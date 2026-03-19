@@ -1,0 +1,69 @@
+================================================================================
+                    AURA CORE - DOCUMENTAZIONE MODULO BRIDGE
+================================================================================
+VERSIONE: 1.0
+TIPO: Interfaccia di Integrazione Esterna (API Wrapper)
+FILE: aura_bridge.py
+
+--------------------------------------------------------------------------------
+1. SCOPO DEL MODULO
+--------------------------------------------------------------------------------
+Il Bridge nasce per separare la logica di Aura (il suo "Cervello") dalla sua 
+interfaccia utente (il Terminale). Permette di istanziare Aura come un oggetto 
+Python all'interno di altri software come:
+- Open WebUI (Interfaccia stile ChatGPT)
+- Bot Telegram / Discord
+- Applicazioni Mobile o Web personalizzate
+
+--------------------------------------------------------------------------------
+2. ARCHITETTURA E FLUSSO DATI
+--------------------------------------------------------------------------------
+Quando viene chiamato il metodo .chat(user_input), il Bridge esegue questi step:
+
+1. [DINAMIC PROMPT]: Interroga 'brain_interface' per sapere chi è l'Admin e chi è 
+   Aura, legge il file della personalità attiva e scansiona i plugin disponibili. 
+   Assembla tutto in un unico System Prompt aggiornato.
+   
+2. [GENERAZIONE]: Invia il prompt e il messaggio dell'utente al backend impostato 
+   (Ollama o KoboldCPP) usando il modulo 'cervello'.
+
+3. [ESECUZIONE PLUGIN]: Passa la risposta dell'IA al 'processore'. Se l'IA ha 
+   inserito dei tag (es: [SISTEMA: ora]), il processore esegue il codice Python 
+   corrispondente e pulisce il testo.
+
+4. [MEMORIA]: Salva automaticamente lo scambio nel database SQLite (Caveau) 
+   per mantenere la coerenza storica della conversazione.
+
+--------------------------------------------------------------------------------
+3. FUNZIONI CHIAVE PER GLI SVILUPPATORI
+--------------------------------------------------------------------------------
+
+> AuraBridge.__init__()
+Inizializza il ConfigManager e prepara il database. Se questo fallisce, 
+il sistema non ha i permessi di scrittura o mancano file core.
+
+> AuraBridge.trace_imports()
+STRUMENTO DI DEBUG CRITICO: Stampa nel log tutti i moduli 'aura' caricati in RAM 
+e il loro percorso su disco. Serve a capire se stai usando la versione corretta 
+dei file in ambienti di produzione.
+
+> AuraBridge.get_full_system_prompt()
+Il "cuore" della potenza di Aura. Se vuoi cambiare radicalmente come Aura si 
+presenta all'esterno, è qui che devi intervenire.
+
+> AuraBridge.chat(user_input)
+L'unico metodo che l'interfaccia esterna deve chiamare. 
+Input: Stringa (testo utente)
+Output: Stringa (risposta elaborata, pulita e con plugin eseguiti)
+
+--------------------------------------------------------------------------------
+4. NOTE DI MANUTENZIONE
+--------------------------------------------------------------------------------
+- PATH: Il bridge aggiunge la cartella del file al sys.path. Assicurarsi che 
+  aura_bridge.py sia sempre nella cartella radice di AuraCore.
+  
+- LOGGING: I log non appaiono solo a schermo ma vengono scritti nei file 
+  giornalieri dentro /logs. In caso di errori "silenziosi", controllare lì.
+
+- DIPENDENZE: Richiede le stesse dipendenze di Aura Core (requests, sqlite3, ecc.)
+--------------------------------------------------------------------------------

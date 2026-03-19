@@ -1,0 +1,98 @@
+{
+    "DASHBOARD": {
+        "descrizione": "Monitoraggio hardware e stato backend AI.",
+        "comandi": {
+            "risorse": "Mostra CPU e RAM.",
+            "vram": "Mostra dettagli VRAM e carico GPU.",
+            "stato": "Mostra stato del backend (Ollama/Kobold).",
+            "tutto": "Mostra tutte le informazioni disponibili."
+        },
+        "stato": "ONLINE (Telemetria attiva)",
+        "esempio": ""
+    },
+    "FILE_MANAGER": {
+        "descrizione": "Gestione file e directory di sistema con supporto ai percorsi utente e lettura file.",
+        "comandi": {
+            "list:percorso": "Elenca file e cartelle (es. list:desktop, list:core, list:plugins).",
+            "conta:percorso": "Fornisce un conteggio dettagliato degli elementi in una cartella.",
+            "read:percorso": "Legge il contenuto di un file di testo (prime 50 righe)."
+        },
+        "stato": "ATTIVO",
+        "esempio": ""
+    },
+    "HELP": {
+        "descrizione": "Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema.",
+        "comandi": {
+            "lista": "Mostra tutti i protocolli disponibili."
+        },
+        "stato": "ATTIVO",
+        "esempio": "[HELP: lista]"
+    },
+    "MEDIA": {
+        "descrizione": "Controllo hardware volume e mute.",
+        "comandi": {
+            "vol:0-100": "Regola volume master.",
+            "mute:on/off": "Attiva o disattiva il silenzio."
+        },
+        "stato": "ATTIVO",
+        "esempio": ""
+    },
+    "ROLEPLAY": {
+        "descrizione": "Gestisce modalità roleplay: carica personaggi e scene per conversazioni immersive.",
+        "comandi": {
+            "list": "Elenca i personaggi disponibili.",
+            "load: nome": "Carica il personaggio specificato (es. load: wizard).",
+            "unload": "Disattiva il roleplay e torna alla personalità normale.",
+            "scene: list": "Elenca le scene disponibili.",
+            "scene: load: nome": "Carica una scena (aggiunge contesto).",
+            "scene: unload": "Rimuove la scena corrente.",
+            "reset": "Resetta il personaggio e la scena."
+        },
+        "stato": "ONLINE (Pronto)",
+        "esempio": ""
+    },
+    "SISTEMA": {
+        "descrizione": "Accesso Root: gestione terminale, reboot, diagnostica log, utilità di sistema.",
+        "comandi": {
+            "help": "Mostra i protocolli di sistema.",
+            "riavvia": "Cold Reboot immediato del core.",
+            "cmd:istruzione": "Esegue un comando shell (es: cmd:dir).",
+            "terminale": "Apre una nuova finestra Prompt CMD.",
+            "leggi log": "Legge gli ultimi eventi registrati nel sistema.",
+            "errori": "Analizza solo gli ultimi crash o fallimenti.",
+            "ora": "Restituisce l'ora corrente.",
+            "apri:programma": "Apre un programma predefinito (notepad, chrome, visual studio, sillytavern).",
+            "esplora:percorso": "Apre una cartella in Explorer (es. esplora:desktop, esplora:download).",
+            "config:set:sezione,chiave,valore": "Aggiorna una voce del file config.json (uso attento)."
+        },
+        "stato": "ONLINE (Shell & BlackBox Access Active)",
+        "esempio": "[SISTEMA: leggi log] o [SISTEMA: terminale] o [SISTEMA: ora]"
+    },
+    "WEB": {
+        "descrizione": "Accesso alla rete per ricerche Google e apertura rapida di siti web.",
+        "comandi": {
+            "search:query": "Esegue una ricerca su Google per il termine specificato.",
+            "open:url": "Apre un indirizzo web nel browser predefinito."
+        },
+        "stato": "ONLINE (Navigazione & Search)",
+        "esempio": "[WEB: search: chi è Root Admin] oppure [WEB: open: youtube.com]"
+    },
+    "WEBCAM": {
+        "descrizione": "Accesso alla visione ottica del PC per scattare istantanee dell'ambiente o dell'Admin.",
+        "comandi": {
+            "snap": "Attiva la fotocamera e salva un'immagine nella cartella 'scatti'."
+        },
+        "stato": "ONLINE (Visione Ottica)",
+        "esempio": ""
+    },
+    "MODELS": {
+        "descrizione": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
+        "comandi": {
+            "set:numero": "Cambia il modello attivo usando il numero della lista (es: set:7).",
+            "lista": "Mostra i modelli disponibili per il backend attuale.",
+            "backend": "Mostra il backend attualmente in uso."
+        },
+        "stato": "ONLINE (Gestione modelli)",
+        "esempio": ""
+    }
+}

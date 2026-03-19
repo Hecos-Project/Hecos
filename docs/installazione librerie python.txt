@@ -1,0 +1,9 @@
+# Crea un ambiente virtuale (opzionale ma consigliato)
+python -m venv venv
+venv\Scripts\activate
+
+# Installa tutto
+pip install -r requirements.txt
+
+# Se vuoi installare anche le opzionali (per sviluppo futuro)
+pip install -r requirements.txt --extra-index-url https://pypi.org/simple

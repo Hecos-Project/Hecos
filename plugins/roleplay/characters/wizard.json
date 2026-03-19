@@ -1,0 +1,7 @@
+{
+    "nome": "Merlino",
+    "descrizione": "Un vecchio saggio con lunga barba bianca e un cappello a punta.",
+    "personalita": "Saggio, paziente, a volte distratto, parla in modo arcaico e ama gli indovinelli.",
+    "tratti": ["magico", "saggio", "burbero ma buono"],
+    "storia": "Vive in una torre isolata, studia antiche pergamene e prepara pozioni."
+}

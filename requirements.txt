@@ -1,0 +1,59 @@
+# ============================================================
+# AURA CORE v0.9.3 - REQUISITI COMPLETI
+# ============================================================
+
+# ------------------------------
+# CORE AI E BACKEND
+# ------------------------------
+ollama                      # Interfaccia con Ollama
+requests>=2.31.0            # Chiamate HTTP
+aiohttp>=3.9.0              # Supporto asincrono (opzionale)
+
+# ------------------------------
+# INTERFACCIA E LOGGING
+# ------------------------------
+colorama>=0.4.6             # Colori ANSI per terminale
+
+# ------------------------------
+# SISTEMA E HARDWARE
+# ------------------------------
+psutil>=5.9.0               # Monitoraggio CPU, RAM, processi
+gputil>=1.4.0               # Monitoraggio GPU/VRAM (opzionale)
+keyboard>=0.13.5            # Gestione eventi tastiera globali
+pywin32>=305                # Accesso API Windows
+
+# ------------------------------
+# AUDIO (Plugin MEDIA e SISTEMA)
+# ------------------------------
+pycaw>=2018.8.20            # Controllo volume Windows
+comtypes>=1.1.14            # Dipendenza pycaw
+winsound                    # Incluso in Python standard (non serve pip)
+
+# ------------------------------
+# PLUGIN WEB
+# ------------------------------
+beautifulsoup4>=4.12.0      # Parsing HTML (plugin web)
+requests                    # Già incluso sopra
+
+# ------------------------------
+# PLUGIN VISIONE (WEBCAM)
+# ------------------------------
+opencv-python>=4.8.0        # Accesso webcam
+numpy>=1.24.0               # Dipendenza OpenCV
+
+# ------------------------------
+# UTILITY E FILE SYSTEM
+# ------------------------------
+send2trash>=1.8.0           # Spostamento file nel cestino
+watchdog>=4.0.0             # Monitoraggio file system (per hot-reload)
+python-dotenv>=1.0.0        # Gestione variabili d'ambiente (opzionale)
+
+# ------------------------------
+# OPZIONALI (per funzionalità estese)
+# ------------------------------
+# Flask>=3.0.0               # Per future API REST
+# fastapi>=0.104.0           # Per future API REST
+# uvicorn>=0.24.0            # Server ASGI
+# websockets>=12.0           # Per comunicazioni real-time
+# pydantic>=2.0.0            # Validazione dati
+# sqlalchemy>=2.0.0          # ORM alternativo a SQLite puro

@@ -1,0 +1,124 @@
+📁 AuraCore_V0.9.3/
+│
+├── 📄 main.py                          # Punto di ingresso principale (semplificato)
+├── 📄 monitor.py                        # Watchdog per riavvio automatico
+├── 📄 config.json                        # Configurazione centrale
+├── 📄 config_tool.py                     # Editor standalone configurazione
+├── 📄 version_tool.py                     # Utility per visualizzare versione
+├── 📄 aura_webui_bridge.py                # Bridge per Open WebUI (streaming)
+├── 📄 avvia_aura.bat                      # Script di avvio (tuo)
+├── 📄 requirements.txt                    # Dipendenze Python complete
+├── 📄 guida_installazione.txt              # Istruzioni installazione (spostato in docs/)
+│
+├── 📁 app/                                # Logica applicativa
+│   ├── 📄 __init__.py
+│   ├── 📄 application.py                   # Classe principale AuraApplication
+│   ├── 📄 config.py                         # Gestione configurazione (ConfigManager)
+│   ├── 📄 state_manager.py                   # Gestione stati globali (thread-safe)
+│   ├── 📄 input_handler.py                    # Gestione input tastiera/vocale
+│   └── 📄 threads.py                          # Thread dedicati (ascolto)
+│
+├── 📁 aura_bridge/                         # Bridge e integrazioni esterne
+│   ├── 📄 documentazione_tecnica_bridge.txt   # Documentazione tecnica del bridge
+│   └── 📄 integrazione webui.py               # Pipe per Open WebUI (da copiare nella funzione)
+│
+├── 📁 core/                               # Sistema nervoso centrale
+│   ├── 📄 __init__.py
+│   ├── 📄 cervello.py                       # Dispatcher backend (Ollama/Kobold)
+│   ├── 📄 processore.py                      # Esecuzione plugin e filtri
+│   ├── 📄 logger.py                          # Logging centralizzato (con debug)
+│   ├── 📄 plugin_loader.py                    # Scansione e registro plugin
+│   ├── 📄 diagnostica.py                      # Check iniziali e boot (con conteggio plugin disabilitati)
+│   ├── 📄 filtri.py                           # Pulizia testo per voce (con rimozione emoji)
+│   ├── 📄 ascolto.py                          # Rilevamento vocale
+│   ├── 📄 voce.py                             # Sintesi vocale (Piper)
+│   ├── 📄 azioni.py                           # Utility varie
+│   ├── 📄 version.py                          # Informazioni centralizzate sulla versione
+│   ├── 📄 ollama_backend.py                   # Comunicazione con Ollama
+│   ├── 📄 kobold_backend.py                   # Comunicazione con KoboldCPP
+│   └── 📄 registry.json                        # Registro capacità (generato)
+│
+├── 📁 docs/                                # Documentazione
+│   ├── 📄 guida all'installazione.txt        # Istruzioni installazione
+│   ├── 📄 installazione librerie python.txt  # Setup librerie
+│   ├── 📄 MANUALE OPERATIVO.docx             # Manuale utente
+│   └── 📄 Mappa cartelle, file e struttura V0.9.3.txt  # Questa mappa
+│
+├── 📁 ui/                                 # Interfaccia utente
+│   ├── 📄 __init__.py
+│   ├── 📄 interfaccia.py                    # UI principale, tasti funzione
+│   ├── 📄 grafica.py                         # Barre di progresso, slider
+│   │
+│   └── 📁 config_editor/                    # Editor di configurazione
+│       ├── 📄 __init__.py
+│       ├── 📄 core.py                         # Classe principale ConfigEditor
+│       ├── 📄 ui.py                           # UI dell'editor (con sezioni)
+│       ├── 📄 parameters.py                    # Definizione parametri
+│       ├── 📄 locks.py                         # Gestione file di lock
+│       └── 📄 utils.py                         # Utility (clear_screen, get_key)
+│
+├── 📁 plugins/                            # Moduli d'azione
+│   ├── 📄 __init__.py
+│   │
+│   ├── 📁 dashboard/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Monitoraggio hardware
+│   │
+│   ├── 📁 file_manager/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Esplorazione file/cartelle
+│   │
+│   ├── 📁 help/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Guida comandi
+│   │
+│   ├── 📁 media/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Controllo volume (richiede pycaw)
+│   │
+│   ├── 📁 models/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Cambio modello IA
+│   │
+│   ├── 📁 sistema/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Comandi shell, reboot, log
+│   │
+│   ├── 📁 web/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Apertura siti, ricerche
+│   │
+│   ├── 📁 webcam/
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Acquisizione immagini
+│   │
+│   ├── 📁 memoria/                           # Plugin memoria (opzionale)
+│   │   ├── 📄 __init__.py
+│   │   └── 📄 main.py                       # Interfaccia con caveau
+│   │
+│   └── 📁 roleplay/                          # Plugin roleplay (esempio)
+│       ├── 📄 __init__.py
+│       ├── 📄 main.py
+│       ├── 📁 characters/
+│       │   └── 📄 wizard.json
+│       └── 📁 scenes/
+│           └── 📄 tavern.json
+│
+├── 📁 plugins_disabled/                    # Plugin disabilitati (spostati qui)
+│
+├── 📁 memoria/                             # Memoria semantica ed episodica
+│   ├── 📄 __init__.py
+│   ├── 📄 brain_interface.py                 # Gestione identità e DB
+│   ├── 📄 archivio_chat.db                    # Database SQLite (generato)
+│   ├── 📄 identita_core.json                   # Chi è Aura
+│   └── 📄 profilo_utente.json                   # Chi è l'Admin
+│
+├── 📁 personalita/                          # Anime (file .txt)
+│   ├── 📄 aura.txt
+│   ├── 📄 aura_dark.txt
+│   ├── 📄 aura_dark_Adult.txt
+│   └── 📄 nova_tech.txt
+│
+└── 📁 logs/                                 # Log giornalieri (generati)
+    ├── 📄 aura_YYYY-MM-DD.log
+    └── 📄 bridge_debug.log                    # Log specifico del bridge

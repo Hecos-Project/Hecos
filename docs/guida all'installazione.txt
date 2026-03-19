@@ -1,0 +1,48 @@
+===================================================
+ GUIDA ALL'INSTALLAZIONE DI AURA CORE v0.7
+          (Per PC "vergine" - da zero)
+===================================================
+
+1. INSTALLARE PYTHON
+   - Vai su https://www.python.org/downloads/
+   - Scarica Python 3.10 o superiore
+   - Durante l'installazione, spunta "Add Python to PATH"
+   - Completa l'installazione
+
+2. INSTALLARE OLLAMA (OPZIONALE, se vuoi usare Ollama)
+   - Vai su https://ollama.com/download
+   - Scarica e installa Ollama
+   - Apri un terminale e scarica un modello di esempio:
+     ollama pull gemma2:2b
+
+3. INSTALLARE KOBOLDCPP (OPZIONALE, se vuoi modelli uncensored)
+   - Vai su https://github.com/LostRuins/koboldcpp/releases
+   - Scarica l'ultimo koboldcpp.exe
+   - Crea una cartella C:\KoboldCPP\
+   - Metti l'exe in C:\KoboldCPP\
+   - Crea una sottocartella C:\KoboldCPP\models\
+   - Scarica un modello GGUF (es. da Hugging Face) e mettilo in models\
+
+4. SCARICARE IL PROGETTO AURA
+   - Estrai il progetto in una cartella, es. C:\AuraCore
+
+5. INSTALLARE LE DIPENDENZE PYTHON
+   - Apri il terminale nella cartella del progetto
+   - Esegui: pip install -r requirements.txt
+
+6. CONFIGURARE PIPER (SINTESI VOCALE)
+   - Assicurati di avere la cartella piper/ con:
+        piper.exe
+        it_IT-paola-medium.onnx
+        it_IT-paola-medium.onnx.json
+   - In config.json, verifica che i percorsi in "voce" puntino ai file corretti
+
+7. PRIMO AVVIO
+   - Apri il terminale nella cartella del progetto
+   - Esegui: python main.py
+   - Se tutto funziona, vedrai l'interfaccia di Aura
+
+8. RISOLUZIONE PROBLEMI COMUNI
+   - "Errore telemetria hardware": installa gputil: pip install gputil
+   - "Nessun modulo trovato": controlla di aver installato tutte le dipendenze
+   - "Backend non pronto": avvia Ollama o KoboldCPP prima di Aura

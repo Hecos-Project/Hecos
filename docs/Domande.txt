@@ -1,0 +1,21 @@
+"Chi sei?"
+
+"Cosa c'è nella tua cartella core?"
+
+"Leggi il file cervello.py"
+
+"Ricorda che il mio nome è Tony"
+
+"Quali sono gli ultimi 3 messaggi?"
+
+"Che ore sono?"
+
+"Apri notepad"
+
+"Apri la cartella Download"
+
+"Aggiorna config:ia,temperature,0.7"
+
+"Apri il terminale"
+
+"Cerca su Google chi è Tony Stark" (dovrebbe attivare [WEB: search:...])

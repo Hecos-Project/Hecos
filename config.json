@@ -1,0 +1,80 @@
+{
+    "backend": {
+        "tipo": "ollama",
+        "ollama": {
+            "modello": "qwen2.5:1.5b-instruct-q4_K_M",
+            "temperature": 0.3,
+            "num_predict": 250,
+            "num_ctx": 4096,
+            "num_gpu": 20,
+            "keep_alive": "60m",
+            "top_p": 0.9,
+            "repeat_penalty": 1.1,
+            "modelli_disponibili": {
+                "1": "gemma3:1b-it-q4_K_M",
+                "2": "huihui_ai/gemma3-abliterated:270m",
+                "3": "huihui_ai/gemma3-abliterated:1b",
+                "4": "jayeshpandit2480/gemma3-UNCENSORED:1b",
+                "5": "deepseek-r1:1.5b",
+                "6": "huihui_ai/qwen3.5-abliterated:0.8B",
+                "7": "qwen2.5:1.5b-instruct-q4_K_M",
+                "8": "qwen2.5:0.5b",
+                "9": "qwen2.5:1.5b",
+                "10": "llama3.2:1b"
+            }
+        },
+        "kobold": {
+            "url": "http://localhost:5001",
+            "modello": "vikhr-qwen-2.5-1.5b-instruct-q4_k_m.gguf",
+            "temperature": 0.8,
+            "max_length": 512,
+            "top_p": 0.92,
+            "rep_pen": 1.1
+        }
+    },
+    "ia": {
+        "personalita_attiva": "aura_dark_Adult.txt",
+        "personalita_disponibili": {
+            "1": "aura_dark.txt",
+            "2": "nova_tech.txt",
+            "3": "aura.txt"
+        }
+    },
+    "voce": {
+        "modello_onnx": "C:\\piper\\it_IT-paola-medium.onnx",
+        "piper_path": "C:\\piper\\piper.exe",
+        "speed": 1.2,
+        "noise_scale": 0.817,
+        "noise_w": 0.9,
+        "sentence_silence": 0.1
+    },
+    "ascolto": {
+        "soglia_energia": 450,
+        "timeout_silenzio": 5,
+        "limite_frase": 15
+    },
+    "filtri": {
+        "rimuovi_asterischi": true,
+        "rimuovi_parentesi_tonde": true,
+        "rimuovi_parentesi_quadre": false,
+        "rimuovi_markdown": true,
+        "sostituzioni_personalizzate": {
+            "IA": "intelligenza artificiale",
+            "PC": "computer"
+        }
+    },
+    "processore": {
+        "debug_mode": false,
+        "log_level": "INFO"
+    },
+    "monitor": {
+        "check_interval": 1,
+        "restart_delay": 2
+    },
+    "bridge": {
+        "usa_processore": true,
+        "ritardo_chunk_ms": 0,
+        "debug_log": true,
+        "rimuovi_think_tags": true
+    }
+}
