@@ -1,5 +1,5 @@
 # Aura Core Project
-![Aura Logo](assets/nome_della_tua_foto.png)
+![Aura Logo](assets/Aura_Core_Project_001.jpg)
 
 # Aura Core V0.9.3
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
