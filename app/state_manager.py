@@ -5,9 +5,9 @@ Gestione centralizzata degli stati dell'applicazione.
 import threading
 
 class StateManager:
-    def __init__(self):
-        self._stato_voce = True
-        self._stato_ascolto = True
+    def __init__(self, stato_voce_iniziale=True, stato_ascolto_iniziale=True):
+        self._stato_voce = stato_voce_iniziale
+        self._stato_ascolto = stato_ascolto_iniziale
         self._ultimo_esc = 0
         self._comando_vocale_rilevato = None
         self._sistema_in_elaborazione = False

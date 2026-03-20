@@ -19,7 +19,11 @@ from .threads import AscoltoThread
 class AuraApplication:
     def __init__(self):
         self.config_manager = ConfigManager()
-        self.state_manager = StateManager()
+        
+        cv = self.config_manager.get('voce', 'stato_voce', default=True)
+        ca = self.config_manager.get('ascolto', 'stato_ascolto', default=True)
+        self.state_manager = StateManager(stato_voce_iniziale=cv, stato_ascolto_iniziale=ca)
+        
         self.input_handler = InputHandler(self.state_manager, self.config_manager)
         self.running = True
 
@@ -195,6 +199,8 @@ class AuraApplication:
             
         elif key == "F4":
             self.state_manager.stato_ascolto = not self.state_manager.stato_ascolto
+            self.config_manager.set(self.state_manager.stato_ascolto, 'ascolto', 'stato_ascolto')
+            self.config_manager.save()
             verb = "ON" if self.state_manager.stato_ascolto else "OFF"
             color = "\033[96m" if self.state_manager.stato_ascolto else "\033[91m"
             print(f"\n{color}[SISTEMA] Ascolto: {verb}\033[0m")
@@ -202,6 +208,8 @@ class AuraApplication:
             
         elif key == "F5":
             self.state_manager.stato_voce = not self.state_manager.stato_voce
+            self.config_manager.set(self.state_manager.stato_voce, 'voce', 'stato_voce')
+            self.config_manager.save()
             verb = "ON" if self.state_manager.stato_voce else "OFF"
             color = "\033[96m" if self.state_manager.stato_voce else "\033[91m"
             print(f"\n{color}[SISTEMA] Voce: {verb}\033[0m")

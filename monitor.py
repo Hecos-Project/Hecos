@@ -35,6 +35,12 @@ def avvia_e_monitora():
             # Controllo unico su config.json
             current_config_time = ottieni_timestamp_file(FILE_CONFIG)
             if current_config_time > last_config_time + 1:
+                if os.path.exists(".config_saved_by_app"):
+                    try: os.remove(".config_saved_by_app")
+                    except: pass
+                    last_config_time = current_config_time
+                    continue
+                    
                 print("\n[MONITOR] Modifica config.json rilevata. Terminazione in corso...")
                 processo.terminate()
                 # Attendiamo che il processo si chiuda davvero (max 5 secondi)

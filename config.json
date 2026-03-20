@@ -46,12 +46,14 @@
         "speed": 1.2,
         "noise_scale": 0.817,
         "noise_w": 0.9,
-        "sentence_silence": 0.1
+        "sentence_silence": 0.1,
+        "stato_voce": false
     },
     "ascolto": {
         "soglia_energia": 450,
         "timeout_silenzio": 5,
-        "limite_frase": 15
+        "limite_frase": 15,
+        "stato_ascolto": false
     },
     "filtri": {
         "rimuovi_asterischi": true,
