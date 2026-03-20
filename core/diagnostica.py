@@ -23,12 +23,12 @@ RESET = '\033[0m'
 
 def check_bypass():
     try:
-        if msvcrt.kbhit():
+        bypassed = False
+        while msvcrt.kbhit():
             tasto = msvcrt.getch()
             if tasto == b'\x1b':
-                while msvcrt.kbhit():
-                    msvcrt.getch()
-                return True
+                bypassed = True
+        return bypassed
     except Exception:
         pass
     return False
