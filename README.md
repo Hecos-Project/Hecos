@@ -1,7 +1,7 @@
 # Aura Core Project
 ![Aura Logo](assets/Aura_Core_Project_001.jpg)
 
-# Aura Core V0.9.3
+# Aura Core - Version 0.9.4 (In Development)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Aura Core

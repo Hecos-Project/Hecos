@@ -6,7 +6,7 @@ Tutte le componenti del sistema devono referenziare questo file.
 # Versione del core
 VERSION_MAJOR = 0
 VERSION_MINOR = 9
-VERSION_PATCH = 3
+VERSION_PATCH = 4
 VERSION = f"{VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH}"
 
 # Nome del progetto
