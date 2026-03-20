@@ -8,7 +8,7 @@ import threading
 import msvcrt
 from core import logger, plugin_loader, diagnostica, processore, ascolto, voce
 import plugins.dashboard.main as dashboard
-from ui import interfaccia, grafica
+from ui import interfaccia, grafica, ui_updater
 from ui.config_editor.core import ConfigEditor
 from memoria import brain_interface
 from .config import ConfigManager
@@ -238,6 +238,9 @@ class AuraApplication:
             self.state_manager.stato_ascolto,
             dashboard.get_backend_status()
         )
+
+        # Avvia aggiornamento in-place della riga hardware (no flickering)
+        ui_updater.avvia(self.config_manager, self.state_manager, dashboard)
 
         self._show_welcome()
 
