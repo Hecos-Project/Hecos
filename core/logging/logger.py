@@ -12,8 +12,8 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
-# Nome del file basato sulla data odierna per una rotazione giornaliera
-log_filename = f"logs/aura_{datetime.now().strftime('%Y-%m-%d')}.log"
+info_filename = f"logs/aura_info_{datetime.now().strftime('%Y-%m-%d')}.log"
+debug_filename = f"logs/aura_debug_{datetime.now().strftime('%Y-%m-%d')}.log"
 
 logger = logging.getLogger("AuraLogger")
 logger.setLevel(logging.DEBUG)  # Il logger accetta tutto
@@ -22,11 +22,24 @@ logger.setLevel(logging.DEBUG)  # Il logger accetta tutto
 if logger.hasHandlers():
     logger.handlers.clear()
 
-# Handler per il file (registra TUTTO, livello DEBUG)
-file_handler = logging.FileHandler(log_filename, encoding='utf-8')
-file_handler.setLevel(logging.DEBUG)
 file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-file_handler.setFormatter(file_formatter)
+
+# Handler per il file INFO/WARN/ERROR
+info_file_handler = logging.FileHandler(info_filename, encoding='utf-8')
+info_file_handler.setLevel(logging.INFO)
+info_file_handler.setFormatter(file_formatter)
+
+# Handler per il file SOLO DEBUG
+class LevelFilter(logging.Filter):
+    def __init__(self, level):
+        self.level = level
+    def filter(self, record):
+        return record.levelno == self.level
+
+debug_file_handler = logging.FileHandler(debug_filename, encoding='utf-8')
+debug_file_handler.setLevel(logging.DEBUG)
+debug_file_handler.addFilter(LevelFilter(logging.DEBUG))
+debug_file_handler.setFormatter(file_formatter)
 
 # Handler per la console (default INFO)
 class ColorFormatter(logging.Formatter):
@@ -50,7 +63,8 @@ console_formatter = ColorFormatter('%(asctime)s [%(levelname)s] %(message)s')
 console_handler.setFormatter(console_formatter)
 
 # Aggiungi gli handler al logger
-logger.addHandler(file_handler)
+logger.addHandler(info_file_handler)
+logger.addHandler(debug_file_handler)
 logger.addHandler(console_handler)
 
 _console_window_started = False
@@ -68,32 +82,57 @@ def init_logger(config):
         pass
         
     destinazione = logging_config.get('destinazione', 'chat')
-    livello_str = logging_config.get('livello', 'INFO').upper()
+    tipo_messaggi = logging_config.get('tipo_messaggi', 'entrambi')
     
-    livello = getattr(logging, livello_str, logging.INFO)
-    
-    # Aggiorna il livello per visualizzare più o meno dettagli (DEBUG, INFO, WARNING, ERROR)
-    console_handler.setLevel(livello)
+    # Rimuovi eventuali filtri precedenti dal console_handler
+    for f in console_handler.filters[:]:
+        console_handler.removeFilter(f)
+
+    # Crea un nuovo filtro basato sulla preferenza tipo_messaggi
+    class ConsoleTypeFilter(logging.Filter):
+        def filter(self, record):
+            if tipo_messaggi == 'info':
+                return record.levelno >= logging.INFO
+            elif tipo_messaggi == 'debug':
+                return record.levelno == logging.DEBUG
+            else: # 'entrambi'
+                return True
+                
+    console_handler.addFilter(ConsoleTypeFilter())
     
     if destinazione == 'console':
-        # Disabilita l'output sulla chat principale rimuovendo console_handler
+        # Disabilita l'output sulla chat principale
         if console_handler in logger.handlers:
             logger.removeHandler(console_handler)
         
-        # Apri la console separata solo una volta
-        if not _console_window_started:
-            # Usa PowerShell per simulare 'tail -f' con colorazione automatica real-time
-            ps_script = (
-                f"Get-Content -Path '{log_filename}' -Wait -Tail 20 | ForEach-Object {{ "
-                "if ($_ -match '\\[ERROR\\]') { Write-Host $_ -ForegroundColor Red } "
-                "elseif ($_ -match '\\[WARNING\\]') { Write-Host $_ -ForegroundColor Yellow } "
-                "elseif ($_ -match '\\[DEBUG\\]') { Write-Host $_ -ForegroundColor Cyan } "
-                "else { Write-Host $_ -ForegroundColor White } "
-                "}"  # Singola parentesi graffa finale per chiudere ForEach-Object
-            )
-            subprocess.Popen(f'start powershell -NoExit -Command "{ps_script}"', shell=True)
-            _console_window_started = True
+        # Riavviamo la console se ha parametri differenti o è nuova
+        if _console_window_started:
+            subprocess.run('taskkill /f /fi "windowtitle eq Aura Logs*" >nul 2>&1', shell=True)
+            
+        if tipo_messaggi == 'info':
+            target_files = f"'{info_filename}'"
+        elif tipo_messaggi == 'debug':
+            target_files = f"'{debug_filename}'"
+        else:
+            target_files = f"'{info_filename}', '{debug_filename}'"
+
+        ps_script = (
+            "$host.ui.RawUI.WindowTitle = 'Aura Logs'; "
+            f"Get-Content -Path {target_files} -Wait -Tail 20 | ForEach-Object {{ "
+            "if ($_ -match '\\[ERROR\\]') { Write-Host $_ -ForegroundColor Red } "
+            "elseif ($_ -match '\\[WARNING\\]') { Write-Host $_ -ForegroundColor Yellow } "
+            "elseif ($_ -match '\\[DEBUG\\]') { Write-Host $_ -ForegroundColor Cyan } "
+            "else { Write-Host $_ -ForegroundColor White } "
+            "}"
+        )
+        subprocess.Popen(f'start powershell -NoExit -Command "{ps_script}"', shell=True)
+        _console_window_started = True
     else:
+        # Se si passa a chat, chiudi la console se aperta
+        if _console_window_started:
+            subprocess.run('taskkill /f /fi "windowtitle eq Aura Logs*" >nul 2>&1', shell=True)
+            _console_window_started = False
+            
         # Assicurati che l'output standard sia attivo
         if console_handler not in logger.handlers:
             logger.addHandler(console_handler)
@@ -125,14 +164,14 @@ def debug_ia(testo_utente, risposta_ia, tag_rilevato=None):
 
 def leggi_log(n=10, solo_errori=False):
     """
-    Ritorna le ultime N righe del log. 
+    Ritorna le ultime N righe del log INFO.
     Se solo_errori è True, filtra solo le righe critiche.
     """
     try:
-        if not os.path.exists(log_filename):
+        if not os.path.exists(info_filename):
             return "Nessun log trovato per la giornata odierna."
             
-        with open(log_filename, 'r', encoding='utf-8') as f:
+        with open(info_filename, 'r', encoding='utf-8') as f:
             righe = f.readlines()
             if solo_errori:
                 righe = [r for r in righe if "[ERROR]" in r]

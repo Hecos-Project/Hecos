@@ -295,7 +295,14 @@ class AuraApplication:
             elif evento == "ESC_AGAIN":
                 print(f"\n\033[93m[SISTEMA] ESC di nuovo per uscire.\033[0m")
             elif evento in ["F1", "F2", "F3", "F4", "F5", "F6", "F7"]:
+                # Sospendi UI updater per evitare corruzione grafica a schermo intero
+                menu_schermo_intero = ["F1", "F2", "F3", "F7"]
+                if evento in menu_schermo_intero:
+                    ui_updater.ferma()
+                    time.sleep(0.1) # Assicura che si fermi il vecchio thread
+                    
                 self._handle_function_key(evento, config)
+                
                 # Ricarica config nel caso sia stato modificato
                 config = self.config_manager.config
                 if evento in ["F4", "F5"]:
@@ -312,6 +319,10 @@ class AuraApplication:
                         self.state_manager.stato_ascolto,
                         dashboard.get_backend_status()
                     )
+                
+                if evento in menu_schermo_intero:
+                    ui_updater.avvia(self.config_manager, self.state_manager, dashboard)
+                    
                 sys.stdout.write(prefisso + input_utente)
                 sys.stdout.flush()
             elif evento == "PROCESSED":

@@ -12,6 +12,7 @@ import sys
 import os
 import time
 import threading
+import re
 from colorama import Fore, Style
 from ui import grafica
 
@@ -113,9 +114,18 @@ def _aggiorna_riga_hardware():
 
         info_hw = (
             f" CPU: {barra_cpu}  RAM: {barra_ram}  "
-            f"VRAM: {vram}  {stato_colore}BACKEND: {backend_status}{Style.RESET_ALL} "
+            f"VRAM: {vram}  {stato_colore}BACKEND: {backend_status}{Fore.CYAN} "
         )
-        riga_formattata = f"{Fore.CYAN}{info_hw.center(_L + _COMPENSAZIONE)}{Style.RESET_ALL}"
+        
+        # Calcola lunghezza visibile effettiva senza codici ANSI
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        l_vis = len(ansi_escape.sub('', info_hw))
+        
+        spazio_rimanente = max(0, _L - l_vis)
+        pad_left = spazio_rimanente // 2
+        pad_right = spazio_rimanente - pad_left
+        
+        riga_formattata = f"{Fore.CYAN}{' ' * pad_left}{info_hw}{' ' * pad_right}{Style.RESET_ALL}"
 
     except Exception:
         riga_formattata = f"{Fore.RED}{'-- ERRORE TELEMETRIA --'.center(_L)}{Style.RESET_ALL}"

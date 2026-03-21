@@ -79,7 +79,7 @@ def build_parameter_list(config):
     # Logging
     logging_cfg = config.get('logging', {})
     params.append(Parameter('logging', 'destinazione', 'Destinazione Log', 'str', options=['chat', 'console']))
-    params.append(Parameter('logging', 'livello', 'Livello Log', 'str', options=['DEBUG', 'INFO', 'WARNING', 'ERROR']))
+    params.append(Parameter('logging', 'tipo_messaggi', 'Tipo Messaggi', 'str', options=['info', 'debug', 'entrambi']))
 
     # --- COMANDI SPECIALI ---
     params.append(Parameter('system', 'reboot', 'RIAVVIA AURA', 'command', 

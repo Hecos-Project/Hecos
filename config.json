@@ -83,6 +83,7 @@
     },
     "logging": {
         "livello": "INFO",
-        "destinazione": "console"
+        "destinazione": "console",
+        "tipo_messaggi": "entrambi"
     }
 }

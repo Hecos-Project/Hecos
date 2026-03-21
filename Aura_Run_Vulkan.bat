@@ -9,7 +9,7 @@ set OLLAMA_NUM_PARALLEL=1
 
 echo Avvio del server Ollama...
 start /min "" "C:\Users\Asus\AppData\Local\Programs\Ollama\ollama.exe" serve
-timeout /t 8
+timeout /t 1
 
 :avvio_aura
 echo Avvio di Aura...

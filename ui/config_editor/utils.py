@@ -6,10 +6,15 @@ import os
 import sys
 import msvcrt
 import time
-
-def clear_screen():
-    """Pulisce lo schermo del terminale."""
-    os.system('cls' if os.name == 'nt' else 'clear')
+def clear_screen(first_time=False):
+    """Pulisce lo schermo del terminale in-place bypassando il pesantissimo cls.
+    Usa la speciale sequenza ANSI VT100 per resettare l'intero buffer visivo
+    istantaneamente e riportare il cursore a 1,1.
+    """
+    if os.name == 'nt':
+        os.system('') # Forza l'abilitazione di ANSI sui vecchi terminali cmd
+    sys.stdout.write('\033[2J\033[H')
+    sys.stdout.flush()
 
 def flush_input():
     """Svuota il buffer della tastiera."""

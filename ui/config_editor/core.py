@@ -60,7 +60,7 @@ class ConfigEditor:
                 'Rimuovi parentesi tonde': 'rimuovi_parentesi_tonde',
                 'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
                 'Destinazione Log': 'destinazione',
-                'Livello Log': 'livello',
+                'Tipo Messaggi': 'tipo_messaggi',
             }
             
             # Trova la chiave corrispondente
@@ -104,7 +104,7 @@ class ConfigEditor:
                 'Rimuovi parentesi tonde': 'rimuovi_parentesi_tonde',
                 'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
                 'Destinazione Log': 'destinazione',
-                'Livello Log': 'livello',
+                'Tipo Messaggi': 'tipo_messaggi',
             }
             
             # Trova la chiave corrispondente
