@@ -1,6 +1,6 @@
 title: Zentra Core
 description: Your Cybernetic Companion. Locale. Modulare. Sovrano.
-theme: jekyll-theme-minimal
 baseurl: ""
-github:
-  is_project_page: true
+# No theme requested as we use custom HTML/CSS
+markdown: kramdown
+exclude: [docs/Domande.txt, docs/MANUALE OPERATIVO.docx, docs/Mappa cartelle, file e struttura V0.9.3.txt, docs/guida all'installazione.txt, docs/installazione librerie python.txt]
