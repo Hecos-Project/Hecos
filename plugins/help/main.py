@@ -1,12 +1,12 @@
-from core.system import plugin_loader
+from core.i18n import translator
 
 def info():
     return {
         "tag": "HELP",
-        "desc": "Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema.",
+        "desc": translator.t("help_desc", default="Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema."),
         "comandi": {
-            "lista": "Mostra tutti i protocolli disponibili.",
-            "refresh": "Rigenera il registro dei plugin e mostra i comandi aggiornati."  # nuovo comando
+            "lista": translator.t("help_cmd_lista", default="Mostra tutti i protocolli disponibili."),
+            "refresh": translator.t("help_cmd_refresh", default="Rigenera il registro dei plugin e mostra i comandi aggiornati.")
         },
         "esempio": "[HELP: lista]"
     }

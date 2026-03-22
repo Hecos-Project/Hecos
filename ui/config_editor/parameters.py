@@ -79,6 +79,7 @@ def build_parameter_list(config):
     # --- Comando speciale RIAVVIA ---
     params.append(Parameter('system', 'reboot', 'RIAVVIA ZENTRA', 'command', 
                            command='reboot'))
+    params.append(Parameter('system', 'lingua', 'Lingua Sistema', 'str', options=['it', 'en']))
 
     # --- PLUGINS (dinamici) ---
     plugins_section = config.get('plugins', {})

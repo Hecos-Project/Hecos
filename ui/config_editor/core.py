@@ -29,12 +29,28 @@ class ConfigEditor:
             raise
 
     def _save_config(self):
-        """Salva il file JSON se ci sono modifiche."""
+        """Salva il file JSON se ci sono modifiche e aggiorna il traduttore."""
         if self.modified:
             try:
+                # Controlla cambio lingua prima del salvataggio
+                vecchia_lingua = None
+                if os.path.exists(self.config_path):
+                    try:
+                        with open(self.config_path, 'r', encoding='utf-8') as f:
+                            old_data = json.load(f)
+                            vecchia_lingua = old_data.get("lingua")
+                    except: pass
+
                 with open(self.config_path, 'w', encoding='utf-8') as f:
                     json.dump(self.config, f, indent=4, ensure_ascii=False)
-                print("\n✅ Configurazione salvata.")
+                
+                # Sincronizza il traduttore se la lingua è cambiata
+                nuova_lingua = self.config.get("lingua")
+                if nuova_lingua and nuova_lingua != vecchia_lingua:
+                    from core.i18n import translator
+                    translator.get_translator().set_language(nuova_lingua)
+                
+                print("\n✅ Configurazione salvata correttamente.")
             except Exception as e:
                 print(f"\n❌ Errore salvataggio: {e}")
 
@@ -61,6 +77,7 @@ class ConfigEditor:
                 'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
                 'Destinazione Log': 'destinazione',
                 'Tipo Messaggi': 'tipo_messaggi',
+                'Lingua Sistema': 'lingua',
             }
             
             # Trova la chiave corrispondente
@@ -77,6 +94,8 @@ class ConfigEditor:
                 return self.config.get('filtri', {}).get(key)
             elif param.section == 'logging':
                 return self.config.get('logging', {}).get(key)
+            elif param.section == 'system':
+                return self.config.get(key)
             elif param.section == 'plugin':
                 # Sezione plugin: accedi a config['plugins'][param.plugin_tag][key]
                 plugins = self.config.get('plugins', {})
@@ -110,6 +129,7 @@ class ConfigEditor:
                 'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
                 'Destinazione Log': 'destinazione',
                 'Tipo Messaggi': 'tipo_messaggi',
+                'Lingua Sistema': 'lingua',
             }
             
             # Trova la chiave corrispondente
@@ -150,6 +170,11 @@ class ConfigEditor:
                 old = self.config['logging'].get(key)
                 if old != value:
                     self.config['logging'][key] = value
+                    self.modified = True
+            elif param.section == 'system':
+                old = self.config.get(key)
+                if old != value:
+                    self.config[key] = value
                     self.modified = True
             elif param.section == 'plugin':
                 # Sezione plugin: aggiorna config['plugins'][param.plugin_tag][key]

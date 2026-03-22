@@ -8,6 +8,7 @@ import threading
 import msvcrt
 from core.logging import logger
 from core.system import plugin_loader, diagnostica
+from core.i18n import translator
 from core.processing import processore
 from core.audio import ascolto, voce
 from ui import interfaccia, grafica, ui_updater
@@ -32,13 +33,16 @@ class ZentraApplication:
     def _initialize(self):
         """Inizializzazione di tutti i componenti."""
         logger.init_logger(self.config_manager.config)
+        # Inizializza traduttore
+        lingua = self.config_manager.config.get("lingua", "it")
+        translator.init_translator(lingua)
         logger.info("[APP] Avvio sequenza di boot Zentra Core.")
         
         interfaccia.setup_console()
-        self.state_manager.sistema_status = "MEMORIA..."
+        self.state_manager.sistema_status = translator.t("loading_memory")
         brain_interface.inizializza_caveau()
         # IMPORTANTE: passa il config corrente al plugin loader
-        self.state_manager.sistema_status = "PLUGIN..."
+        self.state_manager.sistema_status = translator.t("loading_plugins")
         plugin_loader.aggiorna_registro_capacita(self.config_manager.config)
         # Sincronizza la configurazione dei plugin
         plugin_loader.sincronizza_config_plugin(self.config_manager)
@@ -51,7 +55,7 @@ class ZentraApplication:
             self.config_manager.save()
         
         config = self.config_manager.config
-        self.state_manager.sistema_status = "DIAGNOSTICA..."
+        self.state_manager.sistema_status = translator.t("diagnostics")
         diagnostica.esegui_check_iniziale(config)
         
         # Avvia il monitoraggio backend solo se il plugin è attivo
@@ -73,12 +77,13 @@ class ZentraApplication:
 
     def _show_welcome(self):
         """Mostra messaggio di benvenuto."""
-        self.state_manager.sistema_status = "PARLANDO..."
-        interfaccia.scrivi_zentra("Sistemi pronti. Connessione neurale stabilita, Admin.")
+        self.state_manager.sistema_status = translator.t("speaking")
+        messaggio = self.config_manager.config.get("comportamento", {}).get("messaggio_benvenuto", translator.t("system_ready"))
+        interfaccia.scrivi_zentra(messaggio)
         if self.state_manager.stato_voce:
-            voce.parla("Sistemi pronti.")
+            voce.parla(translator.t("system_ready"))
         self.state_manager.sistema_in_elaborazione = False
-        self.state_manager.sistema_status = "PRONTA"
+        self.state_manager.sistema_status = translator.t("ready")
 
     def _input_digitale_sicuro(self, messaggio):
         """Legge un input numerico o ESC senza bloccare."""
@@ -387,7 +392,7 @@ class ZentraApplication:
         testo_v = self.state_manager.comando_vocale_rilevato
         self.state_manager.comando_vocale_rilevato = None
 
-        self.state_manager.sistema_status = "PENSANDO..."
+        self.state_manager.sistema_status = translator.t("thinking")
         interfaccia.avvia_pensiero()
         sys.stdout.write(f"\r{' ' * 80}\r")
         print(f"{prefisso}\033[92mAdmin (Voce): {testo_v}\033[0m")

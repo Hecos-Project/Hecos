@@ -22,8 +22,9 @@ except ImportError:
     GPUtil = None
 from ui import grafica
 from colorama import init, Fore, Back, Style
-from core.system import plugin_loader
+from core.system import plugin_loader, version
 from core.system.version import get_version_string
+from core.i18n import translator
 
 # "Inizializzazione Colorama per colori ANSI e sfondi su Windows"
 init(convert=True, autoreset=True)
@@ -71,7 +72,7 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"
     L = 90  # Larghezza fissa per l'allineamento
     
     # 1. BARRA SUPERIORE (TITOLO) - NERO VERO
-    titolo = f" {get_version_string()} ".center(L)
+    titolo = translator.t("welcome", version=version.VERSION).center(L)
     print(f"\033[46m\033[30m{titolo}\033[0m")
     
     # 2. BARRA DI STATO DINAMICA
@@ -80,11 +81,14 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"
     spk_str = "ON" if stato_voce else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_len = 2 if stato_voce else 3
     
-    visible_len = len(f" STATO: {stato_sistema} | MODELLO: {modello} | ANIMA: {anima} | MIC:  | VOCE:  ") + mic_len + spk_len
+    info_status = translator.t("system_status", status=stato_sistema)
+    
+    # Calcolo lunghezza visibile per il padding (ignora i codici colore ANSI di mic/spk)
+    visible_len = len(f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC:  | VOCE:  ") + mic_len + spk_len
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
-    info_stato_colored = f" STATO: {stato_sistema} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
+    info_stato_colored = f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
     print(f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}")
     
     # 3. BARRA HARDWARE (PLACEHOLDER) - Verrà sovrascritta dall'updater
@@ -93,7 +97,12 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"
     
     # 4. FOOTER COMANDI RAPIDI
     print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
-    comandi = " F1: Guida | F2: Modelli | F3: Anima | F4: Mic | F5: Voce | F6: Reboot | F7: Config | ESC: Esci "
+    comandi = (
+        f" {translator.t('menu_help')} | {translator.t('menu_models')} | "
+        f"{translator.t('menu_persona')} | {translator.t('menu_mic')} | "
+        f"{translator.t('menu_voice')} | {translator.t('menu_reboot')} | "
+        f"{translator.t('menu_config')} | {translator.t('menu_exit')} "
+    )
     print(f"{Style.DIM}{comandi.center(L)}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}\n")
     
@@ -121,15 +130,21 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
             barra_cpu = grafica.crea_barra(cpu, larghezza=10)
             barra_ram = grafica.crea_barra(ram, larghezza=10)
             
-            # Colore per stato backend
+            # Traduci stati backend
             if backend_status == "PRONTA":
+                display_status = translator.t("ready")
                 stato_colore = Fore.GREEN
             elif backend_status in ("OFFLINE", "ERRORE", "TIMEOUT"):
+                display_status = translator.t("disabled")
                 stato_colore = Fore.RED
             else:
+                display_status = backend_status
                 stato_colore = Fore.YELLOW
 
-            info_hw = f"CPU: {barra_cpu}  RAM: {barra_ram}  VRAM: {vram}  {stato_colore}BACKEND: {backend_status}{Style.RESET_ALL}"
+            info_hw = translator.t("hardware_line", 
+                cpu=barra_cpu, ram=barra_ram, gpu="N/D", vram=vram, 
+                backend=f"{stato_colore}{display_status}{Style.RESET_ALL}"
+            )
         except Exception:
             info_hw = f"{Fore.RED}-- ERRORE TELEMETRIA HARDWARE --{Style.RESET_ALL}"
     else:
@@ -181,11 +196,13 @@ def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_siste
     spk_len = 2 if stato_voce else 3
     
     L = 90
-    visible_len = len(f" STATO: {stato_sistema} | MODELLO: {modello} | ANIMA: {anima} | MIC:  | VOCE:  ") + mic_len + spk_len
+    info_status = translator.t("system_status", status=stato_sistema)
+    
+    visible_len = len(f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC:  | VOCE:  ") + mic_len + spk_len
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
-    info_stato_colored = f" STATO: {stato_sistema} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
+    info_stato_colored = f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
     riga_formattata = f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}"
     
     with stdout_lock:
@@ -218,15 +235,15 @@ def mostra_help():
     setup_console()
     
     # Header centrato
-    intestazione = f"{CIANO}╔════════════════ MANUALE AZIONALE DI ZENTRA ════════════════╗{RESET}"
+    intestazione = f"{CIANO}╔════════════════ {translator.t('help_title')} ════════════════╗{RESET}"
     print(f"\n{intestazione.center(90)}")
-    print(f"{BIANCO}Scansione dei Plugin Attivi e Disattivati...{RESET}".center(90))
+    print(f"{BIANCO}{translator.t('help_scanning')}{RESET}".center(90))
     print()
     
     try:
         guida = genera_guida_dinamica()
         if not guida:
-            print(f"{ROSSO}Nessun modulo rilevato in /plugins o /plugins_disabled.{RESET}".center(90))
+            print(f"{ROSSO}{translator.t('help_no_modules')}{RESET}".center(90))
         else:
             for item in guida:
                 tag = item['tag']
@@ -243,16 +260,16 @@ def mostra_help():
                     col_stato = ROSSO
                     bordo = Fore.LIGHTBLACK_EX
                     
-                print(f"{bordo}├─ {col_stato}[{tag.upper()}] {RESET}- Stato: {col_stato}{stato}{RESET}")
-                print(f"{bordo}│{RESET}  {BIANCO}Ruolo:{RESET} {desc}")
+                print(f"{bordo}├─ {col_stato}[{tag.upper()}] {RESET}- {translator.t('system_status', status=col_stato+stato+RESET)}")
+                print(f"{bordo}│{RESET}  {BIANCO}{translator.t('help_role')}{RESET} {desc}")
                 
                 if comandi:
-                    print(f"{bordo}│{RESET}  {GIALLO}Comandi Registrati:{RESET}")
+                    print(f"{bordo}│{RESET}  {GIALLO}{translator.t('help_commands')}{RESET}")
                     for cmd, spiegazione in comandi.items():
                         print(f"{bordo}│{RESET}    • {cmd} -> {spiegazione}")
                         
                 if esempio:
-                    print(f"{bordo}│{RESET}  {MAGENTA}Sintassi d'esempio:{RESET} {esempio}")
+                    print(f"{bordo}│{RESET}  {MAGENTA}{translator.t('help_example')}{RESET} {esempio}")
                     
                 print(f"{bordo}│{RESET}")
                 
@@ -261,7 +278,7 @@ def mostra_help():
         
     chiusura = f"{CIANO}╚════════════════════════════════════════════════════════════╝{RESET}"
     print(f"{chiusura.center(90)}")
-    print(f"\n{GIALLO}Premi un tasto qualsiasi per tornare a terminale...{RESET}".center(90))
+    print(f"\n{GIALLO}{translator.t('help_footer')}{RESET}".center(90))
     
     # Svuoto vecchie digitazioni prima di bloccare
     while msvcrt.kbhit(): msvcrt.getch()

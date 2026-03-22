@@ -15,6 +15,7 @@ from core.logging import logger
 from core.audio import voce
 from ui import interfaccia
 from core.system.version import VERSION, COPYRIGHT, get_version_string
+from core.i18n import translator
 
 VERDE = '\033[92m'
 ROSSO = '\033[91m'
@@ -79,12 +80,12 @@ def check_backend(config):
             print(f"   [>] Inizializzazione VRAM per: {modello}...")
             response = requests.post(url, json=payload, timeout=60)
             if response.status_code == 200:
-                print(f"   [+] {VERDE}Rete Neurale: ONLINE (Modello pronto){RESET}")
+                print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
                 return True
             return False
         except Exception as e:
             logger.errore(f"DIAGNOSTICA: Ollama non risponde: {e}")
-            print(f"   [-] {ROSSO}Ollama non risponde correttamente.{RESET}")
+            print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
             return False
 
 def scansiona_plugins(config):
@@ -126,15 +127,18 @@ def scansiona_plugins(config):
             # VERIFICA FLAG ENABLED NEL CONFIG
             is_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
             
-            if not is_enabled:
-                risultati.append(f"   [!] Plugin '{nome_display}': {GIALLO}DISABILITATO{RESET}")
-                continue
-
-            if hasattr(modulo, "status"):
-                esito = modulo.status()
-                risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{esito}{RESET}")
+            if is_enabled:
+                if hasattr(modulo, "status"):
+                    esito = modulo.status()
+                    # Se l'esito è "PRONTA" o "ATTIVO", prova a tradurlo
+                    if esito == "PRONTA": esito = translator.t("ready")
+                    elif esito == "ATTIVO": esito = translator.t("ready") # o map to online
+                    
+                    risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{esito}{RESET}")
+                else:
+                    risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{translator.t('ready')}{RESET}")
             else:
-                risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}ONLINE{RESET}")
+                risultati.append(f"   [!] Plugin '{nome_display}': {GIALLO}{translator.t('disabled')}{RESET}")
                 
         except Exception as e:
             risultati.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}ERRORE CARICAMENTO ({e}){RESET}")
@@ -153,27 +157,29 @@ def avvia_sequenza_risveglio(config):
     print(f"{'─' * 55}\n")
     
     print(f"{CIANO}==================================================={RESET}")
-    print(f"{CIANO}  SISTEMA OPERATIVO ZENTRA - INIZIALIZZAZIONE...{RESET}")
+    print(f"{CIANO}  {translator.t('welcome', version='ZENTRA')}{RESET}")
+    print(f"{CIANO}  {translator.t('boot_sequence')}{RESET}")
+    print(f"{CIANO}==================================================={RESET}")
     print(f"{CIANO}      (Premi ESC in qualsiasi momento per saltare){RESET}")
     print(f"{CIANO}==================================================={RESET}\n")
     
     if check_bypass(): return True
     mancanti = check_cartelle()
     if mancanti:
-        print(f"   [-] {ROSSO}ERRORE: Directory mancanti: {', '.join(mancanti)}{RESET}")
+        print(f"   [-] {ROSSO}{translator.t('diag_error_dirs', dirs=', '.join(mancanti))}{RESET}")
         time.sleep(2)
         return False
-    print(f"   [+] {VERDE}Struttura dati: INTEGRA{RESET}")
+    print(f"   [+] {VERDE}{translator.t('diag_structure_ok')}{RESET}")
 
     if check_bypass(): return True
     print(check_hardware())
     
     if check_bypass(): return True
-    print(f"   [+] Modulo Vocale: {VERDE}ATTIVO{RESET}")
+    print(f"   [+] {VERDE}{translator.t('diag_voice_ok')}{RESET}")
     
     if check_bypass(): return True
     soglia = config.get('ascolto', {}).get('soglia_energia', 'N/D')
-    print(f"   [+] Modulo Ascolto: {VERDE}PRONTO (Soglia: {soglia}){RESET}")
+    print(f"   [+] {VERDE}{translator.t('diag_mic_ready', soglia=soglia)}{RESET}")
     
     # Check backend
     if check_bypass(): return True

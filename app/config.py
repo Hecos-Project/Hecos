@@ -21,17 +21,34 @@ class ConfigManager:
             return {"backend": {"tipo": "ollama", "ollama": {}}, "ia": {}}
 
     def save(self):
-        """Salva la configurazione corrente."""
+        """Salva la configurazione corrente e aggiorna componenti se necessario."""
+        import os
         try:
-            import os
+            # Ricarichiamo il file per vedere la lingua precedente (se esiste)
+            lingua_precedente = None
+            if os.path.exists(self.config_path):
+                try:
+                    with open(self.config_path, 'r', encoding='utf-8') as f:
+                        old_data = json.load(f)
+                        lingua_precedente = old_data.get("lingua")
+                except: pass
+
+            # Flag per il monitor.py (evita riavvii inutili se config salvato da app)
             try:
                 with open(".config_saved_by_app", "w") as flag_file:
                     flag_file.write("1")
-            except Exception:
-                pass
+            except: pass
                 
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
+            
+            # Notifica traduttore se la lingua è cambiata
+            nuova_lingua = self.config.get("lingua")
+            if nuova_lingua and nuova_lingua != lingua_precedente:
+                from core.i18n import translator
+                translator.get_translator().set_language(nuova_lingua)
+                logger.info("CONFIG", f"Lingua aggiornata istantaneamente in: {nuova_lingua}")
+
             logger.info("[CONFIG] Configurazione salvata correttamente.")
             return True
         except Exception as e:

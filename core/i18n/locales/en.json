@@ -1,0 +1,25 @@
+{
+    "en": {
+        "welcome": "Zentra Core v{version} (Runtime Alpha)",
+        "system_status": "STATUS: {status}",
+        "hardware_line": "{cpu} | {ram} | {gpu} | {vram} | BACKEND: {backend}",
+        "menu_help": "F1: Help",
+        "menu_models": "F2: Models",
+        "menu_persona": "F3: Persona",
+        "menu_mic": "F4: Mic",
+        "menu_voice": "F5: Voice",
+        "menu_reboot": "F6: Reboot",
+        "menu_config": "F7: Config",
+        "menu_exit": "ESC: Exit",
+        "system_ready": "Systems ready. Neural connection established, Admin.",
+        "thinking": "THINKING...",
+        "speaking": "SPEAKING...",
+        "boot_sequence": "INITIALIZING...",
+        "loading_memory": "MEMORY...",
+        "loading_plugins": "PLUGINS...",
+        "diagnostics": "DIAGNOSTICS...",
+        "ready": "READY",
+        "disabled": "DISABLED",
+        "telemetry_off": "TELEMETRY OFF"
+    }
+}
