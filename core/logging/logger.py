@@ -156,12 +156,12 @@ def errore(messaggio):
     logger.error(messaggio)
 
 def debug(modulo, messaggio):
-    """Registra un messaggio di debug nel file di log (non appare in console se livello=INFO)."""
-    logger.debug(f"[DEBUG][{modulo}] {messaggio}")
+    """Registra un messaggio di debug nel file di log."""
+    logger.debug(f"[{modulo}] {messaggio}")
     
 def warning(modulo, messaggio):
     """Registra un avviso (warning)."""
-    logger.warning(f"[WARNING][{modulo}] {messaggio}")
+    logger.warning(f"[{modulo}] {messaggio}")
 
 def debug_ia(testo_utente, risposta_ia, tag_rilevato=None):
     """

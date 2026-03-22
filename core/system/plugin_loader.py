@@ -23,15 +23,11 @@ def get_plugin_module(tag):
     """Restituisce il modulo del plugin se attivo, altrimenti None."""
     return _loaded_plugins.get(tag)
 
-def aggiorna_registro_capacita(config=None):
+def aggiorna_registro_capacita(config=None, debug_log=True):
     """
     Scansiona la directory dei plugin, interroga il manifest info() e 
     genera un file JSON centralizzato con tutte le abilità attive.
-    Supporta sia la vecchia struttura (file .py direttamente in plugins) 
-    che la nuova struttura (sottocartelle con main.py).
-    Inoltre raccoglie gli schemi di configurazione dai plugin che espongono
-    la funzione config_schema().
-    Se config è passato, lo usa per verificare il flag 'enabled' di ogni plugin.
+    Se config è passato, lo usa per verificare il flag 'enabled'.
     """
     global _plugin_config_schemas
     _plugin_config_schemas.clear()
@@ -70,18 +66,14 @@ def aggiorna_registro_capacita(config=None):
             if hasattr(modulo, "info"):
                 dati = modulo.info()
                 tag = dati['tag']
-                # Controlla flag enabled (come già)
+                # Controlla flag enabled
                 plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
                 if not plugin_enabled:
+                    if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabilitato da config.")
                     continue
-                # Salva modulo
+                    
+                # Salva modulo e carica
                 _loaded_plugins[tag] = modulo
-                
-                # Controlla il flag enabled
-                plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
-                if not plugin_enabled:
-                    logger.debug("LOADER", f"Plugin {plugin_dir} disabilitato da config, ignorato.")
-                    continue
                 
                 stato = modulo.status() if hasattr(modulo, "status") else "ATTIVO"
                 
@@ -151,7 +143,8 @@ def aggiorna_registro_capacita(config=None):
     try:
         with open(REGISTRY_PATH, "w", encoding="utf-8") as f:
             json.dump(skills_map, f, indent=4, ensure_ascii=False)
-        logger.info(f"REGISTRY: Registro capacità aggiornato ({len(skills_map)} moduli).")
+        if debug_log:
+            logger.info(f"REGISTRY: Registro capacità aggiornato ({len(skills_map)} moduli).")
     except Exception as e:
         logger.errore(f"REGISTRY: Errore scrittura file: {e}")
     
