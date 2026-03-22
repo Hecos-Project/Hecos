@@ -87,37 +87,24 @@ def check_backend(config):
             print(f"   [-] {ROSSO}Ollama non risponde correttamente.{RESET}")
             return False
 
-def scansiona_plugins():
+def scansiona_plugins(config):
     """
     Cerca e interroga moduli aggiuntivi in automatico.
-    Supporta la nuova struttura a cartelle (plugins/nome_modulo/main.py).
-    Mostra anche il conteggio dei plugin disabilitati.
+    Supporta il flag 'enabled' nel config.json per saltare o segnalare i plugin disattivati.
     """
     risultati = []
     from core.system import plugin_loader
-    plugin_loader.aggiorna_registro_capacita()
     
-    # ---- Controllo plugin disabilitati ----
-    disabled_path = os.path.join("plugins", "plugins_disabled")
-    disabled_count = 0
-    if os.path.exists(disabled_path) and os.path.isdir(disabled_path):
-        for item in os.listdir(disabled_path):
-            item_path = os.path.join(disabled_path, item)
-            if os.path.isdir(item_path) and not item.startswith("__"):
-                if os.path.exists(os.path.join(item_path, "main.py")):
-                    disabled_count += 1
-                else:
-                    disabled_count += 1
+    # Assicuriamoci che il registro sia fresco (passiamo il config)
+    plugin_loader.aggiorna_registro_capacita(config)
     
-    if disabled_count > 0:
-        risultati.append(f"   [!] {GIALLO}Plugin disattivati: {disabled_count}{RESET}")
-    # ----------------------------------------
-    
-    # Cerca nella nuova struttura (sottocartelle con main.py)
+    if not os.path.exists("plugins"):
+        return [f"   [-] {ROSSO}Directory 'plugins' non trovata!{RESET}"]
+
     plugin_dirs = [d for d in os.listdir("plugins") 
                   if os.path.isdir(os.path.join("plugins", d)) 
                   and not d.startswith("__")
-                  and d != "plugins_disabled"]  # Ignora la cartella dei disabilitati
+                  and d != "plugins_disabled"]
     
     for plugin_dir in plugin_dirs:
         main_file = os.path.join("plugins", plugin_dir, "main.py")
@@ -125,25 +112,32 @@ def scansiona_plugins():
             continue
             
         try:
-            # Importa il plugin dalla nuova struttura
-            spec = importlib.util.spec_from_file_location(
-                f"plugins.{plugin_dir}.main", 
-                main_file
-            )
-            if spec is None:
-                continue
-                
+            # Importa il plugin per leggerne il tag e lo stato
+            spec = importlib.util.spec_from_file_location(f"diag.{plugin_dir}", main_file)
+            if spec is None: continue
             modulo = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(modulo)
             
-            nome_modulo = plugin_dir.upper()
+            # Recupera tag e info
+            dati_info = modulo.info() if hasattr(modulo, "info") else {"tag": plugin_dir.lower()}
+            tag = dati_info.get('tag', plugin_dir.lower())
+            nome_display = plugin_dir.upper()
+            
+            # VERIFICA FLAG ENABLED NEL CONFIG
+            is_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+            
+            if not is_enabled:
+                risultati.append(f"   [!] Plugin '{nome_display}': {GIALLO}DISABILITATO{RESET}")
+                continue
+
             if hasattr(modulo, "status"):
                 esito = modulo.status()
-                risultati.append(f"   [+] Plugin '{nome_modulo}': {VERDE}{esito}{RESET}")
+                risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{esito}{RESET}")
             else:
-                risultati.append(f"   [?] Plugin '{nome_modulo}': {GIALLO}Attivo{RESET}")
+                risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}ONLINE{RESET}")
+                
         except Exception as e:
-            risultati.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}ERRORE ({e}){RESET}")
+            risultati.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}ERRORE CARICAMENTO ({e}){RESET}")
     
     return risultati
 
@@ -187,7 +181,7 @@ def avvia_sequenza_risveglio(config):
     
     # Plugin Scan
     if check_bypass(): return True
-    esiti = scansiona_plugins()
+    esiti = scansiona_plugins(config)
     for esito in esiti[:5]:
         if check_bypass(): return True
         print(esito)
