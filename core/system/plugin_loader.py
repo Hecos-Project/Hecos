@@ -1,7 +1,8 @@
 """
 MODULO: Plugin Loader & Capability Registry - Zentra Core
 DESCRIZIONE: Gestisce la scansione dinamica dei plugin (ora in sottocartelle) 
-e la creazione del registro centrale JSON.
+e la creazione del registro centrale JSON. Supporta anche la raccolta degli
+schemi di configurazione per i plugin.
 """
 
 import importlib.util
@@ -12,14 +13,34 @@ from core.logging import logger
 
 REGISTRY_PATH = "core/registry.json"
 
-def aggiorna_registro_capacita():
+# Memorizza gli schemi di configurazione raccolti dai plugin
+_plugin_config_schemas = {}
+
+# ... in cima al file ...
+_loaded_plugins = {}   # tag -> modulo
+
+def get_plugin_module(tag):
+    """Restituisce il modulo del plugin se attivo, altrimenti None."""
+    return _loaded_plugins.get(tag)
+
+def aggiorna_registro_capacita(config=None):
     """
     Scansiona la directory dei plugin, interroga il manifest info() e 
     genera un file JSON centralizzato con tutte le abilità attive.
     Supporta sia la vecchia struttura (file .py direttamente in plugins) 
     che la nuova struttura (sottocartelle con main.py).
+    Inoltre raccoglie gli schemi di configurazione dai plugin che espongono
+    la funzione config_schema().
+    Se config è passato, lo usa per verificare il flag 'enabled' di ogni plugin.
     """
+    global _plugin_config_schemas
+    _plugin_config_schemas.clear()
     skills_map = {}
+    
+    # Se non abbiamo config, lo carichiamo (per retrocompatibilità)
+    if config is None:
+        from app.config import ConfigManager
+        config = ConfigManager().config
     
     # Cerca nella nuova struttura (sottocartelle con main.py)
     plugin_dirs = [d for d in os.listdir("plugins") 
@@ -48,15 +69,35 @@ def aggiorna_registro_capacita():
             # Estrazione manifest
             if hasattr(modulo, "info"):
                 dati = modulo.info()
+                tag = dati['tag']
+                # Controlla flag enabled (come già)
+                plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                if not plugin_enabled:
+                    continue
+                # Salva modulo
+                _loaded_plugins[tag] = modulo
+                
+                # Controlla il flag enabled
+                plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                if not plugin_enabled:
+                    logger.debug("LOADER", f"Plugin {plugin_dir} disabilitato da config, ignorato.")
+                    continue
+                
                 stato = modulo.status() if hasattr(modulo, "status") else "ATTIVO"
                 
-                skills_map[dati['tag']] = {
+                skills_map[tag] = {
                     "descrizione": dati['desc'],
                     "comandi": dati['comandi'],
                     "stato": stato,
                     "esempio": dati.get("esempio", "")
                 }
-                logger.debug("LOADER", f"Plugin {plugin_dir} caricato con tag {dati['tag']}")
+                logger.debug("LOADER", f"Plugin {plugin_dir} caricato con tag {tag}")
+                
+                # Raccogli lo schema di configurazione se presente
+                if hasattr(modulo, "config_schema"):
+                    _plugin_config_schemas[tag] = modulo.config_schema()
+                    logger.debug("LOADER", f"Plugin {plugin_dir} ha config_schema")
+                    
         except Exception as e:
             logger.errore(f"LOADER: Fallimento caricamento {plugin_dir}: {e}")
             continue
@@ -80,15 +121,28 @@ def aggiorna_registro_capacita():
             
             if hasattr(modulo, "info"):
                 dati = modulo.info()
+                tag = dati['tag']
+                
+                # Controlla il flag enabled
+                plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                if not plugin_enabled:
+                    logger.debug("LOADER", f"Plugin legacy {nome_modulo} disabilitato, ignorato.")
+                    continue
+                
                 stato = modulo.status() if hasattr(modulo, "status") else "ATTIVO"
                 
-                skills_map[dati['tag']] = {
+                skills_map[tag] = {
                     "descrizione": dati['desc'],
                     "comandi": dati['comandi'],
                     "stato": stato,
                     "esempio": dati.get("esempio", "")
                 }
-                logger.debug("LOADER", f"Plugin legacy {nome_modulo} caricato con tag {dati['tag']}")
+                logger.debug("LOADER", f"Plugin legacy {nome_modulo} caricato con tag {tag}")
+                
+                if hasattr(modulo, "config_schema"):
+                    _plugin_config_schemas[tag] = modulo.config_schema()
+                    logger.debug("LOADER", f"Plugin legacy {nome_modulo} ha config_schema")
+                    
         except Exception as e:
             logger.errore(f"LOADER: Fallimento caricamento legacy {nome_modulo}: {e}")
             continue
@@ -102,6 +156,42 @@ def aggiorna_registro_capacita():
         logger.errore(f"REGISTRY: Errore scrittura file: {e}")
     
     return skills_map
+
+def sincronizza_config_plugin(config_manager=None):
+    """
+    Sincronizza le configurazioni dei plugin con il file config.json.
+    Aggiunge le sezioni mancanti con i valori di default definiti negli schemi.
+    Inoltre assicura che per ogni plugin esista la chiave 'enabled' (default True).
+    """
+    if config_manager is None:
+        from app.config import ConfigManager
+        config_manager = ConfigManager()
+    
+    config = config_manager.config
+    if "plugins" not in config:
+        config["plugins"] = {}
+    
+    updated = False
+    for tag, schema in _plugin_config_schemas.items():
+        plugin_cfg = config["plugins"].get(tag, {})
+        # Assicura che enabled sia presente (default True)
+        if "enabled" not in plugin_cfg:
+            plugin_cfg["enabled"] = True
+            updated = True
+        # Aggiungi eventuali chiavi mancanti con i valori di default
+        for key, props in schema.items():
+            if key not in plugin_cfg:
+                default = props.get("default")
+                plugin_cfg[key] = default
+                updated = True
+        if updated:
+            config["plugins"][tag] = plugin_cfg
+    
+    if updated:
+        config_manager.save()
+        logger.info("REGISTRY: Configurazioni plugin sincronizzate.")
+    
+    return config
 
 def ottieni_capacita_formattate():
     """Restituisce una stringa leggibile per il terminale."""

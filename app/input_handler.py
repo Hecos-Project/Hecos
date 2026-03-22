@@ -10,7 +10,7 @@ from ui import interfaccia
 from core.processing import processore
 from core.audio import voce
 from core.logging import logger
-from plugins import dashboard
+from core.system import plugin_loader   # <-- aggiunto
 
 class InputHandler:
     def __init__(self, state_manager, config_manager):
@@ -37,9 +37,16 @@ class InputHandler:
         if not testo.strip():
             return None, testo
             
-        if dashboard.get_backend_status() != "PRONTA":
-            print(f"\n\033[93m[SISTEMA] Backend non pronto. Attendere...\033[0m")
-            return None, ""
+        # Ottieni lo stato del backend dal plugin dashboard se attivo
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        if dashboard_mod:
+            backend_status = dashboard_mod.get_backend_status()
+            if backend_status != "PRONTA":
+                print(f"\n\033[93m[SISTEMA] Backend non pronto ({backend_status}). Attendere...\033[0m")
+                return None, ""
+        else:
+            # Se dashboard disabilitato, ignora il controllo (permette comunque il funzionamento)
+            pass
             
         self.state.sistema_in_elaborazione = True
         

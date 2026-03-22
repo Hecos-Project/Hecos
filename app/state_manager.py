@@ -11,6 +11,7 @@ class StateManager:
         self._ultimo_esc = 0
         self._comando_vocale_rilevato = None
         self._sistema_in_elaborazione = False
+        self._sistema_status = "AVVIO"
         self._lock = threading.Lock()
 
     # Proprietà con lock per thread safety
@@ -63,3 +64,13 @@ class StateManager:
     def sistema_in_elaborazione(self, value):
         with self._lock:
             self._sistema_in_elaborazione = value
+
+    @property
+    def sistema_status(self):
+        with self._lock:
+            return self._sistema_status
+
+    @sistema_status.setter
+    def sistema_status(self, value):
+        with self._lock:
+            self._sistema_status = value

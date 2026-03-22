@@ -66,3 +66,24 @@ class ConfigManager:
         """Ricarica la configurazione dal file."""
         self.config = self._load_config()
         return self.config
+
+    def get_plugin_config(self, plugin_tag, key=None, default=None):
+        """
+        Restituisce la configurazione di un plugin.
+        - Se key è None, restituisce l'intero dizionario del plugin.
+        - Altrimenti restituisce il valore per quella chiave, o default se non esiste.
+        """
+        plugins = self.config.get("plugins", {})
+        plugin_cfg = plugins.get(plugin_tag, {})
+        if key is None:
+            return plugin_cfg
+        return plugin_cfg.get(key, default)
+
+    def set_plugin_config(self, plugin_tag, key, value):
+        """Imposta un valore di configurazione per un plugin e salva."""
+        if "plugins" not in self.config:
+            self.config["plugins"] = {}
+        if plugin_tag not in self.config["plugins"]:
+            self.config["plugins"][plugin_tag] = {}
+        self.config["plugins"][plugin_tag][key] = value
+        self.save()

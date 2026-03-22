@@ -69,6 +69,17 @@ logger.addHandler(console_handler)
 
 _console_window_started = False
 
+def chiudi_console_log():
+    """Chiude forzatamente eventuali finestre PowerShell con il titolo Zentra Logs."""
+    global _console_window_started
+    try:
+        if os.name == 'nt':
+            # Usa taskkill filtrando per il titolo esatto della finestra
+            subprocess.run('taskkill /f /fi "windowtitle eq Zentra Logs*" >nul 2>&1', shell=True)
+            _console_window_started = False
+    except:
+        pass
+
 def init_logger(config):
     """
     Inizializza le impostazioni di logging lette da config.json
@@ -105,9 +116,8 @@ def init_logger(config):
         if console_handler in logger.handlers:
             logger.removeHandler(console_handler)
         
-        # Riavviamo la console se ha parametri differenti o è nuova
-        if _console_window_started:
-            subprocess.run('taskkill /f /fi "windowtitle eq Zentra Logs*" >nul 2>&1', shell=True)
+        # Pulisce sempre eventuali finestre orfane all'avvio o cambio config
+        chiudi_console_log()
             
         if tipo_messaggi == 'info':
             target_files = f"'{info_filename}'"
@@ -125,13 +135,12 @@ def init_logger(config):
             "else { Write-Host $_ -ForegroundColor White } "
             "}"
         )
-        subprocess.Popen(f'start powershell -NoExit -Command "{ps_script}"', shell=True)
+        # Avvia powershell minimizzata per non coprire la console principale
+        subprocess.Popen(f'start /min powershell -WindowStyle Minimized -NoExit -Command "{ps_script}"', shell=True)
         _console_window_started = True
     else:
         # Se si passa a chat, chiudi la console se aperta
-        if _console_window_started:
-            subprocess.run('taskkill /f /fi "windowtitle eq Zentra Logs*" >nul 2>&1', shell=True)
-            _console_window_started = False
+        chiudi_console_log()
             
         # Assicurati che l'output standard sia attivo
         if console_handler not in logger.handlers:

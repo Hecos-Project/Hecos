@@ -10,7 +10,6 @@ from core.logging import logger
 from core.system import plugin_loader, diagnostica
 from core.processing import processore
 from core.audio import ascolto, voce
-import plugins.dashboard.main as dashboard
 from ui import interfaccia, grafica, ui_updater
 from ui.config_editor.core import ConfigEditor
 from memoria import brain_interface
@@ -36,8 +35,13 @@ class ZentraApplication:
         logger.info("[APP] Avvio sequenza di boot Zentra Core.")
         
         interfaccia.setup_console()
+        self.state_manager.sistema_status = "MEMORIA..."
         brain_interface.inizializza_caveau()
-        plugin_loader.aggiorna_registro_capacita()
+        # IMPORTANTE: passa il config corrente al plugin loader
+        self.state_manager.sistema_status = "PLUGIN..."
+        plugin_loader.aggiorna_registro_capacita(self.config_manager.config)
+        # Sincronizza la configurazione dei plugin
+        plugin_loader.sincronizza_config_plugin(self.config_manager)
         
         # Sincronizza lista personalità disponibili nel config
         anime_files = interfaccia.elenca_personalita()
@@ -47,8 +51,15 @@ class ZentraApplication:
             self.config_manager.save()
         
         config = self.config_manager.config
+        self.state_manager.sistema_status = "DIAGNOSTICA..."
         diagnostica.esegui_check_iniziale(config)
-        dashboard.avvia_monitoraggio_backend()
+        
+        # Avvia il monitoraggio backend solo se il plugin è attivo
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        if dashboard_mod:
+            dashboard_mod.avvia_monitoraggio_backend()
+        else:
+            logger.warning("APP", "Plugin DASHBOARD disabilitato, monitoraggio hardware non attivo.")
 
     def _show_boot_animation(self):
         """Mostra animazione di avvio."""
@@ -62,11 +73,12 @@ class ZentraApplication:
 
     def _show_welcome(self):
         """Mostra messaggio di benvenuto."""
-        self.state_manager.sistema_in_elaborazione = True
+        self.state_manager.sistema_status = "PARLANDO..."
         interfaccia.scrivi_zentra("Sistemi pronti. Connessione neurale stabilita, Admin.")
         if self.state_manager.stato_voce:
             voce.parla("Sistemi pronti.")
         self.state_manager.sistema_in_elaborazione = False
+        self.state_manager.sistema_status = "PRONTA"
 
     def _input_digitale_sicuro(self, messaggio):
         """Legge un input numerico o ESC senza bloccare."""
@@ -244,6 +256,8 @@ class ZentraApplication:
             
         elif key == "F6":
             print(f"\n\033[91m[SISTEMA] REBOOT IN CORSO...\033[0m")
+            # Chiudi la finestra dei log esterna se presente
+            logger.chiudi_console_log()
             time.sleep(1)
             sys.exit(42)
             
@@ -261,26 +275,34 @@ class ZentraApplication:
         config = self.config_manager.config
         prefisso = f"\n\033[91m# \033[0m"
         input_utente = ""
+        
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        backend_status = dashboard_mod.get_backend_status() if dashboard_mod else "DISABILITATO"
 
-        # UI iniziale
+        # UI iniziale (Stato sistema dinamico da StateManager)
         interfaccia.mostra_ui_completa(
             config,
             self.state_manager.stato_voce,
             self.state_manager.stato_ascolto,
-            dashboard.get_backend_status()
+            self.state_manager.sistema_status
         )
 
         self._show_boot_animation()
         
+        self.state_manager.sistema_status = "PRONTA"
         interfaccia.mostra_ui_completa(
             config,
             self.state_manager.stato_voce,
             self.state_manager.stato_ascolto,
-            dashboard.get_backend_status()
+            self.state_manager.sistema_status
         )
 
-        # Avvia aggiornamento in-place della riga hardware (no flickering)
-        ui_updater.avvia(self.config_manager, self.state_manager, dashboard)
+        # Avvia aggiornamento in-place della riga hardware (no flickering) solo se il plugin è attivo
+        if dashboard_mod:
+            ui_updater.avvia(self.config_manager, self.state_manager, dashboard_mod)
+        else:
+            # Assicuriamoci che l'updater sia fermo (utile se siamo in un loop di ricaricamento)
+            ui_updater.ferma()
 
         self._show_welcome()
 
@@ -317,23 +339,29 @@ class ZentraApplication:
                 
                 # Ricarica config nel caso sia stato modificato
                 config = self.config_manager.config
+                dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+                backend_status = dashboard_mod.get_backend_status() if dashboard_mod else "DISABILITATO"
+                
                 if evento in ["F4", "F5"]:
                     interfaccia.aggiorna_barra_stato_in_place(
                         config,
                         self.state_manager.stato_voce,
                         self.state_manager.stato_ascolto,
-                        dashboard.get_backend_status()
+                        self.state_manager.sistema_status
                     )
                 else:
                     interfaccia.mostra_ui_completa(
                         config,
                         self.state_manager.stato_voce,
                         self.state_manager.stato_ascolto,
-                        dashboard.get_backend_status()
+                        self.state_manager.sistema_status
                     )
                 
                 if evento in menu_schermo_intero:
-                    ui_updater.avvia(self.config_manager, self.state_manager, dashboard)
+                    if dashboard_mod:
+                        ui_updater.avvia(self.config_manager, self.state_manager, dashboard_mod)
+                    else:
+                        ui_updater.ferma()
                     
                 sys.stdout.write(prefisso + input_utente)
                 sys.stdout.flush()
@@ -349,7 +377,8 @@ class ZentraApplication:
 
     def _handle_voice_input(self, prefisso):
         """Gestisce input vocale."""
-        if dashboard.get_backend_status() != "PRONTA":
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        if dashboard_mod and dashboard_mod.get_backend_status() != "PRONTA":
             print(f"\n\033[93m[SISTEMA] Backend non ancora pronto. Attendere...\033[0m")
             self.state_manager.comando_vocale_rilevato = None
             return
@@ -358,6 +387,7 @@ class ZentraApplication:
         testo_v = self.state_manager.comando_vocale_rilevato
         self.state_manager.comando_vocale_rilevato = None
 
+        self.state_manager.sistema_status = "PENSANDO..."
         interfaccia.avvia_pensiero()
         sys.stdout.write(f"\r{' ' * 80}\r")
         print(f"{prefisso}\033[92mAdmin (Voce): {testo_v}\033[0m")

@@ -2,6 +2,7 @@ import ctypes
 import re
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
+from core.logging import logger
 
 def info():
     return {
@@ -13,6 +14,18 @@ def info():
         }
     }
 
+def status():
+    """Stato del plugin."""
+    return "ONLINE"
+
+def config_schema():
+    """
+    Schema di configurazione per questo plugin.
+    Attualmente non ci sono parametri configurabili, ma la funzione è presente
+    per coerenza con la nuova architettura.
+    """
+    return {}
+
 def get_volume_control():
     """Ottiene il controllo volume usando il metodo più compatibile possibile."""
     try:
@@ -22,7 +35,7 @@ def get_volume_control():
             IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
         return ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
     except Exception as e:
-        print(f"DEBUG AUDIO ERROR: {e}")
+        logger.errore(f"MEDIA: Errore accesso audio: {e}")
         return None
 
 def esegui(comando):
@@ -51,4 +64,5 @@ def esegui(comando):
 
         return "Comando media non riconosciuto."
     except Exception as e:
+        logger.errore(f"MEDIA: Errore esecuzione comando: {e}")
         return f"Errore interno MEDIA: {str(e)}"

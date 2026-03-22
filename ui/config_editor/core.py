@@ -77,6 +77,11 @@ class ConfigEditor:
                 return self.config.get('filtri', {}).get(key)
             elif param.section == 'logging':
                 return self.config.get('logging', {}).get(key)
+            elif param.section == 'plugin':
+                # Sezione plugin: accedi a config['plugins'][param.plugin_tag][key]
+                plugins = self.config.get('plugins', {})
+                plugin_cfg = plugins.get(param.plugin_tag, {})
+                return plugin_cfg.get(key)
             else:
                 return None
         except Exception as e:
@@ -145,6 +150,16 @@ class ConfigEditor:
                 old = self.config['logging'].get(key)
                 if old != value:
                     self.config['logging'][key] = value
+                    self.modified = True
+            elif param.section == 'plugin':
+                # Sezione plugin: aggiorna config['plugins'][param.plugin_tag][key]
+                if 'plugins' not in self.config:
+                    self.config['plugins'] = {}
+                if param.plugin_tag not in self.config['plugins']:
+                    self.config['plugins'][param.plugin_tag] = {}
+                old = self.config['plugins'][param.plugin_tag].get(key)
+                if old != value:
+                    self.config['plugins'][param.plugin_tag][key] = value
                     self.modified = True
         except Exception as e:
             print(f"Errore in _set_value per {param.label}: {e}")

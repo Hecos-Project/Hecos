@@ -1,0 +1,84 @@
+📁 ZentraCore_V0.9.4/
+│
+├── 📄 main.py                          # Punto di ingresso principale (lancio monitor)
+├── 📄 monitor.py                        # Watchdog per riavvio automatico e controllo processi
+├── 📄 config.json                        # Configurazione centrale (JSON)
+├── 📄 config_tool.py                     # Editor standalone configurazione
+├── 📄 version_tool.py                     # Utility per visualizzare versione corrente
+├── 📄 zentra_webui_bridge.py                # Bridge per Open WebUI (streaming) e API
+├── 📄 ZENTRA_RUN.bat                      # Script di avvio standard (Windows)
+├── 📄 ZENTRA_Run_Vulkan.bat               # Script di avvio con accelerazione Vulkan
+├── 📄 requirements.txt                    # Elenco completo dipendenze Python
+├── 📄 LICENSE                             # Licenza AGPL v3
+├── 📄 README.md                           # Documentazione principale (English)
+├── 📄 README_ITA.md                       # Documentazione principale (Italiano)
+├── 📄 README_ESP.md                       # Documentazione principale (Español)
+│
+├── 📁 app/                                # Logica applicativa (Model-View-Controller)
+│   ├── 📄 application.py                   # Classe principale ZentraApplication
+│   ├── 📄 config.py                         # Gestore caricamento/salvataggio config
+│   ├── 📄 state_manager.py                   # Thread-safe global state
+│   ├── 📄 input_handler.py                    # Gestore eventi tastiera e input vocale
+│   └── 📄 threads.py                          # Gestione thread di background
+│
+├── 📁 core/                               # Sistema nervoso centrale (Suddiviso per domini)
+│   ├── 📁 audio/                          # Gestione Audio (Input/Output)
+│   │   ├── 📄 ascolto.py                  # Rilevamento vocale (STT bridge)
+│   │   └── 📄 voce.py                     # Sintesi vocale locale (Piper)
+│   │
+│   ├── 📁 llm/                            # Motori di Intelligenza Artificiale
+│   │   ├── 📄 cervello.py                 # Dispatcher e routing verso backends
+│   │   ├── 📄 ollama_backend.py           # Gestore connessione Ollama
+│   │   └── 📄 kobold_backend.py           # Gestore connessione KoboldCPP
+│   │
+│   ├── 📁 logging/                        # Sistema di tracciamento ed errori
+│   │   └── 📄 logger.py                   # Logger centralizzato con rotazione
+│   │
+│   ├── 📁 processing/                     # Elaborazione dati e comandi
+│   │   ├── 📄 filtri.py                   # Pulizia e formattazione testo
+│   │   └── 📄 processore.py                # Esecuzione logica plugin e parsing comandi
+│   │
+│   ├── 📁 system/                         # Utility e gestione sistema
+│   │   ├── 📄 diagnostica.py              # Check iniziali e boot verification
+│   │   ├── 📄 plugin_loader.py            # Caricamento dinamico moduli azione
+│   │   └── 📄 version.py                  # Informazioni di versione core
+│   │
+│   ├── 📄 registry.json                    # Registro auto-generato delle capacità IA
+│   └── 📄 __init__.py
+│
+├── 📁 docs/                                # Sito Web e Documentazione (GitHub Pages)
+│   ├── 📄 index.html                        # Homepage Sito Zentra Core
+│   ├── 📄 features.html                     # Pagina caratteristiche dettagliate
+│   ├── 📄 _config.yml                       # Configurazione Jekyll per GitHub Pages
+│   │
+│   ├── 📁 assets/                           # Asset statici (CSS, JS, Immagini)
+│   ├── 📁 docs/                             # Documentazione Markdown (Inglese)
+│   ├── 📁 community/                        # Landing community
+│   ├── 📁 download/                         # Landing download
+│   └── 📄 Mappa cartelle, file e struttura V0.9.4.txt  # Questa mappa
+│
+├── 📁 ui/                                 # Interfaccia Utente e Grafica
+│   ├── 📄 interfaccia.py                    # TUI principale (Dashboard)
+│   ├── 📄 grafica.py                         # Utility per barre, colori e HUD
+│   └── 📁 config_editor/                    # GUI editor di configurazione
+│
+├── 📁 plugins/                            # Moduli d'azione (Estensioni)
+│   ├── 📁 dashboard/                        # Statistiche hardware
+│   ├── 📁 file_manager/                     # Operazioni sui file
+│   ├── 📁 media/                            # Volume e musica
+│   ├── 📁 models/                           # Gestione modelli AI
+│   ├── 📁 sistema/                          # Comandi shell
+│   ├── 📁 web/                              # Ricerca internet
+│   └── 📁 memoria/                           # Accesso al database cognitivo
+│
+├── 📁 memoria/                             # Cognizione e Persistenza
+│   ├── 📄 archivio_chat.db                    # SQLite database residenza dati
+│   ├── 📄 brain_interface.py                 # Interfaccia tra core e database
+│   ├── 📄 identita_core.json                   # Definizione carattere IA
+│   └── 📄 profilo_utente.json                   # Dati utente e preferenze
+│
+├── 📁 personalita/                          # Anime / Profili IA (.txt)
+│   ├── 📄 zentra.txt                        # Profilo standard
+│   └── 📄 nova_tech.txt                     # Profilo orientato alla tecnologia
+│
+└── 📁 logs/                                 # Log delle sessioni

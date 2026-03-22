@@ -22,7 +22,7 @@ except ImportError:
     GPUtil = None
 from ui import grafica
 from colorama import init, Fore, Back, Style
-import plugins.dashboard.main as dashboard
+from core.system import plugin_loader
 from core.system.version import get_version_string
 
 # "Inizializzazione Colorama per colori ANSI e sfondi su Windows"
@@ -55,7 +55,9 @@ def check_ollama():
         return False
 
 def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"):
-    """ Disegna l'interfaccia completa: Barra Blu (Stato) e Barra Centrale (Hardware) """
+    """ Disegna l'interfaccia completa: Barra Blu (Stato), Barra Hardware (placeholder) e Footer.
+        La barra hardware verrà aggiornata in tempo reale da ui_updater.
+    """
     setup_console()
     
     # MODIFICATO: Legge il modello dal backend attivo
@@ -66,11 +68,10 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"
     mic = "ON" if stato_ascolto else "OFF"
     spk = "ON" if stato_voce else "OFF"
     
-    L = 90  # Aumentata leggermente la larghezza per ospitare la VRAM
+    L = 90  # Larghezza fissa per l'allineamento
     
-        # 1. BARRA SUPERIORE (TITOLO) - NERO VERO
+    # 1. BARRA SUPERIORE (TITOLO) - NERO VERO
     titolo = f" {get_version_string()} ".center(L)
-    # Usa codice ANSI diretto per nero (30) e sfondo ciano (46)
     print(f"\033[46m\033[30m{titolo}\033[0m")
     
     # 2. BARRA DI STATO DINAMICA
@@ -86,42 +87,84 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"
     info_stato_colored = f" STATO: {stato_sistema} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
     print(f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}")
     
-    # 3. BARRA HARDWARE (Telemetria: CPU, RAM, VRAM + stato backend)
-    try:
-        stats = dashboard.get_stats()  # <--- ora usa dashboard da plugins
-        
-        cpu = stats['cpu']
-        ram = stats['ram']
-        vram_text = stats['vram']
-        # Usa backend_status invece di ollama_status
-        backend_status = stats['backend_status']
-
-        from ui import grafica
-        barra_cpu = grafica.crea_barra(cpu, larghezza=12)
-        barra_ram = grafica.crea_barra(ram, larghezza=12)
-        
-        # Colore per stato backend
-        if backend_status == "PRONTA":
-            stato_colore = Fore.GREEN
-        elif backend_status in ("OFFLINE", "ERRORE", "TIMEOUT"):
-            stato_colore = Fore.RED
-        else:
-            stato_colore = Fore.YELLOW
-
-        info_hw = f" CPU: {barra_cpu}  RAM: {barra_ram}  VRAM: {vram_text}  {stato_colore}BACKEND: {backend_status}{Style.RESET_ALL} "
-        compensazione = 60  # Adeguato per ospitare il testo aggiuntivo
-        print(f"{Fore.CYAN}{info_hw.center(L + compensazione)}{Style.RESET_ALL}")
-        
-    except Exception as e:
-        # In caso di errore, stampa un messaggio di fallback
-        print(f"{Fore.RED}{'-- ERRORE TELEMETRIA HARDWARE --'.center(L)}{Style.RESET_ALL}")
-
+    # 3. BARRA HARDWARE (PLACEHOLDER) - Verrà sovrascritta dall'updater
+    # Stampiamo una riga vuota con lo stesso colore di sfondo per mantenere l'allineamento
+    print(f"{Fore.CYAN}{' ' * L}{Style.RESET_ALL}")
+    
     # 4. FOOTER COMANDI RAPIDI
     print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
     comandi = " F1: Guida | F2: Modelli | F3: Anima | F4: Mic | F5: Voce | F6: Reboot | F7: Config | ESC: Esci "
     print(f"{Style.DIM}{comandi.center(L)}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}\n")
     
+def ottieni_riga_hardware(config=None, dashboard_mod=None):
+    """
+    Restituisce la stringa formattata per la riga hardware (CPU, RAM, VRAM, backend).
+    Garantisce una lunghezza fissa di 90 caratteri per evitare wrap e corruzione UI.
+    """
+    import re
+    L = 90
+    
+    if dashboard_mod is None:
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+    
+    if dashboard_mod:
+        try:
+            stats = dashboard_mod.get_stats()
+            cpu = stats['cpu']
+            ram = stats['ram']
+            vram = stats['vram']
+            # Accorcia VRAM se troppo lunga
+            if len(str(vram)) > 10: vram = str(vram)[:7] + ".."
+            backend_status = stats['backend_status']
+            
+            barra_cpu = grafica.crea_barra(cpu, larghezza=10)
+            barra_ram = grafica.crea_barra(ram, larghezza=10)
+            
+            # Colore per stato backend
+            if backend_status == "PRONTA":
+                stato_colore = Fore.GREEN
+            elif backend_status in ("OFFLINE", "ERRORE", "TIMEOUT"):
+                stato_colore = Fore.RED
+            else:
+                stato_colore = Fore.YELLOW
+
+            info_hw = f"CPU: {barra_cpu}  RAM: {barra_ram}  VRAM: {vram}  {stato_colore}BACKEND: {backend_status}{Style.RESET_ALL}"
+        except Exception:
+            info_hw = f"{Fore.RED}-- ERRORE TELEMETRIA HARDWARE --{Style.RESET_ALL}"
+    else:
+        # Se il plugin è disabilitato, restituiamo una riga vuota di 90 spazi
+        return f"{Fore.CYAN}{' ' * L}{Style.RESET_ALL}"
+    
+    # Calcolo padding per centratura perfetta a 90 caratteri
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
+    clean = ansi_escape.sub('', info_hw)
+    
+    if len(clean) > L:
+        # Se ancora troppo lunga (non dovrebbe capitare con i nuovi limiti), prendi i primi L caratteri visibili
+        # Per sicurezza usiamo una regex che cattura sia ANSI che char per troncare correttamente
+        parts = re.split(r'(\x1b\[[0-9;]*m)', info_hw)
+        truncated_hw = ""
+        current_len = 0
+        for part in parts:
+            if part.startswith('\x1b['):
+                truncated_hw += part
+            else:
+                space_left = L - current_len
+                if len(part) <= space_left:
+                    truncated_hw += part
+                    current_len += len(part)
+                else:
+                    truncated_hw += part[:space_left]
+                    current_len += space_left
+                    break
+        return f"{Fore.CYAN}{truncated_hw}{Style.RESET_ALL}"
+    
+    pad_total = L - len(clean)
+    pad_left = pad_total // 2
+    pad_right = pad_total - pad_left
+    
+    return f"{Fore.CYAN}{' ' * pad_left}{info_hw}{' ' * pad_right}{Style.RESET_ALL}"
 
 def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"):
     """Aggiorna solo la riga 2 (Barra di Stato) senza pulire lo schermo."""

@@ -2,13 +2,13 @@
 import sys
 import subprocess
 import os
-
 import winsound
 import time
 import re
 import datetime
 import json
 from core.logging import logger
+from app.config import ConfigManager   # per leggere la configurazione
 
 def info():
     """Manifest del plugin."""
@@ -32,6 +32,80 @@ def info():
 
 def status():
     return "ONLINE (Shell & BlackBox Access Active)"
+
+def config_schema():
+    """
+    Schema di configurazione per il plugin Sistema.
+    Permette di personalizzare programmi, cartelle e whitelist dei comandi shell.
+    """
+    return {
+        "programs": {
+            "type": "dict",
+            "default": {
+                "notepad": "notepad.exe",
+                "chrome": "chrome.exe",
+                "visual studio": r"C:\Program Files\Microsoft VS Code\Code.exe",
+                "sillytavern": r"C:\SillyTavern\SillyTavern\Start.bat"
+            },
+            "description": "Mappatura tra nomi di programmi (comando 'apri:') e percorsi eseguibili."
+        },
+        "explorer_mappings": {
+            "type": "dict",
+            "default": {
+                "desktop": os.path.expanduser("~\\Desktop"),
+                "download": os.path.expanduser("~\\Downloads"),
+                "documenti": os.path.expanduser("~\\Documents"),
+                "core": os.path.join(os.getcwd(), "core"),
+                "plugins": os.path.join(os.getcwd(), "plugins"),
+                "memoria": os.path.join(os.getcwd(), "memoria"),
+                "personalita": os.path.join(os.getcwd(), "personalita"),
+                "logs": os.path.join(os.getcwd(), "logs")
+            },
+            "description": "Mappatura tra scorciatoie (es. 'desktop') e percorsi reali per il comando 'esplora:'."
+        },
+        "shell_command_whitelist": {
+            "type": "list",
+            "default": [],   # lista vuota = nessuna whitelist, tutti i comandi permessi
+            "description": "Lista di comandi shell consentiti (regex). Se vuota, tutti i comandi sono permessi."
+        },
+        "enable_config_set": {
+            "type": "bool",
+            "default": True,
+            "description": "Abilita il comando 'config:set:' per modificare il config.json."
+        },
+        "shell_command_timeout": {
+            "type": "int",
+            "default": 15,
+            "min": 1,
+            "max": 60,
+            "description": "Timeout in secondi per l'esecuzione dei comandi shell."
+        }
+    }
+
+def _get_programs():
+    """Restituisce la mappa programmi dalla configurazione."""
+    cfg = ConfigManager()
+    return cfg.get_plugin_config("SISTEMA", "programs", {})
+
+def _get_explorer_mappings():
+    """Restituisce la mappa percorsi per esplora: dalla configurazione."""
+    cfg = ConfigManager()
+    return cfg.get_plugin_config("SISTEMA", "explorer_mappings", {})
+
+def _get_shell_whitelist():
+    """Restituisce la lista di comandi shell consentiti (regex)."""
+    cfg = ConfigManager()
+    return cfg.get_plugin_config("SISTEMA", "shell_command_whitelist", [])
+
+def _is_shell_command_allowed(cmd):
+    """Controlla se un comando shell è nella whitelist."""
+    whitelist = _get_shell_whitelist()
+    if not whitelist:
+        return True   # whitelist vuota = tutto permesso
+    for pattern in whitelist:
+        if re.search(pattern, cmd, re.IGNORECASE):
+            return True
+    return False
 
 def esegui(comando):
     """Esegue comandi shell o gestisce il ciclo vitale di Zentra."""
@@ -85,15 +159,10 @@ def esegui(comando):
         prog = cmd_originale[5:].strip().lower()
         logger.debug("PLUGIN_SISTEMA", f"Apertura programma: {prog}")
         
-        programmi = {
-            "notepad": "notepad.exe",
-            "chrome": "chrome.exe",
-            "visual studio": r"C:\Program Files\Microsoft VS Code\Code.exe",
-            "sillytavern": r"C:\SillyTavern\SillyTavern\Start.bat"
-        }
-        if prog in programmi:
+        programs = _get_programs()
+        if prog in programs:
             try:
-                os.startfile(programmi[prog])
+                os.startfile(programs[prog])
                 logger.debug("PLUGIN_SISTEMA", f"Programma {prog} avviato")
                 return f"Avvio {prog} in corso."
             except Exception as e:
@@ -115,17 +184,8 @@ def esegui(comando):
         percorso = cmd_originale[8:].strip()
         logger.debug("PLUGIN_SISTEMA", f"Apertura cartella: {percorso}")
         
-        mappa = {
-            "desktop": os.path.expanduser("~\\Desktop"),
-            "download": os.path.expanduser("~\\Downloads"),
-            "documenti": os.path.expanduser("~\\Documents"),
-            "core": os.path.join(os.getcwd(), "core"),
-            "plugins": os.path.join(os.getcwd(), "plugins"),
-            "memoria": os.path.join(os.getcwd(), "memoria"),
-            "personalita": os.path.join(os.getcwd(), "personalita"),
-            "logs": os.path.join(os.getcwd(), "logs")
-        }
-        path = mappa.get(percorso, percorso)
+        mappings = _get_explorer_mappings()
+        path = mappings.get(percorso, percorso)
         if os.path.exists(path):
             os.startfile(path)
             logger.debug("PLUGIN_SISTEMA", f"Cartella {percorso} aperta")
@@ -134,8 +194,12 @@ def esegui(comando):
             logger.debug("PLUGIN_SISTEMA", f"Percorso {percorso} non trovato")
             return f"Percorso {percorso} non trovato."
 
-    # --- 6. CONFIG: SET ---
+    # --- 6. CONFIG: SET (solo se abilitato) ---
     if cmd.startswith("config:set:"):
+        cfg = ConfigManager()
+        if not cfg.get_plugin_config("SISTEMA", "enable_config_set", True):
+            logger.debug("PLUGIN_SISTEMA", "Comando config:set disabilitato dalla configurazione")
+            return "Comando config:set disabilitato per motivi di sicurezza."
         args = cmd_originale[11:].strip().split(',')
         if len(args) == 3:
             sezione, chiave, valore = [x.strip() for x in args]
@@ -177,10 +241,17 @@ def esegui(comando):
         logger.debug("PLUGIN_SISTEMA", "Nessun comando valido, restituisco help")
         return "SISTEMA: Protocolli attivi. Usa 'leggi log', 'terminale', 'riavvia' o 'cmd:istruzione'."
 
+    # Controlla whitelist
+    if not _is_shell_command_allowed(shell_cmd):
+        logger.debug("PLUGIN_SISTEMA", f"Comando non autorizzato dalla whitelist: {shell_cmd}")
+        return "Comando non autorizzato dalla whitelist di sicurezza."
+
+    timeout = ConfigManager().get_plugin_config("SISTEMA", "shell_command_timeout", 15)
+
     try:
         logger.info(f"Esecuzione comando shell: {shell_cmd}")
         logger.debug("PLUGIN_SISTEMA", f"Esecuzione subprocess: {shell_cmd}")
-        output = subprocess.check_output(shell_cmd, shell=True, text=True, stderr=subprocess.STDOUT, timeout=15)
+        output = subprocess.check_output(shell_cmd, shell=True, text=True, stderr=subprocess.STDOUT, timeout=timeout)
         logger.debug("PLUGIN_SISTEMA", f"Output ricevuto: {len(output)} caratteri")
         return output if output.strip() else f"Comando eseguito con successo: {shell_cmd}"
     except subprocess.CalledProcessError as e:

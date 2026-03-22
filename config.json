@@ -85,5 +85,67 @@
         "livello": "INFO",
         "destinazione": "console",
         "tipo_messaggi": "entrambi"
+    },
+    "plugins": {
+        "DASHBOARD": {
+            "monitor_interval": 2,
+            "backend_timeout": 0.5,
+            "enabled": false
+        },
+        "FILE_MANAGER": {
+            "max_read_lines": 50,
+            "max_list_items": 5,
+            "enable_path_mapping": true,
+            "enabled": true
+        },
+        "HELP": {
+            "show_disabled": false,
+            "enabled": true
+        },
+        "MEDIA": {
+            "enabled": true
+        },
+        "ROLEPLAY": {
+            "characters_dir": "C:\\Zentra-Core\\plugins\\roleplay\\characters",
+            "scenes_dir": "C:\\Zentra-Core\\plugins\\roleplay\\scenes",
+            "default_character": "",
+            "default_scene": "",
+            "enabled": true
+        },
+        "SISTEMA": {
+            "programs": {
+                "notepad": "notepad.exe",
+                "chrome": "chrome.exe",
+                "visual studio": "C:\\Program Files\\Microsoft VS Code\\Code.exe",
+                "sillytavern": "C:\\SillyTavern\\SillyTavern\\Start.bat"
+            },
+            "explorer_mappings": {
+                "desktop": "C:\\Users\\Asus\\Desktop",
+                "download": "C:\\Users\\Asus\\Downloads",
+                "documenti": "C:\\Users\\Asus\\Documents",
+                "core": "C:\\Zentra-Core\\core",
+                "plugins": "C:\\Zentra-Core\\plugins",
+                "memoria": "C:\\Zentra-Core\\memoria",
+                "personalita": "C:\\Zentra-Core\\personalita",
+                "logs": "C:\\Zentra-Core\\logs"
+            },
+            "shell_command_whitelist": [],
+            "enable_config_set": true,
+            "shell_command_timeout": 15,
+            "enabled": true
+        },
+        "WEB": {
+            "search_engine": "google",
+            "use_https": true,
+            "open_in_new_tab": false,
+            "enabled": true
+        },
+        "WEBCAM": {
+            "save_directory": "scatti",
+            "image_format": "jpg",
+            "camera_index": 0,
+            "stabilization_delay": 0.5,
+            "enabled": true
+        }
     }
 }

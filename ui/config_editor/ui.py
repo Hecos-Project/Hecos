@@ -5,6 +5,8 @@ Gestione dell'interfaccia utente: disegno e interazione.
 from .utils import clear_screen, get_key, flush_input
 from ui import grafica
 import sys
+import shutil
+from collections import OrderedDict
 
 # Costanti tasti
 KEY_UP = 72
@@ -28,6 +30,7 @@ class UIManager:
         self.get_value = getter
         self.set_value = setter
         self.cursor = 0
+        self.scroll_top = 0      # Indice della riga in alto nel viewport
         self.modified = False
         self.first_draw = True
 
@@ -48,7 +51,12 @@ class UIManager:
                     else:
                         break
                 elif key == KEY_ENTER:
-                    break
+                    # Se il parametro è una stringa libera, attiva modifica
+                    param = self.param_list[self.cursor]
+                    if param.type == 'str' and not param.options:
+                        self._edit_string(param)
+                    else:
+                        break
                 elif key == KEY_UP:
                     if self.cursor > 0:
                         self.cursor -= 1
@@ -63,11 +71,26 @@ class UIManager:
                             return "REBOOT"
                     else:
                         current = self.get_value(param)
-                        if param.type in ('int', 'float') and param.min is not None:
-                            step = param.step or 1
-                            new_val = current - step if key == KEY_LEFT else current + step
+                        if param.type in ('int', 'float'):
+                            # Determina step e limiti
+                            if param.type == 'int':
+                                step = param.step or 1
+                            else:
+                                step = param.step or 0.1
+                            if key == KEY_LEFT:
+                                new_val = current - step
+                            else:
+                                new_val = current + step
+                            # Applica limiti se presenti
+                            if param.min is not None:
+                                new_val = max(param.min, new_val)
+                            if param.max is not None:
+                                new_val = min(param.max, new_val)
                             # Arrotonda per evitare precisione float fastidiosa
-                            new_val = round(max(param.min, min(param.max, new_val)), 2)
+                            if param.type == 'float':
+                                new_val = round(new_val, 2)
+                            else:
+                                new_val = int(new_val)
                             self.set_value(param, new_val)
                             self.modified = True
                         elif param.type == 'bool':
@@ -93,93 +116,193 @@ class UIManager:
             sys.stdout.flush()
         return self.modified
 
+    def _edit_string(self, param):
+        """Modifica una stringa libera con input utente."""
+        current = self.get_value(param) or ""
+        # Mostra prompt
+        print(f"\n{GIALLO}Modifica {param.label}:{RESET}")
+        print(f"Valore attuale: {current}")
+        print("Inserisci nuovo valore (Invio per confermare, ESC per annullare):")
+        # Leggi input
+        new_val = input().strip()
+        if new_val:  # se l'utente ha inserito qualcosa
+            self.set_value(param, new_val)
+            self.modified = True
+            print(f"{VERDE}Valore aggiornato.{RESET}")
+        else:
+            print(f"{GIALLO}Modifica annullata.{RESET}")
+        # Attendi un momento per far leggere il messaggio
+        import time
+        time.sleep(1)
+
     def _wait_for_key(self):
         while True:
             ch = get_key(timeout=None)
             if ch is not None:
                 return ch
 
+    def _get_section_title(self, param):
+        """Restituisce il titolo della sezione per un parametro."""
+        if param.section == 'system':
+            return "⚡ SISTEMA"
+        elif param.section == 'logging':
+            return "📊 LOGGING"
+        elif param.section == 'filtri':
+            return "📝 FILTRI"
+        elif param.section == 'ascolto':
+            return "🎤 ASCOLTO"
+        elif param.section == 'voce':
+            return "🔊 VOCE"
+        elif param.section == 'backend':
+            # Distingue modello dagli altri parametri di backend
+            if param.key == 'modello':
+                return "🤖 MODELLO"
+            else:
+                return "⚙️ GENERAZIONE"
+        elif param.section == 'plugin':
+            return f"🔌 {param.plugin_tag}"
+        else:
+            return "ALTRO"
+
     def _draw(self):
         clear_screen(first_time=self.first_draw)
         self.first_draw = False
         
-        # Importa le informazioni di versione centralizzate
         from core.system.version import get_version_string
         
-        # Intestazione compatta fusa (1 sola riga) per risparmiare spazio verticale!
+        # Intestazione
         intestazione = f" {get_version_string()} - CONFIGURAZIONE SISTEMA "
         print(f"\033[44m\033[97m{intestazione.center(60)}\033[0m")
         
-        # Definizione delle sezioni e degli indici dei parametri
-        sezioni = {
-            "🤖 MODELLO": [0],  # Indice del modello attivo
-            "⚙️ GENERAZIONE": [1, 2, 3, 4],  # Temperatura, Num predict, Contesto, Layer GPU
-            "🔊 VOCE": [5, 6, 7, 8],  # Velocità, Variabilità, Fluidità, Pausa
-            "🎤 ASCOLTO": [9, 10],  # Soglia energia, Timeout silenzio
-            "📝 FILTRI": [11, 12, 13],  # Filtri vari
-            "📊 LOGGING": [14, 15], # Destinazione, Tipo
-            "⚡ SISTEMA": [16]  # RIAVVIA ZENTRA
-        }
+        # 1. Genera lista piatta di "righe renderizzabili"
+        all_rows = [] # Conterrà tuple (tipo, contenuto, param_idx)
+        
+        sections = OrderedDict()
+        for i, param in enumerate(self.param_list):
+            title = self._get_section_title(param)
+            sections.setdefault(title, []).append((i, param))
+        
+        order_standard = ["🤖 MODELLO", "⚙️ GENERAZIONE", "🔊 VOCE", "🎤 ASCOLTO", "📝 FILTRI", "📊 LOGGING", "⚡ SISTEMA"]
+        
+        def add_section_to_rows(title, params_with_idx):
+            all_rows.append(('header', title, None))
+            for p_idx, p in params_with_idx:
+                all_rows.append(('param', p, p_idx))
 
-        idx = 0
-        for nome_sezione, indici in sezioni.items():
-            # Stampa intestazione sezione
-            print(f"{CIANO}├─ {nome_sezione} ─────────────────────────────{RESET}")
+        # Aggiungi sezioni standard
+        for title in order_standard:
+            if title in sections:
+                add_section_to_rows(title, sections[title])
+                sections.pop(title, None)
+        
+        # Aggiungi plugin
+        for title, params in sections.items():
+            add_section_to_rows(title, params)
+
+        # 2. Gestione scorrimento (Viewport)
+        # Ottieni altezza terminale attuale e calcola limite sicuro
+        try:
+            # Svuota buffer terminale per evitare letture vecchie
+            term_size = shutil.get_terminal_size()
+            term_height = term_size.lines
+            # Riserva solo lo stretto necessario (2 righe per header/footer + 1 per margine)
+            safe_limit = max(10, term_height - 4)
+        except:
+            safe_limit = 30 # Fallback più generoso
             
-            for i in indici:
-                if i >= len(self.param_list):
-                    continue
-                    
-                param = self.param_list[i]
-                
-                # Gestione separata per i comandi
-                if param.type == 'command':
-                    disp = "▶ Esegui"
-                    bar = ""
-                else:
-                    value = self.get_value(param)
-                    # Gestione valori None
-                    if value is None:
-                        disp = "N/A"
-                    else:
-                        # Formatta il valore in base al tipo
-                        if param.type == 'bool':
-                            disp = "[X]" if value else "[ ]"
-                        elif param.type == 'float':
-                            disp = f"{value:.2f}"
-                        else:
-                            disp = str(value)
-                    
-                    # Barra rimossa per evitare confusioni con la dashboard HW
-                    bar = ""
+        # Altezza dinamica: mostra tutto se possibile, altrimenti usa il limite
+        viewport_height = min(len(all_rows), safe_limit)
+        
+        # Trova la riga corrispondente al cursore attuale
+        cursor_row_idx = 0
+        for idx, row in enumerate(all_rows):
+            if row[0] == 'param' and row[2] == self.cursor:
+                cursor_row_idx = idx
+                break
 
-                # Formatta il testo senza colori
-                prefisso = " > " if self.cursor == i else "   "
-                testo_base = f"{prefisso}{param.label}: {disp}"
-                
-                # Tronca o riempi per avere larghezza fissa esatta (56 char)
-                if len(testo_base) > 56:
-                    testo_base = testo_base[:53] + "..."
-                else:
-                    testo_base = f"{testo_base:<56}"
+        # Aggiusta scroll_top per tenere il cursore nel viewport
+        if cursor_row_idx < self.scroll_top:
+            self.scroll_top = cursor_row_idx
+        elif cursor_row_idx >= self.scroll_top + viewport_height:
+            self.scroll_top = cursor_row_idx - viewport_height + 1
 
-                # Costruzione riga finale con colori
-                if self.cursor == i:
-                    linea_finale = f"{VERDE}{testo_base}{RESET}"
-                else:
-                    linea_finale = testo_base
-                
-                print(f"| {linea_finale} |")
-                idx += 1
+        # 3. Disegna il viewport con Scrollbar
+        visible_rows = all_rows[self.scroll_top : self.scroll_top + viewport_height]
+        
+        # Calcolo scrollbar
+        total_rows = len(all_rows)
+        thumb_range = None
+        if total_rows > viewport_height:
+            # Dimensione thumb (minimo 1 riga)
+            thumb_size = max(1, int((viewport_height / total_rows) * viewport_height))
+            # Escursione possibile per il thumb
+            scroll_range = total_rows - viewport_height
+            if scroll_range > 0:
+                # Proporzione dello scroll attuale
+                thumb_pos = int((self.scroll_top / scroll_range) * (viewport_height - thumb_size))
+            else:
+                thumb_pos = 0
+            thumb_range = range(thumb_pos, thumb_pos + thumb_size)
 
-        # Footer compatto (1 riga)
-        footer = " ↑/↓: naviga | ←/→: modifica | Invio: salva | Esc: esci "
+        for r_idx, (row_type, content, p_idx) in enumerate(visible_rows):
+            # Carattere scrollbar: block per il thumb, linea sottile per la traccia
+            sb_char = "█" if (thumb_range and r_idx in thumb_range) else "│"
+            
+            if row_type == 'header':
+                # Riga titolo con scrollbar integrata (rimpiazza l'ultimo carattere)
+                titolo_base = f"├─ {content} "
+                # 58 caratteri di linea + 1 scrollbar = 59. 
+                riempimento = "─" * (58 - len(titolo_base))
+                print(f"{CIANO}{titolo_base}{riempimento}{RESET}{sb_char}")
+            else:
+                self._draw_param_row(content, p_idx, sb_char)
+
+        # 4. Riempimento per mantenere il footer fisso in basso (allungamento barra)
+        # Se il contenuto è minore del limite sicuro, aggiungiamo righe vuote
+        rows_to_fill = safe_limit - viewport_height
+        for _ in range(rows_to_fill):
+            print(f"| {' ' * 57} {sb_char if total_rows > viewport_height else '│'}")
+
+        # Footer (ancorato in fondo al safe_limit)
+        footer = " ↑/↓: naviga | ←/→: modifica | Invio: salva/stringa | Esc: esci "
         print(f"\033[47m\033[30m{footer.center(60)}\033[0m")
         
         if self.modified:
             print(f"{GIALLO} Modifiche non salvate.{RESET}{' ' * 30}")
         else:
             print(f"{' ' * 56}")
+
+    def _draw_param_row(self, param, i, sb_char="│"):
+        """Disegna una singola riga di parametro."""
+        if param.type == 'command':
+            disp = "▶ Esegui"
+        else:
+            value = self.get_value(param)
+            if value is None:
+                disp = "N/A"
+            else:
+                if param.type == 'bool':
+                    disp = "[X]" if value else "[ ]"
+                elif param.type == 'float':
+                    disp = f"{value:.2f}"
+                else:
+                    disp = str(value)
+        
+        prefisso = " > " if self.cursor == i else "   "
+        testo_base = f"{prefisso}{param.label}: {disp}"
+        
+        if len(testo_base) > 56:
+            testo_base = testo_base[:53] + "..."
+        else:
+            testo_base = f"{testo_base:<56}"
+        
+        if self.cursor == i:
+            testo_render = f"{VERDE}{testo_base}{RESET}"
+        else:
+            testo_render = testo_base
+        
+        # Stampa la riga rimpiazzando l'ultimo bordo con la scrollbar
+        print(f"| {testo_render} {sb_char}")
 
     def _confirm(self, message):
         print(f"\n{GIALLO}{message}{RESET}")

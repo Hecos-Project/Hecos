@@ -1,21 +1,10 @@
 {
-    "DASHBOARD": {
-        "descrizione": "Monitoraggio hardware e stato backend AI.",
-        "comandi": {
-            "risorse": "Mostra CPU e RAM.",
-            "vram": "Mostra dettagli VRAM e carico GPU.",
-            "stato": "Mostra stato del backend (Ollama/Kobold).",
-            "tutto": "Mostra tutte le informazioni disponibili."
-        },
-        "stato": "ONLINE (Telemetria attiva)",
-        "esempio": ""
-    },
     "FILE_MANAGER": {
         "descrizione": "Gestione file e directory di sistema con supporto ai percorsi utente e lettura file.",
         "comandi": {
             "list:percorso": "Elenca file e cartelle (es. list:desktop, list:core, list:plugins).",
             "conta:percorso": "Fornisce un conteggio dettagliato degli elementi in una cartella.",
-            "read:percorso": "Legge il contenuto di un file di testo (prime 50 righe)."
+            "read:percorso": "Legge il contenuto di un file di testo (prime righe configurabili)."
         },
         "stato": "ATTIVO",
         "esempio": ""
@@ -23,7 +12,8 @@
     "HELP": {
         "descrizione": "Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema.",
         "comandi": {
-            "lista": "Mostra tutti i protocolli disponibili."
+            "lista": "Mostra tutti i protocolli disponibili.",
+            "refresh": "Rigenera il registro dei plugin e mostra i comandi aggiornati."
         },
         "stato": "ATTIVO",
         "esempio": "[HELP: lista]"
@@ -34,7 +24,7 @@
             "vol:0-100": "Regola volume master.",
             "mute:on/off": "Attiva o disattiva il silenzio."
         },
-        "stato": "ATTIVO",
+        "stato": "ONLINE",
         "esempio": ""
     },
     "ROLEPLAY": {
@@ -83,7 +73,7 @@
             "snap": "Attiva la fotocamera e salva un'immagine nella cartella 'scatti'."
         },
         "stato": "ONLINE (Visione Ottica)",
-        "esempio": ""
+        "esempio": "[WEBCAM: snap]"
     },
     "MODELS": {
         "descrizione": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
