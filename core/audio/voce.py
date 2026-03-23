@@ -34,9 +34,16 @@ def parla(testo):
     sta_parlando = True
     
     try:
+        # Recupera di nuovo o usa la config precedente
+        with open('config.json', 'r') as f:
+            c_voce = json.load(f).get('voce', {})
+    except Exception:
+        c_voce = {}
+        
+    try:
         testo_pulito = testo.replace('"', '').replace('\n', ' ')
-        piper_path = r"C:\piper\piper.exe"
-        model_path = r"C:\piper\it_IT-paola-medium.onnx"
+        piper_path = c_voce.get('piper_path', r"C:\piper\piper.exe")
+        model_path = c_voce.get('modello_onnx', r"C:\piper\en_US-lessac-medium.onnx")
         
         # 2. Comando completo con tutti i flag possibili
         comando = [

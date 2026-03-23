@@ -104,6 +104,7 @@
         "label_num_predict": "Num predict",
         "label_num_ctx": "Contesto (ctx)",
         "label_num_gpu": "Layer GPU",
+        "label_modello_voce": "Lingua Vocale (Modello Piper)",
         "label_speed": "Velocità Voce",
         "label_noise_scale": "Variabilità Tono",
         "label_noise_w": "Fluidità Fonemi",

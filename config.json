@@ -88,7 +88,7 @@
         }
     },
     "voce": {
-        "modello_onnx": "C:\\piper\\it_IT-paola-medium.onnx",
+        "modello_onnx": "C:\\piper\\en_US-lessac-medium.onnx",
         "piper_path": "C:\\piper\\piper.exe",
         "speed": 1.2,
         "noise_scale": 0.817,

@@ -1,3 +1,5 @@
+import os
+import glob
 from core.i18n import translator
 
 class Parameter:
@@ -58,6 +60,17 @@ def build_parameter_list(config):
     
     # --- SEZIONE VOCE (PIPER ENGINE) ---
     voce_conf = config.get('voce', {})
+    
+    try:
+        piper_path_dir = r"C:\piper"
+        onnx_files = [os.path.basename(f) for f in glob.glob(os.path.join(piper_path_dir, "*.onnx"))]
+        if not onnx_files: onnx_files = ["en_US-lessac-medium.onnx"]
+        percorsi_onnx = [os.path.join(piper_path_dir, f) for f in onnx_files]
+    except Exception:
+        percorsi_onnx = [r"C:\piper\en_US-lessac-medium.onnx"]
+        
+    params.append(Parameter('voce', 'modello_onnx', translator.t("label_modello_voce", default="Modello Vocale"), 'str', options=percorsi_onnx))
+    
     params.append(Parameter('voce', 'speed', translator.t("label_speed"), 'float', 
                            min=0.5, max=2.5, step=0.1))
     params.append(Parameter('voce', 'noise_scale', translator.t("label_noise_scale"), 'float', 
