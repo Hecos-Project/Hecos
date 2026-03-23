@@ -61,3 +61,115 @@ The AI generates structured commands that are interpreted and executed through t
 ```bash
 git clone [https://github.com/Zentra-Core/zentra-core.github.io.git](https://github.com/Zentra-Core/zentra-core.github.io.git)
 cd zentra-core.github.io
+2. Install dependencies
+Bash
+pip install -r requirements.txt
+3. Run Zentra
+Bash
+python main.py
+🧠 Supported AI Backends
+🔹 Ollama
+Easy to use
+
+Fast and optimized
+
+Recommended for most users
+
+👉 https://ollama.com
+
+🔹 KoboldCpp
+Supports GGUF models
+
+Can run uncensored models
+
+More flexible
+
+🔌 Plugin System
+Zentra uses a dynamic plugin architecture.
+
+Each plugin can:
+
+Register commands
+
+Execute system actions
+
+Extend AI capabilities
+
+Included plugins:
+System control
+
+File manager
+
+Web automation
+
+Hardware dashboard
+
+Media control
+
+Model switching
+
+Memory management
+
+💾 Memory System
+Zentra includes a persistent memory layer:
+
+Stores conversations
+
+Maintains identity
+
+Saves user preferences
+
+Powered by SQLite for lightweight local storage.
+
+🎙️ Voice System
+Speech-to-text input
+
+Text-to-speech output
+
+Real-time interaction
+
+🔗 Integrations
+Zentra can integrate with:
+
+Open WebUI (chat + streaming)
+
+Home Assistant (via bridge)
+
+🔐 Privacy First
+Zentra is designed with privacy in mind:
+
+Runs 100% locally
+
+No mandatory cloud services
+
+Full control over data
+
+🛣️ Roadmap
+📱 Telegram integration (remote control)
+
+🧠 Advanced memory system
+
+🤖 Multi-agent architecture
+
+🛒 Plugin marketplace
+
+🎨 Improved UI/UX
+
+⚠️ Disclaimer
+Zentra can execute system-level commands and control your environment.
+
+Use responsibly. The author is not responsible for misuse or damage.
+
+📜 License
+MIT License (initial release)
+
+👥 Credits & Contact
+Lead Developer: Antonio Meloni (Tony)
+
+Core Team: @Valeria
+
+Official Email: zentra.core.systems@gmail.com
+
+💡 Vision
+Zentra Core aims to become a fully autonomous, local AI assistant platform —
+a private, extensible alternative to cloud-based AI systems.
