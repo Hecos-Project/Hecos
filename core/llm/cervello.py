@@ -7,7 +7,7 @@ import json
 import os
 from core.logging import logger
 from memoria import brain_interface
-from core.llm import ollama_backend, kobold_backend
+from core.llm import client
 
 CONFIG_PATH = "config.json"
 REGISTRY_PATH = "core/registry.json"
@@ -187,9 +187,12 @@ def genera_risposta(testo_utente, config_esterno=None):
     except Exception as e:
         logger.errore(f"Errore nel plugin roleplay: {e}")
 
-    # 4. Scegli il backend
+    # 4. Invocazione del client LiteLLM unificato
     backend_type = config.get('backend', {}).get('tipo', 'ollama')
     backend_config = config.get('backend', {}).get(backend_type, {})
+    
+    # Passiamo il tipo di backend al client per la logica interna
+    backend_config['tipo_backend'] = backend_type
     
     logger.debug("CERVELLO", f"Backend scelto: {backend_type}")
     logger.debug("CERVELLO", f"Config backend: {backend_config}")
@@ -199,14 +202,10 @@ def genera_risposta(testo_utente, config_esterno=None):
         logger.debug("CERVELLO", f"ERRORE: Modello mancante per backend {backend_type}")
         return "Errore: Configurazione modello assente. Controlla il file config.json."
 
-    logger.debug("CERVELLO", f"Chiamata al backend {backend_type} con modello: {backend_config['modello']}")
+    logger.debug("CERVELLO", f"Chiamata a LiteLLM ({backend_type}) con modello: {backend_config['modello']}")
     
-    if backend_type == 'kobold':
-        logger.debug("CERVELLO", "Invio a kobold_backend...")
-        risposta = kobold_backend.genera(system_prompt, testo_utente, backend_config)
-    else:
-        logger.debug("CERVELLO", "Invio a ollama_backend...")
-        risposta = ollama_backend.genera(system_prompt, testo_utente, backend_config)
+    # Unica chiamata al client unificato
+    risposta = client.generate(system_prompt, testo_utente, backend_config, config.get('llm', {}))
     
     logger.debug("CERVELLO", f"Risposta ricevuta dal backend: {len(risposta)} caratteri")
     logger.debug("CERVELLO", f"Primi 100 caratteri: '{risposta[:100]}'")

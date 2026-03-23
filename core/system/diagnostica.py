@@ -71,8 +71,12 @@ def check_backend(config):
         except Exception as e:
             print(f"   [-] {ROSSO}Backend Kobold: NON RISPONDE ({e}){RESET}")
             return False
+    elif backend_type == 'cloud':
+        # Per il cloud, non facciamo check di rete pesanti qui, 
+        # lasciamo che sia il client a gestire l'eventuale errore di connessione/quota.
+        print(f"   [+] {VERDE}Backend CLOUD: PRONTO (LiteLLM){RESET}")
+        return True
     else:  # ollama
-        # Legge il modello dal backend attivo, non più da 'ia'
         modello = config.get('backend', {}).get('ollama', {}).get('modello', 'llama3.2:1b')
         url = "http://localhost:11434/api/generate"
         payload = {"model": modello, "prompt": "hi", "stream": False}
@@ -84,6 +88,8 @@ def check_backend(config):
                 return True
             return False
         except Exception as e:
+            # Se siamo su Ollama ma non risponde, è un errore. 
+            # Ma se fossimo stati su Cloud, non saremmo arrivati qui.
             logger.errore(f"DIAGNOSTICA: Ollama non risponde: {e}")
             print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
             return False

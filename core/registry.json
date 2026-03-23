@@ -10,10 +10,10 @@
         "esempio": ""
     },
     "HELP": {
-        "descrizione": "help_desc",
+        "descrizione": "Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema.",
         "comandi": {
-            "lista": "help_cmd_lista",
-            "refresh": "help_cmd_refresh"
+            "lista": "Mostra tutti i protocolli disponibili.",
+            "refresh": "Rigenera il registro dei plugin e mostra i comandi aggiornati."
         },
         "stato": "ATTIVO",
         "esempio": "[HELP: lista]"

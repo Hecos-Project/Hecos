@@ -108,90 +108,99 @@ class ZentraApplication:
         return scelta
 
     def _handle_f2(self, config):
-        """Gestione F2 - Selezione modelli con lettura automatica da Ollama."""
-        print(f"\n\n\033[96m[ GESTIONE MODELLI ]\033[0m")
+        """Gestione F2 - Selezione modelli universale (Ollama, Kobold, Cloud)."""
+        print(f"\n\n\033[96m[ GESTIONE MODELLI UNIFICATA ]\033[0m")
         
-        backend_type = config.get('backend', {}).get('tipo', 'ollama')
-        backend_config = config.get('backend', {}).get(backend_type, {})
-        
-        # Ottieni la lista dei modelli disponibili da Ollama
-        modelli_ollama = []
+        all_models = [] # Lista di dict: {"name": str, "type": str, "provider": str}
         model_sizes = self._get_model_sizes()
         
+        # 1. Recupero Modelli OLLAMA (Local)
         try:
             import requests
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
+            response = requests.get("http://localhost:11434/api/tags", timeout=1)
             if response.status_code == 200:
-                data = response.json()
-                modelli_ollama = [m.get('name') for m in data.get('models', []) if m.get('name')]
-        except Exception as e:
-            logger.debug("APP", f"Errore connessione a Ollama: {e}")
-            modelli_ollama = []
+                for m in response.json().get('models', []):
+                    all_models.append({"name": m['name'], "type": "ollama", "provider": "local"})
+        except:
+            # Fallback su config
+            for m in config.get('backend', {}).get('ollama', {}).get('modelli_disponibili', {}).values():
+                all_models.append({"name": m, "type": "ollama", "provider": "local"})
+                
+        # 2. Recupero Modelli KOBOLD (Local)
+        for m in config.get('backend', {}).get('kobold', {}).get('modelli_disponibili', {}).values():
+            # Evita duplicati se già presenti (rari tra backend diversi ma possibile)
+            all_models.append({"name": m, "type": "kobold", "provider": "local"})
+
+        # 3. Recupero Modelli CLOUD (Dinamico + Fallback)
+        allow_cloud = config.get('llm', {}).get('allow_cloud', False)
+        if allow_cloud:
+            providers = config.get('llm', {}).get('providers', {})
+            for provider_name, p_data in providers.items():
+                api_key = p_data.get('api_key')
+                cloud_models = []
+                
+                # Tentativo di recupero dinamico per Groq e OpenAI
+                if provider_name in ["groq", "openai"] and api_key:
+                    cloud_models = self._fetch_cloud_models(provider_name, api_key)
+                
+                # Se il recupero dinamico fallisce o non è supportato, usa la lista nel config
+                if not cloud_models:
+                    cloud_models = p_data.get('modelli', [])
+                
+                for m_name in cloud_models:
+                    # Assicuriamoci che il nome abbia il prefisso del provider per LiteLLM
+                    full_name = f"{provider_name}/{m_name}" if not m_name.startswith(f"{provider_name}/") else m_name
+                    all_models.append({"name": full_name, "type": "cloud", "provider": provider_name})
+
+        if not all_models:
+            print(f"\033[91mNessun modello trovato. Controlla la configurazione.\033[0m")
+            time.sleep(2)
+            return
+
+        # 4. Visualizzazione
+        backend_attuale = config.get('backend', {}).get('tipo', 'ollama')
+        modello_attuale = config.get('backend', {}).get(backend_attuale, {}).get('modello', '')
         
-        if not modelli_ollama:
-            # Fallback: usa la lista dal config se Ollama non risponde
-            print(f"\033[93mOllama non raggiungibile. Uso lista locale...\033[0m")
-            modelli = backend_config.get('modelli_disponibili', {})
-            if not modelli:
-                print(f"\033[91mNessun modello configurato per il backend {backend_type}.\033[0m")
-                print(f"\033[93mVerifica che in config.json ci sia 'modelli_disponibili' dentro '{backend_type}'.\033[0m")
-                time.sleep(3)
-                return
-            modelli_ollama = [modelli[k] for k in sorted(modelli.keys(), key=int)]
+        print(f"\033[96mBackend attivo: {backend_attuale.upper()} | Modello: {modello_attuale}\033[0m\n")
         
-        print(f"\033[96mBackend attuale: {backend_type.upper()}\033[0m")
-        print(f"\033[96mModelli disponibili ({len(modelli_ollama)}):\033[0m")
-        
-        attuale = backend_config.get('modello', '')
-        max_len = max([len(m) for m in modelli_ollama]) + 2
-        
-        for idx, model_name in enumerate(modelli_ollama, 1):
-            prefisso = "\033[92m>> " if model_name == attuale else "   "
-            size_info = model_sizes.get(model_name, "")
-            if size_info:
-                size_info = f" \033[90m[{size_info}]\033[0m"
+        # Raggruppiamo per tipo per una visualizzazione ordinata
+        current_section = ""
+        for idx, m in enumerate(all_models, 1):
+            section = f"{m['type'].upper()} ({m['provider'].upper()})"
+            if section != current_section:
+                print(f"\n\033[34m--- {section} ---\033[0m")
+                current_section = section
             
-            nome_formattato = model_name.ljust(max_len)
-            print(f" {prefisso}[{idx}] {nome_formattato}{size_info}\033[0m")
-        
-        print(f"\n\033[93mDigita il numero del modello da attivare (o ESC per annullare):\033[0m")
-        
-        scelta = ""
-        while True:
-            if msvcrt.kbhit():
-                char = msvcrt.getch()
-                if char == b'\x1b':
-                    scelta = "ESC"
-                    break
-                try:
-                    ch = char.decode('utf-8')
-                    if ch == '\r':
-                        break
-                    if ch.isdigit():
-                        scelta += ch
-                        sys.stdout.write(ch)
-                        sys.stdout.flush()
-                except:
-                    pass
-            time.sleep(0.05)
+            prefisso = "\033[92m >> " if m['name'] == modello_attuale else "    "
+            size = model_sizes.get(m['name'], "")
+            size_str = f" \033[90m[{size}]\033[0m" if size else ""
+            
+            print(f"{prefisso}[{idx:2}] {m['name']}{size_str}\033[0m")
+
+        print(f"\n\033[93mSeleziona il numero del modello (o ESC per annullare):\033[0m")
+        scelta = self._input_digitale_sicuro(">> ")
         
         if scelta and scelta != "ESC":
-            idx = int(scelta) - 1
-            if 0 <= idx < len(modelli_ollama):
-                nuovo_modello = modelli_ollama[idx]
-                self.config_manager.set(nuovo_modello, 'backend', backend_type, 'modello')
-                
-                # Opzionale: aggiorna anche la lista modelli_disponibili
-                modelli_dict = {str(i+1): name for i, name in enumerate(modelli_ollama)}
-                self.config_manager.set(modelli_dict, 'backend', backend_type, 'modelli_disponibili')
-                
-                self.config_manager.save()
-                print(f"\n\033[92m✅ Modello impostato: {nuovo_modello} (backend: {backend_type})\033[0m")
-                
-                if backend_type == 'kobold':
-                    print(f"\033[93mNota: Per KoboldCPP, assicurati che il file '{nuovo_modello}' sia nella cartella models e che KoboldCPP sia in esecuzione.\033[0m")
-            else:
-                print(f"\n\033[91mNumero non valido.\033[0m")
+            try:
+                idx = int(scelta) - 1
+                if 0 <= idx < len(all_models):
+                    target = all_models[idx]
+                    nuovo_modello = target['name']
+                    nuovo_tipo = target['type']
+                    
+                    # Aggiorna il tipo di backend principale
+                    self.config_manager.set(nuovo_tipo, 'backend', 'tipo')
+                    # Aggiorna il modello nella sezione specifica
+                    self.config_manager.set(nuovo_modello, 'backend', nuovo_tipo, 'modello')
+                    
+                    # Se è un modello cloud, assicuriamoci di impostare il provider se serve (LiteLLM lo deduce dal nome di solito)
+                    
+                    self.config_manager.save()
+                    print(f"\n\033[92m✅ Modello impostato su {nuovo_modello} ({nuovo_tipo})\033[0m")
+                else:
+                    print(f"\n\033[91mIndice non valido.\033[0m")
+            except:
+                print(f"\n\033[91mErrore nella selezione.\033[0m")
             time.sleep(2)
 
     def _handle_f3(self, config):
@@ -282,7 +291,6 @@ class ZentraApplication:
         input_utente = ""
         
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
-        backend_status = dashboard_mod.get_backend_status() if dashboard_mod else "DISABILITATO"
 
         # UI iniziale (Stato sistema dinamico da StateManager)
         interfaccia.mostra_ui_completa(
@@ -345,7 +353,6 @@ class ZentraApplication:
                 # Ricarica config nel caso sia stato modificato
                 config = self.config_manager.config
                 dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
-                backend_status = dashboard_mod.get_backend_status() if dashboard_mod else "DISABILITATO"
                 
                 if evento in ["F4", "F5"]:
                     interfaccia.aggiorna_barra_stato_in_place(
@@ -465,3 +472,28 @@ class ZentraApplication:
         except Exception as e:
             logger.debug("APP", f"Impossibile recuperare dimensioni modelli: {e}")
         return model_sizes
+
+    def _fetch_cloud_models(self, provider, api_key):
+        """Tenta di recuperare la lista modelli direttamente dalle API del provider."""
+        import requests
+        try:
+            url = ""
+            if provider == "groq":
+                url = "https://api.groq.com/openai/v1/models"
+            elif provider == "openai":
+                url = "https://api.openai.com/v1/models"
+            else:
+                return []
+            
+            headers = {"Authorization": f"Bearer {api_key}"}
+            response = requests.get(url, headers=headers, timeout=2)
+            if response.status_code == 200:
+                data = response.json().get('data', [])
+                return [m['id'] for m in data]
+        except:
+            pass
+        return []
+
+if __name__ == "__main__":
+    app = ZentraApplication()
+    app.run()

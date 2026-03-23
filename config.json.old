@@ -1,8 +1,8 @@
 {
-    "lingua": "it",
+    "lingua": "en",
     "llm": {
         "allow_cloud": true,
-        "debug_llm": true,
+        "debug": true,
         "providers": {
             "openai": {
                 "api_key": "",
@@ -20,7 +20,7 @@
                 ]
             },
             "groq": {
-                "api_key": "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",
+                "api_key": "",
                 "modelli": [
                     "groq/llama-3.1-70b-versatile",
                     "groq/mixtral-8x7b-32768"
@@ -29,8 +29,6 @@
             "gemini": {
                 "api_key": "AIzaSyC4VgHJ-qz8BY5g3LEfmWfSuOMDB9KGvBw",
                 "modelli": [
-                    "gemini/gemini-3.1-flash-lite-preview",
-                    "gemini/gemini-3-flash-preview",
                     "gemini/gemini-2.0-flash",
                     "gemini/gemini-1.5-flash-latest",
                     "gemini/gemini-1.5-pro-latest",
@@ -43,7 +41,7 @@
     "backend": {
         "tipo": "cloud",
         "cloud": {
-            "modello": "groq/qwen/qwen3-32b",
+            "modello": "gemini/gemini-1.5-flash",
             "temperature": 0.7
         },
         "ollama": {

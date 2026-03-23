@@ -37,6 +37,17 @@ def build_parameter_list(config):
     else:
         params.append(Parameter('backend', 'modello', 'Modello attivo', 'str'))
     
+    # --- Sezione LLM ---
+    params.append(Parameter('llm', 'allow_cloud', 'Abilita modelli cloud', 'bool'))
+    params.append(Parameter('llm', 'debug_llm', 'Debug LiteLLM (Console)', 'bool'))
+    
+    # --- API Keys Cloud ---
+    if config.get('llm', {}).get('allow_cloud', False):
+        params.append(Parameter('llm_openai', 'api_key', 'OpenAI API Key', 'str'))
+        params.append(Parameter('llm_anthropic', 'api_key', 'Anthropic API Key', 'str'))
+        params.append(Parameter('llm_groq', 'api_key', 'Groq API Key', 'str'))
+        params.append(Parameter('llm_gemini', 'api_key', 'Gemini API Key', 'str'))
+    
     # Parametri del backend
     params.append(Parameter('backend', 'temperature', 'Temperatura', 'float', 
                            min=0.0, max=2.0, step=0.1))
@@ -73,7 +84,7 @@ def build_parameter_list(config):
 
     # --- Logging ---
     logging_cfg = config.get('logging', {})
-    params.append(Parameter('logging', 'destinazione', 'Destinazione Log', 'str', options=['chat', 'console']))
+    params.append(Parameter('logging', 'destinazione', 'Destinazione Log', 'str', options=['chat', 'console', 'file_only']))
     params.append(Parameter('logging', 'tipo_messaggi', 'Tipo Messaggi', 'str', options=['info', 'debug', 'entrambi']))
 
     # --- Comando speciale RIAVVIA ---

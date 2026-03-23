@@ -7,6 +7,7 @@ from datetime import datetime
 # Disabilita i debug di requests e urllib3 (troppo verbosi)
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 # Creiamo la cartella log se non esiste
 if not os.path.exists("logs"):
@@ -118,50 +119,111 @@ def init_logger(config):
         
         # Pulisce sempre eventuali finestre orfane all'avvio o cambio config
         chiudi_console_log()
+        chiudi_console_debug()
             
-        if tipo_messaggi == 'info':
-            target_files = f"'{info_filename}'"
-        elif tipo_messaggi == 'debug':
-            target_files = f"'{debug_filename}'"
-        else:
-            target_files = f"'{info_filename}', '{debug_filename}'"
-
-        ps_script = (
-            "$host.ui.RawUI.WindowTitle = 'Zentra Logs'; "
-            f"Get-Content -Path {target_files} -Wait -Tail 20 | ForEach-Object {{ "
-            "if ($_ -match '\\[ERROR\\]') { Write-Host $_ -ForegroundColor Red } "
-            "elseif ($_ -match '\\[WARNING\\]') { Write-Host $_ -ForegroundColor Yellow } "
-            "elseif ($_ -match '\\[DEBUG\\]') { Write-Host $_ -ForegroundColor Cyan } "
-            "else { Write-Host $_ -ForegroundColor White } "
-            "}"
-        )
-        # Avvia powershell minimizzata per non coprire la console principale
-        subprocess.Popen(f'start /min powershell -WindowStyle Minimized -NoExit -Command "{ps_script}"', shell=True)
+        if tipo_messaggi == 'info' or tipo_messaggi == 'entrambi':
+            # La finestra principale segue sempre il log INFO (Attività)
+            ps_script_info = (
+                "$host.ui.RawUI.WindowTitle = 'Zentra Core - Log Attivit\u00e0'; "
+                f"Get-Content -Path '{info_filename}' -Wait -Tail 20 | ForEach-Object {{ "
+                "if ($_ -match '\\[ERROR\\]') { Write-Host $_ -ForegroundColor Red } "
+                "elseif ($_ -match '\\[WARNING\\]') { Write-Host $_ -ForegroundColor Yellow } "
+                "else { Write-Host $_ -ForegroundColor White } "
+                "}"
+            )
+            subprocess.Popen(f'start /min powershell -WindowStyle Minimized -NoExit -Command "{ps_script_info}"', shell=True)
+            
+        if tipo_messaggi == 'debug' or tipo_messaggi == 'entrambi':
+            # Se è richiesto il debug, apriamo una finestra dedicata (Debug Tecnico)
+            apri_console_debug()
+            
         _console_window_started = True
-    else:
-        # Se si passa a chat, chiudi la console se aperta
+    elif destinazione == 'file_only':
+        # Se si sceglie solo file, chiudi tutte le console e scrivi solo su log
         chiudi_console_log()
+        chiudi_console_debug()
+        
+        # Disabilita l'output sulla chat principale
+        if console_handler in logger.handlers:
+            logger.removeHandler(console_handler)
+    else:
+        # Se si passa a chat, chiudi le console se aperte
+        chiudi_console_log()
+        chiudi_console_debug()
             
         # Assicurati che l'output standard sia attivo
         if console_handler not in logger.handlers:
             logger.addHandler(console_handler)
 
+def apri_console_debug():
+    """Apre una finestra console dedicata esclusivamente ai log di DEBUG (es. LiteLLM)."""
+    # Chiudiamo eventuali istanze precedenti per evitare duplicati
+    chiudi_console_debug()
+    
+    today = datetime.now().strftime("%Y-%m-%d")
+    debug_filename = f"logs/zentra_debug_{today}.log"
+    
+    # Assicuriamoci che il file esista altrimenti Get-Content fallisce
+    if not os.path.exists(debug_filename):
+        with open(debug_filename, "a") as f:
+            f.write(f"{datetime.now()} [DEBUG] [SISTEMA] Console Debug Inizializzata.\n")
 
-def info(messaggio):
-    """Registra un evento informativo standard."""
-    logger.info(messaggio)
+    ps_script_debug = (
+        "$host.ui.RawUI.WindowTitle = 'Zentra Core - Debug Tecnico (LiteLLM)'; "
+        "Write-Host '=== CONSOLE DEBUG TECNICO ATTIVA ===' -ForegroundColor Cyan; "
+        f"Get-Content -Path '{debug_filename}' -Wait -Tail 20 | ForEach-Object {{ "
+        "if ($_ -match '\\[DEBUG\\]') { Write-Host $_ -ForegroundColor Cyan } "
+        "else { Write-Host $_ -ForegroundColor Gray } "
+        "}"
+    )
+    
+    try:
+        subprocess.Popen(f'start /min powershell -WindowStyle Minimized -NoExit -Command "{ps_script_debug}"', shell=True)
+        return True
+    except:
+        return False
 
-def errore(messaggio):
-    """Registra un errore critico nel sistema."""
-    logger.error(messaggio)
+def chiudi_console_debug():
+    """Chiude la finestra di debug tecnico cercando il titolo della finestra."""
+    try:
+        subprocess.run('taskkill /FI "WINDOWTITLE eq Zentra Core - Debug Tecnico (LiteLLM)*" /F', 
+                       shell=True, capture_output=True)
+    except:
+        pass
+
+def chiudi_console_log():
+    """Chiude la finestra di log attivit\u00e0."""
+    try:
+        subprocess.run('taskkill /FI "WINDOWTITLE eq Zentra Core - Log Attivit\u00e0*" /F', 
+                       shell=True, capture_output=True)
+    except:
+        pass
+
+
+def info(modulo, messaggio=None):
+    """Registra un evento informativo standard. Se messaggio è None, modulo viene trattato come il messaggio."""
+    if messaggio is None:
+        logger.info(modulo)
+    else:
+        logger.info(f"[{modulo}] {messaggio}")
+
+def errore(modulo, messaggio=None):
+    """Registra un errore critico nel sistema. Se messaggio è None, modulo viene trattato come l'errore."""
+    if messaggio is None:
+        logger.error(modulo)
+    else:
+        logger.error(f"[{modulo}] {messaggio}")
 
 def debug(modulo, messaggio):
     """Registra un messaggio di debug nel file di log."""
     logger.debug(f"[{modulo}] {messaggio}")
     
-def warning(modulo, messaggio):
-    """Registra un avviso (warning)."""
-    logger.warning(f"[{modulo}] {messaggio}")
+def warning(modulo, messaggio=None):
+    """Registra un avviso (warning). Se messaggio è None, modulo viene trattato come l'avviso."""
+    if messaggio is None:
+        logger.warning(modulo)
+    else:
+        logger.warning(f"[{modulo}] {messaggio}")
 
 def debug_ia(testo_utente, risposta_ia, tag_rilevato=None):
     """

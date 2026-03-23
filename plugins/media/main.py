@@ -30,9 +30,11 @@ def get_volume_control():
     """Ottiene il controllo volume usando il metodo più compatibile possibile."""
     try:
         devices = AudioUtilities.GetSpeakers()
-        # GUID specifico per IAudioEndpointVolume (evita errori di attributo)
-        interface = devices.Activate(
-            IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        if not devices:
+            return None
+        # Attivazione dell'interfaccia via IID standard
+        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        # Casting esplicito utilizzando QueryInterface per evitare AttributeError
         return ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
     except Exception as e:
         logger.errore(f"MEDIA: Errore accesso audio: {e}")

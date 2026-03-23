@@ -1,4 +1,5 @@
 from core.i18n import translator
+from core.system import plugin_loader
 
 def info():
     return {

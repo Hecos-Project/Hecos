@@ -96,6 +96,11 @@ class ConfigEditor:
                 return self.config.get('logging', {}).get(key)
             elif param.section == 'system':
                 return self.config.get(key)
+            elif param.section == 'llm':
+                return self.config.get('llm', {}).get(key)
+            elif param.section.startswith('llm_'):
+                provider = param.section.split('_')[1]
+                return self.config.get('llm', {}).get('providers', {}).get(provider, {}).get(key)
             elif param.section == 'plugin':
                 # Sezione plugin: accedi a config['plugins'][param.plugin_tag][key]
                 plugins = self.config.get('plugins', {})
@@ -175,6 +180,23 @@ class ConfigEditor:
                 old = self.config.get(key)
                 if old != value:
                     self.config[key] = value
+                    self.modified = True
+            elif param.section == 'llm':
+                if 'llm' not in self.config:
+                    self.config['llm'] = {}
+                old = self.config['llm'].get(key)
+                if old != value:
+                    self.config['llm'][key] = value
+                    self.modified = True
+            elif param.section.startswith('llm_'):
+                provider = param.section.split('_')[1]
+                if 'llm' not in self.config: self.config['llm'] = {}
+                if 'providers' not in self.config['llm']: self.config['llm']['providers'] = {}
+                if provider not in self.config['llm']['providers']: self.config['llm']['providers'][provider] = {}
+                
+                old = self.config['llm']['providers'][provider].get(key)
+                if old != value:
+                    self.config['llm']['providers'][provider][key] = value
                     self.modified = True
             elif param.section == 'plugin':
                 # Sezione plugin: aggiorna config['plugins'][param.plugin_tag][key]

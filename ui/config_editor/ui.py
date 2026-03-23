@@ -145,6 +145,16 @@ class UIManager:
         """Restituisce il titolo della sezione per un parametro."""
         if param.section == 'system':
             return "⚡ SISTEMA"
+        elif param.section == 'llm':
+            return "🌐 LLM"
+        elif param.section == 'llm_openai':
+            return "🌐 OpenAI"
+        elif param.section == 'llm_anthropic':
+            return "🌐 Anthropic"
+        elif param.section == 'llm_groq':
+            return "🌐 Groq"
+        elif param.section == 'llm_gemini':
+            return "🌐 Gemini"
         elif param.section == 'logging':
             return "📊 LOGGING"
         elif param.section == 'filtri':
@@ -182,7 +192,7 @@ class UIManager:
             title = self._get_section_title(param)
             sections.setdefault(title, []).append((i, param))
         
-        order_standard = ["🤖 MODELLO", "⚙️ GENERAZIONE", "🔊 VOCE", "🎤 ASCOLTO", "📝 FILTRI", "📊 LOGGING", "⚡ SISTEMA"]
+        order_standard = ["🤖 MODELLO", "🌐 LLM", "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", "⚙️ GENERAZIONE", "🔊 VOCE", "🎤 ASCOLTO", "📝 FILTRI", "📊 LOGGING", "⚡ SISTEMA"]
         
         def add_section_to_rows(title, params_with_idx):
             all_rows.append(('header', title, None))
