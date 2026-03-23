@@ -1,195 +1,125 @@
+# 🌌 Proyecto Zentra Core
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
+</p>
+
+# Zentra Core - Versión 0.9.5 (Desarrollo Activo)
+Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
+
 # 🤖 Zentra Core
-
-**Tu asistente de IA local (privado, modular y potente)**
-
----
-
-## 🌍 Idiomas disponibles
-
-* 🇬🇧 Inglés → ver `README.md`
-* 🇮🇹 Italiano → ver `README.it.md`
-* 🇪🇸 Español (este archivo)
+**Tu Asistente de IA Personal Offline (Privado, Modular, Potente)**
 
 ---
 
-## 🚀 ¿Qué es Zentra Core?
+## 🚀 Resumen General
+**Zentra Core** es una plataforma de asistencia de IA "local-first" que se ejecuta íntegramente en tu propia máquina.
+Combina LLMs locales, interacción por voz, automatización del sistema y una arquitectura de plugins modulares para crear un compañero digital totalmente personalizable.
 
-**Zentra Core** es una plataforma de asistente de inteligencia artificial que funciona completamente en local en tu ordenador.
-
-Combina modelos de lenguaje (LLM), automatización del sistema, interacción por voz y un sistema de plugins para crear un asistente totalmente personalizable.
-
-A diferencia de las IA en la nube:
-
-* 🔒 tus datos permanecen en tu dispositivo
-* ⚙️ tienes control total
-* 🧠 puedes usar modelos sin restricciones (según configuración)
+Con la integración de **LiteLLM**, Zentra ahora soporta no solo Ollama y KoboldCpp, sino también los principales proveedores de la nube (OpenAI, Anthropic, Gemini, Groq) para la máxima flexibilidad.
 
 ---
 
-## ✨ Características principales
-
-* 🧠 **IA local** — todo se ejecuta en tu hardware
-* 🔄 **Soporte de doble backend** — compatible con Ollama y KoboldCpp
-* 🎙️ **Interacción por voz** — escucha y responde
-* ⚙️ **Control del sistema** — abre aplicaciones, gestiona archivos, ejecuta comandos
-* 🔌 **Sistema de plugins** — amplía fácilmente las funcionalidades
-* 💾 **Memoria persistente** — almacenamiento con SQLite
-* 🌐 **Interacción web** — abre sitios y realiza búsquedas
-* 🖥️ **Monitorización del hardware** — CPU, RAM, GPU
-* 🔗 **Integraciones** — compatible con Open WebUI y Home Assistant
+## ✨ Características Principales
+* 🧠 **Procesamiento de IA Local y Cloud** — Soporta Ollama, KoboldCpp y LiteLLM (OpenAI, Groq, etc.).
+* 🔄 **Soporte de Multi-Backend** — Cambia sin problemas entre modelos locales y en la nube.
+* 🎙️ **Interacción por Voz Multilingüe** — Entrada y salida de voz con selección automática de idioma (ES/EN/IT).
+* ⚙️ **Control del Sistema** — Ejecuta comandos, abre aplicaciones, gestiona archivos.
+* 🔌 **Sistema de Plugins** — Funcionalidades fácilmente extensibles.
+* 💾 **Memoria Persistente** — Memoria a largo plazo basada en SQLite.
+* 🖥️ **Telemetría Avanzada** — Estadísticas de hardware (CPU, RAM, GPU) y registro mejorado.
+* 🔗 **Listo para Integración** — Funciona con Open WebUI y Home Assistant.
 
 ---
 
-## 🧠 ¿Cómo funciona?
+## 🧠 Cómo Funciona
+Zentra Core está construido en torno a una arquitectura modular:
+* **Core** → Enrutamiento de IA, procesamiento y ejecución.
+* **Plugins** → Acciones y capacidades (sistema, web, multimedia, etc.).
+* **Memory** → Identidad y almacenamiento persistente.
+* **UI** → Capa de interacción con el usuario.
+* **Bridge** → Integraciones externas y APIs.
 
-Zentra está construida con una arquitectura modular:
-
-* **Core** → lógica principal, gestión de IA y ejecución
-* **Plugins** → acciones y capacidades
-* **Memoria** → identidad y almacenamiento persistente
-* **UI** → interacción con el usuario
-* **Bridge** → integraciones externas
-
-La IA genera comandos estructurados que los plugins interpretan y ejecutan.
+La IA genera comandos estructurados que son interpretados y ejecutados a través del sistema de plugins.
 
 ---
 
-## ⚡ Inicio rápido
+## ⚡ Inicio Rápido
 
 ### 1. Clonar el repositorio
-
-```bash id="sp1"
-git clone https://github.com/your-username/zentra-core.git
-cd zentra-core
-```
-
-### 2. Instalar dependencias
-
-```bash id="sp2"
+```bash
+git clone [https://github.com/Zentra-Core/zentra-core.github.io.git](https://github.com/Zentra-Core/zentra-core.github.io.git)
+cd zentra-core.github.io
+2. Instalar dependencias
+Bash
 pip install -r requirements.txt
-```
-
-### 3. Ejecutar Zentra
-
-```bash id="sp3"
+3. Ejecutar Zentra
+Bash
 python main.py
-```
-
----
-
-## 🧠 Backends de IA soportados
-
-### 🔹 Ollama
-
-* fácil de usar
-* rápido
-* recomendado para empezar
+🧠 Backends de IA Soportados
+🔹 Ollama
+Fácil de usar, rápido y optimizado. Recomendado para la mayoría de los usuarios.
 
 👉 https://ollama.com
 
-### 🔹 KoboldCpp
+🔹 KoboldCpp
+Soporta modelos GGUF, puede ejecutar modelos sin censura, más flexible.
 
-* soporta modelos GGUF
-* permite modelos sin censura
-* mayor flexibilidad
+🔌 Sistema de Plugins
+Zentra utiliza una arquitectura dinámica. Cada plugin puede registrar comandos, ejecutar acciones del sistema y extender las capacidades de la IA.
 
----
+Plugins incluidos:
 
-## 🔌 Sistema de Plugins
+Control del sistema y Gestor de archivos
 
-Zentra utiliza una arquitectura basada en plugins.
+Automatización Web y Dashboard de hardware
 
-Cada plugin puede:
+Control multimedia y Cambio de modelo
 
-* añadir comandos
-* interactuar con el sistema
-* extender las capacidades de la IA
+Gestión de memoria
 
-### Plugins incluidos:
+💾 Sistemas de Memoria y Voz
+🗄️ Sistema de Memoria
+Zentra incluye una capa de memoria persistente impulsada por SQLite para un almacenamiento local ligero. Almacena conversaciones, mantiene la identidad y guarda las preferencias del usuario.
 
-* control del sistema
-* gestor de archivos
-* web
-* monitor de hardware
-* multimedia
-* gestión de modelos
-* memoria
+🎙️ Sistema de Voz
+Entrada Speech-to-text (voz a texto)
 
----
+Salida Text-to-speech (texto a voz)
 
-## 💾 Sistema de memoria
+Interacción en tiempo real
 
-Zentra incluye un sistema de memoria persistente:
-
-* guarda conversaciones
-* mantiene identidad
-* recuerda preferencias del usuario
-
-Basado en SQLite para ser ligero y eficiente.
-
----
-
-## 🎙️ Sistema de voz
-
-* entrada por voz
-* salida por voz
-* interacción en tiempo real
-
----
-
-## 🔗 Integraciones
-
+🔗 Integraciones y Privacidad
+🤝 Integraciones
 Zentra puede integrarse con:
 
-* Open WebUI
-* Home Assistant
+Open WebUI (chat + streaming)
 
----
+Home Assistant (vía bridge)
 
-## 🔐 Privacidad
+🔐 Privacidad Primero
+Zentra está diseñado pensando en la privacidad: funciona 100% localmente, sin servicios en la nube obligatorios y con control total sobre los datos.
 
-Zentra está diseñada con enfoque en la privacidad:
+🛣️ Hoja de Ruta (Roadmap)
+[ ] 📱 Integración con Telegram (control remoto)
 
-* funciona 100% en local
-* sin servicios en la nube obligatorios
-* control total de los datos
+[ ] 🧠 Sistema de memoria avanzado
 
----
+[ ] 🤖 Arquitectura multi-agente
 
-## 🛣️ Hoja de ruta
+[ ] 🛒 Marketplace de plugins
 
-* 📱 integración con Telegram
-* 🧠 memoria avanzada
-* 🤖 sistema multi-agente
-* 🛒 marketplace de plugins
-* 🎨 mejoras de interfaz
+[ ] 🎨 UI/UX mejorada
 
----
+⚠️ Descargo de Responsabilidad (Disclaimer)
+Zentra puede ejecutar comandos a nivel de sistema y controlar tu entorno. Úsalo con responsabilidad. El autor no se hace responsable del mal uso o de posibles daños.
 
-## ⚠️ Aviso
+📜 Licencia
+Licencia MIT (lanzamiento inicial)
 
-Zentra puede ejecutar comandos a nivel de sistema.
+👥 Créditos y Contacto
+Líder de Desarrollo: Antonio Meloni (Tony)
 
-Úsala con responsabilidad. El autor no se hace responsable de daños o usos indebidos.
+Email Oficial: zentra.core.systems@gmail.com
 
----
-
-## 📜 Licencia
-
-MIT (versión inicial)
-
----
-
-## 👤 Autor
-
-Antonio Meloni (Tony)
-
----
-
-## 💡 Visión
-
-Zentra Core quiere convertirse en una plataforma completa de asistentes de IA locales:
-
-una alternativa privada, modular y potente frente a las soluciones en la nube.
-
----
+💡 Visión
+Zentra Core aspira a convertirse en una plataforma de asistencia de IA local totalmente autónoma: una alternativa privada y extensible a los sistemas de IA basados en la nube.

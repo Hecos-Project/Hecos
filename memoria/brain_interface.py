@@ -43,8 +43,9 @@ def ottieni_contesto_memoria():
         with open(PATH_PROFILO, "r", encoding="utf-8") as f:
             prof_data = json.load(f)
             
+        from core.system.version import VERSION
         contesto = f"\n[MEMORIA IDENTITÀ ATTIVA]\n"
-        contesto += f"Tu sei {id_data['ia']['nome']}, versione {id_data['ia']['versione']}. {id_data['ia']['natura']}.\n"
+        contesto += f"Tu sei {id_data['ia']['nome']}, versione {VERSION}. {id_data['ia']['natura']}.\n"
         contesto += f"Il tuo Creatore (Admin) è {id_data['autore']['nome']}. Protocollo: {id_data['ia']['protocollo']}.\n"
         
         # Note biografiche sull'Admin

@@ -4,13 +4,10 @@ Classe principale dell'applicazione Zentra.
 
 import sys
 import time
-import threading
 import msvcrt
 from core.logging import logger
 from core.system import plugin_loader, diagnostica
-from core.processing import processore
-from core.audio import ascolto, voce
-import plugins.dashboard.main as dashboard
+from core.i18n import translator
 from ui import interfaccia, grafica, ui_updater
 from ui.config_editor.core import ConfigEditor
 from memoria import brain_interface
@@ -18,6 +15,8 @@ from .config import ConfigManager
 from .state_manager import StateManager
 from .input_handler import InputHandler
 from .threads import AscoltoThread
+from .model_manager import ModelManager
+from .personality_manager import PersonalityManager
 
 class ZentraApplication:
     def __init__(self):
@@ -28,16 +27,26 @@ class ZentraApplication:
         self.state_manager = StateManager(stato_voce_iniziale=cv, stato_ascolto_iniziale=ca)
         
         self.input_handler = InputHandler(self.state_manager, self.config_manager)
+        self.model_manager = ModelManager(self.config_manager)
+        self.personality_manager = PersonalityManager(self.config_manager)
         self.running = True
 
     def _initialize(self):
         """Inizializzazione di tutti i componenti."""
         logger.init_logger(self.config_manager.config)
+        # Inizializza traduttore
+        lingua = self.config_manager.config.get("lingua", "it")
+        translator.init_translator(lingua)
         logger.info("[APP] Avvio sequenza di boot Zentra Core.")
         
         interfaccia.setup_console()
+        self.state_manager.sistema_status = translator.t("loading_memory")
         brain_interface.inizializza_caveau()
-        plugin_loader.aggiorna_registro_capacita()
+        # IMPORTANTE: passa il config corrente al plugin loader
+        self.state_manager.sistema_status = translator.t("loading_plugins")
+        plugin_loader.aggiorna_registro_capacita(self.config_manager.config)
+        # Sincronizza la configurazione dei plugin
+        plugin_loader.sincronizza_config_plugin(self.config_manager)
         
         # Sincronizza lista personalità disponibili nel config
         anime_files = interfaccia.elenca_personalita()
@@ -47,12 +56,19 @@ class ZentraApplication:
             self.config_manager.save()
         
         config = self.config_manager.config
+        self.state_manager.sistema_status = translator.t("diagnostics")
         diagnostica.esegui_check_iniziale(config)
-        dashboard.avvia_monitoraggio_backend()
+        
+        # Avvia il monitoraggio backend solo se il plugin è attivo
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        if dashboard_mod:
+            dashboard_mod.avvia_monitoraggio_backend()
+        else:
+            logger.warning("APP", "Plugin DASHBOARD disabilitato, monitoraggio hardware non attivo.")
 
     def _show_boot_animation(self):
         """Mostra animazione di avvio."""
-        sys.stdout.write(f"\n\033[96m[SISTEMA] Sincronizzazione Rete Neurale e Memoria...\033[0m\n")
+        sys.stdout.write(f"\n\033[96m[SYSTEM] {translator.t('boot_sync_msg')}\033[0m\n")
         for progresso in range(0, 101, 2):
             barra = grafica.crea_barra(progresso, larghezza=40, stile="cyber")
             sys.stdout.write(f"\r{barra}")
@@ -62,11 +78,14 @@ class ZentraApplication:
 
     def _show_welcome(self):
         """Mostra messaggio di benvenuto."""
-        self.state_manager.sistema_in_elaborazione = True
-        interfaccia.scrivi_zentra("Sistemi pronti. Connessione neurale stabilita, Admin.")
+        from core.audio import voce
+        self.state_manager.sistema_status = translator.t("speaking")
+        messaggio = self.config_manager.config.get("comportamento", {}).get("messaggio_benvenuto", translator.t("system_ready"))
+        interfaccia.scrivi_zentra(messaggio)
         if self.state_manager.stato_voce:
-            voce.parla("Sistemi pronti.")
+            voce.parla(translator.t("system_ready"))
         self.state_manager.sistema_in_elaborazione = False
+        self.state_manager.sistema_status = translator.t("ready")
 
     def _input_digitale_sicuro(self, messaggio):
         """Legge un input numerico o ESC senza bloccare."""
@@ -90,128 +109,6 @@ class ZentraApplication:
             time.sleep(0.05)
         return scelta
 
-    def _handle_f2(self, config):
-        """Gestione F2 - Selezione modelli con lettura automatica da Ollama."""
-        print(f"\n\n\033[96m[ GESTIONE MODELLI ]\033[0m")
-        
-        backend_type = config.get('backend', {}).get('tipo', 'ollama')
-        backend_config = config.get('backend', {}).get(backend_type, {})
-        
-        # Ottieni la lista dei modelli disponibili da Ollama
-        modelli_ollama = []
-        model_sizes = self._get_model_sizes()
-        
-        try:
-            import requests
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
-            if response.status_code == 200:
-                data = response.json()
-                modelli_ollama = [m.get('name') for m in data.get('models', []) if m.get('name')]
-        except Exception as e:
-            logger.debug("APP", f"Errore connessione a Ollama: {e}")
-            modelli_ollama = []
-        
-        if not modelli_ollama:
-            # Fallback: usa la lista dal config se Ollama non risponde
-            print(f"\033[93mOllama non raggiungibile. Uso lista locale...\033[0m")
-            modelli = backend_config.get('modelli_disponibili', {})
-            if not modelli:
-                print(f"\033[91mNessun modello configurato per il backend {backend_type}.\033[0m")
-                print(f"\033[93mVerifica che in config.json ci sia 'modelli_disponibili' dentro '{backend_type}'.\033[0m")
-                time.sleep(3)
-                return
-            modelli_ollama = [modelli[k] for k in sorted(modelli.keys(), key=int)]
-        
-        print(f"\033[96mBackend attuale: {backend_type.upper()}\033[0m")
-        print(f"\033[96mModelli disponibili ({len(modelli_ollama)}):\033[0m")
-        
-        attuale = backend_config.get('modello', '')
-        max_len = max([len(m) for m in modelli_ollama]) + 2
-        
-        for idx, model_name in enumerate(modelli_ollama, 1):
-            prefisso = "\033[92m>> " if model_name == attuale else "   "
-            size_info = model_sizes.get(model_name, "")
-            if size_info:
-                size_info = f" \033[90m[{size_info}]\033[0m"
-            
-            nome_formattato = model_name.ljust(max_len)
-            print(f" {prefisso}[{idx}] {nome_formattato}{size_info}\033[0m")
-        
-        print(f"\n\033[93mDigita il numero del modello da attivare (o ESC per annullare):\033[0m")
-        
-        scelta = ""
-        while True:
-            if msvcrt.kbhit():
-                char = msvcrt.getch()
-                if char == b'\x1b':
-                    scelta = "ESC"
-                    break
-                try:
-                    ch = char.decode('utf-8')
-                    if ch == '\r':
-                        break
-                    if ch.isdigit():
-                        scelta += ch
-                        sys.stdout.write(ch)
-                        sys.stdout.flush()
-                except:
-                    pass
-            time.sleep(0.05)
-        
-        if scelta and scelta != "ESC":
-            idx = int(scelta) - 1
-            if 0 <= idx < len(modelli_ollama):
-                nuovo_modello = modelli_ollama[idx]
-                self.config_manager.set(nuovo_modello, 'backend', backend_type, 'modello')
-                
-                # Opzionale: aggiorna anche la lista modelli_disponibili
-                modelli_dict = {str(i+1): name for i, name in enumerate(modelli_ollama)}
-                self.config_manager.set(modelli_dict, 'backend', backend_type, 'modelli_disponibili')
-                
-                self.config_manager.save()
-                print(f"\n\033[92m✅ Modello impostato: {nuovo_modello} (backend: {backend_type})\033[0m")
-                
-                if backend_type == 'kobold':
-                    print(f"\033[93mNota: Per KoboldCPP, assicurati che il file '{nuovo_modello}' sia nella cartella models e che KoboldCPP sia in esecuzione.\033[0m")
-            else:
-                print(f"\n\033[91mNumero non valido.\033[0m")
-            time.sleep(2)
-
-    def _handle_f3(self, config):
-        """Gestione F3 - Selezione personalità."""
-        anime_files = interfaccia.elenca_personalita()
-        
-        # Sincronizza config
-        if anime_files:
-            anime_dict = {str(i+1): name for i, name in enumerate(anime_files)}
-            self.config_manager.set(anime_dict, 'ia', 'personalita_disponibili')
-            self.config_manager.save()
-            
-        if not anime_files:
-            print(f"\n\033[91m[!] Nessun file .txt in /personalita!\033[0m")
-            time.sleep(1)
-        else:
-            print(f"\n\n\033[96m--- SELEZIONE ANIMA (PERSONALITÀ) ---\033[0m")
-            for i, nome_file in enumerate(anime_files, 1):
-                print(f" [{i}] {nome_file}")
-            
-            scelta = self._input_digitale_sicuro("Seleziona numero (o ESC per annullare): ")
-            if scelta == "ESC":
-                print(f"\033[93m[SISTEMA] Operazione annullata.\033[0m")
-                return
-                
-            if scelta.isdigit():
-                idx = int(scelta) - 1
-                if 0 <= idx < len(anime_files):
-                    nuova_p = anime_files[idx]
-                    self.config_manager.set(nuova_p, 'ia', 'personalita_attiva')
-                    self.config_manager.save()
-                    print(f"\033[92m[SISTEMA] Personalità aggiornata: {nuova_p}\033[0m")
-                    time.sleep(1)
-                else:
-                    print(f"\033[91m[ERRORE] Indice non valido.\033[0m")
-                    time.sleep(1)
-
     def _handle_function_key(self, key, config):
         """Gestisce i tasti funzione."""
         
@@ -219,10 +116,10 @@ class ZentraApplication:
             interfaccia.mostra_help()
             
         elif key == "F2":
-            self._handle_f2(config)
+            self.model_manager.handle_modelli(self._input_digitale_sicuro)
             
         elif key == "F3":
-            self._handle_f3(config)
+            self.personality_manager.handle_personalita(self._input_digitale_sicuro)
             
         elif key == "F4":
             self.state_manager.stato_ascolto = not self.state_manager.stato_ascolto
@@ -230,7 +127,7 @@ class ZentraApplication:
             self.config_manager.save()
             verb = "ON" if self.state_manager.stato_ascolto else "OFF"
             color = "\033[96m" if self.state_manager.stato_ascolto else "\033[91m"
-            print(f"\n{color}[SISTEMA] Ascolto: {verb}\033[0m")
+            print(f"\n{color}[SYSTEM] {translator.t('header_mic')}: {verb}\033[0m")
             time.sleep(0.5)
             
         elif key == "F5":
@@ -239,18 +136,19 @@ class ZentraApplication:
             self.config_manager.save()
             verb = "ON" if self.state_manager.stato_voce else "OFF"
             color = "\033[96m" if self.state_manager.stato_voce else "\033[91m"
-            print(f"\n{color}[SISTEMA] Voce: {verb}\033[0m")
+            print(f"\n{color}[SYSTEM] {translator.t('header_voice')}: {verb}\033[0m")
             time.sleep(0.5)
             
         elif key == "F6":
-            print(f"\n\033[91m[SISTEMA] REBOOT IN CORSO...\033[0m")
+            print(f"\n\033[91m[SYSTEM] {translator.t('rebooting_msg')}\033[0m")
+            # Chiudi la finestra dei log esterna se presente
+            logger.chiudi_console_log()
             time.sleep(1)
             sys.exit(42)
             
         elif key == "F7":
             editor = ConfigEditor()
             editor.run()
-            # Ricarica la configurazione dopo l'editor
             self.config_manager.reload()
             logger.init_logger(self.config_manager.config)
 
@@ -261,26 +159,31 @@ class ZentraApplication:
         config = self.config_manager.config
         prefisso = f"\n\033[91m# \033[0m"
         input_utente = ""
+        
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
 
         # UI iniziale
         interfaccia.mostra_ui_completa(
             config,
             self.state_manager.stato_voce,
             self.state_manager.stato_ascolto,
-            dashboard.get_backend_status()
+            self.state_manager.sistema_status
         )
 
         self._show_boot_animation()
         
+        self.state_manager.sistema_status = translator.t("ready")
         interfaccia.mostra_ui_completa(
             config,
             self.state_manager.stato_voce,
             self.state_manager.stato_ascolto,
-            dashboard.get_backend_status()
+            self.state_manager.sistema_status
         )
 
-        # Avvia aggiornamento in-place della riga hardware (no flickering)
-        ui_updater.avvia(self.config_manager, self.state_manager, dashboard)
+        if dashboard_mod:
+            ui_updater.avvia(self.config_manager, self.state_manager, dashboard_mod)
+        else:
+            ui_updater.ferma()
 
         self._show_welcome()
 
@@ -293,47 +196,51 @@ class ZentraApplication:
 
         # Loop principale
         while self.running:
-            # Gestione input vocale
+            # Gestione input vocale (Delegata a InputHandler)
             if (self.state_manager.comando_vocale_rilevato and 
                 not self.state_manager.sistema_in_elaborazione):
-                self._handle_voice_input(prefisso)
+                self.input_handler.handle_voice_input(prefisso)
 
-            # Gestione input tastiera
+            # Gestione input tastiera (Delegata a InputHandler)
             evento, input_utente = self.input_handler.handle_keyboard_input(prefisso, input_utente)
             
             if evento == "EXIT":
                 logger.info("[APP] Shutdown di emergenza.")
                 sys.exit(0)
             elif evento == "ESC_AGAIN":
-                print(f"\n\033[93m[SISTEMA] ESC di nuovo per uscire.\033[0m")
+                print(f"\n\033[93m[SYSTEM] {translator.t('esc_to_exit')}\033[0m")
             elif evento in ["F1", "F2", "F3", "F4", "F5", "F6", "F7"]:
-                # Sospendi UI updater per evitare corruzione grafica a schermo intero
                 menu_schermo_intero = ["F1", "F2", "F3", "F7"]
                 if evento in menu_schermo_intero:
                     ui_updater.ferma()
-                    time.sleep(0.1) # Assicura che si fermi il vecchio thread
+                    time.sleep(0.1)
                     
                 self._handle_function_key(evento, config)
                 
-                # Ricarica config nel caso sia stato modificato
+                # Ricarica config e ricollega plugin
                 config = self.config_manager.config
+                dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+                
                 if evento in ["F4", "F5"]:
                     interfaccia.aggiorna_barra_stato_in_place(
                         config,
                         self.state_manager.stato_voce,
                         self.state_manager.stato_ascolto,
-                        dashboard.get_backend_status()
+                        self.state_manager.sistema_status
                     )
                 else:
                     interfaccia.mostra_ui_completa(
                         config,
                         self.state_manager.stato_voce,
                         self.state_manager.stato_ascolto,
-                        dashboard.get_backend_status()
+                        self.state_manager.sistema_status
                     )
                 
                 if evento in menu_schermo_intero:
-                    ui_updater.avvia(self.config_manager, self.state_manager, dashboard)
+                    if dashboard_mod:
+                        ui_updater.avvia(self.config_manager, self.state_manager, dashboard_mod)
+                    else:
+                        ui_updater.ferma()
                     
                 sys.stdout.write(prefisso + input_utente)
                 sys.stdout.flush()
@@ -347,86 +254,6 @@ class ZentraApplication:
 
             time.sleep(0.01)
 
-    def _handle_voice_input(self, prefisso):
-        """Gestisce input vocale."""
-        if dashboard.get_backend_status() != "PRONTA":
-            print(f"\n\033[93m[SISTEMA] Backend non ancora pronto. Attendere...\033[0m")
-            self.state_manager.comando_vocale_rilevato = None
-            return
-
-        self.state_manager.sistema_in_elaborazione = True
-        testo_v = self.state_manager.comando_vocale_rilevato
-        self.state_manager.comando_vocale_rilevato = None
-
-        interfaccia.avvia_pensiero()
-        sys.stdout.write(f"\r{' ' * 80}\r")
-        print(f"{prefisso}\033[92mAdmin (Voce): {testo_v}\033[0m")
-        print(f"\033[93m[Premi ESC per interrompere]\033[0m")
-
-        stop_event = threading.Event()
-        risultato = [None, None]
-        errore = [None]
-
-        def esegui():
-            try:
-                rv, tv = processore.elabora_scambio(testo_v, self.state_manager.stato_voce)
-                risultato[0] = rv
-                risultato[1] = tv
-            except Exception as e:
-                errore[0] = e
-
-        thread = threading.Thread(target=esegui)
-        thread.start()
-
-        while thread.is_alive():
-            if msvcrt.kbhit() and msvcrt.getch() == b'\x1b':
-                stop_event.set()
-                break
-            time.sleep(0.1)
-
-        if stop_event.is_set():
-            interfaccia.ferma_pensiero()
-            print(f"\n\033[93m[SISTEMA] Richiesta annullata.\033[0m")
-            sys.stdout.write(prefisso)
-            sys.stdout.flush()
-            self.state_manager.sistema_in_elaborazione = False
-            return
-
-        thread.join()
-        interfaccia.ferma_pensiero()
-
-        if errore[0]:
-            logger.errore(f"[APP] Errore ciclo vocale: {errore[0]}")
-        else:
-            risposta_video, testo_voce_pulito = risultato
-            brain_interface.salva_messaggio("user", testo_v)
-            brain_interface.salva_messaggio("assistant", risposta_video)
-            interfaccia.scrivi_zentra(risposta_video)
-            if self.state_manager.stato_voce and testo_voce_pulito:
-                voce.parla(testo_voce_pulito)
-
-        sys.stdout.write(prefisso)
-        sys.stdout.flush()
-        self.state_manager.sistema_in_elaborazione = False
-        
-    def _get_model_sizes(self):
-        """Recupera le dimensioni dei modelli da Ollama."""
-        model_sizes = {}
-        try:
-            import requests
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
-            if response.status_code == 200:
-                data = response.json()
-                for model in data.get('models', []):
-                    name = model.get('name')
-                    size = model.get('size', 0)
-                    if size > 1024**3:
-                        size_str = f"{size/(1024**3):.1f} GB"
-                    elif size > 1024**2:
-                        size_str = f"{size/(1024**2):.1f} MB"
-                    else:
-                        size_str = f"{size/1024:.0f} KB"
-                    model_sizes[name] = size_str
-        except Exception as e:
-            logger.debug("APP", f"Impossibile recuperare dimensioni modelli: {e}")
-        return model_sizes
+if __name__ == "__main__":
+    app = ZentraApplication()
+    app.run()

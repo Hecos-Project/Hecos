@@ -1,11 +1,12 @@
 # ============================================================
-# ZENTRA CORE v0.9.3 - REQUISITI COMPLETI
+# ZENTRA CORE v0.9.5 - REQUISITI COMPLETI
 # ============================================================
 
 # ------------------------------
 # CORE AI E BACKEND
 # ------------------------------
 ollama                      # Interfaccia con Ollama
+litellm                     # Supporto multi-provider (OpenAI, Anthropic, ecc.)
 requests>=2.31.0            # Chiamate HTTP
 aiohttp>=3.9.0              # Supporto asincrono (opzionale)
 

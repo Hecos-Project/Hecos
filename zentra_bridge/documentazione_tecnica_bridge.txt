@@ -28,7 +28,7 @@ Quando viene chiamato il metodo .chat(user_input), il Bridge esegue questi step:
    (Ollama o KoboldCPP) usando il modulo 'cervello'.
 
 3. [ESECUZIONE PLUGIN]: Passa la risposta dell'IA al 'processore'. Se l'IA ha 
-   inserito dei tag (es: [SISTEMA: ora]), il processore esegue il codice Python 
+   inserito dei tag (es: [SYSTEM: ora]), il processore esegue il codice Python 
    corrispondente e pulisce il testo.
 
 4. [MEMORIA]: Salva automaticamente lo scambio nel database SQLite (Caveau) 

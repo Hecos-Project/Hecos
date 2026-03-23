@@ -12,6 +12,7 @@ import importlib.util
 from core.llm import cervello
 from core.processing import filtri
 from core.logging import logger
+from core.i18n import translator
 
 # Colori per i log a video
 GIALLO = '\033[93m'
@@ -27,14 +28,14 @@ BLACKLIST = ["titolo", "anima", "regole", "database", "status", "tag"]
 
 # Mappatura per tag generici al modulo corretto
 TAG_MAPPING = {
-    "terminale": "sistema",
-    "cmd": "sistema",
-    "istruzione": "sistema",
-    "apri": "sistema",
-    "notepad": "sistema",
-    "chrome": "sistema",
-    "visual studio": "sistema",
-    "sillytavern": "sistema",
+    "terminale": "system",
+    "cmd": "system",
+    "istruzione": "system",
+    "apri": "system",
+    "notepad": "system",
+    "chrome": "system",
+    "visual studio": "system",
+    "sillytavern": "system",
     "desktop": "file_manager",
     "download": "file_manager",
     "documenti": "file_manager",
@@ -144,7 +145,7 @@ def elabora_scambio(testo_utente, stato_voce):
         
         if plugin_module and hasattr(plugin_module, "esegui"):
             logger.debug("PROCESSORE", f"Plugin {modulo_da_chiamare} ha funzione esegui, chiamo con azione: '{azione}'")
-            print(f"{GIALLO}[SISTEMA] Esecuzione Modulo: {modulo_da_chiamare.upper()}{RESET}")
+            print(f"{GIALLO}[SYSTEM] {translator.t('executing_module', module=modulo_da_chiamare.upper())}{RESET}")
             
             try:
                 esito = plugin_module.esegui(azione)
@@ -172,16 +173,11 @@ def elabora_scambio(testo_utente, stato_voce):
         if re.search(r'\[.*?\]', risposta_grezza):
             # C'erano tag, quindi probabilmente è stato eseguito un comando
             logger.debug("PROCESSORE", "Risposta conteneva solo tag, comando eseguito")
-            risposta_video = "✅ Comando eseguito."
+            risposta_video = translator.t('command_executed')
         else:
             # Nessun tag e nessuna risposta - problema col modello
             logger.warning("PROCESSORE", "Ricevuta risposta completamente vuota dal modello")
-            risposta_video = (
-                "❌ Il modello non ha prodotto alcuna risposta. Possibili cause:\n"
-                "- Modello non ancora caricato (aspetta qualche secondo)\n"
-                "- Modello troppo pesante per la GPU\n"
-                "- Problema di configurazione"
-            )
+            risposta_video = translator.t('model_no_response_error')
     
     logger.debug("PROCESSORE", f"Risposta video finale: {len(risposta_video)} caratteri")
 

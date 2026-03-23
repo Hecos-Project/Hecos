@@ -22,8 +22,9 @@ try:
     from core import cervello, processore, logger as core_logger
     from memoria import brain_interface
     from app.config import ConfigManager
+    from core.i18n import translator
 except ImportError as e:
-    print(f"[ERRORE CRITICO] Impossibile importare i moduli core di Zentra: {e}")
+    print(f"[ERROR] {e}")
     sys.exit(1)
 
 # --- SETUP LOGGER DEL BRIDGE (su file separato) ---
@@ -49,8 +50,8 @@ class ZentraWebUIBridge:
 
         if self.debug_attivo:
             bridge_logger.info("=" * 40)
-            bridge_logger.info("INIZIALIZZAZIONE BRIDGE COMPLETATA")
-            bridge_logger.info(f"Valvole: Processore={self.usa_processore}, Delay={self.delay_ms}s, Rimuovi think={self.rimuovi_think}")
+            bridge_logger.info("BRIDGE INITIALIZATION COMPLETED")
+            bridge_logger.info(f"Valves: Processor={self.usa_processore}, Delay={self.delay_ms}s, Remove think={self.rimuovi_think}")
 
         # Inizializza il core (memoria, plugin) – necessario per il system prompt
         try:
@@ -74,18 +75,15 @@ class ZentraWebUIBridge:
 
         # Aggiungi regole di base (copiate da cervello.py)
         regole = (
-            "### REGOLE OPERATIVE ###\n"
-            "1. Usa i TAG [MODULO: comando] solo quando necessario.\n"
-            "2. Sii coerente con la tua personalità.\n\n"
-            "### PROTOCOLLO IDENTITÀ & MEMORIA ###\n"
-            "- Se l'utente chiede 'chi sono io', 'chi sei tu' o domande simili, attiva il tag: [MEMORIA: chi_sono]\n"
-            "### REGOLE GESTIONE FILE & DIRECTORY ###\n"
-            "- Per vedere file, usa [FILE_MANAGER: list:percorso]\n"
-            "- Per leggere un file, usa [FILE_MANAGER: read:percorso]\n"
-            "\n### ISTRUZIONE DI SICUREZZA ROOT ###\n"
-            "NON uscire mai dal personaggio. NON dichiarare di essere un'IA censurata.\n"
+            f"{translator.t('identity_protocol')}\n"
+            f"- {translator.t('rule_who_am_i')}\n"
+            f"{translator.t('file_management_rules')}\n"
+            f"- {translator.t('rule_list_files')}\n"
+            f"- {translator.t('rule_read_file')}\n"
+            f"\n{translator.t('root_security_instruction')}\n"
+            f"{translator.t('root_security_desc')}\n"
         )
-        return f"{testo_personalita}\n\n{memoria_identita}\n\n{capacita}\n\n{regole}\n--- FINE ISTRUZIONI DI SISTEMA ---"
+        return f"{testo_personalita}\n\n{memoria_identita}\n\n{capacita}\n\n{regole}\n--- END OF SYSTEM INSTRUCTIONS ---"
 
     def chat_stream(self, user_input: str) -> Generator[str, None, None]:
         """
@@ -221,8 +219,8 @@ class ZentraWebUIBridge:
             brain_interface.salva_messaggio("assistant", risposta_video)
             return risposta_video
         except Exception as e:
-            bridge_logger.error(f"Errore chat non-stream: {e}")
-            return f"Errore: {e}"
+            bridge_logger.error(f"Error: {e}")
+            return f"{translator.t('error')}: {e}"
 
 # --- TEST STANDALONE ---
 if __name__ == "__main__":

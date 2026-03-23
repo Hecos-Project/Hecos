@@ -1,88 +1,136 @@
-"""
-Definizione dei parametri modificabili e delle loro caratteristiche.
-"""
+import os
+import glob
+from core.i18n import translator
 
 class Parameter:
     """
     Rappresenta un parametro di configurazione con metadati per l'editor.
     """
     def __init__(self, section, key, label, param_type, **kwargs):
-        self.section = section
-        self.key = key
-        self.label = label
-        self.type = param_type  # 'int', 'float', 'bool', 'str', 'command'
+        self.section = section          # 'backend', 'voce', 'ascolto', 'filtri', 'logging', 'plugin'
+        self.key = key                  # nome nel config.json
+        self.label = label              # nome visualizzato
+        self.type = param_type          # 'int', 'float', 'bool', 'str', 'command'
         self.min = kwargs.get('min')
         self.max = kwargs.get('max')
         self.step = kwargs.get('step')
-        self.options = kwargs.get('options')  # per stringhe con scelta
-        self.command = kwargs.get('command')  # per comandi speciali
+        self.options = kwargs.get('options')    # per stringhe con scelta
+        self.command = kwargs.get('command')    # per comandi speciali
+        self.plugin_tag = kwargs.get('plugin_tag')  # se section == 'plugin', indica il tag del plugin
 
 def build_parameter_list(config):
     """
-    Costruisce la lista di parametri a partire dalla configurazione corrente.
+    Costruisce la lista di parametri a partire dalla configurazione corrente,
+    includendo anche i plugin attivi.
     """
     params = []
 
-    # Backend e Modelli
+    # --- Backend e Modelli (esistenti) ---
     backend_type = config.get('backend', {}).get('tipo', 'ollama')
     backend_config = config.get('backend', {}).get(backend_type, {})
     
     # Modello attivo (dal backend)
+    lbl_modello = translator.t("label_active_model")
     if 'modelli_disponibili' in backend_config:
         models = list(backend_config['modelli_disponibili'].values())
-        params.append(Parameter('backend', backend_type, 'Modello attivo', 'str', options=models))
+        params.append(Parameter('backend', 'modello', lbl_modello, 'str', options=models))
     else:
-        params.append(Parameter('backend', backend_type, 'Modello attivo', 'str'))
+        params.append(Parameter('backend', 'modello', lbl_modello, 'str'))
+    
+    # --- Sezione LLM ---
+    params.append(Parameter('llm', 'allow_cloud', translator.t("label_llm_allow_cloud", default="Cloud"), 'bool'))
+    params.append(Parameter('llm', 'debug_llm', "Debug LiteLLM (Console)", 'bool'))
+    
+    # --- API Keys Cloud ---
+    if config.get('llm', {}).get('allow_cloud', False):
+        params.append(Parameter('llm_openai', 'api_key', 'OpenAI API Key', 'str'))
+        params.append(Parameter('llm_anthropic', 'api_key', 'Anthropic API Key', 'str'))
+        params.append(Parameter('llm_groq', 'api_key', 'Groq API Key', 'str'))
+        params.append(Parameter('llm_gemini', 'api_key', 'Gemini API Key', 'str'))
     
     # Parametri del backend
-    params.append(Parameter('backend', backend_type, 'Temperatura', 'float', 
+    params.append(Parameter('backend', 'temperature', translator.t("label_temperature"), 'float', 
                            min=0.0, max=2.0, step=0.1))
-    params.append(Parameter('backend', backend_type, 'Num predict', 'int', 
+    params.append(Parameter('backend', 'num_predict', translator.t("label_num_predict"), 'int', 
                            min=100, max=2000, step=50))
-    params.append(Parameter('backend', backend_type, 'Contesto (ctx)', 'int', 
+    params.append(Parameter('backend', 'num_ctx', translator.t("label_num_ctx"), 'int', 
                            min=512, max=16384, step=512))
-    params.append(Parameter('backend', backend_type, 'Layer GPU', 'int', 
+    params.append(Parameter('backend', 'num_gpu', translator.t("label_num_gpu"), 'int', 
                            min=0, max=99, step=1))
     
     # --- SEZIONE VOCE (PIPER ENGINE) ---
     voce_conf = config.get('voce', {})
     
-    # Velocità (Length Scale inversa)
-    params.append(Parameter('voce', 'speed', 'Velocità Voce', 'float', 
+    try:
+        piper_path_dir = r"C:\piper"
+        onnx_files = [os.path.basename(f) for f in glob.glob(os.path.join(piper_path_dir, "*.onnx"))]
+        if not onnx_files: onnx_files = ["en_US-lessac-medium.onnx"]
+        percorsi_onnx = [os.path.join(piper_path_dir, f) for f in onnx_files]
+    except Exception:
+        percorsi_onnx = [r"C:\piper\en_US-lessac-medium.onnx"]
+        
+    params.append(Parameter('voce', 'modello_onnx', translator.t("label_modello_voce", default="Modello Vocale"), 'str', options=percorsi_onnx))
+    
+    params.append(Parameter('voce', 'speed', translator.t("label_speed"), 'float', 
                            min=0.5, max=2.5, step=0.1))
-    
-    # Intonazione (Noise Scale) - Rende la voce più "emotiva" o più "robotica"
-    params.append(Parameter('voce', 'noise_scale', 'Variabilità Tono', 'float', 
+    params.append(Parameter('voce', 'noise_scale', translator.t("label_noise_scale"), 'float', 
                            min=0.0, max=1.0, step=0.05))
-    
-    # Fluidità (Noise W) - Controlla la naturalezza dei legami tra fonemi
-    params.append(Parameter('voce', 'noise_w', 'Fluidità Fonemi', 'float', 
+    params.append(Parameter('voce', 'noise_w', translator.t("label_noise_w"), 'float', 
                            min=0.0, max=1.0, step=0.05))
-    
-    # Pausa tra frasi
-    params.append(Parameter('voce', 'sentence_silence', 'Pausa Frasi (sec)', 'float', 
+    params.append(Parameter('voce', 'sentence_silence', translator.t("label_sentence_silence"), 'float', 
                            min=0.0, max=3.0, step=0.1))
 
-    # Ascolto
+    # --- Ascolto ---
     ascolto = config.get('ascolto', {})
-    params.append(Parameter('ascolto', 'soglia_energia', 'Soglia energia', 'int', 
+    params.append(Parameter('ascolto', 'soglia_energia', translator.t("label_soglia_energia"), 'int', 
                            min=100, max=1000, step=50))
-    params.append(Parameter('ascolto', 'timeout_silenzio', 'Timeout silenzio (s)', 'int', 
+    params.append(Parameter('ascolto', 'timeout_silenzio', translator.t("label_timeout_silenzio"), 'int', 
                            min=1, max=10, step=1))
 
-    # Filtri
+    # --- Filtri ---
     filtri = config.get('filtri', {})
-    params.append(Parameter('filtri', 'rimuovi_asterischi', 'Rimuovi asterischi', 'bool'))
-    params.append(Parameter('filtri', 'rimuovi_parentesi_tonde', 'Rimuovi parentesi tonde', 'bool'))
-    params.append(Parameter('filtri', 'rimuovi_parentesi_quadre', 'Rimuovi parentesi quadre', 'bool'))
+    params.append(Parameter('filtri', 'rimuovi_asterischi', translator.t("label_rimuovi_asterischi"), 'bool'))
+    params.append(Parameter('filtri', 'rimuovi_parentesi_tonde', translator.t("label_rimuovi_parentesi_tonde"), 'bool'))
+    params.append(Parameter('filtri', 'rimuovi_parentesi_quadre', translator.t("label_rimuovi_parentesi_quadre"), 'bool'))
 
-    # Logging
+    # --- Logging ---
     logging_cfg = config.get('logging', {})
-    params.append(Parameter('logging', 'destinazione', 'Destinazione Log', 'str', options=['chat', 'console']))
-    params.append(Parameter('logging', 'tipo_messaggi', 'Tipo Messaggi', 'str', options=['info', 'debug', 'entrambi']))
+    params.append(Parameter('logging', 'destinazione', translator.t("label_destinazione_log"), 'str', options=['chat', 'console', 'file_only']))
+    params.append(Parameter('logging', 'tipo_messaggi', translator.t("label_tipo_messaggi"), 'str', options=['info', 'debug', 'entrambi']))
 
-    # --- COMANDI SPECIALI ---
-    params.append(Parameter('system', 'reboot', 'RIAVVIA ZENTRA', 'command', 
-                           command='reboot', options=None))
+    # --- Comando speciale RIAVVIA ---
+    params.append(Parameter('system', 'reboot', translator.t("label_reboot"), 'command', 
+                           command='reboot'))
+    params.append(Parameter('system', 'lingua', translator.t("label_lingua_sistema"), 'str', options=['it', 'en']))
+
+    # --- PLUGINS (dinamici) ---
+    plugins_section = config.get('plugins', {})
+    for plugin_tag, plugin_cfg in plugins_section.items():
+        # Per ogni chiave il cui valore è un tipo semplice, creiamo un parametro
+        for key, value in plugin_cfg.items():
+            # Ignora dizionari e liste (non modificabili dall'editor)
+            if isinstance(value, (dict, list)):
+                continue
+            # Determina il tipo
+            if isinstance(value, bool):
+                param_type = 'bool'
+            elif isinstance(value, int):
+                param_type = 'int'
+            elif isinstance(value, float):
+                param_type = 'float'
+            else:
+                param_type = 'str'
+            # Crea una label leggibile
+            label = translator.t(f"plugin_{plugin_tag.lower()}_{key}_desc", default=key.replace('_', ' ').capitalize())
+            # Aggiungi il parametro con sezione 'plugin' e plugin_tag
+            params.append(Parameter(
+                section='plugin',
+                key=key,
+                label=label,
+                param_type=param_type,
+                plugin_tag=plugin_tag,
+                # eventualmente min/max/step potrebbero essere letti dallo schema,
+                # ma per ora li omettiamo e lasciamo la modifica libera
+            ))
 
     return params

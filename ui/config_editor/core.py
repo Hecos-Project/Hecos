@@ -29,14 +29,30 @@ class ConfigEditor:
             raise
 
     def _save_config(self):
-        """Salva il file JSON se ci sono modifiche."""
+        """Salva il file JSON se ci sono modifiche e aggiorna il traduttore."""
         if self.modified:
             try:
+                # Controlla cambio lingua prima del salvataggio
+                vecchia_lingua = None
+                if os.path.exists(self.config_path):
+                    try:
+                        with open(self.config_path, 'r', encoding='utf-8') as f:
+                            old_data = json.load(f)
+                            vecchia_lingua = old_data.get("lingua")
+                    except: pass
+
                 with open(self.config_path, 'w', encoding='utf-8') as f:
                     json.dump(self.config, f, indent=4, ensure_ascii=False)
-                print("\n✅ Configurazione salvata.")
+                
+                # Sincronizza il traduttore se la lingua è cambiata
+                nuova_lingua = self.config.get("lingua")
+                if nuova_lingua and nuova_lingua != vecchia_lingua:
+                    from core.i18n import translator
+                    translator.get_translator().set_language(nuova_lingua)
+                
+                print(f"\n{translator.t('config_saved_success')}")
             except Exception as e:
-                print(f"\n❌ Errore salvataggio: {e}")
+                print(f"\n{translator.t('config_save_error', error=str(e))}")
 
     def _get_value(self, param):
         """Restituisce il valore di un parametro dal config corrente."""
@@ -45,26 +61,8 @@ class ConfigEditor:
             backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
             backend_config = self.config.get('backend', {}).get(backend_type, {})
             
-            # Mappa le label ai nomi delle chiavi nel config
-            key_mapping = {
-                'Modello attivo': 'modello',
-                'Temperatura': 'temperature',
-                'Num predict': 'num_predict',
-                'Contesto (ctx)': 'num_ctx',
-                'Layer GPU': 'num_gpu',
-                'Velocità voce': 'speed',
-                'Tono voce': 'pitch',
-                'Soglia energia': 'soglia_energia',
-                'Timeout silenzio (s)': 'timeout_silenzio',
-                'Rimuovi asterischi': 'rimuovi_asterischi',
-                'Rimuovi parentesi tonde': 'rimuovi_parentesi_tonde',
-                'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
-                'Destinazione Log': 'destinazione',
-                'Tipo Messaggi': 'tipo_messaggi',
-            }
-            
-            # Trova la chiave corrispondente
-            key = key_mapping.get(param.label, param.key)
+            # La chiave è già presente in param.key grazie alla nuova build_parameter_list
+            key = param.key
             
             # Gestisci i diversi tipi di sezioni
             if param.section == 'backend':
@@ -77,6 +75,18 @@ class ConfigEditor:
                 return self.config.get('filtri', {}).get(key)
             elif param.section == 'logging':
                 return self.config.get('logging', {}).get(key)
+            elif param.section == 'system':
+                return self.config.get(key)
+            elif param.section == 'llm':
+                return self.config.get('llm', {}).get(key)
+            elif param.section.startswith('llm_'):
+                provider = param.section.split('_')[1]
+                return self.config.get('llm', {}).get('providers', {}).get(provider, {}).get(key)
+            elif param.section == 'plugin':
+                # Sezione plugin: accedi a config['plugins'][param.plugin_tag][key]
+                plugins = self.config.get('plugins', {})
+                plugin_cfg = plugins.get(param.plugin_tag, {})
+                return plugin_cfg.get(key)
             else:
                 return None
         except Exception as e:
@@ -89,26 +99,8 @@ class ConfigEditor:
             # Determina il backend attivo
             backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
             
-            # Mappa le label ai nomi delle chiavi nel config
-            key_mapping = {
-                'Modello attivo': 'modello',
-                'Temperatura': 'temperature',
-                'Num predict': 'num_predict',
-                'Contesto (ctx)': 'num_ctx',
-                'Layer GPU': 'num_gpu',
-                'Velocità voce': 'speed',
-                'Tono voce': 'pitch',
-                'Soglia energia': 'soglia_energia',
-                'Timeout silenzio (s)': 'timeout_silenzio',
-                'Rimuovi asterischi': 'rimuovi_asterischi',
-                'Rimuovi parentesi tonde': 'rimuovi_parentesi_tonde',
-                'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
-                'Destinazione Log': 'destinazione',
-                'Tipo Messaggi': 'tipo_messaggi',
-            }
-            
-            # Trova la chiave corrispondente
-            key = key_mapping.get(param.label, param.key)
+            # Uso diretto di param.key
+            key = param.key
             
             # Gestisci i diversi tipi di sezioni
             if param.section == 'backend':
@@ -146,6 +138,38 @@ class ConfigEditor:
                 if old != value:
                     self.config['logging'][key] = value
                     self.modified = True
+            elif param.section == 'system':
+                old = self.config.get(key)
+                if old != value:
+                    self.config[key] = value
+                    self.modified = True
+            elif param.section == 'llm':
+                if 'llm' not in self.config:
+                    self.config['llm'] = {}
+                old = self.config['llm'].get(key)
+                if old != value:
+                    self.config['llm'][key] = value
+                    self.modified = True
+            elif param.section.startswith('llm_'):
+                provider = param.section.split('_')[1]
+                if 'llm' not in self.config: self.config['llm'] = {}
+                if 'providers' not in self.config['llm']: self.config['llm']['providers'] = {}
+                if provider not in self.config['llm']['providers']: self.config['llm']['providers'][provider] = {}
+                
+                old = self.config['llm']['providers'][provider].get(key)
+                if old != value:
+                    self.config['llm']['providers'][provider][key] = value
+                    self.modified = True
+            elif param.section == 'plugin':
+                # Sezione plugin: aggiorna config['plugins'][param.plugin_tag][key]
+                if 'plugins' not in self.config:
+                    self.config['plugins'] = {}
+                if param.plugin_tag not in self.config['plugins']:
+                    self.config['plugins'][param.plugin_tag] = {}
+                old = self.config['plugins'][param.plugin_tag].get(key)
+                if old != value:
+                    self.config['plugins'][param.plugin_tag][key] = value
+                    self.modified = True
         except Exception as e:
             print(f"Errore in _set_value per {param.label}: {e}")
 
@@ -162,7 +186,7 @@ class ConfigEditor:
                 # Salva le modifiche e segnala il reboot
                 if self.modified:
                     self._save_config()
-                print("\n\033[91mRIavvio di Zentra in corso...\033[0m")
+                print(f"\n\033[91m{translator.t('rebooting_msg')}\033[0m")
                 import sys
                 sys.exit(42)  # Codice speciale per il reboot
         finally:

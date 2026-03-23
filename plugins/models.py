@@ -1,20 +1,21 @@
 import json
 import os
 from core.logging import logger
+from core.i18n import translator
 
 def info():
     return {
         "tag": "MODELS",
-        "desc": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
+        "desc": translator.t("plugin_models_desc"),
         "comandi": {
-            "set:numero": "Cambia il modello attivo usando il numero della lista (es: set:7).",
-            "lista": "Mostra i modelli disponibili per il backend attuale.",
-            "backend": "Mostra il backend attualmente in uso."
+            "set:numero": translator.t("plugin_models_set_desc"),
+            "lista": translator.t("plugin_models_lista_desc"),
+            "backend": translator.t("plugin_models_backend_desc")
         }
     }
 
 def status():
-    return "ONLINE (Gestione modelli)"
+    return translator.t("plugin_models_status_online")
 
 def esegui(comando):
     try:

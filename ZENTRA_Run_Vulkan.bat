@@ -1,6 +1,6 @@
 @echo off
 title Avvio Ollama con Accelerazione GPU (Vulkan)
-cd /d "C:\ZentraCore"
+cd /d "%~dp0"
 
 echo Impostazione variabili d'ambiente...
 set OLLAMA_VULKAN=1
@@ -13,7 +13,7 @@ timeout /t 1
 
 :avvio_zentra
 echo Avvio di Zentra...
-python main.py
-if %ERRORLEVEL% equ 42 goto avvio_zentra
+python monitor.py
+goto :eof
 
 pause

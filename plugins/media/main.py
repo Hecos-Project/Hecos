@@ -2,27 +2,43 @@ import ctypes
 import re
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
+from core.logging import logger
+from core.i18n import translator
 
 def info():
     return {
         "tag": "MEDIA",
-        "desc": "Controllo hardware volume e mute.",
+        "desc": translator.t("plugin_media_desc"),
         "comandi": {
-            "vol:0-100": "Regola volume master.",
-            "mute:on/off": "Attiva o disattiva il silenzio."
+            "vol:0-100": translator.t("plugin_media_vol_desc"),
+            "mute:on/off": translator.t("plugin_media_mute_desc")
         }
     }
+
+def status():
+    """Stato del plugin."""
+    return "ONLINE"
+
+def config_schema():
+    """
+    Schema di configurazione per questo plugin.
+    Attualmente non ci sono parametri configurabili, ma la funzione è presente
+    per coerenza con la nuova architettura.
+    """
+    return {}
 
 def get_volume_control():
     """Ottiene il controllo volume usando il metodo più compatibile possibile."""
     try:
         devices = AudioUtilities.GetSpeakers()
-        # GUID specifico per IAudioEndpointVolume (evita errori di attributo)
-        interface = devices.Activate(
-            IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        if not devices:
+            return None
+        # Attivazione dell'interfaccia via IID standard
+        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+        # Casting esplicito utilizzando QueryInterface per evitare AttributeError
         return ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
     except Exception as e:
-        print(f"DEBUG AUDIO ERROR: {e}")
+        logger.errore(f"MEDIA: Errore accesso audio: {e}")
         return None
 
 def esegui(comando):
@@ -51,4 +67,5 @@ def esegui(comando):
 
         return "Comando media non riconosciuto."
     except Exception as e:
+        logger.errore(f"MEDIA: Errore esecuzione comando: {e}")
         return f"Errore interno MEDIA: {str(e)}"

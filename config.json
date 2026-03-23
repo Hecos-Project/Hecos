@@ -1,6 +1,51 @@
 {
+    "lingua": "en",
+    "llm": {
+        "allow_cloud": true,
+        "debug_llm": true,
+        "providers": {
+            "openai": {
+                "api_key": "",
+                "modelli": [
+                    "openai/gpt-4o",
+                    "openai/gpt-4o-mini",
+                    "openai/gpt-3.5-turbo"
+                ]
+            },
+            "anthropic": {
+                "api_key": "",
+                "modelli": [
+                    "anthropic/claude-3-5-sonnet-20240620",
+                    "anthropic/claude-3-opus-20240229"
+                ]
+            },
+            "groq": {
+                "api_key": "",
+                "modelli": [
+                    "groq/llama-3.1-70b-versatile",
+                    "groq/mixtral-8x7b-32768"
+                ]
+            },
+            "gemini": {
+                "api_key": "",
+                "modelli": [
+                    "gemini/gemini-3.1-flash-lite-preview",
+                    "gemini/gemini-3-flash-preview",
+                    "gemini/gemini-2.0-flash",
+                    "gemini/gemini-1.5-flash-latest",
+                    "gemini/gemini-1.5-pro-latest",
+                    "gemini/gemini-1.5-flash",
+                    "gemini/gemini-1.5-pro"
+                ]
+            }
+        }
+    },
     "backend": {
-        "tipo": "ollama",
+        "tipo": "cloud",
+        "cloud": {
+            "modello": "groq/qwen/qwen3-32b",
+            "temperature": 0.7
+        },
         "ollama": {
             "modello": "qwen2.5:1.5b-instruct-q4_K_M",
             "temperature": 0.3,
@@ -43,7 +88,7 @@
         }
     },
     "voce": {
-        "modello_onnx": "C:\\piper\\it_IT-paola-medium.onnx",
+        "modello_onnx": "C:\\piper\\en_US-lessac-medium.onnx",
         "piper_path": "C:\\piper\\piper.exe",
         "speed": 1.2,
         "noise_scale": 0.817,
@@ -55,7 +100,7 @@
         "soglia_energia": 450,
         "timeout_silenzio": 5,
         "limite_frase": 15,
-        "stato_ascolto": false
+        "stato_ascolto": true
     },
     "filtri": {
         "rimuovi_asterischi": true,
@@ -85,5 +130,67 @@
         "livello": "INFO",
         "destinazione": "console",
         "tipo_messaggi": "entrambi"
+    },
+    "plugins": {
+        "DASHBOARD": {
+            "monitor_interval": 2,
+            "backend_timeout": 0.5,
+            "enabled": true
+        },
+        "FILE_MANAGER": {
+            "max_read_lines": 50,
+            "max_list_items": 5,
+            "enable_path_mapping": true,
+            "enabled": true
+        },
+        "HELP": {
+            "show_disabled": false,
+            "enabled": true
+        },
+        "MEDIA": {
+            "enabled": true
+        },
+        "ROLEPLAY": {
+            "characters_dir": "plugins\\roleplay\\characters",
+            "scenes_dir": "plugins\\roleplay\\scenes",
+            "default_character": "",
+            "default_scene": "",
+            "enabled": true
+        },
+        "SYSTEM": {
+            "programs": {
+                "notepad": "notepad.exe",
+                "chrome": "chrome.exe",
+                "visual studio": "C:\\Program Files\\Microsoft VS Code\\Code.exe",
+                "sillytavern": "C:\\SillyTavern\\SillyTavern\\Start.bat"
+            },
+            "explorer_mappings": {
+                "desktop": "C:\\Users\\Asus\\Desktop",
+                "download": "C:\\Users\\Asus\\Downloads",
+                "documenti": "C:\\Users\\Asus\\Documents",
+                "core": "core",
+                "plugins": "plugins",
+                "memoria": "memoria",
+                "personalita": "personalita",
+                "logs": "logs"
+            },
+            "shell_command_whitelist": [],
+            "enable_config_set": true,
+            "shell_command_timeout": 15,
+            "enabled": true
+        },
+        "WEB": {
+            "search_engine": "google",
+            "use_https": true,
+            "open_in_new_tab": false,
+            "enabled": true
+        },
+        "WEBCAM": {
+            "save_directory": "scatti",
+            "image_format": "jpg",
+            "camera_index": 0,
+            "stabilization_delay": 0.5,
+            "enabled": true
+        }
     }
 }

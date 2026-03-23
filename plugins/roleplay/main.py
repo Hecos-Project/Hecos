@@ -6,6 +6,8 @@ Permette di interpretare personaggi in scenari di gioco di ruolo.
 import json
 import os
 from core.logging import logger
+from core.i18n import translator
+from app.config import ConfigManager   # <--- per leggere configurazione
 
 # Stato interno
 _active_character = None
@@ -13,28 +15,75 @@ _active_character_prompt = None
 _active_scene = None
 _active_scene_prompt = None
 
-_characters_dir = os.path.join(os.path.dirname(__file__), "characters")
-_scenes_dir = os.path.join(os.path.dirname(__file__), "scenes")
+# Directory predefinite (possono essere sovrascritte dalla configurazione)
+_DEFAULT_CHARACTERS_DIR = os.path.join(os.path.dirname(__file__), "characters")
+_DEFAULT_SCENES_DIR = os.path.join(os.path.dirname(__file__), "scenes")
 
 def info():
     return {
         "tag": "ROLEPLAY",
-        "desc": "Gestisce modalità roleplay: carica personaggi e scene per conversazioni immersive.",
+        "desc": translator.t("plugin_roleplay_desc"),
         "comandi": {
-            "list": "Elenca i personaggi disponibili.",
-            "load: nome": "Carica il personaggio specificato (es. load: wizard).",
-            "unload": "Disattiva il roleplay e torna alla personalità normale.",
-            "scene: list": "Elenca le scene disponibili.",
-            "scene: load: nome": "Carica una scena (aggiunge contesto).",
-            "scene: unload": "Rimuove la scena corrente.",
-            "reset": "Resetta il personaggio e la scena."
+            "list": translator.t("plugin_roleplay_list_desc"),
+            "load:nome": translator.t("plugin_roleplay_load_desc"),
+            "unload": translator.t("plugin_roleplay_unload_desc"),
+            "scene:list": translator.t("plugin_roleplay_scene_list_desc"),
+            "scene:load:nome": translator.t("plugin_roleplay_scene_load_desc"),
+            "scene:unload": translator.t("plugin_roleplay_scene_unload_desc"),
+            "reset": translator.t("plugin_roleplay_reset_desc")
         }
     }
 
 def status():
     if _active_character:
-        return f"ONLINE (Personaggio: {_active_character})"
-    return "ONLINE (Pronto)"
+        return translator.t("plugin_roleplay_status_active", name=_active_character)
+    return translator.t("plugin_roleplay_status_online")
+
+def config_schema():
+    """
+    Schema di configurazione per il plugin.
+    I valori qui definiti verranno aggiunti automaticamente in config.json
+    nella sezione plugins.ROLEPLAY.
+    """
+    return {
+        "characters_dir": {
+            "type": "str",
+            "default": _DEFAULT_CHARACTERS_DIR,
+            "description": translator.t("plugin_roleplay_chars_dir_desc")
+        },
+        "scenes_dir": {
+            "type": "str",
+            "default": _DEFAULT_SCENES_DIR,
+            "description": translator.t("plugin_roleplay_scenes_dir_desc")
+        },
+        "default_character": {
+            "type": "str",
+            "default": "",
+            "description": translator.t("plugin_roleplay_default_char_desc")
+        },
+        "default_scene": {
+            "type": "str",
+            "default": "",
+            "description": translator.t("plugin_roleplay_default_scene_desc")
+        }
+    }
+
+def _get_characters_dir():
+    """Restituisce la directory dei personaggi configurata o quella predefinita."""
+    cfg = ConfigManager()
+    path = cfg.get_plugin_config("ROLEPLAY", "characters_dir", _DEFAULT_CHARACTERS_DIR)
+    # Assicura che sia un percorso assoluto (se relativo, rispetto alla cartella del plugin)
+    if not os.path.isabs(path):
+        path = os.path.join(os.path.dirname(__file__), path)
+    return path
+
+def _get_scenes_dir():
+    """Restituisce la directory delle scene configurata o quella predefinita."""
+    cfg = ConfigManager()
+    path = cfg.get_plugin_config("ROLEPLAY", "scenes_dir", _DEFAULT_SCENES_DIR)
+    if not os.path.isabs(path):
+        path = os.path.join(os.path.dirname(__file__), path)
+    return path
 
 def esegui(comando):
     global _active_character, _active_character_prompt, _active_scene, _active_scene_prompt
@@ -60,18 +109,20 @@ def esegui(comando):
         return "Comando roleplay non riconosciuto. Usa 'list', 'load:nome', 'unload', 'scene:list', 'scene:load:nome', 'scene:unload', 'reset'."
 
 def _list_characters():
-    if not os.path.exists(_characters_dir):
-        return "Nessun personaggio trovato (cartella 'characters' mancante)."
-    files = [f[:-5] for f in os.listdir(_characters_dir) if f.endswith('.json')]
+    chars_dir = _get_characters_dir()
+    if not os.path.exists(chars_dir):
+        return f"Nessun personaggio trovato (cartella '{chars_dir}' mancante)."
+    files = [f[:-5] for f in os.listdir(chars_dir) if f.endswith('.json')]
     if not files:
         return "Nessun personaggio disponibile."
     return "Personaggi disponibili:\n- " + "\n- ".join(files)
 
 def _load_character(name):
     global _active_character, _active_character_prompt
-    file_path = os.path.join(_characters_dir, name + '.json')
+    chars_dir = _get_characters_dir()
+    file_path = os.path.join(chars_dir, name + '.json')
     if not os.path.exists(file_path):
-        return f"Personaggio '{name}' non trovato."
+        return f"Personaggio '{name}' non trovato in {chars_dir}."
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -99,18 +150,20 @@ def _unload():
     return "Roleplay disattivato. Tornato alla personalità normale."
 
 def _list_scenes():
-    if not os.path.exists(_scenes_dir):
-        return "Nessuna scena trovata (cartella 'scenes' mancante)."
-    files = [f[:-5] for f in os.listdir(_scenes_dir) if f.endswith('.json')]
+    scenes_dir = _get_scenes_dir()
+    if not os.path.exists(scenes_dir):
+        return f"Nessuna scena trovata (cartella '{scenes_dir}' mancante)."
+    files = [f[:-5] for f in os.listdir(scenes_dir) if f.endswith('.json')]
     if not files:
         return "Nessuna scena disponibile."
     return "Scene disponibili:\n- " + "\n- ".join(files)
 
 def _load_scene(name):
     global _active_scene, _active_scene_prompt
-    file_path = os.path.join(_scenes_dir, name + '.json')
+    scenes_dir = _get_scenes_dir()
+    file_path = os.path.join(scenes_dir, name + '.json')
     if not os.path.exists(file_path):
-        return f"Scena '{name}' non trovata."
+        return f"Scena '{name}' non trovata in {scenes_dir}."
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
