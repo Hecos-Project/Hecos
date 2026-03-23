@@ -165,7 +165,7 @@ def avvia_sequenza_risveglio(config):
     print(f"{'─' * 55}\n")
     
     print(f"{CIANO}==================================================={RESET}")
-    print(f"{CIANO}  {translator.t('welcome', version='ZENTRA')}{RESET}")
+    print(f"{CIANO}  {translator.t('welcome', version=VERSION)}{RESET}")
     print(f"{CIANO}  {translator.t('boot_sequence')}{RESET}")
     print(f"{CIANO}==================================================={RESET}")
     print(f"{CIANO}      (Premi ESC in qualsiasi momento per saltare){RESET}")

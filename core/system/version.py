@@ -1,13 +1,20 @@
-"""
-Informazioni centralizzate sulla versione di Zentra Core.
-Tutte le componenti del sistema devono referenziare questo file.
-"""
+import os
 
-# Versione del core
-VERSION_MAJOR = 0
-VERSION_MINOR = 9
-VERSION_PATCH = 5
-VERSION = f"{VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH}"
+def _get_version():
+    """Legge la versione dal file centralizzato core/version."""
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # core/version si trova al livello superiore rispetto a core/system/
+        version_file = os.path.join(current_dir, "..", "version")
+        if os.path.exists(version_file):
+            with open(version_file, "r") as f:
+                return f.read().strip()
+    except Exception:
+        pass
+    return "0.0.0"
+
+# Versione del core (letta dal file centralizzato)
+VERSION = _get_version()
 
 # Nome del progetto
 PROJECT_NAME = "Zentra Core"
