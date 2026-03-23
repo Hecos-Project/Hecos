@@ -100,7 +100,7 @@
         "soglia_energia": 450,
         "timeout_silenzio": 5,
         "limite_frase": 15,
-        "stato_ascolto": false
+        "stato_ascolto": true
     },
     "filtri": {
         "rimuovi_asterischi": true,
@@ -135,7 +135,7 @@
         "DASHBOARD": {
             "monitor_interval": 2,
             "backend_timeout": 0.5,
-            "enabled": false
+            "enabled": true
         },
         "FILE_MANAGER": {
             "max_read_lines": 50,
@@ -151,13 +151,13 @@
             "enabled": true
         },
         "ROLEPLAY": {
-            "characters_dir": "C:\\Zentra-Core\\plugins\\roleplay\\characters",
-            "scenes_dir": "C:\\Zentra-Core\\plugins\\roleplay\\scenes",
+            "characters_dir": "plugins\\roleplay\\characters",
+            "scenes_dir": "plugins\\roleplay\\scenes",
             "default_character": "",
             "default_scene": "",
             "enabled": true
         },
-        "SISTEMA": {
+        "SYSTEM": {
             "programs": {
                 "notepad": "notepad.exe",
                 "chrome": "chrome.exe",
@@ -168,11 +168,11 @@
                 "desktop": "C:\\Users\\Asus\\Desktop",
                 "download": "C:\\Users\\Asus\\Downloads",
                 "documenti": "C:\\Users\\Asus\\Documents",
-                "core": "C:\\Zentra-Core\\core",
-                "plugins": "C:\\Zentra-Core\\plugins",
-                "memoria": "C:\\Zentra-Core\\memoria",
-                "personalita": "C:\\Zentra-Core\\personalita",
-                "logs": "C:\\Zentra-Core\\logs"
+                "core": "core",
+                "plugins": "plugins",
+                "memoria": "memoria",
+                "personalita": "personalita",
+                "logs": "logs"
             },
             "shell_command_whitelist": [],
             "enable_config_set": true,

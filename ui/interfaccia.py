@@ -41,6 +41,18 @@ MAGENTA = Fore.MAGENTA
 BIANCO = Fore.WHITE
 RESET = Style.RESET_ALL
 
+def translate_status(s):
+    """Traduce chiavi di stato note usando il translator."""
+    if not s:
+        return s
+    s_lower = s.lower()
+    keys = ["ready", "error", "offline", "timeout", "waiting", "loading", "online", "disabled"]
+    for k in keys:
+        if s_lower.startswith(k):
+            remainder = s[len(k):]
+            return translator.t(k) + remainder
+    return s
+
 def setup_console():
     """ "Pulisce lo schermo e forza l'UTF-8" """
     if sys.platform == 'win32':
@@ -55,7 +67,7 @@ def check_ollama():
     except:
         return False
 
-def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"):
+def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="READY"):
     """ Disegna l'interfaccia completa: Barra Blu (Stato), Barra Hardware (placeholder) e Footer.
         La barra hardware verrà aggiornata in tempo reale da ui_updater.
     """
@@ -81,19 +93,26 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"
     spk_str = "ON" if stato_voce else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_len = 2 if stato_voce else 3
     
-    info_status = translator.t("system_status", status=stato_sistema)
+    # Tenta di tradurre lo stato se è una chiave nota, altrimenti usa così com'è
+    status_tradotto = translate_status(stato_sistema)
+    info_status = translator.t("system_status", status=status_tradotto)
     
     # Calcolo lunghezza visibile per il padding (ignora i codici colore ANSI di mic/spk)
-    visible_len = len(f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC:  | VOCE:  ") + mic_len + spk_len
+    header_mod = translator.t("header_model")
+    header_ani = translator.t("header_soul")
+    header_mic = translator.t("header_mic")
+    header_voc = translator.t("header_voice")
+    
+    visible_len = len(f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
-    info_stato_colored = f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
+    info_stato_colored = f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}: {mic_str} | {header_voc}: {spk_str} "
     print(f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}")
     
-    # 3. BARRA HARDWARE (PLACEHOLDER) - Verrà sovrascritta dall'updater
-    # Stampiamo una riga vuota con lo stesso colore di sfondo per mantenere l'allineamento
-    print(f"{Fore.CYAN}{' ' * L}{Style.RESET_ALL}")
+    # 3. BARRA HARDWARE (DINAMICA)
+    riga_hw = ottieni_riga_hardware(config, dashboard_mod=None)
+    print(riga_hw)
     
     # 4. FOOTER COMANDI RAPIDI
     print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
@@ -123,22 +142,25 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
             cpu = stats['cpu']
             ram = stats['ram']
             vram = stats['vram']
-            # Accorcia VRAM se troppo lunga
-            if len(str(vram)) > 10: vram = str(vram)[:7] + ".."
+            # Accorcia VRAM se troppo lunga (es: 30 caratteri per evitare wrap)
+            if len(str(vram)) > 30: vram = str(vram)[:27] + ".."
             backend_status = stats['backend_status']
             
             barra_cpu = grafica.crea_barra(cpu, larghezza=10)
             barra_ram = grafica.crea_barra(ram, larghezza=10)
             
             # Traduci stati backend
-            if backend_status == "PRONTA":
+            if backend_status in ("READY", "CLOUD", "ONLINE"):
                 display_status = translator.t("ready")
+                if backend_status == "CLOUD": display_status = "CLOUD"
                 stato_colore = Fore.GREEN
-            elif backend_status in ("OFFLINE", "ERRORE", "TIMEOUT"):
-                display_status = translator.t("disabled")
+            elif backend_status in ("OFFLINE", "ERROR", "TIMEOUT"):
+                # Mappa ERROR -> error, ecc.
+                key = backend_status.lower() if backend_status.lower() in ["offline", "error", "timeout"] else "disabled"
+                display_status = translator.t(key)
                 stato_colore = Fore.RED
             else:
-                display_status = backend_status
+                display_status = translator.t(backend_status.lower()) if backend_status.lower() in ["loading", "waiting", "online"] else backend_status
                 stato_colore = Fore.YELLOW
 
             info_hw = translator.t("hardware_line", 
@@ -146,7 +168,8 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
                 backend=f"{stato_colore}{display_status}{Style.RESET_ALL}"
             )
         except Exception:
-            info_hw = f"{Fore.RED}-- ERRORE TELEMETRIA HARDWARE --{Style.RESET_ALL}"
+            err_msg = translator.t("hardware_error")
+            info_hw = f"{Fore.RED}{err_msg}{Style.RESET_ALL}"
     else:
         # Se il plugin è disabilitato, restituiamo una riga vuota di 90 spazi
         return f"{Fore.CYAN}{' ' * L}{Style.RESET_ALL}"
@@ -181,7 +204,7 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
     
     return f"{Fore.CYAN}{' ' * pad_left}{info_hw}{' ' * pad_right}{Style.RESET_ALL}"
 
-def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_sistema="PRONTA"):
+def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_sistema="READY"):
     """Aggiorna solo la riga 2 (Barra di Stato) senza pulire lo schermo."""
     from ui.ui_updater import _aggiorna_dashboard_os, stdout_lock
     from colorama import Back, Fore, Style
@@ -196,13 +219,19 @@ def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_siste
     spk_len = 2 if stato_voce else 3
     
     L = 90
-    info_status = translator.t("system_status", status=stato_sistema)
+    status_tradotto = translate_status(stato_sistema)
+    info_status = translator.t("system_status", status=status_tradotto)
     
-    visible_len = len(f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC:  | VOCE:  ") + mic_len + spk_len
+    header_mod = translator.t("header_model")
+    header_ani = translator.t("header_soul")
+    header_mic = translator.t("header_mic")
+    header_voc = translator.t("header_voice")
+    
+    visible_len = len(f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
-    info_stato_colored = f" {info_status} | MODELLO: {modello} | ANIMA: {anima} | MIC: {mic_str} | VOCE: {spk_str} "
+    info_stato_colored = f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}: {mic_str} | {header_voc}: {spk_str} "
     riga_formattata = f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}"
     
     with stdout_lock:
@@ -211,21 +240,25 @@ def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_siste
     
 def mostra_menu_modelli(modelli, attuale):
     """ "Stampa la selezione per i LLM" """
-    print(f"\n{CIANO}╔════════════════ SETTAGGI MODELLO IA ════════════════╗{RESET}")
+    t_title = translator.t('model_mgmt_title')
+    print(f"\n{CIANO}╔{'═' * (len(t_title)+2)}╗{RESET}")
+    print(f"{CIANO}║ {t_title} ║{RESET}")
+    print(f"{CIANO}╚{'═' * (len(t_title)+2)}╝{RESET}")
     for i, m in enumerate(modelli, 1):
         pref = f"{VERDE} >> " if m == attuale else "    "
         print(f"{pref}{i}. {m}{RESET}")
     print(f"{CIANO}╚═════════════════════════════════════════════════════╝{RESET}")
-    print(f"{GIALLO}Digita il numero o premi ESC per annullare.{RESET}")
+    print(f"{GIALLO}{translator.t('select_model_index')}{RESET}")
 
 def mostra_menu_personalita(file_lista, attuale):
     """ "Stampa la selezione per i file TXT della personalità" """
-    print(f"\n{MAGENTA}╔════════════════ SELEZIONE PERSONALITÀ ═══════════════╗{RESET}")
+    head = translator.t("select_personality")
+    print(f"\n{MAGENTA}{head}{RESET}")
     for i, f in enumerate(file_lista, 1):
         pref = f"{VERDE} >> " if f == attuale else "    "
         print(f"{pref}{i}. {f.replace('.txt', '')}{RESET}")
-    print(f"{MAGENTA}╚══════════════════════════════════════════════════════╝{RESET}")
-    print(f"{GIALLO}Seleziona un'anima o premi ESC per uscire.{RESET}")
+    print(f"{MAGENTA}{'═' * len(head)}{RESET}")
+    print(f"{GIALLO}{translator.t('help_footer')}{RESET}") # Reuse footer or add specific one
 
 def mostra_help():
     """ "Stampa a video la vera guida dinamica generata dallo scanner plugin" """
@@ -288,7 +321,8 @@ def mostra_help():
 
 def scrivi_zentra(testo):
     """ Stampa la risposta di Zentra evidenziandola in GIALLO. """
-    print(f"{VERDE}Zentra:{GIALLO} {testo}{RESET}")
+    name = translator.t("agent_name")
+    print(f"{VERDE}{name}:{GIALLO} {testo}{RESET}")
     
 def leggi_tastiera(prefisso, input_attuale):
     if msvcrt.kbhit():
@@ -374,9 +408,9 @@ def elenca_personalita():
 
 def mostra_menu_anime(anime_disponibili):
     """Mostra un menu a video per la selezione della personalità."""
-    print(f"\n{CIANO}=== SELEZIONE ANIMA SISTEMA ==={RESET}")
+    print(f"\n{CIANO}=== SELEZIONE ANIMA SYSTEM ==={RESET}")
     for i, nome in enumerate(anime_disponibili, 1):
         print(f"{GIALLO}{i}{RESET} - {nome}")
     print(f"{CIANO}================================{RESET}")
-    sys.stdout.write(f"{VERDE}Scegli ID (o premi altro per annullare): {RESET}")
+    sys.stdout.write(f"{VERDE}{translator.t('select_persona_index')}{RESET}")
     sys.stdout.flush()

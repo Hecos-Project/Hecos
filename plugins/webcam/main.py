@@ -2,22 +2,23 @@ import cv2
 import os
 import time
 from core.logging import logger
+from core.i18n import translator
 from app.config import ConfigManager
 
 def info():
     """Manifest del plugin per il database centralizzato delle skills."""
     return {
         "tag": "WEBCAM",
-        "desc": "Accesso alla visione ottica del PC per scattare istantanee dell'ambiente o dell'Admin.",
+        "desc": translator.t("plugin_webcam_desc"),
         "comandi": {
-            "snap": "Attiva la fotocamera e salva un'immagine nella cartella 'scatti'."
+            "snap": translator.t("plugin_webcam_snap_desc")
         },
         "esempio": "[WEBCAM: snap]"
     }
 
 def status():
     """Stato del plugin."""
-    return "ONLINE (Visione Ottica)"
+    return translator.t("plugin_webcam_status_online")
 
 def config_schema():
     """
@@ -28,27 +29,27 @@ def config_schema():
         "save_directory": {
             "type": "str",
             "default": "scatti",
-            "description": "Cartella dove salvare le immagini acquisite"
+            "description": translator.t("plugin_webcam_save_directory_desc")
         },
         "image_format": {
             "type": "str",
             "default": "jpg",
             "options": ["jpg", "png"],
-            "description": "Formato dell'immagine (jpg o png)"
+            "description": translator.t("plugin_webcam_image_format_desc")
         },
         "camera_index": {
             "type": "int",
             "default": 0,
             "min": 0,
             "max": 10,
-            "description": "Indice della fotocamera (0 = prima fotocamera)"
+            "description": translator.t("plugin_webcam_camera_index_desc")
         },
         "stabilization_delay": {
             "type": "float",
             "default": 0.5,
             "min": 0.0,
             "max": 2.0,
-            "description": "Ritardo in secondi prima di scattare per stabilizzare l'esposizione"
+            "description": translator.t("plugin_webcam_stabilization_delay_desc")
         }
     }
 

@@ -3,7 +3,7 @@ import os
 
 def status():
     """Ritorna lo stato del modulo al boot"""
-    return "PRONTO (Controllo Terminale Attivo)"
+    return "READY (Controllo Terminale Attivo)"
 
 def esegui_shell(comando):
     """

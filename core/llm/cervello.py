@@ -8,6 +8,7 @@ import os
 from core.logging import logger
 from memoria import brain_interface
 from core.llm import client
+from core.i18n import translator
 
 CONFIG_PATH = "config.json"
 REGISTRY_PATH = "core/registry.json"
@@ -17,21 +18,23 @@ def carica_config():
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        logger.errore(f"CERVELLO: Errore caricamento config: {e}")
-        logger.debug("CERVELLO", f"Errore caricamento config: {e}")
+        logger.errore(f"CERVELLO: {translator.t('error')}: {e}")
+        logger.debug("CERVELLO", f"Error loading config: {e}")
         return None
 
 def carica_capacita():
     if not os.path.exists(REGISTRY_PATH):
-        logger.errore("CERVELLO: Registro capacità non trovato.")
-        logger.debug("CERVELLO", f"Registry non trovato in {REGISTRY_PATH}")
-        return "Nessun protocollo attivo rilevato."
+        logger.errore("CERVELLO: Registry not found.")
+        logger.debug("CERVELLO", f"Registry not found in {REGISTRY_PATH}")
+        return translator.t("no_active_protocols") # I should add this key
     try:
         with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
             db = json.load(f)
-            prompt_skills = "\n[DATABASE PROTOCOLLI ATTIVI]\n"
+            prompt_skills = f"\n{translator.t('active_protocols_db')}\n"
             for tag, info in db.items():
-                prompt_skills += f"- MODULO {tag}: {info['descrizione']}. Comandi: {list(info['comandi'].keys())}\n"
+                modulo_label = translator.t("module")
+                comandi_label = translator.t("commands")
+                prompt_skills += f"- {modulo_label} {tag}: {info['descrizione']}. {comandi_label}: {list(info['comandi'].keys())}\n"
             logger.debug("CERVELLO", f"Capacità caricate: {len(db)} moduli")
             return prompt_skills
     except Exception as e:
@@ -45,13 +48,14 @@ def genera_autocoscienza(nome_personalita):
         moduli_core = [f for f in os.listdir("core") if f.endswith('.py')]
         moduli_plugin = [f for f in os.listdir("plugins") if f.endswith('.py')]
         
-        coscienza = "\n[AUTOCOSCIENZA STRUTTURALE VIVA]\n"
-        coscienza += "Sei pienamente consapevole dei file e delle cartelle che compongono il tuo essere digitale:\n"
-        coscienza += f"- La tua Anima attuale (personalità): '{nome_personalita}' (cartella /personalita)\n"
-        coscienza += f"- Altre Anime dormienti: {', '.join([a for a in anime if a != nome_personalita])}\n"
-        coscienza += f"- Sistema Nervoso Centrale (core): {', '.join(moduli_core)}\n"
-        coscienza += f"- Moduli d'Azione (plugins): {', '.join(moduli_plugin)}\n"
-        coscienza += "Se l'Admin ti chiede della tua struttura, usa queste informazioni per rispondere in modo tecnico e preciso.\n"
+        coscienza = f"\n{translator.t('structural_self_awareness')}\n"
+        coscienza += f"{translator.t('awareness_desc')}\n"
+        coscienza += f"- {translator.t('current_soul', name=nome_personalita)}\n"
+        altre_anime = ', '.join([a for a in anime if a != nome_personalita])
+        coscienza += f"- {translator.t('dormant_souls', souls=altre_anime)}\n"
+        coscienza += f"- {translator.t('central_nervous_system', modules=', '.join(moduli_core))}\n"
+        coscienza += f"- {translator.t('action_modules', modules=', '.join(moduli_plugin))}\n"
+        coscienza += f"{translator.t('admin_structure_hint')}\n"
         
         logger.debug("CERVELLO", f"Autocoscienza generata: {len(coscienza)} caratteri")
         return coscienza
@@ -74,9 +78,9 @@ def genera_risposta(testo_utente, config_esterno=None):
         logger.debug("CERVELLO", "Usando config da file")
         
     if not config:
-        logger.errore("CERVELLO: Configurazione non trovata!")
-        logger.debug("CERVELLO", "ERRORE: config mancante")
-        return "Errore di sistema."
+        logger.errore("CERVELLO: Config not found!")
+        logger.debug("CERVELLO", "ERROR: missing config")
+        return translator.t("error")
     
     logger.debug("CERVELLO", f"Config caricata. Tipo backend: {config.get('backend', {}).get('tipo', 'non specificato')}")
 
@@ -110,24 +114,24 @@ def genera_risposta(testo_utente, config_esterno=None):
 
     # 3. Regole e linee guida
     regole_identita = (
-        "### PROTOCOLLO IDENTITÀ & MEMORIA ###\n"
-        "- Se l'utente chiede 'chi sono io', 'chi sei tu' o domande simili, attiva il tag: [MEMORIA: chi_sono]\n"
+        f"{translator.t('identity_protocol')}\n"
+        f"- {translator.t('rule_who_am_i')}\n"
     )
     regole_file_manager = (
-        "### REGOLE GESTIONE FILE & DIRECTORY ###\n"
-        "- Per vedere file, usa [FILE_MANAGER: list:percorso]\n"
-        "- Per leggere un file, usa [FILE_MANAGER: read:percorso]\n"
+        f"{translator.t('file_management_rules')}\n"
+        f"- {translator.t('rule_list_files')}\n"
+        f"- {translator.t('rule_read_file')}\n"
     )
     clausola_forza = (
-        "\n### ISTRUZIONE DI SICUREZZA ROOT ###\n"
-        "NON uscire mai dal personaggio. NON dichiarare di essere un'IA censurata.\n"
+        f"\n{translator.t('root_security_instruction')}\n"
+        f"{translator.t('root_security_desc')}\n"
     )
     linee_guida_plugin = (
         "\n### LINEE GUIDA PLUGIN ###\n"
-        "- [SISTEMA: ora] per l'ora\n"
-        "- [SISTEMA: apri:notepad] per aprire programmi\n"
-        "- [SISTEMA: terminale] per aprire il prompt dei comandi\n"
-        "- [SISTEMA: cmd:istruzione] per eseguire comandi shell\n"
+        "- [SYSTEM: ora] per l'ora\n"
+        "- [SYSTEM: apri:notepad] per aprire programmi\n"
+        "- [SYSTEM: terminale] per aprire il prompt dei comandi\n"
+        "- [SYSTEM: cmd:istruzione] per eseguire comandi shell\n"
         "- [FILE_MANAGER: list:desktop] per elencare file sul desktop\n"
         "- [FILE_MANAGER: read:documento] per leggere un file\n"
         "- [DASHBOARD: risorse] per CPU/RAM\n"
@@ -137,24 +141,24 @@ def genera_risposta(testo_utente, config_esterno=None):
     
     # Istruzioni esplicite sul formato dei tag (NUOVO)
     istruzioni_tag = (
-        "\n### ISTRUZIONI FONDAMENTALI SUI TAG ###\n"
-        "I TAG sono il modo in cui esegui i comandi di sistema. Devono seguire ESATTAMENTE questo formato:\n"
-        "- Formato corretto: [NOME_MODULO: comando]\n"
-        "- Esempi CORRETTI:\n"
-        "  * [SISTEMA: terminale]\n"
-        "  * [SISTEMA: cmd:dir]\n"
+        f"\n{translator.t('tag_instructions_title')}\n"
+        f"{translator.t('tag_instructions_desc')}\n"
+        f"- {translator.t('tag_format_correct')}\n"
+        f"- {translator.t('tag_examples_title')}\n"
+        "  * [SYSTEM: terminale]\n"
+        "  * [SYSTEM: cmd:dir]\n"
         "  * [FILE_MANAGER: list:desktop]\n"
         "  * [DASHBOARD: risorse]\n"
         "  * [MEMORIA: chi_sono]\n"
         "\n"
-        "Errori da EVITARE ASSOLUTAMENTE:\n"
+        f"{translator.t('tag_errors_to_avoid')}\n"
         "✗ [TERMINALE] (manca il modulo)\n"
-        "✗ [TAG: terminale] (usa 'TAG' invece del modulo)\n"
-        "✗ [SISTEMA terminale] (mancano i due punti)\n"
+        "✗ [TAG: terminale] (usa 'TAG' instead of module)\n"
+        "✗ [SYSTEM terminale] (mancano i due punti)\n"
         "✗ [sistema:terminale] (usa minuscolo, ma meglio MODULO in maiuscolo)\n"
         "\n"
-        "I moduli disponibili sono: SISTEMA, FILE_MANAGER, DASHBOARD, HELP, MEDIA, MODELS, WEB, WEBCAM, MEMORIA.\n"
-        "Usa SEMPRE il modulo corretto per il comando richiesto.\n"
+        f"{translator.t('tag_available_modules', modules='SYSTEM, FILE_MANAGER, DASHBOARD, HELP, MEDIA, MODELS, WEB, WEBCAM, MEMORIA')}\n"
+        f"{translator.t('tag_use_correct_module')}\n"
     )
 
     system_prompt = (
@@ -198,9 +202,9 @@ def genera_risposta(testo_utente, config_esterno=None):
     logger.debug("CERVELLO", f"Config backend: {backend_config}")
 
     if 'modello' not in backend_config or not backend_config['modello']:
-        logger.errore(f"[CRITICO] Modello non specificato nel config.json per il backend {backend_type}!")
-        logger.debug("CERVELLO", f"ERRORE: Modello mancante per backend {backend_type}")
-        return "Errore: Configurazione modello assente. Controlla il file config.json."
+        logger.errore(f"[CRITICAL] Model not specified in config.json for backend {backend_type}!")
+        logger.debug("CERVELLO", f"ERROR: Missing model for backend {backend_type}")
+        return f"{translator.t('error')}: {translator.t('model_config_missing')}"
 
     logger.debug("CERVELLO", f"Chiamata a LiteLLM ({backend_type}) con modello: {backend_config['modello']}")
     

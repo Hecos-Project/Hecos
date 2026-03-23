@@ -10,7 +10,9 @@ from ui import interfaccia
 from core.processing import processore
 from core.audio import voce
 from core.logging import logger
-from core.system import plugin_loader   # <-- aggiunto
+from core.system import plugin_loader
+from core.i18n import translator
+from memoria import brain_interface
 
 class InputHandler:
     def __init__(self, state_manager, config_manager):
@@ -32,29 +34,45 @@ class InputHandler:
         
         return None, nuovo_input
 
+    def handle_voice_input(self, prefisso):
+        """Gestisce input vocale."""
+        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        if dashboard_mod and dashboard_mod.get_backend_status() not in ["READY", "CLOUD", "ONLINE"]:
+            print(f"\n\033[93m[SYSTEM] Backend non ancora pronto. Attendere...\033[0m")
+            self.state.comando_vocale_rilevato = None
+            return
+
+        testo_v = self.state.comando_vocale_rilevato
+        self.state.comando_vocale_rilevato = None
+        
+        # Indica che stiamo processando input vocale
+        self._execute_exchange(testo_v, prefisso, is_voice=True)
+
     def _process_text_input(self, testo, prefisso):
         """Processa input testuale."""
         if not testo.strip():
             return None, testo
             
-        # Ottieni lo stato del backend dal plugin dashboard se attivo
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod:
             backend_status = dashboard_mod.get_backend_status()
-            if backend_status != "PRONTA":
-                print(f"\n\033[93m[SISTEMA] Backend non pronto ({backend_status}). Attendere...\033[0m")
+            if backend_status not in ["READY", "CLOUD", "ONLINE"]:
+                print(f"\n\033[93m[SYSTEM] Backend non pronto ({backend_status}). Attendere...\033[0m")
                 return None, ""
-        else:
-            # Se dashboard disabilitato, ignora il controllo (permette comunque il funzionamento)
-            pass
             
+        self._execute_exchange(testo, prefisso, is_voice=False)
+        return "PROCESSED", ""
+
+    def _execute_exchange(self, testo, prefisso, is_voice=False):
+        """Esegue lo scambio (testo -> risposta) con supporto ESC."""
         self.state.sistema_in_elaborazione = True
+        self.state.sistema_status = translator.t("thinking")
         
-        # --- STAMPA IL MESSAGGIO DELL'UTENTE (come per input vocale) ---
+        # Feedback visivo
         sys.stdout.write(f"\r{' ' * 80}\r")
-        print(f"{prefisso}\033[92mAdmin: {testo}\033[0m")
-        print(f"\033[93m[Premi ESC per interrompere]\033[0m")
-        # --------------------------------------------------------------
+        label = "Admin (Voce)" if is_voice else "Admin"
+        print(f"{prefisso}\033[92m{label}: {testo}\033[0m")
+        print(f"\033[93m[{translator.t('press_esc_to_stop')}]\033[0m")
         
         interfaccia.avvia_pensiero()
         
@@ -73,7 +91,6 @@ class InputHandler:
         thread = threading.Thread(target=esegui)
         thread.start()
 
-        # Gestione interruzione ESC
         while thread.is_alive():
             if msvcrt.kbhit() and msvcrt.getch() == b'\x1b':
                 stop_event.set()
@@ -82,9 +99,9 @@ class InputHandler:
 
         if stop_event.is_set():
             interfaccia.ferma_pensiero()
-            print(f"\n\033[93m[SISTEMA] Richiesta annullata.\033[0m")
+            print(f"\n\033[93m[SYSTEM] {translator.t('request_cancelled')}\033[0m")
             self.state.sistema_in_elaborazione = False
-            return "CLEAR", ""
+            return
 
         thread.join()
         interfaccia.ferma_pensiero()
@@ -93,13 +110,16 @@ class InputHandler:
             logger.errore(f"[INPUT] Errore: {errore[0]}")
         else:
             risposta_video, testo_voce_pulito = risultato
+            # Salvataggio in memoria
+            brain_interface.salva_messaggio("user", testo)
+            brain_interface.salva_messaggio("assistant", risposta_video)
+            
             # Mostra la risposta
             interfaccia.scrivi_zentra(risposta_video)
             if self.state.stato_voce and testo_voce_pulito:
                 voce.parla(testo_voce_pulito)
 
         self.state.sistema_in_elaborazione = False
-        return "PROCESSED", ""
 
     def _handle_esc(self):
         """Gestisce pressione ESC."""

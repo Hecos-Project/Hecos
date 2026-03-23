@@ -4,6 +4,7 @@ Gestione dell'interfaccia utente: disegno e interazione.
 
 from .utils import clear_screen, get_key, flush_input
 from ui import grafica
+from core.i18n import translator
 import sys
 import shutil
 from collections import OrderedDict
@@ -46,7 +47,7 @@ class UIManager:
 
                 if key == KEY_ESC:
                     if self.modified:
-                        if self._confirm("Uscire senza salvare? (s/n)"):
+                        if self._confirm(translator.t("exit_without_saving")):
                             break
                     else:
                         break
@@ -67,7 +68,7 @@ class UIManager:
                     param = self.param_list[self.cursor]
                     if param.type == 'command':
                         if param.command == 'reboot':
-                            print(f"\n{GIALLO}Riavvio in corso...{RESET}")
+                            print(f"\n{GIALLO}{translator.t('rebooting_msg')}{RESET}")
                             return "REBOOT"
                     else:
                         current = self.get_value(param)
@@ -120,17 +121,17 @@ class UIManager:
         """Modifica una stringa libera con input utente."""
         current = self.get_value(param) or ""
         # Mostra prompt
-        print(f"\n{GIALLO}Modifica {param.label}:{RESET}")
-        print(f"Valore attuale: {current}")
-        print("Inserisci nuovo valore (Invio per confermare, ESC per annullare):")
+        print(f"\n{GIALLO}{translator.t('edit_string_title', label=param.label)}{RESET}")
+        print(f"{translator.t('current_value', value=current)}")
+        print(translator.t('enter_new_value'))
         # Leggi input
         new_val = input().strip()
         if new_val:  # se l'utente ha inserito qualcosa
             self.set_value(param, new_val)
             self.modified = True
-            print(f"{VERDE}Valore aggiornato.{RESET}")
+            print(f"{VERDE}{translator.t('value_updated')}{RESET}")
         else:
-            print(f"{GIALLO}Modifica annullata.{RESET}")
+            print(f"{GIALLO}{translator.t('edit_cancelled')}{RESET}")
         # Attendi un momento per far leggere il messaggio
         import time
         time.sleep(1)
@@ -144,9 +145,9 @@ class UIManager:
     def _get_section_title(self, param):
         """Restituisce il titolo della sezione per un parametro."""
         if param.section == 'system':
-            return "⚡ SISTEMA"
+            return translator.t("section_system")
         elif param.section == 'llm':
-            return "🌐 LLM"
+            return translator.t("section_llm")
         elif param.section == 'llm_openai':
             return "🌐 OpenAI"
         elif param.section == 'llm_anthropic':
@@ -156,19 +157,19 @@ class UIManager:
         elif param.section == 'llm_gemini':
             return "🌐 Gemini"
         elif param.section == 'logging':
-            return "📊 LOGGING"
+            return translator.t("section_logging")
         elif param.section == 'filtri':
-            return "📝 FILTRI"
+            return translator.t("section_filters")
         elif param.section == 'ascolto':
-            return "🎤 ASCOLTO"
+            return translator.t("section_listening")
         elif param.section == 'voce':
-            return "🔊 VOCE"
+            return translator.t("section_voice")
         elif param.section == 'backend':
             # Distingue modello dagli altri parametri di backend
             if param.key == 'modello':
-                return "🤖 MODELLO"
+                return translator.t("section_models")
             else:
-                return "⚙️ GENERAZIONE"
+                return translator.t("section_generation")
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:
@@ -181,7 +182,7 @@ class UIManager:
         from core.system.version import get_version_string
         
         # Intestazione
-        intestazione = f" {get_version_string()} - CONFIGURAZIONE SISTEMA "
+        intestazione = f" {get_version_string()} - CONFIGURAZIONE SYSTEM "
         print(f"\033[44m\033[97m{intestazione.center(60)}\033[0m")
         
         # 1. Genera lista piatta di "righe renderizzabili"
@@ -192,7 +193,17 @@ class UIManager:
             title = self._get_section_title(param)
             sections.setdefault(title, []).append((i, param))
         
-        order_standard = ["🤖 MODELLO", "🌐 LLM", "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", "⚙️ GENERAZIONE", "🔊 VOCE", "🎤 ASCOLTO", "📝 FILTRI", "📊 LOGGING", "⚡ SISTEMA"]
+        order_standard = [
+            translator.t("section_models"), 
+            translator.t("section_llm"), 
+            "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
+            translator.t("section_generation"), 
+            translator.t("section_voice"), 
+            translator.t("section_listening"), 
+            translator.t("section_filters"), 
+            translator.t("section_logging"), 
+            translator.t("section_system")
+        ]
         
         def add_section_to_rows(title, params_with_idx):
             all_rows.append(('header', title, None))
@@ -274,11 +285,11 @@ class UIManager:
             print(f"| {' ' * 57} {sb_char if total_rows > viewport_height else '│'}")
 
         # Footer (ancorato in fondo al safe_limit)
-        footer = " ↑/↓: naviga | ←/→: modifica | Invio: salva/stringa | Esc: esci "
+        footer = f" {translator.t('menu_nav_help')} "
         print(f"\033[47m\033[30m{footer.center(60)}\033[0m")
         
         if self.modified:
-            print(f"{GIALLO} Modifiche non salvate.{RESET}{' ' * 30}")
+            print(f"{GIALLO} {translator.t('config_unsaved_changes')}{RESET}{' ' * 30}")
         else:
             print(f"{' ' * 56}")
 

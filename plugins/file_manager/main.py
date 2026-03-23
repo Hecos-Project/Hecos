@@ -1,21 +1,22 @@
 import os
 import re
 from core.logging import logger
-from app.config import ConfigManager  # <--- nuovo import
+from core.i18n import translator
+from app.config import ConfigManager
 
 def info():
     return {
         "tag": "FILE_MANAGER",
-        "desc": "Gestione file e directory di sistema con supporto ai percorsi utente e lettura file.",
+        "desc": translator.t("plugin_file_manager_desc"),
         "comandi": {
-            "list:percorso": "Elenca file e cartelle (es. list:desktop, list:core, list:plugins).",
-            "conta:percorso": "Fornisce un conteggio dettagliato degli elementi in una cartella.",
-            "read:percorso": "Legge il contenuto di un file di testo (prime righe configurabili)."
+            "list:percorso": translator.t("plugin_file_manager_list_desc"),
+            "conta:percorso": translator.t("plugin_file_manager_conta_desc"),
+            "read:percorso": translator.t("plugin_file_manager_read_desc")
         }
     }
 
 def status():
-    return "ATTIVO"
+    return "ONLINE"
 
 def config_schema():
     """
@@ -29,19 +30,19 @@ def config_schema():
             "default": 50,
             "min": 1,
             "max": 500,
-            "description": "Numero massimo di righe da mostrare quando si legge un file"
+            "description": translator.t("plugin_file_manager_max_read_lines_desc")
         },
         "max_list_items": {
             "type": "int",
             "default": 5,
             "min": 0,
             "max": 20,
-            "description": "Numero massimo di elementi da elencare (0 = nessun elenco)"
+            "description": translator.t("plugin_file_manager_max_list_items_desc")
         },
         "enable_path_mapping": {
             "type": "bool",
             "default": True,
-            "description": "Abilita la mappatura dei percorsi simbolici (desktop, core, ecc.)"
+            "description": translator.t("plugin_file_manager_enable_path_mapping_desc")
         }
     }
 

@@ -11,7 +11,8 @@ import requests
 import json
 
 from core.logging import logger
-from app.config import ConfigManager  # <--- nuovo import per configurazione centralizzata
+from core.i18n import translator
+from app.config import ConfigManager
 
 try:
     import GPUtil
@@ -37,23 +38,26 @@ def _monitora_backend():
             backend_type = config.get('backend', {}).get('tipo', 'ollama')
             backend_cfg = config.get('backend', {}).get(backend_type, {})
 
-            if backend_type == 'kobold':
+            if backend_type == 'cloud':
+                _backend_status = "CLOUD"
+            elif backend_type == 'kobold':
                 url = backend_cfg.get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
                 r = requests.get(url, timeout=backend_timeout)
-                _backend_status = "PRONTA" if r.status_code == 200 else "ERRORE"
+                _backend_status = "READY" if r.status_code == 200 else "ERROR"
             else:
+                # Default assume Ollama (legacy/common)
                 r = requests.get("http://localhost:11434/api/tags", timeout=backend_timeout)
-                _backend_status = "PRONTA" if r.status_code == 200 else "ERRORE OLLAMA"
+                _backend_status = "READY" if r.status_code == 200 else "ERROR OLLAMA"
 
         except requests.exceptions.ConnectionError:
             _backend_status = "OFFLINE"
         except requests.exceptions.Timeout:
             _backend_status = "TIMEOUT"
         except json.JSONDecodeError:
-            _backend_status = "ERRORE CONFIG"
+            _backend_status = "ERROR CONFIG"
         except Exception as e:
             logger.errore(f"DASHBOARD: Errore monitoraggio backend: {e}")
-            _backend_status = "ERRORE"
+            _backend_status = "ERROR"
 
         time.sleep(monitor_interval)
 
@@ -94,7 +98,7 @@ def get_stats():
 
                     stats["vram"] = vram_usata
                     stats["gpu_load"] = gpu_load
-                    stats["stato_gpu"] = "ATTENDERE" if vram_percent > 80 else "PRONTA"
+                    stats["stato_gpu"] = "WAITING" if vram_percent > 80 else "READY"
                 else:
                     stats["vram"] = "N/A (No GPU)"
                     stats["gpu_load"] = "N/A"
@@ -118,18 +122,18 @@ def info():
     """Manifest del plugin per il registro centrale."""
     return {
         "tag": "DASHBOARD",
-        "desc": "Monitoraggio hardware e stato backend AI.",
+        "desc": translator.t("plugin_dashboard_desc"),
         "comandi": {
-            "risorse": "Mostra CPU e RAM.",
-            "vram": "Mostra dettagli VRAM e carico GPU.",
-            "stato": "Mostra stato del backend (Ollama/Kobold).",
-            "tutto": "Mostra tutte le informazioni disponibili."
+            "risorse": translator.t("plugin_dashboard_risorse_desc"),
+            "vram": translator.t("plugin_dashboard_vram_desc"),
+            "stato": translator.t("plugin_dashboard_stato_desc"),
+            "tutto": translator.t("plugin_dashboard_tutto_desc")
         }
     }
 
 def status():
     """Stato del plugin."""
-    return "ONLINE (Telemetria attiva)"
+    return translator.t("plugin_dashboard_status_online")
 
 def config_schema():
     """
@@ -143,14 +147,14 @@ def config_schema():
             "default": 2,
             "min": 1,
             "max": 10,
-            "description": "Intervallo in secondi tra i controlli del backend"
+            "description": translator.t("plugin_dashboard_monitor_interval_desc")
         },
         "backend_timeout": {
             "type": "float",
             "default": 0.5,
             "min": 0.1,
             "max": 5.0,
-            "description": "Timeout in secondi per le richieste al backend"
+            "description": translator.t("plugin_dashboard_timeout_desc")
         }
     }
 

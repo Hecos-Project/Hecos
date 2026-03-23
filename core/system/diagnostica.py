@@ -136,9 +136,11 @@ def scansiona_plugins(config):
             if is_enabled:
                 if hasattr(modulo, "status"):
                     esito = modulo.status()
-                    # Se l'esito è "PRONTA" o "ATTIVO", prova a tradurlo
-                    if esito == "PRONTA": esito = translator.t("ready")
-                    elif esito == "ATTIVO": esito = translator.t("ready") # o map to online
+                    # Se l'esito è "READY" o "ATTIVO", prova a tradurlo
+                    if esito in ("READY", "ATTIVO", "ONLINE"): 
+                        esito = translator.t(esito.lower() if esito in ("READY", "ONLINE") else "ready")
+                    elif esito in ("ERROR", "OFFLINE"):
+                        esito = translator.t(esito.lower())
                     
                     risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{esito}{RESET}")
                 else:
@@ -199,7 +201,7 @@ def avvia_sequenza_risveglio(config):
         print(esito)
 
     print(f"\n{CIANO}==================================================={RESET}")
-    stampa_e_parla(f"{VERDE}[SISTEMA] {RESET}", "Ciao, sono Zentra")
+    stampa_e_parla(f"{VERDE}[SYSTEM] {RESET}", translator.t("intro_greeting"))
     
     while msvcrt.kbhit():
         msvcrt.getch()

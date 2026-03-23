@@ -166,7 +166,7 @@ def apri_console_debug():
     # Assicuriamoci che il file esista altrimenti Get-Content fallisce
     if not os.path.exists(debug_filename):
         with open(debug_filename, "a") as f:
-            f.write(f"{datetime.now()} [DEBUG] [SISTEMA] Console Debug Inizializzata.\n")
+            f.write(f"{datetime.now()} [DEBUG] [SYSTEM] Console Debug Inizializzata.\n")
 
     ps_script_debug = (
         "$host.ui.RawUI.WindowTitle = 'Zentra Core - Debug Tecnico (LiteLLM)'; "

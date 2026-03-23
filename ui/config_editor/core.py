@@ -50,9 +50,9 @@ class ConfigEditor:
                     from core.i18n import translator
                     translator.get_translator().set_language(nuova_lingua)
                 
-                print("\n✅ Configurazione salvata correttamente.")
+                print(f"\n{translator.t('config_saved_success')}")
             except Exception as e:
-                print(f"\n❌ Errore salvataggio: {e}")
+                print(f"\n{translator.t('config_save_error', error=str(e))}")
 
     def _get_value(self, param):
         """Restituisce il valore di un parametro dal config corrente."""
@@ -61,27 +61,8 @@ class ConfigEditor:
             backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
             backend_config = self.config.get('backend', {}).get(backend_type, {})
             
-            # Mappa le label ai nomi delle chiavi nel config
-            key_mapping = {
-                'Modello attivo': 'modello',
-                'Temperatura': 'temperature',
-                'Num predict': 'num_predict',
-                'Contesto (ctx)': 'num_ctx',
-                'Layer GPU': 'num_gpu',
-                'Velocità voce': 'speed',
-                'Tono voce': 'pitch',
-                'Soglia energia': 'soglia_energia',
-                'Timeout silenzio (s)': 'timeout_silenzio',
-                'Rimuovi asterischi': 'rimuovi_asterischi',
-                'Rimuovi parentesi tonde': 'rimuovi_parentesi_tonde',
-                'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
-                'Destinazione Log': 'destinazione',
-                'Tipo Messaggi': 'tipo_messaggi',
-                'Lingua Sistema': 'lingua',
-            }
-            
-            # Trova la chiave corrispondente
-            key = key_mapping.get(param.label, param.key)
+            # La chiave è già presente in param.key grazie alla nuova build_parameter_list
+            key = param.key
             
             # Gestisci i diversi tipi di sezioni
             if param.section == 'backend':
@@ -118,27 +99,8 @@ class ConfigEditor:
             # Determina il backend attivo
             backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
             
-            # Mappa le label ai nomi delle chiavi nel config
-            key_mapping = {
-                'Modello attivo': 'modello',
-                'Temperatura': 'temperature',
-                'Num predict': 'num_predict',
-                'Contesto (ctx)': 'num_ctx',
-                'Layer GPU': 'num_gpu',
-                'Velocità voce': 'speed',
-                'Tono voce': 'pitch',
-                'Soglia energia': 'soglia_energia',
-                'Timeout silenzio (s)': 'timeout_silenzio',
-                'Rimuovi asterischi': 'rimuovi_asterischi',
-                'Rimuovi parentesi tonde': 'rimuovi_parentesi_tonde',
-                'Rimuovi parentesi quadre': 'rimuovi_parentesi_quadre',
-                'Destinazione Log': 'destinazione',
-                'Tipo Messaggi': 'tipo_messaggi',
-                'Lingua Sistema': 'lingua',
-            }
-            
-            # Trova la chiave corrispondente
-            key = key_mapping.get(param.label, param.key)
+            # Uso diretto di param.key
+            key = param.key
             
             # Gestisci i diversi tipi di sezioni
             if param.section == 'backend':
@@ -224,7 +186,7 @@ class ConfigEditor:
                 # Salva le modifiche e segnala il reboot
                 if self.modified:
                     self._save_config()
-                print("\n\033[91mRIavvio di Zentra in corso...\033[0m")
+                print(f"\n\033[91m{translator.t('rebooting_msg')}\033[0m")
                 import sys
                 sys.exit(42)  # Codice speciale per il reboot
         finally:

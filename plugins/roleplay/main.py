@@ -6,6 +6,7 @@ Permette di interpretare personaggi in scenari di gioco di ruolo.
 import json
 import os
 from core.logging import logger
+from core.i18n import translator
 from app.config import ConfigManager   # <--- per leggere configurazione
 
 # Stato interno
@@ -21,22 +22,22 @@ _DEFAULT_SCENES_DIR = os.path.join(os.path.dirname(__file__), "scenes")
 def info():
     return {
         "tag": "ROLEPLAY",
-        "desc": "Gestisce modalità roleplay: carica personaggi e scene per conversazioni immersive.",
+        "desc": translator.t("plugin_roleplay_desc"),
         "comandi": {
-            "list": "Elenca i personaggi disponibili.",
-            "load: nome": "Carica il personaggio specificato (es. load: wizard).",
-            "unload": "Disattiva il roleplay e torna alla personalità normale.",
-            "scene: list": "Elenca le scene disponibili.",
-            "scene: load: nome": "Carica una scena (aggiunge contesto).",
-            "scene: unload": "Rimuove la scena corrente.",
-            "reset": "Resetta il personaggio e la scena."
+            "list": translator.t("plugin_roleplay_list_desc"),
+            "load:nome": translator.t("plugin_roleplay_load_desc"),
+            "unload": translator.t("plugin_roleplay_unload_desc"),
+            "scene:list": translator.t("plugin_roleplay_scene_list_desc"),
+            "scene:load:nome": translator.t("plugin_roleplay_scene_load_desc"),
+            "scene:unload": translator.t("plugin_roleplay_scene_unload_desc"),
+            "reset": translator.t("plugin_roleplay_reset_desc")
         }
     }
 
 def status():
     if _active_character:
-        return f"ONLINE (Personaggio: {_active_character})"
-    return "ONLINE (Pronto)"
+        return translator.t("plugin_roleplay_status_active", name=_active_character)
+    return translator.t("plugin_roleplay_status_online")
 
 def config_schema():
     """
@@ -48,22 +49,22 @@ def config_schema():
         "characters_dir": {
             "type": "str",
             "default": _DEFAULT_CHARACTERS_DIR,
-            "description": "Percorso della cartella contenente i file JSON dei personaggi"
+            "description": translator.t("plugin_roleplay_chars_dir_desc")
         },
         "scenes_dir": {
             "type": "str",
             "default": _DEFAULT_SCENES_DIR,
-            "description": "Percorso della cartella contenente i file JSON delle scene"
+            "description": translator.t("plugin_roleplay_scenes_dir_desc")
         },
         "default_character": {
             "type": "str",
             "default": "",
-            "description": "Nome del personaggio da caricare automaticamente all'avvio (vuoto = nessuno)"
+            "description": translator.t("plugin_roleplay_default_char_desc")
         },
         "default_scene": {
             "type": "str",
             "default": "",
-            "description": "Nome della scena da caricare automaticamente all'avvio (vuoto = nessuna)"
+            "description": translator.t("plugin_roleplay_default_scene_desc")
         }
     }
 

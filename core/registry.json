@@ -1,12 +1,23 @@
 {
-    "FILE_MANAGER": {
-        "descrizione": "Gestione file e directory di sistema con supporto ai percorsi utente e lettura file.",
+    "DASHBOARD": {
+        "descrizione": "Hardware monitoring and AI backend status.",
         "comandi": {
-            "list:percorso": "Elenca file e cartelle (es. list:desktop, list:core, list:plugins).",
-            "conta:percorso": "Fornisce un conteggio dettagliato degli elementi in una cartella.",
-            "read:percorso": "Legge il contenuto di un file di testo (prime righe configurabili)."
+            "risorse": "Displays CPU and RAM usage.",
+            "vram": "Displays VRAM details and GPU load.",
+            "stato": "Displays backend status (Ollama/Kobold).",
+            "tutto": "Displays all available information."
         },
-        "stato": "ATTIVO",
+        "stato": "ONLINE (Telemetry active)",
+        "esempio": ""
+    },
+    "FILE_MANAGER": {
+        "descrizione": "System file and directory management with user path and file reading support.",
+        "comandi": {
+            "list:percorso": "Lists files and folders (e.g., list:desktop, list:core, list:plugins).",
+            "conta:percorso": "Provides a detailed count of items in a folder.",
+            "read:percorso": "Reads the content of a text file (configurable lines)."
+        },
+        "stato": "ONLINE",
         "esempio": ""
     },
     "HELP": {
@@ -15,74 +26,74 @@
             "lista": "help_cmd_lista",
             "refresh": "help_cmd_refresh"
         },
-        "stato": "ATTIVO",
+        "stato": "ONLINE",
         "esempio": "[HELP: lista]"
     },
     "MEDIA": {
-        "descrizione": "Controllo hardware volume e mute.",
+        "descrizione": "Hardware volume and mute control.",
         "comandi": {
-            "vol:0-100": "Regola volume master.",
-            "mute:on/off": "Attiva o disattiva il silenzio."
+            "vol:0-100": "Adjusts master volume.",
+            "mute:on/off": "Activates or deactivates silence."
         },
         "stato": "ONLINE",
         "esempio": ""
     },
     "ROLEPLAY": {
-        "descrizione": "Gestisce modalità roleplay: carica personaggi e scene per conversazioni immersive.",
+        "descrizione": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
         "comandi": {
-            "list": "Elenca i personaggi disponibili.",
-            "load: nome": "Carica il personaggio specificato (es. load: wizard).",
-            "unload": "Disattiva il roleplay e torna alla personalità normale.",
-            "scene: list": "Elenca le scene disponibili.",
-            "scene: load: nome": "Carica una scena (aggiunge contesto).",
-            "scene: unload": "Rimuove la scena corrente.",
-            "reset": "Resetta il personaggio e la scena."
+            "list": "Lists available characters.",
+            "load:nome": "Loads the specified character (e.g., load: wizard).",
+            "unload": "Deactivates roleplay and returns to normal personality.",
+            "scene:list": "Lists available scenes.",
+            "scene:load:nome": "Loads a scene (adds context).",
+            "scene:unload": "Removes the current scene.",
+            "reset": "Resets character and scene."
         },
-        "stato": "ONLINE (Pronto)",
+        "stato": "plugin_roleplay_status_online",
         "esempio": ""
     },
-    "SISTEMA": {
-        "descrizione": "Accesso Root: gestione terminale, reboot, diagnostica log, utilità di sistema.",
+    "SYSTEM": {
+        "descrizione": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
         "comandi": {
-            "help": "Mostra i protocolli di sistema.",
-            "riavvia": "Cold Reboot immediato del core.",
-            "cmd:istruzione": "Esegue un comando shell (es: cmd:dir).",
-            "terminale": "Apre una nuova finestra Prompt CMD.",
-            "leggi log": "Legge gli ultimi eventi registrati nel sistema.",
-            "errori": "Analizza solo gli ultimi crash o fallimenti.",
-            "ora": "Restituisce l'ora corrente.",
-            "apri:programma": "Apre un programma predefinito (notepad, chrome, visual studio, sillytavern).",
-            "esplora:percorso": "Apre una cartella in Explorer (es. esplora:desktop, esplora:download).",
-            "config:set:sezione,chiave,valore": "Aggiorna una voce del file config.json (uso attento)."
+            "help": "Displays system protocols.",
+            "riavvia": "Immediate Cold Reboot of the core.",
+            "cmd:istruzione": "Executes a shell command (e.g., cmd:dir).",
+            "terminale": "Opens a new CMD Prompt window.",
+            "leggi log": "Reads the latest logged system events.",
+            "errori": "Analyzes only the latest crashes or failures.",
+            "ora": "Returns the current time.",
+            "apri:programma": "Opens a default program (notepad, chrome, visual studio, sillytavern).",
+            "esplora:percorso": "Opens a folder in Explorer (e.g., explore:desktop, explore:download).",
+            "config:set:sezione,chiave,valore": "plugin_sistema_config_set_desc"
         },
-        "stato": "ONLINE (Shell & BlackBox Access Active)",
-        "esempio": "[SISTEMA: leggi log] o [SISTEMA: terminale] o [SISTEMA: ora]"
+        "stato": "plugin_sistema_status_online",
+        "esempio": "[SYSTEM: leggi log] o [SYSTEM: terminale] o [SYSTEM: ora]"
     },
     "WEB": {
-        "descrizione": "Accesso alla rete per ricerche Google e apertura rapida di siti web.",
+        "descrizione": "Network access for Google searches and quick opening of websites.",
         "comandi": {
-            "search:query": "Esegue una ricerca su Google per il termine specificato.",
-            "open:url": "Apre un indirizzo web nel browser predefinito."
+            "search:query": "Executes a Google search for the specified term.",
+            "open:url": "Opens a web address in the default browser."
         },
-        "stato": "ONLINE (Navigazione & Search)",
+        "stato": "ONLINE (Browsing & Search)",
         "esempio": "[WEB: search: chi è Root Admin] oppure [WEB: open: youtube.com]"
     },
     "WEBCAM": {
-        "descrizione": "Accesso alla visione ottica del PC per scattare istantanee dell'ambiente o dell'Admin.",
+        "descrizione": "Access to PC optical vision to take snapshots of the environment or Admin.",
         "comandi": {
-            "snap": "Attiva la fotocamera e salva un'immagine nella cartella 'scatti'."
+            "snap": "Activates the camera and saves an image in the 'scatti' folder."
         },
-        "stato": "ONLINE (Visione Ottica)",
+        "stato": "ONLINE (Optical Vision)",
         "esempio": "[WEBCAM: snap]"
     },
     "MODELS": {
-        "descrizione": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
+        "descrizione": "Changes the AI model based on the active backend (Ollama/Kobold).",
         "comandi": {
-            "set:numero": "Cambia il modello attivo usando il numero della lista (es: set:7).",
-            "lista": "Mostra i modelli disponibili per il backend attuale.",
-            "backend": "Mostra il backend attualmente in uso."
+            "set:numero": "Changes the active model using the list number (e.g., set:7).",
+            "lista": "Displays available models for the current backend.",
+            "backend": "Displays the currently used backend."
         },
-        "stato": "ONLINE (Gestione modelli)",
+        "stato": "ONLINE (Model management)",
         "esempio": ""
     }
 }

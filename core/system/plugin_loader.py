@@ -10,6 +10,7 @@ import os
 import glob
 import json
 from core.logging import logger
+from core.i18n import translator
 
 REGISTRY_PATH = "core/registry.json"
 
@@ -75,7 +76,7 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
                 # Salva modulo e carica
                 _loaded_plugins[tag] = modulo
                 
-                stato = modulo.status() if hasattr(modulo, "status") else "ATTIVO"
+                stato = modulo.status() if hasattr(modulo, "status") else "ONLINE"
                 
                 skills_map[tag] = {
                     "descrizione": dati['desc'],
@@ -121,7 +122,7 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
                     logger.debug("LOADER", f"Plugin legacy {nome_modulo} disabilitato, ignorato.")
                     continue
                 
-                stato = modulo.status() if hasattr(modulo, "status") else "ATTIVO"
+                stato = modulo.status() if hasattr(modulo, "status") else "ONLINE"
                 
                 skills_map[tag] = {
                     "descrizione": dati['desc'],
@@ -194,10 +195,10 @@ def ottieni_capacita_formattate():
     with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
         
-    res = "\n=== PROTOCOLLI DI AZIONE ATTIVI (ROOT ACCESS) ===\n"
+    res = f"\n=== {translator.t('help_registry_title')} ===\n"
     for tag, info in data.items():
-        res += f"\n[MODULO: {tag}] - Stato: {info['stato']}\n"
-        res += f"Descrizione: {info['descrizione']}\n"
+        res += f"\n[MODULO: {tag}] - {translator.t('system_status', status=info['stato'])}\n"
+        res += f"{translator.t('help_role')} {info['descrizione']}\n"
         for cmd, spiegazione in info['comandi'].items():
             res += f"  • {tag}:{cmd} --> {spiegazione}\n"
     return res
@@ -235,7 +236,7 @@ def genera_guida_dinamica():
                 
                 if hasattr(modulo, "info"):
                     dati = modulo.info()
-                    stato_effettivo = stato_forzato if stato_forzato else (modulo.status() if hasattr(modulo, "status") else "ATTIVO")
+                    stato_effettivo = stato_forzato if stato_forzato else (modulo.status() if hasattr(modulo, "status") else translator.t("online"))
                     
                     guida.append({
                         "tag": dati['tag'],
@@ -251,7 +252,7 @@ def genera_guida_dinamica():
     scansiona_cartella("plugins")
     
     # 2. Scansiona plugin disabilitati (forza stato DISATTIVATO)
-    scansiona_cartella(os.path.join("plugins", "plugins_disabled"), stato_forzato="DISATTIVATO")
+    scansiona_cartella(os.path.join("plugins", "plugins_disabled"), stato_forzato=translator.t("offline"))
     
     # 3. Scansiona vecchi plugin nella root "plugins" per compatibilità
     vecchi = glob.glob(os.path.join("plugins", "*.py"))
@@ -265,7 +266,7 @@ def genera_guida_dinamica():
             spec.loader.exec_module(mod)
             if hasattr(mod, "info"):
                 dati = mod.info()
-                stato_effettivo = mod.status() if hasattr(mod, "status") else "ATTIVO"
+                stato_effettivo = mod.status() if hasattr(mod, "status") else translator.t("online")
                 # Evita duplicati se presente in cartella
                 if not any(g['tag'] == dati['tag'] for g in guida):
                     guida.append({

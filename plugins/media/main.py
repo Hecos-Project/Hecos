@@ -3,14 +3,15 @@ import re
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
 from core.logging import logger
+from core.i18n import translator
 
 def info():
     return {
         "tag": "MEDIA",
-        "desc": "Controllo hardware volume e mute.",
+        "desc": translator.t("plugin_media_desc"),
         "comandi": {
-            "vol:0-100": "Regola volume master.",
-            "mute:on/off": "Attiva o disattiva il silenzio."
+            "vol:0-100": translator.t("plugin_media_vol_desc"),
+            "mute:on/off": translator.t("plugin_media_mute_desc")
         }
     }
 

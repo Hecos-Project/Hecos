@@ -1,23 +1,24 @@
 import webbrowser
 import urllib.parse
 from core.logging import logger
+from core.i18n import translator
 from app.config import ConfigManager
 
 def info():
     """Manifest del plugin per il database centralizzato delle skills."""
     return {
         "tag": "WEB",
-        "desc": "Accesso alla rete per ricerche Google e apertura rapida di siti web.",
+        "desc": translator.t("plugin_web_desc"),
         "comandi": {
-            "search:query": "Esegue una ricerca su Google per il termine specificato.",
-            "open:url": "Apre un indirizzo web nel browser predefinito."
+            "search:query": translator.t("plugin_web_search_desc"),
+            "open:url": translator.t("plugin_web_open_desc")
         },
         "esempio": "[WEB: search: chi è Root Admin] oppure [WEB: open: youtube.com]"
     }
 
 def status():
     """Stato del plugin."""
-    return "ONLINE (Navigazione & Search)"
+    return translator.t("plugin_web_status_online")
 
 def config_schema():
     """
@@ -29,17 +30,17 @@ def config_schema():
             "type": "str",
             "default": "google",
             "options": ["google", "duckduckgo", "bing"],
-            "description": "Motore di ricerca predefinito (google, duckduckgo, bing)"
+            "description": translator.t("plugin_web_search_engine_desc")
         },
         "use_https": {
             "type": "bool",
             "default": True,
-            "description": "Forza HTTPS per le aperture di siti senza protocollo"
+            "description": translator.t("plugin_web_use_https_desc")
         },
         "open_in_new_tab": {
             "type": "bool",
             "default": False,
-            "description": "Apre i link in una nuova scheda invece che in una nuova finestra"
+            "description": translator.t("plugin_web_open_in_new_tab_desc")
         }
     }
 
