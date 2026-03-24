@@ -4,10 +4,15 @@ import sys
 import subprocess
 from datetime import datetime
 
-# Disable verbose requests/urllib3/LiteLLM logs
+# Set verbose levels for internal libraries - default WARNING to avoid chat pollution
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+litellm_log = logging.getLogger("LiteLLM")
+litellm_log.setLevel(logging.WARNING)  # Default OFF; init_logger controls this
+litellm_log.propagate = False  # Never leak to root logger
+
 
 # Create logs directory if it doesn't exist
 if not os.path.exists("logs"):
@@ -16,13 +21,11 @@ if not os.path.exists("logs"):
 info_filename = f"logs/zentra_info_{datetime.now().strftime('%Y-%m-%d')}.log"
 debug_filename = f"logs/zentra_debug_{datetime.now().strftime('%Y-%m-%d')}.log"
 
-logger = logging.getLogger("ZentraLogger")
-logger.setLevel(logging.DEBUG)  # Logger accepts everything
+# Global logger for Zentra (points to root for multi-library consistency)
+logger = logging.getLogger() 
+logger.setLevel(logging.DEBUG)
 
-# Clear existing handlers if module is reloaded
-if logger.hasHandlers():
-    logger.handlers.clear()
-
+# File formatters
 file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 
 # Handler for INFO/WARN/ERROR file
@@ -42,7 +45,7 @@ debug_file_handler.setLevel(logging.DEBUG)
 debug_file_handler.addFilter(LevelFilter(logging.DEBUG))
 debug_file_handler.setFormatter(file_formatter)
 
-# Console Handler (default INFO)
+# Console Handler (the one that shows in the chat)
 class ColorFormatter(logging.Formatter):
     COLORS = {
         logging.DEBUG: '\033[96m',    # Cyan
@@ -63,16 +66,22 @@ console_handler.setLevel(logging.INFO)
 console_formatter = ColorFormatter('%(asctime)s [%(levelname)s] %(message)s')
 console_handler.setFormatter(console_formatter)
 
-# Add handlers to logger
-logger.addHandler(info_file_handler)
-logger.addHandler(debug_file_handler)
-logger.addHandler(console_handler)
+# Initial setup: just files for now, until init_logger is called
+if not logger.hasHandlers():
+    logger.addHandler(info_file_handler)
+    logger.addHandler(debug_file_handler)
+    # Default to console if not initialized yet
+    logger.addHandler(console_handler)
+
+if not litellm_log.hasHandlers():
+    litellm_log.addHandler(debug_file_handler)
 
 _console_window_started = False
 
 def init_logger(config):
     """
-    Initializes logging settings read from config.json
+    Initializes logging settings read from config.json.
+    CLEANS ALL HANDLERS first to ensure strict isolation.
     """
     global _console_window_started
     
@@ -80,33 +89,67 @@ def init_logger(config):
     destinazione = logging_config.get('destinazione', 'chat')
     tipo_messaggi = logging_config.get('tipo_messaggi', 'both')
     
-    # Remove previous filters from console_handler
-    for f in console_handler.filters[:]:
-        console_handler.removeFilter(f)
+    # Toggle LiteLLM library debug verbosity dynamically based on config
+    llm_cfg = config.get('llm', {})
+    debug_llm = llm_cfg.get('debug_llm', False)
+    
+    # Purge ALL handlers from LiteLLM logger (prevents its built-in StreamHandler to stdout)
+    for h in litellm_log.handlers[:]:
+        litellm_log.removeHandler(h)
+    # Also silence httpcore/httpx/requests at WARNING always
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    
+    # CRITICAL: Prevent LiteLLM from auto-adding its own stdout StreamHandler via LITELLM_LOG env var
+    import os as _os
+    _os.environ["LITELLM_LOG"] = ""  # Always reset to prevent LiteLLM from activating verbose mode
+    
+    if debug_llm:
+        litellm_log.setLevel(logging.DEBUG)
+        # Redirect LiteLLM output ONLY to our debug file handler, never to stdout
+        litellm_log.addHandler(debug_file_handler)
+    else:
+        litellm_log.setLevel(logging.WARNING)
+        
+    # PULIZIA TOTALE: rimuove ogni handler precedente (anche dalle librerie esterne)
+    for h in logger.handlers[:]:
+        logger.removeHandler(h)
+    
+    # RI-AGGIUNTA FILE HANDLERS (Sempre attivi)
+    logger.addHandler(info_file_handler)
+    logger.addHandler(debug_file_handler)
 
-    # Create new filter based on tipo_messaggi preference
+    # Filter for Console output based on preference
     class ConsoleTypeFilter(logging.Filter):
         def filter(self, record):
             if tipo_messaggi == 'info':
                 return record.levelno >= logging.INFO
             elif tipo_messaggi == 'debug':
                 return record.levelno == logging.DEBUG
-            else: # 'both' or fallback
+            else: # 'both'
                 return True
                 
     console_handler.addFilter(ConsoleTypeFilter())
     
-    if destinazione == 'console':
-        # Disable output on main chat
-        if console_handler in logger.handlers:
-            logger.removeHandler(console_handler)
+    destinazione_lower = destinazione.lower().strip()
+    
+    if destinazione_lower == 'console' or destinazione_lower == 'file_only':
+        class RejectAllFilter(logging.Filter):
+            def filter(self, record): return False
+        console_handler.addFilter(RejectAllFilter())
         
-        # Always clean orphaned windows on startup or config change
+    if destinazione_lower == 'console':
+        # NON aggiungiamo console_handler qui -> i log restano solo su file
+        # che vengono poi letti dalle finestre PowerShell esterne
+        
+        # Chiudiamo le finestre orfane (per sicurezza)
         chiudi_console_log()
         chiudi_console_debug()
             
         if tipo_messaggi == 'info' or tipo_messaggi == 'both':
-            # Main window follows INFO log (Activity)
+            # Finestra Activity Log
             ps_script_info = (
                 "$host.ui.RawUI.WindowTitle = 'Zentra Core - Activity Log'; "
                 f"Get-Content -Path '{info_filename}' -Wait -Tail 20 | ForEach-Object {{ "
@@ -115,25 +158,24 @@ def init_logger(config):
                 "else { Write-Host $_ -ForegroundColor White } "
                 "}"
             )
-            # Use /min and -WindowStyle Minimized to keep it in background
             subprocess.Popen(f'start "" /min powershell -WindowStyle Minimized -NoExit -Command "{ps_script_info}"', shell=True)
             
         if tipo_messaggi == 'debug' or tipo_messaggi == 'both':
-            # Technical Debug window
+            # Finestra Technical Debug
             apri_console_debug()
             
         _console_window_started = True
-    elif destinazione == 'file_only':
+        
+    elif destinazione_lower == 'file_only':
+        # Già fatto sopra (solo file handlers aggiunti)
         chiudi_console_log()
         chiudi_console_debug()
-        if console_handler in logger.handlers:
-            logger.removeHandler(console_handler)
+        
     else:
-        # Destinazione standard: Chat
+        # Destinazione standard: CHAT (nel terminale principale)
         chiudi_console_log()
         chiudi_console_debug()
-        if console_handler not in logger.handlers:
-            logger.addHandler(console_handler)
+        logger.addHandler(console_handler)
 
 def apri_console_debug():
     """Opens a dedicated console for DEBUG logs (e.g., LiteLLM)."""

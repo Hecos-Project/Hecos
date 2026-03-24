@@ -36,12 +36,23 @@ class ModelManager:
         # 3. Recupero Modelli CLOUD
         allow_cloud = config.get('llm', {}).get('allow_cloud', False)
         if allow_cloud:
+            import os
             providers = config.get('llm', {}).get('providers', {})
             for provider_name, p_data in providers.items():
                 api_key = p_data.get('api_key')
+                
+                # Fallback sulle variabili d'ambiente (OS) se non presente nel config
+                if not api_key:
+                    env_key_name = f"{provider_name.upper()}_API_KEY"
+                    api_key = os.environ.get(env_key_name, '').strip().strip("'").strip('"')
+                    if api_key:
+                        logger.debug("MODEL", f"Using environment variable {env_key_name} for {provider_name} (starts with: {api_key[:5]}...).")
+                    else:
+                        logger.debug("MODEL", f"Environment variable {env_key_name} for {provider_name} not found.")
+
                 cloud_models = []
                 
-                if provider_name in ["groq", "openai"] and api_key:
+                if provider_name in ["groq", "openai", "anthropic", "gemini"] and api_key:
                     cloud_models = self._fetch_cloud_models(provider_name, api_key)
                 
                 if not cloud_models:
@@ -50,6 +61,7 @@ class ModelManager:
                 for m_name in cloud_models:
                     full_name = f"{provider_name}/{m_name}" if not m_name.startswith(f"{provider_name}/") else m_name
                     all_models.append({"name": full_name, "type": "cloud", "provider": provider_name})
+
 
         if not all_models:
             print(f"\033[91m{translator.t('no_models_found')}\033[0m")
@@ -128,14 +140,31 @@ class ModelManager:
                 url = "https://api.groq.com/openai/v1/models"
             elif provider == "openai":
                 url = "https://api.openai.com/v1/models"
+            elif provider == "gemini":
+                # Google Gemini (Google AI Studio)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+                # For Gemini, the key is in the URL, not in the header
+                response = requests.get(url, timeout=5)
+                if response.status_code == 200:
+                    data = response.json().get('models', [])
+                    models = [m['name'].replace('models/', '') for m in data if 'name' in m]
+                    logger.debug("MODEL", f"Fetched {len(models)} models from {provider}.")
+                    return models
+                else:
+                    logger.errore(f"MODEL: {provider} API error {response.status_code}")
+                    return []
             else:
                 return []
             
             headers = {"Authorization": f"Bearer {api_key}"}
-            response = requests.get(url, headers=headers, timeout=2)
+            response = requests.get(url, headers=headers, timeout=5) # Aumentato timeout
             if response.status_code == 200:
                 data = response.json().get('data', [])
-                return [m['id'] for m in data]
-        except:
-            pass
+                models = [m['id'] for m in data]
+                logger.debug("MODEL", f"Fetched {len(models)} models from {provider}.")
+                return models
+            else:
+                logger.errore(f"MODEL: {provider} API error {response.status_code}: {response.text[:100]}")
+        except Exception as e:
+            logger.debug("MODEL", f"Fetch error for {provider}: {e}")
         return []

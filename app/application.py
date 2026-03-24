@@ -4,6 +4,7 @@ Classe principale dell'applicazione Zentra.
 
 import sys
 import time
+import atexit
 import msvcrt
 from core.logging import logger
 from core.system import plugin_loader, diagnostica
@@ -17,6 +18,26 @@ from .input_handler import InputHandler
 from .threads import AscoltoThread
 from .model_manager import ModelManager
 from .personality_manager import PersonalityManager
+
+# Registra chiusura finestre di debug come hook di shutdown garantito.
+# atexit gestisce sys.exit() e Ctrl+C normali.
+atexit.register(logger.chiudi_tutte_le_console)
+
+# Su Windows, la chiusura via click X invia CTRL_CLOSE_EVENT che bypassa atexit.
+# SetConsoleCtrlHandler intercetta questo evento a livello OS.
+import ctypes
+import ctypes.wintypes
+
+_HANDLER_ROUTINE = ctypes.WINFUNCTYPE(ctypes.wintypes.BOOL, ctypes.wintypes.DWORD)
+
+@_HANDLER_ROUTINE
+def _console_ctrl_handler(ctrl_type):
+    # CTRL_C=0, CTRL_BREAK=1, CTRL_CLOSE=2, CTRL_LOGOFF=5, CTRL_SHUTDOWN=6
+    if ctrl_type in (0, 1, 2, 5, 6):
+        logger.chiudi_tutte_le_console()
+    return False  # False = lascia proseguire la terminazione normale
+
+ctypes.windll.kernel32.SetConsoleCtrlHandler(_console_ctrl_handler, True)
 
 class ZentraApplication:
     def __init__(self):
@@ -151,6 +172,15 @@ class ZentraApplication:
             editor.run()
             self.config_manager.reload()
             logger.init_logger(self.config_manager.config)
+            
+            # Svuota le cache per garantire l'applicazione immediata
+            from core.processing import filtri
+            if hasattr(filtri, 'reset_cache'):
+                filtri.reset_cache()
+                
+            from core.llm.manager import manager
+            if hasattr(manager, 'reload_config'):
+                manager.reload_config()
 
     def run(self):
         """Avvia il loop principale dell'applicazione."""

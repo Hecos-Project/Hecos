@@ -1,7 +1,6 @@
 """
-MODULO: Dashboard - Zentra Core v0.8
-DESCRIZIONE: Monitoraggio hardware (CPU, RAM, GPU/VRAM) e stato backend AI (Ollama/Kobold).
-Fornisce anche comandi vocali/testuali per interrogare le risorse di sistema.
+Plugin: Dashboard
+Monitoraggio hardware (CPU, RAM, GPU/VRAM) e stato backend AI (Ollama/Kobold).
 """
 import sys
 import psutil
@@ -9,10 +8,24 @@ import threading
 import time
 import requests
 import json
-
-from core.logging import logger
-from core.i18n import translator
-from app.config import ConfigManager
+try:
+    from core.logging import logger
+    from core.i18n import translator
+    from app.config import ConfigManager
+except ImportError:
+    class DummyLogger:
+        def debug(self, *args, **kwargs): print("[DSB_DEBUG]", *args)
+        def info(self, *args, **kwargs): print("[DSB_INFO]", *args)
+        def warning(self, *args, **kwargs): print("[DSB_WARN]", *args)
+        def errore(self, *args, **kwargs): print("[DSB_ERR]", *args)
+    logger = DummyLogger()
+    class DummyTranslator:
+        def t(self, key, **kwargs): return key
+    translator = DummyTranslator()
+    class DummyConfigMgr:
+        def __init__(self): self.config = {}
+        def get_plugin_config(self, tag, key, default): return default
+    ConfigManager = DummyConfigMgr
 
 try:
     import GPUtil
@@ -21,159 +34,230 @@ except ImportError:
     GPUTIL_AVAILABLE = False
     logger.errore("DASHBOARD: GPUtil not installed. VRAM and GPU not available.")
 
+# Variabili globali per lo stato condiviso tra thread e classe
 _backend_status = "STARTING"
+_monitor_thread_started = False
 _lock = threading.Lock()
 
 def _monitora_backend():
     """Thread che monitora periodicamente lo stato del backend AI."""
     global _backend_status
     cfg_mgr = ConfigManager()
-    monitor_interval = cfg_mgr.get_plugin_config("DASHBOARD", "monitor_interval", 2)
-    backend_timeout = cfg_mgr.get_plugin_config("DASHBOARD", "backend_timeout", 0.5)
-
+    
     while True:
         try:
+            # Ricarica l'intervallo ogni volta per dinamicità
+            monitor_interval = cfg_mgr.get_plugin_config("DASHBOARD", "monitor_interval", 2)
+            backend_timeout = cfg_mgr.get_plugin_config("DASHBOARD", "backend_timeout", 0.5)
+            
             config = cfg_mgr.config
             backend_type = config.get('backend', {}).get('tipo', 'ollama')
             backend_cfg = config.get('backend', {}).get(backend_type, {})
 
             if backend_type == 'cloud':
-                _backend_status = "CLOUD"
+                status_val = "CLOUD"
             elif backend_type == 'kobold':
                 url = backend_cfg.get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
                 r = requests.get(url, timeout=backend_timeout)
-                _backend_status = "READY" if r.status_code == 200 else "ERROR"
+                status_val = "READY" if r.status_code == 200 else "ERROR"
             else:
                 r = requests.get("http://localhost:11434/api/tags", timeout=backend_timeout)
-                _backend_status = "READY" if r.status_code == 200 else "ERROR OLLAMA"
+                status_val = "READY" if r.status_code == 200 else "ERROR OLLAMA"
+
+            with _lock:
+                _backend_status = status_val
 
         except requests.exceptions.ConnectionError:
-            _backend_status = "OFFLINE"
+            with _lock: _backend_status = "OFFLINE"
         except requests.exceptions.Timeout:
-            _backend_status = "TIMEOUT"
-        except json.JSONDecodeError:
-            _backend_status = "ERROR CONFIG"
+            with _lock: _backend_status = "TIMEOUT"
         except Exception as e:
-            logger.errore(f"DASHBOARD: Backend monitor error: {e}")
-            _backend_status = "ERROR"
+            logger.debug("DASHBOARD", f"Backend monitor update error: {e}")
+            with _lock: _backend_status = "ERROR"
 
         time.sleep(monitor_interval)
 
-def avvia_monitoraggio_backend():
-    """Avvia il thread di monitoraggio del backend."""
-    thread = threading.Thread(target=_monitora_backend, daemon=True)
-    thread.start()
-    logger.info("DASHBOARD: Backend monitor started.")
+class DashboardTools:
+    """
+    Plugin: Dashboard & Hardware Monitor
+    Fornisce statistiche in tempo reale su CPU, RAM, VRAM e stato del backend AI.
+    """
 
-def get_backend_status():
-    """Restituisce lo stato corrente del backend AI."""
-    with _lock:
-        return _backend_status
+    def __init__(self):
+        self.tag = "DASHBOARD"
+        self.desc = translator.t("plugin_dashboard_desc")
+        
+        self.config_schema = {
+            "monitor_interval": {
+                "type": "int",
+                "default": 2,
+                "min": 1,
+                "max": 10,
+                "description": translator.t("plugin_dashboard_monitor_interval_desc")
+            },
+            "backend_timeout": {
+                "type": "float",
+                "default": 0.5,
+                "min": 0.1,
+                "max": 5.0,
+                "description": translator.t("plugin_dashboard_timeout_desc")
+            }
+        }
+        
+        # Avvia il monitoraggio in background se non è già attivo
+        self._avvia_monitoraggio()
 
-def get_stats():
-    """Recupera le statistiche hardware (CPU, RAM, GPU/VRAM)."""
-    stats = {
-        "cpu": 0,
-        "ram": 0,
-        "vram": "N/A",
-        "gpu_load": "N/A",
-        "stato_gpu": "N/A",
-        "backend_status": get_backend_status()
-    }
+    @property
+    def status(self):
+        return translator.t("plugin_dashboard_status_online")
 
-    try:
-        stats["cpu"] = psutil.cpu_percent(interval=0.1)
-        stats["ram"] = psutil.virtual_memory().percent
+    def _avvia_monitoraggio(self):
+        global _monitor_thread_started
+        if not _monitor_thread_started:
+            thread = threading.Thread(target=_monitora_backend, daemon=True)
+            thread.start()
+            _monitor_thread_started = True
+            logger.info("DASHBOARD: Backend monitor thread initialized via class.")
+
+    def get_system_resources(self) -> str:
+        """
+        Restituisce un riepilogo dell'uso di CPU e RAM di sistema.
+        """
+        cpu = psutil.cpu_percent(interval=0.1)
+        ram = psutil.virtual_memory().percent
+        return translator.t("plugin_dashboard_stats_cpu_ram", cpu=cpu, ram=ram)
+
+    def get_gpu_status(self) -> str:
+        """
+        Restituisce lo stato della scheda video (GPU), inclusa la VRAM usata e il carico termico/computazionale.
+        """
+        if not GPUTIL_AVAILABLE:
+            return "Modulo GPUtil non installato. Impossibile leggere dati GPU."
+        
+        try:
+            gpus = GPUtil.getGPUs()
+            if not gpus:
+                return "Nessuna GPU dedicata rilevata."
+            
+            gpu = gpus[0]
+            vram_percent = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
+            vram_usata = f"{int(vram_percent)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
+            gpu_load = f"{int(gpu.load * 100)}%"
+            
+            return translator.t("plugin_dashboard_stats_vram_gpu", vram=vram_usata, load=gpu_load)
+        except Exception as e:
+            return f"Errore lettura GPU: {e}"
+
+    def _get_raw_backend_status(self) -> str:
+        """Restituisce il codice grezzo di stato del backend (es. 'CLOUD', 'READY', 'ERROR')."""
+        with _lock:
+            return _backend_status
+
+    def get_backend_status(self) -> str:
+        """
+        Verifica se il backend di Intelligenza Artificiale (Ollama, Kobold o Cloud) è online e pronto.
+        """
+        stato = self._get_raw_backend_status()
+        return translator.t("plugin_dashboard_stats_backend", status=stato)
+
+    def get_full_dashboard(self) -> str:
+        """
+        Restituisce un report completo di tutte le risorse hardware e dello stato del backend AI.
+        Usa questo strumento se l'utente chiede 'come stai' o 'fammi un report del sistema'.
+        """
+        cpu = psutil.cpu_percent(interval=0.1)
+        ram = psutil.virtual_memory().percent
+        
+        with _lock:
+            b_status = _backend_status
+
+        vram_info = "N/A"
+        gpu_load = "N/A"
+        stato_gpu = "N/A"
 
         if GPUTIL_AVAILABLE:
             try:
                 gpus = GPUtil.getGPUs()
                 if gpus:
                     gpu = gpus[0]
-                    vram_percent = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
-                    vram_usata = f"{int(vram_percent)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
+                    vram_p = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
+                    vram_info = f"{int(vram_p)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
                     gpu_load = f"{int(gpu.load * 100)}%"
+                    stato_gpu = "WAITING" if vram_p > 80 else "READY"
+            except: pass
 
-                    stats["vram"] = vram_usata
-                    stats["gpu_load"] = gpu_load
-                    stats["stato_gpu"] = "WAITING" if vram_percent > 80 else "READY"
-                else:
-                    stats["vram"] = "N/A (No GPU)"
-                    stats["gpu_load"] = "N/A"
-                    stats["stato_gpu"] = "N/A"
-            except Exception as e:
-                logger.errore(f"DASHBOARD: GPU read error: {e}")
-                stats["vram"] = "ERR"
-                stats["gpu_load"] = "ERR"
-                stats["stato_gpu"] = "ERR"
+        if vram_info in ("N/D", "N/A", "N/A (No GPU)"):
+            return translator.t("plugin_dashboard_stats_full", cpu=cpu, ram=ram, gpu_status=stato_gpu, backend_status=b_status)
         else:
-            stats["vram"] = "N/A (Missing GPUtil)"
-            stats["gpu_load"] = "N/A"
-            stats["stato_gpu"] = "N/A"
+            return translator.t("plugin_dashboard_stats_full_gpu", cpu=cpu, ram=ram, vram=vram_info, load=gpu_load, backend_status=b_status)
 
-    except Exception as e:
-        logger.errore(f"DASHBOARD: Critical get_stats error: {e}")
+# Istanzia pubblicamente lo strumento per l'esportazione verso il Core
+tools = DashboardTools()
 
-    return stats
+# --- COMPATIBILITY SHIMS (Legacy call support) ---
+def get_stats():
+    """Wrapper per compatibilità con interface.py e ui_updater.py"""
+    # Usiamo un dizionario compatibile con il vecchio formato atteso
+    cpu = psutil.cpu_percent(interval=0.1)
+    ram = psutil.virtual_memory().percent
+    
+    with _lock:
+        b_status = _backend_status
 
-def info():
-    """Manifest del plugin per il registro centrale."""
+    vram_info = "N/A"
+    gpu_load = "N/A"
+    stato_gpu = "N/A"
+
+    if GPUTIL_AVAILABLE:
+        try:
+            gpus = GPUtil.getGPUs()
+            if gpus:
+                gpu = gpus[0]
+                vram_p = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
+                vram_info = f"{int(vram_p)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
+                gpu_load = f"{int(gpu.load * 100)}%"
+                stato_gpu = "WAITING" if vram_p > 80 else "READY"
+        except: pass
+
     return {
-        "tag": "DASHBOARD",
-        "desc": translator.t("plugin_dashboard_desc"),
-        "comandi": {
-            "resources": translator.t("plugin_dashboard_risorse_desc"),
-            "vram": translator.t("plugin_dashboard_vram_desc"),
-            "status": translator.t("plugin_dashboard_stato_desc"),
-            "all": translator.t("plugin_dashboard_tutto_desc")
-        },
-        "esempio": "[DASHBOARD: resources] or [DASHBOARD: all]"
+        "cpu": cpu,
+        "ram": ram,
+        "vram": vram_info,
+        "gpu_load": gpu_load,
+        "stato_gpu": stato_gpu,
+        "backend_status": b_status
     }
 
-def status():
-    """Stato del plugin."""
-    return translator.t("plugin_dashboard_status_online")
+def avvia_monitoraggio_backend():
+    """Wrapper per compatibilità con application.py"""
+    tools._avvia_monitoraggio()
 
-def config_schema():
-    """
-    Schema di configurazione per questo plugin.
-    """
-    return {
-        "monitor_interval": {
-            "type": "int",
-            "default": 2,
-            "min": 1,
-            "max": 10,
-            "description": translator.t("plugin_dashboard_monitor_interval_desc")
-        },
-        "backend_timeout": {
-            "type": "float",
-            "default": 0.5,
-            "min": 0.1,
-            "max": 5.0,
-            "description": translator.t("plugin_dashboard_timeout_desc")
-        }
-    }
+def get_backend_status():
+    """Wrapper per compatibilità con input_handler.py - restituisce il codice grezzo (es. 'CLOUD', 'READY')."""
+    return tools._get_raw_backend_status()
 
 def esegui(comando):
-    """Esegue i comandi del plugin."""
+    """Wrapper per compatibilità con plugin legacy e vecchio processore"""
     stats = get_stats()
     cmd = comando.lower().strip()
-
-    if cmd == "resources" or cmd == "risorse":
-        return translator.t("plugin_dashboard_stats_cpu_ram", cpu=stats['cpu'], ram=stats['ram'])
+    if cmd in ["resources", "risorse"]:
+        return tools.get_system_resources()
     elif cmd == "vram":
-        return translator.t("plugin_dashboard_stats_vram_gpu", vram=stats['vram'], load=stats['gpu_load'])
-    elif cmd == "status" or cmd == "stato":
-        return translator.t("plugin_dashboard_stats_backend", status=stats['backend_status'])
-    elif cmd == "all" or cmd == "tutto" or cmd == "":
-        if stats['vram'] in ("N/D", "N/A", "ERR", "N/A (Missing GPUtil)", "N/A (No GPU)"):
-            return translator.t("plugin_dashboard_stats_full", cpu=stats['cpu'], ram=stats['ram'], gpu_status=stats['stato_gpu'], backend_status=stats['backend_status'])
-        else:
-            return translator.t("plugin_dashboard_stats_full_gpu", cpu=stats['cpu'], ram=stats['ram'], vram=stats['vram'], load=stats['gpu_load'], backend_status=stats['backend_status'])
+        return tools.get_gpu_status()
+    elif cmd in ["status", "stato"]:
+        return tools.get_backend_status()
     else:
-        # Default fallback same as 'tutto'
-        if stats['vram'] in ("N/D", "N/A", "ERR", "N/A (Missing GPUtil)", "N/A (No GPU)"):
-            return translator.t("plugin_dashboard_stats_full", cpu=stats['cpu'], ram=stats['ram'], gpu_status=stats['stato_gpu'], backend_status=stats['backend_status'])
-        else:
-            return translator.t("plugin_dashboard_stats_full_gpu", cpu=stats['cpu'], ram=stats['ram'], vram=stats['vram'], load=stats['gpu_load'], backend_status=stats['backend_status'])
+        return tools.get_full_dashboard()
+
+def info():
+    """Manifest legacy per il registro centrale"""
+    return {
+        "tag": "DASHBOARD",
+        "desc": tools.desc,
+        "comandi": {
+            "resources": "Info CPU/RAM",
+            "vram": "Info GPU",
+            "status": "Stato Backend",
+            "all": "Report completo"
+        }
+    }

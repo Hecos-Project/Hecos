@@ -7,262 +7,276 @@ import time
 import re
 import datetime
 import json
-from core.logging import logger
-from core.i18n import translator
-from app.config import ConfigManager   # per leggere la configurazione
+try:
+    from core.logging import logger
+    from core.i18n import translator
+    from app.config import ConfigManager
+except ImportError:
+    class DummyLogger:
+        def debug(self, *args, **kwargs): print("[SYS_DEBUG]", *args)
+        def info(self, *args, **kwargs): print("[SYS_INFO]", *args)
+        def errore(self, *args, **kwargs): print("[SYS_ERR]", *args)
+    logger = DummyLogger()
+    class DummyTranslator:
+        def t(self, key, **kwargs): return key
+    translator = DummyTranslator()
+    class DummyConfigMgr:
+        def __init__(self): self.config = {}
+        def get_plugin_config(self, tag, key, default): return default
+    ConfigManager = DummyConfigMgr
 
-def info():
-    """Manifest del plugin."""
-    return {
-        "tag": "SYSTEM",
-        "desc": translator.t("plugin_system_desc"),
-        "comandi": {
-            "help": translator.t("plugin_system_help_desc"),
-            "reboot": translator.t("plugin_system_riavvia_desc"),
-            "cmd:instruction": translator.t("plugin_system_cmd_desc"),
-            "terminal": translator.t("plugin_system_terminale_desc"),
-            "read log": translator.t("plugin_system_leggi_log_desc"),
-            "errors": translator.t("plugin_system_errori_desc"),
-            "time": translator.t("plugin_system_ora_desc"),
-            "open:program": translator.t("plugin_system_apri_desc"),
-            "explore:path": translator.t("plugin_system_esplora_desc"),
-            "config:set:section,key,value": translator.t("plugin_system_config_set_desc")
-        },
-        "esempio": "[SYSTEM: read log] or [SYSTEM: terminal] or [SYSTEM: time]"
-    }
-
-def status():
-    return translator.t("plugin_sistema_status_online")
-
-def config_schema():
+class SystemTools:
     """
-    Schema di configurazione per il plugin Sistema.
-    Permette di personalizzare programmi, cartelle e whitelist dei comandi shell.
+    Plugin: System
+    Strumenti centrali di sistema. Permette di gestire il SO, leggere l'ora, 
+    eseguire comandi terminale, gestire programmi, cartelle e configurazioni.
     """
-    return {
-        "programs": {
-            "type": "dict",
-            "default": {
-                "notepad": "notepad.exe",
-                "chrome": "chrome.exe",
-                "visual studio": r"C:\Program Files\Microsoft VS Code\Code.exe",
-                "sillytavern": r"C:\SillyTavern\SillyTavern\Start.bat"
+
+    def __init__(self):
+        self.tag = "SYSTEM"
+        self.desc = translator.t("plugin_system_desc")
+        self.status = translator.t("plugin_sistema_status_online")
+        
+        self.config_schema = {
+            "programs": {
+                "type": "dict",
+                "default": {
+                    "notepad": "notepad.exe",
+                    "chrome": "chrome.exe",
+                    "visual studio": r"C:\Program Files\Microsoft VS Code\Code.exe",
+                    "sillytavern": r"C:\SillyTavern\SillyTavern\Start.bat"
+                },
+                "description": translator.t("plugin_sistema_programs_desc")
             },
-            "description": translator.t("plugin_sistema_programs_desc")
-        },
-        "explorer_mappings": {
-            "type": "dict",
-            "default": {
-                "desktop": os.path.expanduser("~\\Desktop"),
-                "download": os.path.expanduser("~\\Downloads"),
-                "documenti": os.path.expanduser("~\\Documents"),
-                "core": os.path.join(os.getcwd(), "core"),
-                "plugins": os.path.join(os.getcwd(), "plugins"),
-                "memory": os.path.join(os.getcwd(), "memory"),
-                "personality": os.path.join(os.getcwd(), "personality"),
-                "logs": os.path.join(os.getcwd(), "logs")
+            "explorer_mappings": {
+                "type": "dict",
+                "default": {
+                    "desktop": os.path.expanduser("~\\Desktop"),
+                    "download": os.path.expanduser("~\\Downloads"),
+                    "documenti": os.path.expanduser("~\\Documents"),
+                    "core": os.path.join(os.getcwd(), "core"),
+                    "plugins": os.path.join(os.getcwd(), "plugins"),
+                    "memory": os.path.join(os.getcwd(), "memory"),
+                    "personality": os.path.join(os.getcwd(), "personality"),
+                    "logs": os.path.join(os.getcwd(), "logs")
+                },
+                "description": translator.t("plugin_sistema_explorer_mappings_desc")
             },
-            "description": translator.t("plugin_sistema_explorer_mappings_desc")
-        },
-        "shell_command_whitelist": {
-            "type": "list",
-            "default": [],   # lista vuota = nessuna whitelist, tutti i comandi permessi
-            "description": translator.t("plugin_sistema_shell_whitelist_desc")
-        },
-        "enable_config_set": {
-            "type": "bool",
-            "default": True,
-            "description": translator.t("plugin_sistema_enable_config_set_desc")
-        },
-        "shell_command_timeout": {
-            "type": "int",
-            "default": 15,
-            "min": 1,
-            "max": 60,
-            "description": translator.t("plugin_sistema_shell_timeout_desc")
+            "shell_command_whitelist": {
+                "type": "list",
+                "default": [],
+                "description": translator.t("plugin_sistema_shell_whitelist_desc")
+            },
+            "enable_config_set": {
+                "type": "bool",
+                "default": True,
+                "description": translator.t("plugin_sistema_enable_config_set_desc")
+            },
+            "shell_command_timeout": {
+                "type": "int",
+                "default": 15,
+                "min": 1,
+                "max": 60,
+                "description": translator.t("plugin_sistema_shell_timeout_desc")
+            }
         }
-    }
 
-def _get_programs():
-    """Restituisce la mappa programmi dalla configurazione."""
-    cfg = ConfigManager()
-    return cfg.get_plugin_config("SYSTEM", "programs", {})
+    # --- METODI PRIVATI (HELPER) ---
 
-def _get_explorer_mappings():
-    """Restituisce la mappa percorsi per esplora: dalla configurazione."""
-    cfg = ConfigManager()
-    return cfg.get_plugin_config("SYSTEM", "explorer_mappings", {})
+    def _get_programs(self):
+        cfg = ConfigManager()
+        return cfg.get_plugin_config(self.tag, "programs", {})
 
-def _get_shell_whitelist():
-    """Restituisce la lista di comandi shell consentiti (regex)."""
-    cfg = ConfigManager()
-    return cfg.get_plugin_config("SYSTEM", "shell_command_whitelist", [])
+    def _get_explorer_mappings(self):
+        cfg = ConfigManager()
+        return cfg.get_plugin_config(self.tag, "explorer_mappings", {})
 
-def _is_shell_command_allowed(cmd):
-    """Controlla se un comando shell è nella whitelist."""
-    whitelist = _get_shell_whitelist()
-    if not whitelist:
-        return True   # whitelist vuota = tutto permesso
-    for pattern in whitelist:
-        if re.search(pattern, cmd, re.IGNORECASE):
-            return True
-    return False
+    def _is_shell_command_allowed(self, cmd: str) -> bool:
+        cfg = ConfigManager()
+        whitelist = cfg.get_plugin_config(self.tag, "shell_command_whitelist", [])
+        if not whitelist:
+            return True # vuota = tutto permesso
+        for pattern in whitelist:
+            if re.search(pattern, cmd, re.IGNORECASE):
+                return True
+        return False
 
-def esegui(comando):
-    """Esegue comandi shell o gestisce il ciclo vitale di Zentra."""
-    logger.debug("PLUGIN_SYSTEM", f"execute() called with command: '{comando}'")
-    
-    cmd_originale = comando.strip()
-    cmd = cmd_originale.lower()
+    # --- METODI PUBBLICI (FUNCTION CALLING TOOLS) ---
 
-    # --- 0. ORA ---
-    if cmd == "ora" or cmd == "time":
-        logger.debug("PLUGIN_SYSTEM", "Executing 'time' command")
+    def get_time(self) -> str:
+        """
+        Restituisce l'ora locale attuale formattata (HH:MM).
+        Usa questo strumento per rispondere quando ti viene chiesta l'ora esatta.
+        """
         ora = datetime.datetime.now().strftime("%H:%M")
+        logger.debug(f"PLUGIN_{self.tag}", "Executing 'time' command")
         return translator.t("plugin_system_time_is", time=ora)
 
-    # --- 1. PROTOCOLLO RIAVVIO ---
-    if any(x in cmd for x in ["riavvia", "reboot", "restart"]):
+    def reboot_system(self) -> str:
+        """
+        Riavvia l'intero sistema Zentra Core.
+        Usa questo strumento se ci sono problemi critici o se l'utente richiede un riavvio.
+        """
         logger.info(translator.t("plugin_system_reboot_admin"))
-        logger.debug("PLUGIN_SYSTEM", "Executing reboot")
-        print(f"\n\033[91m[SYSTEM] {translator.t('rebooting_msg')}\033[0m")
+        logger.debug(f"PLUGIN_{self.tag}", "Executing reboot")
+        print(f"\n\033[91m[{self.tag}] {translator.t('rebooting_msg')}\033[0m")
         sys.stdout.flush() 
         winsound.Beep(600, 150)
         winsound.Beep(400, 150)
         os._exit(0)
         return translator.t("rebooting_msg")
 
-    # --- 2. LETTURA LOG E ERRORI ---
-    if "log" in cmd or "errori" in cmd or "registro" in cmd or "errors" in cmd:
-        solo_err = any(x in cmd for x in ["errori", "crash", "errors"])
-        tipo_str = translator.t("plugin_system_log_errors") if solo_err else translator.t("plugin_system_log_events")
+    def read_logs(self) -> str:
+        """
+        Legge gli ultimi eventi registrati nei file di log generali del sistema.
+        Utile per il debug e per capire cosa è successo di recente.
+        """
+        tipo_str = translator.t("plugin_system_log_events")
         logger.info(translator.t("plugin_system_log_access_msg", type=tipo_str))
-        logger.debug("PLUGIN_SYSTEM", f"Reading logs, errors only: {solo_err}")
+        logger.debug(f"PLUGIN_{self.tag}", "Reading standard logs")
         
-        risultato_log = logger.leggi_log(n=8, solo_errori=solo_err)
+        risultato_log = logger.leggi_log(n=8, solo_errori=False)
         return translator.t("plugin_system_log_analysis_done", type=tipo_str, log=risultato_log)
 
-    # --- 3. APERTURA TERMINALE ESTERNO ---
-    trigger_terminale = ["terminale", "console", "prompt", "apri cmd", "cmd", "terminal"]
-    if cmd == "cmd" or any(x in cmd for x in trigger_terminale):
+    def read_errors(self) -> str:
+        """
+        Legge specificamente gli ultimi errori (crash, eccezioni) registrati dal sistema nel log degli errori.
+        Essenziale per diagnosticare malfunzionamenti.
+        """
+        tipo_str = translator.t("plugin_system_log_errors")
+        logger.info(translator.t("plugin_system_log_access_msg", type=tipo_str))
+        logger.debug(f"PLUGIN_{self.tag}", "Reading error logs")
+        
+        risultato_log = logger.leggi_log(n=8, solo_errori=True)
+        return translator.t("plugin_system_log_analysis_done", type=tipo_str, log=risultato_log)
+
+    def open_terminal(self) -> str:
+        """
+        Apre una nuova finestra indipendente del prompt dei comandi di Windows (CMD).
+        """
         try:
             logger.info("Opening independent external CMD instance.")
-            logger.debug("PLUGIN_SYSTEM", "Opening terminal")
             subprocess.Popen("start cmd.exe", shell=True)
             return translator.t("plugin_system_terminal_opened")
         except Exception as e:
             logger.errore(f"Terminal open failed: {e}")
-            logger.debug("PLUGIN_SYSTEM", f"Terminal open error: {e}")
             return translator.t("plugin_system_terminal_fail", error=str(e))
+
+    def open_program(self, program_name: str) -> str:
+        """
+        Avvia un programma locale specificato dal nome.
         
-    # --- 4. APRI PROGRAMMA ---
-    if cmd.startswith("apri:") or cmd.startswith("open:"):
-        p_offset = 5 if cmd.startswith("apri:") else 5
-        prog = cmd_originale[p_offset:].strip().lower()
-        logger.debug("PLUGIN_SYSTEM", f"Opening program: {prog}")
+        :param program_name: Il nome del programma da aprire (es. 'notepad', 'chrome', o altri nomi registrati).
+        """
+        prog = program_name.strip().lower()
+        logger.debug(f"PLUGIN_{self.tag}", f"Opening program: {prog}")
         
-        programs = _get_programs()
+        programs = self._get_programs()
         if prog in programs:
             try:
                 os.startfile(programs[prog])
-                logger.debug("PLUGIN_SYSTEM", f"Program {prog} started")
                 return translator.t("plugin_system_program_starting", prog=prog)
             except Exception as e:
-                logger.debug("PLUGIN_SYSTEM", f"Error opening {prog}: {e}")
                 return translator.t("plugin_system_program_error", prog=prog, error=str(e))
         else:
-            # Se non è nella lista, prova a interpretarlo come comando diretto
             try:
                 os.startfile(prog + ".exe")
-                logger.debug("PLUGIN_SYSTEM", f"Direct open attempt: {prog}.exe")
                 return translator.t("plugin_system_program_starting", prog=prog)
             except:
-                logger.debug("PLUGIN_SYSTEM", f"Program {prog} unrecognized")
                 return translator.t("plugin_system_program_unknown", prog=prog)
 
-    # --- 5. ESPLORA CARTELLA ---
-    if cmd.startswith("esplora:") or cmd.startswith("explore:"):
-        e_offset = 8 if cmd.startswith("esplora:") else 8
-        percorso = cmd_originale[e_offset:].strip().lower()
-        logger.debug("PLUGIN_SYSTEM", f"Opening folder: {percorso}")
+    def explore_folder(self, folder_path: str) -> str:
+        """
+        Apre il file manager del sistema operativo in una cartella specifica.
         
-        mappings = _get_explorer_mappings()
+        :param folder_path: Il percorso o l'alias della cartella (es. 'desktop', 'download', o un path assoluto).
+        """
+        percorso = folder_path.strip().lower()
+        logger.debug(f"PLUGIN_{self.tag}", f"Opening folder: {percorso}")
+        
+        mappings = self._get_explorer_mappings()
         path = mappings.get(percorso, percorso)
         if os.path.exists(path):
             os.startfile(path)
-            logger.debug("PLUGIN_SYSTEM", f"Folder {percorso} opened")
             return translator.t("plugin_system_folder_opened", folder=percorso)
         else:
-            logger.debug("PLUGIN_SYSTEM", f"Path {percorso} not found")
             return translator.t("plugin_system_path_not_found", path=percorso)
 
-    # --- 6. CONFIG: SET (solo se abilitato) ---
-    if cmd.startswith("config:set:"):
+    def set_configuration(self, section: str, key: str, value: str) -> str:
+        """
+        Modifica un valore all'interno del file di configurazione principale (config.json).
+        Attenzione: va usato solo su richiesta esplicita dell'utente.
+        
+        :param section: La sezione root del config (es. 'llm', 'backend', 'voce').
+        :param key: La chiave specifica da modificare.
+        :param value: Il nuovo valore (testo, numerico o 'true'/'false').
+        """
         cfg = ConfigManager()
-        if not cfg.get_plugin_config("SYSTEM", "enable_config_set", True):
-            logger.debug("PLUGIN_SYSTEM", "config:set command disabled by configuration")
+        if not cfg.get_plugin_config(self.tag, "enable_config_set", True):
             return translator.t("plugin_system_config_disabled")
-        args = cmd_originale[11:].strip().split(',')
-        if len(args) == 3:
-            sezione, chiave, valore = [x.strip() for x in args]
-            logger.debug("PLUGIN_SYSTEM", f"Config modification: {sezione}.{chiave} = {valore}")
-            try:
-                with open('config.json', 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                if sezione in data and chiave in data[sezione]:
-                    vecchio = data[sezione][chiave]
-                    if isinstance(vecchio, bool):
-                        valore = valore.lower() in ('true', '1', 'yes')
-                    elif isinstance(vecchio, int):
-                        valore = int(valore)
-                    elif isinstance(vecchio, float):
-                        valore = float(valore)
-                    data[sezione][chiave] = valore
-                    with open('config.json', 'w', encoding='utf-8') as f:
-                        json.dump(data, f, indent=4)
-                    logger.debug("PLUGIN_SYSTEM", "Config updated")
-                    return translator.t("plugin_system_config_updated", section=sezione, key=chiave, value=str(valore))
-                else:
-                    logger.debug("PLUGIN_SYSTEM", f"Section or key not found")
-                    return translator.t("plugin_system_config_not_found")
-            except Exception as e:
-                logger.debug("PLUGIN_SYSTEM", f"Config update error: {e}")
-                return f"Error: {e}"
-        else:
-            return "Syntax: config:set:section,key,value"
+            
+        logger.debug(f"PLUGIN_{self.tag}", f"Config modification: {section}.{key} = {value}")
+        try:
+            with open('config.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if section in data and key in data[section]:
+                vecchio = data[section][key]
+                val_inserito = value.strip()
+                if isinstance(vecchio, bool):
+                    val_inserito = val_inserito.lower() in ('true', '1', 'yes')
+                elif isinstance(vecchio, int):
+                    val_inserito = int(val_inserito)
+                elif isinstance(vecchio, float):
+                    val_inserito = float(val_inserito)
+                
+                data[section][key] = val_inserito
+                with open('config.json', 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=4)
+                return translator.t("plugin_system_config_updated", section=section, key=key, value=str(val_inserito))
+            else:
+                return translator.t("plugin_system_config_not_found")
+        except Exception as e:
+            return f"Error: {e}"
 
-    # --- 7. ESECUZIONE COMANDI SHELL (cmd:) ---
-    if cmd.startswith("cmd:"):
-        shell_cmd = cmd_originale[4:].strip()
-        logger.debug("PLUGIN_SYSTEM", f"Comando shell: {shell_cmd}")
-    else:
-        shell_cmd = re.sub(r"^(comando_reale|sistema|cmd|esegui|shell)[:\s]+", "", cmd_originale, flags=re.IGNORECASE).strip()
-        logger.debug("PLUGIN_SYSTEM", f"Comando shell (pulito): {shell_cmd}")
+    def execute_shell_command(self, command: str) -> str:
+        """
+        Esegue un comando shell (cmd.exe) nel terminale in background e restituisce l'output.
+        Ideale per diagnostica, automazione o interrogazioni di sistema.
+        
+        :param command: Il comando esatto da passare alla shell.
+        """
+        shell_cmd = command.strip()
+        logger.debug(f"PLUGIN_{self.tag}", f"Executing shell command: {shell_cmd}")
 
-    if not shell_cmd or shell_cmd.lower() == "help":
-        logger.debug("PLUGIN_SYSTEM", "Nessun comando valido, restituisco help")
-        return translator.t("plugin_sistema_help_error")
+        if not shell_cmd:
+            return translator.t("plugin_sistema_help_error")
 
-    # Controlla whitelist
-    if not _is_shell_command_allowed(shell_cmd):
-        logger.debug("PLUGIN_SYSTEM", f"Command not authorized by whitelist: {shell_cmd}")
-        return translator.t("plugin_system_shell_unauthorized")
+        if not self._is_shell_command_allowed(shell_cmd):
+            return translator.t("plugin_system_shell_unauthorized")
 
-    timeout = ConfigManager().get_plugin_config("SYSTEM", "shell_command_timeout", 15)
+        timeout = ConfigManager().get_plugin_config(self.tag, "shell_command_timeout", 15)
 
-    try:
-        logger.info(f"Executing shell command: {shell_cmd}")
-        logger.debug("PLUGIN_SYSTEM", f"Executing subprocess: {shell_cmd}")
-        output = subprocess.check_output(shell_cmd, shell=True, text=True, stderr=subprocess.STDOUT, timeout=timeout)
-        logger.debug("PLUGIN_SYSTEM", f"Output received: {len(output)} characters")
-        return output if output.strip() else translator.t("plugin_system_shell_success", cmd=shell_cmd)
-    except subprocess.CalledProcessError as e:
-        msg_err = f"Shell Error: {e.output}"
-        logger.errore(msg_err)
-        logger.debug("PLUGIN_SYSTEM", f"Subprocess error: {e}")
-        return msg_err
-    except Exception as e:
-        logger.errore(f"Unexpected shell error: {e}")
-        logger.debug("PLUGIN_SYSTEM", f"Exception: {e}")
-        return f"Error: {str(e)}"
-        return f"Errore: {str(e)}"
+        try:
+            output = subprocess.check_output(shell_cmd, shell=True, text=True, stderr=subprocess.STDOUT, timeout=timeout)
+            return output if output.strip() else translator.t("plugin_system_shell_success", cmd=shell_cmd)
+        except subprocess.CalledProcessError as e:
+            msg_err = f"Shell Error: {e.output}"
+            logger.errore(msg_err)
+            return msg_err
+        except Exception as e:
+            logger.errore(f"Unexpected shell error: {e}")
+            return f"Error: {e}"
+
+# Istanzia pubblicamente lo strumento per l'esportazione verso il Core
+tools = SystemTools()
+
+# --- COMPATIBILITY SHIMS ---
+def info():
+    return {"tag": tools.tag, "desc": tools.desc}
+
+def status():
+    return tools.status
+
+def esegui(comando):
+    # Fallback legacy (molto limitato)
+    return f"Use tool calling for {comando}"

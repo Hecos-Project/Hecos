@@ -1,83 +1,84 @@
 import cv2
 import os
 import time
-from core.logging import logger
-from core.i18n import translator
-from app.config import ConfigManager
+try:
+    from core.logging import logger
+    from core.i18n import translator
+    from app.config import ConfigManager
+except ImportError:
+    class DummyLogger:
+        def debug(self, *args, **kwargs): print("[CAM_DEBUG]", *args)
+        def errore(self, *args, **kwargs): print("[CAM_ERR]", *args)
+    logger = DummyLogger()
+    class DummyTranslator:
+        def t(self, key, **kwargs): return key
+    translator = DummyTranslator()
+    class DummyConfigMgr:
+        def __init__(self): self.config = {}
+        def get_plugin_config(self, tag, key, default): return default
+    ConfigManager = DummyConfigMgr
 
-def info():
-    """Manifest del plugin per il database centralizzato delle skills."""
-    return {
-        "tag": "WEBCAM",
-        "desc": translator.t("plugin_webcam_desc"),
-        "comandi": {
-            "snap": translator.t("plugin_webcam_snap_desc")
-        },
-        "esempio": "[WEBCAM: snap]"
-    }
-
-def status():
-    """Stato del plugin."""
-    return translator.t("plugin_webcam_status_online")
-
-def config_schema():
+class WebcamTools:
     """
-    Schema di configurazione per il plugin WEBCAM.
-    Permette di personalizzare la cartella di salvataggio, il formato, il ritardo, ecc.
+    Plugin: Webcam & Hardware Sensor
+    Permette a Zentra di scattare fotografie usando la webcam del sistema.
     """
-    return {
-        "save_directory": {
-            "type": "str",
-            "default": "snapshots",
-            "description": translator.t("plugin_webcam_save_dir_desc")
-        },
-        "image_format": {
-            "type": "str",
-            "default": "jpg",
-            "options": ["jpg", "png"],
-            "description": translator.t("plugin_webcam_img_format_desc")
-        },
-        "camera_index": {
-            "type": "int",
-            "default": 0,
-            "min": 0,
-            "max": 10,
-            "description": translator.t("plugin_webcam_cam_index_desc")
-        },
-        "stabilization_delay": {
-            "type": "float",
-            "default": 0.5,
-            "min": 0.0,
-            "max": 2.0,
-            "description": translator.t("plugin_webcam_stab_delay_desc")
+
+    def __init__(self):
+        self.tag = "WEBCAM"
+        self.desc = translator.t("plugin_webcam_desc")
+        self.status = translator.t("plugin_webcam_status_online")
+        
+        self.config_schema = {
+            "save_directory": {
+                "type": "str",
+                "default": "snapshots",
+                "description": translator.t("plugin_webcam_save_dir_desc")
+            },
+            "image_format": {
+                "type": "str",
+                "default": "jpg",
+                "options": ["jpg", "png"],
+                "description": translator.t("plugin_webcam_img_format_desc")
+            },
+            "camera_index": {
+                "type": "int",
+                "default": 0,
+                "min": 0,
+                "max": 10,
+                "description": translator.t("plugin_webcam_cam_index_desc")
+            },
+            "stabilization_delay": {
+                "type": "float",
+                "default": 0.5,
+                "min": 0.0,
+                "max": 2.0,
+                "description": translator.t("plugin_webcam_stab_delay_desc")
+            }
         }
-    }
 
-def esegui(comando):
-    """Esecuzione del protocollo di acquisizione immagine."""
-    cmd = comando.lower().strip()
-    logger.debug("PLUGIN_WEBCAM", f"execute() called with command: '{cmd}'")
-    
-    # Accettiamo 'snap' come da protocollo, ma siamo tolleranti con termini simili
-    if cmd in ["snap", "scatta", "foto", "snapshot"]:
+    def take_snapshot(self) -> str:
+        """
+        Scatta una foto usando la webcam del computer e la salva sul disco.
+        Usa questo strumento quando l'utente ti chiede di fargli una foto o di guardare qualcosa.
+        """
+        logger.debug(f"PLUGIN_{self.tag}", "Executing snapshot protocol")
+        
         cfg = ConfigManager()
-        save_dir = cfg.get_plugin_config("WEBCAM", "save_directory", "snapshots")
-        img_format = cfg.get_plugin_config("WEBCAM", "image_format", "jpg")
-        camera_index = cfg.get_plugin_config("WEBCAM", "camera_index", 0)
-        delay = cfg.get_plugin_config("WEBCAM", "stabilization_delay", 0.5)
+        save_dir = cfg.get_plugin_config(self.tag, "save_directory", "snapshots")
+        img_format = cfg.get_plugin_config(self.tag, "image_format", "jpg")
+        camera_index = cfg.get_plugin_config(self.tag, "camera_index", 0)
+        delay = cfg.get_plugin_config(self.tag, "stabilization_delay", 0.5)
         
         try:
-            # Assicuriamoci che la cartella esista
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
 
-            # Inizializzazione hardware
             cap = cv2.VideoCapture(camera_index)
             
             if not cap.isOpened():
                 return translator.t("plugin_webcam_error_sensor")
 
-            # Piccolo delay per permettere all'esposizione di stabilizzarsi
             if delay > 0:
                 time.sleep(delay)
             
@@ -88,14 +89,22 @@ def esegui(comando):
                 full_path = os.path.join(save_dir, filename)
                 cv2.imwrite(full_path, frame)
                 cap.release()
-                logger.debug("PLUGIN_WEBCAM", f"Snapshot saved at {full_path}")
+                logger.debug(f"PLUGIN_{self.tag}", f"Snapshot saved at {full_path}")
                 return translator.t("plugin_webcam_snap_saved", path=full_path)
             
             cap.release()
             return translator.t("plugin_webcam_error_read")
 
         except Exception as e:
-            logger.errore(f"PLUGIN_WEBCAM: Error: {e}")
+            logger.errore(f"PLUGIN_{self.tag}: Error: {e}")
             return translator.t("plugin_webcam_error_critical", error=str(e))
-    
-    return translator.t("plugin_webcam_cmd_unrecognized", cmd=cmd)
+
+# Istanzia pubblicamente lo strumento per l'esportazione verso il Core
+tools = WebcamTools()
+
+# --- COMPATIBILITY SHIMS ---
+def info():
+    return {"tag": tools.tag, "desc": tools.desc}
+
+def status():
+    return tools.status

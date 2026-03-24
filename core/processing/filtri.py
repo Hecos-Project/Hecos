@@ -21,6 +21,11 @@ def carica_config_filtri():
             return {}
     return _config_cache
 
+def reset_cache():
+    """Svuota la cache per forzare una ricarica al prossimo utilizzo, utile dopo la modifica da pannello."""
+    global _config_cache
+    _config_cache = None
+
 def rimuovi_emoji(testo):
     """
     Rimuove le emoji e altri caratteri speciali non supportati dalla sintesi vocale.

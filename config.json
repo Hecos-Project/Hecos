@@ -22,8 +22,12 @@
             "groq": {
                 "api_key": "",
                 "modelli": [
+                    "groq/llama-3.3-70b-versatile",
                     "groq/llama-3.1-70b-versatile",
-                    "groq/mixtral-8x7b-32768"
+                    "groq/mixtral-8x7b-32768",
+                    "groq/qwen-2.5-32b",
+                    "groq/qwen-2.5-coder-32b",
+                    "groq/gemma2-9b-it"
                 ]
             },
             "gemini": {
@@ -43,7 +47,7 @@
     "backend": {
         "tipo": "cloud",
         "cloud": {
-            "modello": "groq/qwen/qwen3-32b",
+            "modello": "groq/llama-3.3-70b-versatile",
             "temperature": 0.7
         },
         "ollama": {
@@ -135,7 +139,7 @@
         "DASHBOARD": {
             "monitor_interval": 2,
             "backend_timeout": 0.5,
-            "enabled": true
+            "enabled": false
         },
         "FILE_MANAGER": {
             "max_read_lines": 50,

@@ -89,119 +89,120 @@ class ZentraWebUIBridge:
 
     def chat_stream(self, user_input: str) -> Generator[str, None, None]:
         """
-        Streaming diretto da Ollama, con system prompt e formattazione OpenAI.
+        Streaming usando il client unificato di Zentra (LiteLLM),
+        compatibile con Cloud e Locale.
         """
         if self.debug_attivo:
             bridge_logger.info(f"[STREAM] Input: {user_input}")
 
-        # 1. Costruisci il system prompt
+        # 1. Sistema e Modello
         system_prompt = self._get_system_prompt()
-
-        # 2. Prepara i messaggi per Ollama (formato chat)
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_input}
-        ]
-
-        # 3. Parametri dal config (backend ollama)
-        backend_cfg = self.config.get('backend', {}).get('ollama', {})
-        modello = backend_cfg.get('modello', 'huihui_ai/gemma3-abliterated:1b')
-        temperature = backend_cfg.get('temperature', 0.3)
-        num_ctx = backend_cfg.get('num_ctx', 4096)
-
-        payload = {
-            "model": modello,
-            "messages": messages,
-            "stream": True,
-            "options": {
-                "temperature": temperature,
-                "num_ctx": num_ctx,
-                # puoi aggiungere altri parametri se desideri
-            }
-        }
-
-        url = "http://localhost:11434/api/chat"
+        
+        try:
+            from core.llm.manager import manager
+            from core.llm import client
+        except ImportError as e:
+            bridge_logger.error(f"Cannot import LLM core modules: {e}")
+            yield f"data: {json.dumps({'error': {'message': 'Core import error', 'type': 'internal_error'}})}\n\n"
+            return
+            
+        backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
+        backend_cfg = self.config.get('backend', {}).get(backend_type, {}).copy()
+        
+        # Risolvi dinamicamente il modello di default
+        modello = manager.resolve_model()
+        if modello:
+            backend_cfg['modello'] = modello
+        backend_cfg['tipo_backend'] = backend_type
+        
+        if self.debug_attivo:
+            bridge_logger.info(f"[STREAM] Using backend {backend_type} with model {backend_cfg.get('modello')}")
 
         try:
-            response = requests.post(url, json=payload, stream=True, timeout=120)
-            response.raise_for_status()
-
-            # 4. Invia un chunk iniziale vuoto per attivare lo stream (utile per WebUI)
+            # 2. Invia chunk iniziale (per risvegliare la WebUI)
             first_chunk = {
                 "id": f"chatcmpl-{int(time.time())}",
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": "zentra-local",
-                "choices": [{
-                    "index": 0,
-                    "delta": {"content": ""},
-                    "finish_reason": None
-                }]
+                "choices": [{"index": 0, "delta": {"content": ""}, "finish_reason": None}]
             }
             yield f"data: {json.dumps(first_chunk)}\n\n"
 
-            # 5. Processa lo stream di Ollama
-            for line in response.iter_lines():
-                if line:
-                    line = line.decode('utf-8')
-                    if line.startswith("data: "):
-                        line = line[6:]  # rimuovi il prefisso "data: "
-                    if line == "[DONE]":
-                        break
-                    try:
-                        data = json.loads(line)
-                        content = data.get("message", {}).get("content", "")
-                        if content:
-                            # Se abilitato, rimuovi i tag <think>...</think> (tipici di alcuni modelli)
-                            if self.rimuovi_think:
-                                import re
-                                content = re.sub(r'</?think>', '', content)
-                            # Applica ritardo artificiale se configurato
-                            if self.delay_ms > 0:
-                                time.sleep(self.delay_ms)
-                            chunk = {
-                                "id": f"chatcmpl-{int(time.time())}",
-                                "object": "chat.completion.chunk",
-                                "created": int(time.time()),
-                                "model": "zentra-local",
-                                "choices": [{
-                                    "index": 0,
-                                    "delta": {"content": content},
-                                    "finish_reason": None
-                                }]
-                            }
-                            yield f"data: {json.dumps(chunk)}\n\n"
-                    except json.JSONDecodeError:
-                        continue
+            # 3. Chiama il client in modalità stream
+            stream_generator = client.generate(
+                system_prompt=system_prompt,
+                user_message=user_input,
+                config_or_subconfig=backend_cfg,
+                llm_config=self.config.get('llm', {}),
+                tools=None, # Function calling disattivato nello stream WebUI per ora
+                stream=True
+            )
 
-            # 6. Chunk finale
+            # 4. Processa i chunk da LiteLLM
+            testo_completo = ""
+            if not stream_generator or isinstance(stream_generator, str):
+                # Caso di errore fallback dal client
+                err = stream_generator if isinstance(stream_generator, str) else "Unknown error from client"
+                bridge_logger.error(f"Stream generation failed: {err}")
+                yield f"data: {json.dumps({'error': {'message': err, 'type': 'api_error'}})}\n\n"
+                return
+
+            for chunk in stream_generator:
+                try:
+                    # LiteLLM compatibilità Pydantic o dict
+                    if hasattr(chunk, 'choices') and chunk.choices:
+                        delta = chunk.choices[0].delta
+                        content = getattr(delta, "content", "") or ""
+                    else:
+                        continue
+                        
+                    if content:
+                        if self.rimuovi_think:
+                            import re
+                            content = re.sub(r'</?think>', '', content)
+                            
+                        if self.delay_ms > 0:
+                            time.sleep(self.delay_ms)
+                            
+                        testo_completo += content
+                        
+                        out_chunk = {
+                            "id": f"chatcmpl-{int(time.time())}",
+                            "object": "chat.completion.chunk",
+                            "created": int(time.time()),
+                            "model": "zentra-local",
+                            "choices": [{"index": 0, "delta": {"content": content}, "finish_reason": None}]
+                        }
+                        yield f"data: {json.dumps(out_chunk)}\n\n"
+                except Exception as e:
+                    bridge_logger.error(f"[STREAM] Chunk processing error: {e}")
+                    continue
+
+            # 5. Chunk finale chiusura
             final_chunk = {
                 "id": f"chatcmpl-{int(time.time())}",
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": "zentra-local",
-                "choices": [{
-                    "index": 0,
-                    "delta": {},
-                    "finish_reason": "stop"
-                }]
+                "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
             }
             yield f"data: {json.dumps(final_chunk)}\n\n"
             yield "data: [DONE]\n\n"
 
-            # 7. Salva in memoria (opzionale)
+            # 6. Salva memoria post-streaming
             try:
                 brain_interface.salva_messaggio("user", user_input)
-                # Nota: qui non abbiamo la risposta completa perché è in streaming,
-                # potremmo ricostruirla, ma per ora la saltiamo.
+                if testo_completo.strip():
+                    brain_interface.salva_messaggio("assistant", testo_completo)
+                if self.debug_attivo:
+                    bridge_logger.info(f"[STREAM] DONE. Memory saved: {len(testo_completo)} chars.")
             except Exception as e:
                 bridge_logger.error(f"Memory save error: {e}")
 
         except Exception as e:
             bridge_logger.error(f"Stream error: {e}")
-            error_chunk = {
-                "error": {"message": str(e), "type": "internal_error"}
-            }
+            error_chunk = {"error": {"message": str(e), "type": "internal_error"}}
             yield f"data: {json.dumps(error_chunk)}\n\n"
 
     def chat(self, user_input: str) -> str:

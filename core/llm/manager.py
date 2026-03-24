@@ -27,6 +27,10 @@ class LLMManager:
         else:
             self._config = {}
 
+    def reload_config(self):
+        """Forza la ricarica manuale della configurazione per applicare le modifiche fatte dal pannello F7."""
+        self._load_config()
+
     def get_model_for_tag(self, tag: str) -> str:
         """
         Restituisce il modello configurato per un determinato tag (es. 'ROLEPLAY', 'WEB').

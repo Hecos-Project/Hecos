@@ -10,6 +10,7 @@ from memory import brain_interface
 from core.llm import client
 from core.i18n import translator
 from core.llm.manager import manager
+from core.system.plugin_loader import ottieni_tools_schema
 
 CONFIG_PATH = "config.json"
 REGISTRY_PATH = "core/registry.json"
@@ -215,16 +216,26 @@ def genera_risposta(testo_utente, config_esterno=None, tag=None):
 
     logger.debug("BRAIN", f"LiteLLM call ({backend_type}) with model: {backend_config['modello']}")
     
-    # Unica chiamata al client unificato
-    risposta = client.generate(system_prompt, testo_utente, backend_config, config.get('llm', {}))
+    # Recupera i tools in formato OpenAI JSON Schema
+    tools = ottieni_tools_schema()
     
-    logger.debug("BRAIN", f"Response received from backend: {len(risposta)} characters")
-    logger.debug("BRAIN", f"First 100 characters: '{risposta[:100]}'")
-
+    # Unica chiamata al client unificato
+    risposta = client.generate(system_prompt, testo_utente, backend_config, config.get('llm', {}), tools=tools)
+    
     # 5. Salva nella memoria
     logger.debug("BRAIN", "Saving to memory...")
     brain_interface.salva_messaggio("user", testo_utente)
-    brain_interface.salva_messaggio("assistant", risposta)
+    
+    # Gestione strutturata della risposta (Stringa o Message con tool_calls)
+    if isinstance(risposta, str):
+        logger.debug("BRAIN", f"Response received from backend: {len(risposta)} characters")
+        logger.debug("BRAIN", f"First 100 characters: '{risposta[:100]}'")
+        brain_interface.salva_messaggio("assistant", risposta)
+    else:
+        # È un oggetto Message (ha usato un tool)
+        logger.debug("BRAIN", "Response is a tool call object.")
+        tool_names = [call.function.name for call in getattr(risposta, 'tool_calls', [])]
+        brain_interface.salva_messaggio("assistant", f"*(Tool call: {', '.join(tool_names)})*")
     
     logger.debug("BRAIN", f"=== END generate_response ===")
     return risposta

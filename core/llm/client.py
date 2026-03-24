@@ -6,16 +6,26 @@ DESCRIZIONE: Client unificato per la generazione di testo via LiteLLM con log ri
 import litellm
 import os
 import json
+import logging
 # Importiamo correttamente le funzioni dal modulo logger
 from core.logging import logger as log_mod
 from core.logging.logger import debug as zlog_debug, info as zlog_info, errore as zlog_error
 
 # Configurazione globale LiteLLM
-litellm.telemetry = False 
+litellm.telemetry = False
 
-def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
+# CRITICAL: Purge any StreamHandlers LiteLLM added during import (they write to stdout/chat)
+# LiteLLM may auto-attach a stdout handler if LITELLM_LOG env var is set at import time
+_litellm_logger = logging.getLogger("LiteLLM")
+for _h in _litellm_logger.handlers[:]:
+    if isinstance(_h, logging.StreamHandler) and not isinstance(_h, logging.FileHandler):
+        _litellm_logger.removeHandler(_h)
+# Ensure LITELLM_LOG doesn't force verbose stdout output
+os.environ["LITELLM_LOG"] = ""
+
+def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, tools=None, stream=False):
     """
-    Genera una risposta usando LiteLLM.
+    Genera una risposta usando LiteLLM, con supporto Opzionale per i Tools e Streaming.
     """
     
     # 1. Identificazione Backend e Modello
@@ -56,8 +66,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
         "messages": messages,
         "temperature": specific_config.get('temperature', 0.7),
         "top_p": specific_config.get('top_p', 0.9),
-        "num_retries": 1 
+        "num_retries": 1,
+        "stream": stream
     }
+    
+    # Aggiungi i tools se presenti e se il backend lo supporta
+    if tools and backend_type in ["cloud", "ollama", "kobold"]:
+        params["tools"] = tools
 
     # 4. Configurazione Provider
     if backend_type == "ollama":
@@ -73,11 +88,36 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
     elif backend_type == "cloud":
         actual_model = model_name.split('/', 1)[1] if '/' in model_name else model_name
         
+        # Indica a LiteLLM il provider (es. 'groq', 'openai', 'anthropic', 'gemini')
+        params["custom_llm_provider"] = provider
+        
+        # Mappa dei nomi di variabili d'ambiente per provider
+        ENV_KEY_MAP = {
+            "groq": "GROQ_API_KEY",
+            "openai": "OPENAI_API_KEY",
+            "anthropic": "ANTHROPIC_API_KEY",
+            "gemini": "GEMINI_API_KEY",
+            "cohere": "COHERE_API_KEY",
+        }
+        
         if llm_config:
-            api_key = llm_config.get('providers', {}).get(provider, {}).get('api_key')
+            # 1. Prova a recuperare la chiave dal config.json
+            api_key = llm_config.get('providers', {}).get(provider, {}).get('api_key', '').strip()
+            
+            # 2. Se assente o vuota, prova la variabile d'ambiente del sistema operativo
+            if not api_key:
+                env_var = ENV_KEY_MAP.get(provider, f"{provider.upper()}_API_KEY")
+                api_key = os.environ.get(env_var, '').strip().strip("'").strip('"')
+                if api_key:
+                    zlog_info("LiteLLM", f"API key for '{provider}' loaded from environment variable '{env_var}' (starts with: {api_key[:5]}...).")
+                else:
+                    zlog_debug("LiteLLM", f"API key for '{provider}' not found in environment ({env_var}).")
+            else:
+                api_key = api_key.strip().strip("'").strip('"')
+                zlog_debug("LiteLLM", f"API key for '{provider}' loaded from config.json (starts with: {api_key[:5]}...).")
+            
             if api_key:
                 params["api_key"] = api_key
-                params["custom_llm_provider"] = provider
                 
                 if provider == "gemini":
                     os.environ["GEMINI_API_KEY"] = api_key
@@ -89,24 +129,36 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
                         params["api_base"] = "https://generativelanguage.googleapis.com/v1"
                 else:
                     params["model"] = f"{provider}/{actual_model}"
-
-        if not params.get("api_key"):
-            return f"[SYSTEM] API key missing for '{provider}'."
+            else:
+                # Nessuna chiave trovata: imposta il modello e lascia LiteLLM gestire l'autenticazione
+                zlog_error(f"LiteLLM: No API key found for provider '{provider}' in config or environment. Call may fail.")
+                params["model"] = f"{provider}/{actual_model}" if provider else actual_model
 
     # LOG MANUALE PRE-CHIAMATA
     if debug_enabled:
         zlog_info("LiteLLM", f"Debug Activated for: {model_name}")
-        zlog_debug("LiteLLM", f"REQUEST_PARAMS: {json.dumps({k:v for k,v in params.items() if k != 'api_key'}, indent=2)}")
+        zlog_debug("LiteLLM", f"REQUEST_PARAMS: {json.dumps({k:v for k,v in params.items() if k not in ['api_key', 'tools']}, indent=2)}")
 
     try:
         response = litellm.completion(**params)
-        
+
+        if stream:
+            return response  # Restituisce il generatore per il bridge WebUI
+
+        # CONTROLLO SE HA USATO TOOLS
+        msg = response.choices[0].message
+        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+            if debug_enabled:
+                zlog_debug("LiteLLM", f"TOOL_CALLS: {msg.tool_calls}")
+            # Ritorna l'oggetto message intero affinché processore.py possa leggerne i tool_calls
+            return msg
+
         # LOG MANUALE POST-CHIAMATA
         if debug_enabled:
             # Serializziamo solo il contenuto utile per non intasare troppo il log se enorme
             zlog_debug("LiteLLM", f"RESPONSE_OBJECT: {str(response)[:2000]}")
             
-        return response.choices[0].message.content.strip()
+        return msg.content.strip() if msg.content else ""
     except Exception as e:
         error_msg = str(e)
         zlog_error(f"LiteLLM: Error: {error_msg}")

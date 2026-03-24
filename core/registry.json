@@ -1,110 +1,125 @@
 {
-    "DASHBOARD": {
-        "descrizione": "Hardware monitoring and AI backend status.",
+    "DOMOTICA": {
+        "descrizione": "Controllo della casa intelligente. In fase di integrazione.",
         "comandi": {
-            "resources": "Displays CPU and RAM usage.",
-            "vram": "Displays VRAM details and GPU load.",
-            "status": "Displays backend status (Ollama/Kobold).",
-            "all": "Displays all available information."
+            "get_home_status": "Fornisce un riepilogo dello stato dei dispositivi domotici (es. temperatura, luci accese)."
         },
-        "stato": "ONLINE (Telemetry active)",
-        "esempio": "[DASHBOARD: resources] or [DASHBOARD: all]"
+        "stato": "ONLINE (Simulazione)",
+        "esempio": "",
+        "is_class_based": true
+    },
+    "EXECUTOR": {
+        "descrizione": "Esecuzione comandi terminale diretti.",
+        "comandi": {
+            "execute_shell": "Esegue un comando shell nel terminale di sistema e restituisce l'output (max 500 caratteri)."
+        },
+        "stato": "READY",
+        "esempio": "",
+        "is_class_based": true
     },
     "FILE_MANAGER": {
         "descrizione": "System file and directory management with user path and file reading support.",
         "comandi": {
-            "list:path": "Lists files and folders (e.g., list:desktop, list:core, list:plugins).",
-            "count:path": "Provides a detailed count of items in a folder.",
-            "read:path": "Reads the content of a text file (configurable lines)."
+            "count_items": "Conta il numero totale di file e cartelle in un dato percorso, senza elencarli.",
+            "list_files": "Elenca le cartelle e i file presenti in un determinato percorso.",
+            "read_file": "Legge il contenuto testuale di un file specificato dal percorso."
         },
         "stato": "ONLINE",
-        "esempio": ""
+        "esempio": "",
+        "is_class_based": true
     },
     "HELP": {
         "descrizione": "Displays the list of all active commands and modules in the system.",
         "comandi": {
-            "lista": "Displays all available protocols.",
-            "refresh": "Regenerates the plugin registry and shows updated commands."
+            "list_capabilities": "Mostra la lista completa di tutti i tool, moduli e capacità attualmente caricati nel sistema.",
+            "refresh_registry": "Forza una rilettura e un aggiornamento del registro centrale delle capacità (ricansiona i plugin)."
         },
         "stato": "ONLINE",
-        "esempio": "[HELP: lista]"
+        "esempio": "",
+        "is_class_based": true
     },
     "MEDIA": {
         "descrizione": "Hardware volume and mute control.",
         "comandi": {
-            "vol:0-100": "Adjusts master volume.",
-            "mute:on/off": "Activates or deactivates silence."
+            "set_mute": "Attiva o disattiva la modalità silenziosa (muto) del sistema.",
+            "set_volume": "Imposta il volume di sistema a un livello specifico."
         },
         "stato": "ONLINE",
-        "esempio": ""
+        "esempio": "",
+        "is_class_based": true
     },
     "MEMORY": {
         "descrizione": "Access to the Vault of memories and Admin profile (Identity and History).",
         "comandi": {
-            "remember:text": "Save important information about the user in the biographical profile.",
-            "who_am_i": "Ask Zentra to retrieve identity data for the Admin and the AI.",
-            "read:n": "Extract the last N saved messages from the database history.",
-            "reset": "Execute the Tabula Rasa protocol: clear the entire chat history."
+            "read_history": "Extract the last N saved messages from the database history.",
+            "remember_info": "Save important information about the user in the biographical profile.",
+            "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
+            "who_am_i": "Ask Zentra to retrieve identity data for the Admin and the AI (context profile)."
         },
         "stato": "ONLINE (Vault Access Granted)",
-        "esempio": ""
-    },
-    "ROLEPLAY": {
-        "descrizione": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
-        "comandi": {
-            "list": "Lists available characters.",
-            "load:nome": "Loads the specified character (e.g., load: wizard).",
-            "unload": "Deactivates roleplay and returns to normal personality.",
-            "scene:list": "Lists available scenes.",
-            "scene:load:nome": "Loads a scene (adds context).",
-            "scene:unload": "Removes the current scene.",
-            "reset": "Resets character and scene."
-        },
-        "stato": "plugin_roleplay_status_online",
-        "esempio": ""
-    },
-    "SYSTEM": {
-        "descrizione": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
-        "comandi": {
-            "help": "Displays system protocols.",
-            "reboot": "Immediate Cold Reboot of the core.",
-            "cmd:instruction": "Executes a shell command (e.g., cmd:dir).",
-            "terminal": "Opens a new CMD Prompt window.",
-            "read log": "Reads the latest logged system events.",
-            "errors": "Analyzes only the latest crashes or failures.",
-            "time": "Returns the current time.",
-            "open:program": "Opens a default program (notepad, chrome, visual studio, sillytavern).",
-            "explore:path": "Opens a folder in Explorer (e.g., explore:desktop, explore:download).",
-            "config:set:section,key,value": "Updates a config.json entry (use with care)."
-        },
-        "stato": "plugin_sistema_status_online",
-        "esempio": "[SYSTEM: read log] or [SYSTEM: terminal] or [SYSTEM: time]"
-    },
-    "WEB": {
-        "descrizione": "Network access for Google searches and quick opening of websites.",
-        "comandi": {
-            "search:query": "Executes a Google search for the specified term.",
-            "open:url": "Opens a web address in the default browser."
-        },
-        "stato": "ONLINE (Browsing & Search)",
-        "esempio": "[WEB: search: chi è Root Admin] oppure [WEB: open: youtube.com]"
-    },
-    "WEBCAM": {
-        "descrizione": "Access to PC optical vision to take snapshots of the environment or Admin.",
-        "comandi": {
-            "snap": "Activates the camera and saves an image in the 'scatti' folder."
-        },
-        "stato": "ONLINE (Optical Vision)",
-        "esempio": "[WEBCAM: snap]"
+        "esempio": "",
+        "is_class_based": true
     },
     "MODELS": {
         "descrizione": "Changes the AI model based on the active backend (Ollama/Kobold).",
         "comandi": {
-            "set:numero": "Changes the active model using the list number (e.g., set:7).",
-            "lista": "Displays available models for the current backend.",
-            "backend": "Displays the currently used backend."
+            "get_current_backend": "Restituisce il backend AI correntemente in uso (es. cloud, ollama, kobold).",
+            "list_models": "Elenca tutti i modelli disponibili per il backend attualmente selezionato.",
+            "set_model": "Imposta un nuovo modello AI attivo in base all'indice numerico ricavato da list_models."
         },
         "stato": "ONLINE (Model management)",
-        "esempio": ""
+        "esempio": "",
+        "is_class_based": true
+    },
+    "ROLEPLAY": {
+        "descrizione": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
+        "comandi": {
+            "list_characters": "Elenca tutti i personaggi disponibili per il gioco di ruolo.",
+            "list_scenes": "Elenca tutte le scene disponibili per il gioco di ruolo.",
+            "load_character": "Carica un personaggio dal suo nome per interpretarne il ruolo.",
+            "load_scene": "Carica un'ambientazione o scena specifica per il gioco di ruolo.",
+            "reset_roleplay": "Reset completo di personaggi e scene attive.",
+            "unload_character": "Disattiva il personaggio corrente e torna alla personalità normale.",
+            "unload_scene": "Rimuove la scena o l'ambientazione attuale."
+        },
+        "stato": "plugin_roleplay_status_online",
+        "esempio": "",
+        "is_class_based": true
+    },
+    "SYSTEM": {
+        "descrizione": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
+        "comandi": {
+            "execute_shell_command": "Esegue un comando shell (cmd.exe) nel terminale in background e restituisce l'output.",
+            "explore_folder": "Apre il file manager del sistema operativo in una cartella specifica.",
+            "get_time": "Restituisce l'ora locale attuale formattata (HH:MM).",
+            "open_program": "Avvia un programma locale specificato dal nome.",
+            "open_terminal": "Apre una nuova finestra indipendente del prompt dei comandi di Windows (CMD).",
+            "read_errors": "Legge specificamente gli ultimi errori (crash, eccezioni) registrati dal sistema nel log degli errori.",
+            "read_logs": "Legge gli ultimi eventi registrati nei file di log generali del sistema.",
+            "reboot_system": "Riavvia l'intero sistema Zentra Core.",
+            "set_configuration": "Modifica un valore all'interno del file di configurazione principale (config.json)."
+        },
+        "stato": "plugin_sistema_status_online",
+        "esempio": "",
+        "is_class_based": true
+    },
+    "WEB": {
+        "descrizione": "Network access for Google searches and quick opening of websites.",
+        "comandi": {
+            "open_url": "Apre un sito web specifico nel browser predefinito.",
+            "search_web": "Esegue una ricerca su internet usando il motore di ricerca predefinito (es. Google)."
+        },
+        "stato": "ONLINE (Browsing & Search)",
+        "esempio": "",
+        "is_class_based": true
+    },
+    "WEBCAM": {
+        "descrizione": "Access to PC optical vision to take snapshots of the environment or Admin.",
+        "comandi": {
+            "take_snapshot": "Scatta una foto usando la webcam del computer e la salva sul disco."
+        },
+        "stato": "ONLINE (Optical Vision)",
+        "esempio": "",
+        "is_class_based": true
     }
 }
