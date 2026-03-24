@@ -10,13 +10,16 @@ class Parameter:
         self.section = section          # 'backend', 'voce', 'ascolto', 'filtri', 'logging', 'plugin'
         self.key = key                  # nome nel config.json
         self.label = label              # nome visualizzato
-        self.type = param_type          # 'int', 'float', 'bool', 'str', 'command'
+        self.type = param_type          # 'int', 'float', 'bool', 'str', 'command', 'info'
         self.min = kwargs.get('min')
         self.max = kwargs.get('max')
         self.step = kwargs.get('step')
         self.options = kwargs.get('options')    # per stringhe con scelta
         self.command = kwargs.get('command')    # per comandi speciali
         self.plugin_tag = kwargs.get('plugin_tag')  # se section == 'plugin', indica il tag del plugin
+        self.readonly = kwargs.get('readonly', False)  # se True, non è modificabile dall'utente
+        self.info_value = kwargs.get('info_value', None) # per il tipo 'info': valore statico da mostrare
+        self.global_default_model = kwargs.get('global_default_model', None) # hint per plugin modello_llm
 
 def build_parameter_list(config):
     """
@@ -29,17 +32,26 @@ def build_parameter_list(config):
     backend_type = config.get('backend', {}).get('tipo', 'ollama')
     backend_config = config.get('backend', {}).get(backend_type, {})
     
-    # Modello attivo (dal backend)
+    # Modello attivo (dal backend) - sola lettura, si modifica con F2
     lbl_modello = translator.t("label_active_model")
+    active_model_value = backend_config.get('modello', 'N/A')
     if 'modelli_disponibili' in backend_config:
         models = list(backend_config['modelli_disponibili'].values())
-        params.append(Parameter('backend', 'modello', lbl_modello, 'str', options=models))
+        params.append(Parameter('backend', 'modello', lbl_modello, 'str', options=models, readonly=True))
     else:
-        params.append(Parameter('backend', 'modello', lbl_modello, 'str'))
+        params.append(Parameter('backend', 'modello', lbl_modello, 'str', readonly=True))
+    
+    # Riga informativa: mostra il nome del modello globale per riferimento rapido nel pannello plugin
+    lbl_f2_hint = translator.t("label_f2_model_hint")
+    params.append(Parameter(
+        'backend', '_f2_hint', lbl_f2_hint, 'info',
+        readonly=True,
+        info_value=active_model_value
+    ))
     
     # --- Sezione LLM ---
-    params.append(Parameter('llm', 'allow_cloud', translator.t("label_llm_allow_cloud", default="Cloud"), 'bool'))
-    params.append(Parameter('llm', 'debug_llm', "Debug LiteLLM (Console)", 'bool'))
+    params.append(Parameter('llm', 'allow_cloud', translator.t("label_llm_allow_cloud"), 'bool'))
+    params.append(Parameter('llm', 'debug_llm', translator.t("label_debug_llm"), 'bool'))
     
     # --- API Keys Cloud ---
     if config.get('llm', {}).get('allow_cloud', False):
@@ -69,7 +81,7 @@ def build_parameter_list(config):
     except Exception:
         percorsi_onnx = [r"C:\piper\en_US-lessac-medium.onnx"]
         
-    params.append(Parameter('voce', 'modello_onnx', translator.t("label_modello_voce", default="Modello Vocale"), 'str', options=percorsi_onnx))
+    params.append(Parameter('voce', 'modello_onnx', translator.t("label_modello_voce"), 'str', options=percorsi_onnx))
     
     params.append(Parameter('voce', 'speed', translator.t("label_speed"), 'float', 
                            min=0.5, max=2.5, step=0.1))
@@ -96,12 +108,12 @@ def build_parameter_list(config):
     # --- Logging ---
     logging_cfg = config.get('logging', {})
     params.append(Parameter('logging', 'destinazione', translator.t("label_destinazione_log"), 'str', options=['chat', 'console', 'file_only']))
-    params.append(Parameter('logging', 'tipo_messaggi', translator.t("label_tipo_messaggi"), 'str', options=['info', 'debug', 'entrambi']))
+    params.append(Parameter('logging', 'tipo_messaggi', translator.t("label_tipo_messaggi"), 'str', options=['info', 'debug', 'both']))
 
     # --- Comando speciale RIAVVIA ---
     params.append(Parameter('system', 'reboot', translator.t("label_reboot"), 'command', 
                            command='reboot'))
-    params.append(Parameter('system', 'lingua', translator.t("label_lingua_sistema"), 'str', options=['it', 'en']))
+    params.append(Parameter('system', 'lingua', translator.t("label_lingua_system"), 'str', options=['it', 'en']))
 
     # --- PLUGINS (dinamici) ---
     plugins_section = config.get('plugins', {})
@@ -121,7 +133,26 @@ def build_parameter_list(config):
             else:
                 param_type = 'str'
             # Crea una label leggibile
-            label = translator.t(f"plugin_{plugin_tag.lower()}_{key}_desc", default=key.replace('_', ' ').capitalize())
+            label_key = f"plugin_{plugin_tag.lower()}_{key}_desc"
+            label = translator.t(label_key)
+            if label == label_key:
+                # Se manca la traduzione, usa una versione pulita della chiave
+                label = key.replace('_', ' ').capitalize()
+            
+            # Gestione speciale per la selezione del modello (dropdown)
+            kwargs = {}
+            if key == "modello_llm":
+                if 'modelli_disponibili' in backend_config:
+                    kwargs['options'] = [""] + list(backend_config['modelli_disponibili'].values())
+                else:
+                    if config.get('llm', {}).get('allow_cloud', False):
+                        cloud_models = []
+                        for provider in config.get('llm', {}).get('providers', {}).values():
+                            cloud_models.extend(provider.get('modelli', []))
+                        kwargs['options'] = [""] + cloud_models
+                # Passa il modello globale come hint per il display
+                kwargs['global_default_model'] = active_model_value
+
             # Aggiungi il parametro con sezione 'plugin' e plugin_tag
             params.append(Parameter(
                 section='plugin',
@@ -129,8 +160,7 @@ def build_parameter_list(config):
                 label=label,
                 param_type=param_type,
                 plugin_tag=plugin_tag,
-                # eventualmente min/max/step potrebbero essere letti dallo schema,
-                # ma per ora li omettiamo e lasciamo la modifica libera
+                **kwargs
             ))
 
     return params

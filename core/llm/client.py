@@ -30,7 +30,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
     model_name = specific_config.get('modello')
     
     if not model_name:
-        return f"[SYSTEM] Errore: Modello non trovato."
+        return f"[SYSTEM] Error: Model not found."
 
     # 2. Configurazione Debug
     debug_enabled = llm_config.get('debug_llm', False) if llm_config else False
@@ -91,11 +91,11 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
                     params["model"] = f"{provider}/{actual_model}"
 
         if not params.get("api_key"):
-            return f"[SYSTEM] API key mancante per '{provider}'."
+            return f"[SYSTEM] API key missing for '{provider}'."
 
     # LOG MANUALE PRE-CHIAMATA
     if debug_enabled:
-        zlog_info("LiteLLM", f"Debug Attivato per: {model_name}")
+        zlog_info("LiteLLM", f"Debug Activated for: {model_name}")
         zlog_debug("LiteLLM", f"REQUEST_PARAMS: {json.dumps({k:v for k,v in params.items() if k != 'api_key'}, indent=2)}")
 
     try:
@@ -109,13 +109,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None):
         return response.choices[0].message.content.strip()
     except Exception as e:
         error_msg = str(e)
-        zlog_error(f"LiteLLM: Errore: {error_msg}")
+        zlog_error(f"LiteLLM: Error: {error_msg}")
         
         if "400" in error_msg:
-            return f"[SYSTEM] Errore 400: Parametri non validi per '{model_name}'."
+            return f"[SYSTEM] Error 400: Invalid parameters for '{model_name}'."
         if "404" in error_msg:
-            return f"[SYSTEM] Errore 404: Modello '{model_name}' non trovato."
+            return f"[SYSTEM] Error 404: Model '{model_name}' not found."
         if "429" in error_msg:
-            return f"[SYSTEM] Quota Esaurita (429). Riprova tra 60 secondi."
+            return f"[SYSTEM] Quota Exhausted (429). Try again in 60 seconds."
             
-        return f"[SYSTEM] Errore: {error_msg[:100]}"
+        return f"[SYSTEM] Error: {error_msg[:100]}"

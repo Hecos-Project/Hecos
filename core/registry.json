@@ -2,29 +2,29 @@
     "DASHBOARD": {
         "descrizione": "Hardware monitoring and AI backend status.",
         "comandi": {
-            "risorse": "Displays CPU and RAM usage.",
+            "resources": "Displays CPU and RAM usage.",
             "vram": "Displays VRAM details and GPU load.",
-            "stato": "Displays backend status (Ollama/Kobold).",
-            "tutto": "Displays all available information."
+            "status": "Displays backend status (Ollama/Kobold).",
+            "all": "Displays all available information."
         },
         "stato": "ONLINE (Telemetry active)",
-        "esempio": ""
+        "esempio": "[DASHBOARD: resources] or [DASHBOARD: all]"
     },
     "FILE_MANAGER": {
         "descrizione": "System file and directory management with user path and file reading support.",
         "comandi": {
-            "list:percorso": "Lists files and folders (e.g., list:desktop, list:core, list:plugins).",
-            "conta:percorso": "Provides a detailed count of items in a folder.",
-            "read:percorso": "Reads the content of a text file (configurable lines)."
+            "list:path": "Lists files and folders (e.g., list:desktop, list:core, list:plugins).",
+            "count:path": "Provides a detailed count of items in a folder.",
+            "read:path": "Reads the content of a text file (configurable lines)."
         },
         "stato": "ONLINE",
         "esempio": ""
     },
     "HELP": {
-        "descrizione": "help_desc",
+        "descrizione": "Displays the list of all active commands and modules in the system.",
         "comandi": {
-            "lista": "help_cmd_lista",
-            "refresh": "help_cmd_refresh"
+            "lista": "Displays all available protocols.",
+            "refresh": "Regenerates the plugin registry and shows updated commands."
         },
         "stato": "ONLINE",
         "esempio": "[HELP: lista]"
@@ -36,6 +36,17 @@
             "mute:on/off": "Activates or deactivates silence."
         },
         "stato": "ONLINE",
+        "esempio": ""
+    },
+    "MEMORY": {
+        "descrizione": "Access to the Vault of memories and Admin profile (Identity and History).",
+        "comandi": {
+            "remember:text": "Save important information about the user in the biographical profile.",
+            "who_am_i": "Ask Zentra to retrieve identity data for the Admin and the AI.",
+            "read:n": "Extract the last N saved messages from the database history.",
+            "reset": "Execute the Tabula Rasa protocol: clear the entire chat history."
+        },
+        "stato": "ONLINE (Vault Access Granted)",
         "esempio": ""
     },
     "ROLEPLAY": {
@@ -56,18 +67,18 @@
         "descrizione": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
         "comandi": {
             "help": "Displays system protocols.",
-            "riavvia": "Immediate Cold Reboot of the core.",
-            "cmd:istruzione": "Executes a shell command (e.g., cmd:dir).",
-            "terminale": "Opens a new CMD Prompt window.",
-            "leggi log": "Reads the latest logged system events.",
-            "errori": "Analyzes only the latest crashes or failures.",
-            "ora": "Returns the current time.",
-            "apri:programma": "Opens a default program (notepad, chrome, visual studio, sillytavern).",
-            "esplora:percorso": "Opens a folder in Explorer (e.g., explore:desktop, explore:download).",
-            "config:set:sezione,chiave,valore": "plugin_sistema_config_set_desc"
+            "reboot": "Immediate Cold Reboot of the core.",
+            "cmd:instruction": "Executes a shell command (e.g., cmd:dir).",
+            "terminal": "Opens a new CMD Prompt window.",
+            "read log": "Reads the latest logged system events.",
+            "errors": "Analyzes only the latest crashes or failures.",
+            "time": "Returns the current time.",
+            "open:program": "Opens a default program (notepad, chrome, visual studio, sillytavern).",
+            "explore:path": "Opens a folder in Explorer (e.g., explore:desktop, explore:download).",
+            "config:set:section,key,value": "Updates a config.json entry (use with care)."
         },
         "stato": "plugin_sistema_status_online",
-        "esempio": "[SYSTEM: leggi log] o [SYSTEM: terminale] o [SYSTEM: ora]"
+        "esempio": "[SYSTEM: read log] or [SYSTEM: terminal] or [SYSTEM: time]"
     },
     "WEB": {
         "descrizione": "Network access for Google searches and quick opening of websites.",

@@ -4,10 +4,10 @@ from core.system import plugin_loader
 def info():
     return {
         "tag": "HELP",
-        "desc": translator.t("help_desc", default="Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema."),
+        "desc": translator.t("plugin_help_desc"),
         "comandi": {
-            "lista": translator.t("help_cmd_lista", default="Mostra tutti i protocolli disponibili."),
-            "refresh": translator.t("help_cmd_refresh", default="Rigenera il registro dei plugin e mostra i comandi aggiornati.")
+            "lista": translator.t("plugin_help_cmd_lista"),
+            "refresh": translator.t("plugin_help_cmd_refresh")
         },
         "esempio": "[HELP: lista]"
     }
@@ -17,17 +17,16 @@ def config_schema():
         "show_disabled": {
             "type": "bool",
             "default": False,
-            "description": "Mostra anche i plugin disabilitati nella guida"
+            "description": translator.t("plugin_help_show_disabled_desc")
         }
     }
 
 def esegui(comando):
     cmd = comando.lower().strip()
     if cmd == "lista":
-        # Usa la funzione corretta per ottenere la lista formattata
         return plugin_loader.ottieni_capacita_formattate()
     elif cmd == "refresh":
         plugin_loader.aggiorna_registro_capacita()
-        return "✅ Registro capacità rigenerato.\n" + plugin_loader.ottieni_capacita_formattate()
+        return translator.t("plugin_help_refresh_success") + "\n" + plugin_loader.ottieni_capacita_formattate()
     else:
-        return "Comando sconosciuto. Usa 'lista' o 'refresh'."
+        return translator.t("plugin_help_cmd_unknown")

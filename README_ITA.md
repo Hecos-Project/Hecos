@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.9.5 (In Sviluppo Attivo)
+# Zentra Core - Versione 0.9.6 (In Sviluppo Attivo)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core

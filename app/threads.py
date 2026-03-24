@@ -14,13 +14,13 @@ class AscoltoThread(threading.Thread):
         self.name = "AscoltoPassivo"
 
     def run(self):
-        logger.info("[THREAD ASCOLTO] Inizializzato.")
+        logger.info("[LISTENING THREAD] Initialized.")
         while True:
             if (self.state.stato_ascolto and 
                 not voce.sta_parlando and 
                 not self.state.sistema_in_elaborazione):
                 testo = ascolto.ascolta()
                 if testo and len(testo.strip()) > 1:
-                    logger.info(f"[THREAD ASCOLTO] Input rilevato: '{testo}'")
+                    logger.info(f"[LISTENING THREAD] Input detected: '{testo}'")
                     self.state.comando_vocale_rilevato = testo
             time.sleep(0.2)

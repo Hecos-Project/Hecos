@@ -13,12 +13,12 @@ SCRIPT_PRINCIPALE = "main.py"
 FILE_CONFIG = "config.json"
 
 def get_translator():
-    lang = "it"
+    lang = "en"
     if os.path.exists(FILE_CONFIG):
         try:
             with open(FILE_CONFIG, "r", encoding="utf-8") as f:
                 cfg = json.load(f)
-                lang = cfg.get("sistema", {}).get("lingua_sistema", "it")
+                lang = cfg.get("sistema", {}).get("lingua_sistema", "en")
         except: pass
     
     translations = {
@@ -37,7 +37,7 @@ def get_translator():
             "error": "[MONITOR] Error: {error}"
         }
     }
-    return lambda key, **kwargs: translations.get(lang, translations["it"]).get(key, key).format(**kwargs)
+    return lambda key, **kwargs: translations.get(lang, translations["en"]).get(key, key).format(**kwargs)
 
 t = get_translator()
 

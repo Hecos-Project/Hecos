@@ -77,31 +77,31 @@ def _open_url(url):
 def esegui(comando):
     """Gestisce l'apertura di URL o ricerche con gestione dei prefissi."""
     cmd = comando.strip()
-    logger.debug("PLUGIN_WEB", f"esegui() chiamato con comando: '{cmd}'")
+    logger.debug("PLUGIN_WEB", f"execute() called with command: '{cmd}'")
     
     try:
         # 1. APERTURA SITI WEB
         if cmd.lower().startswith("open:"):
             url = cmd[5:].strip()
             _open_url(url)
-            logger.debug("PLUGIN_WEB", f"Apertura sito: {url}")
-            return f"Protocollo Web: Sito '{url}' aperto nel browser."
+            logger.debug("PLUGIN_WEB", f"Opening site: {url}")
+            return translator.t("plugin_web_open_success", url=url)
 
         # 2. RICERCA
         elif cmd.lower().startswith("search:"):
             query = cmd[7:].strip()
             url = _get_search_url(query)
             _open_url(url)
-            logger.debug("PLUGIN_WEB", f"Ricerca: {query}")
-            return f"Ricerca avviata: Ho cercato '{query}' per te, Admin."
+            logger.debug("PLUGIN_WEB", f"Searching: {query}")
+            return translator.t("plugin_web_search_success", query=query)
 
         # 3. FALLBACK (Apertura generica se manca il prefisso)
         else:
             target = cmd
             _open_url(target)
-            logger.debug("PLUGIN_WEB", f"Apertura generica: {target}")
-            return f"Apertura generica tentata per: {target}"
+            logger.debug("PLUGIN_WEB", f"Generic open: {target}")
+            return translator.t("plugin_web_open_generic", target=target)
             
     except Exception as e:
         logger.errore(f"PLUGIN_WEB: Errore: {e}")
-        return f"Errore durante l'accesso alla rete: {str(e)}"
+        return translator.t("plugin_web_error_network", error=str(e))

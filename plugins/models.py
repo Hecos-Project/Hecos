@@ -27,13 +27,13 @@ def esegui(comando):
         backend_config = config['backend'][backend_type]
         
         if cmd == "backend":
-            return f"Backend attuale: {backend_type.upper()}"
+            return f"Current backend: {backend_type.upper()}"
         
         if cmd == "lista":
             modelli = backend_config.get('modelli_disponibili', {})
             if not modelli:
-                return f"Nessun modello configurato per il backend {backend_type}."
-            result = f"Modelli disponibili per {backend_type.upper()}:\n"
+                return f"No models configured for backend {backend_type}."
+            result = f"Available models for {backend_type.upper()}:\n"
             for k, v in modelli.items():
                 result += f"  [{k}] {v}\n"
             return result
@@ -42,7 +42,7 @@ def esegui(comando):
             import re
             numeri = re.findall(r'\d+', cmd)
             if not numeri:
-                return "Errore: Specifica il numero del modello (es. set:7)."
+                return "Error: Specify the model number (e.g. set:7)."
             
             indice = numeri[0]
             modelli = backend_config.get('modelli_disponibili', {})
@@ -55,12 +55,12 @@ def esegui(comando):
                 with open('config.json', 'w', encoding='utf-8') as f:
                     json.dump(config, f, indent=4)
                 
-                return f"✅ Modello impostato su: {nuovo_modello} (backend: {backend_type})"
+                return f"✅ Model set to: {nuovo_modello} (backend: {backend_type})"
             else:
-                return f"Errore: Il modello {indice} non esiste."
+                return f"Error: Model {indice} does not exist."
         
-        return "Comando non riconosciuto. Usa: set:numero, lista, backend"
+        return "Command not recognized. Use: set:number, list, backend"
         
     except Exception as e:
-        logger.errore(f"MODELS: Errore: {e}")
-        return f"Errore critico: {e}"
+        logger.errore(f"MODELS: Error: {e}")
+        return f"Critical error: {e}"

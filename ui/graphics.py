@@ -1,5 +1,5 @@
 """
-MODULO: Motore Grafico Zentra - core/grafica.py
+MODULO: Motore Grafico Zentra - ui/graphics.py
 DESCRIZIONE: Gestisce la generazione di elementi visuali dinamici, 
 barre di progresso, slider e indicatori di stato reattivi.
 """

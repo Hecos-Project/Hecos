@@ -9,7 +9,7 @@ import sqlite3
 from datetime import datetime
 
 # Percorsi file - Assicuriamoci che puntino alla cartella 'memoria'
-BASE_DIR = "memoria"
+BASE_DIR = "memory"
 PATH_IDENTITA = os.path.join(BASE_DIR, "identita_core.json")
 PATH_PROFILO = os.path.join(BASE_DIR, "profilo_utente.json")
 PATH_DB = os.path.join(BASE_DIR, "archivio_chat.db")
@@ -54,7 +54,7 @@ def ottieni_contesto_memoria():
         
         return contesto
     except Exception as e:
-        return f"\n[MEMORIA]: Errore caricamento identità: {e}\n"
+        return f"\n[MEMORY]: Identity loading error: {e}\n"
 
 def salva_messaggio(ruolo, messaggio):
     """Archivia uno scambio nella memoria episodica (DB)."""
@@ -66,4 +66,4 @@ def salva_messaggio(ruolo, messaggio):
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Errore DB Memoria: {e}")
+        print(f"Memory DB Error: {e}")

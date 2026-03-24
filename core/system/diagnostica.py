@@ -13,7 +13,7 @@ import msvcrt
 import json
 from core.logging import logger
 from core.audio import voce
-from ui import interfaccia
+from ui import interface
 from core.system.version import VERSION, COPYRIGHT, get_version_string
 from core.i18n import translator
 
@@ -42,7 +42,7 @@ def stampa_e_parla(testo_video, testo_voce=None):
     time.sleep(0.1)
 
 def check_cartelle():
-    cartelle = ["plugins", "personalita", "logs", "memoria", "core", "ui", "app"]
+    cartelle = ["plugins", "personality", "logs", "memory", "core", "ui", "app"]
     mancanti = [c for c in cartelle if not os.path.exists(c)]
     return mancanti
 
@@ -56,7 +56,7 @@ def check_hardware():
 def check_backend(config):
     """Verifica lo stato del backend attivo (Ollama o Kobold)."""
     backend_type = config.get('backend', {}).get('tipo', 'ollama')
-    print(f"   [>] Verifica backend {backend_type.upper()}...")
+    print(f"   [>] Checking {backend_type.upper()} backend...")
     
     if backend_type == 'kobold':
         url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
@@ -81,7 +81,7 @@ def check_backend(config):
         url = "http://localhost:11434/api/generate"
         payload = {"model": modello, "prompt": "hi", "stream": False}
         try:
-            print(f"   [>] Inizializzazione VRAM per: {modello}...")
+            print(f"   [>] Initializing VRAM for: {modello}...")
             response = requests.post(url, json=payload, timeout=60)
             if response.status_code == 200:
                 print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
@@ -90,7 +90,7 @@ def check_backend(config):
         except Exception as e:
             # Se siamo su Ollama ma non risponde, è un errore. 
             # Ma se fossimo stati su Cloud, non saremmo arrivati qui.
-            logger.errore(f"DIAGNOSTICA: Ollama non risponde: {e}")
+            logger.errore(f"DIAGNOSTICA: Ollama not responding: {e}")
             print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
             return False
 
@@ -149,7 +149,7 @@ def scansiona_plugins(config):
                 risultati.append(f"   [!] Plugin '{nome_display}': {GIALLO}{translator.t('disabled')}{RESET}")
                 
         except Exception as e:
-            risultati.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}ERRORE CARICAMENTO ({e}){RESET}")
+            risultati.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}LOADING ERROR ({e}){RESET}")
     
     return risultati
 
@@ -168,7 +168,7 @@ def avvia_sequenza_risveglio(config):
     print(f"{CIANO}  {translator.t('welcome', version=VERSION)}{RESET}")
     print(f"{CIANO}  {translator.t('boot_sequence')}{RESET}")
     print(f"{CIANO}==================================================={RESET}")
-    print(f"{CIANO}      (Premi ESC in qualsiasi momento per saltare){RESET}")
+    print(f"{CIANO}      (Press ESC at any time to skip){RESET}")
     print(f"{CIANO}==================================================={RESET}\n")
     
     if check_bypass(): return True

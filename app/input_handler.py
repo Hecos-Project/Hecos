@@ -6,13 +6,13 @@ import sys
 import time
 import threading
 import msvcrt
-from ui import interfaccia
+from ui import interface
 from core.processing import processore
 from core.audio import voce
 from core.logging import logger
 from core.system import plugin_loader
 from core.i18n import translator
-from memoria import brain_interface
+from memory import brain_interface
 
 class InputHandler:
     def __init__(self, state_manager, config_manager):
@@ -21,7 +21,7 @@ class InputHandler:
 
     def handle_keyboard_input(self, prefisso, input_utente):
         """Gestisce input da tastiera."""
-        evento, nuovo_input = interfaccia.leggi_tastiera(prefisso, input_utente)
+        evento, nuovo_input = interface.leggi_tastiera(prefisso, input_utente)
         
         if evento == "ENTER":
             return self._process_text_input(nuovo_input, prefisso)
@@ -38,7 +38,7 @@ class InputHandler:
         """Gestisce input vocale."""
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod and dashboard_mod.get_backend_status() not in ["READY", "CLOUD", "ONLINE"]:
-            print(f"\n\033[93m[SYSTEM] Backend non ancora pronto. Attendere...\033[0m")
+            print(f"\n\033[93m[SYSTEM] Backend not ready yet. Please wait...\033[0m")
             self.state.comando_vocale_rilevato = None
             return
 
@@ -57,7 +57,7 @@ class InputHandler:
         if dashboard_mod:
             backend_status = dashboard_mod.get_backend_status()
             if backend_status not in ["READY", "CLOUD", "ONLINE"]:
-                print(f"\n\033[93m[SYSTEM] Backend non pronto ({backend_status}). Attendere...\033[0m")
+                print(f"\n\033[93m[SYSTEM] Backend not ready ({backend_status}). Please wait...\033[0m")
                 return None, ""
             
         self._execute_exchange(testo, prefisso, is_voice=False)
@@ -74,7 +74,7 @@ class InputHandler:
         print(f"{prefisso}\033[92m{label}: {testo}\033[0m")
         print(f"\033[93m[{translator.t('press_esc_to_stop')}]\033[0m")
         
-        interfaccia.avvia_pensiero()
+        interface.avvia_pensiero()
         
         risultato = [None, None]
         errore = [None]
@@ -98,16 +98,16 @@ class InputHandler:
             time.sleep(0.1)
 
         if stop_event.is_set():
-            interfaccia.ferma_pensiero()
+            interface.ferma_pensiero()
             print(f"\n\033[93m[SYSTEM] {translator.t('request_cancelled')}\033[0m")
             self.state.sistema_in_elaborazione = False
             return
 
         thread.join()
-        interfaccia.ferma_pensiero()
+        interface.ferma_pensiero()
 
         if errore[0]:
-            logger.errore(f"[INPUT] Errore: {errore[0]}")
+            logger.errore(f"[INPUT] Error: {errore[0]}")
         else:
             risposta_video, testo_voce_pulito = risultato
             # Salvataggio in memoria
@@ -115,7 +115,7 @@ class InputHandler:
             brain_interface.salva_messaggio("assistant", risposta_video)
             
             # Mostra la risposta
-            interfaccia.scrivi_zentra(risposta_video)
+            interface.scrivi_zentra(risposta_video)
             if self.state.stato_voce and testo_voce_pulito:
                 voce.parla(testo_voce_pulito)
 

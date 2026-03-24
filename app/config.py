@@ -17,7 +17,7 @@ class ConfigManager:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
         except Exception as e:
-            logger.errore(f"[CONFIG] Errore critico caricamento config: {e}")
+            logger.errore(f"[CONFIG] Critical configuration loading error: {e}")
             return {"backend": {"tipo": "ollama", "ollama": {}}, "ia": {}}
 
     def save(self):
@@ -47,12 +47,12 @@ class ConfigManager:
             if nuova_lingua and nuova_lingua != lingua_precedente:
                 from core.i18n import translator
                 translator.get_translator().set_language(nuova_lingua)
-                logger.info("CONFIG", f"Lingua aggiornata istantaneamente in: {nuova_lingua}")
+                logger.info("CONFIG", f"Language updated to: {nuova_lingua}")
 
-            logger.info("[CONFIG] Configurazione salvata correttamente.")
+            logger.info("[CONFIG] Configuration saved successfully.")
             return True
         except Exception as e:
-            logger.errore(f"[CONFIG] Errore salvataggio: {e}")
+            logger.errore(f"[CONFIG] Save error: {e}")
             return False
 
     def get(self, *keys, default=None):

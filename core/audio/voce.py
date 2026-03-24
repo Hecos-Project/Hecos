@@ -28,7 +28,7 @@ def parla(testo):
             sentence_silence = c.get('sentence_silence', 0.2)
             
     except Exception as e:
-        print(f"[VOCE] Errore configurazione: {e}")
+        print(f"[VOICE] Configuration error: {e}")
         length_scale, noise_scale, noise_w, sentence_silence = 1.0, 0.667, 0.8, 0.2
 
     sta_parlando = True
@@ -72,7 +72,7 @@ def parla(testo):
                 time.sleep(0.05)
                 
     except Exception as e:
-        print(f"[VOCE] Errore esecuzione Piper: {e}")
+        print(f"[VOICE] Piper execution error: {e}")
     finally:
         sta_parlando = False
 

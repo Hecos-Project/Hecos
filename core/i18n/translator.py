@@ -36,7 +36,7 @@ class Translator:
                 data = json.load(f)
                 self.translations = data.get(self.lingua, {})
         else:
-            logger.warning("I18N", f"Lingua '{self.lingua}' non trovata, uso fallback 'en'.")
+            logger.warning("I18N", f"Language '{self.lingua}' not found; using fallback 'en'.")
             self.translations = self.base_translations
 
     def set_language(self, lingua):
@@ -57,7 +57,7 @@ class Translator:
         try:
             return text.format(**kwargs)
         except Exception as e:
-            logger.errore(f"I18N: Errore formattazione per '{key}': {e}")
+            logger.errore(f"I18N: Formatting error for '{key}': {e}")
             return text
 
 # Istanza globale

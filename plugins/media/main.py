@@ -22,8 +22,6 @@ def status():
 def config_schema():
     """
     Schema di configurazione per questo plugin.
-    Attualmente non ci sono parametri configurabili, ma la funzione è presente
-    per coerenza con la nuova architettura.
     """
     return {}
 
@@ -33,19 +31,17 @@ def get_volume_control():
         devices = AudioUtilities.GetSpeakers()
         if not devices:
             return None
-        # Attivazione dell'interfaccia via IID standard
         interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        # Casting esplicito utilizzando QueryInterface per evitare AttributeError
         return ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
     except Exception as e:
-        logger.errore(f"MEDIA: Errore accesso audio: {e}")
+        logger.errore(f"MEDIA: Audio access error: {e}")
         return None
 
 def esegui(comando):
     try:
         volume = get_volume_control()
         if not volume:
-            return "Errore hardware: Interfaccia audio non raggiungibile."
+            return translator.t("plugin_media_error_interface")
 
         cmd = comando.lower().strip()
 
@@ -55,17 +51,17 @@ def esegui(comando):
             livello = int(numeri[0])
             livello = max(0, min(100, livello))
             volume.SetMasterVolumeLevelScalar(livello / 100.0, None)
-            return f"Volume impostato al {livello}%."
+            return translator.t("plugin_media_vol_success", level=livello)
 
         if "mute:on" in cmd or "silenzio" in cmd:
             volume.SetMute(1, None)
-            return "Mute attivato."
+            return translator.t("plugin_media_mute_on")
         
         if "mute:off" in cmd or "attiva" in cmd:
             volume.SetMute(0, None)
-            return "Mute disattivato."
+            return translator.t("plugin_media_mute_off")
 
-        return "Comando media non riconosciuto."
+        return translator.t("plugin_media_cmd_unrecognized")
     except Exception as e:
         logger.errore(f"MEDIA: Errore esecuzione comando: {e}")
-        return f"Errore interno MEDIA: {str(e)}"
+        return translator.t("plugin_media_error_internal", error=str(e))

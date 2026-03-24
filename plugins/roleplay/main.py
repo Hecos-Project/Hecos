@@ -106,23 +106,23 @@ def esegui(comando):
     elif cmd == "reset":
         return _reset()
     else:
-        return "Comando roleplay non riconosciuto. Usa 'list', 'load:nome', 'unload', 'scene:list', 'scene:load:nome', 'scene:unload', 'reset'."
+        return "Roleplay command not recognized. Use 'list', 'load:name', 'unload', 'scene:list', 'scene:load:name', 'scene:unload', 'reset'."
 
 def _list_characters():
     chars_dir = _get_characters_dir()
     if not os.path.exists(chars_dir):
-        return f"Nessun personaggio trovato (cartella '{chars_dir}' mancante)."
+        return f"No character found (folder '{chars_dir}' missing)."
     files = [f[:-5] for f in os.listdir(chars_dir) if f.endswith('.json')]
     if not files:
-        return "Nessun personaggio disponibile."
-    return "Personaggi disponibili:\n- " + "\n- ".join(files)
+        return "No characters available."
+    return "Available characters:\n- " + "\n- ".join(files)
 
 def _load_character(name):
     global _active_character, _active_character_prompt
     chars_dir = _get_characters_dir()
     file_path = os.path.join(chars_dir, name + '.json')
     if not os.path.exists(file_path):
-        return f"Personaggio '{name}' non trovato in {chars_dir}."
+        return f"Character '{name}' not found in {chars_dir}."
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -134,10 +134,10 @@ def _load_character(name):
             prompt += f"Storia: {data['storia']}\n"
         _active_character = name
         _active_character_prompt = prompt
-        logger.info(f"Roleplay: caricato personaggio {name}")
-        return f"Personaggio '{name}' caricato. Ora interpreterai {data['nome']}."
+        logger.info(f"Roleplay: loaded character {name}")
+        return f"Character '{name}' loaded. Now roleplaying as {data['nome']}."
     except Exception as e:
-        logger.errore(f"Errore caricamento personaggio {name}: {e}")
+        logger.errore(f"Error loading character {name}: {e}")
         return f"Errore caricamento personaggio: {e}"
 
 def _unload():
@@ -146,24 +146,24 @@ def _unload():
     _active_character_prompt = None
     _active_scene = None
     _active_scene_prompt = None
-    logger.info("Roleplay disattivato")
-    return "Roleplay disattivato. Tornato alla personalità normale."
+    logger.info("Roleplay deactivated")
+    return "Roleplay deactivated. Returned to normal personality."
 
 def _list_scenes():
     scenes_dir = _get_scenes_dir()
     if not os.path.exists(scenes_dir):
-        return f"Nessuna scena trovata (cartella '{scenes_dir}' mancante)."
+        return f"No scene found (folder '{scenes_dir}' missing)."
     files = [f[:-5] for f in os.listdir(scenes_dir) if f.endswith('.json')]
     if not files:
-        return "Nessuna scena disponibile."
-    return "Scene disponibili:\n- " + "\n- ".join(files)
+        return "No scenes available."
+    return "Available scenes:\n- " + "\n- ".join(files)
 
 def _load_scene(name):
     global _active_scene, _active_scene_prompt
     scenes_dir = _get_scenes_dir()
     file_path = os.path.join(scenes_dir, name + '.json')
     if not os.path.exists(file_path):
-        return f"Scena '{name}' non trovata in {scenes_dir}."
+        return f"Scene '{name}' not found in {scenes_dir}."
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -172,17 +172,17 @@ def _load_scene(name):
             prompt += f"Elementi presenti: {', '.join(data['elementi'])}\n"
         _active_scene = name
         _active_scene_prompt = prompt
-        logger.info(f"Roleplay: caricata scena {name}")
-        return f"Scena '{name}' caricata."
+        logger.info(f"Roleplay: loaded scene {name}")
+        return f"Scene '{name}' loaded."
     except Exception as e:
-        logger.errore(f"Errore caricamento scena {name}: {e}")
+        logger.errore(f"Error loading scene {name}: {e}")
         return f"Errore caricamento scena: {e}"
 
 def _unload_scene():
     global _active_scene, _active_scene_prompt
     _active_scene = None
     _active_scene_prompt = None
-    return "Scena rimossa."
+    return "Scene removed."
 
 def _reset():
     global _active_character, _active_character_prompt, _active_scene, _active_scene_prompt
@@ -190,9 +190,9 @@ def _reset():
     _active_character_prompt = None
     _active_scene = None
     _active_scene_prompt = None
-    return "Roleplay resettato."
+    return "Roleplay reset."
 
-# Funzione esposta per il cervello
+# Funzione esposta per il cervello (Brain)
 def get_roleplay_prompt():
     """Restituisce il prompt combinato (personaggio + scena) se attivo, altrimenti None."""
     if _active_character_prompt:

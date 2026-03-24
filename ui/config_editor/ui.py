@@ -3,7 +3,7 @@ Gestione dell'interfaccia utente: disegno e interazione.
 """
 
 from .utils import clear_screen, get_key, flush_input
-from ui import grafica
+from ui import graphics
 from core.i18n import translator
 import sys
 import shutil
@@ -52,9 +52,11 @@ class UIManager:
                     else:
                         break
                 elif key == KEY_ENTER:
-                    # Se il parametro è una stringa libera, attiva modifica
+                    # Se il parametro è una stringa libera (e non readonly), attiva modifica
                     param = self.param_list[self.cursor]
-                    if param.type == 'str' and not param.options:
+                    if param.readonly:
+                        pass  # ignora per sola lettura
+                    elif param.type == 'str' and not param.options:
                         self._edit_string(param)
                     else:
                         break
@@ -66,14 +68,15 @@ class UIManager:
                         self.cursor += 1
                 elif key == KEY_LEFT or key == KEY_RIGHT:
                     param = self.param_list[self.cursor]
-                    if param.type == 'command':
+                    if param.readonly:
+                        pass  # sola lettura, nessuna azione
+                    elif param.type == 'command':
                         if param.command == 'reboot':
                             print(f"\n{GIALLO}{translator.t('rebooting_msg')}{RESET}")
                             return "REBOOT"
                     else:
                         current = self.get_value(param)
                         if param.type in ('int', 'float'):
-                            # Determina step e limiti
                             if param.type == 'int':
                                 step = param.step or 1
                             else:
@@ -82,12 +85,10 @@ class UIManager:
                                 new_val = current - step
                             else:
                                 new_val = current + step
-                            # Applica limiti se presenti
                             if param.min is not None:
                                 new_val = max(param.min, new_val)
                             if param.max is not None:
                                 new_val = min(param.max, new_val)
-                            # Arrotonda per evitare precisione float fastidiosa
                             if param.type == 'float':
                                 new_val = round(new_val, 2)
                             else:
@@ -107,7 +108,7 @@ class UIManager:
                             self.modified = True
                 elif key == KEY_SPACE:
                     param = self.param_list[self.cursor]
-                    if param.type == 'bool':
+                    if not param.readonly and param.type == 'bool':
                         current = self.get_value(param)
                         self.set_value(param, not current)
                         self.modified = True
@@ -176,18 +177,34 @@ class UIManager:
             return "ALTRO"
 
     def _draw(self):
-        clear_screen(first_time=self.first_draw)
-        self.first_draw = False
-        
+        # Riposizioniamo il cursore invece di pulire tutto (evita flickering)
+        if self.first_draw:
+            clear_screen(first_time=True)
+            self.first_draw = False
+        else:
+            sys.stdout.write('\033[H')
+            
+        output_buffer = []
+        def outprint(text):
+            output_buffer.append(text + "\n")
+            
         from core.system.version import get_version_string
         
+        try:
+            term_size = shutil.get_terminal_size()
+            PANEL_WIDTH = min(110, max(60, term_size.columns - 4))
+            term_height = term_size.lines
+            safe_limit = max(10, term_height - 4)
+        except:
+            PANEL_WIDTH = 80
+            safe_limit = 30
+            
         # Intestazione
         intestazione = f" {get_version_string()} - CONFIGURAZIONE SYSTEM "
-        print(f"\033[44m\033[97m{intestazione.center(60)}\033[0m")
+        outprint(f"\033[44m\033[97m{intestazione.center(PANEL_WIDTH)}\033[0m")
         
         # 1. Genera lista piatta di "righe renderizzabili"
-        all_rows = [] # Conterrà tuple (tipo, contenuto, param_idx)
-        
+        all_rows = [] 
         sections = OrderedDict()
         for i, param in enumerate(self.param_list):
             title = self._get_section_title(param)
@@ -221,27 +238,15 @@ class UIManager:
             add_section_to_rows(title, params)
 
         # 2. Gestione scorrimento (Viewport)
-        # Ottieni altezza terminale attuale e calcola limite sicuro
-        try:
-            # Svuota buffer terminale per evitare letture vecchie
-            term_size = shutil.get_terminal_size()
-            term_height = term_size.lines
-            # Riserva solo lo stretto necessario (2 righe per header/footer + 1 per margine)
-            safe_limit = max(10, term_height - 4)
-        except:
-            safe_limit = 30 # Fallback più generoso
-            
-        # Altezza dinamica: mostra tutto se possibile, altrimenti usa il limite
         viewport_height = min(len(all_rows), safe_limit)
         
-        # Trova la riga corrispondente al cursore attuale
         cursor_row_idx = 0
         for idx, row in enumerate(all_rows):
             if row[0] == 'param' and row[2] == self.cursor:
                 cursor_row_idx = idx
                 break
 
-        # Aggiusta scroll_top per tenere il cursore nel viewport
+        # Aggiusta scroll_top
         if cursor_row_idx < self.scroll_top:
             self.scroll_top = cursor_row_idx
         elif cursor_row_idx >= self.scroll_top + viewport_height:
@@ -250,53 +255,65 @@ class UIManager:
         # 3. Disegna il viewport con Scrollbar
         visible_rows = all_rows[self.scroll_top : self.scroll_top + viewport_height]
         
-        # Calcolo scrollbar
         total_rows = len(all_rows)
         thumb_range = None
         if total_rows > viewport_height:
-            # Dimensione thumb (minimo 1 riga)
             thumb_size = max(1, int((viewport_height / total_rows) * viewport_height))
-            # Escursione possibile per il thumb
             scroll_range = total_rows - viewport_height
             if scroll_range > 0:
-                # Proporzione dello scroll attuale
                 thumb_pos = int((self.scroll_top / scroll_range) * (viewport_height - thumb_size))
             else:
                 thumb_pos = 0
             thumb_range = range(thumb_pos, thumb_pos + thumb_size)
 
         for r_idx, (row_type, content, p_idx) in enumerate(visible_rows):
-            # Carattere scrollbar: block per il thumb, linea sottile per la traccia
             sb_char = "█" if (thumb_range and r_idx in thumb_range) else "│"
             
             if row_type == 'header':
-                # Riga titolo con scrollbar integrata (rimpiazza l'ultimo carattere)
                 titolo_base = f"├─ {content} "
-                # 58 caratteri di linea + 1 scrollbar = 59. 
-                riempimento = "─" * (58 - len(titolo_base))
-                print(f"{CIANO}{titolo_base}{riempimento}{RESET}{sb_char}")
+                riempimento = "─" * (PANEL_WIDTH - 2 - len(titolo_base))
+                outprint(f"{CIANO}{titolo_base}{riempimento}{RESET}{sb_char}")
             else:
-                self._draw_param_row(content, p_idx, sb_char)
+                outprint(self._draw_param_row(content, p_idx, sb_char, PANEL_WIDTH))
 
-        # 4. Riempimento per mantenere il footer fisso in basso (allungamento barra)
-        # Se il contenuto è minore del limite sicuro, aggiungiamo righe vuote
+        # 4. Riempimento per mantenere footer fisso
         rows_to_fill = safe_limit - viewport_height
         for _ in range(rows_to_fill):
-            print(f"| {' ' * 57} {sb_char if total_rows > viewport_height else '│'}")
+            spazi = " " * (PANEL_WIDTH - 3)
+            ultimo_char = sb_char if total_rows > viewport_height else "│"
+            outprint(f"| {spazi} {ultimo_char}")
 
-        # Footer (ancorato in fondo al safe_limit)
+        # Footer
         footer = f" {translator.t('menu_nav_help')} "
-        print(f"\033[47m\033[30m{footer.center(60)}\033[0m")
+        outprint(f"\033[47m\033[30m{footer.center(PANEL_WIDTH)}\033[0m")
         
         if self.modified:
-            print(f"{GIALLO} {translator.t('config_unsaved_changes')}{RESET}{' ' * 30}")
+            outprint(f"{GIALLO} {translator.t('config_unsaved_changes')}{RESET}\033[K")
         else:
-            print(f"{' ' * 56}")
+            outprint("\033[K")
+            
+        sys.stdout.write("".join(output_buffer))
+        sys.stdout.flush()
 
-    def _draw_param_row(self, param, i, sb_char="│"):
+    def _draw_param_row(self, param, i, sb_char, panel_width):
         """Disegna una singola riga di parametro."""
+        # --- Tipo 'info': riga informativa statica (non modificabile) ---
+        if param.type == 'info':
+            disp = param.info_value or ""
+            prefisso = " ℹ " if self.cursor == i else "   "
+            testo_base = f"{prefisso}{param.label}: {disp}"
+            max_testo = panel_width - 4
+            if len(testo_base) > max_testo:
+                testo_base = testo_base[:max_testo-3] + "..."
+            else:
+                testo_base = f"{testo_base:<{max_testo}}"
+            # Render: ciano scuro (dim + ciano) per distinguerlo visivamente
+            testo_render = f"\033[2m{CIANO}{testo_base}{RESET}"
+            return f"| {testo_render} {sb_char}"
+        
+        # --- Tipo standard ---
         if param.type == 'command':
-            disp = "▶ Esegui"
+            disp = "▶ Execute"
         else:
             value = self.get_value(param)
             if value is None:
@@ -308,22 +325,38 @@ class UIManager:
                     disp = f"{value:.2f}"
                 else:
                     disp = str(value)
+                    # Supporto traduzione per valori noti (es. option_both)
+                    if isinstance(value, str):
+                        key_traduzione = f"option_{value.lower().replace(' ', '_')}"
+                        tradotto = translator.t(key_traduzione)
+                        if tradotto != key_traduzione:
+                            disp = tradotto
+            
+            # Per plugin modello_llm vuoto: mostra quale modello verrà usato
+            if param.key == "modello_llm" and not value and param.global_default_model:
+                disp = f"(global: {param.global_default_model})"
         
-        prefisso = " > " if self.cursor == i else "   "
+        if param.readonly:
+            prefisso = " \U0001f512 " if self.cursor == i else "   "
+        else:
+            prefisso = " > " if self.cursor == i else "   "
         testo_base = f"{prefisso}{param.label}: {disp}"
         
-        if len(testo_base) > 56:
-            testo_base = testo_base[:53] + "..."
+        max_testo = panel_width - 4
+        if len(testo_base) > max_testo:
+            testo_base = testo_base[:max_testo-3] + "..."
         else:
-            testo_base = f"{testo_base:<56}"
+            testo_base = f"{testo_base:<{max_testo}}"
         
         if self.cursor == i:
-            testo_render = f"{VERDE}{testo_base}{RESET}"
+            if param.readonly:
+                testo_render = f"\033[2m{testo_base}{RESET}"  # dim: sola lettura
+            else:
+                testo_render = f"{VERDE}{testo_base}{RESET}"
         else:
             testo_render = testo_base
         
-        # Stampa la riga rimpiazzando l'ultimo bordo con la scrollbar
-        print(f"| {testo_render} {sb_char}")
+        return f"| {testo_render} {sb_char}"
 
     def _confirm(self, message):
         print(f"\n{GIALLO}{message}{RESET}")

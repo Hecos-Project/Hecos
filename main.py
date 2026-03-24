@@ -11,13 +11,17 @@ from core.logging import logger
 def main():
     """Avvia l'applicazione Zentra."""
     app = ZentraApplication()
-    app.run()
+    try:
+        app.run()
+    finally:
+        # Garantisce la chiusura delle finestre di log esterne in ogni caso
+        logger.chiudi_tutte_le_console()
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        logger.info("[MAIN] Arresto manuale.")
+        logger.info("[MAIN] Manual stop.")
     except Exception as e:
         logger.errore(f"[CRITICAL FAILURE]: {e}")
         sys.exit(1)

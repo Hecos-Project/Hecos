@@ -19,8 +19,10 @@ if BRIDGE_DIR not in sys.path:
 
 # Import dei moduli core di Zentra (necessari per system prompt e memoria)
 try:
-    from core import cervello, processore, logger as core_logger
-    from memoria import brain_interface
+    from core.llm import brain
+    from core.processing import processore
+    from core.logging import logger as core_logger
+    from memory import brain_interface
     from app.config import ConfigManager
     from core.i18n import translator
 except ImportError as e:
@@ -53,27 +55,27 @@ class ZentraWebUIBridge:
             bridge_logger.info("BRIDGE INITIALIZATION COMPLETED")
             bridge_logger.info(f"Valves: Processor={self.usa_processore}, Delay={self.delay_ms}s, Remove think={self.rimuovi_think}")
 
-        # Inizializza il core (memoria, plugin) – necessario per il system prompt
+        # Inizializza il core (memory, plugin) – necessario per il system prompt
         try:
             brain_interface.inizializza_caveau()
             # Non serve ricaricare i plugin a ogni chiamata, ma per sicurezza:
             # plugin_loader.aggiorna_registro_capacita()  # se vuoi, altrimenti lascia
         except Exception as e:
-            bridge_logger.error(f"Errore inizializzazione core: {e}")
+            bridge_logger.error(f"Core initialization error: {e}")
 
     def _get_system_prompt(self):
         """Costruisce il system prompt come nel cervello originale."""
         personalita_file = self.config.get('ia', {}).get('personalita_attiva', 'zentra.txt')
-        path_p = os.path.join(BRIDGE_DIR, "personalita", personalita_file)
+        path_p = os.path.join(BRIDGE_DIR, "personality", personalita_file)
         testo_personalita = ""
         if os.path.exists(path_p):
             with open(path_p, "r", encoding="utf-8") as f:
                 testo_personalita = f.read()
 
         memoria_identita = brain_interface.ottieni_contesto_memoria()
-        capacita = cervello.carica_capacita()
+        capacita = brain.carica_capacita()
 
-        # Aggiungi regole di base (copiate da cervello.py)
+        # Aggiungi regole di base (copiate da brain.py)
         regole = (
             f"{translator.t('identity_protocol')}\n"
             f"- {translator.t('rule_who_am_i')}\n"
@@ -193,10 +195,10 @@ class ZentraWebUIBridge:
                 # Nota: qui non abbiamo la risposta completa perché è in streaming,
                 # potremmo ricostruirla, ma per ora la saltiamo.
             except Exception as e:
-                bridge_logger.error(f"Errore salvataggio memoria: {e}")
+                bridge_logger.error(f"Memory save error: {e}")
 
         except Exception as e:
-            bridge_logger.error(f"Errore durante lo stream: {e}")
+            bridge_logger.error(f"Stream error: {e}")
             error_chunk = {
                 "error": {"message": str(e), "type": "internal_error"}
             }
@@ -209,7 +211,7 @@ class ZentraWebUIBridge:
         if self.debug_attivo:
             bridge_logger.info(f"[NON-STREAM] Input: {user_input}")
         try:
-            risposta_grezza = cervello.genera_risposta(user_input, self.config)
+            risposta_grezza = brain.genera_risposta(user_input, self.config)
             if self.usa_processore:
                 risposta_video, _ = processore.elabora_scambio(risposta_grezza, stato_voce=False)
             else:

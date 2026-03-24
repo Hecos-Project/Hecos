@@ -20,10 +20,37 @@ class ConfigEditor:
         self.modified = False
 
     def _load_config(self):
-        """Carica il file JSON."""
+        """Carica il file JSON, pulisce config plugin vecchi e sincronizza con la cartella."""
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                config = json.load(f)
+                
+            # --- Auto-sync dei plugin ---
+            plugins_config = config.get("plugins", {})
+            script_dir = os.path.dirname(os.path.abspath(__file__))  
+            ui_dir = os.path.dirname(script_dir)  
+            project_dir = os.path.dirname(ui_dir)  
+            plugins_dir = os.path.join(project_dir, "plugins")
+            
+            # Trova i plugin reali (cartelle con main.py o file .py validi)
+            plugin_reali = set()
+            if os.path.exists(plugins_dir):
+                for item in os.listdir(plugins_dir):
+                    item_path = os.path.join(plugins_dir, item)
+                    if os.path.isdir(item_path) and os.path.isfile(os.path.join(item_path, "main.py")):
+                        plugin_reali.add(item.upper())
+                    elif os.path.isfile(item_path) and item.endswith(".py") and not item.startswith("_"):
+                        plugin_reali.add(item[:-3].upper())
+            
+            # Rimuovere da config.json i plugin che non esistono più
+            da_rimuovere = [p for p in plugins_config if p not in plugin_reali]
+            for p in da_rimuovere:
+                del plugins_config[p]
+                self.modified = True  # Segna come modificato se abbiamo pulito qualcosa
+                
+            config["plugins"] = plugins_config
+            return config
+            
         except Exception as e:
             print(f"Errore caricamento {self.config_path}: {e}")
             raise

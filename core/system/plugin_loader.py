@@ -48,7 +48,7 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
     for plugin_dir in plugin_dirs:
         main_file = os.path.join("plugins", plugin_dir, "main.py")
         if not os.path.exists(main_file):
-            logger.debug("LOADER", f"Plugin {plugin_dir} senza main.py, ignorato")
+            logger.debug("LOADER", f"Plugin {plugin_dir} without main.py, ignored")
             continue
         
         try:
@@ -70,7 +70,7 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
                 # Controlla flag enabled
                 plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
                 if not plugin_enabled:
-                    if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabilitato da config.")
+                    if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                     continue
                     
                 # Salva modulo e carica
@@ -84,15 +84,15 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
                     "stato": stato,
                     "esempio": dati.get("esempio", "")
                 }
-                logger.debug("LOADER", f"Plugin {plugin_dir} caricato con tag {tag}")
+                logger.debug("LOADER", f"Plugin {plugin_dir} loaded with tag {tag}")
                 
                 # Raccogli lo schema di configurazione se presente
                 if hasattr(modulo, "config_schema"):
                     _plugin_config_schemas[tag] = modulo.config_schema()
-                    logger.debug("LOADER", f"Plugin {plugin_dir} ha config_schema")
+                    logger.debug("LOADER", f"Plugin {plugin_dir} has config_schema")
                     
         except Exception as e:
-            logger.errore(f"LOADER: Fallimento caricamento {plugin_dir}: {e}")
+            logger.errore(f"LOADER: Failed to load {plugin_dir}: {e}")
             continue
     
     # 2. (Opzionale) Cerca anche nella vecchia struttura per compatibilità
@@ -119,7 +119,7 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
                 # Controlla il flag enabled
                 plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
                 if not plugin_enabled:
-                    logger.debug("LOADER", f"Plugin legacy {nome_modulo} disabilitato, ignorato.")
+                    logger.debug("LOADER", f"Legacy plugin {nome_modulo} disabled, ignored.")
                     continue
                 
                 stato = modulo.status() if hasattr(modulo, "status") else "ONLINE"
@@ -130,14 +130,14 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
                     "stato": stato,
                     "esempio": dati.get("esempio", "")
                 }
-                logger.debug("LOADER", f"Plugin legacy {nome_modulo} caricato con tag {tag}")
+                logger.debug("LOADER", f"Legacy plugin {nome_modulo} loaded with tag {tag}")
                 
                 if hasattr(modulo, "config_schema"):
                     _plugin_config_schemas[tag] = modulo.config_schema()
-                    logger.debug("LOADER", f"Plugin legacy {nome_modulo} ha config_schema")
+                    logger.debug("LOADER", f"Legacy plugin {nome_modulo} has config_schema")
                     
         except Exception as e:
-            logger.errore(f"LOADER: Fallimento caricamento legacy {nome_modulo}: {e}")
+            logger.errore(f"LOADER: Failed to load legacy {nome_modulo}: {e}")
             continue
 
     # Scrittura del registro centralizzato
@@ -145,9 +145,9 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
         with open(REGISTRY_PATH, "w", encoding="utf-8") as f:
             json.dump(skills_map, f, indent=4, ensure_ascii=False)
         if debug_log:
-            logger.info(f"REGISTRY: Registro capacità aggiornato ({len(skills_map)} moduli).")
+            logger.info(f"REGISTRY: Capabilities registry updated ({len(skills_map)} modules).")
     except Exception as e:
-        logger.errore(f"REGISTRY: Errore scrittura file: {e}")
+        logger.errore(f"REGISTRY: File write error: {e}")
     
     return skills_map
 
@@ -183,7 +183,7 @@ def sincronizza_config_plugin(config_manager=None):
     
     if updated:
         config_manager.save()
-        logger.info("REGISTRY: Configurazioni plugin sincronizzate.")
+        logger.info("REGISTRY: Plugin configurations synchronized.")
     
     return config
 
@@ -246,7 +246,7 @@ def genera_guida_dinamica():
                         "esempio": dati.get("esempio", "")
                     })
             except Exception as e:
-                logger.errore(f"LOADER GUIDA: Fallimento {plugin_dir}: {e}")
+                logger.errore(f"GUIDE LOADER: Failed for {plugin_dir}: {e}")
                 
     # 1. Scansiona plugin attivi
     scansiona_cartella("plugins")

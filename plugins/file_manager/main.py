@@ -9,9 +9,9 @@ def info():
         "tag": "FILE_MANAGER",
         "desc": translator.t("plugin_file_manager_desc"),
         "comandi": {
-            "list:percorso": translator.t("plugin_file_manager_list_desc"),
-            "conta:percorso": translator.t("plugin_file_manager_conta_desc"),
-            "read:percorso": translator.t("plugin_file_manager_read_desc")
+            "list:path": translator.t("plugin_file_manager_list_desc"),
+            "count:path": translator.t("plugin_file_manager_conta_desc"),
+            "read:path": translator.t("plugin_file_manager_read_desc")
         }
     }
 
@@ -21,8 +21,6 @@ def status():
 def config_schema():
     """
     Schema di configurazione per questo plugin.
-    I valori qui definiti verranno aggiunti automaticamente in config.json
-    nella sezione plugins.FILE_MANAGER.
     """
     return {
         "max_read_lines": {
@@ -49,33 +47,28 @@ def config_schema():
 def _espandi_percorso(target):
     """
     Converte un target simbolico in percorso assoluto.
-    Ora legge i mapping da config.json per personalizzabilità.
     """
-    # Ottieni la configurazione centralizzata
     cfg_mgr = ConfigManager()
 
-    # Se la mappatura è disabilitata, restituisci il target così com'è
     if not cfg_mgr.get_plugin_config("FILE_MANAGER", "enable_path_mapping", True):
         return target
 
     user_path = os.path.expanduser("~")
     cwd = os.getcwd()
 
-    # Mappa di default (usata se non diversamente specificato in config)
     default_mapping = {
         "desktop": os.path.join(user_path, "Desktop"),
-        "documenti": os.path.join(user_path, "Documents"),
+        "documents": os.path.join(user_path, "Documents"),
         "download": os.path.join(user_path, "Downloads"),
         "core": os.path.join(cwd, "core"),
         "plugins": os.path.join(cwd, "plugins"),
-        "memoria": os.path.join(cwd, "memoria"),
-        "personalita": os.path.join(cwd, "personalita"),
+        "memory": os.path.join(cwd, "memory"),
+        "personality": os.path.join(cwd, "personality"),
         "logs": os.path.join(cwd, "logs"),
         "config": os.path.join(cwd, "config.json"),
         "main": os.path.join(cwd, "main.py"),
     }
 
-    # Leggi eventuali mapping personalizzati dal config (sezione plugins.FILE_MANAGER.mappings)
     custom_mappings = cfg_mgr.get_plugin_config("FILE_MANAGER", "mappings", {})
     mapping = {**default_mapping, **custom_mappings}
 
@@ -84,7 +77,6 @@ def _espandi_percorso(target):
 def esegui(comando):
     logger.debug("PLUGIN_FILE_MANAGER", f"esegui() chiamato con comando: '{comando}'")
 
-    # Ottieni la configurazione per i limiti
     cfg_mgr = ConfigManager()
     max_read_lines = cfg_mgr.get_plugin_config("FILE_MANAGER", "max_read_lines", 50)
     max_list_items = cfg_mgr.get_plugin_config("FILE_MANAGER", "max_list_items", 5)
@@ -102,47 +94,45 @@ def esegui(comando):
                 elementi = os.listdir(path)
                 cartelle = [f for f in elementi if os.path.isdir(os.path.join(path, f))]
                 files = [f for f in elementi if os.path.isfile(os.path.join(path, f))]
-                logger.debug("PLUGIN_FILE_MANAGER", f"Trovate {len(cartelle)} cartelle, {len(files)} file")
-
-                res = f"Analisi di '{target}':\n- Cartelle: {len(cartelle)}\n- File: {len(files)}"
+                
+                res = translator.t("plugin_file_manager_analysis", target=target)
+                res += f"\n- " + translator.t("plugin_file_manager_folders", count=len(cartelle))
+                res += f"\n- " + translator.t("plugin_file_manager_files", count=len(files))
+                
                 if max_list_items > 0:
                     if cartelle:
-                        res += f"\nPrime cartelle: {', '.join(cartelle[:max_list_items])}"
+                        list_str = ", ".join(cartelle[:max_list_items])
+                        res += f"\n" + translator.t("plugin_file_manager_folders_list", list=list_str)
                     if files:
-                        res += f"\nPrimi file: {', '.join(files[:max_list_items])}"
+                        list_str = ", ".join(files[:max_list_items])
+                        res += f"\n" + translator.t("plugin_file_manager_files_list", list=list_str)
                 return res
             else:
-                logger.debug("PLUGIN_FILE_MANAGER", f"Percorso '{path}' non trovato")
-                return f"Percorso '{path}' non trovato."
+                return translator.t("plugin_file_manager_not_found", path=path)
         except Exception as e:
-            logger.debug("PLUGIN_FILE_MANAGER", f"Errore accesso: {e}")
-            return f"Errore accesso: {e}"
+            return f"Error: {e}"
 
-    # Gestione conta:
-    elif cmd.startswith("conta:"):
-        target = cmd[6:].strip()
+    # Gestione count: / conta:
+    elif cmd.startswith("count:") or cmd.startswith("conta:"):
+        prefix_len = 6 if cmd.startswith("count:") else 6
+        target = cmd[prefix_len:].strip()
         path = _espandi_percorso(target)
-        logger.debug("PLUGIN_FILE_MANAGER", f"conta: target={target}, path={path}")
 
         try:
             if os.path.exists(path):
                 elementi = os.listdir(path)
                 cartelle = [f for f in elementi if os.path.isdir(os.path.join(path, f))]
                 files = [f for f in elementi if os.path.isfile(os.path.join(path, f))]
-                logger.debug("PLUGIN_FILE_MANAGER", f"Conteggio: {len(cartelle)} cartelle, {len(files)} file")
-                return f"Conteggio in '{target}': {len(cartelle)} cartelle, {len(files)} file."
+                return translator.t("plugin_file_manager_count_res", target=target, folders=len(cartelle), files=len(files))
             else:
-                logger.debug("PLUGIN_FILE_MANAGER", f"Percorso '{path}' non trovato")
-                return f"Percorso '{path}' non trovato."
+                return translator.t("plugin_file_manager_not_found", path=path)
         except Exception as e:
-            logger.debug("PLUGIN_FILE_MANAGER", f"Errore accesso: {e}")
-            return f"Errore accesso: {e}"
+            return f"Error: {e}"
 
     # Gestione read:
     elif cmd.startswith("read:"):
         target = cmd[5:].strip()
         path = _espandi_percorso(target)
-        logger.debug("PLUGIN_FILE_MANAGER", f"read: target={target}, path={path}")
 
         try:
             if os.path.isfile(path):
@@ -150,19 +140,16 @@ def esegui(comando):
                     lines = f.readlines()
                     total = len(lines)
                     mostra = lines[:max_read_lines]
-                    logger.debug("PLUGIN_FILE_MANAGER", f"Lette {total} righe, mostrate prime {max_read_lines}")
 
                     if total > max_read_lines:
-                        res = f"File '{target}' (prime {max_read_lines} righe su {total}):\n" + "".join(mostra)
+                        header = translator.t("plugin_file_manager_read_header_full", target=target, lines=max_read_lines, total=total)
                     else:
-                        res = f"File '{target}' ({total} righe):\n" + "".join(mostra)
-                    return res
+                        header = translator.t("plugin_file_manager_read_header", target=target, lines=total)
+                    
+                    return header + "\n" + "".join(mostra)
             else:
-                logger.debug("PLUGIN_FILE_MANAGER", f"'{path}' non è un file o non esiste")
-                return f"'{path}' non è un file o non esiste."
+                return translator.t("plugin_file_manager_not_file", path=path)
         except Exception as e:
-            logger.debug("PLUGIN_FILE_MANAGER", f"Errore lettura file: {e}")
-            return f"Errore lettura file: {e}"
+            return f"Error: {e}"
 
-    logger.debug("PLUGIN_FILE_MANAGER", "Comando non riconosciuto")
-    return "Comando FILE_MANAGER non riconosciuto. Usa list:, conta: o read:"
+    return translator.t("plugin_file_manager_cmd_unknown")

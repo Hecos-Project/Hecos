@@ -3,7 +3,7 @@ Gestione della selezione della personalità (anima) di Zentra.
 """
 
 import time
-from ui import interfaccia
+from ui import interface
 from core.i18n import translator
 
 class PersonalityManager:
@@ -12,7 +12,7 @@ class PersonalityManager:
 
     def handle_personalita(self, input_digitale_sicuro_callback):
         """Gestione F3 - Selezione personalità."""
-        anime_files = interfaccia.elenca_personalita()
+        anime_files = interface.elenca_personalita()
         
         # Sincronizza config
         if anime_files:

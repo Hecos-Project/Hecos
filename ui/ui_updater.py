@@ -10,9 +10,9 @@ import time
 import threading
 import re
 from colorama import Fore, Style
-from ui import grafica
+from ui import graphics
 from core.system import plugin_loader
-from ui.interfaccia import ottieni_riga_hardware
+from ui.interface import ottieni_riga_hardware
 
 stdout_lock = threading.Lock()
 

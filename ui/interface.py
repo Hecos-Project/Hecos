@@ -1,5 +1,5 @@
 """
-MODULO: Interfaccia e Grafica - Zentra Core v0.6
+MODULO: Interface & UI - Zentra Core v0.6
 DESCRIZIONE: Gestisce la UI del terminale, le dashboard hardware e i tasti funzione.
 
 "Nello specifico: Disegna la barra blu di stato (modello, voce, anima) e la barra 
@@ -20,7 +20,7 @@ try:
     import GPUtil  # Telemetria GPU/VRAM
 except ImportError:
     GPUtil = None
-from ui import grafica
+from ui import graphics
 from colorama import init, Fore, Back, Style
 from core.system import plugin_loader, version
 from core.system.version import get_version_string
@@ -146,8 +146,8 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
             if len(str(vram)) > 30: vram = str(vram)[:27] + ".."
             backend_status = stats['backend_status']
             
-            barra_cpu = grafica.crea_barra(cpu, larghezza=10)
-            barra_ram = grafica.crea_barra(ram, larghezza=10)
+            barra_cpu = graphics.crea_barra(cpu, larghezza=10)
+            barra_ram = graphics.crea_barra(ram, larghezza=10)
             
             # Traduci stati backend
             if backend_status in ("READY", "CLOUD", "ONLINE"):
@@ -307,7 +307,7 @@ def mostra_help():
                 print(f"{bordo}│{RESET}")
                 
     except Exception as e:
-        print(f"{ROSSO}Errore fatale nella generazione guida dinamica: {e}{RESET}")
+        print(f"{ROSSO}Fatal error generating dynamic guide: {e}{RESET}")
         
     chiusura = f"{CIANO}╚════════════════════════════════════════════════════════════╝{RESET}"
     print(f"{chiusura.center(90)}")
@@ -402,13 +402,13 @@ def ferma_pensiero():
     
 def elenca_personalita():
     """Scansiona la cartella personalita per trovare i file .txt reali."""
-    cartella = "personalita"
+    cartella = "personality"
     if not os.path.exists(cartella): os.makedirs(cartella)
     return [os.path.basename(f) for f in glob.glob(os.path.join(cartella, "*.txt"))]
 
 def mostra_menu_anime(anime_disponibili):
     """Mostra un menu a video per la selezione della personalità."""
-    print(f"\n{CIANO}=== SELEZIONE ANIMA SYSTEM ==={RESET}")
+    print(f"\n{CIANO}=== SYSTEM SOUL SELECTION ==={RESET}")
     for i, nome in enumerate(anime_disponibili, 1):
         print(f"{GIALLO}{i}{RESET} - {nome}")
     print(f"{CIANO}================================{RESET}")

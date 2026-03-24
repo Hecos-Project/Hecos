@@ -8,9 +8,9 @@ import msvcrt
 from core.logging import logger
 from core.system import plugin_loader, diagnostica
 from core.i18n import translator
-from ui import interfaccia, grafica, ui_updater
+from ui import interface, graphics, ui_updater
 from ui.config_editor.core import ConfigEditor
-from memoria import brain_interface
+from memory import brain_interface
 from .config import ConfigManager
 from .state_manager import StateManager
 from .input_handler import InputHandler
@@ -37,9 +37,9 @@ class ZentraApplication:
         # Inizializza traduttore
         lingua = self.config_manager.config.get("lingua", "it")
         translator.init_translator(lingua)
-        logger.info("[APP] Avvio sequenza di boot Zentra Core.")
+        logger.info("[APP] Zentra Core boot sequence initiated.")
         
-        interfaccia.setup_console()
+        interface.setup_console()
         self.state_manager.sistema_status = translator.t("loading_memory")
         brain_interface.inizializza_caveau()
         # IMPORTANTE: passa il config corrente al plugin loader
@@ -49,7 +49,7 @@ class ZentraApplication:
         plugin_loader.sincronizza_config_plugin(self.config_manager)
         
         # Sincronizza lista personalità disponibili nel config
-        anime_files = interfaccia.elenca_personalita()
+        anime_files = interface.elenca_personalita()
         if anime_files:
             anime_dict = {str(i+1): name for i, name in enumerate(anime_files)}
             self.config_manager.set(anime_dict, 'ia', 'personalita_disponibili')
@@ -64,13 +64,13 @@ class ZentraApplication:
         if dashboard_mod:
             dashboard_mod.avvia_monitoraggio_backend()
         else:
-            logger.warning("APP", "Plugin DASHBOARD disabilitato, monitoraggio hardware non attivo.")
+            logger.warning("APP", "DASHBOARD plugin disabled; hardware monitoring inactive.")
 
     def _show_boot_animation(self):
         """Mostra animazione di avvio."""
         sys.stdout.write(f"\n\033[96m[SYSTEM] {translator.t('boot_sync_msg')}\033[0m\n")
         for progresso in range(0, 101, 2):
-            barra = grafica.crea_barra(progresso, larghezza=40, stile="cyber")
+            barra = graphics.crea_barra(progresso, larghezza=40, stile="cyber")
             sys.stdout.write(f"\r{barra}")
             sys.stdout.flush()
             time.sleep(0.04)
@@ -81,7 +81,7 @@ class ZentraApplication:
         from core.audio import voce
         self.state_manager.sistema_status = translator.t("speaking")
         messaggio = self.config_manager.config.get("comportamento", {}).get("messaggio_benvenuto", translator.t("system_ready"))
-        interfaccia.scrivi_zentra(messaggio)
+        interface.scrivi_zentra(messaggio)
         if self.state_manager.stato_voce:
             voce.parla(translator.t("system_ready"))
         self.state_manager.sistema_in_elaborazione = False
@@ -113,7 +113,7 @@ class ZentraApplication:
         """Gestisce i tasti funzione."""
         
         if key == "F1":
-            interfaccia.mostra_help()
+            interface.mostra_help()
             
         elif key == "F2":
             self.model_manager.handle_modelli(self._input_digitale_sicuro)
@@ -141,8 +141,8 @@ class ZentraApplication:
             
         elif key == "F6":
             print(f"\n\033[91m[SYSTEM] {translator.t('rebooting_msg')}\033[0m")
-            # Chiudi la finestra dei log esterna se presente
-            logger.chiudi_console_log()
+            # Chiudi tutte le console esterne (Log e Debug)
+            logger.chiudi_tutte_le_console()
             time.sleep(1)
             sys.exit(42)
             
@@ -163,7 +163,7 @@ class ZentraApplication:
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
 
         # UI iniziale
-        interfaccia.mostra_ui_completa(
+        interface.mostra_ui_completa(
             config,
             self.state_manager.stato_voce,
             self.state_manager.stato_ascolto,
@@ -173,7 +173,7 @@ class ZentraApplication:
         self._show_boot_animation()
         
         self.state_manager.sistema_status = translator.t("ready")
-        interfaccia.mostra_ui_completa(
+        interface.mostra_ui_completa(
             config,
             self.state_manager.stato_voce,
             self.state_manager.stato_ascolto,
@@ -205,7 +205,7 @@ class ZentraApplication:
             evento, input_utente = self.input_handler.handle_keyboard_input(prefisso, input_utente)
             
             if evento == "EXIT":
-                logger.info("[APP] Shutdown di emergenza.")
+                logger.info("[APP] Emergency shutdown.")
                 sys.exit(0)
             elif evento == "ESC_AGAIN":
                 print(f"\n\033[93m[SYSTEM] {translator.t('esc_to_exit')}\033[0m")
@@ -222,14 +222,14 @@ class ZentraApplication:
                 dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
                 
                 if evento in ["F4", "F5"]:
-                    interfaccia.aggiorna_barra_stato_in_place(
+                    interface.aggiorna_barra_stato_in_place(
                         config,
                         self.state_manager.stato_voce,
                         self.state_manager.stato_ascolto,
                         self.state_manager.sistema_status
                     )
                 else:
-                    interfaccia.mostra_ui_completa(
+                    interface.mostra_ui_completa(
                         config,
                         self.state_manager.stato_voce,
                         self.state_manager.stato_ascolto,

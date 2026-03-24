@@ -117,7 +117,7 @@ class ModelManager:
                         size_str = f"{size/1024:.0f} KB"
                     model_sizes[name] = size_str
         except Exception as e:
-            logger.debug("MODEL", f"Impossibile recuperare dimensioni modelli: {e}")
+            logger.debug("MODEL", f"Unable to fetch model sizes: {e}")
         return model_sizes
 
     def _fetch_cloud_models(self, provider, api_key):
