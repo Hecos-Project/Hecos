@@ -116,6 +116,76 @@ def build_parameter_list(config):
     params.append(Parameter('system', 'reboot', translator.t("label_reboot"), 'command', 
                            command='reboot'))
 
+    # --- Motore: Routing (Dual Engine) ---
+    params.append(Parameter('motore_routing', 'modalita', translator.t("label_routing_mode"), 'str', 
+                           options=['auto', 'forza_nativo', 'forza_legacy']))
+    params.append(Parameter('motore_routing', 'modelli_legacy', translator.t("label_routing_models"), 'str'))
+
+    # --- Selezione Dinamica Modelli Legacy ---
+    import requests
+    models_by_provider = {
+        'ollama': [],
+        'kobold': [],
+        'openai': [],
+        'anthropic': [],
+        'groq': [],
+        'gemini': [],
+        'other': []
+    }
+    
+    def _add_model(name):
+        if '/' in name:
+            prov = name.split('/')[0].lower()
+            if prov in models_by_provider:
+                if name not in models_by_provider[prov]: models_by_provider[prov].append(name)
+            else:
+                if name not in models_by_provider['other']: models_by_provider['other'].append(name)
+        else:
+            if name not in models_by_provider['ollama']: models_by_provider['ollama'].append(name)
+
+    # 0. Modelli persistenti nel config
+    for b_type in ['ollama', 'kobold']:
+        b_conf = config.get('backend', {}).get(b_type, {})
+        for m_name in b_conf.get('modelli_disponibili', {}).values():
+            _add_model(m_name)
+    
+    # 1. Scansione Live OLLAMA
+    try:
+        r = requests.get("http://localhost:11434/api/tags", timeout=1.0)
+        if r.status_code == 200:
+            for m in r.json().get('models', []): _add_model(m['name'])
+    except: pass
+    
+    # 2. Scansione Live KOBOLD
+    try:
+        kb_url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
+        r = requests.get(kb_url, timeout=0.5)
+        if r.status_code == 200:
+            kb_model = r.json().get('result')
+            if kb_model: _add_model(kb_model)
+    except: pass
+
+    # 3. Cloud (da config)
+    allow_cloud = config.get('llm', {}).get('allow_cloud', False)
+    if allow_cloud:
+        providers = config.get('llm', {}).get('providers', {})
+        for p_name, p_data in providers.items():
+            for m_name in p_data.get('modelli', []):
+                full_name = f"{p_name}/{m_name}" if not m_name.startswith(p_name+"/") else m_name
+                _add_model(full_name)
+                    
+    # 4. Modelli già in stringa legacy
+    legacy_str = config.get('motore_routing', {}).get('modelli_legacy', '')
+    for m in [s.strip() for s in legacy_str.split(',') if s.strip()]:
+        _add_model(m)
+
+    # Genera i parametri raggruppati
+    for provider, models in models_by_provider.items():
+        if not models: continue
+        section_name = f"legacy_{provider}"
+        for model in sorted(models):
+            params.append(Parameter(section_name, model, f"Legacy Mode: {model}", 'bool'))
+
     # --- PLUGINS (dinamici) ---
     plugins_section = config.get('plugins', {})
     for plugin_tag, plugin_cfg in plugins_section.items():

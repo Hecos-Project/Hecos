@@ -18,7 +18,11 @@ class ConfigManager:
                 return json.load(f)
         except Exception as e:
             logger.errore(f"[CONFIG] Critical configuration loading error: {e}")
-            return {"backend": {"tipo": "ollama", "ollama": {}}, "ia": {}}
+            return {
+                "backend": {"tipo": "ollama", "ollama": {}}, 
+                "ia": {},
+                "motore_routing": {"modalita": "auto", "modelli_legacy": ""}
+            }
 
     def save(self):
         """Salva la configurazione corrente e aggiorna componenti se necessario."""

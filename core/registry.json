@@ -101,29 +101,26 @@
     "SYSTEM": {
         "descrizione": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
         "comandi": {
-            "execute_shell_command": "Esegue un comando shell (cmd.exe) nel terminale in background e restituisce l'output.",
-            "explore_folder": "Apre il file manager del sistema operativo in una cartella specifica.",
-            "get_time": "Restituisce l'ora locale attuale formattata (HH:MM).",
-            "open_program": "Avvia un programma locale specificato dal nome.",
-            "open_terminal": "Apre una nuova finestra indipendente del prompt dei comandi di Windows (CMD).",
-            "read_errors": "Legge specificamente gli ultimi errori (crash, eccezioni) registrati dal sistema nel log degli errori.",
-            "read_logs": "Legge gli ultimi eventi registrati nei file di log generali del sistema.",
-            "reboot_system": "Riavvia l'intero sistema Zentra Core.",
-            "set_configuration": "Modifica un valore all'interno del file di configurazione principale (config.json)."
+            "time": "Restituisce l'ora corrente",
+            "riavvia": "Riavvia Zentra",
+            "terminale": "Apre un prompt dei comandi",
+            "apri:<nome>": "Apre un programma locale",
+            "esplora:<cartella>": "Apre cartelle come desktop o download",
+            "cmd:<comando>": "Esegue comandi shell e ne legge l'output"
         },
-        "stato": "plugin_sistema_status_online",
+        "stato": "ONLINE",
         "esempio": "",
-        "is_class_based": true
+        "is_legacy": true
     },
     "WEB": {
         "descrizione": "Network access for Google searches and quick opening of websites.",
         "comandi": {
-            "open_url": "Apre un sito web specifico nel browser predefinito.",
-            "search_web": "Esegue una ricerca su internet usando il motore di ricerca predefinito (es. Google)."
+            "cerca:<testo>": "Cerca qualcosa su internet (es. cerca:meteo Roma)",
+            "apri:<sito>": "Apre un sito web specifico (es. apri:wikipedia.org)"
         },
-        "stato": "ONLINE (Browsing & Search)",
+        "stato": "ONLINE",
         "esempio": "",
-        "is_class_based": true
+        "is_legacy": true
     },
     "WEBCAM": {
         "descrizione": "Access to PC optical vision to take snapshots of the environment or Admin.",

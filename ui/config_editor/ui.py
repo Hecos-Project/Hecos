@@ -174,6 +174,22 @@ class UIManager:
                 return translator.t("section_generation")
         elif param.section in ('ollama', 'kobold'):
             return translator.t("section_generation")
+        elif param.section == 'motore_routing':
+            return translator.t("section_routing")
+        elif param.section == 'legacy_ollama':
+            return "🦙 OLLAMA (Local)"
+        elif param.section == 'legacy_kobold':
+            return "🐲 KOBOLD (Local)"
+        elif param.section == 'legacy_openai':
+            return "🕊️ OPENAI (Cloud)"
+        elif param.section == 'legacy_anthropic':
+            return "🕊️ ANTHROPIC (Cloud)"
+        elif param.section == 'legacy_groq':
+            return "🕊️ GROQ (Cloud)"
+        elif param.section == 'legacy_gemini':
+            return "🕊️ GEMINI (Cloud)"
+        elif param.section == 'legacy_other':
+            return "🛠️ LEGACY (Other)"
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:

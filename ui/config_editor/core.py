@@ -50,6 +50,13 @@ class ConfigEditor:
                 self.modified = True  # Segna come modificato se abbiamo pulito qualcosa
                 
             config["plugins"] = plugins_config
+            
+            # --- Auto-init Routing ---
+            if "motore_routing" not in config:
+                config["motore_routing"] = {"modalita": "auto", "modelli_legacy": ""}
+            elif "modelli_legacy" not in config["motore_routing"]:
+                 config["motore_routing"]["modelli_legacy"] = ""
+                 
             return config
             
         except Exception as e:
@@ -119,6 +126,13 @@ class ConfigEditor:
                 plugins = self.config.get('plugins', {})
                 plugin_cfg = plugins.get(param.plugin_tag, {})
                 return plugin_cfg.get(key)
+            elif param.section == 'motore_routing':
+                return self.config.get('motore_routing', {}).get(key)
+            elif param.section.startswith('legacy_'):
+                # Il valore è True se la chiave (nome modello) è nella stringa CSV
+                legacy_str = self.config.get('motore_routing', {}).get('modelli_legacy', '')
+                legacy_list = [m.strip().lower() for m in legacy_str.split(',') if m.strip()]
+                return key.lower() in legacy_list
             else:
                 return None
         except Exception as e:
@@ -216,6 +230,32 @@ class ConfigEditor:
                 if old != value:
                     self.config['plugins'][param.plugin_tag][key] = value
                     self.modified = True
+            elif param.section == 'motore_routing':
+                if 'motore_routing' not in self.config:
+                    self.config['motore_routing'] = {}
+                old = self.config['motore_routing'].get(key)
+                if old != value:
+                    self.config['motore_routing'][key] = value
+                    self.modified = True
+            elif param.section.startswith('legacy_'):
+                # Sincronizza il boolean con la stringa modelli_legacy
+                if 'motore_routing' not in self.config:
+                    self.config['motore_routing'] = {"modelli_legacy": ""}
+                
+                legacy_str = self.config['motore_routing'].get('modelli_legacy', '')
+                legacy_list = [m.strip().lower() for m in legacy_str.split(',') if m.strip()]
+                
+                model_name = key.lower()
+                if value: # Aggiungi
+                    if model_name not in legacy_list:
+                        legacy_list.append(model_name)
+                        self.config['motore_routing']['modelli_legacy'] = ", ".join(legacy_list)
+                        self.modified = True
+                else: # Rimuovi
+                    if model_name in legacy_list:
+                        legacy_list.remove(model_name)
+                        self.config['motore_routing']['modelli_legacy'] = ", ".join(legacy_list)
+                        self.modified = True
         except Exception as e:
             print(f"Errore in _set_value per {param.label}: {e}")
 

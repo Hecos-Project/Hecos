@@ -10,7 +10,7 @@ from memory import brain_interface
 from core.llm import client
 from core.i18n import translator
 from core.llm.manager import manager
-from core.system.plugin_loader import ottieni_tools_schema
+from core.system.plugin_loader import ottieni_tools_schema, ottieni_legacy_schema
 
 CONFIG_PATH = "config.json"
 REGISTRY_PATH = "core/registry.json"
@@ -141,27 +141,37 @@ def genera_risposta(testo_utente, config_esterno=None, tag=None):
         "- [MEMORY: read:n] for history\n"
     )
     
-    # Istruzioni esplicite sul formato dei tag (NUOVO)
-    istruzioni_tag = (
-        f"\n{translator.t('tag_instructions_title')}\n"
-        f"{translator.t('tag_instructions_desc')}\n"
-        f"- {translator.t('tag_format_correct')}\n"
-        f"- {translator.t('tag_examples_title')}\n"
-        "  * [SYSTEM: terminale]\n"
-        "  * [SYSTEM: cmd:dir]\n"
-        "  * [FILE_MANAGER: list:desktop]\n"
-        "  * [DASHBOARD: resources]\n"
-        "  * [MEMORY: who_am_i]\n"
-        "\n"
-        f"{translator.t('tag_errors_to_avoid')}\n"
-        "✗ [TERMINALE] (missing module)\n"
-        "✗ [TAG: terminal] (uses 'TAG' instead of module)\n"
-        "✗ [SYSTEM terminale] (missing colon)\n"
-        "✗ [sistema:terminale] (use lowercase, but MODULE in uppercase is preferred)\n"
-        "\n"
-        f"{translator.t('tag_available_modules', modules='SYSTEM, FILE_MANAGER, DASHBOARD, HELP, MEDIA, MODELS, WEB, WEBCAM, MEMORY')}\n"
-        f"{translator.t('tag_use_correct_module')}\n"
-    )
+    # --- MOTORE ROUTING (DUAL ENGINE) ---
+    routing_cfg = config.get('motore_routing', {})
+    modalita = routing_cfg.get('modalita', 'auto')
+    modelli_legacy_str = routing_cfg.get('modelli_legacy', '')
+    
+    # Risoluzione del modello provvisoria (per capire quale stiamo per usare)
+    from app.model_manager import ModelManager
+    effective_backend_type, effective_default_model = ModelManager.get_effective_model_info(config)
+    modello_risolto_temp = manager.resolve_model(tag, config_override=config)
+    current_model = (modello_risolto_temp or effective_default_model).lower()
+
+    is_legacy = False
+    if modalita == 'forza_legacy':
+        is_legacy = True
+    elif modalita == 'auto':
+        legacy_list = [m.strip().lower() for m in modelli_legacy_str.split(',') if m.strip()]
+        if any(legacy_m in current_model for legacy_m in legacy_list):
+            is_legacy = True
+            
+    if is_legacy:
+        logger.debug("BRAIN", f"Routing: DUAL ENGINE -> LEGACY MODE (Tag Engine) per {current_model}")
+        istruzioni_tag = (
+            f"\n{translator.t('tag_instructions_title')}\n"
+            f"{translator.t('tag_instructions_desc')}\n"
+            f"{ottieni_legacy_schema()}\n"
+        )
+        tools = None
+    else:
+        logger.debug("BRAIN", f"Routing: DUAL ENGINE -> NATIVE MODE (JSON Calling) per {current_model}")
+        istruzioni_tag = ""  # No manual tags needed for Native tools
+        tools = ottieni_tools_schema()
 
     system_prompt = (
         f"{prompt_personalita}\n"
@@ -169,13 +179,12 @@ def genera_risposta(testo_utente, config_esterno=None, tag=None):
         f"{autocoscienza}\n"
         f"{capacita}\n"
         "### OPERATIVE RULES ###\n"
-        "1. Use TAG [MODULE: command] only when necessary.\n"
-        "2. Be consistent with your personality.\n\n"
+        "1. Be consistent with your personality.\n\n"
         f"{regole_identita}"
         f"{regole_file_manager}"
         f"{clausola_forza}"
         f"{linee_guida_plugin}"
-        f"{istruzioni_tag}"  # <--- AGGIUNTO
+        f"{istruzioni_tag}"
     )
     
     logger.debug("BRAIN", f"System prompt created: {len(system_prompt)} characters")
@@ -222,9 +231,6 @@ def genera_risposta(testo_utente, config_esterno=None, tag=None):
         return f"{translator.t('error')}: {translator.t('model_config_missing')}"
 
     logger.debug("BRAIN", f"LiteLLM call ({backend_config['tipo_backend']}) with model: {backend_config['modello']}")
-    
-    # Recupera i tools in formato OpenAI JSON Schema
-    tools = ottieni_tools_schema()
     
     # Unica chiamata al client unificato
     risposta = client.generate(system_prompt, testo_utente, backend_config, config.get('llm', {}), tools=tools)

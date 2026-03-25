@@ -56,33 +56,6 @@ def configura(nuova_config):
     config_attuale = nuova_config
     logger.info("[PROCESSOR] Hardware configuration synchronized.")
 
-def _importa_plugin(modulo_nome):
-    """
-    Importa dinamicamente un plugin dalla nuova struttura a cartelle.
-    Cerca in: plugins/nome_modulo/main.py
-    """
-    try:
-        plugin_path = os.path.join("plugins", modulo_nome, "main.py")
-        if not os.path.exists(plugin_path):
-            logger.debug("PROCESSOR", f"Plugin {modulo_nome} not found in {plugin_path}")
-            return None
-        
-        spec = importlib.util.spec_from_file_location(
-            f"plugins.{modulo_nome}.main", 
-            plugin_path
-        )
-        if spec is None:
-            logger.debug("PROCESSOR", f"Unable to create spec for {modulo_nome}")
-            return None
-            
-        plugin_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(plugin_module)
-        logger.debug("PROCESSOR", f"Plugin {modulo_nome} imported successfully")
-        return plugin_module
-    except Exception as e:
-        logger.errore(f"[PROCESSOR] Plugin import error for {modulo_nome}: {e}")
-        logger.debug("PROCESSOR", f"Exception: {str(e)}")
-        return None
 
 def elabora_scambio(testo_utente, stato_voce):
     """Gestisce l'intera catena: IA -> Plugin -> Pulizia -> Risposta."""
@@ -173,16 +146,34 @@ def elabora_scambio(testo_utente, stato_voce):
             
         logger.debug("PROCESSOR", f"Processing module {modulo_da_chiamare.upper()} (original tag: {tag_originale})")
         
-        # Importa il plugin
-        plugin_module = _importa_plugin(modulo_da_chiamare)
+        # Recupera il plugin (o l'istanza legacy) direttamente dal loader in memoria
+        from core.system import plugin_loader
+        plugin_obj = plugin_loader.get_plugin_module(modulo_da_chiamare.upper(), legacy=False)
+        is_legacy_oop = False
+        if not plugin_obj:
+            plugin_obj = plugin_loader.get_plugin_module(modulo_da_chiamare.upper(), legacy=True)
+            if plugin_obj:
+                is_legacy_oop = True
         
-        if plugin_module:
-            if method_name and hasattr(plugin_module, "tools"):
-                # Esecuzione nuovo stile (Class-based/Function Calling)
+        if plugin_obj:
+            if is_legacy_oop and hasattr(plugin_obj, "elabora_tag"):
+                # Esecuzione nuovo stile Legacy (OOP)
+                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} is OOP Legacy; calling elabora_tag('{azione_o_args}')")
+                print(f"{GIALLO}[SYSTEM] {translator.t('executing_module', module=modulo_da_chiamare.upper())}{RESET}")
+                try:
+                    esito = plugin_obj.elabora_tag(azione_o_args)
+                    if esito:
+                        logger.info(f"[PROCESSOR] Plugin {modulo_da_chiamare.upper()} output: {len(str(esito))} chars")
+                        print(f"{CIANO}[OUTPUT {modulo_da_chiamare.upper()}]:\n{esito}{RESET}")
+                except Exception as e:
+                    logger.errore(f"[PROCESSOR] Legacy OOP execution error for {modulo_da_chiamare}: {e}")
+            
+            elif method_name and hasattr(plugin_obj, "tools"):
+                # Esecuzione nuovo stile (Class-based/Function Calling NATIVO)
                 logger.debug("PROCESSOR", f"Executing native function {method_name} in {modulo_da_chiamare}")
                 print(f"{GIALLO}[SYSTEM] {translator.t('executing_module', module=modulo_da_chiamare.upper())}{RESET}")
                 try:
-                    metodo = getattr(plugin_module.tools, method_name)
+                    metodo = getattr(plugin_obj.tools, method_name)
                     # Passa gli argomenti al metodo python
                     esito = metodo(**azione_o_args) if azione_o_args else metodo()
                     if esito:
@@ -190,22 +181,22 @@ def elabora_scambio(testo_utente, stato_voce):
                         print(f"{CIANO}[OUTPUT {modulo_da_chiamare.upper()}]:\n{esito}{RESET}")
                 except Exception as e:
                     logger.errore(f"[PROCESSOR] Tool execution error for {method_name}: {e}")
-            elif hasattr(plugin_module, "esegui") and not method_name:
-                # Esecuzione vecchio stile (Regex -> esegui(comando: str))
-                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} has 'execute'; calling with: '{azione_o_args}'")
+                    
+            elif hasattr(plugin_obj, "esegui") and not method_name:
+                # Esecuzione vecchissimo stile (Procedura Legacy: esegui(comando: str))
+                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} has 'esegui'; calling with: '{azione_o_args}'")
                 print(f"{GIALLO}[SYSTEM] {translator.t('executing_module', module=modulo_da_chiamare.upper())}{RESET}")
-                
                 try:
-                    esito = plugin_module.esegui(azione_o_args)
+                    esito = plugin_obj.esegui(azione_o_args)
                     if esito:
                         logger.info(f"[PROCESSOR] Plugin {modulo_da_chiamare.upper()} output: {len(str(esito))} chars")
                         print(f"{CIANO}[OUTPUT {modulo_da_chiamare.upper()}]: {esito}{RESET}")
                 except Exception as e:
-                    logger.errore(f"[PROCESSOR] Plugin execution error for {modulo_da_chiamare}: {e}")
+                    logger.errore(f"[PROCESSOR] Old Plugin execution error for {modulo_da_chiamare}: {e}")
             else:
-                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} format error / not found.")
+                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} formatt error / missing expected methods.")
         else:
-            logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} not loaded.")
+            logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} not loaded or inactive.")
     
     if not tags_trovati:
         logger.debug("PROCESSOR", "No tags/tools found in response")

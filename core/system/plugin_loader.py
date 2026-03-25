@@ -17,11 +17,14 @@ REGISTRY_PATH = "core/registry.json"
 # Memorizza gli schemi di configurazione raccolti dai plugin
 _plugin_config_schemas = {}
 
-# ... in cima al file ...
-_loaded_plugins = {}   # tag -> modulo
+# Plugin attivi (Nativi e Legacy)
+_loaded_plugins = {}          # tag -> modulo (per i JSON Calling / vecchi plugin singoli)
+_loaded_legacy_plugins = {}   # tag -> instanza della classe LegacyPlugin
 
-def get_plugin_module(tag):
+def get_plugin_module(tag, legacy=False):
     """Restituisce il modulo del plugin se attivo, altrimenti None."""
+    if legacy:
+        return _loaded_legacy_plugins.get(tag)
     return _loaded_plugins.get(tag)
 
 def aggiorna_registro_capacita(config=None, debug_log=True):
@@ -127,6 +130,61 @@ def aggiorna_registro_capacita(config=None, debug_log=True):
         except Exception as e:
             logger.errore(f"LOADER: Failed to load {plugin_dir}: {e}")
             continue
+            
+    # --- NUOVA SEZIONE: Carica i Plugin Legacy dalla cartella plugins_legacy/ ---
+    if os.path.exists("plugins_legacy"):
+        legacy_dirs = [d for d in os.listdir("plugins_legacy") 
+                      if os.path.isdir(os.path.join("plugins_legacy", d)) 
+                      and not d.startswith("__")]
+                      
+        for leg_dir in legacy_dirs:
+            main_file = os.path.join("plugins_legacy", leg_dir, "main.py")
+            if not os.path.exists(main_file):
+                continue
+                
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    f"plugins_legacy.{leg_dir}.main", 
+                    main_file
+                )
+                if spec is None: continue
+                modulo = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(modulo)
+                
+                # Cerca una classe che finisca per 'Plugin' o istanziala se c'è un get_plugin()
+                instanza_legacy = None
+                if hasattr(modulo, "get_plugin"):
+                    instanza_legacy = modulo.get_plugin()
+                else:
+                    import inspect
+                    for name, obj in inspect.getmembers(modulo, inspect.isclass):
+                        if name.endswith("Plugin") and obj.__module__ == modulo.__name__:
+                            instanza_legacy = obj()
+                            break
+                            
+                if instanza_legacy and hasattr(instanza_legacy, "info"):
+                    dati = instanza_legacy.info()
+                    tag = dati['tag']
+                    
+                    plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                    if not plugin_enabled:
+                        if debug_log: logger.debug("LOADER", f"Legacy Plugin {leg_dir} disabled by config.")
+                        continue
+                        
+                    _loaded_legacy_plugins[tag] = instanza_legacy
+                    stato = instanza_legacy.status() if hasattr(instanza_legacy, "status") else "ONLINE"
+                    
+                    skills_map[tag] = {
+                        "descrizione": dati.get('desc', ''),
+                        "comandi": dati.get('comandi', {}),
+                        "stato": stato,
+                        "esempio": "",
+                        "is_legacy": True
+                    }
+                    if debug_log: logger.debug("LOADER", f"OOP Legacy Plugin {leg_dir} loaded with tag {tag}")
+            except Exception as e:
+                logger.errore(f"LOADER: Failed to load OOP Legacy {leg_dir}: {e}")
+                continue
     
     # 2. (Opzionale) Cerca anche nella vecchia struttura per compatibilità
     #    Plugin ancora presenti come file singoli in plugins/
@@ -393,4 +451,25 @@ def ottieni_tools_schema():
                     }
                 })
                 
-    return tools_list if tools_list else None
+    return tools_list if tools_list else None
+
+def ottieni_legacy_schema():
+    """
+    Restituisce una stringa formattata con l'elenco dei TAG disponibili.
+    Viene aggiunta dinamicamente al System Prompt dei modelli 'piccoli' (Qwen 1.5b ecc.)
+    se il Routing della configurazione rileva la modalità in modo corretto.
+    """
+    if not _loaded_legacy_plugins:
+        return ""
+        
+    res = "COMPETENZE E COMANDI ATTIVI (LEGACY TAG MODE):\n"
+    res += "- Puoi agire sul computer scrivendo esattamente i seguenti tag testuali quando necessario:\n"
+    for tag, istanza in _loaded_legacy_plugins.items():
+        info = istanza.info()
+        comandi = info.get("comandi", {})
+        res += f"\n[MODULO: {tag}]\n"
+        for cmd, desc in comandi.items():
+            res += f"  Per {desc}: scrivi '[{tag}: {cmd}]'\n"
+            
+    res += "\nATTENZIONE: Il tag deve essere chiuso dalle parentesi quadre ed esatto.\n"
+    return res

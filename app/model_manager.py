@@ -19,23 +19,39 @@ class ModelManager:
         model_sizes = self._get_model_sizes()
         
         # 1. Recupero Modelli OLLAMA (Local)
+        models_ollama = []
         try:
             response = requests.get("http://localhost:11434/api/tags", timeout=1)
             if response.status_code == 200:
                 for m in response.json().get('models', []):
-                    all_models.append({"name": m['name'], "type": "ollama", "provider": "local"})
+                    models_ollama.append(m['name'])
+                # Salva nel config per persistenza
+                self.config_manager.set({str(i+1): name for i, name in enumerate(models_ollama)}, 'backend', 'ollama', 'modelli_disponibili')
+                self.config_manager.save()
         except Exception as e:
             logger.debug("MODEL", f"Ollama dynamic fetch failed: {e}")
+            # Fallback su cache
+            models_ollama = list(config.get('backend', {}).get('ollama', {}).get('modelli_disponibili', {}).values())
+
+        for m_name in models_ollama:
+            all_models.append({"name": m_name, "type": "ollama", "provider": "local"})
                 
         # 2. Recupero Modelli KOBOLD (Local)
+        models_kobold = []
         try:
             url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
             r = requests.get(url, timeout=1)
             if r.status_code == 200:
                 model_name = r.json().get('result', 'kobold_model')
-                all_models.append({"name": model_name, "type": "kobold", "provider": "local"})
+                models_kobold = [model_name]
+                self.config_manager.set({"1": model_name}, 'backend', 'kobold', 'modelli_disponibili')
+                self.config_manager.save()
         except Exception as e:
             logger.debug("MODEL", f"Kobold dynamic fetch failed: {e}")
+            models_kobold = list(config.get('backend', {}).get('kobold', {}).get('modelli_disponibili', {}).values())
+
+        for m_name in models_kobold:
+            all_models.append({"name": m_name, "type": "kobold", "provider": "local"})
 
         # 3. Recupero Modelli CLOUD
         allow_cloud = config.get('llm', {}).get('allow_cloud', False)
