@@ -92,6 +92,11 @@ def build_parameter_list(config):
     params.append(Parameter('voce', 'sentence_silence', translator.t("label_sentence_silence"), 'float', 
                            min=0.0, max=3.0, step=0.1))
 
+    # --- Bridge WebUI ---
+    bridge = config.get('bridge', {})
+    params.append(Parameter('bridge', 'voce_locale_abilitata', 'Voce su WebUI (Locale TTS)', 'bool'))
+    params.append(Parameter('bridge', 'voce_webui_stt', 'Usa Mic WebUI (Browser STT)', 'bool'))
+
     # --- Ascolto ---
     ascolto = config.get('ascolto', {})
     params.append(Parameter('ascolto', 'soglia_energia', translator.t("label_soglia_energia"), 'int', 

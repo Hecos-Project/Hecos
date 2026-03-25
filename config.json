@@ -47,7 +47,7 @@
     "backend": {
         "tipo": "cloud",
         "cloud": {
-            "modello": "groq/llama-3.3-70b-versatile",
+            "modello": "groq/qwen/qwen3-32b",
             "temperature": 0.7
         },
         "ollama": {
@@ -128,7 +128,9 @@
         "usa_processore": true,
         "ritardo_chunk_ms": 0,
         "debug_log": true,
-        "rimuovi_think_tags": true
+        "rimuovi_think_tags": true,
+        "voce_locale_abilitata": false,
+        "voce_webui_stt": true
     },
     "logging": {
         "livello": "INFO",

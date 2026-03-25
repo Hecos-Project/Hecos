@@ -108,6 +108,8 @@ class ConfigEditor:
                 return self.config.get('backend', {}).get('kobold', {}).get(key)
             elif param.section == 'voce':
                 return self.config.get('voce', {}).get(key)
+            elif param.section == 'bridge':
+                return self.config.get('bridge', {}).get(key)
             elif param.section == 'ascolto':
                 return self.config.get('ascolto', {}).get(key)
             elif param.section == 'filtri':
@@ -176,6 +178,13 @@ class ConfigEditor:
                 old = self.config['voce'].get(key)
                 if old != value:
                     self.config['voce'][key] = value
+                    self.modified = True
+            elif param.section == 'bridge':
+                if 'bridge' not in self.config:
+                    self.config['bridge'] = {}
+                old = self.config['bridge'].get(key)
+                if old != value:
+                    self.config['bridge'][key] = value
                     self.modified = True
             elif param.section == 'ascolto':
                 if 'ascolto' not in self.config:

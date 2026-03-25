@@ -6,7 +6,7 @@ from typing import Generator, Union
 
 class Pipe:
     def __init__(self):
-        self.zentra_path = r"C:\ZentraCoZentraCore_V0.9.3"
+        self.zentra_path = r"C:\Zentra-Core"
         if self.zentra_path not in sys.path:
             sys.path.insert(0, self.zentra_path)
         self.bridge = None

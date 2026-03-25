@@ -190,6 +190,8 @@ class UIManager:
             return "🕊️ GEMINI (Cloud)"
         elif param.section == 'legacy_other':
             return "🛠️ LEGACY (Other)"
+        elif param.section == 'bridge':
+            return "🌐 BRIDGE WEBUI"
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:
@@ -235,6 +237,7 @@ class UIManager:
             "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
             translator.t("section_generation"), 
             translator.t("section_voice"), 
+            "🌐 BRIDGE WEBUI",
             translator.t("section_listening"), 
             translator.t("section_filters"), 
             translator.t("section_logging"), 
@@ -381,7 +384,7 @@ class UIManager:
         print(f"\n{GIALLO}{message}{RESET}")
         while True:
             ch = self._wait_for_key()
-            if ch in (ord('s'), ord('S')):
+            if ch in (ord('s'), ord('S'), ord('y'), ord('Y')):
                 return True
             if ch in (ord('n'), ord('N'), KEY_ESC):
                 return False
