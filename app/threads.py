@@ -17,9 +17,9 @@ class AscoltoThread(threading.Thread):
         logger.info("[LISTENING THREAD] Initialized.")
         while True:
             if (self.state.stato_ascolto and 
-                not voce.sta_parlando and 
+                not self.state.sistema_parla and 
                 not self.state.sistema_in_elaborazione):
-                testo = ascolto.ascolta()
+                testo = ascolto.ascolta(state=self.state)
                 if testo and len(testo.strip()) > 1:
                     logger.info(f"[LISTENING THREAD] Input detected: '{testo}'")
                     self.state.comando_vocale_rilevato = testo

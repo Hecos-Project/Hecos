@@ -96,6 +96,12 @@ def elabora_scambio(testo_utente, stato_voce):
     # 2. Analisi Tag Plugin e Tool Calls
     logger.debug("PROCESSOR", "Searching for tags or tool_calls in response...")
     
+    # Rimuove i blocchi <think>...</think> prodotti dai reasoning model (Qwen, DeepSeek-R1, ecc.)
+    # Lo facciamo qui prima di qualsiasi analisi per escludere il ragionamento interno dall'output
+    if isinstance(risposta_grezza, str):
+        risposta_grezza = re.sub(r'<think>.*?</think>', '', risposta_grezza, flags=re.DOTALL | re.IGNORECASE).strip()
+        risposta_grezza = re.sub(r'<think>.*$', '', risposta_grezza, flags=re.DOTALL | re.IGNORECASE).strip()
+    
     tags_trovati = []
     
     # Controlla se è una risposta strutturata (Function Calling nativo)
@@ -221,6 +227,8 @@ def elabora_scambio(testo_utente, stato_voce):
             risposta_video = translator.t('model_no_response_error')
     
     logger.debug("PROCESSOR", f"Final video response: {len(risposta_video)} characters")
+    # Sanitizza per la stampa sicura su terminale Windows (previene charmap crash)
+    risposta_video = filtri.pulisci_per_video(risposta_video)
 
     # 4. Preparazione Testo Vocale
     testo_pulito = ""

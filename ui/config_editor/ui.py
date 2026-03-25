@@ -48,9 +48,9 @@ class UIManager:
                 if key == KEY_ESC:
                     if self.modified:
                         if self._confirm(translator.t("exit_without_saving")):
-                            break
+                            return "DISCARD"
                     else:
-                        break
+                        return "NO_CHANGES"
                 elif key == KEY_ENTER:
                     # Se il parametro è una stringa libera (e non readonly), attiva modifica
                     param = self.param_list[self.cursor]
@@ -116,7 +116,8 @@ class UIManager:
             # Ripristina il cursore 
             sys.stdout.write('\033[?25h')
             sys.stdout.flush()
-        return self.modified
+        
+        return "SAVE" if self.modified else "NO_CHANGES"
 
     def _edit_string(self, param):
         """Modifica una stringa libera con input utente."""
@@ -171,6 +172,8 @@ class UIManager:
                 return translator.t("section_models")
             else:
                 return translator.t("section_generation")
+        elif param.section in ('ollama', 'kobold'):
+            return translator.t("section_generation")
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:
@@ -200,7 +203,7 @@ class UIManager:
             safe_limit = 30
             
         # Intestazione
-        intestazione = f" {get_version_string()} - CONFIGURAZIONE SYSTEM "
+        intestazione = f" {get_version_string()} - PANNELLO DI CONTROLLO "
         outprint(f"\033[44m\033[97m{intestazione.center(PANEL_WIDTH)}\033[0m")
         
         # 1. Genera lista piatta di "righe renderizzabili"

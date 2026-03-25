@@ -195,26 +195,33 @@ def genera_risposta(testo_utente, config_esterno=None, tag=None):
         logger.errore(f"Roleplay plugin error: {e}")
 
     # 4. Risoluzione del modello e Invocazione del client LiteLLM unificato
-    backend_type = config.get('backend', {}).get('tipo', 'ollama')
-    backend_config = config.get('backend', {}).get(backend_type, {}).copy() # Copia per non sporcare il config globale
+    from app.model_manager import ModelManager
+    effective_backend_type, effective_default_model = ModelManager.get_effective_model_info(config)
+    
+    backend_config = config.get('backend', {}).get(effective_backend_type, {}).copy() # Copia per non sporcare il config globale
     
     # Risoluzione dinamica del modello tramite LLMManager
-    modello_risolto = manager.resolve_model(tag)
+    modello_risolto = manager.resolve_model(tag, config_override=config)
     if modello_risolto:
         backend_config['modello'] = modello_risolto
         logger.debug("BRAIN", f"Model resolved for tag '{tag}': {modello_risolto}")
-    
-    # Passiamo il tipo di backend al client per la logica interna
-    backend_config['tipo_backend'] = backend_type
-    
-    logger.debug("BRAIN", f"Backend chosen: {backend_type}")
+        
+        # Se il modello risolto (es da un plugin) è cloud, assicuriamoci che client.py sappia di mandarlo al provider
+        is_cloud = any(modello_risolto.startswith(p + "/") for p in ["groq", "openai", "anthropic", "gemini", "cohere"])
+        backend_config['tipo_backend'] = "cloud" if is_cloud else effective_backend_type
+    else:
+        # Fallback ultra-sicuro
+        backend_config['modello'] = effective_default_model
+        backend_config['tipo_backend'] = effective_backend_type
+        
+    logger.debug("BRAIN", f"Backend chosen: {backend_config['tipo_backend']}")
 
-    if 'modello' not in backend_config or not backend_config['modello']:
-        logger.errore(f"[CRITICAL] Model not specified in config.json for backend {backend_type}!")
-        logger.debug("BRAIN", f"ERROR: Missing model for backend {backend_type}")
+    if 'modello' not in backend_config or not backend_config['modello'] or backend_config['modello'] == 'N/D':
+        logger.errore(f"[CRITICAL] Model not specified in config.json for backend {effective_backend_type}!")
+        logger.debug("BRAIN", f"ERROR: Missing model for backend {effective_backend_type}")
         return f"{translator.t('error')}: {translator.t('model_config_missing')}"
 
-    logger.debug("BRAIN", f"LiteLLM call ({backend_type}) with model: {backend_config['modello']}")
+    logger.debug("BRAIN", f"LiteLLM call ({backend_config['tipo_backend']}) with model: {backend_config['modello']}")
     
     # Recupera i tools in formato OpenAI JSON Schema
     tools = ottieni_tools_schema()

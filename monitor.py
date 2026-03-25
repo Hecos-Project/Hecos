@@ -7,6 +7,7 @@ import subprocess
 import time
 import os
 import sys
+import json
 
 # Configurazione percorsi
 SCRIPT_PRINCIPALE = "main.py"

@@ -46,6 +46,9 @@ def _monitora_backend():
     
     while True:
         try:
+            # Ricarichiamo il config ad ogni ciclo per recepire modifiche fatte con F7
+            cfg_mgr.reload()
+            
             # Ricarica l'intervallo ogni volta per dinamicità
             monitor_interval = cfg_mgr.get_plugin_config("DASHBOARD", "monitor_interval", 2)
             backend_timeout = cfg_mgr.get_plugin_config("DASHBOARD", "backend_timeout", 0.5)
@@ -139,7 +142,11 @@ class DashboardTools:
             if not gpus:
                 return "Nessuna GPU dedicata rilevata."
             
+            # Su portatili Dual-GPU (es. Intel + Nvidia), seleziona la GPU discreta
+            # ordinando per VRAM totale decrescente in modo da ignorare l'integrata
+            gpus.sort(key=lambda x: x.memoryTotal, reverse=True)
             gpu = gpus[0]
+            
             vram_percent = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
             vram_usata = f"{int(vram_percent)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
             gpu_load = f"{int(gpu.load * 100)}%"

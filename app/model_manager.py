@@ -24,14 +24,18 @@ class ModelManager:
             if response.status_code == 200:
                 for m in response.json().get('models', []):
                     all_models.append({"name": m['name'], "type": "ollama", "provider": "local"})
-        except:
-            # Fallback su config
-            for m in config.get('backend', {}).get('ollama', {}).get('modelli_disponibili', {}).values():
-                all_models.append({"name": m, "type": "ollama", "provider": "local"})
+        except Exception as e:
+            logger.debug("MODEL", f"Ollama dynamic fetch failed: {e}")
                 
         # 2. Recupero Modelli KOBOLD (Local)
-        for m in config.get('backend', {}).get('kobold', {}).get('modelli_disponibili', {}).values():
-            all_models.append({"name": m, "type": "kobold", "provider": "local"})
+        try:
+            url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
+            r = requests.get(url, timeout=1)
+            if r.status_code == 200:
+                model_name = r.json().get('result', 'kobold_model')
+                all_models.append({"name": model_name, "type": "kobold", "provider": "local"})
+        except Exception as e:
+            logger.debug("MODEL", f"Kobold dynamic fetch failed: {e}")
 
         # 3. Recupero Modelli CLOUD
         allow_cloud = config.get('llm', {}).get('allow_cloud', False)
@@ -70,8 +74,7 @@ class ModelManager:
             return
 
         # 4. Visualizzazione
-        backend_attuale = config.get('backend', {}).get('tipo', 'ollama')
-        modello_attuale = config.get('backend', {}).get(backend_attuale, {}).get('modello', '')
+        backend_attuale, modello_attuale = self.get_effective_model_info(config)
         
         print(translator.t("active_backend", backend=backend_attuale.upper(), model=modello_attuale))
         
@@ -168,3 +171,16 @@ class ModelManager:
         except Exception as e:
             logger.debug("MODEL", f"Fetch error for {provider}: {e}")
         return []
+        
+    @staticmethod
+    def get_effective_model_info(config_dict):
+        """Restituisce il backend e modello effettivo, gestendo i fallback sicuri."""
+        backend_type = config_dict.get('backend', {}).get('tipo', 'ollama')
+        allow_cloud = config_dict.get('llm', {}).get('allow_cloud', False)
+        
+        # Fallback a un backend locale se il cloud è disattivato ma risulta come attivo
+        if backend_type == 'cloud' and not allow_cloud:
+            backend_type = 'ollama'
+            
+        modello = config_dict.get('backend', {}).get(backend_type, {}).get('modello', 'N/D')
+        return backend_type, modello

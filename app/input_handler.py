@@ -13,6 +13,7 @@ from core.logging import logger
 from core.system import plugin_loader
 from core.i18n import translator
 from memory import brain_interface
+# sys è importato a livello di modulo - NON usare 'import sys' inline nei metodi
 
 class InputHandler:
     def __init__(self, state_manager, config_manager):
@@ -30,17 +31,20 @@ class InputHandler:
         elif evento in ["F1", "F2", "F3", "F4", "F5", "F6", "F7"]:
             return evento, nuovo_input
         elif evento == "ESC":
-            return self._handle_esc()
+            return self._handle_esc(prefisso)
         
         return None, nuovo_input
 
     def handle_voice_input(self, prefisso):
         """Gestisce input vocale."""
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
-        if dashboard_mod and dashboard_mod.get_backend_status() not in ["READY", "CLOUD", "ONLINE"]:
-            print(f"\n\033[93m[SYSTEM] Backend not ready yet. Please wait...\033[0m")
-            self.state.comando_vocale_rilevato = None
-            return
+        if dashboard_mod:
+            tools = getattr(dashboard_mod, "tools", None)
+            raw_fn = getattr(tools, "_get_raw_backend_status", None) if tools else None
+            if raw_fn and raw_fn() not in ["READY", "CLOUD", "ONLINE"]:
+                print(f"\n\033[93m[SYSTEM] Backend not ready yet. Please wait...\033[0m")
+                self.state.comando_vocale_rilevato = None
+                return
 
         testo_v = self.state.comando_vocale_rilevato
         self.state.comando_vocale_rilevato = None
@@ -55,10 +59,13 @@ class InputHandler:
             
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod:
-            backend_status = dashboard_mod.get_backend_status()
-            if backend_status not in ["READY", "CLOUD", "ONLINE"]:
-                print(f"\n\033[93m[SYSTEM] Backend not ready ({backend_status}). Please wait...\033[0m")
-                return None, ""
+            tools = getattr(dashboard_mod, "tools", None)
+            raw_fn = getattr(tools, "_get_raw_backend_status", None) if tools else None
+            if raw_fn:
+                raw_status = raw_fn()
+                if raw_status not in ["READY", "CLOUD", "ONLINE"]:
+                    print(f"\n\033[93m[SYSTEM] Backend not ready ({raw_status}). Please wait...\033[0m")
+                    return None, ""
             
         self._execute_exchange(testo, prefisso, is_voice=False)
         return "PROCESSED", ""
@@ -99,8 +106,15 @@ class InputHandler:
 
         if stop_event.is_set():
             interface.ferma_pensiero()
+            voce.ferma_voce() # Interrompe immediatamente l'audio se in riproduzione
+            # Pulisci il buffer della tastiera da eventuali ESC multipli premuti tenendo premuto il tasto
+            while msvcrt.kbhit():
+                msvcrt.getch()
             print(f"\n\033[93m[SYSTEM] {translator.t('request_cancelled')}\033[0m")
+            self.state.sistema_status = translator.t("ready")
             self.state.sistema_in_elaborazione = False
+            sys.stdout.write(prefisso)
+            sys.stdout.flush()
             return
 
         thread.join()
@@ -117,15 +131,60 @@ class InputHandler:
             # Mostra la risposta
             interface.scrivi_zentra(risposta_video)
             if self.state.stato_voce and testo_voce_pulito:
-                voce.parla(testo_voce_pulito)
+                self.state.sistema_status = translator.t("speaking")
+                interface.aggiorna_barra_stato_in_place(
+                    self.config.config, 
+                    self.state.stato_voce, 
+                    self.state.stato_ascolto, 
+                    self.state.sistema_status
+                )
+                voce.parla(testo_voce_pulito, state=self.state)
+                # Al termine della voce, torna a PRONTO (già gestito in fondo al metodo)
 
+        self.state.sistema_status = translator.t("ready")
         self.state.sistema_in_elaborazione = False
+        # Forza un refresh della barra di stato per rimuovere "PENSANDO" o "PARLANDO"
+        interface.aggiorna_barra_stato_in_place(
+            self.config.config, 
+            self.state.stato_voce, 
+            self.state.stato_ascolto, 
+            self.state.sistema_status
+        )
+        # Ripristina il prompt a video per il prossimo input
+        sys.stdout.write(prefisso)
+        sys.stdout.flush()
 
-    def _handle_esc(self):
-        """Gestisce pressione ESC."""
+    def _handle_esc(self, prefisso):
+        """Gestisce pressione ESC: ferma la voce e, se necessario, chiede conferma uscita."""
         ora = time.time()
-        if ora - self.state.ultimo_esc < 0.5:
-            return "EXIT", None
-        else:
-            self.state.ultimo_esc = ora
-            return "ESC_AGAIN", None
+        # Se la voce è stata fermata manualmente da pochissimo, ignora questo ESC (race condition buffer)
+        if ora - self.state.ultimo_stop_voce < 0.5:
+            return "CANCELLED", "" # Ignora silenziosamente
+
+        # Se Zentra stava parlando, ESC deve solo fermare la voce e tornare al prompt
+        if self.state.sistema_parla or voce.sta_parlando:
+            voce.ferma_voce()
+            self.state.sistema_parla = False
+            return "PROCESSED", "" # Torna al prompt
+            
+        # Altrimenti, chiede conferma per uscire
+        sys.stdout.write(f"\n\033[93m[SYSTEM] {translator.t('confirm_exit')} (S/N): \033[0m")
+        sys.stdout.flush()
+        
+        # Aspetta un carattere S o N
+        while True:
+            if msvcrt.kbhit():
+                ch = msvcrt.getch().decode('utf-8', errors='ignore').upper()
+                if ch == 'S':
+                    print("S")
+                    return "EXIT", None
+                elif ch == 'N':
+                    print("N")
+                    sys.stdout.write(f"\r{' ' * 50}\r{prefisso}")
+                    sys.stdout.flush()
+                    return "CANCELLED", "" # Torna al prompt senza uscire
+                elif ch == '\x1b': # ESC di nuovo per annullare
+                    sys.stdout.write(f"\r{' ' * 50}\r{prefisso}")
+                    sys.stdout.flush()
+                    return "CANCELLED", ""
+            time.sleep(0.05)

@@ -14,6 +14,7 @@ from ui import graphics
 from core.system import plugin_loader
 from ui.interface import ottieni_riga_hardware
 
+# Blocco globale per proteggere l'accesso simultaneo allo stdout
 stdout_lock = threading.Lock()
 
 DASHBOARD_ROW = 3
@@ -46,13 +47,21 @@ if os.name == 'nt':
     def _aggiorna_dashboard_os(riga_formattata, riga_index):
         hConsole = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
         csbi = CONSOLE_SCREEN_BUFFER_INFO()
-        kernel32.GetConsoleScreenBufferInfo(hConsole, ctypes.byref(csbi))
-        saved_pos = csbi.dwCursorPosition
-        target_y = csbi.srWindow.Top + (riga_index - 1)
-        kernel32.SetConsoleCursorPosition(hConsole, COORD(0, target_y))
-        sys.stdout.write(f"\033[2K{riga_formattata}\r")
-        sys.stdout.flush()
-        kernel32.SetConsoleCursorPosition(hConsole, saved_pos)
+        if kernel32.GetConsoleScreenBufferInfo(hConsole, ctypes.byref(csbi)):
+            saved_pos = csbi.dwCursorPosition
+            
+            # Con lo scrolling region attivo, la riga 3 è fissa in alto.
+            target_y = riga_index - 1
+            
+            kernel32.SetConsoleCursorPosition(hConsole, COORD(0, target_y))
+            # 2K pulisce la riga, permettendo aggiornamenti puliti
+            sys.stdout.write(f"\033[2K{riga_formattata}\r")
+            sys.stdout.flush()
+            kernel32.SetConsoleCursorPosition(hConsole, saved_pos)
+        else:
+            # Fallback ANSI generico se le API Win32 falliscono
+            sys.stdout.write(f"\0337\033[{riga_index};1H\033[2K{riga_formattata}\0338")
+            sys.stdout.flush()
 else:
     def _aggiorna_dashboard_os(riga_formattata, riga_index):
         sys.stdout.write(f"\0337\033[{riga_index};1H\033[2K{riga_formattata}\0338")
@@ -62,8 +71,11 @@ def _ciclo_aggiornamento(intervallo: float):
     global _updater_attivo
     while _updater_attivo:
         riga = ottieni_riga_hardware(config=None, dashboard_mod=_dashboard_mod)
-        with stdout_lock:
-            _aggiorna_dashboard_os(riga, DASHBOARD_ROW)
+        if _updater_attivo:  # Double check prima di scrivere a video
+            with stdout_lock:
+                _aggiorna_dashboard_os(riga, DASHBOARD_ROW)
+        
+        # Aspettiamo a intervalli piccoli per poterci interrompere tempestivamente
         for _ in range(int(intervallo * 10)):
             if not _updater_attivo:
                 break
@@ -81,5 +93,10 @@ def avvia(config_manager, state_manager, dashboard_module, intervallo: float = 2
     _updater_thread.start()
 
 def ferma():
-    global _updater_attivo
+    global _updater_attivo, _updater_thread
     _updater_attivo = False
+    if _updater_thread and _updater_thread.is_alive() and _updater_thread is not threading.current_thread():
+        # Diamo un lasso di tempo maggiore per essere certi che il thread della dashboard si uccida del tutto 
+        # prima di aprire i pannelli come F7. E' questo che causava l'errore grafico.
+        _updater_thread.join(timeout=1.0)
+    _updater_thread = None

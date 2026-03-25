@@ -136,5 +136,13 @@ Official Email: zentra.core.systems@gmail.com
 
 ---
 
+## 📚 Technical Documentation
+Detailed technical guides for developers and advanced users:
+- 🏗️ **[Technical Architecture Guide](docs/TECHNICAL_GUIDE.md)**: Deep dive into the OOP structure, data flow, and core engines.
+- 🔌 **[Plugin Development Guide](docs/PLUGINS_DEV.md)**: How to create and register new tools using Native Function Calling.
+- 📁 **[Project Structure Map](docs/zentra_core_structure_v0.9.5.md)**: Complete file-by-file breakdown of the repository.
+
+---
+
 ## 💡 Vision
 Zentra Core aims to become a fully autonomous, local AI assistant platform — a private, extensible alternative to cloud-based AI systems.

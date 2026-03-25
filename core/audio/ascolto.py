@@ -3,9 +3,9 @@ from . import voce
 import json
 import time
 
-def ascolta():
+def ascolta(state=None):
     # Controllo ridondante: se sta parlando, non ascoltare affatto
-    if voce.sta_parlando: 
+    if (state and state.sistema_parla) or voce.sta_parlando: 
         return ""
     
     try:
@@ -20,7 +20,7 @@ def ascolta():
     
     with sr.Microphone() as source:
         # Piccolo delay per evitare di sentire l'eco finale della voce
-        if voce.sta_parlando: return ""
+        if (state and state.sistema_parla) or voce.sta_parlando: return ""
         
         try:
             # Regolazione rumore ambientale
@@ -30,7 +30,7 @@ def ascolta():
                              phrase_time_limit=conf['limite_frase'])
             
             # Se ha iniziato a parlare MENTRE ascoltavo, scarta tutto
-            if voce.sta_parlando: return ""
+            if (state and state.sistema_parla) or voce.sta_parlando: return ""
             
             testo = r.recognize_google(audio, language="it-IT", show_all=False)
             return testo.lower()

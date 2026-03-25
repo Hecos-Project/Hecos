@@ -104,9 +104,19 @@ class ZentraApplication:
         messaggio = self.config_manager.config.get("comportamento", {}).get("messaggio_benvenuto", translator.t("system_ready"))
         interface.scrivi_zentra(messaggio)
         if self.state_manager.stato_voce:
-            voce.parla(translator.t("system_ready"))
+            try:
+                voce.parla(translator.t("system_ready"))
+            except Exception as e:
+                logger.warning("APP", f"Welcome voice failed (non-critical): {e}")
         self.state_manager.sistema_in_elaborazione = False
         self.state_manager.sistema_status = translator.t("ready")
+        interface.aggiorna_barra_stato_in_place(
+            self.config_manager.config, 
+            self.state_manager.stato_voce, 
+            self.state_manager.stato_ascolto, 
+            self.state_manager.sistema_status
+        )
+
 
     def _input_digitale_sicuro(self, messaggio):
         """Legge un input numerico o ESC senza bloccare."""
@@ -200,7 +210,8 @@ class ZentraApplication:
             self.state_manager.sistema_status
         )
 
-        self._show_boot_animation()
+        if not config.get("system", {}).get("avvio_rapido", False):
+            self._show_boot_animation()
         
         self.state_manager.sistema_status = translator.t("ready")
         interface.mostra_ui_completa(
@@ -235,10 +246,11 @@ class ZentraApplication:
             evento, input_utente = self.input_handler.handle_keyboard_input(prefisso, input_utente)
             
             if evento == "EXIT":
-                logger.info("[APP] Emergency shutdown.")
-                sys.exit(0)
-            elif evento == "ESC_AGAIN":
-                print(f"\n\033[93m[SYSTEM] {translator.t('esc_to_exit')}\033[0m")
+                logger.info("[APP] User confirmed exit.")
+                self.running = False # Uscita pulita dal loop
+            elif evento == "CANCELLED":
+                # L'input handler ha già ripristinato il prompt, non fare nulla
+                pass
             elif evento in ["F1", "F2", "F3", "F4", "F5", "F6", "F7"]:
                 menu_schermo_intero = ["F1", "F2", "F3", "F7"]
                 if evento in menu_schermo_intero:
@@ -275,8 +287,7 @@ class ZentraApplication:
                 sys.stdout.write(prefisso + input_utente)
                 sys.stdout.flush()
             elif evento == "PROCESSED":
-                sys.stdout.write(prefisso)
-                sys.stdout.flush()
+                pass
             elif evento == "CLEAR":
                 input_utente = ""
                 sys.stdout.write(f"\r{prefisso}")

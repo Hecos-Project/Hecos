@@ -26,6 +26,19 @@ def reset_cache():
     global _config_cache
     _config_cache = None
 
+def rimuovi_think_tags(testo):
+    """
+    Rimuove i blocchi <think>...</think> prodotti dai reasoning model (Qwen, DeepSeek-R1, ecc.).
+    Supporta anche tag in minuscolo/maiuscolo e blocchi multiriga.
+    """
+    if not testo:
+        return testo
+    # Rimuove i blocchi <think>...</think> (case-insensitive, multiriga)
+    testo = re.sub(r'<think>.*?</think>', '', testo, flags=re.DOTALL | re.IGNORECASE)
+    # Rimuove eventuali <think> aperti senza chiusura (risposta troncata)
+    testo = re.sub(r'<think>.*$', '', testo, flags=re.DOTALL | re.IGNORECASE)
+    return testo.strip()
+
 def rimuovi_emoji(testo):
     """
     Rimuove le emoji e altri caratteri speciali non supportati dalla sintesi vocale.
@@ -36,13 +49,53 @@ def rimuovi_emoji(testo):
     testo_pulito = pattern.sub('', testo)
     return testo_pulito
 
+def pulisci_per_video(testo):
+    """
+    Sanitizza il testo per la stampa sicura su terminale Windows.
+    Converte caratteri non-cp1252 (emoji, unicode esteso) in '?' invece di crashare.
+    Questo è il path sicuro per TUTTO il testo che viene mostrato a video.
+    """
+    if not testo:
+        return ""
+    # Rimuove i tag <think> dei reasoning model (Qwen, DeepSeek-R1, ecc.)
+    testo = rimuovi_think_tags(testo)
+    if not testo:
+        return ""
+    try:
+        # Encode in cp1252 con 'replace' (sostituisce caratteri non supportati con '?')
+        # poi decode di nuovo in stringa Python - il terminale ora può sempre stamparlo
+        return testo.encode('cp1252', errors='replace').decode('cp1252')
+    except Exception:
+        # Fallback ultra-sicuro: rimuovi tutto ciò che non è ASCII puro
+        return testo.encode('ascii', errors='replace').decode('ascii')
+
+def safe_print(*args, **kwargs):
+    """
+    Versione di print() sicura per terminali Windows che non supportano UTF-8.
+    Usa automaticamente pulisci_per_video() su ogni argomento stringa.
+    """
+    import sys
+    safe_args = [pulisci_per_video(str(a)) if isinstance(a, str) else a for a in args]
+    try:
+        print(*safe_args, **kwargs)
+    except Exception:
+        # Ultimo fallback: converti tutto in ASCII puro
+        plain = ' '.join(str(a).encode('ascii', errors='replace').decode('ascii') for a in args)
+        sys.stdout.write(plain + '\n')
+        sys.stdout.flush()
+
 def pulisci_per_voce(testo):
     if not testo:
         return ""
 
     conf = carica_config_filtri()
 
-    # 0. Rimuovi emoji e caratteri speciali (NUOVO)
+    # 0. Rimuovi tag <think> dei reasoning model (Qwen, DeepSeek-R1, ecc.)
+    testo = rimuovi_think_tags(testo)
+    if not testo:
+        return ""
+
+    # 1b. Rimuovi emoji e caratteri speciali
     testo = rimuovi_emoji(testo)
 
     # 1. Sostituzioni personalizzate

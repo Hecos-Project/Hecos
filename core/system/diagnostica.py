@@ -77,19 +77,28 @@ def check_backend(config):
         print(f"   [+] {VERDE}Backend CLOUD: PRONTO (LiteLLM){RESET}")
         return True
     else:  # ollama
-        modello = config.get('backend', {}).get('ollama', {}).get('modello', 'llama3.2:1b')
+        ollama_cfg = config.get('backend', {}).get('ollama', {})
+        modello = ollama_cfg.get('modello', 'llama3.2:1b')
         url = "http://localhost:11434/api/generate"
-        payload = {"model": modello, "prompt": "hi", "stream": False}
+        
+        # Inviamo gli stessi parametri GPU che userà client.py in produzione
+        options = {}
+        if ollama_cfg.get('num_gpu') is not None:
+            options["num_gpu"] = int(ollama_cfg['num_gpu'])
+        if ollama_cfg.get('num_ctx') is not None:
+            options["num_ctx"] = int(ollama_cfg['num_ctx'])
+        if ollama_cfg.get('keep_alive') is not None:
+            options["keep_alive"] = ollama_cfg['keep_alive']
+        
+        payload = {"model": modello, "prompt": "hi", "stream": False, "options": options}
         try:
-            print(f"   [>] Initializing VRAM for: {modello}...")
-            response = requests.post(url, json=payload, timeout=60)
+            print(f"   [>] Initializing VRAM for: {modello} (num_gpu={options.get('num_gpu', 'default')})...")
+            response = requests.post(url, json=payload, timeout=120)
             if response.status_code == 200:
                 print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
                 return True
             return False
         except Exception as e:
-            # Se siamo su Ollama ma non risponde, è un errore. 
-            # Ma se fossimo stati su Cloud, non saremmo arrivati qui.
             logger.errore(f"DIAGNOSTICA: Ollama not responding: {e}")
             print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
             return False
@@ -171,36 +180,40 @@ def avvia_sequenza_risveglio(config):
     print(f"{CIANO}      (Press ESC at any time to skip){RESET}")
     print(f"{CIANO}==================================================={RESET}\n")
     
-    if check_bypass(): return True
-    mancanti = check_cartelle()
-    if mancanti:
-        print(f"   [-] {ROSSO}{translator.t('diag_error_dirs', dirs=', '.join(mancanti))}{RESET}")
-        time.sleep(2)
-        return False
-    print(f"   [+] {VERDE}{translator.t('diag_structure_ok')}{RESET}")
-
-    if check_bypass(): return True
-    print(check_hardware())
+    # CONTROLLO AVVIO RAPIDO (Impostato su true in config -> system -> avvio_rapido)
+    is_fast_boot = config.get("system", {}).get("avvio_rapido", False)
     
     if check_bypass(): return True
-    print(f"   [+] {VERDE}{translator.t('diag_voice_ok')}{RESET}")
+    if not is_fast_boot:
+        mancanti = check_cartelle()
+        if mancanti:
+            print(f"   [-] {ROSSO}{translator.t('diag_error_dirs', dirs=', '.join(mancanti))}{RESET}")
+            time.sleep(2)
+            return False
+        print(f"   [+] {VERDE}{translator.t('diag_structure_ok')}{RESET}")
     
-    if check_bypass(): return True
-    soglia = config.get('ascolto', {}).get('soglia_energia', 'N/D')
-    print(f"   [+] {VERDE}{translator.t('diag_mic_ready', soglia=soglia)}{RESET}")
-    
-    # Check backend
-    if check_bypass(): return True
-    check_backend(config)
-    
-    # Plugin Scan
-    if check_bypass(): return True
-    esiti = scansiona_plugins(config)
-    for esito in esiti[:5]:
         if check_bypass(): return True
-        print(esito)
-
-    print(f"\n{CIANO}==================================================={RESET}")
+        print(check_hardware())
+        
+        if check_bypass(): return True
+        print(f"   [+] {VERDE}{translator.t('diag_voice_ok')}{RESET}")
+        
+        if check_bypass(): return True
+        soglia = config.get('ascolto', {}).get('soglia_energia', 'N/D')
+        print(f"   [+] {VERDE}{translator.t('diag_mic_ready', soglia=soglia)}{RESET}")
+        
+        # Check backend
+        if check_bypass(): return True
+        check_backend(config)
+        
+        # Plugin Scan
+        if check_bypass(): return True
+        esiti = scansiona_plugins(config)
+        for esito in esiti[:5]:
+            if check_bypass(): return True
+            print(esito)
+    
+        print(f"\n{CIANO}==================================================={RESET}")
     
     # Estrae lingua voce (es. "en_US-lessac..." -> "en", "it_IT-paola..." -> "it")
     modello_onnx = os.path.basename(config.get("voce", {}).get("modello_onnx", "it_IT-paola-medium.onnx"))

@@ -79,6 +79,38 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         if not model_name.startswith("ollama/"):
             params["model"] = f"ollama/{model_name}"
         params["api_base"] = "http://localhost:11434"
+        
+        # CRITICAL: Parametri Ollama specifici per il caricamento GPU
+        # Senza questi, LiteLLM usa solo i default di Ollama (nessuna GPU)
+        ollama_options = {}
+        
+        num_gpu = specific_config.get('num_gpu')
+        if num_gpu is not None:
+            ollama_options["num_gpu"] = int(num_gpu)
+        
+        num_ctx = specific_config.get('num_ctx')
+        if num_ctx is not None:
+            ollama_options["num_ctx"] = int(num_ctx)
+            
+        num_predict = specific_config.get('num_predict')
+        if num_predict is not None:
+            ollama_options["num_predict"] = int(num_predict)
+            
+        repeat_penalty = specific_config.get('repeat_penalty')
+        if repeat_penalty is not None:
+            ollama_options["repeat_penalty"] = float(repeat_penalty)
+            
+        keep_alive = specific_config.get('keep_alive')
+        if keep_alive is not None:
+            ollama_options["keep_alive"] = keep_alive
+            
+        if ollama_options:
+            params["extra_body"] = {"options": ollama_options}
+        
+        # DEBUG GPU - sempre attivo per Ollama
+        zlog_info("LiteLLM", f"[OLLAMA GPU] Model: {params['model']}")
+        zlog_info("LiteLLM", f"[OLLAMA GPU] Options being sent: {json.dumps(ollama_options)}")
+        zlog_info("LiteLLM", f"[OLLAMA GPU] extra_body: {params.get('extra_body', 'NOT SET')}")
 
     elif backend_type == "kobold":
         if not model_name.startswith("openai/"):

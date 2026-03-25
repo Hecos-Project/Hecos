@@ -1,4 +1,16 @@
 {
+    "DASHBOARD": {
+        "descrizione": "Hardware monitoring and AI backend status.",
+        "comandi": {
+            "get_backend_status": "Verifica se il backend di Intelligenza Artificiale (Ollama, Kobold o Cloud) è online e pronto.",
+            "get_full_dashboard": "Restituisce un report completo di tutte le risorse hardware e dello stato del backend AI.",
+            "get_gpu_status": "Restituisce lo stato della scheda video (GPU), inclusa la VRAM usata e il carico termico/computazionale.",
+            "get_system_resources": "Restituisce un riepilogo dell'uso di CPU e RAM di sistema."
+        },
+        "stato": "ONLINE (Telemetry active)",
+        "esempio": "",
+        "is_class_based": true
+    },
     "DOMOTICA": {
         "descrizione": "Controllo della casa intelligente. In fase di integrazione.",
         "comandi": {

@@ -7,6 +7,7 @@ import os
 from .locks import acquire_lock, release_lock
 from .parameters import build_parameter_list
 from .ui import UIManager
+from core.i18n import translator
 
 class ConfigEditor:
     def __init__(self, config_path="config.json"):
@@ -94,6 +95,10 @@ class ConfigEditor:
             # Gestisci i diversi tipi di sezioni
             if param.section == 'backend':
                 return backend_config.get(key)
+            elif param.section == 'ollama':
+                return self.config.get('backend', {}).get('ollama', {}).get(key)
+            elif param.section == 'kobold':
+                return self.config.get('backend', {}).get('kobold', {}).get(key)
             elif param.section == 'voce':
                 return self.config.get('voce', {}).get(key)
             elif param.section == 'ascolto':
@@ -136,6 +141,20 @@ class ConfigEditor:
                 old = self.config['backend'][backend_type].get(key)
                 if old != value:
                     self.config['backend'][backend_type][key] = value
+                    self.modified = True
+            elif param.section == 'ollama':
+                if 'ollama' not in self.config['backend']:
+                    self.config['backend']['ollama'] = {}
+                old = self.config['backend']['ollama'].get(key)
+                if old != value:
+                    self.config['backend']['ollama'][key] = value
+                    self.modified = True
+            elif param.section == 'kobold':
+                if 'kobold' not in self.config['backend']:
+                    self.config['backend']['kobold'] = {}
+                old = self.config['backend']['kobold'].get(key)
+                if old != value:
+                    self.config['backend']['kobold'][key] = value
                     self.modified = True
             elif param.section == 'voce':
                 if 'voce' not in self.config:
@@ -207,16 +226,37 @@ class ConfigEditor:
             return
         
         try:
+            result = None
             ui = UIManager(self.param_list, self._get_value, self._set_value)
             result = ui.run()
+            
+            import sys
+            import time
+            from core.i18n import translator
+            
             if result == "REBOOT":
-                # Salva le modifiche e segnala il reboot
                 if self.modified:
                     self._save_config()
                 print(f"\n\033[91m{translator.t('rebooting_msg')}\033[0m")
-                import sys
-                sys.exit(42)  # Codice speciale per il reboot
+                time.sleep(1)
+                sys.exit(42)
+                
+            elif result == "SAVE":
+                if self.modified:
+                    self._save_config()
+                # Auto-riavvio garantito se ci sono state modifiche salvate dall'utente
+                print(f"\n\033[91m{translator.t('rebooting_msg')}\033[0m")
+                time.sleep(1)
+                sys.exit(42)
+                
+            elif result == "DISCARD":
+                print(f"\n\033[93mUscita senza salvare. Le modifiche sono state scartate.\033[0m")
+                # Nessun salvataggio, nessun riavvio
+                
+            else: # NO_CHANGES
+                # Possiamo salvare solo se core.py ha pulito vecchi plugin, ma non serve riavviare
+                if self.modified:
+                    self._save_config()
+                    
         finally:
             release_lock()
-            if self.modified and result != "REBOOT":
-                self._save_config()

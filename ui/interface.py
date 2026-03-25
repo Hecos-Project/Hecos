@@ -53,10 +53,30 @@ def translate_status(s):
             return translator.t(k) + remainder
     return s
 
+def get_status_color(s):
+    """Restituisce il codice colore Fore basato sullo stato attuale."""
+    if not s:
+        return Fore.WHITE
+    s_lower = s.lower()
+    
+    # Mapping stati -> colori
+    if "ready" in s_lower or "pronto" in s_lower or "online" in s_lower:
+        return Fore.GREEN
+    if "thinking" in s_lower or "pensando" in s_lower or "loading" in s_lower:
+        return Fore.YELLOW
+    if "speaking" in s_lower or "parlando" in s_lower:
+        return Fore.CYAN
+    if "error" in s_lower or "errore" in s_lower or "offline" in s_lower:
+        return Fore.RED
+        
+    return Fore.WHITE
+
 def setup_console():
     """ "Pulisce lo schermo e forza l'UTF-8" """
     if sys.platform == 'win32':
         os.system('chcp 65001 > nul')
+    # Reset scrolling region and clear screen
+    sys.stdout.write("\033[r")
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def check_ollama():
@@ -73,9 +93,9 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="READY")
     """
     setup_console()
     
-    # MODIFICATO: Legge il modello dal backend attivo
-    backend_type = config.get('backend', {}).get('tipo', 'ollama')
-    modello = config.get('backend', {}).get(backend_type, {}).get('modello', 'N/D')
+    # MODIFICATO: Legge il modello dal backend attivo effettuando il fallback automatico
+    from app.model_manager import ModelManager
+    backend_type, modello = ModelManager.get_effective_model_info(config)
     
     anima = config.get('ia', {}).get('personalita_attiva', 'N/D').replace('.txt', '')
     mic = "ON" if stato_ascolto else "OFF"
@@ -95,15 +115,21 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="READY")
     
     # Tenta di tradurre lo stato se è una chiave nota, altrimenti usa così com'è
     status_tradotto = translate_status(stato_sistema)
-    info_status = translator.t("system_status", status=status_tradotto)
+    colore_status = get_status_color(stato_sistema)
     
-    # Calcolo lunghezza visibile per il padding (ignora i codici colore ANSI di mic/spk)
+    # Creiamo la stringa dello stato col suo colore
+    info_status_raw = translator.t("system_status", status="{ST_PLACEHOLDER}")
+    info_status = info_status_raw.replace("{ST_PLACEHOLDER}", f"{colore_status}{status_tradotto}{Fore.WHITE}")
+    
+    # Calcolo lunghezza visibile per il padding
     header_mod = translator.t("header_model")
     header_ani = translator.t("header_soul")
     header_mic = translator.t("header_mic")
     header_voc = translator.t("header_voice")
     
-    visible_len = len(f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
+    # Lunghezza visibile (senza codici colore)
+    visible_status_text = translator.t("system_status", status=status_tradotto)
+    visible_len = len(f" {visible_status_text} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
@@ -123,7 +149,14 @@ def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="READY")
         f"{translator.t('menu_config')} | {translator.t('menu_exit')} "
     )
     print(f"{Style.DIM}{comandi.center(L)}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}\n")
+    print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
+    
+    # 5. IMPOSTAZIONE AREA DI SCROLLING (Dalla riga 7 alla fine)
+    # Questo blocca le prime 6 righe in alto, impedendo che scorrano via.
+    sys.stdout.write("\033[7;r")
+    # Posiziona il cursore alla riga 7 (inizio area chat)
+    sys.stdout.write("\033[7;1H")
+    sys.stdout.flush()
     
 def ottieni_riga_hardware(config=None, dashboard_mod=None):
     """
@@ -142,12 +175,11 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
             cpu = stats['cpu']
             ram = stats['ram']
             vram = stats['vram']
-            # Accorcia VRAM se troppo lunga (es: 30 caratteri per evitare wrap)
-            if len(str(vram)) > 30: vram = str(vram)[:27] + ".."
+            if len(str(vram)) > 25: vram = str(vram)[:22] + ".."
             backend_status = stats['backend_status']
             
-            barra_cpu = graphics.crea_barra(cpu, larghezza=10)
-            barra_ram = graphics.crea_barra(ram, larghezza=10)
+            barra_cpu = graphics.crea_barra(cpu, larghezza=8)
+            barra_ram = graphics.crea_barra(ram, larghezza=8)
             
             # Traduci stati backend
             if backend_status in ("READY", "CLOUD", "ONLINE"):
@@ -155,62 +187,36 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
                 if backend_status == "CLOUD": display_status = "CLOUD"
                 stato_colore = Fore.GREEN
             elif backend_status in ("OFFLINE", "ERROR", "TIMEOUT"):
-                # Mappa ERROR -> error, ecc.
                 key = backend_status.lower() if backend_status.lower() in ["offline", "error", "timeout"] else "disabled"
                 display_status = translator.t(key)
                 stato_colore = Fore.RED
+            elif backend_status == "STARTING":
+                display_status = "STARTING..."
+                stato_colore = Fore.YELLOW
             else:
-                display_status = translator.t(backend_status.lower()) if backend_status.lower() in ["loading", "waiting", "online"] else backend_status
+                display_status = backend_status if backend_status else "--"
                 stato_colore = Fore.YELLOW
 
             info_hw = translator.t("hardware_line", 
-                cpu=barra_cpu, ram=barra_ram, gpu="N/D", vram=vram, 
+                cpu=barra_cpu, ram=barra_ram, gpu=stats.get('gpu_load', 'N/D'), vram=vram, 
                 backend=f"{stato_colore}{display_status}{Style.RESET_ALL}"
             )
-        except Exception:
-            err_msg = translator.t("hardware_error")
-            info_hw = f"{Fore.RED}{err_msg}{Style.RESET_ALL}"
+        except Exception as e:
+            info_hw = f"{Fore.RED}-- HARDWARE ERROR: {e} --{Style.RESET_ALL}"
     else:
         # Se il plugin è disabilitato, restituiamo una riga vuota di 90 spazi
         return f"{Fore.CYAN}{' ' * L}{Style.RESET_ALL}"
     
-    # Calcolo padding per centratura perfetta a 90 caratteri
-    ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
-    clean = ansi_escape.sub('', info_hw)
-    
-    if len(clean) > L:
-        # Se ancora troppo lunga (non dovrebbe capitare con i nuovi limiti), prendi i primi L caratteri visibili
-        # Per sicurezza usiamo una regex che cattura sia ANSI che char per troncare correttamente
-        parts = re.split(r'(\x1b\[[0-9;]*m)', info_hw)
-        truncated_hw = ""
-        current_len = 0
-        for part in parts:
-            if part.startswith('\x1b['):
-                truncated_hw += part
-            else:
-                space_left = L - current_len
-                if len(part) <= space_left:
-                    truncated_hw += part
-                    current_len += len(part)
-                else:
-                    truncated_hw += part[:space_left]
-                    current_len += space_left
-                    break
-        return f"{Fore.CYAN}{truncated_hw}{Style.RESET_ALL}"
-    
-    pad_total = L - len(clean)
-    pad_left = pad_total // 2
-    pad_right = pad_total - pad_left
-    
-    return f"{Fore.CYAN}{' ' * pad_left}{info_hw}{' ' * pad_right}{Style.RESET_ALL}"
+    # Ritorna la riga senza padding/troncatura complessa: la lasciamo scorrere naturalmente
+    return f"{Fore.CYAN}{info_hw}{Style.RESET_ALL}"
 
 def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_sistema="READY"):
     """Aggiorna solo la riga 2 (Barra di Stato) senza pulire lo schermo."""
     from ui.ui_updater import _aggiorna_dashboard_os, stdout_lock
     from colorama import Back, Fore, Style
+    from app.model_manager import ModelManager
     
-    backend_type = config.get('backend', {}).get('tipo', 'ollama')
-    modello = config.get('backend', {}).get(backend_type, {}).get('modello', 'N/D')
+    backend_type, modello = ModelManager.get_effective_model_info(config)
     anima = config.get('ia', {}).get('personalita_attiva', 'N/D').replace('.txt', '')
     
     mic_str = "ON" if stato_ascolto else f"{Fore.RED}OFF{Fore.WHITE}"
@@ -220,14 +226,18 @@ def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_siste
     
     L = 90
     status_tradotto = translate_status(stato_sistema)
-    info_status = translator.t("system_status", status=status_tradotto)
+    colore_status = get_status_color(stato_sistema)
+    
+    info_status_raw = translator.t("system_status", status="{ST_PLACEHOLDER}")
+    info_status = info_status_raw.replace("{ST_PLACEHOLDER}", f"{colore_status}{status_tradotto}{Fore.WHITE}")
     
     header_mod = translator.t("header_model")
     header_ani = translator.t("header_soul")
     header_mic = translator.t("header_mic")
     header_voc = translator.t("header_voice")
     
-    visible_len = len(f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
+    visible_status_text = translator.t("system_status", status=status_tradotto)
+    visible_len = len(f" {visible_status_text} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
@@ -321,8 +331,10 @@ def mostra_help():
 
 def scrivi_zentra(testo):
     """ Stampa la risposta di Zentra evidenziandola in GIALLO. """
+    from core.processing.filtri import pulisci_per_video
     name = translator.t("agent_name")
-    print(f"{VERDE}{name}:{GIALLO} {testo}{RESET}")
+    testo_sicuro = pulisci_per_video(str(testo))
+    print(f"{VERDE}{name}:{GIALLO} {testo_sicuro}{RESET}")
     
 def leggi_tastiera(prefisso, input_attuale):
     if msvcrt.kbhit():
@@ -382,9 +394,6 @@ def _ciclo_puntini():
         sys.stdout.flush()
         idx += 1
         time.sleep(0.3)
-    
-    sys.stdout.write(f"\r   \r{RESET}")
-    sys.stdout.flush()
 
 def avvia_pensiero():
     """Lancia l'animazione in un thread separato."""
@@ -398,7 +407,8 @@ def ferma_pensiero():
     """Ferma l'animazione dei puntini."""
     global animazione_attiva
     animazione_attiva = False
-    time.sleep(0.1)
+    sys.stdout.write(f"\r   \r{RESET}")
+    sys.stdout.flush()
     
 def elenca_personalita():
     """Scansiona la cartella personalita per trovare i file .txt reali."""

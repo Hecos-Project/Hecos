@@ -29,12 +29,12 @@ def build_parameter_list(config):
     params = []
 
     # --- Backend e Modelli (esistenti) ---
-    backend_type = config.get('backend', {}).get('tipo', 'ollama')
+    from app.model_manager import ModelManager
+    backend_type, active_model_value = ModelManager.get_effective_model_info(config)
     backend_config = config.get('backend', {}).get(backend_type, {})
     
     # Modello attivo (dal backend) - sola lettura, si modifica con F2
     lbl_modello = translator.t("label_active_model")
-    active_model_value = backend_config.get('modello', 'N/A')
     if 'modelli_disponibili' in backend_config:
         models = list(backend_config['modelli_disponibili'].values())
         params.append(Parameter('backend', 'modello', lbl_modello, 'str', options=models, readonly=True))
@@ -60,15 +60,15 @@ def build_parameter_list(config):
         params.append(Parameter('llm_groq', 'api_key', 'Groq API Key', 'str'))
         params.append(Parameter('llm_gemini', 'api_key', 'Gemini API Key', 'str'))
     
-    # Parametri del backend
-    params.append(Parameter('backend', 'temperature', translator.t("label_temperature"), 'float', 
+    # Parametri del backend (Ollama)
+    params.append(Parameter('ollama', 'temperature', translator.t("label_temperature"), 'float', 
                            min=0.0, max=2.0, step=0.1))
-    params.append(Parameter('backend', 'num_predict', translator.t("label_num_predict"), 'int', 
+    params.append(Parameter('ollama', 'num_predict', translator.t("label_num_predict"), 'int', 
                            min=100, max=2000, step=50))
-    params.append(Parameter('backend', 'num_ctx', translator.t("label_num_ctx"), 'int', 
+    params.append(Parameter('ollama', 'num_ctx', translator.t("label_num_ctx"), 'int', 
                            min=512, max=16384, step=512))
-    params.append(Parameter('backend', 'num_gpu', translator.t("label_num_gpu"), 'int', 
-                           min=0, max=99, step=1))
+    params.append(Parameter('ollama', 'num_gpu', translator.t("label_num_gpu"), 'int', 
+                           min=-1, max=99, step=1))
     
     # --- SEZIONE VOCE (PIPER ENGINE) ---
     voce_conf = config.get('voce', {})
@@ -110,10 +110,11 @@ def build_parameter_list(config):
     params.append(Parameter('logging', 'destinazione', translator.t("label_destinazione_log"), 'str', options=['chat', 'console', 'file_only']))
     params.append(Parameter('logging', 'tipo_messaggi', translator.t("label_tipo_messaggi"), 'str', options=['info', 'debug', 'both']))
 
-    # --- Comando speciale RIAVVIA ---
+    # --- Comando speciale RIAVVIA e opzioni di sistema ---
+    params.append(Parameter('system', 'avvio_rapido', translator.t("label_avvio_rapido"), 'bool'))
+    params.append(Parameter('system', 'lingua', translator.t("label_lingua_system"), 'str', options=['it', 'en']))
     params.append(Parameter('system', 'reboot', translator.t("label_reboot"), 'command', 
                            command='reboot'))
-    params.append(Parameter('system', 'lingua', translator.t("label_lingua_system"), 'str', options=['it', 'en']))
 
     # --- PLUGINS (dinamici) ---
     plugins_section = config.get('plugins', {})
