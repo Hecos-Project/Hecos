@@ -47,7 +47,7 @@
     "backend": {
         "tipo": "cloud",
         "cloud": {
-            "modello": "groq/qwen/qwen3-32b",
+            "modello": "gemini/gemini-3-flash-preview",
             "temperature": 0.7
         },
         "ollama": {

@@ -19,6 +19,15 @@ os.chdir(BRIDGE_DIR)
 if BRIDGE_DIR not in sys.path:
     sys.path.insert(0, BRIDGE_DIR)
 
+# Caricamento Variabili d'Ambiente (.env) nel processo WebUI
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(BRIDGE_DIR, ".env")
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+except ImportError:
+    pass
+
 # Import dei moduli core di Zentra
 try:
     from core.llm import brain
@@ -146,9 +155,10 @@ class ZentraWebUIBridge:
         return f"{testo_personalita}\n\n{memoria_identita}\n\n{capacita}\n\n{regole}\n--- END OF SYSTEM INSTRUCTIONS ---"
 
     # ------------------------------------------------------------------
-    # STREAMING
-    # ------------------------------------------------------------------
     def chat_stream(self, user_input: str) -> Generator[str, None, None]:
+        # Ricarica la configurazione per applicare i cambiamenti fatti dall'utente (es. cambio modello)
+        self.config = self.config_manager.reload()
+
         if self.debug_attivo:
             bridge_logger.info(f"[STREAM] Input: {user_input}")
 
@@ -245,6 +255,9 @@ class ZentraWebUIBridge:
     # NON-STREAMING
     # ------------------------------------------------------------------
     def chat(self, user_input: str) -> str:
+        # Ricarica la configurazione
+        self.config = self.config_manager.reload()
+
         if self.debug_attivo:
             bridge_logger.info(f"[NON-STREAM] Input: {user_input}")
         try:

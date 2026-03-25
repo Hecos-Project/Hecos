@@ -118,10 +118,11 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         params["api_base"] = specific_config.get('url', 'http://localhost:5001').rstrip('/') + "/v1"
 
     elif backend_type == "cloud":
-        actual_model = model_name.split('/', 1)[1] if '/' in model_name else model_name
-        
-        # Indica a LiteLLM il provider (es. 'groq', 'openai', 'anthropic', 'gemini')
-        params["custom_llm_provider"] = provider
+        # Assicurati che il modello includa il prefisso
+        if '/' not in model_name and provider:
+            params["model"] = f"{provider}/{model_name}"
+        else:
+            params["model"] = model_name
         
         # Mappa dei nomi di variabili d'ambiente per provider
         ENV_KEY_MAP = {
@@ -141,30 +142,21 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 env_var = ENV_KEY_MAP.get(provider, f"{provider.upper()}_API_KEY")
                 api_key = os.environ.get(env_var, '').strip().strip("'").strip('"')
                 if api_key:
-                    zlog_info("LiteLLM", f"API key for '{provider}' loaded from environment variable '{env_var}' (starts with: {api_key[:5]}...).")
+                    zlog_info("LiteLLM", f"API key for '{provider}' loaded from env '{env_var}'")
                 else:
-                    zlog_debug("LiteLLM", f"API key for '{provider}' not found in environment ({env_var}).")
+                    zlog_debug("LiteLLM", f"API key for '{provider}' not found in env.")
             else:
                 api_key = api_key.strip().strip("'").strip('"')
-                zlog_debug("LiteLLM", f"API key for '{provider}' loaded from config.json (starts with: {api_key[:5]}...).")
+                zlog_debug("LiteLLM", f"API key for '{provider}' loaded from config.json")
             
             if api_key:
                 params["api_key"] = api_key
                 
+                # LiteLLM in alcune versioni preferisce/richiede la env var per Gemini
                 if provider == "gemini":
                     os.environ["GEMINI_API_KEY"] = api_key
-                    params["model"] = actual_model
-                    
-                    if any(v in actual_model for v in ["2.0", "3", "-latest", "-preview", "-exp"]):
-                        params["api_base"] = "https://generativelanguage.googleapis.com/v1beta"
-                    else:
-                        params["api_base"] = "https://generativelanguage.googleapis.com/v1"
-                else:
-                    params["model"] = f"{provider}/{actual_model}"
             else:
-                # Nessuna chiave trovata: imposta il modello e lascia LiteLLM gestire l'autenticazione
-                zlog_error(f"LiteLLM: No API key found for provider '{provider}' in config or environment. Call may fail.")
-                params["model"] = f"{provider}/{actual_model}" if provider else actual_model
+                zlog_error(f"LiteLLM: No API key found for provider '{provider}'. Call may fail.")
 
     # LOG MANUALE PRE-CHIAMATA
     if debug_enabled:
