@@ -279,6 +279,7 @@
     <div class="stat"><span class="stat-label">{{ t('webui_chat_backend') }}</span><span class="stat-val" id="s-backend">—</span></div>
     <div class="stat"><span class="stat-label">{{ t('webui_chat_model') }}</span><span class="stat-val" id="s-model">—</span></div>
     <div class="stat"><span class="stat-label">Bridge</span><span class="stat-val" id="s-bridge">—</span></div>
+    <div class="stat"><span class="stat-label">{{ t('webui_chat_mic') }}</span><span class="stat-val" id="s-mic">—</span></div>
     <div class="stat"><span class="stat-label">TTS</span><span class="stat-val" id="s-tts">—</span></div>
     <div class="stat"><span class="stat-label">Config</span><span class="stat-val" id="s-config">—</span></div>
   </div>
@@ -426,14 +427,6 @@
         <div class="toggle-info">{{ t('webui_conf_bridge_tools') }}</div>
         <label class="switch"><input type="checkbox" id="br-tools"><span class="slider"></span></label>
       </div>
-      <div class="toggle-row">
-        <div class="toggle-info">{{ t('webui_conf_bridge_stt') }}</div>
-        <label class="switch"><input type="checkbox" id="br-voice-stt"><span class="slider"></span></label>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-info">{{ t('webui_conf_bridge_tts') }}</div>
-        <label class="switch"><input type="checkbox" id="br-voice-enabled"><span class="slider"></span></label>
-      </div>
       <div class="field" style="margin-top:16px;">
         <label>{{ t('webui_conf_bridge_delay') }}</label>
         <input type="number" id="br-delay" min="0" max="500" step="10">
@@ -458,6 +451,30 @@
 
   <!-- VOCE -->
   <div id="tab-voice" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_voice_system_title') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_voice_system_listening') }}</div>
+        <label class="switch"><input type="checkbox" id="sys-mic-status"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_voice_system_voice') }}</div>
+        <label class="switch"><input type="checkbox" id="sys-voice-status"><span class="slider"></span></label>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_bridge_title') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_stt') }}</div>
+        <label class="switch"><input type="checkbox" id="br-voice-stt"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_tts') }}</div>
+        <label class="switch"><input type="checkbox" id="br-voice-enabled"><span class="slider"></span></label>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title">{{ t('webui_conf_voice_tts_title') }}</div>
       <div class="field"><label>{{ t('webui_conf_voice_path') }}</label><input type="text" id="v-piper" placeholder="C:\piper\piper.exe"></div>
@@ -639,6 +656,9 @@ function populateUI() {
   document.getElementById('fl-tonde').checked  = fi.remove_round_brackets   ?? false;
   document.getElementById('fl-quadre').checked = fi.remove_square_brackets  ?? false;
 
+  document.getElementById('sys-mic-status').checked   = (c.listening || {}).listening_status ?? false;
+  document.getElementById('sys-voice-status').checked = (c.voice || {}).voice_status     ?? false;
+
   const v = c.voice || {};
   document.getElementById('v-piper').value  = v.piper_path || '';
   const curOnnx = (v.onnx_model || '').split('\\').pop().split('/').pop();
@@ -680,7 +700,7 @@ function renderPlugins(plugins) {
     const on = pCfg.enabled !== false;
     html += `<div class="plugin-row">
       <div><div class="plugin-name">${tag}</div>${descs[tag] ? `<div class="plugin-desc">${descs[tag]}</div>` : ''}</div>
-      <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''}><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''} onchange="saveConfig(true)"><span class="slider"></span></label>
     </div>`;
   }
   cont.innerHTML = html || '<p style="color:var(--muted)">{{ t("webui_conf_no_plugins") }}</p>';
@@ -739,6 +759,11 @@ function buildPayload() {
   out.filters.remove_round_brackets  = document.getElementById('fl-tonde').checked;
   out.filters.remove_square_brackets = document.getElementById('fl-quadre').checked;
 
+  out.listening = out.listening || {};
+  out.listening.listening_status = document.getElementById('sys-mic-status').checked;
+  out.voice = out.voice || {};
+  out.voice.voice_status         = document.getElementById('sys-voice-status').checked;
+
   out.voice = out.voice || {};
   out.voice.piper_path   = document.getElementById('v-piper').value;
   const pdir = sysOptions.piper_dir || 'C:\\piper';
@@ -770,19 +795,24 @@ function buildPayload() {
   return out;
 }
 
-async function saveConfig() {
-  setSaveMsg('{{ t("webui_conf_msg_saving") }}', 'muted');
+async function saveConfig(silent = false) {
+  if (!silent) setSaveMsg('{{ t("webui_conf_msg_saving") }}', 'muted');
   try {
+    const payload = buildPayload();
     const r    = await fetch('/zentra/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildPayload()),
+      body: JSON.stringify(payload),
     });
     const data = await r.json();
-    if (data.ok) { cfg = buildPayload(); setSaveMsg('{{ t("webui_conf_msg_saved") }}', 'ok'); }
-    else setSaveMsg('❌ ' + data.error, 'err');
+    if (data.ok) { 
+        cfg = payload; 
+        if (!silent) setSaveMsg('{{ t("webui_conf_msg_saved") }}', 'ok'); 
+        else setSaveMsg('{{ t("webui_conf_msg_synced") }}', 'ok');
+    }
+    else if (!silent) setSaveMsg('❌ ' + data.error, 'err');
   } catch(e) {
-    setSaveMsg('❌ Network error: ' + e, 'err');
+    if (!silent) setSaveMsg('❌ Network error: ' + e, 'err');
   }
 }
 
@@ -799,6 +829,7 @@ async function refreshStatus() {
     document.getElementById('s-backend').textContent = d.backend  || '—';
     document.getElementById('s-model').textContent   = d.model    || '—';
     document.getElementById('s-bridge').textContent  = d.bridge   || '—';
+    document.getElementById('s-mic').textContent     = d.mic      || '—';
     document.getElementById('s-tts').textContent     = d.tts      || '—';
     document.getElementById('s-config').textContent  = d.config   || '—';
     document.getElementById('hdr-model').textContent = d.model    || '{{ t("webui_chat_offline") }}';
@@ -812,6 +843,13 @@ async function refreshStatus() {
 initAll();
 refreshStatus();
 setInterval(refreshStatus, 3000);
+
+// Auto-save on any change to toggles or selects
+document.addEventListener('change', (e) => {
+  if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+    saveConfig(true);
+  }
+});
 </script>
 </body>
 </html>

@@ -28,6 +28,12 @@ class ConfigManager:
                 self.config = data
                 self.save()
                 
+            # --- Volatility cleanup on load ---
+            # If persistence is DISABLED, we clear the memory on load so they don't survive a reboot.
+            if not data.get("ai", {}).get("save_special_instructions", False):
+                if "ai" in data:
+                    data["ai"]["special_instructions"] = ""
+
             return data
         except Exception as e:
             logger.error(f"[CONFIG] Critical configuration loading error: {e}")
@@ -113,7 +119,7 @@ class ConfigManager:
                 with open(".config_saved_by_app", "w") as flag_file:
                     flag_file.write("1")
             except: pass
-                
+            
             with open(self.config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
             

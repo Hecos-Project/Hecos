@@ -8,8 +8,8 @@
             "4": "Zentra_dark.txt",
             "5": "Zentra_dark_Adult.txt"
         },
-        "save_special_instructions": true,
-        "special_instructions": "Alla fine di ogni frase devi dire: sono la tua serva, Tony, + emoji del bacio"
+        "save_special_instructions": false,
+        "special_instructions": ""
     },
     "backend": {
         "cloud": {
@@ -56,7 +56,7 @@
         "remove_think_tags": true,
         "use_processor": true,
         "webui_voice_enabled": true,
-        "webui_voice_stt": true
+        "webui_voice_stt": false
     },
     "fast_boot": true,
     "filters": {
@@ -68,7 +68,7 @@
     "language": "en",
     "listening": {
         "energy_threshold": 450,
-        "listening_status": false,
+        "listening_status": true,
         "phrase_limit": 15,
         "silence_timeout": 5
     },
@@ -212,6 +212,6 @@
         "piper_path": "C:\\piper\\piper.exe",
         "sentence_silence": 0.1,
         "speed": 1.2,
-        "voice_status": false
+        "voice_status": true
     }
 }

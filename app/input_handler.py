@@ -61,6 +61,7 @@ class InputHandler:
         if testo_pulito.startswith("/istruzione") or testo_pulito.startswith("/instruction"):
             istruzione = testo_pulito.replace("/istruzione", "").replace("/instruction", "").strip()
             self.config.set(istruzione, 'ai', 'special_instructions')
+            processore.configure(self.config.config)
             salva_persistente = self.config.get('ai', 'save_special_instructions', default=False)
             if salva_persistente:
                 self.config.save()

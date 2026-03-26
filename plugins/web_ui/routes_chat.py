@@ -22,7 +22,7 @@ _last_audio_path = None
 _chat_log = logging.getLogger("ZentraChatRoutes")
 
 
-def _run_inference(session_id: str, user_message: str, history: list):
+def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
     sess = _sessions.get(session_id)
     if not sess:
         return
@@ -36,10 +36,8 @@ def _run_inference(session_id: str, user_message: str, history: list):
         return
 
     try:
-        cfg = ConfigManager()
-        cfg.reload()
-
-        risposta = brain.generate_response(user_message, external_config=cfg.config)
+        # Use the shared config manager passed from the plugin server
+        risposta = brain.generate_response(user_message, external_config=cfg_mgr.config)
 
         if isinstance(risposta, str):
             full_text = risposta
@@ -65,7 +63,7 @@ def _run_inference(session_id: str, user_message: str, history: list):
         sess["history"].append({"role": "assistant",  "content": full_text})
         sess["queue"].put({"type": "done", "text": ""})
 
-        _maybe_generate_tts(full_text, cfg)
+        _maybe_generate_tts(full_text, cfg_mgr)
 
     except Exception as exc:
         _chat_log.error(f"[Chat] Inference error: {exc}")
@@ -74,13 +72,16 @@ def _run_inference(session_id: str, user_message: str, history: list):
         sess["done"] = True
 
 
-def _maybe_generate_tts(text: str, cfg):
+def _maybe_generate_tts(text: str, cfg_mgr):
     global _last_audio_path
     try:
-        from app.config import ConfigManager
-        br   = cfg.config.get("bridge", {})
-        voce = cfg.config.get("voice", {})
-        if not br.get("local_voice_enabled", False):
+        br      = cfg_mgr.config.get("bridge", {})
+        voice   = cfg_mgr.config.get("voice", {})
+
+        # We generate TTS for the Web UI if its specific toggle is ON.
+        # This works independently of the global 'voice_status' (F5),
+        # allowing for 'Silent Console / Audible Web' configurations.
+        if not br.get("webui_voice_enabled", False):
             return
         import subprocess
         piper = voce.get("piper_path",   r"C:\piper\piper.exe")
@@ -128,7 +129,7 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         sess = {"queue": queue.Queue(), "history": list(history), "done": False}
         with _sessions_lock:
             _sessions[sid] = sess
-        threading.Thread(target=_run_inference, args=(sid, user_msg, history), daemon=True).start()
+        threading.Thread(target=_run_inference, args=(sid, user_msg, history, cfg_mgr), daemon=True).start()
         return jsonify({"ok": True, "session_id": sid})
 
     @app.route("/api/stream/<session_id>")

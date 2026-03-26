@@ -68,13 +68,22 @@ def init_routes(app, cfg_mgr, root_dir, logger):
             elif backend == "kobold": model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
             else: model = "?"
 
-            br    = cfg.get("bridge", {})
+            br      = cfg.get("bridge", {})
+            voice   = cfg.get("voice", {})
+            listen  = cfg.get("listening", {})
+
             flags = [k for k, v in [
                 ("proc",        br.get("use_processor")),
                 ("think-strip", br.get("remove_think_tags")),
                 ("tools",       br.get("enable_tools")),
             ] if v]
-            tts  = "ON (Piper)" if br.get("local_voice_enabled") else "OFF"
+
+            # System Global Status (F4/F5)
+            mic_status = "ON" if listen.get("listening_status") else "OFF"
+            tts_status = "ON" if voice.get("voice_status") else "OFF"
+
+            # Check if Bridge TTS is also set (for the chip itself, we follow the voice engine)
+            # If the user wants specific bridge info, we could add it, but 'tts_status' is what they see.
 
             from datetime import datetime
             config_path = os.path.join(root_dir, "config.json")
@@ -85,7 +94,8 @@ def init_routes(app, cfg_mgr, root_dir, logger):
                 "backend": backend.upper(),
                 "model":   model,
                 "bridge":  ", ".join(flags) if flags else "default",
-                "tts":     tts,
+                "mic":     mic_status,
+                "tts":     tts_status,
                 "config":  f"last save {ts}",
             })
         except Exception as exc:

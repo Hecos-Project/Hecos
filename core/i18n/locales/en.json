@@ -405,6 +405,10 @@
         "webui_chat_prompt_roleplay": "Activate roleplay mode",
         "webui_chat_prompt_system": "Execute the system command: ",
         "webui_chat_prompt_web": "Search the internet for: ",
-        "webui_chat_prompt_webcam": "Take a picture from the webcam"
+        "webui_chat_prompt_webcam": "Take a picture from the webcam",
+        "webui_conf_voice_system_title": "Global Audio Controls",
+        "webui_conf_voice_system_listening": "System Listening (F4)",
+        "webui_conf_voice_system_voice": "System Voice (F5)",
+        "webui_chat_mic": "MIC"
     }
 }

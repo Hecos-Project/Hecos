@@ -18,6 +18,7 @@ from .input_handler import InputHandler
 from .threads import AscoltoThread
 from .model_manager import ModelManager
 from .personality_manager import PersonalityManager
+from core.processing import processore
 
 # Register debug window closure as a guaranteed shutdown hook.
 # atexit handles normal sys.exit() and Ctrl+C.
@@ -58,6 +59,7 @@ class ZentraApplication:
         # Initialize translator
         language = self.config_manager.config.get("language", "en")
         translator.init_translator(language)
+        processore.configure(self.config_manager.config)
         logger.info("[APP] Zentra Core boot sequence initiated.")
         
         interface.setup_console()
@@ -176,6 +178,7 @@ class ZentraApplication:
         editor = ConfigEditor()
         editor.run()
         self.config_manager.reload()
+        processore.configure(self.config_manager.config)
         logger.init_logger(self.config_manager.config)
         
         # Svuota le cache per garantire l'applicazione immediata
@@ -203,6 +206,7 @@ class ZentraApplication:
             self.state_manager.listening_status = not self.state_manager.listening_status
             self.config_manager.set(self.state_manager.listening_status, 'listening', 'listening_status')
             self.config_manager.save()
+            processore.configure(self.config_manager.config)
             verb = "ON" if self.state_manager.listening_status else "OFF"
             color = "\033[96m" if self.state_manager.listening_status else "\033[91m"
             print(f"\n{color}[SYSTEM] {translator.t('header_mic')}: {verb}\033[0m")
@@ -212,6 +216,7 @@ class ZentraApplication:
             self.state_manager.voice_status = not self.state_manager.voice_status
             self.config_manager.set(self.state_manager.voice_status, 'voice', 'voice_status')
             self.config_manager.save()
+            processore.configure(self.config_manager.config)
             verb = "ON" if self.state_manager.voice_status else "OFF"
             color = "\033[96m" if self.state_manager.voice_status else "\033[91m"
             print(f"\n{color}[SYSTEM] {translator.t('header_voice')}: {verb}\033[0m")
