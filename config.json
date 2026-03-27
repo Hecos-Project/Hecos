@@ -11,7 +11,7 @@
         "save_special_instructions": false,
         "special_instructions": ""
     },
-    "audio_mode": "web",
+    "audio_mode": "console",
     "backend": {
         "cloud": {
             "model": "gemini/gemini-flash-latest",
@@ -59,7 +59,6 @@
         "webui_voice_enabled": true,
         "webui_voice_stt": true
     },
-    "fast_boot": true,
     "filters": {
         "custom_replacements": {},
         "remove_asterisks": true,
@@ -67,13 +66,6 @@
         "remove_square_brackets": false
     },
     "language": "en",
-    "listening": {
-        "energy_threshold": 450,
-        "listening_status": true,
-        "phrase_limit": 15,
-        "push_to_talk": true,
-        "silence_timeout": 5
-    },
     "llm": {
         "allow_cloud": true,
         "debug_llm": false,
@@ -209,15 +201,7 @@
         "mode": "auto"
     },
     "system": {
-        "fast_boot": true
-    },
-    "voice": {
-        "noise_scale": 0.817,
-        "noise_w": 0.9,
-        "onnx_model": "C:\\piper\\it_IT-aurora-medium.onnx",
-        "piper_path": "C:\\piper\\piper.exe",
-        "sentence_silence": 0.1,
-        "speed": 1.2,
-        "voice_status": true
+        "fast_boot": true,
+        "flask_debug": false
     }
 }

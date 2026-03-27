@@ -507,6 +507,43 @@
         <div class="toggle-info">{{ t('webui_conf_voice_system_voice') }}</div>
         <label class="switch"><input type="checkbox" id="sys-voice-status"><span class="slider"></span></label>
       </div>
+      
+      <div class="field" style="margin-top:10px;">
+        <label>Input (Listening) Routing</label>
+        <select id="stt-source">
+           <option value="system">PC Microphone (Local)</option>
+           <option value="web">Web Browser / API</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Output (Voice) Routing</label>
+        <select id="tts-destination">
+           <option value="system">PC Speakers (Local)</option>
+           <option value="web">Web Browser Audio</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">Audio Devices</div>
+      <div class="field">
+        <label>Microphone (Input)</label>
+        <div style="display:flex; gap:8px;">
+          <select id="audio-input-device" style="flex:1"></select>
+          <button class="btn btn-secondary" style="padding:4px 12px; font-size:12px;" onclick="applyAudioDevice()">Apply</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Speaker (Output)</label>
+        <div style="display:flex; gap:8px;">
+          <select id="audio-output-device" style="flex:1"></select>
+          <button class="btn btn-secondary" style="padding:4px 12px; font-size:12px;" onclick="applyAudioDevice()">Apply</button>
+        </div>
+      </div>
+      <div style="margin-top: 16px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+         <span id="audio-scan-status" style="font-size: 12px; color: var(--muted);"></span>
+         <button class="btn btn-secondary" onclick="scanAudioDevices()">Re-scan & Test</button>
+      </div>
     </div>
     
     <div class="card">
@@ -535,6 +572,17 @@
         <div class="field"><label>{{ t('webui_conf_voice_noisew') }}</label><input type="number" id="v-noisew" min="0" max="1" step="0.01"></div>
         <div class="field"><label>{{ t('webui_conf_voice_silence') }}</label><input type="number" id="v-silence" min="0" max="2" step="0.05"></div>
       </div>
+      
+      <!-- Test Voice Section -->
+      <div style="margin-top:20px; padding-top:15px; border-top: 1px solid var(--border);">
+        <label style="font-size:12px; color:var(--muted); margin-bottom:8px; display:block;">Test Voice (Piper)</label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="v-test-text" placeholder="Scrivi qualcosa per testare..." style="flex:1;">
+          <button class="btn btn-secondary" onclick="testVoice('web')" title="Test nel browser">🌐</button>
+          <button class="btn btn-secondary" onclick="testVoice('console')" title="Test su casse PC">💻</button>
+        </div>
+        <div id="v-test-status" style="font-size:11px; margin-top:5px; color:var(--accent);"></div>
+      </div>
     </div>
     <div class="card">
       <div class="card-title">{{ t('webui_conf_voice_mic_title') }}</div>
@@ -556,6 +604,11 @@
           <option value="INFO">Info</option>
           <option value="DEBUG">Debug</option>
         </select>
+      </div>
+      <!-- Flask Debug Toggle -->
+      <div class="toggle-row" style="margin-top:15px;">
+        <div class="toggle-info">Flask Debug Mode (Server)</div>
+        <label class="switch"><input type="checkbox" id="sys-flask-debug"><span class="slider"></span></label>
       </div>
       <div class="field">
         <label>{{ t('webui_conf_sys_log_type') }}</label>
@@ -661,6 +714,8 @@
 <script>
 let cfg = {};
 let sysOptions = {};
+let audioDevices = null;
+let audioConfig = null;
 
 function showTab(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -705,13 +760,25 @@ async function initAll() {
   const start = Date.now();
   setSaveMsg('{{ t("webui_conf_msg_loading") }}', 'muted');
   try {
-    const [rOpts, rCfg] = await Promise.all([
+    const [rOpts, rCfg, rAudio, rAudioCfg] = await Promise.all([
       fetch('/zentra/options'),
-      fetch('/zentra/config')
+      fetch('/zentra/config'),
+      fetch('/api/audio/devices'),
+      fetch('/api/audio/config')
     ]);
     
     sysOptions = await rOpts.json();
     cfg = await rCfg.json();
+    
+    try {
+        const acData = await rAudioCfg.json();
+        if (acData.ok) audioConfig = acData.config;
+    } catch(e) { console.warn("Could not load audio config:", e); }
+    
+    try {
+        const adData = await rAudio.json();
+        if (adData.ok) audioDevices = adData;
+    } catch(e) { console.warn("Could not load audio devices array:", e); }
     
     console.log("Config loaded in " + (Date.now() - start) + "ms");
     populateUI();
@@ -786,10 +853,13 @@ function populateUI() {
   document.getElementById('fl-tonde').checked  = fi.remove_round_brackets   ?? false;
   document.getElementById('fl-quadre').checked = fi.remove_square_brackets  ?? false;
 
-  document.getElementById('sys-mic-status').checked   = (c.listening || {}).listening_status ?? false;
-  document.getElementById('sys-voice-status').checked = (c.voice || {}).voice_status     ?? false;
+  document.getElementById('sys-mic-status').checked   = (audioConfig || {}).listening_status ?? false;
+  document.getElementById('sys-voice-status').checked = (audioConfig || {}).voice_status     ?? false;
+  
+  document.getElementById('stt-source').value = (audioConfig || {}).stt_source || 'system';
+  document.getElementById('tts-destination').value = (audioConfig || {}).tts_destination || 'web';
 
-  const v = c.voice || {};
+  const v = audioConfig || {};
   document.getElementById('v-piper').value  = v.piper_path || '';
   const curOnnx = (v.onnx_model || '').split('\\').pop().split('/').pop();
   populateSelect('v-onnx-model', sysOptions.piper_voices || [], curOnnx, true);
@@ -798,10 +868,33 @@ function populateUI() {
   document.getElementById('v-noisew').value  = v.noise_w          ?? 0.9;
   document.getElementById('v-silence').value = v.sentence_silence ?? 0.1;
 
-  const a = c.listening || {};
+  const a = audioConfig || {};
   document.getElementById('a-threshold').value  = a.energy_threshold   ?? 450;
   document.getElementById('a-timeout').value = a.silence_timeout ?? 5;
   document.getElementById('a-limit').value  = a.phrase_limit     ?? 15;
+
+  // Populate Audio Devices
+  if (audioDevices) {
+     const inSel = document.getElementById('audio-input-device');
+     const outSel = document.getElementById('audio-output-device');
+     inSel.innerHTML = ''; outSel.innerHTML = '';
+     
+     (audioDevices.input_devices || []).forEach(d => {
+         const opt = document.createElement('option');
+         opt.value = d.index;
+         opt.textContent = `${d.index}: ${d.name}`;
+         if (d.index === audioDevices.selected_input_index) opt.selected = true;
+         inSel.appendChild(opt);
+     });
+     
+     (audioDevices.output_devices || []).forEach(d => {
+         const opt = document.createElement('option');
+         opt.value = d.index;
+         opt.textContent = `${d.index}: ${d.name}`;
+         if (d.index === audioDevices.selected_output_index) opt.selected = true;
+         outSel.appendChild(opt);
+     });
+  }
 
   const slg = c.logging || {};
   document.getElementById('log-level').value = slg.level || 'INFO';
@@ -817,6 +910,7 @@ function populateUI() {
 
   const sys = c.system || {};
   document.getElementById('sys-fastboot').checked = sys.fast_boot ?? false;
+  document.getElementById('sys-flask-debug').checked = sys.flask_debug ?? false;
   document.getElementById('sys-language').value   = c.language || 'en';
 
     renderPlugins(c.plugins || {});
@@ -909,26 +1003,6 @@ function buildPayload() {
   out.filters.remove_round_brackets  = document.getElementById('fl-tonde').checked;
   out.filters.remove_square_brackets = document.getElementById('fl-quadre').checked;
 
-  out.listening = out.listening || {};
-  out.listening.listening_status = document.getElementById('sys-mic-status').checked;
-  out.voice = out.voice || {};
-  out.voice.voice_status         = document.getElementById('sys-voice-status').checked;
-
-  out.voice = out.voice || {};
-  out.voice.piper_path   = document.getElementById('v-piper').value;
-  const pdir = sysOptions.piper_dir || 'C:\\piper';
-  const sel  = document.getElementById('v-onnx-model').value;
-  out.voice.onnx_model = (sel.includes('\\') || sel.includes('/')) ? sel : pdir + '\\' + sel;
-  out.voice.speed            = parseFloat(document.getElementById('v-speed').value);
-  out.voice.noise_scale      = parseFloat(document.getElementById('v-noise').value);
-  out.voice.noise_w          = parseFloat(document.getElementById('v-noisew').value);
-  out.voice.sentence_silence = parseFloat(document.getElementById('v-silence').value);
-
-  out.listening = out.listening || {};
-  out.listening.energy_threshold   = parseInt(document.getElementById('a-threshold').value);
-  out.listening.silence_timeout = parseInt(document.getElementById('a-timeout').value);
-  out.listening.phrase_limit     = parseInt(document.getElementById('a-limit').value);
-
   out.logging = {
     level: document.getElementById('log-level').value,
     destination: document.getElementById('log-dest').value,
@@ -941,6 +1015,7 @@ function buildPayload() {
 
   out.system = out.system || {};
   out.system.fast_boot = document.getElementById('sys-fastboot').checked;
+  out.system.flask_debug = document.getElementById('sys-flask-debug').checked;
   out.language  = document.getElementById('sys-language').value;
 
   document.querySelectorAll('[data-plugin]').forEach(cb => {
@@ -948,9 +1023,123 @@ function buildPayload() {
     out.plugins[tag] = out.plugins[tag] || {};
     out.plugins[tag].enabled = cb.checked;
   });
+  } catch (err) { console.error("buildPayload err:", err); }
 
-  } catch(e) { console.error("buildPayload error:", e); }
   return out;
+}
+
+function buildAudioPayload() {
+    const obj = {};
+    obj.listening_status = document.getElementById('sys-mic-status').checked;
+    obj.voice_status     = document.getElementById('sys-voice-status').checked;
+    
+    obj.piper_path       = document.getElementById('v-piper').value;
+    const pdir = sysOptions.piper_dir || 'C:\\piper';
+    const sel  = document.getElementById('v-onnx-model').value;
+    obj.onnx_model       = (sel.includes('\\') || sel.includes('/')) ? sel : pdir + '\\' + sel;
+    
+    obj.speed            = parseFloat(document.getElementById('v-speed').value);
+    obj.noise_scale      = parseFloat(document.getElementById('v-noise').value);
+    obj.noise_w          = parseFloat(document.getElementById('v-noisew').value);
+    obj.sentence_silence = parseFloat(document.getElementById('v-silence').value);
+    
+    obj.energy_threshold = parseInt(document.getElementById('a-threshold').value) || 450;
+    obj.silence_timeout  = parseInt(document.getElementById('a-timeout').value) || 5;
+    obj.phrase_limit     = parseInt(document.getElementById('a-limit').value) || 15;
+    
+    obj.stt_source = document.getElementById('stt-source').value;
+    obj.tts_destination = document.getElementById('tts-destination').value;
+    
+    // Also save device indexes if they exist in the DOM
+    const inSel = document.getElementById('audio-input-device');
+    const outSel = document.getElementById('audio-output-device');
+    if (inSel && inSel.value !== "") {
+        obj.input_device_index = parseInt(inSel.value);
+        let txt = inSel.options[inSel.selectedIndex]?.text || '';
+        obj.input_device_name = txt.includes(':') ? txt.split(': ').slice(1).join(': ') : txt;
+    }
+    if (outSel && outSel.value !== "") {
+        obj.output_device_index = parseInt(outSel.value);
+        let txt = outSel.options[outSel.selectedIndex]?.text || '';
+        obj.output_device_name = txt.includes(':') ? txt.split(': ').slice(1).join(': ') : txt;
+    }
+    
+    return obj;
+}
+
+// ── Audio Device Logic ──
+async function testVoice(mode) {
+    const text = document.getElementById('v-test-text').value || "Test di Zentra Core, tutto funziona correttamente.";
+    const sts = document.getElementById('v-test-status');
+    sts.textContent = mode === 'web' ? "Generating..." : "Playing on console...";
+    
+    try {
+        const r = await fetch('/api/audio/test', {
+            method: 'POST',
+            body: JSON.stringify({ text: text, mode: mode })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            if (mode === 'web' && data.url) {
+                sts.textContent = "Playing...";
+                const audio = new Audio(data.url);
+                audio.play();
+                audio.onended = () => { sts.textContent = "Done."; };
+            } else {
+                sts.textContent = data.msg || "Done.";
+            }
+        } else {
+            sts.textContent = "Error: " + data.error;
+        }
+    } catch(e) {
+        sts.textContent = "Request failed.";
+    }
+}
+
+async function scanAudioDevices() {
+    const sts = document.getElementById('audio-scan-status');
+    sts.textContent = "Scanning... (Wait for beep)";
+    try {
+        const r = await fetch('/api/audio/devices/scan', { method: 'POST' });
+        const data = await r.json();
+        if (data.ok) {
+            sts.textContent = `Done. Selected In: ${data.input_device_index}, Out: ${data.output_device_index}`;
+            // Refresh device lists
+            const rr = await fetch('/api/audio/devices');
+            const rrData = await rr.json();
+            if (rrData.ok) {
+                audioDevices = rrData;
+                populateUI(); // Just re-trigger populate logic to update selects
+            }
+        } else {
+            sts.textContent = "Error: " + data.error;
+        }
+    } catch(e) {
+        sts.textContent = "Request failed.";
+    }
+}
+
+async function applyAudioDevice() {
+    const sts = document.getElementById('audio-scan-status');
+    const inIdx = document.getElementById('audio-input-device').value;
+    const outIdx = document.getElementById('audio-output-device').value;
+    
+    sts.textContent = "Applying...";
+    try {
+        const r = await fetch('/api/audio/devices/select', {
+            method: 'POST',
+            body: JSON.stringify({ input_index: inIdx, output_index: outIdx })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            sts.textContent = "Saved to audio configuration.";
+            setTimeout(() => { if(sts.textContent.includes("Saved")) sts.textContent = ""; }, 3000);
+        } else {
+            sts.textContent = "Error: " + data.error;
+        }
+    } catch(e) {
+        sts.textContent = "Request failed.";
+    }
 }
 
 async function refreshModels() {
@@ -973,19 +1162,31 @@ async function saveConfig(silent = false) {
   if (!silent) setSaveMsg('{{ t("webui_conf_msg_saving") }}', 'muted');
   try {
     const payload = buildPayload();
-    const res = await fetch('/zentra/config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (data.ok) {
+    const audioPayload = buildAudioPayload();
+    
+    const [resCfg, resAud] = await Promise.all([
+        fetch('/zentra/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }),
+        fetch('/api/audio/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(audioPayload)
+        })
+    ]);
+    
+    const data = await resCfg.json();
+    const audData = await resAud.json();
+    
+    if (data.ok && audData.ok) {
       if (!silent) {
           setSaveMsg('{{ t("webui_conf_msg_saved") }}', 'ok');
           setTimeout(() => location.reload(), 1500);
       }
     } else {
-      setSaveMsg('Error: ' + data.error, 'err');
+      setSaveMsg('Error saving config/audio.', 'err');
     }
   } catch (e) {
     setSaveMsg('Fetch error: ' + e, 'err');

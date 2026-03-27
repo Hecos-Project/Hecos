@@ -176,11 +176,15 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
         ⌨️ <span id="ptt-label">PTT</span>
       </button>
     </div>
-    <div class="mode-label">AUDIO MODE</div>
-    <select class="mode-selector" id="audio-mode-select" onchange="setAudioMode(this.value)" title="Controls who handles audio: console, web, or auto">
-      <option value="auto">⚡ Auto (smart routing)</option>
-      <option value="web">🌐 Web only</option>
-      <option value="console">🖥️ Console only</option>
+    <div class="mode-label">INPUT ROUTING</div>
+    <select class="mode-selector" id="stt-source-select" onchange="setAudioRouting('stt_source', this.value)" title="Choose where Zentra listens">
+      <option value="system">🖥️ PC Mic (Local)</option>
+      <option value="web">🌐 Web Browser</option>
+    </select>
+    <div class="mode-label" style="margin-top:8px;">OUTPUT ROUTING</div>
+    <select class="mode-selector" id="tts-dest-select" onchange="setAudioRouting('tts_destination', this.value)" title="Choose where Zentra speaks">
+      <option value="system">🖥️ PC Speakers</option>
+      <option value="web">🌐 Web Audio</option>
     </select>
   </div>
 
@@ -204,7 +208,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
       <div class="topbar-chip" id="chip-mic">🎤 MIC: —</div>
       <div class="topbar-chip" id="chip-tts">🔊 TTS: —</div>
       <div class="topbar-chip" id="chip-ptt">⌨️ PTT: —</div>
-      <div class="topbar-chip" id="chip-mode" style="color:var(--accent2);border-color:rgba(167,139,250,.25);background:rgba(167,139,250,.07);">⚡ AUTO</div>
+      <div class="topbar-chip" id="chip-stt-source" style="font-size:10px;">IN: —</div>
+      <div class="topbar-chip" id="chip-tts-dest" style="font-size:10px;">OUT: —</div>
       <a href="/zentra/config/ui" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;background:var(--glass);border:1px solid var(--border);border-radius:6px;transition:all .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">⚙️ Config</a>
     </div>
   </div>
@@ -240,7 +245,8 @@ let history = [], isStreaming = false;
 let currentMicOn  = false;
 let currentTTSOn  = false;
 let currentPTTOn  = false;
-let currentMode   = 'auto';
+let currentSTTSource = 'system';
+let currentTTSDest   = 'web';
 
 const chatArea   = document.getElementById('chat-area');
 const userInput  = document.getElementById('user-input');
@@ -249,7 +255,8 @@ const welcome    = document.getElementById('welcome');
 const micBtn     = document.getElementById('mic-btn');
 const ttsBtn     = document.getElementById('tts-btn');
 const pttBtn     = document.getElementById('ptt-btn');
-const modeSelect = document.getElementById('audio-mode-select');
+const sttSelect  = document.getElementById('stt-source-select');
+const ttsSelect  = document.getElementById('tts-dest-select');
 
 function hideWelcome() { if(welcome) welcome.style.display = 'none'; }
 function autoResize(ta) { ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,160)+'px'; }
@@ -288,12 +295,14 @@ function _applyPTTState(on) {
   chip.className   = 'topbar-chip ' + (on ? 'on' : 'off');
 }
 
-function _applyModeState(mode) {
-  currentMode = mode;
-  // Sync dropdown without triggering onchange
-  for(let opt of modeSelect.options) { opt.selected = opt.value === mode; }
-  const icons = { auto:'⚡', web:'🌐', console:'🖥️' };
-  document.getElementById('chip-mode').textContent = (icons[mode]||'⚡') + ' ' + mode.toUpperCase();
+function _applyRoutingState(stt, tts) {
+  currentSTTSource = stt;
+  currentTTSDest   = tts;
+  for(let opt of sttSelect.options) { opt.selected = opt.value === stt; }
+  for(let opt of ttsSelect.options) { opt.selected = opt.value === tts; }
+  
+  document.getElementById('chip-stt-source').textContent = 'IN: ' + stt.toUpperCase();
+  document.getElementById('chip-tts-dest').textContent   = 'OUT: ' + tts.toUpperCase();
 }
 
 async function toggleMic() {
@@ -323,16 +332,19 @@ async function togglePTT() {
   } catch(e) { console.error('[Audio] togglePTT failed', e); }
 }
 
-async function setAudioMode(mode) {
+async function setAudioRouting(key, val) {
   try {
-    const r    = await fetch('/api/audio/mode', {
+    const payload = {};
+    payload[key] = val;
+    const r = await fetch('/api/audio/config', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({mode})
+      body: JSON.stringify(payload)
     });
     const data = await r.json();
-    if (data.ok) _applyModeState(data.audio_mode);
-    else console.warn('[Audio] setAudioMode error:', data.error);
-  } catch(e) { console.error('[Audio] setAudioMode failed', e); }
+    if (data.ok) {
+       // Local update will happen on next poll or we manually refresh here
+    }
+  } catch(e) { console.error('[Audio] setAudioRouting failed', e); }
 }
 
 // ── Chat logic ────────────────────────────────────────────────────────────────
@@ -466,7 +478,11 @@ async function refreshStatus() {
     _applyMicState(d.mic === 'ON');
     _applyTTSState(d.tts === 'ON');
     _applyPTTState(d.ptt === 'ON');
-    _applyModeState(d.audio_mode || 'auto');
+    
+    // We expect the status route or another route to provide granular routing
+    // If not, we might need to fetch /api/audio/config
+    const ac = d.audio_config || {};
+    _applyRoutingState(ac.stt_source || 'system', ac.tts_destination || 'web');
 
   } catch(e) { document.getElementById('tb-model').textContent='{{ t("webui_chat_offline") }}'; }
 }

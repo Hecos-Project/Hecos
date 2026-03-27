@@ -72,40 +72,23 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
         sess["done"] = True
 
 
-def _maybe_generate_tts(text: str, cfg_mgr):
+def generate_voice_file(text: str, voice_cfg: dict) -> str:
     """
-    Generate a WAV file via Piper for web playback.
-
-    Logic:
-      - audio_mode == "console"  → skip (console handles audio, web stays silent)
-      - audio_mode == "web"      → always generate for web
-      - audio_mode == "auto"     → generate for web if voice_status is ON
+    Core function to run Piper and create risposta.wav.
+    Returns the absolute path to the generated WAV, or None on failure.
     """
-    global _last_audio_path
     try:
-        cfg        = cfg_mgr.config
-        audio_mode = cfg.get("audio_mode", "auto")
-        voice_cfg  = cfg.get("voice", {})
-        voice_on   = voice_cfg.get("voice_status", False)
-        _chat_log.info(f"[Chat] TTS Check: Mode={audio_mode}, VoiceStatus={voice_on}")
-
-        # Decide whether to synthesise for web
-        if audio_mode == "console":
-            return                          # Console owns audio → web is silent
-        if audio_mode == "auto" and not voice_on:
-            return                          # Auto + voice disabled → skip
-
-        # Resolve Piper paths
         piper_path = voice_cfg.get("piper_path", r"C:\piper\piper.exe")
         model_path = voice_cfg.get("onnx_model", "")
+        
         if not os.path.exists(piper_path):
-            _chat_log.info(f"[Chat] TTS skip: Piper.exe not found at {piper_path}")
-            return
+            _chat_log.info(f"[Audio] Piper.exe not found at {piper_path}")
+            return None
         if not os.path.exists(model_path):
-            _chat_log.info(f"[Chat] TTS skip: ONNX model not found at {model_path}")
-            return
+            _chat_log.info(f"[Audio] ONNX model not found at {model_path}")
+            return None
 
-        # Build optional flags
+        # Build flags
         length_scale     = 1.0 / max(0.1, voice_cfg.get("speed", 1.0))
         noise_scale      = voice_cfg.get("noise_scale", 0.667)
         noise_w          = voice_cfg.get("noise_w", 0.8)
@@ -124,7 +107,8 @@ def _maybe_generate_tts(text: str, cfg_mgr):
             "--sentence_silence", str(sentence_silence),
             "-f", out,
         ]
-        _chat_log.info(f"[Chat] Piper command: {' '.join(command)}")
+        
+        _chat_log.info(f"[Audio] Piper command: {' '.join(command)}")
         proc = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -134,16 +118,58 @@ def _maybe_generate_tts(text: str, cfg_mgr):
         stdout, stderr = proc.communicate(input=clean_text.encode("utf-8"))
 
         if proc.returncode != 0:
-            _chat_log.error(f"[Chat] Piper failed (code {proc.returncode}): {stderr.decode('utf-8', errors='ignore')}")
-            return
+            _chat_log.error(f"[Audio] Piper failed (code {proc.returncode}): {stderr.decode('utf-8', errors='ignore')}")
+            return None
 
         if os.path.exists(out):
-            _last_audio_path = out
-            _chat_log.info(f"[Chat] TTS generated successfully -> {out}")
+            return out
+        return None
+    except Exception as e:
+        _chat_log.error(f"[Audio] generate_voice_file error: {e}")
+        return None
+
+
+def _maybe_generate_tts(text: str, cfg_mgr):
+    """
+    Generate a WAV file via Piper for web playback.
+
+    Logic:
+      - audio_mode == "console"  → skip (console handles audio, web stays silent)
+      - audio_mode == "web"      → always generate for web
+      - audio_mode == "auto"     → generate for web if voice_status is ON
+    """
+    global _last_audio_path
+    try:
+        from core.audio.device_manager import get_audio_config
+        voice_cfg  = get_audio_config()
+        
+        voice_on   = voice_cfg.get("voice_status", False)
+        tts_dest   = voice_cfg.get("tts_destination", "web")
+        
+        if tts_dest == "system":
+            from core.audio import voice
+            # Use a thread to avoid blocking the chat stream
+            import threading
+            _chat_log.info(f"[Chat] Redirecting TTS to PC speakers: {text[:30]}...")
+            threading.Thread(target=voice.speak, args=(text,), daemon=True).start()
+            return False # skip web preview
+            
+        if tts_dest != "web":
+            return                          # Not intended for web
+            
+        if not voice_on:
+            return                          # Voice disabled globally
+
+        path = generate_voice_file(text, voice_cfg)
+        if path:
+            _last_audio_path = path
+            _chat_log.info(f"[Chat] TTS generated successfully -> {path}")
             return True
-        else:
-            _chat_log.error("[Chat] Piper finished but risposta.wav was not created.")
-            return False
+        return False
+
+    except Exception as e:
+        _chat_log.debug(f"[Chat] TTS error: {e}")
+        return False
 
     except Exception as e:
         _chat_log.debug(f"[Chat] TTS error: {e}")

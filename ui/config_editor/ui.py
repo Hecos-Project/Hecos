@@ -26,10 +26,11 @@ CIANO = '\033[96m'
 RESET = '\033[0m'
 
 class UIManager:
-    def __init__(self, param_list, getter, setter):
+    def __init__(self, param_list, getter, setter, command_handler=None):
         self.param_list = param_list
         self.get_value = getter
         self.set_value = setter
+        self.command_handler = command_handler  # callable(command: str) -> bool
         self.cursor = 0
         self.scroll_top = 0      # Indice della riga in alto nel viewport
         self.modified = False
@@ -81,6 +82,10 @@ class UIManager:
                             print(f"\n{VERDE}{translator.t('instruction_cleared')}{RESET}")
                             import time
                             time.sleep(0.8)
+                        elif self.command_handler and self.command_handler(param.command):
+                            # Custom command handled externally (e.g. rescan_audio_devices)
+                            self.first_draw = True  # Force full redraw after command
+                            self.param_list = self.param_list  # handler may rebuild it
                 elif key == KEY_UP:
                     if self.cursor > 0:
                         self.cursor -= 1
@@ -104,6 +109,8 @@ class UIManager:
                             print(f"\n{VERDE}{translator.t('instruction_cleared')}{RESET}")
                             import time
                             time.sleep(0.8)
+                        elif self.command_handler and self.command_handler(param.command):
+                            self.first_draw = True
                     else:
                         current = self.get_value(param)
                         if param.type in ('int', 'float'):
@@ -256,6 +263,8 @@ class UIManager:
             return "🛠️ LEGACY (Other)"
         elif param.section == 'bridge':
             return "🌐 BRIDGE WEBUI"
+        elif param.section == 'audio_device':
+            return "🔊 AUDIO DEVICES"
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:
@@ -296,6 +305,7 @@ class UIManager:
             sections.setdefault(title, []).append((i, param))
         
         order_standard = [
+            "🔊 AUDIO DEVICES",
             translator.t("section_models"), 
             translator.t("section_ia"),
             translator.t("section_llm"), 

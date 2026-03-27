@@ -53,13 +53,23 @@ class ZentraWebUIServer:
         # Inject translation system into Jinja2 templates
         app.jinja_env.globals.update(t=t)
 
-        # Silence werkzeug noise
-        try:
-            import logging as _lg
-            _lg.getLogger("werkzeug").setLevel(_lg.ERROR)
-            app.logger.disabled = True
-        except Exception:
-            pass
+        # Get debug state from system config
+        debug_on = self.config_manager.config.get("system", {}).get("flask_debug", False)
+
+        # Silence werkzeug noise ONLY if debug is off
+        import logging as _lg
+        wz_log = _lg.getLogger("werkzeug")
+        if not debug_on:
+            try:
+                wz_log.setLevel(_lg.ERROR)
+                app.logger.disabled = True
+            except Exception:
+                pass
+        else:
+            # When debug is ON, ensure logs propagate to Zentra's root logger
+            wz_log.setLevel(_lg.INFO)
+            wz_log.propagate = True
+            _chat_log.info("[WebUI] Flask/Werkzeug logging enabled.")
 
         # Register all routes — pass getter so routes always read the current SM
         init_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
@@ -68,11 +78,12 @@ class ZentraWebUIServer:
         def _run():
             try:
                 self.logger.info(
-                    f"[WebUI] 🚀 Server live → "
+                    f"[WebUI] 🚀 Server live (debug={debug_on}) → "
                     f"http://127.0.0.1:{self.port}/chat  |  "
                     f"http://127.0.0.1:{self.port}/zentra/config/ui"
                 )
-                app.run(host="127.0.0.1", port=self.port, debug=False, use_reloader=False)
+                # We disable reloader to avoid starting Zentra threads twice
+                app.run(host="127.0.0.1", port=self.port, debug=debug_on, use_reloader=False)
             except Exception as e:
                 self.logger.error(f"[WebUI] Flask exception: {e}")
 
@@ -122,14 +133,19 @@ if __name__ == "__main__":
     # Initialize translator with current config language
     init_translator(cfg.config.get("language", "en"))
 
-    # Initialize state manager with config
+    # Initialize state manager with config_audio.json settings
+    from core.audio.device_manager import get_audio_config
+    acfg = get_audio_config()
+    
     sm = StateManager(
-        initial_voice_status=cfg.get('voice', 'voice_status', default=True),
-        initial_listening_status=cfg.get('listening', 'listening_status', default=True),
+        initial_voice_status=acfg.get('voice_status', True),
+        initial_listening_status=acfg.get('listening_status', True),
         initial_audio_mode=cfg.get('audio_mode', default='auto')
     )
-    sm.push_to_talk = cfg.get('listening', 'push_to_talk', default=False)
-    sm.ptt_hotkey   = cfg.get('listening', 'ptt_hotkey', default='ctrl+shift')
+    sm.push_to_talk    = acfg.get('push_to_talk', False)
+    sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
+    sm.stt_source      = acfg.get('stt_source', 'system')
+    sm.tts_destination = acfg.get('tts_destination', 'web')
     set_state_manager(sm)
 
     # Start the listening thread (Whisper + PTT)

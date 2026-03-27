@@ -1,5 +1,6 @@
 import os
 import glob
+import json
 from core.i18n import translator
 
 class Parameter:
@@ -27,6 +28,43 @@ def build_parameter_list(config):
     includendo anche i plugin attivi.
     """
     params = []
+
+    # --- Audio Devices Section ---
+    try:
+        from core.audio.device_manager import get_audio_config, list_devices
+        acfg = get_audio_config()
+        out_name = acfg.get("output_device_name", "") or "(not configured)"
+        in_name  = acfg.get("input_device_name",  "") or "(not configured)"
+        last_scan = acfg.get("last_scan", "") or "never"
+
+        # Try to build dropdown lists of available devices for manual override
+        devs = list_devices()
+        output_options = [(str(d["index"]) + " – " + d["name"]) for d in devs["output"]]
+        input_options  = [(str(d["index"]) + " – " + d["name"]) for d in devs["input"]]
+    except Exception:
+        acfg = {}
+        out_name = in_name = "(unavailable)"
+        last_scan = "never"
+        output_options = []
+        input_options  = []
+
+    params.append(Parameter('audio_device', 'output_device_name',
+        f'🔊 Output Device (Piper TTS)',  'info',
+        readonly=True, info_value=out_name))
+    params.append(Parameter('audio_device', 'input_device_name',
+        f'🎤 Input Device (Microphone)',   'info',
+        readonly=True, info_value=in_name))
+    params.append(Parameter('audio_device', 'last_scan',
+        'Last Device Scan',              'info',
+        readonly=True, info_value=last_scan))
+    params.append(Parameter('audio_device', 'auto_select',
+        'Auto-select device on startup', 'bool'))
+    params.append(Parameter('audio_device', 'test_on_startup',
+        'Test devices on startup',       'bool'))
+    params.append(Parameter('audio_device', 'beep_on_select',
+        'Play beep when device selected','bool'))
+    params.append(Parameter('audio_device', 'rescan_devices',
+        '🔄 Re-scan Audio Devices Now',  'command', command='rescan_audio_devices'))
 
     # --- Backend e Modelli (esistenti) ---
     from app.model_manager import ModelManager
@@ -99,8 +137,8 @@ def build_parameter_list(config):
 
     # --- WebUI Bridge ---
     bridge = config.get('bridge', {})
-    params.append(Parameter('bridge', 'webui_voice_enabled', 'Voce su WebUI (Locale TTS)', 'bool'))
-    params.append(Parameter('bridge', 'webui_voice_stt', 'Usa Mic WebUI (Browser STT)', 'bool'))
+    params.append(Parameter('bridge', 'webui_voice_enabled', 'WebUI Voice (Local TTS)', 'bool'))
+    params.append(Parameter('bridge', 'webui_voice_stt', 'WebUI Microphone (Browser STT)', 'bool'))
 
     # --- Listening ---
     listening = config.get('listening', {})
@@ -110,8 +148,8 @@ def build_parameter_list(config):
                            min=1, max=10, step=1))
     params.append(Parameter('listening', 'phrase_limit', translator.t("label_phrase_limit"), 'int', 
                            min=5, max=60, step=5))
-    params.append(Parameter('listening', 'push_to_talk', 'Abilita Push-To-Talk (PTT)', 'bool'))
-    params.append(Parameter('listening', 'ptt_hotkey', 'Shortcut Tasto PTT', 'str'))
+    params.append(Parameter('listening', 'push_to_talk', 'Enable Push-To-Talk (PTT)', 'bool'))
+    params.append(Parameter('listening', 'ptt_hotkey', 'PTT Hotkey Shortcut', 'str'))
 
     # --- Filters ---
     filters = config.get('filters', {})
@@ -126,8 +164,8 @@ def build_parameter_list(config):
 
     # --- Comando speciale RIAVVIA e opzioni di sistema ---
     params.append(Parameter('system', 'fast_boot', translator.t("label_avvio_rapido"), 'bool'))
+    params.append(Parameter('system', 'flask_debug', 'Flask Debug Mode', 'bool'))
     params.append(Parameter('system', 'language', translator.t("label_lingua_system"), 'str', options=['it', 'en']))
-    params.append(Parameter('system', 'audio_mode', 'Routing Audio Principale', 'str', options=['auto', 'console', 'web']))
     params.append(Parameter('system', 'reboot', translator.t("label_reboot"), 'command', 
                            command='reboot'))
     params.append(Parameter('system', 'save_exit', translator.t("label_save_exit"), 'command', 

@@ -44,15 +44,28 @@ class ZentraApplication:
     def __init__(self):
         self.config_manager = ConfigManager()
         
-        cv = self.config_manager.get('voice', 'voice_status', default=True)
-        ca = self.config_manager.get('listening', 'listening_status', default=True)
-        am = self.config_manager.config.get('audio_mode', 'auto')
-        ptt = self.config_manager.config.get('listening', {}).get('push_to_talk', False)
-        hk = self.config_manager.config.get('listening', {}).get('ptt_hotkey', 'ctrl+shift')
+        from core.audio.device_manager import get_audio_config
+        acfg = get_audio_config()
         
-        self.state_manager = StateManager(initial_voice_status=cv, initial_listening_status=ca, initial_audio_mode=am)
-        self.state_manager.push_to_talk = ptt
-        self.state_manager.ptt_hotkey = hk
+        cv    = acfg.get('voice_status', True)
+        ca    = acfg.get('listening_status', True)
+        stt_s = acfg.get('stt_source', 'system')
+        tts_d = acfg.get('tts_destination', 'web')
+        ptt   = acfg.get('push_to_talk', False)
+        hk    = acfg.get('ptt_hotkey', 'ctrl+shift')
+        
+        # Audio mode is legacy and still in config.json (root)
+        am = self.config_manager.config.get('audio_mode', 'auto')
+        
+        self.state_manager = StateManager(
+            initial_voice_status=cv, 
+            initial_listening_status=ca, 
+            initial_audio_mode=am
+        )
+        self.state_manager.push_to_talk    = ptt
+        self.state_manager.ptt_hotkey      = hk
+        self.state_manager.stt_source      = stt_s
+        self.state_manager.tts_destination = tts_d
         
         self.input_handler = InputHandler(self.state_manager, self.config_manager)
         self.model_manager = ModelManager(self.config_manager)
@@ -94,7 +107,16 @@ class ZentraApplication:
         config = self.config_manager.config
         self.state_manager.system_status = translator.t("diagnostics")
         diagnostica.run_initial_check(config)
-        
+
+        # Audio device auto-selection (Piper TTS output + Microphone input)
+        try:
+            from core.audio.device_manager import maybe_scan_on_startup
+            self.state_manager.system_status = "Scanning audio devices..."
+            maybe_scan_on_startup()
+            logger.info("[APP] Audio device scan completed.")
+        except Exception as _ae:
+            logger.warning("APP", f"Audio device scan skipped: {_ae}")
+
         # Avvia il monitoraggio backend solo se il plugin è attivo
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod:
@@ -218,8 +240,12 @@ class ZentraApplication:
             
         elif key == "F4":
             self.state_manager.listening_status = not self.state_manager.listening_status
-            self.config_manager.set(self.state_manager.listening_status, 'listening', 'listening_status')
-            self.config_manager.save()
+            
+            from core.audio.device_manager import get_audio_config, _save_audio_config
+            acfg = get_audio_config()
+            acfg["listening_status"] = self.state_manager.listening_status
+            _save_audio_config(acfg)
+            
             processore.configure(self.config_manager.config)
             verb = "ON" if self.state_manager.listening_status else "OFF"
             color = "\033[96m" if self.state_manager.listening_status else "\033[91m"
@@ -228,8 +254,12 @@ class ZentraApplication:
             
         elif key == "F5":
             self.state_manager.voice_status = not self.state_manager.voice_status
-            self.config_manager.set(self.state_manager.voice_status, 'voice', 'voice_status')
-            self.config_manager.save()
+            
+            from core.audio.device_manager import get_audio_config, _save_audio_config
+            acfg = get_audio_config()
+            acfg["voice_status"] = self.state_manager.voice_status
+            _save_audio_config(acfg)
+            
             processore.configure(self.config_manager.config)
             verb = "ON" if self.state_manager.voice_status else "OFF"
             color = "\033[96m" if self.state_manager.voice_status else "\033[91m"
@@ -250,8 +280,12 @@ class ZentraApplication:
             is_ptt = self.state_manager.push_to_talk
             new_ptt = not is_ptt
             self.state_manager.push_to_talk = new_ptt
-            self.config_manager.set(new_ptt, 'listening', 'push_to_talk')
-            self.config_manager.save()
+            
+            from core.audio.device_manager import get_audio_config, _save_audio_config
+            acfg = get_audio_config()
+            acfg["push_to_talk"] = new_ptt
+            _save_audio_config(acfg)
+            
             verb = "ON" if new_ptt else "OFF"
             color = "\033[96m" if new_ptt else "\033[91m"
             print(f"\n{color}[SYSTEM] Push-To-Talk (PTT): {verb}\033[0m")

@@ -150,7 +150,7 @@ class InputHandler:
             
         # Show response
             interface.write_zentra(video_response)
-            if self.state.voice_status and clean_voice_text:
+            if self.state.voice_status and clean_voice_text and self.state.tts_destination == 'system':
                 self.state.system_status = translator.t("speaking")
                 res = plugin_loader.get_formatted_capabilities()
                 interface.update_status_bar_in_place(

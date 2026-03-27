@@ -17,8 +17,13 @@ class ConfigEditor:
         project_dir = os.path.dirname(ui_dir)  # directory del progetto (dove sta main.py)
         self.config_path = os.path.join(project_dir, config_path)
         self.config = self._load_config()
+        
+        from core.audio.device_manager import get_audio_config
+        self.audio_config = get_audio_config()
+        
         self.param_list = build_parameter_list(self.config)
         self.modified = False
+        self.audio_modified = False
 
     def _load_config(self):
         """Carica il file JSON, pulisce config plugin vecchi e sincronizza con la cartella."""
@@ -65,6 +70,14 @@ class ConfigEditor:
 
     def _save_config(self):
         """Salva il file JSON se ci sono modifiche e aggiorna il traduttore."""
+        if self.audio_modified:
+            try:
+                from core.audio.device_manager import _save_audio_config
+                _save_audio_config(self.audio_config)
+                self.audio_modified = False
+            except Exception as e:
+                print(f"[AUDIO-DM] Save error from config editor: {e}")
+
         if self.modified:
             try:
                 # Check language change before saving
@@ -106,20 +119,18 @@ class ConfigEditor:
                 return self.config.get('backend', {}).get('ollama', {}).get(key)
             elif param.section == 'kobold':
                 return self.config.get('backend', {}).get('kobold', {}).get(key)
-            elif param.section == 'voice':
-                return self.config.get('voice', {}).get(key)
+            elif param.section in ('voice', 'listening', 'audio_device'):
+                return self.audio_config.get(key)
             elif param.section == 'ai':
                 return self.config.get('ai', {}).get(key)
             elif param.section == 'bridge':
                 return self.config.get('bridge', {}).get(key)
-            elif param.section == 'listening':
-                return self.config.get('listening', {}).get(key)
             elif param.section == 'filters':
                 return self.config.get('filters', {}).get(key)
             elif param.section == 'logging':
                 return self.config.get('logging', {}).get(key)
             elif param.section == 'system':
-                return self.config.get(key)
+                return self.config.get('system', {}).get(key)
             elif param.section == 'llm':
                 return self.config.get('llm', {}).get(key)
             elif param.section.startswith('llm_'):
@@ -174,13 +185,11 @@ class ConfigEditor:
                 if old != value:
                     self.config['backend']['kobold'][key] = value
                     self.modified = True
-            elif param.section == 'voice':
-                if 'voice' not in self.config:
-                    self.config['voice'] = {}
-                old = self.config['voice'].get(key)
+            elif param.section in ('voice', 'listening', 'audio_device'):
+                old = self.audio_config.get(key)
                 if old != value:
-                    self.config['voice'][key] = value
-                    self.modified = True
+                    self.audio_config[key] = value
+                    self.audio_modified = True
             elif param.section == 'ai':
                 if 'ai' not in self.config:
                     self.config['ai'] = {}
@@ -194,13 +203,6 @@ class ConfigEditor:
                 old = self.config['bridge'].get(key)
                 if old != value:
                     self.config['bridge'][key] = value
-                    self.modified = True
-            elif param.section == 'listening':
-                if 'listening' not in self.config:
-                    self.config['listening'] = {}
-                old = self.config['listening'].get(key)
-                if old != value:
-                    self.config['listening'][key] = value
                     self.modified = True
             elif param.section == 'filters':
                 if 'filters' not in self.config:
@@ -217,9 +219,11 @@ class ConfigEditor:
                     self.config['logging'][key] = value
                     self.modified = True
             elif param.section == 'system':
-                old = self.config.get(key)
+                if 'system' not in self.config:
+                    self.config['system'] = {}
+                old = self.config['system'].get(key)
                 if old != value:
-                    self.config[key] = value
+                    self.config['system'][key] = value
                     self.modified = True
             elif param.section == 'llm':
                 if 'llm' not in self.config:
@@ -274,8 +278,45 @@ class ConfigEditor:
                         legacy_list.remove(model_name)
                         self.config['routing_engine']['legacy_models'] = ", ".join(legacy_list)
                         self.modified = True
+            elif param.section == 'audio_device':
+                # Writes go directly to config_audio.json
+                try:
+                    from core.audio.device_manager import _load_audio_config, _save_audio_config
+                    acfg = _load_audio_config()
+                    if acfg.get(key) != value:
+                        acfg[key] = value
+                        _save_audio_config(acfg)
+                except Exception as e:
+                    print(f"[AUDIO-DM] _set_value error: {e}")
         except Exception as e:
             print(f"Errore in _set_value per {param.label}: {e}")
+
+    def _handle_special_command(self, command: str) -> bool:
+        """Handles special commands triggered from the UI. Returns True if handled."""
+        if command == 'rescan_audio_devices':
+            import sys
+            sys.stdout.write("\n\033[93m[AUDIO-DM] Scanning audio devices...\033[0m\n")
+            sys.stdout.flush()
+            try:
+                from core.audio.device_manager import scan_and_select
+                cfg = scan_and_select(verbose=True)
+                out = cfg.get('output_device_name', '?')
+                inp = cfg.get('input_device_name', '?')
+                sys.stdout.write(f"\033[92m✅ Output: {out} | Input: {inp}\033[0m\n")
+                sys.stdout.flush()
+            except Exception as e:
+                sys.stdout.write(f"\033[91m❌ Error: {e}\033[0m\n")
+                sys.stdout.flush()
+            import msvcrt, time
+            sys.stdout.write("Press any key to continue...\n")
+            sys.stdout.flush()
+            time.sleep(0.5)
+            while msvcrt.kbhit(): msvcrt.getch()
+            msvcrt.getch()
+            # Rebuild param list with fresh device info
+            self.param_list = build_parameter_list(self.config)
+            return True
+        return False
 
     def run(self):
         """Avvia l'editor interattivo con lock."""
@@ -285,7 +326,8 @@ class ConfigEditor:
         
         try:
             result = None
-            ui = UIManager(self.param_list, self._get_value, self._set_value)
+            ui = UIManager(self.param_list, self._get_value, self._set_value,
+                           command_handler=self._handle_special_command)
             result = ui.run()
             
             import sys

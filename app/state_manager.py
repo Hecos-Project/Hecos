@@ -8,7 +8,9 @@ class StateManager:
     def __init__(self, initial_voice_status=True, initial_listening_status=True, initial_audio_mode="auto"):
         self._voice_status = initial_voice_status
         self._listening_status = initial_listening_status
-        self._audio_mode = initial_audio_mode   # "auto" | "console" | "web"
+        self._audio_mode = initial_audio_mode   # Legacy "auto" | "console" | "web"
+        self._stt_source = "system"             # "system" | "web"
+        self._tts_destination = "web"          # "system" | "web"
         self._last_esc = 0
         self._detected_voice_command = None
         self._system_processing = False
@@ -129,3 +131,23 @@ class StateManager:
     def ptt_hotkey(self, value):
         with self._lock:
             self._ptt_hotkey = value
+
+    @property
+    def stt_source(self):
+        with self._lock:
+            return self._stt_source
+
+    @stt_source.setter
+    def stt_source(self, value):
+        with self._lock:
+            self._stt_source = value
+
+    @property
+    def tts_destination(self):
+        with self._lock:
+            return self._tts_destination
+
+    @tts_destination.setter
+    def tts_destination(self, value):
+        with self._lock:
+            self._tts_destination = value
