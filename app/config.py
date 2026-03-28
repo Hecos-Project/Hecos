@@ -172,6 +172,19 @@ class ConfigManager:
         self.config = self._load_config()
         return self.config
 
+    def update_config(self, new_data):
+        """Deep merge new_data into current config and save."""
+        self.reload() # Ensure we have latest from disk
+        self._deep_update(self.config, new_data)
+        return self.save()
+
+    def _deep_update(self, base, patch):
+        for k, v in patch.items():
+            if isinstance(v, dict) and k in base and isinstance(base[k], dict):
+                self._deep_update(base[k], v)
+            else:
+                base[k] = v
+
     def get_plugin_config(self, plugin_tag, key=None, default=None):
         """
         Restituisce la configurazione di un plugin.

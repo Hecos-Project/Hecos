@@ -75,8 +75,7 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             incoming = request.get_json(force=True)
             if not isinstance(incoming, dict):
                 return jsonify({"ok": False, "error": "Invalid payload"}), 400
-            cfg_mgr.config = incoming
-            if cfg_mgr.save():
+            if cfg_mgr.update_config(incoming):
                 # Dynamically update the global translator language without reboot
                 from core.i18n.translator import get_translator
                 get_translator().set_language(incoming.get("language", "en"))

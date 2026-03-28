@@ -68,7 +68,7 @@ def _update_title_bar(row_text):
     """Updates the terminal window title with just the app name and status guide."""
     try:
         # Keep title clean and simple as requested
-        title = "Zentra Core | [F1..F8 Menu]"
+        title = "Zentra Core"
         if os.name == 'nt':
             ctypes.windll.kernel32.SetConsoleTitleW(title)
         else:
