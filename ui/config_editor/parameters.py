@@ -162,6 +162,15 @@ def build_parameter_list(config):
     params.append(Parameter('logging', 'destination', translator.t("label_destinazione_log"), 'str', options=['chat', 'console', 'file_only']))
     params.append(Parameter('logging', 'message_types', translator.t("label_tipo_messaggi"), 'str', options=['info', 'debug', 'both']))
 
+    # --- Cognition (Memory System) ---
+    params.append(Parameter('cognition', 'memory_enabled',          'Memory System',                 'bool'))
+    params.append(Parameter('cognition', 'episodic_memory',         'Save Conversations',            'bool'))
+    params.append(Parameter('cognition', 'clear_on_restart',        'Clear History on Restart',      'bool'))
+    params.append(Parameter('cognition', 'max_history_messages',    'Max History Messages',          'int'))
+    params.append(Parameter('cognition', 'include_identity_context','Inject Identity Context',       'bool'))
+    params.append(Parameter('cognition', 'include_self_awareness',  'Inject Self‑Awareness',         'bool'))
+    params.append(Parameter('cognition', 'clear_history', 'Clear History Now', 'command', command='clear_memory'))
+
     # --- Comando speciale RIAVVIA e opzioni di sistema ---
     params.append(Parameter('system', 'fast_boot', translator.t("label_avvio_rapido"), 'bool'))
     params.append(Parameter('system', 'flask_debug', 'Flask Debug Mode', 'bool'))

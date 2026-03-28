@@ -84,6 +84,7 @@ class ZentraApplication:
         interface.setup_console()
         self.state_manager.system_status = translator.t("loading_memory")
         brain_interface.initialize_vault()
+        brain_interface.maybe_clear_on_restart(self.config_manager.config)
         # IMPORTANT: pass current config to plugin loader
         self.state_manager.system_status = translator.t("loading_plugins")
         plugin_loader.update_capability_registry(self.config_manager.config)

@@ -176,6 +176,13 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
         ⌨️ <span id="ptt-label">PTT</span>
       </button>
     </div>
+    <button id="stop-voice-btn" onclick="stopVoice()" title="Stop Voice (ESC)" style="
+        display:none; margin:0 0 8px; width:100%; padding:6px 10px;
+        background:rgba(248,113,113,.15); border:1px solid rgba(248,113,113,.4);
+        border-radius:8px; color:var(--red); font-size:12px; cursor:pointer;
+        transition:opacity .2s;">
+      ⏹ Stop Voice
+    </button>
     <div class="mode-label">INPUT ROUTING</div>
     <select class="mode-selector" id="stt-source-select" onchange="setAudioRouting('stt_source', this.value)" title="Choose where Zentra listens">
       <option value="system">🖥️ PC Mic (Local)</option>
@@ -377,9 +384,11 @@ function renderMarkdown(text) {
 }
 
 async function sendMessage() {
-  if(isStreaming) return;
   const text = userInput.value.trim();
-  if(!text) return;
+  if(!text || isStreaming) return;
+
+  showStopVoiceBtn(false);
+  
   hideWelcome();
   userInput.value=''; autoResize(userInput);
   addBubble('user', text);
@@ -408,6 +417,11 @@ async function sendMessage() {
         chatArea.scrollTop = chatArea.scrollHeight;
       } else if(ev.type==='audio_ready') {
         tryLoadAudio(aiBubble);
+      } else if(ev.type==='system_audio_playing') {
+        showStopVoiceBtn(true);
+        // Auto-hide the button after an estimated duration
+        const durationMs = Math.max(2000, (aiText.length * 85) + 2000);
+        setTimeout(() => showStopVoiceBtn(false), durationMs);
       } else if(ev.type==='done'||ev.type==='error') {
         cursor.remove();
         aiBubble.innerHTML = renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
@@ -429,6 +443,9 @@ async function sendMessage() {
   }
 }
 
+// Global reference to the currently playing browser audio element
+let currentAudio = null;
+
 async function tryLoadAudio(bubble) {
   const url = '/api/audio?t=' + Date.now();
   console.log("[Audio] Creating element for URL:", url);
@@ -440,8 +457,10 @@ async function tryLoadAudio(bubble) {
   const audio = document.createElement('audio');
   audio.controls = true;
   audio.src = url;
+  currentAudio = audio;  // track globally for ESC
   badge.appendChild(audio);
   bubble.appendChild(badge);
+  showStopVoiceBtn(true);
   
   audio.oncanplaythrough = () => {
     console.log("[Audio] Can play through, starting...");
@@ -455,10 +474,36 @@ async function tryLoadAudio(bubble) {
     });
   };
 
+  audio.onended  = () => { currentAudio = null; showStopVoiceBtn(false); };
   audio.onerror = () => {
     console.error("[Audio] Element error code:", audio.error ? audio.error.code : 'unknown');
+    currentAudio = null; showStopVoiceBtn(false);
   };
 }
+
+function showStopVoiceBtn(visible) {
+  const btn = document.getElementById('stop-voice-btn');
+  if (btn) btn.style.display = visible ? 'block' : 'none';
+}
+
+async function stopVoice() {
+  // 1. Stop browser audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+  // 2. Kill server-side sounddevice playback (for system-mode TTS)
+  try { await fetch('/api/audio/stop', {method: 'POST'}); } catch(e) {}
+  showStopVoiceBtn(false);
+}
+
+// ESC key: stop TTS anywhere in the chat
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    stopVoice();
+  }
+});
 
 function clearChat() {
   history=[];

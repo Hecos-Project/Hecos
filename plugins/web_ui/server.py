@@ -127,11 +127,16 @@ if __name__ == "__main__":
     from core.logging import logger
     cfg = ConfigManager()
     
-    # Initialize basic logging
-    logger.init_logger(cfg.config)
+    # Initialize basic logging (disable external windows for webui standalone)
+    logger.init_logger(cfg.config, allow_external_windows=False)
     
     # Initialize translator with current config language
     init_translator(cfg.config.get("language", "en"))
+
+    # Initialize memory vault (creates DB if not present)
+    from memory.brain_interface import initialize_vault, maybe_clear_on_restart
+    initialize_vault()
+    maybe_clear_on_restart(cfg.config)
 
     # Initialize state manager with config_audio.json settings
     from core.audio.device_manager import get_audio_config

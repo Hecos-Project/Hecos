@@ -78,7 +78,7 @@ if not litellm_log.hasHandlers():
 
 _console_window_started = False
 
-def init_logger(config):
+def init_logger(config, allow_external_windows=True):
     """
     Initializes logging settings read from config.json.
     CLEANS ALL HANDLERS first to ensure strict isolation.
@@ -141,6 +141,11 @@ def init_logger(config):
         console_handler.addFilter(RejectAllFilter())
         
     if destination_lower == 'console':
+        # Skip external windows if requested
+        if not allow_external_windows:
+            logger.addHandler(console_handler) # fallback to terminal if external windows restricted
+            return
+            
         # NON aggiungiamo console_handler qui -> i log restano solo su file
         # che vengono poi letti dalle finestre PowerShell esterne
         

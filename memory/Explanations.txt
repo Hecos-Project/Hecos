@@ -1,0 +1,4 @@
+core_identity.json: Contains the AI name, nature, and official protocols.
+user_profile.json: Contains biographical notes about the administrator (Root User).
+chat_history.db: SQLite database for long-term episodic memory.
+Explanations.txt: This file.

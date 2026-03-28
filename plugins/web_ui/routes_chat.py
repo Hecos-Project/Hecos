@@ -19,6 +19,7 @@ import logging
 _sessions      = {}
 _sessions_lock = threading.Lock()
 _last_audio_path = None
+_current_piper_proc = None
 _chat_log = logging.getLogger("ZentraChatRoutes")
 
 
@@ -62,8 +63,20 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
         sess["history"].append({"role": "assistant",  "content": full_text})
         sess["queue"].put({"type": "done", "text": ""})
 
-        if _maybe_generate_tts(full_text, cfg_mgr):
+        # Save to persistent long-term memory
+        try:
+            from memory import brain_interface
+            brain_interface.save_message("user", user_message, config=cfg_mgr.config)
+            brain_interface.save_message("assistant", full_text, config=cfg_mgr.config)
+        except Exception as e:
+            _chat_log.error(f"[Chat] Memory save error: {e}")
+
+
+        audio_status = _maybe_generate_tts(full_text, cfg_mgr)
+        if audio_status == "web":
             sess["queue"].put({"type": "audio_ready", "text": ""})
+        elif audio_status == "system":
+            sess["queue"].put({"type": "system_audio_playing", "text": ""})
 
     except Exception as exc:
         _chat_log.error(f"[Chat] Inference error: {exc}")
@@ -109,13 +122,16 @@ def generate_voice_file(text: str, voice_cfg: dict) -> str:
         ]
         
         _chat_log.info(f"[Audio] Piper command: {' '.join(command)}")
+        global _current_piper_proc
         proc = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
+        _current_piper_proc = proc
         stdout, stderr = proc.communicate(input=clean_text.encode("utf-8"))
+        _current_piper_proc = None
 
         if proc.returncode != 0:
             _chat_log.error(f"[Audio] Piper failed (code {proc.returncode}): {stderr.decode('utf-8', errors='ignore')}")
@@ -128,6 +144,17 @@ def generate_voice_file(text: str, voice_cfg: dict) -> str:
         _chat_log.error(f"[Audio] generate_voice_file error: {e}")
         return None
 
+
+def stop_voice_generation():
+    """Immediately kills any active Piper generation for the browser output."""
+    global _current_piper_proc
+    if _current_piper_proc is not None:
+        try:
+            _current_piper_proc.terminate()
+            _chat_log.info("[Audio] Terminated web-mode Piper generation.")
+        except: pass
+        finally:
+            _current_piper_proc = None
 
 def _maybe_generate_tts(text: str, cfg_mgr):
     """
@@ -152,20 +179,20 @@ def _maybe_generate_tts(text: str, cfg_mgr):
             import threading
             _chat_log.info(f"[Chat] Redirecting TTS to PC speakers: {text[:30]}...")
             threading.Thread(target=voice.speak, args=(text,), daemon=True).start()
-            return False # skip web preview
+            return "system" # notify UI to show Stop button
             
         if tts_dest != "web":
-            return                          # Not intended for web
+            return None                     # Not intended for web
             
         if not voice_on:
-            return                          # Voice disabled globally
+            return None                     # Voice disabled globally
 
         path = generate_voice_file(text, voice_cfg)
         if path:
             _last_audio_path = path
             _chat_log.info(f"[Chat] TTS generated successfully -> {path}")
-            return True
-        return False
+            return "web"
+        return None
 
     except Exception as e:
         _chat_log.debug(f"[Chat] TTS error: {e}")

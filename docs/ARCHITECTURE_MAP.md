@@ -30,10 +30,10 @@ Zentra-Core/
 │
 ├── logs/                 # Active system runtime and technical logs
 │
-├── memory/               # Persistent AI storage
-│   ├── archivio_chat.db  # SQLite database for long-term episodic memory
-│   ├── identita_core.json # AI identity and personality traits
-│   └── profilo_utente.json # User profile and biographical notes
+├── memory/           # Brain Interface & Long-term storage
+│   ├── chat_history.db   # SQLite database for long-term episodic memory
+│   ├── core_identity.json # AI identity and personality traits
+│   └── user_profile.json  # User profile and biographical notes
 │
 ├── personality/          # Text injects for AI persona and system prompts
 │

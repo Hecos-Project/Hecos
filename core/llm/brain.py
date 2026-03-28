@@ -103,14 +103,27 @@ def generate_response(user_text, external_config=None, tag=None):
             logger.error(f"BRAIN: Personality reading error: {e}")
             logger.debug("BRAIN", f"Personality reading error: {e}")
 
-    # 2. Memory and self-awareness
+    # 2. Memory and self-awareness (respecting cognition config)
+    cog = config.get('cognition', {})
     logger.debug("BRAIN", "Memory loading...")
-    memory_context = brain_interface.get_memory_context()
+    memory_context = brain_interface.get_context(config) if cog.get('include_identity_context', True) else ""
     logger.debug("BRAIN", f"Memory: {len(memory_context)} characters")
     
     logger.debug("BRAIN", "Self-awareness generation...")
-    self_awareness = generate_self_awareness(personality_name)
+    self_awareness = generate_self_awareness(personality_name) if cog.get('include_self_awareness', True) else ""
     logger.debug("BRAIN", f"Self-awareness: {len(self_awareness)} characters")
+    
+    # Build episodic history block (conversation context)
+    history_block = ""
+    if cog.get('memory_enabled', True) and cog.get('episodic_memory', True):
+        max_h = int(cog.get('max_history_messages', 20))
+        history_rows = brain_interface.get_history(limit=max_h, config=config)
+        if history_rows:
+            history_block = "\n[RECENT CONVERSATION HISTORY]\n"
+            for role, msg in history_rows:
+                label = "User" if role == "user" else "Zentra"
+                history_block += f"{label}: {msg}\n"
+        logger.debug("BRAIN", f"History injected: {len(history_rows)} messages")
     
     logger.debug("BRAIN", "Capabilities loading...")
     capabilities = load_capabilities()
@@ -181,6 +194,7 @@ def generate_response(user_text, external_config=None, tag=None):
     system_prompt = (
         f"{personality_prompt}\n"
         f"{memory_context}\n"
+        f"{history_block}\n"
         f"{self_awareness}\n"
         f"{capabilities}\n"
         "### OPERATIVE RULES ###\n"
@@ -241,20 +255,19 @@ def generate_response(user_text, external_config=None, tag=None):
     # Single call to the unified client
     response = client.generate(system_prompt, user_text, backend_config, config.get('llm', {}), tools=tools)
     
-    # 5. Save to memory
+    # 5. Save to memory (respecting cognition config)
     logger.debug("BRAIN", "Saving to memory...")
-    brain_interface.save_message("user", user_text)
+    brain_interface.save_message("user", user_text, config=config)
     
     # Structured response management (String or Message with tool_calls)
     if isinstance(response, str):
         logger.debug("BRAIN", f"Response received from backend: {len(response)} characters")
-        logger.debug("BRAIN", f"First 100 characters: '{response[:100]}'")
-        brain_interface.save_message("assistant", response)
+        brain_interface.save_message("assistant", response, config=config)
     else:
         # It's a Message object (used a tool)
         logger.debug("BRAIN", "Response is a tool call object.")
         tool_names = [call.function.name for call in getattr(response, 'tool_calls', [])]
-        brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*")
+        brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*", config=config)
     
     logger.debug("BRAIN", f"=== END generate_response ===")
     return response

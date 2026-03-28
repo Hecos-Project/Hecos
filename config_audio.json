@@ -8,7 +8,7 @@
     "fallback_on_error": true,
     "beep_on_select": true,
     "last_scan": "2026-03-27 12:11:32",
-    "voice_status": false,
+    "voice_status": true,
     "piper_path": "C:\\piper\\piper.exe",
     "onnx_model": "C:\\piper\\it_IT-paola-medium.onnx",
     "speed": 1.2,
@@ -21,6 +21,6 @@
     "phrase_limit": 15,
     "push_to_talk": false,
     "ptt_hotkey": "ctrl+shift",
-    "stt_source": "system",
-    "tts_destination": "system"
+    "stt_source": "web",
+    "tts_destination": "web"
 }

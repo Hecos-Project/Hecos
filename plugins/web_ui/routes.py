@@ -158,7 +158,60 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
+    # ── Memory Control API ─────────────────────────────────────────────────────
+
+    @app.route("/api/memory/clear", methods=["POST"])
+    def memory_clear():
+        """Wipes the episodic history from the DB."""
+        try:
+            from memory.brain_interface import clear_history
+            cleared = clear_history()
+            if cleared:
+                logger.info("[WebUI] Chat history cleared via API.")
+                return jsonify({"ok": True, "message": "History cleared."})
+            return jsonify({"ok": False, "error": "Failed to clear."}), 500
+        except Exception as exc:
+            logger.error(f"[WebUI] memory_clear error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/memory/status", methods=["GET"])
+    def memory_status():
+        """Returns memory row count and config."""
+        try:
+            import sqlite3, os
+            db_path = os.path.join("memory", "chat_history.db")
+            count = 0
+            if os.path.exists(db_path):
+                conn = sqlite3.connect(db_path)
+                count = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
+                conn.close()
+            cog = cfg_mgr.config.get("cognition", {})
+            return jsonify({"ok": True, "total_messages": count, "cognition": cog})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     # ── Audio Control API ─────────────────────────────────────────────────────
+
+    @app.route("/api/audio/stop", methods=["POST"])
+    def stop_audio():
+        """Stop server-side TTS playback and generation."""
+        try:
+            # Stop playback and system-routing generation
+            from core.audio.voice import stop_voice
+            stop_voice()
+            
+            # Stop web-routing generation
+            try:
+                from plugins.web_ui.routes_chat import stop_voice_generation
+                stop_voice_generation()
+            except Exception as e:
+                logger.debug(f"[WebUI] Could not stop web generation: {e}")
+
+            logger.info("[WebUI] TTS stopped via API (ESC).")
+            return jsonify({"ok": True})
+        except Exception as exc:
+            logger.error(f"[WebUI] stop_audio error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
 
     @app.route("/api/audio/toggle/mic", methods=["POST"])
     def toggle_mic():

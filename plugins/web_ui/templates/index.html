@@ -324,6 +324,7 @@
     <button class="tab" onclick="showTab('ia')">{{ t('webui_conf_tab_ia') }}</button>
     <button class="tab" onclick="showTab('bridge')">{{ t('webui_conf_tab_bridge') }}</button>
     <button class="tab" onclick="showTab('voice')">{{ t('webui_conf_tab_voice') }}</button>
+    <button class="tab" onclick="showTab('memory'); loadMemoryStatus();">🧠 Memory</button>
     <button class="tab" onclick="showTab('system')">{{ t('webui_conf_tab_sys') }}</button>
     <button class="tab" onclick="showTab('plugins')">{{ t('webui_conf_tab_plugins') }}</button>
     <button class="tab" onclick="showTab('logs'); startLogStream();">{{ t('webui_conf_tab_logs') }}</button>
@@ -491,6 +492,45 @@
       <div class="toggle-row">
         <div class="toggle-info">{{ t('webui_conf_filter_square') }}</div>
         <label class="switch"><input type="checkbox" id="fl-quadre"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- COGNITION / MEMORY -->
+  <div id="tab-memory" class="panel">
+    <div class="card">
+      <div class="card-title">🧠 Cognition System</div>
+      <div class="toggle-row">
+        <div class="toggle-info">Memory System (Global ON/OFF)</div>
+        <label class="switch"><input type="checkbox" id="cog-memory-enabled"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Save Conversations (Episodic Memory)</div>
+        <label class="switch"><input type="checkbox" id="cog-episodic"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Clear History on Restart</div>
+        <label class="switch"><input type="checkbox" id="cog-clear-restart"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Inject Identity Context</div>
+        <label class="switch"><input type="checkbox" id="cog-identity"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Inject Self-Awareness</div>
+        <label class="switch"><input type="checkbox" id="cog-awareness"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="margin-top:15px;">
+        <label>Max History Messages in Context</label>
+        <input type="number" id="cog-max-history" min="1" max="200" style="width:80px;">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Memory Status</div>
+      <p id="mem-status-text" style="color:#aaa;font-size:0.9em;">Loading...</p>
+      <div style="margin-top:10px;display:flex;gap:10px;">
+        <button class="btn" onclick="loadMemoryStatus()">🔄 Refresh</button>
+        <button class="btn" style="background:#c0392b;" onclick="clearMemoryHistory()">🗑 Clear History Now</button>
       </div>
     </div>
   </div>
@@ -913,6 +953,15 @@ function populateUI() {
   document.getElementById('sys-flask-debug').checked = sys.flask_debug ?? false;
   document.getElementById('sys-language').value   = c.language || 'en';
 
+  // Cognition (Memory)
+  const cog = c.cognition || {};
+  document.getElementById('cog-memory-enabled').checked = cog.memory_enabled ?? true;
+  document.getElementById('cog-episodic').checked       = cog.episodic_memory ?? true;
+  document.getElementById('cog-clear-restart').checked  = cog.clear_on_restart ?? false;
+  document.getElementById('cog-identity').checked       = cog.include_identity_context ?? true;
+  document.getElementById('cog-awareness').checked      = cog.include_self_awareness ?? true;
+  document.getElementById('cog-max-history').value      = cog.max_history_messages ?? 20;
+
     renderPlugins(c.plugins || {});
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -1018,6 +1067,16 @@ function buildPayload() {
   out.system.flask_debug = document.getElementById('sys-flask-debug').checked;
   out.language  = document.getElementById('sys-language').value;
 
+  // Cognition
+  out.cognition = {
+    memory_enabled:          document.getElementById('cog-memory-enabled').checked,
+    episodic_memory:         document.getElementById('cog-episodic').checked,
+    clear_on_restart:        document.getElementById('cog-clear-restart').checked,
+    include_identity_context:document.getElementById('cog-identity').checked,
+    include_self_awareness:  document.getElementById('cog-awareness').checked,
+    max_history_messages:    parseInt(document.getElementById('cog-max-history').value) || 20
+  };
+
   document.querySelectorAll('[data-plugin]').forEach(cb => {
     const tag = cb.dataset.plugin;
     out.plugins[tag] = out.plugins[tag] || {};
@@ -1026,6 +1085,37 @@ function buildPayload() {
   } catch (err) { console.error("buildPayload err:", err); }
 
   return out;
+}
+
+async function loadMemoryStatus() {
+  try {
+    const r = await fetch('/api/memory/status');
+    const d = await r.json();
+    const el = document.getElementById('mem-status-text');
+    if (!el) return;
+    if (d.ok) {
+      const cog = d.cognition || {};
+      el.innerHTML = `💬 Messages stored: <strong>${d.total_messages}</strong><br>` +
+        `Memory: <strong>${cog.memory_enabled ? 'ON ✅' : 'OFF ❌'}</strong> | ` +
+        `Episodic: <strong>${cog.episodic_memory ? 'ON ✅' : 'OFF ❌'}</strong> | ` +
+        `Max context: <strong>${cog.max_history_messages}</strong> msgs`;
+    } else {
+      el.textContent = 'Error: ' + d.error;
+    }
+  } catch(e) {
+    const el = document.getElementById('mem-status-text');
+    if (el) el.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function clearMemoryHistory() {
+  if (!confirm('Clear all conversation history? This cannot be undone.')) return;
+  try {
+    const r = await fetch('/api/memory/clear', {method: 'POST'});
+    const d = await r.json();
+    if (d.ok) { alert('✅ History cleared!'); loadMemoryStatus(); }
+    else       alert('❌ Error: ' + d.error);
+  } catch(e) { alert('❌ Error: ' + e.message); }
 }
 
 function buildAudioPayload() {

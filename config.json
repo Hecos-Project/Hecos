@@ -14,7 +14,7 @@
     "audio_mode": "console",
     "backend": {
         "cloud": {
-            "model": "gemini/gemini-flash-latest",
+            "model": "gemini/gemini-flash-lite-latest",
             "temperature": 0.7
         },
         "kobold": {
@@ -58,6 +58,14 @@
         "use_processor": true,
         "webui_voice_enabled": true,
         "webui_voice_stt": true
+    },
+    "cognition": {
+        "memory_enabled": true,
+        "episodic_memory": true,
+        "clear_on_restart": false,
+        "include_identity_context": true,
+        "include_self_awareness": true,
+        "max_history_messages": 20
     },
     "filters": {
         "custom_replacements": {},

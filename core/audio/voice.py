@@ -12,6 +12,7 @@ import keyboard
 import msvcrt
 
 is_speaking = False
+_current_piper_proc = None
 
 # --- sounddevice optional import ---
 try:
@@ -83,6 +84,7 @@ def speak(text, state=None):
     if state:
         state.system_speaking = True
 
+    global _current_piper_proc
     try:
         clean_text = text.replace('"', "").replace("\n", " ")
 
@@ -102,7 +104,9 @@ def speak(text, state=None):
             stderr=subprocess.DEVNULL,
             text=True
         )
+        _current_piper_proc = proc
         proc.communicate(input=clean_text)
+        _current_piper_proc = None
 
         if os.path.exists("risposta.wav"):
             actual_duration = _play_wav("risposta.wav", device_index=output_device)
@@ -135,7 +139,17 @@ def speak(text, state=None):
 
 
 def stop_voice():
-    global is_speaking
+    global is_speaking, _current_piper_proc
+    
+    # Kill generation if it's currently running
+    if _current_piper_proc is not None:
+        try:
+            _current_piper_proc.terminate()
+        except:
+            pass
+        finally:
+            _current_piper_proc = None
+
     if SOUNDDEVICE_AVAILABLE:
         try:
             sd.stop()

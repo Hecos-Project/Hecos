@@ -131,6 +131,8 @@ class ConfigEditor:
                 return self.config.get('logging', {}).get(key)
             elif param.section == 'system':
                 return self.config.get('system', {}).get(key)
+            elif param.section == 'cognition':
+                return self.config.get('cognition', {}).get(key)
             elif param.section == 'llm':
                 return self.config.get('llm', {}).get(key)
             elif param.section.startswith('llm_'):
@@ -225,6 +227,13 @@ class ConfigEditor:
                 if old != value:
                     self.config['system'][key] = value
                     self.modified = True
+            elif param.section == 'cognition':
+                if 'cognition' not in self.config:
+                    self.config['cognition'] = {}
+                old = self.config['cognition'].get(key)
+                if old != value:
+                    self.config['cognition'][key] = value
+                    self.modified = True
             elif param.section == 'llm':
                 if 'llm' not in self.config:
                     self.config['llm'] = {}
@@ -315,6 +324,27 @@ class ConfigEditor:
             msvcrt.getch()
             # Rebuild param list with fresh device info
             self.param_list = build_parameter_list(self.config)
+            return True
+        if command == 'clear_memory':
+            import sys
+            sys.stdout.write("\n\033[93m[MEMORY] Clearing conversation history...\033[0m\n")
+            sys.stdout.flush()
+            try:
+                from memory.brain_interface import clear_history
+                cleared = clear_history()
+                if cleared:
+                    sys.stdout.write("\033[92m✅ History cleared successfully!\033[0m\n")
+                else:
+                    sys.stdout.write("\033[91m❌ Failed to clear history.\033[0m\n")
+            except Exception as e:
+                sys.stdout.write(f"\033[91m❌ Error: {e}\033[0m\n")
+            sys.stdout.flush()
+            import msvcrt, time
+            sys.stdout.write("Press any key to continue...\n")
+            sys.stdout.flush()
+            time.sleep(0.5)
+            while msvcrt.kbhit(): msvcrt.getch()
+            msvcrt.getch()
             return True
         return False
 
