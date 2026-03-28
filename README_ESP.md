@@ -20,9 +20,10 @@ Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Z
 ---
 
 ## ✨ Características Principales (v0.9.7)
+* 👁️ **Soporte de Visión Nativa** — Capacidades de IA multimodal para Gemini, OpenAI y Ollama (LLaVA). Analiza imágenes, fotos y capturas de pantalla directamente en el chat.
 * 🏗️ **Plugin WebUI Nativo** — Migrado de un bridge a un plugin core (`plugins/web_ui/`) para máximo rendimiento y estabilidad.
 * 🌐 **I18N Global (Multilingüe)** — Soporte completo para Inglés (default) e Italiano en Terminal e interfaz Web con cambio en tiempo real.
-* 🧠 **Streaming Multi-Nube** — Soporte nativo para Groq, OpenAI, Gemini y Anthropic con efecto "máquina de escribir".
+* 🧠 **Streaming Multi-Nube** — Soporte nativo para Groq, OpenAI, Gemini e Anthropic con efecto "máquina de escribir".
 * 🔄 **Live-Sync Config** — Cambia cualquier ajuste en el Panel Web y aplícalo al instante sin reiniciar el sistema.
 * 🎙️ **Chat de Voz Integrado** — Interfaz de Chat nativa con integración de Piper TTS y reproducción de audio automática.
 * 🔌 **Botones Macro de Plugins** — La lista de plugins lateral ahora incluye macros clicables para inyectar comandos especializados al instante.

@@ -72,9 +72,25 @@ All plugins respond to unified interfaces that export `shell commands` and updat
 
 *(e.g.: Hiding the top HW bar only requires setting `Plugin Dashboard Enabled` to "False" in F7 and restarting)*
 
+---
+
+## 👁️ 5. Vision & Multimodal Interaction (v0.9.7)
+
+Zentra 0.9.7 introduces the **Vision Support System**, allowing the AI to "see" and analyze visual data.
+- **Image Upload**: Drag & drop files directly into the web chat or paste images from your clipboard (**Ctrl+V**).
+- **Multimodal AI**: Supported backends (Gemini 1.5/2.0, OpenAI GPT-4o, Ollama LLaVA) can describe, reason about, and extract text from images.
+- **Visual Feedback**: Thumbnails are rendered in both your message bubble (sent) and the attachment toolbar (pending).
+
+---
+
+## 🔄 6. Response Management
+
+- **Regenerate Response**: Use the circular arrow button next to any AI message to ask Zentra to try again. The system will remove the previous response and re-run the inference.
+- **Internal Messaging**: Regenerating doesn't require re-typing; the UI uses a direct API channel to resend the previous prompt with its original context.
+
 --- 
 
-## 🛡️ 5. Security and Troubleshooting
+## 🛡️ 7. Security and Troubleshooting
 
 1. **Graphic Interference Bug (Dashboard):** Zentra's engine asynchronously joins UI threads. Any text overlap is resolved by the total block `(Thread Join)` at the start of the F7 menu call.
 2. **Logs:** Zentra logs are kept in the `/logs` directory. From F7 Config, it's possible to hide log reports from the chat to favor text readability (exclusive visual routing to parallel log `Console` or `File Only` recommended).

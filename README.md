@@ -20,6 +20,7 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.9.7 offe
 ---
 
 ## ✨ Key Features (v0.9.7)
+* 👁️ **Native Vision Support** — Multimodal AI capabilities for Gemini, OpenAI, and Ollama (LLaVA). Analyze images, photos, and screenshots directly in chat.
 * 🏗️ **Native WebUI Plugin** — Migrated from a bridge to a core plugin (`plugins/web_ui/`) for maximum performance and stability.
 * 🌐 **Global I18N (Multilingual)** — Complete support for English (default) and Italian across Terminal and WebUI with real-time switching.
 * 🧠 **Multi-Cloud Streaming** — Native support for Groq, OpenAI, Gemini, and Anthropic with real-time "typewriter" effect.

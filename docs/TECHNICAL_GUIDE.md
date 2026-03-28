@@ -1,23 +1,24 @@
-# Zentra Core Technical Guide (v0.9.5)
-
-## 1. System Architecture
+## 1. System Architecture (v0.9.7)
 Zentra Core is built on a **Modular Object-Oriented Architecture** designed for high performance, local first-AI, and extensibility.
 
 ### Design Principles:
 - **Singleton Pattern**: Core managers (Config, State, I18n) are singletons to ensure consistent state across threads.
 - **Asynchronous Execution**: Heavy tasks (STT, LLM inference, TTS) run in dedicated background threads to keep the UI responsive.
 - **Backend Agnostic**: The system routes requests through a unified client (`client.py`) supporting Ollama, KoboldCPP, and various cloud providers via LiteLLM.
+- **Multimodal Ready**: Version 0.9.7 introduces native vision support via provider-specific adapters.
 
 ---
 
 ## 2. The Execution Pipeline (Data Flow)
 1. **Input Stage**: `InputHandler` captures text (keyboard) or processes audio via `listening.py` (STT).
 2. **Context Enrichment**: `brain.py` gathers system prompts, personality files, and retrieves relevant history from `memory/`.
-3. **Model Resolution**: `LLMManager` determines the best model based on the active backend and specific plugin requirements (routing).
-4. **Inference**: `LiteLLM` unifies the request and calls the local/cloud provider.
-5. **Post-Processing**: `Processor` parses the AI response for **Tool Calls** (Function Calling) or legacy tags.
-6. **Action Stage**: If a tool is detected, the corresponding plugin in `plugins/` is executed.
-7. **Output Stage**: Final text is sanitized by `filtri.py` and sent to the TUI (`interface.py`) and/or the TTS engine (`voice.py`).
+3. **Vision Processing** (v0.9.7): If images are attached, `client.py` selects the correct **VisionAdapter** (Gemini, OpenAI, or Ollama) to build the multimodal payload.
+4. **Model Resolution**: `LLMManager` determines the best model based on the active backend and specific plugin requirements.
+5. **Inference**: `LiteLLM` unifies the request and calls the local/cloud provider.
+6. **Post-Processing**: `Processor` parses the AI response for **Tool Calls** (Function Calling) or legacy tags.
+7. **Action Stage**: If a tool is detected, the corresponding plugin in `plugins/` is executed.
+8. **Output Stage**: Final text is sanitized by `filtri.py` and sent to the TUI (`interface.py`) and/or the TTS engine (`voice.py`).
+9. **Web Notification**: Native WebUI (`plugins/web_ui/`) receives the stream and updates the browser chat in real-time.
 
 ---
 
