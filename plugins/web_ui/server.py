@@ -158,12 +158,31 @@ if __name__ == "__main__":
     audio_th = AscoltoThread(sm)
     audio_th.start()
 
-    # Auto-open browser in standalone mode
+    def is_webui_already_open(root_dir):
+        """Check if a WebUI tab is already active via heartbeat file."""
+        import time, json, os
+        hb_file = os.path.join(root_dir, "logs", "webui_heartbeat.json")
+        if not os.path.exists(hb_file): 
+            return False
+        try:
+            with open(hb_file, "r") as f:
+                data = json.load(f)
+                # If any page (chat or config) checked in last 15 seconds, assume open
+                now = time.time()
+                for ts in data.values():
+                    if now - ts < 15: return True
+        except: pass
+        return False
+
+    # Auto-open browser in standalone mode ONLY if not already open
     def _delayed_browser():
         import time
         import webbrowser
         time.sleep(1.5)
-        webbrowser.open(f"http://127.0.0.1:7070/chat")
+        if not is_webui_already_open(root):
+            webbrowser.open(f"http://127.0.0.1:7070/chat")
+        else:
+            print("[WEB] WebUI already active in a tab (heartbeat detected). Skipping auto-open.")
     
     import threading
     threading.Thread(target=_delayed_browser, daemon=True).start()

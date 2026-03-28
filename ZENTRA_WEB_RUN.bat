@@ -1,5 +1,5 @@
 @echo off
-title ZENTRA — Native Web Server
+title ZENTRA — Native Web Server (Watchdog)
 color 0A
 
 echo.
@@ -13,14 +13,13 @@ if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
 
-echo [!] Avvio server Flask su porta 7070...
+echo [!] Avvio monitor di controllo in modalità WEB...
 echo [!] Apertura automatica del browser in corso...
 echo.
 
-:: Avvia il server direttamente nella finestra corrente. 
-:: Grazie all'aggiornamento di server.py, il browser si aprirà da solo.
-python -m plugins.web_ui.server
+:: Avviamo il monitor passando il modulo del server web standalone.
+python monitor.py --script plugins.web_ui.server
 
 echo.
-echo Server arrestato.
-pause
+echo [!] Watchdog terminato.
+timeout /t 5

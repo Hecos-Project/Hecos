@@ -1,6 +1,6 @@
 """
 MODULE: Simplified Resuscitation Monitor - Zentra Core
-DESCRIPTION: Monitors config.json for restarts.
+DESCRIPTION: Monitors config.json for restarts. Supports both main app and standalone web mode.
 """
 
 import subprocess
@@ -8,9 +8,10 @@ import time
 import os
 import sys
 import json
+import argparse
 
 # Path configuration
-MAIN_SCRIPT = "main.py"
+DEFAULT_MAIN_SCRIPT = "main.py"
 CONFIG_FILE = "config.json"
 
 def get_translator():
@@ -25,14 +26,14 @@ def get_translator():
     translations = {
         "it": {
             "critical_missing": "[MONITOR] CRITICAL: {file} not found.",
-            "starting": "[MONITOR] Starting Zentra...",
+            "starting": "[MONITOR] Starting Zentra ({script})...",
             "config_changed": "[MONITOR] config.json change detected. Terminating...",
             "reset_complete": "[MONITOR] Reset complete. Restarting in 2 seconds...",
             "error": "[MONITOR] Error: {error}"
         },
         "en": {
             "critical_missing": "[MONITOR] CRITICAL: {file} not found.",
-            "starting": "[MONITOR] Starting Zentra...",
+            "starting": "[MONITOR] Starting Zentra ({script})...",
             "config_changed": "[MONITOR] config.json change detected. Terminating...",
             "reset_complete": "[MONITOR] Reset complete. Restarting in 2 seconds...",
             "error": "[MONITOR] Error: {error}"
@@ -47,16 +48,21 @@ def get_file_timestamp(path):
         return os.path.getmtime(path)
     return 0
 
-def start_and_monitor():
-    if not os.path.exists(MAIN_SCRIPT):
-        print(t("critical_missing", file=MAIN_SCRIPT))
-        return False
+def start_and_monitor(script_to_run):
+    # For module-style runs (like plugins.web_ui.server), we don't check file existence directly if it contains dots
+    if "." not in script_to_run or not script_to_run.endswith(".py"):
+        if not os.path.exists(script_to_run) and not script_to_run.startswith("plugins."):
+            print(t("critical_missing", file=script_to_run))
+            return False
 
     last_config_time = get_file_timestamp(CONFIG_FILE)
-    print(t("starting"))
+    print(t("starting", script=script_to_run))
     
-    # Process startup
-    process = subprocess.Popen([sys.executable, MAIN_SCRIPT])
+    # Process startup: handle both direct scripts and module-style runs
+    if script_to_run.startswith("plugins."):
+        process = subprocess.Popen([sys.executable, "-m", script_to_run])
+    else:
+        process = subprocess.Popen([sys.executable, script_to_run])
 
     try:
         while process.poll() is None:
@@ -71,7 +77,7 @@ def start_and_monitor():
                     except: pass
                     last_config_time = current_config_time
                     continue
-                    
+                
                 print(f"\n{t('config_changed')}")
                 process.terminate()
                 # Wait for process to close (max 5 seconds)
@@ -86,7 +92,7 @@ def start_and_monitor():
                 
         # Natural exit:
         if process.returncode == 42:
-            return True # Restart on F6 request
+            return True # Restart on request code 42
         else:
             return False # Normal closure or different error, do not restart
                     
@@ -97,6 +103,28 @@ def start_and_monitor():
     return False
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Zentra Watchdog Monitor")
+    parser.add_argument("--script", default=DEFAULT_MAIN_SCRIPT, help="Script or module to monitor (e.g. main.py or plugins.web_ui.server)")
+    args = parser.parse_args()
+
+    print(f"\n{'-'*55}")
+    print(f" [MONITOR] Zentra Core Watchdog Active")
+    print(f" Target: {args.script}")
+    print(f"{'-'*55}\n")
+    
     while True:
-        success = start_and_monitor()
-        if not success: break
+        try:
+            should_restart = start_and_monitor(args.script)
+            if not should_restart:
+                print(f"\n[MONITOR] Zentra Core shut down normally. Exiting watchdog.")
+                break
+            
+            # If we are here, we need to restart
+            print(f"\n[MONITOR] Restarting Zentra Core in progress...")
+            time.sleep(1) # Brief pause
+        except KeyboardInterrupt:
+            print(f"\n[MONITOR] Watchdog terminated by user.")
+            break
+        except Exception as e:
+            print(f"\n[MONITOR] unexpected error in watchdog loop: {e}")
+            time.sleep(5) # Long pause before retry if something crashed

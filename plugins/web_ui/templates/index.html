@@ -679,11 +679,7 @@
         </select>
       </div>
     </div>
-    <div class="card" style="border-color: rgba(248,113,113,0.3);">
-      <div class="card-title" style="color: var(--red);">Power Control</div>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">Trigger a full system restart of Zentra Core and the Web Server.</p>
-      <button class="btn btn-secondary" style="background:rgba(248,113,113,0.15); border-color:var(--red); color:var(--red); width: 100%;" onclick="rebootSystem()">🔄 Riavvia Zentra Server</button>
-    </div>
+    <!-- Power Control section moved to footer -->
   </div>
 
   <!-- PLUGIN -->
@@ -753,7 +749,8 @@
 
 <div class="save-bar">
   <span id="save-msg"></span>
-  <button class="btn btn-secondary" onclick="location.reload()">{{ t('webui_conf_btn_reload') }}</button>
+  <button class="btn btn-secondary" style="background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); color:var(--red); margin-right:auto;" onclick="rebootSystem()">🔄 REBOOT SYSTEM</button>
+  <button class="btn btn-secondary" onclick="location.reload()">🔃 {{ t('webui_conf_btn_reload') }}</button>
   <button class="btn btn-primary" onclick="saveConfig()">{{ t('webui_conf_btn_save') }}</button>
 </div>
 

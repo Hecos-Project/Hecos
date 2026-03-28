@@ -81,8 +81,11 @@ class WebUIPlugin:
                 start_if_needed(self._cfg_mgr, _ROOT, port=self._port)
                 logger.info(f"[WEB_UI] Server started → {self._url}/chat")
                 self._server_started = True
-                if self._auto_open and not self._is_ui_active():
-                    threading.Timer(5.0, lambda: webbrowser.open(f"{self._url}/chat")).start()
+                if self._auto_open:
+                    if not self._is_ui_active():
+                        threading.Timer(5.0, lambda: webbrowser.open(f"{self._url}/chat")).start()
+                    else:
+                        logger.info("[WEB_UI] Web interface already active. Skipping auto-open.")
             except Exception as e:
                 logger.warning(f"[WEB_UI] Server startup error: {e}")
 
