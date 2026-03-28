@@ -34,8 +34,9 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 /* SIDEBAR */
 #sidebar { width:var(--sidebar-w); min-width:var(--sidebar-w); background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; z-index:10; overflow:hidden; }
 
-.sidebar-header { padding:22px 20px 18px; border-bottom:1px solid var(--border); }
-.logo { font-size:20px; font-weight:700; background:var(--accent-g); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.sidebar-header { padding:18px 20px 14px; border-bottom:1px solid var(--border); }
+.logo { height: 26px; display: block; }
+.logo img { height: 100%; display: block; }
 .logo-sub { font-size:11px; color:var(--muted); margin-top:2px; letter-spacing:.5px; text-transform:uppercase; }
 
 .sidebar-section { padding:16px 14px 8px; }
@@ -92,7 +93,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 #chat-area::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
 #welcome { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; flex:1; text-align:center; padding:40px; }
-.welcome-logo { font-size:56px; line-height:1; filter:drop-shadow(0 0 30px rgba(108,140,255,.5)); }
+.welcome-logo { height:110px; display: flex; align-items: center; justify-content: center; filter:drop-shadow(0 0 40px rgba(108,140,255,.4)); margin-bottom: 5px; }
+.welcome-logo img { height: 100%; object-fit: contain; }
 .welcome-title { font-size:28px; font-weight:700; background:var(--accent-g); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 .welcome-sub { font-size:15px; color:var(--muted); max-width:480px; line-height:1.6; }
 
@@ -150,7 +152,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 
 <div id="sidebar">
   <div class="sidebar-header">
-    <div class="logo">⚡ Zentra</div>
+    <div class="logo"><img src="/assets/Zentra_Core_Logo_NBG.png" alt="Zentra Logo"></div>
     <div class="logo-sub">{{ t('webui_chat_title') }}</div>
   </div>
   <div class="status-pill">
@@ -224,7 +226,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 
   <div id="chat-area">
     <div id="welcome">
-      <div class="welcome-logo">⚡</div>
+      <div class="welcome-logo"><img src="/assets/Zentra_Core_Logo_NBG.png" alt="Zentra Logo"></div>
       <div class="welcome-title">{{ t('webui_chat_welcome_title') }}</div>
       <div class="welcome-sub">{{ t('webui_chat_welcome_sub') }}</div>
       <div class="quick-chips">

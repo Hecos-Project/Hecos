@@ -12,6 +12,12 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
         return get_sm() if callable(get_sm) else get_sm
 
+    @app.route("/assets/<path:filename>")
+    def serve_assets(filename):
+        from flask import send_from_directory
+        assets_dir = os.path.join(root_dir, "assets")
+        return send_from_directory(assets_dir, filename)
+
 
     @app.route("/zentra/config/ui")
     def config_ui():
