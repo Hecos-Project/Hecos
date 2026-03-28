@@ -434,6 +434,15 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     cfg["auto_select"] = False
                 
                 _save_audio_config(cfg)
+
+                # Sync with running StateManager to prevent UI status from reverting
+                sm = _sm()
+                if sm:
+                    if "stt_source" in data:
+                        sm.stt_source = data["stt_source"]
+                    if "tts_destination" in data:
+                        sm.tts_destination = data["tts_destination"]
+
                 return jsonify({"ok": True})
             except Exception as exc:
                 logger.error(f"[WebUI] manage_audio_config POST error: {exc}")

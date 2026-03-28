@@ -620,6 +620,7 @@
           <input type="text" id="v-test-text" placeholder="Scrivi qualcosa per testare..." style="flex:1;">
           <button class="btn btn-secondary" onclick="testVoice('web')" title="Test nel browser">🌐</button>
           <button class="btn btn-secondary" onclick="testVoice('console')" title="Test su casse PC">💻</button>
+          <button id="v-test-stop" class="btn btn-secondary" style="display:none; background:rgba(248,113,113,0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()" title="Stop Voice">⏹</button>
         </div>
         <div id="v-test-status" style="font-size:11px; margin-top:5px; color:var(--accent);"></div>
       </div>
@@ -1158,10 +1159,13 @@ function buildAudioPayload() {
 }
 
 // ── Audio Device Logic ──
+let currentTestAudio = null;
 async function testVoice(mode) {
     const text = document.getElementById('v-test-text').value || "Test di Zentra Core, tutto funziona correttamente.";
     const sts = document.getElementById('v-test-status');
+    const stopBtn = document.getElementById('v-test-stop');
     sts.textContent = mode === 'web' ? "Generating..." : "Playing on console...";
+    if(stopBtn) stopBtn.style.display = 'inline-block';
     
     try {
         const r = await fetch('/api/audio/test', {
@@ -1172,19 +1176,48 @@ async function testVoice(mode) {
         if (data.ok) {
             if (mode === 'web' && data.url) {
                 sts.textContent = "Playing...";
-                const audio = new Audio(data.url);
-                audio.play();
-                audio.onended = () => { sts.textContent = "Done."; };
+                if (currentTestAudio) currentTestAudio.pause();
+                currentTestAudio = new Audio(data.url);
+                currentTestAudio.play();
+                currentTestAudio.onended = () => { 
+                    sts.textContent = "Done."; 
+                    if(stopBtn) stopBtn.style.display='none'; 
+                    currentTestAudio = null;
+                };
             } else {
                 sts.textContent = data.msg || "Done.";
+                if(mode === 'console') {
+                   // For console mode, we don't know exactly when it ends, but we'll hide stop after 5s or wait for manual stop
+                   setTimeout(() => { if(sts.textContent!=="Generating...") if(stopBtn) stopBtn.style.display='none'; }, 8000);
+                }
             }
         } else {
             sts.textContent = "Error: " + data.error;
+            if(stopBtn) stopBtn.style.display='none';
         }
     } catch(e) {
         sts.textContent = "Request failed.";
+        if(stopBtn) stopBtn.style.display='none';
     }
 }
+
+async function stopVoice() {
+    if (currentTestAudio) {
+        currentTestAudio.pause();
+        currentTestAudio.src = "";
+        currentTestAudio = null;
+    }
+    try { await fetch('/api/audio/stop', {method: 'POST'}); } catch(e) {}
+    const stopBtn = document.getElementById('v-test-stop');
+    if(stopBtn) stopBtn.style.display = 'none';
+    const sts = document.getElementById('v-test-status');
+    if(sts) sts.textContent = "Stopped.";
+}
+
+// Global ESC listener for Dashboard
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') stopVoice();
+});
 
 async function scanAudioDevices() {
     const sts = document.getElementById('audio-scan-status');
@@ -1389,6 +1422,9 @@ setInterval(refreshStatus, 3000);
 // Auto-save on any change to toggles or selects
 document.addEventListener('change', (e) => {
   if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+    if (e.target.id === 'sys-voice-status' && !e.target.checked) {
+       stopVoice();
+    }
     saveConfig(true);
   }
 });

@@ -217,6 +217,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
       <div class="topbar-chip" id="chip-ptt">⌨️ PTT: —</div>
       <div class="topbar-chip" id="chip-stt-source" style="font-size:10px;">IN: —</div>
       <div class="topbar-chip" id="chip-tts-dest" style="font-size:10px;">OUT: —</div>
+      <button id="stop-voice-btn" class="topbar-chip on" style="display:none; cursor:pointer; background:rgba(248,113,113,0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()">⏹ Stop Voice</button>
       <a href="/zentra/config/ui" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;background:var(--glass);border:1px solid var(--border);border-radius:6px;transition:all .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">⚙️ Config</a>
     </div>
   </div>
@@ -254,6 +255,7 @@ let currentTTSOn  = false;
 let currentPTTOn  = false;
 let currentSTTSource = 'system';
 let currentTTSDest   = 'web';
+let currentAudio     = null;
 
 const chatArea   = document.getElementById('chat-area');
 const userInput  = document.getElementById('user-input');
@@ -325,7 +327,10 @@ async function toggleTTS() {
   try {
     const r    = await fetch('/api/audio/toggle/tts', {method:'POST'});
     const data = await r.json();
-    if (data.ok) _applyTTSState(data.voice_status);
+    if (data.ok) {
+        _applyTTSState(data.voice_status);
+        if (!data.voice_status) stopVoice(); 
+    }
     else console.warn('[Audio] toggleTTS error:', data.error);
   } catch(e) { console.error('[Audio] toggleTTS failed', e); }
 }
@@ -418,10 +423,14 @@ async function sendMessage() {
       } else if(ev.type==='audio_ready') {
         tryLoadAudio(aiBubble);
       } else if(ev.type==='system_audio_playing') {
+        console.log("[Audio] System audio playing event received, showing Stop button");
         showStopVoiceBtn(true);
-        // Auto-hide the button after an estimated duration
-        const durationMs = Math.max(2000, (aiText.length * 85) + 2000);
-        setTimeout(() => showStopVoiceBtn(false), durationMs);
+        // Auto-hide the button after a generous timeout (60s) or when stopped
+        if (window._stopTimeout) clearTimeout(window._stopTimeout);
+        window._stopTimeout = setTimeout(() => {
+           console.log("[Audio] Auto-hiding Stop button (timeout)");
+           showStopVoiceBtn(false);
+        }, 60000);
       } else if(ev.type==='done'||ev.type==='error') {
         cursor.remove();
         aiBubble.innerHTML = renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
@@ -442,9 +451,6 @@ async function sendMessage() {
     isStreaming=false; sendBtn.disabled=false;
   }
 }
-
-// Global reference to the currently playing browser audio element
-let currentAudio = null;
 
 async function tryLoadAudio(bubble) {
   const url = '/api/audio?t=' + Date.now();
@@ -483,10 +489,11 @@ async function tryLoadAudio(bubble) {
 
 function showStopVoiceBtn(visible) {
   const btn = document.getElementById('stop-voice-btn');
-  if (btn) btn.style.display = visible ? 'block' : 'none';
+  if (btn) btn.style.display = visible ? 'inline-flex' : 'none';
 }
 
 async function stopVoice() {
+  console.log("[Audio] stopVoice triggered");
   // 1. Stop browser audio
   if (currentAudio) {
     currentAudio.pause();
@@ -501,6 +508,7 @@ async function stopVoice() {
 // ESC key: stop TTS anywhere in the chat
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
+    console.log("[Audio] ESC pressed");
     stopVoice();
   }
 });

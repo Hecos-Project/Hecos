@@ -61,7 +61,7 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
 
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
-        sess["queue"].put({"type": "done", "text": ""})
+
 
         # Save to persistent long-term memory
         try:
@@ -77,6 +77,9 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
             sess["queue"].put({"type": "audio_ready", "text": ""})
         elif audio_status == "system":
             sess["queue"].put({"type": "system_audio_playing", "text": ""})
+            
+        # Signal completion to UI only after audio events are queued
+        sess["queue"].put({"type": "done", "text": ""})
 
     except Exception as exc:
         _chat_log.error(f"[Chat] Inference error: {exc}")
@@ -150,9 +153,11 @@ def stop_voice_generation():
     global _current_piper_proc
     if _current_piper_proc is not None:
         try:
+            pid = _current_piper_proc.pid
+            _chat_log.info(f"[Audio] Killing active web Piper process {pid}...")
             _current_piper_proc.terminate()
-            _chat_log.info("[Audio] Terminated web-mode Piper generation.")
-        except: pass
+        except Exception as e:
+            _chat_log.error(f"[Audio] Failed to terminate web Piper: {e}")
         finally:
             _current_piper_proc = None
 

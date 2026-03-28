@@ -21,6 +21,6 @@
     "phrase_limit": 15,
     "push_to_talk": false,
     "ptt_hotkey": "ctrl+shift",
-    "stt_source": "web",
-    "tts_destination": "web"
+    "stt_source": "system",
+    "tts_destination": "system"
 }

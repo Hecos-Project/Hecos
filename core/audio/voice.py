@@ -33,11 +33,10 @@ def _play_wav(wav_path: str, device_index: int = -1):
     if SOUNDDEVICE_AVAILABLE:
         try:
             data, sample_rate = sf.read(wav_path, dtype="float32")
-            kwargs = {"samplerate": sample_rate, "blocking": True}
+            kwargs = {"samplerate": sample_rate, "blocking": False}
             if device_index >= 0:
                 kwargs["device"] = device_index
             sd.play(data, **kwargs)
-            # Duration is exact when blocking=True
             return len(data) / sample_rate
         except Exception as e:
             # More descriptive error for device index issues
@@ -111,20 +110,29 @@ def speak(text, state=None):
         if os.path.exists("risposta.wav"):
             actual_duration = _play_wav("risposta.wav", device_index=output_device)
 
-            # If sounddevice returned exact duration, use it; otherwise estimate
             if actual_duration is not None:
-                # sounddevice blocking=True already waited — just let finally run
-                pass
+                # sounddevice async path: wait exactly actual_duration, checking for stops
+                start_time = time.time()
+                while (time.time() - start_time) < actual_duration:
+                    if not is_speaking:  # API stop_voice() sets this to False
+                        sd.stop()
+                        break
+                    if keyboard.is_pressed("esc"):
+                        while msvcrt.kbhit(): msvcrt.getch()
+                        if state: state.last_voice_stop = time.time()
+                        stop_voice()
+                        break
+                    time.sleep(0.05)
             else:
                 # winsound async path: estimate duration then watch for ESC
                 estimated_duration = (len(clean_text) / 12) * length_scale + sentence_silence
                 start_time = time.time()
                 while (time.time() - start_time) < estimated_duration:
+                    if not is_speaking:
+                        break
                     if keyboard.is_pressed("esc"):
-                        while msvcrt.kbhit():
-                            msvcrt.getch()
-                        if state:
-                            state.last_voice_stop = time.time()
+                        while msvcrt.kbhit(): msvcrt.getch()
+                        if state: state.last_voice_stop = time.time()
                         stop_voice()
                         break
                     time.sleep(0.05)
@@ -140,22 +148,32 @@ def speak(text, state=None):
 
 def stop_voice():
     global is_speaking, _current_piper_proc
+    print("[VOICE] stop_voice() called - Attempting to silence all PC speaker audio...")
     
     # Kill generation if it's currently running
     if _current_piper_proc is not None:
         try:
+            print(f"[VOICE] Terminating Piper process {_current_piper_proc.pid}...")
             _current_piper_proc.terminate()
-        except:
-            pass
+        except Exception as e:
+            print(f"[VOICE] Error terminating Piper: {e}")
         finally:
             _current_piper_proc = None
 
     if SOUNDDEVICE_AVAILABLE:
         try:
+            print("[VOICE] Calling sd.stop()...")
             sd.stop()
-        except Exception:
-            pass
-    else:
+        except Exception as e:
+            print(f"[VOICE] sd.stop() error: {e}")
+
+    # Always try winsound purge on Windows in case of fallback
+    try:
         import winsound as ws
+        print("[VOICE] Calling winsound PURGE...")
         ws.PlaySound(None, ws.SND_PURGE)
+    except Exception:
+        pass
+    
     is_speaking = False
+    print("[VOICE] stop_voice() complete. is_speaking set to False.")
