@@ -180,8 +180,8 @@ def start_wake_sequence(config):
     print(f"{CIANO}      (Press ESC at any time to skip){RESET}")
     print(f"{CIANO}==================================================={RESET}\n")
     
-    # FAST BOOT CHECK (Set to true in config -> fast_boot)
-    fast_boot = config.get("fast_boot", False)
+    # FAST BOOT CHECK (Set to true in config -> system -> fast_boot)
+    fast_boot = config.get("system", {}).get("fast_boot", False)
     
     if check_bypass(): return True
     if not fast_boot:

@@ -50,6 +50,7 @@ class InputHandler:
         self.state.detected_voice_command = None
         
         # Indicates we are processing voice input
+        voice.stop_voice() # Stop any ongoing old speech
         self._execute_exchange(text_v, prefix, is_voice=True)
 
     def _process_text_input(self, testo, prefisso):
@@ -85,6 +86,7 @@ class InputHandler:
                     print(f"\n\033[93m[SYSTEM] Backend not ready ({raw_status}). Please wait...\033[0m")
                     return None, ""
             
+        voice.stop_voice() # Stop any ongoing old speech
         self._execute_exchange(testo, prefisso, is_voice=False)
         return "PROCESSED", ""
 
@@ -144,22 +146,36 @@ class InputHandler:
             logger.error(f"[INPUT] Error: {error[0]}")
         else:
             video_response, clean_voice_text = result
+            # Show response
+            interface.write_zentra(video_response)
+            
             # Save to memory
             brain_interface.save_message("user", text)
             brain_interface.save_message("assistant", video_response)
-            
-        # Show response
-            interface.write_zentra(video_response)
+
             if self.state.voice_status and clean_voice_text and self.state.tts_destination == 'system':
                 self.state.system_status = translator.t("speaking")
-                res = plugin_loader.get_formatted_capabilities()
                 interface.update_status_bar_in_place(
                     self.config.config, 
                     self.state.voice_status, 
                     self.state.listening_status, 
                     self.state.system_status
                 )
-                voice.speak(clean_voice_text, state=self.state)
+                
+                # NON-BLOCKING SPEECH: Run in a daemon thread so prompt returns immediately
+                def _speak_task():
+                    try:
+                        voice.speak(clean_voice_text, state=self.state)
+                    finally:
+                        # Once finished naturally or stopped, restore READY status
+                        if not self.state.system_processing: # only if we are still at prompt
+                            self.state.system_status = translator.t("ready")
+                            interface.update_status_bar_in_place(
+                                self.config.config, self.state.voice_status, 
+                                self.state.listening_status, self.state.system_status
+                            )
+                
+                threading.Thread(target=_speak_task, daemon=True).start()
                 # At the end of voice, returns to READY (already handled below)
 
         self.state.system_status = translator.t("ready")

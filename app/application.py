@@ -310,7 +310,7 @@ class ZentraApplication:
             self.state_manager.system_status
         )
 
-        if not config.get("fast_boot", False):
+        if not config.get("system", {}).get("fast_boot", False):
             self._show_boot_animation()
         
         self.state_manager.system_status = translator.t("ready")

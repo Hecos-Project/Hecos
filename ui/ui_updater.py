@@ -44,26 +44,88 @@ if os.name == 'nt':
                     ("srWindow", SMALL_RECT),
                     ("dwMaximumWindowSize", COORD)]
 
-def _update_dashboard_os(row_text, row_index):
+def is_viewport_at_bottom():
     """
-    Updates a specific row in the terminal using ANSI escape codes.
-    Does not use Win32 APIs for positioning to avoid scrolling conflicts in large buffers.
+    Checks if the terminal viewport is currently at the bottom of the buffer.
+    If the user has scrolled up to read history, this returns False.
     """
-    # \0337: Save cursor position (DEC)
-    # \033[{row_index};1H: Move to row;col
-    # \033[2K: Clear current line
-    # {row_text}: Write new content
-    # \0338: Restore cursor position (DEC)
-    sys.stdout.write(f"\0337\033[{row_index};1H\033[2K{row_text}\r\0338")
+    if os.name != 'nt':
+        return True # Fallback for non-Windows (complex to detect scroll without libs)
+        
+    try:
+        handle = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+        csbi = CONSOLE_SCREEN_BUFFER_INFO()
+        if kernel32.GetConsoleScreenBufferInfo(handle, ctypes.byref(csbi)):
+            # srWindow.Bottom is the zero-based index of the last visible row.
+            # dwCursorPosition.Y is where the next char will be written (usually the bottom).
+            # We allow 2 lines of margin for variations in prompt rendering.
+            return csbi.srWindow.Bottom >= csbi.dwCursorPosition.Y - 2
+    except:
+        pass
+    return True
+
+def _update_title_bar(row_text):
+    """Updates the terminal window title with just the app name and status guide."""
+    try:
+        # Keep title clean and simple as requested
+        title = "Zentra Core | [F1..F8 Menu]"
+        if os.name == 'nt':
+            ctypes.windll.kernel32.SetConsoleTitleW(title)
+        else:
+            sys.stdout.write(f"\033]2;{title}\007")
+            sys.stdout.flush()
+    except:
+        pass
+
+def _update_dashboard_os(text, row_index):
+    """
+    Intelligent Console Update.
+    - If user is scrolling history: Updates absolute buffer rows 1-3 (Safe).
+    - If user is at prompt: Updates Row 1-3 only if they are still visible.
+    - Prevents duplication in history and viewport jumps.
+    """
+    if os.name == 'nt':
+        try:
+            handle = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+            csbi = CONSOLE_SCREEN_BUFFER_INFO()
+            if kernel32.GetConsoleScreenBufferInfo(handle, ctypes.byref(csbi)):
+                # Detect if we are at the bottom of the prompt
+                at_bottom = csbi.srWindow.Bottom >= csbi.dwCursorPosition.Y - 2
+                
+                if at_bottom:
+                    # If we are at the bottom, Row 3 must be visible to be updated.
+                    # Typical terminal height is 30, so if prompt is > 30, Row 3 is gone.
+                    if csbi.dwCursorPosition.Y > 30:
+                        return # Scrolled off, stop console updates to keep history clean
+                
+                # Use absolute Buffer positioning (Safe, prevents jumps)
+                old_pos = csbi.dwCursorPosition
+                target_pos = COORD(0, row_index - 1)
+                kernel32.SetConsoleCursorPosition(handle, target_pos)
+                sys.stdout.write(text.rstrip() + "\033[K")
+                sys.stdout.flush()
+                kernel32.SetConsoleCursorPosition(handle, old_pos)
+                return
+        except: pass
+
+    # Non-Windows fallback
+    sys.stdout.write(f"\0337\033[{row_index};1H\033[K{text}\033[0m\0338")
     sys.stdout.flush()
 
 def _update_cycle(interval: float):
     global _updater_active
     while _updater_active:
         row = get_hardware_row(config=None, dashboard_mod=_dashboard_mod)
-        if _updater_active:  # Double check before writing to video
+        if _updater_active:
             with stdout_lock:
-                _update_dashboard_os(row, DASHBOARD_ROW)
+                # 1. Update title bar (Clean)
+                _update_title_bar("")
+                
+                # 2. RESTORED: Update dashboard in Row 4 of the screen
+                # ONLY if we are at the bottom to prevent scroll-jumps.
+                if is_viewport_at_bottom():
+                    # Row 4 is the hardware row in the five-row layout
+                    _update_dashboard_os(row, 4)
         
         # Wait in small intervals to allow prompt termination
         for _ in range(int(interval * 10)):

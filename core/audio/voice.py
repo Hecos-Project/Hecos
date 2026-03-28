@@ -11,6 +11,8 @@ import time
 import keyboard
 import msvcrt
 
+from core.logging import logger
+
 is_speaking = False
 _current_piper_proc = None
 
@@ -42,10 +44,10 @@ def _play_wav(wav_path: str, device_index: int = -1):
             # More descriptive error for device index issues
             error_msg = str(e)
             if "Invalid device" in error_msg or "PaErrorCode -9996" in error_msg:
-                print(f"[VOICE] sounddevice error: Invalid Output Device (index {device_index}). "
-                      f"Please check your Speaker selection in config_audio.json. Falling back to winsound...")
+                logger.info("VOICE", f"sounddevice error: Invalid Output Device (index {device_index}). "
+                            f"Please check your Speaker selection in config_audio.json. Falling back to winsound...")
             else:
-                print(f"[VOICE] sounddevice playback error: {e} — falling back to winsound")
+                logger.debug("VOICE", f"sounddevice playback error: {e} — falling back to winsound")
             # Fall through to winsound below
     # Fallback: winsound (no device selection, async)
     import winsound as ws
@@ -75,7 +77,7 @@ def speak(text, state=None):
         model_path       = audio_cfg.get("onnx_model", r"C:\piper\it_IT-aurora-medium.onnx")
         output_device    = audio_cfg.get("output_device_index", -1)
     except Exception as e:
-        print(f"[VOICE] Configuration error: {e}")
+        logger.debug("VOICE", f"Configuration error: {e}")
         length_scale, noise_scale, noise_w, sentence_silence = 1.0, 0.667, 0.8, 0.2
         piper_path, model_path, output_device = r"C:\piper\piper.exe", r"C:\piper\it_IT-aurora-medium.onnx", -1
 
@@ -106,6 +108,10 @@ def speak(text, state=None):
         _current_piper_proc = proc
         proc.communicate(input=clean_text)
         _current_piper_proc = None
+
+        if not is_speaking:
+            logger.debug("VOICE", "Generation interrupted by user.")
+            return
 
         if os.path.exists("risposta.wav"):
             actual_duration = _play_wav("risposta.wav", device_index=output_device)
@@ -138,7 +144,7 @@ def speak(text, state=None):
                     time.sleep(0.05)
 
     except Exception as e:
-        print(f"[VOICE] Piper execution error: {e}")
+        logger.info("VOICE", f"Piper execution error: {e}")
     finally:
         time.sleep(0.3)
         is_speaking = False
@@ -148,32 +154,32 @@ def speak(text, state=None):
 
 def stop_voice():
     global is_speaking, _current_piper_proc
-    print("[VOICE] stop_voice() called - Attempting to silence all PC speaker audio...")
+    logger.debug("VOICE", "stop_voice() called - Attempting to silence all PC speaker audio...")
     
     # Kill generation if it's currently running
     if _current_piper_proc is not None:
         try:
-            print(f"[VOICE] Terminating Piper process {_current_piper_proc.pid}...")
+            logger.debug("VOICE", f"Terminating Piper process {_current_piper_proc.pid}...")
             _current_piper_proc.terminate()
         except Exception as e:
-            print(f"[VOICE] Error terminating Piper: {e}")
+            logger.debug("VOICE", f"Error terminating Piper: {e}")
         finally:
             _current_piper_proc = None
 
     if SOUNDDEVICE_AVAILABLE:
         try:
-            print("[VOICE] Calling sd.stop()...")
+            logger.debug("VOICE", "Calling sd.stop()...")
             sd.stop()
         except Exception as e:
-            print(f"[VOICE] sd.stop() error: {e}")
+            logger.debug("VOICE", f"sd.stop() error: {e}")
 
     # Always try winsound purge on Windows in case of fallback
     try:
         import winsound as ws
-        print("[VOICE] Calling winsound PURGE...")
+        logger.debug("VOICE", "Calling winsound PURGE...")
         ws.PlaySound(None, ws.SND_PURGE)
     except Exception:
         pass
     
     is_speaking = False
-    print("[VOICE] stop_voice() complete. is_speaking set to False.")
+    logger.debug("VOICE", "stop_voice() complete. is_speaking set to False.")

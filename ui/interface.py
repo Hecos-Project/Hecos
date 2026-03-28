@@ -94,89 +94,72 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
     setup_console()
     
     # MODIFIED: Reads model from active backend with automatic fallback
+def show_complete_ui(config, voice_status, listening_status, system_status="READY", model="gemini/gemini-flash-lite-latest"):
+    """
+    Clears the screen and prints the header (Rows 1-4) in the console buffer.
+    Indices: R1=Menu, R2=Status, R3=Hardware.
+    """
     from app.model_manager import ModelManager
-    backend_type, model = ModelManager.get_effective_model_info(config)
+    from core.i18n import translator
+    import shutil
+    import re
     
-    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
-    mic = "ON" if listening_status else "OFF"
-    spk = "ON" if voice_status else "OFF"
+    # 1. CLEAR SCREEN (Ensures Row 1 of Viewport is Row 1 of the header)
+    os.system('cls' if os.name == 'nt' else 'clear')
     
     import shutil
-    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    L = 90
+    try:
+        L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    except: pass
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     
-    # 1. BARRA SUPERIORE (TITOLO) - NERO VERO
-    titolo = translator.t("welcome", version=version.VERSION).center(L)
-    print(f"\033[46m\033[30m{titolo}\033[0m")
+    # --- ROW 1: TITLE BAR (CYAN) ---
+    from core.system.version import get_version_string
+    titolo = f" Zentra Core {get_version_string()} "
+    print(f"\033[46m\033[30m{titolo.center(L)}\033[0m")
     
-    # 2. DYNAMIC STATUS BAR
-    mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
-    mic_len = 2 if listening_status else 3
-    spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
-    spk_len = 2 if voice_status else 3
-    
-    is_ptt = config.get("listening", {}).get("push_to_talk", False)
-    ptt_str = "ON" if is_ptt else f"{Fore.RED}OFF{Fore.WHITE}"
-    ptt_len = 2 if is_ptt else 3
-    
-    # Attempts to translate status if it's a known key, otherwise uses as is
-    status_translated = translate_status(system_status)
-    status_color = get_status_color(system_status)
-    
-    # Create status string with its color
-    info_status_raw = translator.t("system_status", status="{ST_PLACEHOLDER}")
-    info_status = info_status_raw.replace("{ST_PLACEHOLDER}", f"{status_color}{status_translated}{Fore.WHITE}")
-    
-    # Calcolo lunghezza visibile per il padding
-    header_mod = translator.t("header_model")
-    header_ani = translator.t("header_soul")
-    header_mic = translator.t("header_mic")
-    header_voc = translator.t("header_voice")
-    
-    # Dynamic Truncation
-    visible_status_text = translator.t("system_status", status=status_translated)
-    base_len = len(f" {visible_status_text} | {header_mod}:  | {header_ani}:  | {header_mic}:  | {header_voc}:  | PTT:  ") + mic_len + spk_len + ptt_len
-    
-    avail_space = max(20, L - base_len)
-    space_mod = avail_space // 2
-    space_ani = avail_space - space_mod
-    
-    if len(model) > space_mod: model = model[:max(3, space_mod-2)] + ".."
-    if len(soul) > space_ani: soul = soul[:max(3, space_ani-2)] + ".."
-    
-    visible_len = base_len + len(model) + len(soul)
-    pad_left = max(0, L - visible_len) // 2
-    pad_right = max(0, L - visible_len) - pad_left
-    
-    info_status_colored = f" {info_status} | {header_mod}: {model} | {header_ani}: {soul} | {header_mic}: {mic_str} | {header_voc}: {spk_str} | PTT: {ptt_str} "
-    print(f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_status_colored}{' '*pad_right}{Style.RESET_ALL}")
-    
-    # 3. HARDWARE BAR (DYNAMIC)
-    hw_row = get_hardware_row(config, dashboard_mod=None)
-    print(hw_row)
-    
-    # 4. FOOTER COMANDI RAPIDI
-    print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
+    # --- ROW 2: COMMANDS MENU ---
     comandi = (
         f" {translator.t('menu_help')} | {translator.t('menu_models')} | "
         f"{translator.t('menu_persona')} | {translator.t('menu_mic')} | "
         f"{translator.t('menu_voice')} | {translator.t('menu_reboot')} | "
         f"{translator.t('menu_config')} | PTT (F8) | {translator.t('menu_exit')} "
     )
-    # Truncate if comandi size is larger than L
-    import re
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    visible_cmd_len = len(ansi_escape.sub('', comandi))
-    if visible_cmd_len > L:
-        # If still too long, fall back to something minimalist
+    if len(ansi_escape.sub('', comandi)) > L:
         comandi = " F1..F7: Menu | F8: PTT | ESC: Exit "
     print(f"{Style.DIM}{comandi.center(L)}{Style.RESET_ALL}")
+    
+    # --- ROW 3: STATUS BAR (BLUE) ---
+    backend_type, model_eff = ModelManager.get_effective_model_info(config)
+    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
+    mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    is_ptt = config.get("listening", {}).get("push_to_talk", False)
+    ptt_str = "ON" if is_ptt else f"{Fore.RED}OFF{Fore.WHITE}"
+    
+    status_translated = translate_status(system_status)
+    status_color = get_status_color(system_status)
+    info_status = translator.t("system_status", status="{S}").replace("{S}", f"{status_color}{status_translated}{Fore.WHITE}")
+    header_mod = translator.t("header_model")
+    header_ani = translator.t("header_soul")
+    header_mic = translator.t("header_mic")
+    header_voc = translator.t("header_voice")
+
+    info_status_colored = f" {info_status} | {header_mod}: {model_eff} | {header_ani}: {soul} | {header_mic}: {mic_str} | {header_voc}: {spk_str} | PTT: {ptt_str} "
+    vis_len = len(ansi_escape.sub('', info_status_colored))
+    p_left = max(0, L - vis_len) // 2
+    p_right = max(0, L - vis_len) - p_left
+    print(f"{Back.BLUE}{Fore.WHITE}{' '*p_left}{info_status_colored}{' '*p_right}{Style.RESET_ALL}")
+    
+    # --- ROW 4: HARDWARE BAR (CYAN) ---
+    hw_row = get_hardware_row(config, dashboard_mod=None)
+    print(hw_row)
+    
+    # DIVIDER line
     print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
     
-    # 5. IMPOSTAZIONE AREA DI SCROLLING (Dalla riga 7 alla fine)
-    # Questo blocca le prime 6 righe in alto, impedendo che scorrano via.
-    sys.stdout.write("\033[7;r")
-    # Posiziona il cursore alla riga 7 (inizio area chat)
-    sys.stdout.write("\033[7;1H")
+    sys.stdout.write("\n")
     sys.stdout.flush()
     
 def get_hardware_row(config=None, dashboard_mod=None):
@@ -235,56 +218,45 @@ def get_hardware_row(config=None, dashboard_mod=None):
     return f"{Fore.CYAN}{info_hw[:500]}{Style.RESET_ALL}"
 
 def update_status_bar_in_place(config, voice_status, listening_status, system_status="READY"):
-    """Updates only row 2 (Status Bar) without clearing the screen."""
-    from ui.ui_updater import _update_dashboard_os, stdout_lock
+    """Updates the status bar (Row 3) in-place without title-bar bloat."""
+    from ui.ui_updater import _update_dashboard_os, stdout_lock, _update_title_bar
     from colorama import Back, Fore, Style
     from app.model_manager import ModelManager
+    import re
     
+    # 1. Update Title Bar (Keep it clean: only app name)
+    _update_title_bar("")
+    
+    # 2. Rebuild the Status Bar row
     backend_type, model = ModelManager.get_effective_model_info(config)
     soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
     
     mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
-    mic_len = 2 if listening_status else 3
     spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
-    spk_len = 2 if voice_status else 3
-    
     is_ptt = config.get("listening", {}).get("push_to_talk", False)
     ptt_str = "ON" if is_ptt else f"{Fore.RED}OFF{Fore.WHITE}"
-    ptt_len = 2 if is_ptt else 3
     
     import shutil
     L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
     status_translated = translate_status(system_status)
     status_color = get_status_color(system_status)
     
-    info_status_raw = translator.t("system_status", status="{ST_PLACEHOLDER}")
-    info_status = info_status_raw.replace("{ST_PLACEHOLDER}", f"{status_color}{status_translated}{Fore.WHITE}")
-    
+    info_status = translator.t("system_status", status="{S}").replace("{S}", f"{status_color}{status_translated}{Fore.WHITE}")
     header_mod = translator.t("header_model")
     header_ani = translator.t("header_soul")
     header_mic = translator.t("header_mic")
     header_voc = translator.t("header_voice")
     
-    # Dynamic Truncation
-    visible_status_text = translator.t("system_status", status=status_translated)
-    base_len = len(f" {visible_status_text} | {header_mod}:  | {header_ani}:  | {header_mic}:  | {header_voc}:  | PTT:  ") + mic_len + spk_len + ptt_len
-    
-    avail_space = max(20, L - base_len)
-    space_mod = avail_space // 2
-    space_ani = avail_space - space_mod
-    
-    if len(model) > space_mod: model = model[:max(3, space_mod-2)] + ".."
-    if len(soul) > space_ani: soul = soul[:max(3, space_ani-2)] + ".."
-    
-    visible_len = base_len + len(model) + len(soul)
+    info_status_colored = f" {info_status} | {header_mod}: {model} | {header_ani}: {soul} | {header_mic}: {mic_str} | {header_voc}: {spk_str} | PTT: {ptt_str} "
+    visible_len = len(re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', info_status_colored))
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
-    info_status_colored = f" {info_status} | {header_mod}: {model} | {header_ani}: {soul} | {header_mic}: {mic_str} | {header_voc}: {spk_str} | PTT: {ptt_str} "
     formatted_row = f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_status_colored}{' '*pad_right}{Style.RESET_ALL}"
     
     with stdout_lock:
-        _update_dashboard_os(formatted_row, 2)
+        # Write to Row 3 of the viewport (Safe absolute update)
+        _update_dashboard_os(formatted_row, 3)
 
     
 def show_models_menu(categorized_models, current):

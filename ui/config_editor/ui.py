@@ -27,12 +27,44 @@ RESET = '\033[0m'
 
 class UIManager:
     def __init__(self, param_list, getter, setter, command_handler=None):
-        self.param_list = param_list
         self.get_value = getter
         self.set_value = setter
-        self.command_handler = command_handler  # callable(command: str) -> bool
+        self.command_handler = command_handler
+        
+        # Define visual order priority
+        self.order_standard = [
+            "🔊 AUDIO DEVICES",
+            translator.t("section_models"), 
+            translator.t("section_ia"),
+            translator.t("section_llm"), 
+            "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
+            translator.t("section_generation"), 
+            translator.t("section_voice"), 
+            "🌐 BRIDGE WEBUI",
+            translator.t("section_listening"), 
+            translator.t("section_filters"), 
+            translator.t("section_logging"), 
+            translator.t("section_cognition"),
+            translator.t("section_system"),
+            translator.t("section_routing")
+        ]
+        
+        # Helper to get priority index
+        def get_priority(p):
+            title = self._get_section_title(p)
+            try:
+                return self.order_standard.index(title)
+            except ValueError:
+                if title.startswith("🔌"): return 200 # Plugins last
+                if title.startswith("🦋") or title.startswith("🕊️") or title.startswith("🦙") or title.startswith("🐲"): 
+                    return 150 # Legacy models
+                return 100 # Other
+                
+        # Sort param_list to MATCH the visual order
+        self.param_list = sorted(param_list, key=get_priority)
+        
         self.cursor = 0
-        self.scroll_top = 0      # Indice della riga in alto nel viewport
+        self.scroll_top = 0
         self.modified = False
         self.first_draw = True
 
@@ -297,42 +329,16 @@ class UIManager:
         intestazione = f" {get_version_string()} - PANNELLO DI CONTROLLO "
         outprint(f"\033[44m\033[97m{intestazione.center(PANEL_WIDTH)}\033[0m")
         
-        # 1. Genera lista piatta di "righe renderizzabili"
+        # 1. Generate flat list of renderable rows based on the ALREADY SORTED list
         all_rows = [] 
-        sections = OrderedDict()
+        current_header = None
+        
         for i, param in enumerate(self.param_list):
             title = self._get_section_title(param)
-            sections.setdefault(title, []).append((i, param))
-        
-        order_standard = [
-            "🔊 AUDIO DEVICES",
-            translator.t("section_models"), 
-            translator.t("section_ia"),
-            translator.t("section_llm"), 
-            "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
-            translator.t("section_generation"), 
-            translator.t("section_voice"), 
-            "🌐 BRIDGE WEBUI",
-            translator.t("section_listening"), 
-            translator.t("section_filters"), 
-            translator.t("section_logging"), 
-            translator.t("section_system")
-        ]
-        
-        def add_section_to_rows(title, params_with_idx):
-            all_rows.append(('header', title, None))
-            for p_idx, p in params_with_idx:
-                all_rows.append(('param', p, p_idx))
-
-        # Aggiungi sezioni standard
-        for title in order_standard:
-            if title in sections:
-                add_section_to_rows(title, sections[title])
-                sections.pop(title, None)
-        
-        # Aggiungi plugin
-        for title, params in sections.items():
-            add_section_to_rows(title, params)
+            if title != current_header:
+                all_rows.append(('header', title, None))
+                current_header = title
+            all_rows.append(('param', param, i))
 
         # 2. Gestione scorrimento (Viewport)
         viewport_height = min(len(all_rows), safe_limit)
