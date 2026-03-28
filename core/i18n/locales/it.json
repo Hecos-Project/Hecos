@@ -7,6 +7,7 @@
         "header_soul": "ANIMA",
         "header_mic": "MIC",
         "header_voice": "VOCE",
+        "ptt_hint": "PREMI CONTROL+SHIFT PER PARLARE",
         "hardware_line": "CPU: {cpu} | RAM: {ram} | GPU: {gpu} | VRAM: {vram} | BACKEND: {backend}",
         "menu_help": "F1: Guida",
         "menu_models": "F2: Modelli",

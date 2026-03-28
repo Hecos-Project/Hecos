@@ -159,7 +159,8 @@ class InputHandler:
                     self.config.config, 
                     self.state.voice_status, 
                     self.state.listening_status, 
-                    self.state.system_status
+                    self.state.system_status,
+                    ptt_status=self.state.push_to_talk
                 )
                 
                 # NON-BLOCKING SPEECH: Run in a daemon thread so prompt returns immediately
@@ -172,7 +173,8 @@ class InputHandler:
                             self.state.system_status = translator.t("ready")
                             interface.update_status_bar_in_place(
                                 self.config.config, self.state.voice_status, 
-                                self.state.listening_status, self.state.system_status
+                                self.state.listening_status, self.state.system_status,
+                                ptt_status=self.state.push_to_talk
                             )
                 
                 threading.Thread(target=_speak_task, daemon=True).start()
@@ -182,7 +184,8 @@ class InputHandler:
         self.state.system_processing = False
         # Force a status bar refresh to remove "THINKING" or "SPEAKING"
         interface.update_status_bar_in_place(
-            self.config.config, self.state.voice_status, self.state.listening_status, self.state.system_status
+            self.config.config, self.state.voice_status, self.state.listening_status, self.state.system_status,
+            ptt_status=self.state.push_to_talk
         )
         # Restore prompt for next input
         sys.stdout.write(prefix)

@@ -87,14 +87,14 @@ def check_ollama():
     except:
         return False
 
-def show_complete_ui(config, voice_status, listening_status, system_status="READY"):
+def show_complete_ui(config, voice_status, listening_status, system_status="READY", ptt_status=False):
     """ Draws the complete interface: Blue Bar (Status), Hardware Bar (placeholder) and Footer.
         The hardware bar will be updated in real-time by ui_updater.
     """
     setup_console()
     
     # MODIFIED: Reads model from active backend with automatic fallback
-def show_complete_ui(config, voice_status, listening_status, system_status="READY", model="gemini/gemini-flash-lite-latest"):
+def show_complete_ui(config, voice_status, listening_status, system_status="READY", model="gemini/gemini-flash-lite-latest", ptt_status=False):
     """
     Clears the screen and prints the header (Rows 1-4) in the console buffer.
     Indices: R1=Menu, R2=Status, R3=Hardware.
@@ -135,8 +135,7 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
     soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
     mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
-    is_ptt = config.get("listening", {}).get("push_to_talk", False)
-    ptt_str = "ON" if is_ptt else f"{Fore.RED}OFF{Fore.WHITE}"
+    ptt_str = "ON" if ptt_status else f"{Fore.RED}OFF{Fore.WHITE}"
     
     status_translated = translate_status(system_status)
     status_color = get_status_color(system_status)
@@ -156,8 +155,13 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
     hw_row = get_hardware_row(config, dashboard_mod=None)
     print(hw_row)
     
-    # DIVIDER line
-    print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
+    # --- ROW 5: HINT BAR (Yellow) if PTT is ON ---
+    if ptt_status:
+        hint_text = f" {translator.t('ptt_hint')} "
+        print(f"{Fore.YELLOW}{hint_text.center(L)}{Style.RESET_ALL}")
+    else:
+        # Divider line
+        print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
     
     sys.stdout.write("\n")
     sys.stdout.flush()
@@ -217,7 +221,7 @@ def get_hardware_row(config=None, dashboard_mod=None):
     # A simple but effective way: ensure the text doesn't exceed a safe width.
     return f"{Fore.CYAN}{info_hw[:500]}{Style.RESET_ALL}"
 
-def update_status_bar_in_place(config, voice_status, listening_status, system_status="READY"):
+def update_status_bar_in_place(config, voice_status, listening_status, system_status="READY", ptt_status=False):
     """Updates the status bar (Row 3) in-place without title-bar bloat."""
     from ui.ui_updater import _update_dashboard_os, stdout_lock, _update_title_bar
     from colorama import Back, Fore, Style
@@ -233,8 +237,7 @@ def update_status_bar_in_place(config, voice_status, listening_status, system_st
     
     mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
-    is_ptt = config.get("listening", {}).get("push_to_talk", False)
-    ptt_str = "ON" if is_ptt else f"{Fore.RED}OFF{Fore.WHITE}"
+    ptt_str = "ON" if ptt_status else f"{Fore.RED}OFF{Fore.WHITE}"
     
     import shutil
     L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
@@ -257,6 +260,15 @@ def update_status_bar_in_place(config, voice_status, listening_status, system_st
     with stdout_lock:
         # Write to Row 3 of the viewport (Safe absolute update)
         _update_dashboard_os(formatted_row, 3)
+        
+        # Update Row 5: Hint or Divider
+        if ptt_status:
+            hint_text = f" {translator.t('ptt_hint')} "
+            formatted_hint = f"{Fore.YELLOW}{hint_text.center(L)}{Style.RESET_ALL}"
+            _update_dashboard_os(formatted_hint, 5)
+        else:
+            divider = f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}"
+            _update_dashboard_os(divider, 5)
 
     
 def show_models_menu(categorized_models, current):

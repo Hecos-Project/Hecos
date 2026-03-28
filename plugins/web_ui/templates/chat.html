@@ -302,6 +302,16 @@ function _applyPTTState(on) {
   const chip = document.getElementById('chip-ptt');
   chip.textContent = '⌨️ PTT: ' + label;
   chip.className   = 'topbar-chip ' + (on ? 'on' : 'off');
+  
+  // Dynamic hint near the input area
+  const hintEle = document.querySelector('.input-hint');
+  if (hintEle) {
+    if (on) {
+      hintEle.innerHTML = `{{ t('webui_chat_hint') }} <span style="color:var(--accent); font-weight:600;">· {{ t('ptt_hint') }}</span>`;
+    } else {
+      hintEle.textContent = `{{ t('webui_chat_hint') }}`;
+    }
+  }
 }
 
 function _applyRoutingState(stt, tts) {

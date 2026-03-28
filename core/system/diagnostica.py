@@ -219,7 +219,7 @@ def start_wake_sequence(config):
     from core.system.greeting import get_spoken_greeting
     intro_greeting_voc = get_spoken_greeting(config)
  
-    # Print in UI locale, speak in VOICE language
+    # Print in UI locale, speak in VOICE language (Always at startup)
     print_and_speak(f"{VERDE}[SYSTEM] {RESET}" + translator.t("intro_greeting"), intro_greeting_voc)
     
     while msvcrt.kbhit():

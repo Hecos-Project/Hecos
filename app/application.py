@@ -155,7 +155,8 @@ class ZentraApplication:
             self.config_manager.config, 
             self.state_manager.voice_status, 
             self.state_manager.listening_status, 
-            self.state_manager.system_status
+            self.state_manager.system_status,
+            ptt_status=self.state_manager.push_to_talk
         )
 
 
@@ -190,7 +191,8 @@ class ZentraApplication:
             self.config_manager.config,
             self.state_manager.voice_status,
             self.state_manager.listening_status,
-            self.state_manager.system_status
+            self.state_manager.system_status,
+            ptt_status=self.state_manager.push_to_talk
         )
 
     def _handle_f2(self):
@@ -307,7 +309,8 @@ class ZentraApplication:
             config,
             self.state_manager.voice_status,
             self.state_manager.listening_status,
-            self.state_manager.system_status
+            self.state_manager.system_status,
+            ptt_status=self.state_manager.push_to_talk
         )
 
         if not config.get("system", {}).get("fast_boot", False):
@@ -318,7 +321,8 @@ class ZentraApplication:
             config,
             self.state_manager.voice_status,
             self.state_manager.listening_status,
-            self.state_manager.system_status
+            self.state_manager.system_status,
+            ptt_status=self.state_manager.push_to_talk
         )
 
         if dashboard_mod:
@@ -368,14 +372,16 @@ class ZentraApplication:
                         config,
                         self.state_manager.voice_status,
                         self.state_manager.listening_status,
-                        self.state_manager.system_status
+                        self.state_manager.system_status,
+                        ptt_status=self.state_manager.push_to_talk
                     )
                 else:
                     interface.show_complete_ui(
                         config,
                         self.state_manager.voice_status,
                         self.state_manager.listening_status,
-                        self.state_manager.system_status
+                        self.state_manager.system_status,
+                        ptt_status=self.state_manager.push_to_talk
                     )
                 
                 if evento in menu_schermo_intero:
