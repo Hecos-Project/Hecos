@@ -163,6 +163,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 @media(max-width: 700px) { #sidebar { display:none; } }
 </style>
 {% include 'modules/chat_message_actions.html' %}
+{% include 'modules/chat_image_viewer.html' %}
 </head>
 <body>
 
@@ -427,17 +428,45 @@ function renderMarkdown(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>');
+  // Process AI image tags [[IMG:filename]]
+  if (typeof window.processAiImages === 'function') html = window.processAiImages(html);
+  return html;
 }
 
 async function sendMessage() {
   const text = userInput.value.trim();
   if(!text || isStreaming) return;
 
+  // Collect any pending document/image attachments
+  let attachCtx = '';
+  let attachImgs = [];
+  if (typeof window.getAttachmentContext === 'function') {
+    const attachData = await window.getAttachmentContext();
+    attachCtx = attachData.context || '';
+    attachImgs = attachData.images || [];
+  }
+  const fullMessage = text + attachCtx;
+
   showStopVoiceBtn(false);
-  
   hideWelcome();
   userInput.value=''; autoResize(userInput);
-  addBubble('user', text);
+  
+  // Format user text with images for the UI
+  let userHtml = text;
+  if (attachImgs.length > 0) {
+    let imgHtml = '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">';
+    attachImgs.forEach(img => {
+      imgHtml += `<img src="data:${img.mime_type};base64,${img.data_b64}" style="max-height:100px; border-radius:6px; background:#0d0e14; border:1px solid rgba(255,255,255,0.1); cursor:pointer;" onclick="if(window.openLightbox) window.openLightbox(this.src)" title="${img.name}">`;
+    });
+    imgHtml += '</div>';
+    userHtml = imgHtml + userHtml;
+  }
+  
+  const { bubble: userBubble } = addBubble('user', userHtml);
+  // Re-attach actions manually since addBubble escapes HTML normally
+  userBubble.innerHTML = userHtml;
+  if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(userBubble);
+
   const { bubble: aiBubble } = addBubble('ai', '', 'ai-'+Date.now());
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
@@ -448,7 +477,7 @@ async function sendMessage() {
   try {
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message:text, history})
+      body: JSON.stringify({message: fullMessage, history, images: attachImgs})
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
@@ -492,6 +521,63 @@ async function sendMessage() {
     isStreaming=false; sendBtn.disabled=false;
   }
 }
+
+// Used by regenerate function to resend a message without reading input/attachments
+window.sendInternalMessage = async function(text) {
+  if(!text || isStreaming) return;
+  
+  showStopVoiceBtn(false);
+  hideWelcome();
+  const { bubble: aiBubble } = addBubble('ai', '', 'ai-'+Date.now());
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  aiBubble.appendChild(cursor);
+  sendBtn.disabled = true; isStreaming = true;
+  let aiText = '';
+
+  try {
+    const res = await fetch('/api/chat', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      // Note: regeneration relies on the history being sent as-is
+      body: JSON.stringify({message: text, history: history, images: []})
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error||'Server error');
+
+    const evtSrc = new EventSource(`/api/stream/${data.session_id}`);
+    evtSrc.onmessage = (e) => {
+      const ev = JSON.parse(e.data);
+      if(ev.type==='token') {
+        aiText += ev.text;
+        aiBubble.innerHTML = renderMarkdown(aiText);
+        aiBubble.appendChild(cursor);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      } else if(ev.type==='audio_ready') {
+        tryLoadAudio(aiBubble);
+      } else if(ev.type==='system_audio_playing') {
+        showStopVoiceBtn(true);
+        if (window._stopTimeout) clearTimeout(window._stopTimeout);
+        window._stopTimeout = setTimeout(() => showStopVoiceBtn(false), 60000);
+      } else if(ev.type==='done'||ev.type==='error') {
+        cursor.remove();
+        aiBubble.innerHTML = renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
+        evtSrc.close();
+        history.push({role:'user',content:text});
+        history.push({role:'assistant',content:aiText});
+        isStreaming=false; sendBtn.disabled=false;
+      }
+    };
+    evtSrc.onerror = () => {
+      cursor.remove();
+      if(!aiText) aiBubble.textContent='❌ {{ t("webui_chat_err_connected") }}';
+      evtSrc.close(); isStreaming=false; sendBtn.disabled=false;
+    };
+  } catch(err) {
+    cursor.remove();
+    aiBubble.textContent = '❌ {{ t("webui_chat_err_general") }} ' + err.message;
+    isStreaming=false; sendBtn.disabled=false;
+  }
+};
 
 async function tryLoadAudio(bubble) {
   const url = '/api/audio?t=' + Date.now();
@@ -640,5 +726,6 @@ setInterval(() => {
 </script>
 <script src="/static/js/chat_message_actions.js"></script>
 <script src="/static/js/chat_input_toolbar.js"></script>
+<script src="/static/js/chat_image_viewer.js"></script>
 </body>
 </html>

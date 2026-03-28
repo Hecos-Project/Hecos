@@ -1,0 +1,127 @@
+{#
+  MODULE: chat_image_viewer.html
+  PURPOSE: CSS for AI image rendering in chat and drag-to-folder support
+  This file is included in the <head> of chat.html via Jinja2 {% include %}
+#}
+<style>
+/* ── Chat Images (sent by AI) ─────────────────────────────────── */
+.chat-img-wrap {
+  position: relative;
+  display: inline-block;
+  margin: 8px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  cursor: default;
+  max-width: 420px;
+}
+
+.chat-img-wrap img {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #0d0e14;
+}
+
+/* ── Hover overlay with actions ─────────────────────────────────── */
+.chat-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.75) 100%);
+  opacity: 0;
+  transition: opacity .2s;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.chat-img-wrap:hover .chat-img-overlay { opacity: 1; }
+
+.img-action-btn {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background .15s;
+  font-family: inherit;
+}
+.img-action-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* Dragging state */
+.chat-img-wrap.dragging {
+  opacity: 0.5;
+  transform: scale(0.97);
+  transition: transform .1s, opacity .1s;
+}
+
+/* ── Folder Drop Zone (toast-like banner) ────────────────────────── */
+#img-drop-banner {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8500;
+  background: rgba(108,140,255,.15);
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  padding: 16px 32px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+#img-drop-banner.active { display: block; }
+#img-drop-banner .idb-icon { font-size: 28px; }
+#img-drop-banner .idb-label { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+
+/* ── Lightbox ───────────────────────────────────────────────────── */
+#img-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0,0,0,0.92);
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+#img-lightbox.open { display: flex; }
+#img-lightbox img {
+  max-width: 92vw;
+  max-height: 92vh;
+  border-radius: 8px;
+  object-fit: contain;
+  box-shadow: 0 0 80px rgba(0,0,0,0.8);
+  cursor: default;
+}
+#img-lightbox-close {
+  position: absolute;
+  top: 20px; right: 28px;
+  font-size: 28px;
+  color: white;
+  cursor: pointer;
+  opacity: 0.7;
+}
+#img-lightbox-close:hover { opacity: 1; }
+</style>
+
+<!-- Img Drop Banner (appears when dragging a chat image) -->
+<div id="img-drop-banner">
+  <div class="idb-icon">📁</div>
+  <div class="idb-label">Rilascia per salvare in una cartella</div>
+</div>
+
+<!-- Lightbox for fullscreen image view -->
+<div id="img-lightbox">
+  <span id="img-lightbox-close" title="Chiudi (ESC)">✕</span>
+  <img id="img-lightbox-img" src="" alt="Fullscreen">
+</div>

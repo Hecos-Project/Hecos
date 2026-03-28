@@ -135,15 +135,41 @@ async function regenerateLastResponse(historyIndex) {
     showToast('⚠️ Nessun messaggio precedente da rigenerare');
     return;
   }
-  // Remove visual AI message
+  
+  // 1. Identify the AI message and the preceding User message
+  const aiMsgObj = history[historyIndex];
+  const prevUserMsgObj = history[historyIndex - 1];
+  
+  if (!aiMsgObj || aiMsgObj.role !== 'assistant') {
+    showToast('⚠️ Azione non valida su questo messaggio');
+    return;
+  }
+  if (!prevUserMsgObj || prevUserMsgObj.role !== 'user') {
+    showToast('⚠️ Impossibile trovare la domanda precedente');
+    return;
+  }
+
+  const textToResend = prevUserMsgObj.content;
+
+  // 2. Remove visual AI message from DOM
   const aiMsgEl = document.querySelector(`[data-history="${historyIndex}"]`);
-  if (aiMsgEl) aiMsgEl.remove();
-  // Remove AI from history
+  if (aiMsgEl) {
+    aiMsgEl.style.opacity = '0';
+    setTimeout(() => aiMsgEl.remove(), 250);
+  }
+
+  // 3. Remove AI message from history array
   history.splice(historyIndex, 1);
-  // Re-send
+  
+  // 4. Trigger regeneration using internal sender
   showToast('🔁 Rigenerazione in corso...');
-  if (typeof window.sendMessage === 'function') {
-    await window.sendMessage(null, true); // pass regen flag
+  if (typeof window.sendInternalMessage === 'function') {
+    // Small delay to allow fade-out animation
+    setTimeout(async () => {
+      await window.sendInternalMessage(textToResend);
+    }, 260);
+  } else {
+    showToast('❌ Errore interno: sendInternalMessage mancante');
   }
 }
 

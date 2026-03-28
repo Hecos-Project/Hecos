@@ -23,7 +23,7 @@ _current_piper_proc = None
 _chat_log = logging.getLogger("ZentraChatRoutes")
 
 
-def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
+def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, images=None):
     sess = _sessions.get(session_id)
     if not sess:
         return
@@ -37,7 +37,7 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr):
 
     try:
         # Use the shared config manager passed from the plugin server
-        risposta = brain.generate_response(user_message, external_config=cfg_mgr.config)
+        risposta = brain.generate_response(user_message, external_config=cfg_mgr.config, images=images)
 
         if isinstance(risposta, str):
             full_text = risposta
@@ -231,13 +231,14 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         data     = request.get_json(force=True) or {}
         user_msg = data.get("message", "").strip()
         history  = data.get("history", [])
-        if not user_msg:
+        images   = data.get("images", [])
+        if not user_msg and not images:
             return jsonify({"ok": False, "error": "Empty message"}), 400
         sid  = str(uuid.uuid4())
         sess = {"queue": queue.Queue(), "history": list(history), "done": False}
         with _sessions_lock:
             _sessions[sid] = sess
-        threading.Thread(target=_run_inference, args=(sid, user_msg, history, cfg_mgr), daemon=True).start()
+        threading.Thread(target=_run_inference, args=(sid, user_msg, history, cfg_mgr, images), daemon=True).start()
         return jsonify({"ok": True, "session_id": sid})
 
     @app.route("/api/stream/<session_id>")
@@ -294,19 +295,25 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
 
     @app.route("/api/upload", methods=["POST"])
     def api_upload():
-        """Accept multipart file uploads, extract text context and return it."""
+        """Accept multipart file uploads.
+        - Text files (TXT, MD, CSV, PDF, DOCX): extracted as text context
+        - Images (PNG, JPG, JPEG, WEBP): encoded as base64 for vision models
+        Returns: {ok, context: str, images: [{name, mime_type, data_b64}], file_count}
+        """
         from flask import request, jsonify
-        import traceback
+        import base64
         files = request.files.getlist("files")
         if not files:
             return jsonify({"ok": False, "error": "No files received"}), 400
 
         context_parts = []
+        image_parts = []  # List of {name, mime_type, data_b64}
+
         for f in files:
             name = f.filename or "unknown"
             ext  = os.path.splitext(name)[1].lower()
             try:
-                if ext == ".txt" or ext == ".md" or ext == ".csv":
+                if ext in (".txt", ".md", ".csv"):
                     text = f.read().decode("utf-8", errors="replace")
                     context_parts.append(f"--- {name} ---\n{text}")
 
@@ -320,7 +327,7 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
                     except ImportError:
                         context_parts.append(f"--- {name} ---\n[pypdf non installato, impossibile leggere il PDF]")
 
-                elif ext in (".docx",):
+                elif ext == ".docx":
                     try:
                         import docx
                         from io import BytesIO
@@ -331,8 +338,13 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
                         context_parts.append(f"--- {name} ---\n[python-docx non installato, impossibile leggere il DOCX]")
 
                 elif ext in (".png", ".jpg", ".jpeg", ".webp"):
-                    # For images, just notify — vision support can be added later
-                    context_parts.append(f"--- {name} (Image) ---\n[Immagine allegata: {name}. Supporto visione non ancora disponibile.]")
+                    # Encode image as base64 for vision models
+                    raw = f.read()
+                    b64 = base64.b64encode(raw).decode("utf-8")
+                    mime_map = {".png": "image/png", ".jpg": "image/jpeg",
+                                ".jpeg": "image/jpeg", ".webp": "image/webp"}
+                    mime = mime_map.get(ext, "image/jpeg")
+                    image_parts.append({"name": name, "mime_type": mime, "data_b64": b64})
 
                 else:
                     context_parts.append(f"--- {name} ---\n[Tipo file non supportato: {ext}]")
@@ -341,10 +353,30 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
                 context_parts.append(f"--- {name} ---\n[Errore durante la lettura: {e}]")
 
         combined = "\n\n".join(context_parts)
-        return jsonify({"ok": True, "context": combined, "file_count": len(files)})
+        return jsonify({
+            "ok": True,
+            "context": combined,
+            "images": image_parts,
+            "file_count": len(files)
+        })
 
     @app.route("/static/js/<filename>")
     def serve_static_js(filename):
         from flask import send_from_directory
         js_dir = os.path.join(os.path.dirname(__file__), "static", "js")
         return send_from_directory(js_dir, filename)
+
+    @app.route("/api/images/<filename>")
+    def serve_ai_image(filename):
+        """
+        Serve images from the data/images/ directory.
+        The AI can reference images with [[IMG:filename.ext]] syntax.
+        Place images in: <zentra-root>/data/images/
+        """
+        from flask import send_from_directory, jsonify
+        images_dir = os.path.join(root_dir, "data", "images")
+        os.makedirs(images_dir, exist_ok=True)
+        img_path = os.path.join(images_dir, filename)
+        if os.path.exists(img_path):
+            return send_from_directory(images_dir, filename)
+        return jsonify({"error": "Image not found"}), 404

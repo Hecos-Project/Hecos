@@ -14,7 +14,7 @@
     "audio_mode": "console",
     "backend": {
         "cloud": {
-            "model": "gemini/gemini-3-flash-preview",
+            "model": "gemini/gemini-2.5-flash",
             "temperature": 0.7
         },
         "kobold": {

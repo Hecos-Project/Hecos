@@ -61,21 +61,22 @@ window.removeAttachment = function(name, chipEl) {
 
 // ── Upload & extract context before sending ─────────────────────
 async function uploadAndGetContext() {
-  if (!window.pendingAttachments.length) return '';
+  if (!window.pendingAttachments.length) return { context: '', images: [] };
   const formData = new FormData();
   window.pendingAttachments.forEach(a => formData.append('files', a.file));
   try {
     const r = await fetch('/api/upload', { method: 'POST', body: formData });
     const data = await r.json();
-    if (data.ok && data.context) {
+    if (data.ok) {
       window.pendingAttachments = [];
       document.getElementById('upload-preview').innerHTML = '';
-      return '\n\n[CONTESTO ALLEGATO]:\n' + data.context;
+      const ctx = data.context ? '\n\n[CONTESTO ALLEGATO]:\n' + data.context : '';
+      return { context: ctx, images: data.images || [] };
     }
   } catch (e) {
     if (window.showToast) showToast('❌ Upload fallito: ' + e.message);
   }
-  return '';
+  return { context: '', images: [] };
 }
 window.getAttachmentContext = uploadAndGetContext;
 

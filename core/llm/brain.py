@@ -66,7 +66,7 @@ def generate_self_awareness(personality_name):
         logger.debug("BRAIN", f"Self-awareness error: {e}")
         return ""
 
-def generate_response(user_text, external_config=None, tag=None):
+def generate_response(user_text, external_config=None, tag=None, images=None):
     logger.debug("BRAIN", f"=== START generate_response ===")
     logger.debug("BRAIN", f"User text: '{user_text}'")
     logger.debug("BRAIN", f"external_config provided: {external_config is not None}")
@@ -255,7 +255,7 @@ def generate_response(user_text, external_config=None, tag=None):
     logger.debug("BRAIN", f"LiteLLM call ({backend_config['backend_type']}) with model: {backend_config['model']}")
     
     # Single call to the unified client
-    response = client.generate(system_prompt, user_text, backend_config, config.get('llm', {}), tools=tools)
+    response = client.generate(system_prompt, user_text, backend_config, config.get('llm', {}), tools=tools, images=images)
     
     # 5. Save to memory (respecting cognition config)
     logger.debug("BRAIN", "Saving to memory...")

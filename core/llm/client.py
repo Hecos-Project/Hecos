@@ -22,9 +22,11 @@ for _h in _litellm_logger.handlers[:]:
 # Ensure LITELLM_LOG doesn't force verbose stdout output
 os.environ["LITELLM_LOG"] = ""
 
-def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, tools=None, stream=False):
+def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, tools=None, stream=False, images=None):
     """
-    Genera una risposta usando LiteLLM, con supporto Opzionale per i Tools e Streaming.
+    Genera una risposta usando LiteLLM.
+    - images: optional list of dicts {data: bytes, mime_type: str, name: str}
+      When provided, the appropriate VisionAdapter builds the multimodal messages.
     """
     
     # 1. Backend and Model Identification
@@ -50,15 +52,33 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     # 3. Preparazione Messaggi
     provider = model_name.split('/')[0] if '/' in model_name else ""
     
-    if provider == "gemini":
-        messages = [
-            {"role": "user", "content": f"{system_prompt}\n\n[USER]: {user_message}"}
-        ]
-    else:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
+    # ── Vision path: delegate to adapter if images are attached ──
+    if images:
+        try:
+            from core.llm.vision.factory import get_vision_adapter
+            adapter = get_vision_adapter(model_name, backend_type)
+            if adapter:
+                messages = adapter.build_messages(system_prompt, user_message, images)
+                zlog_debug("LiteLLM", f"Vision adapter used: {adapter.__class__.__name__} ({len(images)} image(s))")
+            else:
+                # Adapter not available: fallback to text-only with a notice
+                zlog_debug("LiteLLM", "No vision adapter for this model; falling back to text-only")
+                images = None  # reset so text-only path runs below
+        except Exception as ve:
+            zlog_error(f"LiteLLM: Vision adapter error: {ve}")
+            images = None
+
+    # ── Text-only path ────────────────────────────────────────────
+    if not images:
+        if provider == "gemini":
+            messages = [
+                {"role": "user", "content": f"{system_prompt}\n\n[USER]: {user_message}"}
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ]
 
     params = {
         "model": model_name,
