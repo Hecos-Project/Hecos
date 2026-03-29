@@ -1,8 +1,8 @@
 """
-MODULO: Plugin Loader & Capability Registry - Zentra Core
-DESCRIZIONE: Gestisce la scansione dinamica dei plugin (ora in sottocartelle) 
-e la creazione del registro centrale JSON. Supporta anche la raccolta degli
-schemi di configurazione per i plugin.
+MODULE: Plugin Loader & Capability Registry - Zentra Core
+DESCRIPTION: Handles dynamic scanning of plugins (now in subfolders)
+and creation of the central JSON registry. Also supports gathering
+configuration schemas for plugins.
 """
 
 import importlib.util
@@ -14,198 +14,265 @@ from core.i18n import translator
 
 REGISTRY_PATH = "core/registry.json"
 
-# Memorizza gli schemi di configurazione raccolti dai plugin
+# Stores configuration schemas collected from plugins
 _plugin_config_schemas = {}
 
-# ... in cima al file ...
-_loaded_plugins = {}   # tag -> modulo
+# Active plugins (Native and Legacy)
+_loaded_plugins = {}          # tag -> module (for JSON Calling / old single plugins)
+_loaded_legacy_plugins = {}   # tag -> instance of LegacyPlugin class
 
-def get_plugin_module(tag):
-    """Restituisce il modulo del plugin se attivo, altrimenti None."""
+def get_active_tags():
+    """Returns a list of all currently active plugin tags."""
+    return list(_loaded_plugins.keys()) + list(_loaded_legacy_plugins.keys())
+
+def get_plugin_module(tag, legacy=False):
+    """Returns the plugin module if active, otherwise None."""
+    if legacy:
+        return _loaded_legacy_plugins.get(tag)
     return _loaded_plugins.get(tag)
 
-def aggiorna_registro_capacita(config=None, debug_log=True):
+def update_capability_registry(config=None, debug_log=True):
     """
-    Scansiona la directory dei plugin, interroga il manifest info() e 
-    genera un file JSON centralizzato con tutte le abilità attive.
-    Se config è passato, lo usa per verificare il flag 'enabled'.
+    Scans the plugins directory, queries the info() manifest, and
+    generates a centralized JSON file with all active abilities.
+    If config is passed, it uses it to check the 'enabled' flag.
     """
-    global _plugin_config_schemas
+    global _plugin_config_schemas, _loaded_plugins, _loaded_legacy_plugins
     _plugin_config_schemas.clear()
+    _loaded_plugins.clear()
+    _loaded_legacy_plugins.clear()
     skills_map = {}
-    
-    # Se non abbiamo config, lo carichiamo (per retrocompatibilità)
+
+    # If we don't have config, load it (for backward compatibility)
     if config is None:
         from app.config import ConfigManager
         config = ConfigManager().config
-    
-    # Cerca nella nuova struttura (sottocartelle con main.py)
-    plugin_dirs = [d for d in os.listdir("plugins") 
-                  if os.path.isdir(os.path.join("plugins", d)) 
+
+    # Search in the new structure (subfolders with main.py)
+    plugin_dirs = [d for d in os.listdir("plugins")
+                  if os.path.isdir(os.path.join("plugins", d))
                   and not d.startswith("__")
-                  and d != "plugins_disabled"]  # <--- IGNORA QUESTA CARTELLA
-    
+                  and d != "plugins_disabled"]
+
     for plugin_dir in plugin_dirs:
         main_file = os.path.join("plugins", plugin_dir, "main.py")
         if not os.path.exists(main_file):
             logger.debug("LOADER", f"Plugin {plugin_dir} without main.py, ignored")
             continue
-        
+
         try:
-            # Importazione dinamica del modulo
+            # Dynamic module import
             spec = importlib.util.spec_from_file_location(
-                f"plugins.{plugin_dir}.main", 
+                f"plugins.{plugin_dir}.main",
                 main_file
             )
             if spec is None:
                 continue
-                
-            modulo = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(modulo)
-            
-            # Estrazione manifest
-            if hasattr(modulo, "tools"):
-                # --- NUOVO SISTEMA CLASS-BASED (FUNCTION CALLING) ---
-                t = modulo.tools
-                tag = t.tag
+
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            # Manifest extraction
+            if hasattr(module, "tools"):
+                # --- NEW CLASS-BASED SYSTEM (FUNCTION CALLING) ---
+                tools_instance = module.tools
+                tag = tools_instance.tag
                 plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
                 if not plugin_enabled:
                     if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                     continue
-                    
-                _loaded_plugins[tag] = modulo
-                stato = getattr(t, "status", "ONLINE")
-                
-                # Estrae i comandi tramite l'ispezione dei metodi pubblici
+
+                _loaded_plugins[tag] = module
+                status = getattr(tools_instance, "status", "ONLINE")
+
+                # Extract commands by inspecting public methods
                 import inspect
-                comandi = {}
-                for name, method in inspect.getmembers(t, predicate=inspect.ismethod):
+                commands = {}
+                for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
                     if not name.startswith('_'):
                         doc = method.__doc__
-                        comandi[name] = doc.strip().split('\n')[0] if doc else "Method"
-                
+                        commands[name] = doc.strip().split('\n')[0] if doc else "Method"
+
                 skills_map[tag] = {
-                    "descrizione": t.desc,
-                    "comandi": comandi,
-                    "stato": stato,
-                    "esempio": "",
+                    "description": tools_instance.desc,
+                    "commands": commands,
+                    "status": status,
+                    "example": "",
                     "is_class_based": True
                 }
                 logger.debug("LOADER", f"Class-based Plugin {plugin_dir} loaded with tag {tag}")
-                
-                if hasattr(t, "config_schema"):
-                    _plugin_config_schemas[tag] = t.config_schema
-                    
-            elif hasattr(modulo, "info"):
-                # --- VECCHIO SISTEMA LEGACY ---
-                dati = modulo.info()
-                tag = dati['tag']
-                # Controlla flag enabled
+
+                if hasattr(tools_instance, "config_schema"):
+                    _plugin_config_schemas[tag] = tools_instance.config_schema
+
+            elif hasattr(module, "info"):
+                # --- OLD LEGACY SYSTEM ---
+                plugin_info = module.info()
+                tag = plugin_info['tag']
+                # Check enabled flag
                 plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
                 if not plugin_enabled:
                     if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                     continue
-                    
-                # Salva modulo e carica
-                _loaded_plugins[tag] = modulo
-                
-                stato = modulo.status() if hasattr(modulo, "status") else "ONLINE"
-                
+
+                # Save module and load
+                _loaded_plugins[tag] = module
+
+                status = module.status() if hasattr(module, "status") else "ONLINE"
+
                 skills_map[tag] = {
-                    "descrizione": dati['desc'],
-                    "comandi": dati['comandi'],
-                    "stato": stato,
-                    "esempio": dati.get("esempio", "")
+                    "description": plugin_info.get('desc') or plugin_info.get('description', ''),
+                    "commands": plugin_info.get('comandi') or plugin_info.get('commands', {}),
+                    "status": status,
+                    "example": plugin_info.get("esempio") or plugin_info.get("example", "")
                 }
                 logger.debug("LOADER", f"Plugin {plugin_dir} loaded with tag {tag}")
-                
-                # Raccogli lo schema di configurazione se presente
-                if hasattr(modulo, "config_schema"):
-                    _plugin_config_schemas[tag] = modulo.config_schema()
+
+                # Collect configuration schema if present
+                if hasattr(module, "config_schema"):
+                    _plugin_config_schemas[tag] = module.config_schema()
                     logger.debug("LOADER", f"Plugin {plugin_dir} has config_schema")
-                    
+
         except Exception as e:
-            logger.errore(f"LOADER: Failed to load {plugin_dir}: {e}")
-            continue
-    
-    # 2. (Opzionale) Cerca anche nella vecchia struttura per compatibilità
-    #    Plugin ancora presenti come file singoli in plugins/
-    old_plugins = glob.glob(os.path.join("plugins", "*.py"))
-    for file in old_plugins:
-        nome_modulo = os.path.basename(file)[:-3]
-        if nome_modulo.startswith("__") or nome_modulo.startswith("_"):
-            continue
-        
-        # Evita di ricaricare plugin già trovati nella nuova struttura
-        if any(nome_modulo == d for d in plugin_dirs):
-            continue
-            
-        try:
-            spec = importlib.util.spec_from_file_location(nome_modulo, file)
-            modulo = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(modulo)
-            
-            if hasattr(modulo, "info"):
-                dati = modulo.info()
-                tag = dati['tag']
-                
-                # Controlla il flag enabled
-                plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
-                if not plugin_enabled:
-                    logger.debug("LOADER", f"Legacy plugin {nome_modulo} disabled, ignored.")
-                    continue
-                
-                stato = modulo.status() if hasattr(modulo, "status") else "ONLINE"
-                
-                skills_map[tag] = {
-                    "descrizione": dati['desc'],
-                    "comandi": dati['comandi'],
-                    "stato": stato,
-                    "esempio": dati.get("esempio", "")
-                }
-                logger.debug("LOADER", f"Legacy plugin {nome_modulo} loaded with tag {tag}")
-                
-                if hasattr(modulo, "config_schema"):
-                    _plugin_config_schemas[tag] = modulo.config_schema()
-                    logger.debug("LOADER", f"Legacy plugin {nome_modulo} has config_schema")
-                    
-        except Exception as e:
-            logger.errore(f"LOADER: Failed to load legacy {nome_modulo}: {e}")
+            logger.error(f"LOADER: Failed to load {plugin_dir}: {e}")
             continue
 
-    # Scrittura del registro centralizzato
+    # --- NEW SECTION: Load Legacy Plugins from plugins_legacy/ folder ---
+    if os.path.exists("plugins_legacy"):
+        legacy_dirs = [d for d in os.listdir("plugins_legacy")
+                      if os.path.isdir(os.path.join("plugins_legacy", d))
+                      and not d.startswith("__")]
+
+        for legacy_dir in legacy_dirs:
+            main_file = os.path.join("plugins_legacy", legacy_dir, "main.py")
+            if not os.path.exists(main_file):
+                continue
+
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    f"plugins_legacy.{legacy_dir}.main",
+                    main_file
+                )
+                if spec is None: continue
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                # Look for a class ending in 'Plugin' or instantiate via get_plugin()
+                legacy_instance = None
+                if hasattr(module, "get_plugin"):
+                    legacy_instance = module.get_plugin()
+                else:
+                    import inspect
+                    for name, obj in inspect.getmembers(module, inspect.isclass):
+                        if name.endswith("Plugin") and obj.__module__ == module.__name__:
+                            legacy_instance = obj()
+                            break
+
+                if legacy_instance and hasattr(legacy_instance, "info"):
+                    plugin_info = legacy_instance.info()
+                    tag = plugin_info['tag']
+
+                    plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                    if not plugin_enabled:
+                        if debug_log: logger.debug("LOADER", f"Legacy Plugin {legacy_dir} disabled by config.")
+                        continue
+
+                    _loaded_legacy_plugins[tag] = legacy_instance
+                    status = legacy_instance.status() if hasattr(legacy_instance, "status") else "ONLINE"
+
+                    # Extraction of commands with prioritization for English nomenclature
+                    info_dict = legacy_instance.info()
+                    legacy_commands = info_dict.get('commands') or info_dict.get('comandi', {})
+
+                    skills_map[tag] = {
+                        "description": info_dict.get('description') or info_dict.get('desc', ''),
+                        "commands": legacy_commands,
+                        "status": status,
+                        "example": info_dict.get("example") or info_dict.get("esempio", ""),
+                        "is_legacy": True
+                    }
+                    if debug_log: logger.debug("LOADER", f"OOP Legacy Plugin {legacy_dir} loaded with tag {tag}")
+            except Exception as e:
+                logger.error(f"LOADER: Failed to load OOP Legacy {legacy_dir}: {e}")
+                continue
+
+    # 2. (Optional) Search also in the old structure for compatibility
+    old_plugins_files = glob.glob(os.path.join("plugins", "*.py"))
+    for file in old_plugins_files:
+        module_name = os.path.basename(file)[:-3]
+        if module_name.startswith("__") or module_name.startswith("_"):
+            continue
+
+        # Avoid reloading plugins already found in the new structure
+        if any(module_name == d for d in plugin_dirs):
+            continue
+
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, file)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            if hasattr(module, "info"):
+                plugin_info = module.info()
+                tag = plugin_info['tag']
+
+                # Check enabled flag
+                plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                if not plugin_enabled:
+                    logger.debug("LOADER", f"Legacy plugin {module_name} disabled, ignored.")
+                    continue
+
+                status = module.status() if hasattr(module, "status") else "ONLINE"
+
+                skills_map[tag] = {
+                    "description": plugin_info.get('desc') or plugin_info.get('description', ''),
+                    "commands": plugin_info.get('comandi') or plugin_info.get('commands', {}),
+                    "status": status,
+                    "example": plugin_info.get("esempio") or plugin_info.get("example", "")
+                }
+                logger.debug("LOADER", f"Legacy plugin {module_name} loaded with tag {tag}")
+
+                if hasattr(module, "config_schema"):
+                    _plugin_config_schemas[tag] = module.config_schema()
+                    logger.debug("LOADER", f"Legacy plugin {module_name} has config_schema")
+
+        except Exception as e:
+            logger.error(f"LOADER: Failed to load legacy {module_name}: {e}")
+            continue
+
+    # Centralized registry writing
     try:
         with open(REGISTRY_PATH, "w", encoding="utf-8") as f:
             json.dump(skills_map, f, indent=4, ensure_ascii=False)
         if debug_log:
             logger.info(f"REGISTRY: Capabilities registry updated ({len(skills_map)} modules).")
     except Exception as e:
-        logger.errore(f"REGISTRY: File write error: {e}")
-    
+        logger.error(f"REGISTRY: File write error: {e}")
+
     return skills_map
 
-def sincronizza_config_plugin(config_manager=None):
+def sync_plugin_config(config_manager=None):
     """
-    Sincronizza le configurazioni dei plugin con il file config.json.
-    Aggiunge le sezioni mancanti con i valori di default definiti negli schemi.
-    Inoltre assicura che per ogni plugin esista la chiave 'enabled' (default True).
+    Synchronizes plugin configurations with the config.json file.
+    Adds missing sections with default values defined in the schemas.
+    Also ensures each plugin has the 'enabled' key (default True).
     """
     if config_manager is None:
         from app.config import ConfigManager
         config_manager = ConfigManager()
-    
+
     config = config_manager.config
     if "plugins" not in config:
         config["plugins"] = {}
-    
+
     updated = False
     for tag, schema in _plugin_config_schemas.items():
         plugin_cfg = config["plugins"].get(tag, {})
-        # Assicura che enabled sia presente (default True)
+        # Ensure enabled is present (default True)
         if "enabled" not in plugin_cfg:
             plugin_cfg["enabled"] = True
             updated = True
-        # Aggiungi eventuali chiavi mancanti con i valori di default
+        # Add any missing keys with default values
         for key, props in schema.items():
             if key not in plugin_cfg:
                 default = props.get("default")
@@ -213,178 +280,178 @@ def sincronizza_config_plugin(config_manager=None):
                 updated = True
         if updated:
             config["plugins"][tag] = plugin_cfg
-    
+
     if updated:
         config_manager.save()
         logger.info("REGISTRY: Plugin configurations synchronized.")
-    
+
     return config
 
-def ottieni_capacita_formattate():
-    """Restituisce una stringa leggibile per il terminale."""
+def get_formatted_capabilities():
+    """Returns a readable string for the terminal."""
     if not os.path.exists(REGISTRY_PATH):
-        aggiorna_registro_capacita()
-        
+        update_capability_registry()
+
     with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
-        
-    res = f"\n=== {translator.t('help_registry_title')} ===\n"
-    for tag, info in data.items():
-        res += f"\n[MODULO: {tag}] - {translator.t('system_status', status=info['stato'])}\n"
-        res += f"{translator.t('help_role')} {info['descrizione']}\n"
-        for cmd, spiegazione in info['comandi'].items():
-            res += f"  • {tag}:{cmd} --> {spiegazione}\n"
-    return res
 
-def genera_guida_dinamica():
+    result_string = f"\n=== {translator.t('help_registry_title')} ===\n"
+    for tag, info in data.items():
+        result_string += f"\n[MODULE: {tag}] - {translator.t('system_status', status=info['status'])}\n"
+        result_string += f"{translator.t('help_role')} {info['description']}\n"
+        for command, explanation in info['commands'].items():
+            result_string += f"  • {tag}:{command} --> {explanation}\n"
+    return result_string
+
+def generate_dynamic_guide():
     """
-    Scansiona tutte le cartelle dei plugin (attivi e disattivati) per ricavare 
-    i metadati necessari a costruire la guida utente (F1).
-    Ritorna una lista di dizionari con i dettagli dei moduli.
+    Scans all plugin folders (active and disabled) to get
+    necessary metadata to build the user guide (F1).
+    Returns a list of dictionaries with module details.
     """
-    guida = []
-    
-    def scansiona_cartella(base_path, stato_forzato=None):
-        if not os.path.exists(base_path): 
+    guide = []
+
+    def scan_directory(base_path, forced_status=None):
+        if not os.path.exists(base_path):
             return
-            
-        plugin_dirs = [d for d in os.listdir(base_path) 
-                       if os.path.isdir(os.path.join(base_path, d)) 
+
+        plugin_dirs = [d for d in os.listdir(base_path)
+                       if os.path.isdir(os.path.join(base_path, d))
                        and not d.startswith("__")
                        and d != "plugins_disabled"]
-        
+
         for plugin_dir in plugin_dirs:
             main_file = os.path.join(base_path, plugin_dir, "main.py")
             if not os.path.exists(main_file):
                 continue
             try:
                 spec = importlib.util.spec_from_file_location(
-                    f"guida_{os.path.basename(base_path)}_{plugin_dir}", 
+                    f"guide_{os.path.basename(base_path)}_{plugin_dir}",
                     main_file
                 )
-                if spec is None: 
+                if spec is None:
                     continue
-                modulo = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(modulo)
-                
-                if hasattr(modulo, "info"):
-                    dati = modulo.info()
-                    stato_effettivo = stato_forzato if stato_forzato else (modulo.status() if hasattr(modulo, "status") else translator.t("online"))
-                    
-                    guida.append({
-                        "tag": dati['tag'],
-                        "descrizione": dati.get('desc', 'Nessuna descrizione.'),
-                        "comandi": dati.get('comandi', {}),
-                        "stato": stato_effettivo,
-                        "esempio": dati.get("esempio", "")
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                if hasattr(module, "info"):
+                    plugin_info = module.info()
+                    effective_status = forced_status if forced_status else (module.status() if hasattr(module, "status") else translator.t("online"))
+
+                    guide.append({
+                        "tag": plugin_info['tag'],
+                        "description": plugin_info.get('desc', 'No description.'),
+                        "commands": plugin_info.get('comandi', {}),
+                        "status": effective_status,
+                        "example": plugin_info.get("esempio", "")
                     })
             except Exception as e:
-                logger.errore(f"GUIDE LOADER: Failed for {plugin_dir}: {e}")
-                
-    # 1. Scansiona plugin attivi
-    scansiona_cartella("plugins")
-    
-    # 2. Scansiona plugin disabilitati (forza stato DISATTIVATO)
-    scansiona_cartella(os.path.join("plugins", "plugins_disabled"), stato_forzato=translator.t("offline"))
-    
-    # 3. Scansiona vecchi plugin nella root "plugins" per compatibilità
-    vecchi = glob.glob(os.path.join("plugins", "*.py"))
-    for file in vecchi:
-        nome_mod = os.path.basename(file)[:-3]
-        if nome_mod.startswith("__") or nome_mod.startswith("_"): 
+                logger.error(f"GUIDE LOADER: Failed for {plugin_dir}: {e}")
+
+    # 1. Scan active plugins
+    scan_directory("plugins")
+
+    # 2. Scan disabled plugins (force OFFLINE status)
+    scan_directory(os.path.join("plugins", "plugins_disabled"), forced_status=translator.t("offline"))
+
+    # 3. Scan old plugins in root "plugins" for compatibility
+    old_files = glob.glob(os.path.join("plugins", "*.py"))
+    for file in old_files:
+        module_name = os.path.basename(file)[:-3]
+        if module_name.startswith("__") or module_name.startswith("_"):
             continue
         try:
-            spec = importlib.util.spec_from_file_location(f"guida_{nome_mod}", file)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            if hasattr(mod, "tools"):
-                t = mod.tools
-                stato_effettivo = getattr(t, "status", translator.t("online"))
+            spec = importlib.util.spec_from_file_location(f"guide_{module_name}", file)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if hasattr(module, "tools"):
+                tools_instance = module.tools
+                effective_status = getattr(tools_instance, "status", translator.t("online"))
                 import inspect
-                comandi = {}
-                for name, method in inspect.getmembers(t, predicate=inspect.ismethod):
+                commands = {}
+                for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
                     if not name.startswith('_'):
                         doc = method.__doc__
-                        comandi[name] = doc.strip().split('\n')[0] if doc else "Method"
-                if not any(g['tag'] == t.tag for g in guida):
-                    guida.append({
-                        "tag": t.tag,
-                        "descrizione": getattr(t, "desc", "Nessuna descrizione."),
-                        "comandi": comandi,
-                        "stato": stato_effettivo,
-                        "esempio": ""
+                        commands[name] = doc.strip().split('\n')[0] if doc else "Method"
+                if not any(g['tag'] == tools_instance.tag for g in guide):
+                    guide.append({
+                        "tag": tools_instance.tag,
+                        "description": getattr(tools_instance, "desc", "No description."),
+                        "commands": commands,
+                        "status": effective_status,
+                        "example": ""
                     })
-            elif hasattr(mod, "info"):
-                dati = mod.info()
-                stato_effettivo = mod.status() if hasattr(mod, "status") else translator.t("online")
-                # Evita duplicati se presente in cartella
-                if not any(g['tag'] == dati['tag'] for g in guida):
-                    guida.append({
-                        "tag": dati['tag'],
-                        "descrizione": dati.get('desc', 'Nessuna descrizione.'),
-                        "comandi": dati.get('comandi', {}),
-                        "stato": stato_effettivo,
-                        "esempio": dati.get("esempio", "")
+            elif hasattr(module, "info"):
+                plugin_info = module.info()
+                effective_status = module.status() if hasattr(module, "status") else translator.t("online")
+                # Avoid duplicates if present in folder
+                if not any(g['tag'] == plugin_info['tag'] for g in guide):
+                    guide.append({
+                        "tag": plugin_info['tag'],
+                        "description": plugin_info.get('desc', 'No description.'),
+                        "commands": plugin_info.get('comandi', {}),
+                        "status": effective_status,
+                        "example": plugin_info.get("esempio", "")
                     })
-        except: 
+        except:
             pass
 
-    # Ordina per tag alfabetico
-    guida.sort(key=lambda x: x['tag'])
-    return guida
+    # Sort by alphabetical tag
+    guide.sort(key=lambda x: x['tag'])
+    return guide
 
-def ottieni_tools_schema():
+def get_tools_schema():
     """
-    Scansiona i plugin class-based caricati e genera una lista di tools
-    nel formato JSON Schema atteso da LiteLLM / OpenAI per il Function Calling.
+    Scans loaded class-based plugins and generates a list of tools
+    in the JSON Schema format expected by LiteLLM / OpenAI for Function Calling.
     """
     import inspect
     import re
-    
+
     tools_list = []
-    
-    def _parse_docstring(doc):
-        if not doc: return "Tool function", {}
-        lines = doc.strip().split('\n')
-        desc = lines[0].strip()
-        params_desc = {}
+
+    def _parse_docstring(docstring):
+        if not docstring: return "Tool function", {}
+        lines = docstring.strip().split('\n')
+        description = lines[0].strip()
+        params_description = {}
         for line in lines[1:]:
             match = re.search(r':param\s+(\w+):\s+(.+)', line)
             if match:
-                params_desc[match.group(1)] = match.group(2).strip()
-        return desc, params_desc
+                params_description[match.group(1)] = match.group(2).strip()
+        return description, params_description
 
-    for tag, modulo in _loaded_plugins.items():
-        if hasattr(modulo, "tools"):
-            t = modulo.tools
-            for name, method in inspect.getmembers(t, predicate=inspect.ismethod):
+    for tag, module in _loaded_plugins.items():
+        if hasattr(module, "tools"):
+            tools_instance = module.tools
+            for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
                 if name.startswith('_'):
                     continue
-                
-                desc, params_desc = _parse_docstring(method.__doc__)
-                sig = inspect.signature(method)
-                
+
+                description, params_description = _parse_docstring(method.__doc__)
+                signature = inspect.signature(method)
+
                 properties = {}
                 required = []
-                
-                for param_name, param in sig.parameters.items():
+
+                for param_name, param in signature.parameters.items():
                     if param_name == 'self':
                         continue
-                        
-                    # Impostiamo tutto a string per semplicitá, basato sul docstring
-                    p_desc = params_desc.get(param_name, f"Parameter {param_name}")
+
+                    # Set everything to string for simplicity, based on docstring
+                    param_description = params_description.get(param_name, f"Parameter {param_name}")
                     properties[param_name] = {
                         "type": "string",
-                        "description": p_desc
+                        "description": param_description
                     }
                     if param.default == inspect.Parameter.empty:
                         required.append(param_name)
-                        
+
                 tools_list.append({
                     "type": "function",
                     "function": {
                         "name": f"{tag}__{name}",
-                        "description": desc,
+                        "description": description,
                         "parameters": {
                             "type": "object",
                             "properties": properties,
@@ -392,5 +459,48 @@ def ottieni_tools_schema():
                         }
                     }
                 })
+
+    return tools_list if tools_list else None
+
+def get_legacy_schema():
+    """
+    Returns a formatted string with the list of available TAGS.
+    Supports both legacy functional plugins and new class-based plugins.
+    """
+    if not _loaded_legacy_plugins and not _loaded_plugins:
+        return ""
+
+    result_string = "### ACTIVE SKILLS AND COMMANDS (TAG MODE) ###\n"
+    result_string += "- You can trigger actions by writing text tags in the format [TAG: command:parameters].\n"
+    
+    # 1. Legacy Plugins (SYSTEM, WEB)
+    for tag, instance in _loaded_legacy_plugins.items():
+        info = instance.info()
+        commands = info.get("comandi", {})
+        result_string += f"\n[MODULE: {tag}]\n"
+        for command, desc in commands.items():
+            result_string += f"  - [{tag}: {command}] : {desc}\n"
+
+    # 2. Native Class-based Plugins (IMAGE_GEN, DASHBOARD, etc.)
+    import inspect
+    for tag, module in _loaded_plugins.items():
+        if hasattr(module, "tools"):
+            result_string += f"\n[MODULE: {tag}]\n"
+            tools_instance = module.tools
+            for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
+                if name.startswith('_'): continue
                 
-    return tools_list if tools_list else None
+                # Get description from docstring
+                doc = method.__doc__ or "Execute command"
+                desc = doc.strip().split('\n')[0]
+                
+                # Get parameters
+                sig = inspect.signature(method)
+                params = [p for p in sig.parameters.keys() if p != 'self']
+                param_str = ": " + ",".join(params) if params else ""
+                
+                result_string += f"  - [{tag}: {name}{param_str}] : {desc}\n"
+
+    result_string += "\nATTENTION: Tags must be exactly in [TAG: command] format to be executed.\n"
+    return result_string
+

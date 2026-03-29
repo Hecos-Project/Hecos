@@ -29,20 +29,20 @@ from core.i18n import translator
 # "Inizializzazione Colorama per colori ANSI e sfondi su Windows"
 init(convert=True, autoreset=True)
 
-# Variabile globale per controllare l'animazione
-animazione_attiva = False
+# Global variable for animation control
+animation_active = False
 
-# "Palette colori standard"
-VERDE = Fore.GREEN
-GIALLO = Fore.YELLOW
-ROSSO = Fore.RED
-CIANO = Fore.CYAN
+# Standard color palette
+GREEN = Fore.GREEN
+YELLOW = Fore.YELLOW
+RED = Fore.RED
+CYAN = Fore.CYAN
 MAGENTA = Fore.MAGENTA
-BIANCO = Fore.WHITE
+WHITE = Fore.WHITE
 RESET = Style.RESET_ALL
 
 def translate_status(s):
-    """Traduce chiavi di stato note usando il translator."""
+    """Translates known status keys using the translator."""
     if not s:
         return s
     s_lower = s.lower()
@@ -54,25 +54,25 @@ def translate_status(s):
     return s
 
 def get_status_color(s):
-    """Restituisce il codice colore Fore basato sullo stato attuale."""
+    """Returns the Fore color code based on current status."""
     if not s:
         return Fore.WHITE
     s_lower = s.lower()
     
-    # Mapping stati -> colori
+    # Status -> color mapping
     if "ready" in s_lower or "pronto" in s_lower or "online" in s_lower:
         return Fore.GREEN
     if "thinking" in s_lower or "pensando" in s_lower or "loading" in s_lower:
         return Fore.YELLOW
     if "speaking" in s_lower or "parlando" in s_lower:
         return Fore.CYAN
-    if "error" in s_lower or "errore" in s_lower or "offline" in s_lower:
+    if "error" in s_lower or "offline" in s_lower:
         return Fore.RED
         
     return Fore.WHITE
 
 def setup_console():
-    """ "Pulisce lo schermo e forza l'UTF-8" """
+    """Cleans screen and forces UTF-8."""
     if sys.platform == 'win32':
         os.system('chcp 65001 > nul')
     # Reset scrolling region and clear screen
@@ -80,91 +80,100 @@ def setup_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def check_ollama():
-    """Verifica se il server Ollama è attivo per la barra di stato."""
+    """Checks if Ollama server is active for the status bar."""
     try:
         r = requests.get("http://localhost:11434/api/tags", timeout=0.2)
         return r.status_code == 200
     except:
         return False
 
-def mostra_ui_completa(config, stato_voce, stato_ascolto, stato_sistema="READY"):
-    """ Disegna l'interfaccia completa: Barra Blu (Stato), Barra Hardware (placeholder) e Footer.
-        La barra hardware verrà aggiornata in tempo reale da ui_updater.
+def show_complete_ui(config, voice_status, listening_status, system_status="READY", ptt_status=False):
+    """ Draws the complete interface: Blue Bar (Status), Hardware Bar (placeholder) and Footer.
+        The hardware bar will be updated in real-time by ui_updater.
     """
     setup_console()
     
-    # MODIFICATO: Legge il modello dal backend attivo effettuando il fallback automatico
+    # MODIFIED: Reads model from active backend with automatic fallback
+def show_complete_ui(config, voice_status, listening_status, system_status="READY", model="gemini/gemini-flash-lite-latest", ptt_status=False):
+    """
+    Clears the screen and prints the header (Rows 1-4) in the console buffer.
+    Indices: R1=Menu, R2=Status, R3=Hardware.
+    """
     from app.model_manager import ModelManager
-    backend_type, modello = ModelManager.get_effective_model_info(config)
+    from core.i18n import translator
+    import shutil
+    import re
     
-    anima = config.get('ia', {}).get('personalita_attiva', 'N/D').replace('.txt', '')
-    mic = "ON" if stato_ascolto else "OFF"
-    spk = "ON" if stato_voce else "OFF"
+    # 1. CLEAR SCREEN (Ensures Row 1 of Viewport is Row 1 of the header)
+    os.system('cls' if os.name == 'nt' else 'clear')
     
-    L = 90  # Larghezza fissa per l'allineamento
+    import shutil
+    L = 90
+    try:
+        L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    except: pass
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     
-    # 1. BARRA SUPERIORE (TITOLO) - NERO VERO
-    titolo = translator.t("welcome", version=version.VERSION).center(L)
-    print(f"\033[46m\033[30m{titolo}\033[0m")
+    # --- ROW 1: TITLE BAR (CYAN) ---
+    from core.system.version import get_version_string
+    titolo = f" {get_version_string()} "
+    print(f"\033[46m\033[30m{titolo.center(L)}\033[0m")
     
-    # 2. BARRA DI STATO DINAMICA
-    mic_str = "ON" if stato_ascolto else f"{Fore.RED}OFF{Fore.WHITE}"
-    mic_len = 2 if stato_ascolto else 3
-    spk_str = "ON" if stato_voce else f"{Fore.RED}OFF{Fore.WHITE}"
-    spk_len = 2 if stato_voce else 3
-    
-    # Tenta di tradurre lo stato se è una chiave nota, altrimenti usa così com'è
-    status_tradotto = translate_status(stato_sistema)
-    colore_status = get_status_color(stato_sistema)
-    
-    # Creiamo la stringa dello stato col suo colore
-    info_status_raw = translator.t("system_status", status="{ST_PLACEHOLDER}")
-    info_status = info_status_raw.replace("{ST_PLACEHOLDER}", f"{colore_status}{status_tradotto}{Fore.WHITE}")
-    
-    # Calcolo lunghezza visibile per il padding
-    header_mod = translator.t("header_model")
-    header_ani = translator.t("header_soul")
-    header_mic = translator.t("header_mic")
-    header_voc = translator.t("header_voice")
-    
-    # Lunghezza visibile (senza codici colore)
-    visible_status_text = translator.t("system_status", status=status_tradotto)
-    visible_len = len(f" {visible_status_text} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
-    pad_left = max(0, L - visible_len) // 2
-    pad_right = max(0, L - visible_len) - pad_left
-    
-    info_stato_colored = f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}: {mic_str} | {header_voc}: {spk_str} "
-    print(f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}")
-    
-    # 3. BARRA HARDWARE (DINAMICA)
-    riga_hw = ottieni_riga_hardware(config, dashboard_mod=None)
-    print(riga_hw)
-    
-    # 4. FOOTER COMANDI RAPIDI
-    print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
+    # --- ROW 2: COMMANDS MENU ---
     comandi = (
         f" {translator.t('menu_help')} | {translator.t('menu_models')} | "
         f"{translator.t('menu_persona')} | {translator.t('menu_mic')} | "
         f"{translator.t('menu_voice')} | {translator.t('menu_reboot')} | "
-        f"{translator.t('menu_config')} | {translator.t('menu_exit')} "
+        f"{translator.t('menu_config')} | PTT (F8) | {translator.t('menu_exit')} "
     )
+    if len(ansi_escape.sub('', comandi)) > L:
+        comandi = " F1..F7: Menu | F8: PTT | ESC: Exit "
     print(f"{Style.DIM}{comandi.center(L)}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
     
-    # 5. IMPOSTAZIONE AREA DI SCROLLING (Dalla riga 7 alla fine)
-    # Questo blocca le prime 6 righe in alto, impedendo che scorrano via.
-    sys.stdout.write("\033[7;r")
-    # Posiziona il cursore alla riga 7 (inizio area chat)
-    sys.stdout.write("\033[7;1H")
+    # --- ROW 3: STATUS BAR (BLUE) ---
+    backend_type, model_eff = ModelManager.get_effective_model_info(config)
+    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
+    mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    ptt_str = "ON" if ptt_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    
+    status_translated = translate_status(system_status)
+    status_color = get_status_color(system_status)
+    info_status = translator.t("system_status", status="{S}").replace("{S}", f"{status_color}{status_translated}{Fore.WHITE}")
+    header_mod = translator.t("header_model")
+    header_ani = translator.t("header_soul")
+    header_mic = translator.t("header_mic")
+    header_voc = translator.t("header_voice")
+
+    info_status_colored = f" {info_status} | {header_mod}: {model_eff} | {header_ani}: {soul} | {header_mic}: {mic_str} | {header_voc}: {spk_str} | PTT: {ptt_str} "
+    vis_len = len(ansi_escape.sub('', info_status_colored))
+    p_left = max(0, L - vis_len) // 2
+    p_right = max(0, L - vis_len) - p_left
+    print(f"{Back.BLUE}{Fore.WHITE}{' '*p_left}{info_status_colored}{' '*p_right}{Style.RESET_ALL}")
+    
+    # --- ROW 4: HARDWARE BAR (CYAN) ---
+    hw_row = get_hardware_row(config, dashboard_mod=None)
+    print(hw_row)
+    
+    # --- ROW 5: HINT BAR (Yellow) if PTT is ON ---
+    if ptt_status:
+        hint_text = f" {translator.t('ptt_hint')} "
+        print(f"{Fore.YELLOW}{hint_text.center(L)}{Style.RESET_ALL}")
+    else:
+        # Divider line
+        print(f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}")
+    
+    sys.stdout.write("\n")
     sys.stdout.flush()
     
-def ottieni_riga_hardware(config=None, dashboard_mod=None):
+def get_hardware_row(config=None, dashboard_mod=None):
     """
-    Restituisce la stringa formattata per la riga hardware (CPU, RAM, VRAM, backend).
-    Garantisce una lunghezza fissa di 90 caratteri per evitare wrap e corruzione UI.
+    Returns the formatted string for the hardware row (CPU, RAM, VRAM, backend).
+    Guarantees it respects the terminal width to avoid UI corruption/wrap.
     """
     import re
-    L = 90
+    import shutil
+    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
     
     if dashboard_mod is None:
         dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
@@ -178,28 +187,28 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
             if len(str(vram)) > 25: vram = str(vram)[:22] + ".."
             backend_status = stats['backend_status']
             
-            barra_cpu = graphics.crea_barra(cpu, larghezza=8)
-            barra_ram = graphics.crea_barra(ram, larghezza=8)
+            cpu_bar = graphics.create_bar(cpu, width=5)
+            ram_bar = graphics.create_bar(ram, width=5)
             
-            # Traduci stati backend
+            # Translate backend status
             if backend_status in ("READY", "CLOUD", "ONLINE"):
                 display_status = translator.t("ready")
                 if backend_status == "CLOUD": display_status = "CLOUD"
-                stato_colore = Fore.GREEN
+                status_color = Fore.GREEN
             elif backend_status in ("OFFLINE", "ERROR", "TIMEOUT"):
                 key = backend_status.lower() if backend_status.lower() in ["offline", "error", "timeout"] else "disabled"
                 display_status = translator.t(key)
-                stato_colore = Fore.RED
+                status_color = Fore.RED
             elif backend_status == "STARTING":
                 display_status = "STARTING..."
-                stato_colore = Fore.YELLOW
+                status_color = Fore.YELLOW
             else:
                 display_status = backend_status if backend_status else "--"
-                stato_colore = Fore.YELLOW
+                status_color = Fore.YELLOW
 
             info_hw = translator.t("hardware_line", 
-                cpu=barra_cpu, ram=barra_ram, gpu=stats.get('gpu_load', 'N/D'), vram=vram, 
-                backend=f"{stato_colore}{display_status}{Style.RESET_ALL}"
+                cpu=cpu_bar, ram=ram_bar, gpu=stats.get('gpu_load', 'N/D'), vram=vram, 
+                backend=f"{status_color}{display_status}{Style.RESET_ALL}"
             )
         except Exception as e:
             info_hw = f"{Fore.RED}-- HARDWARE ERROR: {e} --{Style.RESET_ALL}"
@@ -207,220 +216,274 @@ def ottieni_riga_hardware(config=None, dashboard_mod=None):
         # Se il plugin è disabilitato, restituiamo una riga vuota di 90 spazi
         return f"{Fore.CYAN}{' ' * L}{Style.RESET_ALL}"
     
-    # Ritorna la riga senza padding/troncatura complessa: la lasciamo scorrere naturalmente
-    return f"{Fore.CYAN}{info_hw}{Style.RESET_ALL}"
+    # Explicitly truncate to avoid wrap-induced scrolling
+    # We limit the visible characters, ANSI codes are extra.
+    # A simple but effective way: ensure the text doesn't exceed a safe width.
+    return f"{Fore.CYAN}{info_hw[:500]}{Style.RESET_ALL}"
 
-def aggiorna_barra_stato_in_place(config, stato_voce, stato_ascolto, stato_sistema="READY"):
-    """Aggiorna solo la riga 2 (Barra di Stato) senza pulire lo schermo."""
-    from ui.ui_updater import _aggiorna_dashboard_os, stdout_lock
+def update_status_bar_in_place(config, voice_status, listening_status, system_status="READY", ptt_status=False):
+    """Updates the status bar (Row 3) in-place without title-bar bloat."""
+    from ui.ui_updater import _update_dashboard_os, stdout_lock, _update_title_bar
     from colorama import Back, Fore, Style
     from app.model_manager import ModelManager
+    import re
     
-    backend_type, modello = ModelManager.get_effective_model_info(config)
-    anima = config.get('ia', {}).get('personalita_attiva', 'N/D').replace('.txt', '')
+    # 1. Update Title Bar (Keep it clean: only app name)
+    _update_title_bar("")
     
-    mic_str = "ON" if stato_ascolto else f"{Fore.RED}OFF{Fore.WHITE}"
-    mic_len = 2 if stato_ascolto else 3
-    spk_str = "ON" if stato_voce else f"{Fore.RED}OFF{Fore.WHITE}"
-    spk_len = 2 if stato_voce else 3
+    # 2. Rebuild the Status Bar row
+    backend_type, model = ModelManager.get_effective_model_info(config)
+    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
     
-    L = 90
-    status_tradotto = translate_status(stato_sistema)
-    colore_status = get_status_color(stato_sistema)
+    mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
+    ptt_str = "ON" if ptt_status else f"{Fore.RED}OFF{Fore.WHITE}"
     
-    info_status_raw = translator.t("system_status", status="{ST_PLACEHOLDER}")
-    info_status = info_status_raw.replace("{ST_PLACEHOLDER}", f"{colore_status}{status_tradotto}{Fore.WHITE}")
+    import shutil
+    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    status_translated = translate_status(system_status)
+    status_color = get_status_color(system_status)
     
+    info_status = translator.t("system_status", status="{S}").replace("{S}", f"{status_color}{status_translated}{Fore.WHITE}")
     header_mod = translator.t("header_model")
     header_ani = translator.t("header_soul")
     header_mic = translator.t("header_mic")
     header_voc = translator.t("header_voice")
     
-    visible_status_text = translator.t("system_status", status=status_tradotto)
-    visible_len = len(f" {visible_status_text} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}:  | {header_voc}:  ") + mic_len + spk_len
+    info_status_colored = f" {info_status} | {header_mod}: {model} | {header_ani}: {soul} | {header_mic}: {mic_str} | {header_voc}: {spk_str} | PTT: {ptt_str} "
+    visible_len = len(re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', info_status_colored))
     pad_left = max(0, L - visible_len) // 2
     pad_right = max(0, L - visible_len) - pad_left
     
-    info_stato_colored = f" {info_status} | {header_mod}: {modello} | {header_ani}: {anima} | {header_mic}: {mic_str} | {header_voc}: {spk_str} "
-    riga_formattata = f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_stato_colored}{' '*pad_right}{Style.RESET_ALL}"
+    formatted_row = f"{Back.BLUE}{Fore.WHITE}{' '*pad_left}{info_status_colored}{' '*pad_right}{Style.RESET_ALL}"
     
     with stdout_lock:
-        _aggiorna_dashboard_os(riga_formattata, 2)
+        # Write to Row 3 of the viewport (Safe absolute update)
+        _update_dashboard_os(formatted_row, 3)
+        
+        # Update Row 5: Hint or Divider
+        if ptt_status:
+            hint_text = f" {translator.t('ptt_hint')} "
+            formatted_hint = f"{Fore.YELLOW}{hint_text.center(L)}{Style.RESET_ALL}"
+            _update_dashboard_os(formatted_hint, 5)
+        else:
+            divider = f"{Fore.CYAN}{'━' * L}{Style.RESET_ALL}"
+            _update_dashboard_os(divider, 5)
 
     
-def mostra_menu_modelli(modelli, attuale):
-    """ "Stampa la selezione per i LLM" """
+def show_models_menu(categorized_models, current):
+    """Prints the selection for LLM models with categorized blue sections."""
+    from app.model_manager import ModelManager
+    
     t_title = translator.t('model_mgmt_title')
-    print(f"\n{CIANO}╔{'═' * (len(t_title)+2)}╗{RESET}")
-    print(f"{CIANO}║ {t_title} ║{RESET}")
-    print(f"{CIANO}╚{'═' * (len(t_title)+2)}╝{RESET}")
-    for i, m in enumerate(modelli, 1):
-        pref = f"{VERDE} >> " if m == attuale else "    "
-        print(f"{pref}{i}. {m}{RESET}")
-    print(f"{CIANO}╚═════════════════════════════════════════════════════╝{RESET}")
-    print(f"{GIALLO}{translator.t('select_model_index')}{RESET}")
+    L = 58
+    
+    print(f"\n{CYAN}╔{'═' * (L)}╗{RESET}")
+    print(f"{CYAN}║{WHITE} {t_title.center(L-2)} {CYAN}║{RESET}")
+    print(f"{CYAN}╠{'═' * (L)}╣{RESET}")
+    
+    # Try to get model sizes for Ollama
+    model_sizes = {}
+    try:
+        import requests
+        resp = requests.get("http://localhost:11434/api/tags", timeout=1)
+        if resp.status_code == 200:
+            for m in resp.json().get('models', []):
+                name = m.get('name', '')
+                size = m.get('size', 0)
+                if size > 1024**3:
+                    model_sizes[name] = f"{size/(1024**3):.1f}GB"
+                elif size > 1024**2:
+                    model_sizes[name] = f"{size/(1024**2):.0f}MB"
+    except:
+        pass
+    
+    global_idx = 1
+    for category, models in categorized_models.items():
+        # Blue category header bar
+        cat_title = f" ── {category.upper()} ── "
+        print(f"{CYAN}║{Back.BLUE}{Fore.WHITE}{cat_title.center(L)}{Style.RESET_ALL}{CYAN}║{RESET}")
+        print(f"{CYAN}║{'─' * (L)}║{RESET}")
+        
+        for m in models:
+            is_active = m == current
+            pref = f"{GREEN} ► " if is_active else "   "
+            size_str = ""
+            if category == "Ollama (Local)" and m in model_sizes:
+                size_str = f"  {YELLOW}[{model_sizes[m]}]{RESET}"
+            
+            model_str = f"{CYAN}║{RESET} {pref}{global_idx:2}. {m}{size_str}"
+            print(model_str)
+            global_idx += 1
+        
+        print(f"{CYAN}║{RESET}")  # Blank separator line between categories
+            
+    print(f"{CYAN}╚{'═' * (L)}╝{RESET}")
+    print(f"{YELLOW}  {translator.t('select_model_index')}{RESET}")
 
-def mostra_menu_personalita(file_lista, attuale):
-    """ "Stampa la selezione per i file TXT della personalità" """
+
+
+
+def show_personality_menu(file_list, current):
+    """Prints the selection for personality TXT files."""
     head = translator.t("select_personality")
     print(f"\n{MAGENTA}{head}{RESET}")
-    for i, f in enumerate(file_lista, 1):
-        pref = f"{VERDE} >> " if f == attuale else "    "
+    for i, f in enumerate(file_list, 1):
+        pref = f"{GREEN} >> " if f == current else "    "
         print(f"{pref}{i}. {f.replace('.txt', '')}{RESET}")
     print(f"{MAGENTA}{'═' * len(head)}{RESET}")
-    print(f"{GIALLO}{translator.t('help_footer')}{RESET}") # Reuse footer or add specific one
+    print(f"{YELLOW}{translator.t('help_footer')}{RESET}")
 
-def mostra_help():
-    """ "Stampa a video la vera guida dinamica generata dallo scanner plugin" """
-    from core.system.plugin_loader import genera_guida_dinamica
+def show_help():
+    """Displays the dynamic guide generated by the plugin scanner."""
+    from core.system.plugin_loader import generate_dynamic_guide
     
-    # Puliamo lo schermo per dare spazio alla guida estesa
+    # Clear the screen to make space for the extended guide
     setup_console()
     
-    # Header centrato
-    intestazione = f"{CIANO}╔════════════════ {translator.t('help_title')} ════════════════╗{RESET}"
-    print(f"\n{intestazione.center(90)}")
-    print(f"{BIANCO}{translator.t('help_scanning')}{RESET}".center(90))
+    # Centered Header
+    header_text = f"{CYAN}╔════════════════ {translator.t('help_title')} ════════════════╗{RESET}"
+    print(f"\n{header_text.center(90)}")
+    print(f"{WHITE}{translator.t('help_scanning')}{RESET}".center(90))
     print()
     
     try:
-        guida = genera_guida_dinamica()
-        if not guida:
-            print(f"{ROSSO}{translator.t('help_no_modules')}{RESET}".center(90))
+        data = generate_dynamic_guide()
+        if not data:
+            print(f"{RED}{translator.t('help_no_modules')}{RESET}".center(90))
         else:
-            for item in guida:
+            for item in data:
                 tag = item['tag']
-                stato = item['stato']
-                desc = item['descrizione']
-                comandi = item.get('comandi', {})
-                esempio = item.get('esempio', '')
+                status_text = item['status']
+                desc = item['description']
+                commands = item.get('commands', {})
+                example = item.get('example', '')
                 
-                # Variazioni cromatiche per i disattivati
-                if stato == "ATTIVO":
-                    col_stato = VERDE
-                    bordo = CIANO
+                # Color variations for disabled modules
+                if status_text in ("ACTIVE", "ATTIVO", "ONLINE"):
+                    status_col = GREEN
+                    border = CYAN
                 else:
-                    col_stato = ROSSO
-                    bordo = Fore.LIGHTBLACK_EX
+                    status_col = RED
+                    border = Fore.LIGHTBLACK_EX
                     
-                print(f"{bordo}├─ {col_stato}[{tag.upper()}] {RESET}- {translator.t('system_status', status=col_stato+stato+RESET)}")
-                print(f"{bordo}│{RESET}  {BIANCO}{translator.t('help_role')}{RESET} {desc}")
+                print(f"{border}├─ {status_col}[{tag.upper()}] {RESET}- {translator.t('system_status', status=status_col+status_text+RESET)}")
+                print(f"{border}│{RESET}  {WHITE}{translator.t('help_role')}{RESET} {desc}")
                 
-                if comandi:
-                    print(f"{bordo}│{RESET}  {GIALLO}{translator.t('help_commands')}{RESET}")
-                    for cmd, spiegazione in comandi.items():
-                        print(f"{bordo}│{RESET}    • {cmd} -> {spiegazione}")
+                if commands:
+                    print(f"{border}│{RESET}  {YELLOW}{translator.t('help_commands')}{RESET}")
+                    for cmd, explanation in commands.items():
+                        print(f"{border}│{RESET}    • {cmd} -> {explanation}")
                         
-                if esempio:
-                    print(f"{bordo}│{RESET}  {MAGENTA}{translator.t('help_example')}{RESET} {esempio}")
+                if example:
+                    print(f"{border}│{RESET}  {MAGENTA}{translator.t('help_example')}{RESET} {Fore.WHITE}'{example}'{RESET}")
                     
-                print(f"{bordo}│{RESET}")
+                print(f"{border}│{RESET}")
                 
     except Exception as e:
-        print(f"{ROSSO}Fatal error generating dynamic guide: {e}{RESET}")
+        print(f"{RED}Fatal error generating dynamic guide: {e}{RESET}")
         
-    chiusura = f"{CIANO}╚════════════════════════════════════════════════════════════╝{RESET}"
-    print(f"{chiusura.center(90)}")
-    print(f"\n{GIALLO}{translator.t('help_footer')}{RESET}".center(90))
+    closure = f"{CYAN}╚════════════════════════════════════════════════════════════╝{RESET}"
+    print(f"{closure.center(90)}")
+    print(f"\n{YELLOW}{translator.t('help_footer')}{RESET}".center(90))
     
-    # Svuoto vecchie digitazioni prima di bloccare
+    # Flush old keystrokes before blocking
     while msvcrt.kbhit(): msvcrt.getch()
     msvcrt.getch()
-    # Pulisco uscendo e lascio il compito ad interfaccia.mostra_ui_completa
+    # Clean up on exit and leave the task to show_complete_ui
     setup_console()
 
-def scrivi_zentra(testo):
-    """ Stampa la risposta di Zentra evidenziandola in GIALLO. """
-    from core.processing.filtri import pulisci_per_video
-    name = translator.t("agent_name")
-    testo_sicuro = pulisci_per_video(str(testo))
-    print(f"{VERDE}{name}:{GIALLO} {testo_sicuro}{RESET}")
+def write_zentra(text):
+    """Prints Zentra's response highlighting it in CYAN."""
+    from core.processing import filtri
+    # Ensure terminal safety
+    text = filtri.clean_for_video(text)
+    print(Fore.CYAN + "ZENTRA: " + Style.RESET_ALL + text)
     
-def leggi_tastiera(prefisso, input_attuale):
+def read_keyboard_input(prefix, current_input):
     if msvcrt.kbhit():
         ch_raw = msvcrt.getch()
-        # Tasti funzione F1-F6
+        # Function keys F1-F6
         if ch_raw in [b'\x00', b'\xe0']:
-            tasto_speciale = msvcrt.getch()
-            if tasto_speciale == b';': return "F1", input_attuale
-            if tasto_speciale == b'<': return "F2", input_attuale
-            if tasto_speciale == b'=': return "F3", input_attuale
-            if tasto_speciale == b'>': return "F4", input_attuale
-            if tasto_speciale == b'?': return "F5", input_attuale
-            if tasto_speciale == b'@': return "F6", input_attuale
-            if tasto_speciale == b'A': return "F7", input_attuale
-            # Opzionale: aggiungi anche F8-F12 se vuoi
-            # if tasto_speciale == b'B': return "F8", input_attuale
-            # if tasto_speciale == b'C': return "F9", input_attuale
-            # if tasto_speciale == b'D': return "F10", input_attuale
-            # if tasto_speciale == b'E': return "F11", input_attuale
-            # if tasto_speciale == b'F': return "F12", input_attuale
-            return None, input_attuale
+            special_key = msvcrt.getch()
+            if special_key == b';': return "F1", current_input
+            if special_key == b'<': return "F2", current_input
+            if special_key == b'=': return "F3", current_input
+            if special_key == b'>': return "F4", current_input
+            if special_key == b'?': return "F5", current_input
+            if special_key == b'@': return "F6", current_input
+            if special_key == b'A': return "F7", current_input
+            if special_key == b'B': return "F8", current_input
+            # if special_key == b'C': return "F9", current_input
+            # if special_key == b'D': return "F10", current_input
+            # if special_key == b'E': return "F11", current_input
+            # if special_key == b'F': return "F12", current_input
+            return None, current_input
 
         if ch_raw == b'\x1b':  # ESC
-            if input_attuale:
-                return "CLEAR", ""       # cancella tutto
+            if current_input:
+                return "CLEAR", ""       # clear all
             else:
-                return "ESC", input_attuale   # altrimenti uscita
+                return "ESC", current_input   # otherwise exit
 
         try: ch = ch_raw.decode('utf-8')
-        except: return None, input_attuale
+        except: return None, current_input
 
-        if ch == '\r': return "ENTER", input_attuale
+        if ch == '\r': return "ENTER", current_input
         elif ch == '\b':
-            if len(input_attuale) > 0:
-                input_attuale = input_attuale[:-1]
+            if len(current_input) > 0:
+                current_input = current_input[:-1]
                 sys.stdout.write('\b \b')
                 sys.stdout.flush()
-            return "CHAR", input_attuale
+            return "CHAR", current_input
         else:
-            input_attuale += ch
+            current_input += ch
             sys.stdout.write(ch)
             sys.stdout.flush()
-            return "CHAR", input_attuale
+            return "CHAR", current_input
 
-    return None, input_attuale
+    return None, current_input
 
-# --- LOGICA ANIMAZIONE PUNTINI ---
+# --- DOTS ANIMATION LOGIC ---
 
-def _ciclo_puntini():
-    """Mostra solo i puntini animati senza testo."""
-    global animazione_attiva
-    fasi = [".  ", ".. ", "...", ".. "] 
+def _dots_cycle():
+    """Shows only animated dots without text."""
+    global animation_active
+    phases = [".  ", ".. ", "...", ".. "] 
     idx = 0
-    sys.stdout.write(GIALLO) 
-    while animazione_attiva:
-        sys.stdout.write(f"\r{fasi[idx % len(fasi)]}")
+    sys.stdout.write(YELLOW) 
+    while animation_active:
+        sys.stdout.write(f"\r{phases[idx % len(phases)]}")
         sys.stdout.flush()
         idx += 1
         time.sleep(0.3)
 
-def avvia_pensiero():
-    """Lancia l'animazione in un thread separato."""
-    global animazione_attiva
-    if not animazione_attiva:
-        animazione_attiva = True
-        t = threading.Thread(target=_ciclo_puntini, daemon=True)
+def start_thinking():
+    """Launches the animation in a separate thread."""
+    global animation_active
+    if not animation_active:
+        animation_active = True
+        t = threading.Thread(target=_dots_cycle, daemon=True)
         t.start()
 
-def ferma_pensiero():
-    """Ferma l'animazione dei puntini."""
-    global animazione_attiva
-    animazione_attiva = False
+def stop_thinking():
+    """Stops the dots animation."""
+    global animation_active
+    animation_active = False
     sys.stdout.write(f"\r   \r{RESET}")
     sys.stdout.flush()
     
-def elenca_personalita():
-    """Scansiona la cartella personalita per trovare i file .txt reali."""
-    cartella = "personality"
-    if not os.path.exists(cartella): os.makedirs(cartella)
-    return [os.path.basename(f) for f in glob.glob(os.path.join(cartella, "*.txt"))]
+def list_personalities():
+    """Scans the personality folder to find real .txt files."""
+    folder = "personality"
+    if not os.path.exists(folder): os.makedirs(folder)
+    return [os.path.basename(f) for f in glob.glob(os.path.join(folder, "*.txt"))]
 
-def mostra_menu_anime(anime_disponibili):
-    """Mostra un menu a video per la selezione della personalità."""
-    print(f"\n{CIANO}=== SYSTEM SOUL SELECTION ==={RESET}")
-    for i, nome in enumerate(anime_disponibili, 1):
-        print(f"{GIALLO}{i}{RESET} - {nome}")
-    print(f"{CIANO}================================{RESET}")
-    sys.stdout.write(f"{VERDE}{translator.t('select_persona_index')}{RESET}")
+def show_soul_menu(available_souls):
+    """Shows a menu for personality selection."""
+    print(f"\n{CYAN}=== SYSTEM SOUL SELECTION ==={RESET}")
+    for i, name in enumerate(available_souls, 1):
+        print(f"{YELLOW}{i}{RESET} - {name}")
+    print(f"{CYAN}================================{RESET}")
+    sys.stdout.write(f"{GREEN}{translator.t('select_persona_index')}{RESET}")
     sys.stdout.flush()

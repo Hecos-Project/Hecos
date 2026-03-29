@@ -9,7 +9,7 @@ try:
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[WEB_DEBUG]", *args)
-        def errore(self, *args, **kwargs): print("[WEB_ERROR]", *args)
+        def error(self, *args, **kwargs): print("[WEB_ERR]", *args)
         def info(self, *args, **kwargs): print("[WEB_INFO]", *args)
         def warning(self, *args, **kwargs): print("[WEB_WARNING]", *args)
     logger = DummyLogger()
@@ -28,7 +28,7 @@ except ImportError:
 class WebTools:
     """
     Plugin: Web Browsing
-    Permette di effettuare ricerche su internet o aprire siti web specifici nel browser.
+    Allows performing internet searches or opening specific websites in the browser.
     """
 
     def __init__(self):
@@ -90,9 +90,9 @@ class WebTools:
 
     def open_url(self, url: str) -> str:
         """
-        Apre un sito web specifico nel browser predefinito.
+        Opens a specific website in the default browser.
         
-        :param url: L'indirizzo del sito web da aprire (es. 'youtube.com', 'wikipedia.org').
+        :param url: The website address to open (e.g., 'youtube.com', 'wikipedia.org').
         """
         indirizzo = url.strip()
         logger.debug(f"PLUGIN_{self.tag}", f"Opening site: {indirizzo}")
@@ -100,15 +100,15 @@ class WebTools:
             self._open_target_url(indirizzo)
             return translator.t("plugin_web_open_success", url=indirizzo)
         except Exception as e:
-            logger.errore(f"PLUGIN_{self.tag}: Error: {e}")
+            logger.error(f"PLUGIN_{self.tag}: Error: {e}")
             return translator.t("plugin_web_error_network", error=str(e))
 
     def search_web(self, query: str) -> str:
         """
-        Esegue una ricerca su internet usando il motore di ricerca predefinito (es. Google).
-        Apre automaticamente il browser con i risultati della ricerca.
+        Performs an internet search using the default search engine (e.g., Google).
+        Automatically opens the browser with the search results.
         
-        :param query: I termini da cercare su internet (es. 'notizie di oggi', 'come funziona il function calling').
+        :param query: The terms to search for on the internet.
         """
         ricerca = query.strip()
         logger.debug(f"PLUGIN_{self.tag}", f"Searching: {ricerca}")
@@ -117,7 +117,7 @@ class WebTools:
             self._open_target_url(url_ricerca)
             return translator.t("plugin_web_search_success", query=ricerca)
         except Exception as e:
-            logger.errore(f"PLUGIN_{self.tag}: Error: {e}")
+            logger.error(f"PLUGIN_{self.tag}: Error: {e}")
             return translator.t("plugin_web_error_network", error=str(e))
 
 # Istanzia pubblicamente lo strumento per l'esportazione verso il Core
@@ -129,3 +129,17 @@ def info():
 
 def status():
     return tools.status
+
+def execute(comando: str) -> str:
+    """Compatibilità legacy: smista i comandi testuali ai nuovi metodi ad oggetti."""
+    c = comando.strip()
+    c_lower = c.lower()
+    
+    if c_lower.startswith("search:") or c_lower.startswith("cerca:") or c_lower.startswith("search_web:"):
+        q = c.split(":", 1)[1].strip()
+        return tools.search_web(q)
+    elif c_lower.startswith("url:") or c_lower.startswith("apri:") or c_lower.startswith("open_url:"):
+        u = c.split(":", 1)[1].strip()
+        return tools.open_url(u)
+        
+    return f"Errore: Comando legacy '{comando}' non supportato o mancante."

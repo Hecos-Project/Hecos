@@ -6,7 +6,7 @@ try:
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[FM_DEBUG]", *args)
-        def errore(self, *args, **kwargs): print("[FM_ERR]", *args)
+        def error(self, *args, **kwargs): print("[FILE_ERR]", *args)
     logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -19,8 +19,8 @@ except ImportError:
 class FileManager:
     """
     Plugin: File Manager
-    Strumenti per l'interazione con il file system locale.
-    Permette di elencare cartelle, contare file e leggere il contenuto di documenti testuali.
+    Tools for interaction with the local file system.
+    Allows listing folders, counting files, and reading the content of text documents.
     """
 
     def __init__(self):
@@ -49,12 +49,12 @@ class FileManager:
         }
         self.status = "ONLINE"
 
-    def _espandi_percorso(self, target: str) -> str:
+    def _expand_path(self, target: str) -> str:
         """
-        Converte un target simbolico (es. 'desktop') in un percorso assoluto.
+        Converts a symbolic target (e.g., 'desktop') to an absolute path.
         
-        :param target: Il percorso simbolico o assoluto da espandere.
-        :return: Il percorso assoluto calcolato.
+        :param target: The symbolic or absolute path to expand.
+        :return: The calculated absolute path.
         """
         cfg_mgr = ConfigManager()
 
@@ -84,13 +84,15 @@ class FileManager:
 
     def list_files(self, path: str) -> str:
         """
-        Elenca le cartelle e i file presenti in un determinato percorso.
+        SCANS and lists files/folders in a path to return the names to the AI.
+        Use this tool ONLY if you need to know the filenames to process them or answer questions. 
+        Does NOT open a visual window for the user.
         
-        :param path: Il percorso della directory da ispezionare (es. 'desktop' o un percorso assoluto).
-        :return: Una stringa riassuntiva con il contenuto della cartella.
+        :param path: The path of the directory to inspect (e.g., 'desktop' or an absolute path).
+        :return: A summary string with the folder content.
         """
         target = path.strip()
-        espanso = self._espandi_percorso(target)
+        espanso = self._expand_path(target)
         logger.debug(f"PLUGIN_{self.tag}", f"list: target={target}, path={espanso}")
 
         cfg_mgr = ConfigManager()
@@ -121,13 +123,13 @@ class FileManager:
 
     def count_items(self, path: str) -> str:
         """
-        Conta il numero totale di file e cartelle in un dato percorso, senza elencarli.
+        Counts the total number of files and folders in a given path, without listing them.
         
-        :param path: Il percorso della directory da ispezionare.
-        :return: Una stringa con il conteggio degli elementi.
+        :param path: The path of the directory to inspect.
+        :return: A string with the count of elements.
         """
         target = path.strip()
-        espanso = self._espandi_percorso(target)
+        espanso = self._expand_path(target)
 
         try:
             if os.path.exists(espanso):
@@ -142,14 +144,14 @@ class FileManager:
 
     def read_file(self, path: str) -> str:
         """
-        Legge il contenuto testuale di un file specificato dal percorso.
-        Se il file è molto lungo, ne legge solo una parte iniziale definita nelle impostazioni.
+        Reads the textual content of a file specified by the path.
+        If the file is very long, it only reads an initial part defined in settings.
         
-        :param path: Il percorso del file testuale da leggere.
-        :return: Le prime righe del file come testo.
+        :param path: The path of the text file to read.
+        :return: The first lines of the file as text.
         """
         target = path.strip()
-        espanso = self._espandi_percorso(target)
+        espanso = self._expand_path(target)
 
         cfg_mgr = ConfigManager()
         max_read_lines = cfg_mgr.get_plugin_config(self.tag, "max_read_lines", 50)
@@ -181,3 +183,20 @@ def info():
 
 def status():
     return tools.status
+
+def execute(comando: str) -> str:
+    """Compatibilità legacy: smista i comandi testuali ai nuovi metodi ad oggetti."""
+    c = comando.strip()
+    c_lower = c.lower()
+    
+    if c_lower.startswith("list:") or c_lower.startswith("lista:") or c_lower.startswith("list_files:"):
+        path = c.split(":", 1)[1].strip()
+        return tools.list_files(path)
+    elif c_lower.startswith("count:") or c_lower.startswith("conta:") or c_lower.startswith("count_items:"):
+        path = c.split(":", 1)[1].strip()
+        return tools.count_items(path)
+    elif c_lower.startswith("read:") or c_lower.startswith("leggi:") or c_lower.startswith("read_file:"):
+        path = c.split(":", 1)[1].strip()
+        return tools.read_file(path)
+        
+    return f"Errore: Comando legacy '{comando}' non supportato o mancante. Usa Tools Calling."

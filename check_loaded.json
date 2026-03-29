@@ -1,0 +1,23 @@
+{
+  "loaded_plugins": [
+    "DASHBOARD",
+    "DOMOTICA",
+    "EXECUTOR",
+    "FILE_MANAGER",
+    "HELP",
+    "IMAGE_GEN",
+    "MEDIA",
+    "MEMORY",
+    "MODELS",
+    "ROLEPLAY",
+    "SYSTEM",
+    "WEB",
+    "WEBCAM",
+    "WEB_UI"
+  ],
+  "has_image_gen": true,
+  "has_tools": true,
+  "methods": [
+    "generate_image"
+  ]
+}

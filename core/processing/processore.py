@@ -1,9 +1,7 @@
 """
-MODULO: Processore Logico - Zentra Core v2.5
-DESCRIZIONE: Il 'motore di esecuzione'. Trasforma il pensiero dell'IA in azioni 
-reali tramite plugin e filtra il testo per la sintesi vocale.
-Supporta la nuova struttura a cartelle dei plugin (plugins/nome_modulo/main.py).
-Brain unificato.
+MODULE: Logical Processor - Zentra Core v2.5
+DESCRIPTION: The 'execution engine'. Transforms AI thought into real actions 
+via plugins and filters text for speech synthesis.
 """
 import sys
 import re
@@ -16,226 +14,257 @@ from core.processing import filtri
 from core.logging import logger
 from core.i18n import translator
 
-# Colori per i log a video
-GIALLO = '\033[93m'
-CIANO = '\033[96m'
-ROSSO = '\033[91m'
+# Colors for terminal logs
+YELLOW = '\033[93m'
+CYAN = '\033[96m'
+RED = '\033[91m'
 RESET = '\033[0m'
 
-# Variabile globale per mantenere i parametri hardware
-config_attuale = {}
+# Global variable to hold hardware parameters
+current_config = {}
 
-# Blacklist di tag da ignorare
+# Blacklist of tags to ignore
 BLACKLIST = ["titolo", "anima", "regole", "database", "status", "tag"]
 
-# Mappatura per tag generici al modulo corretto
+# Mapping for generic tags to the correct module
 TAG_MAPPING = {
-    "terminale": "system",
+    "terminal": "system",
     "cmd": "system",
-    "istruzione": "system",
-    "apri": "system",
+    "instruction": "system",
+    "open": "system",
     "notepad": "system",
     "chrome": "system",
     "visual studio": "system",
     "sillytavern": "system",
-    "desktop": "file_manager",
-    "download": "file_manager",
-    "documenti": "file_manager",
+    "desktop": "system",
+    "download": "system",
+    "documents": "system",
     "core": "file_manager",
+
     "plugins": "file_manager",
     "memory": "file_manager",
     "personality": "file_manager",
     "logs": "file_manager",
     "config": "file_manager",
     "main": "file_manager",
+    # Legacy fallbacks
+    "terminale": "system",
+    "istruzione": "system",
+    "apri": "system",
+    "documenti": "file_manager",
 }
 
-def configura(nuova_config):
-    """Riceve la configurazione dal Main e la memorizza per le chiamate al cervello (Brain)."""
-    global config_attuale
-    config_attuale = nuova_config
+def configure(new_config):
+    """Receives configuration from Main and stores it for Brain calls."""
+    global current_config
+    current_config = new_config
     logger.info("[PROCESSOR] Hardware configuration synchronized.")
 
-def _importa_plugin(modulo_nome):
-    """
-    Importa dinamicamente un plugin dalla nuova struttura a cartelle.
-    Cerca in: plugins/nome_modulo/main.py
-    """
-    try:
-        plugin_path = os.path.join("plugins", modulo_nome, "main.py")
-        if not os.path.exists(plugin_path):
-            logger.debug("PROCESSOR", f"Plugin {modulo_nome} not found in {plugin_path}")
-            return None
-        
-        spec = importlib.util.spec_from_file_location(
-            f"plugins.{modulo_nome}.main", 
-            plugin_path
-        )
-        if spec is None:
-            logger.debug("PROCESSOR", f"Unable to create spec for {modulo_nome}")
-            return None
-            
-        plugin_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(plugin_module)
-        logger.debug("PROCESSOR", f"Plugin {modulo_nome} imported successfully")
-        return plugin_module
-    except Exception as e:
-        logger.errore(f"[PROCESSOR] Plugin import error for {modulo_nome}: {e}")
-        logger.debug("PROCESSOR", f"Exception: {str(e)}")
-        return None
 
-def elabora_scambio(testo_utente, stato_voce):
-    """Gestisce l'intera catena: IA -> Plugin -> Pulizia -> Risposta."""
-    logger.info(f"[PROCESSOR] Input received: '{testo_utente}'. Calling brain...")
-    logger.debug("PROCESSOR", f"Input received: '{testo_utente}' | Voice status: {stato_voce}")
+def process_exchange(user_text, voice_status):
+    """Manages the entire chain: AI -> Plugin -> Cleaning -> Response."""
+    logger.info(f"[PROCESSOR] Input received: '{user_text}'. Calling brain...")
     
-    # 1. Genera risposta dall'IA
-    logger.debug("PROCESSOR", "Calling brain.genera_risposta()")
-    risposta_grezza = brain.genera_risposta(testo_utente, config_attuale)
+    # 1. Generate response from AI
+    raw_response = brain.generate_response(user_text, external_config=current_config)
     
-    # 2. Analisi Tag Plugin e Tool Calls
-    logger.debug("PROCESSOR", "Searching for tags or tool_calls in response...")
+    # 2. Process tags and clean response
+    return process(raw_response, config=current_config, voice_status=voice_status)
+
+
+def process(raw_response, config=None, voice_status=False):
+    """
+    Processes a raw LLM response: executes tags/tools and cleans the text for video/voice.
+    """
+    global current_config
+    if config:
+        current_config = config
+
+    # 1. Ignore error messages from the Brain
+    if isinstance(raw_response, str) and raw_response.startswith("ZENTRA:"):
+        logger.debug("PROCESSOR", "Ignoring internal ZENTRA error message for tag processing")
+        return raw_response, ""
+
+    # 1. Reasoning removal (<think> tags)
+    if isinstance(raw_response, str):
+        raw_response = re.sub(r'<think>.*?</think>', '', raw_response, flags=re.DOTALL | re.IGNORECASE).strip()
+        raw_response = re.sub(r'<think>.*$', '', raw_response, flags=re.DOTALL | re.IGNORECASE).strip()
     
-    # Rimuove i blocchi <think>...</think> prodotti dai reasoning model (Qwen, DeepSeek-R1, ecc.)
-    # Lo facciamo qui prima di qualsiasi analisi per escludere il ragionamento interno dall'output
-    if isinstance(risposta_grezza, str):
-        risposta_grezza = re.sub(r'<think>.*?</think>', '', risposta_grezza, flags=re.DOTALL | re.IGNORECASE).strip()
-        risposta_grezza = re.sub(r'<think>.*$', '', risposta_grezza, flags=re.DOTALL | re.IGNORECASE).strip()
+    tags_found = []
     
-    tags_trovati = []
+    # 2. Structured response (Native Function Calling)
+    tool_calls = getattr(raw_response, 'tool_calls', None)
+    if not tool_calls and isinstance(raw_response, dict):
+        tool_calls = raw_response.get('tool_calls')
     
-    # Controlla se è una risposta strutturata (Function Calling nativo)
-    is_tool_call_object = not isinstance(risposta_grezza, str) and hasattr(risposta_grezza, 'tool_calls') and risposta_grezza.tool_calls
+    # Check for legacy function_call (Gemini often uses this)
+    single_call = getattr(raw_response, 'function_call', None)
+    if not tool_calls and single_call:
+        # Normalize into a list format
+        tool_calls = [raw_response] # The object itself acts as the call container if it's a Message
+        
+    is_tool_call_object = bool(tool_calls)
     
     if is_tool_call_object:
         logger.info("[PROCESSOR] Native Function Calling detected.")
-        for call in risposta_grezza.tool_calls:
-            # call.function.name format: "tag__method"
-            if "__" in call.function.name:
-                tag, method = call.function.name.split("__", 1)
+        for call in tool_calls:
+            # Handle both list of calls and single message with function_call
+            f_obj = getattr(call, 'function', None) or getattr(call, 'function_call', None)
+            if not f_obj: continue
+            
+            f_name = getattr(f_obj, 'name', '')
+            f_args_raw = getattr(f_obj, 'arguments', '{}')
+            
+            if "__" in f_name:
+                tag, method = f_name.split("__", 1)
                 try:
-                    args = json.loads(call.function.arguments)
+                    # Allow dict or string
+                    args = f_args_raw if isinstance(f_args_raw, dict) else json.loads(f_args_raw)
+                    logger.debug("PROCESSOR", f"Tool call: {tag}.{method}({args})")
                 except Exception as e:
-                    logger.debug("PROCESSOR", f"Error parsing arguments: {e}")
+                    logger.error("PROCESSOR", f"Error parsing arguments: {e}")
                     args = {}
-                
-                # Formato tuple: (modulo, args, "function_call", method_name)
-                tags_trovati.append((tag.lower(), args, "function_call", method))
-                logger.debug("PROCESSOR", f"Function call extracted: {tag.upper()}.{method}() with args {args}")
+                tags_found.append((tag.lower(), args, "function_call", method))
             else:
-                logger.debug("PROCESSOR", f"Unknown function format: {call.function.name}")
+                logger.debug("PROCESSOR", f"Unknown function format: {f_name}")
         
-        # Testo grezzo verbale, se presente, altrimenti stringa vuota per evitare eccezioni
-        testo_risposta_originale = getattr(risposta_grezza, 'content', "") or ""
-        risposta_grezza = testo_risposta_originale
-        logger.debug("PROCESSOR", f"Testo associato alla function call: '{risposta_grezza}'")
+        original_response_text = getattr(raw_response, 'content', "") or ""
+        raw_response = original_response_text
     else:
-        # Se non è un oggetto tool_call, ci assicuriamo che sia una stringa
-        if not isinstance(risposta_grezza, str):
-            risposta_grezza = getattr(risposta_grezza, 'content', "") or ""
+        if not isinstance(raw_response, str):
+            raw_response = getattr(raw_response, 'content', "") or ""
             
-        logger.debug("PROCESSOR", f"Raw response received: {len(risposta_grezza)} characters")
-        logger.debug("PROCESSOR", f"Content: '{risposta_grezza[:200]}...'")
+        logger.debug("PROCESSOR", f"Processing text for tags: '{raw_response[:200]}...'")
         
-        # Cerca tag standard [MODULO: comando] (Legacy)
-        matches_standard = re.findall(r'\[(\w+):(.*?)\]', risposta_grezza)
-        for tag, azione in matches_standard:
-            tags_trovati.append((tag.lower(), azione.strip(), "standard", None))
-            logger.debug("PROCESSOR", f"Standard tag found: {tag.upper()} -> '{azione}'")
+        # Legacy Tag parsing
+        matches_standard = re.findall(r'\[(\w+):(.*?)\]', raw_response)
+        for tag, action in matches_standard:
+            logger.info(f"[PROCESSOR] Standard tag: [{tag}:{action}]")
+            tags_found.append((tag.lower(), action.strip(), "standard", None))
         
-        # Cerca tag semplici [MODULO] (Legacy)
-        matches_semplici = re.findall(r'\[(\w+)\]', risposta_grezza)
-        for tag in matches_semplici:
-            if not any(t[0] == tag.lower() for t in tags_trovati):
-                tags_trovati.append((tag.lower(), "", "semplice", None))
-                logger.debug("PROCESSOR", f"Simple tag found: {tag.upper()}")
+        matches_simple = re.findall(r'\[(\w+)\]', raw_response)
+        for tag in matches_simple:
+            if not any(t[0] == tag.lower() for t in tags_found):
+                logger.info(f"[PROCESSOR] Simple tag: [{tag}]")
+                tags_found.append((tag.lower(), "", "simple", None))
                 
-    # Processa TUTTI i test/tag trovati
-    for tag_originale, azione_o_args, tipo, method_name in tags_trovati:
-        # Determina il modulo da chiamare (con mappatura per legacy fallback)
-        modulo_da_chiamare = tag_originale
+    # 3. Execution
+    tool_results = []
+    for original_tag, action_or_args, call_type, method_name in tags_found:
+        module_to_call = original_tag
         
-        # Se il tag è "tag" (errore legacy AI), cerca di mappare l'azione
-        if tag_originale == "tag" and not method_name and isinstance(azione_o_args, str):
-            azione_pulita = azione_o_args.strip().lower()
-            for keyword, modulo in TAG_MAPPING.items():
-                if keyword in azione_pulita:
-                    modulo_da_chiamare = modulo
-                    logger.debug("PROCESSOR", f"Mapped 'tag' with action '{azione_pulita}' to module {modulo}")
+        if original_tag == "tag" and not method_name and isinstance(action_or_args, str):
+            clean_action = action_or_args.strip().lower()
+            for keyword, module in TAG_MAPPING.items():
+                if keyword in clean_action:
+                    module_to_call = module
                     break
-            else:
-                logger.debug("PROCESSOR", f"Tag 'tag' with action '{azione_o_args}' not mappable, ignored")
-                continue
+            else: continue
         
-        if modulo_da_chiamare in BLACKLIST:
-            logger.debug("PROCESSOR", f"Module {modulo_da_chiamare} blacklisted, ignored")
-            continue
+        if module_to_call in BLACKLIST: continue
             
-        logger.debug("PROCESSOR", f"Processing module {modulo_da_chiamare.upper()} (original tag: {tag_originale})")
+        from core.system import plugin_loader
         
-        # Importa il plugin
-        plugin_module = _importa_plugin(modulo_da_chiamare)
+        # FAIL-SAFE: If the registry is empty (happens in standalone child processes), auto-init.
+        if not plugin_loader._loaded_plugins:
+            logger.info("[PROCESSOR] Plugin registry empty; performing lazy initialization...")
+            plugin_loader.update_capability_registry(current_config, debug_log=False)
+            
+        plugin_obj = plugin_loader.get_plugin_module(module_to_call.upper(), legacy=False)
+        is_legacy_oop = False
+        if not plugin_obj:
+            plugin_obj = plugin_loader.get_plugin_module(module_to_call.upper(), legacy=True)
+            if plugin_obj: 
+                is_legacy_oop = True
+                logger.debug("PROCESSOR", f"Found legacy OOP plugin for {module_to_call}")
+        else:
+            logger.debug("PROCESSOR", f"Found native plugin for {module_to_call}")
         
-        if plugin_module:
-            if method_name and hasattr(plugin_module, "tools"):
-                # Esecuzione nuovo stile (Class-based/Function Calling)
-                logger.debug("PROCESSOR", f"Executing native function {method_name} in {modulo_da_chiamare}")
-                print(f"{GIALLO}[SYSTEM] {translator.t('executing_module', module=modulo_da_chiamare.upper())}{RESET}")
+        if plugin_obj:
+            logger.debug("PROCESSOR", f"Analyzing plugin {module_to_call}: legacy_oop={is_legacy_oop}, has_tools={hasattr(plugin_obj, 'tools')}, has_execute={hasattr(plugin_obj, 'execute')}")
+            
+            if is_legacy_oop and (hasattr(plugin_obj, "process_tag") or hasattr(plugin_obj, "elabora_tag")):
+                method_to_call = "process_tag" if hasattr(plugin_obj, "process_tag") else "elabora_tag"
+                logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
                 try:
-                    metodo = getattr(plugin_module.tools, method_name)
-                    # Passa gli argomenti al metodo python
-                    esito = metodo(**azione_o_args) if azione_o_args else metodo()
-                    if esito:
-                        logger.info(f"[PROCESSOR] Tool {method_name} output: {len(str(esito))} chars")
-                        print(f"{CIANO}[OUTPUT {modulo_da_chiamare.upper()}]:\n{esito}{RESET}")
+                    exec_method = getattr(plugin_obj, method_to_call)
+                    result = exec_method(action_or_args)
+                    if result:
+                        logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
+                        tool_results.append(str(result))
                 except Exception as e:
-                    logger.errore(f"[PROCESSOR] Tool execution error for {method_name}: {e}")
-            elif hasattr(plugin_module, "esegui") and not method_name:
-                # Esecuzione vecchio stile (Regex -> esegui(comando: str))
-                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} has 'execute'; calling with: '{azione_o_args}'")
-                print(f"{GIALLO}[SYSTEM] {translator.t('executing_module', module=modulo_da_chiamare.upper())}{RESET}")
+                    logger.error(f"[PROCESSOR] Legacy OOP error: {e}")
+            
+            elif hasattr(plugin_obj, "tools"):
+                # Handle both Native (method_name set) and Tag-based (extract from action_or_args)
+                actual_method_name = method_name
+                actual_args = action_or_args
                 
+                if not actual_method_name and isinstance(action_or_args, str) and ":" in action_or_args:
+                    m_name, m_args = action_or_args.split(":", 1)
+                    m_name = m_name.strip()
+                    if hasattr(plugin_obj.tools, m_name):
+                        actual_method_name = m_name
+                        # If the method exists, we try to pass the rest as 'prompt' (common case)
+                        # or as a single positional argument.
+                        actual_args = {"prompt": m_args.strip()}
+                
+                if actual_method_name:
+                    logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
+                    try:
+                        method = getattr(plugin_obj.tools, actual_method_name)
+                        # If it's a dict (from Native), unpack it. If it's the 'prompt' dict we just made, unpack it.
+                        result = method(**actual_args) if isinstance(actual_args, dict) else method(actual_args)
+                        if result:
+                            logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
+                            tool_results.append(str(result))
+                    except Exception as e:
+                        logger.error(f"[PROCESSOR] Tool error ({actual_method_name}): {e}")
+                    
+            elif hasattr(plugin_obj, "execute") and not method_name:
+                logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
                 try:
-                    esito = plugin_module.esegui(azione_o_args)
-                    if esito:
-                        logger.info(f"[PROCESSOR] Plugin {modulo_da_chiamare.upper()} output: {len(str(esito))} chars")
-                        print(f"{CIANO}[OUTPUT {modulo_da_chiamare.upper()}]: {esito}{RESET}")
+                    result = plugin_obj.execute(action_or_args)
+                    if result:
+                        logger.info(f"[OUTPUT {module_to_call.upper()}]: {result}")
+                        tool_results.append(str(result))
                 except Exception as e:
-                    logger.errore(f"[PROCESSOR] Plugin execution error for {modulo_da_chiamare}: {e}")
+                    logger.error(f"[PROCESSOR] Old Plugin error: {e}")
+    
+    # 4. Cleaning
+    base_video = re.sub(r'\[.*?:.*?\]', '', raw_response).strip()
+    base_video = re.sub(r'\[.*?\]', '', base_video).strip() # Remove simple tags too
+    
+    if not base_video:
+        if tags_found:
+            # If we only have tags, provide more detailed feedback
+            if isinstance(tags_found, list) and len(tags_found) > 0:
+                # tags_found elements are (tag, args, type[, method])
+                distinct_tags = []
+                for t in tags_found:
+                    tag_name = t[0].upper()
+                    method_name = t[3] if len(t) > 3 else None
+                    label = f"{tag_name}.{method_name}" if method_name else tag_name
+                    if label not in distinct_tags:
+                        distinct_tags.append(label)
+                
+                info_msg = ", ".join(distinct_tags)
+                base_video = f"✅ {translator.t('command_executed_info', info=info_msg)}"
             else:
-                logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} format error / not found.")
+                base_video = translator.t('command_executed')
         else:
-            logger.debug("PROCESSOR", f"Plugin {modulo_da_chiamare} not loaded.")
+            base_video = translator.t('model_no_response_error')
     
-    if not tags_trovati:
-        logger.debug("PROCESSOR", "No tags/tools found in response")
-
+    video_response = filtri.clean_for_video(base_video)
     
-        # 3. Pulizia per l'output video
-    logger.debug("PROCESSOR", "Removing tags for video output")
-    risposta_video = re.sub(r'\[.*?:.*?\]', '', risposta_grezza).strip()
-    
-    if not risposta_video:
-        # Controlla se c'erano tag nella risposta originale
-        if re.search(r'\[.*?\]', risposta_grezza):
-            # C'erano tag, quindi probabilmente è stato eseguito un comando
-            logger.debug("PROCESSOR", "Response contained only tags; command executed")
-            risposta_video = translator.t('command_executed')
-        else:
-            # Nessun tag e nessuna risposta - problema col modello
-            logger.warning("PROCESSOR", "Empty response received from model")
-            risposta_video = translator.t('model_no_response_error')
-    
-    logger.debug("PROCESSOR", f"Final video response: {len(risposta_video)} characters")
-    # Sanitizza per la stampa sicura su terminale Windows (previene charmap crash)
-    risposta_video = filtri.pulisci_per_video(risposta_video)
-
-    # 4. Preparazione Testo Vocale
-    testo_pulito = ""
-    if stato_voce:
-        logger.debug("PROCESSOR", "Preparing text for speech synthesis")
-        testo_pulito = filtri.pulisci_per_voce(risposta_video)
-        logger.info("[PROCESSOR] Text filtered and prepared for speech synthesis.")
-        logger.debug("PROCESSOR", f"Voice text: {len(testo_pulito)} characters")
+    clean_voice_text = ""
+    if voice_status:
+        # We use base_video so Zentra speaks only her intention, not the raw JSON/logs.
+        clean_voice_text = filtri.clean_for_voice(base_video)
         
-    return risposta_video, testo_pulito
+    if tool_results:
+        # Append raw plugin results explicitly to the GUI chat window (video_response)
+        video_response += "\n\n" + "\n\n".join(tool_results)
+        
+    return video_response, clean_voice_text
+

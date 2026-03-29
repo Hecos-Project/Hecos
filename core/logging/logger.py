@@ -78,7 +78,7 @@ if not litellm_log.hasHandlers():
 
 _console_window_started = False
 
-def init_logger(config):
+def init_logger(config, allow_external_windows=True):
     """
     Initializes logging settings read from config.json.
     CLEANS ALL HANDLERS first to ensure strict isolation.
@@ -86,8 +86,8 @@ def init_logger(config):
     global _console_window_started
     
     logging_config = config.get('logging', {})
-    destinazione = logging_config.get('destinazione', 'chat')
-    tipo_messaggi = logging_config.get('tipo_messaggi', 'both')
+    destination = logging_config.get('destination', 'chat')
+    message_types = logging_config.get('message_types', 'both')
     
     # Toggle LiteLLM library debug verbosity dynamically based on config
     llm_cfg = config.get('llm', {})
@@ -124,31 +124,36 @@ def init_logger(config):
     # Filter for Console output based on preference
     class ConsoleTypeFilter(logging.Filter):
         def filter(self, record):
-            if tipo_messaggi == 'info':
+            if message_types == 'info':
                 return record.levelno >= logging.INFO
-            elif tipo_messaggi == 'debug':
+            elif message_types == 'debug':
                 return record.levelno == logging.DEBUG
             else: # 'both'
                 return True
                 
     console_handler.addFilter(ConsoleTypeFilter())
     
-    destinazione_lower = destinazione.lower().strip()
+    destination_lower = destination.lower().strip()
     
-    if destinazione_lower == 'console' or destinazione_lower == 'file_only':
+    if destination_lower == 'console' or destination_lower == 'file_only':
         class RejectAllFilter(logging.Filter):
             def filter(self, record): return False
         console_handler.addFilter(RejectAllFilter())
         
-    if destinazione_lower == 'console':
+    if destination_lower == 'console':
+        # Skip external windows if requested
+        if not allow_external_windows:
+            logger.addHandler(console_handler) # fallback to terminal if external windows restricted
+            return
+            
         # NON aggiungiamo console_handler qui -> i log restano solo su file
         # che vengono poi letti dalle finestre PowerShell esterne
         
         # Chiudiamo le finestre orfane (per sicurezza)
-        chiudi_console_log()
-        chiudi_console_debug()
+        close_activity_log()
+        close_debug_log()
             
-        if tipo_messaggi == 'info' or tipo_messaggi == 'both':
+        if message_types == 'info' or message_types == 'both':
             # Finestra Activity Log
             ps_script_info = (
                 "$host.ui.RawUI.WindowTitle = 'Zentra Core - Activity Log'; "
@@ -160,26 +165,26 @@ def init_logger(config):
             )
             subprocess.Popen(f'start "" /min powershell -WindowStyle Minimized -NoExit -Command "{ps_script_info}"', shell=True)
             
-        if tipo_messaggi == 'debug' or tipo_messaggi == 'both':
+        if message_types == 'debug' or message_types == 'both':
             # Finestra Technical Debug
-            apri_console_debug()
+            open_debug_log()
             
         _console_window_started = True
         
-    elif destinazione_lower == 'file_only':
+    elif destination_lower == 'file_only':
         # Già fatto sopra (solo file handlers aggiunti)
-        chiudi_console_log()
-        chiudi_console_debug()
+        close_activity_log()
+        close_debug_log()
         
     else:
         # Destinazione standard: CHAT (nel terminale principale)
-        chiudi_console_log()
-        chiudi_console_debug()
+        close_activity_log()
+        close_debug_log()
         logger.addHandler(console_handler)
 
-def apri_console_debug():
+def open_debug_log():
     """Opens a dedicated console for DEBUG logs (e.g., LiteLLM)."""
-    chiudi_console_debug()
+    close_debug_log()
     
     today = datetime.now().strftime("%Y-%m-%d")
     debug_filename = f"logs/zentra_debug_{today}.log"
@@ -204,7 +209,7 @@ def apri_console_debug():
     except:
         return False
 
-def chiudi_console_debug():
+def close_debug_log():
     """Closes technical debug window via title search."""
     try:
         subprocess.run('taskkill /FI "WINDOWTITLE eq Zentra Core - Technical Debug (LiteLLM)*" /F', 
@@ -212,7 +217,7 @@ def chiudi_console_debug():
     except:
         pass
 
-def chiudi_console_log():
+def close_activity_log():
     """Closes activity log window via title search."""
     try:
         # Match both old and new titles for safety during transition
@@ -221,50 +226,54 @@ def chiudi_console_log():
     except:
         pass
 
-def chiudi_tutte_le_console():
+def close_all_consoles():
     """Closes all external windows."""
-    chiudi_console_log()
-    chiudi_console_debug()
+    close_activity_log()
+    close_debug_log()
 
-def info(modulo, messaggio=None):
+def info(module, message=None):
     """Logs a standard info event."""
-    if messaggio is None:
-        logger.info(modulo)
+    if message is None:
+        logger.info(module)
     else:
-        logger.info(f"[{modulo}] {messaggio}")
+        logger.info(f"[{module}] {message}")
 
-def errore(modulo, messaggio=None):
+def error(module, message=None):
     """Logs a critical error."""
-    if messaggio is None:
-        logger.error(modulo)
+    if message is None:
+        logger.error(module)
     else:
-        logger.error(f"[{modulo}] {messaggio}")
+        logger.error(f"[{module}] {message}")
 
-def debug(modulo, messaggio):
+def debug(module, message):
     """Logs a debug message."""
-    logger.debug(f"[{modulo}] {messaggio}")
+    logger.debug(f"[{module}] {message}")
     
-def warning(modulo, messaggio=None):
+def warning(module, message=None):
     """Logs a warning."""
-    if messaggio is None:
-        logger.warning(modulo)
+    if message is None:
+        logger.warning(module)
     else:
-        logger.warning(f"[{modulo}] {messaggio}")
+        logger.warning(f"[{module}] {message}")
 
-def debug_ia(testo_utente, risposta_ia, tag_rilevato=None):
+def debug_ai(user_text, ai_response, tag_detected=None):
     """Logs full conversation flow and plugin activation."""
-    info_tag = f" | TAG DETECTED: {tag_rilevato}" if tag_rilevato else ""
-    logger.info(f"USER: {testo_utente} | AI: {risposta_ia}{info_tag}")
+    info_tag = f" | TAG DETECTED: {tag_detected}" if tag_detected else ""
+    logger.info(f"USER: {user_text} | AI: {ai_response}{info_tag}")
 
-def leggi_log(n=10, solo_errori=False):
-    """Returns the last N lines of the INFO log."""
+def read_logs(n=10, errors_only=False, debug_only=False):
+    """Returns the last N lines of the specified log file."""
     try:
-        if not os.path.exists(info_filename):
-            return "No logs found for today."
+        target_file = info_filename
+        if debug_only:
+            target_file = debug_filename
             
-        with open(info_filename, 'r', encoding='utf-8') as f:
+        if not os.path.exists(target_file):
+            return f"No logs found in {target_file} for today."
+            
+        with open(target_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-            if solo_errori:
+            if errors_only:
                 lines = [r for r in lines if "[ERROR]" in r]
             
             last_lines = lines[-n:]

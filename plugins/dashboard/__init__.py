@@ -1,3 +1,3 @@
-from .main import avvia_monitoraggio_backend, get_backend_status, info, status, esegui
+from .main import start_backend_monitoring, get_backend_status, info, status, execute
 
-__all__ = ["avvia_monitoraggio_backend", "get_backend_status", "info", "status", "esegui"]
+__all__ = ["start_backend_monitoring", "get_backend_status", "info", "status", "execute"]

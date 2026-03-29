@@ -1,6 +1,6 @@
 """
 Plugin: Dashboard
-Monitoraggio hardware (CPU, RAM, GPU/VRAM) e stato backend AI (Ollama/Kobold).
+Hardware monitoring (CPU, RAM, GPU/VRAM) and AI backend status (Ollama/Kobold/Cloud).
 """
 import sys
 import psutil
@@ -17,7 +17,7 @@ except ImportError:
         def debug(self, *args, **kwargs): print("[DSB_DEBUG]", *args)
         def info(self, *args, **kwargs): print("[DSB_INFO]", *args)
         def warning(self, *args, **kwargs): print("[DSB_WARN]", *args)
-        def errore(self, *args, **kwargs): print("[DSB_ERR]", *args)
+        def error(self, *args, **kwargs): print("[DASH_ERR]", *args)
     logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -32,15 +32,15 @@ try:
     GPUTIL_AVAILABLE = True
 except ImportError:
     GPUTIL_AVAILABLE = False
-    logger.errore("DASHBOARD: GPUtil not installed. VRAM and GPU not available.")
+    logger.error("DASHBOARD: GPUtil not installed. VRAM and GPU not available.")
 
 # Variabili globali per lo stato condiviso tra thread e classe
 _backend_status = "STARTING"
 _monitor_thread_started = False
 _lock = threading.Lock()
 
-def _monitora_backend():
-    """Thread che monitora periodicamente lo stato del backend AI."""
+def _monitor_backend():
+    """Thread that periodically monitors the AI backend status."""
     global _backend_status
     cfg_mgr = ConfigManager()
     
@@ -54,7 +54,7 @@ def _monitora_backend():
             backend_timeout = cfg_mgr.get_plugin_config("DASHBOARD", "backend_timeout", 0.5)
             
             config = cfg_mgr.config
-            backend_type = config.get('backend', {}).get('tipo', 'ollama')
+            backend_type = config.get('backend', {}).get('type', 'ollama')
             backend_cfg = config.get('backend', {}).get(backend_type, {})
 
             if backend_type == 'cloud':
@@ -83,7 +83,7 @@ def _monitora_backend():
 class DashboardTools:
     """
     Plugin: Dashboard & Hardware Monitor
-    Fornisce statistiche in tempo reale su CPU, RAM, VRAM e stato del backend AI.
+    Provides real-time stats on CPU, RAM, VRAM, and AI backend status.
     """
 
     def __init__(self):
@@ -107,24 +107,24 @@ class DashboardTools:
             }
         }
         
-        # Avvia il monitoraggio in background se non è già attivo
-        self._avvia_monitoraggio()
+        # Start background monitoring if not already active
+        self._start_monitoring()
 
     @property
     def status(self):
         return translator.t("plugin_dashboard_status_online")
 
-    def _avvia_monitoraggio(self):
+    def _start_monitoring(self):
         global _monitor_thread_started
         if not _monitor_thread_started:
-            thread = threading.Thread(target=_monitora_backend, daemon=True)
+            thread = threading.Thread(target=_monitor_backend, daemon=True)
             thread.start()
             _monitor_thread_started = True
             logger.info("DASHBOARD: Backend monitor thread initialized via class.")
 
     def get_system_resources(self) -> str:
         """
-        Restituisce un riepilogo dell'uso di CPU e RAM di sistema.
+        Returns a summary of system CPU and RAM usage.
         """
         cpu = psutil.cpu_percent(interval=0.1)
         ram = psutil.virtual_memory().percent
@@ -132,7 +132,7 @@ class DashboardTools:
 
     def get_gpu_status(self) -> str:
         """
-        Restituisce lo stato della scheda video (GPU), inclusa la VRAM usata e il carico termico/computazionale.
+        Returns the video card (GPU) status, including VRAM usage and thermal/computational load.
         """
         if not GPUTIL_AVAILABLE:
             return "Modulo GPUtil non installato. Impossibile leggere dati GPU."
@@ -140,7 +140,7 @@ class DashboardTools:
         try:
             gpus = GPUtil.getGPUs()
             if not gpus:
-                return "Nessuna GPU dedicata rilevata."
+                return "No dedicated GPU detected."
             
             # Su portatili Dual-GPU (es. Intel + Nvidia), seleziona la GPU discreta
             # ordinando per VRAM totale decrescente in modo da ignorare l'integrata
@@ -162,15 +162,15 @@ class DashboardTools:
 
     def get_backend_status(self) -> str:
         """
-        Verifica se il backend di Intelligenza Artificiale (Ollama, Kobold o Cloud) è online e pronto.
+        Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.
         """
         stato = self._get_raw_backend_status()
         return translator.t("plugin_dashboard_stats_backend", status=stato)
 
     def get_full_dashboard(self) -> str:
         """
-        Restituisce un report completo di tutte le risorse hardware e dello stato del backend AI.
-        Usa questo strumento se l'utente chiede 'come stai' o 'fammi un report del sistema'.
+        Returns a complete report of all hardware resources and AI backend status.
+        Useful if the user asks 'how are you' or 'system report'.
         """
         cpu = psutil.cpu_percent(interval=0.1)
         ram = psutil.virtual_memory().percent
@@ -231,20 +231,20 @@ def get_stats():
         "ram": ram,
         "vram": vram_info,
         "gpu_load": gpu_load,
-        "stato_gpu": stato_gpu,
+        "gpu_status": stato_gpu,
         "backend_status": b_status
     }
 
-def avvia_monitoraggio_backend():
-    """Wrapper per compatibilità con application.py"""
-    tools._avvia_monitoraggio()
+def start_backend_monitoring():
+    """Wrapper for compatibility with application.py"""
+    tools._start_monitoring()
 
 def get_backend_status():
     """Wrapper per compatibilità con input_handler.py - restituisce il codice grezzo (es. 'CLOUD', 'READY')."""
     return tools._get_raw_backend_status()
 
-def esegui(comando):
-    """Wrapper per compatibilità con plugin legacy e vecchio processore"""
+def execute(comando):
+    """Wrapper for compatibility with legacy plugins and old processor"""
     stats = get_stats()
     cmd = comando.lower().strip()
     if cmd in ["resources", "risorse"]:
@@ -261,10 +261,10 @@ def info():
     return {
         "tag": "DASHBOARD",
         "desc": tools.desc,
-        "comandi": {
-            "resources": "Info CPU/RAM",
-            "vram": "Info GPU",
-            "status": "Stato Backend",
-            "all": "Report completo"
+        "commands": {
+            "resources": "CPU/RAM Info",
+            "vram": "GPU Info",
+            "status": "Backend Status",
+            "all": "Full Report"
         }
     }

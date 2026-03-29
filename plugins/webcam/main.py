@@ -8,7 +8,7 @@ try:
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[CAM_DEBUG]", *args)
-        def errore(self, *args, **kwargs): print("[CAM_ERR]", *args)
+        def error(self, *args, **kwargs): print("[CAM_ERR]", *args)
     logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -21,7 +21,7 @@ except ImportError:
 class WebcamTools:
     """
     Plugin: Webcam & Hardware Sensor
-    Permette a Zentra di scattare fotografie usando la webcam del sistema.
+    Allows Zentra to take photographs using the system webcam.
     """
 
     def __init__(self):
@@ -59,8 +59,8 @@ class WebcamTools:
 
     def take_snapshot(self) -> str:
         """
-        Scatta una foto usando la webcam del computer e la salva sul disco.
-        Usa questo strumento quando l'utente ti chiede di fargli una foto o di guardare qualcosa.
+        Takes a photo using the computer's webcam and saves it to disk.
+        Use this tool when the user asks to take a photo or look at something.
         """
         logger.debug(f"PLUGIN_{self.tag}", "Executing snapshot protocol")
         
@@ -96,10 +96,10 @@ class WebcamTools:
             return translator.t("plugin_webcam_error_read")
 
         except Exception as e:
-            logger.errore(f"PLUGIN_{self.tag}: Error: {e}")
+            logger.error(f"PLUGIN_{self.tag}: Error: {e}")
             return translator.t("plugin_webcam_error_critical", error=str(e))
 
-# Istanzia pubblicamente lo strumento per l'esportazione verso il Core
+# Publicly instantiate the tool for exporting to Core
 tools = WebcamTools()
 
 # --- COMPATIBILITY SHIMS ---

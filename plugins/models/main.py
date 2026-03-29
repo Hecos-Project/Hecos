@@ -7,7 +7,7 @@ try:
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[MOD_DEBUG]", *args)
-        def errore(self, *args, **kwargs): print("[MOD_ERR]", *args)
+        def error(self, *args, **kwargs): print("[MODELS_ERR]", *args)
     logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -16,7 +16,7 @@ except ImportError:
 class ModelsTools:
     """
     Plugin: Models & Backend Manager
-    Permette di gestire i modelli LLM e visualizzare lo stato del backend.
+    Allows managing LLM models and viewing backend status.
     """
 
     def __init__(self):
@@ -26,21 +26,21 @@ class ModelsTools:
 
     def get_current_backend(self) -> str:
         """
-        Restituisce il backend AI correntemente in uso (es. cloud, ollama, kobold).
+        Returns the AI backend currently in use (e.g., cloud, ollama, kobold).
         """
         try:
             with open('config.json', 'r', encoding='utf-8') as f:
                 config = json.load(f)
-            backend_type = config['backend']['tipo']
+            backend_type = config['backend']['type']
             return f"Current backend: {backend_type.upper()}"
         except Exception as e:
-            logger.errore(f"MODELS: Error: {e}")
+            logger.error(f"MODELS: Error: {e}")
             return f"Critical error: {e}"
 
     def list_models(self) -> str:
         """
-        Elenca tutti i modelli disponibili per il backend attualmente selezionato.
-        Tenta di recuperare la lista aggiornata via API (Ollama, Groq, OpenAI).
+        Lists all available models for the currently selected backend.
+        Attempts to retrieve the updated list via API (Ollama, Groq, OpenAI).
         """
         try:
             from app.config import ConfigManager
@@ -53,7 +53,7 @@ class ModelsTools:
             with open('config.json', 'r', encoding='utf-8') as f:
                 config = json.load(f)
             
-            backend_attuale = config.get('backend', {}).get('tipo', 'ollama')
+            backend_attuale = config.get('backend', {}).get('type', 'ollama')
             all_models = []
             
             # Ollama (Local)
@@ -78,11 +78,11 @@ class ModelsTools:
 
             if not all_models:
                 backend_config = config['backend'].get(backend_attuale, {})
-                modelli_dict = backend_config.get('modelli_disponibili', {})
+                modelli_dict = backend_config.get('available_models', {})
                 all_models = list(modelli_dict.values())
 
             if not all_models:
-                return f"Nessun modello trovato per il backend {backend_attuale}."
+                return f"No models found for backend {backend_attuale}."
 
             self.last_listed_models = all_models
             result = f"Modelli disponibili ({backend_attuale.upper()}):\n"
@@ -94,7 +94,7 @@ class ModelsTools:
 
     def set_model(self, model_number: str) -> str:
         """
-        Imposta un nuovo modello AI attivo in base all'indice numerico ricavato da list_models.
+        Sets a new active AI model based on the numeric index obtained from list_models.
         """
         try:
             numeri = re.findall(r'\d+', str(model_number))
@@ -106,12 +106,12 @@ class ModelsTools:
                 nuovo_modello = self.last_listed_models[idx]
                 with open('config.json', 'r', encoding='utf-8') as f:
                     config = json.load(f)
-                b_type = config['backend']['tipo']
-                config['backend'][b_type]['modello'] = nuovo_modello
+                b_type = config['backend']['type']
+                config['backend'][b_type]['model'] = nuovo_modello
                 with open('config.json', 'w', encoding='utf-8') as f:
                     json.dump(config, f, indent=4)
-                return f"✅ Modello impostato correttamente: {nuovo_modello}"
-            return "Errore: Indice non valido o lista non caricata."
+                return f"✅ Model set successfully: {nuovo_modello}"
+            return "Error: Invalid index or list not loaded."
         except Exception as e:
             return f"Error: {e}"
 

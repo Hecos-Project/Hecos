@@ -1,6 +1,6 @@
 """
 Plugin Roleplay - Zentra Core
-Permette di interpretare personaggi in scenari di gioco di ruolo.
+Allows interpreting characters in roleplay scenarios.
 """
 
 import json
@@ -13,7 +13,7 @@ except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[RP_DEBUG]", *args)
         def info(self, *args, **kwargs): print("[RP_INFO]", *args)
-        def errore(self, *args, **kwargs): print("[RP_ERR]", *args)
+        def error(self, *args, **kwargs): print("[RP_ERR]", *args)
     logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -34,7 +34,7 @@ _DEFAULT_CHARACTERS_DIR = os.path.join(os.path.dirname(__file__), "characters")
 _DEFAULT_SCENES_DIR = os.path.join(os.path.dirname(__file__), "scenes")
 
 def get_roleplay_prompt():
-    """Restituisce il prompt combinato (personaggio + scena) se attivo, altrimenti None."""
+    """Returns the combined prompt (character + scene) if active, otherwise None."""
     if _active_character_prompt:
         combined = _active_character_prompt
         if _active_scene_prompt:
@@ -45,7 +45,7 @@ def get_roleplay_prompt():
 class RoleplayTools:
     """
     Plugin: Roleplay
-    Permette di caricare e gestire personaggi e scenari per il gioco di ruolo.
+    Allows loading and managing characters and scenarios for roleplaying.
     """
 
     def __init__(self):
@@ -95,7 +95,7 @@ class RoleplayTools:
         return path
 
     def list_characters(self) -> str:
-        """Elenca tutti i personaggi disponibili per il gioco di ruolo."""
+        """Lists all characters available for roleplaying."""
         chars_dir = self._get_characters_dir()
         if not os.path.exists(chars_dir):
             return f"No character found (folder '{chars_dir}' missing)."
@@ -106,9 +106,9 @@ class RoleplayTools:
 
     def load_character(self, name: str) -> str:
         """
-        Carica un personaggio dal suo nome per interpretarne il ruolo.
+        Loads a character by name to interpret their role.
         
-        :param name: Il nome del personaggio da caricare (esatto).
+        :param name: The exact name of the character to load.
         """
         global _active_character, _active_character_prompt
         chars_dir = self._get_characters_dir()
@@ -118,22 +118,28 @@ class RoleplayTools:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            prompt = f"Sei {data['nome']}. {data.get('descrizione', '')}\n"
-            prompt += f"Personalità: {data.get('personalita', '')}\n"
-            if 'tratti' in data:
-                prompt += f"Tratti: {', '.join(data['tratti'])}\n"
-            if 'storia' in data:
-                prompt += f"Storia: {data['storia']}\n"
+            name_val = data.get('name') or data.get('nome', 'Character')
+            desc_val = data.get('description') or data.get('descrizione', '')
+            pers_val = data.get('personality') or data.get('personalita', '')
+            traits_val = data.get('traits') or data.get('tratti', [])
+            hist_val = data.get('history') or data.get('storia', '')
+
+            prompt = f"Roleplay Identity: {name_val}. {desc_val}\n"
+            prompt += f"Personality: {pers_val}\n"
+            if traits_val:
+                prompt += f"Traits: {', '.join(traits_val)}\n"
+            if hist_val:
+                prompt += f"Background/History: {hist_val}\n"
             _active_character = name
             _active_character_prompt = prompt
             logger.info(f"Roleplay: loaded character {name}")
-            return f"Character '{name}' loaded. Now roleplaying as {data['nome']}."
+            return f"Character '{name}' loaded. Now roleplaying as {name_val}."
         except Exception as e:
-            logger.errore(f"Error loading character {name}: {e}")
+            logger.error(f"Error loading character {name}: {e}")
             return f"Errore caricamento personaggio: {e}"
 
     def unload_character(self) -> str:
-        """Disattiva il personaggio corrente e torna alla personalità normale."""
+        """Deactivates the current character and returns to the normal personality."""
         global _active_character, _active_character_prompt
         _active_character = None
         _active_character_prompt = None
@@ -141,7 +147,7 @@ class RoleplayTools:
         return "Roleplay deactivated. Returned to normal personality."
 
     def list_scenes(self) -> str:
-        """Elenca tutte le scene disponibili per il gioco di ruolo."""
+        """Lists all scenes available for roleplaying."""
         scenes_dir = self._get_scenes_dir()
         if not os.path.exists(scenes_dir):
             return f"No scene found (folder '{scenes_dir}' missing)."
@@ -152,9 +158,9 @@ class RoleplayTools:
 
     def load_scene(self, name: str) -> str:
         """
-        Carica un'ambientazione o scena specifica per il gioco di ruolo.
+        Loads a specific setting or scene for roleplaying.
         
-        :param name: Il nome della scena da caricare.
+        :param name: The name of the scene to load.
         """
         global _active_scene, _active_scene_prompt
         scenes_dir = self._get_scenes_dir()
@@ -164,26 +170,29 @@ class RoleplayTools:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            prompt = f"Ambientazione: {data.get('descrizione', '')}\n"
-            if 'elementi' in data:
-                prompt += f"Elementi presenti: {', '.join(data['elementi'])}\n"
+            desc_val = data.get('description') or data.get('descrizione', '')
+            elem_val = data.get('elements') or data.get('elementi', [])
+
+            prompt = f"Setting/Scene: {desc_val}\n"
+            if elem_val:
+                prompt += f"Elements present: {', '.join(elem_val)}\n"
             _active_scene = name
             _active_scene_prompt = prompt
             logger.info(f"Roleplay: loaded scene {name}")
             return f"Scene '{name}' loaded."
         except Exception as e:
-            logger.errore(f"Error loading scene {name}: {e}")
+            logger.error(f"Error loading scene {name}: {e}")
             return f"Errore caricamento scena: {e}"
 
     def unload_scene(self) -> str:
-        """Rimuove la scena o l'ambientazione attuale."""
+        """Removes the current scene or setting."""
         global _active_scene, _active_scene_prompt
         _active_scene = None
         _active_scene_prompt = None
         return "Scene removed."
 
     def reset_roleplay(self) -> str:
-        """Reset completo di personaggi e scene attive."""
+        """Complete reset of active characters and scenes."""
         global _active_character, _active_character_prompt, _active_scene, _active_scene_prompt
         _active_character = None
         _active_character_prompt = None

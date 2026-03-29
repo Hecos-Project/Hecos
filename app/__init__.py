@@ -1,6 +1,6 @@
 """
-Pacchetto principale dell'applicazione Zentra.
-Espone la classe ZentraApplication.
+Main package for the Zentra application.
+Exposes the ZentraApplication class.
 """
 
 from .application import ZentraApplication

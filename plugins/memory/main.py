@@ -3,15 +3,17 @@ PLUGIN: Memory Management
 DESCRIPTION: Class-based interface for accessing the Vault (Semantic and Episodic Memory).
 """
 
-import sqlite3
 import os
 try:
     from memory import brain_interface
     from core.i18n import translator
 except ImportError:
+    # Minimal fallback for standalone testing
     class DummyBrainInterface:
-        def aggiorna_profilo(self, k, v): print(f"[MEM_SAVE] {k}={v}"); return True
-        def ottieni_contesto_memoria(self): return "Stand-alone profile."
+        def update_profile(self, k, v): return True
+        def get_context(self): return "Stand-alone profile."
+        def get_history(self, limit): return []
+        def clear_history(self): return True
     brain_interface = DummyBrainInterface()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -36,7 +38,7 @@ class MemoryTools:
         :param text: The detailed information to remember (e.g. 'The user likes coffee').
         """
         info_to_save = text.strip()
-        success = brain_interface.aggiorna_profilo("note_biografiche", info_to_save)
+        success = brain_interface.update_profile("notes", info_to_save)
         if success:
             return f"Archiviation protocol completed: I now remember that {info_to_save}."
         else:
@@ -47,7 +49,7 @@ class MemoryTools:
         Ask Zentra to retrieve identity data for the Admin and the AI (context profile).
         Use this tool to read the current state of the relationship, personality, and known user traits.
         """
-        return brain_interface.ottieni_contesto_memoria()
+        return brain_interface.get_context()
 
     def read_history(self, n: str) -> str:
         """
@@ -57,33 +59,30 @@ class MemoryTools:
         """
         try:
             count = int(n.strip())
-            # This function will need to be implemented in brain_interface for SQL queries
-            return f"Analyzing last {count} exchanges... (Database Consultation active)."
+            history = brain_interface.get_history(count)
+            if not history:
+                return "Episodic history is currently empty."
+            
+            res = f"Last {len(history)} messages extracted from Vault:\n"
+            for role, msg in history:
+                res += f"[{role.upper()}]: {msg[:200]}...\n"
+            return res
         except ValueError:
             return "Error: specify a valid number for reading."
+        except Exception as e:
+            return f"Database consultation failure: {e}"
 
     def reset_memory(self) -> str:
         """
         Execute the Tabula Rasa protocol: clear the entire episodic chat history.
         Use this tool ONLY if explicitly requested by the user to wipe the memory.
         """
-        # Note: Actual deletion logic is handled here or by brain_interface
-        # to ensure the integrity of the .db file
-        try:
-            db_path = "memory/archivio_chat.db"
-            if os.path.exists(db_path):
-                conn = sqlite3.connect(db_path)
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM cronologia")
-                conn.commit()
-                conn.close()
-                return "OBLIVION protocol executed. Episodic history cleared. Tabula Rasa."
-            else:
-                return "Memory database not found."
-        except Exception as e:
-            return f"Memory reset failure: {e}"
+        if brain_interface.clear_history():
+            return "OBLIVION protocol executed. Episodic history cleared. Tabula Rasa."
+        else:
+            return "Memory reset failure: check system logs."
 
-# Istanzia pubblicamente lo strumento per l'esportazione verso il Core
+# Publicly instantiate the tool for exporting to Core
 tools = MemoryTools()
 
 # --- COMPATIBILITY SHIMS ---
@@ -92,4 +91,3 @@ def info():
 
 def status():
     return tools.status
-

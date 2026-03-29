@@ -1,6 +1,6 @@
 """
-MODULO: Diagnostica di Sistema - Zentra Core
-DESCRIZIONE: Gestisce i check pre-volo, ora supporta anche Kobold.
+MODULE: System Diagnostics - Zentra Core
+DESCRIPTION: Handles pre-flight checks and hardware status.
 """
 
 import os
@@ -12,7 +12,7 @@ import psutil
 import msvcrt
 import json
 from core.logging import logger
-from core.audio import voce
+from core.audio import voice
 from ui import interface
 from core.system.version import VERSION, COPYRIGHT, get_version_string
 from core.i18n import translator
@@ -35,27 +35,27 @@ def check_bypass():
         pass
     return False
 
-def stampa_e_parla(testo_video, testo_voce=None):
-    print(testo_video)
-    if testo_voce:
-        voce.parla(testo_voce)
+def print_and_speak(video_text, voice_text=None):
+    print(video_text)
+    if voice_text:
+        voice.speak(voice_text)
     time.sleep(0.1)
 
-def check_cartelle():
-    cartelle = ["plugins", "personality", "logs", "memory", "core", "ui", "app"]
-    mancanti = [c for c in cartelle if not os.path.exists(c)]
-    return mancanti
+def check_folders():
+    folders = ["plugins", "personality", "logs", "memory", "core", "ui", "app"]
+    missing = [f for f in folders if not os.path.exists(f)]
+    return missing
 
 def check_hardware():
     cpu = psutil.cpu_percent(interval=0.1)
     ram = psutil.virtual_memory().percent
-    stato_cpu = f"{VERDE}OK{RESET}" if cpu < 80 else f"{ROSSO}ALTA ({cpu}%){RESET}"
-    stato_ram = f"{VERDE}OK{RESET}" if ram < 85 else f"{ROSSO}CRITICA ({ram}%){RESET}"
-    return f"   [+] CPU Core: {stato_cpu} | Memoria Neurale (RAM): {stato_ram}"
+    cpu_status = f"{VERDE}OK{RESET}" if cpu < 80 else f"{ROSSO}HIGH ({cpu}%){RESET}"
+    ram_status = f"{VERDE}OK{RESET}" if ram < 85 else f"{ROSSO}CRITICAL ({ram}%){RESET}"
+    return f"   [+] CPU Core: {cpu_status} | Neural Memory (RAM): {ram_status}"
 
 def check_backend(config):
-    """Verifica lo stato del backend attivo (Ollama o Kobold)."""
-    backend_type = config.get('backend', {}).get('tipo', 'ollama')
+    """Verifies the status of the active backend (Ollama, Kobold, or Cloud)."""
+    backend_type = config.get('backend', {}).get('type', 'ollama')
     print(f"   [>] Checking {backend_type.upper()} backend...")
     
     if backend_type == 'kobold':
@@ -63,25 +63,25 @@ def check_backend(config):
         try:
             r = requests.get(url, timeout=2)
             if r.status_code == 200:
-                print(f"   [+] {VERDE}Backend Kobold: ONLINE{RESET}")
+                print(f"   [+] {VERDE}Kobold Backend: ONLINE{RESET}")
                 return True
             else:
-                print(f"   [-] {ROSSO}Backend Kobold: ERRORE ({r.status_code}){RESET}")
+                print(f"   [-] {ROSSO}Kobold Backend: ERROR ({r.status_code}){RESET}")
                 return False
         except Exception as e:
-            print(f"   [-] {ROSSO}Backend Kobold: NON RISPONDE ({e}){RESET}")
+            print(f"   [-] {ROSSO}Kobold Backend: NOT RESPONDING ({e}){RESET}")
             return False
     elif backend_type == 'cloud':
-        # Per il cloud, non facciamo check di rete pesanti qui, 
-        # lasciamo che sia il client a gestire l'eventuale errore di connessione/quota.
-        print(f"   [+] {VERDE}Backend CLOUD: PRONTO (LiteLLM){RESET}")
+        # For cloud, we don't perform heavy network checks here, 
+        # let the client handle connection/quota errors.
+        print(f"   [+] {VERDE}Backend CLOUD: READY (LiteLLM){RESET}")
         return True
     else:  # ollama
         ollama_cfg = config.get('backend', {}).get('ollama', {})
-        modello = ollama_cfg.get('modello', 'llama3.2:1b')
+        model = ollama_cfg.get('model', 'llama3.2:1b')
         url = "http://localhost:11434/api/generate"
         
-        # Inviamo gli stessi parametri GPU che userà client.py in produzione
+        # Send the same GPU parameters used by client.py in production
         options = {}
         if ollama_cfg.get('num_gpu') is not None:
             options["num_gpu"] = int(ollama_cfg['num_gpu'])
@@ -90,32 +90,41 @@ def check_backend(config):
         if ollama_cfg.get('keep_alive') is not None:
             options["keep_alive"] = ollama_cfg['keep_alive']
         
-        payload = {"model": modello, "prompt": "hi", "stream": False, "options": options}
+        payload = {"model": model, "prompt": "hi", "stream": False, "options": options}
         try:
-            print(f"   [>] Initializing VRAM for: {modello} (num_gpu={options.get('num_gpu', 'default')})...")
-            response = requests.post(url, json=payload, timeout=120)
+            # Fast Check: Just verify if Ollama is alive and knows the model
+            tags_url = "http://localhost:11434/api/tags"
+            r_tags = requests.get(tags_url, timeout=2)
+            if r_tags.status_code == 200:
+                models = [m['name'] for m in r_tags.json().get('models', [])]
+                if model in models or any(model in m for m in models):
+                    print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
+                    return True
+            
+            # Fallback to the heavier check if tags fail or model not sure
+            print(f"   [>] Initializing VRAM for: {model}...")
+            response = requests.post(url, json=payload, timeout=5) # Reduced timeout for boot
             if response.status_code == 200:
                 print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
                 return True
             return False
         except Exception as e:
-            logger.errore(f"DIAGNOSTICA: Ollama not responding: {e}")
+            logger.error(f"DIAGNOSTICS: Ollama not responding: {e}")
             print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
             return False
-
-def scansiona_plugins(config):
+def scan_plugins(config):
     """
-    Cerca e interroga moduli aggiuntivi in automatico.
-    Supporta il flag 'enabled' nel config.json per saltare o segnalare i plugin disattivati.
+    Automatically search and query additional modules.
+    Supports the 'enabled' flag in config.json to skip or report disabled plugins.
     """
-    risultati = []
+    results = []
     from core.system import plugin_loader
     
-    # Assicuriamoci che il registro sia fresco (passiamo il config)
-    plugin_loader.aggiorna_registro_capacita(config)
+    # Ensure registry is fresh
+    plugin_loader.update_capability_registry(config)
     
     if not os.path.exists("plugins"):
-        return [f"   [-] {ROSSO}Directory 'plugins' non trovata!{RESET}"]
+        return [f"   [-] {ROSSO}Directory 'plugins' not found!{RESET}"]
 
     plugin_dirs = [d for d in os.listdir("plugins") 
                   if os.path.isdir(os.path.join("plugins", d)) 
@@ -128,47 +137,48 @@ def scansiona_plugins(config):
             continue
             
         try:
-            # Importa il plugin per leggerne il tag e lo stato
+            # Import plugin to read tag and status
             spec = importlib.util.spec_from_file_location(f"diag.{plugin_dir}", main_file)
             if spec is None: continue
-            modulo = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(modulo)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
             
-            # Recupera tag e info
-            dati_info = modulo.info() if hasattr(modulo, "info") else {"tag": plugin_dir.lower()}
-            tag = dati_info.get('tag', plugin_dir.lower())
-            nome_display = plugin_dir.upper()
+            # Retrieve tag and info
+            info_data = module.info() if hasattr(module, "info") else {"tag": plugin_dir.lower()}
+            tag = info_data.get('tag', plugin_dir.lower())
+            display_name = plugin_dir.upper()
             
-            # VERIFICA FLAG ENABLED NEL CONFIG
+            # CHECK ENABLED FLAG IN CONFIG
             is_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
             
             if is_enabled:
-                if hasattr(modulo, "status"):
-                    esito = modulo.status()
-                    # Se l'esito è "READY" o "ATTIVO", prova a tradurlo
-                    if esito in ("READY", "ATTIVO", "ONLINE"): 
-                        esito = translator.t(esito.lower() if esito in ("READY", "ONLINE") else "ready")
-                    elif esito in ("ERROR", "OFFLINE"):
-                        esito = translator.t(esito.lower())
+                if hasattr(module, "status"):
+                    status_result = module.status()
+                    # If status is "READY", "ACTIVE", or "ONLINE", try to translate it
+                    if status_result in ("READY", "ACTIVE", "ONLINE"): 
+                        status_result = translator.t(status_result.lower() if status_result in ("READY", "ONLINE") else "ready")
+                    elif status_result in ("ERROR", "OFFLINE"):
+                        status_result = translator.t(status_result.lower())
                     
-                    risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{esito}{RESET}")
+                    results.append(f"   [+] Plugin '{display_name}': {VERDE}{status_result}{RESET}")
                 else:
-                    risultati.append(f"   [+] Plugin '{nome_display}': {VERDE}{translator.t('ready')}{RESET}")
+                    results.append(f"   [+] Plugin '{display_name}': {VERDE}{translator.t('ready')}{RESET}")
             else:
-                risultati.append(f"   [!] Plugin '{nome_display}': {GIALLO}{translator.t('disabled')}{RESET}")
+                results.append(f"   [!] Plugin '{display_name}': {GIALLO}{translator.t('disabled')}{RESET}")
                 
         except Exception as e:
-            risultati.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}LOADING ERROR ({e}){RESET}")
+            results.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}LOADING ERROR ({e}){RESET}")
     
-    return risultati
+    return results
 
-def esegui_check_iniziale(config):
-    return avvia_sequenza_risveglio(config)
+def run_initial_check(config):
+    return start_wake_sequence(config)
 
-def avvia_sequenza_risveglio(config):
+
+def start_wake_sequence(config):
     os.system('cls' if os.name == 'nt' else 'clear')
     
-    # Usa le variabili centralizzate da core.version
+    # Use centralized variables from core.version
     print(f"{VERDE}{get_version_string()}{RESET}")
     print(f"{VERDE}{COPYRIGHT}{RESET}")
     print(f"{'─' * 55}\n")
@@ -180,14 +190,14 @@ def avvia_sequenza_risveglio(config):
     print(f"{CIANO}      (Press ESC at any time to skip){RESET}")
     print(f"{CIANO}==================================================={RESET}\n")
     
-    # CONTROLLO AVVIO RAPIDO (Impostato su true in config -> system -> avvio_rapido)
-    is_fast_boot = config.get("system", {}).get("avvio_rapido", False)
+    # FAST BOOT CHECK (Set to true in config -> system -> fast_boot)
+    fast_boot = config.get("system", {}).get("fast_boot", False)
     
     if check_bypass(): return True
-    if not is_fast_boot:
-        mancanti = check_cartelle()
-        if mancanti:
-            print(f"   [-] {ROSSO}{translator.t('diag_error_dirs', dirs=', '.join(mancanti))}{RESET}")
+    if not fast_boot:
+        missing = check_folders()
+        if missing:
+            print(f"   [-] {ROSSO}{translator.t('diag_error_dirs', dirs=', '.join(missing))}{RESET}")
             time.sleep(2)
             return False
         print(f"   [+] {VERDE}{translator.t('diag_structure_ok')}{RESET}")
@@ -199,8 +209,8 @@ def avvia_sequenza_risveglio(config):
         print(f"   [+] {VERDE}{translator.t('diag_voice_ok')}{RESET}")
         
         if check_bypass(): return True
-        soglia = config.get('ascolto', {}).get('soglia_energia', 'N/D')
-        print(f"   [+] {VERDE}{translator.t('diag_mic_ready', soglia=soglia)}{RESET}")
+        energy_threshold = config.get('listening', {}).get('energy_threshold', 'N/D')
+        print(f"   [+] {VERDE}{translator.t('diag_mic_ready', soglia=energy_threshold)}{RESET}")
         
         # Check backend
         if check_bypass(): return True
@@ -208,29 +218,19 @@ def avvia_sequenza_risveglio(config):
         
         # Plugin Scan
         if check_bypass(): return True
-        esiti = scansiona_plugins(config)
-        for esito in esiti[:5]:
+        results = scan_plugins(config)
+        for res in results[:5]:
             if check_bypass(): return True
-            print(esito)
+            print(res)
     
         print(f"\n{CIANO}==================================================={RESET}")
     
-    # Estrae lingua voce (es. "en_US-lessac..." -> "en", "it_IT-paola..." -> "it")
-    modello_onnx = os.path.basename(config.get("voce", {}).get("modello_onnx", "it_IT-paola-medium.onnx"))
-    lingua_voce = modello_onnx.split("_")[0] if "_" in modello_onnx else "en"
-    
-    # Chiediamo al Translator il dizionario delle traduzioni e forziamo la lingua
-    from core.i18n.translator import get_translator
-    t_obj = get_translator()
-    saluto_vocale = "Hello, I am Zentra" # Fallback sicuro
-    try:
-        # translator.translations contiene dicts della forma {'it': {...}, 'en': {...}}
-        saluto_vocale = t_obj.translations.get(lingua_voce, {}).get("intro_greeting", "Hello, I am Zentra")
-    except Exception:
-        pass
-
-    # Stampa in UI locale, parla in lingua VOCE
-    stampa_e_parla(f"{VERDE}[SYSTEM] {RESET}" + translator.t("intro_greeting"), saluto_vocale)
+    # Estrae la frase personalizzata adatta alla lingua corrente
+    from core.system.greeting import get_spoken_greeting
+    intro_greeting_voc = get_spoken_greeting(config)
+ 
+    # Print in UI locale, speak in VOICE language (Always at startup)
+    print_and_speak(f"{VERDE}[SYSTEM] {RESET}" + translator.t("intro_greeting"), intro_greeting_voc)
     
     while msvcrt.kbhit():
         msvcrt.getch()

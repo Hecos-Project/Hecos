@@ -6,54 +6,54 @@ barre di progresso, slider e indicatori di stato reattivi.
 
 from colorama import Fore, Style
 
-# Palette Colori Centralizzata
-COLORI = {
-    "VERDE": Fore.GREEN,
-    "GIALLO": Fore.YELLOW,
-    "ROSSO": Fore.RED,
-    "CIANO": Fore.CYAN,
-    "BIANCO": Fore.WHITE,
-    "NERO": Fore.BLACK,
+# Centralized Color Palette
+COLORS = {
+    "GREEN": Fore.GREEN,
+    "YELLOW": Fore.YELLOW,
+    "RED": Fore.RED,
+    "CYAN": Fore.CYAN,
+    "WHITE": Fore.WHITE,
+    "BLACK": Fore.BLACK,
     "RESET": Style.RESET_ALL,
     "BRIGHT": Style.BRIGHT
 }
 
-def crea_barra(percentuale, larghezza=20, stile="cyber"):
+def create_bar(percentage, width=20, style="cyber"):
     """
-    Genera una barra di progresso testuale.
-    Stili: 'cyber' (█░), 'minimal' ([#-]) o 'dot' (●○).
+    Generates a textual progress bar.
+    Styles: 'cyber' (█░), 'minimal' ([#-]) or 'dot' (●○).
     """
-    percentuale = max(0, min(100, percentuale))
-    pieni = int((percentuale / 100) * larghezza)
-    vuoti = larghezza - pieni
+    percentage = max(0, min(100, percentage))
+    filled = int((percentage / 100) * width)
+    empty = width - filled
     
-    # Selezione caratteri in base allo stile
-    char_pieno, char_vuoto = "█", "░"
-    if stile == "minimal": char_pieno, char_vuoto = "#", "-"
-    if stile == "dot": char_pieno, char_vuoto = "●", "○"
+    # Character selection based on style
+    char_filled, char_empty = "█", "░"
+    if style == "minimal": char_filled, char_empty = "#", "-"
+    if style == "dot": char_filled, char_empty = "●", "○"
 
-    # Colore dinamico in base alla soglia
-    colore = COLORI["VERDE"]
-    if percentuale > 70: colore = COLORI["GIALLO"]
-    if percentuale > 90: colore = COLORI["ROSSO"]
+    # Dynamic color based on threshold
+    color = COLORS["GREEN"]
+    if percentage > 70: color = COLORS["YELLOW"]
+    if percentage > 90: color = COLORS["RED"]
 
-    barra = f"{colore}{char_pieno * pieni}{COLORI['NERO']}{char_vuoto * vuoti}{COLORI['RESET']}"
+    bar = f"{color}{char_filled * filled}{COLORS['BLACK']}{char_empty * empty}{COLORS['RESET']}"
     
-    # Arrotonda la percentuale a 1 decimale per la visualizzazione
-    percentuale_arrotondata = round(percentuale, 1)
+    # Round percentage for display
+    rounded_percentage = round(percentage, 1)
     
-    return f"{barra} {COLORI['BRIGHT']}{percentuale_arrotondata:>3}%{COLORI['RESET']}"
+    return f"{bar} {COLORS['BRIGHT']}{rounded_percentage:>3}%{COLORS['RESET']}"
 
-def indicatore_reattivita(stato_online):
-    """Restituisce un widget testuale per lo stato di Ollama/Modello."""
-    if stato_online:
-        return f"{COLORI['VERDE']}● ONLINE{COLORI['RESET']}"
+def responsiveness_indicator(is_online):
+    """Returns a textual widget for Ollama/Model status."""
+    if is_online:
+        return f"{COLORS['GREEN']}● ONLINE{COLORS['RESET']}"
     else:
-        return f"{COLORI['ROSSO']}○ OFFLINE{COLORI['RESET']}"
+        return f"{COLORS['RED']}○ OFFLINE{COLORS['RESET']}"
 
-def genera_slider(valore, range_max=100, etichetta="VOL"):
-    """Crea uno slider orizzontale per parametri regolabili."""
-    pos = int((valore / range_max) * 10)
+def generate_slider(value, max_range=100, label="VOL"):
+    """Creates a horizontal slider for adjustable parameters."""
+    pos = int((value / max_range) * 10)
     slider = ["-"] * 11
-    slider[pos] = f"{COLORI['CIANO']}⧯{COLORI['RESET']}"
-    return f"{etichetta}: <{''.join(slider)}>"
+    slider[pos] = f"{COLORS['CYAN']}⧯{COLORS['RESET']}"
+    return f"{label}: <{''.join(slider)}>"

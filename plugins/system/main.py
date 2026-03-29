@@ -15,7 +15,7 @@ except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[SYS_DEBUG]", *args)
         def info(self, *args, **kwargs): print("[SYS_INFO]", *args)
-        def errore(self, *args, **kwargs): print("[SYS_ERR]", *args)
+        def error(self, *args, **kwargs): print("[SYS_ERR]", *args)
     logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
@@ -28,8 +28,8 @@ except ImportError:
 class SystemTools:
     """
     Plugin: System
-    Strumenti centrali di sistema. Permette di gestire il SO, leggere l'ora, 
-    eseguire comandi terminale, gestire programmi, cartelle e configurazioni.
+    Central system tools. Allows managing the OS, reading the time,
+    executing terminal commands, managing programs, folders, and configurations.
     """
 
     def __init__(self):
@@ -105,8 +105,8 @@ class SystemTools:
 
     def get_time(self) -> str:
         """
-        Restituisce l'ora locale attuale formattata (HH:MM).
-        Usa questo strumento per rispondere quando ti viene chiesta l'ora esatta.
+        Returns the current local time (HH:MM).
+        Use this tool to answer when asked for the exact time.
         """
         ora = datetime.datetime.now().strftime("%H:%M")
         logger.debug(f"PLUGIN_{self.tag}", "Executing 'time' command")
@@ -114,8 +114,8 @@ class SystemTools:
 
     def reboot_system(self) -> str:
         """
-        Riavvia l'intero sistema Zentra Core.
-        Usa questo strumento se ci sono problemi critici o se l'utente richiede un riavvio.
+        Reboots the entire Zentra Core system.
+        Use this tool if there are critical issues or if the user requests a reboot.
         """
         logger.info(translator.t("plugin_system_reboot_admin"))
         logger.debug(f"PLUGIN_{self.tag}", "Executing reboot")
@@ -135,38 +135,50 @@ class SystemTools:
         logger.info(translator.t("plugin_system_log_access_msg", type=tipo_str))
         logger.debug(f"PLUGIN_{self.tag}", "Reading standard logs")
         
-        risultato_log = logger.leggi_log(n=8, solo_errori=False)
+        risultato_log = logger.read_logs(n=8, errors_only=False)
         return translator.t("plugin_system_log_analysis_done", type=tipo_str, log=risultato_log)
 
     def read_errors(self) -> str:
         """
-        Legge specificamente gli ultimi errori (crash, eccezioni) registrati dal sistema nel log degli errori.
-        Essenziale per diagnosticare malfunzionamenti.
+        Reads specifically the latest errors (crashes, exceptions) recorded by the system.
+        Essential for diagnosing malfunctions.
         """
         tipo_str = translator.t("plugin_system_log_errors")
         logger.info(translator.t("plugin_system_log_access_msg", type=tipo_str))
         logger.debug(f"PLUGIN_{self.tag}", "Reading error logs")
         
-        risultato_log = logger.leggi_log(n=8, solo_errori=True)
+        risultato_log = logger.read_logs(n=8, errors_only=True)
+        return translator.t("plugin_system_log_analysis_done", type=tipo_str, log=risultato_log)
+
+    def read_debug_logs(self) -> str:
+        """
+        Reads the technical debug logs (LiteLLM, Brain processing).
+        Useful for advanced developers and deep diagnostics.
+        """
+        tipo_str = "DEBUG"
+        logger.info(translator.t("plugin_system_log_access_msg", type=tipo_str))
+        logger.debug(f"PLUGIN_{self.tag}", "Reading debug logs")
+        
+        risultato_log = logger.read_logs(n=10, debug_only=True)
         return translator.t("plugin_system_log_analysis_done", type=tipo_str, log=risultato_log)
 
     def open_terminal(self) -> str:
         """
-        Apre una nuova finestra indipendente del prompt dei comandi di Windows (CMD).
+        Opens a new independent Windows command prompt (CMD) window.
         """
         try:
             logger.info("Opening independent external CMD instance.")
             subprocess.Popen("start cmd.exe", shell=True)
             return translator.t("plugin_system_terminal_opened")
         except Exception as e:
-            logger.errore(f"Terminal open failed: {e}")
+            logger.error(f"Terminal open failed: {e}")
             return translator.t("plugin_system_terminal_fail", error=str(e))
 
     def open_program(self, program_name: str) -> str:
         """
-        Avvia un programma locale specificato dal nome.
+        Starts a local program specified by name.
         
-        :param program_name: Il nome del programma da aprire (es. 'notepad', 'chrome', o altri nomi registrati).
+        :param program_name: The name of the program to open (e.g., 'notepad', 'chrome').
         """
         prog = program_name.strip().lower()
         logger.debug(f"PLUGIN_{self.tag}", f"Opening program: {prog}")
@@ -187,15 +199,37 @@ class SystemTools:
 
     def explore_folder(self, folder_path: str) -> str:
         """
-        Apre il file manager del sistema operativo in una cartella specifica.
+        OPENS a graphical Windows Explorer window for the specified folder. 
+        Use this tool when the user wants to visually 'see', 'open', or 'explore' a directory on their desktop.
         
-        :param folder_path: Il percorso o l'alias della cartella (es. 'desktop', 'download', o un path assoluto).
+        :param folder_path: The path or alias of the folder (e.g., 'desktop', 'download', 'documents').
         """
         percorso = folder_path.strip().lower()
         logger.debug(f"PLUGIN_{self.tag}", f"Opening folder: {percorso}")
         
         mappings = self._get_explorer_mappings()
-        path = mappings.get(percorso, percorso)
+        
+        # Alias resolution for common folders
+        if percorso not in mappings:
+            if percorso == "downloads" and "download" in mappings:
+                path = mappings["download"]
+            elif percorso == "download" and "downloads" in mappings:
+                path = mappings["downloads"]
+            elif percorso == "documents" and "documenti" in mappings:
+                path = mappings["documenti"]
+            elif percorso == "documenti" and "documents" in mappings:
+                path = mappings["documents"]
+            else:
+                path = percorso
+        else:
+            path = mappings[percorso]
+
+        # Expand user path fallback just in case
+        if not os.path.exists(path):
+            expanded_path = os.path.expanduser(f"~\\{percorso.capitalize()}")
+            if os.path.exists(expanded_path):
+                path = expanded_path
+
         if os.path.exists(path):
             os.startfile(path)
             return translator.t("plugin_system_folder_opened", folder=percorso)
@@ -204,12 +238,12 @@ class SystemTools:
 
     def set_configuration(self, section: str, key: str, value: str) -> str:
         """
-        Modifica un valore all'interno del file di configurazione principale (config.json).
-        Attenzione: va usato solo su richiesta esplicita dell'utente.
+        Modifies a value within the main configuration file (config.json).
+        Warning: use only upon explicit user request.
         
-        :param section: La sezione root del config (es. 'llm', 'backend', 'voce').
-        :param key: La chiave specifica da modificare.
-        :param value: Il nuovo valore (testo, numerico o 'true'/'false').
+        :param section: The root section of the config (e.g., 'llm', 'backend', 'voice').
+        :param key: The specific key to modify.
+        :param value: The new value (text, numeric, or 'true'/'false').
         """
         cfg = ConfigManager()
         if not cfg.get_plugin_config(self.tag, "enable_config_set", True):
@@ -240,10 +274,10 @@ class SystemTools:
 
     def execute_shell_command(self, command: str) -> str:
         """
-        Esegue un comando shell (cmd.exe) nel terminale in background e restituisce l'output.
-        Ideale per diagnostica, automazione o interrogazioni di sistema.
+        Executes a shell command (cmd.exe) in the background and returns the output.
+        Ideal for diagnostics, automation, or system queries.
         
-        :param command: Il comando esatto da passare alla shell.
+        :param command: The exact command to pass to the shell.
         """
         shell_cmd = command.strip()
         logger.debug(f"PLUGIN_{self.tag}", f"Executing shell command: {shell_cmd}")
@@ -261,10 +295,10 @@ class SystemTools:
             return output if output.strip() else translator.t("plugin_system_shell_success", cmd=shell_cmd)
         except subprocess.CalledProcessError as e:
             msg_err = f"Shell Error: {e.output}"
-            logger.errore(msg_err)
+            logger.error(msg_err)
             return msg_err
         except Exception as e:
-            logger.errore(f"Unexpected shell error: {e}")
+            logger.error(f"Unexpected shell error: {e}")
             return f"Error: {e}"
 
 # Istanzia pubblicamente lo strumento per l'esportazione verso il Core
@@ -277,6 +311,32 @@ def info():
 def status():
     return tools.status
 
-def esegui(comando):
-    # Fallback legacy (molto limitato)
-    return f"Use tool calling for {comando}"
+def execute(comando: str) -> str:
+    """Compatibilità legacy: smista i comandi testuali ai nuovi metodi ad oggetti."""
+    c = comando.strip()
+    c_lower = c.lower()
+    
+    if c_lower in ("terminal", "cmd", "terminale", "prompt", "open_terminal"):
+        return tools.open_terminal()
+    elif c_lower.startswith("open:") or c_lower.startswith("program:") or c_lower.startswith("open_program:"):
+        prog = c.split(":", 1)[1].strip()
+        return tools.open_program(prog)
+    elif c_lower.startswith("explore:") or c_lower.startswith("folder:") or c_lower.startswith("apri:") or c_lower.startswith("explore_folder:"):
+        folder = c.split(":", 1)[1].strip()
+        return tools.explore_folder(folder)
+    elif c_lower in ("reboot", "reboot_system"):
+        return tools.reboot_system()
+    elif c_lower in ("logs", "log", "read_logs"):
+        return tools.read_logs()
+    elif c_lower in ("errors", "errori", "read_errors"):
+        return tools.read_errors()
+    elif c_lower in ("debug", "debug_logs", "read_debug_logs"):
+        return tools.read_debug_logs()
+    elif c_lower in ("time", "ora", "tempo", "get_time"):
+        return tools.get_time()
+    
+    if c_lower.startswith("shell:") or c_lower.startswith("execute_shell_command:"):
+        shell_cmd = c.split(":", 1)[1].strip()
+        return tools.execute_shell_command(shell_cmd)
+        
+    return f"Errore: Comando legacy '{comando}' non supportato o mancante. Usa Tools Calling."

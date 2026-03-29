@@ -1,4 +1,5 @@
-# Zentra Core v0.9.6 - Architecture Map
+# Zentra Core - Architecture Map
+**Version:** 0.9.7 (Stable English Standard)
 
 A visual guide to the Zentra Core folder structure and system components.
 
@@ -7,6 +8,8 @@ Zentra-Core/
 │
 ├── app/                  # Application runtime environment
 │   ├── application.py    # Main boot sequence and event loop
+│   ├── config.py         # Global configuration manager & I18N loader
+│   ├── diagnostica.py    # Hardware and system health checks
 │   ├── input_handler.py  # User keyboard and microphone unified input
 │   ├── model_manager.py  # Global AI model state management
 │   ├── state_manager.py  # Tracks internal status (Thinking, Speaking, Ready)
@@ -14,31 +17,28 @@ Zentra-Core/
 │
 ├── core/                 # Low-level core engines
 │   ├── audio/            # TTS (Piper) and STT voice systems
-│   ├── i18n/             # Internationalization dictionaries (IT/EN)
+│   ├── i18n/             # Internationalization dictionaries (EN/IT/ES)
 │   ├── llm/              # Unified AI backends (Ollama, Kobold, Cloud clients)
 │   ├── processing/       # Token streaming and text output filters
-│   └── system/           # Core bootstrap, versioning, and diagnostics
+│   └── system/           # Core bootstrap, versioning, and plugin loading
+│       └── instance_lock.py # PID-based single instance locking
 │
 ├── docs/                 # Operational manuals and technical documentation
-│   ├── MANUALE_OPERATIVO.md
-│   └── zentra_core_structure.md
+│   ├── OPERATING_MANUAL.md
+│   ├── ARCHITECTURE_MAP.md
+│   ├── installation_guide.md
+│   └── PLUGINS_DEV.md
 │
 ├── logs/                 # Active system runtime and technical logs
 │
-├── memory/               # Persistent AI storage
-│   ├── caveau/           # Database environment for long-term memories
-│   └── history/          # Short-term active conversation histories
+├── memory/           # Brain Interface & Long-term storage
+│   ├── chat_history.db   # SQLite database for long-term episodic memory
+│   ├── core_identity.json # AI identity and personality traits
+│   └── user_profile.json  # User profile and biographical notes
 │
 ├── personality/          # Text injects for AI persona and system prompts
-│   ├── default.txt
-│   └── (custom_souls).txt
 │
 ├── plugins/              # Modular root capabilities and tools
-│   ├── dashboard/        # Background hardware monitoring telemetry
-│   ├── media/            # Audio output controls
-│   ├── system_admin/     # OS root access (shell access, file manager)
-│   ├── web_search/       # Internet browsing and API queries
-│   └── webcam/           # PC optical sensor interface
 │
 ├── ui/                   # Visual output and menus
 │   ├── config_editor/    # F7 Interactive Configuration Panel (Inquirer)
@@ -54,7 +54,8 @@ Zentra-Core/
 ```
 
 ### Component Overview
-* **`app/`** regulates the loop. If it crashes, the application dies.
-* **`core/`** provides the heavy lifting (LLM connections, audio engine).
-* **`plugins/`** is purely dynamic. Every subfolder acts as an independent tool the AI can physically use. Removing a plugin does not crash the system.
-* **`ui/`** is exclusively drawing pixels and catching terminal keystrokes.
+* **`app/`**: Regulates the main loop. Manages the transition between thinking, speaking, and listening states.
+* **`core/`**: Provides the functional foundation (LLM connections, audio engine, translation layer).
+* **`plugins/`**: Purely dynamic. Every subfolder acts as an independent tool the AI can use via Function Calling or legacy tags.
+* **`memory/`**: Centralized vault for everything the AI "knows" and "remembers" about itself and the user.
+* **`ui/`**: Responsible for rendering the TUI and handling interactive console menus.

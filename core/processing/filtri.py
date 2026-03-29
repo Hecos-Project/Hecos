@@ -2,128 +2,128 @@ import re
 import json
 import unicodedata
 
-# Cache per non leggere il disco a ogni frase
+# Cache to avoid disk reads on every sentence
 _config_cache = None
 
-def carica_config_filtri():
+def load_filter_config():
     global _config_cache
     if _config_cache is None:
         try:
             with open("config.json", "r", encoding="utf-8") as f:
                 full_config = json.load(f)
-                _config_cache = full_config.get("filtri", {
-                    "rimuovi_asterischi": True,
-                    "rimuovi_parentesi_tonde": True,
-                    "rimuovi_parentesi_quadre": False,
-                    "sostituzioni_personalizzate": {}
+                _config_cache = full_config.get("filters", {
+                    "remove_asterisks": True,
+                    "remove_round_brackets": True,
+                    "remove_square_brackets": False,
+                    "custom_replacements": {}
                 })
-        except Exception as e:
+        except Exception:
             return {}
     return _config_cache
 
 def reset_cache():
-    """Svuota la cache per forzare una ricarica al prossimo utilizzo, utile dopo la modifica da pannello."""
+    """Clears cache to force a reload on next use, useful after panel updates."""
     global _config_cache
     _config_cache = None
 
-def rimuovi_think_tags(testo):
+def remove_think_tags(text):
     """
-    Rimuove i blocchi <think>...</think> prodotti dai reasoning model (Qwen, DeepSeek-R1, ecc.).
-    Supporta anche tag in minuscolo/maiuscolo e blocchi multiriga.
+    Removes <think>...</think> blocks produced by reasoning models (Qwen, DeepSeek-R1, etc.).
+    Supports case-insensitive tags and multiline blocks.
     """
-    if not testo:
-        return testo
-    # Rimuove i blocchi <think>...</think> (case-insensitive, multiriga)
-    testo = re.sub(r'<think>.*?</think>', '', testo, flags=re.DOTALL | re.IGNORECASE)
-    # Rimuove eventuali <think> aperti senza chiusura (risposta troncata)
-    testo = re.sub(r'<think>.*$', '', testo, flags=re.DOTALL | re.IGNORECASE)
-    return testo.strip()
+    if not text:
+        return text
+    # Removes <think>...</think> blocks (case-insensitive, multiline)
+    text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    # Removes any open <think> without closure (truncated response)
+    text = re.sub(r'<think>.*$', '', text, flags=re.DOTALL | re.IGNORECASE)
+    return text.strip()
 
-def rimuovi_emoji(testo):
+def remove_emoji(text):
     """
-    Rimuove le emoji e altri caratteri speciali non supportati dalla sintesi vocale.
+    Removes emojis and other special characters not supported by speech synthesis.
     """
-    # Filtra i caratteri non stampabili e le emoji
-    # Mantiene solo lettere, numeri, punteggiatura base e spazi
+    # Filter non-printable characters and emojis
+    # Keep only letters, numbers, basic punctuation, and spaces
     pattern = re.compile(r'[^\x00-\x7F\u00C0-\u017F\s\.,!?;:\'"\(\)\[\]\{\}]')
-    testo_pulito = pattern.sub('', testo)
-    return testo_pulito
+    clean_text = pattern.sub('', text)
+    return clean_text
 
-def pulisci_per_video(testo):
+def clean_for_video(text):
     """
-    Sanitizza il testo per la stampa sicura su terminale Windows.
-    Converte caratteri non-cp1252 (emoji, unicode esteso) in '?' invece di crashare.
-    Questo è il path sicuro per TUTTO il testo che viene mostrato a video.
+    Sanitizes text for safe terminal output on Windows.
+    Converts non-cp1252 characters (emojis, extended unicode) to '?' instead of crashing.
+    This is the safe path for ALL text displayed on screen.
     """
-    if not testo:
+    if not text:
         return ""
-    # Rimuove i tag <think> dei reasoning model (Qwen, DeepSeek-R1, ecc.)
-    testo = rimuovi_think_tags(testo)
-    if not testo:
+    # Remove <think> tags from reasoning models (Qwen, DeepSeek-R1, etc.)
+    text = remove_think_tags(text)
+    if not text:
         return ""
     try:
-        # Encode in cp1252 con 'replace' (sostituisce caratteri non supportati con '?')
-        # poi decode di nuovo in stringa Python - il terminale ora può sempre stamparlo
-        return testo.encode('cp1252', errors='replace').decode('cp1252')
+        # Encode in cp1252 with 'replace' (replaces unsupported characters with '?')
+        # then decode back to a Python string - the terminal can now always print it
+        return text.encode('cp1252', errors='replace').decode('cp1252')
     except Exception:
-        # Fallback ultra-sicuro: rimuovi tutto ciò che non è ASCII puro
-        return testo.encode('ascii', errors='replace').decode('ascii')
+        # Ultra-safe fallback: remove everything non-pure-ASCII
+        return text.encode('ascii', errors='replace').decode('ascii')
 
 def safe_print(*args, **kwargs):
     """
-    Versione di print() sicura per terminali Windows che non supportano UTF-8.
-    Usa automaticamente pulisci_per_video() su ogni argomento stringa.
+    Safe print() version for Windows terminals.
+    Automatically uses clean_for_video() on each string argument.
     """
     import sys
-    safe_args = [pulisci_per_video(str(a)) if isinstance(a, str) else a for a in args]
+    safe_args = [clean_for_video(str(a)) if isinstance(a, str) else a for a in args]
     try:
         print(*safe_args, **kwargs)
     except Exception:
-        # Ultimo fallback: converti tutto in ASCII puro
+        # Ultimate fallback: pure ASCII
         plain = ' '.join(str(a).encode('ascii', errors='replace').decode('ascii') for a in args)
         sys.stdout.write(plain + '\n')
         sys.stdout.flush()
 
-def pulisci_per_voce(testo):
-    if not testo:
+def clean_for_voice(text):
+    if not text:
         return ""
 
-    conf = carica_config_filtri()
+    conf = load_filter_config()
 
-    # 0. Rimuovi tag <think> dei reasoning model (Qwen, DeepSeek-R1, ecc.)
-    testo = rimuovi_think_tags(testo)
-    if not testo:
+    # 0. Remove <think> tags from reasoning models (Qwen, DeepSeek-R1, etc.)
+    text = remove_think_tags(text)
+    if not text:
         return ""
 
-    # 1b. Rimuovi emoji e caratteri speciali
-    testo = rimuovi_emoji(testo)
+    # 1b. Remove emojis and special characters
+    text = remove_emoji(text)
 
-    # 1. Sostituzioni personalizzate
-    sostituzioni = conf.get("sostituzioni_personalizzate", {})
-    for target, sostituto in sostituzioni.items():
-        testo = testo.replace(target, sostituto)
+    # 1. Custom replacements
+    replacements = conf.get("custom_replacements", {})
+    for target, replacement in replacements.items():
+        text = text.replace(target, replacement)
 
-    # 2. Rimuove testo tra asterischi
-    if conf.get("rimuovi_asterischi", True):
-        testo = re.sub(r"\*.*?\*", "", testo)
+    # 2. Removes text between asterisks
+    if conf.get("remove_asterisks", True):
+        text = re.sub(r"\*.*?\*", "", text)
 
-    # 3. Rimuove testo tra parentesi tonde
-    if conf.get("rimuovi_parentesi_tonde", True):
-        testo = re.sub(r"\(.*?\)", "", testo)
+    # 3. Removes text between round brackets
+    if conf.get("remove_round_brackets", True):
+        text = re.sub(r"\(.*?\)", "", text)
 
-    # 4. Gestione parentesi quadre
-    if conf.get("rimuovi_parentesi_quadre", False):
-        testo = re.sub(r"\[.*?\]", "", testo)
+    # 4. Handle square brackets
+    if conf.get("remove_square_brackets", False):
+        text = re.sub(r"\[.*?\]", "", text)
     else:
-        testo = testo.replace("[", "").replace("]", "")
+        text = text.replace("[", "").replace("]", "")
 
-    # 5. Rimuove markdown (grassetto, corsivo)
-    if conf.get("rimuovi_markdown", True):
-        testo = re.sub(r'\*\*.*?\*\*', '', testo)
-        testo = re.sub(r'__.*?__', '', testo)
-        testo = re.sub(r'\*.*?\*', '', testo)
+    # 5. Removes markdown (bold, italic)
+    if conf.get("remove_markdown", True):
+        text = re.sub(r'\*\*.*?\*\*', '', text)
+        text = re.sub(r'__.*?__', '', text)
+        text = re.sub(r'\*.*?\*', '', text)
 
-    # 6. Pulizia spazi doppi
-    testo = re.sub(r'\s+', ' ', testo).strip()
+    # 6. Double space cleanup
+    text = re.sub(r'\s+', ' ', text).strip()
 
-    return testo
+    return text

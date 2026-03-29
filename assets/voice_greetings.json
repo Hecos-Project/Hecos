@@ -1,0 +1,8 @@
+{
+    "en": "Hello, I am Zentra.",
+    "it": "Zentra, molto piacere!",
+    "es": "Hola, soy Zentra.",
+    "fr": "Bonjour, je suis Zentra.",
+    "de": "Hallo, ich bin Zentra.",
+    "fallback": "System Ready."
+}

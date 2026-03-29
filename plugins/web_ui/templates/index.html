@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zentra — {{ t('webui_conf_title') }}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg:       #0f1117;
+    --bg2:      #1a1d27;
+    --bg3:      #22263a;
+    --accent:   #6c8cff;
+    --accent2:  #a78bfa;
+    --green:    #34d399;
+    --red:      #f87171;
+    --yellow:   #fbbf24;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --border:   #2d3351;
+    --radius:   10px;
+    --shadow:   0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px 0;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo img {
+    height: 32px;
+    width: auto;
+    filter: drop-shadow(0 0 8px rgba(108,140,255,0.2));
+  }
+
+  .logo-text {
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { font-weight: 300; color: var(--muted); -webkit-text-fill-color: var(--muted); }
+
+  #status-dot { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; padding-bottom: 100px; }
+
+  #live-status {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+
+  .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-label { color: var(--muted); }
+  .stat-val { font-weight: 600; }
+  .val-ok   { color: var(--green); }
+  .val-warn { color: var(--yellow); }
+  .val-err  { color: var(--red); }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 10px 18px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all .2s;
+  }
+
+  .tab:hover { color: var(--text); background: var(--bg3); }
+
+  .tab.active {
+    color: var(--accent);
+    background: var(--bg2);
+    border-color: var(--border);
+    border-bottom-color: var(--bg2);
+    margin-bottom: -1px;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+  }
+
+  .field input[type=text],
+  .field input[type=number],
+  .field input[type=password],
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color .2s;
+    outline: none;
+  }
+
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-info { font-size: 14px; }
+  .toggle-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    transition: .3s;
+  }
+
+  .slider:before {
+    content: "";
+    position: absolute;
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: .3s;
+  }
+
+  input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(20px); background: white; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    z-index: 99;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  }
+
+  #save-msg { font-size: 13px; color: var(--muted); }
+
+  .btn {
+    padding: 9px 22px;
+    border-radius: 6px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .plugin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .plugin-row:last-child { border-bottom: none; }
+  .plugin-name { font-weight: 600; font-size: 14px; }
+  .plugin-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* LOG CONSOLE */
+  .log-container { display: flex; flex-direction: column; gap: 8px; height: 500px; }
+  .log-container.split #log-group-info, 
+  .log-container.split #log-group-debug { height: 50%; display: flex; flex-direction: column; min-height: 0; }
+  .log-container.split #log-console, 
+  .log-container.split #log-console-debug { flex: 1; min-height: 0; height: auto; }
+
+  #log-console, #log-console-info, #log-console-debug {
+    background: #05070a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 500px;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-y: auto;
+    color: #cbd5e1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .log-label-split { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; display: none; margin-top: 4px; }
+  .split .log-label-split { display: block; }
+
+  .log-line { border-bottom: 1px solid rgba(255,255,255,0.03); padding: 1px 0; }
+  .log-time { color: var(--muted); margin-right: 8px; }
+  .log-lvl  { font-weight: 700; margin-right: 8px; width: 50px; display: inline-block; }
+  .lvl-INFO  { color: #94a3b8; }
+  .lvl-DEBUG { color: #38bdf8; }
+  .lvl-ERROR { color: #f87171; }
+  .lvl-WARN  { color: #fbbf24; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="/assets/Zentra_Core_Logo_NBG.png" alt="Zentra Logo">
+    <div class="logo-text">Zentra <span>{{ t('webui_conf_title') }}</span></div>
+  </div>
+  <div id="status-dot">
+    <div class="dot"></div>
+    <span id="hdr-model">{{ t('webui_chat_loading') }}</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div id="live-status">
+    <div class="stat"><span class="stat-label">{{ t('webui_chat_backend') }}</span><span class="stat-val" id="s-backend">—</span></div>
+    <div class="stat"><span class="stat-label">{{ t('webui_chat_model') }}</span><span class="stat-val" id="s-model">—</span></div>
+    <div class="stat"><span class="stat-label">Bridge</span><span class="stat-val" id="s-bridge">—</span></div>
+    <div class="stat"><span class="stat-label">{{ t('webui_chat_mic') }}</span><span class="stat-val" id="s-mic">—</span></div>
+    <div class="stat"><span class="stat-label">TTS</span><span class="stat-val" id="s-tts">—</span></div>
+    <div class="stat"><span class="stat-label">Config</span><span class="stat-val" id="s-config">—</span></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('backend')">{{ t('webui_conf_tab_backend') }}</button>
+    <button class="tab" onclick="showTab('llm')">{{ t('webui_conf_tab_llm') }}</button>
+    <button class="tab" onclick="showTab('routing')">{{ t('webui_conf_tab_routing') }}</button>
+    <button class="tab" onclick="showTab('ia')">{{ t('webui_conf_tab_ia') }}</button>
+    <button class="tab" onclick="showTab('bridge')">{{ t('webui_conf_tab_bridge') }}</button>
+    <button class="tab" onclick="showTab('voice')">{{ t('webui_conf_tab_voice') }}</button>
+    <button class="tab" onclick="showTab('memory'); loadMemoryStatus();">🧠 Memory</button>
+    <button class="tab" onclick="showTab('system')">{{ t('webui_conf_tab_sys') }}</button>
+    <button class="tab" onclick="showTab('plugins')">{{ t('webui_conf_tab_plugins') }}</button>
+    <button class="tab" onclick="showTab('logs'); startLogStream();">{{ t('webui_conf_tab_logs') }}</button>
+  </div>
+
+  <!-- BACKEND -->
+  <div id="tab-backend" class="panel active">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_backend_title') }}</div>
+      <div class="field">
+        <label>{{ t('webui_conf_backend_type') }}</label>
+        <select id="backend-type">
+          <option value="cloud">{{ t('webui_conf_backend_cloud_opt') }}</option>
+          <option value="ollama">{{ t('webui_conf_backend_ollama_opt') }}</option>
+          <option value="kobold">{{ t('webui_conf_backend_kobold_opt') }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card" id="card-cloud">
+      <div class="card-title">{{ t('webui_conf_cloud_title') }}</div>
+      <div class="field">
+        <label>{{ t('webui_conf_model_active') }}</label>
+        <div style="display:flex; gap:8px;">
+          <select id="cloud-model" style="flex:1"></select>
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="refreshModels()">{{ t('webui_chat_btn_clear') }} 🔄</button>
+        </div>
+      </div>
+      <div class="field"><label>{{ t('webui_conf_temp') }}</label><input type="number" id="cloud-temp" min="0" max="2" step="0.05"></div>
+    </div>
+
+    <div class="card" id="card-ollama" style="display:none">
+      <div class="card-title">{{ t('webui_conf_ollama_title') }}</div>
+      <div class="field">
+        <label>{{ t('webui_conf_model_active') }}</label>
+        <div style="display:flex; gap:8px;">
+          <select id="ollama-model" style="flex:1"></select>
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="refreshModels()">{{ t('webui_chat_btn_clear') }} 🔄</button>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>{{ t('webui_conf_temp') }}</label><input type="number" id="ollama-temp" min="0" max="2" step="0.05"></div>
+        <div class="field"><label>{{ t('webui_conf_gpu_layers') }}</label><input type="number" id="ollama-gpu" min="-1" max="200" step="1"></div>
+        <div class="field"><label>{{ t('webui_conf_num_predict') }}</label><input type="number" id="ollama-predict" min="50" max="8192" step="50"></div>
+        <div class="field"><label>{{ t('webui_conf_num_ctx') }}</label><input type="number" id="ollama-ctx" min="512" max="65536" step="512"></div>
+        <div class="field"><label>{{ t('webui_conf_top_p') }}</label><input type="number" id="ollama-top-p" min="0" max="1" step="0.05"></div>
+        <div class="field"><label>{{ t('webui_conf_repeat_penalty') }}</label><input type="number" id="ollama-repeat" min="0.5" max="2" step="0.05"></div>
+      </div>
+    </div>
+
+    <div class="card" id="card-kobold" style="display:none">
+      <div class="card-title">{{ t('webui_conf_kobold_title') }}</div>
+      <div class="field"><label>{{ t('webui_conf_url_server') }}</label><input type="text" id="kobold-url" placeholder="http://localhost:5001"></div>
+      <div class="field"><label>{{ t('webui_conf_model_active') }}</label><input type="text" id="kobold-model"></div>
+      <div class="grid-2">
+        <div class="field"><label>{{ t('webui_conf_temp') }}</label><input type="number" id="kobold-temp" min="0" max="2" step="0.05"></div>
+        <div class="field"><label>{{ t('webui_conf_max_length') }}</label><input type="number" id="kobold-max" min="64" max="8192" step="64"></div>
+        <div class="field"><label>{{ t('webui_conf_top_p') }}</label><input type="number" id="kobold-top-p" min="0" max="1" step="0.05"></div>
+        <div class="field"><label>{{ t('webui_conf_rep_pen') }}</label><input type="number" id="kobold-rep" min="0.5" max="2" step="0.05"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LLM / CLOUD -->
+  <div id="tab-llm" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_llm_providers') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }}</div></div>
+        <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">LiteLLM Verbose Debug<div class="toggle-sub">Stampa log dettagliati di ogni richiesta AI (molto verboso)</div></div>
+        <label class="switch"><input type="checkbox" id="llm-debug"><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_api_keys') }}</div>
+      <div class="field"><label>OpenAI</label><input type="password" id="key-openai" placeholder="sk-..."></div>
+      <div class="field"><label>Anthropic</label><input type="password" id="key-anthropic" placeholder="sk-ant-..."></div>
+      <div class="field"><label>Groq</label><input type="password" id="key-groq" placeholder="gsk_..."></div>
+      <div class="field"><label>Gemini</label><input type="password" id="key-gemini" placeholder="AIza..."></div>
+      <small style="color:var(--muted); font-size:12px;">{{ t('webui_conf_api_keys_warn') }}</small>
+    </div>
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_available_models') }}</div>
+      <div class="field"><label>OpenAI</label><textarea id="models-openai" rows="4"></textarea></div>
+      <div class="field"><label>Anthropic</label><textarea id="models-anthropic" rows="3"></textarea></div>
+      <div class="field"><label>Groq</label><textarea id="models-groq" rows="5"></textarea></div>
+      <div class="field"><label>Gemini</label><textarea id="models-gemini" rows="5"></textarea></div>
+    </div>
+  </div>
+
+  <!-- ROUTING -->
+  <div id="tab-routing" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_routing_title') }}</div>
+      <div class="field">
+        <label>{{ t('webui_conf_routing_mode') }}</label>
+        <select id="route-mode">
+          <option value="auto">{{ t('webui_conf_routing_auto') }}</option>
+          <option value="forza_nativo">{{ t('webui_conf_routing_native') }}</option>
+          <option value="forza_legacy">{{ t('webui_conf_routing_legacy') }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>{{ t('webui_conf_routing_locked') }}</label>
+        <input type="text" id="route-models" placeholder="es. qwen2.5:0.5b, gemma2:2b">
+      </div>
+    </div>
+  </div>
+
+  <!-- IA / PROMPT -->
+  <div id="tab-ia" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_persona_title') }}</div>
+      <div class="field"><label>{{ t('webui_conf_persona') }}</label><select id="ia-personality"></select></div>
+    </div>
+    <div class="card">
+      <div class="card-title">{{ t('label_special_instructions') }}</div>
+      <div class="field">
+        <textarea id="ia-instructions" rows="4" placeholder="Es: Sii sempre molto conciso ed evita gli asterischi..."></textarea>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('label_save_special_instructions') }}</div>
+        <label class="switch"><input type="checkbox" id="ia-save-instructions"><span class="slider"></span></label>
+      </div>
+      <div style="margin-top: 12px; text-align: right;">
+        <button class="btn btn-secondary" onclick="document.getElementById('ia-instructions').value='';">{{ t('label_clear_special_instructions') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRIDGE & FILTRI -->
+  <div id="tab-bridge" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_bridge_title') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_proc') }}<div class="toggle-sub">{{ t('webui_conf_bridge_proc_sub') }}</div></div>
+        <label class="switch"><input type="checkbox" id="br-processor"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_think') }}<div class="toggle-sub">{{ t('webui_conf_bridge_think_sub') }}</div></div>
+        <label class="switch"><input type="checkbox" id="br-think-tags"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_debug') }}</div>
+        <label class="switch"><input type="checkbox" id="br-debug"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_tools') }}</div>
+        <label class="switch"><input type="checkbox" id="br-tools"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label>{{ t('webui_conf_bridge_delay') }}</label>
+        <input type="number" id="br-delay" min="0" max="500" step="10">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_filters_title') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_filter_ast') }}</div>
+        <label class="switch"><input type="checkbox" id="fl-ast"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_filter_round') }}</div>
+        <label class="switch"><input type="checkbox" id="fl-tonde"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_filter_square') }}</div>
+        <label class="switch"><input type="checkbox" id="fl-quadre"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- COGNITION / MEMORY -->
+  <div id="tab-memory" class="panel">
+    <div class="card">
+      <div class="card-title">🧠 Cognition System</div>
+      <div class="toggle-row">
+        <div class="toggle-info">Memory System (Global ON/OFF)</div>
+        <label class="switch"><input type="checkbox" id="cog-memory-enabled"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Save Conversations (Episodic Memory)</div>
+        <label class="switch"><input type="checkbox" id="cog-episodic"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Clear History on Restart</div>
+        <label class="switch"><input type="checkbox" id="cog-clear-restart"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Inject Identity Context</div>
+        <label class="switch"><input type="checkbox" id="cog-identity"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Inject Self-Awareness</div>
+        <label class="switch"><input type="checkbox" id="cog-awareness"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="margin-top:15px;">
+        <label>Max History Messages in Context</label>
+        <input type="number" id="cog-max-history" min="1" max="200" style="width:80px;">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Memory Status</div>
+      <p id="mem-status-text" style="color:#aaa;font-size:0.9em;">Loading...</p>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <select id="clear-range" class="mode-selector" style="width:140px; margin:0;">
+          <option value="all">Full Wipe (Everything)</option>
+          <option value="1">Older than 24h</option>
+          <option value="7">Older than 7 days</option>
+          <option value="30">Older than 30 days</option>
+        </select>
+        <button class="btn" style="background:#c0392b; flex:1;" onclick="clearMemoryHistory()">🗑 Clear Selected</button>
+        <button class="btn" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh">🔄</button>
+      </div>
+      <small style="color:var(--muted); font-size:11px; margin-top:8px; display:block;">
+        Note: Identity and User Profile are NOT affected by this.
+      </small>
+    </div>
+  </div>
+
+  <!-- VOCE -->
+  <div id="tab-voice" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_voice_system_title') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_voice_system_listening') }}</div>
+        <label class="switch"><input type="checkbox" id="sys-mic-status"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_voice_system_voice') }}</div>
+        <label class="switch"><input type="checkbox" id="sys-voice-status"><span class="slider"></span></label>
+      </div>
+      
+      <div class="field" style="margin-top:10px;">
+        <label>Input (Listening) Routing</label>
+        <select id="stt-source">
+           <option value="system">PC Microphone (Local)</option>
+           <option value="web">Web Browser / API</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Output (Voice) Routing</label>
+        <select id="tts-destination">
+           <option value="system">PC Speakers (Local)</option>
+           <option value="web">Web Browser Audio</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">Audio Devices</div>
+      <div class="field">
+        <label>Microphone (Input)</label>
+        <div style="display:flex; gap:8px;">
+          <select id="audio-input-device" style="flex:1"></select>
+          <button class="btn btn-secondary" style="padding:4px 12px; font-size:12px;" onclick="applyAudioDevice()">Apply</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Speaker (Output)</label>
+        <div style="display:flex; gap:8px;">
+          <select id="audio-output-device" style="flex:1"></select>
+          <button class="btn btn-secondary" style="padding:4px 12px; font-size:12px;" onclick="applyAudioDevice()">Apply</button>
+        </div>
+      </div>
+      <div style="margin-top: 16px; text-align: right; display: flex; justify-content: space-between; align-items: center;">
+         <span id="audio-scan-status" style="font-size: 12px; color: var(--muted);"></span>
+         <button class="btn btn-secondary" onclick="scanAudioDevices()">Re-scan & Test</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_bridge_title') }}</div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_stt') }}</div>
+        <label class="switch"><input type="checkbox" id="br-voice-stt"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_bridge_tts') }}</div>
+        <label class="switch"><input type="checkbox" id="br-voice-enabled"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_voice_tts_title') }}</div>
+      <div class="field"><label>{{ t('webui_conf_voice_path') }}</label><input type="text" id="v-piper" placeholder="C:\piper\piper.exe"></div>
+      <div class="field">
+        <label>{{ t('webui_conf_voice_onnx') }}</label>
+        <select id="v-onnx-model"></select>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;">{{ t('webui_conf_voice_info') }}</p>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>{{ t('webui_conf_voice_speed') }}</label><input type="number" id="v-speed" min="0.5" max="3" step="0.05"></div>
+        <div class="field"><label>{{ t('webui_conf_voice_noise') }}</label><input type="number" id="v-noise" min="0" max="1" step="0.01"></div>
+        <div class="field"><label>{{ t('webui_conf_voice_noisew') }}</label><input type="number" id="v-noisew" min="0" max="1" step="0.01"></div>
+        <div class="field"><label>{{ t('webui_conf_voice_silence') }}</label><input type="number" id="v-silence" min="0" max="2" step="0.05"></div>
+      </div>
+      
+      <!-- Test Voice Section -->
+      <div style="margin-top:20px; padding-top:15px; border-top: 1px solid var(--border);">
+        <label style="font-size:12px; color:var(--muted); margin-bottom:8px; display:block;">Test Voice (Piper)</label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="v-test-text" placeholder="Scrivi qualcosa per testare..." style="flex:1;">
+          <button class="btn btn-secondary" onclick="testVoice('web')" title="Test nel browser">🌐</button>
+          <button class="btn btn-secondary" onclick="testVoice('console')" title="Test su casse PC">💻</button>
+          <button id="v-test-stop" class="btn btn-secondary" style="display:none; background:rgba(248,113,113,0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()" title="Stop Voice">⏹</button>
+        </div>
+        <div id="v-test-status" style="font-size:11px; margin-top:5px; color:var(--accent);"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_voice_mic_title') }}</div>
+      <div class="grid-2">
+        <div class="field"><label>{{ t('webui_conf_voice_energy') }}</label><input type="number" id="a-threshold" min="50" max="5000" step="50"></div>
+        <div class="field"><label>{{ t('webui_conf_voice_timeout') }}</label><input type="number" id="a-timeout" min="1" max="30" step="1"></div>
+        <div class="field"><label>{{ t('webui_conf_voice_limit') }}</label><input type="number" id="a-limit" min="5" max="60" step="1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SISTEMA -->
+  <div id="tab-system" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_sys_log_title') }}</div>
+      <div class="field">
+        <label>{{ t('webui_conf_sys_log_level') }}</label>
+        <select id="log-level">
+          <option value="INFO">Info</option>
+          <option value="DEBUG">Debug</option>
+        </select>
+      </div>
+      <!-- Flask Debug Toggle -->
+      <div class="toggle-row" style="margin-top:15px;">
+        <div class="toggle-info">Flask Debug Mode (Server)</div>
+        <label class="switch"><input type="checkbox" id="sys-flask-debug"><span class="slider"></span></label>
+      </div>
+      <div class="field">
+        <label>{{ t('webui_conf_sys_log_type') }}</label>
+        <select id="log-type">
+          <option value="info">Info</option>
+          <option value="debug">Debug</option>
+          <option value="both">Both</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>{{ t('webui_conf_sys_log_dest') }}</label>
+        <select id="log-dest">
+          <option value="chat">{{ t('webui_conf_sys_log_chat') }}</option>
+          <option value="console">{{ t('webui_conf_sys_log_console') }}</option>
+          <option value="file_only">{{ t('webui_conf_sys_log_file') }}</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_sys_fastboot') }}</div>
+        <label class="switch"><input type="checkbox" id="sys-fastboot"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="margin-top:20px;">
+        <label>{{ t('webui_conf_sys_lang') }}</label>
+        <select id="sys-language">
+          <option value="en">English</option>
+          <option value="it">Italian</option>
+        </select>
+      </div>
+    </div>
+    <!-- Power Control section moved to footer -->
+  </div>
+
+  <!-- PLUGIN -->
+  <div id="tab-plugins" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_plugin_active_title') }}</div>
+      <div id="plugin-list"><p style="color:var(--muted);font-size:13px;">{{ t('webui_conf_msg_loading') }}</p></div>
+    </div>
+    <div class="card" id="card-image-gen">
+      <div class="card-title">🎨 Image Generation (Pollinations.ai)</div>
+      <div class="grid-2">
+        <div class="field"><label>Width (px)</label><input type="number" id="igen-width" min="256" max="2048" step="64"></div>
+        <div class="field"><label>Height (px)</label><input type="number" id="igen-height" min="256" max="2048" step="64"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info" style="font-weight:600; color:var(--text);">Abilita Image Generation</div>
+        <label class="switch"><input type="checkbox" id="igen-enabled" onchange="saveConfig(true)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Remove Logo/Watermark</div>
+        <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div id="tab-logs" class="panel">
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_logs_title') }}</div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">{{ t('webui_conf_logs_help') }}</p>
+      
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid var(--border);">
+        <div class="field">
+          <label>{{ t('webui_conf_logs_web_level') }}</label>
+          <select id="web-log-level">
+            <option value="BOTH">Both (Info & Debug)</option>
+            <option value="INFO">Info Only</option>
+            <option value="DEBUG">Debug Only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>{{ t('webui_conf_logs_web_max') }}</label>
+          <input type="number" id="web-log-max" value="500" min="5" max="2000">
+        </div>
+        <div class="field">
+          <label>{{ t('webui_conf_logs_web_autoscroll') }}</label>
+          <div class="toggle-wrap">
+            <input type="checkbox" id="web-log-autoscroll" checked>
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+        <div class="field">
+          <label>{{ t('webui_conf_logs_web_split') }}</label>
+          <div class="toggle-wrap">
+            <input type="checkbox" id="web-log-split" onchange="toggleLogSplit()">
+            <span class="toggle-slider"></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="font-size:12px; color:var(--muted);">Streaming: <span id="log-status" class="val-warn">Waiting...</span></div>
+        <button class="btn btn-secondary" style="padding:4px 12px; font-size:11px;" onclick="clearLogConsole()">{{ t('webui_chat_btn_clear') }}</button>
+      </div>
+
+      <div id="log-wrapper" class="log-container">
+        <div id="log-group-info" style="display:flex; flex-direction:column; flex:1;">
+          <div class="log-label-split">Info / Error / Warning</div>
+          <div id="log-console">
+            <div style="color:var(--muted)">Clicca sulla tab Logs per avviare il monitoraggio...</div>
+          </div>
+        </div>
+        <div id="log-group-debug" style="display:none; flex-direction:column; flex:1;">
+          <div class="log-label-split">Debug</div>
+          <div id="log-console-debug"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="save-bar">
+  <span id="save-msg"></span>
+  <button class="btn btn-secondary" style="background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); color:var(--red); margin-right:auto;" onclick="rebootSystem()">🔄 REBOOT SYSTEM</button>
+  <button class="btn btn-secondary" onclick="location.reload()">🔃 {{ t('webui_conf_btn_reload') }}</button>
+  <button class="btn btn-primary" onclick="saveConfig()">{{ t('webui_conf_btn_save') }}</button>
+</div>
+
+<script>
+let cfg = {};
+let sysOptions = {};
+let audioDevices = null;
+let audioConfig = null;
+
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+document.getElementById('backend-type').addEventListener('change', function() {
+  const v = this.value;
+  document.getElementById('card-cloud').style.display  = v === 'cloud'  ? '' : 'none';
+  document.getElementById('card-ollama').style.display = v === 'ollama' ? '' : 'none';
+  document.getElementById('card-kobold').style.display = v === 'kobold' ? '' : 'none';
+});
+
+function populateSelect(id, list, currentValue, isFilenameOnly = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = '';
+  if (!Array.isArray(list)) list = [];
+  
+  // If we only care about the filename, clean the currentValue
+  let cleanValue = currentValue;
+  if (isFilenameOnly && currentValue && (currentValue.includes('\\') || currentValue.includes('/'))) {
+    cleanValue = currentValue.split(/[\\/]/).pop();
+  }
+
+  list.forEach(item => {
+    const opt = document.createElement('option');
+    // For filenames, we only want the name, not the path
+    const shortItem = (isFilenameOnly && (item.includes('\\') || item.includes('/'))) ? item.split(/[\\/]/).pop() : item;
+    
+    opt.value = item;
+    opt.textContent = shortItem;
+    if (cleanValue && (item === cleanValue || item.endsWith(cleanValue))) opt.selected = true;
+    el.appendChild(opt);
+  });
+}
+
+async function initAll() {
+  console.log("Initializing Configuration...");
+  const start = Date.now();
+  setSaveMsg('{{ t("webui_conf_msg_loading") }}', 'muted');
+  try {
+    const [rOpts, rCfg, rAudio, rAudioCfg] = await Promise.all([
+      fetch('/zentra/options'),
+      fetch('/zentra/config'),
+      fetch('/api/audio/devices'),
+      fetch('/api/audio/config')
+    ]);
+    
+    sysOptions = await rOpts.json();
+    cfg = await rCfg.json();
+    
+    try {
+        const acData = await rAudioCfg.json();
+        if (acData.ok) audioConfig = acData.config;
+    } catch(e) { console.warn("Could not load audio config:", e); }
+    
+    try {
+        const adData = await rAudio.json();
+        if (adData.ok) audioDevices = adData;
+    } catch(e) { console.warn("Could not load audio devices array:", e); }
+    
+    console.log("Config loaded in " + (Date.now() - start) + "ms");
+    populateUI();
+    
+    const now = new Date().toLocaleTimeString();
+    setSaveMsg('{{ t("webui_conf_msg_synced") }} (' + now + ')', 'ok');
+    console.log("UI populated in total " + (Date.now() - start) + "ms");
+    setTimeout(() => { if (document.getElementById('save-msg').textContent.includes(now)) setSaveMsg('', ''); }, 5000);
+  } catch(e) {
+    console.error("Init error:", e);
+    setSaveMsg('{{ t("webui_conf_msg_err") }} ' + e, 'err');
+  }
+}
+
+function populateUI() {
+  try {
+    const c = cfg;
+    // ... all existing code ...
+
+  const bt = c.backend?.type || 'ollama';
+  document.getElementById('backend-type').value = bt;
+  document.getElementById('backend-type').dispatchEvent(new Event('change'));
+
+  populateSelect('cloud-model', sysOptions.all_cloud || [], c.backend?.cloud?.model);
+  populateSelect('ollama-model', sysOptions.ollama_models || [], c.backend?.ollama?.model);
+
+  document.getElementById('cloud-temp').value    = c.backend?.cloud?.temperature   ?? 0.7;
+  document.getElementById('ollama-temp').value   = c.backend?.ollama?.temperature  ?? 0.3;
+  document.getElementById('ollama-gpu').value    = c.backend?.ollama?.num_gpu      ?? 25;
+  document.getElementById('ollama-predict').value= c.backend?.ollama?.num_predict  ?? 250;
+  document.getElementById('ollama-ctx').value    = c.backend?.ollama?.num_ctx      ?? 4096;
+  document.getElementById('ollama-top-p').value  = c.backend?.ollama?.top_p        ?? 0.9;
+  document.getElementById('ollama-repeat').value = c.backend?.ollama?.repeat_penalty ?? 1.1;
+  document.getElementById('kobold-url').value    = c.backend?.kobold?.url          || 'http://localhost:5001';
+  document.getElementById('kobold-model').value = c.backend?.kobold?.model      || '';
+  document.getElementById('kobold-temp').value   = c.backend?.kobold?.temperature  ?? 0.8;
+  document.getElementById('kobold-max').value    = c.backend?.kobold?.max_length   ?? 512;
+  document.getElementById('kobold-top-p').value  = c.backend?.kobold?.top_p        ?? 0.92;
+  document.getElementById('kobold-rep').value    = c.backend?.kobold?.rep_pen      ?? 1.1;
+
+  const llm = c.llm || {};
+  document.getElementById('llm-allow-cloud').checked = llm.allow_cloud ?? true;
+  document.getElementById('llm-debug').checked       = llm.debug_llm   ?? true;
+  const prov = llm.providers || {};
+  document.getElementById('key-openai').value       = prov.openai?.api_key    || '';
+  document.getElementById('key-anthropic').value    = prov.anthropic?.api_key || '';
+  document.getElementById('key-groq').value         = prov.groq?.api_key      || '';
+  document.getElementById('key-gemini').value       = prov.gemini?.api_key    || '';
+  document.getElementById('models-openai').value    = (prov.openai?.models    || []).join('\n');
+  document.getElementById('models-anthropic').value = (prov.anthropic?.models || []).join('\n');
+  document.getElementById('models-groq').value      = (prov.groq?.models      || []).join('\n');
+  document.getElementById('models-gemini').value    = (prov.gemini?.models    || []).join('\n');
+
+  const rm = c.routing_engine || {};
+  document.getElementById('route-mode').value   = rm.mode       || 'auto';
+  document.getElementById('route-models').value = rm.legacy_models || '';
+
+  populateSelect('ia-personality', sysOptions.personalities || [], c.ai?.active_personality, true);
+  document.getElementById('ia-instructions').value = c.ai?.special_instructions || '';
+  document.getElementById('ia-save-instructions').checked = c.ai?.save_special_instructions || false;
+
+  const br = c.bridge || {};
+  document.getElementById('br-processor').checked      = br.use_processor        ?? false;
+  document.getElementById('br-think-tags').checked     = br.remove_think_tags    ?? true;
+  document.getElementById('br-debug').checked          = br.debug_log             ?? true;
+  document.getElementById('br-tools').checked          = br.enable_tools         ?? true;
+  document.getElementById('br-voice-stt').checked      = br.webui_voice_stt        ?? true;
+  document.getElementById('br-voice-enabled').checked  = br.webui_voice_enabled ?? false;
+  document.getElementById('br-delay').value            = br.chunk_delay_ms      ?? 0;
+
+  const fi = c.filters || {};
+  document.getElementById('fl-ast').checked    = fi.remove_asterisks         ?? false;
+  document.getElementById('fl-tonde').checked  = fi.remove_round_brackets   ?? false;
+  document.getElementById('fl-quadre').checked = fi.remove_square_brackets  ?? false;
+
+  document.getElementById('sys-mic-status').checked   = (audioConfig || {}).listening_status ?? false;
+  document.getElementById('sys-voice-status').checked = (audioConfig || {}).voice_status     ?? false;
+  
+  document.getElementById('stt-source').value = (audioConfig || {}).stt_source || 'system';
+  document.getElementById('tts-destination').value = (audioConfig || {}).tts_destination || 'web';
+
+  const v = audioConfig || {};
+  document.getElementById('v-piper').value  = v.piper_path || '';
+  const curOnnx = (v.onnx_model || '').split('\\').pop().split('/').pop();
+  populateSelect('v-onnx-model', sysOptions.piper_voices || [], curOnnx, true);
+  document.getElementById('v-speed').value   = v.speed            ?? 1.2;
+  document.getElementById('v-noise').value   = v.noise_scale      ?? 0.817;
+  document.getElementById('v-noisew').value  = v.noise_w          ?? 0.9;
+  document.getElementById('v-silence').value = v.sentence_silence ?? 0.1;
+
+  const a = audioConfig || {};
+  document.getElementById('a-threshold').value  = a.energy_threshold   ?? 450;
+  document.getElementById('a-timeout').value = a.silence_timeout ?? 5;
+  document.getElementById('a-limit').value  = a.phrase_limit     ?? 15;
+
+  // Populate Audio Devices
+  if (audioDevices) {
+     const inSel = document.getElementById('audio-input-device');
+     const outSel = document.getElementById('audio-output-device');
+     inSel.innerHTML = ''; outSel.innerHTML = '';
+     
+     (audioDevices.input_devices || []).forEach(d => {
+         const opt = document.createElement('option');
+         opt.value = d.index;
+         opt.textContent = `${d.index}: ${d.name}`;
+         if (d.index === audioDevices.selected_input_index) opt.selected = true;
+         inSel.appendChild(opt);
+     });
+     
+     (audioDevices.output_devices || []).forEach(d => {
+         const opt = document.createElement('option');
+         opt.value = d.index;
+         opt.textContent = `${d.index}: ${d.name}`;
+         if (d.index === audioDevices.selected_output_index) opt.selected = true;
+         outSel.appendChild(opt);
+     });
+  }
+
+  const slg = c.logging || {};
+  document.getElementById('log-level').value = slg.level || 'INFO';
+  document.getElementById('log-type').value  = slg.message_types || 'both';
+  document.getElementById('log-dest').value  = slg.destination  || 'console';
+
+  // Logs Web Settings
+  document.getElementById('web-log-level').value = slg.web_level || 'BOTH';
+  document.getElementById('web-log-max').value   = slg.web_max_history || 500;
+  document.getElementById('web-log-autoscroll').checked = slg.web_autoscroll !== false;
+  document.getElementById('web-log-split').checked = slg.web_split === true;
+  toggleLogSplit();
+
+  const sys = c.system || {};
+  document.getElementById('sys-fastboot').checked = sys.fast_boot ?? false;
+  document.getElementById('sys-flask-debug').checked = sys.flask_debug ?? false;
+  document.getElementById('sys-language').value   = c.language || 'en';
+
+  // Cognition (Memory)
+  const cog = c.cognition || {};
+  document.getElementById('cog-memory-enabled').checked = cog.memory_enabled ?? true;
+  document.getElementById('cog-episodic').checked       = cog.episodic_memory ?? true;
+  document.getElementById('cog-clear-restart').checked  = cog.clear_on_restart ?? false;
+  document.getElementById('cog-identity').checked       = cog.include_identity_context ?? true;
+  document.getElementById('cog-awareness').checked      = cog.include_self_awareness ?? true;
+  document.getElementById('cog-max-history').value      = cog.max_history_messages ?? 20;
+
+    const igen = (c.plugins || {}).IMAGE_GEN || {};
+    document.getElementById('igen-enabled').checked = igen.enabled !== false;
+    document.getElementById('igen-width').value  = igen.width  || 1024;
+    document.getElementById('igen-height').value = igen.height || 1024;
+    document.getElementById('igen-nologo').checked = igen.nologo ?? true;
+
+    renderPlugins(c.plugins || {});
+    console.log("UI Populated successfully.");
+  } catch (err) {
+    console.error("UI Population failed:", err);
+  }
+}
+
+function renderPlugins(plugins) {
+  const cont = document.getElementById('plugin-list');
+  const descs = {
+    DASHBOARD:   '{{ t("webui_conf_plugin_desc_dashboard") }}',
+    FILE_MANAGER:'{{ t("webui_conf_plugin_desc_file") }}',
+    HELP:        '{{ t("webui_conf_plugin_desc_help") }}',
+    MEDIA:       '{{ t("webui_conf_plugin_desc_media") }}',
+    ROLEPLAY:    '{{ t("webui_conf_plugin_desc_roleplay") }}',
+    SYSTEM:      '{{ t("webui_conf_plugin_desc_system") }}',
+    WEB:         '{{ t("webui_conf_plugin_desc_web") }}',
+    WEBCAM:      '{{ t("webui_conf_plugin_desc_webcam") }}',
+    WEB_UI:      '{{ t("webui_conf_plugin_desc_webui") }}',
+    IMAGE_GEN:   'Generazione Immagini AI (Pollinations)'
+  };
+  let html = '';
+  for (const [tag, pCfg] of Object.entries(plugins)) {
+    const on = pCfg.enabled !== false;
+    html += `<div class="plugin-row">
+      <div><div class="plugin-name">${tag}</div>${descs[tag] ? `<div class="plugin-desc">${descs[tag]}</div>` : ''}</div>
+      <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''} onchange="saveConfig(true)"><span class="slider"></span></label>
+    </div>`;
+  }
+  cont.innerHTML = html || '<p style="color:var(--muted)">{{ t("webui_conf_no_plugins") }}</p>';
+}
+
+function buildPayload() {
+  const out = JSON.parse(JSON.stringify(cfg));
+  out.backend        = out.backend        || {};
+  out.backend.cloud  = out.backend.cloud  || {};
+  out.backend.ollama = out.backend.ollama || {};
+  out.backend.kobold = out.backend.kobold || {};
+
+  try {
+    out.backend.type                  = document.getElementById('backend-type').value;
+    out.backend.cloud.model           = document.getElementById('cloud-model').value;
+    out.backend.cloud.temperature     = parseFloat(document.getElementById('cloud-temp').value) || 0.7;
+    out.backend.ollama.model          = document.getElementById('ollama-model').value;
+    out.backend.ollama.temperature    = parseFloat(document.getElementById('ollama-temp').value) || 0.7;
+    out.backend.ollama.num_gpu        = parseInt(document.getElementById('ollama-gpu').value) || 33;
+    out.backend.ollama.num_predict    = parseInt(document.getElementById('ollama-predict').value) || 1024;
+    out.backend.ollama.num_ctx        = parseInt(document.getElementById('ollama-ctx').value) || 4096;
+    out.backend.ollama.top_p          = parseFloat(document.getElementById('ollama-top-p').value) || 0.95;
+    out.backend.ollama.repeat_penalty = parseFloat(document.getElementById('ollama-repeat').value) || 1.1;
+    out.backend.kobold.url            = document.getElementById('kobold-url').value;
+    out.backend.kobold.model          = document.getElementById('kobold-model').value;
+    out.backend.kobold.temperature    = parseFloat(document.getElementById('kobold-temp').value) || 0.7;
+    out.backend.kobold.max_length     = parseInt(document.getElementById('kobold-max').value) || 512;
+    out.backend.kobold.top_p          = parseFloat(document.getElementById('kobold-top-p').value) || 0.95;
+    out.backend.kobold.rep_pen        = parseFloat(document.getElementById('kobold-rep').value) || 1.1;
+
+  out.llm = out.llm || {};
+  out.llm.allow_cloud = document.getElementById('llm-allow-cloud').checked;
+  out.llm.debug_llm = document.getElementById('llm-debug').checked;
+  out.llm.providers = out.llm.providers || {};
+  ['openai','anthropic','groq','gemini'].forEach(p => {
+    out.llm.providers[p] = out.llm.providers[p] || {};
+    const k = document.getElementById('key-'+p).value.trim();
+    if (k) out.llm.providers[p].api_key = k;
+    const rawM = document.getElementById('models-'+p).value.trim();
+    if (rawM) out.llm.providers[p].models = rawM.split('\n').map(s=>s.trim()).filter(Boolean);
+  });
+
+  out.routing_engine = out.routing_engine || {};
+  out.routing_engine.mode       = document.getElementById('route-mode').value;
+  out.routing_engine.legacy_models = document.getElementById('route-models').value;
+
+  out.ai = out.ai || {};
+  out.ai.active_personality = document.getElementById('ia-personality').value;
+  out.ai.special_instructions = document.getElementById('ia-instructions').value;
+  out.ai.save_special_instructions = document.getElementById('ia-save-instructions').checked;
+
+  out.bridge = out.bridge || {};
+  out.bridge.use_processor        = document.getElementById('br-processor').checked;
+  out.bridge.remove_think_tags    = document.getElementById('br-think-tags').checked;
+  out.bridge.debug_log             = document.getElementById('br-debug').checked;
+  out.bridge.enable_tools         = document.getElementById('br-tools').checked;
+  out.bridge.webui_voice_stt        = document.getElementById('br-voice-stt').checked;
+  out.bridge.webui_voice_enabled = document.getElementById('br-voice-enabled').checked;
+  out.bridge.chunk_delay_ms      = parseInt(document.getElementById('br-delay').value);
+
+  out.filters = out.filters || {};
+  out.filters.remove_asterisks       = document.getElementById('fl-ast').checked;
+  out.filters.remove_round_brackets  = document.getElementById('fl-tonde').checked;
+  out.filters.remove_square_brackets = document.getElementById('fl-quadre').checked;
+
+  out.logging = {
+    level: document.getElementById('log-level').value,
+    destination: document.getElementById('log-dest').value,
+    message_types: document.getElementById('log-type').value,
+    web_level: document.getElementById('web-log-level').value,
+    web_max_history: parseInt(document.getElementById('web-log-max').value),
+    web_autoscroll: document.getElementById('web-log-autoscroll').checked,
+    web_split: document.getElementById('web-log-split').checked
+  };
+
+  out.system = out.system || {};
+  out.system.fast_boot = document.getElementById('sys-fastboot').checked;
+  out.system.flask_debug = document.getElementById('sys-flask-debug').checked;
+  out.language  = document.getElementById('sys-language').value;
+
+  // Cognition
+  out.cognition = {
+    memory_enabled:          document.getElementById('cog-memory-enabled').checked,
+    episodic_memory:         document.getElementById('cog-episodic').checked,
+    clear_on_restart:        document.getElementById('cog-clear-restart').checked,
+    include_identity_context:document.getElementById('cog-identity').checked,
+    include_self_awareness:  document.getElementById('cog-awareness').checked,
+    max_history_messages:    parseInt(document.getElementById('cog-max-history').value) || 20
+  };
+
+  document.querySelectorAll('[data-plugin]').forEach(cb => {
+    const tag = cb.dataset.plugin;
+    out.plugins[tag] = out.plugins[tag] || {};
+    out.plugins[tag].enabled = cb.checked;
+  });
+
+  out.plugins.IMAGE_GEN = out.plugins.IMAGE_GEN || {};
+  out.plugins.IMAGE_GEN.enabled = document.getElementById('igen-enabled').checked;
+  out.plugins.IMAGE_GEN.width  = parseInt(document.getElementById('igen-width').value) || 1024;
+  out.plugins.IMAGE_GEN.height = parseInt(document.getElementById('igen-height').value) || 1024;
+  out.plugins.IMAGE_GEN.nologo = document.getElementById('igen-nologo').checked;
+  } catch (err) { console.error("buildPayload err:", err); }
+
+  return out;
+}
+
+async function loadMemoryStatus() {
+  try {
+    const r = await fetch('/api/memory/status');
+    const d = await r.json();
+    const el = document.getElementById('mem-status-text');
+    if (!el) return;
+    if (d.ok) {
+      const cog = d.cognition || {};
+      el.innerHTML = `💬 Messages stored: <strong>${d.total_messages}</strong><br>` +
+        `Memory: <strong>${cog.memory_enabled ? 'ON ✅' : 'OFF ❌'}</strong> | ` +
+        `Episodic: <strong>${cog.episodic_memory ? 'ON ✅' : 'OFF ❌'}</strong> | ` +
+        `Max context: <strong>${cog.max_history_messages}</strong> msgs`;
+    } else {
+      el.textContent = 'Error: ' + d.error;
+    }
+  } catch(e) {
+    const el = document.getElementById('mem-status-text');
+    if (el) el.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function clearMemoryHistory() {
+  const range = document.getElementById('clear-range').value;
+  const label = range === 'all' ? 'ALL history' : `history older than ${range} day(s)`;
+  
+  if (!confirm(`Warning: You are about to delete ${label}. This cannot be undone. Continue?`)) return;
+  
+  try {
+    const r = await fetch('/api/memory/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: range })
+    });
+    const d = await r.json();
+    if (d.ok) { 
+      alert('✅ ' + d.message); 
+      loadMemoryStatus(); 
+    }
+    else {
+      alert('❌ Error: ' + d.error);
+    }
+  } catch(e) { 
+    alert('❌ Error: ' + e.message); 
+  }
+}
+
+function buildAudioPayload() {
+    const obj = {};
+    obj.listening_status = document.getElementById('sys-mic-status').checked;
+    obj.voice_status     = document.getElementById('sys-voice-status').checked;
+    
+    obj.piper_path       = document.getElementById('v-piper').value;
+    const pdir = sysOptions.piper_dir || 'C:\\piper';
+    const sel  = document.getElementById('v-onnx-model').value;
+    obj.onnx_model       = (sel.includes('\\') || sel.includes('/')) ? sel : pdir + '\\' + sel;
+    
+    obj.speed            = parseFloat(document.getElementById('v-speed').value);
+    obj.noise_scale      = parseFloat(document.getElementById('v-noise').value);
+    obj.noise_w          = parseFloat(document.getElementById('v-noisew').value);
+    obj.sentence_silence = parseFloat(document.getElementById('v-silence').value);
+    
+    obj.energy_threshold = parseInt(document.getElementById('a-threshold').value) || 450;
+    obj.silence_timeout  = parseInt(document.getElementById('a-timeout').value) || 5;
+    obj.phrase_limit     = parseInt(document.getElementById('a-limit').value) || 15;
+    
+    obj.stt_source = document.getElementById('stt-source').value;
+    obj.tts_destination = document.getElementById('tts-destination').value;
+    
+    // Also save device indexes if they exist in the DOM
+    const inSel = document.getElementById('audio-input-device');
+    const outSel = document.getElementById('audio-output-device');
+    if (inSel && inSel.value !== "") {
+        obj.input_device_index = parseInt(inSel.value);
+        let txt = inSel.options[inSel.selectedIndex]?.text || '';
+        obj.input_device_name = txt.includes(':') ? txt.split(': ').slice(1).join(': ') : txt;
+    }
+    if (outSel && outSel.value !== "") {
+        obj.output_device_index = parseInt(outSel.value);
+        let txt = outSel.options[outSel.selectedIndex]?.text || '';
+        obj.output_device_name = txt.includes(':') ? txt.split(': ').slice(1).join(': ') : txt;
+    }
+    
+    return obj;
+}
+
+// ── Audio Device Logic ──
+let currentTestAudio = null;
+async function testVoice(mode) {
+    const text = document.getElementById('v-test-text').value || "Test di Zentra Core, tutto funziona correttamente.";
+    const sts = document.getElementById('v-test-status');
+    const stopBtn = document.getElementById('v-test-stop');
+    sts.textContent = mode === 'web' ? "Generating..." : "Playing on console...";
+    if(stopBtn) stopBtn.style.display = 'inline-block';
+    
+    try {
+        const r = await fetch('/api/audio/test', {
+            method: 'POST',
+            body: JSON.stringify({ text: text, mode: mode })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            if (mode === 'web' && data.url) {
+                sts.textContent = "Playing...";
+                if (currentTestAudio) currentTestAudio.pause();
+                currentTestAudio = new Audio(data.url);
+                currentTestAudio.play();
+                currentTestAudio.onended = () => { 
+                    sts.textContent = "Done."; 
+                    if(stopBtn) stopBtn.style.display='none'; 
+                    currentTestAudio = null;
+                };
+            } else {
+                sts.textContent = data.msg || "Done.";
+                if(mode === 'console') {
+                   // For console mode, we don't know exactly when it ends, but we'll hide stop after 5s or wait for manual stop
+                   setTimeout(() => { if(sts.textContent!=="Generating...") if(stopBtn) stopBtn.style.display='none'; }, 8000);
+                }
+            }
+        } else {
+            sts.textContent = "Error: " + data.error;
+            if(stopBtn) stopBtn.style.display='none';
+        }
+    } catch(e) {
+        sts.textContent = "Request failed.";
+        if(stopBtn) stopBtn.style.display='none';
+    }
+}
+
+async function stopVoice() {
+    if (currentTestAudio) {
+        currentTestAudio.pause();
+        currentTestAudio.src = "";
+        currentTestAudio = null;
+    }
+    try { await fetch('/api/audio/stop', {method: 'POST'}); } catch(e) {}
+    const stopBtn = document.getElementById('v-test-stop');
+    if(stopBtn) stopBtn.style.display = 'none';
+    const sts = document.getElementById('v-test-status');
+    if(sts) sts.textContent = "Stopped.";
+}
+
+// Global ESC listener for Dashboard
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') stopVoice();
+});
+
+async function scanAudioDevices() {
+    const sts = document.getElementById('audio-scan-status');
+    sts.textContent = "Scanning... (Wait for beep)";
+    try {
+        const r = await fetch('/api/audio/devices/scan', { method: 'POST' });
+        const data = await r.json();
+        if (data.ok) {
+            sts.textContent = `Done. Selected In: ${data.input_device_index}, Out: ${data.output_device_index}`;
+            // Refresh device lists
+            const rr = await fetch('/api/audio/devices');
+            const rrData = await rr.json();
+            if (rrData.ok) {
+                audioDevices = rrData;
+                populateUI(); // Just re-trigger populate logic to update selects
+            }
+        } else {
+            sts.textContent = "Error: " + data.error;
+        }
+    } catch(e) {
+        sts.textContent = "Request failed.";
+    }
+}
+
+async function applyAudioDevice() {
+    const sts = document.getElementById('audio-scan-status');
+    const inIdx = document.getElementById('audio-input-device').value;
+    const outIdx = document.getElementById('audio-output-device').value;
+    
+    sts.textContent = "Applying...";
+    try {
+        const r = await fetch('/api/audio/devices/select', {
+            method: 'POST',
+            body: JSON.stringify({ input_index: inIdx, output_index: outIdx })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            sts.textContent = "Saved to audio configuration.";
+            setTimeout(() => { if(sts.textContent.includes("Saved")) sts.textContent = ""; }, 3000);
+        } else {
+            sts.textContent = "Error: " + data.error;
+        }
+    } catch(e) {
+        sts.textContent = "Request failed.";
+    }
+}
+
+async function refreshModels() {
+  const btn = event.target;
+  const oldTxt = btn.textContent;
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    await fetch('/api/models/refresh', {method:'POST'});
+    await initAll(); // Re-fetch options and re-populate
+  } catch(e) {
+    alert("Refresh failed: " + e);
+  } finally {
+    btn.textContent = oldTxt;
+    btn.disabled = false;
+  }
+}
+
+async function saveConfig(silent = false) {
+  if (!silent) setSaveMsg('{{ t("webui_conf_msg_saving") }}', 'muted');
+  try {
+    const payload = buildPayload();
+    const audioPayload = buildAudioPayload();
+    
+    const [resCfg, resAud] = await Promise.all([
+        fetch('/zentra/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }),
+        fetch('/api/audio/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(audioPayload)
+        })
+    ]);
+    
+    const data = await resCfg.json();
+    const audData = await resAud.json();
+    
+    if (data.ok && audData.ok) {
+      if (!silent) {
+          setSaveMsg('{{ t("webui_conf_msg_saved") }}', 'ok');
+          setTimeout(() => location.reload(), 1500);
+      }
+    } else {
+      setSaveMsg('Error saving config/audio.', 'err');
+    }
+  } catch (e) {
+    setSaveMsg('Fetch error: ' + e, 'err');
+  }
+}
+
+let logEvtSource = null;
+function startLogStream() {
+    if (logEvtSource) return;
+    const consoleEl = document.getElementById('log-console');
+    const statusEl  = document.getElementById('log-status');
+    
+    consoleEl.innerHTML = '';
+    statusEl.textContent = 'Active';
+    statusEl.className = 'val-ok';
+
+    logEvtSource = new EventSource('/api/logs/stream');
+    logEvtSource.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        const filter = document.getElementById('web-log-level').value;
+        if (filter !== 'BOTH' && data.level !== filter) return;
+
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        
+        let colorClass = 'lvl-INFO';
+        if (data.text.includes('[DEBUG]')) colorClass = 'lvl-DEBUG';
+        if (data.text.includes('[ERROR]')) colorClass = 'lvl-ERROR';
+        if (data.text.includes('[WARNING]')) colorClass = 'lvl-WARN';
+
+        line.innerHTML = `<span class="log-time">${data.time}</span><span class="log-lvl ${colorClass}">${data.level}</span><span class="log-text">${escapeHtml(data.text)}</span>`;
+        
+        let target = document.getElementById('log-console');
+        const debugEl = document.getElementById('log-console-debug');
+        const isSplit = document.getElementById('web-log-split').checked;
+        
+        if (isSplit && data.level === 'DEBUG') target = debugEl;
+        
+        target.appendChild(line);
+        
+        const m = parseInt(document.getElementById('web-log-max').value);
+        const maxLines = isNaN(m) ? 500 : m;
+        while (target.children.length > maxLines) target.removeChild(target.firstChild);
+        
+        if (document.getElementById('web-log-autoscroll').checked) {
+            target.scrollTop = target.scrollHeight;
+        }
+    };
+    logEvtSource.onerror = () => {
+        statusEl.textContent = 'Disconnected (Reconnecting...)';
+        statusEl.className = 'val-err';
+    };
+}
+
+function toggleLogSplit() {
+    const isSplit = document.getElementById('web-log-split').checked;
+    const wrapper = document.getElementById('log-wrapper');
+    const debugG  = document.getElementById('log-group-debug');
+    const mainLog = document.getElementById('log-console');
+    
+    if (isSplit) {
+        wrapper.classList.add('split');
+        debugG.style.display = 'flex';
+        mainLog.style.height = 'auto';
+    } else {
+        wrapper.classList.remove('split');
+        debugG.style.display = 'none';
+        mainLog.style.height = '500px';
+    }
+}
+
+function clearLogConsole() {
+    document.getElementById('log-console').innerHTML = '';
+    document.getElementById('log-console-debug').innerHTML = '';
+}
+
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function setSaveMsg(msg, type) {
+  const el = document.getElementById('save-msg');
+  el.textContent = msg;
+  el.style.color = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--muted)';
+}
+
+async function refreshStatus() {
+  try {
+    const r = await fetch('/zentra/status');
+    const d = await r.json();
+    document.getElementById('s-backend').textContent = d.backend  || '—';
+    document.getElementById('s-model').textContent   = d.model    || '—';
+    document.getElementById('s-bridge').textContent  = d.bridge   || '—';
+    document.getElementById('s-mic').textContent     = d.mic      || '—';
+    document.getElementById('s-tts').textContent     = d.tts      || '—';
+    document.getElementById('s-config').textContent  = d.config   || '—';
+    document.getElementById('hdr-model').textContent = d.model    || '{{ t("webui_chat_offline") }}';
+    const m = document.getElementById('s-model');
+    m.className = 'stat-val ' + (d.model && d.model !== '—' ? 'val-ok' : 'val-warn');
+  } catch(e) {
+    document.getElementById('hdr-model').textContent = '{{ t("webui_chat_offline") }}';
+  }
+}
+
+initAll();
+refreshStatus();
+setInterval(refreshStatus, 3000);
+
+// Auto-save on any change to toggles or selects
+document.addEventListener('change', (e) => {
+  if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+    // Cross-sync for IMAGE_GEN toggles
+    if (e.target.id === 'igen-enabled') {
+        const other = document.querySelector('[data-plugin="IMAGE_GEN"]');
+        if (other) other.checked = e.target.checked;
+    } else if (e.target.dataset.plugin === 'IMAGE_GEN') {
+        const other = document.getElementById('igen-enabled');
+        if (other) other.checked = e.target.checked;
+    }
+
+    if (e.target.id === 'sys-voice-status' && !e.target.checked) {
+       stopVoice();
+    }
+    saveConfig(true);
+  }
+});
+
+// Heartbeat to prevent multiple tabs
+setInterval(() => {
+  fetch('/zentra/heartbeat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'config' })
+  }).catch(() => {});
+}, 5000);
+
+async function rebootSystem() {
+  setSaveMsg('Rebooting...', 'err');
+  try {
+    const res = await fetch("/api/system/reboot", { method: "POST" });
+    if (res.ok) {
+       console.log("Reboot command sent.");
+       setTimeout(() => { location.reload(); }, 5000);
+    } else {
+       const err = await res.json();
+       setSaveMsg("Reboot error: " + (err.error || "Unknown"), 'err');
+    }
+  } catch (e) {
+    setSaveMsg("Network error during reboot", 'err');
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 """
-MODULO: LiteLLM Client - Zentra Core (MANUAL LOGGING)
-DESCRIZIONE: Client unificato per la generazione di testo via LiteLLM con log rincanalati.
+MODULE: LiteLLM Client - Zentra Core (MANUAL LOGGING)
+DESCRIPTION: Unified client for text generation via LiteLLM with re-routed logs.
 """
 
 import litellm
@@ -9,13 +9,12 @@ import json
 import logging
 # Importiamo correttamente le funzioni dal modulo logger
 from core.logging import logger as log_mod
-from core.logging.logger import debug as zlog_debug, info as zlog_info, errore as zlog_error
+from core.logging.logger import debug as zlog_debug, info as zlog_info, error as zlog_error
 
-# Configurazione globale LiteLLM
+# Pre-configure LiteLLM (no print to chat)
 litellm.telemetry = False
 
-# CRITICAL: Purge any StreamHandlers LiteLLM added during import (they write to stdout/chat)
-# LiteLLM may auto-attach a stdout handler if LITELLM_LOG env var is set at import time
+# CRITICAL: Purge any StreamHandlers LiteLLM added during import
 _litellm_logger = logging.getLogger("LiteLLM")
 for _h in _litellm_logger.handlers[:]:
     if isinstance(_h, logging.StreamHandler) and not isinstance(_h, logging.FileHandler):
@@ -23,21 +22,23 @@ for _h in _litellm_logger.handlers[:]:
 # Ensure LITELLM_LOG doesn't force verbose stdout output
 os.environ["LITELLM_LOG"] = ""
 
-def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, tools=None, stream=False):
+def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, tools=None, stream=False, images=None):
     """
-    Genera una risposta usando LiteLLM, con supporto Opzionale per i Tools e Streaming.
+    Genera una risposta usando LiteLLM.
+    - images: optional list of dicts {data: bytes, mime_type: str, name: str}
+      When provided, the appropriate VisionAdapter builds the multimodal messages.
     """
     
-    # 1. Identificazione Backend e Modello
+    # 1. Backend and Model Identification
     if 'backend' in config_or_subconfig:
         backend_info = config_or_subconfig.get('backend', {})
-        backend_type = backend_info.get('tipo', 'ollama')
+        backend_type = backend_info.get('type', 'ollama')
         specific_config = backend_info.get(backend_type, {})
     else:
         specific_config = config_or_subconfig
-        backend_type = specific_config.get('tipo_backend', 'ollama')
+        backend_type = specific_config.get('backend_type', 'ollama')
 
-    model_name = specific_config.get('modello')
+    model_name = specific_config.get('model')
     
     if not model_name:
         return f"[SYSTEM] Error: Model not found."
@@ -51,11 +52,24 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     # 3. Preparazione Messaggi
     provider = model_name.split('/')[0] if '/' in model_name else ""
     
-    if provider == "gemini":
-        messages = [
-            {"role": "user", "content": f"{system_prompt}\n\n[USER]: {user_message}"}
-        ]
-    else:
+    # ── Vision path: delegate to adapter if images are attached ──
+    if images:
+        try:
+            from core.llm.vision.factory import get_vision_adapter
+            adapter = get_vision_adapter(model_name, backend_type)
+            if adapter:
+                messages = adapter.build_messages(system_prompt, user_message, images)
+                zlog_debug("LiteLLM", f"Vision adapter used: {adapter.__class__.__name__} ({len(images)} image(s))")
+            else:
+                # Adapter not available: fallback to text-only with a notice
+                zlog_debug("LiteLLM", "No vision adapter for this model; falling back to text-only")
+                images = None  # reset so text-only path runs below
+        except Exception as ve:
+            zlog_error(f"LiteLLM: Vision adapter error: {ve}")
+            images = None
+
+    # ── Text-only path ────────────────────────────────────────────
+    if not images:
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message}
@@ -118,10 +132,11 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         params["api_base"] = specific_config.get('url', 'http://localhost:5001').rstrip('/') + "/v1"
 
     elif backend_type == "cloud":
-        actual_model = model_name.split('/', 1)[1] if '/' in model_name else model_name
-        
-        # Indica a LiteLLM il provider (es. 'groq', 'openai', 'anthropic', 'gemini')
-        params["custom_llm_provider"] = provider
+        # Assicurati che il modello includa il prefisso
+        if '/' not in model_name and provider:
+            params["model"] = f"{provider}/{model_name}"
+        else:
+            params["model"] = model_name
         
         # Mappa dei nomi di variabili d'ambiente per provider
         ENV_KEY_MAP = {
@@ -141,30 +156,21 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 env_var = ENV_KEY_MAP.get(provider, f"{provider.upper()}_API_KEY")
                 api_key = os.environ.get(env_var, '').strip().strip("'").strip('"')
                 if api_key:
-                    zlog_info("LiteLLM", f"API key for '{provider}' loaded from environment variable '{env_var}' (starts with: {api_key[:5]}...).")
+                    zlog_info("LiteLLM", f"API key for '{provider}' loaded from env '{env_var}'")
                 else:
-                    zlog_debug("LiteLLM", f"API key for '{provider}' not found in environment ({env_var}).")
+                    zlog_debug("LiteLLM", f"API key for '{provider}' not found in env.")
             else:
                 api_key = api_key.strip().strip("'").strip('"')
-                zlog_debug("LiteLLM", f"API key for '{provider}' loaded from config.json (starts with: {api_key[:5]}...).")
+                zlog_debug("LiteLLM", f"API key for '{provider}' loaded from config.json")
             
             if api_key:
                 params["api_key"] = api_key
                 
+                # LiteLLM in alcune versioni preferisce/richiede la env var per Gemini
                 if provider == "gemini":
                     os.environ["GEMINI_API_KEY"] = api_key
-                    params["model"] = actual_model
-                    
-                    if any(v in actual_model for v in ["2.0", "3", "-latest", "-preview", "-exp"]):
-                        params["api_base"] = "https://generativelanguage.googleapis.com/v1beta"
-                    else:
-                        params["api_base"] = "https://generativelanguage.googleapis.com/v1"
-                else:
-                    params["model"] = f"{provider}/{actual_model}"
             else:
-                # Nessuna chiave trovata: imposta il modello e lascia LiteLLM gestire l'autenticazione
-                zlog_error(f"LiteLLM: No API key found for provider '{provider}' in config or environment. Call may fail.")
-                params["model"] = f"{provider}/{actual_model}" if provider else actual_model
+                zlog_error(f"LiteLLM: No API key found for provider '{provider}'. Call may fail.")
 
     # LOG MANUALE PRE-CHIAMATA
     if debug_enabled:
@@ -196,10 +202,12 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         zlog_error(f"LiteLLM: Error: {error_msg}")
         
         if "400" in error_msg:
-            return f"[SYSTEM] Error 400: Invalid parameters for '{model_name}'."
+            return f"ZENTRA: ⚠️ Errore 400: Parametri non validi per '{model_name}'."
         if "404" in error_msg:
-            return f"[SYSTEM] Error 404: Model '{model_name}' not found."
+            return f"ZENTRA: ⚠️ Errore 404: Il modello '{model_name}' non è stato trovato o l'endpoint è errato."
         if "429" in error_msg:
-            return f"[SYSTEM] Quota Exhausted (429). Try again in 60 seconds."
+            return f"ZENTRA: ⚠️ Quota Esaurita (Errore 429). Troppe richieste o credito terminato. Riprova tra 60 secondi."
+        if "503" in error_msg or "ServiceUnavailableError" in error_msg:
+            return f"ZENTRA: ⚠️ Server AI Sovraccarico (Errore 503). Il provider {provider} è momentaneamente non disponibile. Riprova tra poco."
             
-        return f"[SYSTEM] Error: {error_msg[:100]}"
+        return f"ZENTRA: ⚠️ Errore LLM imprevisto: {error_msg[:100]}..."

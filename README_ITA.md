@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.9.6 (Stabilizzazione OOP)
+# Zentra Core - Versione 0.9.7 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -11,24 +11,28 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
+> [!WARNING]
+> **Stato Runtime Alpha**: Zentra Core è attualmente in una fase iniziale **Alpha**. È in fase di sviluppo attivo e debugging. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
+
 ## 🚀 Panoramica
 **Zentra Core** è una piattaforma di assistenza AI local-first che gira interamente sulla tua macchina.
 Combina LLM locali, interazione vocale, automazione di sistema e un'architettura a plugin modulari per creare un compagno digitale completamente personalizzabile.
 
-Ora completamente migrato a una **architettura stabile a Oggetti (OOP)**, Zentra 0.9.6 offre affidabilità e prestazioni senza precedenti. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud (OpenAI, Anthropic, Gemini, Groq) con streaming nativo.
+Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.9.7 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
-## ✨ Caratteristiche Principali (v0.9.6)
-* 🏗️ **Core OOP Stabile** — Completamente rifattorizzato per una stabilità di livello professionale.
-* 🧠 **Streaming Multi-Cloud** — Supporto nativo per Groq, OpenAI e Gemini con effetto "macchina da scrivere".
-* 🔄 **F7 Live-Sync** — Modifica le impostazioni nel pannello di configurazione e applicale istantaneamente senza riavviare.
-* 🔌 **Plugin Standalone** — Ogni plugin è ora un modulo indipendente che può girare anche separatamente dal core.
-* 🎙️ **Interazione Vocale Multilingua** — Input/Output vocale con selezione automatica della lingua (IT/EN).
-* ⚙️ **Controllo di Sistema** — Esegue comandi, apre app, gestisce file e monitora l'hardware.
+## ✨ Caratteristiche Principali (v0.9.7)
+* 👁️ **Supporto Visione Nativa** — Capacità AI multimodali per Gemini, OpenAI e Ollama (LLaVA). Analizza immagini, foto e screenshot direttamente in chat.
+* 🎨 **Generazione Immagini** — Genera contenuti visivi da prompt testuali tramite server IA esterni (Integrato via Pollinations.ai).
+* 🏗️ **Plugin WebUI Nativo** — Migrato da un bridge a un plugin core (`plugins/web_ui/`) per massime prestazioni e stabilità.
+* 🌐 **I18N Globale (Multilingua)** — Supporto completo per Inglese (default) e Italiano tra Terminale e WebUI con switch in tempo reale.
+* 🧠 **Streaming Multi-Cloud** — Supporto nativo per Groq, OpenAI, Gemini e Anthropic con effetto "macchina da scrivere".
+* 🔄 **Live-Sync Config** — Modifica qualsiasi impostazione nel Pannello Web e vedila applicata istantaneamente al core senza riavvii.
+* 🎙️ **Chat Vocale Integrata** — Interfaccia Chat nativa con integrazione Piper TTS e riproduzione audio automatica.
+* 🔌 **Pulsanti Macro Plugin** — L'elenco plugin nel sidebar ora include macro cliccabili per iniettare comandi specializzati istantaneamente.
 * 💾 **Memoria Persistente** — Memoria SQLite con contesto condiviso tra WebUI e Terminale.
-* 🖥️ **Logging Raffinato** — Finestre di debug tecnico isolate e cronologia chat pulita.
-* 🔗 **WebUI Bridge** — Piena compatibilità con Open WebUI e API di streaming locale.
+* 🚀 **Launcher Standalone** — File `run_zentra_web.bat` dedicato per avviare il server Web in modo indipendente.
 
 ---
 
@@ -133,6 +137,13 @@ Licenza MIT (rilascio iniziale)
 ## 👥 Crediti e Contatti
 Sviluppatore Capo: Antonio Meloni (Tony)
 Email Ufficiale: zentra.core.systems@gmail.com
+
+---
+
+## 📚 Documentazione Tecnica
+- 🏗️ **[Guida all'Architettura](docs/TECHNICAL_GUIDE.md)**
+- 🔌 **[Sviluppo Plugin](docs/PLUGINS_DEV.md)**
+- 📁 **[Mappa Struttura](docs/zentra_core_structure_v0.9.7.md)**
 
 ---
 

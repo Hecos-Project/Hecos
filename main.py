@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 """
-Punto di ingresso principale per Zentra Core.
-Avvia l'applicazione e gestisce le eccezioni non catturate.
+Main entry point for Zentra Core.
+Starts the application and handles uncaught exceptions.
 """
 
 import sys
+import atexit
 from dotenv import load_dotenv
 
-# Carica le variabili d'ambiente dal file .env (se esiste) il prima possibile
+# Load environment variables from .env file as soon as possible
 load_dotenv()
 
 # Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with box-drawing characters)
@@ -23,14 +24,17 @@ if sys.platform == "win32":
 from app import ZentraApplication
 from core.logging import logger
 
+# Register the guaranteed cleanup hook
+atexit.register(logger.close_all_consoles)
+
 def main():
-    """Avvia l'applicazione Zentra."""
+    """Starts the Zentra application."""
     app = ZentraApplication()
     try:
         app.run()
     finally:
-        # Garantisce la chiusura delle finestre di log esterne in ogni caso
-        logger.chiudi_tutte_le_console()
+        # Ensures all external log consoles are closed in any case
+        logger.close_all_consoles()
 
 if __name__ == "__main__":
     try:
@@ -39,5 +43,5 @@ if __name__ == "__main__":
         logger.info("[MAIN] Manual stop.")
     except Exception as e:
         import traceback
-        logger.errore(f"[CRITICAL FAILURE]: {e}\n{traceback.format_exc()}")
+        logger.error(f"[CRITICAL FAILURE]: {e}\n{traceback.format_exc()}")
         sys.exit(1)

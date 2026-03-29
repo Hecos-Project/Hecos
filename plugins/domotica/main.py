@@ -8,17 +8,17 @@ except ImportError:
 class DomoticaTools:
     """
     Plugin: Domotica (Smart Home)
-    Simulazione o integrazione con dispositivi domestici intelligenti (luci, temperatura).
+    Simulation or integration with smart home devices (lights, temperature).
     """
 
     def __init__(self):
         self.tag = "DOMOTICA"
-        self.desc = "Controllo della casa intelligente. In fase di integrazione."
-        self.status = "ONLINE (Simulazione)"
+        self.desc = "Smart Home control. Currently in integration phase."
+        self.status = "ONLINE (Simulation)"
 
     def get_home_status(self) -> str:
         """
-        Fornisce un riepilogo dello stato dei dispositivi domotici (es. temperatura, luci accese).
+        Provides a summary of the status of smart home devices (e.g., temperature, lights on).
         """
         dispositivi_online = 4
         temperatura_casa = 21.5

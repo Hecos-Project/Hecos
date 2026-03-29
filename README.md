@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Zentra Logo">
 </p>
 
-# Zentra Core - Version 0.9.6 (OOP Stabilization)
+# Zentra Core - Version 0.9.7 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -11,24 +11,28 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
+> [!WARNING]
+> **Runtime Alpha Status**: Zentra Core is currently in an early **Alpha** stage. It is under active development and debugging. Features may change, and the system is not yet considered stable. Use with caution.
+
 ## 🚀 Overview
 **Zentra Core** is a local-first AI assistant platform that runs entirely on your machine.
 It combines local LLMs, voice interaction, system automation, and a modular plugin architecture to create a fully customizable AI companion.
 
-Now fully migrated to a **stable Object-Oriented (OOP) architecture**, Zentra 0.9.6 offers unprecedented reliability and performance. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers (OpenAI, Anthropic, Gemini, Groq) with native streaming.
+Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.9.7 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 
-## ✨ Key Features (v0.9.6)
-* 🏗️ **Stable OOP Core** — Fully refactored for professional-grade stability and modularity.
-* 🧠 **Multi-Cloud Streaming** — Native support for Groq, OpenAI, and Gemini with real-time "typewriter" effect.
-* 🔄 **F7 Live-Sync** — Change settings in the configuration panel and see them applied instantly without restarting.
-* 🔌 **Standalone Plugins** — Every plugin is now an independent module that can run even without the core system.
-* 🎙️ **Multilingual Voice Interaction** — Dynamic TTS/STT with automatic language selection (EN/IT).
-* ⚙️ **System Control** — Execute commands, open apps, manage files, and control hardware.
+## ✨ Key Features (v0.9.7)
+* 👁️ **Native Vision Support** — Multimodal AI capabilities for Gemini, OpenAI, and Ollama (LLaVA). Analyze images, photos, and screenshots directly in chat.
+* 🎨 **Image Generation Support** — Generate visual content from text prompts using external AI servers (Integrated via Pollinations.ai).
+* 🏗️ **Native WebUI Plugin** — Migrated from a bridge to a core plugin (`plugins/web_ui/`) for maximum performance and stability.
+* 🌐 **Global I18N (Multilingual)** — Complete support for English (default) and Italian across Terminal and WebUI with real-time switching.
+* 🧠 **Multi-Cloud Streaming** — Native support for Groq, OpenAI, Gemini, and Anthropic with real-time "typewriter" effect.
+* 🔄 **Live-Sync Config** — Change any setting in the Web Panel and see it applied instantly to the core without restarts.
+* 🎙️ **Integrated Voice Chat** — Native Chat UI with Piper TTS integration and automatic audio playback.
+* 🔌 **Plugin Macro Buttons** — Sidebar plugin list now features clickable macros to inject specialized commands instantly.
 * 💾 **Persistent Memory** — SQLite-based long-term memory with shared context across WebUI and Terminal.
-* 🖥️ **Refined Logging** — Isolated technical debug windows and clean chat history.
-* 🔗 **WebUI Bridge** — Full compatibility with Open WebUI and local streaming APIs.
+* 🚀 **Standalone Launcher** — Dedicated `run_zentra_web.bat` to start the Web server independently.
 
 ---
 
@@ -140,7 +144,7 @@ Official Email: zentra.core.systems@gmail.com
 Detailed technical guides for developers and advanced users:
 - 🏗️ **[Technical Architecture Guide](docs/TECHNICAL_GUIDE.md)**: Deep dive into the OOP structure, data flow, and core engines.
 - 🔌 **[Plugin Development Guide](docs/PLUGINS_DEV.md)**: How to create and register new tools using Native Function Calling.
-- 📁 **[Project Structure Map](docs/zentra_core_structure_v0.9.5.md)**: Complete file-by-file breakdown of the repository.
+- 📁 **[Project Structure Map](docs/zentra_core_structure_v0.9.7.md)**: Complete file-by-file breakdown of the repository.
 
 ---
 

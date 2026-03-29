@@ -179,3 +179,17 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Zentra Specifics
+logs/
+memory/*.db
+memory/*.json
+memory/chat_history.db
+snapshots/
+config.json
+.env
+*.wav
+*.mp3
+tmp/
+brain/
+*.log

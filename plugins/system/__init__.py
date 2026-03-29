@@ -1,4 +1,4 @@
 """Plugin Sistema - Accesso Root e comandi di sistema."""
-from .main import info, status, esegui
+from .main import info, status, execute
 
-__all__ = ["info", "status", "esegui"]
+__all__ = ["info", "status", "execute"]

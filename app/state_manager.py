@@ -1,98 +1,153 @@
 """
-Gestione centralizzata degli stati dell'applicazione.
+Centralized management of application states.
 """
 
 import threading
 
 class StateManager:
-    def __init__(self, stato_voce_iniziale=True, stato_ascolto_iniziale=True):
-        self._stato_voce = stato_voce_iniziale
-        self._stato_ascolto = stato_ascolto_iniziale
-        self._ultimo_esc = 0
-        self._comando_vocale_rilevato = None
-        self._sistema_in_elaborazione = False
-        self._sistema_status = "AVVIO"
-        self._sistema_parla = False
-        self._ultimo_stop_voce = 0
+    def __init__(self, initial_voice_status=True, initial_listening_status=True, initial_audio_mode="auto"):
+        self._voice_status = initial_voice_status
+        self._listening_status = initial_listening_status
+        self._audio_mode = initial_audio_mode   # Legacy "auto" | "console" | "web"
+        self._stt_source = "system"             # "system" | "web"
+        self._tts_destination = "web"          # "system" | "web"
+        self._last_esc = 0
+        self._detected_voice_command = None
+        self._system_processing = False
+        self._system_status = "STARTUP"
+        self._system_speaking = False
+        self._last_voice_stop = 0
+        self._push_to_talk = False
+        self._ptt_hotkey = "ctrl+shift"
         self._lock = threading.Lock()
 
-    # Proprietà con lock per thread safety
+    # Thread-safe properties
     @property
-    def stato_voce(self):
+    def voice_status(self):
         with self._lock:
-            return self._stato_voce
+            return self._voice_status
 
-    @stato_voce.setter
-    def stato_voce(self, value):
+    @voice_status.setter
+    def voice_status(self, value):
         with self._lock:
-            self._stato_voce = value
-
-    @property
-    def stato_ascolto(self):
-        with self._lock:
-            return self._stato_ascolto
-
-    @stato_ascolto.setter
-    def stato_ascolto(self, value):
-        with self._lock:
-            self._stato_ascolto = value
+            self._voice_status = value
 
     @property
-    def ultimo_esc(self):
+    def listening_status(self):
         with self._lock:
-            return self._ultimo_esc
+            return self._listening_status
 
-    @ultimo_esc.setter
-    def ultimo_esc(self, value):
+    @listening_status.setter
+    def listening_status(self, value):
         with self._lock:
-            self._ultimo_esc = value
-
-    @property
-    def comando_vocale_rilevato(self):
-        with self._lock:
-            return self._comando_vocale_rilevato
-
-    @comando_vocale_rilevato.setter
-    def comando_vocale_rilevato(self, value):
-        with self._lock:
-            self._comando_vocale_rilevato = value
+            self._listening_status = value
 
     @property
-    def sistema_in_elaborazione(self):
+    def last_esc(self):
         with self._lock:
-            return self._sistema_in_elaborazione
+            return self._last_esc
 
-    @sistema_in_elaborazione.setter
-    def sistema_in_elaborazione(self, value):
+    @last_esc.setter
+    def last_esc(self, value):
         with self._lock:
-            self._sistema_in_elaborazione = value
-
-    @property
-    def sistema_status(self):
-        with self._lock:
-            return self._sistema_status
-
-    @sistema_status.setter
-    def sistema_status(self, value):
-        with self._lock:
-            self._sistema_status = value
+            self._last_esc = value
 
     @property
-    def sistema_parla(self):
+    def detected_voice_command(self):
         with self._lock:
-            return self._sistema_parla
+            return self._detected_voice_command
 
-    @sistema_parla.setter
-    def sistema_parla(self, value):
+    @detected_voice_command.setter
+    def detected_voice_command(self, value):
         with self._lock:
-            self._sistema_parla = value
+            self._detected_voice_command = value
 
     @property
-    def ultimo_stop_voce(self):
+    def system_processing(self):
         with self._lock:
-            return self._ultimo_stop_voce
+            return self._system_processing
 
-    @ultimo_stop_voce.setter
-    def ultimo_stop_voce(self, value):
+    @system_processing.setter
+    def system_processing(self, value):
         with self._lock:
-            self._ultimo_stop_voce = value
+            self._system_processing = value
+
+    @property
+    def system_status(self):
+        with self._lock:
+            return self._system_status
+
+    @system_status.setter
+    def system_status(self, value):
+        with self._lock:
+            self._system_status = value
+
+    @property
+    def system_speaking(self):
+        with self._lock:
+            return self._system_speaking
+
+    @system_speaking.setter
+    def system_speaking(self, value):
+        with self._lock:
+            self._system_speaking = value
+
+    @property
+    def last_voice_stop(self):
+        with self._lock:
+            return self._last_voice_stop
+
+    @last_voice_stop.setter
+    def last_voice_stop(self, value):
+        with self._lock:
+            self._last_voice_stop = value
+
+    @property
+    def audio_mode(self):
+        with self._lock:
+            return self._audio_mode
+
+    @audio_mode.setter
+    def audio_mode(self, value):
+        with self._lock:
+            self._audio_mode = value
+
+    @property
+    def push_to_talk(self):
+        with self._lock:
+            return self._push_to_talk
+
+    @push_to_talk.setter
+    def push_to_talk(self, value):
+        with self._lock:
+            self._push_to_talk = value
+
+    @property
+    def ptt_hotkey(self):
+        with self._lock:
+            return self._ptt_hotkey
+
+    @ptt_hotkey.setter
+    def ptt_hotkey(self, value):
+        with self._lock:
+            self._ptt_hotkey = value
+
+    @property
+    def stt_source(self):
+        with self._lock:
+            return self._stt_source
+
+    @stt_source.setter
+    def stt_source(self, value):
+        with self._lock:
+            self._stt_source = value
+
+    @property
+    def tts_destination(self):
+        with self._lock:
+            return self._tts_destination
+
+    @tts_destination.setter
+    def tts_destination(self, value):
+        with self._lock:
+            self._tts_destination = value

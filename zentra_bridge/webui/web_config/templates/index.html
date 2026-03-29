@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zentra — Config Panel</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg:       #0f1117;
+    --bg2:      #1a1d27;
+    --bg3:      #22263a;
+    --accent:   #6c8cff;
+    --accent2:  #a78bfa;
+    --green:    #34d399;
+    --red:      #f87171;
+    --yellow:   #fbbf24;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --border:   #2d3351;
+    --radius:   10px;
+    --shadow:   0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px 0;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .logo span { font-weight: 300; color: var(--muted); -webkit-text-fill-color: var(--muted); }
+
+  #status-dot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:.4; }
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; padding-bottom: 100px; }
+
+  /* Status bar */
+  #live-status {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+
+  .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-label { color: var(--muted); }
+  .stat-val { font-weight: 600; }
+  .val-ok   { color: var(--green); }
+  .val-warn { color: var(--yellow); }
+  .val-err  { color: var(--red); }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 10px 18px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border: 1px solid transparent;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all .2s;
+  }
+
+  .tab:hover { color: var(--text); background: var(--bg3); }
+
+  .tab.active {
+    color: var(--accent);
+    background: var(--bg2);
+    border-color: var(--border);
+    border-bottom-color: var(--bg2);
+    margin-bottom: -1px;
+  }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .field { margin-bottom: 16px; }
+
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+  }
+
+  .field input[type=text],
+  .field input[type=number],
+  .field input[type=password],
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color .2s;
+    outline: none;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--accent);
+  }
+
+  /* Toggle switch */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .toggle-row:last-child { border-bottom: none; }
+
+  .toggle-info { font-size: 14px; }
+  .toggle-sub  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 46px; height: 26px;
+    flex-shrink: 0;
+  }
+
+  .switch input { opacity: 0; width: 0; height: 0; }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    transition: .3s;
+  }
+
+  .slider:before {
+    content: "";
+    position: absolute;
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: .3s;
+  }
+
+  input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(20px); background: white; }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  @media(max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Save button */
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    z-index: 99;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  }
+
+  #save-msg { font-size: 13px; color: var(--muted); }
+
+  .btn {
+    padding: 9px 22px;
+    border-radius: 6px;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Plugin rows */
+  .plugin-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .plugin-row:last-child { border-bottom: none; }
+  .plugin-name { font-weight: 600; font-size: 14px; }
+  .plugin-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* Model pill */
+  .model-active {
+    display: inline-block;
+    background: var(--bg3);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .section-sep {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ Zentra <span>Config Panel</span></div>
+  <div id="status-dot">
+    <div class="dot"></div>
+    <span id="hdr-model">caricamento...</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Live Status Bar -->
+  <div id="live-status">
+    <div class="stat"><span class="stat-label">Backend</span><span class="stat-val" id="s-backend">—</span></div>
+    <div class="stat"><span class="stat-label">Modello</span><span class="stat-val" id="s-model">—</span></div>
+    <div class="stat"><span class="stat-label">Bridge</span><span class="stat-val" id="s-bridge">—</span></div>
+    <div class="stat"><span class="stat-label">TTS</span><span class="stat-val" id="s-tts">—</span></div>
+    <div class="stat"><span class="stat-label">Config</span><span class="stat-val" id="s-config">—</span></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('backend')">🧠 Backend</button>
+    <button class="tab" onclick="showTab('llm')">☁️ LLM/Cloud</button>
+    <button class="tab" onclick="showTab('routing')">🛣️ Routing</button>
+    <button class="tab" onclick="showTab('ia')">🤖 IA/Prompt</button>
+    <button class="tab" onclick="showTab('bridge')">🌉 Bridge / Filtri</button>
+    <button class="tab" onclick="showTab('voice')">🔊 Voce</button>
+    <button class="tab" onclick="showTab('system')">⚙️ Sistema</button>
+    <button class="tab" onclick="showTab('plugins')">🧩 Plugin</button>
+  </div>
+
+  <!-- ── BACKEND ── -->
+  <div id="tab-backend" class="panel active">
+    <div class="card">
+      <div class="card-title">🧠 Backend LLM attivo</div>
+      <div class="field">
+        <label>Tipo backend</label>
+        <select id="backend-tipo">
+          <option value="cloud">☁️ Cloud (Groq / Gemini / OpenAI / Anthropic)</option>
+          <option value="ollama">🦙 Ollama (locale)</option>
+          <option value="kobold">🐉 KoboldCPP (locale)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card" id="card-cloud">
+      <div class="card-title">☁️ Cloud</div>
+      <div class="field">
+        <label>Modello attivo</label>
+        <select id="cloud-modello">
+          <!-- Popolato dinamicamente da JS -->
+        </select>
+      </div>
+      <div class="field">
+        <label>Temperature</label>
+        <input type="number" id="cloud-temp" min="0" max="2" step="0.05">
+      </div>
+    </div>
+
+    <div class="card" id="card-ollama" style="display:none">
+      <div class="card-title">🦙 Ollama</div>
+      <div class="field">
+        <label>Modello attivo</label>
+        <select id="ollama-modello">
+           <!-- Popolato dinamicamente da JS -->
+        </select>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Temperature</label>
+          <input type="number" id="ollama-temp" min="0" max="2" step="0.05">
+        </div>
+        <div class="field">
+          <label>Num GPU layers</label>
+          <input type="number" id="ollama-gpu" min="-1" max="200" step="1">
+        </div>
+        <div class="field">
+          <label>Num predict (tokens)</label>
+          <input type="number" id="ollama-predict" min="50" max="8192" step="50">
+        </div>
+        <div class="field">
+          <label>Context (num_ctx)</label>
+          <input type="number" id="ollama-ctx" min="512" max="65536" step="512">
+        </div>
+        <div class="field">
+          <label>Top P</label>
+          <input type="number" id="ollama-top-p" min="0" max="1" step="0.05">
+        </div>
+        <div class="field">
+          <label>Repeat penalty</label>
+          <input type="number" id="ollama-repeat" min="0.5" max="2" step="0.05">
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-kobold" style="display:none">
+      <div class="card-title">🐉 KoboldCPP</div>
+      <div class="field">
+        <label>URL server</label>
+        <input type="text" id="kobold-url" placeholder="http://localhost:5001">
+      </div>
+      <div class="field">
+        <label>Modello (nome file)</label>
+        <input type="text" id="kobold-modello">
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Temperature</label>
+          <input type="number" id="kobold-temp" min="0" max="2" step="0.05">
+        </div>
+        <div class="field">
+          <label>Max length</label>
+          <input type="number" id="kobold-max" min="64" max="8192" step="64">
+        </div>
+        <div class="field">
+          <label>Top P</label>
+          <input type="number" id="kobold-top-p" min="0" max="1" step="0.05">
+        </div>
+        <div class="field">
+          <label>Rep pen</label>
+          <input type="number" id="kobold-rep" min="0.5" max="2" step="0.05">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LLM / CLOUD ── -->
+  <div id="tab-llm" class="panel">
+    <div class="card">
+      <div class="card-title">☁️ Provider Cloud</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          Abilita provider Cloud
+          <div class="toggle-sub">Permette l'uso di API cloud (Groq, Gemini, ecc.)</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔑 API Keys</div>
+      <div class="field"><label>OpenAI</label><input type="password" id="key-openai" placeholder="sk-..."></div>
+      <div class="field"><label>Anthropic</label><input type="password" id="key-anthropic" placeholder="sk-ant-..."></div>
+      <div class="field"><label>Groq</label><input type="password" id="key-groq" placeholder="gsk_..."></div>
+      <div class="field"><label>Gemini</label><input type="password" id="key-gemini" placeholder="AIza..."></div>
+      <small style="color:var(--muted); font-size:12px;">⚠️ Le chiavi vengono salvate in config.json in chiaro. Considera di usare un file .env per maggiore sicurezza.</small>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Modelli disponibili per provider</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Uno per riga. Il primo elemento è usato come default per quel provider.</p>
+      <div class="field"><label>OpenAI</label><textarea id="models-openai" rows="4"></textarea></div>
+      <div class="field"><label>Anthropic</label><textarea id="models-anthropic" rows="3"></textarea></div>
+      <div class="field"><label>Groq</label><textarea id="models-groq" rows="5"></textarea></div>
+      <div class="field"><label>Gemini</label><textarea id="models-gemini" rows="5"></textarea></div>
+    </div>
+  </div>
+
+  <!-- ── ROUTING ── -->
+  <div id="tab-routing" class="panel">
+    <div class="card">
+      <div class="card-title">🛣️ Routing Engine Zentra</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Come vengono smistati i tool invocati dall'LLM: nativo JSON (OpenAI style) o Legacy (Testo regex)</p>
+      
+      <div class="field">
+        <label>Modalità di Routing</label>
+        <select id="route-modalita">
+          <option value="auto">Auto (Native JSON, cade indietro a Legacy se Cloud disattivato)</option>
+          <option value="forza_nativo">Forza Nativo (Richiede modelli intelligenti)</option>
+          <option value="forza_legacy">Forza Legacy (Ottimo per modelli locali piccoli)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Modelli bloccati in Legacy</label>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;">Modelli locali o specifici che non supportano JSON schema e devono sempre e solo usare il testo (separati da virgola)</p>
+        <input type="text" id="route-modelli" placeholder="es. qwen2.5:0.5b, gemma2:2b">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── IA / PROMPT ── -->
+  <div id="tab-ia" class="panel">
+    <div class="card">
+      <div class="card-title">🤖 Personalità (Prompt Predefiniti)</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Seleziona il system prompt primario per la rete neurale.</p>
+      
+      <div class="field">
+        <label>Personalità Attiva</label>
+        <select id="ia-personalita">
+          <!-- Popolato dinamicamente da JS -->
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BRIDGE & FILTRI ── -->
+  <div id="tab-bridge" class="panel">
+    <div class="card">
+      <div class="card-title">🌉 Opzioni Bridge WebUI</div>
+      <div class="toggle-row">
+        <div class="toggle-info">Usa processore testo<div class="toggle-sub">Passa la risposta attraverso il processore globale</div></div>
+        <label class="switch"><input type="checkbox" id="br-processore"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Rimuovi tag &lt;think&gt;<div class="toggle-sub">Nasconde i blocchi di ragionamento interno DeepSeek r1</div></div>
+        <label class="switch"><input type="checkbox" id="br-think"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Debug log bridge<div class="toggle-sub">Scrive log HTTP dettagliati in logs/bridge_debug.log</div></div>
+        <label class="switch"><input type="checkbox" id="br-debug"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Abilita Tools (funzioni plugin)<div class="toggle-sub">Inietta gli schema JSON (F7 tools) in Open WebUI</div></div>
+        <label class="switch"><input type="checkbox" id="br-tools"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Ascolta da WebUI (Pass-through STT)<div class="toggle-sub">Il Bridge riceve l'input testuale dal plugin Speech di WebUI</div></div>
+        <label class="switch"><input type="checkbox" id="br-stt"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Rispondi a voce (Locale Piper TTS)<div class="toggle-sub">Sintetizza in tempo reale la riproduzione in streaming tramite Python backend su porte locali</div></div>
+        <label class="switch"><input type="checkbox" id="br-tts"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="margin-top:16px;">
+        <label>Ritardo Artificiale Stream Chunk (ms)</label>
+        <input type="number" id="br-delay" min="0" max="500" step="10">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🧹 Filtri di Testo Attivi</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Zentra modifica il resoconto testuale in uscita rimuovendo gli artefatti testuali per rendere l'output parlato / scritto più pulito.</p>
+      
+      <div class="toggle-row">
+        <div class="toggle-info">Rimuovi Asterischi (*azione*)</div>
+        <label class="switch"><input type="checkbox" id="fl-ast"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Rimuovi Tonde (annotazione)</div>
+        <label class="switch"><input type="checkbox" id="fl-tonde"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Rimuovi Quadre [dettagli]</div>
+        <label class="switch"><input type="checkbox" id="fl-quadre"><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VOCE ── -->
+  <div id="tab-voice" class="panel">
+    <div class="card">
+      <div class="card-title">🔊 Configurazione TTS (Piper)</div>
+      <div class="field">
+        <label>Path eseguibile Piper</label>
+        <input type="text" id="v-piper" placeholder="C:\piper\piper.exe">
+      </div>
+      <div class="field">
+        <label>Modello ONNX</label>
+        <select id="v-onnx">
+          <!-- Popolato dinamicamente da JS leggendo i file -->
+        </select>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;">Piper voices are fetched automatically from C:\piper.</p>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>Speed (1.0 = normal)</label><input type="number" id="v-speed" min="0.5" max="3" step="0.05"></div>
+        <div class="field"><label>Noise scale</label><input type="number" id="v-noise" min="0" max="1" step="0.01"></div>
+        <div class="field"><label>Noise W</label><input type="number" id="v-noisew" min="0" max="1" step="0.01"></div>
+        <div class="field"><label>Sentence silence (s)</label><input type="number" id="v-silence" min="0" max="2" step="0.05"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎤 Ascolto Continuo Locale (Non usato in WebUI nativo, utile per Zentra Core Standalone)</div>
+      <div class="grid-2">
+        <div class="field"><label>Soglia energia mic</label><input type="number" id="a-soglia" min="50" max="5000" step="50"></div>
+        <div class="field"><label>Timeout silenzio (s)</label><input type="number" id="a-timeout" min="1" max="30" step="1"></div>
+        <div class="field"><label>Limite frase (s)</label><input type="number" id="a-limite" min="5" max="60" step="1"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SISTEMA ── -->
+  <div id="tab-system" class="panel">
+    <div class="card">
+      <div class="card-title">⚙️ Logging & Debug System</div>
+      <div class="field">
+        <label>Livello Dettaglio</label>
+        <select id="log-tipo">
+          <option value="info">Info (Solo messaggi principali)</option>
+          <option value="debug">Debug (Estremamente esplicativo)</option>
+          <option value="both">Both (Doppia traccia)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Destinazione Log Principali</label>
+        <select id="log-dest">
+          <option value="chat">Chat TUI e File</option>
+          <option value="console">Console Python</option>
+          <option value="file_only">Solo file log remoto</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Ignora Startup Integrity Checks (Fast Boot)</div>
+        <label class="switch"><input type="checkbox" id="sys-fastboot"><span class="slider"></span></label>
+      </div>
+      <div class="field" style="margin-top:20px;">
+        <label>Lingua Applicazione Zentra Core Term</label>
+        <select id="sys-lingua">
+          <option value="en">English (Trascrizione default)</option>
+          <option value="it">Italian (Tradizionale locale)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PLUGIN ── -->
+  <div id="tab-plugins" class="panel">
+    <div class="card">
+      <div class="card-title">🧩 Plugin attivi</div>
+      <div id="plugin-list">
+        <p style="color:var(--muted);font-size:13px;">Caricamento plugin...</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Save bar -->
+<div class="save-bar">
+  <span id="save-msg"></span>
+  <button class="btn btn-secondary" onclick="initAll()">↺ Ricarica UI</button>
+  <button class="btn btn-primary" onclick="saveConfig()">💾 Salva configurazione nel nodo sorgente</button>
+</div>
+
+<script>
+let cfg = {};
+let sysOptions = {};
+
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+document.getElementById('backend-tipo').addEventListener('change', function() {
+  const v = this.value;
+  document.getElementById('card-cloud').style.display   = v === 'cloud'  ? '' : 'none';
+  document.getElementById('card-ollama').style.display  = v === 'ollama' ? '' : 'none';
+  document.getElementById('card-kobold').style.display  = v === 'kobold' ? '' : 'none';
+});
+
+function populateSelect(id, list, currentValue, enforceExactMatch = false) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  
+  if (enforceExactMatch && currentValue && !list.includes(currentValue) && !list.some(x => typeof x === 'string' && x.includes(currentValue))) {
+       list.push(currentValue);
+  } else if (!enforceExactMatch && currentValue && !list.some(i => i.endsWith(currentValue))) {
+       list.push(currentValue);
+  }
+
+  list.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item;
+    opt.textContent = item;
+    // Basic logic for selecting active ones
+    if (currentValue && (item === currentValue || item.endsWith(currentValue))) {
+        opt.selected = true;
+    }
+    el.appendChild(opt);
+  });
+}
+
+// ─── INITIALIZATION (Options -> Config) ────────────────────────────────────────────────
+async function initAll() {
+  setSaveMsg('⏳ Startup Bridge Nodes...', 'muted');
+  try {
+    const rOpts = await fetch('/zentra/options');
+    sysOptions = await rOpts.json();
+
+    const rCfg = await fetch('/zentra/config');
+    cfg = await rCfg.json();
+
+    populateUI();
+    setSaveMsg('✅ UI sincronizzata e moduli agganciati.', 'ok');
+  } catch(e) {
+    setSaveMsg('❌ Errore critico in fetching root config: ' + e, 'err');
+  }
+}
+
+function populateUI() {
+  const c = cfg;
+  
+  // Backend & Dropdowns
+  const bt = c.backend?.tipo || 'ollama';
+  document.getElementById('backend-tipo').value = bt;
+  document.getElementById('backend-tipo').dispatchEvent(new Event('change'));
+
+  // Cloud Models dynamically flattened from the 4 providers
+  let allCloud = [];
+  Object.values(sysOptions.cloud_models || {}).forEach(arr => { allCloud.push(...arr); });
+  populateSelect('cloud-modello', allCloud, c.backend?.cloud?.modello);
+  
+  // Ollama Models
+  populateSelect('ollama-modello', sysOptions.ollama_models || [], c.backend?.ollama?.modello);
+  
+  // Custom Temp & Params
+  document.getElementById('cloud-temp').value     = c.backend?.cloud?.temperature ?? 0.7;
+  document.getElementById('ollama-temp').value    = c.backend?.ollama?.temperature ?? 0.3;
+  document.getElementById('ollama-gpu').value     = c.backend?.ollama?.num_gpu    ?? 25;
+  document.getElementById('ollama-predict').value = c.backend?.ollama?.num_predict ?? 250;
+  document.getElementById('ollama-ctx').value     = c.backend?.ollama?.num_ctx    ?? 4096;
+  document.getElementById('ollama-top-p').value   = c.backend?.ollama?.top_p      ?? 0.9;
+  document.getElementById('ollama-repeat').value  = c.backend?.ollama?.repeat_penalty ?? 1.1;
+
+  document.getElementById('kobold-url').value     = c.backend?.kobold?.url        || 'http://localhost:5001';
+  document.getElementById('kobold-modello').value = c.backend?.kobold?.modello    || '';
+  document.getElementById('kobold-temp').value    = c.backend?.kobold?.temperature ?? 0.8;
+  document.getElementById('kobold-max').value     = c.backend?.kobold?.max_length  ?? 512;
+  document.getElementById('kobold-top-p').value   = c.backend?.kobold?.top_p       ?? 0.92;
+  document.getElementById('kobold-rep').value     = c.backend?.kobold?.rep_pen     ?? 1.1;
+
+  // LLM / Cloud API Keys & Lists
+  const llm = c.llm || {};
+  document.getElementById('llm-allow-cloud').checked = llm.allow_cloud ?? true;
+  const prov = llm.providers || {};
+  document.getElementById('key-openai').value    = prov.openai?.api_key    || '';
+  document.getElementById('key-anthropic').value = prov.anthropic?.api_key || '';
+  document.getElementById('key-groq').value      = prov.groq?.api_key      || '';
+  document.getElementById('key-gemini').value    = prov.gemini?.api_key    || '';
+  document.getElementById('models-openai').value    = (prov.openai?.modelli    || []).join('\n');
+  document.getElementById('models-anthropic').value = (prov.anthropic?.modelli || []).join('\n');
+  document.getElementById('models-groq').value      = (prov.groq?.modelli      || []).join('\n');
+  document.getElementById('models-gemini').value    = (prov.gemini?.modelli    || []).join('\n');
+
+  // Routing Modulo Dinamico
+  const rm = c.motore_routing || {};
+  document.getElementById('route-modalita').value = rm.modalita || 'auto';
+  document.getElementById('route-modelli').value  = rm.modelli_legacy || '';
+
+  // IA Prompts & Personalities
+  populateSelect('ia-personalita', sysOptions.personalita || [], c.ia?.personalita_attiva, true);
+
+  // Bridge Flags & Modifiers
+  const br = c.bridge || {};
+  document.getElementById('br-processore').checked = br.usa_processore        ?? false;
+  document.getElementById('br-think').checked      = br.rimuovi_think_tags    ?? true;
+  document.getElementById('br-debug').checked      = br.debug_log             ?? true;
+  document.getElementById('br-tools').checked      = br.abilita_tools         ?? true;
+  document.getElementById('br-stt').checked        = br.voce_webui_stt        ?? true;
+  document.getElementById('br-tts').checked        = br.voce_locale_abilitata ?? false;
+  document.getElementById('br-delay').value        = br.ritardo_chunk_ms      ?? 0;
+
+  // Filtri Output RegEx
+  const fi = c.filtri || {};
+  document.getElementById('fl-ast').checked   = fi.rimuovi_asterischi ?? false;
+  document.getElementById('fl-tonde').checked = fi.rimuovi_parentesi_tonde ?? false;
+  document.getElementById('fl-quadre').checked = fi.rimuovi_parentesi_quadre ?? false;
+
+  // Voice TTS (Dynamic Dropdown for ONNX models)
+  const v = c.voice || {};
+  document.getElementById('v-piper').value   = v.piper_path       || '';
+  
+  // Format ONNX from short name back to absolute path for Zentra Core compatibility
+  const exactOnnxPath = v.onnx_model || '';
+  const onnxFileNames = (sysOptions.piper_voices || []);
+  populateSelect('v-onnx', onnxFileNames, exactOnnxPath.split('\\').pop() || exactOnnxPath.split('/').pop(), true);
+
+  document.getElementById('v-speed').value   = v.speed            ?? 1.2;
+  document.getElementById('v-noise').value   = v.noise_scale      ?? 0.817;
+  document.getElementById('v-noisew').value  = v.noise_w          ?? 0.9;
+  document.getElementById('v-silence').value = v.sentence_silence ?? 0.1;
+
+  // Local Ambient Mic Listening
+  const a = c.listening || {};
+  document.getElementById('a-soglia').value  = a.energy_threshold ?? 450;
+  document.getElementById('a-timeout').value = a.silence_timeout  ?? 5;
+  document.getElementById('a-limite').value  = a.phrase_limit      ?? 15;
+
+  // Logging & System Root Directives
+  const slg = c.logging || {};
+  document.getElementById('log-tipo').value = slg.tipo_messaggi || 'both';
+  document.getElementById('log-dest').value = slg.destinazione || 'chat';
+
+  const ssy = c.system || {};
+  document.getElementById('sys-fastboot').checked = ssy.avvio_rapido ?? false;
+  document.getElementById('sys-lingua').value = c.lingua || 'en';
+
+  // Plugins
+  renderPlugins(c.plugins || {});
+}
+
+function renderPlugins(plugins) {
+  const cont = document.getElementById('plugin-list');
+  const pluginDesc = {
+    DASHBOARD: 'Monitor hardware: CPU, RAM, GPU, VRAM in tempo reale',
+    FILE_MANAGER: 'Gestione file e directory locale del nodo C:',
+    HELP: 'Auto-guida dinamica interattiva',
+    MEDIA: 'Sistema playback audio MP3/WAV/A-V',
+    ROLEPLAY: 'Sistema narrativo e bypass content',
+    SYSTEM: 'Bridge esecutivo shell / subprocess / kill',
+    WEB: 'Gateway per fetch internet e url parsing',
+    WEBCAM: 'Scatto istantanee da Open CV / Hardware webcam 0',
+  };
+  let html = '';
+  for (const [tag, pCfg] of Object.entries(plugins)) {
+    const enabled = pCfg.enabled !== false;
+    const desc = pluginDesc[tag] || '';
+    html += `
+      <div class="plugin-row">
+        <div>
+          <div class="plugin-name">${tag}</div>
+          ${desc ? `<div class="plugin-desc">${desc}</div>` : ''}
+        </div>
+        <label class="switch">
+          <input type="checkbox" data-plugin="${tag}" ${enabled ? 'checked' : ''}>
+          <span class="slider"></span>
+        </label>
+      </div>`;
+  }
+  cont.innerHTML = html || '<p style="color:var(--muted)">Nessun plugin Zentra caricato sulla rete locale.</p>';
+}
+
+function buildPayload() {
+  const out = JSON.parse(JSON.stringify(cfg)); // Deep clone per preservare campi legacy oscuri
+
+  // Backend Core
+  out.backend.tipo = document.getElementById('backend-tipo').value;
+  out.backend.cloud.modello     = document.getElementById('cloud-modello').value;
+  out.backend.cloud.temperature = parseFloat(document.getElementById('cloud-temp').value);
+
+  out.backend.ollama.modello        = document.getElementById('ollama-modello').value;
+  out.backend.ollama.temperature    = parseFloat(document.getElementById('ollama-temp').value);
+  out.backend.ollama.num_gpu        = parseInt(document.getElementById('ollama-gpu').value);
+  out.backend.ollama.num_predict    = parseInt(document.getElementById('ollama-predict').value);
+  out.backend.ollama.num_ctx        = parseInt(document.getElementById('ollama-ctx').value);
+  out.backend.ollama.top_p          = parseFloat(document.getElementById('ollama-top-p').value);
+  out.backend.ollama.repeat_penalty = parseFloat(document.getElementById('ollama-repeat').value);
+
+  out.backend.kobold.url         = document.getElementById('kobold-url').value;
+  out.backend.kobold.modello     = document.getElementById('kobold-modello').value;
+  out.backend.kobold.temperature = parseFloat(document.getElementById('kobold-temp').value);
+  out.backend.kobold.max_length  = parseInt(document.getElementById('kobold-max').value);
+  out.backend.kobold.top_p       = parseFloat(document.getElementById('kobold-top-p').value);
+  out.backend.kobold.rep_pen     = parseFloat(document.getElementById('kobold-rep').value);
+
+  // LLM Providers Array Parsing
+  out.llm = out.llm || {};
+  out.llm.allow_cloud = document.getElementById('llm-allow-cloud').checked;
+  out.llm.providers   = out.llm.providers || {};
+  ['openai', 'anthropic', 'groq', 'gemini'].forEach(p => {
+    out.llm.providers[p] = out.llm.providers[p] || {};
+    const keyVal = document.getElementById('key-' + p).value.trim();
+    if (keyVal) out.llm.providers[p].api_key = keyVal;
+    const rawModels = document.getElementById('models-' + p).value.trim();
+    if (rawModels) {
+      out.llm.providers[p].modelli = rawModels.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+  });
+
+  // Routing
+  out.motore_routing = out.motore_routing || {};
+  out.motore_routing.modalita = document.getElementById('route-modalita').value;
+  out.motore_routing.modelli_legacy = document.getElementById('route-modelli').value;
+
+  // IA Prompts
+  out.ia = out.ia || {};
+  out.ia.personalita_attiva = document.getElementById('ia-personalita').value;
+
+  // Bridge WebUI
+  out.bridge = out.bridge || {};
+  out.bridge.usa_processore        = document.getElementById('br-processore').checked;
+  out.bridge.rimuovi_think_tags    = document.getElementById('br-think').checked;
+  out.bridge.debug_log             = document.getElementById('br-debug').checked;
+  out.bridge.abilita_tools         = document.getElementById('br-tools').checked;
+  out.bridge.voce_webui_stt        = document.getElementById('br-stt').checked;
+  out.bridge.voce_locale_abilitata = document.getElementById('br-tts').checked;
+  out.bridge.ritardo_chunk_ms      = parseInt(document.getElementById('br-delay').value);
+
+  // Filtri Output
+  out.filtri = out.filtri || {};
+  out.filtri.rimuovi_asterischi = document.getElementById('fl-ast').checked;
+  out.filtri.rimuovi_parentesi_tonde = document.getElementById('fl-tonde').checked;
+  out.filtri.rimuovi_parentesi_quadre = document.getElementById('fl-quadre').checked;
+
+  // Voice TTS Path Reconstruction Helper
+  out.voice = out.voice || {};
+  out.voice.piper_path       = document.getElementById('v-piper').value;
+  
+  // Riassembla il path assoluto per il piper .onnx richiesto da Core
+  const pdir = sysOptions.piper_dir || "C:\\piper";
+  let voiceSel = document.getElementById('v-onnx').value;
+  if(!voiceSel.includes("\\") && !voiceSel.includes("/")) {
+      out.voice.onnx_model = pdir + "\\" + voiceSel;
+  } else {
+      out.voice.onnx_model = voiceSel;
+  }
+
+  out.voice.speed            = parseFloat(document.getElementById('v-speed').value);
+  out.voice.noise_scale      = parseFloat(document.getElementById('v-noise').value);
+  out.voice.noise_w          = parseFloat(document.getElementById('v-noisew').value);
+  out.voice.sentence_silence = parseFloat(document.getElementById('v-silence').value);
+
+  // Ascolto Ambient
+  out.listening = out.listening || {};
+  out.listening.energy_threshold = parseInt(document.getElementById('a-soglia').value);
+  out.listening.silence_timeout  = parseInt(document.getElementById('a-timeout').value);
+  out.listening.phrase_limit     = parseInt(document.getElementById('a-limite').value);
+
+  // Logging & System Root
+  out.logging = out.logging || {};
+  out.logging.tipo_messaggi = document.getElementById('log-tipo').value;
+  out.logging.destinazione  = document.getElementById('log-dest').value;
+
+  out.system = out.system || {};
+  out.system.avvio_rapido = document.getElementById('sys-fastboot').checked;
+  out.lingua = document.getElementById('sys-lingua').value;
+
+  // Plugins Network
+  document.querySelectorAll('[data-plugin]').forEach(cb => {
+    const tag = cb.dataset.plugin;
+    out.plugins[tag] = out.plugins[tag] || {};
+    out.plugins[tag].enabled = cb.checked;
+  });
+
+  return out;
+}
+
+async function saveConfig() {
+  setSaveMsg('⏳ Overwriting remote Node 0 via LAN...', 'muted');
+  try {
+    const payload = buildPayload();
+    const r = await fetch('/zentra/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (data.ok) {
+      cfg = payload;
+      setSaveMsg('✅ Sovrascrittura Master confermata. Modifiche Hot-Plug attive.', 'ok');
+    } else {
+      setSaveMsg('❌ Errore Backend: ' + data.error, 'err');
+    }
+  } catch(e) {
+    setSaveMsg('❌ Errore network: ' + e, 'err');
+  }
+}
+
+function setSaveMsg(msg, type) {
+  const el = document.getElementById('save-msg');
+  el.textContent = msg;
+  el.style.color = type === 'ok' ? 'var(--green)' : type === 'err' ? 'var(--red)' : 'var(--muted)';
+}
+
+async function refreshStatus() {
+  try {
+    const r = await fetch('/zentra/status');
+    const d = await r.json();
+
+    document.getElementById('s-backend').textContent  = d.backend  || '—';
+    document.getElementById('s-model').textContent    = d.model    || '—';
+    document.getElementById('s-bridge').textContent   = d.bridge   || '—';
+    document.getElementById('s-tts').textContent      = d.tts      || '—';
+    document.getElementById('s-config').textContent   = d.config   || '—';
+    document.getElementById('hdr-model').textContent  = d.model    || 'offline';
+
+    const modelEl = document.getElementById('s-model');
+    modelEl.className = 'stat-val ' + (d.model && d.model !== '—' ? 'val-ok' : 'val-warn');
+  } catch(e) {
+    document.getElementById('hdr-model').textContent = 'offline server bridge...';
+  }
+}
+
+// ─── START ───────────────────────────────────────────────────────────────────
+initAll();
+refreshStatus();
+setInterval(refreshStatus, 3000);
+</script>
+</body>
+</html>

@@ -17,8 +17,13 @@ class ConfigEditor:
         project_dir = os.path.dirname(ui_dir)  # directory del progetto (dove sta main.py)
         self.config_path = os.path.join(project_dir, config_path)
         self.config = self._load_config()
+        
+        from core.audio.device_manager import get_audio_config
+        self.audio_config = get_audio_config()
+        
         self.param_list = build_parameter_list(self.config)
         self.modified = False
+        self.audio_modified = False
 
     def _load_config(self):
         """Carica il file JSON, pulisce config plugin vecchi e sincronizza con la cartella."""
@@ -26,110 +31,136 @@ class ConfigEditor:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
                 
-            # --- Auto-sync dei plugin ---
+            # --- Auto-sync plugins ---
             plugins_config = config.get("plugins", {})
             script_dir = os.path.dirname(os.path.abspath(__file__))  
             ui_dir = os.path.dirname(script_dir)  
             project_dir = os.path.dirname(ui_dir)  
             plugins_dir = os.path.join(project_dir, "plugins")
             
-            # Trova i plugin reali (cartelle con main.py o file .py validi)
-            plugin_reali = set()
+            # Find real plugins (folders with main.py or valid .py files)
+            real_plugins = set()
             if os.path.exists(plugins_dir):
                 for item in os.listdir(plugins_dir):
                     item_path = os.path.join(plugins_dir, item)
                     if os.path.isdir(item_path) and os.path.isfile(os.path.join(item_path, "main.py")):
-                        plugin_reali.add(item.upper())
+                        real_plugins.add(item.upper())
                     elif os.path.isfile(item_path) and item.endswith(".py") and not item.startswith("_"):
-                        plugin_reali.add(item[:-3].upper())
+                        real_plugins.add(item[:-3].upper())
             
-            # Rimuovere da config.json i plugin che non esistono più
-            da_rimuovere = [p for p in plugins_config if p not in plugin_reali]
-            for p in da_rimuovere:
+            # Remove plugins from config.json that no longer exist
+            to_remove = [p for p in plugins_config if p not in real_plugins]
+            for p in to_remove:
                 del plugins_config[p]
-                self.modified = True  # Segna come modificato se abbiamo pulito qualcosa
+                self.modified = True  # Mark as modified if we cleaned something
                 
             config["plugins"] = plugins_config
+            
+            # --- Auto-init Routing ---
+            if "routing_engine" not in config:
+                config["routing_engine"] = {"mode": "auto", "legacy_models": ""}
+            elif "legacy_models" not in config["routing_engine"]:
+                 config["routing_engine"]["legacy_models"] = ""
+                 
             return config
             
         except Exception as e:
-            print(f"Errore caricamento {self.config_path}: {e}")
+            print(f"Error loading {self.config_path}: {e}")
             raise
 
     def _save_config(self):
         """Salva il file JSON se ci sono modifiche e aggiorna il traduttore."""
+        if self.audio_modified:
+            try:
+                from core.audio.device_manager import _save_audio_config
+                _save_audio_config(self.audio_config)
+                self.audio_modified = False
+            except Exception as e:
+                print(f"[AUDIO-DM] Save error from config editor: {e}")
+
         if self.modified:
             try:
-                # Controlla cambio lingua prima del salvataggio
-                vecchia_lingua = None
+                # Check language change before saving
+                old_language = None
                 if os.path.exists(self.config_path):
                     try:
                         with open(self.config_path, 'r', encoding='utf-8') as f:
                             old_data = json.load(f)
-                            vecchia_lingua = old_data.get("lingua")
+                            old_language = old_data.get("language")
                     except: pass
 
                 with open(self.config_path, 'w', encoding='utf-8') as f:
                     json.dump(self.config, f, indent=4, ensure_ascii=False)
                 
-                # Sincronizza il traduttore se la lingua è cambiata
-                nuova_lingua = self.config.get("lingua")
-                if nuova_lingua and nuova_lingua != vecchia_lingua:
+                # Sync translator if language changed
+                new_language = self.config.get("language")
+                if new_language and new_language != old_language:
                     from core.i18n import translator
-                    translator.get_translator().set_language(nuova_lingua)
+                    translator.get_translator().set_language(new_language)
                 
                 print(f"\n{translator.t('config_saved_success')}")
             except Exception as e:
                 print(f"\n{translator.t('config_save_error', error=str(e))}")
 
     def _get_value(self, param):
-        """Restituisce il valore di un parametro dal config corrente."""
+        """Returns a parameter value from current config."""
         try:
-            # Determina il backend attivo
-            backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
+            # Determine active backend
+            backend_type = self.config.get('backend', {}).get('type', 'ollama')
             backend_config = self.config.get('backend', {}).get(backend_type, {})
             
-            # La chiave è già presente in param.key grazie alla nuova build_parameter_list
+            # Key is already present in param.key
             key = param.key
             
-            # Gestisci i diversi tipi di sezioni
+            # Handle different section types
             if param.section == 'backend':
                 return backend_config.get(key)
             elif param.section == 'ollama':
                 return self.config.get('backend', {}).get('ollama', {}).get(key)
             elif param.section == 'kobold':
                 return self.config.get('backend', {}).get('kobold', {}).get(key)
-            elif param.section == 'voce':
-                return self.config.get('voce', {}).get(key)
-            elif param.section == 'ascolto':
-                return self.config.get('ascolto', {}).get(key)
-            elif param.section == 'filtri':
-                return self.config.get('filtri', {}).get(key)
+            elif param.section in ('voice', 'listening', 'audio_device'):
+                return self.audio_config.get(key)
+            elif param.section == 'ai':
+                return self.config.get('ai', {}).get(key)
+            elif param.section == 'bridge':
+                return self.config.get('bridge', {}).get(key)
+            elif param.section == 'filters':
+                return self.config.get('filters', {}).get(key)
             elif param.section == 'logging':
                 return self.config.get('logging', {}).get(key)
             elif param.section == 'system':
-                return self.config.get(key)
+                return self.config.get('system', {}).get(key)
+            elif param.section == 'cognition':
+                return self.config.get('cognition', {}).get(key)
             elif param.section == 'llm':
                 return self.config.get('llm', {}).get(key)
             elif param.section.startswith('llm_'):
                 provider = param.section.split('_')[1]
                 return self.config.get('llm', {}).get('providers', {}).get(provider, {}).get(key)
             elif param.section == 'plugin':
-                # Sezione plugin: accedi a config['plugins'][param.plugin_tag][key]
+                # Plugin section: access config['plugins'][param.plugin_tag][key]
                 plugins = self.config.get('plugins', {})
                 plugin_cfg = plugins.get(param.plugin_tag, {})
                 return plugin_cfg.get(key)
+            elif param.section == 'routing_engine':
+                return self.config.get('routing_engine', {}).get(key)
+            elif param.section.startswith('legacy_'):
+                # Value is True if key (model name) is in CSV string
+                legacy_str = self.config.get('routing_engine', {}).get('legacy_models', '')
+                legacy_list = [m.strip().lower() for m in legacy_str.split(',') if m.strip()]
+                return key.lower() in legacy_list
             else:
                 return None
         except Exception as e:
-            print(f"Errore in _get_value per {param.label}: {e}")
+            print(f"Error in _get_value for {param.label}: {e}")
             return None
 
     def _set_value(self, param, value):
         """Imposta il valore e marca come modificato."""
         try:
             # Determina il backend attivo
-            backend_type = self.config.get('backend', {}).get('tipo', 'ollama')
+            backend_type = self.config.get('backend', {}).get('type', 'ollama')
             
             # Uso diretto di param.key
             key = param.key
@@ -156,26 +187,31 @@ class ConfigEditor:
                 if old != value:
                     self.config['backend']['kobold'][key] = value
                     self.modified = True
-            elif param.section == 'voce':
-                if 'voce' not in self.config:
-                    self.config['voce'] = {}
-                old = self.config['voce'].get(key)
+            elif param.section in ('voice', 'listening', 'audio_device'):
+                old = self.audio_config.get(key)
                 if old != value:
-                    self.config['voce'][key] = value
+                    self.audio_config[key] = value
+                    self.audio_modified = True
+            elif param.section == 'ai':
+                if 'ai' not in self.config:
+                    self.config['ai'] = {}
+                old = self.config['ai'].get(key)
+                if old != value:
+                    self.config['ai'][key] = value
                     self.modified = True
-            elif param.section == 'ascolto':
-                if 'ascolto' not in self.config:
-                    self.config['ascolto'] = {}
-                old = self.config['ascolto'].get(key)
+            elif param.section == 'bridge':
+                if 'bridge' not in self.config:
+                    self.config['bridge'] = {}
+                old = self.config['bridge'].get(key)
                 if old != value:
-                    self.config['ascolto'][key] = value
+                    self.config['bridge'][key] = value
                     self.modified = True
-            elif param.section == 'filtri':
-                if 'filtri' not in self.config:
-                    self.config['filtri'] = {}
-                old = self.config['filtri'].get(key)
+            elif param.section == 'filters':
+                if 'filters' not in self.config:
+                    self.config['filters'] = {}
+                old = self.config['filters'].get(key)
                 if old != value:
-                    self.config['filtri'][key] = value
+                    self.config['filters'][key] = value
                     self.modified = True
             elif param.section == 'logging':
                 if 'logging' not in self.config:
@@ -185,9 +221,18 @@ class ConfigEditor:
                     self.config['logging'][key] = value
                     self.modified = True
             elif param.section == 'system':
-                old = self.config.get(key)
+                if 'system' not in self.config:
+                    self.config['system'] = {}
+                old = self.config['system'].get(key)
                 if old != value:
-                    self.config[key] = value
+                    self.config['system'][key] = value
+                    self.modified = True
+            elif param.section == 'cognition':
+                if 'cognition' not in self.config:
+                    self.config['cognition'] = {}
+                old = self.config['cognition'].get(key)
+                if old != value:
+                    self.config['cognition'][key] = value
                     self.modified = True
             elif param.section == 'llm':
                 if 'llm' not in self.config:
@@ -216,8 +261,92 @@ class ConfigEditor:
                 if old != value:
                     self.config['plugins'][param.plugin_tag][key] = value
                     self.modified = True
+            elif param.section == 'routing_engine':
+                if 'routing_engine' not in self.config:
+                    self.config['routing_engine'] = {}
+                old = self.config['routing_engine'].get(key)
+                if old != value:
+                    self.config['routing_engine'][key] = value
+                    self.modified = True
+            elif param.section.startswith('legacy_'):
+                # Sincronizza il boolean con la stringa legacy_models
+                if 'routing_engine' not in self.config:
+                    self.config['routing_engine'] = {"legacy_models": ""}
+                
+                legacy_str = self.config['routing_engine'].get('legacy_models', '')
+                legacy_list = [m.strip().lower() for m in legacy_str.split(',') if m.strip()]
+                
+                model_name = key.lower()
+                if value: # Aggiungi
+                    if model_name not in legacy_list:
+                        legacy_list.append(model_name)
+                        self.config['routing_engine']['legacy_models'] = ", ".join(legacy_list)
+                        self.modified = True
+                else: # Rimuovi
+                    if model_name in legacy_list:
+                        legacy_list.remove(model_name)
+                        self.config['routing_engine']['legacy_models'] = ", ".join(legacy_list)
+                        self.modified = True
+            elif param.section == 'audio_device':
+                # Writes go directly to config_audio.json
+                try:
+                    from core.audio.device_manager import _load_audio_config, _save_audio_config
+                    acfg = _load_audio_config()
+                    if acfg.get(key) != value:
+                        acfg[key] = value
+                        _save_audio_config(acfg)
+                except Exception as e:
+                    print(f"[AUDIO-DM] _set_value error: {e}")
         except Exception as e:
             print(f"Errore in _set_value per {param.label}: {e}")
+
+    def _handle_special_command(self, command: str) -> bool:
+        """Handles special commands triggered from the UI. Returns True if handled."""
+        if command == 'rescan_audio_devices':
+            import sys
+            sys.stdout.write("\n\033[93m[AUDIO-DM] Scanning audio devices...\033[0m\n")
+            sys.stdout.flush()
+            try:
+                from core.audio.device_manager import scan_and_select
+                cfg = scan_and_select(verbose=True)
+                out = cfg.get('output_device_name', '?')
+                inp = cfg.get('input_device_name', '?')
+                sys.stdout.write(f"\033[92m✅ Output: {out} | Input: {inp}\033[0m\n")
+                sys.stdout.flush()
+            except Exception as e:
+                sys.stdout.write(f"\033[91m❌ Error: {e}\033[0m\n")
+                sys.stdout.flush()
+            import msvcrt, time
+            sys.stdout.write("Press any key to continue...\n")
+            sys.stdout.flush()
+            time.sleep(0.5)
+            while msvcrt.kbhit(): msvcrt.getch()
+            msvcrt.getch()
+            # Rebuild param list with fresh device info
+            self.param_list = build_parameter_list(self.config)
+            return True
+        if command == 'clear_memory':
+            import sys
+            sys.stdout.write("\n\033[93m[MEMORY] Clearing conversation history...\033[0m\n")
+            sys.stdout.flush()
+            try:
+                from memory.brain_interface import clear_history
+                cleared = clear_history()
+                if cleared:
+                    sys.stdout.write("\033[92m✅ History cleared successfully!\033[0m\n")
+                else:
+                    sys.stdout.write("\033[91m❌ Failed to clear history.\033[0m\n")
+            except Exception as e:
+                sys.stdout.write(f"\033[91m❌ Error: {e}\033[0m\n")
+            sys.stdout.flush()
+            import msvcrt, time
+            sys.stdout.write("Press any key to continue...\n")
+            sys.stdout.flush()
+            time.sleep(0.5)
+            while msvcrt.kbhit(): msvcrt.getch()
+            msvcrt.getch()
+            return True
+        return False
 
     def run(self):
         """Avvia l'editor interattivo con lock."""
@@ -227,7 +356,8 @@ class ConfigEditor:
         
         try:
             result = None
-            ui = UIManager(self.param_list, self._get_value, self._set_value)
+            ui = UIManager(self.param_list, self._get_value, self._set_value,
+                           command_handler=self._handle_special_command)
             result = ui.run()
             
             import sys
@@ -242,11 +372,19 @@ class ConfigEditor:
                 sys.exit(42)
                 
             elif result == "SAVE":
+                import os
+                # Pulisce lo schermo per chiarezza per il report esito testuale
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"\n\n\033[92m{'═'*55}")
+                print("   ✅ CONFIGURAZIONE SALVATA CON SUCCESSO!   ")
+                print(f"{'═'*55}\033[0m")
+                
                 if self.modified:
                     self._save_config()
-                # Auto-riavvio garantito se ci sono state modifiche salvate dall'utente
-                print(f"\n\033[91m{translator.t('rebooting_msg')}\033[0m")
-                time.sleep(1)
+                
+                # Auto-riavvio garantito per applicare le modifiche
+                print(f"\n\033[93m{translator.t('rebooting_msg')}...\033[0m")
+                time.sleep(2)
                 sys.exit(42)
                 
             elif result == "DISCARD":

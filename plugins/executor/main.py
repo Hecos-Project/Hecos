@@ -1,27 +1,31 @@
 import subprocess
 try:
     from core.logging import logger
+    from core.i18n import translator
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[EXE_DEBUG]", *args)
     logger = DummyLogger()
+    class DummyTranslator:
+        def t(self, key, **kwargs): return key
+    translator = DummyTranslator()
 
 class ExecutorTools:
     """
     Plugin: System Executor
-    Permette l'esecuzione di comandi shell a basso livello (uso avanzato).
+    Allows the execution of low-level shell commands (advanced use).
     """
 
     def __init__(self):
         self.tag = "EXECUTOR"
-        self.desc = "Esecuzione comandi terminale diretti."
-        self.status = "READY"
+        self.desc = "Direct terminal command execution."
+        self.status = translator.t("plugin_executor_status_ready")
 
     def execute_shell(self, command: str) -> str:
         """
-        Esegue un comando shell nel terminale di sistema e restituisce l'output (max 500 caratteri).
+        Executes a shell command in the system terminal and returns the output (max 500 characters).
         
-        :param command: Il comando da eseguire (es. 'dir', 'ipconfig').
+        :param command: The command to execute (e.g., 'dir', 'ipconfig').
         """
         try:
             logger.debug("EXECUTOR", f"Shell direct: {command}")

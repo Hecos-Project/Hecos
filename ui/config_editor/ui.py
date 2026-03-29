@@ -26,12 +26,45 @@ CIANO = '\033[96m'
 RESET = '\033[0m'
 
 class UIManager:
-    def __init__(self, param_list, getter, setter):
-        self.param_list = param_list
+    def __init__(self, param_list, getter, setter, command_handler=None):
         self.get_value = getter
         self.set_value = setter
+        self.command_handler = command_handler
+        
+        # Define visual order priority
+        self.order_standard = [
+            "🔊 AUDIO DEVICES",
+            translator.t("section_models"), 
+            translator.t("section_ia"),
+            translator.t("section_llm"), 
+            "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
+            translator.t("section_generation"), 
+            translator.t("section_voice"), 
+            "🌐 BRIDGE WEBUI",
+            translator.t("section_listening"), 
+            translator.t("section_filters"), 
+            translator.t("section_logging"), 
+            translator.t("section_cognition"),
+            translator.t("section_system"),
+            translator.t("section_routing")
+        ]
+        
+        # Helper to get priority index
+        def get_priority(p):
+            title = self._get_section_title(p)
+            try:
+                return self.order_standard.index(title)
+            except ValueError:
+                if title.startswith("🔌"): return 200 # Plugins last
+                if title.startswith("🦋") or title.startswith("🕊️") or title.startswith("🦙") or title.startswith("🐲"): 
+                    return 150 # Legacy models
+                return 100 # Other
+                
+        # Sort param_list to MATCH the visual order
+        self.param_list = sorted(param_list, key=get_priority)
+        
         self.cursor = 0
-        self.scroll_top = 0      # Indice della riga in alto nel viewport
+        self.scroll_top = 0
         self.modified = False
         self.first_draw = True
 
@@ -47,19 +80,44 @@ class UIManager:
 
                 if key == KEY_ESC:
                     if self.modified:
-                        if self._confirm(translator.t("exit_without_saving")):
-                            return "DISCARD"
+                        print(f"\n\n{GIALLO}Hai delle modifiche non salvate. [S] = Salva ed Esci | [N] = Scarta Modifiche | [ESC] = Annulla{RESET}")
+                        while True:
+                            c = self._wait_for_key()
+                            if c in (ord('s'), ord('S'), ord('y'), ord('Y'), KEY_ENTER):
+                                return "SAVE"
+                            elif c in (ord('n'), ord('N')):
+                                return "DISCARD"
+                            elif c == KEY_ESC:
+                                break # Ritorna all'editor continuo
                     else:
                         return "NO_CHANGES"
                 elif key == KEY_ENTER:
-                    # Se il parametro è una stringa libera (e non readonly), attiva modifica
+                    # Comportamento ENTER: Se è stringa libera, edita. Se bool, togga. Se comando, esegue.
                     param = self.param_list[self.cursor]
                     if param.readonly:
                         pass  # ignora per sola lettura
                     elif param.type == 'str' and not param.options:
                         self._edit_string(param)
-                    else:
-                        break
+                    elif param.type == 'bool':
+                        current = self.get_value(param)
+                        self.set_value(param, not current)
+                        self.modified = True
+                    elif param.type == 'command':
+                        if param.command == 'save_exit':
+                            return "SAVE"
+                        elif param.command == 'reboot':
+                            return "REBOOT"
+                        elif param.command == 'clear_instructions':
+                            dummy_param = type('T', (), {'section': 'ai', 'key': 'special_instructions'})()
+                            self.set_value(dummy_param, "")
+                            self.modified = True
+                            print(f"\n{VERDE}{translator.t('instruction_cleared')}{RESET}")
+                            import time
+                            time.sleep(0.8)
+                        elif self.command_handler and self.command_handler(param.command):
+                            # Custom command handled externally (e.g. rescan_audio_devices)
+                            self.first_draw = True  # Force full redraw after command
+                            self.param_list = self.param_list  # handler may rebuild it
                 elif key == KEY_UP:
                     if self.cursor > 0:
                         self.cursor -= 1
@@ -72,8 +130,19 @@ class UIManager:
                         pass  # sola lettura, nessuna azione
                     elif param.type == 'command':
                         if param.command == 'reboot':
-                            print(f"\n{GIALLO}{translator.t('rebooting_msg')}{RESET}")
                             return "REBOOT"
+                        elif param.command == 'save_exit':
+                            return "SAVE"
+                        elif param.command == 'clear_instructions':
+                            # Rimuove sia dal config temporaneo che salvato
+                            dummy_param = type('T', (), {'section': 'ai', 'key': 'special_instructions'})()
+                            self.set_value(dummy_param, "")
+                            self.modified = True
+                            print(f"\n{VERDE}{translator.t('instruction_cleared')}{RESET}")
+                            import time
+                            time.sleep(0.8)
+                        elif self.command_handler and self.command_handler(param.command):
+                            self.first_draw = True
                     else:
                         current = self.get_value(param)
                         if param.type in ('int', 'float'):
@@ -120,21 +189,53 @@ class UIManager:
         return "SAVE" if self.modified else "NO_CHANGES"
 
     def _edit_string(self, param):
-        """Modifica una stringa libera con input utente."""
+        """Modifica una stringa libera con input utente, supportando ESC per annullare."""
         current = self.get_value(param) or ""
-        # Mostra prompt
         print(f"\n{GIALLO}{translator.t('edit_string_title', label=param.label)}{RESET}")
         print(f"{translator.t('current_value', value=current)}")
         print(translator.t('enter_new_value'))
-        # Leggi input
-        new_val = input().strip()
-        if new_val:  # se l'utente ha inserito qualcosa
-            self.set_value(param, new_val)
-            self.modified = True
-            print(f"{VERDE}{translator.t('value_updated')}{RESET}")
-        else:
-            print(f"{GIALLO}{translator.t('edit_cancelled')}{RESET}")
-        # Attendi un momento per far leggere il messaggio
+        
+        # Mostra cursore per la digitazione
+        sys.stdout.write('\033[?25h')
+        sys.stdout.flush()
+        
+        flush_input()
+        chars = []
+        import msvcrt
+        while True:
+            if msvcrt.kbhit():
+                ch = msvcrt.getch()
+                if ch == b'\x1b': # ESC
+                    print(f"\n{GIALLO}{translator.t('edit_cancelled')}{RESET}")
+                    sys.stdout.write('\033[?25l')
+                    sys.stdout.flush()
+                    import time
+                    time.sleep(1)
+                    return
+                elif ch == b'\r': # ENTER
+                    break
+                elif ch == b'\x08': # BACKSPACE
+                    if chars:
+                        chars.pop()
+                        sys.stdout.write('\b \b')
+                        sys.stdout.flush()
+                else:
+                    try:
+                        c = ch.decode('utf-8')
+                        chars.append(c)
+                        sys.stdout.write(c)
+                        sys.stdout.flush()
+                    except:
+                        pass
+        
+        new_val = "".join(chars).strip()
+        self.set_value(param, new_val)
+        self.modified = True
+        print(f"\n{VERDE}{translator.t('value_updated')}{RESET}")
+        
+        # Nasconde cursore e attende
+        sys.stdout.write('\033[?25l')
+        sys.stdout.flush()
         import time
         time.sleep(1)
 
@@ -148,6 +249,8 @@ class UIManager:
         """Restituisce il titolo della sezione per un parametro."""
         if param.section == 'system':
             return translator.t("section_system")
+        elif param.section == 'ai':
+            return translator.t("section_ia")
         elif param.section == 'llm':
             return translator.t("section_llm")
         elif param.section == 'llm_openai':
@@ -160,20 +263,40 @@ class UIManager:
             return "🌐 Gemini"
         elif param.section == 'logging':
             return translator.t("section_logging")
-        elif param.section == 'filtri':
+        elif param.section == 'filters':
             return translator.t("section_filters")
-        elif param.section == 'ascolto':
+        elif param.section == 'listening':
             return translator.t("section_listening")
-        elif param.section == 'voce':
+        elif param.section == 'voice':
             return translator.t("section_voice")
         elif param.section == 'backend':
             # Distingue modello dagli altri parametri di backend
-            if param.key == 'modello':
+            if param.key == 'model' or param.key == '_f2_hint':
                 return translator.t("section_models")
             else:
                 return translator.t("section_generation")
         elif param.section in ('ollama', 'kobold'):
             return translator.t("section_generation")
+        elif param.section == 'routing_engine':
+            return translator.t("section_routing")
+        elif param.section == 'legacy_ollama':
+            return "🦙 OLLAMA (Local)"
+        elif param.section == 'legacy_kobold':
+            return "🐲 KOBOLD (Local)"
+        elif param.section == 'legacy_openai':
+            return "🕊️ OPENAI (Cloud)"
+        elif param.section == 'legacy_anthropic':
+            return "🕊️ ANTHROPIC (Cloud)"
+        elif param.section == 'legacy_groq':
+            return "🕊️ GROQ (Cloud)"
+        elif param.section == 'legacy_gemini':
+            return "🕊️ GEMINI (Cloud)"
+        elif param.section == 'legacy_other':
+            return "🛠️ LEGACY (Other)"
+        elif param.section == 'bridge':
+            return "🌐 BRIDGE WEBUI"
+        elif param.section == 'audio_device':
+            return "🔊 AUDIO DEVICES"
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:
@@ -206,39 +329,16 @@ class UIManager:
         intestazione = f" {get_version_string()} - PANNELLO DI CONTROLLO "
         outprint(f"\033[44m\033[97m{intestazione.center(PANEL_WIDTH)}\033[0m")
         
-        # 1. Genera lista piatta di "righe renderizzabili"
+        # 1. Generate flat list of renderable rows based on the ALREADY SORTED list
         all_rows = [] 
-        sections = OrderedDict()
+        current_header = None
+        
         for i, param in enumerate(self.param_list):
             title = self._get_section_title(param)
-            sections.setdefault(title, []).append((i, param))
-        
-        order_standard = [
-            translator.t("section_models"), 
-            translator.t("section_llm"), 
-            "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
-            translator.t("section_generation"), 
-            translator.t("section_voice"), 
-            translator.t("section_listening"), 
-            translator.t("section_filters"), 
-            translator.t("section_logging"), 
-            translator.t("section_system")
-        ]
-        
-        def add_section_to_rows(title, params_with_idx):
-            all_rows.append(('header', title, None))
-            for p_idx, p in params_with_idx:
-                all_rows.append(('param', p, p_idx))
-
-        # Aggiungi sezioni standard
-        for title in order_standard:
-            if title in sections:
-                add_section_to_rows(title, sections[title])
-                sections.pop(title, None)
-        
-        # Aggiungi plugin
-        for title, params in sections.items():
-            add_section_to_rows(title, params)
+            if title != current_header:
+                all_rows.append(('header', title, None))
+                current_header = title
+            all_rows.append(('param', param, i))
 
         # 2. Gestione scorrimento (Viewport)
         viewport_height = min(len(all_rows), safe_limit)
@@ -365,7 +465,7 @@ class UIManager:
         print(f"\n{GIALLO}{message}{RESET}")
         while True:
             ch = self._wait_for_key()
-            if ch in (ord('s'), ord('S')):
+            if ch in (ord('s'), ord('S'), ord('y'), ord('Y')):
                 return True
             if ch in (ord('n'), ord('N'), KEY_ESC):
                 return False

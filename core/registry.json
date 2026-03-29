@@ -1,137 +1,144 @@
 {
     "DASHBOARD": {
-        "descrizione": "Hardware monitoring and AI backend status.",
-        "comandi": {
-            "get_backend_status": "Verifica se il backend di Intelligenza Artificiale (Ollama, Kobold o Cloud) è online e pronto.",
-            "get_full_dashboard": "Restituisce un report completo di tutte le risorse hardware e dello stato del backend AI.",
-            "get_gpu_status": "Restituisce lo stato della scheda video (GPU), inclusa la VRAM usata e il carico termico/computazionale.",
-            "get_system_resources": "Restituisce un riepilogo dell'uso di CPU e RAM di sistema."
+        "description": "Hardware monitoring and AI backend status.",
+        "commands": {
+            "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
+            "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
+            "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
+            "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "stato": "ONLINE (Telemetry active)",
-        "esempio": "",
+        "status": "ONLINE (Telemetry active)",
+        "example": "",
         "is_class_based": true
     },
     "DOMOTICA": {
-        "descrizione": "Controllo della casa intelligente. In fase di integrazione.",
-        "comandi": {
-            "get_home_status": "Fornisce un riepilogo dello stato dei dispositivi domotici (es. temperatura, luci accese)."
+        "description": "Smart Home control. Currently in integration phase.",
+        "commands": {
+            "get_home_status": "Provides a summary of the status of smart home devices (e.g., temperature, lights on)."
         },
-        "stato": "ONLINE (Simulazione)",
-        "esempio": "",
+        "status": "ONLINE (Simulation)",
+        "example": "",
         "is_class_based": true
     },
     "EXECUTOR": {
-        "descrizione": "Esecuzione comandi terminale diretti.",
-        "comandi": {
-            "execute_shell": "Esegue un comando shell nel terminale di sistema e restituisce l'output (max 500 caratteri)."
+        "description": "Direct terminal command execution.",
+        "commands": {
+            "execute_shell": "Executes a shell command in the system terminal and returns the output (max 500 characters)."
         },
-        "stato": "READY",
-        "esempio": "",
+        "status": "plugin_executor_status_ready",
+        "example": "",
         "is_class_based": true
     },
     "FILE_MANAGER": {
-        "descrizione": "System file and directory management with user path and file reading support.",
-        "comandi": {
-            "count_items": "Conta il numero totale di file e cartelle in un dato percorso, senza elencarli.",
-            "list_files": "Elenca le cartelle e i file presenti in un determinato percorso.",
-            "read_file": "Legge il contenuto testuale di un file specificato dal percorso."
+        "description": "System file and directory management with user path and file reading support.",
+        "commands": {
+            "count_items": "Counts the total number of files and folders in a given path, without listing them.",
+            "list_files": "SCANS and lists files/folders in a path to return the names to the AI.",
+            "read_file": "Reads the textual content of a file specified by the path."
         },
-        "stato": "ONLINE",
-        "esempio": "",
+        "status": "ONLINE",
+        "example": "",
         "is_class_based": true
     },
     "HELP": {
-        "descrizione": "Displays the list of all active commands and modules in the system.",
-        "comandi": {
-            "list_capabilities": "Mostra la lista completa di tutti i tool, moduli e capacità attualmente caricati nel sistema.",
-            "refresh_registry": "Forza una rilettura e un aggiornamento del registro centrale delle capacità (ricansiona i plugin)."
+        "description": "Displays the list of all active commands and modules in the system.",
+        "commands": {
+            "list_capabilities": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
+            "refresh_registry": "Forces a re-read and update of the central capabilities registry (rescans plugins)."
         },
-        "stato": "ONLINE",
-        "esempio": "",
+        "status": "ONLINE",
+        "example": "",
         "is_class_based": true
     },
     "MEDIA": {
-        "descrizione": "Hardware volume and mute control.",
-        "comandi": {
-            "set_mute": "Attiva o disattiva la modalità silenziosa (muto) del sistema.",
-            "set_volume": "Imposta il volume di sistema a un livello specifico."
+        "description": "Hardware volume and mute control.",
+        "commands": {
+            "set_mute": "Toggles system mute mode on or off.",
+            "set_volume": "Sets the system volume to a specific level."
         },
-        "stato": "ONLINE",
-        "esempio": "",
+        "status": "ONLINE",
+        "example": "",
         "is_class_based": true
     },
     "MEMORY": {
-        "descrizione": "Access to the Vault of memories and Admin profile (Identity and History).",
-        "comandi": {
+        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+        "commands": {
             "read_history": "Extract the last N saved messages from the database history.",
             "remember_info": "Save important information about the user in the biographical profile.",
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
             "who_am_i": "Ask Zentra to retrieve identity data for the Admin and the AI (context profile)."
         },
-        "stato": "ONLINE (Vault Access Granted)",
-        "esempio": "",
+        "status": "ONLINE (Vault Access Granted)",
+        "example": "",
         "is_class_based": true
     },
     "MODELS": {
-        "descrizione": "Changes the AI model based on the active backend (Ollama/Kobold).",
-        "comandi": {
-            "get_current_backend": "Restituisce il backend AI correntemente in uso (es. cloud, ollama, kobold).",
-            "list_models": "Elenca tutti i modelli disponibili per il backend attualmente selezionato.",
-            "set_model": "Imposta un nuovo modello AI attivo in base all'indice numerico ricavato da list_models."
+        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
+        "commands": {
+            "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
+            "list_models": "Lists all available models for the currently selected backend.",
+            "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "stato": "ONLINE (Model management)",
-        "esempio": "",
+        "status": "ONLINE (Model management)",
+        "example": "",
         "is_class_based": true
     },
     "ROLEPLAY": {
-        "descrizione": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
-        "comandi": {
-            "list_characters": "Elenca tutti i personaggi disponibili per il gioco di ruolo.",
-            "list_scenes": "Elenca tutte le scene disponibili per il gioco di ruolo.",
-            "load_character": "Carica un personaggio dal suo nome per interpretarne il ruolo.",
-            "load_scene": "Carica un'ambientazione o scena specifica per il gioco di ruolo.",
-            "reset_roleplay": "Reset completo di personaggi e scene attive.",
-            "unload_character": "Disattiva il personaggio corrente e torna alla personalità normale.",
-            "unload_scene": "Rimuove la scena o l'ambientazione attuale."
+        "description": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
+        "commands": {
+            "list_characters": "Lists all characters available for roleplaying.",
+            "list_scenes": "Lists all scenes available for roleplaying.",
+            "load_character": "Loads a character by name to interpret their role.",
+            "load_scene": "Loads a specific setting or scene for roleplaying.",
+            "reset_roleplay": "Complete reset of active characters and scenes.",
+            "unload_character": "Deactivates the current character and returns to the normal personality.",
+            "unload_scene": "Removes the current scene or setting."
         },
-        "stato": "plugin_roleplay_status_online",
-        "esempio": "",
+        "status": "plugin_roleplay_status_online",
+        "example": "",
         "is_class_based": true
     },
     "SYSTEM": {
-        "descrizione": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
-        "comandi": {
-            "execute_shell_command": "Esegue un comando shell (cmd.exe) nel terminale in background e restituisce l'output.",
-            "explore_folder": "Apre il file manager del sistema operativo in una cartella specifica.",
-            "get_time": "Restituisce l'ora locale attuale formattata (HH:MM).",
-            "open_program": "Avvia un programma locale specificato dal nome.",
-            "open_terminal": "Apre una nuova finestra indipendente del prompt dei comandi di Windows (CMD).",
-            "read_errors": "Legge specificamente gli ultimi errori (crash, eccezioni) registrati dal sistema nel log degli errori.",
-            "read_logs": "Legge gli ultimi eventi registrati nei file di log generali del sistema.",
-            "reboot_system": "Riavvia l'intero sistema Zentra Core.",
-            "set_configuration": "Modifica un valore all'interno del file di configurazione principale (config.json)."
+        "description": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
+        "commands": {
+            "time": "Returns the current local time",
+            "reboot": "Reboots the Zentra Core system",
+            "terminal": "Opens a new system command prompt",
+            "open:<name>": "Starts a local program by name",
+            "explore:<folder>": "Opens folders like desktop or downloads",
+            "shell:<command>": "Executes shell commands and reads output"
         },
-        "stato": "plugin_sistema_status_online",
-        "esempio": "",
-        "is_class_based": true
+        "status": "ONLINE",
+        "example": "",
+        "is_legacy": true
     },
     "WEB": {
-        "descrizione": "Network access for Google searches and quick opening of websites.",
-        "comandi": {
-            "open_url": "Apre un sito web specifico nel browser predefinito.",
-            "search_web": "Esegue una ricerca su internet usando il motore di ricerca predefinito (es. Google)."
+        "description": "Network access for Google searches and quick opening of websites.",
+        "commands": {
+            "search:<text>": "Search for something on the internet (e.g. search:Rome weather)",
+            "open:<site>": "Open a specific website (e.g. open:wikipedia.org)"
         },
-        "stato": "ONLINE (Browsing & Search)",
-        "esempio": "",
-        "is_class_based": true
+        "status": "ONLINE",
+        "example": "",
+        "is_legacy": true
     },
     "WEBCAM": {
-        "descrizione": "Access to PC optical vision to take snapshots of the environment or Admin.",
-        "comandi": {
-            "take_snapshot": "Scatta una foto usando la webcam del computer e la salva sul disco."
+        "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
+        "commands": {
+            "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
         },
-        "stato": "ONLINE (Optical Vision)",
-        "esempio": "",
+        "status": "ONLINE (Optical Vision)",
+        "example": "",
+        "is_class_based": true
+    },
+    "WEB_UI": {
+        "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
+        "commands": {
+            "get_panel_url": "Returns the URL of the chat interface.",
+            "open_browser": "Opens the Zentra web interface in the default browser if not already open."
+        },
+        "status": "Online → http://127.0.0.1:7070/chat",
+        "example": "",
         "is_class_based": true
     }
 }

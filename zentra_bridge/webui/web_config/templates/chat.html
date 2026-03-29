@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zentra — AI Chat Interface</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:        #080b14;
+  --bg2:       #0d1322;
+  --bg3:       #121929;
+  --glass:     rgba(255,255,255,0.04);
+  --glass-b:   rgba(255,255,255,0.08);
+  --accent:    #6c8cff;
+  --accent2:   #a78bfa;
+  --accent-g:  linear-gradient(135deg, #6c8cff, #a78bfa);
+  --green:     #34d399;
+  --red:       #f87171;
+  --yellow:    #fbbf24;
+  --text:      #e2e8f0;
+  --muted:     #4a5568;
+  --border:    rgba(108,140,255,0.15);
+  --radius:    14px;
+  --sidebar-w: 260px;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ── Background ambient glow ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: -200px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(108,140,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -200px; right: -200px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(167,139,250,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── SIDEBAR ── */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  transition: width .3s ease;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--accent-g);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -.5px;
+}
+
+.logo-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.sidebar-section { padding: 16px 14px 8px; }
+
+.sidebar-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  padding: 0 6px;
+}
+
+.sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all .2s;
+  text-decoration: none;
+}
+
+.sidebar-btn:hover { background: var(--glass-b); }
+.sidebar-btn.active { background: rgba(108,140,255,.15); color: var(--accent); }
+.sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; }
+
+/* Status pill */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  margin: 6px 14px;
+}
+
+.dot-pulse {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: dpulse 2s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes dpulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+.status-text { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-val  { color: var(--text); font-weight: 600; }
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── MAIN AREA ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Topbar */
+#topbar {
+  background: rgba(8,11,20,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.topbar-left { display:flex; align-items:center; gap:12px; }
+
+#model-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Chat messages area */
+#chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+#chat-area::-webkit-scrollbar { width: 4px; }
+#chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Welcome screen */
+#welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex: 1;
+  text-align: center;
+  padding: 40px;
+}
+
+.welcome-logo {
+  font-size: 56px;
+  line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(108,140,255,.5));
+}
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 700;
+  background: var(--accent-g);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-sub { font-size: 15px; color: var(--muted); max-width: 480px; line-height: 1.6; }
+
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.chip {
+  padding: 8px 16px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .2s;
+  color: var(--text);
+}
+
+.chip:hover { background: rgba(108,140,255,.15); border-color: var(--accent); color:var(--accent); }
+
+/* Message bubbles */
+.msg {
+  display: flex;
+  gap: 12px;
+  max-width: 820px;
+  animation: fadeUp .3s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.msg.user { flex-direction: row-reverse; margin-left: auto; }
+
+.msg-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.msg.user  .msg-avatar { background: rgba(108,140,255,.2); border: 1px solid rgba(108,140,255,.3); }
+.msg.ai    .msg-avatar { background: rgba(167,139,250,.15); border: 1px solid rgba(167,139,250,.25); }
+
+.msg-bubble {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: calc(100% - 46px);
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.msg.user .msg-bubble {
+  background: rgba(108,140,255,.12);
+  border-color: rgba(108,140,255,.25);
+  border-radius: var(--radius) 4px var(--radius) var(--radius);
+}
+
+.msg.ai .msg-bubble {
+  border-radius: 4px var(--radius) var(--radius) var(--radius);
+}
+
+/* Inline code */
+.msg-bubble code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0,0,0,.35);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  color: #93c5fd;
+}
+
+/* Code blocks */
+.msg-bubble pre {
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #c4b5fd;
+}
+
+.msg-bubble pre code { background:none; border:none; padding:0; color:inherit; }
+
+/* Audio badge */
+.audio-badge {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.audio-badge audio { height: 24px; opacity: .8; }
+
+/* Typing cursor */
+.cursor {
+  display: inline-block;
+  width: 10px; height: 16px;
+  background: var(--accent);
+  border-radius: 2px;
+  animation: blink .6s step-end infinite;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+}
+
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+/* ── INPUT AREA ── */
+#input-bar {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  background: rgba(8,11,20,0.9);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+}
+
+.input-wrap {
+  max-width: 820px;
+  margin: 0 auto;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 14px;
+  transition: border-color .2s;
+}
+
+.input-wrap:focus-within { border-color: var(--accent); }
+
+#user-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: none;
+  max-height: 160px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+#user-input::placeholder { color: var(--muted); }
+
+.input-actions { display:flex; gap:6px; flex-shrink:0; }
+
+.action-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+
+.action-btn:hover { background: var(--glass-b); color: var(--text); border-color: var(--accent); }
+
+#send-btn {
+  background: var(--accent-g);
+  border-color: transparent;
+  color: white;
+  width: 38px; height: 38px;
+}
+
+#send-btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+#send-btn:active { transform: translateY(0); }
+#send-btn:disabled { opacity: .4; cursor:not-allowed; transform:none; filter:none; }
+
+.input-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  #sidebar { display: none; }
+}
+
+/* Scrollbar for sidebar */
+#sidebar::-webkit-scrollbar { width: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">⚡ Zentra</div>
+    <div class="logo-sub">Native AI Interface</div>
+  </div>
+
+  <div class="status-pill">
+    <div class="dot-pulse"></div>
+    <div>
+      <div class="status-text">Backend</div>
+      <div class="status-val" id="sb-backend">—</div>
+    </div>
+  </div>
+  <div class="status-pill">
+    <div style="width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);flex-shrink:0;"></div>
+    <div style="overflow:hidden;">
+      <div class="status-text">Modello</div>
+      <div class="status-val" id="sb-model" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Navigazione</div>
+    <button class="sidebar-btn active" onclick="clearChat()">
+      <span class="icon">💬</span> Nuova Chat
+    </button>
+    <a class="sidebar-btn" href="/zentra/config/ui" target="_blank">
+      <span class="icon">⚙️</span> Config Panel
+    </a>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Plugin attivi</div>
+    <div id="sb-plugins">
+      <div style="font-size:12px;color:var(--muted);padding:4px 6px;">caricamento...</div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div style="font-size:11px;color:var(--muted);text-align:center;">
+      Zentra Core — Web Interface<br>
+      <span style="color:var(--accent)">localhost:7070</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN ── -->
+<div id="main">
+
+  <div id="topbar">
+    <div class="topbar-left">
+      <div id="model-badge">🧠 <span id="tb-model">caricamento...</span></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div id="tts-indicator" style="display:none;font-size:12px;color:var(--muted);">🔊 TTS</div>
+      <a href="/zentra/config/ui" target="_blank"
+         style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;background:var(--glass);border:1px solid var(--border);border-radius:6px;transition:all .2s;"
+         onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">
+        ⚙️ Config
+      </a>
+    </div>
+  </div>
+
+  <div id="chat-area">
+    <div id="welcome">
+      <div class="welcome-logo">⚡</div>
+      <div class="welcome-title">Benvenuto in Zentra</div>
+      <div class="welcome-sub">Il tuo assistente AI nativo, con pieno controllo locale. Nessuna dipendenza cloud obbligatoria.</div>
+      <div class="quick-chips">
+        <div class="chip" onclick="startPrompt('Come stai? Fammi un report del sistema')">📊 Report sistema</div>
+        <div class="chip" onclick="startPrompt('Quali plugin hai disponibili?')">🧩 Plugin attivi</div>
+        <div class="chip" onclick="startPrompt('Apri Chrome')">🚀 Apri un programma</div>
+        <div class="chip" onclick="startPrompt('Cerca online le ultime notizie')">🌐 Cerca sul web</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="input-bar">
+    <div class="input-wrap">
+      <textarea id="user-input" rows="1" placeholder="Scrivi un messaggio a Zentra..." 
+                onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <div class="input-actions">
+        <button class="action-btn" title="Cancella chat" onclick="clearChat()">🗑</button>
+        <button class="action-btn" id="send-btn" title="Invia (Enter)" onclick="sendMessage()">▶</button>
+      </div>
+    </div>
+    <div class="input-hint">Enter per inviare · Shift+Enter per andare a capo</div>
+  </div>
+
+</div>
+
+<script>
+let history = [];
+let isStreaming = false;
+let hasTTS = false;
+
+// ── DOM helpers ─────────────────────────────────────────────────────────────
+const chatArea   = document.getElementById('chat-area');
+const userInput  = document.getElementById('user-input');
+const sendBtn    = document.getElementById('send-btn');
+const welcome    = document.getElementById('welcome');
+
+function hideWelcome() {
+  if(welcome) { welcome.style.display = 'none'; }
+}
+
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+}
+
+function handleKey(e) {
+  if(e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function startPrompt(text) {
+  userInput.value = text;
+  autoResize(userInput);
+  sendMessage();
+}
+
+// ── Chat logic ───────────────────────────────────────────────────────────────
+function addBubble(role, text, id) {
+  const isUser = role === 'user';
+
+  const msg = document.createElement('div');
+  msg.className = `msg ${isUser ? 'user' : 'ai'}`;
+  if(id) msg.id = id;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = isUser ? '👤' : '⚡';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  if(text) bubble.innerHTML = renderMarkdown(text);
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  chatArea.appendChild(msg);
+  chatArea.scrollTop = chatArea.scrollHeight;
+  return { msg, bubble };
+}
+
+function renderMarkdown(text) {
+  // Simple markdown: code blocks, inline code, bold, italic
+  return text
+    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+async function sendMessage() {
+  if(isStreaming) return;
+  const text = userInput.value.trim();
+  if(!text) return;
+
+  hideWelcome();
+  userInput.value = '';
+  autoResize(userInput);
+
+  // User bubble
+  addBubble('user', text);
+
+  // AI bubble with cursor
+  const aiId = 'ai-' + Date.now();
+  const { bubble: aiBubble } = addBubble('ai', '', aiId);
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor';
+  aiBubble.appendChild(cursor);
+
+  sendBtn.disabled = true;
+  isStreaming = true;
+  let aiText = '';
+
+  try {
+    // Start inference
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, history })
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Server error');
+    const sid = data.session_id;
+
+    // Stream tokens via SSE
+    const evtSrc = new EventSource(`/api/stream/${sid}`);
+    evtSrc.onmessage = (e) => {
+      const event = JSON.parse(e.data);
+      if(event.type === 'token') {
+        aiText += event.text;
+        aiBubble.innerHTML = renderMarkdown(aiText);
+        aiBubble.appendChild(cursor);
+        chatArea.scrollTop = chatArea.scrollHeight;
+      } else if(event.type === 'done' || event.type === 'error') {
+        cursor.remove();
+        aiBubble.innerHTML = renderMarkdown(aiText || (event.type === 'error' ? '❌ ' + event.text : ''));
+        evtSrc.close();
+        history.push({role:'user', content:text});
+        history.push({role:'assistant', content:aiText});
+        isStreaming = false;
+        sendBtn.disabled = false;
+        if(hasTTS) tryLoadAudio(aiBubble);
+      } else if(event.type === 'heartbeat') {
+        // ignore
+      }
+    };
+    evtSrc.onerror = () => {
+      cursor.remove();
+      if(!aiText) aiBubble.textContent = '❌ Connessione interrotta.';
+      evtSrc.close();
+      isStreaming = false;
+      sendBtn.disabled = false;
+    };
+
+  } catch(err) {
+    cursor.remove();
+    aiBubble.textContent = '❌ Errore: ' + err.message;
+    isStreaming = false;
+    sendBtn.disabled = false;
+  }
+}
+
+async function tryLoadAudio(bubble) {
+  try {
+    const r = await fetch('/api/audio');
+    if(!r.ok) return;
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const badge = document.createElement('div');
+    badge.className = 'audio-badge';
+    badge.innerHTML = `🔊 <audio controls autoplay src="${url}"></audio>`;
+    bubble.appendChild(badge);
+  } catch(e) {}
+}
+
+function clearChat() {
+  history = [];
+  chatArea.innerHTML = '';
+  chatArea.appendChild(welcome);
+  welcome.style.display = 'flex';
+}
+
+// ── Status bar ───────────────────────────────────────────────────────────────
+async function refreshStatus() {
+  try {
+    const r = await fetch('/zentra/status');
+    const d = await r.json();
+    const m = d.model || '—';
+    document.getElementById('sb-backend').textContent = d.backend || '—';
+    document.getElementById('sb-model').textContent   = m;
+    document.getElementById('tb-model').textContent   = m;
+
+    // TTS indicator
+    hasTTS = d.tts && d.tts.includes('ON');
+    document.getElementById('tts-indicator').style.display = hasTTS ? 'block' : 'none';
+  } catch(e) {
+    document.getElementById('tb-model').textContent = 'offline';
+  }
+}
+
+async function loadPlugins() {
+  try {
+    const r = await fetch('/zentra/config');
+    const cfg = await r.json();
+    const plugins = cfg.plugins || {};
+    const cont = document.getElementById('sb-plugins');
+    const icons = {
+      DASHBOARD:'📊', FILE_MANAGER:'📁', HELP:'❓', MEDIA:'🎵',
+      ROLEPLAY:'🎭', SYSTEM:'⚙', WEB:'🌐', WEBCAM:'📷', WEB_UI:'💻'
+    };
+    let html = '';
+    for(const [tag, pc] of Object.entries(plugins)) {
+      const enabled = pc.enabled !== false;
+      const icon = icons[tag] || '🧩';
+      html += `<div class="sidebar-btn" style="font-size:12px;${!enabled?'opacity:.4;':''}">
+        <span class="icon">${icon}</span> ${tag}
+      </div>`;
+    }
+    cont.innerHTML = html || '<div style="font-size:12px;color:var(--muted);padding:4px 6px;">nessuno</div>';
+  } catch(e) {}
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+refreshStatus();
+loadPlugins();
+setInterval(refreshStatus, 4000);
+userInput.focus();
+</script>
+</body>
+</html>
