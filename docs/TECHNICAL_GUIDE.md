@@ -6,6 +6,8 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 - **Asynchronous Execution**: Heavy tasks (STT, LLM inference, TTS) run in dedicated background threads to keep the UI responsive.
 - **Backend Agnostic**: The system routes requests through a unified client (`client.py`) supporting Ollama, KoboldCPP, and various cloud providers via LiteLLM.
 - **Multimodal Ready**: Version 0.9.7 introduces native vision support via provider-specific adapters.
+- **Runtime Alpha Status**: The project is currently in an early development phase. This means the system is subject to frequent changes, debugging, and is not yet considered a stable "production-ready" release.
+- **Single-Instance Protection**: To prevent data corruption and resource conflicts, Zentra uses a file-based locking mechanism (`core/system/instance_lock.py`) to ensure only one instance of the core and web interface runs at a time.
 
 ---
 
@@ -18,7 +20,7 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 6. **Post-Processing**: `Processor` parses the AI response for **Tool Calls** (Function Calling) or legacy tags.
 7. **Action Stage**: If a tool is detected, the corresponding plugin in `plugins/` is executed.
 8. **Output Stage**: Final text is sanitized by `filtri.py` and sent to the TUI (`interface.py`) and/or the TTS engine (`voice.py`).
-9. **Web Notification**: Native WebUI (`plugins/web_ui/`) receives the stream and updates the browser chat in real-time.
+9. **Web Notification & Sync**: Native WebUI (`plugins/web_ui/`) receives the stream via a unified event bus and updates the browser chat. Global configuration changes are synchronized instantly across all interfaces.
 
 ---
 
@@ -34,7 +36,8 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 - **`llm/brain.py`**: The "Router". It builds the complex system prompt and chooses the backend.
 - **`llm/manager.py` (`LLMManager`)**: **Automatic Routing Logic.** If a plugin needs a specific model (e.g., a faster one for simple checks), this module manages the fallback and selection.
 - **`processing/processore.py`**: The logic dispatcher. It handles both Native Function Calling (JSON) and Legacy Tagging (`[MODULE: CMD]`).
-- **`i18n/translator.py`**: Singleton for real-time localization of the entire interface.
+- **`i18n/`**: Centralized internationalization system. Supports English (EN), Italian (IT), and Spanish (ES) with a singleton `translator.py` that manages real-time localization for the entire system (Console + WebUI).
+- **`system/instance_lock.py`**: Handles PID-based process locking to maintain a single active instance.
 
 ---
 

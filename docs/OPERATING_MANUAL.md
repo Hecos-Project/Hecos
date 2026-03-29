@@ -46,6 +46,12 @@ Zentra's terminal interface is built on an anchored architecture (`DECSTBM Scrol
 
 ## ⚙️ 3. Dynamic O-T-F (On-The-Fly) Configuration
 
+## 💻 Native WebUI (v0.9.7)
+Zentra 0.9.7 features a powerful native web interface accessible at `http://localhost:5000` (by default).
+- **Real-time Chat**: Experience the AI stream directly in the browser.
+- **Config Dashboard**: Change system settings via a modern GUI with instant synchronization to the core.
+- **Audio Sync**: WebUI audio state is automatically synced with the terminal (F4/F5 status).
+
 Zentra provides Function Keys (F1-F7) to interact with and reparameterize `config.json` live, with permanent memory.
 
 * **[ F1 ] ACTION MANUAL (Help):** Calls the "root" protocols exposed by Plugins, showing free commands (e.g., `list:`, `cmd:`, `open:`).
@@ -68,6 +74,7 @@ Navigable via Arrow Keys (`Up`, `Down`, `Right`, `Left`), it allows editing of b
 
 Zentra is infinitely expandable by placing folders in `plugins/`.
 All plugins respond to unified interfaces that export `shell commands` and update Zentra's dynamic configuration (Config Syncing).
+
 - **Clean Disabling:** If a plugin or module is faulty but essentially non-blocking, disabling it from F7 (`Plugins` section) will move the code to memory fallback, bypassing it at startup.
 
 *(e.g.: Hiding the top HW bar only requires setting `Plugin Dashboard Enabled` to "False" in F7 and restarting)*

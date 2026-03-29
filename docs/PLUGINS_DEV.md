@@ -56,10 +56,11 @@ def esegui(comando: str):
 ---
 
 ## 5. Plugin Guidelines
-- **Return Type**: Functions should ideally return strings. If an object is returned, it will be converted to a string before being presented to the user.
-- **Dependency**: If your plugin requires external libraries, list them in `requirements.txt` at the root and provide instructions.
-- **Security**: Never allow a plugin to execute arbitrary code (e.g., `eval()`) from AI input without extreme sanitization.
-- **Config Access**: Plugins can access their own config through the `ConfigManager` via `config.json`.
+- **Return Type**: Functions should return strings or JSON-serializable objects. 
+- **Dependency**: If your plugin requires external libraries, list them in `requirements.txt` at the root.
+- **Security**: Never use `eval()` on AI input. Use the provided `executor` plugin for controlled system commands.
+- **Config Access**: Plugins can access their own config through the `ConfigManager` or via a local `config.json`.
+- **I18N Support**: New plugins should use the `core/i18n` system for any user-facing strings to support English, Italian, and Spanish.
 
 ---
 

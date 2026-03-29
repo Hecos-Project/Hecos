@@ -20,6 +20,7 @@ Zentra-Core/
 │   │   └── vision/       # Multimodal adapters (Gemini, OpenAI, LLaVA)
 │   ├── processing/       # Token streaming and text output filters
 │   └── system/           # Core bootstrap, versioning, and diagnostics
+│       └── instance_lock.py # Single-instance process protection
 │
 ├── docs/                 # Operational manuals and technical documentation
 │   ├── OPERATING_MANUAL.md

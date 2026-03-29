@@ -1,5 +1,6 @@
 # Installation Guide - Zentra Core
-(For clean installation from scratch)
+> [!WARNING]
+> **Runtime Alpha Status**: Zentra Core is currently in an early **Alpha** stage. It is under active development and debugging. Features may change, and the system is not yet considered stable. Use with caution.
 
 ---
 
@@ -26,6 +27,7 @@
 ## 5. Install Python Dependencies
 - Open a terminal in the project folder.
 - Run: `pip install -r requirements.txt`
+- *Note: Ensure `psutil` and `gputil` are installed for system locking and dashboard features.*
 
 ## 6. Configure Piper (TTS)
 - Ensure the `piper/` folder contains:
@@ -36,8 +38,9 @@
 
 ## 7. First Run
 - Open a terminal in the project folder.
-- Run: `python main.py`
-- If successful, you will see the Zentra terminal interface.
+- Run: `python main.py` (for Terminal UI)
+- Run: `python plugins/web_ui/main.py` or use `ZENTRA_WEB_RUN.bat` (for Native WebUI)
+- If successful, you will see the Zentra terminal interface or the Web browser opening.
 
 ---
 

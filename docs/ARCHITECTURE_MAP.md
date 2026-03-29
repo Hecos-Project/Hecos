@@ -17,10 +17,11 @@ Zentra-Core/
 │
 ├── core/                 # Low-level core engines
 │   ├── audio/            # TTS (Piper) and STT voice systems
-│   ├── i18n/             # Internationalization dictionaries (JSON locales)
+│   ├── i18n/             # Internationalization dictionaries (EN/IT/ES)
 │   ├── llm/              # Unified AI backends (Ollama, Kobold, Cloud clients)
 │   ├── processing/       # Token streaming and text output filters
 │   └── system/           # Core bootstrap, versioning, and plugin loading
+│       └── instance_lock.py # PID-based single instance locking
 │
 ├── docs/                 # Operational manuals and technical documentation
 │   ├── OPERATING_MANUAL.md

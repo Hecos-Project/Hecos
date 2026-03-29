@@ -96,6 +96,12 @@ Zentra può creare contenuti visivi utilizzando il plugin `IMAGE_GEN`.
 - **Server Esterni**: Di default utilizza **Pollinations.ai** per una generazione veloce e senza filtri.
 - **Interazione**: L'immagine generata apparirà direttamente in chat con opzioni per il download o lo zoom.
 
+## 💻 WebUI Nativa (v0.9.7)
+Zentra 0.9.7 include una potente interfaccia web nativa accessibile a `http://localhost:5000` (di default).
+- **Chat in Tempo Reale**: Visualizza lo streaming dell'IA direttamente nel browser.
+- **Dashboard Config**: Modifica le impostazioni di sistema tramite una GUI moderna con sincronizzazione istantanea al core.
+- **Sincro Audio**: Lo stato audio della WebUI è automaticamente sincronizzato con il terminale (stato F4/F5).
+
 ---
 
 ## 🛡️ 8. Sicurezza e Risoluzione Problemi
