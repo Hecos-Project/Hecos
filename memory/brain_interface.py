@@ -10,8 +10,9 @@ import sqlite3
 from datetime import datetime
 from core.logging import logger
 
-# File paths
-BASE_DIR = "memory"
+# File paths (forced absolute to avoid working-directory confusion)
+ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.join(ROOT_DIR, "memory")
 PATH_IDENTITY = os.path.join(BASE_DIR, "core_identity.json")
 PATH_PROFILE   = os.path.join(BASE_DIR, "user_profile.json")
 PATH_DB        = os.path.join(BASE_DIR, "chat_history.db")
@@ -66,7 +67,7 @@ def initialize_vault():
     ''')
     conn.commit()
     conn.close()
-    logger.info("[MEMORY] Vault initialized.")
+    logger.info(f"[MEMORY] Vault initialized at: {os.path.abspath(PATH_DB)}")
 
 
 def maybe_clear_on_restart(config: dict):
@@ -180,15 +181,30 @@ def get_history(limit: int = None, config: dict = None) -> list:
         return []
 
 
-def clear_history() -> bool:
-    """Wipes the episodic history table."""
+def clear_history(days: int = None) -> bool:
+    """
+    Wipes the episodic history from the DB.
+    If days is specified, only deletes messages older than now - days.
+    """
     try:
         conn = sqlite3.connect(PATH_DB)
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM history")
+        
+        if days is None:
+            cursor.execute("DELETE FROM history")
+            msg = "[MEMORY] All history cleared."
+        else:
+            # Timestamp format is %Y-%m-%d %H:%M:%S
+            from datetime import timedelta
+            cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute("DELETE FROM history WHERE timestamp < ?", (cutoff,))
+            msg = f"[MEMORY] History older than {days} days cleared."
+        
         conn.commit()
+        # Shrink the file size on disk
+        cursor.execute("VACUUM")
         conn.close()
-        logger.info("[MEMORY] History cleared.")
+        logger.info(f"{msg} Database vacuumed.")
         return True
     except Exception as e:
         logger.error(f"Memory Reset Error: {e}")

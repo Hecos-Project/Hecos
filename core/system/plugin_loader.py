@@ -21,6 +21,10 @@ _plugin_config_schemas = {}
 _loaded_plugins = {}          # tag -> module (for JSON Calling / old single plugins)
 _loaded_legacy_plugins = {}   # tag -> instance of LegacyPlugin class
 
+def get_active_tags():
+    """Returns a list of all currently active plugin tags."""
+    return list(_loaded_plugins.keys()) + list(_loaded_legacy_plugins.keys())
+
 def get_plugin_module(tag, legacy=False):
     """Returns the plugin module if active, otherwise None."""
     if legacy:
@@ -33,8 +37,10 @@ def update_capability_registry(config=None, debug_log=True):
     generates a centralized JSON file with all active abilities.
     If config is passed, it uses it to check the 'enabled' flag.
     """
-    global _plugin_config_schemas
+    global _plugin_config_schemas, _loaded_plugins, _loaded_legacy_plugins
     _plugin_config_schemas.clear()
+    _loaded_plugins.clear()
+    _loaded_legacy_plugins.clear()
     skills_map = {}
 
     # If we don't have config, load it (for backward compatibility)
@@ -459,20 +465,42 @@ def get_tools_schema():
 def get_legacy_schema():
     """
     Returns a formatted string with the list of available TAGS.
-    Dynamically added to the System Prompt for 'small' models (Qwen 1.5b etc.)
-     if the Configuration Routing detects the mode correctly.
+    Supports both legacy functional plugins and new class-based plugins.
     """
-    if not _loaded_legacy_plugins:
+    if not _loaded_legacy_plugins and not _loaded_plugins:
         return ""
 
-    result_string = "ACTIVE SKILLS AND COMMANDS (LEGACY TAG MODE):\n"
-    result_string += "- You can act on the computer by writing exactly the following text tags when necessary:\n"
+    result_string = "### ACTIVE SKILLS AND COMMANDS (TAG MODE) ###\n"
+    result_string += "- You can trigger actions by writing text tags in the format [TAG: command:parameters].\n"
+    
+    # 1. Legacy Plugins (SYSTEM, WEB)
     for tag, instance in _loaded_legacy_plugins.items():
         info = instance.info()
         commands = info.get("comandi", {})
         result_string += f"\n[MODULE: {tag}]\n"
         for command, desc in commands.items():
-            result_string += f"  To {desc}: write '[{tag}: {command}]'\n"
+            result_string += f"  - [{tag}: {command}] : {desc}\n"
 
-    result_string += "\nATTENTION: The tag must be enclosed in square brackets and exact.\n"
+    # 2. Native Class-based Plugins (IMAGE_GEN, DASHBOARD, etc.)
+    import inspect
+    for tag, module in _loaded_plugins.items():
+        if hasattr(module, "tools"):
+            result_string += f"\n[MODULE: {tag}]\n"
+            tools_instance = module.tools
+            for name, method in inspect.getmembers(tools_instance, predicate=inspect.ismethod):
+                if name.startswith('_'): continue
+                
+                # Get description from docstring
+                doc = method.__doc__ or "Execute command"
+                desc = doc.strip().split('\n')[0]
+                
+                # Get parameters
+                sig = inspect.signature(method)
+                params = [p for p in sig.parameters.keys() if p != 'self']
+                param_str = ": " + ",".join(params) if params else ""
+                
+                result_string += f"  - [{tag}: {name}{param_str}] : {desc}\n"
+
+    result_string += "\nATTENTION: Tags must be exactly in [TAG: command] format to be executed.\n"
     return result_string
+

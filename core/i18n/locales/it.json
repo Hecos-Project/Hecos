@@ -229,6 +229,7 @@
         "rule_read_file": "Per leggere un file, usa [FILE_MANAGER: read:percorso]",
         "executing_module": "Esecuzione Modulo: {module}",
         "command_executed": "✅ Comando eseguito.",
+        "command_executed_info": "Comando eseguito: {info}",
         "model_no_response_error": "❌ Il modello non ha prodotto alcuna risposta. Possibili cause:\n- Modello non ancora caricato\n- Modello troppo pesante\n- Problema di configurazione",
         "debug_lock_acquire_attempt": "[DEBUG locks] acquire_lock() - attesa massima {timeout}s",
         "debug_lock_removed_old": "[DEBUG locks] Rimosso lock vecchio",

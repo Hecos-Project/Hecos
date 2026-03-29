@@ -103,10 +103,10 @@ def speak(text, state=None):
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            text=True
+            text=False
         )
         _current_piper_proc = proc
-        proc.communicate(input=clean_text)
+        proc.communicate(input=clean_text.encode('utf-8'))
         _current_piper_proc = None
 
         if not is_speaking:

@@ -411,6 +411,10 @@
         <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }}</div></div>
         <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <div class="toggle-info">LiteLLM Verbose Debug<div class="toggle-sub">Stampa log dettagliati di ogni richiesta AI (molto verboso)</div></div>
+        <label class="switch"><input type="checkbox" id="llm-debug"><span class="slider"></span></label>
+      </div>
     </div>
     <div class="card">
       <div class="card-title">{{ t('webui_conf_api_keys') }}</div>
@@ -543,10 +547,19 @@
     <div class="card">
       <div class="card-title">📋 Memory Status</div>
       <p id="mem-status-text" style="color:#aaa;font-size:0.9em;">Loading...</p>
-      <div style="margin-top:10px;display:flex;gap:10px;">
-        <button class="btn" onclick="loadMemoryStatus()">🔄 Refresh</button>
-        <button class="btn" style="background:#c0392b;" onclick="clearMemoryHistory()">🗑 Clear History Now</button>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+        <select id="clear-range" class="mode-selector" style="width:140px; margin:0;">
+          <option value="all">Full Wipe (Everything)</option>
+          <option value="1">Older than 24h</option>
+          <option value="7">Older than 7 days</option>
+          <option value="30">Older than 30 days</option>
+        </select>
+        <button class="btn" style="background:#c0392b; flex:1;" onclick="clearMemoryHistory()">🗑 Clear Selected</button>
+        <button class="btn" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh">🔄</button>
       </div>
+      <small style="color:var(--muted); font-size:11px; margin-top:8px; display:block;">
+        Note: Identity and User Profile are NOT affected by this.
+      </small>
     </div>
   </div>
 
@@ -702,6 +715,21 @@
     <div class="card">
       <div class="card-title">{{ t('webui_conf_plugin_active_title') }}</div>
       <div id="plugin-list"><p style="color:var(--muted);font-size:13px;">{{ t('webui_conf_msg_loading') }}</p></div>
+    </div>
+    <div class="card" id="card-image-gen">
+      <div class="card-title">🎨 Image Generation (Pollinations.ai)</div>
+      <div class="grid-2">
+        <div class="field"><label>Width (px)</label><input type="number" id="igen-width" min="256" max="2048" step="64"></div>
+        <div class="field"><label>Height (px)</label><input type="number" id="igen-height" min="256" max="2048" step="64"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info" style="font-weight:600; color:var(--text);">Abilita Image Generation</div>
+        <label class="switch"><input type="checkbox" id="igen-enabled" onchange="saveConfig(true)"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">Remove Logo/Watermark</div>
+        <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
+      </div>
     </div>
   </div>
 
@@ -879,6 +907,7 @@ function populateUI() {
 
   const llm = c.llm || {};
   document.getElementById('llm-allow-cloud').checked = llm.allow_cloud ?? true;
+  document.getElementById('llm-debug').checked       = llm.debug_llm   ?? true;
   const prov = llm.providers || {};
   document.getElementById('key-openai').value       = prov.openai?.api_key    || '';
   document.getElementById('key-anthropic').value    = prov.anthropic?.api_key || '';
@@ -980,6 +1009,12 @@ function populateUI() {
   document.getElementById('cog-awareness').checked      = cog.include_self_awareness ?? true;
   document.getElementById('cog-max-history').value      = cog.max_history_messages ?? 20;
 
+    const igen = (c.plugins || {}).IMAGE_GEN || {};
+    document.getElementById('igen-enabled').checked = igen.enabled !== false;
+    document.getElementById('igen-width').value  = igen.width  || 1024;
+    document.getElementById('igen-height').value = igen.height || 1024;
+    document.getElementById('igen-nologo').checked = igen.nologo ?? true;
+
     renderPlugins(c.plugins || {});
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -998,7 +1033,8 @@ function renderPlugins(plugins) {
     SYSTEM:      '{{ t("webui_conf_plugin_desc_system") }}',
     WEB:         '{{ t("webui_conf_plugin_desc_web") }}',
     WEBCAM:      '{{ t("webui_conf_plugin_desc_webcam") }}',
-    WEB_UI:      '{{ t("webui_conf_plugin_desc_webui") }}'
+    WEB_UI:      '{{ t("webui_conf_plugin_desc_webui") }}',
+    IMAGE_GEN:   'Generazione Immagini AI (Pollinations)'
   };
   let html = '';
   for (const [tag, pCfg] of Object.entries(plugins)) {
@@ -1038,6 +1074,7 @@ function buildPayload() {
 
   out.llm = out.llm || {};
   out.llm.allow_cloud = document.getElementById('llm-allow-cloud').checked;
+  out.llm.debug_llm = document.getElementById('llm-debug').checked;
   out.llm.providers = out.llm.providers || {};
   ['openai','anthropic','groq','gemini'].forEach(p => {
     out.llm.providers[p] = out.llm.providers[p] || {};
@@ -1100,6 +1137,12 @@ function buildPayload() {
     out.plugins[tag] = out.plugins[tag] || {};
     out.plugins[tag].enabled = cb.checked;
   });
+
+  out.plugins.IMAGE_GEN = out.plugins.IMAGE_GEN || {};
+  out.plugins.IMAGE_GEN.enabled = document.getElementById('igen-enabled').checked;
+  out.plugins.IMAGE_GEN.width  = parseInt(document.getElementById('igen-width').value) || 1024;
+  out.plugins.IMAGE_GEN.height = parseInt(document.getElementById('igen-height').value) || 1024;
+  out.plugins.IMAGE_GEN.nologo = document.getElementById('igen-nologo').checked;
   } catch (err) { console.error("buildPayload err:", err); }
 
   return out;
@@ -1127,13 +1170,28 @@ async function loadMemoryStatus() {
 }
 
 async function clearMemoryHistory() {
-  if (!confirm('Clear all conversation history? This cannot be undone.')) return;
+  const range = document.getElementById('clear-range').value;
+  const label = range === 'all' ? 'ALL history' : `history older than ${range} day(s)`;
+  
+  if (!confirm(`Warning: You are about to delete ${label}. This cannot be undone. Continue?`)) return;
+  
   try {
-    const r = await fetch('/api/memory/clear', {method: 'POST'});
+    const r = await fetch('/api/memory/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: range })
+    });
     const d = await r.json();
-    if (d.ok) { alert('✅ History cleared!'); loadMemoryStatus(); }
-    else       alert('❌ Error: ' + d.error);
-  } catch(e) { alert('❌ Error: ' + e.message); }
+    if (d.ok) { 
+      alert('✅ ' + d.message); 
+      loadMemoryStatus(); 
+    }
+    else {
+      alert('❌ Error: ' + d.error);
+    }
+  } catch(e) { 
+    alert('❌ Error: ' + e.message); 
+  }
 }
 
 function buildAudioPayload() {
@@ -1439,6 +1497,15 @@ setInterval(refreshStatus, 3000);
 // Auto-save on any change to toggles or selects
 document.addEventListener('change', (e) => {
   if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+    // Cross-sync for IMAGE_GEN toggles
+    if (e.target.id === 'igen-enabled') {
+        const other = document.querySelector('[data-plugin="IMAGE_GEN"]');
+        if (other) other.checked = e.target.checked;
+    } else if (e.target.dataset.plugin === 'IMAGE_GEN') {
+        const other = document.getElementById('igen-enabled');
+        if (other) other.checked = e.target.checked;
+    }
+
     if (e.target.id === 'sys-voice-status' && !e.target.checked) {
        stopVoice();
     }

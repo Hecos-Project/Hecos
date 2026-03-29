@@ -39,23 +39,14 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
         # Use the shared config manager passed from the plugin server
         risposta = brain.generate_response(user_message, external_config=cfg_mgr.config, images=images)
 
-        if isinstance(risposta, str):
-            full_text = risposta
-        else:
-            content = getattr(risposta, "content", None)
-            if content:
-                full_text = str(content)
-            else:
-                calls = getattr(risposta, "tool_calls", [])
-                full_text = " ".join(f"[Tool: {c.function.name}]" for c in calls) or "(risposta non testuale)"
-
+        # Pass the raw response object to the processor so it can detect and execute tools
         try:
             from core.processing import processore
-            full_text, _ = processore.process(full_text, config=cfg_mgr.config)
+            full_text, _ = processore.process(risposta, config=cfg_mgr.config)
         except Exception as e:
             _chat_log.error(f"[Chat] Processor error: {e}")
-            pass
-
+            # Fallback to string if processor fails
+            full_text = str(risposta) if isinstance(risposta, str) else "(error during processing)"
 
         for i in range(0, len(full_text), 40):
             sess["queue"].put({"type": "token", "text": full_text[i:i+40]})

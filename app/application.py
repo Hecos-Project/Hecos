@@ -102,8 +102,10 @@ class ZentraApplication:
         personality_files = interface.list_personalities()
         if personality_files:
             personality_dict = {str(i+1): name for i, name in enumerate(personality_files)}
-            self.config_manager.set(personality_dict, 'ai', 'available_personalities')
-            self.config_manager.save()
+            current_personalities = self.config_manager.get('ai', 'available_personalities')
+            if personality_dict != current_personalities:
+                self.config_manager.set(personality_dict, 'ai', 'available_personalities')
+                self.config_manager.save()
         
         config = self.config_manager.config
         self.state_manager.system_status = translator.t("diagnostics")

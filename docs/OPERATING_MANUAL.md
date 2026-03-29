@@ -88,9 +88,18 @@ Zentra 0.9.7 introduces the **Vision Support System**, allowing the AI to "see" 
 - **Regenerate Response**: Use the circular arrow button next to any AI message to ask Zentra to try again. The system will remove the previous response and re-run the inference.
 - **Internal Messaging**: Regenerating doesn't require re-typing; the UI uses a direct API channel to resend the previous prompt with its original context.
 
---- 
+---
 
-## 🛡️ 7. Security and Troubleshooting
+## 🎨 7. Image Generation (v0.9.7)
+
+Zentra can create visual content using the `IMAGE_GEN` plugin.
+- **How to use**: Simply ask Zentra to "Generate an image of..." or "Draw a...".
+- **External Servers**: By default, it uses **Pollinations.ai** for high-speed, filter-free generation.
+- **Interaction**: The generated image will appear directly in the chat with options to download or zoom.
+
+---
+
+## 🛡️ 8. Security and Troubleshooting
 
 1. **Graphic Interference Bug (Dashboard):** Zentra's engine asynchronously joins UI threads. Any text overlap is resolved by the total block `(Thread Join)` at the start of the F7 menu call.
 2. **Logs:** Zentra logs are kept in the `/logs` directory. From F7 Config, it's possible to hide log reports from the chat to favor text readability (exclusive visual routing to parallel log `Console` or `File Only` recommended).

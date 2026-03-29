@@ -92,19 +92,33 @@ class ZentraWebUIServer:
 
 
 def start_if_needed(config_manager, root_dir: str, port: int = 7070) -> None:
-    """Singleton entry point — safe to call multiple times."""
-    global _global_server_instance
-    with _server_lock:
+    """Singleton entry point — safe to call multiple times, even with two module instances."""
+    # We use sys to share the singleton because this module is often double-imported
+    # (once as __main__ and once as plugins.web_ui.server).
+    import sys
+    
+    # We also need a shared lock
+    if not hasattr(sys, "_zentra_webui_lock"):
+        import threading
+        sys._zentra_webui_lock = threading.Lock()
+    
+    with sys._zentra_webui_lock:
         b_log = logging.getLogger("ZentraWebUI")
         try:
-            alive = (_global_server_instance is not None
-                     and _global_server_instance._thread is not None
-                     and _global_server_instance._thread.is_alive())
+            srv = getattr(sys, "_zentra_webui_instance", None)
+            
+            alive = (srv is not None
+                     and srv._thread is not None
+                     and srv._thread.is_alive())
+            
             if not alive:
-                b_log.info(f"[WebUI] Starting server on port {port}.")
+                b_log.info(f"[WebUI] Starting server on port {port}...")
                 srv = ZentraWebUIServer(config_manager, root_dir, port, logger=b_log)
                 srv.start()
-                _global_server_instance = srv
+                setattr(sys, "_zentra_webui_instance", srv)
+            else:
+                # Already running
+                pass
         except Exception as e:
             b_log.error(f"[WebUI] Startup error: {e}")
 
@@ -112,7 +126,9 @@ def start_if_needed(config_manager, root_dir: str, port: int = 7070) -> None:
 # ── Standalone (.bat launcher) ────────────────────────────────────────────────
 if __name__ == "__main__":
     import sys
-
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
     if root not in sys.path:
         sys.path.insert(0, root)
@@ -137,6 +153,10 @@ if __name__ == "__main__":
     from memory.brain_interface import initialize_vault, maybe_clear_on_restart
     initialize_vault()
     maybe_clear_on_restart(cfg.config)
+    
+    # Initialize plugin registry (needed for plugin execution from WebUI process)
+    from core.system import plugin_loader
+    plugin_loader.update_capability_registry(cfg.config)
 
     # Initialize state manager with config_audio.json settings
     from core.audio.device_manager import get_audio_config

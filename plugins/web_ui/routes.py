@@ -108,16 +108,32 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             incoming = request.get_json(force=True)
             if not isinstance(incoming, dict):
                 return jsonify({"ok": False, "error": "Invalid payload"}), 400
+            
+            # DEBUG: Log exact state of plugins toggle
+            p_state = incoming.get("plugins", {}).get("IMAGE_GEN", {}).get("enabled")
+            logger.info("CONFIG", f"Incoming Save Request. IMAGE_GEN enabled: {p_state}")
             if cfg_mgr.update_config(incoming):
                 # Dynamically update the global translator language without reboot
                 from core.i18n.translator import get_translator
                 get_translator().set_language(incoming.get("language", "en"))
                 # Keep state_manager in sync with saved audio_mode
+                # Keep everything in sync
                 sm = _sm()
                 if sm is not None:
                     sm.audio_mode = incoming.get("audio_mode", "auto")
                     sm.voice_status = incoming.get("voice", {}).get("voice_status", sm.voice_status)
                     sm.listening_status = incoming.get("listening", {}).get("listening_status", sm.listening_status)
+                
+                # IMPORTANT: Update the processor and registry at runtime
+                try:
+                    from core.processing import processore
+                    from core.system import plugin_loader
+                    processore.configure(incoming)
+                    # We also update the registry (memory cache)
+                    plugin_loader.update_capability_registry(incoming, debug_log=False)
+                except Exception as e:
+                    logger.debug(f"[WebUI] Processor runtime sync error: {e}")
+                    
                 return jsonify({"ok": True})
             return jsonify({"ok": False, "error": "Save failed"}), 500
         except Exception as exc:
@@ -194,13 +210,20 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/api/memory/clear", methods=["POST"])
     def memory_clear():
-        """Wipes the episodic history from the DB."""
+        """Wipes the episodic history from the DB (optionally granular)."""
         try:
+            data = request.get_json(force=True) or {}
+            days = data.get("days") if data.get("days") != "all" else None
+            if days is not None:
+                try: days = int(days)
+                except: days = None
+            
             from memory.brain_interface import clear_history
-            cleared = clear_history()
+            cleared = clear_history(days=days)
             if cleared:
-                logger.info("[WebUI] Chat history cleared via API.")
-                return jsonify({"ok": True, "message": "History cleared."})
+                msg = f"History cleared (days={days if days else 'all'})."
+                logger.info(f"[WebUI] {msg}")
+                return jsonify({"ok": True, "message": msg})
             return jsonify({"ok": False, "error": "Failed to clear."}), 500
         except Exception as exc:
             logger.error(f"[WebUI] memory_clear error: {exc}")
@@ -211,10 +234,10 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         """Returns memory row count and config."""
         try:
             import sqlite3, os
-            db_path = os.path.join("memory", "chat_history.db")
+            from memory.brain_interface import PATH_DB
             count = 0
-            if os.path.exists(db_path):
-                conn = sqlite3.connect(db_path)
+            if os.path.exists(PATH_DB):
+                conn = sqlite3.connect(PATH_DB)
                 count = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
                 conn.close()
             cog = cfg_mgr.config.get("cognition", {})

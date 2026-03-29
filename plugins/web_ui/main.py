@@ -99,7 +99,7 @@ class WebUIPlugin:
         self._ensure_server()
         return f"{self._url}/chat"
 
-    def open_browser(self) -> str:
+    def open_browser(self, **kwargs) -> str:
         """Opens the Zentra web interface in the default browser if not already open."""
         self._ensure_server()
         if self._is_ui_active():

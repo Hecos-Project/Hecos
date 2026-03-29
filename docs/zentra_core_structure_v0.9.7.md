@@ -40,6 +40,7 @@ Zentra-Core/
 │   ├── executor/         # Shell command execution engine
 │   ├── file_manager/     # OS file system operations
 │   ├── help/             # Integrated documentation assistant
+│   ├── image_gen/       # NEW: Image Generation (Pollinations.ai)
 │   ├── media/            # Audio/Video playback control
 │   ├── memory/           # Manual memory injection tools
 │   ├── models/           # Real-time model switching macros
@@ -63,5 +64,5 @@ Zentra-Core/
 ### Component Overview
 * **`app/`** regulates the loop. If it crashes, the application dies.
 * **`core/llm/vision/`** (New in v0.9.7) handles the translation of images to provider-specific multimodal payloads.
-* **`plugins/`** is the modular heart. v0.9.7 features 15 distinct functional modules. `web_ui` is now a fully integrated native plugin.
+* **`plugins/`** is the modular heart. v0.9.7 features 16 distinct functional modules. `web_ui` is now a fully integrated native plugin.
 * **`ui/`** handles terminal rendering, while `plugins/web_ui` handles the browser-based interaction.

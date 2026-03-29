@@ -89,7 +89,16 @@ Zentra 0.9.7 introduce il **Sistema di Supporto Visione**, permettendo all'AI di
 
 ---
 
-## 🛡️ 7. Sicurezza e Risoluzione Problemi
+## 🎨 7. Generazione Immagini (v0.9.7)
+
+Zentra può creare contenuti visivi utilizzando il plugin `IMAGE_GEN`.
+- **Come usarlo**: Chiedi semplicemente a Zentra di "Generare un'immagine di..." o "Disegna un...".
+- **Server Esterni**: Di default utilizza **Pollinations.ai** per una generazione veloce e senza filtri.
+- **Interazione**: L'immagine generata apparirà direttamente in chat con opzioni per il download o lo zoom.
+
+---
+
+## 🛡️ 8. Sicurezza e Risoluzione Problemi
 
 1. **Bug dell'interferenza grafica (Dashboard):** L'engine di Zentra unisce asincronamente i thread UI. Ogni compenetrazione di testi è risolta dal blocco totale `(Thread Join)` ad inizio chiamata del menu F7.
 2. **Logs:** I Log di Zentra si conservano nella directory `/logs`. Da Config F7 è possibile nascondere il report log dalla chat per favorire leggibilità di testo.

@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import argparse
+from core.system import instance_lock
 
 # Path configuration
 DEFAULT_MAIN_SCRIPT = "main.py"
@@ -112,19 +113,30 @@ if __name__ == "__main__":
     print(f" Target: {args.script}")
     print(f"{'-'*55}\n")
     
-    while True:
-        try:
-            should_restart = start_and_monitor(args.script)
-            if not should_restart:
-                print(f"\n[MONITOR] Zentra Core shut down normally. Exiting watchdog.")
+    # Determine lock name based on script
+    lock_name = "zentra_console" if "main.py" in args.script else "zentra_web"
+    
+    if not instance_lock.acquire_lock(lock_name):
+        print(f"\n[MONITOR] ERROR: Another instance of Zentra ({lock_name}) is already running.")
+        print(f"[MONITOR] Please close the existing instance before starting a new one.")
+        sys.exit(1)
+    
+    try:
+        while True:
+            try:
+                should_restart = start_and_monitor(args.script)
+                if not should_restart:
+                    print(f"\n[MONITOR] Zentra Core shut down normally. Exiting watchdog.")
+                    break
+                
+                # If we are here, we need to restart
+                print(f"\n[MONITOR] Restarting Zentra Core in progress...")
+                time.sleep(1) # Brief pause
+            except KeyboardInterrupt:
+                print(f"\n[MONITOR] Watchdog terminated by user.")
                 break
-            
-            # If we are here, we need to restart
-            print(f"\n[MONITOR] Restarting Zentra Core in progress...")
-            time.sleep(1) # Brief pause
-        except KeyboardInterrupt:
-            print(f"\n[MONITOR] Watchdog terminated by user.")
-            break
-        except Exception as e:
-            print(f"\n[MONITOR] unexpected error in watchdog loop: {e}")
-            time.sleep(5) # Long pause before retry if something crashed
+            except Exception as e:
+                print(f"\n[MONITOR] unexpected error in watchdog loop: {e}")
+                time.sleep(5) # Long pause before retry if something crashed
+    finally:
+        instance_lock.release_lock(lock_name)

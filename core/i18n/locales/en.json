@@ -214,6 +214,7 @@
         "rule_read_file": "To read a file, use [FILE_MANAGER: read:path]",
         "executing_module": "Executing Module: {module}",
         "command_executed": "✅ Command executed.",
+        "command_executed_info": "Command executed: {info}",
         "model_no_response_error": "❌ The model produced no response. Possible causes:\n- Model not yet loaded\n- Model too heavy\n- Configuration issue",
         "debug_lock_acquire_attempt": "[DEBUG locks] acquire_lock() - max wait {timeout}s",
         "debug_lock_removed_old": "[DEBUG locks] Removed stale lock",

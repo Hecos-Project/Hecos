@@ -1,0 +1,688 @@
+{
+  "skills_map_keys": [
+    "DASHBOARD",
+    "DOMOTICA",
+    "EXECUTOR",
+    "FILE_MANAGER",
+    "HELP",
+    "IMAGE_GEN",
+    "MEDIA",
+    "MEMORY",
+    "MODELS",
+    "ROLEPLAY",
+    "SYSTEM",
+    "WEB",
+    "WEBCAM",
+    "WEB_UI"
+  ],
+  "tools_schema": [
+    {
+      "type": "function",
+      "function": {
+        "name": "DASHBOARD__get_backend_status",
+        "description": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "DASHBOARD__get_full_dashboard",
+        "description": "Returns a complete report of all hardware resources and AI backend status.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "DASHBOARD__get_gpu_status",
+        "description": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "DASHBOARD__get_system_resources",
+        "description": "Returns a summary of system CPU and RAM usage.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "DOMOTICA__get_home_status",
+        "description": "Provides a summary of the status of smart home devices (e.g., temperature, lights on).",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "EXECUTOR__execute_shell",
+        "description": "Executes a shell command in the system terminal and returns the output (max 500 characters).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The command to execute (e.g., 'dir', 'ipconfig')."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "FILE_MANAGER__count_items",
+        "description": "Counts the total number of files and folders in a given path, without listing them.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The path of the directory to inspect."
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "FILE_MANAGER__list_files",
+        "description": "SCANS and lists files/folders in a path to return the names to the AI.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The path of the directory to inspect (e.g., 'desktop' or an absolute path)."
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "FILE_MANAGER__read_file",
+        "description": "Reads the textual content of a file specified by the path.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The path of the text file to read."
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "HELP__list_capabilities",
+        "description": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "HELP__refresh_registry",
+        "description": "Forces a re-read and update of the central capabilities registry (rescans plugins).",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "IMAGE_GEN__generate_image",
+        "description": "Generates an image from a text description using an external AI server.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Detailed description of the image to generate."
+            }
+          },
+          "required": [
+            "prompt"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MEDIA__set_mute",
+        "description": "Toggles system mute mode on or off.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "description": "Use 'on' (to mute) or 'off' (to unmute)."
+            }
+          },
+          "required": [
+            "state"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MEDIA__set_volume",
+        "description": "Sets the system volume to a specific level.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "string",
+              "description": "The desired volume level, from 0 to 100."
+            }
+          },
+          "required": [
+            "level"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MEMORY__read_history",
+        "description": "Extract the last N saved messages from the database history.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "n": {
+              "type": "string",
+              "description": "The number of previous messages to extract (e.g. '10')."
+            }
+          },
+          "required": [
+            "n"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MEMORY__remember_info",
+        "description": "Save important information about the user in the biographical profile.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The detailed information to remember (e.g. 'The user likes coffee')."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MEMORY__reset_memory",
+        "description": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MEMORY__who_am_i",
+        "description": "Ask Zentra to retrieve identity data for the Admin and the AI (context profile).",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MODELS__get_current_backend",
+        "description": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MODELS__list_models",
+        "description": "Lists all available models for the currently selected backend.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "MODELS__set_model",
+        "description": "Sets a new active AI model based on the numeric index obtained from list_models.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "model_number": {
+              "type": "string",
+              "description": "Parameter model_number"
+            }
+          },
+          "required": [
+            "model_number"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__list_characters",
+        "description": "Lists all characters available for roleplaying.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__list_scenes",
+        "description": "Lists all scenes available for roleplaying.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__load_character",
+        "description": "Loads a character by name to interpret their role.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The exact name of the character to load."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__load_scene",
+        "description": "Loads a specific setting or scene for roleplaying.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the scene to load."
+            }
+          },
+          "required": [
+            "name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__reset_roleplay",
+        "description": "Complete reset of active characters and scenes.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__unload_character",
+        "description": "Deactivates the current character and returns to the normal personality.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ROLEPLAY__unload_scene",
+        "description": "Removes the current scene or setting.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__execute_shell_command",
+        "description": "Executes a shell command (cmd.exe) in the background and returns the output.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "command": {
+              "type": "string",
+              "description": "The exact command to pass to the shell."
+            }
+          },
+          "required": [
+            "command"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__explore_folder",
+        "description": "OPENS a graphical Windows Explorer window for the specified folder.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "folder_path": {
+              "type": "string",
+              "description": "The path or alias of the folder (e.g., 'desktop', 'download', 'documents')."
+            }
+          },
+          "required": [
+            "folder_path"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__get_time",
+        "description": "Returns the current local time (HH:MM).",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__open_program",
+        "description": "Starts a local program specified by name.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "program_name": {
+              "type": "string",
+              "description": "The name of the program to open (e.g., 'notepad', 'chrome')."
+            }
+          },
+          "required": [
+            "program_name"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__open_terminal",
+        "description": "Opens a new independent Windows command prompt (CMD) window.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__read_debug_logs",
+        "description": "Reads the technical debug logs (LiteLLM, Brain processing).",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__read_errors",
+        "description": "Reads specifically the latest errors (crashes, exceptions) recorded by the system.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__read_logs",
+        "description": "Legge gli ultimi eventi registrati nei file di log generali del sistema.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__reboot_system",
+        "description": "Reboots the entire Zentra Core system.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "SYSTEM__set_configuration",
+        "description": "Modifies a value within the main configuration file (config.json).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "section": {
+              "type": "string",
+              "description": "The root section of the config (e.g., 'llm', 'backend', 'voice')."
+            },
+            "key": {
+              "type": "string",
+              "description": "The specific key to modify."
+            },
+            "value": {
+              "type": "string",
+              "description": "The new value (text, numeric, or 'true'/'false')."
+            }
+          },
+          "required": [
+            "section",
+            "key",
+            "value"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "WEB__open_url",
+        "description": "Opens a specific website in the default browser.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "The website address to open (e.g., 'youtube.com', 'wikipedia.org')."
+            }
+          },
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "WEB__search_web",
+        "description": "Performs an internet search using the default search engine (e.g., Google).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "The terms to search for on the internet."
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "WEBCAM__take_snapshot",
+        "description": "Takes a photo using the computer's webcam and saves it to disk.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "WEB_UI__get_panel_url",
+        "description": "Returns the URL of the chat interface.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "WEB_UI__open_browser",
+        "description": "Opens the Zentra web interface in the default browser if not already open.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    }
+  ],
+  "loaded_plugins": [
+    "DASHBOARD",
+    "DOMOTICA",
+    "EXECUTOR",
+    "FILE_MANAGER",
+    "HELP",
+    "IMAGE_GEN",
+    "MEDIA",
+    "MEMORY",
+    "MODELS",
+    "ROLEPLAY",
+    "SYSTEM",
+    "WEB",
+    "WEBCAM",
+    "WEB_UI"
+  ]
+}

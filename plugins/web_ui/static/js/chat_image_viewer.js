@@ -12,15 +12,19 @@
 
 // ── Convert [[IMG:name]] tags in AI text to rendered image HTML ──
 window.processAiImages = function(html) {
-  return html.replace(/\[\[IMG:([^\]]+)\]\]/g, (match, filename) => {
-    const url = `/api/images/${encodeURIComponent(filename.trim())}`;
+  return html.replace(/\[\[IMG:([^\]]+)\]\]/g, (match, identifier) => {
+    identifier = identifier.trim();
+    const isUrl = identifier.startsWith('http://') || identifier.startsWith('https://');
+    const url = isUrl ? identifier : `/api/images/${encodeURIComponent(identifier)}`;
+    const displayTitle = isUrl ? (identifier.split('/').pop() || 'Image') : identifier;
+
     return `
-<div class="chat-img-wrap" draggable="true" data-img-url="${url}" data-img-name="${filename.trim()}">
-  <img src="${url}" alt="${filename.trim()}" loading="lazy"
+<div class="chat-img-wrap" draggable="true" data-img-url="${url}" data-img-name="${displayTitle}">
+  <img src="${url}" alt="${displayTitle}" loading="lazy"
        onerror="this.parentElement.style.display='none'"
-       onclick="openLightbox('${url}')">
+       onclick="if(window.openLightbox) window.openLightbox('${url}')">
   <div class="chat-img-overlay">
-    <button class="img-action-btn" onclick="downloadChatImage('${url}','${filename.trim()}')">⬇ Scarica</button>
+    <button class="img-action-btn" onclick="downloadChatImage('${url}','${displayTitle}')">⬇ Scarica</button>
     <button class="img-action-btn" onclick="openLightbox('${url}')">🔍 Zoom</button>
   </div>
 </div>`;

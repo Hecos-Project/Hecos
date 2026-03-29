@@ -46,9 +46,11 @@ def load_capabilities():
 
 def generate_self_awareness(personality_name):
     try:
+        from core.system.plugin_loader import get_active_tags
+        active_plugins = get_active_tags()
+        
         souls = [f for f in os.listdir("personality") if f.endswith('.txt')]
         core_modules = [f for f in os.listdir("core") if f.endswith('.py')]
-        plugin_modules = [f for f in os.listdir("plugins") if f.endswith('.py')]
         
         awareness = f"\n{translator.t('structural_self_awareness')}\n"
         awareness += f"{translator.t('awareness_desc')}\n"
@@ -56,10 +58,10 @@ def generate_self_awareness(personality_name):
         other_souls = ', '.join([a for a in souls if a != personality_name])
         awareness += f"- {translator.t('dormant_souls', souls=other_souls)}\n"
         awareness += f"- {translator.t('central_nervous_system', modules=', '.join(core_modules))}\n"
-        awareness += f"- {translator.t('action_modules', modules=', '.join(plugin_modules))}\n"
+        awareness += f"- {translator.t('action_modules', modules=', '.join(active_plugins) if active_plugins else 'none')}\n"
         awareness += f"{translator.t('admin_structure_hint')}\n"
         
-        logger.debug("BRAIN", f"Self-awareness generated: {len(awareness)} characters")
+        logger.debug("BRAIN", f"Self-awareness generated for {len(active_plugins)} active plugins")
         return awareness
     except Exception as e:
         logger.error(f"BRAIN: Self-awareness perception error: {e}")
@@ -146,14 +148,29 @@ def generate_response(user_text, external_config=None, tag=None, images=None):
     # Concisely inject folder mappings to guide the AI without using absolute paths in guidelines
     desktop_map = external_config.get("plugins", {}).get("FILE_MANAGER", {}).get("mappings", {}).get("desktop", "desktop") if external_config else "desktop"
 
+    # --- ROLEPLAY OVERRIDE ---
+    rp_active = False
+    try:
+        from plugins.roleplay.main import get_roleplay_prompt
+        rp_prompt = get_roleplay_prompt()
+        if rp_prompt:
+            logger.debug("BRAIN", "Roleplay mode active - character prompt loaded")
+            personality_prompt = rp_prompt
+            tag = "ROLEPLAY"
+            rp_active = True
+    except:
+        pass
+
     plugin_guidelines = (
         "\n### PLUGIN GUIDELINES ###\n"
+        "- PRIORITY: Always respond with TEXT first. Only use a tool if the user explicitly asks for an action.\n"
         "- [SYSTEM: time] - Get current local time\n"
         "- [SYSTEM: open:prog_name] - Open notepad, chrome, etc.\n"
         "- [SYSTEM: terminal] - Open Windows CMD prompt window\n"
-        "- [SYSTEM: explore:folder] - Open folder graphically (desktop, download, documents)\n"
-        "- [FILE_MANAGER: list:folder] - List files for your own analysis (does NOT open window)\n"
-        "- [DASHBOARD: resources] - Get CPU/RAM telemetry\n"
+        "- [SYSTEM: explore:folder] - Open folder graphically\n"
+        "- [FILE_MANAGER: list:folder] - List files for analysis\n"
+        "- [DASHBOARD: resources] - Get hardware telemetry\n"
+        "- [IMAGE_GEN: generate_image:description] - Generate an image\n"
     )
 
 
@@ -200,7 +217,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None):
         f"{self_awareness}\n"
         f"{capabilities}\n"
         "### OPERATIVE RULES ###\n"
-        "1. Be consistent with your personality.\n\n"
+        "1. Be consistent with your personality.\n"
+        "2. IMPORTANT: Check [ACTIVE PROTOCOLS] before offering a service. If a specific protocol (like IMAGE_GEN, WEB, etc.) is NOT listed in the section above, YOU DO NOT HAVE THAT ABILITY. Do NOT offer to generate images, search the web, or perform other plugin actions if they are not active.\n\n"
         f"{identity_rules}"
         f"{file_manager_rules}"
         f"{force_clause}"
@@ -211,19 +229,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None):
     
     logger.debug("BRAIN", f"System prompt created: {len(system_prompt)} characters")
     
-    # Check if roleplay plugin is active
-    try:
-        from plugins.roleplay.main import get_roleplay_prompt
-        rp_prompt = get_roleplay_prompt()
-        if rp_prompt:
-            # Replaces system prompt with roleplay prompt
-            system_prompt = rp_prompt
-            tag = "ROLEPLAY" # Set tag for model dispatching
-            logger.debug("BRAIN", "Roleplay mode active - prompt replaced and tag set")
-    except ImportError:
-        pass
-    except Exception as e:
-        logger.error(f"Roleplay plugin error: {e}")
+    # (RP check moved before prompt assembly to preserve rules/capabilities)
 
     # 4. Model resolution and Invocation of the unified LiteLLM client
     from app.model_manager import ModelManager
@@ -259,17 +265,26 @@ def generate_response(user_text, external_config=None, tag=None, images=None):
     
     # 5. Save to memory (respecting cognition config)
     logger.debug("BRAIN", "Saving to memory...")
-    brain_interface.save_message("user", user_text, config=config)
     
-    # Structured response management (String or Message with tool_calls)
-    if isinstance(response, str):
-        logger.debug("BRAIN", f"Response received from backend: {len(response)} characters")
-        brain_interface.save_message("assistant", response, config=config)
+    # Filter error messages (don't save them to history to avoid loops/bloat)
+    is_error = False
+    if isinstance(response, str) and (response.startswith("ZENTRA: ⚠️") or "Error" in response):
+        is_error = True
+    
+    if not is_error:
+        brain_interface.save_message("user", user_text, config=config)
+        
+        # Structured response management (String or Message with tool_calls)
+        if isinstance(response, str):
+            logger.debug("BRAIN", f"Response received from backend: {len(response)} characters")
+            brain_interface.save_message("assistant", response, config=config)
+        else:
+            # It's a Message object (used a tool)
+            logger.debug("BRAIN", "Response is a tool call object.")
+            tool_names = [call.function.name for call in getattr(response, 'tool_calls', [])]
+            brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*", config=config)
     else:
-        # It's a Message object (used a tool)
-        logger.debug("BRAIN", "Response is a tool call object.")
-        tool_names = [call.function.name for call in getattr(response, 'tool_calls', [])]
-        brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*", config=config)
+        logger.debug("BRAIN", "AI response is an error; skipping history persistence.")
     
     logger.debug("BRAIN", f"=== END generate_response ===")
     return response

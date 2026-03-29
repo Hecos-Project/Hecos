@@ -3,13 +3,16 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
 </p>
 
-# Zentra Core - Versión 0.9.7 (WebUI Nativa & I18N)
+# Zentra Core - Versión 0.9.7 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
 **Tu Asistente de IA Personal Offline (Privado, Modular, Potente)**
 
 ---
+
+> [!WARNING]
+> **Estado Runtime Alpha**: Zentra Core se encuentra actualmente en una fase inicial **Alpha**. Está en desarrollo activo y depuración. Las funciones pueden cambiar y el sistema aún no se considera estable. Usar con precaución.
 
 ## 🚀 Resumen General
 **Zentra Core** es una plataforma de asistencia de IA "local-first" que se ejecuta íntegramente en tu propia máquina.
@@ -20,7 +23,8 @@ Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Z
 ---
 
 ## ✨ Características Principales (v0.9.7)
-* 👁️ **Soporte de Visión Nativa** — Capacidades de IA multimodal para Gemini, OpenAI y Ollama (LLaVA). Analiza imágenes, fotos y capturas de pantalla directamente en el chat.
+* 👁️ **Soporte de Visión Nativa** — Capacidades de IA multimodal para Gemini, OpenAI y Ollama (LLaVA). Analizza immagini, foto e captures de pantalla directamente en el chat.
+* 🎨 **Generación de Imágenes** — Genera contenido visual a partir de prompts de texto mediante servidores de IA externos (Integrado vía Pollinations.ai).
 * 🏗️ **Plugin WebUI Nativo** — Migrado de un bridge a un plugin core (`plugins/web_ui/`) para máximo rendimiento y estabilidad.
 * 🌐 **I18N Global (Multilingüe)** — Soporte completo para Inglés (default) e Italiano en Terminal e interfaz Web con cambio en tiempo real.
 * 🧠 **Streaming Multi-Nube** — Soporte nativo para Groq, OpenAI, Gemini e Anthropic con efecto "máquina de escribir".
@@ -133,6 +137,13 @@ Licencia MIT (lanzamiento inicial)
 ## 👥 Créditos y Contacto
 Líder de Desarrollo: Antonio Meloni (Tony)
 Email Oficial: zentra.core.systems@gmail.com
+
+---
+
+## 📚 Documentación Técnica
+- 🏗️ **[Guía de Arquitectura](docs/TECHNICAL_GUIDE.md)**
+- 🔌 **[Desarrollo de Plugins](docs/PLUGINS_DEV.md)**
+- 📁 **[Mapa de Estructura](docs/zentra_core_structure_v0.9.7.md)**
 
 ---
 

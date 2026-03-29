@@ -93,22 +93,40 @@ def process(raw_response, config=None, voice_status=False):
     tags_found = []
     
     # 2. Structured response (Native Function Calling)
-    is_tool_call_object = not isinstance(raw_response, str) and hasattr(raw_response, 'tool_calls') and raw_response.tool_calls
+    tool_calls = getattr(raw_response, 'tool_calls', None)
+    if not tool_calls and isinstance(raw_response, dict):
+        tool_calls = raw_response.get('tool_calls')
+    
+    # Check for legacy function_call (Gemini often uses this)
+    single_call = getattr(raw_response, 'function_call', None)
+    if not tool_calls and single_call:
+        # Normalize into a list format
+        tool_calls = [raw_response] # The object itself acts as the call container if it's a Message
+        
+    is_tool_call_object = bool(tool_calls)
     
     if is_tool_call_object:
         logger.info("[PROCESSOR] Native Function Calling detected.")
-        for call in raw_response.tool_calls:
-            if "__" in call.function.name:
-                tag, method = call.function.name.split("__", 1)
+        for call in tool_calls:
+            # Handle both list of calls and single message with function_call
+            f_obj = getattr(call, 'function', None) or getattr(call, 'function_call', None)
+            if not f_obj: continue
+            
+            f_name = getattr(f_obj, 'name', '')
+            f_args_raw = getattr(f_obj, 'arguments', '{}')
+            
+            if "__" in f_name:
+                tag, method = f_name.split("__", 1)
                 try:
-                    args = json.loads(call.function.arguments)
+                    # Allow dict or string
+                    args = f_args_raw if isinstance(f_args_raw, dict) else json.loads(f_args_raw)
                     logger.debug("PROCESSOR", f"Tool call: {tag}.{method}({args})")
                 except Exception as e:
                     logger.error("PROCESSOR", f"Error parsing arguments: {e}")
                     args = {}
                 tags_found.append((tag.lower(), args, "function_call", method))
             else:
-                logger.debug("PROCESSOR", f"Unknown function format: {call.function.name}")
+                logger.debug("PROCESSOR", f"Unknown function format: {f_name}")
         
         original_response_text = getattr(raw_response, 'content', "") or ""
         raw_response = original_response_text
@@ -146,6 +164,12 @@ def process(raw_response, config=None, voice_status=False):
         if module_to_call in BLACKLIST: continue
             
         from core.system import plugin_loader
+        
+        # FAIL-SAFE: If the registry is empty (happens in standalone child processes), auto-init.
+        if not plugin_loader._loaded_plugins:
+            logger.info("[PROCESSOR] Plugin registry empty; performing lazy initialization...")
+            plugin_loader.update_capability_registry(current_config, debug_log=False)
+            
         plugin_obj = plugin_loader.get_plugin_module(module_to_call.upper(), legacy=False)
         is_legacy_oop = False
         if not plugin_obj:
@@ -171,16 +195,31 @@ def process(raw_response, config=None, voice_status=False):
                 except Exception as e:
                     logger.error(f"[PROCESSOR] Legacy OOP error: {e}")
             
-            elif method_name and hasattr(plugin_obj, "tools"):
-                logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
-                try:
-                    method = getattr(plugin_obj.tools, method_name)
-                    result = method(**action_or_args) if action_or_args else method()
-                    if result:
-                        logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
-                        tool_results.append(str(result))
-                except Exception as e:
-                    logger.error(f"[PROCESSOR] Tool error: {e}")
+            elif hasattr(plugin_obj, "tools"):
+                # Handle both Native (method_name set) and Tag-based (extract from action_or_args)
+                actual_method_name = method_name
+                actual_args = action_or_args
+                
+                if not actual_method_name and isinstance(action_or_args, str) and ":" in action_or_args:
+                    m_name, m_args = action_or_args.split(":", 1)
+                    m_name = m_name.strip()
+                    if hasattr(plugin_obj.tools, m_name):
+                        actual_method_name = m_name
+                        # If the method exists, we try to pass the rest as 'prompt' (common case)
+                        # or as a single positional argument.
+                        actual_args = {"prompt": m_args.strip()}
+                
+                if actual_method_name:
+                    logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
+                    try:
+                        method = getattr(plugin_obj.tools, actual_method_name)
+                        # If it's a dict (from Native), unpack it. If it's the 'prompt' dict we just made, unpack it.
+                        result = method(**actual_args) if isinstance(actual_args, dict) else method(actual_args)
+                        if result:
+                            logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
+                            tool_results.append(str(result))
+                    except Exception as e:
+                        logger.error(f"[PROCESSOR] Tool error ({actual_method_name}): {e}")
                     
             elif hasattr(plugin_obj, "execute") and not method_name:
                 logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")
@@ -198,7 +237,21 @@ def process(raw_response, config=None, voice_status=False):
     
     if not base_video:
         if tags_found:
-            base_video = translator.t('command_executed')
+            # If we only have tags, provide more detailed feedback
+            if isinstance(tags_found, list) and len(tags_found) > 0:
+                # tags_found elements are (tag, args, type[, method])
+                distinct_tags = []
+                for t in tags_found:
+                    tag_name = t[0].upper()
+                    method_name = t[3] if len(t) > 3 else None
+                    label = f"{tag_name}.{method_name}" if method_name else tag_name
+                    if label not in distinct_tags:
+                        distinct_tags.append(label)
+                
+                info_msg = ", ".join(distinct_tags)
+                base_video = f"✅ {translator.t('command_executed_info', info=info_msg)}"
+            else:
+                base_video = translator.t('command_executed')
         else:
             base_video = translator.t('model_no_response_error')
     

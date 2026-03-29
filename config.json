@@ -76,7 +76,7 @@
     "language": "en",
     "llm": {
         "allow_cloud": true,
-        "debug_llm": false,
+        "debug_llm": true,
         "providers": {
             "anthropic": {
                 "api_key": "",
@@ -146,6 +146,12 @@
         "HELP": {
             "enabled": true,
             "show_disabled": false
+        },
+        "IMAGE_GEN": {
+            "enabled": false,
+            "height": 1024,
+            "nologo": false,
+            "width": 1024
         },
         "MEDIA": {
             "enabled": true

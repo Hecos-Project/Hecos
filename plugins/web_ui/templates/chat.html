@@ -51,7 +51,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 .sidebar-header { padding:18px 20px 14px; border-bottom:1px solid var(--border); }
 .logo { height: 32px; display: flex; align-items: center; gap: 10px; }
 .logo img { height: 100%; width: auto; display: block; filter: drop-shadow(0 0 8px rgba(108,140,255,0.3)); }
-.logo-text { font-size: 20px; font-weight: 700; background: var(--accent-g); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.logo-text { font-size: 20px; font-weight: 700; background: var(--accent-g); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .logo-sub { font-size:10px; color:var(--muted); margin-top:2px; letter-spacing:.5px; text-transform:uppercase; font-weight: 500; }
 
 .sidebar-section { padding:16px 14px 8px; }
@@ -422,14 +422,17 @@ function addBubble(role, text, id) {
 }
 
 function renderMarkdown(text) {
-  return text
+  let html = text
     .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>');
+    
   // Process AI image tags [[IMG:filename]]
-  if (typeof window.processAiImages === 'function') html = window.processAiImages(html);
+  if (typeof window.processAiImages === 'function') {
+    html = window.processAiImages(html);
+  }
   return html;
 }
 

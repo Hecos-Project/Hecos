@@ -3,13 +3,16 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.9.7 (WebUI Nativa & I18N)
+# Zentra Core - Versione 0.9.7 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
 **Il tuo Assistente AI Personale Offline (Privato, Modulare, Potente)**
 
 ---
+
+> [!WARNING]
+> **Stato Runtime Alpha**: Zentra Core è attualmente in una fase iniziale **Alpha**. È in fase di sviluppo attivo e debugging. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
 
 ## 🚀 Panoramica
 **Zentra Core** è una piattaforma di assistenza AI local-first che gira interamente sulla tua macchina.
@@ -21,6 +24,7 @@ Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra
 
 ## ✨ Caratteristiche Principali (v0.9.7)
 * 👁️ **Supporto Visione Nativa** — Capacità AI multimodali per Gemini, OpenAI e Ollama (LLaVA). Analizza immagini, foto e screenshot direttamente in chat.
+* 🎨 **Generazione Immagini** — Genera contenuti visivi da prompt testuali tramite server IA esterni (Integrato via Pollinations.ai).
 * 🏗️ **Plugin WebUI Nativo** — Migrato da un bridge a un plugin core (`plugins/web_ui/`) per massime prestazioni e stabilità.
 * 🌐 **I18N Globale (Multilingua)** — Supporto completo per Inglese (default) e Italiano tra Terminale e WebUI con switch in tempo reale.
 * 🧠 **Streaming Multi-Cloud** — Supporto nativo per Groq, OpenAI, Gemini e Anthropic con effetto "macchina da scrivere".
@@ -133,6 +137,13 @@ Licenza MIT (rilascio iniziale)
 ## 👥 Crediti e Contatti
 Sviluppatore Capo: Antonio Meloni (Tony)
 Email Ufficiale: zentra.core.systems@gmail.com
+
+---
+
+## 📚 Documentazione Tecnica
+- 🏗️ **[Guida all'Architettura](docs/TECHNICAL_GUIDE.md)**
+- 🔌 **[Sviluppo Plugin](docs/PLUGINS_DEV.md)**
+- 📁 **[Mappa Struttura](docs/zentra_core_structure_v0.9.7.md)**
 
 ---
 

@@ -1,0 +1,100 @@
+2026-03-29 07:30:30,501 [INFO] [LiteLLM] API key for 'gemini' loaded from env 'GEMINI_API_KEY'
+2026-03-29 07:30:30,502 [INFO] [LiteLLM] Debug Activated for: gemini/gemini-2.0-flash-lite
+2026-03-29 07:30:31,111 [ERROR] LiteLLM: Error: litellm.RateLimitError: litellm.RateLimitError: geminiException - {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash-lite\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash-lite\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash-lite\nPlease retry in 9.766568073s.",
+    "status": "RESOURCE_EXHAUSTED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Learn more about Gemini API quotas",
+            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
+        "violations": [
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_input_token_count",
+            "quotaId": "GenerateContentInputTokensPerModelPerMinute-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash-lite"
+            }
+          },
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash-lite"
+            }
+          },
+          {
+            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
+            "quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier",
+            "quotaDimensions": {
+              "location": "global",
+              "model": "gemini-2.0-flash-lite"
+            }
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.RetryInfo",
+        "retryDelay": "9s"
+      }
+    ]
+  }
+}
+
+2026-03-29 07:30:31,244 [INFO] [Chat] Redirecting TTS to PC speakers: ZENTRA: ⚠️ Quota Esaurita (Err...
+2026-03-29 07:31:01,005 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:01,005 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:01,012 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:01,013 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:01,018 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:01,026 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:01,064 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:01,067 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:08,358 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:08,358 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:08,370 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:08,370 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:08,374 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:08,379 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:08,410 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:08,436 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:11,715 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:11,715 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:11,724 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:11,725 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:11,733 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:11,734 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:11,772 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:11,773 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:18,611 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:31:18,612 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:31:18,617 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:18,631 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:44,182 [INFO] [MEMORY] Vault initialized at: C:\Zentra-Core\memory\chat_history.db
+2026-03-29 07:31:44,187 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:31:44,488 [INFO] [WebUI] Starting server on port 7070...
+2026-03-29 07:31:44,517 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:31:44,532 [INFO] REGISTRY: Capabilities registry updated (13 modules).
+2026-03-29 07:31:44,534 [INFO] [WEB] Starting standalone audio engine...
+2026-03-29 07:31:44,535 [INFO] [LISTENING THREAD] Initialized.
+2026-03-29 07:32:17,093 [INFO] [CONFIG] Configuration saved successfully.
+2026-03-29 07:32:17,093 [INFO] [PROCESSOR] Hardware configuration synchronized.
+2026-03-29 07:32:17,098 [INFO] DASHBOARD: Backend monitor thread initialized via class.
+2026-03-29 07:32:17,109 [INFO] [WEB_UI] Server started → http://127.0.0.1:7070/chat
+2026-03-29 07:32:25,216 [INFO] [LiteLLM] API key for 'groq' loaded from env 'GROQ_API_KEY'
+2026-03-29 07:32:25,216 [INFO] [LiteLLM] Debug Activated for: groq/llama-3.3-70b-versatile
+2026-03-29 07:32:27,366 [INFO] [PROCESSOR] Native Function Calling detected.
+2026-03-29 07:32:27,366 [INFO] [SYSTEM] Executing Module: WEB_UI
+2026-03-29 07:32:27,367 [ERROR] [PROCESSOR] Tool error (open_browser): WebUIPlugin.open_browser() takes 1 positional argument but 2 were given
+2026-03-29 07:32:27,402 [INFO] [Chat] Redirecting TTS to PC speakers: ? Command executed....

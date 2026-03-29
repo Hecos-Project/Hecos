@@ -70,15 +70,10 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
 
     # ── Text-only path ────────────────────────────────────────────
     if not images:
-        if provider == "gemini":
-            messages = [
-                {"role": "user", "content": f"{system_prompt}\n\n[USER]: {user_message}"}
-            ]
-        else:
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
-            ]
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message}
+        ]
 
     params = {
         "model": model_name,
