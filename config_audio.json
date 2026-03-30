@@ -19,7 +19,7 @@
     "energy_threshold": 450,
     "silence_timeout": 5,
     "phrase_limit": 15,
-    "push_to_talk": false,
+    "push_to_talk": true,
     "ptt_hotkey": "ctrl+shift",
     "stt_source": "system",
     "tts_destination": "system"

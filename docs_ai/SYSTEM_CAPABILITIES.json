@@ -121,6 +121,19 @@
       "notes": "Main interaction point for the user."
     },
     {
+      "id": "sys_net",
+      "description": "Strumenti di rete avanzati: tracciamento IP locale e pubblico, mappatura LAN (ARP), latenza (ping) e manipolazione DNS per evasione blocchi regionali.",
+      "risk": "high",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/sys_net/main.py"],
+        "entry_points": ["AI Function Calling tramite get_network_info, set_dns_servers, ecc."],
+        "config_keys": []
+      },
+      "verification_step": "Chiedere: 'Qual è il mio IP pubblico?' o 'Cambia i miei DNS su Google' (dovrebbe richiedere avvio come amministratore).",
+      "notes": "Le funzioni di modifica DNS richiedono privilegi di Amministratore di sistema."
+    },
+    {
       "id": "web_ui",
       "description": "Native Browser Interface (localhost:7070) providing Chat and Configuration panels.",
       "risk": "low",
