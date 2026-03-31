@@ -470,15 +470,8 @@ def generate_image(prompt: str, provider: str, model: str, width: int, height: i
             return filename
         except Exception as e:
             _log_debug(f"[ImageEngine] {provider} failed: {e}")
-            logger.error(f"[ImageEngine] {provider} failed: {e}. Falling back to Pollinations...")
+            logger.error(f"[ImageEngine] {provider} failed: {e}. No automatic fallback.")
+            raise Exception(f"{provider.capitalize()} failed to generate image: {e}")
 
-    # Fallback: Pollinations free (no key)
-    if provider != "pollinations":
-        try:
-            filename = PollinationsProvider.generate(prompt, width, height, "flux", "")
-            _log_debug(f"[ImageEngine] SUCCESS via Pollinations fallback → {filename}")
-            return filename
-        except Exception as e2:
-            _log_debug(f"[ImageEngine] Pollinations fallback failed: {e2}")
-
-    raise Exception(f"All image providers failed for prompt: {prompt[:40]}")
+    # If the provider is not mapped in our image PROVIDERS dict (e.g., groq, anthropic)
+    raise Exception(f"Il provider '{provider}' non possiede un motore nativo per la generazione di immagini. Selezionare un provider compatibile (es. OpenAI, Gemini Native, Pollinations).")

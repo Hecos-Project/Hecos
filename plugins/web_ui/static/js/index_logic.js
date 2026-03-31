@@ -230,6 +230,39 @@ function populateUI() {
     setVal('cog-max-history', cog.max_history_messages ?? 20);
 
     const igen = (mediaConfig && mediaConfig.image_gen) ? mediaConfig.image_gen : {};
+
+    // --- Dynamic Image Providers Population ---
+    const imgProvSelect = document.getElementById('igen-provider');
+    if (imgProvSelect && c.llm && c.llm.providers) {
+        imgProvSelect.innerHTML = '';
+        const globalProviders = Object.keys(c.llm.providers);
+        globalProviders.push("ollama");
+        const extraImageProviders = ["pollinations", "airforce", "stability", "gemini_native"];
+        
+        // Merge without duplicates
+        const allSet = new Set([...globalProviders, ...extraImageProviders]);
+        
+        const labels = {
+            "pollinations": "Pollinations.ai (Free)",
+            "airforce": "Airforce API (Free/Experimental)",
+            "gemini": "Google Gemini Imagen",
+            "gemini_native": "Google Gemini (Studio Multi-Modality)",
+            "openai": "OpenAI DALL-E",
+            "stability": "Stability.ai",
+            "groq": "Groq (Testo - Non supporta immagini)",
+            "anthropic": "Anthropic (Testo - Non supporta immagini)",
+            "ollama": "Ollama (Testo - Non supporta immagini)",
+            "lmstudio": "LM Studio (Testo - Non supporta immagini)"
+        };
+
+        allSet.forEach(prov => {
+            const opt = document.createElement('option');
+            opt.value = prov;
+            opt.textContent = labels[prov] || (prov.charAt(0).toUpperCase() + prov.slice(1));
+            imgProvSelect.appendChild(opt);
+        });
+    }
+
     setCheck('igen-enabled', igen.enabled !== false);
     setVal('igen-provider', igen.provider || 'pollinations');
     setVal('igen-width', igen.width  || 1024);
