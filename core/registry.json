@@ -122,14 +122,16 @@
         "is_legacy": true
     },
     "SYS_NET": {
-        "description": "Strumenti di rete avanzati: IP, Ping, Mappatura LAN, VPN/DNS.",
+        "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
         "commands": {
             "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
+            "get_proxy_status": "Reports the current proxy configuration status in Zentra, including the URL and whether it is active.",
             "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
             "ping_test": "Executes a network ping test to the specified target (IP or domain).",
             "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
             "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
-            "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking."
+            "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
         },
         "status": "Online",
         "example": "",

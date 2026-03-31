@@ -1,0 +1,246 @@
+<!-- SYS NET PANEL -->
+<div id="tab-sysnet" class="panel">
+  <div class="card">
+    <div class="card-title">🌐 Sys Net — Rete &amp; Proxy</div>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:18px;">
+      Configura il proxy per le richieste backend di Zentra (es. Gemini Imagen, cloud AI). 
+      Il proxy viene usato internamente e non richiede una VPN di sistema.<br>
+      Puoi anche chiedere a Zentra in chat: <em>"Stato proxy"</em>
+    </p>
+
+    <!-- Proxy Builder -->
+    <div style="background:var(--surface2,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px;">Configura Proxy</div>
+
+      <div style="display:grid; grid-template-columns: 110px 1fr 80px; gap:10px; align-items:end; margin-bottom:12px;">
+        <div class="field" style="margin:0">
+          <label style="font-size:12px;">Protocollo</label>
+          <select id="sysnet-proto" onchange="updateProxyUrl()">
+            <option value="">Nessuno</option>
+            <option value="http">HTTP</option>
+            <option value="https">HTTPS</option>
+            <option value="socks4">SOCKS4</option>
+            <option value="socks5">SOCKS5</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0">
+          <label style="font-size:12px;">Host / IP</label>
+          <input type="text" id="sysnet-host" placeholder="es. 127.0.0.1 o proxy.example.com" oninput="updateProxyUrl()">
+        </div>
+        <div class="field" style="margin:0">
+          <label style="font-size:12px;">Porta</label>
+          <input type="number" id="sysnet-port" placeholder="8080" min="1" max="65535" oninput="updateProxyUrl()">
+        </div>
+      </div>
+
+      <!-- Optional auth -->
+      <div id="sysnet-auth-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+        <div class="field" style="margin:0">
+          <label style="font-size:12px;">Username (opzionale)</label>
+          <input type="text" id="sysnet-user" placeholder="utente" oninput="updateProxyUrl()">
+        </div>
+        <div class="field" style="margin:0">
+          <label style="font-size:12px;">Password (opzionale)</label>
+          <input type="password" id="sysnet-pass" placeholder="password" oninput="updateProxyUrl()">
+        </div>
+      </div>
+
+      <!-- Resulting URL -->
+      <div class="field" style="margin:0 0 12px 0">
+        <label style="font-size:12px;">URL Proxy Generato <small style="color:var(--muted)">(modifica diretta possibile)</small></label>
+        <input type="text" id="sys-proxy-url" placeholder="Seleziona protocollo, host e porta sopra..." oninput="parseProxyUrl()">
+      </div>
+
+      <!-- Test Button & Status -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <button type="button" class="btn btn-primary" style="font-size:13px; padding:6px 18px;"
+          id="sysnet-test-btn" onclick="runProxyTest()">🧪 Testa Connessione</button>
+        <span id="sysnet-test-spinner" style="display:none; color:var(--muted); font-size:13px;">⏳ Test in corso...</span>
+      </div>
+
+      <!-- Proxy Location Indicator -->
+      <div style="display:flex; align-items:center; gap:8px; font-size:13px; background:#0d0d1a; padding:8px 12px; border-radius:6px; border:1px solid #333; width: fit-content;">
+        <div id="sysnet-status-dot" style="width:10px; height:10px; border-radius:50%; background:#ff6b6b; box-shadow: 0 0 5px #ff6b6b; transition: all 0.3s ease;"></div>
+        <div style="color:#c0c0d0;">Stato: <strong id="sysnet-status-text" style="color:#ff6b6b; transition: color 0.3s ease;">Sconosciuto</strong></div>
+        <div style="color:var(--muted); margin-left:8px;" id="sysnet-status-loc"></div>
+      </div>
+    </div>
+
+    <!-- Live log panel -->
+    <div id="sysnet-log-panel" style="display:none; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;">Log connessione</div>
+      <div id="sysnet-log-output" style="
+        background:#0d0d1a; border:1px solid var(--border,#333); border-radius:6px;
+        padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:12px;
+        max-height:220px; overflow-y:auto; line-height:1.7; color:#c0c0d0;
+      "></div>
+    </div>
+
+    <!-- Quick preset buttons -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px;">Preset rapidi</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
+          onclick="applyProxyPreset('socks5','127.0.0.1','2080')">🔒 SOCKS5 :2080</button>
+        <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
+          onclick="applyProxyPreset('socks5','127.0.0.1','1080')">🔒 SOCKS5 :1080</button>
+        <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
+          onclick="applyProxyPreset('http','127.0.0.1','8080')">🌐 HTTP :8080</button>
+        <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px; background:#422; border-color:#633; color:#f88;"
+          onclick="clearProxy()">✕ Rimuovi Proxy</button>
+      </div>
+    </div>
+
+    <div style="font-size:12px; color:var(--muted); line-height:1.6;">
+      <strong>Nota:</strong> Il proxy viene usato da Zentra internamente. Non è necessaria una VPN di sistema.<br>
+      Salva prima, poi clicca <strong>Testa Connessione</strong> oppure chiedi in chat: <em>"Stato proxy"</em>.
+    </div>
+  </div>
+</div>
+
+<script>
+function updateProxyUrl() {
+  const proto = document.getElementById('sysnet-proto').value;
+  const host  = document.getElementById('sysnet-host').value.trim();
+  const port  = document.getElementById('sysnet-port').value.trim();
+  const user  = document.getElementById('sysnet-user').value.trim();
+  const pass  = document.getElementById('sysnet-pass').value.trim();
+  const urlEl = document.getElementById('sys-proxy-url');
+  if (!proto || !host) { urlEl.value = ''; return; }
+  let auth = '';
+  if (user) auth = pass ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : `${encodeURIComponent(user)}@`;
+  urlEl.value = `${proto}://${auth}${host}${port ? ':'+port : ''}`;
+}
+
+function parseProxyUrl() {
+  const url = document.getElementById('sys-proxy-url').value.trim();
+  if (!url) { clearProxyFields(); return; }
+  try {
+    const m = url.match(/^(\w+):\/\/(?:([^:@]+)?(?::([^@]+))?@)?([^:/]+)(?::(\d+))?/);
+    if (m) {
+      const protoEl = document.getElementById('sysnet-proto');
+      if ([...protoEl.options].some(o => o.value === m[1])) protoEl.value = m[1];
+      document.getElementById('sysnet-user').value = m[2] ? decodeURIComponent(m[2]) : '';
+      document.getElementById('sysnet-pass').value = m[3] ? decodeURIComponent(m[3]) : '';
+      document.getElementById('sysnet-host').value = m[4] || '';
+      document.getElementById('sysnet-port').value = m[5] || '';
+    }
+  } catch(e) {}
+}
+
+function applyProxyPreset(proto, host, port) {
+  document.getElementById('sysnet-proto').value = proto;
+  document.getElementById('sysnet-host').value  = host;
+  document.getElementById('sysnet-port').value  = port;
+  document.getElementById('sysnet-user').value  = '';
+  document.getElementById('sysnet-pass').value  = '';
+  updateProxyUrl();
+}
+
+function clearProxy() {
+  clearProxyFields();
+  document.getElementById('sys-proxy-url').value = '';
+}
+
+function clearProxyFields() {
+  document.getElementById('sysnet-proto').value = '';
+  document.getElementById('sysnet-host').value  = '';
+  document.getElementById('sysnet-port').value  = '';
+  document.getElementById('sysnet-user').value  = '';
+  document.getElementById('sysnet-pass').value  = '';
+}
+
+// Called during populateUI() to restore saved proxy
+function restoreProxyFields(proxyUrl) {
+  const urlEl = document.getElementById('sys-proxy-url');
+  if (urlEl) {
+    urlEl.value = proxyUrl || '';
+    if (proxyUrl) parseProxyUrl();
+  }
+}
+
+let _proxyTestEvt = null;
+function runProxyTest() {
+  const proxyUrl = document.getElementById('sys-proxy-url').value.trim();
+  const logPanel = document.getElementById('sysnet-log-panel');
+  const logOut   = document.getElementById('sysnet-log-output');
+  const spinner  = document.getElementById('sysnet-test-spinner');
+  const btn      = document.getElementById('sysnet-test-btn');
+
+  const dot = document.getElementById('sysnet-status-dot');
+  const txt = document.getElementById('sysnet-status-text');
+  const loc = document.getElementById('sysnet-status-loc');
+
+  // Reset UI
+  logPanel.style.display = 'block';
+  logOut.innerHTML = '';
+  spinner.style.display = 'inline';
+  btn.disabled = true;
+  
+  dot.style.background = '#ffd66b';
+  dot.style.boxShadow = '0 0 5px #ffd66b';
+  txt.style.color = '#ffd66b';
+  txt.textContent = 'Verifica in corso...';
+  loc.innerHTML = '';
+  let proxySuccess = false;
+
+  if (_proxyTestEvt) { _proxyTestEvt.close(); _proxyTestEvt = null; }
+
+  const encoded = encodeURIComponent(proxyUrl);
+  _proxyTestEvt = new EventSource(`/api/sysnet/test-proxy?url=${encoded}`);
+
+  const colors = { OK: '#6ffa88', ERR: '#ff6b6b', WARN: '#ffd66b', DONE: 'var(--muted)', INFO: '#c0c0d0' };
+
+  _proxyTestEvt.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    
+    if (data.level === 'PAYLOAD') {
+        try {
+            const payload = JSON.parse(data.msg);
+            if (payload.status === 'active') {
+                proxySuccess = true;
+                dot.style.background = '#6ffa88';
+                dot.style.boxShadow = '0 0 5px #6ffa88';
+                txt.style.color = '#6ffa88';
+                txt.textContent = 'Attivo';
+                loc.innerHTML = `🌍 IP: <b>${payload.ip}</b> — Regione: <b>${payload.loc}</b>`;
+            }
+        } catch(err) {}
+        return;
+    }
+
+    const color = colors[data.level] || colors.INFO;
+    const line = document.createElement('div');
+    line.innerHTML = `<span style="color:var(--muted);user-select:none;">[${data.ts}]</span> <span style="color:${color}">${escapeHtml(data.msg)}</span>`;
+    logOut.appendChild(line);
+    logOut.scrollTop = logOut.scrollHeight;
+
+    if (data.level === 'DONE') {
+      _proxyTestEvt.close();
+      _proxyTestEvt = null;
+      spinner.style.display = 'none';
+      btn.disabled = false;
+      
+      if (!proxySuccess) {
+          dot.style.background = '#ff6b6b';
+          dot.style.boxShadow = '0 0 5px #ff6b6b';
+          txt.style.color = '#ff6b6b';
+          txt.textContent = 'Inattivo / Fallito';
+      }
+    }
+  };
+
+  _proxyTestEvt.onerror = () => {
+    const line = document.createElement('div');
+    line.innerHTML = `<span style="color:#ff6b6b">❌ Connessione SSE interrotta.</span>`;
+    logOut.appendChild(line);
+    spinner.style.display = 'none';
+    btn.disabled = false;
+    dot.style.background = '#ff6b6b';
+    dot.style.boxShadow = '0 0 5px #ff6b6b';
+    txt.style.color = '#ff6b6b';
+    txt.textContent = 'Errore Connessione';
+    if (_proxyTestEvt) { _proxyTestEvt.close(); _proxyTestEvt = null; }
+  };
+}
+</script>

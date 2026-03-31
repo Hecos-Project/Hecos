@@ -45,9 +45,10 @@ class ImageGenTools:
 
             # Also check .env for provider-specific key if not in config_media.json
             env_map = {
-                "gemini":    "GEMINI_API_KEY",
-                "openai":    "OPENAI_API_KEY",
-                "stability": "STABILITY_API_KEY",
+                "gemini":        "GEMINI_API_KEY",
+                "gemini_native": "GEMINI_API_KEY",
+                "openai":        "OPENAI_API_KEY",
+                "stability":     "STABILITY_API_KEY",
             }
             if not api_key and provider in env_map:
                 api_key = os.environ.get(env_map[provider], "").strip()

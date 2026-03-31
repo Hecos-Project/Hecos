@@ -38,8 +38,14 @@ def _save_image_bytes(data: bytes, ext: str = "jpg") -> str:
         f.write(data)
     return filename
 
-def _get_proxies() -> dict:
-    """Read proxy configuration from SYS_NET plugin settings."""
+def _get_proxies(provider: str = "") -> dict:
+    """
+    Read proxy configuration from SYS_NET plugin settings.
+    Bypass proxy for free APIs (Pollinations/Airforce) to avoid timeouts over Tor.
+    """
+    if provider in ["pollinations", "airforce"]:
+        return {}
+        
     try:
         from app.config import ConfigManager
         cfg = ConfigManager()
@@ -100,7 +106,7 @@ class PollinationsProvider:
         """Fetch model list from Pollinations API dynamically."""
         try:
             import requests
-            r = requests.get(PollinationsProvider.MODELS_URL, timeout=5, proxies=_get_proxies())
+            r = requests.get(PollinationsProvider.MODELS_URL, timeout=5, proxies=_get_proxies(PollinationsProvider.NAME))
             if r.status_code == 200:
                 data = r.json()
                 # API returns a list of model names or dicts
@@ -129,7 +135,7 @@ class PollinationsProvider:
         if api_key and len(api_key) > 20:
             headers["Authorization"] = f"Bearer {api_key}"
 
-        r = requests.get(url, headers=headers, timeout=30, proxies=_get_proxies())
+        r = requests.get(url, headers=headers, timeout=30, proxies=_get_proxies(PollinationsProvider.NAME))
         _log_debug(f"[Pollinations] HTTP {r.status_code}, bytes={len(r.content)}")
 
         if r.status_code != 200:
@@ -147,7 +153,7 @@ class GeminiProvider:
 
     @staticmethod
     def get_models() -> list:
-        return ["imagen-3.0-generate-002", "imagen-4.0"]
+        return ["imagen-3.0-generate-001", "imagen-4.0"]
 
     @staticmethod
     def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
@@ -167,7 +173,10 @@ class GeminiProvider:
             # Ensure a valid Gemini image model
             # (If user forgot to refresh models in UI and 'stable-image-core' is still selected)
             if "imagen" not in model:
-                model = "imagen-3.0-generate-002"
+                model = "imagen-3.0-generate-001"
+            
+            if model == "imagen-3.0-generate-002":
+                model = "imagen-3.0-generate-001"
 
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:predict?key={api_key}"
             
@@ -203,6 +212,71 @@ class GeminiProvider:
 
         except Exception as e:
             raise Exception(f"Gemini API Error: {e}")
+
+
+# ── 2b. Google Gemini Native (generateContent with image modality) ─────────────
+
+class GeminiNativeProvider:
+    """
+    Uses the standard Gemini generateContent API with responseModalities: ["IMAGE"].
+    Works with a standard AI Studio API key — no Vertex AI needed.
+    Supported models: gemini-2.0-flash-preview-image-generation, etc.
+    """
+    NAME = "gemini_native"
+
+    @staticmethod
+    def get_models() -> list:
+        return [
+            "gemini-2.0-flash-preview-image-generation",
+            "gemini-2.0-flash-exp-image-generation",
+        ]
+
+    @staticmethod
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+        """Generate image via Gemini generateContent with IMAGE modality."""
+        if not api_key:
+            api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+        if not api_key:
+            raise Exception("Gemini API key not set. Add GEMINI_API_KEY to .env")
+
+        import requests
+        import base64
+
+        eng_prompt = _ensure_english_prompt(prompt)
+        _log_debug(f"[GeminiNative] model={model} prompt={eng_prompt[:60]}")
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": eng_prompt}]}],
+            "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}
+        }
+        headers = {"Content-Type": "application/json"}
+
+        r = requests.post(url, json=payload, headers=headers, timeout=60, proxies=_get_proxies())
+        _log_debug(f"[GeminiNative] HTTP {r.status_code}, bytes={len(r.content)}")
+
+        if r.status_code != 200:
+            try:
+                err_msg = r.json().get("error", {}).get("message", r.text[:200])
+            except Exception:
+                err_msg = r.text[:200]
+            raise Exception(f"GeminiNative HTTP {r.status_code}: {err_msg}")
+
+        data = r.json()
+        # Parse response: image data is in parts with inlineData
+        try:
+            candidates = data.get("candidates", [])
+            for candidate in candidates:
+                for part in candidate.get("content", {}).get("parts", []):
+                    inline = part.get("inlineData", {})
+                    if inline.get("mimeType", "").startswith("image/"):
+                        img_bytes = base64.b64decode(inline["data"])
+                        ext = inline["mimeType"].split("/")[-1].replace("jpeg", "jpg")
+                        return _save_image_bytes(img_bytes, ext)
+        except Exception as parse_err:
+            raise Exception(f"GeminiNative response parse error: {parse_err}")
+
+        raise Exception("GeminiNative: nessuna immagine trovata nella risposta")
 
 
 # ── 3. OpenAI DALL-E ──────────────────────────────────────────────────────────
@@ -345,7 +419,7 @@ class AirforceProvider:
         _log_debug(f"[Airforce] URL: {url}")
         
         headers = {"User-Agent": "Mozilla/5.0"}
-        r = requests.get(url, headers=headers, timeout=45, proxies=_get_proxies())
+        r = requests.get(url, headers=headers, timeout=45, proxies=_get_proxies(AirforceProvider.NAME))
         
         if r.status_code != 200:
             raise Exception(f"Airforce HTTP {r.status_code}")
@@ -358,11 +432,12 @@ class AirforceProvider:
 # ── Registry & Engine ─────────────────────────────────────────────────────────
 
 PROVIDERS = {
-    "pollinations": PollinationsProvider,
-    "gemini":       GeminiProvider,
-    "openai":       OpenAIProvider,
-    "stability":    StabilityProvider,
-    "airforce":     AirforceProvider,
+    "pollinations":   PollinationsProvider,
+    "gemini":         GeminiProvider,
+    "gemini_native":  GeminiNativeProvider,
+    "openai":         OpenAIProvider,
+    "stability":      StabilityProvider,
+    "airforce":       AirforceProvider,
 }
 
 

@@ -39,16 +39,23 @@ class SysNetTools:
 
     def __init__(self):
         self.tag = "SYS_NET"
-        self.desc = "Strumenti di rete avanzati: IP, Ping, Mappatura LAN, VPN/DNS e Proxy."
+        self.desc = "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS."
         self.status = "Online"
         
         self.config_schema = {
             "proxy_url": {
                 "type": "str",
                 "default": "",
-                "description": "Indirizzo Proxy (es. socks5://127.0.0.1:2080 o http://ip:port). Lascia vuoto per non usare Nessun Proxy."
+                "description": "URL completo del Proxy (es. socks5://127.0.0.1:2080 o http://ip:port). Lascia vuoto per non usare nessun proxy."
             }
         }
+
+    def _get_proxy_url(self) -> str:
+        """Helper: returns the configured proxy_url from SYS_NET settings."""
+        try:
+            return ConfigManager().get_plugin_config(self.tag, "proxy_url", "").strip()
+        except:
+            return ""
 
     # --- PHASE 1: NETWORK AWARENESS (READING) ---
 
@@ -60,14 +67,74 @@ class SysNetTools:
         logger.debug(f"PLUGIN_{self.tag}", "Fetching public IP...")
         try:
             import urllib.request
-            # Fast, reliable, no key required
             req = urllib.request.Request("https://api.ipify.org")
             with urllib.request.urlopen(req, timeout=5) as response:
                 ip = response.read().decode("utf-8")
-                return f"My current public IP address is: {ip}"
+                return f"Il mio indirizzo IP pubblico attuale è: {ip}"
         except Exception as e:
             logger.error(f"Failed to fetch public IP: {e}")
-            return f"Error fetching public IP: {e}"
+            return f"Errore nel recuperare l'IP pubblico: {e}"
+
+    def get_proxy_status(self) -> str:
+        """
+        Reports the current proxy configuration status in Zentra, including the URL and whether it is active.
+        Also verifies the live outgoing IP with and without the proxy to confirm if it is working.
+        """
+        proxy_url = self._get_proxy_url()
+        logger.debug(f"PLUGIN_{self.tag}", f"Checking proxy status: {proxy_url!r}")
+
+        if not proxy_url:
+            # Try to get direct IP for reference
+            try:
+                import urllib.request
+                ip = urllib.request.urlopen("https://api.ipify.org", timeout=5).read().decode()
+            except:
+                ip = "(non disponibile)"
+            return (
+                f"**Stato Proxy Zentra: DISATTIVO** ❌\n"
+                f"Nessun proxy configurato in Zentra. Le richieste usano la connessione diretta.\n"
+                f"IP pubblico corrente (connessione diretta): `{ip}`\n\n"
+                f"Per attivare un proxy, vai su Impostazioni → Sys Net e inserisci un URL proxy."
+            )
+
+        # Parse the proxy URL for display
+        try:
+            import re
+            m = re.match(r'^(\w+)://(?:[^@]+@)?([^:/]+):(\d+)$', proxy_url)
+            if m:
+                proto, host, port = m.group(1), m.group(2), m.group(3)
+                proxy_display = f"{proto}://{host}:{port}"
+            else:
+                proxy_display = proxy_url
+        except:
+            proxy_display = proxy_url
+
+        # Try to reach ipify through the configured proxy
+        try:
+            import requests
+            proxies = {"http": proxy_url, "https": proxy_url}
+            r = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=10)
+            if r.status_code == 200:
+                ip_via_proxy = r.json().get('ip', 'N/A')
+                return (
+                    f"**Stato Proxy Zentra: ATTIVO** ✅\n"
+                    f"Proxy configurato: `{proxy_display}`\n"
+                    f"IP pubblico in uscita (via proxy): `{ip_via_proxy}`\n"
+                    f"Il proxy funziona correttamente. Gemini e altri provider IA utilizzeranno questo IP."
+                )
+            else:
+                return (
+                    f"**Stato Proxy Zentra: ERRORE** ⚠️\n"
+                    f"Proxy configurato: `{proxy_display}`\n"
+                    f"Il proxy ha risposto con codice HTTP {r.status_code}. Verificare l'indirizzo."
+                )
+        except Exception as e:
+            return (
+                f"**Stato Proxy Zentra: IRRAGGIUNGIBILE** ❌\n"
+                f"Proxy configurato: `{proxy_display}`\n"
+                f"Impossibile connettersi al proxy. Dettaglio errore: {e}\n"
+                f"Verificare che il servizio proxy sia avviato e l'indirizzo sia corretto."
+            )
 
     def get_network_info(self) -> str:
         """
@@ -102,32 +169,10 @@ class SysNetTools:
 
     def test_proxy(self) -> str:
         """
-        Tests the configured Proxy by attempting to reach an external service an reports the IP.
-        Useful to verify if the proxy configuration bypasses blocks successfully.
+        Tests the configured Proxy by attempting to reach an external service and reports the visible IP.
+        Useful to verify if the proxy configuration bypasses geographic blocks successfully.
         """
-        cfg = ConfigManager()
-        proxy_url = cfg.get_plugin_config(self.tag, "proxy_url", "").strip()
-        
-        if not proxy_url:
-            return "Nessun proxy configurato in Zentra. La richiesta di test usera' la connessione standard."
-            
-        logger.debug(f"PLUGIN_{self.tag}", f"Testing proxy: {proxy_url}")
-        try:
-            import requests
-            proxies = {
-                "http": proxy_url,
-                "https": proxy_url
-            }
-            # Test connectivity and get IP through proxy
-            r = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=10)
-            if r.status_code == 200:
-                ip_data = r.json()
-                return f"SUCCESS: Il Proxy funziona correttamente! L'IP in uscita registrato e': {ip_data.get('ip')}"
-            else:
-                return f"ATTENZIONE: Il proxy ha risposto con codice {r.status_code}."
-        except Exception as e:
-            logger.error(f"Failed to test proxy: {e}")
-            return f"ERRORE: Impossibile connettersi al proxy '{proxy_url}'. Dettagli: {e}"
+        return self.get_proxy_status()
 
     def ping_test(self, target: str) -> str:
         """
@@ -239,5 +284,27 @@ def status():
     return tools.status
 
 def execute(comando: str) -> str:
-    # Legacy wrapper if needed (we rely on native Function Calling API via get_network_info etc)
-    return f"Errore: Usa i Tools nativi per Sys_Net (es. get_network_info)."
+    """Compatibilità legacy (tag-based): smista comandi testuali ai nuovi metodi."""
+    c = comando.strip()
+    c_lower = c.lower()
+
+    if c_lower in ("get_public_ip", "ip", "public_ip", "mio_ip"):
+        return tools.get_public_ip()
+    elif c_lower in ("get_proxy_status", "proxy_status", "stato_proxy", "test_proxy", "testa_proxy", "testa_connessione_proxy"):
+        return tools.get_proxy_status()
+    elif c_lower in ("get_network_info", "network_info", "rete", "network"):
+        return tools.get_network_info()
+    elif c_lower in ("scan_local_network", "scan", "scan_lan", "arp", "scansione"):
+        return tools.scan_local_network()
+    elif c_lower.startswith("ping:") or c_lower.startswith("ping_test:"):
+        target = c.split(":", 1)[1].strip()
+        return tools.ping_test(target)
+    elif c_lower.startswith("set_dns:"):
+        parts = c.split(":", 1)[1].strip().split(",")
+        primary = parts[0].strip() if parts else ""
+        secondary = parts[1].strip() if len(parts) > 1 else ""
+        return tools.set_dns_servers(primary, secondary)
+    elif c_lower in ("reset_dns", "dhcp_dns"):
+        return tools.reset_dns()
+
+    return f"Errore: Comando '{comando}' non riconosciuto nel plugin {tools.tag}. Usa i Function Tools nativi."

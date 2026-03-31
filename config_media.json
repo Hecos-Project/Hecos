@@ -1,8 +1,8 @@
 {
     "image_gen": {
         "enabled": true,
-        "provider": "airforce",
-        "model": "flux",
+        "provider": "pollinations",
+        "model": "sana",
         "width": 1024,
         "height": 1024,
         "nologo": true,

@@ -215,7 +215,11 @@ function populateUI() {
     setVal('sys-language', c.language || 'en');
 
     const sysNet = (c.plugins || {}).SYS_NET || {};
-    setVal('sys-proxy-url', sysNet.proxy_url || '');
+    if (typeof restoreProxyFields === 'function') {
+      restoreProxyFields(sysNet.proxy_url || '');
+    } else {
+      setVal('sys-proxy-url', sysNet.proxy_url || '');
+    }
 
     const cog = c.cognition || {};
     setCheck('cog-memory-enabled', cog.memory_enabled ?? true);
