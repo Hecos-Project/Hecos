@@ -15,7 +15,7 @@
       <label>Input (Listening) Routing</label>
       <select id="stt-source">
          <option value="system">PC Microphone (Local)</option>
-         <option value="web">Web Browser / API</option>
+         <option value="web">Web Browser / API (In Sviluppo)</option>
       </select>
     </div>
     <div class="field" style="margin-top:10px;">
@@ -25,7 +25,22 @@
          <option value="web">Web Browser Audio</option>
       </select>
     </div>
+    <div class="field" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+      <label style="display:flex; align-items:center; gap:6px;">
+        🔀 Modalità Audio
+        <span style="font-size:11px; color:var(--muted); font-weight:400;">(dove Zentra ascolta e parla)</span>
+      </label>
+      <select id="audio-mode" style="margin-top:6px;">
+         <option value="console">Console — Mic e altoparlanti PC</option>
+         <option value="web">Web — Browser audio</option>
+         <option value="auto">Auto — rileva in base a cosa è aperto</option>
+      </select>
+      <p style="font-size:11px; color:var(--muted); margin-top:5px;">
+        In modalità <strong>Auto</strong>, il sistema usa console se la WebUI non è in primo piano, e browser se lo è.
+      </p>
+    </div>
   </div>
+
   
   <div class="card">
     <div class="card-title">Audio Devices</div>

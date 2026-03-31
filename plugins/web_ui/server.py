@@ -165,7 +165,7 @@ if __name__ == "__main__":
     sm = StateManager(
         initial_voice_status=acfg.get('voice_status', True),
         initial_listening_status=acfg.get('listening_status', True),
-        initial_audio_mode=cfg.get('audio_mode', default='auto')
+        initial_audio_mode=acfg.get('audio_mode', 'auto')
     )
     sm.push_to_talk    = acfg.get('push_to_talk', False)
     sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
@@ -177,6 +177,20 @@ if __name__ == "__main__":
     logger.info("[WEB] Starting standalone audio engine...")
     audio_th = AscoltoThread(sm)
     audio_th.start()
+
+    def standalone_voice_poller():
+        """Polls for detected voice commands in standalone mode and pushes them to WebUI clients."""
+        while True:
+            if sm and sm.detected_voice_command:
+                cmd = sm.detected_voice_command
+                sm.detected_voice_command = None
+                logger.info(f"[WEB] Dispatched standalone voice command: '{cmd}'")
+                sm.add_event("voice_detected", {"text": cmd, "standalone": True})
+            import time
+            time.sleep(0.2)
+
+    import threading
+    threading.Thread(target=standalone_voice_poller, daemon=True).start()
 
     def is_webui_already_open(root_dir):
         """Check if a WebUI tab is already active via heartbeat file."""

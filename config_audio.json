@@ -1,8 +1,8 @@
 {
     "output_device_index": 4,
     "output_device_name": "Microsoft Sound Mapper - Output",
-    "input_device_index": 0,
-    "input_device_name": "Microsoft Sound Mapper - Input",
+    "input_device_index": 1,
+    "input_device_name": "Microfono (Realtek High Definit",
     "auto_select": false,
     "test_on_startup": true,
     "fallback_on_error": true,
@@ -15,12 +15,13 @@
     "noise_scale": 0.817,
     "noise_w": 0.9,
     "sentence_silence": 0.1,
-    "listening_status": true,
+    "listening_status": false,
     "energy_threshold": 450,
     "silence_timeout": 5,
     "phrase_limit": 15,
-    "push_to_talk": true,
+    "push_to_talk": false,
     "ptt_hotkey": "ctrl+shift",
     "stt_source": "system",
-    "tts_destination": "system"
+    "tts_destination": "system",
+    "audio_mode": "console"
 }

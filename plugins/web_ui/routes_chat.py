@@ -159,9 +159,9 @@ def _maybe_generate_tts(text: str, cfg_mgr):
     Generate a WAV file via Piper for web playback.
 
     Logic:
-      - audio_mode == "console"  → skip (console handles audio, web stays silent)
-      - audio_mode == "web"      → always generate for web
-      - audio_mode == "auto"     → generate for web if voice_status is ON
+      - tts_destination == "system" → play via PC speakers (system audio)
+      - tts_destination == "web"    → generate WAV file for browser playback
+      - voice_status == False       → skip TTS entirely
     """
     global _last_audio_path
     try:
@@ -173,11 +173,10 @@ def _maybe_generate_tts(text: str, cfg_mgr):
         
         if tts_dest == "system":
             from core.audio import voice
-            # Use a thread to avoid blocking the chat stream
             import threading
             _chat_log.info(f"[Chat] Redirecting TTS to PC speakers: {text[:30]}...")
             threading.Thread(target=voice.speak, args=(text,), daemon=True).start()
-            return "system" # notify UI to show Stop button
+            return "system"  # notify UI to show Stop button
             
         if tts_dest != "web":
             return None                     # Not intended for web
@@ -194,11 +193,8 @@ def _maybe_generate_tts(text: str, cfg_mgr):
 
     except Exception as e:
         _chat_log.debug(f"[Chat] TTS error: {e}")
-        return False
+        return None
 
-    except Exception as e:
-        _chat_log.debug(f"[Chat] TTS error: {e}")
-        return False
 
 
 def init_chat_routes(app, cfg_mgr, root_dir: str, logger):

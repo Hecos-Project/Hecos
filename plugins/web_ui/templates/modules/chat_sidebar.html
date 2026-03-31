@@ -39,7 +39,7 @@
     <div class="mode-label">INPUT ROUTING</div>
     <select class="mode-selector" id="stt-source-select" onchange="setAudioRouting('stt_source', this.value)" title="Choose where Zentra listens">
       <option value="system">🖥️ PC Mic (Local)</option>
-      <option value="web">🌐 Web Browser</option>
+      <option value="web">🌐 Web Browser (In Sviluppo)</option>
     </select>
     <div class="mode-label" style="margin-top:8px;">OUTPUT ROUTING</div>
     <select class="mode-selector" id="tts-dest-select" onchange="setAudioRouting('tts_destination', this.value)" title="Choose where Zentra speaks">
@@ -49,7 +49,7 @@
   </div>
 
   <div class="sidebar-section">
-    <div class="sidebar-label">{{ t('webui_chat_nav') }}</div>
+    <div class="sidebar-label">{{ t('webui_nav_chat') }}</div>
     <button class="sidebar-btn active" onclick="clearChat()"><span class="icon">💬</span> {{ t('webui_chat_new') }}</button>
   </div>
   <div class="sidebar-section">

@@ -54,8 +54,8 @@ class ZentraApplication:
         ptt   = acfg.get('push_to_talk', False)
         hk    = acfg.get('ptt_hotkey', 'ctrl+shift')
         
-        # Audio mode is legacy and still in config.json (root)
-        am = self.config_manager.config.get('audio_mode', 'auto')
+        # audio_mode is now stored in config_audio.json
+        am = acfg.get('audio_mode', 'auto')
         
         self.state_manager = StateManager(
             initial_voice_status=cv, 

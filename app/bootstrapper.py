@@ -46,13 +46,7 @@ class SystemBootstrapper:
             logger.warning("APP", f"Could not inject state_manager into WebUI: {_e}")
         
         # Synchronize list of available personalities in config
-        personality_files = interface.list_personalities()
-        if personality_files:
-            personality_dict = {str(i+1): name for i, name in enumerate(personality_files)}
-            current_personalities = self.config_manager.get('ai', 'available_personalities')
-            if personality_dict != current_personalities:
-                self.config_manager.set(personality_dict, 'ai', 'available_personalities')
-                self.config_manager.save()
+        self.config_manager.sync_available_personalities()
         
         config = self.config_manager.config
         self.state_manager.system_status = translator.t("diagnostics")

@@ -36,6 +36,14 @@ function _applyMicState(on) {
       chip.textContent = '🎤 MIC: ' + label;
       chip.className   = 'topbar-chip ' + (on ? 'on' : 'off');
   }
+  // If MIC is turned OFF, also reset PTT state visually
+  if (!on) {
+    _applyPTTState(false);
+    // Gray out PTT button to signal it's unavailable
+    if (pttBtn) pttBtn.title = 'Abilita prima il MIC per usare PTT';
+  } else {
+    if (pttBtn) pttBtn.title = 'Toggle Push-To-Talk (F8)';
+  }
 }
 
 function _applyTTSState(on) {
@@ -88,62 +96,72 @@ function _applyRoutingState(stt, tts) {
 async function toggleMic() {
   try {
     const url = window.location.origin + '/api/audio/toggle/mic';
-    console.log("[DEBUG-UI] Toggling Mic via:", url);
     const r = await fetch(url, {method:'POST'});
     if (!r.ok) {
-        console.error("[DEBUG-UI] Mic toggle HTTP Error:", r.status);
+        console.error('[DEBUG-UI] Mic toggle HTTP Error:', r.status);
         return;
     }
     const data = await r.json();
-    console.log("[DEBUG-UI] Mic toggle response:", data);
     if (data.ok) {
         _applyMicState(data.listening_status);
+        // If backend auto-disabled PTT because MIC went OFF
+        if (data.ptt_forced_off) {
+            _applyPTTState(false);
+            currentPTTOn = false;
+        }
     }
-  } catch(e) { 
-    console.error('[DEBUG-UI] toggleMic exception:', e); 
+  } catch(e) {
+    console.error('[DEBUG-UI] toggleMic exception:', e);
   }
 }
 
 async function toggleTTS() {
   try {
     const url = window.location.origin + '/api/audio/toggle/tts';
-    console.log("[DEBUG-UI] Toggling TTS via:", url);
     const r = await fetch(url, {method:'POST'});
     if (!r.ok) {
-        console.error("[DEBUG-UI] TTS toggle HTTP Error:", r.status);
+        console.error('[DEBUG-UI] TTS toggle HTTP Error:', r.status);
         return;
     }
     const data = await r.json();
-    console.log("[DEBUG-UI] TTS toggle response:", data);
     if (data.ok) {
         _applyTTSState(data.voice_status);
-        if (!data.voice_status) stopVoice(); 
+        if (!data.voice_status) stopVoice();
     }
-  } catch(e) { 
+  } catch(e) {
     console.error('[DEBUG-UI] toggleTTS exception:', e);
   }
 }
 
 async function togglePTT() {
+  // Guard: PTT requires MIC to be ON
+  if (!currentMicOn) {
+    if (window.showToast) showToast('🎤 Abilita prima il MIC per usare PTT');
+    else console.warn('[Audio] PTT blocked: MIC is OFF');
+    return;
+  }
   try {
     const url = window.location.origin + '/api/audio/toggle/ptt';
-    console.log("[DEBUG-UI] Toggling PTT via:", url);
     const r = await fetch(url, {method:'POST'});
-    if (!r.ok) {
-        console.error("[DEBUG-UI] PTT toggle HTTP Error:", r.status);
-        return;
-    }
     const data = await r.json();
-    console.log("[DEBUG-UI] PTT toggle response:", data);
-    if (data.ok) {
+    if (r.ok && data.ok) {
         _applyPTTState(data.push_to_talk);
+    } else {
+        // Backend rejected (e.g. MIC went OFF between check and API call)
+        const msg = data.error || 'PTT non disponibile';
+        if (window.showToast) showToast('⚠️ ' + msg);
+        _applyPTTState(false);
     }
-  } catch(e) { 
+  } catch(e) {
     console.error('[DEBUG-UI] togglePTT exception:', e);
   }
 }
 
 async function setAudioRouting(key, val) {
+  if (key === 'stt_source' && val === 'web') {
+    if (window.showToast) showToast('⚠️ L\'ascolto da browser è in sviluppo. Il MIC di sistema verrà silenziato.', 'warn');
+    else console.warn('[Audio] Web STT selected (In Sviluppo). System Mic is now ignored.');
+  }
   try {
     const payload = {};
     payload[key] = val;
@@ -483,19 +501,26 @@ function initEvents() {
     if (ev.type === 'voice_detected' && ev.text) {
       console.log("[Audio] Voice command received:", ev.text);
       hideWelcome();
-      // Render user text immediately. DO NOT call `startPrompt` as the Console is already processing it.
-      addBubble('user', ev.text);
       
-      // Create a temporary AI loading bubble
-      const { bubble: aiBubble } = addBubble('ai', '', 'ai-live-'+Date.now());
-      aiBubble.innerHTML = '<span class="cursor"></span>';
-      window._liveBackendAiBubble = aiBubble;
-      
-      // Lock input + show stop button so user knows something is running
-      isStreaming = true;
-      if (sendBtn) sendBtn.disabled = true;
-      showStopVoiceBtn(true);
-      if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+      if (ev.standalone) {
+          // In standalone mode, the frontend must orchestrate generation
+          // This will render the user bubble, lock UI, and call /api/chat
+          sendInternalMessage(ev.text);
+      } else {
+          // Native Console system is already processing it, just show the bubbles
+          addBubble('user', ev.text);
+          
+          // Create a temporary AI loading bubble
+          const { bubble: aiBubble } = addBubble('ai', '', 'ai-live-'+Date.now());
+          aiBubble.innerHTML = '<span class="cursor"></span>';
+          window._liveBackendAiBubble = aiBubble;
+          
+          // Lock input + show stop button so user knows something is running
+          isStreaming = true;
+          if (sendBtn) sendBtn.disabled = true;
+          showStopVoiceBtn(true);
+          if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+      }
 
     } else if (ev.type === 'processing_start') {
       hideWelcome();

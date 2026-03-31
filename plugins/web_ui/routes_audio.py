@@ -14,17 +14,13 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def stop_audio():
         """Stop server-side TTS playback and generation."""
         try:
-            # Stop playback and system-routing generation
             from core.audio.voice import stop_voice
             stop_voice()
-            
-            # Stop web-routing generation
             try:
                 from plugins.web_ui.routes_chat import stop_voice_generation
                 stop_voice_generation()
             except Exception as e:
                 logger.debug(f"[WebUI] Could not stop web generation: {e}")
-
             logger.info("[WebUI] TTS stopped via API (ESC).")
             return jsonify({"ok": True})
         except Exception as exc:
@@ -33,29 +29,45 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/api/audio/toggle/mic", methods=["POST"])
     def toggle_mic():
-        """Toggle listening_status — mirrors F4 on the console."""
+        """Toggle listening_status (MIC continuous listening).
+        If MIC is turned OFF, also force PTT off to prevent a silent PTT state."""
         try:
             from core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
-            new_val = not acfg.get("listening_status", True)
-            
-            # Update live StateManager if present
+            new_mic = not acfg.get("listening_status", True)
+
             sm = _sm()
             if sm is not None:
-                sm.listening_status = new_val
-            
-            acfg["listening_status"] = new_val
+                sm.listening_status = new_mic
+
+            acfg["listening_status"] = new_mic
+
+            # Auto-disable PTT when MIC is turned OFF
+            forced_ptt_off = False
+            if not new_mic and acfg.get("push_to_talk", False):
+                acfg["push_to_talk"] = False
+                forced_ptt_off = True
+                if sm is not None:
+                    sm.push_to_talk = False
+                logger.info("[WebUI] PTT auto-disabled because MIC was turned OFF.")
+
             if _save_audio_config(acfg):
-                logger.info(f"[WebUI] MIC toggled to {new_val} and saved.")
+                logger.info(f"[WebUI] MIC toggled to {new_mic} and saved.")
             else:
                 logger.error("[WebUI] Failed to save MIC toggle.")
-            # Keep processore in sync
+
             try:
                 from core.processing import processore
                 processore.configure(cfg_mgr.config)
             except Exception:
                 pass
-            return jsonify({"ok": True, "listening_status": new_val})
+
+            return jsonify({
+                "ok": True,
+                "listening_status": new_mic,
+                "push_to_talk": acfg.get("push_to_talk", False),
+                "ptt_forced_off": forced_ptt_off
+            })
         except Exception as exc:
             logger.error(f"[WebUI] toggle_mic error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
@@ -67,12 +79,11 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             from core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             new_val = not acfg.get("voice_status", True)
-            
-            # Update live StateManager if present
+
             sm = _sm()
             if sm is not None:
                 sm.voice_status = new_val
-            
+
             acfg["voice_status"] = new_val
             if _save_audio_config(acfg):
                 logger.info(f"[WebUI] TTS toggled to {new_val} and saved.")
@@ -90,20 +101,29 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/api/audio/toggle/ptt", methods=["POST"])
     def toggle_ptt():
-        """Toggle push_to_talk flag — mirrors F8 on the console."""
+        """Toggle push_to_talk flag.
+        PTT can only be ENABLED if listening_status (continuous MIC) is also ON.
+        PTT is a sub-mode of mic input, not an independent feature."""
         try:
             sm = _sm()
             from core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
-            current_val = acfg.get("push_to_talk", False)
-            new_val = not current_val
-            
+            current_ptt = acfg.get("push_to_talk", False)
+            new_val = not current_ptt
+
+            # Guard: PTT cannot be enabled if MIC is OFF
+            if new_val and not acfg.get("listening_status", True):
+                return jsonify({
+                    "ok": False,
+                    "error": "Enable MIC (continuous listening) before activating PTT.",
+                    "push_to_talk": False
+                }), 400
+
             acfg["push_to_talk"] = new_val
             if _save_audio_config(acfg):
                 logger.info(f"[WebUI] PTT toggled to {new_val} and saved.")
             else:
                 logger.error("[WebUI] Failed to save PTT toggle.")
-            # Synchronize the live StateManager
             if sm is not None:
                 sm.push_to_talk = new_val
             return jsonify({"ok": True, "push_to_talk": new_val})
@@ -113,7 +133,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/api/audio/mode", methods=["POST"])
     def set_audio_mode():
-        """Set audio_mode: console | web | auto"""
+        """Set audio_mode: console | web | auto — stored in config_audio.json"""
         try:
             data = request.get_json(force=True) or {}
             mode = data.get("mode", "auto")
@@ -122,8 +142,10 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             sm = _sm()
             if sm is not None:
                 sm.audio_mode = mode
-            cfg_mgr.config["audio_mode"] = mode
-            cfg_mgr.save()
+            from core.audio.device_manager import get_audio_config, _save_audio_config
+            acfg = get_audio_config()
+            acfg["audio_mode"] = mode
+            _save_audio_config(acfg)
             return jsonify({"ok": True, "audio_mode": mode})
         except Exception as exc:
             logger.error(f"[WebUI] set_audio_mode error: {exc}")
@@ -135,17 +157,15 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             data = request.get_json(force=True) or {}
             text = data.get("text", "Test di Zentra Core, tutto funziona correttamente.")
-            mode = data.get("mode", "console") # console or web
-            
+            mode = data.get("mode", "console")
+
             from core.audio.device_manager import get_audio_config
             acfg = get_audio_config()
 
             if mode == "console":
                 from core.audio.voice import speak
-                # We force console playback
                 threading.Thread(target=speak, args=(text,), daemon=True).start()
                 return jsonify({"ok": True, "msg": "Speaking on console..."})
-            
             else:
                 from plugins.web_ui.routes_chat import generate_voice_file
                 path = generate_voice_file(text, acfg)
@@ -153,7 +173,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     return jsonify({"ok": True, "url": f"/api/audio?t={int(time.time()*1000)}"})
                 else:
                     return jsonify({"ok": False, "error": "Failed to generate audio file"})
-                    
+
         except Exception as exc:
             logger.error(f"[WebUI] test_audio error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
@@ -229,39 +249,55 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def manage_audio_config():
         """Gets or updates advanced audio settings in config_audio.json."""
         from core.audio.device_manager import get_audio_config, _save_audio_config
-        
+
         if request.method == "GET":
             try:
                 return jsonify({"ok": True, "config": get_audio_config()})
             except Exception as exc:
                 return jsonify({"ok": False, "error": str(exc)}), 500
-                
+
         if request.method == "POST":
             try:
                 data = request.get_json(force=True) or {}
                 cfg = get_audio_config()
-                # Update allowed keys
-                for k in ["voice_status", "listening_status", "piper_path", "onnx_model", 
+                # audio_mode is now stored here in config_audio.json
+                for k in ["voice_status", "listening_status", "piper_path", "onnx_model",
                           "speed", "noise_scale", "noise_w", "sentence_silence",
                           "energy_threshold", "silence_timeout", "phrase_limit",
-                          "input_device_index", "input_device_name", 
+                          "input_device_index", "input_device_name",
                           "output_device_index", "output_device_name",
-                          "stt_source", "tts_destination"]:
+                          "stt_source", "tts_destination", "audio_mode"]:
                     if k in data:
                         cfg[k] = data[k]
-                
+
                 if "input_device_index" in data or "output_device_index" in data:
                     cfg["auto_select"] = False
-                
+
                 _save_audio_config(cfg)
 
-                # Sync with running StateManager to prevent UI status from reverting
+                # Sync with running StateManager
                 sm = _sm()
                 if sm:
                     if "stt_source" in data:
                         sm.stt_source = data["stt_source"]
                     if "tts_destination" in data:
                         sm.tts_destination = data["tts_destination"]
+                    if "audio_mode" in data:
+                        sm.audio_mode = data["audio_mode"]
+                    if "listening_status" in data:
+                        sm.listening_status = data["listening_status"]
+                    if "voice_status" in data:
+                        sm.voice_status = data["voice_status"]
+                    if "push_to_talk" in data:
+                        sm.push_to_talk = data["push_to_talk"]
+
+                # If voice capabilities changed, we must update the processor
+                if any(k in data for k in ["voice_status", "listening_status"]):
+                    try:
+                        from core.processing import processore
+                        processore.configure(cfg_mgr.config)
+                    except Exception:
+                        pass
 
                 return jsonify({"ok": True})
             except Exception as exc:

@@ -72,7 +72,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 acfg = get_audio_config()
                 mic_on     = acfg.get("listening_status", False)
                 tts_on     = acfg.get("voice_status", False)
-                audio_mode = cfg.get("audio_mode", "auto")
+                audio_mode = acfg.get("audio_mode", "auto")
 
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"

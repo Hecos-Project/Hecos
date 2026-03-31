@@ -12,14 +12,8 @@ class PersonalityManager:
 
     def handle_personality(self, input_callback, soul_files=None):
         """Management F3 - Personality selection."""
-        if soul_files is None:
-            soul_files = interface.list_personalities()
-        
-        # Sync config
-        if soul_files:
-            personality_dict = {str(i+1): name for i, name in enumerate(soul_files)}
-            self.config_manager.set(personality_dict, 'ai', 'available_personalities')
-            self.config_manager.save()
+        # Always sync before listing or choosing
+        soul_files = self.config_manager.sync_available_personalities()
             
         if not soul_files:
             print(f"\n\033[91m{translator.t('no_personality_files')}\033[0m")

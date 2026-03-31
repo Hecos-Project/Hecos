@@ -66,7 +66,7 @@
 <div class="save-bar">
   <div id="save-msg"></div>
   <button type="button" class="btn btn-secondary" style="background:#422; border-color:#633; color:#f88;" onclick="rebootSystem()">{{ t("label_reboot_system") }}</button>
-  <button type="button" class="btn btn-secondary" onclick="initAll()">{{ t("webui_chat_btn_clear") }} 🔄</button>
+  <button type="button" class="btn btn-secondary" onclick="initAll()">{{ t("webui_conf_btn_reload") }}</button>
   <button type="button" class="btn btn-primary" onclick="saveConfig()">{{ t("webui_conf_btn_save") }}</button>
 </div>
 
@@ -91,6 +91,28 @@
     plugin_desc_webui: "{{ t('webui_conf_plugin_desc_webui') }}"
   };
 </script>
-<script src="/static/js/index_logic.js"></script>
+<script src="/static/js/config_core.js"></script>
+<script src="/static/js/config_audio_logic.js"></script>
+<script src="/static/js/config_media_logic.js"></script>
+<script src="/static/js/config_system_logic.js"></script>
+
+<script>
+  // Global Initialization Bootstrapper
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof initAll === 'function') initAll();
+    if (typeof refreshStatus === 'function') {
+        refreshStatus();
+        setInterval(refreshStatus, 3000);
+    }
+    // Heartbeat
+    setInterval(() => {
+      fetch('/zentra/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'config' })
+      }).catch(() => {});
+    }, 5000);
+  });
+</script>
 </body>
 </html>

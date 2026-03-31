@@ -205,3 +205,31 @@ class ConfigManager:
             self.config["plugins"][plugin_tag] = {}
         self.config["plugins"][plugin_tag][key] = value
         self.save()
+
+    def sync_available_personalities(self):
+        """
+        Scans the 'personality' folder for .txt files and updates the 
+        'ai.available_personalities' config key if the list has changed.
+        Returns the current list of personality files.
+        """
+        import os
+        import glob
+        folder = "personality"
+        if not os.path.exists(folder):
+            try: os.makedirs(folder)
+            except: pass
+        
+        # Scan for .txt files
+        files = [os.path.basename(f) for f in glob.glob(os.path.join(folder, "*.txt"))]
+        
+        if files:
+            # Create a dictionary { "1": "Pers1.txt", "2": "Pers2.txt", ... }
+            personality_dict = {str(i+1): name for i, name in enumerate(files)}
+            current_personalities = self.get('ai', 'available_personalities')
+            
+            if personality_dict != current_personalities:
+                self.set(personality_dict, 'ai', 'available_personalities')
+                self.save()
+                logger.info("[CONFIG] Personality list synchronized with filesystem.")
+        
+        return files

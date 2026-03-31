@@ -1,17 +1,18 @@
 {
     "ai": {
-        "active_personality": "Zentra_dark_Adult.txt",
+        "active_personality": "Nova_X-01.txt",
         "available_personalities": {
-            "1": "nova_tech.txt",
-            "2": "sebastian_pro.txt",
-            "3": "Zentra.txt",
-            "4": "Zentra_dark.txt",
-            "5": "Zentra_dark_Adult.txt"
+            "1": "Atlas_Man.txt",
+            "2": "MacGyver.txt",
+            "3": "Nova_X-01.txt",
+            "4": "Sebastian_Pro.txt",
+            "5": "Urania_9800_Woman.txt",
+            "6": "Urania_9800_Woman_Adult.txt",
+            "7": "Zentra_Default.txt"
         },
         "save_special_instructions": false,
         "special_instructions": ""
     },
-    "audio_mode": "console",
     "backend": {
         "cloud": {
             "model": "gemini/gemini-2.5-flash",
@@ -188,7 +189,7 @@
         },
         "SYS_NET": {
             "enabled": true,
-            "proxy_url": ""
+            "proxy_url": "socks5://localhost:9150"
         },
         "WEB": {
             "enabled": true,

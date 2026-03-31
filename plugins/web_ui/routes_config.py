@@ -34,12 +34,13 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 from core.i18n.translator import get_translator
                 get_translator().set_language(incoming.get("language", "en"))
                 
-                # Keep state_manager in sync with saved audio_mode and toggles
+                # Keep state_manager in sync with toggles
+                # Note: audio_mode is in config_audio.json, not here
                 sm = _sm()
                 if sm is not None:
-                    sm.audio_mode = incoming.get("audio_mode", "auto")
-                    sm.voice_status = incoming.get("voice", {}).get("voice_status", sm.voice_status)
-                    sm.listening_status = incoming.get("listening", {}).get("listening_status", sm.listening_status)
+                    from core.audio.device_manager import get_audio_config
+                    acfg = get_audio_config()
+                    sm.audio_mode = acfg.get("audio_mode", "auto")
                 
                 # Update the processor and registry at runtime
                 try:
@@ -73,7 +74,11 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         categorized = mm.get_available_models()
         
         ollama_models = categorized.get("Ollama (Local)", [])
-        personalita   = list(cfg.get("ai", {}).get("available_personalities", {}).values())
+        
+        # Ensure config.json is in sync with filesystem personalities before returning
+        cfg_mgr.sync_available_personalities()
+        cfg = cfg_mgr.reload()
+        personalita = list(cfg.get("ai", {}).get("available_personalities", {}).values())
         
         # Flatten cloud models for the simple dropdown
         cloud_models_flat = []
