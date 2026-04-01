@@ -2,6 +2,19 @@
   "domain": "Core Engine",
   "capabilities": [
     {
+      "id": "agentic_loop",
+      "description": "Motore cognitivo autonomo (Chain of Thought). Valuta l'input, seleziona in autonomia i tool necessari, esegue step multipli di ragionamento e formula una risposta finale basata sui risultati.",
+      "risk": "medium",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["core/agent/loop.py", "core/agent/traces.py", "core/agent/prompt.py"],
+        "entry_points": ["core/llm/manager.py -> AgentExecutor"],
+        "config_keys": []
+      },
+      "verification_step": "Richiedere operazioni complesse (es. 'Calcola X o cerca Y') e verificare l'emissione dei Trace di sistema.",
+      "notes": "Sostituisce il vecchio paradigma single-shot. Supporta SSE per streaming in tempo reale dei ragionamenti (Agentic Traces) alla WebUI."
+    },
+    {
       "id": "process_exchange",
       "description": "Core AI interaction cycle: processes text or voice input, retrieves memory, and generates an LLM response.",
       "risk": "low",

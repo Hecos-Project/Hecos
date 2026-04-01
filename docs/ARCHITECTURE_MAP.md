@@ -16,6 +16,7 @@ Zentra-Core/
 │   └── threads.py        # Background asynchronous workers
 │
 ├── core/                 # Low-level core engines
+│   ├── agent/            # Agentic Loop (Chain of Thought, SSE Traces)
 │   ├── audio/            # TTS (Piper) and STT voice systems
 │   ├── i18n/             # Internationalization (IT/EN/ES)
 │   ├── llm/              # Unified AI backends (Ollama, Kobold, Cloud)
@@ -39,7 +40,7 @@ Zentra-Core/
 ├── plugins/              # Modular Plugin System
 │   ├── dashboard/        # Hardware HUD
 │   ├── domotica/         # IoT control
-│   ├── executor/         # Shell execution
+│   ├── executor/         # AST Code Sandbox (Zentra Code Jail)
 │   ├── file_manager/     # OS file operations
 │   ├── help/             # Documentation assistant
 │   ├── image_gen/        # AI Image Generation

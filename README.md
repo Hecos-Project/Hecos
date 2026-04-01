@@ -23,6 +23,8 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.9.9 offe
 ---
 
 ## ✨ Key Features (v0.9.9)
+* 🤖 **Autonomous Agentic Loop** — Zentra can now reason step-by-step (Chain of Thought), dynamically select tools, and solve complex multi-step problems autonomously.
+* 🛡️ **Zentra Code Jail (AST Sandbox)** — A native, highly secure Python sandbox that allows the AI to execute algorithms, math, and data logic safely.
 * 👁️ **Native Vision Support** — Multimodal AI capabilities for Gemini, OpenAI, and Ollama (LLaVA). Analyze images, photos, and screenshots directly in chat.
 * 🎨 **Image Generation Support** — Generate visual content from text prompts using external AI servers (Integrated via Pollinations.ai).
 * 🏗️ **Native WebUI Plugin** — Migrated from a bridge to a core plugin (`plugins/web_ui/`) for maximum performance and stability.

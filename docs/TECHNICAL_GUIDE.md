@@ -18,8 +18,8 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 3. **Vision Processing** (v0.9.9): If images are attached, `client.py` selects the correct **VisionAdapter** (Gemini, OpenAI, or Ollama) to build the multimodal payload.
 4. **Model Resolution**: `LLMManager` determines the best model based on the active backend and specific plugin requirements.
 5. **Inference**: `LiteLLM` unifies the request and calls the local/cloud provider.
-6. **Post-Processing**: `Processor` parses the AI response for **Tool Calls** (Function Calling) or legacy tags.
-7. **Action Stage**: If a tool is detected, the corresponding plugin in `plugins/` is executed.
+6. **Agentic Loop**: The `AgentExecutor` takes control off the prompt. It parses responses for **Tool Calls**, executes plugins (like the `executor` AST python jail), and feeds results back to the LLM in a multi-step "Chain of Thought" loop.
+7. **Streaming Traces**: While reasoning, the agent streams live `agent_trace` UI updates (thought bubbles) back to the browser via Server-Sent Events (SSE).
 8. **Output Stage**: Final text is sanitized by `filtri.py` and sent to the TUI (`interface.py`) and/or the TTS engine (`voice.py`).
 9. **Web Notification & Sync**: Native WebUI (`plugins/web_ui/`) receives the stream via a unified event bus and updates the browser chat. Global configuration changes are synchronized instantly across all interfaces.
 

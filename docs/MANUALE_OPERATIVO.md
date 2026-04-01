@@ -112,4 +112,13 @@ Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://lo
 3. **Loop di Innesco Audio:** Regolare il parametro `Soglia Energia` in **F7 → Ascolto** per calibrare i rumori di fondo ambientali.
 
 ---
+
+## 🤖 9. Agente Autonomo e Sandbox (Code Jail)
+
+Dalla versione 0.9.9 Zentra integra un **Loop Cognitivo (Agentic Loop)**. Questo trasforma il sistema da un semplice chatbot a un agente capace di ragionamento complesso su più step (Chain of Thought).
+
+- **Nuvolette di Pensiero (Live Traces)**: Quando chiedi un'operazione elaborata (es. "Cerca X e riassumilo"), nella WebUI vedrai apparire una nuvoletta animata. Zentra sta elaborando attivamente un piano d'azione, spiegandoti cosa intende fare prima di agire e di risponderti.
+- **Zentra Code Jail (Sandbox)**: Zentra può scrivere frammenti di codice Python al volo ed eseguirli (nella cartella sicura `/workspace/sandbox/`) per risolvere calcoli aritmetici lunghi, costruire algoritmi o manipolare dati complessi con precisione assoluta. Una speciale macchina AST di sicurezza interviene prima dell'esecuzione: se l'IA prova a usare comandi di sistema pericolosi, l'azione viene bloccata all'istante, mantenendo il computer sempre protetto.
+
+---
 *Fine del rapporto documentale v0.9.9.*

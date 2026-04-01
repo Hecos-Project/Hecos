@@ -23,6 +23,8 @@ Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra
 ---
 
 ## ✨ Caratteristiche Principali (v0.9.9)
+* 🤖 **Agente Cognitivo Autonomo** — Zentra ora ragiona step-by-step (Chain of Thought), sceglie dinamicamente gli strumenti e risolve task complessi in autonomia.
+* 🛡️ **Zentra Code Jail (Sandbox AST)** — Un ambiente di esecuzione nativo e isolato che permette all'IA di eseguire calcoli Python, algoritmi e test in totale sicurezza.
 * 👁️ **Supporto Visione Nativa** — Capacità AI multimodali per Gemini, OpenAI e Ollama (LLaVA). Analizza immagini, foto e screenshot direttamente in chat.
 * 🎨 **Generazione Immagini** — Genera contenuti visivi da prompt testuali tramite server IA esterni (Integrato via Pollinations.ai).
 * 🏗️ **Plugin WebUI Nativo** — Migrato da un bridge a un plugin core (`plugins/web_ui/`) per massime prestazioni e stabilità.
