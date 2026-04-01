@@ -39,8 +39,8 @@
 ## 7. First Run
 - Open a terminal in the project folder.
 - Run: `python main.py` (for Terminal UI)
-- Run: `python plugins/web_ui/main.py` or use `ZENTRA_WEB_RUN.bat` (for Native WebUI)
-- If successful, you will see the Zentra terminal interface or the Web browser opening.
+- Run: `python plugins/web_ui/main.py` (for Native WebUI)
+- If successful, you will see the Zentra terminal interface or the Web browser opening at `http://127.0.0.1:7070`.
 
 ---
 

@@ -1,0 +1,174 @@
+{
+  "domain": "Plugins",
+  "capabilities": [
+    {
+      "id": "sys_net",
+      "description": "Strumenti di rete avanzati: tracciamento IP locale e pubblico, mappatura LAN (ARP), latenza (ping) e manipolazione DNS per evasione blocchi regionali.",
+      "risk": "high",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/sys_net/main.py"],
+        "entry_points": ["AI Function Calling tramite get_network_info, set_dns_servers, ecc."],
+        "config_keys": []
+      },
+      "verification_step": "Chiedere: 'Qual è il mio IP pubblico?' o 'Cambia i miei DNS su Google' (dovrebbe richiedere avvio come amministratore).",
+      "notes": "Le funzioni di modifica DNS richiedono privilegi di Amministratore di sistema."
+    },
+    {
+      "id": "web_ui",
+      "description": "Native Browser Interface (localhost:7070) providing Chat and Configuration panels.",
+      "risk": "low",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["plugins/web_ui/server.py", "plugins/web_ui/main.py"],
+        "entry_points": ["FastAPI app on localhost:7070"],
+        "config_keys": ["plugins.WEB_UI.enabled"]
+      },
+      "verification_step": "Navigate to http://127.0.0.1:7070/chat to verify UI loads.",
+      "notes": "Syncs with the Core system state."
+    },
+    {
+      "id": "DASHBOARD_plugin",
+      "description": "Hardware monitoring (GPU VRAM, CPU Load, RAM) and AI backend status verification.",
+      "risk": "low",
+      "available_in": ["cli", "web", "ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/dashboard/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.DASHBOARD.enabled"]
+      },
+      "verification_step": "Ask AI 'Qual è lo stato delle risorse?', verify telemetry response.",
+      "notes": "Essential for system health awareness."
+    },
+    {
+      "id": "IMAGE_GEN_plugin",
+      "description": "Generates AI images from text prompts using Pollinations or Airforce APIs.",
+      "risk": "low",
+      "available_in": ["cli", "web", "ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/image_gen/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.IMAGE_GEN.api_key", "plugins.IMAGE_GEN.enabled"]
+      },
+      "verification_step": "Ask AI 'Genera un'immagine di un gatto', verify file saved in data/images/.",
+      "notes": "Saves results to data/images/."
+    },
+    {
+      "id": "FILE_MANAGER_plugin",
+      "description": "Capability to list, count, and read files from the local filesystem.",
+      "risk": "high",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/file_manager/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.FILE_MANAGER.enabled"]
+      },
+      "verification_step": "Ask AI to read a harmless file, verify output matches file content.",
+      "notes": "Highly sensitive OS access."
+    },
+    {
+      "id": "EXECUTOR_plugin",
+      "description": "Direct execution of shell commands through the AI brain.",
+      "risk": "high",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/executor/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.EXECUTOR.enabled", "plugins.EXECUTOR.auto_execute"]
+      },
+      "verification_step": "Ask AI to run 'echo TEST', verify 'TEST' is logged or spoken.",
+      "notes": "Requires user oversight. Full terminal access."
+    },
+    {
+      "id": "DOMOTICA_plugin",
+      "description": "Smart home device control simulation and status reporting.",
+      "risk": "low",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/domotica/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.DOMOTICA.enabled"]
+      },
+      "verification_step": "Ask AI to turn off the lights, verify JSON simulation response.",
+      "notes": "Currently in integration/simulation phase."
+    },
+    {
+      "id": "MEDIA_plugin",
+      "description": "Hardware volume control and audio mute/unmute functions.",
+      "risk": "low",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/media/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.MEDIA.enabled"]
+      },
+      "verification_step": "Ask AI to mute system volume, verify OS mute state changes.",
+      "notes": "Directly interacts with OS audio mixers."
+    },
+    {
+      "id": "WEBCAM_plugin",
+      "description": "Takes snapshots via the connected webcam for environmental awareness.",
+      "risk": "medium",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/webcam/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.WEBCAM.enabled"]
+      },
+      "verification_step": "Ask AI to take a picture, verify snapshot saved in snapshots/ folder.",
+      "notes": "Accesses hardware peripherals."
+    },
+    {
+      "id": "image_generation",
+      "description": "Generates images from text using Pollinations or Airforce APIs.",
+      "risk": "low",
+      "available_in": ["cli", "web", "ai"],
+      "implementation": {
+        "core_files": ["plugins/image_gen/main.py", "core/media_config.py"],
+        "entry_points": ["plugins/image_gen/main.py -> generate_image"],
+        "config_keys": ["config_media.json -> image_gen"]
+      },
+      "verification_step": "Instruct AI to draw an image or use /image prompt command.",
+      "notes": "Configuration previously in config.json, now isolated in config_media.json."
+    },
+    {
+      "id": "ROLEPLAY_plugin",
+      "description": "Immersive scenario management: loading characters and scenes for AI interaction.",
+      "risk": "low",
+      "available_in": ["ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/roleplay/main.py"],
+        "entry_points": ["AI Plugin Call (Class-based)"],
+        "config_keys": ["plugins.ROLEPLAY.enabled"]
+      },
+      "verification_step": "Ask AI to list default roleplay characters, verify list is accurate.",
+      "notes": "Uses specialized tag routing."
+    },
+    {
+      "id": "SYSTEM_legacy_plugin",
+      "description": "Legacy system tool. Root Access: terminal management, reboot, log diagnostics.",
+      "risk": "high",
+      "available_in": ["cli", "ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/system/main.py"],
+        "entry_points": ["Legacy tag routing for [SYSTEM: ...]"],
+        "config_keys": ["plugins.SYSTEM.enabled"]
+      },
+      "verification_step": "Send [SYSTEM: time] to AI, verify it responds with local time.",
+      "notes": "Commands: time, reboot, terminal, open:<name>, explore:<folder>, shell:<command>."
+    },
+    {
+      "id": "WEB_legacy_plugin",
+      "description": "Legacy web tool. Network access for Google searches and websites.",
+      "risk": "low",
+      "available_in": ["cli", "ai", "plugin"],
+      "implementation": {
+        "core_files": ["plugins/web/main.py"],
+        "entry_points": ["Legacy tag routing for [WEB: ...]"],
+        "config_keys": ["plugins.WEB.enabled"]
+      },
+      "verification_step": "Send [WEB: search:Test] to AI, verify it triggers a browser search.",
+      "notes": "Commands: search:<text>, open:<site>."
+    }
+  ]
+}

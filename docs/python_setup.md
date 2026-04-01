@@ -19,7 +19,7 @@ python -m venv venv
 ```bash
 pip install -r requirements.txt
 ```
-*Note: `psutil` is required for the Single-Instance locking mechanism introduced in v0.9.7.*
+*Note: `psutil` is required for the Single-Instance locking mechanism introduced in v0.9.9.*
 
 ### 4. Optional: Development Dependencies
 ```bash

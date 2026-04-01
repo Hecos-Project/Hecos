@@ -1,4 +1,4 @@
-# Zentra Core Plugin Development Guide (v0.9.8)
+# Zentra Core Plugin Development Guide (v0.9.9)
 
 ## 1. Overview
 Plugins in Zentra Core are modular extensions located in the `plugins/` directory. Each plugin is a self-contained folder that follows a specific structure and interface.

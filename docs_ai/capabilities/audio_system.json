@@ -1,0 +1,44 @@
+{
+  "domain": "Audio System",
+  "capabilities": [
+    {
+      "id": "voice_output_tts",
+      "description": "Text-to-Speech conversion using Piper or System engines. Toggleable output.",
+      "risk": "low",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["core/audio/voice.py", "core/audio/device_manager.py"],
+        "entry_points": ["F5 in app/application.py -> _handle_function_key"],
+        "config_keys": ["voice_status", "tts_destination", "audio_mode"]
+      },
+      "verification_step": "Press F5, check status bar voice indicator toggles ON/OFF.",
+      "notes": "F5 toggle. Can be directed to Local or Web UI."
+    },
+    {
+      "id": "voice_input_stt",
+      "description": "Speech-to-Text conversion using System/Faster-Whisper engines. Toggleable listening.",
+      "risk": "low",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["core/audio/listen.py", "app/threads.py", "core/audio/device_manager.py"],
+        "entry_points": ["F4 in app/application.py -> _handle_function_key"],
+        "config_keys": ["listening_status", "stt_source"]
+      },
+      "verification_step": "Press F4, check status bar mic indicator toggles ON/OFF.",
+      "notes": "F4 toggle. Supports PTT (Push-To-Talk)."
+    },
+    {
+      "id": "push_to_talk",
+      "description": "Manual activation of the microphone via hotkey (Ctrl+Shift) or F8 toggle.",
+      "risk": "low",
+      "available_in": ["cli"],
+      "implementation": {
+        "core_files": ["app/input_handler.py", "core/audio/device_manager.py"],
+        "entry_points": ["F8 in app/application.py -> _handle_function_key", "Ctrl+Shift listener thread"],
+        "config_keys": ["push_to_talk", "ptt_hotkey"]
+      },
+      "verification_step": "Press F8 to enable PTT, verify voice is only captured while holding hotkey.",
+      "notes": "Prevents accidental voice detection."
+    }
+  ]
+}

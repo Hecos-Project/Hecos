@@ -4,7 +4,7 @@ Definizione dei parametri e della struttura del sistema delle capacità.
 
 ## Struttura della Capability (JSON)
 
-Ogni entry in `SYSTEM_CAPABILITIES.json` deve seguire questo schema rigoroso (architettura Blueprints):
+Ogni entry nei file `capabilities/*.json` deve seguire questo schema rigoroso (architettura Blueprints):
 
 ```json
 {

@@ -7,7 +7,7 @@
 **Ogni sessione di lavoro o richiesta di modifica DEVE iniziare con l'esecuzione del PROTOCOLLO ZERO:**
 
 1. **SCANNER:** Eseguire una scansione ricorsiva della cartella `/docs_ai/`.
-2. **SYNC:** Sincronizzare la memoria con `SYSTEM_CAPABILITIES.json`.
+2. **SYNC:** Sincronizzare la memoria con i file in `capabilities/*.json`.
 3. **NO MEMORY:** È vietato procedere basandosi sulla memoria della sessione precedente. La "Verità" risiede solo nei file di documentazione attuali.
 4. **CONTEXT CHECK:** Verificare se l'operazione impatta il Kernel (`main.py`) o un plugin specifico (Blueprints).
 
@@ -26,7 +26,7 @@
 - **Integrità:** Non eliminare funzioni esistenti a meno che non sia richiesto esplicitamente dal Master Context (Deprecazione).
 
 ### 3. Output e Registrazione
-- Ogni nuova funzione deve essere aggiunta a `SYSTEM_CAPABILITIES.json`.
+- Ogni nuova funzione deve essere aggiunta ai file in `capabilities/*.json`.
 - In caso di errori nel codice rilevati durante la scansione, segnalarli immediatamente come "Documentation/Code Mismatch".
 
 ---

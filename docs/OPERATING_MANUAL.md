@@ -1,7 +1,7 @@
 # 📖 OPERATING MANUAL - Zentra Core
 
 *System documentation for the Administrator (Admin).*
-**Version:** 0.9.8 (Centralized Sync & Root Cleanup)
+**Version:** 0.9.9 (Centralized Sync & Root Cleanup)
 
 ---
 
@@ -46,8 +46,8 @@ Zentra's terminal interface is built on an anchored architecture (`DECSTBM Scrol
 
 ## ⚙️ 3. Dynamic O-T-F (On-The-Fly) Configuration
 
-## 💻 Native WebUI (v0.9.8)
-Zentra 0.9.8 features a powerful native web interface accessible at `http://localhost:7070` (by default).
+## 💻 Native WebUI (v0.9.9)
+Zentra 0.9.9 features a powerful native web interface accessible at `http://localhost:7070` (by default).
 - **Real-time Chat**: Experience the AI stream directly in the browser.
 - **Config Dashboard**: Change system settings via a modern GUI with instant synchronization to the core.
 - **Audio Sync**: WebUI audio state is automatically synced with the terminal (F4/F5 status).
@@ -82,9 +82,9 @@ All plugins respond to unified interfaces that export `shell commands` and updat
 
 ---
 
-## 👁️ 5. Vision & Multimodal Interaction (v0.9.8)
+## 👁️ 5. Vision & Multimodal Interaction (v0.9.9)
 
-Zentra 0.9.7 introduces the **Vision Support System**, allowing the AI to "see" and analyze visual data.
+Zentra 0.9.9 introduces the **Vision Support System**, allowing the AI to "see" and analyze visual data.
 - **Image Upload**: Drag & drop files directly into the web chat or paste images from your clipboard (**Ctrl+V**).
 - **Multimodal AI**: Supported backends (Gemini 1.5/2.0, OpenAI GPT-4o, Ollama LLaVA) can describe, reason about, and extract text from images.
 - **Visual Feedback**: Thumbnails are rendered in both your message bubble (sent) and the attachment toolbar (pending).
@@ -98,7 +98,7 @@ Zentra 0.9.7 introduces the **Vision Support System**, allowing the AI to "see" 
 
 ---
 
-## 🎨 7. Image Generation (v0.9.8)
+## 🎨 7. Image Generation (v0.9.9)
 
 Zentra can create visual content using the `IMAGE_GEN` plugin.
 - **How to use**: Simply ask Zentra to "Generate an image of..." or "Draw a...".
@@ -114,4 +114,4 @@ Zentra can create visual content using the `IMAGE_GEN` plugin.
 3. **Audio Trigger Loop:** Adjust the `Energy Threshold` parameter in **F7 → Listening** to calibrate ambient background noise that triggers Zentra into "THINKING" mode without any real input.
 
 ---
-*End of documentation report v0.9.8.*
+*End of documentation report v0.9.9.*

@@ -1,0 +1,57 @@
+{
+  "domain": "AI Management",
+  "capabilities": [
+    {
+      "id": "personality_management",
+      "description": "Dynamic switching between AI 'Souls' or personalities, affecting system prompt and behavior.",
+      "risk": "low",
+      "available_in": ["cli", "web", "ai"],
+      "implementation": {
+        "core_files": ["app/personality_manager.py", "app/config.py", "ui/interface.py", "core/system/plugin_loader.py"],
+        "entry_points": ["F3 in app/application.py -> _handle_f3"],
+        "config_keys": ["ai.active_personality", "ai.available_personalities"]
+      },
+      "verification_step": "Press F3, select a personality, verify config.json updates.",
+      "notes": "Accessible via F3 shortcut in CLI."
+    },
+    {
+      "id": "model_management",
+      "description": "Switching between AI backends (Ollama, Kobold, Cloud) and selecting specific local models.",
+      "risk": "medium",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["app/model_manager.py", "ui/interface.py", "plugins/models/main.py"],
+        "entry_points": ["F2 in app/application.py -> _handle_f2", "MODELS plugin"],
+        "config_keys": ["llm.active_model", "plugins.MODELS.enabled"]
+      },
+      "verification_step": "Press F2, switch model, check if backend connects successfully.",
+      "notes": "Accessible via F2 shortcut in CLI. Impacts performance."
+    },
+    {
+      "id": "special_instructions",
+      "description": "On-the-fly modification of AI behavior using the /istruzione or /instruction commands.",
+      "risk": "low",
+      "available_in": ["cli", "ai"],
+      "implementation": {
+        "core_files": ["app/input_handler.py"],
+        "entry_points": ["app/input_handler.py -> _process_text_input"],
+        "config_keys": ["ai.special_instructions", "ai.save_special_instructions"]
+      },
+      "verification_step": "Type /istruzione test, check if AI follows 'test'.",
+      "notes": "Can be ephemeral (RAM) or persistent."
+    },
+    {
+      "id": "roleplay_mode",
+      "description": "Engages an unstructured roleplay session bypassing tool restrictions.",
+      "risk": "medium",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["plugins/roleplay/main.py"],
+        "entry_points": ["plugins/roleplay/main.py -> manage_mode"],
+        "config_keys": ["plugins.ROLEPLAY.enabled"]
+      },
+      "verification_step": "Enable roleplay via /roleplay on/off command.",
+      "notes": "Alters AI behavior significantly."
+    }
+  ]
+}

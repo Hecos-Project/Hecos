@@ -1,0 +1,109 @@
+{
+  "domain": "Core Engine",
+  "capabilities": [
+    {
+      "id": "process_exchange",
+      "description": "Core AI interaction cycle: processes text or voice input, retrieves memory, and generates an LLM response.",
+      "risk": "low",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["core/processing/processore.py", "app/input_handler.py", "core/llm/manager.py"],
+        "entry_points": ["app/input_handler.py -> handle_keyboard_input / handle_voice_input", "app/application.py -> run"],
+        "config_keys": []
+      },
+      "verification_step": "Submit any prompt via CLI or WebUI and verify the AI responds.",
+      "notes": "Fundamental loop of the system."
+    },
+    {
+      "id": "console_dashboard",
+      "description": "Real-time ASCII terminal interface with hardware telemetry and system status bar.",
+      "risk": "low",
+      "available_in": ["cli"],
+      "implementation": {
+        "core_files": ["ui/interface.py", "ui/graphics.py", "ui/ui_updater.py"],
+        "entry_points": ["app/application.py -> show_complete_ui / show_welcome"],
+        "config_keys": ["system.fast_boot"]
+      },
+      "verification_step": "Run application, check if CLI status bar and header appear correctly.",
+      "notes": "Main interaction point for the user."
+    },
+    {
+      "id": "config_editor",
+      "description": "Standalone GUI and CLI menus for editing detailed system configuration (config.json).",
+      "risk": "medium",
+      "available_in": ["cli"],
+      "implementation": {
+        "core_files": ["ui/config_editor/core.py", "app/config.py"],
+        "entry_points": ["F7 in app/application.py -> _handle_f7"],
+        "config_keys": ["*"]
+      },
+      "verification_step": "Press F7, verify config menu opens, change a value and verify reload.",
+      "notes": "F7 shortcut. Reloads system after save."
+    },
+    {
+      "id": "help_system",
+      "description": "Dynamic documentation system listing active commands and module explanations.",
+      "risk": "low",
+      "available_in": ["cli", "ai"],
+      "implementation": {
+        "core_files": ["core/system/plugin_loader.py", "ui/interface.py", "plugins/help/main.py"],
+        "entry_points": ["F1 in app/application.py -> _handle_f1", "HELP plugin tag"],
+        "config_keys": []
+      },
+      "verification_step": "Press F1, verify dynamic list of all installed plugins appears.",
+      "notes": "F1 shortcut. Reads registry.json."
+    },
+    {
+      "id": "memory_vault",
+      "description": "Access to long-term memory, identity profiles, and chat history. Includes Tabula Rasa protocol.",
+      "risk": "medium",
+      "available_in": ["cli", "web", "ai"],
+      "implementation": {
+        "core_files": ["memory/brain_interface.py", "plugins/memory/main.py"],
+        "entry_points": ["MEMORY plugin commands"],
+        "config_keys": []
+      },
+      "verification_step": "Ask 'Who am I?', verify system reads identity from vault.",
+      "notes": "Resetting memory clears episodic chat databases."
+    },
+    {
+      "id": "reboot_system",
+      "description": "Software-level system reboot to refresh configuration and plugins.",
+      "risk": "medium",
+      "available_in": ["cli", "ai"],
+      "implementation": {
+        "core_files": ["app/application.py", "app/bootstrapper.py", "ZENTRA_RUN.bat"],
+        "entry_points": ["F6 in app/application.py -> _handle_function_key", "SYSTEM plugin -> reboot"],
+        "config_keys": []
+      },
+      "verification_step": "Press F6, verify app exits with code 42 and bat script restarts it.",
+      "notes": "F6 shortcut. Exits with code 42."
+    },
+    {
+      "id": "process_manager",
+      "description": "Process monitoring tool to prevent duplicate instances and manage Zentra threads.",
+      "risk": "medium",
+      "available_in": ["cli"],
+      "implementation": {
+        "core_files": ["zentra_proc_manager.py", "ZENTRA_PROC_MANAGER.bat"],
+        "entry_points": ["Execution of ZENTRA_PROC_MANAGER.bat"],
+        "config_keys": []
+      },
+      "verification_step": "Run process manager bat, verify it lists active main.py pids.",
+      "notes": "Utility for system stability."
+    },
+    {
+      "id": "i18n_support",
+      "description": "Full system internationalization (translations) for English and Italian.",
+      "risk": "low",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["core/i18n/translator.py", "core/i18n/locales/en.json", "core/i18n/locales/it.json"],
+        "entry_points": ["app/application.py -> _initialize"],
+        "config_keys": ["language"]
+      },
+      "verification_step": "Switch language in F7, verify UI prompts change to chosen language.",
+      "notes": "Affects terminal logs, UI labels, and voice responses."
+    }
+  ]
+}

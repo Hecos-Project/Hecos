@@ -1,7 +1,7 @@
 # 📖 MANUALE OPERATIVO - Zentra Core
 
 *Documentazione di sistema per l'Amministratore (Admin).*
-**Versione:** 0.9.8 (Sincro Centralizzata & Pulizia Root)
+**Versione:** 0.9.9 (Sincro Centralizzata & Pulizia Root)
 
 ---
 
@@ -73,9 +73,9 @@ Tutti i plugin rispondono ad interfacce unificate che esportano `comandi shell` 
 
 ---
 
-## 👁️ 5. Visione e Interazione Multimodale (v0.9.8)
+## 👁️ 5. Visione e Interazione Multimodale (v0.9.9)
 
-Zentra 0.9.7 introduce il **Sistema di Supporto Visione**, permettendo all'AI di "vedere" e analizzare dati visivi.
+Zentra 0.9.9 introduce il **Sistema di Supporto Visione**, permettendo all'AI di "vedere" e analizzare dati visivi.
 - **Caricamento Immagini**: Trascina i file direttamente nella chat web o incolla immagini dalla memoria (**Ctrl+V**).
 - **AI Multimodale**: I backend supportati (Gemini 1.5/2.0, OpenAI GPT-4o, Ollama LLaVA) possono descrivere, analizzare e leggere testo dalle immagini.
 - **Feedback Visivo**: Le miniature vengono renderizzate sia nella bolla del tuo messaggio (inviato) che nella barra degli allegati (pendente).
@@ -89,15 +89,15 @@ Zentra 0.9.7 introduce il **Sistema di Supporto Visione**, permettendo all'AI di
 
 ---
 
-## 🎨 7. Generazione Immagini (v0.9.8)
+## 🎨 7. Generazione Immagini (v0.9.9)
 
 Zentra può creare contenuti visivi utilizzando il plugin `IMAGE_GEN`.
 - **Come usarlo**: Chiedi semplicemente a Zentra di "Generare un'immagine di..." o "Disegna un...".
 - **Server Esterni**: Di default utilizza **Pollinations.ai** per una generazione veloce e senza filtri.
 - **Interazione**: L'immagine generata apparirà direttamente in chat con opzioni per il download o lo zoom.
 
-## 💻 WebUI Nativa (v0.9.8)
-Zentra 0.9.8 include una potente interfaccia web nativa accessibile a `http://localhost:7070` (di default).
+## 💻 WebUI Nativa (v0.9.9)
+Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://localhost:7070` (di default).
 - **Chat in Tempo Reale**: Visualizza lo streaming dell'IA direttamente nel browser.
 - **Dashboard Config**: Modifica le impostazioni di sistema tramite una GUI moderna con sincronizzazione istantanea al core.
 - **Sincro Audio**: Lo stato audio della WebUI è automaticamente sincronizzato con il terminale (stato F4/F5).
@@ -112,4 +112,4 @@ Zentra 0.9.8 include una potente interfaccia web nativa accessibile a `http://lo
 3. **Loop di Innesco Audio:** Regolare il parametro `Soglia Energia` in **F7 → Ascolto** per calibrare i rumori di fondo ambientali.
 
 ---
-*Fine del rapporto documentale v0.9.8.*
+*Fine del rapporto documentale v0.9.9.*

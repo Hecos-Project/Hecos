@@ -9,11 +9,11 @@ Questo documento stabilisce le regole d'oro per l'evoluzione e la manutenzione d
 - Ogni modifica deve preservare la retrocompatibilità con la CLI, la WebUI e i Plugin esistenti.
 
 ### 2. Fonte di Verità
-- `SYSTEM_CAPABILITIES.json` è la fonte di verità ufficiale per ciò che il sistema "sa fare".
-- Ogni volta che viene aggiunta una funzione (nuovo plugin, nuova rotta API, nuovo comando CLI), essa **DEVE** essere registrata nel file delle capabilities.
+- I file in `capabilities/*.json` sono la fonte di verità ufficiale per ciò che il sistema "sa fare".
+- Ogni volta che viene aggiunta una funzione (nuovo plugin, nuova rotta API, nuovo comando CLI), essa **DEVE** essere registrata nei file delle capabilities.
 
 ### 3. Allineamento e Mismatch
-- Se durante l'analisi del codice si riscontra una discrepanza tra il codice reale e `SYSTEM_CAPABILITIES.json`, la priorità è segnalare il mismatch e aggiornare la documentazione.
+- Se durante l'analisi del codice si riscontra una discrepanza tra il codice reale e i file in `capabilities/*.json`, la priorità è segnalare il mismatch e aggiornare la documentazione.
 - Non implementare mai soluzioni "fantasma" che non siano tracciate nel sistema di documentazione.
 
 ### 4. Sicurezza e Rischio

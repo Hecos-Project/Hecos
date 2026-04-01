@@ -5,7 +5,7 @@ Regole tecniche per lo sviluppo del sistema standalone (Flask-based).
 ## Standard di Sviluppo
 
 ### 1. Registrazione Capabilities
-Ogni modulo Python che introduce una nuova interazione deve essere accompagnato da un aggiornamento del file `SYSTEM_CAPABILITIES.json`.
+Ogni modulo Python che introduce una nuova interazione deve essere accompagnato da un aggiornamento nei file `capabilities/*.json`.
 
 ### 2. Coding & Documentation Language (MANDATORY)
 - **English Only:** Tutto il codice sorgente (classi, funzioni, variabili) e TUTTI i commenti nel codice devono essere scritti in inglese.
