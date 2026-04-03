@@ -49,7 +49,7 @@ class AgentExecutor:
         Calls the LLM, checks if tools are requested, executes them, feeds the result back.
         Repeats until the LLM returns plain text without tools or hits max iterations.
         """
-        self._emit(translator.t("agent_analyzing_request", request=user_text[:30]), level="info")
+        self._emit(f"Analyzing request: '{user_text[:30]}...'", level="info")
         
         if not self.is_enabled:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
@@ -67,7 +67,7 @@ class AgentExecutor:
             save_hist = (iteration == 1)
             
             # 1. Call the Brain
-            self._emit(f"Sto pensando (Loop {iteration})...", level="info")
+            self._emit(f"Thinking (Loop {iteration})...", level="info")
             raw_response = brain.generate_response(
                 user_text, 
                 external_config=self.config, 
@@ -81,7 +81,7 @@ class AgentExecutor:
             
             if not tools_called:
                 # BREAK CONDITION: The LLM didn't call any tools, so it produced the final response.
-                self._emit("Risposta formulata.", level="success")
+                self._emit("Response formulated.", level="success")
                 
                 # IMPORTANT: If it took loops, we must save the FINAL response to history manually.
                 if iteration > 1:
@@ -111,7 +111,7 @@ class AgentExecutor:
 
                 # B) Execute tool and add 'tool' results to context
                 for res in tool_results:
-                    self._emit(f"Risultato ottenuto dallo strumento: {res.get('tag')}", level="tool")
+                    self._emit(f"Tool execution result: {res.get('tag')}", level="tool")
                     
                     # Native Tool Message
                     agent_context.append({
@@ -121,9 +121,9 @@ class AgentExecutor:
                         "content": res.get("output")
                     })
                     
-                self._emit("Analizzo i risultati degli strumenti...", level="info")
+                self._emit("Analyzing tool results...", level="info")
                 
                 if iteration == self.max_iterations:
-                    self._emit("Raggiunto limite massimo di pensiero.", level="error")
-                    video_response, clean_voice = processore.clean_final_output("Ho raggiunto il limite di elaborazione. " + extracted_text, tool_results, raw_response, voice_status)
+                    self._emit("Maximum thought limit reached.", level="error")
+                    video_response, clean_voice = processore.clean_final_output("I have reached the processing limit. " + extracted_text, tool_results, raw_response, voice_status)
                     return video_response, clean_voice

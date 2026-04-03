@@ -218,12 +218,14 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         zlog_error(f"LiteLLM: Error: {error_msg}")
         
         if "400" in error_msg:
-            return f"⚠️ Errore 400: Parametri non validi per '{model_name}'."
+            return f"⚠️ Errore 400: Parametri non validi per '{model_name}'. Dettagli: {error_msg[:200]}"
+        if "401" in error_msg:
+            return f"⚠️ Errore 401: Chiave API non valida o non autorizzata per '{provider}'. Verifica di averla incollata correttamente."
         if "404" in error_msg:
             return f"⚠️ Errore 404: Il modello '{model_name}' non è stato trovato o l'endpoint è errato."
         if "429" in error_msg:
-            return f"⚠️ Quota Esaurita (Errore 429). Troppe richieste o credito terminato. Riprova tra 60 secondi."
+            return f"⚠️ Quota Esaurita o Limite Superato (Errore 429) per {provider}. Dettaglio provider: {error_msg[:300]}"
         if "503" in error_msg or "ServiceUnavailableError" in error_msg:
-            return f"⚠️ Server AI Sovraccarico (Errore 503). Il provider {provider} è momentaneamente non disponibile. Riprova tra poco."
+            return f"⚠️ Server AI Sovraccarico (Errore 503). Il provider {provider} è momentaneamente non disponibile. Dettagli: {error_msg[:100]}"
             
-        return f"⚠️ Errore LLM imprevisto: {error_msg[:100]}..."
+        return f"⚠️ Errore LLM imprevisto: {error_msg[:250]}"

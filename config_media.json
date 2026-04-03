@@ -2,7 +2,7 @@
     "image_gen": {
         "enabled": true,
         "provider": "pollinations",
-        "model": "sana",
+        "model": "flux",
         "width": 1024,
         "height": 1024,
         "nologo": true,

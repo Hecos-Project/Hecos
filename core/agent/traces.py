@@ -26,17 +26,17 @@ class AgentTracer:
         """
         # 1. Terminal Output
         color = AgentTracer.COLOR_AGENT
-        prefix = "🧠 [Agente]"
+        prefix = "🧠 [Agent]"
         
         if level == "tool":
             color = AgentTracer.COLOR_TOOL
             prefix = "⚙️ [Tool]"
         elif level == "error":
             color = AgentTracer.COLOR_ERROR
-            prefix = "❌ [Errore]"
+            prefix = "❌ [Error]"
         elif level == "success":
             color = AgentTracer.COLOR_SUCCESS
-            prefix = "✅ [Successo]"
+            prefix = "✅ [Success]"
             
         print(f"{color}{prefix} {msg}{AgentTracer.COLOR_RESET}")
         logger.debug("AGENT_TRACE", f"{level.upper()}: {msg}")
