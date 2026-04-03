@@ -2,7 +2,8 @@ import json
 import os
 from core.logging import logger
 
-MEDIA_CONFIG_PATH = "config_media.json"
+_PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+MEDIA_CONFIG_PATH = os.path.join(_PROJECT_ROOT, "config", "media.json")
 
 def _get_default_media_config():
     return {

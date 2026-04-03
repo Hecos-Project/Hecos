@@ -1,0 +1,231 @@
+{
+    "ai": {
+        "active_personality": "Zentra_System_Soul.txt",
+        "available_personalities": {
+            "1": "Atlas_Man.txt",
+            "2": "MacGyver.txt",
+            "3": "Motoko Kusanagi.txt",
+            "4": "Nova_X-01.txt",
+            "5": "Sebastian_Pro.txt",
+            "6": "Urania_9800_Woman.txt",
+            "7": "Urania_9800_Woman_Adult.txt",
+            "8": "Zentra_System_Soul.txt"
+        },
+        "save_special_instructions": false,
+        "special_instructions": ""
+    },
+    "backend": {
+        "cloud": {
+            "model": "gemini/gemini-2.5-flash",
+            "temperature": 0.7
+        },
+        "kobold": {
+            "max_length": 512,
+            "model": "vikhr-qwen-2.5-1.5b-instruct-q4_k_m.gguf",
+            "rep_pen": 1.1,
+            "temperature": 0.8,
+            "top_p": 0.92,
+            "url": "http://localhost:5001"
+        },
+        "ollama": {
+            "available_models": {
+                "1": "gemma3:1b-it-q4_K_M",
+                "2": "huihui_ai/gemma3-abliterated:270m",
+                "3": "huihui_ai/gemma3-abliterated:1b",
+                "4": "jayeshpandit2480/gemma3-UNCENSORED:1b",
+                "5": "deepseek-r1:1.5b",
+                "6": "huihui_ai/qwen3.5-abliterated:0.8B",
+                "7": "qwen2.5:1.5b-instruct-q4_K_M",
+                "8": "qwen2.5:0.5b",
+                "9": "qwen2.5:1.5b",
+                "10": "llama3.2:1b"
+            },
+            "keep_alive": "120m",
+            "model": "qwen2.5:1.5b",
+            "num_ctx": 4096,
+            "num_gpu": 25,
+            "num_predict": 250,
+            "repeat_penalty": 1.1,
+            "temperature": 0.3,
+            "top_p": 0.9
+        },
+        "type": "cloud"
+    },
+    "bridge": {
+        "chunk_delay_ms": 0,
+        "debug_log": true,
+        "enable_tools": true,
+        "local_voice_enabled": false,
+        "remove_think_tags": true,
+        "use_processor": true,
+        "webui_voice_enabled": true,
+        "webui_voice_stt": true
+    },
+    "cognition": {
+        "memory_enabled": true,
+        "episodic_memory": true,
+        "clear_on_restart": false,
+        "include_identity_context": true,
+        "include_self_awareness": true,
+        "max_history_messages": 20
+    },
+    "filters": {
+        "custom_replacements": {},
+        "remove_asterisks": true,
+        "remove_round_brackets": true,
+        "remove_square_brackets": false
+    },
+    "language": "en",
+    "llm": {
+        "allow_cloud": true,
+        "debug_llm": true,
+        "providers": {
+            "anthropic": {
+                "api_key": "",
+                "models": [
+                    "anthropic/claude-3-5-sonnet-20240620",
+                    "anthropic/claude-3-opus-20240229"
+                ]
+            },
+            "gemini": {
+                "api_key": "",
+                "models": [
+                    "gemini/gemini-3.1-flash-lite-preview",
+                    "gemini/gemini-3-flash-preview",
+                    "gemini/gemini-2.0-flash",
+                    "gemini/gemini-1.5-flash-latest",
+                    "gemini/gemini-1.5-pro-latest",
+                    "gemini/gemini-1.5-flash",
+                    "gemini/gemini-1.5-pro"
+                ]
+            },
+            "groq": {
+                "api_key": "",
+                "models": [
+                    "groq/llama-3.3-70b-versatile",
+                    "groq/llama-3.1-70b-versatile",
+                    "groq/mixtral-8x7b-32768",
+                    "groq/qwen-2.5-32b",
+                    "groq/qwen-2.5-coder-32b",
+                    "groq/gemma2-9b-it"
+                ]
+            },
+            "openai": {
+                "api_key": "",
+                "models": [
+                    "openai/gpt-4o",
+                    "openai/gpt-4o-mini",
+                    "openai/gpt-3.5-turbo"
+                ]
+            }
+        }
+    },
+    "logging": {
+        "level": "DEBUG",
+        "destination": "console",
+        "message_types": "both",
+        "web_level": "BOTH",
+        "web_max_history": 100,
+        "web_autoscroll": true,
+        "web_split": false
+    },
+    "monitor": {
+        "check_interval": 1,
+        "restart_delay": 2
+    },
+    "plugins": {
+        "DASHBOARD": {
+            "backend_timeout": 0.5,
+            "enabled": true,
+            "monitor_interval": 2
+        },
+        "FILE_MANAGER": {
+            "enable_path_mapping": true,
+            "enabled": true,
+            "max_list_items": 5,
+            "max_read_lines": 50
+        },
+        "HELP": {
+            "enabled": true,
+            "show_disabled": false
+        },
+        "IMAGE_GEN": {
+            "enabled": true,
+            "height": 1024,
+            "nologo": false,
+            "width": 1024
+        },
+        "MEDIA": {
+            "enabled": true
+        },
+        "ROLEPLAY": {
+            "characters_dir": "plugins\\roleplay\\characters",
+            "default_character": "",
+            "default_scene": "",
+            "enabled": true,
+            "llm_model": "",
+            "scenes_dir": "plugins\\roleplay\\scenes"
+        },
+        "SYSTEM": {
+            "enable_config_set": true,
+            "enabled": true,
+            "explorer_mappings": {
+                "core": "core",
+                "desktop": "C:\\Users\\Asus\\Desktop",
+                "documents": "C:\\Users\\Asus\\Documents",
+                "download": "C:\\Users\\Asus\\Downloads",
+                "logs": "logs",
+                "memory": "memory",
+                "personality": "personality",
+                "plugins": "plugins"
+            },
+            "programs": {
+                "chrome": "chrome.exe",
+                "notepad": "notepad.exe",
+                "sillytavern": "C:\\SillyTavern\\SillyTavern\\Start.bat",
+                "visual studio": "C:\\Program Files\\Microsoft VS Code\\Code.exe"
+            },
+            "shell_command_timeout": 15,
+            "shell_command_whitelist": []
+        },
+        "SYS_NET": {
+            "enabled": true,
+            "proxy_url": "socks5://localhost:9150"
+        },
+        "WEB": {
+            "enabled": true,
+            "llm_model": "",
+            "open_in_new_tab": false,
+            "search_engine": "google",
+            "use_https": true
+        },
+        "WEBCAM": {
+            "camera_index": 0,
+            "enabled": true,
+            "image_format": "jpg",
+            "save_directory": "snapshots",
+            "stabilization_delay": 0.5
+        },
+        "WEB_UI": {
+            "auto_open_browser": false,
+            "enabled": true,
+            "port": 7070
+        },
+        "EXECUTOR": {
+            "enabled": true,
+            "timeout_seconds": 10
+        }
+    },
+    "processor": {
+        "debug_mode": false,
+        "log_level": "INFO"
+    },
+    "routing_engine": {
+        "legacy_models": "",
+        "mode": "auto"
+    },
+    "system": {
+        "fast_boot": true,
+        "flask_debug": false
+    }
+}

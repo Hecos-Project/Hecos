@@ -13,7 +13,7 @@ from core.system import instance_lock
 
 # Path configuration
 DEFAULT_MAIN_SCRIPT = "main.py"
-CONFIG_FILE = "config.json"
+CONFIG_FILE = os.path.join("config", "system.json")
 
 def get_translator():
     language = "en"

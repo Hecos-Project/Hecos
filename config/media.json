@@ -1,0 +1,14 @@
+{
+    "image_gen": {
+        "enabled": true,
+        "provider": "pollinations",
+        "model": "flux",
+        "width": 1024,
+        "height": 1024,
+        "nologo": true,
+        "api_key": ""
+    },
+    "video_gen": {
+        "enabled": false
+    }
+}

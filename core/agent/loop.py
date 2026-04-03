@@ -21,7 +21,7 @@ class AgentExecutor:
         
         # Load dedicated agent configuration
         self.agent_config = {"enabled": True, "max_iterations": 5, "verbose_traces": True}
-        config_path = os.path.join(os.path.dirname(__file__), "config_agent.json")
+        config_path = os.path.join(os.path.dirname(__file__), "..", "..", "config", "agent.json")
         try:
             if os.path.exists(config_path):
                 import json

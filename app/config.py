@@ -1,15 +1,17 @@
-"""
-Gestione centralizzata della configurazione.
-"""
-
+import os as _os
 import json
 import time
 from core.logging import logger
 
+# Root of the project (parent of app/)
+_PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), ".."))
+_DEFAULT_CONFIG_PATH = _os.path.join(_PROJECT_ROOT, "config", "system.json")
+
 class ConfigManager:
-    def __init__(self, config_path="config.json"):
-        self.config_path = config_path
+    def __init__(self, config_path=None):
+        self.config_path = config_path if config_path is not None else _DEFAULT_CONFIG_PATH
         self.config = self._load_config()
+
 
     def _load_config(self):
         """Carica le impostazioni da config.json con migrazione automatica all'inglese."""

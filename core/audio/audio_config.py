@@ -8,7 +8,9 @@ import json
 from datetime import datetime
 
 # --- Constants ---
-CONFIG_AUDIO_PATH = "config_audio.json"
+import os as _os
+_PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
+CONFIG_AUDIO_PATH = _os.path.join(_PROJECT_ROOT, "config", "audio.json")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CONFIG I/O
@@ -70,9 +72,9 @@ def _save_audio_config(cfg: dict) -> bool:
 
 
 def _migrate_from_main_config():
-    """Migrates 'voice' and 'listening' dicts from config.json to config_audio.json, then deletes them."""
-    main_cfg_path = "config.json"
-    if not os.path.exists(main_cfg_path): return
+    """Migrates 'voice' and 'listening' dicts from config/system.json to config/audio.json, then deletes them."""
+    main_cfg_path = _os.path.join(_PROJECT_ROOT, "config", "system.json")
+    if not _os.path.exists(main_cfg_path): return
     
     try:
         with open(main_cfg_path, "r", encoding="utf-8") as f:
