@@ -185,7 +185,7 @@ logs/
 memory/*.db
 memory/*.json
 memory/chat_history.db
-snapshots/
+# snapshots/ removed from here to move to end
 config.json
 .env
 *.wav
@@ -194,4 +194,5 @@ tmp/
 brain/
 *.log
 data/
+snapshots/**
 
