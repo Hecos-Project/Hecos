@@ -8,6 +8,7 @@ try:
     from core.logging import logger
     from core.i18n import translator
     from app.config import ConfigManager
+    from core.system.os_adapter import OSAdapter
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[SYS_NET]", *args)
@@ -143,8 +144,16 @@ class SysNetTools:
         """
         logger.debug(f"PLUGIN_{self.tag}", "Reading local IP config...")
         try:
-            output = subprocess.check_output("ipconfig /all", shell=True, text=True, stderr=subprocess.STDOUT)
-            # We filter for the active adapter (ones that have IPv4 Address)
+            cmd = OSAdapter.get_network_info_cmd()
+            output = subprocess.check_output(cmd, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT)
+            
+            cfg_proxy = ConfigManager().get_plugin_config(self.tag, "proxy_url", "")
+            proxy_info = f"\nZentra Configured Proxy: {cfg_proxy if cfg_proxy else 'None'}"
+            
+            if OSAdapter.get_os() != 'windows':
+                return output[:2000] + proxy_info
+
+            # We filter for the active adapter (ones that have IPv4 Address) on Windows
             lines = output.split('\n')
             results = []
             
@@ -183,10 +192,11 @@ class SysNetTools:
         """
         logger.debug(f"PLUGIN_{self.tag}", f"Pinging {target}...")
         try:
-            # We use 'ping -n 4' to send exactly 4 ICMP packets
             target = re.sub(r'[^a-zA-Z0-9.-]', '', target) # Sanitize input
             if not target: return "Invalid target"
-            output = subprocess.check_output(f"ping -n 4 {target}", shell=True, text=True, stderr=subprocess.STDOUT)
+            
+            cmd = OSAdapter.get_ping_cmd(target, count=4)
+            output = subprocess.check_output(cmd, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT)
             return output
         except subprocess.CalledProcessError as e:
             return f"Ping failed or destination unreachable:\n{e.output}"
@@ -199,7 +209,8 @@ class SysNetTools:
         """
         logger.debug(f"PLUGIN_{self.tag}", "Scanning local network (ARP)...")
         try:
-            output = subprocess.check_output("arp -a", shell=True, text=True, stderr=subprocess.STDOUT)
+            cmd = OSAdapter.get_arp_cmd()
+            output = subprocess.check_output(cmd, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT)
             return output
         except subprocess.CalledProcessError as e:
             return f"ARP scan failed:\n{e.output}"
@@ -232,6 +243,9 @@ class SysNetTools:
         :param primary: The primary DNS IPv4 address.
         :param secondary: The secondary DNS IPv4 address.
         """
+        if OSAdapter.get_os() != 'windows':
+            return "ERROR: DNS configuration is currently supported only on Windows."
+            
         if not is_admin():
             logger.warning("[SysNet] Attempted to change DNS without Admin privileges.")
             return "PERMISSION DENIED: Modifying DNS requires Zentra to be running as Windows Administrator. Please restart Zentra as Admin."
@@ -260,6 +274,9 @@ class SysNetTools:
         Restores the DNS configuration of the active network adapter back to DHCP (automatic).
         Requires Zentra to be running as Administrator!
         """
+        if OSAdapter.get_os() != 'windows':
+            return "ERROR: DNS configuration is currently supported only on Windows."
+
         if not is_admin():
             logger.warning("[SysNet] Attempted to reset DNS without Admin privileges.")
             return "PERMISSION DENIED: Resetting DNS requires Zentra to be running as Windows Administrator."

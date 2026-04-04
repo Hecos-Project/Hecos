@@ -25,14 +25,8 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             images_dir = os.path.join(root_dir, "data", "images")
             os.makedirs(images_dir, exist_ok=True)
-            if os.name == 'nt':
-                os.startfile(images_dir)
-            elif sys.platform == 'darwin':
-                import subprocess
-                subprocess.Popen(["open", images_dir])
-            else:
-                import subprocess
-                subprocess.Popen(["xdg-open", images_dir])
+            from core.system.os_adapter import OSAdapter
+            OSAdapter.open_path(images_dir)
             return jsonify({"ok": True, "message": "Folder opened"})
         except Exception as exc:
             logger.error(f"[WebUI] open_media_folder error: {exc}")
