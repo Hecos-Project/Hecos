@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.10.1 (Runtime Alpha)
+# Zentra Core - Versione 0.12.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -149,7 +149,7 @@ Email Ufficiale: zentra.core.systems@gmail.com
 ## 📚 Documentazione Tecnica
 - 🏗️ **[Guida all'Architettura](docs/TECHNICAL_GUIDE.md)**
 - 🔌 **[Sviluppo Plugin](docs/PLUGINS_DEV.md)**
-- 📁 **[Mappa Struttura](docs/zentra_core_structure_v0.10.1.md)**
+- 📁 **[Mappa Struttura](docs/ARCHITECTURE_MAP.md)**
 
 ---
 

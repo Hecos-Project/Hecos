@@ -1,14 +1,14 @@
-# Zentra Core v0.9.9 - Architecture Map
+# Zentra Core v0.12.0 - Architecture Map
 
-A visual guide to the Zentra Core folder structure and system components as of version 0.9.9.
+A visual guide to the Zentra Core folder structure and system components as of version 0.12.0.
 
 ```text
 Zentra-Core/
 │
 ├── app/                  # Application runtime environment
 │   ├── application.py    # Main boot sequence and event loop
-│   ├── bootstrapper.py   # System initialization (replaces inline logic)
-│   ├── config.py         # Centralized ConfigManager (with Personality Sync)
+│   ├── bootstrapper.py   # System initialization (Console & Web access info)
+│   ├── config.py         # YAML ConfigManager (Pydantic v2 validation)
 │   ├── input_handler.py  # User keyboard and microphone unified input
 │   ├── model_manager.py  # Global AI model state management
 │   ├── personality_manager.py # F3 Selection & Dynamic Sync logic
@@ -18,6 +18,7 @@ Zentra-Core/
 ├── core/                 # Low-level core engines
 │   ├── agent/            # Agentic Loop (Chain of Thought, SSE Traces)
 │   ├── audio/            # TTS (Piper) and STT voice systems
+│   ├── auth/             # AES Session & SQLite Auth Manager
 │   ├── i18n/             # Internationalization (IT/EN/ES)
 │   ├── llm/              # Unified AI backends (Ollama, Kobold, Cloud)
 │   │   └── vision/       # Multimodal adapters
@@ -30,6 +31,8 @@ Zentra-Core/
 │   └── ARCHITECTURE_MAP.md
 │
 ├── logs/                 # Active system runtime and technical logs
+│   ├── zentra.log        # Core logging output
+│   └── webui_heartbeat.json # Frontend status tracking
 │
 ├── memory/               # Persistent AI storage (SQLite)
 │   ├── caveau/           # Long-term semantic memories
@@ -40,29 +43,32 @@ Zentra-Core/
 ├── plugins/              # Modular Plugin System
 │   ├── dashboard/        # Hardware HUD
 │   ├── domotica/         # IoT control
+│   ├── drive/            # Zentra Drive (HTTP File Manager)
 │   ├── executor/         # AST Code Sandbox (Zentra Code Jail)
-│   ├── file_manager/     # OS file operations
+│   ├── file_manager/     # OS file operations (AI tools)
 │   ├── help/             # Documentation assistant
 │   ├── image_gen/        # AI Image Generation
 │   ├── media/            # Audio/Video playback
 │   ├── memory/           # Memory tools
 │   ├── models/           # Real-time model macros
-│   ├── roleplay/         # Advanced personas
 │   ├── system/           # OS management
 │   ├── web/              # Internet browsing
-│   ├── web_ui/           # Native Web Interface (Full Plugin)
+│   ├── web_ui/           # Native Web Interface (Chat + Config)
 │   ├── webcam/           # Vision sensor
 │   └── plugins_disabled/ # Inactive modules
 │
+├── config/               # Centralized YAML Configuration
+│   ├── system.yaml       # Core system settings
+│   └── audio.yaml        # Audio & Voice settings
+│
 ├── .env                  # API Keys & Sensitive Data
-├── config.json           # Master Configuration (Source of Truth)
 ├── main.py               # Application Entry Point
 ├── monitor.py            # Configuration Watchdog
 └── zentra_proc_manager.py # Optional Process Manager
 ```
 
 ### Component Overview
-* **`app/`**: Regulates the execution flow. `ConfigManager` now handles dynamic synchronization of personalities.
-* **`core/`**: The engine room. Powered by **LiteLLM** for seamless switching between local (Ollama) and cloud backends.
-* **`plugins/`**: Modular heart. Version 0.9.9 continues the Native Plugin architecture with improved stability and cleaner root structure.
-* **`personality/`**: No longer requires manual config entry. Files added here are automatically detected and synced by the core.
+* **`app/`**: Regulates the execution flow. Powered by a YAML-first configuration system for stability.
+* **`core/`**: The engine room. Version 0.12.0 introduces native Auth systems and Agentic reasoning.
+* **`plugins/`**: Modular heart. Now includes **Zentra Drive** for secure HTTP file management.
+* **`config/`**: Centralized repository for all system parameters, replacing old scattered JSONs.

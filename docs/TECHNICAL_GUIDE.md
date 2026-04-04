@@ -8,7 +8,7 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 - **Multimodal Ready**: Version 0.9.9 introduces native vision support via provider-specific adapters.
 - **Runtime Alpha Status**: The project is currently in an early development phase. This means the system is subject to frequent changes, debugging, and is not yet considered a stable "production-ready" release.
 - **Single-Instance Protection**: To prevent data corruption and resource conflicts, Zentra uses a file-based locking mechanism (`core/system/instance_lock.py`) to ensure only one instance of the core and web interface runs at a time.
-- **Centralized Configuration**: Version 0.10.1 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
+- **Centralized Configuration**: Version 0.12.0 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
 - **OS Agnostic Architecture**: Version 0.11.0 abstracts all operating system dependent workflows via the new `OSAdapter` (`core/system/os_adapter.py`). It guarantees safe cross-platform compatibility across Windows, Linux and MacOS.
 - **Mandatory HTTPS & Auth Security**: Version 0.12.0 implements standard Flask-Login authentication over AES sessions and SQLite SQLite PBKDF2 hashing (`core/auth/auth_manager.py`). The Native UI is completely locked from unauthorized accesses.
 

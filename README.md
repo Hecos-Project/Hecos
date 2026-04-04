@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Zentra Logo">
 </p>
 
-# Zentra Core - Version 0.10.1 (Runtime Alpha)
+# Zentra Core - Version 0.12.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -162,7 +162,7 @@ Official Email: zentra.core.systems@gmail.com
 Detailed technical guides for developers and advanced users:
 - 🏗️ **[Technical Architecture Guide](docs/TECHNICAL_GUIDE.md)**: Deep dive into the OOP structure, data flow, and core engines.
 - 🔌 **[Plugin Development Guide](docs/PLUGINS_DEV.md)**: How to create and register new tools using Native Function Calling.
-- 📁 **[Project Structure Map](docs/zentra_core_structure_v0.10.1.md)**: Complete file-by-file breakdown of the repository.
+- 📁 **[Project Structure Map](docs/ARCHITECTURE_MAP.md)**: Complete file-by-file breakdown of the repository.
 
 ---
 

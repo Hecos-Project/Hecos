@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
 </p>
 
-# Zentra Core - Versión 0.10.1 (Runtime Alpha)
+# Zentra Core - Versión 0.12.0 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -40,6 +40,7 @@ Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Z
 * 🎙️ **Chat de Voz Integrado** — Interfaz de Chat nativa con integración de Piper TTS y reproducción de audio automática.
 * 🔌 **Botones Macro de Plugins** — La lista de plugins lateral ahora incluye macros clicables para inyectar comandos especializados al instante.
 * 💾 **Memoria Persistente** — Memoria SQLite con contexto compartido entre WebUI y Terminal.
+* 🗂️ **Zentra Drive (Gestor de Archivos)** — Gestor de archivos HTTP nativo integrado en la WebUI para cargar, descargar y organizar archivos del sistema con una interfaz de doble panel.
 * 🚀 **Lanzador Standalone** — Archivo `run_zentra_web.bat` dedicado para iniciar el servidor Web de forma independiente.
 
 ---
@@ -150,7 +151,7 @@ Email Oficial: zentra.core.systems@gmail.com
 ## 📚 Documentación Técnica
 - 🏗️ **[Guía de Arquitectura](docs/TECHNICAL_GUIDE.md)**
 - 🔌 **[Desarrollo de Plugins](docs/PLUGINS_DEV.md)**
-- 📁 **[Mapa de Estructura](docs/zentra_core_structure_v0.10.1.md)**
+- 📁 **[Mapa de Estructura](docs/ARCHITECTURE_MAP.md)**
 
 ---
 
