@@ -52,10 +52,37 @@ class ZentraWebUIServer:
         # Inject translation system into Jinja2 templates
         app.jinja_env.globals.update(t=t)
 
+        # --- ZENTRA AUTH SYSTEM ---
+        app.secret_key = self.config_manager.config.get("system", {}).get("flask_secret_key", "zentra_default_secret_key_84nd")
+        
+        from flask_login import LoginManager, current_user
+        from core.auth.auth_manager import auth_mgr
+        
+        login_manager = LoginManager()
+        login_manager.init_app(app)
+        login_manager.login_view = "login_page"
+
+        @login_manager.user_loader
+        def load_user(user_id):
+            return auth_mgr.get_user_by_id(user_id)
+
+        from flask import request, redirect, url_for, jsonify
+        @app.before_request
+        def require_login():
+            # Exempt routes for the login process and static files
+            exempt_paths = ['/login', '/logout', '/static']
+            if any(request.path.startswith(p) for p in exempt_paths):
+                return
+            
+            if not current_user.is_authenticated:
+                if request.path.startswith('/api/') or request.path.startswith('/zentra/api/'):
+                    return jsonify({"ok": False, "error": "Authentication required. Please login."}), 401
+                return redirect(url_for('login_page'))
+        # --------------------------
+
         # Get debug state from system config
         debug_on = self.config_manager.config.get("system", {}).get("flask_debug", False)
 
-        # Silence werkzeug noise ONLY if debug is off
         import logging as _lg
         wz_log = _lg.getLogger("werkzeug")
         if not debug_on:
@@ -68,11 +95,12 @@ class ZentraWebUIServer:
             # When debug is ON, ensure logs propagate to Zentra's root logger
             wz_log.setLevel(_lg.INFO)
             wz_log.propagate = True
-            _chat_log.info("[WebUI] Flask/Werkzeug logging enabled.")
 
         # Register all routes — pass getter so routes always read the current SM
         init_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
         init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
+        from .routes_auth import init_auth_routes
+        init_auth_routes(app, self.logger)
 
         def _run():
             try:
