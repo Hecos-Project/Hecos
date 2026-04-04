@@ -1,0 +1,109 @@
+<!-- PAYLOAD VIEWER PANEL -->
+<div id="tab-payload" class="panel">
+  <div class="card">
+    <div class="card-title">🔍 Context & Token Payload Inspector</div>
+    <p style="color: var(--muted); font-size: 13px; margin-bottom: 15px;">
+      Mostra l'ultimo carico di byte/token inviato al modello LLM. <br>
+      Disattivare plugin pesanti (WebCam, Browser, ecc.) ridurrà l'uso della memoria riducendo i costi.
+    </p>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <div>
+        <strong>Model:</strong> <span id="pl-model" style="color: var(--primary);">N/A</span>
+      </div>
+      <div>
+        <button type="button" class="btn btn-secondary" onclick="loadPayloadData()">🔄 Aggiorna Dati</button>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+      
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
+        <span>System + Memory + Storico</span>
+        <span id="pl-sys" style="font-family: monospace; color: #aaa;">0 chars</span>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
+        <span>Messaggio Utente</span>
+        <span id="pl-usr" style="font-family: monospace; color: #aaa;">0 chars</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
+        <span title="Include le definizioni JSON di tutti i comandi dei plugin abilitati">JSON Tools (Schemi Funzioni)</span>
+        <span id="pl-tls" style="font-family: monospace; color: #aaa;">0 chars</span>
+      </div>
+
+      <!-- Plugins Cost Breakdown -->
+      <div id="pl-plugins-box" style="margin-left: 15px; padding-left: 10px; border-left: 2px solid var(--border); font-size: 13px; color: #aaa; display: none;"></div>
+
+      <div style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 5px;">
+        <span>Totale Invio (Caratteri)</span>
+        <span id="pl-tot" style="font-family: monospace; color: var(--text-color);">0 chars</span>
+      </div>
+      
+      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-top: 5px; color: var(--primary);">
+        <span>STIMA COSTO TOKEN</span>
+        <span id="pl-tks" style="font-family: monospace;">~ 0 Tokens</span>
+      </div>
+
+    </div>
+
+    <!-- Developer messages logic -->
+    <div style="margin-top:20px;">
+      <div class="card-title" style="font-size:14px; color:var(--muted);">Anteprima Codice Sorgente (Ultimi 2 messaggi)</div>
+      <div style="background: #111; padding: 10px; border-radius: 6px; border: 1px solid #333; max-height: 250px; overflow-y: auto;">
+        <pre id="pl-preview" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin: 0; color: #8f8f8f; white-space: pre-wrap; word-break: break-all;">Invia un messaggio per catturare il payload...</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function loadPayloadData() {
+  const btn = event ? event.target : null;
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = "Caricamento..."; btn.disabled = true; }
+  
+  try {
+    const res = await fetch('/api/system/payload');
+    const data = await res.json();
+    
+    if (data.ok && data.payload) {
+      const pl = data.payload;
+      document.getElementById('pl-model').textContent = pl.model || "N/A";
+      document.getElementById('pl-sys').textContent   = (pl.system_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-usr').textContent   = (pl.user_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-tls').textContent   = (pl.tools_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-tot').textContent   = (pl.total_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-tks').textContent   = "~ " + (pl.approx_tokens || 0).toLocaleString() + " Tokens";
+      
+      const pBox = document.getElementById('pl-plugins-box');
+      if (pl.plugins_cost && Object.keys(pl.plugins_cost).length > 0) {
+        let html = "";
+        for (const [tag, cost] of Object.entries(pl.plugins_cost)) {
+            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span>➤ ${tag}</span> <span>${cost.toLocaleString()} chars</span>
+                     </div>`;
+        }
+        pBox.innerHTML = html;
+        pBox.style.display = "block";
+      } else {
+        pBox.style.display = "none";
+      }
+
+      let preText = "Nessun dato disponibile.";
+      if (pl.messages_count > 0 && Array.isArray(pl.messages_preview)) {
+         preText = JSON.stringify(pl.messages_preview, null, 2);
+      }
+      document.getElementById('pl-preview').textContent = preText;
+    }
+  } catch (err) {
+    console.error("Errore fetch payload", err);
+    document.getElementById('pl-preview').textContent = "Errore di connessione a Zentra: " + err.message;
+  } finally {
+    if (btn) { btn.textContent = oldText; btn.disabled = false; }
+  }
+}
+</script>

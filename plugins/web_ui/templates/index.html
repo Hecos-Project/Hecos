@@ -44,6 +44,7 @@
     <button class="tab" onclick="showTab('media')">Media</button>
     <button class="tab" onclick="showTab('sysnet')">Sys Net</button>
     <button class="tab" onclick="showTab('system')">System</button>
+    <button class="tab" onclick="showTab('payload'); loadPayloadData()">Payload</button>
     <button class="tab" onclick="showTab('plugins')">Plugins</button>
     <button class="tab" onclick="showTab('logs'); startLogStream();">Logs</button>
   </div>
@@ -59,6 +60,7 @@
     {% include 'modules/config_system.html' %}
     {% include 'modules/config_media.html' %}
     {% include 'modules/config_sysnet.html' %}
+    {% include 'modules/config_payload.html' %}
     {% include 'modules/config_plugins.html' %}
     {% include 'modules/config_logs.html' %}
   </form>

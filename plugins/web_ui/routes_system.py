@@ -107,6 +107,17 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500
 
+    # ── Payload Inspection API ─────────────────────────────────────────────────────
+
+    @app.route("/api/system/payload", methods=["GET"])
+    def get_system_payload():
+        """Returns the last LLM payload sizes for context usage optimization."""
+        try:
+            from core.llm.client import LAST_PAYLOAD_INFO
+            return jsonify({"ok": True, "payload": LAST_PAYLOAD_INFO})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     # ── Generation Control API ─────────────────────────────────────────────────────
 
     @app.route("/api/system/stop", methods=["POST"])

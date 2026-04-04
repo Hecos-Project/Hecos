@@ -11,6 +11,19 @@ import logging
 from core.logging import logger as log_mod
 from core.logging.logger import debug as zlog_debug, info as zlog_info, error as zlog_error
 
+# Global variable to store last payload metadata for WebUI inspection
+LAST_PAYLOAD_INFO = {
+    "model": "None",
+    "provider": "None",
+    "system_chars": 0,
+    "user_chars": 0,
+    "tools_chars": 0,
+    "total_chars": 0,
+    "approx_tokens": 0,
+    "messages_count": 0,
+    "plugins_cost": {}
+}
+
 # Pre-configure LiteLLM (no print to chat)
 litellm.telemetry = False
 
@@ -176,7 +189,37 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             else:
                 zlog_error(f"LiteLLM: No API key found for provider '{provider}'. Call may fail.")
 
-    # LOG MANUALE PRE-CHIAMATA
+    # LOG MANUALE PRE-CHIAMATA E UPDATE PAYLOAD
+    try:
+        sys_chars = sum(len(str(m.get('content', ''))) for m in params.get("messages", []) if m.get('role') == 'system')
+        usr_chars = sum(len(str(m.get('content', ''))) for m in params.get("messages", []) if m.get('role') != 'system')
+        tls_chars = len(json.dumps(params.get("tools", []))) if params.get("tools") else 0
+        tot_chars = sys_chars + usr_chars + tls_chars
+        
+        plugins_cost = {}
+        for tool in params.get("tools", []):
+            try:
+                name = tool.get("function", {}).get("name", "")
+                tag = name.split("__")[0] if "__" in name else "CORE_TOOLS"
+                tool_size = len(json.dumps(tool))
+                plugins_cost[tag] = plugins_cost.get(tag, 0) + tool_size
+            except Exception:
+                pass
+        
+        LAST_PAYLOAD_INFO.update({
+            "model": model_name,
+            "provider": backend_type,
+            "system_chars": sys_chars,
+            "user_chars": usr_chars,
+            "tools_chars": tls_chars,
+            "total_chars": tot_chars,
+            "approx_tokens": tot_chars // 3,  # Approximate 1 token ~ 3-4 chars
+            "messages_count": len(params.get("messages", [])),
+            "plugins_cost": plugins_cost
+        })
+    except Exception as e:
+        zlog_debug("LiteLLM", f"Payload analysis skipped: {e}")
+
     if debug_enabled:
         zlog_info("LiteLLM", f"Debug Activated for: {model_name}")
         try:
