@@ -21,15 +21,19 @@ Combina LLMs locales, interacción por voz, automatización del sistema y una ar
 Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Zentra 0.10.1 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
+Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Zentra 0.11.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
-## ✨ Características Principales (v0.10.1)
+---
+
+## ✨ Características Principales (v0.11.0)
 * 🤖 **Agente Cognitivo Autónomo** — Zentra ahora razona paso a paso (Chain of Thought), elige herramientas dinámicamente y resuelve tareas complejas de forma autónoma.
 * 🛡️ **Zentra Code Jail (Sandbox AST)** — Un entorno de ejecución nativo altamente seguro que permite a la IA ejecutar algoritmos Python, matemáticas y lógica de datos de forma segura.
 * 👁️ **Soporte de Visión Nativa** — Capacidades de IA multimodal para Gemini, OpenAI y Ollama (LLaVA). Analiza imágenes, fotos y capturas de pantalla directamente en el chat.
 * 🏗️ **Plugin WebUI Nativo** — Migrado de un bridge a un plugin core (`plugins/web_ui/`) para máximo rendimiento y estabilidad.
-* 🔒 **Seguridad HTTPS Local** — Interfaz web con integración nativa HTTPS para proporcionar contexto seguro para Webcam y Micrófono.
-* ⚙️ **Configuración YAML + Pydantic** — Sistema de configuración moderno, robusto y verificable, basado en esquemas Pydantic.
-* 📊 **Token Payload Inspector** — Métricas en tiempo real en la WebUI que detallan el uso del contexto por cada Plugin individualmente.
+* 🔒 **Seguridad HTTPS Nativa**: Generación de certificados SSL para integración segura WebRTC (Micrófono/Cámara).
+* ⚙️ **Configuración YAML**: Archivos validados con esquemas Pydantic v2 (`system.yaml`).
+* 📊 **Token Payload Inspector**: Panel para auditar el uso de tokens por cada plugin activo.
+* 💻 **Soporte Multi-OS Nativo**: Arquitectura agnóstica vía `OSAdapter` para compatibilidad total con Windows, Linux y MacOS.
 * 🌐 **I18N Global (Multilingüe)** — Soporte completo para Inglés (default) e Italiano en Terminal e interfaz Web con cambio en tiempo real.
 * 🧠 **Streaming Multi-Nube** — Soporte nativo para Groq, OpenAI, Gemini e Anthropic con efecto "máquina de escribir".
 * 🔄 **Live-Sync Config** — Cambia cualquier ajuste en el Panel Web y aplícalo al instante sin reiniciar el sistema.
@@ -42,8 +46,7 @@ Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Z
 ---
 
 ## 🧠 Cómo Funciona
-Zentra Core está construido en torno a una arquitectura modular:
-* **Core** → Enrutamiento de IA, procesamiento y ejecución.
+**Zentra Core está actualmente en `v0.11.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
 * **Plugins** → Acciones y capacidades (sistema, web, multimedia, etc.).
 * **Memory** → Identidad y almacenamiento persistente.
 * **UI** → Capa de interacción con el usuario.
