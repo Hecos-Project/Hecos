@@ -2,7 +2,6 @@
 Classe principale ConfigEditor che coordina il caricamento, l'editor e il salvataggio.
 """
 
-import json
 import os
 from .locks import acquire_lock, release_lock
 from .parameters import build_parameter_list
@@ -10,35 +9,30 @@ from .ui import UIManager
 from core.i18n import translator
 
 class ConfigEditor:
-    def __init__(self, config_path="config.json"):
-        # Ottieni il percorso della directory in cui si trova main.py
-        script_dir = os.path.dirname(os.path.abspath(__file__))  # directory di core.py (ui/config_editor)
-        ui_dir = os.path.dirname(script_dir)  # directory ui
-        project_dir = os.path.dirname(ui_dir)  # directory del progetto (dove sta main.py)
-        self.config_path = os.path.join(project_dir, config_path)
+    def __init__(self, config_path=None):
+        # config_path kept for backward compat but ignored — we always use ConfigManager.
+        # Lazy import to avoid circular import with app/__init__.py
+        from app.config import ConfigManager
+        self._config_manager = ConfigManager()
         self.config = self._load_config()
-        
+
         from core.audio.device_manager import get_audio_config
         self.audio_config = get_audio_config()
-        
+
         self.param_list = build_parameter_list(self.config)
         self.modified = False
         self.audio_modified = False
 
     def _load_config(self):
-        """Carica il file JSON, pulisce config plugin vecchi e sincronizza con la cartella."""
+        """Loads config via ConfigManager (YAML-backed) and cleans up stale plugin entries."""
         try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
-                
+            config = dict(self._config_manager.config)
+
             # --- Auto-sync plugins ---
             plugins_config = config.get("plugins", {})
-            script_dir = os.path.dirname(os.path.abspath(__file__))  
-            ui_dir = os.path.dirname(script_dir)  
-            project_dir = os.path.dirname(ui_dir)  
-            plugins_dir = os.path.join(project_dir, "plugins")
-            
-            # Find real plugins (folders with main.py or valid .py files)
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            plugins_dir = os.path.normpath(os.path.join(script_dir, "..", "..", "plugins"))
+
             real_plugins = set()
             if os.path.exists(plugins_dir):
                 for item in os.listdir(plugins_dir):
@@ -47,29 +41,26 @@ class ConfigEditor:
                         real_plugins.add(item.upper())
                     elif os.path.isfile(item_path) and item.endswith(".py") and not item.startswith("_"):
                         real_plugins.add(item[:-3].upper())
-            
-            # Remove plugins from config.json that no longer exist
+
             to_remove = [p for p in plugins_config if p not in real_plugins]
             for p in to_remove:
                 del plugins_config[p]
-                self.modified = True  # Mark as modified if we cleaned something
-                
             config["plugins"] = plugins_config
-            
+
             # --- Auto-init Routing ---
             if "routing_engine" not in config:
                 config["routing_engine"] = {"mode": "auto", "legacy_models": ""}
-            elif "legacy_models" not in config["routing_engine"]:
-                 config["routing_engine"]["legacy_models"] = ""
-                 
+            elif "legacy_models" not in config.get("routing_engine", {}):
+                config["routing_engine"]["legacy_models"] = ""
+
             return config
-            
+
         except Exception as e:
-            print(f"Error loading {self.config_path}: {e}")
+            print(f"Error loading config via ConfigManager: {e}")
             raise
 
     def _save_config(self):
-        """Salva il file JSON se ci sono modifiche e aggiorna il traduttore."""
+        """Saves config via ConfigManager (to YAML) and audio config."""
         if self.audio_modified:
             try:
                 from core.audio.device_manager import _save_audio_config
@@ -80,24 +71,7 @@ class ConfigEditor:
 
         if self.modified:
             try:
-                # Check language change before saving
-                old_language = None
-                if os.path.exists(self.config_path):
-                    try:
-                        with open(self.config_path, 'r', encoding='utf-8') as f:
-                            old_data = json.load(f)
-                            old_language = old_data.get("language")
-                    except: pass
-
-                with open(self.config_path, 'w', encoding='utf-8') as f:
-                    json.dump(self.config, f, indent=4, ensure_ascii=False)
-                
-                # Sync translator if language changed
-                new_language = self.config.get("language")
-                if new_language and new_language != old_language:
-                    from core.i18n import translator
-                    translator.get_translator().set_language(new_language)
-                
+                self._config_manager.update_config(self.config)
                 print(f"\n{translator.t('config_saved_success')}")
             except Exception as e:
                 print(f"\n{translator.t('config_save_error', error=str(e))}")

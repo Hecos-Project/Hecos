@@ -1,53 +1,33 @@
-import json
+"""
+MODULE: Media Config
+DESCRIPTION: Loads, validates and saves the media configuration via YAML + Pydantic.
+             Auto-migrates from legacy config/media.json on first run.
+"""
+
 import os
 from core.logging import logger
+from config.yaml_utils import load_yaml, save_yaml
+from config.schemas.media_schema import MediaConfig
 
 _PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-MEDIA_CONFIG_PATH = os.path.join(_PROJECT_ROOT, "config", "media.json")
+MEDIA_CONFIG_PATH = os.path.join(_PROJECT_ROOT, "config", "media.yaml")
 
-def _get_default_media_config():
-    return {
-        "image_gen": {
-            "enabled": True,
-            "provider": "pollinations",
-            "model": "flux",
-            "width": 1024,
-            "height": 1024,
-            "nologo": True,
-            "api_key": ""
-        },
-        "video_gen": {
-            "enabled": False
-        }
-    }
 
-def get_media_config():
-    if not os.path.exists(MEDIA_CONFIG_PATH):
-        cfg = _get_default_media_config()
-        save_media_config(cfg)
-        return cfg
+def get_media_config() -> dict:
+    """Returns the full media configuration as a plain dict."""
     try:
-        with open(MEDIA_CONFIG_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            # Ensure base objects exist for backward/forward compatibility
-            defaults = _get_default_media_config()
-            for k, v in defaults.items():
-                if k not in data:
-                    data[k] = v
-                elif isinstance(v, dict):
-                    for sub_k, sub_v in v.items():
-                        if sub_k not in data[k]:
-                            data[k][sub_k] = sub_v
-            return data
+        model = load_yaml(MEDIA_CONFIG_PATH, MediaConfig)
+        return model.model_dump()
     except Exception as e:
-        logger.error(f"[MEDIA CONFIG] Error loading {MEDIA_CONFIG_PATH}: {e}")
-        return _get_default_media_config()
+        logger.error(f"[MEDIA CONFIG] Error loading config: {e}")
+        return MediaConfig().model_dump()
 
-def save_media_config(cfg):
+
+def save_media_config(cfg: dict) -> bool:
+    """Validates cfg against MediaConfig and saves to config/media.yaml."""
     try:
-        with open(MEDIA_CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(cfg, f, indent=4)
-        return True
+        model = MediaConfig.model_validate(cfg)
+        return save_yaml(MEDIA_CONFIG_PATH, model)
     except Exception as e:
-        logger.error(f"[MEDIA CONFIG] Error saving {MEDIA_CONFIG_PATH}: {e}")
+        logger.error(f"[MEDIA CONFIG] Error saving media config: {e}")
         return False

@@ -1,5 +1,5 @@
 # ============================================================
-# ZENTRA CORE v0.9.5 - REQUISITI COMPLETI
+# ZENTRA CORE v0.10.0 - REQUISITI COMPLETI
 # ============================================================
 
 # ------------------------------
@@ -52,11 +52,16 @@ watchdog>=4.0.0             # Monitoraggio file system (per hot-reload)
 python-dotenv>=1.0.0        # Gestione variabili d'ambiente (opzionale)
 
 # ------------------------------
+# CONFIGURAZIONE
+# ------------------------------
+pydantic>=2.0.0             # Validazione e schema della configurazione
+PyYAML>=6.0                 # Lettura/scrittura file YAML
+
+# ------------------------------
 # OPZIONALI (per funzionalità estese)
 # ------------------------------
 # Flask>=3.0.0               # Per future API REST
 # fastapi>=0.104.0           # Per future API REST
 # uvicorn>=0.24.0            # Server ASGI
 # websockets>=12.0           # Per comunicazioni real-time
-# pydantic>=2.0.0            # Validazione dati
 # sqlalchemy>=2.0.0          # ORM alternativo a SQLite puro

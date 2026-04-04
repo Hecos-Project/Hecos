@@ -195,4 +195,8 @@ brain/
 *.log
 data/
 snapshots/**
+
+# Config files (contain API keys — never commit)
+config/*.yaml
+config/*.json.bak
 

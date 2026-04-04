@@ -21,16 +21,17 @@ class AgentExecutor:
         
         # Load dedicated agent configuration
         self.agent_config = {"enabled": True, "max_iterations": 5, "verbose_traces": True}
-        config_path = os.path.join(os.path.dirname(__file__), "..", "..", "config", "agent.json")
         try:
-            if os.path.exists(config_path):
-                import json
-                with open(config_path, "r", encoding="utf-8") as f:
-                    file_conf = json.load(f)
-                    self.agent_config.update(file_conf)
+            from config.yaml_utils import load_yaml
+            from config.schemas.agent_schema import AgentConfig
+            _agent_cfg_path = os.path.normpath(
+                os.path.join(os.path.dirname(__file__), "..", "..", "config", "agent.yaml")
+            )
+            agent_model = load_yaml(_agent_cfg_path, AgentConfig)
+            self.agent_config = agent_model.model_dump()
         except Exception as e:
-            logger.error(f"[AGENT] Error loading config_agent.json: {e}")
-            
+            logger.error(f"[AGENT] Error loading agent.yaml: {e}")
+
         self.max_iterations = max_iterations if max_iterations is not None else self.agent_config.get("max_iterations", 5)
         self.is_enabled = self.agent_config.get("enabled", True)
         
