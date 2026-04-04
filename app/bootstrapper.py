@@ -81,6 +81,11 @@ class SystemBootstrapper:
     def show_welcome(self):
         """Shows welcome message."""
         self.state_manager.system_status = translator.t("speaking")
+        
+        # Show Web UI access links if active
+        if plugin_loader.get_plugin_module("WEB_UI"):
+            interface.show_web_access_info(self.config_manager.config)
+            
         message = self.config_manager.config.get("behavior", {}).get("welcome_message", translator.t("system_ready"))
         interface.write_zentra(message)
         

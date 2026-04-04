@@ -1,36 +1,28 @@
 #!/bin/bash
-# ZENTRA CORE - Backend VULKAN (Nvidia mode/Ollama)
+# ZENTRA CORE - NVIDIA AI ACCELERATED RUNNER
 
+# Spostati nella cartella in cui si trova questo script
 cd "$(dirname "$0")"
 
-echo "======================================================"
-echo "   ATTIVAZIONE VULKAN - MACCHINA LINUX (Nvidia)"
-echo "======================================================"
+VERSION=$(cat core/version 2>/dev/null || echo "Unknown")
 
-# --- VARIABILI CRITICHE: SBLOCCO VULKAN ---
-export OLLAMA_VULKAN=1
-export OLLAMA_LLM_LIBRARY=vulkan
+echo -e "\033[1;33m==============================================================\033[0m"
+echo -e "\033[1;33m ZENTRA CORE NVIDIA AI v${VERSION}\033[0m"
+echo -e "\033[1;33m==============================================================\033[0m"
+echo ""
 
-# --- OTTIMIZZAZIONE VRAM ---
-export OLLAMA_GPU_OVERHEAD=1
-export OLLAMA_NUM_PARALLEL=1
-export OLLAMA_KEEP_ALIVE=-1
-
-echo "[1/3] Pulizia logica dei processi precedenti (ollama serve)..."
-pkill -f "ollama serve"
-
-echo "[2/3] Avvio server Ollama in background..."
-ollama serve &
-
-echo "[3/3] Attesa inizializzazione Driver Vulkan (12 secondi)..."
-sleep 12
-
-echo "Lancio Zentra Monitor..."
+# Avvia l'ambiente virtuale se esiste
 if [ -f "venv/bin/activate" ]; then
     source venv/bin/activate
 fi
 
+echo -e "[*] Avvio sessione con supporto accelerazione CUDA..."
+echo -e "[*] Premere \033[1;33mF9\033[0m per un Riavvio Sicuro del programma."
+echo ""
+
 python3 monitor.py
 
+echo ""
+echo "[!] Processo terminato."
 echo "Premi INVIO per uscire..."
 read

@@ -391,6 +391,23 @@ def show_help():
     # Clean up on exit and leave the task to show_complete_ui
     setup_console()
 
+def show_web_access_info(config):
+    """Prints Web UI access links if the plugin is active."""
+    port = config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
+    base_url = f"http://localhost:{port}"
+    
+    import shutil
+    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    
+    print(f"{Fore.CYAN}┌{'─' * (L-2)}┐{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}│{Style.RESET_ALL} {Fore.YELLOW}{'WEB INTERFACE ACCESS'.center(L-4)}{Style.RESET_ALL} {Fore.CYAN}│{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}├{'─' * (L-2)}┤{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Chat:  {Style.RESET_ALL} {base_url}/chat".ljust(L-1))
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Config:{Style.RESET_ALL} {base_url}/zentra/config/ui".ljust(L-1))
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Drive: {Style.RESET_ALL} {base_url}/drive".ljust(L-1))
+    print(f"{Fore.CYAN}└{'─' * (L-2)}┘{Style.RESET_ALL}")
+    print()
+
 def write_zentra(text):
     """Prints Zentra's response highlighting it in CYAN."""
     from core.processing import filtri

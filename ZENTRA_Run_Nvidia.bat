@@ -1,40 +1,31 @@
 @echo off
-title ZENTRA CORE - Backend VULKAN (Nvidia 920MX)
-
+@chcp 65001 >nul
+title ZENTRA CORE - NVIDIA AI ACCELERATED
 cd /d "%~dp0"
+color 0E
 
-echo ======================================================
-echo    ATTIVAZIONE VULKAN - NVIDIA 920MX (Ollama 0.18.0)
-echo ======================================================
+echo.
+set ZENTRA_VERSION=Unknown
+if exist core\version set /p ZENTRA_VERSION=<core\version
+echo  ==============================================================
+echo   ZENTRA CORE NVIDIA RUNNER v%ZENTRA_VERSION%
+echo  ==============================================================
+echo.
 
-:: --- VARIABILE CRITICA: SBLOCCO VULKAN ---
-:: Senza questa, Ollama 0.18+ ignora la GPU
-set OLLAMA_VULKAN=1
+:: Attiva l'ambiente virtuale se esiste
+if exist "venv\Scripts\activate.bat" (
+  call venv\Scripts\activate.bat
+)
 
-:: Forza l'uso della libreria Vulkan
-set OLLAMA_LLM_LIBRARY=vulkan
+echo [*] Avvio sessione con supporto CUDA...
+echo [*] Premere F9 per un Riavvio Sicuro del programma.
+echo.
 
-:: --- OTTIMIZZAZIONE VRAM (2GB) ---
-:: Impedisce crash da saturazione memoria
-set OLLAMA_GPU_OVERHEAD=1
-:: Disabilita caricamenti paralleli per non dividere la VRAM
-set OLLAMA_NUM_PARALLEL=1
-set OLLAMA_KEEP_ALIVE=-1
+:: Forza l'uso di CUDA se disponibile via variabili d'ambiente (opzionale)
+set CUDA_VISIBLE_DEVICES=0
 
-:: --- VARIABILI ZENTRA ---
-setx GROQ_API_KEY "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" >nul
-
-echo [1/3] Pulizia processi precedenti...
-taskkill /f /im ollama.exe >nul 2>&1
-
-echo [2/3] Avvio server Ollama...
-:: Usiamo 'start' cosi' vedi i log in una finestra a parte
-start "LOGS OLLAMA" cmd /c "ollama serve"
-
-echo [3/3] Attesa inizializzazione Driver Vulkan (12 secondi)...
-timeout /t 12 /nobreak
-
-echo Lancio Zentra Monitor...
 python monitor.py
 
+echo.
+echo [!] Processo terminato.
 pause
