@@ -419,7 +419,7 @@ async function loadPlugins() {
     const icons = {DASHBOARD:'📊',FILE_MANAGER:'📁',HELP:'❓',MEDIA:'🎵',ROLEPLAY:'🎭',SYSTEM:'⚙',WEB:'🌐',WEBCAM:'📷',WEB_UI:'💻'};
     const prompts = {
       DASHBOARD: I18N.prompt_dashboard,
-      FILE_MANAGER: 'read: C:\\Zentra-Core\\config.json',
+      FILE_MANAGER: 'read: config/system.yaml',
       HELP: I18N.prompt_help,
       MEDIA: I18N.prompt_media,
       ROLEPLAY: I18N.prompt_roleplay,

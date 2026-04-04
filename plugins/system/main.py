@@ -11,6 +11,7 @@ try:
     from core.logging import logger
     from core.i18n import translator
     from app.config import ConfigManager
+    from core.system.os_adapter import OSAdapter
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[SYS_DEBUG]", *args)
@@ -51,9 +52,9 @@ class SystemTools:
             "explorer_mappings": {
                 "type": "dict",
                 "default": {
-                    "desktop": os.path.expanduser("~\\Desktop"),
-                    "download": os.path.expanduser("~\\Downloads"),
-                    "documenti": os.path.expanduser("~\\Documents"),
+                    "desktop": OSAdapter.expand_user_folder("desktop"),
+                    "download": OSAdapter.expand_user_folder("download"),
+                    "documenti": OSAdapter.expand_user_folder("documenti"),
                     "core": os.path.join(os.getcwd(), "core"),
                     "plugins": os.path.join(os.getcwd(), "plugins"),
                     "memory": os.path.join(os.getcwd(), "memory"),
@@ -164,11 +165,11 @@ class SystemTools:
 
     def open_terminal(self) -> str:
         """
-        Opens a new independent Windows command prompt (CMD) window.
+        Opens a new independent Terminal/CMD window.
         """
         try:
-            logger.info("Opening independent external CMD instance.")
-            subprocess.Popen("start cmd.exe", shell=True)
+            logger.info("Opening independent external terminal instance.")
+            OSAdapter.open_terminal()
             return translator.t("plugin_system_terminal_opened")
         except Exception as e:
             logger.error(f"Terminal open failed: {e}")
@@ -186,13 +187,13 @@ class SystemTools:
         programs = self._get_programs()
         if prog in programs:
             try:
-                os.startfile(programs[prog])
+                OSAdapter.open_path(programs[prog])
                 return translator.t("plugin_system_program_starting", prog=prog)
             except Exception as e:
                 return translator.t("plugin_system_program_error", prog=prog, error=str(e))
         else:
             try:
-                os.startfile(prog + ".exe")
+                OSAdapter.open_path(prog + ".exe")
                 return translator.t("plugin_system_program_starting", prog=prog)
             except:
                 return translator.t("plugin_system_program_unknown", prog=prog)
@@ -226,12 +227,12 @@ class SystemTools:
 
         # Expand user path fallback just in case
         if not os.path.exists(path):
-            expanded_path = os.path.expanduser(f"~\\{percorso.capitalize()}")
+            expanded_path = OSAdapter.expand_user_folder(percorso)
             if os.path.exists(expanded_path):
                 path = expanded_path
 
         if os.path.exists(path):
-            os.startfile(path)
+            OSAdapter.open_path(path)
             return translator.t("plugin_system_folder_opened", folder=percorso)
         else:
             return translator.t("plugin_system_path_not_found", path=percorso)
@@ -291,7 +292,7 @@ class SystemTools:
         timeout = ConfigManager().get_plugin_config(self.tag, "shell_command_timeout", 15)
 
         try:
-            output = subprocess.check_output(shell_cmd, shell=True, text=True, stderr=subprocess.STDOUT, timeout=timeout)
+            output = subprocess.check_output(shell_cmd, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT, timeout=timeout)
             return output if output.strip() else translator.t("plugin_system_shell_success", cmd=shell_cmd)
         except subprocess.CalledProcessError as e:
             msg_err = f"Shell Error: {e.output}"
