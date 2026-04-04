@@ -199,4 +199,7 @@ snapshots/**
 # Config files (contain API keys — never commit)
 config/*.yaml
 config/*.json.bak
+
+# TLS/SSL Certificates (contain private keys)
+certs/
 

@@ -205,6 +205,12 @@ function buildPayload() {
            out.plugins['SYS_NET'] = out.plugins['SYS_NET'] || {};
            out.plugins['SYS_NET'].proxy_url = sysPart.plugins.SYS_NET.proxy_url;
         }
+        
+        // Handle WEB_UI HTTPS settings
+        if (sysPart.plugins && sysPart.plugins.WEB_UI) {
+           out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
+           out.plugins['WEB_UI'].https_enabled = sysPart.plugins.WEB_UI.https_enabled;
+        }
     }
 
     document.querySelectorAll('[data-plugin]').forEach(cb => {

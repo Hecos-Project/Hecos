@@ -186,6 +186,9 @@ class PluginWebUI(BaseModel):
     enabled: bool = True
     port: int = 7070
     auto_open_browser: bool = False
+    https_enabled: bool = False
+    cert_file: str = "certs/cert.pem"
+    key_file: str = "certs/key.pem"
 
 class PluginExecutor(BaseModel):
     enabled: bool = True

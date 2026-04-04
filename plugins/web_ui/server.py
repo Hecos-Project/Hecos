@@ -76,14 +76,35 @@ class ZentraWebUIServer:
 
         def _run():
             try:
+                # SSL Setup
+                ssl_context = None
+                webui_cfg = self.config_manager.config.get("plugins", {}).get("WEB_UI", {})
+                use_https = webui_cfg.get("https_enabled", False)
+                scheme = "https" if use_https else "http"
+
+                if use_https:
+                    from .ssl_manager import ensure_certificates
+                    cert_file = webui_cfg.get("cert_file", "certs/cert.pem")
+                    key_file = webui_cfg.get("key_file", "certs/key.pem")
+                    ssl_paths = ensure_certificates(cert_file, key_file)
+                    
+                    if ssl_paths:
+                        ssl_context = ssl_paths  # Flask expects a tuple (cert, key)
+                    else:
+                        self.logger.warning("[WebUI] HTTPS requested but cert generation failed. Falling back to HTTP.")
+                        scheme = "http"
+
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
-                    f"http://127.0.0.1:{self.port}/chat  |  "
-                    f"http://127.0.0.1:{self.port}/zentra/config/ui"
+                    f"{scheme}://127.0.0.1:{self.port}/chat  |  "
+                    f"{scheme}://127.0.0.1:{self.port}/zentra/config/ui"
                 )
                 # We disable reloader to avoid starting Zentra threads twice
                 # Bind to 0.0.0.0 to handle localhost/127.0.0.1/::1 issues on Windows
-                app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False)
+                if ssl_context:
+                    app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False, ssl_context=ssl_context)
+                else:
+                    app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False)
             except Exception as e:
                 self.logger.error(f"[WebUI] Flask exception: {e}")
 
@@ -214,7 +235,9 @@ if __name__ == "__main__":
         import webbrowser
         time.sleep(1.5)
         if not is_webui_already_open(root):
-            webbrowser.open(f"http://127.0.0.1:7070/chat")
+            webui_cfg = cfg.config.get("plugins", {}).get("WEB_UI", {})
+            scheme = "https" if webui_cfg.get("https_enabled", False) else "http"
+            webbrowser.open(f"{scheme}://127.0.0.1:7070/chat")
         else:
             print("[WEB] WebUI already active in a tab (heartbeat detected). Skipping auto-open.")
     

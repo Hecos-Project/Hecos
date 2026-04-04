@@ -20,6 +20,10 @@ function populateSystemUI() {
     setCheck('sys-fastboot', sys.fast_boot ?? false);
     setCheck('sys-flask-debug', sys.flask_debug ?? false);
     setVal('sys-language', c.language || 'en');
+    
+    // HTTPS config
+    const webUiPlug = (c.plugins || {}).WEB_UI || {};
+    setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
 
     const sysNet = (c.plugins || {}).SYS_NET || {};
     if (typeof restoreProxyFields === 'function') {
@@ -67,6 +71,9 @@ function buildSystemPayload() {
         plugins: {
             SYS_NET: {
                 proxy_url: proxyEl ? proxyEl.value.trim() : ""
+            },
+            WEB_UI: {
+                https_enabled: document.getElementById('sys-https-enabled')?.checked || false
             }
         }
     };
