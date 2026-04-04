@@ -31,6 +31,9 @@
     {% endif %}
 
     <a href="/chat" class="btn btn-secondary" style="text-decoration:none;">{{ t("webui_nav_chat") }}</a>
+    {% if current_user.is_authenticated %}
+    <a href="/drive" class="btn btn-secondary" style="text-decoration:none;">🗂️ Drive</a>
+    {% endif %}
   </div>
 </header>
 
@@ -55,6 +58,7 @@
     <button class="tab" onclick="showTab('media')">Media</button>
     <button class="tab" onclick="showTab('sysnet')">Sys Net</button>
     <button class="tab" onclick="showTab('system')">System</button>
+    <button class="tab" onclick="showTab('drive'); loadDriveConfig()">🗂️ Drive</button>
     {% if current_user.is_authenticated and current_user.role == 'admin' %}
     <button class="tab" onclick="showTab('users'); loadUsersData()">Users</button>
     {% endif %}
@@ -79,6 +83,7 @@
     {% endif %}
     {% include 'modules/config_payload.html' %}
     {% include 'modules/config_plugins.html' %}
+    {% include 'modules/config_drive.html' %}
     {% include 'modules/config_logs.html' %}
   </form>
 </div>

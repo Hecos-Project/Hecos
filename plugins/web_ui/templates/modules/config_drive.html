@@ -1,0 +1,64 @@
+<!-- DRIVE CONFIG PANEL -->
+<div id="tab-drive" class="panel">
+  <div class="card">
+    <div class="card-title">🗂️ Zentra Drive — File Manager</div>
+    <p style="font-size:12px; color:#888; margin-bottom:16px;">
+      Configura il modulo HTTP File Manager. Accessibile via <a href="/drive" target="_blank" style="color:#66fcf1;">/drive</a> (solo utenti autenticati).
+    </p>
+
+    <div class="field">
+      <label>📁 Root Directory</label>
+      <input type="text" id="drive-root-dir" placeholder="Vuoto = Home utente (es. C:\Users\Asus o /home/user)">
+      <small style="color:#666; font-size:11px;">La navigazione è limitata a questa cartella. Non è possibile salire al di sopra della root.</small>
+    </div>
+
+    <div class="field">
+      <label>⬆️ Dimensione massima upload (MB)</label>
+      <input type="number" id="drive-max-upload-mb" min="1" max="2048" value="100">
+    </div>
+
+    <div class="field">
+      <label>🔒 Estensioni consentite in upload</label>
+      <input type="text" id="drive-allowed-ext" placeholder="Vuoto = tutte (es: jpg,png,pdf,txt,mp3)">
+      <small style="color:#666; font-size:11px;">Lista separata da virgola. Lascia vuoto per consentire tutti i tipi di file.</small>
+    </div>
+
+    <div style="margin-top:18px; padding:12px; background:rgba(102,252,241,0.05); border:1px solid rgba(102,252,241,0.15); border-radius:8px;">
+      <div style="font-size:12px; color:#66fcf1; margin-bottom:8px;">🔗 Accesso rapido</div>
+      <a href="/drive" target="_blank" class="btn btn-secondary" style="text-decoration:none; font-size:12px;">Apri Zentra Drive →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Drive Config Load/Save ───────────────────────────────────────────────────
+function loadDriveConfig() {
+  fetch("/zentra/api/config")
+    .then(r => r.json())
+    .then(cfg => {
+      const d = (cfg.plugins || {}).DRIVE || {};
+      document.getElementById("drive-root-dir").value = d.root_dir || "";
+      document.getElementById("drive-max-upload-mb").value = d.max_upload_mb ?? 100;
+      document.getElementById("drive-allowed-ext").value = d.allowed_extensions || "";
+    })
+    .catch(e => console.warn("[Drive config] load error:", e));
+}
+
+function buildDrivePayload() {
+  return {
+    plugins: {
+      DRIVE: {
+        root_dir:            document.getElementById("drive-root-dir").value.trim(),
+        max_upload_mb:       parseInt(document.getElementById("drive-max-upload-mb").value) || 100,
+        allowed_extensions:  document.getElementById("drive-allowed-ext").value.trim()
+      }
+    }
+  };
+}
+
+// Hook into the global init + save machinery
+document.addEventListener("DOMContentLoaded", () => {
+  // Carica al click sulla tab
+  document.querySelector('[onclick*="showTab(\'drive\')"]')?.addEventListener("click", loadDriveConfig);
+});
+</script>

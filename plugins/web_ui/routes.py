@@ -21,3 +21,11 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_media_routes(app, cfg_mgr, root_dir, logger, get_sm)
     init_system_routes(app, cfg_mgr, root_dir, logger, get_sm)
     init_users_routes(app, logger)
+    
+    # Zentra Drive — HTTP File Manager
+    try:
+        from plugins.drive.routes import init_drive_routes
+        init_drive_routes(app, logger)
+    except Exception as e:
+        logger.warning(f"[WebUI] Zentra Drive non disponibile: {e}")
+

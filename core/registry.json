@@ -20,6 +20,14 @@
         "example": "",
         "is_class_based": true
     },
+    "DRIVE": {
+        "description": "HTTP File Manager: sfoglia, carica, scarica e cancella file via WebUI.",
+        "commands": {
+            "/drive": "Apre il File Manager nel browser"
+        },
+        "status": "ONLINE",
+        "example": "Vai su /drive per sfogliare i tuoi file."
+    },
     "EXECUTOR": {
         "description": "Safe Python execution (AST Sandbox).",
         "commands": {
