@@ -37,7 +37,11 @@ class AgentExecutor:
         
     def _emit(self, msg: str, level: str = "info"):
         """Routes a trace to both the terminal tracer and the optional session callback."""
-        AgentTracer.emit(self.state_manager, msg, level=level)
+        # If trace_callback is present, we are in a /api/stream session.
+        # Sending it to state_manager too would duplicate the trace via /api/events.
+        sm_for_trace = self.state_manager if not self.trace_callback else None
+        AgentTracer.emit(sm_for_trace, msg, level=level)
+        
         if self.trace_callback:
             try:
                 self.trace_callback(msg, level)
