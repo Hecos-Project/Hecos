@@ -60,6 +60,27 @@ def generate_self_signed_cert(cert_file: str, key_file: str, hostname: str = "lo
             x509.NameAttribute(NameOID.COMMON_NAME, hostname),
         ])
 
+        # Fetch the LAN IP dynamically to include it in the cert SANs
+        try:
+            import socket
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('10.254.254.254', 1))
+            lan_ip_str = s.getsockname()[0]
+            s.close()
+            san_ip = ipaddress.IPv4Address(lan_ip_str)
+        except Exception:
+            san_ip = None
+
+        san_list = [
+            x509.DNSName(hostname),
+            x509.DNSName("localhost"),
+            x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+        ]
+        if san_ip:
+            san_list.append(x509.IPAddress(san_ip))
+
+        from cryptography.x509.oid import ExtendedKeyUsageOID
+
         # Build the certificate
         now = datetime.datetime.now(datetime.timezone.utc)
         cert = (
@@ -69,13 +90,31 @@ def generate_self_signed_cert(cert_file: str, key_file: str, hostname: str = "lo
             .public_key(key.public_key())
             .serial_number(x509.random_serial_number())
             .not_valid_before(now)
-            .not_valid_after(now + datetime.timedelta(days=3650))  # 10 years
+            .not_valid_after(now + datetime.timedelta(days=365))  # 1 year (iOS strict policy max 398 days)
             .add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName(hostname),
-                    x509.DNSName("localhost"),
-                    x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
-                ]),
+                x509.SubjectAlternativeName(san_list),
+                critical=False,
+            )
+            .add_extension(
+                x509.BasicConstraints(ca=False, path_length=None),
+                critical=True,
+            )
+            .add_extension(
+                x509.KeyUsage(
+                    digital_signature=True,
+                    content_commitment=False,
+                    key_encipherment=True,
+                    data_encipherment=False,
+                    key_agreement=False,
+                    key_cert_sign=False,
+                    crl_sign=False,
+                    encipher_only=False,
+                    decipher_only=False,
+                ),
+                critical=True,
+            )
+            .add_extension(
+                x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]),
                 critical=False,
             )
             .sign(key, hashes.SHA256())

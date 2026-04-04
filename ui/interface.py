@@ -393,8 +393,21 @@ def show_help():
 
 def show_web_access_info(config):
     """Prints Web UI access links if the plugin is active."""
-    port = config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
-    base_url = f"http://localhost:{port}"
+    web_opts = config.get("plugins", {}).get("WEB_UI", {})
+    port = web_opts.get("port", 7070)
+    use_https = web_opts.get("https_enabled", False)
+    scheme = "https" if use_https else "http"
+    
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('10.254.254.254', 1))
+        lan_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        lan_ip = "localhost"
+        
+    base_url = f"{scheme}://{lan_ip}:{port}"
     
     import shutil
     L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)

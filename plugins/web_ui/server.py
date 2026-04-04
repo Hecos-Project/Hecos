@@ -122,10 +122,19 @@ class ZentraWebUIServer:
                         self.logger.warning("[WebUI] HTTPS requested but cert generation failed. Falling back to HTTP.")
                         scheme = "http"
 
+                try:
+                    import socket
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(('10.254.254.254', 1))
+                    lan_ip = s.getsockname()[0]
+                    s.close()
+                except Exception:
+                    lan_ip = "127.0.0.1"
+
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
-                    f"{scheme}://127.0.0.1:{self.port}/chat  |  "
-                    f"{scheme}://127.0.0.1:{self.port}/zentra/config/ui"
+                    f"{scheme}://{lan_ip}:{self.port}/chat  |  "
+                    f"{scheme}://{lan_ip}:{self.port}/zentra/config/ui"
                 )
                 # We disable reloader to avoid starting Zentra threads twice
                 # Bind to 0.0.0.0 to handle localhost/127.0.0.1/::1 issues on Windows

@@ -30,13 +30,22 @@ if errorlevel 1 (
 )
 echo.
 
+:: Recupera l'IP della macchina per l'accesso remoto
+set LAN_IP=localhost
+for /f "delims=" %%i in ('python -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('10.254.254.254', 1)); print(s.getsockname()[0])" 2^>nul') do set LAN_IP=%%i
+
+:: Recupera lo schema HTTP/HTTPS da system.yaml
+set SCHEME=http
+for /f "delims=" %%s in ('python -c "import yaml; print('https' if yaml.safe_load(open('config/system.yaml')).get('plugins',{}).get('WEB_UI',{}).get('https_enabled',False) else 'http')" 2^>nul') do set SCHEME=%%s
+
 echo  ==============================================================
 echo   [ ACCESSO RAPIDO ]
-echo   Se chiudi il browser per sbaglio, usa Ctrl + Clic sui link:
+echo   Se chiudi il browser per sbaglio o vuoi collegarti
+echo   dal telefono o tablet, usa l'indirizzo della tua rete:
 echo.
-echo   * Chat:     http://localhost:7070/chat
-echo   * Config:   http://localhost:7070/zentra/config/ui
-echo   * Drive:    http://localhost:7070/drive
+echo   * Chat:     %SCHEME%://%LAN_IP%:7070/chat
+echo   * Config:   %SCHEME%://%LAN_IP%:7070/zentra/config/ui
+echo   * Drive:    %SCHEME%://%LAN_IP%:7070/drive
 echo  ==============================================================
 echo.
 
