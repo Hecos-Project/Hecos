@@ -16,12 +16,12 @@ def init_security_routes(app, logger):
             return jsonify({"error": "Root CA not found. System is not configured for HTTPS."}), 404
         
         try:
-            # Send with correct mimetype for iOS installation
+            # Send with correct mimetype for x509 certificates
             return send_file(
                 ca_path,
-                mimetype='application/x-x509-ca-cert',
+                mimetype='application/pkix-cert',
                 as_attachment=True,
-                download_name='zentra_rootCA.pem'
+                download_name='zentra_rootCA.crt'
             )
         except Exception as e:
             logger.error(f"[PKI] Certificate send error: {str(e)}")
