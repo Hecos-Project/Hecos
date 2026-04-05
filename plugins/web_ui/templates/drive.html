@@ -259,6 +259,44 @@
     @media (max-width:600px) {
       #sidebar { display:none; }
     }
+
+    /* Mobile responsive fixes */
+    @media (max-width: 768px) {
+      header {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+      .nav-links {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+      }
+      .user-badge {
+        padding: 3px 8px;
+        font-size: 11px;
+      }
+      .nav-links a {
+        padding: 4px 8px;
+        font-size: 11px;
+      }
+      #toolbar {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px;
+      }
+      #path-bar {
+        width: 100%;
+        order: -1;
+      }
+      table thead th:nth-child(2),
+      table thead th:nth-child(3),
+      table td:nth-child(2),
+      table td:nth-child(3) {
+        display: none; /* Hide size & date columns on mobile */
+      }
+    }
   </style>
 </head>
 <body>

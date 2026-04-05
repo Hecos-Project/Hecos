@@ -9,6 +9,39 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    @media (max-width: 768px) {
+      header {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+      header > div:last-child {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+      }
+      /* Make tabs row scrollable horizontally */
+      .tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        padding-bottom: 4px;
+      }
+      .tab {
+        flex-shrink: 0;
+        font-size: 11px;
+        padding: 6px 10px;
+        white-space: nowrap;
+      }
+      .container {
+        padding: 8px;
+      }
+    }
+  </style>
 </head>
 <body>
 
