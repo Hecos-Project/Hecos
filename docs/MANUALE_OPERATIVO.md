@@ -1,7 +1,7 @@
 # 📖 MANUALE OPERATIVO - Zentra Core
 
 *Documentazione di sistema per l'Amministratore (Admin).*
-**Versione:** 0.9.9 (Sincro Centralizzata & Pulizia Root)
+**Versione:** 0.12.0 (Zentra Drive & WebUI Autonoma)
 
 ---
 
@@ -105,7 +105,33 @@ Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://lo
 
 ---
 
-## 🛡️ 8. Sicurezza e Risoluzione Problemi
+- **Estensioni Consentite**: Campo csv per blindare gli upload a specifiche estensioni (es. solo `pdf, jpg`). Se vuoto, nessuna restrizione viene applicata.
+
+---
+
+## 🛡️ 9. Sicurezza Avanzata (Zentra PKI)
+
+Zentra 0.12.0 introduce un'infrastruttura **PKI (Public Key Infrastructure)** integrata per garantire connessioni HTTPS sicure in tutta la rete locale.
+
+### Certificati e Root CA
+Per sbloccare funzionalità come il **Microfono** e la **Webcam** sui browser mobile (che richiedono contesti sicuri), Zentra agisce come una propria Autorità di Certificazione:
+1. **Root CA**: Generata automaticamente al primo avvio in `certs/ca/`.
+2. **Installazione**: È necessario scaricare e installare il certificato `Root CA` sul proprio dispositivo (Mobile o PC remoto) e impostarlo come "Attendibile".
+3. **Download**: Il certificato è scaricabile direttamente dalla tab **Security** nel Pannello di Configurazione o dal modal **Neural Link** nella chat.
+
+---
+
+## 📱 10. Interfaccia Mobile-First
+
+Zentra è ora ottimizzato per l'uso su smartphone e tablet.
+- **Menu Hamburger**: Su schermi piccoli, la sidebar scompare e viene sostituita da un menu a scorrimento (accessibile tramite l'icona `☰` in alto a sinistra).
+- **Safe Area & Gestures**: Le testate e i tab di configurazione sono ottimizzati per il tocco e lo scorrimento orizzontale.
+- **Neural Link**: Su mobile, la prima interazione richiede il tocco del pulsante "Establish Connection" per sbloccare l'AudioContext del browser e permettere all'IA di parlare e ascoltare.
+
+
+---
+
+## 🛡️ 9. Sicurezza e Risoluzione Problemi
 
 1. **Bug dell'interferenza grafica (Dashboard):** L'engine di Zentra unisce asincronamente i thread UI. Ogni compenetrazione di testi è risolta dal blocco totale `(Thread Join)` ad inizio chiamata del menu F7.
 2. **Logs:** I Log di Zentra si conservano nella directory `/logs`. Da Config F7 è possibile nascondere il report log dalla chat per favorire leggibilità di testo.
@@ -113,7 +139,7 @@ Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://lo
 
 ---
 
-## 🤖 9. Agente Autonomo e Sandbox (Code Jail)
+## 🤖 10. Agente Autonomo e Sandbox (Code Jail)
 
 Dalla versione 0.9.9 Zentra integra un **Loop Cognitivo (Agentic Loop)**. Questo trasforma il sistema da un semplice chatbot a un agente capace di ragionamento complesso su più step (Chain of Thought).
 
@@ -121,4 +147,4 @@ Dalla versione 0.9.9 Zentra integra un **Loop Cognitivo (Agentic Loop)**. Questo
 - **Zentra Code Jail (Sandbox)**: Zentra può scrivere frammenti di codice Python al volo ed eseguirli (nella cartella sicura `/workspace/sandbox/`) per risolvere calcoli aritmetici lunghi, costruire algoritmi o manipolare dati complessi con precisione assoluta. Una speciale macchina AST di sicurezza interviene prima dell'esecuzione: se l'IA prova a usare comandi di sistema pericolosi, l'azione viene bloccata all'istante, mantenendo il computer sempre protetto.
 
 ---
-*Fine del rapporto documentale v0.9.9.*
+*Fine del rapporto documentale v0.12.0.*

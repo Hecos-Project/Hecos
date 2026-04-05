@@ -14,6 +14,7 @@ aiohttp>=3.9.0              # Supporto asincrono (opzionale)
 # INTERFACCIA E LOGGING
 # ------------------------------
 colorama>=0.4.6             # Colori ANSI per terminale
+flask-login>=0.6.3          # Gestione sessioni e auth WebUI
 
 # ------------------------------
 # SISTEMA E HARDWARE

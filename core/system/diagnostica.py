@@ -226,11 +226,12 @@ def start_wake_sequence(config):
         print(f"\n{CIANO}==================================================={RESET}")
     
     # Estrae la frase personalizzata adatta alla lingua corrente
-    from core.system.greeting import get_spoken_greeting
+    from core.system.greeting import get_spoken_greeting, get_ui_greeting
     intro_greeting_voc = get_spoken_greeting(config)
+    intro_greeting_ui = get_ui_greeting(config)
  
     # Print in UI locale, speak in VOICE language (Always at startup)
-    print_and_speak(f"{VERDE}[SYSTEM] {RESET}" + translator.t("intro_greeting"), intro_greeting_voc)
+    print_and_speak(f"{VERDE}[SYSTEM] {RESET}" + intro_greeting_ui, intro_greeting_voc)
     
     while msvcrt.kbhit():
         msvcrt.getch()

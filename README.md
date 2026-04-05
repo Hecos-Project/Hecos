@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Zentra Logo">
 </p>
 
-# Zentra Core - Version 0.11.0 (Runtime Alpha)
+# Zentra Core - Version 0.12.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,22 +12,23 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 ---
 
 > [!WARNING]
-> **Runtime Alpha Status**: Zentra Core is currently in `v0.11.0`. This repository contains the engine, backend, AI reasoning modules, and the main native WebUI. Features may change, and the system is not yet considered stable. Use with caution.
+> **Runtime Alpha Status**: Zentra Core is currently in `v0.12.0`. This repository contains the engine, backend, AI reasoning modules, and the main native WebUI. Features may change, and the system is not yet considered stable. Use with caution.
 
 ## 🚀 Overview
 **Zentra Core** is a local-first AI assistant platform that runs entirely on your machine.
 It combines local LLMs, voice interaction, system automation, and a modular plugin architecture to create a fully customizable AI companion.
 
-Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.11.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
+Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.12.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 
-## ✨ Key Features (v0.11.0)
+## ✨ Key Features (v0.12.0)
 * 🤖 **Autonomous Agentic Loop** — Zentra can now reason step-by-step (Chain of Thought), dynamically select tools, and solve complex multi-step problems autonomously.
 * 🛡️ **Zentra Code Jail (AST Sandbox)** — A native, highly secure Python sandbox that allows the AI to execute algorithms, math, and data logic safely.
 * 👁️ **Native Vision Support** — Multimodal AI capabilities for Gemini, OpenAI, and Ollama (LLaVA). Analyze images, photos, and screenshots directly in chat.
 * 🏗️ **Native WebUI Plugin** — Migrated from a bridge to a core plugin (`plugins/web_ui/`) for maximum performance and stability.
-* 🔒 **Secure Local HTTPS** — WebUI natively integrates an- **HTTPS Native Security**: Self-signed SSL certificate generation for secure WebRTC integration (Microphone/Webcam API).
+* 🔒 **Professional Zentra PKI (HTTPS)** — Zentra now acts as its own **Certificate Authority (Root CA)**. It automatically generates and signs host-specific certificates, enabling a full "Green Lock" experience on all devices. This unlocks browser-restricted features like Microphone and Camera across your LAN.
+* 📱 **Mobile-First Responsive UI** — A completely redesigned mobile interface featuring an off-canvas hamburger menu, swipeable configuration tabs, and an optimized "Neural Link" for seamless media access on iOS and Android.
 * ⚙️ **YAML Configuration** — Clean, validated `system.yaml`, `audio.yaml` powered by Pydantic v2 schemas.
 * 📊 **Token Payload Inspector** — Live transparency on context window usage per-plugin via the WebUI Dashboard.
 * 🖥️ **Native Multi-OS Support** — Deep OS-agnostic architecture via `OSAdapter` (Fully supports Windows, Linux, and MacOS).
@@ -38,7 +39,8 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.11.0 off
 * 🎙️ **Integrated Voice Chat** — Native Chat UI with Piper TTS integration and automatic audio playback.
 * 🔌 **Plugin Macro Buttons** — Sidebar plugin list now features clickable macros to inject specialized commands instantly.
 * 💾 **Persistent Memory** — SQLite-based long-term memory with shared context across WebUI and Terminal.
-* 🚀 **Standalone Launcher** — Dedicated `run_zentra_web.bat` to start the Web server independently.
+* 🗂️ **Zentra Drive (File Manager)** — Native HTTP file manager integrated into the WebUI to upload, download, and organize your system files through a seamless dual-panel interface.
+* 🚀 **Professional English Launchers** — All startup scripts (`.bat` and `.sh`) are now fully internationalized in English, providing clear instructions for Windows and Linux users alike.
 
 ---
 
@@ -67,10 +69,21 @@ cd zentra-core.github.io
 pip install -r requirements.txt
 ```
 
-### 3. Run Zentra
+### 3. Run Zentra:
 ```bash
 python main.py
 ```
+2. Open your browser and navigate to the local HTTPS/HTTP port highlighted in the console (usually `https://127.0.0.1:7070`).
+
+### 🔐 First Login & Authentication
+Zentra v0.12.0 introduced mandatory Auth. On your very first access, the system generates a default Master Admin:
+- **Username:** `admin`
+- **Password:** `zentra`
+
+We strongly recommend changing the password immediately from the **Users Tab** inside the Configuration Panel.
+
+**Password Recovery:**
+If you get locked out, run `python scripts/reset_admin.py` from the terminal to force a new password, or manually delete the `memory/users.db` file to reset the system defaults.
 
 ---
 
@@ -150,7 +163,7 @@ Official Email: zentra.core.systems@gmail.com
 Detailed technical guides for developers and advanced users:
 - 🏗️ **[Technical Architecture Guide](docs/TECHNICAL_GUIDE.md)**: Deep dive into the OOP structure, data flow, and core engines.
 - 🔌 **[Plugin Development Guide](docs/PLUGINS_DEV.md)**: How to create and register new tools using Native Function Calling.
-- 📁 **[Project Structure Map](docs/zentra_core_structure_v0.10.1.md)**: Complete file-by-file breakdown of the repository.
+- 📁 **[Project Structure Map](docs/ARCHITECTURE_MAP.md)**: Complete file-by-file breakdown of the repository.
 
 ---
 

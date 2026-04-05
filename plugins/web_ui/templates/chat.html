@@ -2,22 +2,56 @@
 <html lang="{{ config.language or 'en' }}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <title>Zentra — {{ t('webui_chat_title') }}</title>
 <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG.png">
-<link rel="stylesheet" href="/assets/css/chat.css">
+<link rel="stylesheet" href="/assets/css/chat.css?v=3">
+<link rel="stylesheet" href="/static/css/mobile/responsive.css?v=5">
+<!-- CRITICAL: inline mobile overrides - cache-proof -->
+<style>
+  /* Default: hide hamburger/mobile elements on desktop */
+  .mobile-only { display: none !important; }
+  /* Mobile: show hamburger, hide desktop topbar */
+  @media (max-width: 768px) {
+    .mobile-only { display: flex !important; }
+    #topbar { display: none !important; }
+    #main { margin-left: 0 !important; width: 100%; }
+    /* CRITICAL FIX: override chat.css that sets display:none on #sidebar at 700px */
+    /* Use off-canvas (left:-100%) instead so it can slide in */
+    #sidebar {
+      display: block !important;
+      position: fixed !important;
+      left: -110% !important;
+      top: 0 !important;
+      height: 100% !important;
+      width: 260px !important;
+      z-index: 1000 !important;
+      transition: left 0.3s ease !important;
+      overflow-y: auto !important;
+      background: #0d1117 !important;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.8) !important;
+    }
+    #sidebar.open { left: 0 !important; }
+    #mobile-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; }
+    #mobile-overlay.active { display: block !important; }
+  }
+</style>
 {% include 'modules/chat_message_actions.html' %}
 {% include 'modules/chat_image_viewer.html' %}
 </head>
 <body>
 
 {% include 'modules/chat_sidebar.html' %}
+{% include 'modules/neural_link.html' %}
 
 <div id="main">
+  {% include 'modules/mobile/mobile_navbar.html' %}
   {% include 'modules/chat_topbar.html' %}
   {% include 'modules/chat_area.html' %}
   {% include 'modules/chat_input.html' %}
 </div>
+
+<script src="/static/js/neural_link/neural_link_logic.js"></script>
 
 <script>
   // I18N Strings for external JS
@@ -48,5 +82,6 @@
 <script src="/static/js/chat_message_actions.js?v=2"></script>
 <script src="/static/js/chat_input_toolbar.js?v=2"></script>
 <script src="/static/js/chat_image_viewer.js?v=2"></script>
+<script src="/static/js/mobile/mobile_logic.js?v=1"></script>
 </body>
 </html>

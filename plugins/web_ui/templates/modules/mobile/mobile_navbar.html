@@ -1,0 +1,47 @@
+<!-- mobile_navbar.html -->
+<div class="mobile-navbar mobile-only" style="padding: 10px 15px; background: rgba(11, 12, 16, 0.9); border-bottom: 1px solid rgba(102, 252, 241, 0.1); align-items: center; justify-content: space-between; backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 900;">
+    <div style="display:flex; align-items: center; gap: 12px;">
+        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" style="background: transparent; border: none; color: #66fcf1; font-size: 24px; cursor: pointer; padding: 0; z-index: 901; position: relative;">☰</button>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: bold; color: #c5c6c7;">Zentra <span style="color:#45a29e;">Core</span></span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <!-- Elementi rapidi per mobile se necessari -->
+        <span id="mobile-status-dot" style="display:inline-block; width:8px; height:8px; background:#45a29e; border-radius:50%; box-shadow:0 0 5px #45a29e;"></span>
+    </div>
+</div>
+
+<!-- Div per l'overlay click-out -->
+<div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileMenu()"></div>
+
+<script>
+function toggleMobileMenu() {
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('mobile-overlay');
+    if (!sidebar) return;
+
+    var isOpen = sidebar.dataset.mobileOpen === 'true';
+
+    if (!isOpen) {
+        // Force sidebar visible with inline styles (wins over everything)
+        sidebar.style.setProperty('display', 'block', 'important');
+        sidebar.style.setProperty('position', 'fixed', 'important');
+        sidebar.style.setProperty('left', '0', 'important');
+        sidebar.style.setProperty('top', '0', 'important');
+        sidebar.style.setProperty('height', '100%', 'important');
+        sidebar.style.setProperty('width', '260px', 'important');
+        sidebar.style.setProperty('z-index', '1000', 'important');
+        sidebar.style.setProperty('background', '#0d1117', 'important');
+        sidebar.style.setProperty('overflow-y', 'auto', 'important');
+        sidebar.style.setProperty('box-shadow', '4px 0 20px rgba(0,0,0,0.9)', 'important');
+        sidebar.dataset.mobileOpen = 'true';
+        if (overlay) { overlay.style.display = 'block'; }
+    } else {
+        // Reset inline styles to let CSS cascade take over (hides it again)
+        ['display','position','left','top','height','width','z-index','background','overflow-y','box-shadow'].forEach(function(p) {
+            sidebar.style.removeProperty(p);
+        });
+        sidebar.dataset.mobileOpen = 'false';
+        if (overlay) { overlay.style.display = 'none'; }
+    }
+}
+</script>

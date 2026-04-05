@@ -52,10 +52,37 @@ class ZentraWebUIServer:
         # Inject translation system into Jinja2 templates
         app.jinja_env.globals.update(t=t)
 
+        # --- ZENTRA AUTH SYSTEM ---
+        app.secret_key = self.config_manager.config.get("system", {}).get("flask_secret_key", "zentra_default_secret_key_84nd")
+        
+        from flask_login import LoginManager, current_user
+        from core.auth.auth_manager import auth_mgr
+        
+        login_manager = LoginManager()
+        login_manager.init_app(app)
+        login_manager.login_view = "login_page"
+
+        @login_manager.user_loader
+        def load_user(user_id):
+            return auth_mgr.get_user_by_id(user_id)
+
+        from flask import request, redirect, url_for, jsonify
+        @app.before_request
+        def require_login():
+            # Exempt routes for the login process and static files
+            exempt_paths = ['/login', '/logout', '/static']
+            if any(request.path.startswith(p) for p in exempt_paths):
+                return
+            
+            if not current_user.is_authenticated:
+                if request.path.startswith('/api/') or request.path.startswith('/zentra/api/'):
+                    return jsonify({"ok": False, "error": "Authentication required. Please login."}), 401
+                return redirect(url_for('login_page'))
+        # --------------------------
+
         # Get debug state from system config
         debug_on = self.config_manager.config.get("system", {}).get("flask_debug", False)
 
-        # Silence werkzeug noise ONLY if debug is off
         import logging as _lg
         wz_log = _lg.getLogger("werkzeug")
         if not debug_on:
@@ -68,11 +95,12 @@ class ZentraWebUIServer:
             # When debug is ON, ensure logs propagate to Zentra's root logger
             wz_log.setLevel(_lg.INFO)
             wz_log.propagate = True
-            _chat_log.info("[WebUI] Flask/Werkzeug logging enabled.")
 
         # Register all routes — pass getter so routes always read the current SM
         init_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
         init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
+        from .routes_auth import init_auth_routes
+        init_auth_routes(app, self.logger)
 
         def _run():
             try:
@@ -83,21 +111,41 @@ class ZentraWebUIServer:
                 scheme = "https" if use_https else "http"
 
                 if use_https:
-                    from .ssl_manager import ensure_certificates
-                    cert_file = webui_cfg.get("cert_file", "certs/cert.pem")
-                    key_file = webui_cfg.get("key_file", "certs/key.pem")
-                    ssl_paths = ensure_certificates(cert_file, key_file)
-                    
-                    if ssl_paths:
-                        ssl_context = ssl_paths  # Flask expects a tuple (cert, key)
-                    else:
-                        self.logger.warning("[WebUI] HTTPS requested but cert generation failed. Falling back to HTTP.")
+                    # 1. Determina l'IP per passarlo nel SAN del certificato
+                    try:
+                        import socket
+                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        s.connect(('10.254.254.254', 1))
+                        lan_ip = s.getsockname()[0]
+                        s.close()
+                    except Exception:
+                        lan_ip = "127.0.0.1"
+
+                    # 2. Genera Root CA e Certificato Host
+                    from core.security.pki import CAManager, CertGenerator
+                    try:
+                        ca = CAManager()
+                        cert_gen = CertGenerator(ca)
+                        cert_file, key_file = cert_gen.generate_host_cert(lan_ip)
+                        ssl_context = (cert_file, key_file)
+                    except Exception as e:
+                        self.logger.warning(f"[WebUI] Errore generazione Zentra PKI: {e}. Fallback to HTTP.")
                         scheme = "http"
+                        
+                else:
+                    try:
+                        import socket
+                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        s.connect(('10.254.254.254', 1))
+                        lan_ip = s.getsockname()[0]
+                        s.close()
+                    except Exception:
+                        lan_ip = "127.0.0.1"
 
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
-                    f"{scheme}://127.0.0.1:{self.port}/chat  |  "
-                    f"{scheme}://127.0.0.1:{self.port}/zentra/config/ui"
+                    f"{scheme}://{lan_ip}:{self.port}/chat  |  "
+                    f"{scheme}://{lan_ip}:{self.port}/zentra/config/ui"
                 )
                 # We disable reloader to avoid starting Zentra threads twice
                 # Bind to 0.0.0.0 to handle localhost/127.0.0.1/::1 issues on Windows

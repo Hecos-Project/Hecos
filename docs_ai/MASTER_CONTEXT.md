@@ -23,4 +23,4 @@ Questo documento stabilisce le regole d'oro per l'evoluzione e la manutenzione d
 ---
 
 > [!IMPORTANT]
-> Zentra-Core è in fase **Runtime Alpha**. La stabilità è fondamentale per lo sviluppo futuro.
+> Zentra-Core è in una fase stabile di **v0.12.0 (Alpha)**. La sicurezza PKI, l'interfaccia mobile-first e l'internazionalizzazione degli script sono ora standard di sistema che devono essere preservati in ogni modifica futura.

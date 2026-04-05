@@ -24,8 +24,20 @@
         "entry_points": ["FastAPI app on localhost:7070"],
         "config_keys": ["plugins.WEB_UI.enabled"]
       },
-      "verification_step": "Navigate to http://127.0.0.1:7070/chat to verify UI loads.",
-      "notes": "Syncs with the Core system state."
+      "verification_step": "Navigate to http://127.0.0.1:7070/chat to verify UI loads."
+    },
+    {
+      "id": "DRIVE_plugin",
+      "description": "Zentra Drive HTTP File Manager. Native browser-based dual-panel interface for file uploads, downloads, and system navigation.",
+      "risk": "medium",
+      "available_in": ["web"],
+      "implementation": {
+        "core_files": ["plugins/drive/main.py", "plugins/drive/routes.py", "plugins/web_ui/templates/drive.html", "plugins/web_ui/static/js/drive.js"],
+        "entry_points": ["FastAPI app route /drive"],
+        "config_keys": ["plugins.DRIVE.enabled", "plugins.DRIVE.root_dir", "plugins.DRIVE.max_upload_mb"]
+      },
+      "verification_step": "Navigate to http://127.0.0.1:7070/drive and verify directory tree loads correctly.",
+      "notes": "Integrates path-traversal protection."
     },
     {
       "id": "DASHBOARD_plugin",

@@ -29,6 +29,10 @@
 - Ogni nuova funzione deve essere aggiunta ai file in `capabilities/*.json`.
 - In caso di errori nel codice rilevati durante la scansione, segnalarli immediatamente come "Documentation/Code Mismatch".
 
+### 4. Validazione UX & Scripts
+- Verificare sempre che le nuove UI siano **responsive** (Test su viewport mobile).
+- Assicurarsi che ogni nuovo script di sistema segua lo standard **I18N English Only**.
+
 ---
 
 ## 🛠 Comandi Rapidi per l'IA

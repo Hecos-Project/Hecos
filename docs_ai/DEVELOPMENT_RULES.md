@@ -29,6 +29,18 @@ Zentra non è più un bridge, ma un ecosistema nativo.
 - Le modifiche alla configurazione devono sempre passare per il `ConfigManager`, che si occuperà in automatico della validazione dei tipi e del salvataggio nel giusto file YAML (`system.yaml`, `audio.yaml`, ecc.).
 - Nessuna modifica raw va fatta al JSON storico.
 
+### 7. Mobile Responsiveness (MANDATORY)
+- Tutte le interfacce WebUI devono essere **Responsive**. Utilizzare media query per garantire il corretto funzionamento su schermi ≤ 768px.
+- La navigazione principale su mobile deve passare attraverso il **Menu Hamburger** (off-canvas).
+
+### 8. Internationalized Scripts (I18N)
+- Tutti i file di avvio e utility (`.bat`, `.sh`, `.py`) devono mostrare messaggi di log e istruzioni esclusivamente in **Inglese**.
+- Questo garantisce la compatibilità cross-platform e l'accessibilità internazionale.
+
+### 9. Secure Contexts (PKI)
+- Con l'introduzione di **Zentra PKI**, gran parte del traffico WebUI avviene su HTTPS.
+- Utilizzare percorsi assoluti (quando possibile via Flask `url_for`) per gli asset e caricare i file tramite protocolli sicuri per evitare avvisi di "Contenuto Misto" sui browser moderni.
+
 ---
 
 > [!WARNING]

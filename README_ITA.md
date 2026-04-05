@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.10.1 (Runtime Alpha)
+# Zentra Core - Versione 0.12.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,22 +12,23 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ---
 
 > [!WARNING]
-> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.11.0`. Questa repository contiene il motore, il backend, i moduli di ragionamento IA e la WebUI nativa principale. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
+> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.12.0`. Questa repository contiene il motore, il backend, i moduli di ragionamento IA e la WebUI nativa principale. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
 
 ## 🚀 Panoramica
 **Zentra Core** è una piattaforma di assistenza AI local-first che gira interamente sulla tua macchina.
 Combina LLM locali, interazione vocale, automazione di sistema e un'architettura a plugin modulari per creare un compagno digitale completamente personalizzabile.
 
-Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.11.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
+Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.12.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
-## ✨ Caratteristiche Principali (v0.11.0)
+## ✨ Caratteristiche Principali (v0.12.0)
 * 🤖 **Agente Cognitivo Autonomo** — Zentra ora ragiona step-by-step (Chain of Thought), sceglie dinamicamente gli strumenti e risolve task complessi in autonomia.
 * 🛡️ **Zentra Code Jail (Sandbox AST)** — Un ambiente di esecuzione nativo e isolato che permette all'IA di eseguire calcoli Python, algoritmi e test in totale sicurezza.
 * 👁️ **Supporto Visione Nativa** — Capacità AI multimodali per Gemini, OpenAI e Ollama (LLaVA). Analizza immagini, foto e screenshot direttamente in chat.
 * 🏗️ **Plugin WebUI Nativo** — Migrato da un bridge a un plugin core (`plugins/web_ui/`) per massime prestazioni e stabilità.
-* 🔒 **Sicurezza HTTPS Locale** — Generazione automatica di certificati self-signed per consentire un contesto browser sicuro (microfono e webcam sbloccati senza frizioni).
+* 🔒 **Zentra PKI Professionale (HTTPS)** — Zentra ora agisce come la propria **Autorità di Certificazione (Root CA)**. Genera e firma automaticamente certificati specifici per l'host, abilitando il "Lucchetto Verde" su tutti i dispositivi. Questo sblocca le funzioni limitate dal browser come Microfono e Camera in tutta la tua LAN.
+* 📱 **UI Responsive Mobile-First** — Un'interfaccia mobile completamente ridisegnata con menu hamburger off-canvas, tab di configurazione scorrevoli e un "Neural Link" ottimizzato per l'accesso ai media su iOS e Android.
 * ⚙️ **Configurazione YAML + Pydantic** — Sistema di configurazione robusto, tipizzato, commentato e human-readable.
 * 📊 **Token Payload Inspector** — Metriche aggiornate in tempo reale per monitorare i byte esatti consumati in contesto per ciascun singolo Plugin, perfetto per ottimizzare i token.
 * 🌐 **I18N Globale (Multilingua)** — Supporto completo per Inglese (default) e Italiano tra Terminale e WebUI con switch in tempo reale.
@@ -37,7 +38,8 @@ Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra
 * 🎙️ **Chat Vocale Integrata** — Interfaccia Chat nativa con integrazione Piper TTS e riproduzione audio automatica.
 * 🔌 **Pulsanti Macro Plugin** — L'elenco plugin nel sidebar ora include macro cliccabili per iniettare comandi specializzati istantaneamente.
 * 💾 **Memoria Persistente** — Memoria SQLite con contesto condiviso tra WebUI e Terminale.
-* 🚀 **Launcher Standalone** — File `run_zentra_web.bat` dedicato per avviare il server Web in modo indipendente.
+* 🗂️ **Zentra Drive (File Manager)** — File manager HTTP nativo integrato nella WebUI per caricare, scaricare e organizzare i file di sistema attraverso una comoda interfaccia a doppio pannello.
+* 🚀 **Launcher Professionali in Inglese** — Tutti gli script di avvio (`.bat` e `.sh`) sono ora completamente internazionalizzati in inglese, fornendo istruzioni chiare per utenti Windows e Linux.
 
 ---
 
@@ -148,7 +150,7 @@ Email Ufficiale: zentra.core.systems@gmail.com
 ## 📚 Documentazione Tecnica
 - 🏗️ **[Guida all'Architettura](docs/TECHNICAL_GUIDE.md)**
 - 🔌 **[Sviluppo Plugin](docs/PLUGINS_DEV.md)**
-- 📁 **[Mappa Struttura](docs/zentra_core_structure_v0.10.1.md)**
+- 📁 **[Mappa Struttura](docs/ARCHITECTURE_MAP.md)**
 
 ---
 

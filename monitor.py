@@ -13,15 +13,18 @@ from core.system import instance_lock
 
 # Path configuration
 DEFAULT_MAIN_SCRIPT = "main.py"
-CONFIG_FILE = os.path.join("config", "system.json")
+CONFIG_FILE = os.path.join("config", "system.yaml")
 
 def get_translator():
     language = "en"
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-                language = cfg.get("language", "en")
+                # Semplice parsing per trovare la riga "language: xx" in YAML senza lib esterne pesanti
+                for line in f:
+                    if line.startswith("language:"):
+                        language = line.split(":")[1].strip().strip('"\'')
+                        break
         except: pass
     
     translations = {
@@ -93,8 +96,10 @@ def start_and_monitor(script_to_run):
                 
         # Natural exit:
         if process.returncode == 42:
+            time.sleep(1) # Safety pause before new incarnation
             return True # Restart on request code 42
         else:
+            print(f"[MONITOR] Process exited with code: {process.returncode}")
             return False # Normal closure or different error, do not restart
                     
     except Exception as e:

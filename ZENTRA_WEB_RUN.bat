@@ -1,38 +1,57 @@
 @echo off
-title ZENTRA — Native Web Server (Watchdog)
-color 0A
+title ZENTRA -- Native Web Server (Watchdog)
+color 0B
 
 echo.
-set /p ZENTRA_VERSION=<core\version
-echo  ======================================
+set ZENTRA_VERSION=Unknown
+if exist core\version set /p ZENTRA_VERSION=<core\version
+echo  ==============================================================
 echo   ZENTRA NATIVE WEB INTERFACE v%ZENTRA_VERSION%
-echo  ======================================
+echo  ==============================================================
 echo.
 
-:: Attiva ambiente virtuale se esiste
+:: Activate virtual environment if it exists
 if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
 
-echo [!] Avvio monitor di controllo in modalità WEB...
-echo [!] Apertura automatica del browser in corso...
+echo [!] Starting control monitor in WEB mode...
+echo [!] Opening browser automatically...
 echo.
 
-:: Apri porta 7070 nel Firewall Windows (solo se la regola non esiste gia')
+:: Open port 7070 in Windows Firewall (only if rule doesn't exist)
 netsh advfirewall firewall show rule name="Zentra WebUI LAN" >nul 2>&1
 if errorlevel 1 (
-  echo [*] Apertura porta 7070 nel Firewall Windows...
-  netsh advfirewall firewall add rule name="Zentra WebUI LAN" dir=in action=allow protocol=TCP localport=7070 >nul
-  echo [+] Porta 7070 aperta. Raggiungibile su http://192.168.1.35:7070/chat
+  echo [*] Opening port 7070 in Windows Firewall...
+  netsh advfirewall firewall add rule name="Zentra WebUI LAN" dir=in action=allow protocol=TCP localport=7070 >nul 2>&1
+  echo [+] Port opened.
 ) else (
-  echo [+] Regola firewall gia' presente. Porta 7070 attiva.
+  echo [+] Firewall rule already exists. Port 7070 is active.
 )
 echo.
 
-:: Avviamo il monitor passando il modulo del server web standalone.
+:: Retrieve machine IP for remote access
+set LAN_IP=localhost
+for /f "delims=" %%i in ('python -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('10.254.254.254', 1)); print(s.getsockname()[0])" 2^>nul') do set LAN_IP=%%i
+
+:: Recupera lo schema HTTP/HTTPS da system.yaml
+set SCHEME=http
+for /f "delims=" %%s in ('python -c "import yaml; print('https' if yaml.safe_load(open('config/system.yaml')).get('plugins',{}).get('WEB_UI',{}).get('https_enabled',False) else 'http')" 2^>nul') do set SCHEME=%%s
+
+echo  ==============================================================
+echo   [ QUICK ACCESS ]
+echo   If you accidentally close the browser or want to
+echo   connect from your phone or tablet, use your network address:
+echo.
+echo   * Chat:     %SCHEME%://%LAN_IP%:7070/chat
+echo   * Config:   %SCHEME%://%LAN_IP%:7070/zentra/config/ui
+echo   * Drive:    %SCHEME%://%LAN_IP%:7070/drive
+echo  ==============================================================
+echo.
+
+:: Starting the monitor
 python monitor.py --script plugins.web_ui.server
 
-
 echo.
-echo [!] Watchdog terminato.
+echo [!] Watchdog terminated.
 timeout /t 5

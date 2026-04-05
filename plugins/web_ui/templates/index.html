@@ -9,6 +9,39 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    @media (max-width: 768px) {
+      header {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+      header > div:last-child {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+      }
+      /* Make tabs row scrollable horizontally */
+      .tabs {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        padding-bottom: 4px;
+      }
+      .tab {
+        flex-shrink: 0;
+        font-size: 11px;
+        padding: 6px 10px;
+        white-space: nowrap;
+      }
+      .container {
+        padding: 8px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -19,7 +52,21 @@
   </div>
   <div style="display:flex; align-items:center; gap:20px;">
     <div id="status-dot"><div class="dot"></div> <span id="hdr-model">{{ t("webui_chat_offline") }}</span></div>
+    
+    <!-- AUTHENTICATION WIDGET -->
+    {% if current_user.is_authenticated %}
+    <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:4px 12px; border-radius:12px; font-size:12px;">
+      <span style="color:#c5c6c7;">Utente:</span>
+      <strong style="color:#66fcf1;">{{ current_user.username }}</strong>
+      <span style="background:#45a29e; color:#0b0c10; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; text-transform:uppercase;">{{ current_user.role }}</span>
+      <a href="/logout" style="color:#ff4b4b; text-decoration:none; margin-left:8px; font-weight:bold;">Esci</a>
+    </div>
+    {% endif %}
+
     <a href="/chat" class="btn btn-secondary" style="text-decoration:none;">{{ t("webui_nav_chat") }}</a>
+    {% if current_user.is_authenticated %}
+    <a href="/drive" class="btn btn-secondary" style="text-decoration:none;">🗂️ Drive</a>
+    {% endif %}
   </div>
 </header>
 
@@ -44,6 +91,11 @@
     <button class="tab" onclick="showTab('media')">Media</button>
     <button class="tab" onclick="showTab('sysnet')">Sys Net</button>
     <button class="tab" onclick="showTab('system')">System</button>
+    <button class="tab" onclick="showTab('drive'); loadDriveConfig()">🗂️ Drive</button>
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    <button class="tab" onclick="showTab('users'); loadUsersData()">Users</button>
+    <button class="tab" onclick="showTab('security')">🔒 Security</button>
+    {% endif %}
     <button class="tab" onclick="showTab('payload'); loadPayloadData()">Payload</button>
     <button class="tab" onclick="showTab('plugins')">Plugins</button>
     <button class="tab" onclick="showTab('logs'); startLogStream();">Logs</button>
@@ -60,8 +112,13 @@
     {% include 'modules/config_system.html' %}
     {% include 'modules/config_media.html' %}
     {% include 'modules/config_sysnet.html' %}
+    {% if current_user.is_authenticated and current_user.role == 'admin' %}
+    {% include 'modules/config_users.html' %}
+    {% include 'modules/config_security.html' %}
+    {% endif %}
     {% include 'modules/config_payload.html' %}
     {% include 'modules/config_plugins.html' %}
+    {% include 'modules/config_drive.html' %}
     {% include 'modules/config_logs.html' %}
   </form>
 </div>

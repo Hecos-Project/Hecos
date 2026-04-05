@@ -391,6 +391,36 @@ def show_help():
     # Clean up on exit and leave the task to show_complete_ui
     setup_console()
 
+def show_web_access_info(config):
+    """Prints Web UI access links if the plugin is active."""
+    web_opts = config.get("plugins", {}).get("WEB_UI", {})
+    port = web_opts.get("port", 7070)
+    use_https = web_opts.get("https_enabled", False)
+    scheme = "https" if use_https else "http"
+    
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('10.254.254.254', 1))
+        lan_ip = s.getsockname()[0]
+        s.close()
+    except Exception:
+        lan_ip = "localhost"
+        
+    base_url = f"{scheme}://{lan_ip}:{port}"
+    
+    import shutil
+    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    
+    print(f"{Fore.CYAN}┌{'─' * (L-2)}┐{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}│{Style.RESET_ALL} {Fore.YELLOW}{'WEB INTERFACE ACCESS'.center(L-4)}{Style.RESET_ALL} {Fore.CYAN}│{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}├{'─' * (L-2)}┤{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Chat:  {Style.RESET_ALL} {base_url}/chat".ljust(L-1))
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Config:{Style.RESET_ALL} {base_url}/zentra/config/ui".ljust(L-1))
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Drive: {Style.RESET_ALL} {base_url}/drive".ljust(L-1))
+    print(f"{Fore.CYAN}└{'─' * (L-2)}┘{Style.RESET_ALL}")
+    print()
+
 def write_zentra(text):
     """Prints Zentra's response highlighting it in CYAN."""
     from core.processing import filtri

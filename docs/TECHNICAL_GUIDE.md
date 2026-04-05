@@ -1,4 +1,4 @@
-## 1. System Architecture (v0.11.0)
+## 1. System Architecture (v0.12.0)
 Zentra Core is built on a **Modular Object-Oriented Architecture** designed for high performance, local first-AI, and extensibility.
 
 ### Design Principles:
@@ -8,8 +8,9 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 - **Multimodal Ready**: Version 0.9.9 introduces native vision support via provider-specific adapters.
 - **Runtime Alpha Status**: The project is currently in an early development phase. This means the system is subject to frequent changes, debugging, and is not yet considered a stable "production-ready" release.
 - **Single-Instance Protection**: To prevent data corruption and resource conflicts, Zentra uses a file-based locking mechanism (`core/system/instance_lock.py`) to ensure only one instance of the core and web interface runs at a time.
-- **Centralized Configuration**: Version 0.10.1 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
+- **Centralized Configuration**: Version 0.12.0 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
 - **OS Agnostic Architecture**: Version 0.11.0 abstracts all operating system dependent workflows via the new `OSAdapter` (`core/system/os_adapter.py`). It guarantees safe cross-platform compatibility across Windows, Linux and MacOS.
+- **Mandatory HTTPS & Auth Security**: Version 0.12.0 implements standard Flask-Login authentication over AES sessions and SQLite SQLite PBKDF2 hashing (`core/auth/auth_manager.py`). The Native UI is completely locked from unauthorized accesses.
 
 ---
 
@@ -48,8 +49,14 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 ### LLM Dynamic Routing
 Zentra Core features a built-in routing system. Instead of hardcoding models, plugins can request a "capability tag". The `LLMManager` looks up the best match in `system.yaml` under the `plugins` section or uses the global default backend. This prevents code repetition when switching models.
 
-### Hardware-Aware Dashboard
-The `plugins/dashboard` module uses a background thread (`ui_updater.py`) to bypass the standard scroll buffer and write directly to the top of the terminal, providing a real-time HUD without flickering.
+### Zentra PKI (Native HTTPS)
+Version 0.12.0 introduces a built-in Certificate Authority. The `core/security/pki` module handles CA generation and host certificate signing. This infrastructure is vital for bypassing browser security restrictions on remote devices, enabling secure access to the Microphone and Camera APIs across the network.
+
+### Mobile-First UI Architecture
+The WebUI now implements a responsive grid and an off-canvas navigation pattern. Key features include:
+- **Mobile Navbar**: A dedicated top bar for screens ≤ 768px.
+- **Swipeable Tabs**: Config tabs use `overflow-x: auto` with touch-scrolling enabled.
+- **Neural Link**: A mandatory bridge for mobile browsers to establish an authenticated and active AudioContext.
 
 ---
 
