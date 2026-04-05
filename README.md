@@ -27,7 +27,8 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.12.0 off
 * 🛡️ **Zentra Code Jail (AST Sandbox)** — A native, highly secure Python sandbox that allows the AI to execute algorithms, math, and data logic safely.
 * 👁️ **Native Vision Support** — Multimodal AI capabilities for Gemini, OpenAI, and Ollama (LLaVA). Analyze images, photos, and screenshots directly in chat.
 * 🏗️ **Native WebUI Plugin** — Migrated from a bridge to a core plugin (`plugins/web_ui/`) for maximum performance and stability.
-* 🔒 **Secure Local HTTPS** — WebUI natively integrates an- **HTTPS Native Security**: Self-signed SSL certificate generation for secure WebRTC integration (Microphone/Webcam API).
+* 🔒 **Professional Zentra PKI (HTTPS)** — Zentra now acts as its own **Certificate Authority (Root CA)**. It automatically generates and signs host-specific certificates, enabling a full "Green Lock" experience on all devices. This unlocks browser-restricted features like Microphone and Camera across your LAN.
+* 📱 **Mobile-First Responsive UI** — A completely redesigned mobile interface featuring an off-canvas hamburger menu, swipeable configuration tabs, and an optimized "Neural Link" for seamless media access on iOS and Android.
 * ⚙️ **YAML Configuration** — Clean, validated `system.yaml`, `audio.yaml` powered by Pydantic v2 schemas.
 * 📊 **Token Payload Inspector** — Live transparency on context window usage per-plugin via the WebUI Dashboard.
 * 🖥️ **Native Multi-OS Support** — Deep OS-agnostic architecture via `OSAdapter` (Fully supports Windows, Linux, and MacOS).
@@ -39,7 +40,7 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.12.0 off
 * 🔌 **Plugin Macro Buttons** — Sidebar plugin list now features clickable macros to inject specialized commands instantly.
 * 💾 **Persistent Memory** — SQLite-based long-term memory with shared context across WebUI and Terminal.
 * 🗂️ **Zentra Drive (File Manager)** — Native HTTP file manager integrated into the WebUI to upload, download, and organize your system files through a seamless dual-panel interface.
-* 🚀 **Standalone Launcher** — Dedicated `run_zentra_web.bat` to start the Web server independently.
+* 🚀 **Professional English Launchers** — All startup scripts (`.bat` and `.sh`) are now fully internationalized in English, providing clear instructions for Windows and Linux users alike.
 
 ---
 
