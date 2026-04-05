@@ -12,12 +12,15 @@
 <body>
 
 {% include 'modules/chat_sidebar.html' %}
+{% include 'modules/neural_link.html' %}
 
 <div id="main">
   {% include 'modules/chat_topbar.html' %}
   {% include 'modules/chat_area.html' %}
   {% include 'modules/chat_input.html' %}
 </div>
+
+<script src="/static/js/neural_link/neural_link_logic.js"></script>
 
 <script>
   // I18N Strings for external JS
