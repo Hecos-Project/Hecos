@@ -2,10 +2,10 @@
 # ZENTRA CORE - Configuration UI Launcher
 
 echo "==================================================="
-echo "        ZENTRA CORE: PANNELLO DI CONTROLLO"
+echo "        ZENTRA CORE: CONTROL PANEL"
 echo "==================================================="
 echo ""
-echo "[SISTEMA] Apertura interfaccia di configurazione..."
+echo "[SYSTEM] Opening configuration interface..."
 echo "[PATH] http://127.0.0.1:7070/zentra/config/ui"
 echo ""
 
@@ -20,9 +20,9 @@ elif which open > /dev/null
 then
   open http://127.0.0.1:7070/zentra/config/ui
 else
-  echo "[ERRORE] Impossibile aprire automaticamente il browser su questo SO."
-  echo "Apri manualmente: http://127.0.0.1:7070/zentra/config/ui"
-  echo "Assicurati che Zentra WebUI sia attiva."
+  echo "[ERROR] Unable to automatically open the browser on this OS."
+  echo "Open manually: http://127.0.0.1:7070/zentra/config/ui"
+  echo "Ensure Zentra WebUI is running."
 fi
 
 sleep 3

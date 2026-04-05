@@ -12,20 +12,20 @@ echo   ZENTRA CORE NVIDIA RUNNER v%ZENTRA_VERSION%
 echo  ==============================================================
 echo.
 
-:: Attiva l'ambiente virtuale se esiste
+:: Activate virtual environment if it exists
 if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
 
-echo [*] Avvio sessione con supporto CUDA...
-echo [*] Premere F9 per un Riavvio Sicuro del programma.
+echo [*] Starting session with CUDA support...
+echo [*] Press F9 for a Safe Restart of the program.
 echo.
 
-:: Forza l'uso di CUDA se disponibile via variabili d'ambiente (opzionale)
+:: Force CUDA usage if available via environment variables (optional)
 set CUDA_VISIBLE_DEVICES=0
 
 python monitor.py
 
 echo.
-echo [!] Processo terminato.
+echo [!] Process terminated.
 pause

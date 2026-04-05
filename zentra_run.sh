@@ -11,18 +11,18 @@ echo -e "\033[1;36m ZENTRA CORE NATIVE TERMINAL v${VERSION}\033[0m"
 echo -e "\033[1;36m==============================================================\033[0m"
 echo ""
 
-# Avvia l'ambiente virtuale se esiste
+# Start the virtual environment if it exists
 if [ -f "venv/bin/activate" ]; then
     source venv/bin/activate
 fi
 
-echo -e "[*] Avvio terminale interattivo..."
-echo -e "[*] Premere \033[1;33mF9\033[0m per un Riavvio Sicuro del programma."
+echo -e "[*] Starting interactive terminal..."
+echo -e "[*] Press \033[1;33mF9\033[0m for a Safe Restart of the program."
 echo ""
 
 python3 monitor.py
 
 echo ""
-echo "[!] Processo terminato."
-echo "Premi INVIO per uscire..."
+echo "[!] Process terminated."
+echo "Press ENTER to exit..."
 read

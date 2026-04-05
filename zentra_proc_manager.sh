@@ -11,17 +11,17 @@ echo -e "\033[1;35m ZENTRA PROCESS MANAGER v${VERSION}\033[0m"
 echo -e "\033[1;35m==============================================================\033[0m"
 echo ""
 
-# Avvia l'ambiente virtuale se esiste
+# Start the virtual environment if it exists
 if [ -f "venv/bin/activate" ]; then
     source venv/bin/activate
 fi
 
-echo -e "[*] Avvio monitor di controllo processi (standalone)..."
+echo -e "[*] Starting standalone process monitor..."
 echo ""
 
 python3 zentra_proc_manager.py
 
 echo ""
-echo "[!] Processo terminato."
-echo "Premi INVIO per uscire..."
+echo "[!] Process terminated."
+echo "Press ENTER to exit..."
 read

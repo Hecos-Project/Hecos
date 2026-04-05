@@ -12,16 +12,16 @@ echo   ZENTRA PROCESS MANAGER v%ZENTRA_VERSION%
 echo  ==============================================================
 echo.
 
-:: Attiva l'ambiente virtuale se esiste
+:: Activate virtual environment if it exists
 if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
 
-echo [*] Avvio monitor di controllo processi (standalone)...
+echo [*] Starting standalone process monitor...
 echo.
 
 python zentra_proc_manager.py
 
 echo.
-echo [!] Processo terminato.
+echo [!] Process terminated.
 pause

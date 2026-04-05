@@ -11,17 +11,17 @@ echo   ZENTRA CORE NATIVE TERMINAL v%ZENTRA_VERSION%
 echo  ==============================================================
 echo.
 
-:: Attiva l'ambiente virtuale se esiste
+:: Activate virtual environment if it exists
 if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
 
-echo [*] Avvio terminale interattivo...
-echo [*] Premere F9 per un Riavvio Sicuro del programma.
+echo [*] Starting interactive terminal...
+echo [*] Press F9 for a Safe Restart of the program.
 echo.
 
 python monitor.py
 
 echo.
-echo [!] Processo terminato.
+echo [!] Process terminated.
 pause

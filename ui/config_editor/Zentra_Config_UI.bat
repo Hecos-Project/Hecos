@@ -3,10 +3,10 @@ title ZENTRA CORE - Configuration UI Launcher
 color 0E
 
 echo ===================================================
-echo           ZENTRA CORE: PANNELLO DI CONTROLLO
+echo           ZENTRA CORE: CONTROL PANEL
 echo ===================================================
 echo.
-echo [SISTEMA] Apertura interfaccia di configurazione...
+echo [SYSTEM] Opening configuration interface...
 echo [PATH] http://localhost:7070/zentra/config/ui
 echo.
 
@@ -14,11 +14,11 @@ echo.
 start http://localhost:7070/zentra/config/ui
 
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERRORE] Impossibile aprire il browser.
-    echo Assicurati che Zentra Core sia attivo sulla porta 7070.
+    echo [ERROR] Unable to open browser.
+    echo Ensure Zentra Core is running on port 7070.
     pause
 ) else (
-    echo [OK] Browser lanciato con successo.
+    echo [OK] Browser launched successfully.
     timeout /t 3 >nul
 )
 
