@@ -256,6 +256,7 @@ async function sendMessage() {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
       } else if(ev.type==='token') {
         aiText += ev.text;
+        if(window.ClientCameraManager) aiText = window.ClientCameraManager.interceptStream(aiText, data.session_id, aiBubble);
         aiBubble.innerHTML = renderMarkdown(aiText);
         aiBubble.appendChild(cursor);
         if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
@@ -316,6 +317,7 @@ window.sendInternalMessage = async function(text) {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
       } else if(ev.type==='token') {
         aiText += ev.text;
+        if(window.ClientCameraManager) aiText = window.ClientCameraManager.interceptStream(aiText, data.session_id, aiBubble);
         aiBubble.innerHTML = renderMarkdown(aiText);
         aiBubble.appendChild(cursor);
         if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;

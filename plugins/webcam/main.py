@@ -57,12 +57,20 @@ class WebcamTools:
             }
         }
 
-    def take_snapshot(self) -> str:
+    def take_snapshot(self, target: str = "server") -> str:
         """
         Takes a photo using the computer's webcam and saves it to disk.
         Use this tool when the user asks to take a photo or look at something.
+        
+        Args:
+            target (str): "server" to use the local OS webcam hardware.
+                          "client" to ask the user's remote device (smartphone/browser) 
+                                   to take a picture and auto-upload it.
         """
-        logger.debug(f"PLUGIN_{self.tag}", "Executing snapshot protocol")
+        logger.debug(f"PLUGIN_{self.tag}", f"Executing snapshot protocol (Target: {target})")
+        
+        if target.lower() == "client":
+            return "[CAMERA_SNAPSHOT_REQUEST]"
         
         cfg = ConfigManager()
         save_dir = cfg.get_plugin_config(self.tag, "save_directory", "snapshots")

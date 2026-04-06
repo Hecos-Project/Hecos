@@ -120,6 +120,20 @@ class AgentExecutor:
                     
                     output_text = res.get("output")
                     
+                    # ── Client Camera Short-Circuit ───────────────────────────────────────
+                    # When WEBCAM is called with target='client', it returns a signal 
+                    # asking the AI to output [CAMERA_SNAPSHOT_REQUEST]. Instead of relying
+                    # on the LLM to do this (it gets confused), we intercept it here and
+                    # construct the final response directly — guaranteeing the token reaches
+                    # the Javascript interceptor in the browser.
+                    CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
+                    if output_text and CAMERA_TOKEN in output_text:
+                        self._emit("Client camera request intercepted — forwarding directly to browser.", level="info")
+                        final_response = f"Sure! {CAMERA_TOKEN} Please allow camera access and take a photo when prompted."
+                        video_response, clean_voice = processore.clean_final_output(final_response, tool_results, final_response, voice_status)
+                        return video_response, clean_voice
+                    # ─────────────────────────────────────────────────────────────────────
+                    
                     # Native Tool Message
                     agent_context.append({
                         "role": "tool",

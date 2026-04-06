@@ -1,21 +1,27 @@
 {
     "tag": "WEBCAM",
-    "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
+    "description": "Access to PC or Client optical vision to take snapshots of the environment or Admin. Can trigger the user's own smartphone or remote browser camera.",
     "lazy_load": true,
     "is_class_based": true,
     "status": "ONLINE (Optical Vision)",
     "commands": {
-        "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
+        "take_snapshot": "Takes a photo using the local server webcam (target='server') or the user's own client device camera (target='client')."
     },
     "tool_schema": [
         {
             "type": "function",
             "function": {
                 "name": "WEBCAM__take_snapshot",
-                "description": "Takes a photo using the computer's webcam and saves it to disk.",
+                "description": "Takes a photo. Use target='server' for the local PC webcam (default). Use target='client' ONLY when the user explicitly asks to take a photo from their phone or remote browser - this opens the device's native camera app and auto-uploads the image.",
                 "parameters": {
                     "type": "object",
-                    "properties": {},
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "Where to take the photo from. 'server' = local PC webcam. 'client' = user's own device (phone/browser camera).",
+                            "enum": ["server", "client"]
+                        }
+                    },
                     "required": []
                 }
             }

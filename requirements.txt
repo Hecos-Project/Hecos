@@ -57,6 +57,7 @@ python-dotenv>=1.0.0        # Gestione variabili d'ambiente (opzionale)
 # ------------------------------
 pydantic>=2.0.0             # Validazione e schema della configurazione
 PyYAML>=6.0                 # Lettura/scrittura file YAML
+ruamel.yaml>=0.17.0         # Salvataggio YAML con Round-Trip (preservazione dei commenti)
 cryptography>=41.0.0        # Criptazione dati sensibili
 
 # ------------------------------
