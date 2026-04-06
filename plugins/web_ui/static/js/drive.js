@@ -87,6 +87,20 @@ function updateLocationBar(path, entries) {
 }
 
 // ─── File table ───────────────────────────────────────────────────────────────
+
+// File types the Zentra Code Editor supports
+const EDITABLE_EXTS = new Set([
+  'py','js','ts','json','yaml','yml','toml','html','htm','css','scss',
+  'sh','bat','ps1','md','txt','ini','cfg','conf','log','xml','env'
+]);
+function isEditable(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  return EDITABLE_EXTS.has(ext);
+}
+function openEditor(path) {
+  window.open(`/drive/editor?path=${encodeURIComponent(path)}`, '_blank');
+}
+
 function sortBy(key) {
   sortAsc = (sortKey === key) ? !sortAsc : true;
   sortKey = key;
@@ -131,6 +145,9 @@ function renderTable() {
         ${e.is_dir
           ? `<button onclick="navigateTo('${esc(e.path)}')" title="Apri">📂</button>`
           : `<button onclick="downloadFile('${esc(e.path)}')" title="Scarica">⬇️</button>`}
+        ${!e.is_dir && isEditable(e.name)
+          ? `<button onclick="openEditor('${esc(e.path)}')" title="Apri in Zentra Editor" style="color:#58a6ff;">✏️</button>`
+          : ''}
         <button onclick="deleteItem('${esc(e.path)}','${esc(e.name)}')" title="Elimina">🗑️</button>
       </td>
     </tr>`;

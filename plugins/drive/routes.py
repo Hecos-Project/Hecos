@@ -34,6 +34,17 @@ def init_drive_routes(app, logger_instance=None):
     from .main import get_plugin
     plugin = get_plugin()
 
+    # ─── Load Extensions ────────────────────────────────────────────────────────
+    # Register the Code Editor extension routes immediately (it adds /drive/editor)
+    try:
+        from core.system.extension_loader import load_extension_routes, discover_extensions
+        plugin_dir = os.path.dirname(os.path.abspath(__file__))
+        discover_extensions("DRIVE", plugin_dir)
+        load_extension_routes(app, "DRIVE", "editor")
+    except Exception as _ext_err:
+        _log.error(f"[Drive] Failed to load editor extension: {_ext_err}")
+    # ────────────────────────────────────────────────────────────────────────────
+
     # ─── PAGE ──────────────────────────────────────────────────────────────────
 
     @app.route("/drive")
