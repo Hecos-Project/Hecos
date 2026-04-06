@@ -40,6 +40,8 @@ Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra
 * 💾 **Memoria Persistente** — Memoria SQLite con contesto condiviso tra WebUI e Terminale.
 * 🗂️ **Zentra Drive (File Manager)** — File manager HTTP nativo integrato nella WebUI per caricare, scaricare e organizzare i file di sistema attraverso una comoda interfaccia a doppio pannello.
 * 🚀 **Launcher Professionali in Inglese** — Tutti gli script di avvio (`.bat` e `.sh`) sono ora completamente internazionalizzati in inglese, fornendo istruzioni chiare per utenti Windows e Linux.
+* ⚡ **Architettura Lazy Loading (Dormant Plugins)** — I plugin ora vengono caricati "al volo" solo quando richiesti dall'IA. Questo azzera l'impatto sul tempo di avvio e riduce drasticamente l'occupazione di memoria RAM/VRAM per i moduli non utilizzati.
+* 📸 **Remote Client Camera (Snap dal Telefono)** — Zentra può ora richiedere uno scatto direttamente dal tuo smartphone o browser. Grazie a un sistema di eventi SSE dedicato, appare un pulsante "Tap to Capture" sulla WebUI che sblocca la fotocamera del dispositivo remoto per un upload istantaneo nella chat.
 
 ---
 
