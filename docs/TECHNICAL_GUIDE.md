@@ -9,8 +9,9 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 - **Runtime Alpha Status**: The project is currently in an early development phase. This means the system is subject to frequent changes, debugging, and is not yet considered a stable "production-ready" release.
 - **Single-Instance Protection**: To prevent data corruption and resource conflicts, Zentra uses a file-based locking mechanism (`core/system/instance_lock.py`) to ensure only one instance of the core and web interface runs at a time.
 - **Centralized Configuration**: Version 0.12.0 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
-- **OS Agnostic Architecture**: Version 0.11.0 abstracts all operating system dependent workflows via the new `OSAdapter` (`core/system/os_adapter.py`). It guarantees safe cross-platform compatibility across Windows, Linux and MacOS.
+- **OS Agnostic Architecture**: Version 0.11.0 abstracts all operating system dependent workflows via the new `OSAdapter` (`core/system/os_adapter.py`).
 - **Mandatory HTTPS & Auth Security**: Version 0.12.0 implements standard Flask-Login authentication over AES sessions and SQLite SQLite PBKDF2 hashing (`core/auth/auth_manager.py`). The Native UI is completely locked from unauthorized accesses.
+- **Extension Architecture & Lazy Loading (JIT)**: Plugins can encapsulate complex feature sets (e.g., Code Editors) into `extensions/`. These are lazy-loaded dynamically via `core/system/extension_loader.py` ONLY when accessed, zeroing their RAM/CPU footprint during normal startup operations.
 
 ---
 
@@ -18,12 +19,13 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 1. **Input Stage**: `InputHandler` captures text (keyboard) or processes audio via `listening.py` (STT).
 2. **Context Enrichment**: `personality_manager.py` ensures the configuration is synced with the filesystem. `brain.py` then gathers system prompts and retrieves relevant history from `memory/`.
 3. **Vision Processing** (v0.9.9): If images are attached, `client.py` selects the correct **VisionAdapter** (Gemini, OpenAI, or Ollama) to build the multimodal payload.
-4. **Model Resolution**: `LLMManager` determines the best model based on the active backend and specific plugin requirements.
-5. **Inference**: `LiteLLM` unifies the request and calls the local/cloud provider.
-6. **Agentic Loop**: The `AgentExecutor` takes control off the prompt. It parses responses for **Tool Calls**, executes plugins (like the `executor` AST python jail), and feeds results back to the LLM in a multi-step "Chain of Thought" loop.
-7. **Streaming Traces**: While reasoning, the agent streams live `agent_trace` UI updates (thought bubbles) back to the browser via Server-Sent Events (SSE).
-8. **Output Stage**: Final text is sanitized by `filtri.py` and sent to the TUI (`interface.py`) and/or the TTS engine (`voice.py`).
-9. **Web Notification & Sync**: Native WebUI (`plugins/web_ui/`) receives the stream via a unified event bus and updates the browser chat. Global configuration changes are synchronized instantly across all interfaces.
+4. **WebRTC Asynchronous Audio Ingestion**: Mobile PTT dictation is recorded client-side via `MediaRecorder` and posted to `/api/audio/transcribe` via `FormData`. The server converts these WebM/OGG blobs to 16kHz WAV locally using `pydub` before piping them into the Google STT engine.
+5. **Model Resolution**: `LLMManager` determines the best model based on the active backend and specific plugin requirements.
+6. **Inference**: `LiteLLM` unifies the request and calls the local/cloud provider.
+7. **Agentic Loop**: The `AgentExecutor` takes control off the prompt. It parses responses for **Tool Calls**, executes plugins (like the `executor` AST python jail), and feeds results back to the LLM in a multi-step "Chain of Thought" loop.
+8. **Streaming Traces**: While reasoning, the agent streams live `agent_trace` UI updates (thought bubbles) back to the browser via Server-Sent Events (SSE).
+9. **Output Stage**: Final text is sanitized by `filtri.py` and sent to the TUI (`interface.py`) and/or the TTS engine (`voice.py`). Auto-play blocks on mobile are bypassed by pre-blessing a global HTML5 Audio proxy channel upon user interaction.
+10. **Web Notification & Sync**: Native WebUI (`plugins/web_ui/`) receives the stream via a unified event bus and updates the browser chat. Global configuration changes are synchronized instantly across all interfaces.
 
 ---
 
@@ -52,11 +54,13 @@ Zentra Core features a built-in routing system. Instead of hardcoding models, pl
 ### Zentra PKI (Native HTTPS)
 Version 0.12.0 introduces a built-in Certificate Authority. The `core/security/pki` module handles CA generation and host certificate signing. This infrastructure is vital for bypassing browser security restrictions on remote devices, enabling secure access to the Microphone and Camera APIs across the network.
 
-### Mobile-First UI Architecture
-The WebUI now implements a responsive grid and an off-canvas navigation pattern. Key features include:
-- **Mobile Navbar**: A dedicated top bar for screens ≤ 768px.
-- **Swipeable Tabs**: Config tabs use `overflow-x: auto` with touch-scrolling enabled.
-- **Neural Link**: A mandatory bridge for mobile browsers to establish an authenticated and active AudioContext.
+### Mobile-First UI & Autoplay Bypass
+The WebUI implements a responsive grid and an off-canvas navigation pattern. 
+- **Swipeable Tabs**: Config tabs use touch-scrolling.
+- **Neural Link & AudioContext Blessing**: Mobile browsers mandate a synchronous user gesture to play audio. Zentra binds to the Chat Submit or WebRTC PTT Hold actions to play an empty wav file on a persistent, global `ZentraTTSPlayer`, preserving autoplay rights exclusively for the asynchronous server TTS response seconds later.
+
+### Cross-Drive Absolute Path Security
+The Drive plugin enables full bare-metal filesystem traversal bypassing relative symlink jails via absolute path resolving. The custom `_safe_path` function validates against path traversal exploits (e.g., `../`) using `os.path.abspath(os.path.join(base, requested))` ensuring the requested URI physically resides within the chosen volume root (`C:\` vs `D:\`).
 
 ---
 

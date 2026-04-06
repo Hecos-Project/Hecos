@@ -68,8 +68,10 @@ Navigabile tramite Frecce Direzionali (`Su`, `Giù`, `Destra`, `Sinistra`), perm
 
 Zentra è espandibile all'infinito posizionando cartelle in `plugins/`.
 Tutti i plugin rispondono ad interfacce unificate che esportano `comandi shell` e aggiornano la configurazione dinamica di Zentra (Config Syncing).
-- **Plugin WebUI Nativo**: L'interfaccia browser (`plugins/web_ui`) è ora un componente nativo del sistema (Porta 7070), gestendo chat, configurazione e dati multimodali in tempo reale con sincronizzazione automatica delle personalità.
-- **Disabilitazione Pulita**: Se un plugin o modulo è difettoso ma in essenza non bloccante, disattivandolo dal F7 (sezione `Plugins`) sposterà il codice nella memory, bypassandolo all'avvio.
+- **Architettura a Estensioni (JIT)**: I plugin possono avere a loro volta "sub-plugin" chiamati Extensions, caricati in tempo reale (Lazy Loading). Un esempio è lo **Zentra Code Editor**, un'estensione del plugin Drive basata sul motore di Visual Studio Code (Monaco) per editare codice e file di testo direttamente dal WebUI.
+- **Drive Pro (Navigazione Assoluta)**: Il plugin Drive permette di navigare l'intero filesystem del server host partendo dalla root `C:\` e permette di cambiare disco (es. `D:`, pennette USB) grazie all'Absolute Drive Selector.
+- **Plugin WebUI Nativo**: L'interfaccia browser (`plugins/web_ui`) è un componente nativo (Porta 7070), gestendo chat, configurazione e dati multimodali in tempo reale con sincronizzazione automatica delle personalità.
+- **Disabilitazione Pulita**: Se un plugin o modulo è difettoso ma in essenza non bloccante, disattivandolo dal F7 o dalla Dashboard WebUI lo disattiverà in memoria aggirandolo.
 
 ---
 
@@ -121,29 +123,30 @@ Per sbloccare funzionalità come il **Microfono** e la **Webcam** sui browser mo
 
 ---
 
-## 📱 10. Interfaccia Mobile-First
+## 📱 10. Interfaccia Mobile-First e Audio WebRTC
 
-Zentra è ora ottimizzato per l'uso su smartphone e tablet.
+Zentra è ottimizzato per l'uso su smartphone e tablet.
 - **Menu Hamburger**: Su schermi piccoli, la sidebar scompare e viene sostituita da un menu a scorrimento (accessibile tramite l'icona `☰` in alto a sinistra).
-- **Safe Area & Gestures**: Le testate e i tab di configurazione sono ottimizzati per il tocco e lo scorrimento orizzontale.
-- **Neural Link**: Su mobile, la prima interazione richiede il tocco del pulsante "Establish Connection" per sbloccare l'AudioContext del browser e permettere all'IA di parlare e ascoltare.
-
+- **Audio Push-to-Talk (PTT)**: Dal PC si usa `Ctrl+Shift` globale, mentre **da telefono o browser** si usa il pulsante Microfono accanto al box chat.
+  - **Walkie-Talkie (Hold)**: Tieni premuto il pulsante 🎙️, parla, rilascia per inviare l'audio.
+  - **Mani Libere (Tap-To-Toggle)**: Fai un click veloce sul pulsante 🎙️. Apparirà il lucchetto (🔴 🔓) e la registrazione continuerà mentre appoggi il telefono. Ripremi per stoppare e convertire in testo usando l'API client-side WebRTC nativa e il convertitore server-side locale Pydub.
+- **Neural TTS Autoplay**: Nonostante i blocchi Apple/Android sui media, la sintesi vocale TTS partirà sempre automaticamente alla risposta usando un ingegnoso proxy player HTML5 integrato nel framework.
 
 ---
 
-## 🛡️ 9. Sicurezza e Risoluzione Problemi
+## 🛠️ 11. Risoluzione Problemi Hardware
 
 1. **Bug dell'interferenza grafica (Dashboard):** L'engine di Zentra unisce asincronamente i thread UI. Ogni compenetrazione di testi è risolta dal blocco totale `(Thread Join)` ad inizio chiamata del menu F7.
 2. **Logs:** I Log di Zentra si conservano nella directory `/logs`. Da Config F7 è possibile nascondere il report log dalla chat per favorire leggibilità di testo.
-3. **Loop di Innesco Audio:** Regolare il parametro `Soglia Energia` in **F7 → Ascolto** per calibrare i rumori di fondo ambientali.
+3. **Loop di Innesco Audio:** Regolare il parametro `Soglia Energia` in **F7 → Ascolto** per calibrare i rumori di fondo ambientali se il microfono hardware è impazzito.
 
 ---
 
-## 🤖 10. Agente Autonomo e Sandbox (Code Jail)
+## 🤖 12. Agente Autonomo e Sandbox (Code Jail)
 
 Dalla versione 0.9.9 Zentra integra un **Loop Cognitivo (Agentic Loop)**. Questo trasforma il sistema da un semplice chatbot a un agente capace di ragionamento complesso su più step (Chain of Thought).
 
-- **Nuvolette di Pensiero (Live Traces)**: Quando chiedi un'operazione elaborata (es. "Cerca X e riassumilo"), nella WebUI vedrai apparire una nuvoletta animata. Zentra sta elaborando attivamente un piano d'azione, spiegandoti cosa intende fare prima di agire e di risponderti.
+- **Nuvolette di Pensiero (Live Traces)**: Quando chiedi un'operazione elaborata (es. "Scatta una foto a questo file"), nella WebUI vedrai apparire una trace live animata. Zentra sta elaborando attivamente un piano d'azione chiamando Tool hardware o plugin di rete prima di risponderti in modo compiuto.
 - **Zentra Code Jail (Sandbox)**: Zentra può scrivere frammenti di codice Python al volo ed eseguirli (nella cartella sicura `/workspace/sandbox/`) per risolvere calcoli aritmetici lunghi, costruire algoritmi o manipolare dati complessi con precisione assoluta. Una speciale macchina AST di sicurezza interviene prima dell'esecuzione: se l'IA prova a usare comandi di sistema pericolosi, l'azione viene bloccata all'istante, mantenendo il computer sempre protetto.
 
 ---

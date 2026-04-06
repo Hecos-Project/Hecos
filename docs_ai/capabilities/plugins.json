@@ -28,16 +28,16 @@
     },
     {
       "id": "DRIVE_plugin",
-      "description": "Zentra Drive HTTP File Manager. Native browser-based dual-panel interface for file uploads, downloads, and system navigation.",
+      "description": "Zentra Drive HTTP File Manager. Native browser-based dual-panel interface with Absolute Path Navigation to all host volumes (C:, D:) and Monaco Remote Code Editor Extension.",
       "risk": "medium",
       "available_in": ["web"],
       "implementation": {
-        "core_files": ["plugins/drive/main.py", "plugins/drive/routes.py", "plugins/web_ui/templates/drive.html", "plugins/web_ui/static/js/drive.js"],
-        "entry_points": ["FastAPI app route /drive"],
+        "core_files": ["plugins/drive/main.py", "plugins/drive/routes.py", "plugins/drive/extensions/editor/main.py"],
+        "entry_points": ["FastAPI app route /drive", "FastAPI app route /drive/editor"],
         "config_keys": ["plugins.DRIVE.enabled", "plugins.DRIVE.root_dir", "plugins.DRIVE.max_upload_mb"]
       },
-      "verification_step": "Navigate to http://127.0.0.1:7070/drive and verify directory tree loads correctly.",
-      "notes": "Integrates path-traversal protection."
+      "verification_step": "Navigate to http://127.0.0.1:7070/drive and open a file in the editor.",
+      "notes": "Integrates path-traversal protection (_safe_path) mapping absolute Windows volume directories."
     },
     {
       "id": "DASHBOARD_plugin",

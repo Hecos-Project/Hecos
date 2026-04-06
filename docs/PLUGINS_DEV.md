@@ -121,3 +121,24 @@ Zentra can now trigger actions directly on the user's browser/phone instead of t
 3. `routes_chat.py` detects the token and emits a dedicated **SSE Event** (e.g., `camera_request`).
 4. The WebUI (via `client_camera.js`) reacts to this event by injecting a visible UI button.
 5. The button click triggers a native browser capability (like `camera.capture`).
+
+---
+
+## 9. Extension Architecture (JIT Modules)
+In version 0.12.0, Zentra introduced "Extensions", which are dynamically loaded sub-plugins encapsulated inside specific master plugins (e.g., Code Editor inside the Drive plugin).
+
+**Structure:**
+```text
+plugins/drive/
+├── extensions/
+│   └── editor/
+│       ├── manifest.json
+│       ├── main.py     # Only loaded when the Editor is opened!
+│       └── assets/     # JS/CSS dependencies loaded dynamically
+```
+
+**Workflow:**
+- The master plugin registers an endpoint (e.g. `/drive/editor`).
+- When the user visits it, `extension_loader.load_extension("drive", "editor")` is called.
+- Zentra validates `manifest.json`, injects `main.py` functions into the master module conditionally, and serves the UI.
+- This allows Zentra plugins to grow infinitely in capabilities without affecting boot times or holding RAM hostage.

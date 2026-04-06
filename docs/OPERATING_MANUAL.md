@@ -76,9 +76,10 @@ Navigable via Arrow Keys (`Up`, `Down`, `Right`, `Left`), it allows editing of b
 Zentra is infinitely expandable by placing folders in `plugins/`.
 All plugins respond to unified interfaces that export `shell commands` and update Zentra's dynamic configuration (Config Syncing).
 
-- **Clean Disabling:** If a plugin or module is faulty but essentially non-blocking, disabling it from F7 (`Plugins` section) will move the code to memory fallback, bypassing it at startup.
-
-*(e.g.: Hiding the top HW bar only requires setting `Plugin Dashboard Enabled` to "False" in F7 and restarting)*
+- **Extension Architecture (JIT)**: Plugins can now have "sub-plugins" called Extensions, loaded in real-time (Lazy Loading). An example is the **Zentra Code Editor**, an extension of the Drive plugin based on the Visual Studio Code engine (Monaco) to edit code and text files directly from the WebUI.
+- **Drive Pro (Absolute Navigation)**: The Drive plugin allows you to navigate the entire filesystem of the host server starting from the `C:\` root and allows switching drives (e.g. `D:`, USB drives) thanks to the Absolute Drive Selector.
+- **Native WebUI Plugin**: The browser interface (`plugins/web_ui`) is a native component (Port 7070), managing chat, configuration, and multimodal data in real-time.
+- **Clean Disabling**: If a plugin or module is faulty but essentially non-blocking, disabling it from F7 (`Plugins` section) or the WebUI Dashboard will move the code to memory fallback, bypassing it.
 
 ---
 
@@ -137,20 +138,31 @@ To unlock features like the **Microphone** and **Webcam** on mobile browsers (wh
 
 ---
 
-## 📱 10. Mobile-First Interface
+## 📱 10. Mobile-First Interface & WebRTC Audio
 
-Zentra is now optimized for use on smartphones and tablets.
+Zentra is optimized for use on smartphones and tablets.
 - **Hamburger Menu**: On small screens, the sidebar is hidden and replaced by a sliding menu (accessible via the `☰` icon at the top left).
-- **Safe Area & Gestures**: Headers and configuration tabs are optimized for touch and horizontal scrolling.
-- **Neural Link**: On mobile, the first interaction requires tapping the "Establish Connection" button to unlock the browser's AudioContext and allow the AI to speak and listen.
+- **Push-to-Talk (PTT) Audio**: From PC you use `Ctrl+Shift` globally, while **from phone or browser** you use the Microphone button next to the chat box.
+  - **Walkie-Talkie (Hold)**: Hold the 🎙️ button, speak, release to send the audio.
+  - **Hands-Free (Tap-To-Toggle)**: Do a quick click on the 🎙️ button. The padlock will appear (🔴 🔓) and recording will continue while you put your phone down. Press again to stop and convert to text using the native client-side WebRTC API and local server-side Pydub converter.
+- **Neural TTS Autoplay**: Despite Apple/Android media blocks, the TTS voice synthesis will always start automatically upon response using an ingenious HTML5 proxy player integrated into the framework.
 
 ---
 
-## 🛡️ 11. Security and Troubleshooting
+## 🛠️ 11. Troubleshooting & Security
 
 1. **Graphic Interference Bug (Dashboard):** Zentra's engine asynchronously joins UI threads. Any text overlap is resolved by the total block `(Thread Join)` at the start of the F7 menu call.
-2. **Logs:** Zentra logs are kept in the `/logs` directory. From F7 Config, it's possible to hide log reports from the chat to favor text readability (exclusive visual routing to parallel log `Console` or `File Only` recommended).
-3. **Audio Trigger Loop:** Adjust the `Energy Threshold` parameter in **F7 → Listening** to calibrate ambient background noise that triggers Zentra into "THINKING" mode without any real input.
+2. **Logs:** Zentra logs are kept in the `/logs` directory. From F7 Config, it's possible to hide log reports from the chat.
+3. **Audio Trigger Loop:** Adjust the `Energy Threshold` parameter in **F7 → Listening** to calibrate ambient background noise if the physical microphone acts up.
+
+---
+
+## 🤖 12. Autonomous Agent and Sandbox (Code Jail)
+
+From version 0.9.9 Zentra integrates a **Cognitive Loop (Agentic Loop)**. This transforms the system from a simple chatbot to an agent capable of complex multi-step reasoning (Chain of Thought).
+
+- **Thought Bubbles (Live Traces)**: When you ask for a complex operation (e.g. "Take a photo of this file"), you will see an animated live trace appear in the WebUI. Zentra is actively developing an action plan calling hardware Tools or network plugins before answering you completely.
+- **Zentra Code Jail (Sandbox)**: Zentra can write Python code snippets on the fly and execute them (in the secure folder `/workspace/sandbox/`) to solve long arithmetic calculations, build algorithms or manipulate complex data with absolute precision. A special security AST machine intervenes before execution: if the AI tries to use dangerous system commands, the action is blocked instantly, keeping the computer always protected.
 
 ---
 *End of documentation report v0.12.0.*

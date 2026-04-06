@@ -29,16 +29,16 @@
     },
     {
       "id": "push_to_talk",
-      "description": "Manual activation of the microphone via hotkey (Ctrl+Shift) or F8 toggle.",
+      "description": "Manual activation of the microphone. Server-side via hotkey (Ctrl+Shift) or F8 toggle. Client-side via WebRTC Browser MediaRecorder.",
       "risk": "low",
-      "available_in": ["cli"],
+      "available_in": ["cli", "web"],
       "implementation": {
-        "core_files": ["app/input_handler.py", "core/audio/device_manager.py"],
-        "entry_points": ["F8 in app/application.py -> _handle_function_key", "Ctrl+Shift listener thread"],
+        "core_files": ["app/input_handler.py", "plugins/web_ui/routes_audio.py", "plugins/web_ui/static/js/web_audio.js"],
+        "entry_points": ["F8 -> _handle_function_key", "Ctrl+Shift listener thread", "POST /api/audio/transcribe"],
         "config_keys": ["push_to_talk", "ptt_hotkey"]
       },
-      "verification_step": "Press F8 to enable PTT, verify voice is only captured while holding hotkey.",
-      "notes": "Prevents accidental voice detection."
+      "verification_step": "Press F8 to enable server PTT, or hold tap WebUI mic icon to test WebRTC upload.",
+      "notes": "WebRTC PTT uses pydub backend conversion to map remote Mobile Dictation to standard Zentra STT."
     }
   ]
 }
