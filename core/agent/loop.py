@@ -54,8 +54,8 @@ class AgentExecutor:
         Calls the LLM, checks if tools are requested, executes them, feeds the result back.
         Repeats until the LLM returns plain text without tools or hits max iterations.
         """
-        self._emit(f"Analyzing request: '{user_text[:30]}...'", level="info")
-        
+        # Privacy-oriented log: avoid echoing private user text on the server physical console.
+        self._emit(f"Analyzing incoming user request...", level="info")
         if not self.is_enabled:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1

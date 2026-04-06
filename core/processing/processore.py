@@ -65,7 +65,7 @@ def configure(new_config):
 def process_exchange(user_text, voice_status, sm=None):
     """Manages the entire chain: AI -> Plugin -> Cleaning -> Response.
     NOW REFACTORED TO USE THE AGENTIC LOOP."""
-    logger.info(f"[PROCESSOR] Input received: '{user_text}'. Delegating to Agentic Loop.")
+    logger.info(f"[PROCESSOR] Input received (length: {len(user_text)}). Delegating to Agentic Loop.")
     
     from core.agent.loop import AgentExecutor
     
