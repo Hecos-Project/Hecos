@@ -202,6 +202,10 @@ async function setAudioRouting(key, val) {
 // (DOM rendering moved to chat_renderer.js)
 
 async function sendMessage() {
+  if (typeof window.unlockAudioContext === 'function') {
+      window.unlockAudioContext();
+  }
+
   const text = userInput ? userInput.value.trim() : '';
   if(!text || isStreaming) return;
 

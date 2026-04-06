@@ -139,6 +139,8 @@ function bindWebPTT(buttonId) {
 
   const startFn = (e) => {
     e.preventDefault();
+    if (typeof window.unlockAudioContext === 'function') window.unlockAudioContext();
+    
     if (isWebAudioRecording) {
       if (isLockedMode) {
         // Tap while locked -> Stop

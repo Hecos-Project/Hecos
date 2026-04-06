@@ -48,6 +48,21 @@ function renderMarkdown(text) {
   return html;
 }
 
+// --- Global TTS Player (Blessed for Autoplay) ---
+const SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+window.ZentraTTSPlayer = document.createElement('audio');
+window.ZentraTTSPlayer.controls = true;
+window.ZentraTTSPlayer.style.display = 'block';
+window.ZentraTTSPlayer.style.marginTop = '10px';
+
+// Helper to unlock autoplay on mobile during user interaction (called from sendMessage/bindWebPTT)
+window.unlockAudioContext = function() {
+  if (window.ZentraTTSPlayer.src !== SILENT_WAV && !window.ZentraTTSPlayer.src.includes('blob:')) {
+    window.ZentraTTSPlayer.src = SILENT_WAV;
+    window.ZentraTTSPlayer.play().catch(e => { console.warn("[Audio] Silent unlock failed:", e); });
+  }
+};
+
 async function tryLoadAudio(bubble) {
   const url = '/api/audio?t=' + Date.now();
   console.log("[Audio] Attempting to load audio from:", url);
@@ -56,20 +71,25 @@ async function tryLoadAudio(bubble) {
   badge.className='audio-badge';
   badge.innerHTML = '🔊 ';
   
-  // Create audio element
-  const audio = document.createElement('audio');
-  audio.style.display = 'block';
-  audio.style.marginTop = '10px';
-  audio.controls = true;
-  
+  // If the global player is already in another bubble, clone it there so the user keeps a play button for history
+  if (window.ZentraTTSPlayer.parentNode) {
+      const oldSrc = window.ZentraTTSPlayer.src;
+      const clone = document.createElement('audio');
+      clone.controls = true;
+      clone.style.display = 'block';
+      clone.style.marginTop = '10px';
+      clone.src = oldSrc;
+      window.ZentraTTSPlayer.parentNode.replaceChild(clone, window.ZentraTTSPlayer);
+  }
+
   // Under HTTPS, sometimes the browser blocks direct src assignment for self-signed
   // Let's try to fetch it as a blob to see if it's a network/security error
+  let blobUrl = "";
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
     const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    audio.src = blobUrl;
+    blobUrl = URL.createObjectURL(blob);
     console.log("[Audio] Blob created successfully");
   } catch (e) {
     console.error("[Audio] Fetch failed (possibly SSL/CORS):", e);
@@ -80,14 +100,15 @@ async function tryLoadAudio(bubble) {
     return;
   }
 
-  window.currentAudio = audio;
-  badge.appendChild(audio);
+  window.ZentraTTSPlayer.src = blobUrl;
+  window.currentAudio = window.ZentraTTSPlayer;
+  badge.appendChild(window.ZentraTTSPlayer);
   bubble.appendChild(badge);
   showStopVoiceBtn(true);
   
-  audio.oncanplaythrough = () => {
+  window.ZentraTTSPlayer.oncanplaythrough = () => {
     console.log("[Audio] Can play through, attempting autoplay...");
-    audio.play().then(() => {
+    window.ZentraTTSPlayer.play().then(() => {
         console.log("[Audio] Autoplay success");
     }).catch(err => {
       console.warn("[Audio] Autoplay blocked by browser. User must click play.", err);
@@ -101,9 +122,14 @@ async function tryLoadAudio(bubble) {
     });
   };
 
-  audio.onended  = () => { window.currentAudio = null; showStopVoiceBtn(false); };
-  audio.onerror = () => {
-    console.error("[Audio] Player error:", audio.error ? audio.error.code : 'unknown');
+  window.ZentraTTSPlayer.onended = () => { 
+      window.currentAudio = null; 
+      showStopVoiceBtn(false); 
+      // Important to explicitly tell the OS we finished playing so 
+      // other media apps (Spotify) can resume 
+  };
+  window.ZentraTTSPlayer.onerror = () => {
+    console.error("[Audio] Player error:", window.ZentraTTSPlayer.error ? window.ZentraTTSPlayer.error.code : 'unknown');
     window.currentAudio = null; showStopVoiceBtn(false);
   };
 }
