@@ -1,28 +1,28 @@
 {
     "tag": "WEBCAM",
-    "description": "Access to PC or Client optical vision to take snapshots of the environment or Admin. Can trigger the user's own smartphone or remote browser camera.",
+    "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
     "lazy_load": true,
     "is_class_based": true,
     "status": "ONLINE (Optical Vision)",
     "commands": {
-        "take_snapshot": "Takes a photo using the local server webcam (target='server') or the user's own client device camera (target='client')."
+        "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser."
     },
     "tool_schema": [
         {
             "type": "function",
             "function": {
                 "name": "WEBCAM__take_snapshot",
-                "description": "Takes a photo. Use target='server' for the local PC webcam (default). Use target='client' ONLY when the user explicitly asks to take a photo from their phone or remote browser - this opens the device's native camera app and auto-uploads the image.",
+                "description": "Takes a photo. CRITICAL ROUTING: If the user mentions taking a photo from their PHONE, SMARTPHONE, MOBILE, BROWSER or REMOTE DEVICE, you MUST pass target='client'. This opens their native camera app automatically. Only use target='server' (default) if the user explicitly wants the local PC webcam.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "target": {
                             "type": "string",
-                            "description": "Where to take the photo from. 'server' = local PC webcam. 'client' = user's own device (phone/browser camera).",
+                            "description": "REQUIRED ROUTING. Use 'client' if user says phone/smartphone/mobile/browser/remote — opens the user's native device camera. Use 'server' only if user wants the local PC webcam attached to the server.",
                             "enum": ["server", "client"]
                         }
                     },
-                    "required": []
+                    "required": ["target"]
                 }
             }
         }

@@ -88,6 +88,30 @@ class AgentExecutor:
                 # BREAK CONDITION: The LLM didn't call any tools, so it produced the final response.
                 self._emit("Response formulated.", level="success")
                 
+                # If the AI produces NO text (common for some models after tool calls),
+                # provide a friendly fallback instead of showing an error.
+                if not extracted_text or not extracted_text.strip():
+                    if tool_results:
+                        extracted_text = f"I have executed the requested actions: {', '.join([r.get('tag') for r in tool_results])}."
+                    else:
+                        extracted_text = "I'm thinking, but I don't have a specific text response yet. How can I help further?"
+
+                # ── Server Image Rendering ──────────────────────────────────────────
+                # If any tool returned an image path (e.g. WEBCAM target='server'),
+                # append it as a markdown image so the user can actually see it.
+                # We use the new /snapshots/ route for this.
+                import re
+                for res in tool_results:
+                    out = res.get("output", "")
+                    if out and isinstance(out, str):
+                        potential_paths = re.findall(r'([\w\.\-\\/]+\.(?:jpg|jpeg|png))', out, re.IGNORECASE)
+                        for path in potential_paths:
+                            fname = os.path.basename(path)
+                            # Convert local path to web URL
+                            img_url = f"/snapshots/{fname}"
+                            extracted_text += f"\n\n![Snapshot]({img_url})"
+                # ────────────────────────────────────────────────────────────────────
+
                 # IMPORTANT: If it took loops, we must save the FINAL response to history manually.
                 if iteration > 1:
                      from memory import brain_interface
@@ -127,11 +151,15 @@ class AgentExecutor:
                     # construct the final response directly — guaranteeing the token reaches
                     # the Javascript interceptor in the browser.
                     CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
-                    if output_text and CAMERA_TOKEN in output_text:
+                    if output_text and CAMERA_TOKEN in str(output_text).strip():
                         self._emit("Client camera request intercepted — forwarding directly to browser.", level="info")
-                        final_response = f"Sure! {CAMERA_TOKEN} Please allow camera access and take a photo when prompted."
+                        # Use the user's personality or a polite default
+                        final_response = f"Sure! {CAMERA_TOKEN} Please take the photo when prompted by your browser."
                         video_response, clean_voice = processore.clean_final_output(final_response, tool_results, final_response, voice_status)
                         return video_response, clean_voice
+                    
+                    if res.get("tag") == "WEBCAM":
+                        logger.debug(f"[AGENT] WEBCAM result did NOT trigger short-circuit. Output: '{str(output_text)[:50]}...'")
                     # ─────────────────────────────────────────────────────────────────────
                     
                     # Native Tool Message

@@ -174,6 +174,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         "- [FILE_MANAGER: list:folder] - List files for analysis\n"
         "- [DASHBOARD: resources] - Get hardware telemetry\n"
         "- [IMAGE_GEN: generate_image:description] - Generate an image\n"
+        "- WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device,"
+        " you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.\n"
     )
 
 

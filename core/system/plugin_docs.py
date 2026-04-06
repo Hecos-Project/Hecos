@@ -140,6 +140,11 @@ def get_tools_schema():
     import inspect
     import re
 
+    # CRITICAL: Ensure _lazy_tool_schemas is populated if this is a fresh process
+    if not _loaded_plugins and not _lazy_tool_schemas:
+        logger.debug("DOCS", "Memory schemas empty, triggering capability rescan...")
+        update_capability_registry(debug_log=False)
+
     tools_list = []
 
     def _parse_docstring(docstring):
@@ -248,8 +253,24 @@ def get_legacy_schema():
                     is_lazy = tag in _lazy_plugins_paths
                     if is_lazy or "DORMANT" in info.get("status", ""):
                         result_string += f"\n[MODULE: {tag}] (Dormant)\n"
-                        for cmd, dsc in info.get("commands", {}).items():
-                            result_string += f"  - [{tag}: {cmd}] : {dsc}\n"
+                        # Improve documentation by showing parameters if they exist in _lazy_tool_schemas
+                        lazy_commands = info.get("commands", {})
+                        
+                        # Peek into tool_schema for param names
+                        param_map = {}
+                        if tag in _lazy_tool_schemas:
+                            for schema in _lazy_tool_schemas[tag]:
+                                func_name = schema.get("function", {}).get("name", "")
+                                if "__" in func_name:
+                                    _, actual_cmd = func_name.split("__", 1)
+                                    props = schema.get("function", {}).get("parameters", {}).get("properties", {})
+                                    if props:
+                                        param_map[actual_cmd] = list(props.keys())
+
+                        for cmd, dsc in lazy_commands.items():
+                            p_list = param_map.get(cmd, [])
+                            p_str = ": " + ",".join(p_list) if p_list else ""
+                            result_string += f"  - [{tag}: {cmd}{p_str}] : {dsc}\n"
         except: pass
 
     result_string += "\nATTENTION: Tags must be exactly in [TAG: command] format to be executed.\n"

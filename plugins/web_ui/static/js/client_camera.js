@@ -1,35 +1,19 @@
 /**
  * MODULE: client_camera.js
- * PURPOSE: Extends the WebUI with the ability to trigger the native device camera 
- *          when requested by the AI. Intercepts the streaming response and shows
- *          a tap-to-capture button (required due to browser security: programmatic
- *          file input clicks are blocked unless initiated by a real user gesture).
+ * PURPOSE: Shows a visible tap-to-capture button when the AI requests a client camera snapshot.
+ *          The button is injected into the .msg container (parent of the AI bubble) so it
+ *          survives innerHTML re-renders. The button click IS a valid user gesture, enabling
+ *          the browser to open the native device camera.
  */
 
 window.ClientCameraManager = {
-    triggerToken: "[CAMERA_SNAPSHOT_REQUEST]",
 
     /**
-     * Inspects the incoming AI text stream. If the trigger token is detected,
-     * strips it from the output and injects a camera capture button into the bubble.
-     * @param {string} currentText - Current accumulated AI response text
-     * @param {string} sessionId   - Session ID to prevent multiple triggers
-     * @param {HTMLElement} bubble - The AI chat bubble DOM element to inject the button into
+     * Injects a visible camera capture button into the parent of the given AI bubble.
+     * Called directly by chat_logic.js when it receives a dedicated 'camera_request' SSE event.
+     * @param {HTMLElement} bubble - The AI chat bubble element
      */
-    interceptStream: function(currentText, sessionId, bubble) {
-        if (currentText.includes(this.triggerToken)) {
-            currentText = currentText.replace(this.triggerToken, "").trim();
-
-            // Prevent multiple triggers for the same AI stream session
-            if (window._clientCameraTriggeredSession !== sessionId) {
-                window._clientCameraTriggeredSession = sessionId;
-                this._injectCaptureButton(bubble);
-            }
-        }
-        return currentText;
-    },
-
-    _injectCaptureButton: function(bubble) {
+    showCameraButton: function(bubble) {
         // Avoid duplicating the button
         if (document.getElementById('client-camera-btn')) return;
 
@@ -39,7 +23,7 @@ window.ClientCameraManager = {
             camInput = document.createElement('input');
             camInput.type = 'file';
             camInput.accept = 'image/*';
-            camInput.capture = 'environment';
+            camInput.capture = 'environment'; // 'environment' = rear camera on mobile
             camInput.id = 'client-camera-capture-field';
             camInput.style.display = 'none';
 
@@ -47,7 +31,7 @@ window.ClientCameraManager = {
                 if (e.target.files && e.target.files.length > 0) {
                     if (typeof window.handleFiles === 'function') {
                         window.handleFiles(e.target.files, 'img');
-                        // Give the upload chip a moment to register before sending
+                        // Give the upload chip a moment to register, then auto-send
                         setTimeout(() => {
                             if (typeof window.sendMessage === 'function') {
                                 window.sendMessage();
@@ -55,47 +39,42 @@ window.ClientCameraManager = {
                         }, 150);
                     }
                 }
-                // Remove button after use
+                // Remove the button after use to keep chat clean
                 const btn = document.getElementById('client-camera-btn');
                 if (btn) btn.remove();
             };
             document.body.appendChild(camInput);
         }
-        camInput.value = '';
+        camInput.value = ''; // Reset so re-use works
 
-        // Create a visible, tappable button and inject it directly into the AI bubble
+        // Create the visible button
         const btn = document.createElement('button');
         btn.id = 'client-camera-btn';
-        btn.innerHTML = '📷 Tap here to open camera';
+        btn.innerHTML = '📷 Tap here to take a photo';
         btn.style.cssText = `
-            display: block;
+            display: inline-block;
             margin-top: 12px;
             padding: 10px 20px;
             background: linear-gradient(135deg, #6e40c9, #9f5fee);
-            color: white;
+            color: #fff;
             border: none;
             border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             letter-spacing: 0.3px;
-            box-shadow: 0 2px 12px rgba(110, 64, 201, 0.4);
+            box-shadow: 0 2px 12px rgba(110,64,201,0.4);
             transition: opacity 0.2s;
         `;
         btn.addEventListener('mouseenter', () => btn.style.opacity = '0.85');
         btn.addEventListener('mouseleave', () => btn.style.opacity = '1');
 
-        // This click listener IS a valid user gesture — camera access will be granted
-        btn.addEventListener('click', () => {
-            camInput.click();
-        });
+        // A button click event IS a valid user gesture — browser will grant camera access
+        btn.addEventListener('click', () => camInput.click());
 
-        if (bubble) {
-            bubble.appendChild(btn);
-        } else {
-            // Fallback: append to chat area
-            const chatArea = document.getElementById('chat-area');
-            if (chatArea) chatArea.appendChild(btn);
-        }
+        // Inject into the .msg PARENT, not inside the bubble itself.
+        // The bubble innerHTML is rewritten on every token event; the parent is stable.
+        const container = bubble ? (bubble.parentElement || bubble) : document.getElementById('chat-area');
+        if (container) container.appendChild(btn);
     }
 };

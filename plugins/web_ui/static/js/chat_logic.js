@@ -256,10 +256,12 @@ async function sendMessage() {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
       } else if(ev.type==='token') {
         aiText += ev.text;
-        if(window.ClientCameraManager) aiText = window.ClientCameraManager.interceptStream(aiText, data.session_id, aiBubble);
         aiBubble.innerHTML = renderMarkdown(aiText);
         aiBubble.appendChild(cursor);
         if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+      } else if(ev.type==='camera_request') {
+        // Dedicated event emitted by Python before chunking — guaranteed not split
+        if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
       } else if(ev.type==='audio_ready') {
         tryLoadAudio(aiBubble);
       } else if(ev.type==='system_audio_playing') {
@@ -317,10 +319,11 @@ window.sendInternalMessage = async function(text) {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
       } else if(ev.type==='token') {
         aiText += ev.text;
-        if(window.ClientCameraManager) aiText = window.ClientCameraManager.interceptStream(aiText, data.session_id, aiBubble);
         aiBubble.innerHTML = renderMarkdown(aiText);
         aiBubble.appendChild(cursor);
         if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+      } else if(ev.type==='camera_request') {
+        if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
       } else if(ev.type==='audio_ready') {
         tryLoadAudio(aiBubble);
       } else if(ev.type==='system_audio_playing') {

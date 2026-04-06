@@ -67,9 +67,23 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
         # The agent logic handles memory storage internally to avoid duplicates
         full_text, _ = agent.run_agentic_loop(user_message, voice_status=False, images=images)
 
+        # ── Client Camera Interceptor ────────────────────────────────────────────
+        # Check for [CAMERA_SNAPSHOT_REQUEST] BEFORE the 40-char chunking loop.
+        # If intercepted in the loop, the token gets split across chunks and the
+        # browser JS never sees it as a complete string — this is far more reliable.
+        _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
+        camera_request_pending = _CAMERA_TOKEN in (full_text or "")
+        if camera_request_pending:
+            full_text = full_text.replace(_CAMERA_TOKEN, "").strip()
+        # ────────────────────────────────────────────────────────────────────────
+
         for i in range(0, len(full_text), 40):
             sess["queue"].put({"type": "token", "text": full_text[i:i+40]})
             time.sleep(0.02)
+
+        # Emit camera request event AFTER the text tokens so it appears last
+        if camera_request_pending:
+            sess["queue"].put({"type": "camera_request"})
 
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
@@ -207,6 +221,13 @@ def _maybe_generate_tts(text: str, cfg_mgr):
 
 
 def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
+    from flask import send_from_directory
+    
+    @app.route("/snapshots/<path:filename>")
+    def serve_snapshots(filename):
+        """Serves captured images from the snapshots directory."""
+        save_dir = os.path.join(root_dir, "snapshots")
+        return send_from_directory(save_dir, filename)
 
     @app.route("/")
     def root_redirect():

@@ -180,9 +180,9 @@
         "is_legacy": true
     },
     "WEBCAM": {
-        "description": "Access to PC or Client optical vision to take snapshots of the environment or Admin. Can trigger the user's own smartphone or remote browser camera.",
+        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
         "commands": {
-            "take_snapshot": "Takes a photo using the local server webcam (target='server') or the user's own client device camera (target='client')."
+            "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser."
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
