@@ -23,4 +23,4 @@ Questo documento stabilisce le regole d'oro per l'evoluzione e la manutenzione d
 ---
 
 > [!IMPORTANT]
-> Zentra-Core è in una fase stabile di **v0.13.0 (Alpha)**. La sicurezza PKI, l'interfaccia mobile-first, il WebRTC Audio PTT, e la Navigazione Assoluta Drive (con Code Editor Monaco Extension) sono standard di sistema operativi che devono essere rigorosamente documentati e preservati in ogni modifica.
+> Zentra-Core è in una fase stabile di **v0.14.0 (Alpha)**. La sicurezza PKI, l'interfaccia mobile-first, il WebRTC Audio PTT, e la Navigazione Assoluta Drive (con Code Editor Monaco Extension) sono standard di sistema operativi che devono essere rigorosamente documentati e preservati in ogni modifica.

@@ -1,4 +1,4 @@
-# Zentra Core Plugin Development Guide (v0.13.0)
+# Zentra Core Plugin Development Guide (v0.14.0)
 
 ## 1. Overview
 Plugins in Zentra Core are modular extensions located in the `plugins/` directory. Each plugin is a self-contained folder that follows a specific structure and interface.
@@ -83,7 +83,7 @@ tools = Tools()
 
 ---
 
-## 7. Lazy Loading & Manifest Sync (v0.13.0+)
+## 7. Lazy Loading & Manifest Sync (v0.14.0+)
 To improve startup speed, plugins can now be loaded lazily. Instead of importing the Python module at boot, Zentra reads a `manifest.json` file.
 
 ### manifest.json structure:

@@ -1,6 +1,6 @@
 {
     "it": {
-        "welcome": "Zentra Core v{version} (Runtime Alpha)",
+        "welcome": "Zentra Core v0.14.0 (Runtime Alpha)",
         "agent_name": "Zentra",
         "system_status": "STATO: {status}",
         "header_model": "MODELLO",

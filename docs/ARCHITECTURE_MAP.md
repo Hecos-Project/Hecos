@@ -1,6 +1,6 @@
-# Zentra Core v0.13.0 - Architecture Map
+# Zentra Core v0.14.0 - Architecture Map
 
-A visual guide to the Zentra Core folder structure and system components as of version 0.13.0.
+A visual guide to the Zentra Core folder structure and system components as of version 0.14.0.
 
 ```text
 Zentra-Core/
@@ -14,9 +14,9 @@ Zentra-Core/
 │   ├── personality_manager.py # F3 Selection & Dynamic Sync logic
 │   ├── state_manager.py  # Tracks internal status (Thinking, Speaking, Ready)
 │   └── threads.py        # Background asynchronous workers
-# Zentra Core v0.13.0 - Architecture Map
+# Zentra Core v0.14.0 - Architecture Map
 
-A visual guide to the Zentra Core folder structure and system components as of version 0.13.0.
+A visual guide to the Zentra Core folder structure and system components as of version 0.14.0.
 
 ```text
 Zentra-Core/
@@ -86,7 +86,7 @@ Zentra-Core/
 
 ### Component Overview
 * **`app/`**: Regulates the execution flow. Powered by a YAML-first configuration system for stability.
-* **`core/`**: The engine room. Version 0.13.0 introduces native Auth systems, **Zentra PKI** for self-hosted HTTPS, and Agentic reasoning.
+* **`core/`**: The engine room. Version 0.14.0 introduces native Auth systems, **Zentra PKI** for self-hosted HTTPS, and Agentic reasoning.
 * **`plugins/`**: Modular heart. Now includes **Lazy Loading** for zero-boot impact, **Zentra Drive** for file management, and **Remote Client Camera** support for mobile devices.
 * **`config/`**: Centralized repository for all system parameters, replacing old scattered JSONs.
 * **`scripts/`**: Internationalized launchers (.bat/.sh) in standard English.
