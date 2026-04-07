@@ -1,15 +1,4 @@
 {
-    "AUTOCODER": {
-        "description": "Zentra AutoCoder Tools. Usa questi tool per analizzare o scrivere codice nel sistema in maniera autonoma.",
-        "commands": {
-            "list_dir": "Lists directory contents.",
-            "read_file": "Reads the exact contents of a file. Pass start_line and end_line bounds to limit output verbosity.",
-            "write_file": "Writes or creates a new file. Mode 'w' overwrites."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "is_class_based": true
-    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -214,6 +203,17 @@
             "set_state_manager": "Injects the live StateManager from the main application."
         },
         "status": "Online → https://127.0.0.1:7070/chat",
+        "example": "",
+        "is_class_based": true
+    },
+    "AUTOCODER": {
+        "description": "Zentra AutoCoder Tools. Usa questi tool per analizzare o scrivere codice nel sistema in maniera autonoma.",
+        "commands": {
+            "list_dir": "Lists directory contents.",
+            "read_file": "Reads the exact contents of a file. Pass start_line and end_line bounds to limit output verbosity.",
+            "write_file": "Writes or creates a new file. Mode 'w' overwrites."
+        },
+        "status": "ONLINE",
         "example": "",
         "is_class_based": true
     }

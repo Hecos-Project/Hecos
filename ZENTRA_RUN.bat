@@ -1,7 +1,7 @@
 @echo off
 title ZENTRA CORE - ACTIVE SESSION RUNNER (Native Text Console)
 cd /d "%~dp0"
-color 0A
+
 
 echo.
 set ZENTRA_VERSION=Unknown

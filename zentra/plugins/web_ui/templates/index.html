@@ -103,6 +103,7 @@
     {% endif %}
     <button class="tab" onclick="showTab('payload'); loadPayloadData()">Payload</button>
     <button class="tab" onclick="showTab('plugins')">Plugins</button>
+    <button class="tab" onclick="showTab('autocoder')">🏗️ AutoCoder</button>
     <button class="tab" onclick="showTab('logs'); startLogStream();">Logs</button>
   </div>
 
@@ -123,6 +124,7 @@
     {% endif %}
     {% include 'modules/config_payload.html' %}
     {% include 'modules/config_plugins.html' %}
+    {% include 'modules/config_autocoder.html' %}
     {% include 'modules/config_drive.html' %}
     {% include 'modules/config_logs.html' %}
   </form>
@@ -153,7 +155,8 @@
     plugin_desc_system: "{{ t('webui_conf_plugin_desc_system') }}",
     plugin_desc_web: "{{ t('webui_conf_plugin_desc_web') }}",
     plugin_desc_webcam: "{{ t('webui_conf_plugin_desc_webcam') }}",
-    plugin_desc_webui: "{{ t('webui_conf_plugin_desc_webui') }}"
+    plugin_desc_webui: "{{ t('webui_conf_plugin_desc_webui') }}",
+    plugin_desc_autocoder: "{{ t('webui_conf_plugin_desc_autocoder') }}"
   };
 </script>
 <script>
@@ -164,6 +167,7 @@
 <script src="/static/js/config_core.js"></script>
 <script src="/static/js/config_audio_logic.js"></script>
 <script src="/static/js/config_media_logic.js"></script>
+<script src="/static/js/config_autocoder_logic.js"></script>
 <script src="/static/js/config_system_logic.js"></script>
 
 <script>

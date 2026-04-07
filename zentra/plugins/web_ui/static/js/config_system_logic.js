@@ -19,6 +19,7 @@ function populateSystemUI() {
     const sys = c.system || {};
     setCheck('sys-fastboot', sys.fast_boot ?? false);
     setCheck('sys-flask-debug', sys.flask_debug ?? false);
+    setVal('sys-plugin-sources', (sys.plugin_sources || []).join('\n'));
     setVal('sys-language', c.language || 'en');
     
     // HTTPS config
@@ -57,7 +58,8 @@ function buildSystemPayload() {
         },
         system: {
             fast_boot: document.getElementById('sys-fastboot').checked,
-            flask_debug: document.getElementById('sys-flask-debug').checked
+            flask_debug: document.getElementById('sys-flask-debug').checked,
+            plugin_sources: document.getElementById('sys-plugin-sources').value.trim().split('\n').map(s=>s.trim()).filter(Boolean)
         },
         language: document.getElementById('sys-language').value,
         cognition: {

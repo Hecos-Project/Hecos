@@ -206,6 +206,11 @@ class PluginExecutor(BaseModel):
     lazy_load: bool = False
     timeout_seconds: int = 10
 
+class PluginAutoCoder(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = False
+    sandbox_only: bool = False
+
 class PluginsConfig(BaseModel):
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
@@ -219,6 +224,7 @@ class PluginsConfig(BaseModel):
     WEBCAM: PluginWebcam = Field(default_factory=PluginWebcam)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
+    AUTOCODER: PluginAutoCoder = Field(default_factory=PluginAutoCoder)
 
 
 # ─── PROCESSOR & ROUTING & SYSTEM ─────────────────────────────────────────────
@@ -234,6 +240,7 @@ class RoutingEngineConfig(BaseModel):
 class SystemFlagsConfig(BaseModel):
     fast_boot: bool = True
     flask_debug: bool = False
+    plugin_sources: List[str] = Field(default_factory=lambda: ["zentra/plugins"])
 
 
 # ─── ROOT ─────────────────────────────────────────────────────────────────────

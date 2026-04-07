@@ -98,6 +98,9 @@ function populateUI() {
     // 4. Media Module Dispatch
     if (typeof populateMediaUI === 'function') populateMediaUI();
 
+    // 5. AutoCoder Module Dispatch
+    if (typeof populateAutoCoderUI === 'function') populateAutoCoderUI();
+
     renderPlugins(c.plugins || {});
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -212,6 +215,12 @@ function buildPayload() {
            out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
            out.plugins['WEB_UI'].https_enabled = sysPart.plugins.WEB_UI.https_enabled;
         }
+    }
+
+    // Dispatch to AutoCoder Logic
+    if (typeof buildAutoCoderPayload === 'function') {
+        const acPart = buildAutoCoderPayload();
+        out.plugins['AUTOCODER'] = Object.assign(out.plugins['AUTOCODER'] || {}, acPart.AUTOCODER);
     }
 
     document.querySelectorAll('[data-plugin]').forEach(cb => {
