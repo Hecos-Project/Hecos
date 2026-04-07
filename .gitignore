@@ -202,4 +202,15 @@ config/*.json.bak
 
 # TLS/SSL Certificates (contain private keys)
 certs/
+
+# Temporary / Scratch scripts
+test_scanner.py
+config_audio_test.py
+*.tmp
+
+# User Workspace (can contain private project data)
+workspace/
+
+# Auto-generated registry
+zentra/core/registry.json
 
