@@ -5,9 +5,10 @@
     <textarea id="user-input" rows="1" placeholder="{{ t('webui_chat_placeholder') }}" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <div class="input-actions">
       <button class="action-btn" title="{{ t('webui_chat_btn_clear') }}" onclick="clearChat()">🗑</button>
-      <button class="action-btn" id="web-ptt-btn" title="Tieni premuto per parlare (WebRTC)">🎙️</button>
+      <button class="action-btn" id="web-ptt-btn" title="Tieni premuto per parlare · Tocca per bloccare (WebRTC)" aria-label="Microfono WebRTC">🎙️</button>
       <button class="action-btn" id="send-btn" title="{{ t('webui_chat_btn_send') }}" onclick="sendMessage()">▶</button>
     </div>
   </div>
   <div class="input-hint">{{ t('webui_chat_hint') }}</div>
+  <div id="web-ptt-status-bar">🎙️ Tieni premuto per parlare · Tocco breve per modalità toggle</div>
 </div>
