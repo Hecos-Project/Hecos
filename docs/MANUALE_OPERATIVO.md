@@ -1,7 +1,7 @@
 # 📖 MANUALE OPERATIVO - Zentra Core
 
 *Documentazione di sistema per l'Amministratore (Admin).*
-**Versione:** 0.12.0 (Zentra Drive & WebUI Autonoma)
+**Versione:** 0.13.0 (Zentra Drive & WebUI Autonoma)
 
 ---
 
@@ -75,7 +75,7 @@ Tutti i plugin rispondono ad interfacce unificate che esportano `comandi shell` 
 
 ---
 
-## 👁️ 5. Visione e Interazione Multimodale (v0.9.9)
+## 👁️ 5. Visione e Interazione Multimodale (v0.13.0)
 
 Zentra 0.9.9 introduce il **Sistema di Supporto Visione**, permettendo all'AI di "vedere" e analizzare dati visivi.
 - **Caricamento Immagini**: Trascina i file direttamente nella chat web o incolla immagini dalla memoria (**Ctrl+V**).
@@ -91,14 +91,14 @@ Zentra 0.9.9 introduce il **Sistema di Supporto Visione**, permettendo all'AI di
 
 ---
 
-## 🎨 7. Generazione Immagini (v0.9.9)
+## 🎨 7. Generazione Immagini (v0.13.0)
 
 Zentra può creare contenuti visivi utilizzando il plugin `IMAGE_GEN`.
 - **Come usarlo**: Chiedi semplicemente a Zentra di "Generare un'immagine di..." o "Disegna un...".
 - **Server Esterni**: Di default utilizza **Pollinations.ai** per una generazione veloce e senza filtri.
 - **Interazione**: L'immagine generata apparirà direttamente in chat con opzioni per il download o lo zoom.
 
-## 💻 WebUI Nativa (v0.9.9)
+## 💻 WebUI Nativa (v0.13.0)
 Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://localhost:7070` (di default).
 - **Chat in Tempo Reale**: Visualizza lo streaming dell'IA direttamente nel browser.
 - **Dashboard Config**: Modifica le impostazioni di sistema tramite una GUI moderna con sincronizzazione istantanea al core.
@@ -113,7 +113,7 @@ Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://lo
 
 ## 🛡️ 9. Sicurezza Avanzata (Zentra PKI)
 
-Zentra 0.12.0 introduce un'infrastruttura **PKI (Public Key Infrastructure)** integrata per garantire connessioni HTTPS sicure in tutta la rete locale.
+Zentra 0.13.0 introduce un'infrastruttura **PKI (Public Key Infrastructure)** integrata per garantire connessioni HTTPS sicure in tutta la rete locale.
 
 ### Certificati e Root CA
 Per sbloccare funzionalità come il **Microfono** e la **Webcam** sui browser mobile (che richiedono contesti sicuri), Zentra agisce come una propria Autorità di Certificazione:
@@ -150,4 +150,4 @@ Dalla versione 0.9.9 Zentra integra un **Loop Cognitivo (Agentic Loop)**. Questo
 - **Zentra Code Jail (Sandbox)**: Zentra può scrivere frammenti di codice Python al volo ed eseguirli (nella cartella sicura `/workspace/sandbox/`) per risolvere calcoli aritmetici lunghi, costruire algoritmi o manipolare dati complessi con precisione assoluta. Una speciale macchina AST di sicurezza interviene prima dell'esecuzione: se l'IA prova a usare comandi di sistema pericolosi, l'azione viene bloccata all'istante, mantenendo il computer sempre protetto.
 
 ---
-*Fine del rapporto documentale v0.12.0.*
+*Fine del rapporto documentale v0.13.0.*

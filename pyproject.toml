@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build-meta"
+
+[project]
+name = "zentra-core"
+version = "0.13.0"
+description = "Modular AI Agentic Framework"
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml",
+    "litellm",
+    # Aggiungi le altre dipendenze che hai nel manuale
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

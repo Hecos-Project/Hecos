@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
 </p>
 
-# Zentra Core - Versión 0.12.0 (Runtime Alpha)
+# Zentra Core - Versión 0.13.0 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -20,11 +20,11 @@ Combina LLMs locales, interacción por voz, automatización del sistema y una ar
 
 
 ---
-Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Zentra 0.12.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
+Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Zentra 0.13.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
 
-## ✨ Características Principales (v0.12.0)
+## ✨ Características Principales (v0.13.0)
 * 🤖 **Agente Cognitivo Autónomo** — Zentra ahora razona paso a paso (Chain of Thought), elige herramientas dinámicamente y resuelve tareas complejas de forma autónoma.
 * 🛡️ **Zentra Code Jail (Sandbox AST)** — Un entorno de ejecución nativo altamente seguro que permite a la IA ejecutar algoritmos Python, matemáticas y lógica de datos de forma segura.
 * 👁️ **Soporte de Visión Nativa** — Capacidades de IA multimodal para Gemini, OpenAI y Ollama (LLaVA). Analiza imágenes, fotos y capturas de pantalla directamente en el chat.
@@ -46,7 +46,7 @@ Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Z
 ---
 
 ## 🧠 Cómo Funciona
-**Zentra Core está actualmente en `v0.12.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
+**Zentra Core está actualmente en `v0.13.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
 * **Plugins** → Acciones y capacidades (sistema, web, multimedia, etc.).
 * **Memory** → Identidad y almacenamiento persistente.
 * **UI** → Capa de interacción con el usuario.

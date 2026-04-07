@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.12.0 (Runtime Alpha)
+# Zentra Core - Versione 0.13.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,17 +12,17 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ---
 
 > [!WARNING]
-> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.12.0`. Questa repository contiene il motore, il backend, i moduli di ragionamento IA e la WebUI nativa principale. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
+> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.13.0`. Questa repository contiene il motore, il backend, i moduli di ragionamento IA e la WebUI nativa principale. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
 
 ## 🚀 Panoramica
 **Zentra Core** è una piattaforma di assistenza AI local-first che gira interamente sulla tua macchina.
 Combina LLM locali, interazione vocale, automazione di sistema e un'architettura a plugin modulari per creare un compagno digitale completamente personalizzabile.
 
-Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.12.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
+Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.13.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
-## ✨ Caratteristiche Principali (v0.12.0)
+## ✨ Caratteristiche Principali (v0.13.0)
 * 🤖 **Agente Cognitivo Autonomo** — Zentra ora ragiona step-by-step (Chain of Thought), sceglie dinamicamente gli strumenti e risolve task complessi in autonomia.
 * 🛡️ **Zentra Code Jail (Sandbox AST)** — Un ambiente di esecuzione nativo e isolato che permette all'IA di eseguire calcoli Python, algoritmi e test in totale sicurezza.
 * 👁️ **Supporto Visione Nativa** — Capacità AI multimodali per Gemini, OpenAI e Ollama (LLaVA). Analizza immagini, foto e screenshot direttamente in chat.
