@@ -1,0 +1,5 @@
+b24fecf Merge pull request #18 from Zentra-Core/feature/zentra-package-v0.14
+56406a1 g verif
+fa70030 update documentation
+88b7483 update
+910bd9b Fix cartelle plugin esterne

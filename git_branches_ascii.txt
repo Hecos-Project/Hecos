@@ -1,0 +1,23 @@
+  feature/zentra-package-v0.14
+  main
+  sviluppo-v0.10.0
+  sviluppo-v0.10.1
+  sviluppo-v0.11.0
+  sviluppo-v0.12.0
+  sviluppo-v0.13.0
+* sviluppo-v0.15.0
+  sviluppo-v0.9.10
+  sviluppo-v0.9.7
+  sviluppo-v0.9.8
+  sviluppo-v0.9.9
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/feature/zentra-package-v0.14
+  remotes/origin/main
+  remotes/origin/sviluppo-v0.10.0
+  remotes/origin/sviluppo-v0.10.1
+  remotes/origin/sviluppo-v0.11.0
+  remotes/origin/sviluppo-v0.12.0
+  remotes/origin/sviluppo-v0.13.0
+  remotes/origin/sviluppo-v0.15.0
+  remotes/origin/sviluppo-v0.9.10
+  remotes/origin/sviluppo-v0.9.9

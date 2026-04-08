@@ -1,0 +1,290 @@
+M	.gitignore
+M	CONFIG_EDITOR_STANDALONE_RUN.bat
+M	CONTRIBUTING.md
+M	README.md
+M	README_ESP.md
+M	README_ITA.md
+M	ZENTRA_RUN.bat
+M	ZENTRA_Run_Nvidia.bat
+M	ZENTRA_WEB_RUN.bat
+R100	zentra/app/__init__.py	app/__init__.py
+R091	zentra/app/application.py	app/application.py
+R091	zentra/app/bootstrapper.py	app/bootstrapper.py
+R093	zentra/app/config.py	app/config.py
+R096	zentra/app/input_handler.py	app/input_handler.py
+R091	zentra/app/menu_handler.py	app/menu_handler.py
+R094	zentra/app/model_manager.py	app/model_manager.py
+R097	zentra/app/personality_manager.py	app/personality_manager.py
+R100	zentra/app/state_manager.py	app/state_manager.py
+R091	zentra/app/threads.py	app/threads.py
+M	config/schemas/system_schema.py
+R100	zentra/core/__init__.py	core/__init__.py
+R100	zentra/__init__.py	core/agent/__init__.py
+R082	zentra/core/agent/loop.py	core/agent/loop.py
+R097	zentra/core/agent/traces.py	core/agent/traces.py
+R100	zentra/core/agent/__init__.py	core/audio/__init__.py
+R100	zentra/core/audio/audio_config.py	core/audio/audio_config.py
+R100	zentra/core/audio/beep_generator.py	core/audio/beep_generator.py
+R100	zentra/core/audio/device_manager.py	core/audio/device_manager.py
+R100	zentra/core/audio/device_scanner.py	core/audio/device_scanner.py
+R096	zentra/core/audio/listen.py	core/audio/listen.py
+R098	zentra/core/audio/voice.py	core/audio/voice.py
+R096	zentra/core/auth/auth_manager.py	core/auth/auth_manager.py
+R100	zentra/core/auth/decorators.py	core/auth/decorators.py
+R100	zentra/core/audio/__init__.py	core/i18n/__init__.py
+R100	zentra/core/i18n/locales/en.json	core/i18n/locales/en.json
+R098	zentra/core/i18n/locales/it.json	core/i18n/locales/it.json
+R098	zentra/core/i18n/translator.py	core/i18n/translator.py
+A	core/keys/__init__.py
+A	core/keys/key_loader.py
+A	core/keys/key_manager.py
+A	core/keys/key_store.py
+R100	zentra/core/i18n/__init__.py	core/llm/__init__.py
+R090	zentra/core/llm/brain.py	core/llm/brain.py
+R060	zentra/core/llm/client.py	core/llm/client.py
+R098	zentra/core/llm/manager.py	core/llm/manager.py
+R100	zentra/core/llm/vision/__init__.py	core/llm/vision/__init__.py
+R100	zentra/core/llm/vision/base.py	core/llm/vision/base.py
+R093	zentra/core/llm/vision/factory.py	core/llm/vision/factory.py
+R100	zentra/core/llm/vision/gemini_vision.py	core/llm/vision/gemini_vision.py
+R100	zentra/core/llm/vision/ollama_vision.py	core/llm/vision/ollama_vision.py
+R100	zentra/core/llm/vision/openai_vision.py	core/llm/vision/openai_vision.py
+R100	zentra/core/logging/__init__.py	core/logging/__init__.py
+R100	zentra/core/logging/logger.py	core/logging/logger.py
+R100	zentra/core/media/__init__.py	core/media/__init__.py
+R099	zentra/core/media/image_providers.py	core/media/image_providers.py.bak
+A	core/media/image_providers/__init__.py
+A	core/media/image_providers/airforce.py
+A	core/media/image_providers/gemini.py
+A	core/media/image_providers/huggingface.py
+A	core/media/image_providers/openai.py
+A	core/media/image_providers/pollinations.py
+A	core/media/image_providers/stability.py
+A	core/media/image_providers/utils.py
+R096	zentra/core/media_config.py	core/media_config.py
+R100	zentra/core/llm/__init__.py	core/processing/__init__.py
+R100	zentra/core/processing/filtri.py	core/processing/filtri.py
+R084	zentra/core/processing/processore.py	core/processing/processore.py
+R081	zentra/core/registry.json	core/registry.json
+R100	zentra/core/security/pki/__init__.py	core/security/pki/__init__.py
+R100	zentra/core/security/pki/ca_manager.py	core/security/pki/ca_manager.py
+R100	zentra/core/security/pki/cert_generator.py	core/security/pki/cert_generator.py
+R100	zentra/core/processing/__init__.py	core/system/__init__.py
+R089	zentra/core/system/diagnostica.py	core/system/diagnostica.py
+R093	zentra/core/system/extension_loader.py	core/system/extension_loader.py
+R094	zentra/core/system/greeting.py	core/system/greeting.py
+R100	zentra/core/system/instance_lock.py	core/system/instance_lock.py
+R099	zentra/core/system/os_adapter.py	core/system/os_adapter.py
+R093	zentra/core/system/plugin_config_sync.py	core/system/plugin_config_sync.py
+R097	zentra/core/system/plugin_docs.py	core/system/plugin_docs.py
+R100	zentra/core/system/plugin_loader.py	core/system/plugin_loader.py
+A	core/system/plugin_scanner.py
+R094	zentra/core/system/plugin_state.py	core/system/plugin_state.py
+R100	zentra/core/system/version.py	core/system/version.py
+A	core/version
+A	debug_config.py
+M	docs/ARCHITECTURE_MAP.md
+M	docs/MANUALE_OPERATIVO.md
+M	docs/OPERATING_MANUAL.md
+M	docs/PLUGINS_DEV.md
+M	docs/TECHNICAL_GUIDE.md
+D	docs/google955b9ecf87b3639d.html
+M	docs/index.html
+M	docs_ai/MASTER_CONTEXT.md
+M	docs_ai/capabilities/ai_management.json
+M	docs_ai/capabilities/core_engine.json
+A	editor_init_trace.txt
+A	err.txt
+A	ext_debug.txt
+A	extension_loader_trace.txt
+A	extract.py
+A	flask_routes_dump.txt
+R100	zentra/core/system/__init__.py	git_check.txt
+R100	zentra/memory/__init__.py	git_check2.txt
+A	health_check_out.txt
+A	health_check_result.txt
+M	logs/webui_heartbeat.json
+R094	zentra/main.py	main.py
+R100	zentra/memory/Explanations.txt	memory/Explanations.txt
+R100	zentra/plugins/__init__.py	memory/__init__.py
+R098	zentra/memory/brain_interface.py	memory/brain_interface.py
+R089	zentra/memory/chat_history.db	memory/chat_history.db
+R100	zentra/memory/core_identity.json	memory/core_identity.json
+R100	zentra/memory/user_profile.json	memory/user_profile.json
+M	monitor.py
+R100	zentra/plugins/drive/__init__.py	plugins/__init__.py
+R100	zentra/plugins/dashboard/__init__.py	plugins/dashboard/__init__.py
+R098	zentra/plugins/dashboard/main.py	plugins/dashboard/main.py
+R100	zentra/plugins/dashboard/manifest.json	plugins/dashboard/manifest.json
+R095	zentra/plugins/domotica/main.py	plugins/domotica/main.py
+R100	zentra/plugins/domotica/manifest.json	plugins/domotica/manifest.json
+R100	zentra/plugins/file_manager/__init__.py	plugins/drive/__init__.py
+A	plugins/drive/extensions/__init__.py
+R100	zentra/plugins/help/__init__.py	plugins/drive/extensions/editor/__init__.py
+A	plugins/drive/extensions/editor/main.py
+R100	zentra/plugins/drive/extensions/editor/manifest.json	plugins/drive/extensions/editor/manifest.json
+A	plugins/drive/extensions/editor/static/css/editor.css
+A	plugins/drive/extensions/editor/static/js/editor.js
+A	plugins/drive/extensions/editor/templates/editor.html
+R090	zentra/plugins/drive/main.py	plugins/drive/main.py
+A	plugins/drive/manifest.json
+A	plugins/drive/routes.py
+A	plugins/drive/static/css/drive.css
+R100	zentra/plugins/web_ui/static/js/drive.js	plugins/drive/static/js/drive.js
+A	plugins/drive/templates/drive.html
+R097	zentra/plugins/executor/main.py	plugins/executor/main.py
+R100	zentra/plugins/executor/manifest.json	plugins/executor/manifest.json
+R100	zentra/plugins/media/__init__.py	plugins/file_manager/__init__.py
+R097	zentra/plugins/file_manager/main.py	plugins/file_manager/main.py
+R100	zentra/plugins/file_manager/manifest.json	plugins/file_manager/manifest.json
+R100	zentra/plugins/roleplay/__init__.py	plugins/help/__init__.py
+R095	zentra/plugins/help/main.py	plugins/help/main.py
+R100	zentra/plugins/help/manifest.json	plugins/help/manifest.json
+R100	zentra/plugins/image_gen/__init__.py	plugins/image_gen/__init__.py
+R076	zentra/plugins/image_gen/main.py	plugins/image_gen/main.py
+R100	zentra/plugins/image_gen/manifest.json	plugins/image_gen/manifest.json
+R095	zentra/plugins/lazy_test/main.py	plugins/lazy_test/main.py
+R100	zentra/plugins/lazy_test/manifest.json	plugins/lazy_test/manifest.json
+R100	zentra/plugins/web/__init__.py	plugins/media/__init__.py
+R097	zentra/plugins/media/main.py	plugins/media/main.py
+R100	zentra/plugins/media/manifest.json	plugins/media/manifest.json
+R095	zentra/plugins/memory/main.py	plugins/memory/main.py
+R100	zentra/plugins/memory/manifest.json	plugins/memory/manifest.json
+R093	zentra/plugins/models/main.py	plugins/models/main.py
+R100	zentra/plugins/models/manifest.json	plugins/models/manifest.json
+A	plugins/remote_triggers/main.py
+A	plugins/remote_triggers/manifest.json
+A	plugins/remote_triggers/routes.py
+A	plugins/remote_triggers/static/js/remote_triggers.js
+R100	zentra/plugins/webcam/__init__.py	plugins/roleplay/__init__.py
+R100	zentra/plugins/roleplay/characters/wizard.json	plugins/roleplay/characters/wizard.json
+R098	zentra/plugins/roleplay/main.py	plugins/roleplay/main.py
+R100	zentra/plugins/roleplay/manifest.json	plugins/roleplay/manifest.json
+R100	zentra/plugins/roleplay/scenes/tavern.json	plugins/roleplay/scenes/tavern.json
+R100	zentra/plugins/sys_net/__init__.py	plugins/sys_net/__init__.py
+R098	zentra/plugins/sys_net/main.py	plugins/sys_net/main.py
+R100	zentra/plugins/sys_net/manifest.json	plugins/sys_net/manifest.json
+R100	zentra/plugins/system/__init__.py	plugins/system/__init__.py
+R097	zentra/plugins/system/main.py	plugins/system/main.py
+R100	zentra/plugins/system/manifest.json	plugins/system/manifest.json
+A	plugins/web/__init__.py
+R097	zentra/plugins/web/main.py	plugins/web/main.py
+R100	zentra/plugins/web/manifest.json	plugins/web/manifest.json
+R100	zentra/plugins/web_ui/__init__.py	plugins/web_ui/__init__.py
+R083	zentra/plugins/web_ui/main.py	plugins/web_ui/main.py
+R100	zentra/plugins/web_ui/manifest.json	plugins/web_ui/manifest.json
+R075	zentra/plugins/web_ui/routes.py	plugins/web_ui/routes.py
+R085	zentra/plugins/web_ui/routes_audio.py	plugins/web_ui/routes_audio.py
+R096	zentra/plugins/web_ui/routes_auth.py	plugins/web_ui/routes_auth.py
+R097	zentra/plugins/web_ui/routes_chat.py	plugins/web_ui/routes_chat.py
+R092	zentra/plugins/web_ui/routes_config.py	plugins/web_ui/routes_config.py
+A	plugins/web_ui/routes_keys.py
+R092	zentra/plugins/web_ui/routes_media.py	plugins/web_ui/routes_media.py
+R100	zentra/plugins/web_ui/routes_security.py	plugins/web_ui/routes_security.py
+R095	zentra/plugins/web_ui/routes_system.py	plugins/web_ui/routes_system.py
+R096	zentra/plugins/web_ui/routes_users.py	plugins/web_ui/routes_users.py
+R089	zentra/plugins/web_ui/server.py	plugins/web_ui/server.py
+A	plugins/web_ui/static/css/chat.css
+R100	zentra/plugins/web_ui/static/css/mobile/responsive.css	plugins/web_ui/static/css/mobile/responsive.css
+R100	zentra/plugins/web_ui/static/js/agent/agent_traces.js	plugins/web_ui/static/js/agent/agent_traces.js
+A	plugins/web_ui/static/js/audio_controls.js
+A	plugins/web_ui/static/js/audio_encoder.js
+A	plugins/web_ui/static/js/audio_recorder.js
+A	plugins/web_ui/static/js/audio_ui.js
+A	plugins/web_ui/static/js/chat_api.js
+A	plugins/web_ui/static/js/chat_events.js
+R100	zentra/plugins/web_ui/static/js/chat_image_viewer.js	plugins/web_ui/static/js/chat_image_viewer.js
+R100	zentra/plugins/web_ui/static/js/chat_input_toolbar.js	plugins/web_ui/static/js/chat_input_toolbar.js
+R100	zentra/plugins/web_ui/static/js/chat_message_actions.js	plugins/web_ui/static/js/chat_message_actions.js
+R100	zentra/plugins/web_ui/static/js/chat_renderer.js	plugins/web_ui/static/js/chat_renderer.js
+A	plugins/web_ui/static/js/chat_ui.js
+R100	zentra/plugins/web_ui/static/js/client_camera.js	plugins/web_ui/static/js/client_camera.js
+R100	zentra/plugins/web_ui/static/js/config_audio_logic.js	plugins/web_ui/static/js/config_audio_logic.js
+R092	zentra/plugins/web_ui/static/js/config_core.js	plugins/web_ui/static/js/config_core.js
+R089	zentra/plugins/web_ui/static/js/config_mapper.js	plugins/web_ui/static/js/config_mapper.js
+R097	zentra/plugins/web_ui/static/js/config_media_logic.js	plugins/web_ui/static/js/config_media_logic.js
+R097	zentra/plugins/web_ui/static/js/config_system_logic.js	plugins/web_ui/static/js/config_system_logic.js
+R100	zentra/plugins/web_ui/static/js/mobile/mobile_logic.js	plugins/web_ui/static/js/mobile/mobile_logic.js
+R100	zentra/plugins/web_ui/static/js/neural_link/neural_link_logic.js	plugins/web_ui/static/js/neural_link/neural_link_logic.js
+R087	zentra/plugins/web_ui/templates/chat.html	plugins/web_ui/templates/chat.html
+R096	zentra/plugins/web_ui/templates/index.html	plugins/web_ui/templates/index.html
+R100	zentra/plugins/web_ui/templates/login.html	plugins/web_ui/templates/login.html
+R100	zentra/plugins/web_ui/templates/modules/chat_area.html	plugins/web_ui/templates/modules/chat_area.html
+R100	zentra/plugins/web_ui/templates/modules/chat_image_viewer.html	plugins/web_ui/templates/modules/chat_image_viewer.html
+R078	zentra/plugins/web_ui/templates/modules/chat_input.html	plugins/web_ui/templates/modules/chat_input.html
+R100	zentra/plugins/web_ui/templates/modules/chat_input_toolbar.html	plugins/web_ui/templates/modules/chat_input_toolbar.html
+R100	zentra/plugins/web_ui/templates/modules/chat_message_actions.html	plugins/web_ui/templates/modules/chat_message_actions.html
+R100	zentra/plugins/web_ui/templates/modules/chat_sidebar.html	plugins/web_ui/templates/modules/chat_sidebar.html
+R100	zentra/plugins/web_ui/templates/modules/chat_topbar.html	plugins/web_ui/templates/modules/chat_topbar.html
+R100	zentra/plugins/web_ui/templates/modules/config_backend.html	plugins/web_ui/templates/modules/config_backend.html
+R100	zentra/plugins/web_ui/templates/modules/config_bridge.html	plugins/web_ui/templates/modules/config_bridge.html
+R056	zentra/plugins/web_ui/templates/modules/config_drive.html	plugins/web_ui/templates/modules/config_drive.html
+R100	zentra/plugins/web_ui/templates/modules/config_llm.html	plugins/web_ui/templates/modules/config_llm.html
+R100	zentra/plugins/web_ui/templates/modules/config_logs.html	plugins/web_ui/templates/modules/config_logs.html
+R100	zentra/plugins/web_ui/templates/modules/config_media.html	plugins/web_ui/templates/modules/config_media.html
+R100	zentra/plugins/web_ui/templates/modules/config_memory.html	plugins/web_ui/templates/modules/config_memory.html
+R100	zentra/plugins/web_ui/templates/modules/config_payload.html	plugins/web_ui/templates/modules/config_payload.html
+R100	zentra/plugins/web_ui/templates/modules/config_persona.html	plugins/web_ui/templates/modules/config_persona.html
+R100	zentra/plugins/web_ui/templates/modules/config_plugins.html	plugins/web_ui/templates/modules/config_plugins.html
+R100	zentra/plugins/web_ui/templates/modules/config_routing.html	plugins/web_ui/templates/modules/config_routing.html
+R100	zentra/plugins/web_ui/templates/modules/config_security.html	plugins/web_ui/templates/modules/config_security.html
+R100	zentra/plugins/web_ui/templates/modules/config_sysnet.html	plugins/web_ui/templates/modules/config_sysnet.html
+R085	zentra/plugins/web_ui/templates/modules/config_system.html	plugins/web_ui/templates/modules/config_system.html
+R100	zentra/plugins/web_ui/templates/modules/config_users.html	plugins/web_ui/templates/modules/config_users.html
+R077	zentra/plugins/web_ui/templates/modules/config_voice.html	plugins/web_ui/templates/modules/config_voice.html
+A	plugins/web_ui/templates/modules/key_manager.html
+R100	zentra/plugins/web_ui/templates/modules/mobile/mobile_navbar.html	plugins/web_ui/templates/modules/mobile/mobile_navbar.html
+R098	zentra/plugins/web_ui/templates/modules/neural_link.html	plugins/web_ui/templates/modules/neural_link.html
+A	plugins/webcam/__init__.py
+R097	zentra/plugins/webcam/main.py	plugins/webcam/main.py
+R100	zentra/plugins/webcam/manifest.json	plugins/webcam/manifest.json
+A	plugins_legacy/base.py
+A	plugins_legacy/system/main.py
+A	plugins_legacy/web/main.py
+A	prompt_output.txt
+M	pyproject.toml
+M	risposta.wav
+A	root.txt
+M	scripts/reset_admin.py
+A	status_check.txt
+A	test_drive_routes.py
+A	test_editor.py
+A	test_loader.py
+A	test_prompt.py
+A	test_prompt_2.py
+D	test_scanner.py
+A	test_trace2.py
+A	test_validation.py
+A	test_yaml_save.py
+A	tmp_log.txt
+M	ui/config_editor/core.py
+M	ui/config_editor/locks.py
+M	ui/config_editor/parameters.py
+M	ui/config_editor/ui.py
+M	ui/interface.py
+M	ui/ui_updater.py
+A	verify_keys.py
+A	version_sync.py
+A	version_tool.py
+D	zentra/config/agent.yaml
+D	zentra/config/audio.yaml
+D	zentra/config/media.yaml
+D	zentra/core/system/plugin_scanner.py
+D	zentra/core/version
+M	zentra/memory/users.db
+D	zentra/plugins/drive/extensions/editor/__init__.py
+D	zentra/plugins/drive/extensions/editor/main.py
+D	zentra/plugins/drive/manifest.json
+D	zentra/plugins/drive/routes.py
+D	zentra/plugins/web_ui/static/css/chat.css
+D	zentra/plugins/web_ui/static/js/chat_logic.js
+D	zentra/plugins/web_ui/static/js/config_autocoder_logic.js
+D	zentra/plugins/web_ui/static/js/web_audio.js
+D	zentra/plugins/web_ui/templates/drive.html
+D	zentra/plugins/web_ui/templates/editor.html
+D	zentra/plugins/web_ui/templates/modules/config_autocoder.html
+M	zentra_bridge/webui/bridge.py
+M	zentra_bridge/webui/prompting.py
+M	zentra_bridge/webui/streaming.py
+M	zentra_bridge/webui/web_config/__init__.py
+M	zentra_web_run.sh

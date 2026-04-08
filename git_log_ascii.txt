@@ -1,0 +1,20 @@
+df452b0 remote trigger
+4281d93 suddivisione image providers + huggingface
+7b2b20d aggiornamento docs
+bbb3605 feat: Implementazione Gestore Multi-Chiave API con Failover automatico
+7da4f40 Split editor e chat html, pulizia codice, aggiornamento documentazione
+40e1f28 Split ottimizzazione codici moduli audio
+4d2b94f FIX conf audio PTT
+a7f488a Aggiornamento PTT FINALMENTE FUNZIONANTE
+3009409 Aggiornamento documentazione
+ae7f003 Merge pull request #17 from Zentra-Core/sviluppo-v0.13.0
+3368357 Fix privacy console issue
+cfc9817 aggiornamento documentazione
+409c82e feat: audio listen da terminale esterno
+f8fd134 Mobile PTT & Web Audio Routing (WebRTC)
+865783b Fix browse file system from root
+3154180 feat(core/plugins): implementazione Extension Framework e Zentra Code Editor
+fbd89fa fix vari
+a5c61e6 Fix take a pic from phone
+4233692 feat: scattare foto dal client esterno
+24b2158 fix personality who I am

@@ -1,147 +1,47 @@
-"""
-MODULE: Simplified Resuscitation Monitor - Zentra Core
-DESCRIPTION: Monitors config.json for restarts. Supports both main app and standalone web mode.
-"""
-
-import subprocess
-import time
-import os
+#!/usr/bin/env python
+# Wrapper root per Zentra Monitor
 import sys
-import json
-import argparse
-from core.system import instance_lock
+import os
 
-# Path configuration
-DEFAULT_MAIN_SCRIPT = "main.py"
-CONFIG_FILE = os.path.join("config", "system.yaml")
-
-def get_translator():
-    language = "en"
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                # Semplice parsing per trovare la riga "language: xx" in YAML senza lib esterne pesanti
-                for line in f:
-                    if line.startswith("language:"):
-                        language = line.split(":")[1].strip().strip('"\'')
-                        break
-        except: pass
-    
-    translations = {
-        "it": {
-            "critical_missing": "[MONITOR] CRITICAL: {file} not found.",
-            "starting": "[MONITOR] Starting Zentra ({script})...",
-            "config_changed": "[MONITOR] system.yaml change detected. Terminating...",
-            "reset_complete": "[MONITOR] Reset complete. Restarting in 2 seconds...",
-            "error": "[MONITOR] Error: {error}"
-        },
-        "en": {
-            "critical_missing": "[MONITOR] CRITICAL: {file} not found.",
-            "starting": "[MONITOR] Starting Zentra ({script})...",
-            "config_changed": "[MONITOR] system.yaml change detected. Terminating...",
-            "reset_complete": "[MONITOR] Reset complete. Restarting in 2 seconds...",
-            "error": "[MONITOR] Error: {error}"
-        }
-    }
-    return lambda key, **kwargs: translations.get(language, translations["en"]).get(key, key).format(**kwargs)
-
-t = get_translator()
-
-def get_file_timestamp(path):
-    if os.path.exists(path):
-        return os.path.getmtime(path)
-    return 0
-
-def start_and_monitor(script_to_run):
-    # For module-style runs (like plugins.web_ui.server), we don't check file existence directly if it contains dots
-    if "." not in script_to_run or not script_to_run.endswith(".py"):
-        if not os.path.exists(script_to_run) and not script_to_run.startswith("plugins."):
-            print(t("critical_missing", file=script_to_run))
-            return False
-
-    last_config_time = get_file_timestamp(CONFIG_FILE)
-    print(t("starting", script=script_to_run))
-    
-    # Process startup: handle both direct scripts and module-style runs
-    if script_to_run.startswith("plugins."):
-        process = subprocess.Popen([sys.executable, "-m", script_to_run])
-    else:
-        process = subprocess.Popen([sys.executable, script_to_run])
-
-    try:
-        while process.poll() is None:
-            time.sleep(1)
-            
-            # config.json check
-            current_config_time = get_file_timestamp(CONFIG_FILE)
-            if current_config_time > last_config_time + 1:
-                # Check for flag set by app to avoid unnecessary restarts
-                if os.path.exists(".config_saved_by_app"):
-                    try: os.remove(".config_saved_by_app")
-                    except: pass
-                    last_config_time = current_config_time
-                    continue
-                
-                print(f"\n{t('config_changed')}")
-                process.terminate()
-                # Wait for process to close (max 5 seconds)
-                try:
-                    process.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    process.kill() # Force close if unresponsive
-                
-                print(t("reset_complete"))
-                time.sleep(2) # Safety pause for GPU
-                return True
-                
-        # Natural exit:
-        if process.returncode == 42:
-            time.sleep(1) # Safety pause before new incarnation
-            return True # Restart on request code 42
-        else:
-            print(f"[MONITOR] Process exited with code: {process.returncode}")
-            return False # Normal closure or different error, do not restart
-                    
-    except Exception as e:
-        print(t("error", error=e))
-        process.kill()
-    
-    return False
+# Aggiunge la cartella zentra al path per permettere gli import interni
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "zentra"))
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Zentra Watchdog Monitor")
-    parser.add_argument("--script", default=DEFAULT_MAIN_SCRIPT, help="Script or module to monitor (e.g. main.py or plugins.web_ui.server)")
+    # Importa e lancia il monitor reale che ora è nel package
+    from zentra.monitor import t, start_and_monitor, DEFAULT_MAIN_SCRIPT
+    import argparse
+    from core.system import instance_lock
+
+    parser = argparse.ArgumentParser(description="Zentra Watchdog Monitor (Wrapper)")
+    parser.add_argument("--script", default=DEFAULT_MAIN_SCRIPT, help="Script or module to monitor")
     args = parser.parse_args()
 
     print(f"\n{'-'*55}")
-    print(f" [MONITOR] Zentra Core Watchdog Active")
-    print(f" Target: {args.script}")
+    print(f" [MONITOR] Zentra Core Watchdog Proxy Active")
+    print(f" Target: {args.script} (Package Mode)")
     print(f"{'-'*55}\n")
     
-    # Determine lock name based on script
     lock_name = "zentra_console" if "main.py" in args.script else "zentra_web"
     
     if not instance_lock.acquire_lock(lock_name):
         print(f"\n[MONITOR] ERROR: Another instance of Zentra ({lock_name}) is already running.")
-        print(f"[MONITOR] Please close the existing instance before starting a new one.")
         sys.exit(1)
     
     try:
         while True:
             try:
+                # Nota: passiamo il path relativo al package se necessario, 
+                # ma start_and_monitor userà sys.executable sul path passato.
                 should_restart = start_and_monitor(args.script)
                 if not should_restart:
-                    print(f"\n[MONITOR] Zentra Core shut down normally. Exiting watchdog.")
+                    print(f"\n[MONITOR] Zentra Core shut down normally.")
                     break
-                
-                # If we are here, we need to restart
-                print(f"\n[MONITOR] Restarting Zentra Core in progress...")
-                time.sleep(1) # Brief pause
+                time.sleep(1)
             except KeyboardInterrupt:
-                print(f"\n[MONITOR] Watchdog terminated by user.")
                 break
             except Exception as e:
-                print(f"\n[MONITOR] unexpected error in watchdog loop: {e}")
-                time.sleep(5) # Long pause before retry if something crashed
+                print(f"\n[MONITOR] Error: {e}")
+                import time
+                time.sleep(5)
     finally:
         instance_lock.release_lock(lock_name)
