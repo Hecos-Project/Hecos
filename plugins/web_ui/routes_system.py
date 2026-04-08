@@ -14,23 +14,15 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             data = request.get_json(force=True) or {}
             page_type = data.get("type", "unknown")
-            
-            # Simple persistence to file to survive server restarts
             hb_file = os.path.join(root_dir, "logs", "webui_heartbeat.json")
             hb_data = {}
             if os.path.exists(hb_file):
                 try:
-                    with open(hb_file, "r") as f:
-                        hb_data = json.load(f)
+                    with open(hb_file, "r") as f: hb_data = json.load(f)
                 except: pass
-            
             hb_data[page_type] = time.time()
-            
-            # Ensure logs dir exists
             os.makedirs(os.path.dirname(hb_file), exist_ok=True)
-            with open(hb_file, "w") as f:
-                json.dump(hb_data, f)
-                
+            with open(hb_file, "w") as f: json.dump(hb_data, f)
             return jsonify({"ok": True})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500

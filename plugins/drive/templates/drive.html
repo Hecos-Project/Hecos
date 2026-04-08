@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="{{ config.language or 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zentra Drive</title>
+  <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/drive_static/css/drive.css">
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <img src="/assets/Zentra_Core_Logo_NBG.png" alt="Zentra">
+    <div class="logo-text">Zentra <span>Drive</span></div>
+  </div>
+  <div class="nav-links">
+    {% if current_user.is_authenticated %}
+    <div class="user-badge">
+      <span style="color:#888;">Utente:</span>
+      <strong>{{ current_user.username }}</strong>
+      <span class="role-badge">{{ current_user.role }}</span>
+    </div>
+    {% endif %}
+    <a href="/zentra/config/ui">⚙️ Config</a>
+    <a href="/chat">💬 Chat</a>
+    <a href="/logout" style="color:var(--red);">Esci</a>
+  </div>
+</header>
+
+<!-- ── Toolbar ────────────────────────────────────────────── -->
+<div id="toolbar">
+  <button class="btn" onclick="navigateTo('')" title="Torna alla root">🏠</button>
+  <button class="btn" onclick="goUp()" title="Cartella superiore">⬆️</button>
+  <div id="path-bar"><span class="crumb current">🏠 Drive</span></div>
+  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">⬆️ Carica</button>
+  <input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
+  <button class="btn" onclick="showMkdirModal()">📁 Nuova Cartella</button>
+</div>
+
+<div id="main-layout">
+
+  <!-- ── Sidebar (dir tree) ─────────────────────────────── -->
+  <div id="sidebar">
+    <div id="sidebar-header">📂 Cartelle</div>
+    <div id="tree-root"></div>
+  </div>
+
+  <!-- ── File Area ──────────────────────────────────────── -->
+  <div id="file-area">
+
+    <!-- location bar -->
+    <div id="location-bar">
+      <div class="loc-left">Posizione corrente: <span id="loc-path" class="loc-path">/</span></div>
+      <div class="loc-right">
+        <span id="loc-count" style="color:var(--muted)">—</span>
+      </div>
+    </div>
+
+    <!-- upload drop target -->
+    <div id="dropzone">Trascina file qui per caricarli nella cartella corrente</div>
+
+    <!-- upload progress -->
+    <div id="upload-progress">
+      <progress id="upload-bar" value="0" max="100"></progress>
+      <div id="upload-label"></div>
+    </div>
+
+    <!-- files table -->
+    <div id="file-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">Nome ↕</th>
+            <th onclick="sortBy('size')">Dimensione ↕</th>
+            <th onclick="sortBy('modified')">Modificato ↕</th>
+            <th>Azioni</th>
+          </tr>
+        </thead>
+        <tbody id="file-tbody">
+          <tr class="empty-row"><td colspan="4">Caricamento...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- status bar -->
+    <div id="statusbar">
+      <span id="sb-info">—</span>
+      <span id="sb-selected" style="color:var(--accent)"></span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Mkdir Modal ────────────────────────────────────────── -->
+<div class="modal-bg" id="mkdir-modal">
+  <div class="modal">
+    <h3>📁 Nuova Cartella</h3>
+    <p id="mkdir-hint">Verrà creata in: <strong id="mkdir-path-hint" style="color:var(--accent);">/</strong></p>
+    <input type="text" id="mkdir-name" placeholder="Nome cartella..."
+           onkeydown="if(event.key==='Enter')confirmMkdir(); if(event.key==='Escape')closeMkdirModal()">
+    <div class="modal-btns">
+      <button class="btn" onclick="closeMkdirModal()">Annulla</button>
+      <button class="btn btn-primary" onclick="confirmMkdir()">Crea</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Notification toast ─────────────────────────────────── -->
+<div id="drive-msg"></div>
+
+<script src="/drive_static/js/drive.js"></script>
+</body>
+</html>

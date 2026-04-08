@@ -27,6 +27,20 @@ function showTab(name) {
   }
 }
 
+async function fetchWithTimeout(resource, options = {}) {
+  const { timeout = 10000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(resource, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
 /**
  * Master Initialization
  */
@@ -38,11 +52,11 @@ async function initAll() {
 
   try {
     const [rOpts, rCfg, rAudio, rAudioCfg, rMediaCfg] = await Promise.all([
-      fetch('/zentra/options'),
-      fetch('/zentra/config'),
-      fetch('/api/audio/devices'),
-      fetch('/api/audio/config'),
-      fetch('/zentra/api/config/media')
+      fetchWithTimeout('/zentra/options'),
+      fetchWithTimeout('/zentra/config'),
+      fetchWithTimeout('/api/audio/devices'),
+      fetchWithTimeout('/api/audio/config'),
+      fetchWithTimeout('/zentra/api/config/media')
     ]);
     
     sysOptions = await rOpts.json();

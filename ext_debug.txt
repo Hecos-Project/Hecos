@@ -1,0 +1,6 @@
+discover_extensions: ext_root=C:\Zentra-Core\plugins\drive\extensions
+Registered DRIVE:editor at C:\Zentra-Core\plugins\drive\extensions\editor\main.py
+load_extension_routes: key=('DRIVE', 'editor'), main_path=C:\Zentra-Core\plugins\drive\extensions\editor\main.py
+module_name=plugins.drive.extensions.editor.main, spec=ModuleSpec(name='plugins.drive.extensions.editor.main', loader=<_frozen_importlib_external.SourceFileLoader object at 0x000001A4C4E5C130>, origin='C:\\Zentra-Core\\plugins\\drive\\extensions\\editor\\main.py')
+exec_module starting...
+EXCEPTION: unexpected character after line continuation character (__init__.py, line 1)

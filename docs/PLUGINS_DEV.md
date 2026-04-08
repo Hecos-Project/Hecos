@@ -125,20 +125,49 @@ Zentra can now trigger actions directly on the user's browser/phone instead of t
 ---
 
 ## 9. Extension Architecture (JIT Modules)
-In version 0.12.0, Zentra introduced "Extensions", which are dynamically loaded sub-plugins encapsulated inside specific master plugins (e.g., Code Editor inside the Drive plugin).
+In version 0.12.0, Zentra introduced **Extensions**, which are dynamically loaded sub-plugins encapsulated inside specific master plugins (e.g., Code Editor inside the Drive plugin).
 
-**Structure:**
+### Key Features:
+- **JIT Loading**: Extensions are only loaded into memory when specifically requested by the master plugin.
+- **Isolated Routing**: Each extension can have its own Flask Blueprint with its own templates and static files.
+- **Auto-Config**: Extensions append their settings to the master plugin's configuration block in `system.yaml`.
+
+### Directory Structure:
 ```text
 plugins/drive/
 ├── extensions/
 │   └── editor/
-│       ├── manifest.json
-│       ├── main.py     # Only loaded when the Editor is opened!
-│       └── assets/     # JS/CSS dependencies loaded dynamically
+│       ├── manifest.json  # Metadata (parent_plugin, version, config_schema)
+│       ├── main.py        # Must define init_routes(app)
+│       ├── templates/     # HTML templates for the extension
+│       └── static/        # JS/CSS for the extension
 ```
 
-**Workflow:**
-- The master plugin registers an endpoint (e.g. `/drive/editor`).
-- When the user visits it, `extension_loader.load_extension("drive", "editor")` is called.
-- Zentra validates `manifest.json`, injects `main.py` functions into the master module conditionally, and serves the UI.
-- This allows Zentra plugins to grow infinitely in capabilities without affecting boot times or holding RAM hostage.
+### Implementation Example (Master Plugin `routes.py`):
+```python
+from core.system.extension_loader import load_extension_routes, discover_extensions
+
+def init_drive_routes(app, logger):
+    # 1. Discover extensions in the master plugin directory
+    discover_extensions("DRIVE", os.path.dirname(__file__))
+    
+    # 2. JIT Load a specific extension
+    load_extension_routes(app, "DRIVE", "editor", logger)
+```
+
+### Implementation Example (Extension `main.py`):
+```python
+from flask import Blueprint, render_template
+
+editor_bp = Blueprint("zentra_editor", __name__, 
+                      template_folder="templates", 
+                      static_folder="static", 
+                      static_url_path="/editor_static")
+
+def init_routes(app):
+    """Entry point called by extension_loader"""
+    if "zentra_editor" not in app.blueprints:
+        app.register_blueprint(editor_bp)
+```
+
+**Developer Tip:** The `extension_loader` automatically registers the extension module in `sys.modules`. This ensures that Flask can correctly resolve the filesystem location for `template_folder` and `static_folder` even though the module was loaded dynamically via `importlib`.

@@ -12,7 +12,7 @@ class DrivePlugin:
     
     def __init__(self):
         self.tag = TAG
-        self.desc = "HTTP File Manager: sfoglia, carica, scarica e cancella file via WebUI."
+        self.desc = "Zentra Drive: Gestione file avanzata via WebUI (Upload, Download, Editor)."
         self.config_schema = {
             "root_dir": {
                 "type": "str",

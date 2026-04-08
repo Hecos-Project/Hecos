@@ -388,6 +388,12 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         js_dir = os.path.join(os.path.dirname(__file__), "static", "js")
         return send_from_directory(js_dir, filename)
 
+    @app.route("/static/css/<path:filename>")
+    def serve_static_css(filename):
+        from flask import send_from_directory
+        css_dir = os.path.join(os.path.dirname(__file__), "static", "css")
+        return send_from_directory(css_dir, filename)
+
     @app.route("/api/images/<filename>")
     def serve_ai_image(filename):
         """

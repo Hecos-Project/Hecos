@@ -78,20 +78,26 @@ def load_extension_routes(app, plugin_tag: str, ext_id: str):
     key = (plugin_tag, ext_id)
     main_path = _extension_paths.get(key)
 
+
     if not main_path or not os.path.exists(main_path):
         logger.error(f"EXT_LOADER: Extension [{plugin_tag}:{ext_id}] not found or not registered.")
         return False
 
     try:
-        plugin_dir = os.path.basename(os.path.dirname(os.path.dirname(main_path)))
+        plugin_dir = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(main_path))))
         module_name = f"plugins.{plugin_dir}.extensions.{ext_id}.main"
+        
 
         spec = importlib.util.spec_from_file_location(module_name, main_path)
         if not spec:
             return False
 
         module = importlib.util.module_from_spec(spec)
+        import sys
+        sys.modules[module_name] = module
+            
         spec.loader.exec_module(module)
+
 
         if hasattr(module, "init_routes"):
             module.init_routes(app)
@@ -99,5 +105,6 @@ def load_extension_routes(app, plugin_tag: str, ext_id: str):
 
         return True
     except Exception as e:
+        import traceback
         logger.error(f"EXT_LOADER: Failed to load extension [{plugin_tag}:{ext_id}]: {e}")
         return False

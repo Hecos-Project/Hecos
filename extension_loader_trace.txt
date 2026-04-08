@@ -1,0 +1,21 @@
+
+--- Loading ('DRIVE', 'editor') ---
+main_path: C:\Zentra-Core\plugins\drive\extensions\editor\main.py
+module_name: plugins.drive.extensions.editor.main
+executing module...
+module executed successfully. hasattr init_routes: True
+init_routes called.
+
+--- Loading ('DRIVE', 'editor') ---
+main_path: C:\Zentra-Core\plugins\drive\extensions\editor\main.py
+module_name: plugins.drive.extensions.editor.main
+executing module...
+module executed successfully. hasattr init_routes: True
+init_routes called.
+
+--- Loading ('DRIVE', 'editor') ---
+main_path: C:\Zentra-Core\plugins\drive\extensions\editor\main.py
+module_name: plugins.drive.extensions.editor.main
+executing module...
+module executed successfully. hasattr init_routes: True
+init_routes called.

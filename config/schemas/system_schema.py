@@ -206,6 +206,20 @@ class PluginExecutor(BaseModel):
     lazy_load: bool = False
     timeout_seconds: int = 10
 
+class PluginDrive(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = True
+    root_dir: str = ""
+    max_upload_mb: int = 100
+    allowed_extensions: str = ""
+    editor: Dict[str, Any] = Field(default_factory=lambda: {
+        "enabled": True,
+        "theme": "vs-dark",
+        "max_file_size_kb": 1024,
+        "word_wrap": True,
+        "spell_check": False
+    })
+
 class PluginsConfig(BaseModel):
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
@@ -219,6 +233,7 @@ class PluginsConfig(BaseModel):
     WEBCAM: PluginWebcam = Field(default_factory=PluginWebcam)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
+    DRIVE: PluginDrive = Field(default_factory=PluginDrive)
 
 
 # ─── PROCESSOR & ROUTING & SYSTEM ─────────────────────────────────────────────

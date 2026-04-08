@@ -23,7 +23,7 @@
         "is_lazy": true
     },
     "DRIVE": {
-        "description": "HTTP File Manager: sfoglia, carica, scarica e cancella file via WebUI.",
+        "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
         "commands": {
             "/drive": "Apre il File Manager nel browser"
         },

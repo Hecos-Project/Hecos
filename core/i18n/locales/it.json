@@ -412,6 +412,7 @@
         "webui_conf_plugin_active_title": "Plugin Attivi",
         "webui_conf_plugin_desc_dashboard": "Monitor CPU/RAM/GPU",
         "webui_conf_plugin_desc_file": "Gestione File locale",
+        "webui_conf_plugin_desc_drive": "Archiviazione e Gestione File HTTP (Drive)",
         "webui_conf_plugin_desc_help": "Guida Dinamica",
         "webui_conf_plugin_desc_media": "Playback Audio/Video",
         "webui_conf_plugin_desc_roleplay": "Sistema Narrativo",

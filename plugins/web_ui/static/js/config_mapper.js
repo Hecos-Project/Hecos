@@ -97,6 +97,9 @@ function populateUI() {
 
     // 4. Media Module Dispatch
     if (typeof populateMediaUI === 'function') populateMediaUI();
+    
+    // 5. Drive Module Dispatch
+    populateDriveUI();
 
     renderPlugins(c.plugins || {});
     console.log("UI Populated successfully.");
@@ -119,7 +122,8 @@ function renderPlugins(plugins) {
     WEB:         I18N.plugin_desc_web,
     WEBCAM:      I18N.plugin_desc_webcam,
     WEB_UI:      I18N.plugin_desc_webui,
-    IMAGE_GEN:   'Generazione Immagini AI (Pollinations)'
+    IMAGE_GEN:   'Generazione Immagini AI (Pollinations)',
+    DRIVE:       I18N.webui_conf_plugin_desc_drive || 'Gestore File HTTP (Zentra Drive)'
   };
   let html = '';
   for (const [tag, pCfg] of Object.entries(plugins)) {
@@ -214,6 +218,13 @@ function buildPayload() {
         }
     }
 
+    // Drive Plugin Payload
+    const drivePart = buildDrivePayload();
+    if (drivePart && drivePart.plugins && drivePart.plugins.DRIVE) {
+        out.plugins['DRIVE'] = out.plugins['DRIVE'] || {};
+        Object.assign(out.plugins['DRIVE'], drivePart.plugins.DRIVE);
+    }
+
     document.querySelectorAll('[data-plugin]').forEach(cb => {
       const tag = cb.dataset.plugin;
       out.plugins[tag] = out.plugins[tag] || {};
@@ -230,6 +241,29 @@ function buildPayload() {
   } catch (err) { console.error("buildPayload err:", err); }
 
   return out;
+}
+
+function populateDriveUI() {
+    const c = window.cfg;
+    if (!c || !c.plugins || !c.plugins.DRIVE) return;
+    const d = c.plugins.DRIVE;
+    setVal('drive-root-dir', d.root_dir || '');
+    setVal('drive-max-upload-mb', d.max_upload_mb ?? 100);
+    setVal('drive-allowed-ext', d.allowed_extensions || '');
+}
+
+function buildDrivePayload() {
+    const rootEl = document.getElementById('drive-root-dir');
+    if (!rootEl) return {}; // Not in DOM
+    return {
+        plugins: {
+            DRIVE: {
+                root_dir: rootEl.value.trim(),
+                max_upload_mb: parseInt(document.getElementById('drive-max-upload-mb').value) || 100,
+                allowed_extensions: document.getElementById('drive-allowed-ext').value.trim()
+            }
+        }
+    };
 }
 
 // Global Exports
