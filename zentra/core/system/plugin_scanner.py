@@ -32,18 +32,34 @@ def update_capability_registry(config=None, debug_log=True):
 
     # If we don't have config, load it (for backward compatibility)
     if config is None:
-        from app.config import ConfigManager
-        config = ConfigManager().config
+        try:
+            from app.config import ConfigManager
+            config = ConfigManager().config
+        except ImportError:
+            from zentra.app.config import ConfigManager
+            config = ConfigManager().config
 
-    # Search in the new structure (subfolders with main.py)
-    plugin_dirs = [d for d in os.listdir("plugins")
-                  if os.path.isdir(os.path.join("plugins", d))
-                  and not d.startswith("__")
-                  and d != "plugins_disabled"]
+    # Determine the actual plugins directory
+    # Try local 'plugins' first, then 'zentra/plugins'
+    plugins_dir = "plugins"
+    if not os.path.exists(plugins_dir):
+        # We might be in package mode
+        plugins_dir = os.path.join("zentra", "plugins")
+        if not os.path.exists(plugins_dir):
+            # Try absolute path from this file
+            base = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            plugins_dir = os.path.join(base, "plugins")
+
+    plugin_dirs = []
+    if os.path.exists(plugins_dir):
+        plugin_dirs = [d for d in os.listdir(plugins_dir)
+                      if os.path.isdir(os.path.join(plugins_dir, d))
+                      and not d.startswith("__")
+                      and d != "plugins_disabled"]
 
     for plugin_dir in plugin_dirs:
-        main_file = os.path.join("plugins", plugin_dir, "main.py")
-        manifest_file = os.path.join("plugins", plugin_dir, "manifest.json")
+        main_file = os.path.join(plugins_dir, plugin_dir, "main.py")
+        manifest_file = os.path.join(plugins_dir, plugin_dir, "manifest.json")
         if not os.path.exists(main_file):
             logger.debug("LOADER", f"Plugin {plugin_dir} without main.py, ignored")
             continue
@@ -166,13 +182,17 @@ def update_capability_registry(config=None, debug_log=True):
             continue
 
     # --- NEW SECTION: Load Legacy Plugins from plugins_legacy/ folder ---
-    if os.path.exists("plugins_legacy"):
-        legacy_dirs = [d for d in os.listdir("plugins_legacy")
-                      if os.path.isdir(os.path.join("plugins_legacy", d))
+    legacy_root = "plugins_legacy"
+    if not os.path.exists(legacy_root):
+        legacy_root = os.path.join("zentra", "plugins_legacy")
+
+    if os.path.exists(legacy_root):
+        legacy_dirs = [d for d in os.listdir(legacy_root)
+                      if os.path.isdir(os.path.join(legacy_root, d))
                       and not d.startswith("__")]
 
         for legacy_dir in legacy_dirs:
-            main_file = os.path.join("plugins_legacy", legacy_dir, "main.py")
+            main_file = os.path.join(legacy_root, legacy_dir, "main.py")
             if not os.path.exists(main_file):
                 continue
 
@@ -225,7 +245,7 @@ def update_capability_registry(config=None, debug_log=True):
                 continue
 
     # 2. (Optional) Search also in the old structure for compatibility
-    old_plugins_files = glob.glob(os.path.join("plugins", "*.py"))
+    old_plugins_files = glob.glob(os.path.join(plugins_dir, "*.py"))
     for file in old_plugins_files:
         module_name = os.path.basename(file)[:-3]
         if module_name.startswith("__") or module_name.startswith("_"):

@@ -43,7 +43,11 @@ def print_and_speak(video_text, voice_text=None):
 
 def check_folders():
     folders = ["plugins", "personality", "logs", "memory", "core", "ui", "app"]
-    missing = [f for f in folders if not os.path.exists(f)]
+    missing = []
+    for f in folders:
+        # Check root and then zentra/
+        if not os.path.exists(f) and not os.path.exists(os.path.join("zentra", f)):
+            missing.append(f)
     return missing
 
 def check_hardware():
@@ -123,16 +127,20 @@ def check_backend(config):
     # Ensure registry is fresh
     plugin_loader.update_capability_registry(config)
     
-    if not os.path.exists("plugins"):
+    plugins_dir = "plugins"
+    if not os.path.exists(plugins_dir):
+        plugins_dir = os.path.join("zentra", "plugins")
+
+    if not os.path.exists(plugins_dir):
         return [f"   [-] {ROSSO}Directory 'plugins' not found!{RESET}"]
 
-    plugin_dirs = [d for d in os.listdir("plugins") 
-                  if os.path.isdir(os.path.join("plugins", d)) 
+    plugin_dirs = [d for d in os.listdir(plugins_dir) 
+                  if os.path.isdir(os.path.join(plugins_dir, d)) 
                   and not d.startswith("__")
                   and d != "plugins_disabled"]
     
     for plugin_dir in plugin_dirs:
-        main_file = os.path.join("plugins", plugin_dir, "main.py")
+        main_file = os.path.join(plugins_dir, plugin_dir, "main.py")
         if not os.path.exists(main_file):
             continue
             

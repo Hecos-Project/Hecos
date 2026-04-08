@@ -53,9 +53,10 @@ def get_file_timestamp(path):
     return 0
 
 def start_and_monitor(script_to_run):
-    # For module-style runs (like plugins.web_ui.server), we don't check file existence directly if it contains dots
-    if "." not in script_to_run or not script_to_run.endswith(".py"):
-        if not os.path.exists(script_to_run) and not script_to_run.startswith("plugins."):
+    # For module-style runs (like zentra.plugins.web_ui.server), we don't check file existence directly if it contains dots
+    is_module = ("." in script_to_run and not script_to_run.endswith(".py"))
+    if not is_module:
+        if not os.path.exists(script_to_run):
             print(t("critical_missing", file=script_to_run))
             return False
 
@@ -63,7 +64,7 @@ def start_and_monitor(script_to_run):
     print(t("starting", script=script_to_run))
     
     # Process startup: handle both direct scripts and module-style runs
-    if script_to_run.startswith("plugins."):
+    if is_module:
         process = subprocess.Popen([sys.executable, "-m", script_to_run])
     else:
         process = subprocess.Popen([sys.executable, script_to_run])

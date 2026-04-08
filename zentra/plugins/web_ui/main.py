@@ -28,7 +28,8 @@ except ImportError:
     translator = _T()
 
 # Ensure the project root is importable
-_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# Path: zentra/plugins/web_ui/main.py -> 3 levels up to reach root
+_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
@@ -80,7 +81,7 @@ class WebUIPlugin:
 
     def _ensure_server(self):
         """Lazy starts the server only when the plugin is actually interacted with."""
-        if not self._server_started:
+        if not self._server_started and self._cfg_mgr is not None:
             try:
                 from .server import start_if_needed
                 start_if_needed(self._cfg_mgr, _ROOT, port=self._port)
@@ -96,7 +97,7 @@ class WebUIPlugin:
 
     def _get_scheme(self) -> str:
         """Dynamically gets the HTTP/HTTPS scheme based on current config."""
-        if self._cfg_mgr and self._cfg_mgr.config:
+        if self._cfg_mgr and hasattr(self._cfg_mgr, 'config') and self._cfg_mgr.config:
             return "https" if self._cfg_mgr.config.get("plugins", {}).get("WEB_UI", {}).get("https_enabled", False) else "http"
         return "http"
 

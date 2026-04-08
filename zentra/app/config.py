@@ -18,8 +18,9 @@ def _get_schema():
     from config.schemas.system_schema import SystemConfig
     return SystemConfig
 
-# Root of the project (parent of app/)
-_PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), ".."))
+# Root of the project (parent of zentra/)
+# __file__ is zentra/app/config.py -> dirname(dirname(dirname)) is root
+_PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
 _CONFIG_YAML_PATH = _os.path.join(_PROJECT_ROOT, "config", "system.yaml")
 _CONFIG_JSON_PATH = _os.path.join(_PROJECT_ROOT, "config", "system.json")
 

@@ -122,6 +122,15 @@
         "is_class_based": true,
         "is_lazy": true
     },
+    "REMOTE_TRIGGERS": {
+        "description": "Attivazione PTT da periferiche hardware e dispositivi remoti",
+        "commands": {
+            "info": "Method"
+        },
+        "status": "online",
+        "example": "",
+        "is_class_based": true
+    },
     "ROLEPLAY": {
         "description": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
         "commands": {

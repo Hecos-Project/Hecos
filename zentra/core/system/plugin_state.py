@@ -3,7 +3,9 @@ MODULE: Plugin State
 DESCRIPTION: Holds global state references for loaded plugins and their configurations.
 """
 
-REGISTRY_PATH = "core/registry.json"
+import os
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+REGISTRY_PATH = os.path.join(_BASE_DIR, "core", "registry.json")
 
 # Stores configuration schemas collected from plugins
 _plugin_config_schemas = {}

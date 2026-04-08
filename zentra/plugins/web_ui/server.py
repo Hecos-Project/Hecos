@@ -31,9 +31,15 @@ def get_state_manager():
 class ZentraWebUIServer:
     def __init__(self, config_manager, root_dir: str, port: int, logger=None):
         self.config_manager = config_manager
+        # Fallback if somehow initialized before config manager is injected
+        if self.config_manager is None:
+            class DummyConfig:
+                config = {"plugins": {"WEB_UI": {"https_enabled": True, "port": 7070}}}
+            self.config_manager = DummyConfig()
+            
         self.root_dir = root_dir
         self.port = port
-        self.logger = logger or log
+        self.logger = logger or logging.getLogger()
         self._thread = None
 
     def start(self) -> None:
@@ -45,9 +51,15 @@ class ZentraWebUIServer:
 
         from core.i18n.translator import t
 
-        # Templates are inside this plugin's own templates/ folder
-        tpl_dir = os.path.join(os.path.dirname(__file__), "templates")
-        app = Flask("ZentraWebUI", template_folder=tpl_dir)
+        # Static files and templates are inside this plugin's package
+        base_dir = os.path.dirname(__file__)
+        tpl_dir = os.path.join(base_dir, "templates")
+        stc_dir = os.path.join(base_dir, "static")
+        
+        app = Flask(__name__, 
+                    template_folder=tpl_dir, 
+                    static_folder=stc_dir,
+                    static_url_path='/static')
         
         # FIX: Force CSS/JS mimetypes to prevent Windows Registry corruption issues leading to blank pages
         import mimetypes
@@ -116,6 +128,18 @@ class ZentraWebUIServer:
         init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
         from .routes_auth import init_auth_routes
         init_auth_routes(app, self.logger)
+
+        # SERVE ASSETS FOLDER (Logos, index.css, etc.)
+        # Assets are in the root directory or in zentra/assets
+        if "serve_assets" not in app.view_functions:
+            from flask import send_from_directory
+            @app.route('/assets/<path:filename>', endpoint='serve_assets')
+            def serve_assets(filename):
+                # Try root/assets then zentra/assets
+                assets_root = os.path.join(self.root_dir, "assets")
+                if not os.path.exists(os.path.join(assets_root, filename)):
+                    assets_root = os.path.join(self.root_dir, "zentra", "assets")
+                return send_from_directory(assets_root, filename)
 
         def _run():
             try:
@@ -215,7 +239,8 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
     
-    root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    # We are in zentra/plugins/web_ui/server.py -> need 3 levels up to reach root
+    root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     if root not in sys.path:
         sys.path.insert(0, root)
     os.chdir(root)
