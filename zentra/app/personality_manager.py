@@ -3,8 +3,8 @@ Management of Zentra's personality (soul) selection.
 """
 
 import time
-from ui import interface
-from core.i18n import translator
+from zentra.ui import interface
+from zentra.core.i18n import translator
 
 class PersonalityManager:
     def __init__(self, config_manager):
@@ -12,8 +12,13 @@ class PersonalityManager:
 
     def handle_personality(self, input_callback, soul_files=None):
         """Management F3 - Personality selection."""
-        # Always sync before listing or choosing
-        soul_files = self.config_manager.sync_available_personalities()
+        try:
+            # Always sync before listing or choosing
+            soul_files = self.config_manager.sync_available_personalities()
+        except Exception as e:
+            from zentra.core.logging import logger
+            logger.error(f"[PERSONALITY] Sync error: {e}")
+            soul_files = []
             
         if not soul_files:
             print(f"\n\033[91m{translator.t('no_personality_files')}\033[0m")

@@ -9,7 +9,7 @@ def init_keys_routes(app, logger):
     """Register /api/keys/* routes."""
 
     def _km():
-        from core.keys import get_key_manager
+        from zentra.core.keys import get_key_manager
         return get_key_manager()
 
     # ── GET /api/keys/status ─────────────────────────────────────────────────

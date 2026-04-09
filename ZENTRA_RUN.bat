@@ -1,11 +1,11 @@
 @echo off
 title ZENTRA CORE - ACTIVE SESSION RUNNER (Native Text Console)
 cd /d "%~dp0"
-color 0A
+
 
 echo.
 set ZENTRA_VERSION=Unknown
-if exist core\version set /p ZENTRA_VERSION=<core\version
+if exist zentra\core\version set /p ZENTRA_VERSION=<zentra\core\version
 echo  ==============================================================
 echo   ZENTRA CORE NATIVE TERMINAL v%ZENTRA_VERSION%
 echo  ==============================================================
@@ -20,7 +20,7 @@ echo [*] Starting interactive terminal...
 echo [*] Press F9 for a Safe Restart of the program.
 echo.
 
-python monitor.py
+python zentra\monitor.py
 
 echo.
 echo [!] Process terminated.

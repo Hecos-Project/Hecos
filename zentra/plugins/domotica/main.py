@@ -1,5 +1,5 @@
 try:
-    from core.i18n import translator
+    from zentra.core.i18n import translator
 except ImportError:
     class DummyTranslator:
         def t(self, key, **kwargs): return key

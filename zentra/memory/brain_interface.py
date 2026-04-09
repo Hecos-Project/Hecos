@@ -8,7 +8,7 @@ import json
 import os
 import sqlite3
 from datetime import datetime
-from core.logging import logger
+from zentra.core.logging import logger
 
 # File paths (forced absolute to avoid working-directory confusion)
 ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
@@ -96,7 +96,7 @@ def get_context(config: dict = None, dynamic_name: str = None) -> str:
         with open(PATH_PROFILE, "r", encoding="utf-8") as f:
             prof_data = json.load(f)
             
-        from core.system.version import VERSION
+        from zentra.core.system.version import VERSION
         context = f"\n[ACTIVE IDENTITY MEMORY]\n"
         
         # AI Identity

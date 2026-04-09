@@ -1,5 +1,5 @@
 import time
-from core.logging import logger
+from zentra.core.logging import logger
 
 class LazyTestTools:
     def __init__(self):

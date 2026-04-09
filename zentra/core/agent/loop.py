@@ -1,10 +1,11 @@
 import os
 import time
-from core.logging import logger
-from core.llm import brain
-from core.agent.traces import AgentTracer
-from core.processing import processore
-from core.i18n import translator
+import json
+from zentra.core.logging import logger
+from zentra.core.llm import brain
+from zentra.core.agent.traces import AgentTracer
+from zentra.core.processing import processore
+from zentra.core.i18n import translator
 
 class AgentExecutor:
     """
@@ -12,8 +13,9 @@ class AgentExecutor:
     Orchestrates the repeated multi-turn connection between Brain and Plugins.
     """
     
-    def __init__(self, config=None, state_manager=None, max_iterations=None, trace_callback=None):
+    def __init__(self, config=None, config_manager=None, state_manager=None, max_iterations=None, trace_callback=None):
         self.config = config
+        self.config_manager = config_manager
         self.state_manager = state_manager
         # Optional direct callback for WebUI session traces.
         # Signature: trace_callback(msg: str, level: str) -> None
@@ -22,10 +24,10 @@ class AgentExecutor:
         # Load dedicated agent configuration
         self.agent_config = {"enabled": True, "max_iterations": 5, "verbose_traces": True}
         try:
-            from config.yaml_utils import load_yaml
-            from config.schemas.agent_schema import AgentConfig
+            from zentra.config.yaml_utils import load_yaml
+            from zentra.config.schemas.agent_schema import AgentConfig
             _agent_cfg_path = os.path.normpath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "config", "agent.yaml")
+                os.path.join(os.path.dirname(__file__), "..", "..", "config", "data", "agent.yaml")
             )
             agent_model = load_yaml(_agent_cfg_path, AgentConfig)
             self.agent_config = agent_model.model_dump()
@@ -74,10 +76,13 @@ class AgentExecutor:
             save_hist = (iteration == 1)
             
             # 1. Call the Brain
+            # Ensure we use the latest config from the manager if available
+            current_cfg = self.config_manager.config if self.config_manager else self.config
+            
             self._emit(f"Thinking (Loop {iteration})...", level="info")
             raw_response = brain.generate_response(
                 user_text, 
-                external_config=self.config, 
+                external_config=current_cfg, 
                 agent_context=agent_context,
                 save_history=save_hist,
                 images=images
@@ -128,7 +133,7 @@ class AgentExecutor:
 
                 # IMPORTANT: If it took loops, we must save the FINAL response to history manually.
                 if iteration > 1:
-                     from memory import brain_interface
+                     from zentra.memory import brain_interface
                      brain_interface.save_message("assistant", extracted_text, config=self.config)
                 
                 # Proceed to voice/video cleaning
@@ -137,7 +142,10 @@ class AgentExecutor:
                     import datetime
                     _img_p = r'\[\[IMG:'
                     _has_i = bool(re.search(_img_p, extracted_text))
-                    with open("logs/image_gen_debug.txt", "a", encoding="utf-8") as _dbg:
+                    _zentra_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                    _log_path = os.path.join(_zentra_dir, "logs", "image_gen_debug.txt")
+                    os.makedirs(os.path.dirname(_log_path), exist_ok=True)
+                    with open(_log_path, "a", encoding="utf-8") as _dbg:
                         _now = datetime.datetime.now().strftime("%H:%M:%S")
                         _dbg.write(f"[{_now}] [LoopDebug] tool_results count={len(tool_results)}, extracted_text_has_img={_has_i}\n")
                         _dbg.write(f"[{_now}] [LoopDebug] extracted_text={extracted_text[:300]}\n")

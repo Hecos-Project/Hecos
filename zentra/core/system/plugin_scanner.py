@@ -9,7 +9,7 @@ import sys
 import os
 import glob
 import json
-from core.logging import logger
+from zentra.core.logging import logger
 
 from .plugin_state import (
     REGISTRY_PATH,

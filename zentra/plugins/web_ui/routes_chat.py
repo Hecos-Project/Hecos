@@ -29,14 +29,14 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
         return
 
     try:
-        from core.llm import brain
+        from zentra.core.llm import brain
     except ImportError as e:
         sess["queue"].put({"type": "error", "text": f"Core non importabile: {e}"})
         sess["done"] = True
         return
 
     try:
-        from core.agent.loop import AgentExecutor
+        from zentra.core.agent.loop import AgentExecutor
         from plugins.web_ui.server import get_state_manager
         
         # Instantiate AgentExecutor with shared config and live StateManager
@@ -54,7 +54,7 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
             })
         # ─────────────────────────────────────────────────────────────────────
 
-        agent = AgentExecutor(config=cfg_mgr.config, state_manager=sm, trace_callback=_session_trace)
+        agent = AgentExecutor(config=cfg_mgr.config, config_manager=cfg_mgr, state_manager=sm, trace_callback=_session_trace)
         
         # ── SSE Connection Buffer ─────────────────────────────────────────────
         # The browser receives session_id from POST /api/chat, then must open a
@@ -127,7 +127,8 @@ def generate_voice_file(text: str, voice_cfg: dict) -> str:
         sentence_silence = voice_cfg.get("sentence_silence", 0.2)
 
         root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        out  = os.path.join(root, "risposta.wav")
+        # rispota.wav in zentra/logs/
+        out = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "logs", "risposta.wav"))
 
         import subprocess
         clean_text = text.replace('"', '').replace('\n', ' ')
@@ -188,14 +189,14 @@ def _maybe_generate_tts(text: str, cfg_mgr):
     """
     global _last_audio_path
     try:
-        from core.audio.device_manager import get_audio_config
+        from zentra.core.audio.device_manager import get_audio_config
         voice_cfg  = get_audio_config()
         
         voice_on   = voice_cfg.get("voice_status", False)
         tts_dest   = voice_cfg.get("tts_destination", "web")
         
         if tts_dest == "system":
-            from core.audio import voice
+            from zentra.core.audio import voice
             import threading
             _chat_log.info(f"[Chat] Redirecting TTS to PC speakers: {text[:30]}...")
             threading.Thread(target=voice.speak, args=(text,), daemon=True).start()
@@ -225,8 +226,9 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
     
     @app.route("/snapshots/<path:filename>")
     def serve_snapshots(filename):
-        """Serves captured images from the snapshots directory."""
-        save_dir = os.path.join(root_dir, "snapshots")
+        """Serves captured images from the snapshots directory inside the package."""
+        # Anchored to zentra/snapshots/
+        save_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "snapshots"))
         return send_from_directory(save_dir, filename)
 
     @app.route("/")
@@ -397,12 +399,12 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
     @app.route("/api/images/<filename>")
     def serve_ai_image(filename):
         """
-        Serve images from the data/images/ directory.
+        Serve images from the snapshots/images/ directory.
         The AI can reference images with [[IMG:filename.ext]] syntax.
-        Place images in: <zentra-root>/data/images/
         """
         from flask import send_from_directory, jsonify
-        images_dir = os.path.join(root_dir, "data", "images")
+        # Anchored to zentra/snapshots/images/
+        images_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "snapshots", "images"))
         os.makedirs(images_dir, exist_ok=True)
         img_path = os.path.join(images_dir, filename)
         if os.path.exists(img_path):

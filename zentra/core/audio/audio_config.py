@@ -5,12 +5,13 @@ DESCRIPTION: Loads, validates and saves the audio configuration via YAML + Pydan
 """
 
 import os as _os
-from config.yaml_utils import load_yaml, save_yaml
-from config.schemas.audio_schema import AudioConfig
+from zentra.config.yaml_utils import load_yaml, save_yaml
+from zentra.config.schemas.audio_schema import AudioConfig
 
 # --- Constants ---
-_PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
-CONFIG_AUDIO_PATH = _os.path.join(_PROJECT_ROOT, "config", "audio.yaml")
+# zentra/core/audio -> zentra/
+_ZENTRA_DIR = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
+CONFIG_AUDIO_PATH = _os.path.join(_ZENTRA_DIR, "config", "data", "audio.yaml")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # CONFIG I/O

@@ -7,22 +7,23 @@ DESCRIPTION: Loads, validates and saves the main system configuration.
 import os as _os
 import json
 import time
-from core.logging import logger
+from zentra.core.logging import logger
 
 # Lazy imports (avoid circular imports at module level)
 def _get_yaml_utils():
-    from config.yaml_utils import load_yaml, save_yaml
+    from zentra.config.yaml_utils import load_yaml, save_yaml
     return load_yaml, save_yaml
 
 def _get_schema():
-    from config.schemas.system_schema import SystemConfig
+    from zentra.config.schemas.system_schema import SystemConfig
     return SystemConfig
 
-# Root of the project (parent of zentra/)
-# __file__ is zentra/app/config.py -> dirname(dirname(dirname)) is root
+# Project root and Zentra package root
 _PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
-_CONFIG_YAML_PATH = _os.path.join(_PROJECT_ROOT, "config", "system.yaml")
-_CONFIG_JSON_PATH = _os.path.join(_PROJECT_ROOT, "config", "system.json")
+_ZENTRA_DIR = _os.path.join(_PROJECT_ROOT, "zentra")
+
+_CONFIG_YAML_PATH = _os.path.join(_ZENTRA_DIR, "config", "data", "system.yaml")
+_CONFIG_JSON_PATH = _os.path.join(_ZENTRA_DIR, "config", "data", "system.json")
 
 
 class ConfigManager:
@@ -99,7 +100,7 @@ class ConfigManager:
             new_lang = self._model.language
             if new_lang and new_lang != old_lang:
                 try:
-                    from core.i18n import translator
+                    from zentra.core.i18n import translator
                     translator.get_translator().set_language(new_lang)
                     logger.info(f"[CONFIG] Language updated to: {new_lang}")
                 except Exception:
@@ -196,14 +197,14 @@ class ConfigManager:
         """
         import os
         import glob
-        folder = "personality"
-        if not os.path.exists(folder):
+        folder = _os.path.join(_PROJECT_ROOT, "zentra", "personality")
+        if not _os.path.exists(folder):
             try:
-                os.makedirs(folder)
+                _os.makedirs(folder)
             except Exception:
                 pass
 
-        files = [os.path.basename(f) for f in glob.glob(os.path.join(folder, "*.txt"))]
+        files = [_os.path.basename(f) for f in glob.glob(_os.path.join(folder, "*.txt"))]
 
         if files:
             personality_dict = {str(i + 1): name for i, name in enumerate(files)}

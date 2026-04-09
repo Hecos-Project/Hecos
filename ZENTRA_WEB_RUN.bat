@@ -4,7 +4,7 @@ color 0B
 
 echo.
 set ZENTRA_VERSION=Unknown
-if exist core\version set /p ZENTRA_VERSION=<core\version
+if exist zentra\core\version set /p ZENTRA_VERSION=<zentra\core\version
 echo  ==============================================================
 echo   ZENTRA NATIVE WEB INTERFACE v%ZENTRA_VERSION%
 echo  ==============================================================
@@ -36,7 +36,7 @@ for /f "delims=" %%i in ('python -c "import socket; s=socket.socket(socket.AF_IN
 
 :: Recupera lo schema HTTP/HTTPS da system.yaml
 set SCHEME=http
-for /f "delims=" %%s in ('python -c "import yaml; print('https' if yaml.safe_load(open('config/system.yaml')).get('plugins',{}).get('WEB_UI',{}).get('https_enabled',False) else 'http')" 2^>nul') do set SCHEME=%%s
+for /f "delims=" %%s in ('python -c "import yaml; print('https' if yaml.safe_load(open('zentra/config/data/system.yaml')).get('plugins',{}).get('WEB_UI',{}).get('https_enabled',False) else 'http')" 2^>nul') do set SCHEME=%%s
 
 echo  ==============================================================
 echo   [ QUICK ACCESS ]
@@ -50,7 +50,7 @@ echo  ==============================================================
 echo.
 
 :: Starting the monitor
-python monitor.py --script plugins.web_ui.server
+python zentra\monitor.py --script zentra.plugins.web_ui.server
 
 echo.
 echo [!] Watchdog terminated.

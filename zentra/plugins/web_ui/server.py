@@ -12,8 +12,8 @@ from .routes import init_routes
 
 log = logging.getLogger("ZentraWebUIServer")
 
-from app.state_manager import StateManager
-from app.threads import AscoltoThread
+from zentra.app.state_manager import StateManager
+from zentra.app.threads import AscoltoThread
 
 import sys
 print(f"[DEBUG BOOT] server.py loaded from: {__file__}", flush=True)
@@ -53,7 +53,7 @@ class ZentraWebUIServer:
             self.logger.warning(f"[WebUI] Flask not available ({e})")
             return
 
-        from core.i18n.translator import t
+        from zentra.core.i18n.translator import t
 
         # Static files and templates are inside this plugin's package
         base_dir = os.path.dirname(__file__)
@@ -77,7 +77,7 @@ class ZentraWebUIServer:
         app.secret_key = self.config_manager.config.get("system", {}).get("flask_secret_key", "zentra_default_secret_key_84nd")
         
         from flask_login import LoginManager, current_user
-        from core.auth.auth_manager import auth_mgr
+        from zentra.core.auth.auth_manager import auth_mgr
         
         login_manager = LoginManager()
         login_manager.init_app(app)
@@ -162,7 +162,7 @@ class ZentraWebUIServer:
                         lan_ip = "127.0.0.1"
 
                     # 2. Genera Root CA e Certificato Host
-                    from core.security.pki import CAManager, CertGenerator
+                    from zentra.core.security.pki import CAManager, CertGenerator
                     try:
                         ca = CAManager()
                         cert_gen = CertGenerator(ca)
@@ -250,9 +250,9 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s"
     )
-    from app.config import ConfigManager
-    from core.i18n.translator import init_translator
-    from core.logging import logger
+    from zentra.app.config import ConfigManager
+    from zentra.core.i18n.translator import init_translator
+    from zentra.core.logging import logger
     cfg = ConfigManager()
     
     # Initialize basic logging (disable external windows for webui standalone)
@@ -262,16 +262,16 @@ if __name__ == "__main__":
     init_translator(cfg.config.get("language", "en"))
 
     # Initialize memory vault (creates DB if not present)
-    from memory.brain_interface import initialize_vault, maybe_clear_on_restart
+    from zentra.memory.brain_interface import initialize_vault, maybe_clear_on_restart
     initialize_vault()
     maybe_clear_on_restart(cfg.config)
     
     # Initialize plugin registry (needed for plugin execution from WebUI process)
-    from core.system import plugin_loader
+    from zentra.core.system import plugin_loader
     plugin_loader.update_capability_registry(cfg.config)
 
     # Initialize state manager with config_audio.json settings
-    from core.audio.device_manager import get_audio_config
+    from zentra.core.audio.device_manager import get_audio_config
     acfg = get_audio_config()
     
     sm = StateManager(
@@ -307,7 +307,9 @@ if __name__ == "__main__":
     def is_webui_already_open(root_dir):
         """Check if a WebUI tab is already active via heartbeat file."""
         import time, json, os
-        hb_file = os.path.join(root_dir, "logs", "webui_heartbeat.json")
+        # hb_file is in zentra/logs/
+        central_logs = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
+        hb_file = os.path.join(central_logs, "webui_heartbeat.json")
         if not os.path.exists(hb_file): 
             return False
         try:
@@ -343,3 +345,4 @@ if __name__ == "__main__":
             time.sleep(1)
     except KeyboardInterrupt:
         print("Zentra WebUI server stopped.")
+

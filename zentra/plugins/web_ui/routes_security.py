@@ -11,7 +11,9 @@ def init_security_routes(app, logger):
     @app.route('/api/security/download-ca', methods=['GET'])
     @login_required # Protected! Only authenticated users can download
     def download_root_ca():
-        ca_path = os.path.abspath("certs/ca/rootCA.pem")
+        # zentra/plugins/web_ui/routes_security.py -> ../../ is zentra/
+        zentra_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        ca_path = os.path.join(zentra_dir, "certs", "ca", "rootCA.pem")
         if not os.path.exists(ca_path):
             return jsonify({"error": "Root CA not found. System is not configured for HTTPS."}), 404
         

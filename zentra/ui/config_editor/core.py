@@ -6,17 +6,17 @@ import os
 from .locks import acquire_lock, release_lock
 from .parameters import build_parameter_list
 from .ui import UIManager
-from core.i18n import translator
+from zentra.core.i18n import translator
 
 class ConfigEditor:
     def __init__(self, config_path=None):
         # config_path kept for backward compat but ignored — we always use ConfigManager.
         # Lazy import to avoid circular import with app/__init__.py
-        from app.config import ConfigManager
+        from zentra.app.config import ConfigManager
         self._config_manager = ConfigManager()
         self.config = self._load_config()
 
-        from core.audio.device_manager import get_audio_config
+        from zentra.core.audio.device_manager import get_audio_config
         self.audio_config = get_audio_config()
 
         self.param_list = build_parameter_list(self.config)
@@ -63,7 +63,7 @@ class ConfigEditor:
         """Saves config via ConfigManager (to YAML) and audio config."""
         if self.audio_modified:
             try:
-                from core.audio.device_manager import _save_audio_config
+                from zentra.core.audio.device_manager import _save_audio_config
                 _save_audio_config(self.audio_config)
                 self.audio_modified = False
             except Exception as e:
@@ -264,7 +264,7 @@ class ConfigEditor:
             elif param.section == 'audio_device':
                 # Writes go directly to config_audio.json
                 try:
-                    from core.audio.device_manager import _load_audio_config, _save_audio_config
+                    from zentra.core.audio.device_manager import _load_audio_config, _save_audio_config
                     acfg = _load_audio_config()
                     if acfg.get(key) != value:
                         acfg[key] = value
@@ -281,7 +281,7 @@ class ConfigEditor:
             sys.stdout.write("\n\033[93m[AUDIO-DM] Scanning audio devices...\033[0m\n")
             sys.stdout.flush()
             try:
-                from core.audio.device_manager import scan_and_select
+                from zentra.core.audio.device_manager import scan_and_select
                 cfg = scan_and_select(verbose=True)
                 out = cfg.get('output_device_name', '?')
                 inp = cfg.get('input_device_name', '?')
@@ -304,7 +304,7 @@ class ConfigEditor:
             sys.stdout.write("\n\033[93m[MEMORY] Clearing conversation history...\033[0m\n")
             sys.stdout.flush()
             try:
-                from memory.brain_interface import clear_history
+                from zentra.memory.brain_interface import clear_history
                 cleared = clear_history()
                 if cleared:
                     sys.stdout.write("\033[92m✅ History cleared successfully!\033[0m\n")
@@ -336,7 +336,7 @@ class ConfigEditor:
             
             import sys
             import time
-            from core.i18n import translator
+            from zentra.core.i18n import translator
             
             if result == "REBOOT":
                 if self.modified:

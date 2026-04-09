@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, jsonify, flash
 from flask_login import login_user, logout_user, login_required
-from core.auth.auth_manager import auth_mgr
+from zentra.core.auth.auth_manager import auth_mgr
 
 def init_auth_routes(app, logger):
 

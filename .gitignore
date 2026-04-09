@@ -180,26 +180,19 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Zentra Specifics
-logs/
-memory/*.db
-memory/*.json
-memory/chat_history.db
-# snapshots/ removed from here to move to end
-config.json
-.env
-*.wav
-*.mp3
+# Zentra Core - Black Box Protection
+zentra/logs/
+zentra/memory/
+zentra/snapshots/
+zentra/certs/
+zentra/config/data/system.yaml
+zentra/config/data/*.bak
+
+# Temporary and build files
 tmp/
 brain/
 *.log
-data/
-snapshots/**
-
-# Config files (contain API keys — never commit)
-config/*.yaml
-config/*.json.bak
-
-# TLS/SSL Certificates (contain private keys)
-certs/
+*.wav
+*.mp3
+.env
 

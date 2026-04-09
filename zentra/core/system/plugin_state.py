@@ -37,7 +37,7 @@ def get_plugin_module(tag, legacy=False):
     if tag in _lazy_plugins_paths:
         import importlib.util
         import os
-        from core.logging import logger
+        from zentra.core.logging import logger
         
         main_file = _lazy_plugins_paths[tag]
         # Forced warning level for Yellow color in terminal as requested by user

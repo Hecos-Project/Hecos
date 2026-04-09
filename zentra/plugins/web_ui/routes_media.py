@@ -12,7 +12,7 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         """Returns available image generation models for the specified provider."""
         provider = request.args.get("provider", "pollinations")
         try:
-            from core.media.image_providers import get_models_for_provider
+            from zentra.core.media.image_providers import get_models_for_provider
             models = get_models_for_provider(provider)
             return jsonify({"ok": True, "provider": provider, "models": models})
         except Exception as exc:
@@ -25,7 +25,7 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             images_dir = os.path.join(root_dir, "data", "images")
             os.makedirs(images_dir, exist_ok=True)
-            from core.system.os_adapter import OSAdapter
+            from zentra.core.system.os_adapter import OSAdapter
             OSAdapter.open_path(images_dir)
             return jsonify({"ok": True, "message": "Folder opened"})
         except Exception as exc:

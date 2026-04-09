@@ -14,12 +14,13 @@ litellm_log.setLevel(logging.WARNING)  # Default OFF; init_logger controls this
 litellm_log.propagate = False  # Never leak to root logger
 
 
-# Create logs directory if it doesn't exist
-if not os.path.exists("logs"):
-    os.makedirs("logs")
+# Create logs directory INSIDE zentra/
+logs_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
+if not os.path.exists(logs_dir):
+    os.makedirs(logs_dir)
 
-info_filename = f"logs/zentra_info_{datetime.now().strftime('%Y-%m-%d')}.log"
-debug_filename = f"logs/zentra_debug_{datetime.now().strftime('%Y-%m-%d')}.log"
+info_filename = os.path.join(logs_dir, f"zentra_info_{datetime.now().strftime('%Y-%m-%d')}.log")
+debug_filename = os.path.join(logs_dir, f"zentra_debug_{datetime.now().strftime('%Y-%m-%d')}.log")
 
 # Global logger for Zentra (points to root for multi-library consistency)
 logger = logging.getLogger() 
@@ -176,8 +177,8 @@ def init_logger(config, allow_external_windows=True):
                 "else { Write-Host $_ -ForegroundColor White } "
                 "}"
             )
-            # Remove /min and -WindowStyle Minimized to make windows visible as requested
-            subprocess.Popen(f'start "" powershell -NoExit -Command "{ps_script_info}"', shell=True)
+            # Usa /min per aprire la finestra minimizzata e non rubare il focus
+            subprocess.Popen(f'start /min "" powershell -NoExit -Command "{ps_script_info}"', shell=True)
             
         if message_types == 'debug' or message_types == 'both':
             # Finestra Technical Debug
@@ -201,10 +202,10 @@ def open_debug_log():
     close_debug_log()
     
     today = datetime.now().strftime("%Y-%m-%d")
-    debug_filename = f"logs/zentra_debug_{today}.log"
+    debug_filename = os.path.join(logs_dir, f"zentra_debug_{today}.log")
     
     if not os.path.exists(debug_filename):
-        with open(debug_filename, "a") as f:
+        with open(debug_filename, "a", encoding='utf-8') as f:
             f.write(f"{datetime.now()} [DEBUG] [SYSTEM] Debug Console Initialized.\n")
 
     ps_script_debug = (
@@ -217,8 +218,8 @@ def open_debug_log():
     )
     
     try:
-        # Remove /min and -WindowStyle Minimized to make windows visible
-        subprocess.Popen(f'start "" powershell -NoExit -Command "{ps_script_debug}"', shell=True)
+        # Usa /min per aprire la finestra minimizzata e non rubare il focus
+        subprocess.Popen(f'start /min "" powershell -NoExit -Command "{ps_script_debug}"', shell=True)
         return True
     except:
         return False

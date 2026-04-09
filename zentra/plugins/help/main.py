@@ -1,6 +1,6 @@
 try:
-    from core.i18n import translator
-    from core.system import plugin_loader
+    from zentra.core.i18n import translator
+    from zentra.core.system import plugin_loader
 except ImportError:
     class DummyTranslator:
         def t(self, key, **kwargs): return key

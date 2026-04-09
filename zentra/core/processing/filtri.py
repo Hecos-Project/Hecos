@@ -9,17 +9,20 @@ def load_filter_config():
     global _config_cache
     if _config_cache is None:
         try:
-            with open("config.json", "r", encoding="utf-8") as f:
-                full_config = json.load(f)
-                _config_cache = full_config.get("filters", {
-                    "remove_asterisks": True,
-                    "remove_round_brackets": True,
-                    "remove_square_brackets": False,
-                    "custom_replacements": {}
-                })
+            import os
+            # Calcola la root (zentra/core/processing -> ../../../)
+            root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            path = os.path.join(root, "config", "system.yaml")
+            if os.path.exists(path):
+                import yaml
+                with open(path, "r", encoding="utf-8") as f:
+                    full_config = yaml.safe_load(f) or {}
+                    _config_cache = full_config.get("filters", {})
+            else:
+                _config_cache = {}
         except Exception:
             return {}
-    return _config_cache
+    return _config_cache or {}
 
 def reset_cache():
     """Clears cache to force a reload on next use, useful after panel updates."""

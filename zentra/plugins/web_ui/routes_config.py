@@ -33,20 +33,20 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             
             if cfg_mgr.update_config(incoming):
                 # Dynamically update the global translator language without reboot
-                from core.i18n.translator import get_translator
+                from zentra.core.i18n.translator import get_translator
                 get_translator().set_language(incoming.get("language", "en"))
                 
                 # Keep state_manager in sync with toggles
                 sm = _sm()
                 if sm is not None:
-                    from core.audio.device_manager import get_audio_config
+                    from zentra.core.audio.device_manager import get_audio_config
                     acfg = get_audio_config()
                     sm.audio_mode = acfg.get("audio_mode", "auto")
                 
                 # Update the processor and registry at runtime
                 try:
-                    from core.processing import processore
-                    from core.system import plugin_loader
+                    from zentra.core.processing import processore
+                    from zentra.core.system import plugin_loader
                     processore.configure(incoming)
                     plugin_loader.update_capability_registry(incoming, debug_log=False)
                 except Exception as e:
@@ -115,7 +115,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/zentra/api/config/media", methods=["GET"])
     def get_media_config_api():
-        from core.media_config import get_media_config
+        from zentra.core.media_config import get_media_config
         return jsonify(get_media_config())
 
     @app.route("/zentra/api/config/media", methods=["POST"])
@@ -125,7 +125,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             if not isinstance(incoming, dict):
                  return jsonify({"ok": False, "error": "Invalid payload"}), 400
             
-            from core.media_config import save_media_config, get_media_config
+            from zentra.core.media_config import save_media_config, get_media_config
             cfg = get_media_config()
             
             # Simple deep update

@@ -2,8 +2,8 @@ import json
 import os
 import re
 try:
-    from core.logging import logger
-    from core.i18n import translator
+    from zentra.core.logging import logger
+    from zentra.core.i18n import translator
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[MOD_DEBUG]", *args)

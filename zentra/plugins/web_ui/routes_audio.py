@@ -58,7 +58,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def stop_audio():
         """Stop server-side TTS playback and generation."""
         try:
-            from core.audio.voice import stop_voice
+            from zentra.core.audio.voice import stop_voice
             stop_voice()
             try:
                 from plugins.web_ui.routes_chat import stop_voice_generation
@@ -76,7 +76,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         """Toggle listening_status (MIC continuous listening).
         If MIC is turned OFF, also force PTT off to prevent a silent PTT state."""
         try:
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             new_mic = not acfg.get("listening_status", True)
 
@@ -101,7 +101,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 logger.error("[WebUI] Failed to save MIC toggle.")
 
             try:
-                from core.processing import processore
+                from zentra.core.processing import processore
                 processore.configure(cfg_mgr.config)
             except Exception:
                 pass
@@ -120,7 +120,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def toggle_tts():
         """Toggle voice_status — mirrors F5 on the console."""
         try:
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             new_val = not acfg.get("voice_status", True)
 
@@ -134,7 +134,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             else:
                 logger.error("[WebUI] Failed to save TTS toggle.")
             try:
-                from core.processing import processore
+                from zentra.core.processing import processore
                 processore.configure(cfg_mgr.config)
             except Exception:
                 pass
@@ -150,7 +150,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         PTT is a sub-mode of mic input, not an independent feature."""
         try:
             sm = _sm()
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             current_ptt = acfg.get("push_to_talk", False)
             new_val = not current_ptt
@@ -186,7 +186,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             sm = _sm()
             if sm is not None:
                 sm.audio_mode = mode
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             acfg["audio_mode"] = mode
             _save_audio_config(acfg)
@@ -203,11 +203,11 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             text = data.get("text", "Test di Zentra Core, tutto funziona correttamente.")
             mode = data.get("mode", "console")
 
-            from core.audio.device_manager import get_audio_config
+            from zentra.core.audio.device_manager import get_audio_config
             acfg = get_audio_config()
 
             if mode == "console":
-                from core.audio.voice import speak
+                from zentra.core.audio.voice import speak
                 threading.Thread(target=speak, args=(text,), daemon=True).start()
                 return jsonify({"ok": True, "msg": "Speaking on console..."})
             else:
@@ -228,7 +228,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def get_audio_devices():
         """Returns available audio devices and current config_audio.json selection."""
         try:
-            from core.audio.device_manager import list_devices, get_audio_config
+            from zentra.core.audio.device_manager import list_devices, get_audio_config
             devices = list_devices()
             acfg = get_audio_config()
             return jsonify({
@@ -249,7 +249,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def scan_audio_devices():
         """Triggers device scan + beep test on the best output device."""
         try:
-            from core.audio.device_manager import scan_and_select
+            from zentra.core.audio.device_manager import scan_and_select
             cfg = scan_and_select(verbose=False)
             return jsonify({
                 "ok": True,
@@ -268,7 +268,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         """Manually sets output and/or input device index."""
         try:
             data = request.get_json(force=True) or {}
-            from core.audio.device_manager import set_output_device, set_input_device, list_devices
+            from zentra.core.audio.device_manager import set_output_device, set_input_device, list_devices
 
             devs = list_devices()
             out_idx = data.get("output_index")
@@ -292,7 +292,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/api/audio/config", methods=["GET", "POST"])
     def manage_audio_config():
         """Gets or updates advanced audio settings in config_audio.json."""
-        from core.audio.device_manager import get_audio_config, _save_audio_config
+        from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
 
         if request.method == "GET":
             try:
@@ -338,7 +338,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 # If voice capabilities changed, we must update the processor
                 if any(k in data for k in ["voice_status", "listening_status"]):
                     try:
-                        from core.processing import processore
+                        from zentra.core.processing import processore
                         processore.configure(cfg_mgr.config)
                     except Exception:
                         pass

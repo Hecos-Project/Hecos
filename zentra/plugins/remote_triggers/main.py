@@ -11,7 +11,7 @@ il JS non viene iniettato.
 """
 
 try:
-    from core.logging import logger
+    from zentra.core.logging import logger
 except ImportError:
     class _DL:
         def info(self, *a, **k): print("[RT]", *a)

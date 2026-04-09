@@ -1,6 +1,6 @@
 import os
 import json
-from core.logging import logger
+from zentra.core.logging import logger
 
 class Translator:
     _instance = None

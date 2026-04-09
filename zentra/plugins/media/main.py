@@ -3,8 +3,8 @@ import re
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from comtypes import CLSCTX_ALL
 try:
-    from core.logging import logger
-    from core.i18n import translator
+    from zentra.core.logging import logger
+    from zentra.core.i18n import translator
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[MEDIA_DEBUG]", *args)

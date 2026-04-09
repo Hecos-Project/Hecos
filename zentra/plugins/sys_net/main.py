@@ -5,10 +5,10 @@ import os
 import ctypes
 
 try:
-    from core.logging import logger
-    from core.i18n import translator
+    from zentra.core.logging import logger
+    from zentra.core.i18n import translator
     from app.config import ConfigManager
-    from core.system.os_adapter import OSAdapter
+    from zentra.core.system.os_adapter import OSAdapter
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[SYS_NET]", *args)

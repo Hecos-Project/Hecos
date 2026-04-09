@@ -6,13 +6,13 @@ import sys
 import time
 import threading
 import msvcrt
-from ui import interface
-from core.processing import processore
-from core.audio import voice
-from core.logging import logger
-from core.system import plugin_loader
-from core.i18n import translator
-from memory import brain_interface
+from zentra.ui import interface
+from zentra.core.processing import processore
+from zentra.core.audio import voice
+from zentra.core.logging import logger
+from zentra.core.system import plugin_loader
+from zentra.core.i18n import translator
+from zentra.memory import brain_interface
 # sys è importato a livello di modulo - NON usare 'import sys' inline nei metodi
 
 class InputHandler:
@@ -207,8 +207,8 @@ class InputHandler:
             
             elif self.state.voice_status and clean_voice_text and self.state.tts_destination == 'web':
                 # Generate audio file but don't play locally, just notify WebUI
-                from core.audio.device_manager import get_audio_config
-                from plugins.web_ui.routes_chat import generate_voice_file
+                from zentra.core.audio.device_manager import get_audio_config
+                from zentra.plugins.web_ui.routes_chat import generate_voice_file
                 try:
                     path = generate_voice_file(clean_voice_text, get_audio_config())
                     if path:

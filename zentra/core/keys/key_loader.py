@@ -24,7 +24,7 @@ import re
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from core.keys.key_store import ApiKeyEntry, STATUS_UNKNOWN
+from zentra.core.keys.key_store import ApiKeyEntry, STATUS_UNKNOWN
 
 # Try to import YAML loader (used by Zentra config)
 try:
@@ -34,7 +34,7 @@ except ImportError:
     _YAML_AVAILABLE = False
 
 # Root project directory (keys.yaml and .env live here or in /config/)
-_PROJECT_ROOT = Path(__file__).parent.parent.parent
+_PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
 _KEYS_YAML_PATH = _PROJECT_ROOT / "config" / "keys.yaml"
 _ENV_PATH = _PROJECT_ROOT / ".env"
 

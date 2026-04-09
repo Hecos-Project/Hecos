@@ -4,21 +4,23 @@ import urllib.parse
 import datetime
 
 try:
-    from core.logging import logger
+    from zentra.core.logging import logger
 except ImportError:
     class _Logger:
         def info(self, *a): print("[IMGPROVIDER]", *a)
         def error(self, *a): print("[IMGPROVIDER ERROR]", *a)
         def debug(self, *a): pass
     logger = _Logger()
+# zentra/core/media/image_providers/utils.py -> ../../../ is zentra/
+_ZENTRA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
-OUTPUT_DIR = "data/images"
+OUTPUT_DIR = os.path.join(_ZENTRA_DIR, "snapshots", "images")
 
 def log_debug(msg: str):
-    log_file = "logs/image_gen_debug.txt"
+    log_file = os.path.join(_ZENTRA_DIR, "logs", "image_gen_debug.txt")
     now = datetime.datetime.now().strftime("%H:%M:%S")
     try:
-        os.makedirs("logs", exist_ok=True)
+        os.makedirs(os.path.join(_ZENTRA_DIR, "logs"), exist_ok=True)
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(f"[{now}] {msg}\n")
     except Exception:

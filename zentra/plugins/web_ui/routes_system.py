@@ -61,7 +61,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 tts_on     = sm.voice_status
                 audio_mode = sm.audio_mode
             else:
-                from core.audio.device_manager import get_audio_config
+                from zentra.core.audio.device_manager import get_audio_config
                 acfg = get_audio_config()
                 mic_on     = acfg.get("listening_status", False)
                 tts_on     = acfg.get("voice_status", False)
@@ -70,7 +70,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
             
-            from core.audio.device_manager import get_audio_config
+            from zentra.core.audio.device_manager import get_audio_config
             acfg = get_audio_config()
             ptt_on     = acfg.get("push_to_talk", False)
             ptt_status = "ON" if ptt_on else "OFF"
@@ -106,7 +106,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def get_system_payload():
         """Returns the last LLM payload sizes for context usage optimization."""
         try:
-            from core.llm.client import LAST_PAYLOAD_INFO
+            from zentra.core.llm.client import LAST_PAYLOAD_INFO
             return jsonify({"ok": True, "payload": LAST_PAYLOAD_INFO})
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
@@ -271,7 +271,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             # Start a background thread to allow the HTTP response to complete first
             def do_reboot():
                 import time, os, winsound
-                from core.i18n.translator import t
+                from zentra.core.i18n.translator import t
                 time.sleep(1.0)
                 print(f"\n\033[91m[WEB_UI] Riavvio del sistema in corso...\033[0m")
                 winsound.Beep(600, 150)

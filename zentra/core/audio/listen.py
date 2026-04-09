@@ -6,7 +6,7 @@ DESCRIPTION: Microphone input and speech recognition.
 
 import speech_recognition as sr
 from . import voice
-from core.logging import logger
+from zentra.core.logging import logger
 import json
 import time
 
@@ -26,7 +26,7 @@ _is_calibrated = False
 def _get_mic_device_index():
     """Returns the microphone device index from config_audio.json, or None for system default."""
     try:
-        from core.audio.device_manager import get_input_device
+        from zentra.core.audio.device_manager import get_input_device
         return get_input_device()
     except Exception:
         return None
@@ -40,7 +40,7 @@ def listen(state=None):
         return ""
 
     try:
-        from core.audio.device_manager import get_audio_config
+        from zentra.core.audio.device_manager import get_audio_config
         conf = get_audio_config()
     except Exception:
         conf = {}

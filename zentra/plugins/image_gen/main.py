@@ -3,9 +3,9 @@ Plugin: Image Generation
 Delegates image generation to core/media/image_providers.py (multi-provider engine).
 """
 try:
-    from core.logging import logger
-    from core.media_config import get_media_config
-    from core.media.image_providers import generate_image, get_models_for_provider
+    from zentra.core.logging import logger
+    from zentra.core.media_config import get_media_config
+    from zentra.core.media.image_providers import generate_image, get_models_for_provider
 except ImportError as _e:
     class _DummyLogger:
         def error(self, *a): print("[IMAGE_GEN ERR]", *a)
@@ -47,7 +47,7 @@ class ImageGenTools:
             # Also check .env for provider-specific key if not in config_media.json
             if not api_key:
                 try:
-                    from core.keys.key_manager import KeyManager
+                    from zentra.core.keys.key_manager import KeyManager
                     manager = KeyManager()
                     # Fallback to key manager logic that handles API_KEY_1 etc.
                     k = manager.get_key(provider)

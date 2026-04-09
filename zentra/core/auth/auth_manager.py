@@ -2,7 +2,7 @@ import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from core.logging import logger
+from zentra.core.logging import logger
 
 class User(UserMixin):
     def __init__(self, id, username, role):
@@ -16,7 +16,9 @@ class AuthManager:
     delle password tramite hash (PBKDF2).
     """
     def __init__(self):
-        self.db_dir = os.path.join(os.getcwd(), "memory")
+        # zentra/core/auth/auth_manager.py -> ../../ is zentra/
+        zentra_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        self.db_dir = os.path.join(zentra_dir, "memory")
         self.db_path = os.path.join(self.db_dir, "users.db")
         os.makedirs(self.db_dir, exist_ok=True)
         self._init_db()

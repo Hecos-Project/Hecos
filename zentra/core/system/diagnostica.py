@@ -11,11 +11,11 @@ import glob
 import psutil
 import msvcrt
 import json
-from core.logging import logger
-from core.audio import voice
-from ui import interface
-from core.system.version import VERSION, COPYRIGHT, get_version_string
-from core.i18n import translator
+from zentra.core.logging import logger
+from zentra.core.audio import voice
+from zentra.ui import interface
+from zentra.core.system.version import VERSION, COPYRIGHT, get_version_string
+from zentra.core.i18n import translator
 
 VERDE = '\033[92m'
 ROSSO = '\033[91m'
@@ -42,12 +42,23 @@ def print_and_speak(video_text, voice_text=None):
     time.sleep(0.1)
 
 def check_folders():
-    folders = ["plugins", "personality", "logs", "memory", "core", "ui", "app"]
+    # Directories that should be inside the package
+    package_folders = ["plugins", "core", "ui", "app"]
+    # Directories that should be in the user workspace (root)
+    user_folders = ["logs", "memory", "personality"]
+    
     missing = []
-    for f in folders:
-        # Check root and then zentra/
-        if not os.path.exists(f) and not os.path.exists(os.path.join("zentra", f)):
-            missing.append(f)
+    for f in package_folders:
+        # Check if they exist inside zentra/ (relative to root)
+        if not os.path.exists(os.path.join("zentra", f)):
+            missing.append(f"zentra/{f}")
+            
+    for f in user_folders:
+        if not os.path.exists(f):
+            # Auto-create if missing in workspace
+            try: os.makedirs(f, exist_ok=True)
+            except: missing.append(f)
+            
     return missing
 
 def check_hardware():
@@ -116,13 +127,14 @@ def check_backend(config):
             logger.error(f"DIAGNOSTICS: Ollama not responding: {e}")
             print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
             return False
-def scan_plugins(config):
+
+def scan_plugins(config):
     """
     Automatically search and query additional modules.
     Supports the 'enabled' flag in config.json to skip or report disabled plugins.
     """
     results = []
-    from core.system import plugin_loader
+    from zentra.core.system import plugin_loader
     
     # Ensure registry is fresh
     plugin_loader.update_capability_registry(config)
@@ -186,7 +198,7 @@ def run_initial_check(config):
 def start_wake_sequence(config):
     os.system('cls' if os.name == 'nt' else 'clear')
     
-    # Use centralized variables from core.version
+    # Use centralized variables from zentra.core.version
     print(f"{VERDE}{get_version_string()}{RESET}")
     print(f"{VERDE}{COPYRIGHT}{RESET}")
     print(f"{'─' * 55}\n")
@@ -234,7 +246,7 @@ def start_wake_sequence(config):
         print(f"\n{CIANO}==================================================={RESET}")
     
     # Estrae la frase personalizzata adatta alla lingua corrente
-    from core.system.greeting import get_spoken_greeting, get_ui_greeting
+    from zentra.core.system.greeting import get_spoken_greeting, get_ui_greeting
     intro_greeting_voc = get_spoken_greeting(config)
     intro_greeting_ui = get_ui_greeting(config)
  

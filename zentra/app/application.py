@@ -6,19 +6,19 @@ import sys
 import time
 import atexit
 import msvcrt
-from core.logging import logger
-from core.system import plugin_loader, diagnostica
-from core.i18n import translator
-from ui import interface, graphics, ui_updater
-from ui.config_editor.core import ConfigEditor
-from memory import brain_interface
+from zentra.core.logging import logger
+from zentra.core.system import plugin_loader, diagnostica
+from zentra.core.i18n import translator
+from zentra.ui import interface, graphics, ui_updater
+from zentra.ui.config_editor.core import ConfigEditor
+from zentra.memory import brain_interface
 from .config import ConfigManager
 from .state_manager import StateManager
 from .input_handler import InputHandler
 from .threads import AscoltoThread
 from .model_manager import ModelManager
 from .personality_manager import PersonalityManager
-from core.processing import processore
+from zentra.core.processing import processore
 
 # Register debug window closure as a guaranteed shutdown hook.
 # atexit handles normal sys.exit() and Ctrl+C.
@@ -44,7 +44,7 @@ class ZentraApplication:
     def __init__(self):
         self.config_manager = ConfigManager()
         
-        from core.audio.device_manager import get_audio_config
+        from zentra.core.audio.device_manager import get_audio_config
         acfg = get_audio_config()
         
         cv    = acfg.get('voice_status', True)

@@ -5,20 +5,26 @@ DESCRIPTION: Coordinates prompt construction and invokes the chosen backend.
 
 import json
 import os
-from core.logging import logger
-from memory import brain_interface
-from core.llm import client
-from core.i18n import translator
-from core.llm.manager import manager
-from core.system.plugin_loader import get_tools_schema, get_legacy_schema
+from zentra.core.logging import logger
+from zentra.memory import brain_interface
+from zentra.core.llm import client
+from zentra.core.i18n import translator
+from zentra.core.llm.manager import manager
+from zentra.core.system.plugin_loader import get_tools_schema, get_legacy_schema
 
-CONFIG_PATH = "config.json"
-REGISTRY_PATH = "core/registry.json"
+# --- PROJECT ROOT CALCULATION ---
+# Anchored to zentra/ folder
+_ZENTRA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+CONFIG_PATH = os.path.join(_ZENTRA_DIR, "config", "data", "system.yaml")
+REGISTRY_PATH = os.path.join(_ZENTRA_DIR, "core", "registry.json")
+PERSONALITY_DIR = os.path.join(_ZENTRA_DIR, "personality")
+CORE_DIR = os.path.join(_ZENTRA_DIR, "core")
 
 def load_config():
     try:
+        import yaml
         with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return yaml.safe_load(f)
     except Exception as e:
         logger.error(f"BRAIN: {translator.t('error')}: {e}")
         logger.debug("BRAIN", f"Error loading config: {e}")
@@ -46,12 +52,12 @@ def load_capabilities():
 
 def generate_self_awareness(personality_name):
     try:
-        from core.system.plugin_loader import get_active_tags
+        from zentra.core.system.plugin_loader import get_active_tags
         active_plugins = get_active_tags()
         
         # Simplified listing to save tokens
-        souls_count = len([f for f in os.listdir("personality") if f.endswith('.txt')])
-        core_count  = len([f for f in os.listdir("core") if f.endswith('.py')])
+        souls_count = len([f for f in os.listdir(PERSONALITY_DIR) if f.endswith('.txt')])
+        core_count  = len([f for f in os.listdir(CORE_DIR) if f.endswith('.py')])
         
         awareness = f"\n{translator.t('structural_self_awareness')}\n"
         awareness += f"{translator.t('awareness_desc')}\n"
@@ -94,7 +100,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         personality_name = "zentra.txt"
     logger.debug("BRAIN", f"Active personality: {personality_name}")
     
-    personality_path = os.path.join("personality", personality_name)
+    personality_path = os.path.join(PERSONALITY_DIR, personality_name)
     personality_prompt = "You are Zentra, an advanced AI."
     if os.path.exists(personality_path):
         try:

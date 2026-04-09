@@ -10,9 +10,14 @@ from cryptography.hazmat.primitives import serialization
 class CertGenerator:
     """Genera certificati Host firmati dalla Zentra Root CA"""
 
-    def __init__(self, ca_manager, certs_dir="certs"):
+    def __init__(self, ca_manager, certs_dir=None):
         self.ca = ca_manager
-        self.certs_dir = certs_dir
+        if certs_dir is None:
+            # zentra/core/security/pki/cert_generator.py -> ../../../ is zentra/
+            package_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            self.certs_dir = os.path.join(package_root, "certs")
+        else:
+            self.certs_dir = certs_dir
         
         self.cert_path = os.path.join(self.certs_dir, "cert.pem")
         self.key_path = os.path.join(self.certs_dir, "key.pem")

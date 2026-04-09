@@ -1,5 +1,5 @@
 import os
-from core.media.image_providers.utils import log_debug, save_image_bytes, get_proxies, ensure_english_prompt
+from zentra.core.media.image_providers.utils import log_debug, save_image_bytes, get_proxies, ensure_english_prompt
 
 class HuggingFaceProvider:
     NAME = "huggingface"

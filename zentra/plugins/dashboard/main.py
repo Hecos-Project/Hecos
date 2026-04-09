@@ -9,8 +9,8 @@ import time
 import requests
 import json
 try:
-    from core.logging import logger
-    from core.i18n import translator
+    from zentra.core.logging import logger
+    from zentra.core.i18n import translator
     from app.config import ConfigManager
 except ImportError:
     class DummyLogger:

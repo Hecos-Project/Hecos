@@ -10,7 +10,7 @@ from flask import request, jsonify, render_template, abort, Blueprint
 from flask_login import login_required, current_user
 
 try:
-    from core.logging import logger
+    from zentra.core.logging import logger
 except ImportError:
     class _L:
         def info(self, *a): print("[EDITOR]", *a)

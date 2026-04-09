@@ -3,8 +3,8 @@ Management of LLM model selection and configuration.
 """
 
 import requests
-from core.logging import logger
-from core.i18n import translator
+from zentra.core.logging import logger
+from zentra.core.i18n import translator
 
 class ModelManager:
     def __init__(self, config_manager):
@@ -48,7 +48,7 @@ class ModelManager:
         if config.get('llm', {}).get('allow_cloud', False):
             import os
             try:
-                from core.keys.key_manager import KeyManager
+                from zentra.core.keys.key_manager import KeyManager
                 key_mgr = KeyManager()
             except ImportError:
                 key_mgr = None

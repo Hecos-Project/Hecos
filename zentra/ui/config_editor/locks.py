@@ -4,7 +4,7 @@ Gestione del file di lock per accesso concorrente al file di configurazione.
 
 import os
 import time
-from core.i18n import translator
+from zentra.core.i18n import translator
 
 LOCK_FILE = "config.lock"
 

@@ -8,8 +8,8 @@ import os
 import json
 import logging
 # Importiamo correttamente le funzioni dal modulo logger
-from core.logging import logger as log_mod
-from core.logging.logger import debug as zlog_debug, info as zlog_info, error as zlog_error
+from zentra.core.logging import logger as log_mod
+from zentra.core.logging.logger import debug as zlog_debug, info as zlog_info, error as zlog_error
 
 # Global variable to store last payload metadata for WebUI inspection
 LAST_PAYLOAD_INFO = {
@@ -68,7 +68,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     # ── Vision path: delegate to adapter if images are attached ──
     if images:
         try:
-            from core.llm.vision.factory import get_vision_adapter
+            from zentra.core.llm.vision.factory import get_vision_adapter
             adapter = get_vision_adapter(model_name, backend_type)
             if adapter:
                 messages = adapter.build_messages(system_prompt, user_message, images)
@@ -161,7 +161,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         
         # ── KeyManager: pool di chiavi con failover automatico ────────────
         try:
-            from core.keys import get_key_manager
+            from zentra.core.keys import get_key_manager
             _km = get_key_manager()
             api_key = _km.get_key(provider)
             if api_key:
@@ -228,7 +228,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
 
 
     # ── Retry loop with auto-failover ────────────────────────────────────
-    from core.keys import get_key_manager as _get_km
+    from zentra.core.keys import get_key_manager as _get_km
     _max_key_retries = 8  # max chiavi diverse da provare in sequenza
     _tried_keys: list = []
 

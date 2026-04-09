@@ -1,7 +1,7 @@
 import os
 import platform
 import subprocess
-from core.logging import logger
+from zentra.core.logging import logger
 
 class OSAdapter:
     """

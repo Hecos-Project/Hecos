@@ -4,8 +4,8 @@ Separate thread management.
 
 import threading
 import time
-from core.audio import listen, voice
-from core.logging import logger
+from zentra.core.audio import listen, voice
+from zentra.core.logging import logger
 
 class AscoltoThread(threading.Thread):
     def __init__(self, state_manager):

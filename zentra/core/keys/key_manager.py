@@ -8,8 +8,8 @@ import threading
 import time
 from typing import Dict, List, Optional
 
-from core.keys.key_store import ApiKeyEntry, STATUS_VALID, STATUS_UNKNOWN, STATUS_INVALID
-from core.keys import key_loader as _loader
+from zentra.core.keys.key_store import ApiKeyEntry, STATUS_VALID, STATUS_UNKNOWN, STATUS_INVALID
+from zentra.core.keys import key_loader as _loader
 
 # Default cooldown for rate-limited keys (seconds)
 DEFAULT_COOLDOWN = 60.0
@@ -23,7 +23,7 @@ class KeyManager:
     Singleton that manages pools of API keys for each provider.
 
     Usage:
-        from core.keys import get_key_manager
+        from zentra.core.keys import get_key_manager
         km = get_key_manager()
 
         key = km.get_key("groq")            # Returns next available key string

@@ -4,12 +4,12 @@ Module responsible for handling function keys (F1-F9) and associated menus/actio
 import sys
 import time
 import msvcrt
-from core.logging import logger
-from core.system import plugin_loader
-from core.i18n import translator
-from ui import interface, ui_updater
-from ui.config_editor.core import ConfigEditor
-from core.processing import processore
+from zentra.core.logging import logger
+from zentra.core.system import plugin_loader
+from zentra.core.i18n import translator
+from zentra.ui import interface, ui_updater
+from zentra.ui.config_editor.core import ConfigEditor
+from zentra.core.processing import processore
 
 class MenuHandler:
     """Manages system shortcuts and UI menus triggered via function keys."""
@@ -82,11 +82,11 @@ class MenuHandler:
         logger.init_logger(self.config_manager.config)
         
         # Svuota le cache per garantire l'applicazione immediata
-        from core.processing import filtri
+        from zentra.core.processing import filtri
         if hasattr(filtri, 'reset_cache'):
             filtri.reset_cache()
             
-        from core.llm.manager import manager
+        from zentra.core.llm.manager import manager
         if hasattr(manager, 'reload_config'):
             manager.reload_config()
 
@@ -105,7 +105,7 @@ class MenuHandler:
             
         elif key == "F4": # Toggle Mic
             self.state_manager.listening_status = not self.state_manager.listening_status
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             acfg["listening_status"] = self.state_manager.listening_status
             _save_audio_config(acfg)
@@ -127,7 +127,7 @@ class MenuHandler:
             
         elif key == "F6": # Toggle Voice
             self.state_manager.voice_status = not self.state_manager.voice_status
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             acfg["voice_status"] = self.state_manager.voice_status
             _save_audio_config(acfg)
@@ -144,7 +144,7 @@ class MenuHandler:
             is_ptt = self.state_manager.push_to_talk
             new_ptt = not is_ptt
             self.state_manager.push_to_talk = new_ptt
-            from core.audio.device_manager import get_audio_config, _save_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
             acfg["push_to_talk"] = new_ptt
             _save_audio_config(acfg)

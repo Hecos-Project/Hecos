@@ -10,9 +10,9 @@ import time
 import threading
 import re
 from colorama import Fore, Style
-from ui import graphics
-from core.system import plugin_loader
-from ui.interface import get_hardware_row
+from zentra.ui import graphics
+from zentra.core.system import plugin_loader
+from zentra.ui.interface import get_hardware_row
 
 # Blocco globale per proteggere l'accesso simultaneo allo stdout
 stdout_lock = threading.Lock()

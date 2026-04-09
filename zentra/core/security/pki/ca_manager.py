@@ -9,10 +9,16 @@ from cryptography.hazmat.primitives import serialization
 class CAManager:
     """Gestisce la Zentra Local Root CA (Generazione, Caricamento e Salvataggio)"""
     
-    def __init__(self, ca_dir="certs/ca"):
-        self.ca_dir = ca_dir
-        self.ca_key_path = os.path.join(ca_dir, "rootCA-key.pem")
-        self.ca_cert_path = os.path.join(ca_dir, "rootCA.pem")
+    def __init__(self, ca_dir=None):
+        if ca_dir is None:
+            # zentra/core/security/pki/ca_manager.py -> ../../../ is zentra/
+            package_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            self.ca_dir = os.path.join(package_root, "certs", "ca")
+        else:
+            self.ca_dir = ca_dir
+        
+        self.ca_key_path = os.path.join(self.ca_dir, "rootCA-key.pem")
+        self.ca_cert_path = os.path.join(self.ca_dir, "rootCA.pem")
         
         if not os.path.exists(self.ca_dir):
             os.makedirs(self.ca_dir)

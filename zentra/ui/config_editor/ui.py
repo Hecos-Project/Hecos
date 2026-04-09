@@ -3,8 +3,8 @@ Gestione dell'interfaccia utente: disegno e interazione.
 """
 
 from .utils import clear_screen, get_key, flush_input
-from ui import graphics
-from core.i18n import translator
+from zentra.ui import graphics
+from zentra.core.i18n import translator
 import sys
 import shutil
 from collections import OrderedDict
@@ -314,7 +314,7 @@ class UIManager:
         def outprint(text):
             output_buffer.append(text + "\n")
             
-        from core.system.version import get_version_string
+        from zentra.core.system.version import get_version_string
         
         try:
             term_size = shutil.get_terminal_size()

@@ -1,8 +1,10 @@
 import os
 import json
-from core.logging import logger
+from zentra.core.logging import logger
 
-GREETINGS_FILE = os.path.join("assets", "voice_greetings.json")
+# zentra/core/system/greeting.py -> ../../ is zentra/
+_ZENTRA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+GREETINGS_FILE = os.path.join(_ZENTRA_DIR, "config", "data", "voice_greetings.json")
 
 DEFAULT_GREETINGS = {
     "en": "Zentra. That's me!",
@@ -35,7 +37,7 @@ def get_spoken_greeting(config=None):
     Restituisce il saluto vocale basato sulla lingua del modello Piper caricato.
     """
     try:
-        from core.audio.device_manager import get_audio_config
+        from zentra.core.audio.device_manager import get_audio_config
         audio_cfg = get_audio_config()
         onnx_model = os.path.basename(audio_cfg.get("onnx_model", "en_US-lessac.onnx"))
     except:

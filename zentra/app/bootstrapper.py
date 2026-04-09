@@ -3,12 +3,12 @@ Module responsible for initializing the Zentra Core system and showing boot sequ
 """
 import sys
 import time
-from core.logging import logger
-from core.system import plugin_loader, diagnostica
-from core.i18n import translator
-from ui import interface, graphics, ui_updater
-from memory import brain_interface
-from core.processing import processore
+from zentra.core.logging import logger
+from zentra.core.system import plugin_loader, diagnostica
+from zentra.core.i18n import translator
+from zentra.ui import interface, graphics, ui_updater
+from zentra.memory import brain_interface
+from zentra.core.processing import processore
 
 class SystemBootstrapper:
     """Handles the heavy lifting of system initialization."""
@@ -54,7 +54,7 @@ class SystemBootstrapper:
 
         # Audio device auto-selection (Piper TTS output + Microphone input)
         try:
-            from core.audio.device_manager import maybe_scan_on_startup
+            from zentra.core.audio.device_manager import maybe_scan_on_startup
             self.state_manager.system_status = "Scanning audio devices..."
             maybe_scan_on_startup()
             logger.info("[APP] Audio device scan completed.")

@@ -11,7 +11,7 @@ import time
 import keyboard
 import msvcrt
 
-from core.logging import logger
+from zentra.core.logging import logger
 
 is_speaking = False
 _current_piper_proc = None
@@ -62,7 +62,7 @@ def speak(text, state=None):
 
     # 1. Load Audio Configuration
     try:
-        from core.audio.device_manager import get_audio_config
+        from zentra.core.audio.device_manager import get_audio_config
         audio_cfg = get_audio_config()
         
         # Check if voice is globally disabled
@@ -95,7 +95,7 @@ def speak(text, state=None):
             "--noise_scale",     str(noise_scale),
             "--noise_w",         str(noise_w),
             "--sentence_silence", str(sentence_silence),
-            "-f", "risposta.wav"
+            "-f", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs", "risposta.wav")
         ]
 
         proc = subprocess.Popen(
@@ -113,8 +113,9 @@ def speak(text, state=None):
             logger.debug("VOICE", "Generation interrupted by user.")
             return
 
-        if os.path.exists("risposta.wav"):
-            actual_duration = _play_wav("risposta.wav", device_index=output_device)
+        wav_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs", "risposta.wav")
+        if os.path.exists(wav_path):
+            actual_duration = _play_wav(wav_path, device_index=output_device)
 
             if actual_duration is not None:
                 # sounddevice async path: wait exactly actual_duration, checking for stops

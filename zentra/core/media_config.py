@@ -5,12 +5,13 @@ DESCRIPTION: Loads, validates and saves the media configuration via YAML + Pydan
 """
 
 import os
-from core.logging import logger
-from config.yaml_utils import load_yaml, save_yaml
-from config.schemas.media_schema import MediaConfig
+from zentra.core.logging import logger
+from zentra.config.yaml_utils import load_yaml, save_yaml
+from zentra.config.schemas.media_schema import MediaConfig
 
-_PROJECT_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-MEDIA_CONFIG_PATH = os.path.join(_PROJECT_ROOT, "config", "media.yaml")
+# zentra/core -> zentra/
+_ZENTRA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+MEDIA_CONFIG_PATH = os.path.join(_ZENTRA_DIR, "config", "data", "media.yaml")
 
 
 def get_media_config() -> dict:

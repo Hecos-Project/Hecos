@@ -6,7 +6,7 @@ DESCRIPTION: Class-based interface for accessing the Vault (Semantic and Episodi
 import os
 try:
     from memory import brain_interface
-    from core.i18n import translator
+    from zentra.core.i18n import translator
 except ImportError:
     # Minimal fallback for standalone testing
     class DummyBrainInterface:
@@ -56,7 +56,7 @@ class MemoryTools:
             clean_name = personality_name.replace(".txt", "").replace("_", " ") if personality_name else "Zentra"
             return brain_interface.get_context(config=cfg, dynamic_name=clean_name)
         except Exception as e:
-            from core.logging import logger
+            from zentra.core.logging import logger
             logger.error(f"[MEMORY] who_am_i tool error: {e}")
             return brain_interface.get_context()
 

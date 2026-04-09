@@ -6,7 +6,7 @@ Multi-provider image generation engine for Zentra Core.
 import os
 
 try:
-    from core.logging import logger
+    from zentra.core.logging import logger
 except ImportError:
     class _Logger:
         def info(self, *a): print("[IMGPROVIDER]", *a)
@@ -14,13 +14,13 @@ except ImportError:
         def debug(self, *a): pass
     logger = _Logger()
 
-from core.media.image_providers.utils import log_debug
-from core.media.image_providers.pollinations import PollinationsProvider
-from core.media.image_providers.gemini import GeminiProvider, GeminiNativeProvider
-from core.media.image_providers.openai import OpenAIProvider
-from core.media.image_providers.stability import StabilityProvider
-from core.media.image_providers.airforce import AirforceProvider
-from core.media.image_providers.huggingface import HuggingFaceProvider
+from zentra.core.media.image_providers.utils import log_debug
+from zentra.core.media.image_providers.pollinations import PollinationsProvider
+from zentra.core.media.image_providers.gemini import GeminiProvider, GeminiNativeProvider
+from zentra.core.media.image_providers.openai import OpenAIProvider
+from zentra.core.media.image_providers.stability import StabilityProvider
+from zentra.core.media.image_providers.airforce import AirforceProvider
+from zentra.core.media.image_providers.huggingface import HuggingFaceProvider
 
 
 # ── Registry & Engine ─────────────────────────────────────────────────────────

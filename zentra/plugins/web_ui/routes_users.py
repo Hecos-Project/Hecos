@@ -1,6 +1,6 @@
 from flask import jsonify, request
-from core.auth.auth_manager import auth_mgr
-from core.auth.decorators import admin_required
+from zentra.core.auth.auth_manager import auth_mgr
+from zentra.core.auth.decorators import admin_required
 
 def init_users_routes(app, logger):
 

@@ -5,8 +5,14 @@ Starts the application and handles uncaught exceptions.
 """
 
 import sys
+import os
 import atexit
 from dotenv import load_dotenv
+
+# Bootstrap path: ensure project root is in sys.path
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
 
 # Load environment variables from .env file as soon as possible
 load_dotenv()
@@ -21,8 +27,8 @@ if sys.platform == "win32":
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-from app import ZentraApplication
-from core.logging import logger
+from zentra.app.application import ZentraApplication
+from zentra.core.logging import logger
 
 # Register the guaranteed cleanup hook
 atexit.register(logger.close_all_consoles)

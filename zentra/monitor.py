@@ -9,11 +9,17 @@ import os
 import sys
 import json
 import argparse
-from core.system import instance_lock
+
+# Bootstrap path: ensure project root is in sys.path
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+
+from zentra.core.system import instance_lock
 
 # Path configuration
-DEFAULT_MAIN_SCRIPT = "main.py"
-CONFIG_FILE = os.path.join("config", "system.yaml")
+DEFAULT_MAIN_SCRIPT = os.path.join("zentra", "main.py")
+CONFIG_FILE = os.path.join("zentra", "config", "data", "system.yaml")
 
 def get_translator():
     language = "en"
@@ -64,10 +70,14 @@ def start_and_monitor(script_to_run):
     print(t("starting", script=script_to_run))
     
     # Process startup: handle both direct scripts and module-style runs
+    # Inietta la root nel PYTHONPATH del sottoprocesso per garantire la risoluzione di 'zentra'
+    env = os.environ.copy()
+    env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
+
     if is_module:
-        process = subprocess.Popen([sys.executable, "-m", script_to_run])
+        process = subprocess.Popen([sys.executable, "-m", script_to_run], env=env)
     else:
-        process = subprocess.Popen([sys.executable, script_to_run])
+        process = subprocess.Popen([sys.executable, script_to_run], env=env)
 
     try:
         while process.poll() is None:

@@ -3,13 +3,13 @@ MODULE: core/llm/vision/factory.py
 PURPOSE: Factory that selects the correct VisionAdapter based on model/backend.
 
 Usage:
-    from core.llm.vision.factory import get_vision_adapter
+    from zentra.core.llm.vision.factory import get_vision_adapter
     adapter = get_vision_adapter(model_name, backend_type)
     if adapter:
         messages = adapter.build_messages(system_prompt, user_text, images)
 """
 
-from core.logging.logger import debug as zlog_debug, error as zlog_error
+from zentra.core.logging.logger import debug as zlog_debug, error as zlog_error
 
 
 # ── Provider prefix → adapter mapping ─────────────────────────────

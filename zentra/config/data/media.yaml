@@ -1,0 +1,29 @@
+# ── Zentra Media Generation Configuration ──
+# Manages all plugins for multimedia content generation.
+
+image_gen:
+  # Enable or disable access to the Text-to-Image Generation plugin.
+  enabled: true
+
+  # API provider for image processing (e.g., pollinations, openai, stability).
+  provider: huggingface
+
+  # Specific AI model to use (depends on the selected provider).
+  model: black-forest-labs/FLUX.1-schnell
+
+  # Image resolution: width in pixels.
+  width: 1024
+
+  # Image resolution: height in pixels.
+  height: 1024
+
+  # Remove watermarks or logos from the generated image (if supported by the provider).
+  nologo: true
+
+  # API Authentication Key. For Pollinations this can often be left blank, but providers 
+  # like OpenAI or HuggingFace will require a valid account and key inserted here.
+  api_key: ''
+
+video_gen:
+  # Future configuration: Enable the rendering engine for text-to-video.
+  enabled: false

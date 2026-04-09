@@ -1,5 +1,5 @@
 import urllib.parse
-from core.media.image_providers.utils import log_debug, save_image_bytes, get_proxies
+from zentra.core.media.image_providers.utils import log_debug, save_image_bytes, get_proxies
 
 class PollinationsProvider:
     NAME = "pollinations"

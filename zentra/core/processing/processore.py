@@ -10,10 +10,10 @@ import json
 import time
 
 import importlib.util
-from core.llm import brain
-from core.processing import filtri
-from core.logging import logger
-from core.i18n import translator
+from zentra.core.llm import brain
+from zentra.core.processing import filtri
+from zentra.core.logging import logger
+from zentra.core.i18n import translator
 
 # Colors for terminal logs
 YELLOW = '\033[93m'
@@ -67,7 +67,7 @@ def process_exchange(user_text, voice_status, sm=None):
     NOW REFACTORED TO USE THE AGENTIC LOOP."""
     logger.info(f"[PROCESSOR] Input received (length: {len(user_text)}). Delegating to Agentic Loop.")
     
-    from core.agent.loop import AgentExecutor
+    from zentra.core.agent.loop import AgentExecutor
     
     executor = AgentExecutor(config=current_config, state_manager=sm)
     video_response, clean_voice = executor.run_agentic_loop(user_text, voice_status=voice_status)
@@ -165,7 +165,7 @@ def extract_and_execute_tools(raw_response, config=None):
         
         if module_to_call in BLACKLIST: continue
             
-        from core.system import plugin_loader
+        from zentra.core.system import plugin_loader
         
         # FAIL-SAFE: If the registry is empty (happens in standalone child processes), auto-init.
         if not plugin_loader.get_active_tags():
@@ -301,7 +301,9 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         import datetime
         _pat = r'\[\[IMG:'
         _has_vr = bool(_re.search(_pat, video_response))
-        with open("logs/image_gen_debug.txt", "a", encoding="utf-8") as _f:
+        _zentra_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        _logs_dir = os.path.join(_zentra_dir, "logs")
+        with open(os.path.join(_logs_dir, "image_gen_debug.txt"), "a", encoding="utf-8") as _f:
             _now = datetime.datetime.now().strftime("%H:%M:%S")
             _f.write(f"[{_now}] [ProcessorExitDebug] Final video_response (len={len(video_response)}, has_img={_has_vr}): {video_response[:200]}\n")
     except Exception:

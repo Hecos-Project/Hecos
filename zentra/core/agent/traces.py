@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from core.logging import logger
+from zentra.core.logging import logger
 
 class AgentTracer:
     """

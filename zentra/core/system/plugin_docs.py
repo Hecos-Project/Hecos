@@ -7,8 +7,8 @@ import os
 import json
 import importlib.util
 import glob
-from core.logging import logger
-from core.i18n import translator
+from zentra.core.logging import logger
+from zentra.core.i18n import translator
 
 from .plugin_state import (
     REGISTRY_PATH,

@@ -1,7 +1,7 @@
 import os
 try:
-    from core.logging import logger
-    from core.i18n import translator
+    from zentra.core.logging import logger
+    from zentra.core.i18n import translator
     from app.config import ConfigManager
 except ImportError:
     class DummyLogger:
@@ -62,19 +62,20 @@ class FileManager:
             return target
 
         user_path = os.path.expanduser("~")
-        cwd = os.getcwd()
+        # zentra/plugins/file_manager/main.py -> ../../ is zentra/
+        zentra_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
         default_mapping = {
             "desktop": os.path.join(user_path, "Desktop"),
             "documents": os.path.join(user_path, "Documents"),
             "download": os.path.join(user_path, "Downloads"),
-            "core": os.path.join(cwd, "core"),
-            "plugins": os.path.join(cwd, "plugins"),
-            "memory": os.path.join(cwd, "memory"),
-            "personality": os.path.join(cwd, "personality"),
-            "logs": os.path.join(cwd, "logs"),
-            "config": os.path.join(cwd, "config.json"),
-            "main": os.path.join(cwd, "main.py"),
+            "core": os.path.join(zentra_root, "core"),
+            "plugins": os.path.join(zentra_root, "plugins"),
+            "memory": os.path.join(zentra_root, "memory"),
+            "personality": os.path.join(zentra_root, "personality"),
+            "logs": os.path.join(zentra_root, "logs"),
+            "config": os.path.join(zentra_root, "config", "data", "system.yaml"),
+            "main": os.path.join(os.path.dirname(zentra_root), "main.py"), # main remains in root
         }
 
         custom_mappings = cfg_mgr.get_plugin_config(self.tag, "mappings", {})

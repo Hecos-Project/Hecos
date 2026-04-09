@@ -8,7 +8,7 @@ Each extension follows the same manifest contract as a plugin.
 import os
 import json
 import importlib.util
-from core.logging import logger
+from zentra.core.logging import logger
 
 # Registry of discovered extensions: {plugin_tag: {ext_id: manifest_data}}
 _extension_registry = {}

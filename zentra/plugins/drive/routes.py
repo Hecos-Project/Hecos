@@ -8,7 +8,7 @@ import os
 import shutil
 from flask import request, jsonify, send_file, render_template, abort, Blueprint
 from flask_login import login_required, current_user
-from core.logging import logger
+from zentra.core.logging import logger
 
 # Declare the Drive Blueprint
 # We use a unique name 'zentra_drive' to avoid internal Flask collisions
@@ -56,7 +56,7 @@ def init_drive_routes(app, logger_instance=None):
 
     # ─── Load Extensions ────────────────────────────────────────────────────────
     try:
-        from core.system.extension_loader import load_extension_routes, discover_extensions
+        from zentra.core.system.extension_loader import load_extension_routes, discover_extensions
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
         discover_extensions("DRIVE", plugin_dir)
         load_extension_routes(app, "DRIVE", "editor")
