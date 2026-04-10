@@ -349,11 +349,100 @@ def show_help():
     # Clear the screen to make space for the extended guide
     setup_console()
     
-    # Centered Header
-    header_text = f"{CYAN}╔════════════════ {translator.t('help_title')} ════════════════╗{RESET}"
-    print(f"\n{header_text.center(90)}")
-    print(f"{WHITE}{translator.t('help_scanning')}{RESET}".center(90))
-    print()
+    L = 90
+    
+    lines = []
+    # ─── HEADER ─────────────────────────────────────────────────────────────────
+    lines.append(f"{CYAN}╔════════════════════════════════════════════════════════════════════════════════════════╗{RESET}")
+    lines.append(f"{CYAN}║{WHITE}                      ZENTRA CORE — GUIDA UTENTE (F1)                                   {CYAN}║{RESET}")
+    lines.append(f"{CYAN}╚════════════════════════════════════════════════════════════════════════════════════════╝{RESET}")
+    lines.append("")
+    lines.append(f"{WHITE}Benvenuto! Zentra è un sistema IA modulare. Puoi comunicare usando il linguaggio")
+    lines.append(f"naturale: non devi imparare comandi o sintassi complesse.{RESET}")
+    lines.append("")
+
+    # ─── SEZIONE 1: COME USARLO ─────────────────────────────────────────────────
+    lines.append(f"{YELLOW}━━━ 1. COME PARLARE CON ZENTRA ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    lines.append("")
+    lines.append(f"{WHITE}  ■ Modalità Testuale:{RESET} Scrivi qualunque cosa nel prompt in basso e premi INVIO.")
+    lines.append(f"    Es: {CYAN}\"Ciao, come stai?\"{RESET} oppure {CYAN}\"Mostrami i dati della CPU\"{RESET}")
+    lines.append("")
+    lines.append(f"{WHITE}  ■ Modalità Vocale (PC):{RESET} Tieni premuto {GREEN}CTRL+SHIFT{RESET} per attivare il microfono.")
+    lines.append(f"    Parla, poi rilascia i tasti per inviare. Zentra ti risponderà a voce.")
+    lines.append("")
+    lines.append(f"{WHITE}  ■ Modalità Vocale (WebUI/Mobile):{RESET} Usa il pulsante 🎙️ nella chat WebUI.")
+    lines.append(f"    Es: (Tap to talk) {CYAN}\"Abbassa il volume al 20%\"{RESET}")
+    lines.append("")
+
+    # ─── SEZIONE 2: TASTI FUNZIONE ──────────────────────────────────────────────
+    lines.append(f"{YELLOW}━━━ 2. TASTI FUNZIONE RAPIDI (Console locale) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    lines.append("")
+    lines.append(f"{GREEN}  F1{RESET} → Mostra questa Guida Utente")
+    lines.append(f"{GREEN}  F2{RESET} → Cambia il modello AI in uso (es. GPT-4, Llama locale, Gemini)")
+    lines.append(f"{GREEN}  F3{RESET} → Carica una \"Personalità\" o sistema base (es. Urania, MacGyver)")
+    lines.append(f"{GREEN}  F4{RESET} → Attiva o Disattiva il microfono di sistema (Privacy mute)")
+    lines.append(f"{GREEN}  F5{RESET} → Aggiorna l'interfaccia (Forza il ridisegno locale)")
+    lines.append(f"{GREEN}  F6{RESET} → Attiva/Disattiva la risposta Parlata (Text-to-Speech)")
+    lines.append(f"{GREEN}  F7{RESET} → Editor Backend (Modifica IP, porte API, database)")
+    lines.append(f"{GREEN}  F8{RESET} → Attiva/Disattiva la modalità 'Push To Talk'")
+    lines.append(f"{GREEN}  F9{RESET} → Riavvia immediatamente Zentra Core")
+    lines.append("")
+
+    # ─── SEZIONE 3: COSA PUOI CHIEDERE ───────────────────────────────────────
+    lines.append(f"{YELLOW}━━━ 3. ESEMPI DI UTILIZZO E COMANDI COMUNI ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    lines.append("")
+    lines.append(f"  🗣️  {CYAN}CONVERSARE E IMPARARE{RESET}")
+    lines.append(f"     \"{GREEN}Spiegami in parole semplici la fisica quantistica{RESET}\"")
+    lines.append(f"     \"{GREEN}Scrivi un'email di scuse per un ritardo{RESET}\"")
+    lines.append(f"     \"{GREEN}Traduci questa frase in finlandese{RESET}\"")
+    lines.append("")
+    lines.append(f"  🖥️  {CYAN}CONTROLLO DEL COMPUTER E FILE{RESET}")
+    lines.append(f"     \"{GREEN}Elenca i file che si trovano sul mio Desktop{RESET}\"")
+    lines.append(f"     \"{GREEN}Apri il Blocco Note / Apri Discord{RESET}\"")
+    lines.append(f"     \"{GREEN}Mostrami graficamente come va la CPU{RESET}\"")
+    lines.append("")
+    lines.append(f"  🌐  {CYAN}INTERNET E INFORMAZIONI{RESET}")
+    lines.append(f"     \"{GREEN}Cerca in rete le ultime notizie su SpaceX{RESET}\"")
+    lines.append(f"     \"{GREEN}Che giorno è oggi? / Che ore sono?{RESET}\"")
+    lines.append("")
+    lines.append(f"  🎵  {CYAN}CONTROLLO MEDIA E VOLUME{RESET}")
+    lines.append(f"     \"{GREEN}Abbassa il volume del computer al 30%{RESET}\"")
+    lines.append(f"     \"{GREEN}Metti in pausa la musica{RESET}\"")
+    lines.append("")
+    lines.append(f"  📸  {CYAN}FOTOCAMERA E VISIONE{RESET}")
+    lines.append(f"     \"{GREEN}Scatta una foto con la webcam e dimmi cosa vedi{RESET}\"")
+    lines.append(f"     \"{GREEN}Fai una foto col telefono{RESET}\" (se connesso via WebUI su mobile)")
+    lines.append("")
+    lines.append(f"  🎨  {CYAN}GENERAZIONE IMMAGINI AI{RESET}")
+    lines.append(f"     \"{GREEN}Genera l'immagine di un cane nello spazio, stile fotorealistico{RESET}\"")
+    lines.append("")
+    lines.append(f"  🐍  {CYAN}ZENTRA SANDBOX (CODICE PYTHON){RESET}")
+    lines.append(f"     Zentra può scrivere e autovalutare codice per risolvere calcoli o logica.")
+    lines.append(f"     \"{GREEN}Calcola matematicamente la radice di 5612 in Python{RESET}\"")
+    lines.append("")
+
+    # ─── SEZIONE 4: REGOLE E OVERRIDE ───────────────────────────────────────────
+    lines.append(f"{YELLOW}━━━ 4. PERSONALIZZAZIONI AVANZATE E REGOLE COMPORTAMENTALI ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    lines.append("")
+    lines.append(f"  {WHITE}■ Istruzioni Comportamentali (Special AI Instructions):{RESET}")
+    lines.append(f"    Per cambiare dinamicamente il modo in cui Zentra chatta (il tono base),")
+    lines.append(f"    apri la WebUI, vai in {CYAN}Configurazione > Persona{RESET} e scrivi per esempio:")
+    lines.append(f"    \"{GREEN}Da ora in poi rispondimi sempre in rima{RESET}\" oppure \"{GREEN}Usa un tono sarcastico{RESET}\".")
+    lines.append("")
+    lines.append(f"  {WHITE}■ Plugin Routing Overrides (Novità v0.16.x):{RESET}")
+    lines.append(f"    Puoi forzare in modo potente il modo in cui Zentra usa i suoi strumenti.")
+    lines.append(f"    Apri la WebUI, vai in {CYAN}Configurazione > Routing > Custom Plugin Overrides{RESET}.")
+    lines.append(f"    Aggiungi una regola associata a un Tag, es:")
+    lines.append(f"    Tag: {RED}WEBCAM{RESET} -> \"{GREEN}Non usare la webcam sul PC, usa sempre target='client'{RESET}\".")
+    lines.append("")
+
+    # ─── SEZIONE 5: MODULI SISTEMA ──────────────────────────────────────────────
+    lines.append(f"{YELLOW}━━━ 5. STATO DIAGNOSTICO DEI MODULI (TOOL ATTIVI) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+    lines.append("")
+    
+    for l in lines:
+        print(l)
+        
     
     try:
         data = generate_dynamic_guide()
@@ -379,21 +468,17 @@ def show_help():
                 print(f"{border}│{RESET}  {WHITE}{translator.t('help_role')}{RESET} {desc}")
                 
                 if commands:
-                    print(f"{border}│{RESET}  {YELLOW}{translator.t('help_commands')}{RESET}")
                     for cmd, explanation in commands.items():
                         print(f"{border}│{RESET}    • {cmd} -> {explanation}")
                         
-                if example:
-                    print(f"{border}│{RESET}  {MAGENTA}{translator.t('help_example')}{RESET} {Fore.WHITE}'{example}'{RESET}")
-                    
                 print(f"{border}│{RESET}")
                 
     except Exception as e:
         print(f"{RED}Fatal error generating dynamic guide: {e}{RESET}")
         
-    closure = f"{CYAN}╚════════════════════════════════════════════════════════════╝{RESET}"
-    print(f"{closure.center(90)}")
-    print(f"\n{YELLOW}{translator.t('help_footer')}{RESET}".center(90))
+    closure = f"{CYAN}╚════════════════════════════════════════════════════════════════════════════════════════╝{RESET}"
+    print(closure)
+    print(f"\n{YELLOW}{translator.t('help_footer')}{RESET}".center(L))
     
     # Flush old keystrokes before blocking
     while msvcrt.kbhit(): msvcrt.getch()

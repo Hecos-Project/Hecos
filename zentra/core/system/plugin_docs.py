@@ -80,14 +80,19 @@ def generate_dynamic_guide():
             except Exception as e:
                 logger.error(f"GUIDE LOADER: Failed for {plugin_dir}: {e}")
 
+    import os
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    plugins_dir = os.path.join(BASE_DIR, "plugins")
+    disabled_dir = os.path.join(plugins_dir, "plugins_disabled")
+
     # 1. Scan active plugins
-    scan_directory("plugins")
+    scan_directory(plugins_dir)
 
     # 2. Scan disabled plugins (force OFFLINE status)
-    scan_directory(os.path.join("plugins", "plugins_disabled"), forced_status=translator.t("offline"))
+    scan_directory(disabled_dir, forced_status=translator.t("offline"))
 
     # 3. Scan old plugins in root "plugins" for compatibility
-    old_files = glob.glob(os.path.join("plugins", "*.py"))
+    old_files = glob.glob(os.path.join(plugins_dir, "*.py"))
     for file in old_files:
         module_name = os.path.basename(file)[:-3]
         if module_name.startswith("__") or module_name.startswith("_"):
@@ -111,12 +116,11 @@ def generate_dynamic_guide():
                         "description": getattr(tools_instance, "desc", "No description."),
                         "commands": commands,
                         "status": effective_status,
-                        "example": ""
+                        "example": getattr(tools_instance, "esempio", "")
                     })
             elif hasattr(module, "info"):
                 plugin_info = module.info()
                 effective_status = module.status() if hasattr(module, "status") else translator.t("online")
-                # Avoid duplicates if present in folder
                 if not any(g['tag'] == plugin_info['tag'] for g in guide):
                     guide.append({
                         "tag": plugin_info['tag'],
