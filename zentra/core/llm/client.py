@@ -283,7 +283,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 # Detect if the response was blocked by a safety filter
                 if getattr(choice, 'finish_reason', None) == 'content_filter' or getattr(response, 'prompt_feedback', {}).get('blockReason'):
                     zlog_error("LiteLLM: Response BLOCKED by safety filter.")
-                    return "[BLOCK:SAFETY]"
+                    return "!!!BLOCK_SAFETY!!!"
                 return ""
             content = msg.content.strip()
             import re

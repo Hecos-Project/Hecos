@@ -25,7 +25,7 @@ RESET = '\033[0m'
 current_config = {}
 
 # Blacklist of tags to ignore
-BLACKLIST = ["titolo", "anima", "regole", "database", "status", "tag"]
+BLACKLIST = ["titolo", "anima", "regole", "database", "status", "tag", "block"]
 
 # Mapping for generic tags to the correct module
 TAG_MAPPING = {
@@ -236,7 +236,7 @@ def extract_and_execute_tools(raw_response, config=None):
                     logger.error(f"[PROCESSOR] Old Plugin error: {e}")
                     tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": module_to_call.upper()})
     
-    return True, tool_results, base_text
+    return bool(tool_results), tool_results, base_text
 
 # Tokens that must survive tag cleanup (intercepted by the browser JS)
 _PRESERVED_TOKENS = ["[CAMERA_SNAPSHOT_REQUEST]"]

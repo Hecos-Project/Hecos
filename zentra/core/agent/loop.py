@@ -104,7 +104,7 @@ class AgentExecutor:
                         extracted_text = "I'm thinking, but I don't have a specific text response yet. How can I help further?"
                 
                 # Check for explicit safety blocks from client.py
-                if "[BLOCK:SAFETY]" in str(extracted_text):
+                if "!!!BLOCK_SAFETY!!!" in str(extracted_text):
                     if translator.language == 'it':
                         extracted_text = "Spiacente, questa richiesta è stata bloccata dai filtri di sicurezza del provider AI (Content Filter). Prova a riformulare con termini meno sensibili."
                     else:
