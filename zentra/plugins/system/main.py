@@ -124,7 +124,7 @@ class SystemTools:
         sys.stdout.flush() 
         winsound.Beep(600, 150)
         winsound.Beep(400, 150)
-        os._exit(0)
+        os._exit(42)
         return translator.t("rebooting_msg")
 
     def read_logs(self) -> str:
