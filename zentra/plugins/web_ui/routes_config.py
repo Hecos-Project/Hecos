@@ -142,3 +142,35 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             logger.error(f"[WebUI] POST /zentra/api/config/media error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/zentra/config/routing", methods=["GET"])
+    def get_routing_config():
+        try:
+            from zentra.config import load_yaml
+            from zentra.config.schemas.routing_schema import RoutingOverrides
+            path = os.path.join(root_dir, "zentra", "config", "data", "routing_overrides.yaml")
+            model = load_yaml(path, RoutingOverrides)
+            return jsonify(model.overrides)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/zentra/config/routing", methods=["POST"])
+    def post_routing_config():
+        try:
+            incoming = request.get_json(force=True)
+            if not isinstance(incoming, dict):
+                return jsonify({"ok": False, "error": "Invalid payload"}), 400
+            
+            from zentra.config import save_yaml
+            from zentra.config.schemas.routing_schema import RoutingOverrides
+            path = os.path.join(root_dir, "zentra", "config", "data", "routing_overrides.yaml")
+            
+            # Re-validate and save
+            model = RoutingOverrides(overrides=incoming)
+            if save_yaml(path, model):
+                logger.info("[WebUI] Routing overrides saved successfully.")
+                return jsonify({"ok": True})
+            return jsonify({"ok": False, "error": "Save failed"}), 500
+        except Exception as exc:
+            logger.error(f"[WebUI] POST /zentra/config/routing error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500

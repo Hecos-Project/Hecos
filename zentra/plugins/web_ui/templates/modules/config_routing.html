@@ -14,5 +14,26 @@
       <label>{{ t('webui_conf_routing_locked') }}</label>
       <input type="text" id="route-models" placeholder="es. qwen2.5:0.5b, gemma2:2b">
     </div>
+
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+      <div class="card-title" style="margin:0; font-size: 14px;">{{ t('webui_conf_routing_overrides_title') or 'Custom Plugin Overrides' }}</div>
+      <div style="display: flex; gap: 8px;">
+        <a href="/drive/editor?path=Zentra-Core/zentra/config/data/routing_overrides.yaml" target="_blank" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; text-decoration: none;">📝 Edit in Drive</a>
+        <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="addOverride()">+ Add Override</button>
+      </div>
+    </div>
+    <div class="muted" style="font-size: 10px; margin-bottom: 10px; opacity: 0.7;">
+      * Gli override qui sotto controllano il comportamento tecnico dei singoli strumenti. Per il tono generale dell'IA, usa la scheda <strong>Persona</strong>.
+    </div>
+    
+    <div id="routing-overrides-list" style="margin-bottom: 15px;">
+      <!-- Dynamic list -->
+    </div>
+    
+    <div style="text-align: right;">
+      <button type="button" class="btn btn-primary" style="padding: 6px 15px; font-size: 12px;" onclick="saveRoutingOverrides()">Save Overrides</button>
+    </div>
   </div>
 </div>

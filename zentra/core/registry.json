@@ -9,6 +9,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -19,6 +20,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -29,6 +31,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": false,
         "is_lazy": true
     },
@@ -39,6 +42,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -51,6 +55,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -62,6 +67,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -72,6 +78,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image.",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -83,6 +90,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -94,6 +102,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -107,6 +116,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -119,6 +129,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -129,6 +140,7 @@
         },
         "status": "online",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true
     },
     "ROLEPLAY": {
@@ -144,6 +156,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -163,6 +176,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -180,6 +194,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -191,6 +206,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -201,6 +217,7 @@
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
+        "routing_instructions": "WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device, you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.",
         "is_class_based": true,
         "is_lazy": true
     },
@@ -214,6 +231,7 @@
         },
         "status": "Online → http://127.0.0.1:7070/chat",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true
     },
     "AUTOCODER": {
@@ -225,6 +243,7 @@
         },
         "status": "ONLINE",
         "example": "",
+        "routing_instructions": "",
         "is_class_based": true
     }
 }
