@@ -195,4 +195,12 @@ brain/
 *.wav
 *.mp3
 .env
+
+# Root Level Protection (prevent leakage outside zentra/)
+/snapshots/
+/logs/
+/data/
+/data/images/
+/zentra/core/snapshots/
+/zentra/core/logs/
 

@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 from datetime import datetime
+from zentra.core.constants import LOGS_DIR
 
 # Set verbose levels for internal libraries - default WARNING to avoid chat pollution
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -14,13 +15,12 @@ litellm_log.setLevel(logging.WARNING)  # Default OFF; init_logger controls this
 litellm_log.propagate = False  # Never leak to root logger
 
 
-# Create logs directory INSIDE zentra/
-logs_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
-if not os.path.exists(logs_dir):
-    os.makedirs(logs_dir)
+# Use centralized logs directory
+if not os.path.exists(LOGS_DIR):
+    os.makedirs(LOGS_DIR)
 
-info_filename = os.path.join(logs_dir, f"zentra_info_{datetime.now().strftime('%Y-%m-%d')}.log")
-debug_filename = os.path.join(logs_dir, f"zentra_debug_{datetime.now().strftime('%Y-%m-%d')}.log")
+info_filename = os.path.join(LOGS_DIR, f"zentra_info_{datetime.now().strftime('%Y-%m-%d')}.log")
+debug_filename = os.path.join(LOGS_DIR, f"zentra_debug_{datetime.now().strftime('%Y-%m-%d')}.log")
 
 # Global logger for Zentra (points to root for multi-library consistency)
 logger = logging.getLogger() 
@@ -202,7 +202,7 @@ def open_debug_log():
     close_debug_log()
     
     today = datetime.now().strftime("%Y-%m-%d")
-    debug_filename = os.path.join(logs_dir, f"zentra_debug_{today}.log")
+    debug_filename = os.path.join(LOGS_DIR, f"zentra_debug_{today}.log")
     
     if not os.path.exists(debug_filename):
         with open(debug_filename, "a", encoding='utf-8') as f:

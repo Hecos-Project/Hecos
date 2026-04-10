@@ -12,25 +12,23 @@ except ImportError:
         def debug(self, *a): pass
     logger = _Logger()
 # zentra/core/media/image_providers/utils.py -> ../../../ is zentra/
-_ZENTRA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-
-OUTPUT_DIR = os.path.join(_ZENTRA_DIR, "snapshots", "images")
+from zentra.core.constants import IMAGES_DIR, LOGS_DIR
 
 def log_debug(msg: str):
-    log_file = os.path.join(_ZENTRA_DIR, "logs", "image_gen_debug.txt")
+    log_file = os.path.join(LOGS_DIR, "image_gen_debug.txt")
     now = datetime.datetime.now().strftime("%H:%M:%S")
     try:
-        os.makedirs(os.path.join(_ZENTRA_DIR, "logs"), exist_ok=True)
+        os.makedirs(LOGS_DIR, exist_ok=True)
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(f"[{now}] {msg}\n")
     except Exception:
         pass
 
 def save_image_bytes(data: bytes, ext: str = "jpg") -> str:
-    """Save raw image bytes to data/images/ and return filename."""
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    """Save raw image bytes and return filename."""
+    os.makedirs(IMAGES_DIR, exist_ok=True)
     filename = f"gen_{uuid.uuid4().hex[:8]}.{ext}"
-    path = os.path.join(OUTPUT_DIR, filename)
+    path = os.path.join(IMAGES_DIR, filename)
     with open(path, "wb") as f:
         f.write(data)
     return filename

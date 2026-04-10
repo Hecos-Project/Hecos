@@ -4,6 +4,7 @@ import time
 try:
     from zentra.core.logging import logger
     from zentra.core.i18n import translator
+    from zentra.core.constants import SNAPSHOTS_DIR
     from app.config import ConfigManager
 except ImportError:
     class DummyLogger:
@@ -79,6 +80,11 @@ class WebcamTools:
         delay = cfg.get_plugin_config(self.tag, "stabilization_delay", 0.5)
         
         try:
+            # Standardize snapshot directory to stay inside zentra/
+            # If the user sets a relative path, we join it with SNAPSHOTS_DIR root
+            if not os.path.isabs(save_dir):
+                save_dir = os.path.join(os.path.dirname(SNAPSHOTS_DIR), save_dir)
+            
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
 
