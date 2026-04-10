@@ -1,4 +1,4 @@
-# Zentra Core - Contributing Guidelines (v0.15.1)
+# Zentra Core - Contributing Guidelines (v0.15.2)
 
 Thank you for contributing to Zentra Core! To ensure the project remains accessible and professional for international developers, please follow these language and coding standards.
 

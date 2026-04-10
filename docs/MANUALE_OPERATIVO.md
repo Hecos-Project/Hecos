@@ -1,7 +1,7 @@
 # 📖 MANUALE OPERATIVO - Zentra Core
 
 *Documentazione di sistema per l'Amministratore (Admin).*
-**Versione:** 0.15.1 (Management update)
+**Versione:** 0.15.2 (Management update)
 
 ---
 
@@ -75,7 +75,7 @@ Tutti i plugin rispondono ad interfacce unificate che esportano `comandi shell` 
 
 ---
 
-## 👁️ 5. Visione e Interazione Multimodale (v0.15.1)
+## 👁️ 5. Visione e Interazione Multimodale (v0.15.2)
 
 Zentra 0.9.9 introduce il **Sistema di Supporto Visione**, permettendo all'AI di "vedere" e analizzare dati visivi.
 - **Caricamento Immagini**: Trascina i file direttamente nella chat web o incolla immagini dalla memoria (**Ctrl+V**).
@@ -91,14 +91,14 @@ Zentra 0.9.9 introduce il **Sistema di Supporto Visione**, permettendo all'AI di
 
 ---
 
-## 🎨 7. Generazione Immagini (v0.15.1)
+## 🎨 7. Generazione Immagini (v0.15.2)
 
 Zentra può creare contenuti visivi utilizzando il plugin `IMAGE_GEN`.
 - **Come usarlo**: Chiedi semplicemente a Zentra di "Generare un'immagine di..." o "Disegna un...".
 - **Server Esterni**: Di default utilizza **Pollinations.ai** per una generazione veloce e senza filtri.
 - **Interazione**: L'immagine generata apparirà direttamente in chat con opzioni per il download o lo zoom.
 
-## 💻 WebUI Nativa (v0.15.1)
+## 💻 WebUI Nativa (v0.15.2)
 Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://localhost:7070` (di default).
 - **Chat in Tempo Reale**: Visualizza lo streaming dell'IA direttamente nel browser.
 - **Dashboard Config**: Modifica le impostazioni di sistema tramite una GUI moderna con sincronizzazione istantanea al core.
@@ -113,7 +113,7 @@ Zentra 0.9.9 include una potente interfaccia web nativa accessibile a `http://lo
 
 ## 🛡️ 9. Sicurezza Avanzata (Zentra PKI)
 
-Zentra 0.15.1 introduce un'infrastruttura **PKI (Public Key Infrastructure)** integrata per garantire connessioni HTTPS sicure in tutta la rete locale.
+Zentra 0.15.2 introduce un'infrastruttura **PKI (Public Key Infrastructure)** integrata per garantire connessioni HTTPS sicure in tutta la rete locale.
 
 ### Certificati e Root CA
 Per sbloccare funzionalità come il **Microfono** e la **Webcam** sui browser mobile (che richiedono contesti sicuri), Zentra agisce come una propria Autorità di Certificazione:
@@ -151,7 +151,7 @@ Dalla versione 0.9.9 Zentra integra un **Loop Cognitivo (Agentic Loop)**. Questo
 
 ---
 
-## 🔑 13. Gestione API Keys e Failover (v0.15.1)
+## 🔑 13. Gestione API Keys e Failover (v0.15.2)
 
 Zentra introduce un sistema avanzato per la gestione delle chiavi API, eliminando la necessità di riavvii manuali in caso di esaurimento dei crediti.
 
@@ -177,4 +177,4 @@ Dalla WebUI è possibile monitorare in tempo reale lo stato delle chiavi. È pos
 
 ---
 
-*Fine del rapporto documentale v0.15.1.*
+*Fine del rapporto documentale v0.15.2.*

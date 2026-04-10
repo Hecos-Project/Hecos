@@ -1,7 +1,7 @@
 # 📖 OPERATING MANUAL - Zentra Core
 
 *System documentation for the Administrator (Admin).*
-**Version:** 0.15.1 (Zentra Drive & Standalone WebUI)
+**Version:** 0.15.2 (Zentra Drive & Standalone WebUI)
 
 ---
 
@@ -46,7 +46,7 @@ Zentra's terminal interface is built on an anchored architecture (`DECSTBM Scrol
 
 ## ⚙️ 3. Dynamic O-T-F (On-The-Fly) Configuration
 
-## 💻 Native WebUI (v0.15.1)
+## 💻 Native WebUI (v0.15.2)
 Zentra 0.9.9 features a powerful native web interface accessible at `http://localhost:7070` (by default).
 - **Real-time Chat**: Experience the AI stream directly in the browser.
 - **Config Dashboard**: Change system settings via a modern GUI with instant synchronization to the core.
@@ -83,7 +83,7 @@ All plugins respond to unified interfaces that export `shell commands` and updat
 
 ---
 
-## 👁️ 5. Vision & Multimodal Interaction (v0.15.1)
+## 👁️ 5. Vision & Multimodal Interaction (v0.15.2)
 
 Zentra 0.9.9 introduces the **Vision Support System**, allowing the AI to "see" and analyze visual data.
 - **Image Upload**: Drag & drop files directly into the web chat or paste images from your clipboard (**Ctrl+V**).
@@ -99,7 +99,7 @@ Zentra 0.9.9 introduces the **Vision Support System**, allowing the AI to "see" 
 
 ---
 
-## 🎨 7. Image Generation (v0.15.1)
+## 🎨 7. Image Generation (v0.15.2)
 
 Zentra can create visual content using the `IMAGE_GEN` plugin.
 - **How to use**: Simply ask Zentra to "Generate an image of..." or "Draw a...".
@@ -110,7 +110,7 @@ Zentra can create visual content using the `IMAGE_GEN` plugin.
 
 ## 🗂️ 8. Zentra Drive (HTTP File Manager)
 
-Zentra 0.15.1 integrates a native and secure file manager, accessible at `http://localhost:7070/drive` (or by clicking the Drive link in the Config Panel Navbar).
+Zentra 0.15.2 integrates a native and secure file manager, accessible at `http://localhost:7070/drive` (or by clicking the Drive link in the Config Panel Navbar).
 
 ### Key Features
 - **Dual-Panel Layout**: Left navigation tree (for expanding directories) and detailed list on the right (name, size, modified date).
@@ -128,7 +128,7 @@ The Drive Module can be configured via the WebUI Panel (**Drive** tab):
 
 ## 🛡️ 9. Advanced Security (Zentra PKI)
 
-Zentra 0.15.1 introduces an integrated **PKI (Public Key Infrastructure)** to ensure secure HTTPS connections across your entire local network.
+Zentra 0.15.2 introduces an integrated **PKI (Public Key Infrastructure)** to ensure secure HTTPS connections across your entire local network.
 
 ### Certificates and Root CA
 To unlock features like the **Microphone** and **Webcam** on mobile browsers (which require secure contexts), Zentra acts as its own Certificate Authority:

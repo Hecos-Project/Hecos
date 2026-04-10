@@ -1,4 +1,4 @@
-## 1. System Architecture (v0.15.1)
+## 1. System Architecture (v0.15.2)
 Zentra Core is built on a **Modular Object-Oriented Architecture** designed for high performance, local first-AI, and extensibility.
 
 ### Design Principles:
@@ -8,9 +8,9 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 - **Multimodal Ready**: Version 0.9.9 introduces native vision support via provider-specific adapters.
 - **Runtime Alpha Status**: The project is currently in an early development phase. This means the system is subject to frequent changes, debugging, and is not yet considered a stable "production-ready" release.
 - **Single-Instance Protection**: To prevent data corruption and resource conflicts, Zentra uses a file-based locking mechanism (`core/system/instance_lock.py`) to ensure only one instance of the core and web interface runs at a time.
-- **Centralized Configuration**: Version 0.15.1 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
+- **Centralized Configuration**: Version 0.15.2 abandons legacy JSON for a robust **Pydantic v2 + YAML** ConfigManager (`config/system.yaml`), ensuring strong schema validation natively.
 - **OS Agnostic Architecture**: Version 0.11.0 abstracts all operating system dependent workflows via the new `OSAdapter` (`core/system/os_adapter.py`).
-- **Mandatory HTTPS & Auth Security**: Version 0.15.1 implements standard Flask-Login authentication over AES sessions and SQLite SQLite PBKDF2 hashing (`core/auth/auth_manager.py`). The Native UI is completely locked from unauthorized accesses.
+- **Mandatory HTTPS & Auth Security**: Version 0.15.2 implements standard Flask-Login authentication over AES sessions and SQLite SQLite PBKDF2 hashing (`core/auth/auth_manager.py`). The Native UI is completely locked from unauthorized accesses.
 - **Extension Architecture & Lazy Loading (JIT)**: Plugins can encapsulate complex feature sets (e.g., Code Editors) into `extensions/`. These are lazy-loaded dynamically via `core/system/extension_loader.py` ONLY when accessed, zeroing their RAM/CPU footprint during normal startup operations.
 
 ---
@@ -18,7 +18,7 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 ## 2. The Execution Pipeline (Data Flow)
 1. **Input Stage**: `InputHandler` captures text (keyboard) or processes audio via `listening.py` (STT).
 2. **Context Enrichment**: `personality_manager.py` ensures the configuration is synced with the filesystem. `brain.py` then gathers system prompts and retrieves relevant history from `memory/`.
-3. **Vision Processing** (v0.15.1): If images are attached, `client.py` selects the correct **VisionAdapter** (Gemini, OpenAI, or Ollama) to build the multimodal payload.
+3. **Vision Processing** (v0.15.2): If images are attached, `client.py` selects the correct **VisionAdapter** (Gemini, OpenAI, or Ollama) to build the multimodal payload.
 4. **WebRTC Asynchronous Audio Ingestion**: Mobile PTT dictation is recorded client-side via `MediaRecorder` and posted to `/api/audio/transcribe` via `FormData`. The server converts these WebM/OGG blobs to 16kHz WAV locally using `pydub` before piping them into the Google STT engine.
 5. **Model Resolution**: `LLMManager` determines the best model based on the active backend and specific plugin requirements.
 6. **Inference**: `LiteLLM` unifies the request and calls the local/cloud provider.
@@ -53,7 +53,7 @@ Zentra Core is built on a **Modular Object-Oriented Architecture** designed for 
 Zentra Core features a built-in routing system. Instead of hardcoding models, plugins can request a "capability tag". The `LLMManager` looks up the best match in `system.yaml` under the `plugins` section or uses the global default backend. This prevents code repetition when switching models.
 
 ### Zentra PKI (Native HTTPS)
-Version 0.15.1 introduces a built-in Certificate Authority. The `core/security/pki` module handles CA generation and host certificate signing. This infrastructure is vital for bypassing browser security restrictions on remote devices, enabling secure access to the Microphone and Camera APIs across the network.
+Version 0.15.2 introduces a built-in Certificate Authority. The `core/security/pki` module handles CA generation and host certificate signing. This infrastructure is vital for bypassing browser security restrictions on remote devices, enabling secure access to the Microphone and Camera APIs across the network.
 
 ### Mobile-First UI & Autoplay Bypass
 The WebUI implements a responsive grid and an off-canvas navigation pattern. 

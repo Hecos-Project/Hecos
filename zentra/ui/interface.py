@@ -510,7 +510,7 @@ def stop_thinking():
     
 def list_personalities():
     """Scans the personality folder to find real .txt files."""
-    # Look inside the package for v0.15.1
+    # Look inside the package for v0.15.2
     folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "personality")
     if not os.path.exists(folder): os.makedirs(folder, exist_ok=True)
     return [os.path.basename(f) for f in glob.glob(os.path.join(folder, "*.txt"))]

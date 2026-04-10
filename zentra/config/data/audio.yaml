@@ -66,11 +66,11 @@ ptt_hotkey: ctrl+shift
 # ── Audio Data Routing and Paths ──
 # "system" if the voice is to be transcribed by the local daemon (Whisper).
 # Otherwise, other channels like "web".
-stt_source: web
+stt_source: system
 
 # "system" to output voice directly from the connected PC's speakers.
 # "web" to encapsulate the WAV file and play it inside the browser via the integrated WebUI.
-tts_destination: web
+tts_destination: system
 
 # Status of the audio playback system (console mode means bypassing web redirects).
 audio_mode: console
