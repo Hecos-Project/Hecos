@@ -60,7 +60,7 @@ phrase_limit: 15
 
 # ── Push-To-Talk (Walkie-Talkie Mode) ──
 # If enabled (true), the AI will only listen if the specified PTT key combination is currently pressed.
-push_to_talk: true
+push_to_talk: false
 ptt_hotkey: ctrl+shift
 
 # ── Audio Data Routing and Paths ──

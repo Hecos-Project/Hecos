@@ -102,6 +102,13 @@ class AgentExecutor:
                         extracted_text = f"I have executed the requested actions: {', '.join([r.get('tag') for r in tool_results])}."
                     else:
                         extracted_text = "I'm thinking, but I don't have a specific text response yet. How can I help further?"
+                
+                # Check for explicit safety blocks from client.py
+                if "[BLOCK:SAFETY]" in str(extracted_text):
+                    if translator.language == 'it':
+                        extracted_text = "Spiacente, questa richiesta è stata bloccata dai filtri di sicurezza del provider AI (Content Filter). Prova a riformulare con termini meno sensibili."
+                    else:
+                        extracted_text = "I'm sorry, but this request was blocked by the AI provider's safety filters (Content Filter). Please try rephrasing with less sensitive terms."
 
                 # ── Server Image Rendering ──────────────────────────────────────────
                 # If any tool returned an image path (e.g. WEBCAM target='server'),

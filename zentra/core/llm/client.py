@@ -179,6 +179,14 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             # LiteLLM in alcune versioni preferisce/richiede la env var per Gemini
             if provider == "gemini":
                 os.environ["GEMINI_API_KEY"] = api_key
+                # Apply the most permissive safety settings for Gemini (Imagen/Generative)
+                # This helps reduce false-positive "spicy" blocks.
+                params["safety_settings"] = [
+                    {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                    {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+                ]
         else:
             zlog_error(f"LiteLLM: No API key found for provider '{provider}'. Call may fail.")
         
@@ -261,7 +269,8 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 return response  # Restituisce il generatore per il bridge WebUI
 
             # CONTROLLO SE HA USATO TOOLS
-            msg = response.choices[0].message
+            choice = response.choices[0]
+            msg = choice.message
             if hasattr(msg, 'tool_calls') and msg.tool_calls:
                 if debug_enabled:
                     zlog_debug("LiteLLM", f"TOOL_CALLS: {msg.tool_calls}")
@@ -271,6 +280,10 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 zlog_debug("LiteLLM", f"RESPONSE_OBJECT: {str(response)[:2000]}")
 
             if not msg.content:
+                # Detect if the response was blocked by a safety filter
+                if getattr(choice, 'finish_reason', None) == 'content_filter' or getattr(response, 'prompt_feedback', {}).get('blockReason'):
+                    zlog_error("LiteLLM: Response BLOCKED by safety filter.")
+                    return "[BLOCK:SAFETY]"
                 return ""
             content = msg.content.strip()
             import re
