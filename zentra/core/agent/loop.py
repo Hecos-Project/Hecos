@@ -105,7 +105,7 @@ class AgentExecutor:
                 
                 # Check for explicit safety blocks from client.py
                 if "!!!BLOCK_SAFETY!!!" in str(extracted_text):
-                    if translator.language == 'it':
+                    if translator.get_translator().language == 'it':
                         extracted_text = "Spiacente, questa richiesta è stata bloccata dai filtri di sicurezza del provider AI (Content Filter). Prova a riformulare con termini meno sensibili."
                     else:
                         extracted_text = "I'm sorry, but this request was blocked by the AI provider's safety filters (Content Filter). Please try rephrasing with less sensitive terms."

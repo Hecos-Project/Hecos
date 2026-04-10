@@ -351,7 +351,7 @@ def show_help():
     
     L = 90
     
-    lang = translator.language
+    lang = translator.get_translator().language
     lines = []
     
     if lang == 'it':
