@@ -29,7 +29,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             
             # DEBUG: Log exact state of plugins toggle
             p_state = incoming.get("plugins", {}).get("IMAGE_GEN", {}).get("enabled")
-            logger.info("CONFIG", f"Incoming Save Request. IMAGE_GEN enabled: {p_state}")
+            logger.info(f"[CONFIG] Incoming Save Request. IMAGE_GEN enabled: {p_state}")
             
             if cfg_mgr.update_config(incoming):
                 # Dynamically update the global translator language without reboot

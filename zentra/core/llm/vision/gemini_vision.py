@@ -29,13 +29,15 @@ class GeminiVisionAdapter(VisionAdapter):
         """
         content = []
 
-        # 1. System prompt injected as first text part (Gemini does not have a 'system' role)
+        # 1. We now properly support the system role
+        system_msg = {"role": "system", "content": system_prompt}
+
+        # 2. User text and image parts
         content.append({
             "type": "text",
-            "text": f"{system_prompt}\n\n[USER]: {user_message}"
+            "text": user_message
         })
 
-        # 2. Each image as base64 inline data
         for img in images:
             b64 = img.get("data_b64") or encode_image_b64(img.get("data", b""))
             mime = img.get("mime_type", "image/jpeg")
@@ -46,4 +48,4 @@ class GeminiVisionAdapter(VisionAdapter):
                 }
             })
 
-        return [{"role": "user", "content": content}]
+        return [system_msg, {"role": "user", "content": content}]

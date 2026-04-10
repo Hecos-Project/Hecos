@@ -260,9 +260,12 @@ def error(module, message=None):
     else:
         logger.error(f"[{module}] {message}")
 
-def debug(module, message):
+def debug(module, message=None):
     """Logs a debug message."""
-    logger.debug(f"[{module}] {message}")
+    if message is None:
+        logger.debug(module)
+    else:
+        logger.debug(f"[{module}] {message}")
     
 def warning(module, message=None):
     """Logs a warning."""

@@ -1,6 +1,6 @@
 {
     "tag": "IMAGE_GEN",
-    "description": "Generates images from text descriptions using AI image models.",
+    "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
     "lazy_load": true,
     "is_class_based": true,
     "status": "ONLINE",
@@ -18,7 +18,7 @@
                     "properties": {
                         "prompt": {
                             "type": "string",
-                            "description": "Detailed description of the image to generate."
+                            "description": "Detailed description of the image or photo to generate. Translate to English if needed."
                         }
                     },
                     "required": [

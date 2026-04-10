@@ -179,9 +179,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         "- [SYSTEM: explore:folder] - Open folder graphically\n"
         "- [FILE_MANAGER: list:folder] - List files for analysis\n"
         "- [DASHBOARD: resources] - Get hardware telemetry\n"
-        "- [IMAGE_GEN: generate_image:description] - Generate an image\n"
-        "- WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device,"
-        " you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.\n"
+        "- [IMAGE_GEN: generate_image:description] - Generate an AI image, art, or a fake photo (e.g., 'foto di un gatto', 'foto di te').\n"
+        "- WEBCAM ROUTING RULE: When the user asks to take a REAL photo or look at something through the camera, call WEBCAM. If they say 'phone', 'smartphone', 'il telefono', 'browser', use target='client'. NEVER use WEBCAM to arbitrarily generate pictures of animals or characters.\n"
     )
 
 
