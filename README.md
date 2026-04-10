@@ -75,10 +75,15 @@ pip install -r requirements.txt
 ```bash
 python main.py
 ```
-2. Open your browser and navigate to the local HTTPS/HTTP port highlighted in the console (usually `https://127.0.0.1:7070`).
+### 4. Configuration & First Run
+Zentra is designed for a professional "download-and-play" experience.
+- On your first run, the system will detect that `system.yaml` and `routing_overrides.yaml` are missing.
+- It will **automatically generate** these files by copying the templates from `zentra/config/data/*.example`.
+- You can find your personal configuration in `zentra/config/data/system.yaml` (main settings) and `routing_overrides.yaml` (AI routing rules).
+- **Pro Tip**: Use the built-in [In-WebUI Routing Editor] to safely modify these rules without touching code.
 
-### 🔐 First Login & Authentication
-Zentra v0.15.2 introduced mandatory Auth. On your very first access, the system generates a default Master Admin:
+### 🔐 Login & Authentication
+Zentra v0.16.0 requires mandatory Auth. The default first-time login is:
 - **Username:** `admin`
 - **Password:** `zentra`
 

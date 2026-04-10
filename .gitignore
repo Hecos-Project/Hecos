@@ -188,6 +188,7 @@ zentra/certs/
 
 # Config data: all personal settings and generated config files
 zentra/config/data/
+!zentra/config/data/*.example
 
 # API Keys - CRITICAL: never push these to git
 zentra/config/keys.yaml

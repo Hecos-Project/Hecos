@@ -38,8 +38,31 @@ class ConfigManager:
             self._yaml_path = _CONFIG_YAML_PATH
             self._json_path = _CONFIG_JSON_PATH
 
+        self._ensure_files_exist()
         self._model = self._load_model()
         self.config = self._model.model_dump()  # plain dict kept for full backward compat
+
+    def _ensure_files_exist(self):
+        """Automatically setup initial config files from templates if missing."""
+        import shutil
+        data_dir = _os.path.dirname(self._yaml_path)
+        
+        # Files to check and auto-generate if missing
+        files_to_check = [
+            "system.yaml",
+            "routing_overrides.yaml"
+        ]
+        
+        for filename in files_to_check:
+            yaml_file = _os.path.join(data_dir, filename)
+            example_file = yaml_file + ".example"
+            
+            if not _os.path.exists(yaml_file) and _os.path.exists(example_file):
+                try:
+                    shutil.copy2(example_file, yaml_file)
+                    logger.info(f"[CONFIG] Auto-generated {filename} from template.")
+                except Exception as e:
+                    logger.error(f"[CONFIG] Failed to auto-generate {filename}: {e}")
 
     # ──────────────────────────────────────────────────────────────────────────
     # INTERNAL

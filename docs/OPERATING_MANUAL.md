@@ -24,6 +24,12 @@ If the Admin desires a lightning-fast startup, the **Fast Boot (Skip Diagnostics
 - By disabling diagnostics (activatable from the **F7** Control Panel under `SYSTEM`), Zentra Core will ignore all hardware text checks on screen.
 - The useful terminal loading time drops to **~0.5 seconds**, returning interaction to the fixed prompt immediately.
 
+### 🏁 1.1 First Run & Auto-Setup
+When Zentra starts for the first time or if essential configuration files are deleted:
+- The system automatically detects missing `.yaml` files in `zentra/config/data/`.
+- It copies the factory-default templates from `*.yaml.example` to create active `.yaml` files.
+- **Admin Note**: If you want to reset your configuration to factory defaults, simply delete `system.yaml` or `routing_overrides.yaml` and restart Zentra — it will handle the redeployment automatically.
+
 ---
 
 ## 🖥 2. Fixed User Interface (Safe Scrolling UI)
