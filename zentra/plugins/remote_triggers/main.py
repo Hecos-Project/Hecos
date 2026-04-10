@@ -1,13 +1,13 @@
 """
 Plugin: Remote Triggers
 VERSION: 1.0.0
-DESCRIPTION: Attiva il PTT (Push-To-Talk) tramite input remoti:
-             - Webhook HTTP (bottoni USB, Arduino, ESP32)
-             - MediaSession API / tasti hardware (cuffie Bluetooth, iPhone)
+DESCRIPTION: Activates PTT (Push-To-Talk) via remote inputs:
+             - HTTP Webhooks (USB buttons, Arduino, ESP32)
+             - MediaSession API / Hardware keys (Bluetooth headphones, iPhone)
 
-Il plugin si registra su Flask e inietta il JS nella WebUI.
-Se disabilitato, non produce errori: le rotte non vengono registrate,
-il JS non viene iniettato.
+The plugin registers with Flask and injects JS into the WebUI.
+If disabled, it produces no errors: routes are not registered, 
+and JS is not injected.
 """
 
 try:
@@ -24,19 +24,19 @@ except ImportError:
 class RemoteTriggerPlugin:
     """
     Zentra Remote Triggers — Plugin Interface.
-    Espone le funzionalità al Core senza necessità di tool LLM.
+    Exposes functionality to the Core without requiring LLM tools.
     """
 
     def __init__(self):
         self.tag = "REMOTE_TRIGGERS"
-        self.desc = "Attivazione PTT da periferiche hardware e dispositivi remoti"
+        self.desc = "PTT activation from hardware devices and remote clients"
         self.status = "online"
 
     def info(self):
         return {"tag": self.tag, "desc": self.desc}
 
 
-# Istanza singleton del plugin
+# Singleton instance of the plugin
 tools = RemoteTriggerPlugin()
 
 
@@ -50,8 +50,8 @@ def status():
 
 def init_routes(app):
     """
-    Registra le route Flask per i webhook e la pagina di status.
-    Chiamato da routes.py del web_ui quando il plugin è attivo.
+    Registers Flask routes for webhooks and status page.
+    Called by web_ui routes.py when the plugin is active.
     """
     from .routes import init_remote_triggers_routes
     init_remote_triggers_routes(app, logger)

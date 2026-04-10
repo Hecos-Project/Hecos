@@ -213,4 +213,27 @@ overrides:
 ```
 
 ---
+
+## 📱 14. Remote PTT & Hardware Triggers
+Version 0.16.0 introduces the **Remote Triggers** plugin, allowing you to activate Zentra's microphone from external devices or hardware keys.
+
+### 🎧 MediaSession Integration (Bluetooth/Headphones)
+Zentra can hijack the **Play/Pause** buttons on your Bluetooth headphones or smartphone (iPhone/Android).
+- **How it works**: When the WebUI is open, Zentra starts a silent audio stream to claim priority over your device's media buttons.
+- **Controls**: Press "Play" to start recording, "Pause" to stop.
+- **Visual Feedback**: On Android/iOS lock screens, you will see a "Zentra — Remote Trigger Enabled" notification.
+- **Settings**: If the "tututu" startup sound or the media overlay is bothersome, you can disable `Enable MediaSession` in the **Remote Triggers** tab of the Config Panel.
+
+### 🕹️ Hardware Webhooks (Arduino/ESP32/USB)
+You can build your own physical PTT button using an Arduino or ESP32 by sending HTTP requests to the Zentra server:
+- **PTT Start**: `GET /api/remote-triggers/ptt/start`
+- **PTT Stop**: `GET /api/remote-triggers/ptt/stop`
+- **PTT Toggle**: `GET /api/remote-triggers/ptt/toggle`
+
+### 🛠️ Configuration
+Manage these features from the WebUI:
+- **Enable MediaSession**: Toggles Bluetooth/Media key interception.
+- **Enable Volume Keys**: Toggles volume key PTT on Android devices.
+
+---
 *End of documentation report v0.16.0.*

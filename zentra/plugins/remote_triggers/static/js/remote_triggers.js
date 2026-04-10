@@ -2,14 +2,14 @@
  * ZENTRA — Remote Triggers Client v1.0
  * ======================================
  * Intercepts hardware key events from the iPhone/Android:
- *   - Media Play/Pause button (Bluetooth headphones)
+ *   - Media Play/Pause button (Bluetooth headphones/MediaSession)
  *   - Volume keys (where allowed by browser)
  * 
  * Also listens for SSE events of type "remote_ptt" pushed by the
  * backend webhook endpoints (Arduino/ESP32/USB buttons via HTTP).
  *
- * When a trigger fires, this script calls window.togglePTT() or
- * directly invokes the WebUI's microphone start/stop API.
+ * When a trigger fires, this script calls the WebUI's microphone 
+ * start/stop API.
  */
 
 (function () {
@@ -25,16 +25,28 @@
     console.log(LOG_TAG, msg);
   }
 
+  /**
+   * Helper to safely get plugin settings from the global Zentra config.
+   * Returns default if not found.
+   */
+  function getSetting(key, defaultValue) {
+    try {
+      if (window.cfg && window.cfg.plugins && window.cfg.plugins.REMOTE_TRIGGERS) {
+        const settings = window.cfg.plugins.REMOTE_TRIGGERS.settings || {};
+        return settings[key] !== undefined ? settings[key] : defaultValue;
+      }
+    } catch (e) {}
+    return defaultValue;
+  }
+
   // ── Core PTT Bridge ────────────────────────────────────────────────────────
-  // Tries to use the existing WebUI PTT functions (window.togglePTT,
-  // window._webptt_setButtonState) if they are available.
+  // Interacts with the native WebUI audio recorder.
 
   function startListening() {
-    log('START signal received → activating mic');
+    log('START signal received → activating microphone');
     if (typeof window._webpttStartRecording === 'function') {
       window._webpttStartRecording();
     } else if (typeof window.togglePTT === 'function') {
-      // Fallback: toggle (if not already recording)
       if (!window._zenrtIsRecording) {
         window.togglePTT();
         window._zenrtIsRecording = true;
@@ -43,7 +55,7 @@
   }
 
   function stopListening() {
-    log('STOP signal received → deactivating mic');
+    log('STOP signal received → deactivating microphone');
     if (typeof window._webpttStopRecording === 'function') {
       window._webpttStopRecording();
       window._zenrtIsRecording = false;
@@ -64,9 +76,8 @@
 
   window._zenrtIsRecording = false;
 
-  // ── 1. SSE Listener — Backend Webhook (Arduino/ESP32/USB) ─────────────────
-  // The web_ui SSE stream already exists. We hook into it via the global
-  // event dispatcher already set up by chat_events.js.
+  // ── 1. SSE Listener — Backend Webhooks ─────────────────────────────────────
+  // Listens for PTT events broadcasted by the Flask backend.
   function handleRemotePttEvent(data) {
     const action = data.action || 'toggle';
     if (action === 'start') startListening();
@@ -74,90 +85,86 @@
     else toggleListening();
   }
 
-  // Register our handler in the global SSE dispatcher (chat_events.js calls
-  // window._zentraSSEHandlers[type](data) for each incoming event type).
   if (!window._zentraSSEHandlers) window._zentraSSEHandlers = {};
   window._zentraSSEHandlers['remote_ptt'] = handleRemotePttEvent;
   log('SSE handler registered for type: remote_ptt');
 
   // ── 2. MediaSession API — Bluetooth/Headphone Buttons ─────────────────────
-  // Safari iOS and Chrome Android support MediaSession for media hardware keys.
-  // We create a silent audio node to "own" the media session so the OS routes
-  // the hardware buttons to us instead of another app.
+  // Intercepts Play/Pause from hardware buttons (e.g. iPhone).
   function setupMediaSession() {
     if (!('mediaSession' in navigator)) {
-      log('MediaSession API not available on this browser.');
+      log('MediaSession API not available.');
       return;
     }
 
-    // Create a silent oscillator so the browser treats us as a media player
-    // and gives priority to our MediaSession handlers.
+    if (!getSetting('enable_mediasession', true)) {
+      log('MediaSession feature disabled in settings.');
+      return;
+    }
+
+    // Create a silent audio node to "own" the media session
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = ctx.createOscillator();
       const gainNode = ctx.createGain();
-      gainNode.gain.setValueAtTime(0, ctx.currentTime); // silence
+      gainNode.gain.setValueAtTime(0, ctx.currentTime); 
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
       oscillator.start();
-      // Immediately suspend to not waste CPU — wake it up only when needed
       ctx.suspend();
       window._zenrtAudioCtx = ctx;
     } catch (e) {
-      log('Could not create silent AudioContext: ' + e);
+      log('AudioContext initialization failed: ' + e);
     }
 
-    // Set metadata so the lock screen shows "Zentra — listening"
     navigator.mediaSession.metadata = new MediaMetadata({
       title: 'Zentra',
-      artist: 'Remote Trigger Active',
+      artist: 'Remote Trigger Enabled',
       album: 'AI Assistant',
     });
 
-    // 🎯 THE MAGIC: intercept Play/Pause from headphone buttons
     navigator.mediaSession.setActionHandler('play', function () {
-      log('MediaSession: PLAY pressed → PTT START');
-      // Resume our context to claim media session priority
+      log('Hardware: PLAY pressed → PTT START');
       if (window._zenrtAudioCtx) window._zenrtAudioCtx.resume();
       startListening();
     });
 
     navigator.mediaSession.setActionHandler('pause', function () {
-      log('MediaSession: PAUSE pressed → PTT STOP');
+      log('Hardware: PAUSE pressed → PTT STOP');
       stopListening();
     });
 
-    // Some Android headphones also send "nexttrack" / "previoustrack"
-    // We can map these to toggle as a bonus
     try {
       navigator.mediaSession.setActionHandler('nexttrack', function () {
-        log('MediaSession: NEXT pressed → PTT TOGGLE');
+        log('Hardware: NEXT pressed → PTT TOGGLE');
         toggleListening();
       });
-    } catch (e) { /* not all browsers support this */ }
+    } catch (e) {}
 
     navigator.mediaSession.playbackState = 'paused';
-    log('MediaSession handlers installed (Play/Pause → PTT Start/Stop)');
+    log('MediaSession handlers installed.');
   }
 
-  // ── 3. Volume Key Interception (Android Chrome only) ──────────────────────
-  // Note: iOS Safari does NOT allow JS to intercept volume keys in foreground.
-  // On Android Chrome, keydown events for volume keys ARE fired when the
-  // page has focus. We intercept them here.
+  // ── 3. Volume Key Interception ───────────────────────────────────────────
+  // Intercepts volume keys on focus (Android Chrome primarily).
   function setupVolumeKeys() {
+    if (!getSetting('enable_volume_keys', true)) {
+      log('Volume key interception disabled in settings.');
+      return;
+    }
+
     document.addEventListener('keydown', function (e) {
-      // Android Chrome fires these keyCodes for volume buttons
       if (e.keyCode === 175 || e.key === 'AudioVolumeUp') {
         e.preventDefault();
-        log('Volume UP key → PTT START');
+        log('Key: Volume UP → PTT START');
         startListening();
       } else if (e.keyCode === 174 || e.key === 'AudioVolumeDown') {
         e.preventDefault();
-        log('Volume DOWN key → PTT STOP');
+        log('Key: Volume DOWN → PTT STOP');
         stopListening();
       }
     }, { passive: false });
-    log('Volume key listeners attached (Android Chrome)');
+    log('Volume key listener attached.');
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
@@ -165,10 +172,9 @@
     log('Initializing...');
     setupMediaSession();
     setupVolumeKeys();
-    log('Ready. Webhook URLs: /api/remote-triggers/ptt/start | /stop | /toggle');
+    log('Plugin ready.');
   }
 
-  // Wait for DOM to be ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
