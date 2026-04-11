@@ -133,6 +133,35 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     logger.debug("BRAIN", f"User text: '{user_text}'")
     logger.debug("BRAIN", f"external_config provided: {external_config is not None}")
     
+    # --- FASE 6: AI Vision - Avatar Auto-Injection ---
+    if user_text and isinstance(user_text, str):
+        import re
+        identity_keywords = r'\b(who am i|what do i look like|my face|my photo|my picture|my avatar|chi sono|come sono|il mio viso|la mia foto|il mio aspetto)\b'
+        if re.search(identity_keywords, user_text, re.IGNORECASE):
+            from zentra.core.auth.auth_manager import auth_mgr
+            profile = auth_mgr.get_profile(user_id)
+            if profile and profile.get("avatar_path"):
+                from zentra.memory.user_vault_manager import get_vault_path
+                import base64
+                import os
+                vault = get_vault_path(user_id)
+                avatar_file = os.path.join(vault, "avatar.jpg")
+                if os.path.exists(avatar_file):
+                    try:
+                        with open(avatar_file, "rb") as af:
+                            b64_avatar = base64.b64encode(af.read()).decode("utf-8")
+                        if images is None:
+                            images = []
+                        images.append({
+                            "data_b64": b64_avatar,
+                            "mime_type": "image/jpeg",
+                            "name": f"avatar_{user_id}.jpg"
+                        })
+                        logger.info(f"[BRAIN] Injected user avatar for Vision AI based on contextual trigger.")
+                    except Exception as e:
+                        logger.error(f"[BRAIN] Failed to inject avatar: {e}")
+    # --------------------------------------------------
+    
     # If processor provides updated config, use it; otherwise, load from file
     if external_config:
         config = external_config
