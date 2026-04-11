@@ -183,7 +183,7 @@ cython_debug/
 # Zentra Core - Black Box Protection
 zentra/logs/
 zentra/memory/
-zentra/snapshots/
+zentra/media/
 zentra/certs/
 
 # Config data: all personal settings and generated config files
@@ -194,10 +194,7 @@ zentra/config/data/
 zentra/config/keys.yaml
 config/keys.yaml
 
-# Generated images from AI (Image Gen plugin)
-zentra/assets/generated/
-*.generated.png
-*.generated.jpg
+# (Generated images are now stored in zentra/media/images/ — see above)
 
 # Temporary and build files
 tmp/

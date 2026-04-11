@@ -13,6 +13,8 @@ except ImportError:
     logger = _Logger()
 # zentra/core/media/image_providers/utils.py -> ../../../ is zentra/
 from zentra.core.constants import IMAGES_DIR, LOGS_DIR
+# NOTE: IMAGES_DIR now points to zentra/media/images (centralized media)
+# NOTE: SNAPSHOTS_DIR now points to zentra/media/screenshots (centralized media)
 
 def log_debug(msg: str):
     log_file = os.path.join(LOGS_DIR, "image_gen_debug.txt")

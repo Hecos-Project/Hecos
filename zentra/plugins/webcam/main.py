@@ -5,6 +5,7 @@ try:
     from zentra.core.logging import logger
     from zentra.core.i18n import translator
     from zentra.core.constants import SNAPSHOTS_DIR
+    # NOTE: SNAPSHOTS_DIR now points to zentra/media/screenshots (centralized media)
     from app.config import ConfigManager
 except ImportError:
     class DummyLogger:
@@ -33,7 +34,7 @@ class WebcamTools:
         self.config_schema = {
             "save_directory": {
                 "type": "str",
-                "default": "snapshots",
+                "default": "screenshots",
                 "description": translator.t("plugin_webcam_save_dir_desc")
             },
             "image_format": {

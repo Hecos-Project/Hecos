@@ -12,6 +12,10 @@ import keyboard
 import msvcrt
 
 from zentra.core.logging import logger
+from zentra.core.constants import AUDIO_DIR
+import os as _os
+_os.makedirs(AUDIO_DIR, exist_ok=True)
+_RISPOSTA_WAV = _os.path.join(AUDIO_DIR, "risposta.wav")
 
 is_speaking = False
 _current_piper_proc = None
@@ -95,7 +99,7 @@ def speak(text, state=None):
             "--noise_scale",     str(noise_scale),
             "--noise_w",         str(noise_w),
             "--sentence_silence", str(sentence_silence),
-            "-f", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs", "risposta.wav")
+            "-f", _RISPOSTA_WAV
         ]
 
         proc = subprocess.Popen(
@@ -113,7 +117,7 @@ def speak(text, state=None):
             logger.debug("VOICE", "Generation interrupted by user.")
             return
 
-        wav_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "logs", "risposta.wav")
+        wav_path = _RISPOSTA_WAV
         if os.path.exists(wav_path):
             actual_duration = _play_wav(wav_path, device_index=output_device)
 

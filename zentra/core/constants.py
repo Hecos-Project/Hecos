@@ -6,15 +6,22 @@ ZENTRA_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Main storage directories (relative to ZENTRA_DIR)
 LOGS_DIR = os.path.join(ZENTRA_DIR, "logs")
-SNAPSHOTS_DIR = os.path.join(ZENTRA_DIR, "snapshots")
-IMAGES_DIR = os.path.join(SNAPSHOTS_DIR, "images")
 MEMORY_DIR = os.path.join(ZENTRA_DIR, "memory")
 CONFIG_DATA_DIR = os.path.join(ZENTRA_DIR, "config", "data")
+
+# Centralized media directory — all user-generated media goes here.
+# Delete this single folder to remove all personal media for privacy.
+MEDIA_DIR = os.path.join(ZENTRA_DIR, "media")
+IMAGES_DIR = os.path.join(MEDIA_DIR, "images")        # AI-generated images
+SNAPSHOTS_DIR = os.path.join(MEDIA_DIR, "screenshots") # Webcam snapshots
+AUDIO_DIR = os.path.join(MEDIA_DIR, "audio")           # TTS audio files
+VIDEO_DIR = os.path.join(MEDIA_DIR, "video")           # Future: video recordings
 
 # Standardize path creation logic
 def ensure_directories():
     """Ensure that all core directories exist."""
-    dirs = [LOGS_DIR, SNAPSHOTS_DIR, IMAGES_DIR, MEMORY_DIR, CONFIG_DATA_DIR]
+    dirs = [LOGS_DIR, MEMORY_DIR, CONFIG_DATA_DIR,
+            MEDIA_DIR, IMAGES_DIR, SNAPSHOTS_DIR, AUDIO_DIR, VIDEO_DIR]
     for d in dirs:
         if not os.path.exists(d):
             os.makedirs(d, exist_ok=True)

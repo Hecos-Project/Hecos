@@ -15,7 +15,7 @@ import threading
 import queue
 import time
 import logging
-from zentra.core.constants import LOGS_DIR, SNAPSHOTS_DIR
+from zentra.core.constants import LOGS_DIR, SNAPSHOTS_DIR, IMAGES_DIR, AUDIO_DIR
 
 _sessions      = {}
 _sessions_lock = threading.Lock()
@@ -132,8 +132,8 @@ def generate_voice_file(text: str, voice_cfg: dict) -> str:
         noise_w          = voice_cfg.get("noise_w", 0.8)
         sentence_silence = voice_cfg.get("sentence_silence", 0.2)
 
-        # risposta.wav in zentra/logs/
-        out = os.path.join(LOGS_DIR, "risposta.wav")
+        # risposta.wav in zentra/media/audio/
+        out = os.path.join(AUDIO_DIR, "risposta.wav")
 
         import subprocess
         clean_text = text.replace('"', '').replace('\n', ' ')
@@ -236,9 +236,14 @@ def _maybe_generate_tts(text: str, cfg_mgr):
 def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
     from flask import send_from_directory
     
-    @app.route("/snapshots/<path:filename>")
+    @app.route("/media/screenshots/<path:filename>")
     def serve_snapshots(filename):
-        """Serves captured images from the snapshots directory inside the package."""
+        """Serves captured images from the centralized media/screenshots directory."""
+        return send_from_directory(SNAPSHOTS_DIR, filename)
+
+    @app.route("/snapshots/<path:filename>")
+    def serve_snapshots_legacy(filename):
+        """Legacy route kept for backward compatibility with old snapshot paths."""
         return send_from_directory(SNAPSHOTS_DIR, filename)
 
     @app.route("/")
@@ -410,14 +415,12 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
     @app.route("/api/images/<filename>")
     def serve_ai_image(filename):
         """
-        Serve images from the snapshots/images/ directory.
+        Serve images from the centralized media/images/ directory.
         The AI can reference images with [[IMG:filename.ext]] syntax.
         """
         from flask import send_from_directory, jsonify
-        # Use SNAPSHOTS_DIR relative images folder
-        images_dir = os.path.join(SNAPSHOTS_DIR, "images")
-        os.makedirs(images_dir, exist_ok=True)
-        img_path = os.path.join(images_dir, filename)
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        img_path = os.path.join(IMAGES_DIR, filename)
         if os.path.exists(img_path):
-            return send_from_directory(images_dir, filename)
+            return send_from_directory(IMAGES_DIR, filename)
         return jsonify({"error": "Image not found"}), 404
