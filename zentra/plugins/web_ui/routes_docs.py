@@ -132,3 +132,42 @@ def init_docs_routes(app, root_dir, logger):
             return jsonify({"error": "Chapter not found"}), 404
             
         return jsonify({"content": content})
+
+    @app.route("/api/docs/search")
+    @login_required
+    def api_docs_search():
+        group = request.args.get("group", "user")
+        query = request.args.get("query", "").strip().lower()
+        lang = request.args.get("lang", "en")
+        
+        if not query:
+            return jsonify([])
+            
+        if group == "tech" and not (current_user.is_authenticated and current_user.role == 'admin'):
+            return jsonify({"error": "Admin required"}), 403
+            
+        chapters = list_chapters(group, lang)
+        results = []
+        
+        for ch in chapters:
+            content = get_chapter_content(group, ch['id'], lang)
+            if not content: continue
+            
+            # Simple case-insensitive search
+            text = content.lower()
+            idx = text.find(query)
+            if idx != -1:
+                # Extract a snippet
+                start = max(0, idx - 40)
+                end = min(len(content), idx + len(query) + 60)
+                snippet = content[start:end].replace("\n", " ").strip()
+                if start > 0: snippet = "..." + snippet
+                if end < len(content): snippet = snippet + "..."
+                
+                results.append({
+                    "id": ch['id'],
+                    "title": ch['name'],
+                    "snippet": snippet
+                })
+                
+        return jsonify(results)

@@ -167,6 +167,62 @@
         }
 
         /* Content Area */
+        .search-container {
+            margin: 15px 0;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px 12px 10px 35px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 14px;
+        }
+
+        .search-results-overlay {
+            position: fixed;
+            top: 0; left: var(--sidebar-width); right: 0; bottom: 0;
+            background: var(--bg);
+            z-index: 150;
+            padding: 50px;
+            display: none;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .search-result-item:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .search-result-title { color: var(--accent); font-weight: 600; font-size: 18px; margin-bottom: 8px; }
+        .search-result-snippet { color: #888; font-size: 14px; line-height: 1.5; }
+        .search-result-snippet b { color: #fff; background: rgba(102, 252, 241, 0.2); padding: 0 2px; }
+
+        .close-search {
+            position: absolute;
+            top: 30px; right: 40px;
+            background: none; border: none; color: #666;
+            font-size: 24px; cursor: pointer;
+        }
+        .close-search:hover { color: white; }
+
         .docs-main {
             flex: 1;
             overflow-y: auto;
@@ -276,6 +332,11 @@
         <a href="javascript:void(0)" onclick="switchLang('es')" id="lang-es" class="lang-link">ES</a>
     </div>
 
+    <div class="search-container">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="docs-search" class="search-input" placeholder="Search docs..." onkeyup="handleSearch(event)">
+    </div>
+
     <div class="nav-group-selector">
         <button id="btn-group-user" class="group-btn" onclick="switchGroup('user')">OPERATING</button>
         {% if current_user.role == 'admin' %}
@@ -301,6 +362,12 @@
 </div>
 
 <main class="docs-main">
+    <div id="search-results" class="search-results-overlay">
+        <button class="close-search" onclick="closeSearch()">✕</button>
+        <h2 id="search-query-display" style="margin-bottom: 30px;">Search Results for "..."</h2>
+        <div id="results-list"></div>
+    </div>
+
     <div id="loading-overlay">
         <div style="color: var(--accent); font-weight: 600; letter-spacing: 2px; animation: pulse 1.5s infinite;">LOADING...</div>
     </div>
@@ -403,6 +470,64 @@
         } finally {
             overlay.style.display = 'none';
         }
+    }
+
+    // --- Search Logic ---
+    let searchTimeout = null;
+
+    function handleSearch(e) {
+        const query = e.target.value.trim();
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            if (query.length === 0) closeSearch();
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    }
+
+    async function performSearch(query) {
+        document.getElementById("search-results").style.display = "block";
+        document.getElementById("search-query-display").innerText = `Results for "${query}"`;
+        const list = document.getElementById("results-list");
+        list.innerHTML = `<div style="color: #666; padding: 20px;">Searching...</div>`;
+        
+        try {
+            const resp = await fetch(`/api/docs/search?group=${currentGroup}&query=${encodeURIComponent(query)}&lang=${currentLang}`);
+            const results = await resp.json();
+            
+            if (results.length === 0) {
+                list.innerHTML = `<div style="color: #666; padding: 20px;">No results found for "${query}".</div>`;
+                return;
+            }
+            
+            list.innerHTML = results.map(r => `
+                <div class="search-result-item" onclick="goToSearchResult('${r.id}')">
+                    <div class="search-result-title">${r.title}</div>
+                    <div class="search-result-snippet">${highlightQuery(r.snippet, query)}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            list.innerHTML = `<div style="color: #f66; padding: 20px;">Error during search.</div>`;
+        }
+    }
+
+    function highlightQuery(text, query) {
+        const regex = new RegExp(`(${query})`, 'gi');
+        return text.replace(regex, '<b>$1</b>');
+    }
+
+    function closeSearch() {
+        document.getElementById("search-results").style.display = "none";
+        document.getElementById("docs-search").value = "";
+    }
+
+    function goToSearchResult(chapterId) {
+        closeSearch();
+        loadContent(chapterId);
     }
 
     function updatePagination() {
