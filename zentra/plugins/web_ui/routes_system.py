@@ -122,7 +122,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "model":      model,
                 "persona":    persona,
                 "avatar":     avatar_path,
+                "avatar_size": cfg.get("ai", {}).get("avatar_size", "medium"),
                 "bridge":     ", ".join(flags) if flags else "default",
+
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,

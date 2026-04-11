@@ -72,7 +72,9 @@ function populateUI() {
     setVal('route-models', rm.legacy_models || '');
 
     populateSelect('ia-personality', sysOptions.personalities || [], c.ai?.active_personality, true);
+    setVal('ia-avatar-size', c.ai?.avatar_size || 'medium');
     setVal('ia-instructions', c.ai?.special_instructions || '');
+
     setCheck('ia-save-instructions', c.ai?.save_special_instructions || false);
     
     // Load the avatar preview for the currently selected persona
@@ -193,7 +195,9 @@ function buildPayload() {
 
     out.ai = out.ai || {};
     out.ai.active_personality = document.getElementById('ia-personality').value;
+    out.ai.avatar_size = document.getElementById('ia-avatar-size').value;
     out.ai.special_instructions = document.getElementById('ia-instructions').value;
+
     out.ai.save_special_instructions = document.getElementById('ia-save-instructions').checked;
 
     out.bridge = out.bridge || {};

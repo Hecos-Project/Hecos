@@ -233,3 +233,43 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+/* AVATAR SIZES (Global Scope) */
+.size-small .msg-avatar { width: 40px; height: 40px; font-size: 18px; }
+.size-small .msg-avatar img { width: 30px !important; height: 30px !important; }
+
+.size-medium .msg-avatar { width: 64px; height: 64px; font-size: 24px; }
+.size-medium .msg-avatar img { width: 50px !important; height: 50px !important; }
+
+.size-large .msg-avatar { width: 96px; height: 96px; font-size: 32px; }
+.size-large .msg-avatar img { width: 80px !important; height: 80px !important; }
+
+/* LIGHTBOX */
+
+
+
+#avatar-lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000; opacity: 0; visibility: hidden;
+  transition: all 0.3s ease; backdrop-filter: blur(8px);
+  cursor: zoom-out;
+}
+#avatar-lightbox.active { opacity: 1; visibility: visible; }
+#avatar-lightbox img { 
+  max-width: 90%; max-height: 90%; border-radius: 12px; 
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+  transform: scale(0.9); transition: transform 0.3s ease;
+}
+#avatar-lightbox.active img { transform: scale(1); }
+
+/* FULLVIEW BUTTON ON AVATAR */
+.avatar-zoom-wrapper { position: relative; cursor: pointer; transition: transform 0.2s; }
+.avatar-zoom-wrapper:hover { transform: scale(1.05); }
+.avatar-zoom-icon {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 14px; height: 14px; background: var(--accent);
+  color: white; border-radius: 50%; font-size: 8px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bg); opacity: 0; transition: opacity 0.2s;
+}
+.avatar-zoom-wrapper:hover .avatar-zoom-icon { opacity: 1; }

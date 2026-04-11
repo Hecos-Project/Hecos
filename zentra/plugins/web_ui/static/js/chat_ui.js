@@ -105,6 +105,17 @@ window.refreshStatus = async function() {
     if (d.avatar) {
         window.ZentraAvatar = d.avatar;
     }
+    if (d.avatar_size) {
+        window.ZentraAvatarSize = d.avatar_size;
+        // Apply size class globally to chat area
+        const chatArea = document.getElementById('chat-area');
+        if (chatArea) {
+            chatArea.classList.remove('size-small', 'size-medium', 'size-large');
+            chatArea.classList.add('size-' + d.avatar_size);
+        }
+    }
+
+
 
     if (window._applyMicState) window._applyMicState(d.mic === 'ON');
     if (window._applyTTSState) window._applyTTSState(d.tts === 'ON');
