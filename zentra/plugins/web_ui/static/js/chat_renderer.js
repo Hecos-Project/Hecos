@@ -13,7 +13,12 @@ function addBubble(role, text, id) {
   if (isUser) {
     avatar.textContent = '👤';
   } else {
-    avatar.innerHTML = `<img src="/assets/Zentra_Core_Logo_NBG.png" style="width:24px; height:24px; filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));">`;
+    const avatarSrc = window.ZentraAvatar || "/assets/Zentra_Core_Logo_NBG.png";
+    const imgStyle = window.ZentraAvatar ? 
+      "width:24px; height:24px; object-fit:cover; border-radius:50%;" : 
+      "width:24px; height:24px; filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+    
+    avatar.innerHTML = `<img src="${avatarSrc}" onerror="this.src='/assets/Zentra_Core_Logo_NBG.png'; this.style='width:24px; height:24px; filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));';" style="${imgStyle}">`;
   }
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';

@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 # ─── AI ───────────────────────────────────────────────────────────────────────
 
 class AIConfig(BaseModel):
-    active_personality: str = "Zentra_System_Soul.txt"
+    active_personality: str = "Zentra_System_Soul.yaml"
     available_personalities: Dict[str, str] = {}
     save_special_instructions: bool = False
     special_instructions: str = ""

@@ -3,6 +3,8 @@ import json
 import time
 import threading
 import sys
+import yaml
+import urllib.parse
 from flask import request, jsonify
 from zentra.core.constants import LOGS_DIR
 
@@ -31,9 +33,17 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/assets/<path:filename>")
     def serve_assets(filename):
         from flask import send_from_directory, make_response
-        # New location inside the package for v0.15.2
+        import mimetypes
         assets_dir = os.path.join(root_dir, "zentra", "assets")
+        
+        # Flask's send_from_directory prefers forward slashes even on Windows
         resp = make_response(send_from_directory(assets_dir, filename))
+        
+        # Ensure correct mimetype, especially on Windows where registry might be broken
+        mtype, _ = mimetypes.guess_type(filename)
+        if mtype:
+            resp.headers["Content-Type"] = mtype
+        
         # Prevent aggressive browser caching for assets to ensure UI updates are seen
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         resp.headers["Pragma"] = "no-cache"
@@ -91,12 +101,27 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             tts_d = sm.tts_destination if sm else acfg.get("tts_destination", "web")
 
             persona = cfg.get("ai", {}).get("active_personality", "?")
-            if persona.endswith(".txt"): persona = persona[:-4]
+            if persona.endswith(".yaml"): persona = persona[:-5]
+            
+            avatar_path = "/assets/Zentra_Core_Logo_NBG.png"
+            try:
+                # Retrieve the full path to the personality folder
+                p_dir = os.path.join(root_dir, "zentra", "personality")
+                p_file = os.path.join(p_dir, f"{persona}.yaml")
+                if os.path.exists(p_file):
+                    with open(p_file, "r", encoding="utf-8") as f:
+                        data = yaml.safe_load(f)
+                        if data and data.get("avatar_image"):
+                            # URL encode the path to handle spaces safely
+                            encoded_path = urllib.parse.quote(data.get("avatar_image"))
+                            avatar_path = "/assets/" + encoded_path
+            except Exception: pass
 
             return jsonify({
                 "backend":    backend.upper(),
                 "model":      model,
                 "persona":    persona,
+                "avatar":     avatar_path,
                 "bridge":     ", ".join(flags) if flags else "default",
                 "mic":        mic_status,
                 "tts":        tts_status,
@@ -270,6 +295,86 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 time.sleep(0.1)
         
         return Response(stream_with_context(generate()), mimetype="text/event-stream")
+
+    @app.route("/api/persona/avatar", methods=["GET"])
+    def persona_avatar_get():
+        """Returns the avatar URL for a given persona name."""
+        persona = request.args.get("persona", "").strip()
+        if not persona:
+            return jsonify({"ok": False, "error": "Missing persona name"}), 400
+        
+        # Strip .yaml if sent from frontend
+        if persona.endswith(".yaml"):
+            persona = persona[:-5]
+        
+        p_dir = os.path.join(root_dir, "zentra", "personality")
+        p_file = os.path.join(p_dir, f"{persona}.yaml")
+        
+        default_avatar = "/assets/Zentra_Core_Logo_NBG.png"
+        
+        if not os.path.exists(p_file):
+            return jsonify({"ok": True, "avatar_path": default_avatar})
+        
+        try:
+            with open(p_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+            
+            ai = data.get("avatar_image", "")
+            if ai:
+                encoded = urllib.parse.quote(ai)
+                return jsonify({"ok": True, "avatar_path": f"/assets/{encoded}"})
+            else:
+                return jsonify({"ok": True, "avatar_path": default_avatar})
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/persona/avatar/upload", methods=["POST"])
+
+    def persona_avatar_upload():
+        """Handles image upload for a specific personality."""
+        try:
+            if 'file' not in request.files:
+                return jsonify({"ok": False, "error": "No file part"}), 400
+            file = request.files['file']
+            persona = request.form.get("persona")
+            if not file or not persona:
+                return jsonify({"ok": False, "error": "Missing file or persona name"}), 400
+            
+            # 1. Prepare directories (Inside zentra/assets/avatars/)
+            assets_dir = os.path.join(root_dir, "zentra", "assets")
+            avatar_base_dir = os.path.join(assets_dir, "avatars")
+            
+            # Use secure_filename for the folder as well to avoid space/special char issues
+            from werkzeug.utils import secure_filename
+            safe_persona = secure_filename(persona)
+            persona_avatar_dir = os.path.join(avatar_base_dir, safe_persona)
+            os.makedirs(persona_avatar_dir, exist_ok=True)
+            
+            # 2. Save file
+            filename = secure_filename(file.filename)
+            save_path = os.path.join(persona_avatar_dir, filename)
+            file.save(save_path)
+            
+            # 3. Update YAML
+            import yaml
+            p_dir = os.path.join(root_dir, "zentra", "personality")
+            p_file = os.path.join(p_dir, f"{persona}.yaml")
+            
+            if os.path.exists(p_file):
+                with open(p_file, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f) or {}
+                
+                # Update the path relative to avatars/
+                data["avatar_image"] = f"avatars/{safe_persona}/{filename}"
+                
+                with open(p_file, "w", encoding="utf-8") as f:
+                    yaml.dump(data, f, allow_unicode=True, sort_keys=False)
+            
+            logger.info(f"[WebUI] Avatar uploaded for persona {persona}: {filename}")
+            return jsonify({"ok": True, "avatar_path": f"/assets/avatars/{safe_persona}/{filename}"})
+        except Exception as exc:
+            logger.error(f"[WebUI] persona_avatar_upload error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
 
     @app.route("/api/system/reboot", methods=["POST"])
     def system_reboot():

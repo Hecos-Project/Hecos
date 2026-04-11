@@ -137,7 +137,7 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
 
     soul = config.get('ai', {}).get('active_personality', 'N/D')
     if soul:
-        soul = str(soul).replace('.txt', '')
+        soul = str(soul).replace('.yaml', '')
     else:
         soul = "N/D"
 
@@ -241,7 +241,7 @@ def update_status_bar_in_place(config, voice_status, listening_status, system_st
     
     # 2. Rebuild the Status Bar row
     backend_type, model = ModelManager.get_effective_model_info(config)
-    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.txt', '')
+    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.yaml', '')
     
     mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"
@@ -338,7 +338,7 @@ def show_personality_menu(file_list, current):
     print(f"\n{MAGENTA}{head}{RESET}")
     for i, f in enumerate(file_list, 1):
         pref = f"{GREEN} >> " if f == current else "    "
-        print(f"{pref}{i}. {f.replace('.txt', '')}{RESET}")
+        print(f"{pref}{i}. {f.replace('.yaml', '')}{RESET}")
     print(f"{MAGENTA}{'═' * len(head)}{RESET}")
     print(f"{YELLOW}{translator.t('help_footer')}{RESET}")
 
@@ -695,11 +695,11 @@ def stop_thinking():
     sys.stdout.flush()
     
 def list_personalities():
-    """Scans the personality folder to find real .txt files."""
+    """Scans the personality folder to find real .yaml files."""
     # Look inside the package for v0.15.2
     folder = os.path.join(os.path.dirname(os.path.dirname(__file__)), "personality")
     if not os.path.exists(folder): os.makedirs(folder, exist_ok=True)
-    return [os.path.basename(f) for f in glob.glob(os.path.join(folder, "*.txt"))]
+    return [os.path.basename(f) for f in glob.glob(os.path.join(folder, "*.yaml"))]
 
 def show_soul_menu(available_souls):
     """Shows a menu for personality selection."""

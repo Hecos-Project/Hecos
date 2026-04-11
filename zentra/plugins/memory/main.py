@@ -52,8 +52,8 @@ class MemoryTools:
         try:
             from app.config import ConfigManager
             cfg = ConfigManager().config
-            personality_name = cfg.get('ai', {}).get('active_personality', 'zentra.txt')
-            clean_name = personality_name.replace(".txt", "").replace("_", " ") if personality_name else "Zentra"
+            personality_name = cfg.get('ai', {}).get('active_personality', 'Zentra_System_Soul.yaml')
+            clean_name = personality_name.replace(".yaml", "").replace("_", " ") if personality_name else "Zentra"
             return brain_interface.get_context(config=cfg, dynamic_name=clean_name)
         except Exception as e:
             from zentra.core.logging import logger

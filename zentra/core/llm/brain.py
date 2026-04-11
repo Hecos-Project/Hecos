@@ -110,7 +110,7 @@ def generate_self_awareness(personality_name):
         active_plugins = get_active_tags()
         
         # Simplified listing to save tokens
-        souls_count = len([f for f in os.listdir(PERSONALITY_DIR) if f.endswith('.txt')])
+        souls_count = len([f for f in os.listdir(PERSONALITY_DIR) if f.endswith('.yaml')])
         core_count  = len([f for f in os.listdir(CORE_DIR) if f.endswith('.py')])
         
         awareness = f"\n{translator.t('structural_self_awareness')}\n"
@@ -149,17 +149,19 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     logger.debug("BRAIN", f"Config loaded. Backend type: {config.get('backend', {}).get('type', 'unspecified')}")
 
     # 1. Retrieve personality
-    personality_name = config.get('ai', {}).get('active_personality', 'zentra.txt')
+    personality_name = config.get('ai', {}).get('active_personality', 'Zentra_System_Soul.yaml')
     if not personality_name:
-        personality_name = "zentra.txt"
+        personality_name = "Zentra_System_Soul.yaml"
     logger.debug("BRAIN", f"Active personality: {personality_name}")
     
     personality_path = os.path.join(PERSONALITY_DIR, personality_name)
     personality_prompt = "You are Zentra, an advanced AI."
     if os.path.exists(personality_path):
         try:
+            import yaml as pyyaml
             with open(personality_path, "r", encoding="utf-8") as f:
-                personality_prompt = f.read()
+                persona_data = pyyaml.safe_load(f)
+                personality_prompt = persona_data.get("system_prompt", "You are Zentra, an advanced AI.")
             logger.debug("BRAIN", f"Personality loaded: {len(personality_prompt)} characters")
         except Exception as e:
             logger.error(f"BRAIN: Personality reading error: {e}")
@@ -170,7 +172,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     logger.debug("BRAIN", "Memory loading...")
     
     # Calculate clean name for identity context
-    clean_name = personality_name.replace(".txt", "").replace("_", " ") if personality_name else "Zentra"
+    clean_name = personality_name.replace(".yaml", "").replace("_", " ") if personality_name else "Zentra"
     
     memory_context = brain_interface.get_context(config, dynamic_name=clean_name) if cog.get('include_identity_context', True) else ""
     logger.debug("BRAIN", f"Memory: {len(memory_context)} characters")

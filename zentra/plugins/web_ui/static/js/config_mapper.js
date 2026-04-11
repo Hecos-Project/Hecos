@@ -74,6 +74,15 @@ function populateUI() {
     populateSelect('ia-personality', sysOptions.personalities || [], c.ai?.active_personality, true);
     setVal('ia-instructions', c.ai?.special_instructions || '');
     setCheck('ia-save-instructions', c.ai?.save_special_instructions || false);
+    
+    // Load the avatar preview for the currently selected persona
+    if (typeof window.loadPersonaAvatar === 'function') {
+        const personaEl = document.getElementById('ia-personality');
+        if (personaEl && personaEl.value) {
+            window.loadPersonaAvatar(personaEl.value);
+        }
+    }
+
 
     const br = c.bridge || {};
     setCheck('br-processor', br.use_processor ?? false);

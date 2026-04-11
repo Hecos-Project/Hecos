@@ -214,7 +214,7 @@ class ConfigManager:
 
     def sync_available_personalities(self):
         """
-        Scans the 'personality' folder for .txt files and updates
+        Scans the 'personality' folder for .yaml files and updates
         'ai.available_personalities' if the list has changed.
         Returns the current list of personality files.
         """
@@ -227,9 +227,14 @@ class ConfigManager:
             except Exception:
                 pass
 
-        files = [_os.path.basename(f) for f in glob.glob(_os.path.join(folder, "*.txt"))]
+        files = sorted([_os.path.basename(f) for f in glob.glob(_os.path.join(folder, "*.yaml"))])
 
         if files:
+            # Force Zentra_System_Soul to position #1 if present
+            if "Zentra_System_Soul.yaml" in files:
+                files.remove("Zentra_System_Soul.yaml")
+                files.insert(0, "Zentra_System_Soul.yaml")
+
             personality_dict = {str(i + 1): name for i, name in enumerate(files)}
             current = self.get("ai", "available_personalities")
             if personality_dict != current:

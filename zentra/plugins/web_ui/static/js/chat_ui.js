@@ -101,6 +101,10 @@ window.refreshStatus = async function() {
     if (sbM) sbM.textContent = d.model || '—';
     if (sbS) sbS.textContent = d.persona || '—';
     if (tbM) tbM.textContent = d.model || (window.I18N.offline || 'Offline');
+    
+    if (d.avatar) {
+        window.ZentraAvatar = d.avatar;
+    }
 
     if (window._applyMicState) window._applyMicState(d.mic === 'ON');
     if (window._applyTTSState) window._applyTTSState(d.tts === 'ON');
