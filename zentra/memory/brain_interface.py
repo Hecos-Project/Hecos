@@ -1,6 +1,7 @@
 """
 MODULE: Brain Interface - Zentra Memory Vault
 DESCRIPTION: Centralized manager for semantic and episodic memory.
+             Supports per-user memory scoping via user_id parameter.
              Respects the 'cognition' config section for all operations.
 """
 
@@ -10,12 +11,34 @@ import sqlite3
 from datetime import datetime
 from zentra.core.logging import logger
 
-# File paths (forced absolute to avoid working-directory confusion)
+# Base memory directory
 ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
-BASE_DIR = os.path.join(ROOT_DIR, "memory")
+BASE_DIR  = os.path.join(ROOT_DIR, "memory")
+
+# Legacy single-user paths (kept for backward compat / migration)
 PATH_IDENTITY = os.path.join(BASE_DIR, "core_identity.json")
-PATH_PROFILE   = os.path.join(BASE_DIR, "user_profile.json")
-PATH_DB        = os.path.join(BASE_DIR, "chat_history.db")
+
+# Per-user vault paths
+_USERS_DIR = os.path.join(BASE_DIR, "users")
+
+
+# ── Vault path helpers ─────────────────────────────────────────────────────────
+
+def _vault(user_id: str = "admin") -> str:
+    """Returns the path to the user's vault directory, creating it if needed."""
+    path = os.path.join(_USERS_DIR, user_id)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+def _profile_path(user_id: str = "admin") -> str:
+    return os.path.join(_vault(user_id), "profile.json")
+
+def _db_path(user_id: str = "admin") -> str:
+    return os.path.join(_vault(user_id), "history.db")
+
+def _avatar_path(user_id: str = "admin") -> str:
+    return os.path.join(_vault(user_id), "avatar.jpg")
+
 
 # ── Config helpers ─────────────────────────────────────────────────────────────
 
@@ -23,15 +46,12 @@ def _get_cognition(config) -> dict:
     """Returns the cognition sub-section from a config dict or ConfigManager."""
     if config is None:
         return {}
-    
-    # Extract raw dictionary if it's a ConfigManager
     if hasattr(config, "config") and isinstance(config.config, dict):
         cfg_dict = config.config
     elif isinstance(config, dict):
         cfg_dict = config
     else:
         return {}
-        
     return cfg_dict.get("cognition", {})
 
 
@@ -50,13 +70,16 @@ def get_max_history(config: dict = None) -> int:
 # ── Vault management ───────────────────────────────────────────────────────────
 
 def initialize_vault():
-    """Creates the folder and databases if they don't exist."""
-    if not os.path.exists(BASE_DIR):
-        os.makedirs(BASE_DIR)
-    
-    conn = sqlite3.connect(PATH_DB)
+    """Creates the legacy base folder (for backward compat). Prefer initialize_user_vault."""
+    os.makedirs(BASE_DIR, exist_ok=True)
+    logger.info(f"[MEMORY] Legacy vault checked at: {BASE_DIR}")
+
+
+def initialize_user_vault(user_id: str = "admin"):
+    """Creates vault directory and DB schema for the given user."""
+    db = _db_path(user_id)
+    conn = sqlite3.connect(db)
     cursor = conn.cursor()
-    # Ensure the history table exists
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,84 +90,86 @@ def initialize_vault():
     ''')
     conn.commit()
     conn.close()
-    logger.info(f"[MEMORY] Vault initialized at: {os.path.abspath(PATH_DB)}")
+    logger.info(f"[MEMORY] Vault initialized for user '{user_id}' at: {db}")
 
 
-def maybe_clear_on_restart(config: dict):
+def maybe_clear_on_restart(config: dict, user_id: str = "admin"):
     """Clears the episodic history if clear_on_restart is enabled in config."""
     cog = _get_cognition(config)
     if cog.get("clear_on_restart", False):
-        cleared = clear_history()
+        cleared = clear_history(user_id=user_id)
         if cleared:
-            logger.info("[MEMORY] History cleared on restart (clear_on_restart=True).")
+            logger.info(f"[MEMORY] History cleared on restart for '{user_id}'.")
 
 
 # ── Context retrieval ──────────────────────────────────────────────────────────
 
-def get_context(config: dict = None, dynamic_name: str = None) -> str:
-    """Retrieves AI and Admin identity for the System Prompt."""
+def get_context(config: dict = None, dynamic_name: str = None,
+                user_id: str = "admin") -> str:
+    """Retrieves AI and user identity for the System Prompt."""
     cog = _get_cognition(config)
     if not cog.get("include_identity_context", True):
         return ""
     try:
-        if not os.path.exists(PATH_IDENTITY) or not os.path.exists(PATH_PROFILE):
-            return ""
+        # Load core AI identity (shared)
+        id_data = {}
+        if os.path.exists(PATH_IDENTITY):
+            with open(PATH_IDENTITY, "r", encoding="utf-8") as f:
+                id_data = json.load(f)
 
-        with open(PATH_IDENTITY, "r", encoding="utf-8") as f:
-            id_data = json.load(f)
-        
-        with open(PATH_PROFILE, "r", encoding="utf-8") as f:
-            prof_data = json.load(f)
-            
+        # Load per-user profile notes
+        prof_path = _profile_path(user_id)
+        prof_data = {}
+        if os.path.exists(prof_path):
+            with open(prof_path, "r", encoding="utf-8") as f:
+                prof_data = json.load(f)
+
         from zentra.core.system.version import VERSION
-        context = f"\n[ACTIVE IDENTITY MEMORY]\n"
-        
-        # AI Identity
+        context = "\n[ACTIVE IDENTITY MEMORY]\n"
+
         fallback_name = id_data.get('ai', {}).get('name', 'Zentra')
         ai_name = dynamic_name or fallback_name
-        
+
         if dynamic_name and dynamic_name.lower() != "zentra":
-            # Neutral context for custom roleplays (Urania, MacGyver, etc.)
             context += f"You are {ai_name}, running on core version {VERSION}.\n"
-            context += f"Your user/interlocutor is {id_data.get('author', {}).get('name', 'Admin')}.\n"
+            user_label = prof_data.get("display_name") or id_data.get('author', {}).get('name', user_id)
+            context += f"Your user/interlocutor is {user_label}.\n"
         else:
-            # Full Zentra context
             ai_nature   = id_data.get('ai', {}).get('nature', 'AI Assistant')
             ai_protocol = id_data.get('ai', {}).get('protocol', 'Standard')
             context += f"You are {ai_name}, version {VERSION}. {ai_nature}.\n"
-            context += f"Your Creator (Admin) is {id_data.get('author', {}).get('name', 'Admin')}. Protocol: {ai_protocol}.\n"
-        
-        # Admin Biographical Notes
-        notes = prof_data.get('author', {}).get('notes', 'No specific notes.')
-        context += f"Admin notes: {notes}\n"
-        
+            user_label = prof_data.get("display_name") or id_data.get('author', {}).get('name', user_id)
+            context += f"Your Creator (Admin) is {user_label}. Protocol: {ai_protocol}.\n"
+
+        # User notes from profile
+        notes = prof_data.get('notes') or id_data.get('author', {}).get('notes', '')
+        if notes:
+            context += f"User notes: {notes}\n"
+
+        # Avatar context hint (for Vision models)
+        av = _avatar_path(user_id)
+        if os.path.exists(av):
+            context += f"[USER_AVATAR_PATH: {av}]\n"
+
         return context
     except Exception as e:
         logger.error(f"Memory Context Error: {e}")
         return ""
 
 
-def update_profile(key, value):
-    """Updates a specific field in the user profile JSON."""
+def update_profile(key, value, user_id: str = "admin"):
+    """Updates a specific field in the user's profile JSON."""
     try:
-        if not os.path.exists(PATH_PROFILE):
-            # Create a default profile if missing
-            data = {"author": {"name": "Admin", "role": "Root User", "notes": ""}}
+        prof_path = _profile_path(user_id)
+        if not os.path.exists(prof_path):
+            data = {"display_name": user_id, "notes": ""}
         else:
-            with open(PATH_PROFILE, "r", encoding="utf-8") as f:
+            with open(prof_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-        
-        # Ensure 'author' section exists
-        if "author" not in data:
-            data["author"] = {}
-            
-        # Standardize: we usually update 'notes'
-        if key == "notes":
-            data["author"]["notes"] = value
-        else:
-            data["author"][key] = value
-            
-        with open(PATH_PROFILE, "w", encoding="utf-8") as f:
+
+        data[key] = value
+
+        with open(prof_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
         return True
     except Exception as e:
@@ -154,13 +179,20 @@ def update_profile(key, value):
 
 # ── Episodic memory (chat history) ────────────────────────────────────────────
 
-def save_message(role, message, config: dict = None):
+def save_message(role, message, config: dict = None, user_id: str = "admin"):
     """Stores an exchange in episodic memory (DB), respecting config flags."""
     if not is_memory_enabled(config):
         return
     try:
-        conn = sqlite3.connect(PATH_DB)
+        db = _db_path(user_id)
+        conn = sqlite3.connect(db)
         cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT, role TEXT, message TEXT
+            )
+        ''')
         cursor.execute("INSERT INTO history (timestamp, role, message) VALUES (?, ?, ?)",
                        (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message))
         conn.commit()
@@ -169,18 +201,19 @@ def save_message(role, message, config: dict = None):
         logger.error(f"Memory Save Error: {e}")
 
 
-def get_history(limit: int = None, config: dict = None) -> list:
-    """Retrieves the last N messages from the history."""
+def get_history(limit: int = None, config: dict = None, user_id: str = "admin") -> list:
+    """Retrieves the last N messages from the user's history."""
     if limit is None:
         limit = get_max_history(config)
     try:
-        conn = sqlite3.connect(PATH_DB)
+        db = _db_path(user_id)
+        if not os.path.exists(db):
+            return []
+        conn = sqlite3.connect(db)
         cursor = conn.cursor()
         cursor.execute("SELECT role, message FROM history ORDER BY id DESC LIMIT ?", (limit,))
         rows = cursor.fetchall()
         conn.close()
-        
-        # Return in chronological order (oldest first)
         rows.reverse()
         return rows
     except Exception as e:
@@ -188,27 +221,28 @@ def get_history(limit: int = None, config: dict = None) -> list:
         return []
 
 
-def clear_history(days: int = None) -> bool:
+def clear_history(days: int = None, user_id: str = "admin") -> bool:
     """
-    Wipes the episodic history from the DB.
+    Wipes the episodic history from the user's DB.
     If days is specified, only deletes messages older than now - days.
     """
     try:
-        conn = sqlite3.connect(PATH_DB)
+        db = _db_path(user_id)
+        if not os.path.exists(db):
+            return True
+        conn = sqlite3.connect(db)
         cursor = conn.cursor()
-        
+
         if days is None:
             cursor.execute("DELETE FROM history")
-            msg = "[MEMORY] All history cleared."
+            msg = f"[MEMORY] All history cleared for '{user_id}'."
         else:
-            # Timestamp format is %Y-%m-%d %H:%M:%S
             from datetime import timedelta
             cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
             cursor.execute("DELETE FROM history WHERE timestamp < ?", (cutoff,))
-            msg = f"[MEMORY] History older than {days} days cleared."
-        
+            msg = f"[MEMORY] History older than {days} days cleared for '{user_id}'."
+
         conn.commit()
-        # Shrink the file size on disk
         cursor.execute("VACUUM")
         conn.close()
         logger.info(f"{msg} Database vacuumed.")
@@ -220,6 +254,6 @@ def clear_history(days: int = None) -> bool:
 
 # ── Aliases ────────────────────────────────────────────────────────────────────
 
-def get_memory_context(config: dict = None) -> str:
+def get_memory_context(config: dict = None, user_id: str = "admin") -> str:
     """Alias for get_context()."""
-    return get_context(config)
+    return get_context(config, user_id=user_id)
