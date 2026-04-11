@@ -233,6 +233,17 @@ class PluginDrive(BaseModel):
         "spell_check": False
     })
 
+class MCPServerConfig(BaseModel):
+    command: str
+    args: List[str] = []
+    env: Dict[str, str] = {}
+    enabled: bool = True
+
+class PluginMCPBridge(BaseModel):
+    enabled: bool = False
+    lazy_load: bool = False
+    servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
+
 class PluginsConfig(BaseModel):
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
@@ -248,6 +259,7 @@ class PluginsConfig(BaseModel):
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
     REMOTE_TRIGGERS: PluginRemoteTriggers = Field(default_factory=PluginRemoteTriggers)
+    MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     extra_dirs: List[str] = []
 
 

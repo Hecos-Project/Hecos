@@ -1,0 +1,45 @@
+<div id="mcp" class="tab-content">
+  <div class="module-header">
+    <h2>🔌 MCP Bridge (Model Context Protocol)</h2>
+    <p>Connect Zentra to external AI tools and resources using the MCP standard.</p>
+  </div>
+
+  <div class="config-section">
+    <div class="form-group row">
+      <label>Enable MCP Bridge</label>
+      <div class="toggle-wrapper">
+        <input type="checkbox" id="mcp-enabled" class="config-toggle" data-path="plugins.MCP_BRIDGE.enabled">
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section">
+    <h3>Active Servers</h3>
+    <table class="config-table" id="mcp-servers-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Command</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Dynamic rows -->
+      </tbody>
+    </table>
+    <button type="button" class="btn btn-secondary" onclick="addMCPServer()">+ Add Server</button>
+  </div>
+</div>
+
+<script>
+  function addMCPServer() {
+    const name = prompt("Enter server name (e.g. google-maps):");
+    if (!name) return;
+    const command = prompt("Enter command (e.g. npx):");
+    if (!command) return;
+    
+    // In a real implementation, this would update the UI and the internal config object
+    alert("Server added to configuration. Remember to SAVE to apply.");
+  }
+</script>

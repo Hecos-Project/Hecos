@@ -104,6 +104,8 @@
     {% endif %}
     <button class="tab" onclick="showTab('payload'); loadPayloadData()">Payload</button>
     <button class="tab" onclick="showTab('plugins')">Plugins</button>
+    <button class="tab" onclick="showTab('studio')">🛠️ Studio</button>
+    <button class="tab" onclick="showTab('mcp')">🔌 MCP Bridge</button>
     <button class="tab" onclick="showTab('remote-triggers')">📱 Remote Triggers</button>
     <button class="tab" onclick="showTab('logs'); startLogStream();">Logs</button>
   </div>
@@ -126,6 +128,8 @@
     {% endif %}
     {% include 'modules/config_payload.html' %}
     {% include 'modules/config_plugins.html' %}
+    {% include 'modules/config_plugin_studio.html' %}
+    {% include 'modules/config_mcp.html' %}
     {% include 'modules/config_remote_triggers.html' %}
     {% include 'modules/config_drive.html' %}
     {% include 'modules/config_logs.html' %}

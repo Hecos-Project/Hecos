@@ -37,6 +37,15 @@ class SystemBootstrapper:
         plugin_loader.update_capability_registry(self.config_manager.config)
         self.state_manager.system_status = translator.t("sync_plugins")
         plugin_loader.sync_plugin_config(self.config_manager)
+
+        # MCP Bridge Bootstrap
+        mcp_bridge = plugin_loader.get_plugin_module("MCP_BRIDGE")
+        if mcp_bridge and hasattr(mcp_bridge, "on_load"):
+            try:
+                logger.info("[APP] Bootstrapping MCP Bridge...")
+                mcp_bridge.on_load(self.config_manager.config)
+            except Exception as _mcp_e:
+                logger.error("APP", f"MCP Bridge bootstrap error: {_mcp_e}")
         
         # Inject state_manager into WebUI server after plugin load (for audio toggle routes)
         try:
