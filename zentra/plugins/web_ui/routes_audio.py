@@ -60,6 +60,10 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             from zentra.core.audio.voice import stop_voice
             stop_voice()
+            
+            sm = _sm()
+            if sm: sm.system_speaking = False
+            
             try:
                 from plugins.web_ui.routes_chat import stop_voice_generation
                 stop_voice_generation()
@@ -70,6 +74,22 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             logger.error(f"[WebUI] stop_audio error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/audio/speaking/start", methods=["POST"])
+    def speaking_start():
+        sm = _sm()
+        if sm:
+            sm.system_speaking = True
+            logger.debug("[WebUI] Audio speaking started on browser, pausing system mic.")
+        return jsonify({"ok": True})
+
+    @app.route("/api/audio/speaking/stop", methods=["POST"])
+    def speaking_stop():
+        sm = _sm()
+        if sm:
+            sm.system_speaking = False
+            logger.debug("[WebUI] Audio speaking stopped on browser, resuming system mic.")
+        return jsonify({"ok": True})
 
     @app.route("/api/audio/toggle/mic", methods=["POST"])
     def toggle_mic():

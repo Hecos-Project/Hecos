@@ -131,15 +131,23 @@ async function tryLoadAudio(bubble) {
     });
   };
 
+  window.ZentraTTSPlayer.onplay = () => {
+      fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
+  };
+
+  window.ZentraTTSPlayer.onpause = () => {
+      fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+  };
+
   window.ZentraTTSPlayer.onended = () => { 
       window.currentAudio = null; 
       showStopVoiceBtn(false); 
-      // Important to explicitly tell the OS we finished playing so 
-      // other media apps (Spotify) can resume 
+      fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   };
   window.ZentraTTSPlayer.onerror = () => {
     console.error("[Audio] Player error:", window.ZentraTTSPlayer.error ? window.ZentraTTSPlayer.error.code : 'unknown');
     window.currentAudio = null; showStopVoiceBtn(false);
+    fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
   };
 }
 
