@@ -87,7 +87,8 @@ def init_users_routes(app, logger):
     @app.route("/zentra/api/users/<username>/profile", methods=["GET"])
     @login_required
     def get_profile(username):
-        # Users can view their own profile, admin can view all
+        if username == "me":
+            username = current_user.username
         if current_user.role != "admin" and current_user.username != username:
             return jsonify({"ok": False, "error": "Non autorizzato"}), 403
             
@@ -99,6 +100,8 @@ def init_users_routes(app, logger):
     @app.route("/zentra/api/users/<username>/profile", methods=["PUT"])
     @login_required
     def update_profile(username):
+        if username == "me":
+            username = current_user.username
         if current_user.role != "admin" and current_user.username != username:
             return jsonify({"ok": False, "error": "Non autorizzato"}), 403
             
@@ -111,6 +114,8 @@ def init_users_routes(app, logger):
     @app.route("/zentra/api/users/<username>/avatar", methods=["POST"])
     @login_required
     def upload_avatar(username):
+        if username == "me":
+            username = current_user.username
         if current_user.role != "admin" and current_user.username != username:
             return jsonify({"ok": False, "error": "Non autorizzato"}), 403
             
@@ -142,6 +147,8 @@ def init_users_routes(app, logger):
     @app.route("/zentra/api/users/<username>/avatar", methods=["GET"])
     @login_required
     def get_avatar(username):
+        if username == "me":
+            username = current_user.username
         # We allow everyone logged in to see avatars (useful for UI lists)
         from zentra.memory.user_vault_manager import get_vault_path
         vault = get_vault_path(username)

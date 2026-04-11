@@ -1,4 +1,31 @@
 <div id="tab-users" class="panel">
+  <!-- FASE 5: My Profile Card -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-title">My Profile</div>
+    <div class="row">
+      <div class="group" style="flex:2;">
+        <label>Personal Setup</label>
+        <input type="text" id="my_display_name" class="input-modern" placeholder="Display Name e.g. John Doe" style="margin-bottom:8px;">
+        <textarea id="my_bio_notes" class="input-modern" placeholder="Memories or bio notes about you..." style="height:60px; margin-bottom:8px;"></textarea>
+        <select id="my_language" class="input-modern" style="margin-bottom:8px;">
+            <option value="en">English</option>
+            <option value="it">Italiano</option>
+            <option value="es">Español</option>
+        </select>
+        <button type="button" class="btn btn-primary" onclick="saveMyProfile()">Salva Profilo</button>
+      </div>
+      <div class="group" style="flex:1; text-align:center;">
+        <label>Avatar</label>
+        <div style="margin-bottom: 10px;">
+            <img id="my_avatar_preview" src="" alt="Avatar" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid #45a29e; display:none; margin: 0 auto;">
+            <div id="my_avatar_placeholder" style="width:100px; height:100px; border-radius:50%; background:#1e2430; border:2px dashed #444; color:#888; display:flex; align-items:center; justify-content:center; margin: 0 auto;">No IMG</div>
+        </div>
+        <input type="file" id="my_avatar_file" accept="image/jpeg, image/png" style="display:none;" onchange="uploadMyAvatar()">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('my_avatar_file').click()">Carica Foto</button>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title">Users & Roles</div>
     <div class="row">
@@ -23,6 +50,80 @@
   </div>
 
   <script>
+    async function loadMyProfile() {
+        try {
+            const r = await fetch("/zentra/api/users/me/profile");
+            const res = await r.json();
+            if (res.ok && res.profile) {
+                document.getElementById('my_display_name').value = res.profile.display_name || "";
+                document.getElementById('my_bio_notes').value = res.profile.bio_notes || "";
+                
+                if (res.profile.preferred_language) {
+                    document.getElementById('my_language').value = res.profile.preferred_language;
+                }
+                
+                if (res.profile.avatar_path) {
+                    const img = document.getElementById('my_avatar_preview');
+                    img.src = res.profile.avatar_path + "?t=" + new Date().getTime(); // force reload
+                    img.style.display = "block";
+                    document.getElementById('my_avatar_placeholder').style.display = "none";
+                }
+            }
+        } catch (e) {
+            console.error("Error loading profile:", e);
+        }
+    }
+
+    async function saveMyProfile() {
+        const data = {
+            display_name: document.getElementById('my_display_name').value,
+            bio_notes: document.getElementById('my_bio_notes').value,
+            preferred_language: document.getElementById('my_language').value
+        };
+        try {
+            const r = await fetch("/zentra/api/users/me/profile", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            const res = await r.json();
+            if (res.ok) {
+                alert("Profilo aggiornato!");
+            } else {
+                alert("Errore salvataggio profilo: " + res.error);
+            }
+        } catch (e) {
+            alert("Errore di rete.");
+        }
+    }
+
+    async function uploadMyAvatar() {
+        const fileInput = document.getElementById('my_avatar_file');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const r = await fetch("/zentra/api/users/me/avatar", {
+                method: "POST",
+                body: formData
+            });
+            const res = await r.json();
+            if (res.ok) {
+                const img = document.getElementById('my_avatar_preview');
+                img.src = res.avatar_path + "?t=" + new Date().getTime();
+                img.style.display = "block";
+                document.getElementById('my_avatar_placeholder').style.display = "none";
+            } else {
+                alert("Errore caricamento avatar: " + res.error);
+            }
+        } catch (e) {
+            alert("Errore caricamento.");
+        }
+    }
+
     async function loadUsersData() {
         const container = document.getElementById("users-table-container");
         try {

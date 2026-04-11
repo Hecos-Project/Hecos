@@ -25,6 +25,12 @@ function showTab(name) {
   if (event && event.target && event.target.classList.contains('tab')) {
     event.target.classList.add('active');
   }
+  
+  // Call specific load functions when switching to their respective tabs
+  if (name === 'users') {
+      if (typeof loadMyProfile === 'function') loadMyProfile();
+      if (typeof loadUsersData === 'function') loadUsersData();
+  }
 }
 
 async function fetchWithTimeout(resource, options = {}) {
