@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, jsonify, flash
 from flask_login import login_user, logout_user, login_required
 from zentra.core.auth.auth_manager import auth_mgr
 
-def init_auth_routes(app, logger):
+def init_auth_routes(app, cfg_mgr, logger):
 
     @app.route('/login', methods=['GET', 'POST'])
     def login_page():
@@ -27,7 +27,7 @@ def init_auth_routes(app, logger):
             logger.warning(f"[WebUI Auth] Failed login attempt for user '{username}'.")
             error = "Credenziali non valide. Riprova."
 
-        return render_template('login.html', error=error)
+        return render_template('login.html', error=error, zconfig=cfg_mgr.config)
 
     @app.route('/logout')
     @login_required

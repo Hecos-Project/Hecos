@@ -9,7 +9,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/zentra/config/ui")
     def config_ui():
         try:
-            return render_template("index.html")
+            return render_template("index.html", zconfig=cfg_mgr.config)
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
 

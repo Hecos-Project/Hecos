@@ -135,7 +135,7 @@ class ZentraWebUIServer:
             init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
             
             from .routes_auth import init_auth_routes
-            init_auth_routes(app, self.logger)
+            init_auth_routes(app, self.config_manager, self.logger)
         except Exception as e:
             import traceback
             print(f"[DEBUG BOOT] CRITICAL ERROR during route registration: {e}", flush=True)

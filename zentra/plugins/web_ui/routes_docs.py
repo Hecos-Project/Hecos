@@ -3,7 +3,7 @@ from flask import render_template, request, abort, jsonify
 from flask_login import login_required, current_user
 from zentra.core.auth.decorators import admin_required
 
-def init_docs_routes(app, root_dir, logger):
+def init_docs_routes(app, cfg_mgr, root_dir, logger):
     """Modular Documentation routes."""
 
     def list_chapters(group, lang='en'):
@@ -103,6 +103,7 @@ def init_docs_routes(app, root_dir, logger):
                              group=group, 
                              initial_chapter=chapter, 
                              lang=lang, 
+                             zconfig=cfg_mgr.config,
                              page_title="Zentra Documentation")
 
     @app.route("/api/docs/list/<group>")

@@ -26,7 +26,7 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_users_routes(app, logger)
     init_security_routes(app, logger)
     init_keys_routes(app, logger)
-    init_docs_routes(app, root_dir, logger)
+    init_docs_routes(app, cfg_mgr, root_dir, logger)
     
     # Zentra Drive — HTTP File Manager
     try:
