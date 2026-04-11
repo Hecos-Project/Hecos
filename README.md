@@ -167,11 +167,15 @@ Official Email: zentra.core.systems@gmail.com
 ---
 
 ## 📚 Documentation
-Detailed guides for developers, admins, and users:
-- 📖 **[Operating Manual (EN)](docs/OPERATING_MANUAL.md)**: User-facing guide to all features and panels.
-- 🏗️ **[Technical Architecture Guide](docs/TECHNICAL_GUIDE.md)**: Deep dive into the OOP structure, data flow, and core engines.
-- 🔌 **[Plugin Development Guide](docs/PLUGINS_DEV.md)**: How to create and register new tools using Native Function Calling.
-- 📁 **[Project Structure Map](docs/ARCHITECTURE_MAP.md)**: Complete file-by-file breakdown of the repository.
+Zentra Core uses a modular documentation system localized in EN, IT, and ES.
+
+### Local Access (Modular)
+Detailed guides are located in the `docs/` folder:
+- 📖 **[User Guide](docs/user/)**: Operational instructions and feature walkthroughs.
+- 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details.
+
+### Online Access
+The documentation is also synchronized with the **[GitHub Wiki](https://github.com/Zentra-Core/zentra-core.github.io/wiki)**.
 
 ---
 

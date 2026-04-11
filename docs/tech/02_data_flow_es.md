@@ -1,9 +1,9 @@
-# 🔄 2. Flujo de Datos (Data Flow)
+# 🔄 2. Flujo de Datos
 
-1. **Entrada**: Captura de texto o audio.
-2. **Enriquecimiento de Contexto**: Sincronización de la personalidad.
-3. **Procesamiento de Visión**: Creación de carga multimodal.
-4. **Audio WebRTC**: Conversión de OGG a WAV.
-5. **Inferencia**: Ejecución a través de LiteLLM.
-6. **Bucle de Agente**: Gestión de llamadas a herramientas.
-7. **Salida**: Texto filtrado enviado a la TUI y TTS.
+El flujo de información en Zentra sigue una ruta estructurada para garantizar velocidad y seguridad.
+
+1.  **Input**: Recepción vía Terminal (texto), Micrófono (audio) o WebUI.
+2.  **Processing**: El Agentic Loop analiza la solicitud utilizando el modelo de IA seleccionado.
+3.  **Tool Calling**: Si es necesario, la IA activa los plugins requeridos (p. ej., `SYSTEM`, `FILES`, `IMAGES`).
+4.  **Sandbox**: Cada operación lógica es validada y filtrada.
+5.  **Output**: Respuesta textual en el chat y síntesis de voz síncrona (TTS).

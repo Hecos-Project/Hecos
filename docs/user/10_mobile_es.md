@@ -1,8 +1,7 @@
 # 📱 10. Interfaz Móvil y Audio WebRTC
 
-Zentra está optimizado para dispositivos móviles.
-- **Menú de Hamburguesa**: La barra lateral se contrae en un menú desplegable (icono `☰`).
-- **Push-to-Talk (PTT)**: Usa el botón de Micrófono al lado del cuadro de chat.
-  - **Walkie-Talkie (Mantener)**: Mantén presionado 🎙️, habla y suelta para enviar.
-  - **Manos Libres (Alternar)**: Toque rápido en 🎙️ para bloquear la grabación (🔴 🔓). Toca de nuevo para detener.
-- **Reproducción Automática TTS**: La síntesis de voz comienza automáticamente incluso en navegadores móviles.
+Zentra está optimizado para su uso en smartphones y tablets.
+
+- **Diseño Responsivo**: La interfaz se adapta automáticamente al tamaño de tu pantalla, ofreciendo menús desplegables y controles táctiles.
+- **Neural Link Móvil**: Accede rápidamente a tus medios y consulta el estado del sistema directamente desde tu teléfono.
+- **Audio Remoto**: Gracias a WebRTC, puedes hablar con Zentra usando el micrófono de tu smartphone y escuchar sus respuestas por los altavoces del teléfono, exactamente como si estuvieras frente a la PC.

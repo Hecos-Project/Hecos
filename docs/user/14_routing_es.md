@@ -1,11 +1,10 @@
-# 🧭 14. Enrutamiento de Instrucciones (3 Niveles)
+# 🧭 14. Enrutamiento de Instrucciones de IA (3 Niveles)
 
-Arquitectura híbrida avanzada para controlar el comportamiento del sistema.
+Zentra utiliza un sistema de enrutamiento de tres niveles para decidir cómo debe responder la IA a cada comando.
 
-| Nivel | Dónde | Ámbito | Propósito |
-|---|---|---|---|
-| **1. Instrucciones Especiales** | Config → Persona | Global | Estilo y tono |
-| **2. Overrides de Enrutamiento** | Config → Routing | Por herramienta | Forzar restricciones específicas |
-| **3. Manifiesto del Plugin** | `registry.json` | Por defecto | Configuración de fábrica |
+1.  **Defaults del Plugin**: Instrucciones básicas proporcionadas por el desarrollador del plugin.
+2.  **Overrides de Usuario**: Tus personalizaciones guardadas en el archivo `routing_overrides.yaml`. Estas tienen prioridad sobre los valores por defecto.
+3.  **Core Fallback**: Reglas del sistema que garantizan estabilidad y seguridad.
 
-> **Nota**: El Nivel 2 (YAML) tiene prioridad total sobre los demás niveles.
+- **Editor Integrado**: En la pestaña "Routing" de la WebUI, puedes modificar estas reglas sin tocar el código, añadiendo instrucciones específicas para cada plugin.
+- **Flexibilidad Total**: Puedes cambiar el comportamiento de cualquier comando de la IA con un simple clic.

@@ -64,26 +64,19 @@ def init_docs_routes(app, root_dir, logger):
         """Fetches chapter content with language fallback."""
         group_dir = os.path.join(root_dir, "docs", group)
         
-        # 1. Try full language file first: chapter_it.md, chapter_en.md
+        # 1. Try requested language first: chapter_it.md, chapter_en.md, etc.
         lang_path = os.path.join(group_dir, f"{chapter_id}_{lang}.md")
         if os.path.exists(lang_path):
             with open(lang_path, "r", encoding="utf-8") as f:
                 return f.read()
 
-        # 2. If lang is 'en', try the bare file: chapter.md
-        if lang == 'en':
-            base_path = os.path.join(group_dir, f"{chapter_id}.md")
-            if os.path.exists(base_path):
-                with open(base_path, "r", encoding="utf-8") as f:
-                    return f.read()
-        
-        # 3. Fallback to bare file chapter.md for any other language if missing
+        # 2. Try bare file as a generic fallback (if exists)
         base_path = os.path.join(group_dir, f"{chapter_id}.md")
         if os.path.exists(base_path):
             with open(base_path, "r", encoding="utf-8") as f:
                 return f.read()
-            
-        # 4. Ultimate fallback to chapter_en.md if even bare file is missing
+
+        # 3. Ultimate selection: fallback to English version (_en.md) if everything else fails
         if lang != 'en':
             en_path = os.path.join(group_dir, f"{chapter_id}_en.md")
             if os.path.exists(en_path):

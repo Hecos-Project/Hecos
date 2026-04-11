@@ -1,6 +1,8 @@
 # 💻 WebUI Nativa
 
-Zentra incluye una potente interfaz web nativa accesible en `http://localhost:7070`.
-- **Chat en Tiempo Real**: Visualiza el streaming de la IA directamente en tu navegador.
-- **Panel de Configuración**: Cambia los ajustes del sistema a través de una GUI moderna con sincronización instantánea.
-- **Sincronización de Audio**: El estado de audio de la WebUI se sincroniza automáticamente con la terminal.
+La WebUI de Zentra es la interfaz gráfica moderna accesible a través de tu navegador.
+
+- **Acceso**: Por defecto está disponible en `http://localhost:5000` (o en el puerto configurado).
+- **Chat Enriquecido**: Admite la visualización de imágenes, negrita, tablas y bloques de código con resaltado de sintaxis.
+- **Configuración Gráfica**: Permite modificar cada aspecto de Zentra a través de menús intuitivos, sin tener que editar manualmente los archivos YAML.
+- **Micrófono y Cámara**: Gracias al cifrado Zentra PKI, puedes usar el micrófono y la cámara de tu navegador para interactuar con la IA incluso de forma remota en tu red local.

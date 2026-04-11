@@ -1,6 +1,8 @@
-# 🔑 13. Gestor de Llaves (Key Manager)
+# 🔑 13. Gestor de Llaves y Failover
 
-Gestiona tus llaves de API sin reiniciar el sistema.
-- **Failover Automático**: Cambia instantáneamente a la siguiente llave disponible en caso de errores de cuota (429) o credenciales.
-- **Enfriamiento**: Pausa temporalmente las llaves congestionadas.
-- **GUI de Pool de Llaves**: Agrega y monitorea llaves a través de la pestaña Key Manager en la WebUI.
+El Key Manager es el módulo central para la gestión de licencias y llaves API en Zentra.
+
+- **Gestión de Llaves**: Puedes añadir, eliminar o modificar tus llaves API (OpenAI, Gemini, Anthropic) directamente desde el Panel de Configuración.
+- **Seguridad**: Las llaves se almacenan de forma segura y nunca se exponen en los registros del sistema.
+- **Failover Automático**: Si un proveedor de servicios no responde, Zentra puede intentar automáticamente usar un modelo o proveedor alternativo para completar tu solicitud.
+- **Monitoreo de Tokens**: Visualiza el consumo de tokens en tiempo real para cada sesión de chat.
