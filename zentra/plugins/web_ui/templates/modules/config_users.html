@@ -1,32 +1,38 @@
-<div id="tab-users" class="panel">
+<div id="tab-users" class="panel" style="display:flex; flex-direction:column; gap:20px;">
   <!-- FASE 5: My Profile Card -->
-  <div class="card" style="margin-bottom: 20px;">
-    <div class="card-title">My Profile</div>
-    <div class="row">
-      <div class="group" style="flex:2;">
-        <label>Personal Setup</label>
-        <input type="text" id="my_display_name" class="input-modern" placeholder="Display Name e.g. John Doe" style="margin-bottom:8px;">
-        <textarea id="my_bio_notes" class="input-modern" placeholder="Memories or bio notes about you..." style="height:60px; margin-bottom:8px;"></textarea>
-        <select id="my_language" class="input-modern" style="margin-bottom:8px;">
-            <option value="en">English</option>
-            <option value="it">Italiano</option>
-            <option value="es">Español</option>
+  <div class="card" style="box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s;">
+    <div class="card-title" style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:18px;">👤</span> My Profile
+    </div>
+    <div class="row" style="gap:25px; align-items: flex-start;">
+      <div class="group" style="flex:2; display:flex; flex-direction:column; gap:12px;">
+        <label style="font-weight: 600; color: #45a29e; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Personal Setup</label>
+        <input type="text" id="my_display_name" class="input-modern" placeholder="Display Name e.g. John Doe" style="width:100%;">
+        <textarea id="my_bio_notes" class="input-modern" placeholder="Memories or bio notes about you..." style="height:80px; width:100%;"></textarea>
+        <select id="my_language" class="input-modern" style="width:100%;">
+            <option value="en">English (US)</option>
+            <option value="it">Italiano (IT)</option>
+            <option value="es">Español (ES)</option>
         </select>
-        <button type="button" class="btn btn-primary" onclick="saveMyProfile()">Salva Profilo</button>
+        <div style="margin-top:5px;">
+            <button type="button" class="btn btn-primary" onclick="saveMyProfile()" style="padding: 10px 20px;">Salva Profilo</button>
+        </div>
       </div>
-      <div class="group" style="flex:1; text-align:center;">
-        <label>Avatar</label>
-        <div style="margin-bottom: 10px;">
-            <img id="my_avatar_preview" src="" alt="Avatar" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid #45a29e; display:none; margin: 0 auto;">
-            <div id="my_avatar_placeholder" style="width:100px; height:100px; border-radius:50%; background:#1e2430; border:2px dashed #444; color:#888; display:flex; align-items:center; justify-content:center; margin: 0 auto;">No IMG</div>
+      <div class="group" style="flex:1; text-align:center; background: rgba(30, 36, 48, 0.5); padding: 20px; border-radius: 12px; border: 1px solid #333;">
+        <label style="display:block; margin-bottom:15px; font-weight: 600; color: #45a29e;">Avatar</label>
+        <div style="margin-bottom: 20px; position: relative; display: inline-block;">
+            <img id="my_avatar_preview" src="" alt="Avatar" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #66fcf1; display:none; box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);">
+            <div id="my_avatar_placeholder" style="width:120px; height:120px; border-radius:50%; background:#1e2430; border:2px dashed #444; color:#888; display:flex; align-items:center; justify-content:center; font-size:12px;">No Image</div>
         </div>
         <input type="file" id="my_avatar_file" accept="image/jpeg, image/png" style="display:none;" onchange="uploadMyAvatar()">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('my_avatar_file').click()">Carica Foto</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('my_avatar_file').click()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span style="font-size:16px;">📸</span> Carica Foto
+        </button>
       </div>
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);">
     <div class="card-title">Users & Roles</div>
     <div class="row">
       <div class="group" style="flex:2;">

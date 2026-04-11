@@ -29,7 +29,7 @@ last_scan: '2026-03-29 06:31:16'
 
 # Enable or disable the Text-To-Speech (TTS) Synthesizer globally.
 # If false, Zentra will only respond via written text.
-voice_status: true
+voice_status: false
 
 # ── Piper TTS Configuration (Local Voice Engine) ──
 # Absolute path of the piper executable for text reading.
