@@ -60,9 +60,39 @@
       </div>
     </div>
 
+    <div class="card" style="box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);">
+      <div class="card-title" style="display:flex; align-items:center; gap:10px; color:#fbc531;">
+          <span style="font-size:18px;">🔐</span> {{ t('webui_conf_pki_title') }}
+      </div>
+      <div class="row" style="gap:25px; align-items: flex-start;">
+        <div class="group" style="flex:2;">
+          <p style="font-size:13px; color:#888; margin-bottom:15px; line-height:1.5;">
+            {{ t('webui_conf_pki_desc') }}
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="/api/security/download-ca" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px; background:#fbc531!important; color:#000;">
+              <span>📥</span> {{ t('webui_conf_pki_download_btn') }}
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="window.open('/zentra/docs/pki_guide.md', '_blank')" style="display:inline-flex; align-items:center; gap:8px;">
+              {{ t('webui_conf_pki_guide_btn') }}
+            </button>
+          </div>
+        </div>
+        <div class="group" style="flex:1; background: rgba(251, 197, 49, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(251, 197, 49, 0.2);">
+          <div style="font-size:11px; text-transform:uppercase; color:#fbc531; font-weight:bold; margin-bottom:10px;">{{ t('webui_conf_pki_status_active') }}</div>
+          <div id="pki-status-ip" style="font-family:monospace; color:#fff; font-size:14px; margin-bottom:5px;">...</div>
+          <div style="font-size:10px; color:#666;">SAN: localhost, 127.0.0.1</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- End flex wrapper -->
   <script>
     async function loadMyProfile() {
+        // Detect current IP from URL
+        const currentIP = window.location.hostname;
+        document.getElementById('pki-status-ip').innerText = currentIP;
+
         try {
             const r = await fetch("/zentra/api/users/me/profile");
             const res = await r.json();
