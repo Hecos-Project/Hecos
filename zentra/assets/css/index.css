@@ -52,6 +52,7 @@ header {
 .logo img {
   height: 28px;
   width: auto;
+  object-fit: contain;
   filter: drop-shadow(0 0 8px rgba(108,140,255,0.2));
 }
 

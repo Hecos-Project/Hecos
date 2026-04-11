@@ -439,8 +439,16 @@ def show_help():
         lines.append(f"    Tag: {RED}WEBCAM{RESET} -> \"{GREEN}Non usare la webcam sul PC, usa sempre target='client'{RESET}\".")
         lines.append("")
 
-        # ─── SEZIONE 5: MODULI SISTEMA ──────────────────────────────────────────────
-        lines.append(f"{YELLOW}━━━ 5. STATO DIAGNOSTICO DEI MODULI (TOOL ATTIVI) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+        # ─── SEZIONE 5: DOCUMENTAZIONE ONLINE ───────────────────────────────────────
+        lines.append(f"{YELLOW}━━━ 5. DOCUMENTAZIONE ONLINE E WIKI ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+        lines.append("")
+        lines.append(f"{WHITE}  📖 Guida Utente Unificata:{RESET}  {CYAN}http://localhost:7070/zentra/docs/user{RESET}")
+        lines.append(f"{WHITE}  💻 Guida Tecnica (Admin):{RESET}   {CYAN}http://localhost:7070/zentra/docs/tech{RESET}")
+        lines.append(f"{WHITE}  🌐 GitHub Wiki:{RESET}             {CYAN}https://github.com/zentra-core/zentra-core/wiki{RESET}")
+        lines.append("")
+
+        # ─── SEZIONE 6: MODULI SISTEMA ──────────────────────────────────────────────
+        lines.append(f"{YELLOW}━━━ 6. STATO DIAGNOSTICO DEI MODULI (TOOL ATTIVI) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
         lines.append("")
     else:
         # ─── HEADER ─────────────────────────────────────────────────────────────────
@@ -521,8 +529,16 @@ def show_help():
         lines.append(f"    Tag: {RED}WEBCAM{RESET} -> \"{GREEN}Don't use PC webcam, always use target='client'{RESET}\".")
         lines.append("")
 
-        # ─── SECTION 5: SYSTEM MODULES ──────────────────────────────────────────────
-        lines.append(f"{YELLOW}━━━ 5. SYSTEM MODULE DIAGNOSTICS (ACTIVE TOOLS) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+        # ─── SECTION 5: ONLINE DOCUMENTATION ───────────────────────────────────────
+        lines.append(f"{YELLOW}━━━ 5. ONLINE DOCUMENTATION AND WIKI ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
+        lines.append("")
+        lines.append(f"{WHITE}  📖 Unified User Guide:{RESET}     {CYAN}http://localhost:7070/zentra/docs/user{RESET}")
+        lines.append(f"{WHITE}  💻 Technical Guide (Admin):{RESET}  {CYAN}http://localhost:7070/zentra/docs/tech{RESET}")
+        lines.append(f"{WHITE}  🌐 GitHub Wiki:{RESET}             {CYAN}https://github.com/zentra-core/zentra-core/wiki{RESET}")
+        lines.append("")
+
+        # ─── SECTION 6: SYSTEM MODULES ──────────────────────────────────────────────
+        lines.append(f"{YELLOW}━━━ 6. SYSTEM MODULE DIAGNOSTICS (ACTIVE TOOLS) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━{RESET}")
         lines.append("")
 
     for l in lines:

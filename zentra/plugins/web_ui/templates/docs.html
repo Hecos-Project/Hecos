@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - Zentra Docs</title>
+    <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG%20-%20SQR.png">
+    <link rel="stylesheet" href="/assets/css/index.css?v=0.15.2">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js for Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        :root {
+            --sidebar-width: 300px;
+            --accent: #66fcf1;
+            --accent2: #45a29e;
+            --bg: #0b0c10;
+            --surface: #1f2833;
+            --text: #c5c6c7;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Style */
+        .docs-sidebar {
+            width: var(--sidebar-width);
+            background: #0d1117;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .sidebar-header img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+        }
+
+        .sidebar-header .title {
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+
+        .nav-section {
+            margin-bottom: 20px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #45a29e;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            padding-left: 10px;
+            opacity: 0.7;
+        }
+
+        .nav-group-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            padding: 5px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+        }
+
+        .group-btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #888;
+            border: none;
+            background: transparent;
+        }
+
+        .group-btn:hover { color: #ccc; }
+        .group-btn.active {
+            background: var(--surface);
+            color: var(--accent);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .chapter-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .chapter-item {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #888;
+            font-size: 13px;
+            transition: all 0.2s;
+            margin-bottom: 2px;
+            border-left: 2px solid transparent;
+        }
+
+        .chapter-item:hover {
+            color: var(--text);
+            background: rgba(255,255,255,0.03);
+        }
+
+        .chapter-item.active {
+            color: var(--accent);
+            background: rgba(102, 252, 241, 0.08);
+            border-left-color: var(--accent);
+            font-weight: 500;
+        }
+
+        /* Language Switcher */
+        .lang-switcher {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .lang-link {
+            text-decoration: none;
+            color: #666;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.02);
+            transition: all 0.2s;
+        }
+        .lang-link:hover, .lang-link.active {
+            color: var(--accent);
+            background: rgba(102, 252, 241, 0.1);
+        }
+
+        /* Content Area */
+        .docs-main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 60px;
+            box-sizing: border-box;
+            background: radial-gradient(circle at top right, rgba(102, 252, 241, 0.03), transparent 400px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #content-target {
+            max-width: 850px;
+            margin: 0 auto 60px auto;
+            width: 100%;
+            line-height: 1.6;
+        }
+
+        /* Markdown Styles */
+        #content-target h1 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 15px; margin-bottom: 30px; }
+        #content-target h2 { color: var(--accent2); margin-top: 45px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        #content-target h3 { color: #8ef; margin-top: 30px; }
+        #content-target p { margin-bottom: 18px; color: #d1d2d3; }
+        #content-target code { background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; color: #f88; }
+        #content-target pre { background: #0d1117; padding: 20px; border-radius: 12px; overflow-x: auto; border: 1px solid rgba(255,252,241,0.05); margin: 20px 0; }
+        #content-target pre code { background: transparent; padding: 0; color: inherit; }
+        #content-target blockquote { border-left: 4px solid var(--accent); background: rgba(102, 252, 241, 0.02); margin: 25px 0; padding: 15px 25px; color: #888; font-style: italic; }
+        #content-target table { width: 100%; border-collapse: collapse; margin: 30px 0; font-size: 14px; }
+        #content-target th, #content-target td { border: 1px solid rgba(255,255,255,0.08); padding: 14px; text-align: left; }
+        #content-target th { background: rgba(255,255,255,0.04); color: var(--accent); }
+        #content-target img { max-width: 100%; border-radius: 12px; margin: 30px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        /* Pagination Buttons */
+        .pagination {
+            max-width: 850px;
+            margin: auto auto 40px auto;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .pag-btn {
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: #666;
+            transition: all 0.2s;
+            max-width: 45%;
+        }
+
+        .pag-btn:hover { color: var(--accent); }
+        .pag-btn .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .pag-btn .title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pag-btn.prev { text-align: left; }
+        .pag-btn.next { text-align: right; }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            color: #888;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .back-link:hover { background: var(--surface); color: white; }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: var(--sidebar-width); right: 0; bottom: 0;
+            background: var(--bg);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        @media (max-width: 900px) {
+            :root { --sidebar-width: 240px; }
+            .docs-main { padding: 30px; }
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .docs-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            .docs-main { padding: 20px; }
+            #loading-overlay { left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="docs-sidebar">
+    <div class="sidebar-header">
+        <img src="/assets/Zentra_Core_Logo_NBG%20-%20SQR.png" alt="Zentra Logo">
+        <div class="title">ZENTRA DOCS</div>
+    </div>
+
+    <div class="lang-switcher">
+        <a href="javascript:void(0)" onclick="switchLang('en')" id="lang-en" class="lang-link">EN</a>
+        <a href="javascript:void(0)" onclick="switchLang('it')" id="lang-it" class="lang-link">IT</a>
+        <a href="javascript:void(0)" onclick="switchLang('es')" id="lang-es" class="lang-link">ES</a>
+    </div>
+
+    <div class="nav-group-selector">
+        <button id="btn-group-user" class="group-btn" onclick="switchGroup('user')">OPERATING</button>
+        {% if current_user.role == 'admin' %}
+        <button id="btn-group-tech" class="group-btn" onclick="switchGroup('tech')">TECHNICAL</button>
+        {% endif %}
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label" id="chapters-label">Chapters</div>
+        <div id="chapters-container" class="chapter-list">
+            <!-- Dynamic Chapters -->
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label">Resources</div>
+        <a href="https://github.com/zentra-core/zentra-core.github.io" target="_blank" class="chapter-item">
+            GitHub Wiki ↗
+        </a>
+    </div>
+
+    <a href="/chat" class="back-link">↩ Back to Chat</a>
+</div>
+
+<main class="docs-main">
+    <div id="loading-overlay">
+        <div style="color: var(--accent); font-weight: 600; letter-spacing: 2px; animation: pulse 1.5s infinite;">LOADING...</div>
+    </div>
+    <article id="content-target">
+        <!-- Content injected here -->
+    </article>
+
+    <div class="pagination" id="pagination">
+        <a href="#" class="pag-btn prev" id="pag-prev" style="visibility: hidden;">
+            <span class="label">Previous</span>
+            <span class="title" id="pag-prev-title">---</span>
+        </a>
+        <a href="#" class="pag-btn next" id="pag-next" style="visibility: hidden;">
+            <span class="label">Next</span>
+            <span class="title" id="pag-next-title">---</span>
+        </a>
+    </div>
+</main>
+
+<script>
+    let currentGroup = "{{ group }}";
+    let currentChapter = "{{ initial_chapter }}";
+    let currentLang = "{{ lang }}";
+    let chapters = [];
+
+    async function loadChapters() {
+        try {
+            const resp = await fetch(`/api/docs/list/${currentGroup}?lang=${currentLang}`);
+            chapters = await resp.json();
+            renderSidebar();
+            if (currentChapter) {
+                loadContent(currentChapter);
+            } else if (chapters.length > 0) {
+                loadContent(chapters[0].id);
+            }
+        } catch (e) {
+            console.error("Error loading chapters:", e);
+        }
+    }
+
+    function renderSidebar() {
+        const container = document.getElementById('chapters-container');
+        container.innerHTML = '';
+        
+        chapters.forEach((ch, index) => {
+            const a = document.createElement('a');
+            a.href = `javascript:void(0)`;
+            a.className = `chapter-item ${ch.id === currentChapter ? 'active' : ''}`;
+            a.textContent = ch.name;
+            a.onclick = () => loadContent(ch.id);
+            container.appendChild(a);
+        });
+
+        // Update Group Tabs
+        document.getElementById('btn-group-user').classList.toggle('active', currentGroup === 'user');
+        const techBtn = document.getElementById('btn-group-tech');
+        if (techBtn) techBtn.classList.toggle('active', currentGroup === 'tech');
+
+        // Update Lang Links
+        document.querySelectorAll('.lang-link').forEach(el => {
+            el.classList.toggle('active', el.id === `lang-${currentLang}`);
+        });
+    }
+
+    async function loadContent(chapterId) {
+        if (!chapterId) return;
+        currentChapter = chapterId;
+        
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex';
+
+        try {
+            const resp = await fetch(`/api/docs/content/${currentGroup}/${chapterId}?lang=${currentLang}`);
+            const data = await resp.json();
+            
+            if (data.error) {
+                document.getElementById('content-target').innerHTML = `<h1>Error</h1><p>${data.error}</p>`;
+            } else {
+                const target = document.getElementById('content-target');
+                target.innerHTML = marked.parse(data.content);
+                
+                // Highlight code
+                target.querySelectorAll('pre code').forEach((el) => {
+                    hljs.highlightElement(el);
+                 });
+                
+                // Scroll to top
+                document.querySelector('.docs-main').scrollTop = 0;
+            }
+            
+            updatePagination();
+            renderSidebar();
+            
+            // Update URL without refresh
+            const newUrl = `${window.location.pathname}?group=${currentGroup}&chapter=${chapterId}&lang=${currentLang}`;
+            window.history.pushState({ group: currentGroup, chapter: chapterId, lang: currentLang }, '', newUrl);
+
+        } catch (e) {
+            console.error("Error loading content:", e);
+        } finally {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function updatePagination() {
+        const idx = chapters.findIndex(c => c.id === currentChapter);
+        const prev = chapters[idx - 1];
+        const next = chapters[idx + 1];
+
+        const prevEl = document.getElementById('pag-prev');
+        if (prev) {
+            prevEl.style.visibility = 'visible';
+            document.getElementById('pag-prev-title').textContent = prev.name;
+            prevEl.onclick = (e) => { e.preventDefault(); loadContent(prev.id); };
+        } else {
+            prevEl.style.visibility = 'hidden';
+        }
+
+        const nextEl = document.getElementById('pag-next');
+        if (next) {
+            nextEl.style.visibility = 'visible';
+            document.getElementById('pag-next-title').textContent = next.name;
+            nextEl.onclick = (e) => { e.preventDefault(); loadContent(next.id); };
+        } else {
+            nextEl.style.visibility = 'hidden';
+        }
+    }
+
+    function switchGroup(group) {
+        if (group === currentGroup) return;
+        currentGroup = group;
+        currentChapter = ""; // Load first chapter of new group
+        loadChapters();
+    }
+
+    function switchLang(lang) {
+        if (lang === currentLang) return;
+        currentLang = lang;
+        loadChapters(); // Reload titles and content
+    }
+
+    // Handle browser back/forward
+    window.onpopstate = function(event) {
+        if (event.state) {
+            currentGroup = event.state.group;
+            currentChapter = event.state.chapter;
+            currentLang = event.state.lang;
+            loadChapters();
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', loadChapters);
+</script>
+
+<style>
+    @keyframes pulse {
+        0% { opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { opacity: 0.4; }
+    }
+</style>
+
+</body>
+</html>

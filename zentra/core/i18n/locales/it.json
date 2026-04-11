@@ -437,6 +437,18 @@
         "webui_conf_voice_system_title": "Controlli Globali Audio",
         "webui_conf_voice_system_listening": "Ascolto Sistema (F4)",
         "webui_conf_voice_system_voice": "Voce Sistema (F5)",
-        "webui_chat_mic": "MIC"
+        "webui_chat_mic": "MIC",
+        "side_guide": "Guida",
+        "doc_user_guide": "Manuale Operativo",
+        "doc_tech_guide": "Guida Tecnica",
+        "doc_resources": "Risorse",
+        "doc_back_to_chat": "Torna alla Chat",
+        "doc_loading": "Caricamento guida in corso...",
+        "doc_select_guide": "Seleziona una guida dalla barra laterale per iniziare.",
+        "doc_user_desc": "Guida all'uso quotidiano, configurazione dei plugin e comandi vocali.",
+        "doc_tech_desc": "Architettura di sistema, pipeline di esecuzione e best practice per sviluppatori.",
+        "lang_en": "Inglese",
+        "lang_it": "Italiano",
+        "lang_es": "Spagnolo"
     }
 }

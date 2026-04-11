@@ -1,0 +1,16 @@
+{
+    "es": {
+        "side_guide": "Guía",
+        "doc_user_guide": "Manual de Operación",
+        "doc_tech_guide": "Guía Técnica",
+        "doc_resources": "Recursos",
+        "doc_back_to_chat": "Volver al Chat",
+        "doc_loading": "Cargando guía...",
+        "doc_select_guide": "Seleccione una guía en la barra lateral para comenzar.",
+        "doc_user_desc": "Guía de uso diario, configuración de plugins y comandos de voz.",
+        "doc_tech_desc": "Arquitectura del sistema, pipeline de ejecución y mejores prácticas para desarrolladores.",
+        "lang_en": "Inglés",
+        "lang_it": "Italiano",
+        "lang_es": "Español"
+    }
+}

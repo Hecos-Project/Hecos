@@ -422,6 +422,18 @@
         "webui_conf_voice_system_title": "Global Audio Controls",
         "webui_conf_voice_system_listening": "System Listening (F4)",
         "webui_conf_voice_system_voice": "System Voice (F5)",
-        "webui_chat_mic": "MIC"
+        "webui_chat_mic": "MIC",
+        "side_guide": "Guide",
+        "doc_user_guide": "Operating Manual",
+        "doc_tech_guide": "Technical Guide",
+        "doc_resources": "Resources",
+        "doc_back_to_chat": "Back to Chat",
+        "doc_loading": "Loading guide...",
+        "doc_select_guide": "Select a guide from the sidebar to start.",
+        "doc_user_desc": "Daily usage guide, plugin configuration and voice commands.",
+        "doc_tech_desc": "System architecture, execution pipeline and developer best practices.",
+        "lang_en": "English",
+        "lang_it": "Italiano",
+        "lang_es": "Español"
     }
 }

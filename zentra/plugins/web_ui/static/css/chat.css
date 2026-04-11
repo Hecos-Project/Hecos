@@ -54,3 +54,17 @@
   border-color: #ff3b3b !important;
   animation: pulse-mic 1s infinite alternate;
 }
+
+/* Logo Fixes */
+.logo img {
+  height: 28px !important;
+  width: auto !important;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.sidebar-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
