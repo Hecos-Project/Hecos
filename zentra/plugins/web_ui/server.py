@@ -136,6 +136,9 @@ class ZentraWebUIServer:
             
             from .routes_auth import init_auth_routes
             init_auth_routes(app, self.config_manager, self.logger)
+            
+            from .routes_mcp import init_mcp_routes
+            init_mcp_routes(app, self.config_manager, self.logger)
         except Exception as e:
             import traceback
             print(f"[DEBUG BOOT] CRITICAL ERROR during route registration: {e}", flush=True)
@@ -270,6 +273,15 @@ if __name__ == "__main__":
     # Initialize plugin registry (needed for plugin execution from WebUI process)
     from zentra.core.system import plugin_loader
     plugin_loader.update_capability_registry(cfg.config)
+    
+    # Initialize MCP Bridge for Universal External Tools
+    mcp_bridge = plugin_loader.get_plugin_module("MCP_BRIDGE", legacy=False)
+    if mcp_bridge and hasattr(mcp_bridge, "on_load"):
+        try:
+            logger.info("[WebUI Standalone] Bootstrapping MCP Bridge...")
+            mcp_bridge.on_load(cfg.config)
+        except Exception as mcp_e:
+            logger.error(f"[WebUI Standalone] MCP Bridge bootstrap error: {mcp_e}")
 
     # Initialize state manager with config_audio.json settings
     from zentra.core.audio.device_manager import get_audio_config

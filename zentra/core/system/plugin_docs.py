@@ -187,6 +187,10 @@ def get_tools_schema():
                     }
                     if param.default == inspect.Parameter.empty:
                         required.append(param_name)
+                        
+                # Ensure we don't expose internal MCP bridge handlers directly to the AI
+                if tag == "MCP_BRIDGE" and name in ["get_mcp_schemas", "call_tool"]:
+                    continue
 
                 tools_list.append({
                     "type": "function",
@@ -200,6 +204,15 @@ def get_tools_schema():
                         }
                     }
                 })
+                
+        # --- NEW: Inject flattened dynamic MCP Schemas directly from the bridge ---
+        if tag == "MCP_BRIDGE" and hasattr(module, "tools") and hasattr(module.tools, "get_mcp_schemas"):
+            try:
+                mcp_dynamic_schemas = module.tools.get_mcp_schemas()
+                if mcp_dynamic_schemas:
+                    tools_list.extend(mcp_dynamic_schemas)
+            except Exception as e:
+                logger.error(f"DOCS: Failed to fetch dynamic MCP schemas: {e}")
 
     # --- ADD LAZY PLUGINS SCHEMAS ---
     for tag, schema_list in _lazy_tool_schemas.items():

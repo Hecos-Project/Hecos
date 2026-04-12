@@ -315,6 +315,28 @@ def update_capability_registry(config=None, debug_log=True):
             logger.error(f"LOADER: Failed to load legacy {module_name}: {e}")
             continue
 
+    # --- NEW SECTION: Universal Hub - External Providers (MCP) ---
+    try:
+        mcp_cfg = config.get("plugins", {}).get("MCP_BRIDGE", {})
+        if mcp_cfg.get("enabled", True):
+            mcp_servers = mcp_cfg.get("servers", {})
+            for mcp_name, mcp_s in mcp_servers.items():
+                if mcp_s.get("enabled", True):
+                    # We map each external MCP server as a top-level module in Zentra
+                    skills_map[f"MCP_{mcp_name.upper()}"] = {
+                        "description": f"External Tool Provider ({mcp_name}) via Model Context Protocol.",
+                        "commands": {"<dynamic_tools>": "Tools are dynamically discovered upon connection."},
+                        "status": "EXTERNAL",
+                        "example": "",
+                        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
+                        "is_class_based": False,
+                        "is_mcp": True,
+                        "server_name": mcp_name
+                    }
+                    if debug_log: logger.debug("LOADER", f"External Provider {mcp_name} registered in unified hub.")
+    except Exception as e:
+        logger.error(f"LOADER: Failed to parse MCP external providers for registry: {e}")
+
     # Centralized registry writing
     try:
         with open(REGISTRY_PATH, "w", encoding="utf-8") as f:

@@ -103,17 +103,27 @@ class MCPBridgePlugin:
         mcp_cfg = config.get("plugins", {}).get("MCP_BRIDGE", {})
         servers = mcp_cfg.get("servers", {})
         
+        logger.info(f"[MCP_BRIDGE DEMO] Extracted raw config servers: {list(servers.keys())}")
+        
         for name, s_cfg in servers.items():
-            if not s_cfg.get("enabled", True): continue
+            if not s_cfg.get("enabled", True): 
+                logger.info(f"[MCP_BRIDGE DEMO] Skipping {name} because it is disabled.")
+                continue
             
+            # WINDOWS FIX: Ensure commands use .cmd if applicable
+            cmd = s_cfg.get("command")
+            if os.name == 'nt' and cmd == 'npx':
+                cmd = 'npx.cmd'
+                
             proxy = MCPProxy(
                 name=name,
-                command=s_cfg.get("command"),
+                command=cmd,
                 args=s_cfg.get("args", []),
                 env=s_cfg.get("env", {})
             )
             proxy.start()
             self.proxies[name] = proxy
+            logger.info(f"[MCP_BRIDGE DEMO] Proxy object appended for {name}. Total proxies: {len(self.proxies)}")
         
         self.initialized = True
         logger.info(f"[MCP_BRIDGE] Bootstrap complete. {len(self.proxies)} servers connected.")
@@ -161,6 +171,31 @@ class MCPBridgePlugin:
         # We need the real config here, but for now we expect the next call to trigger it
         return "MCP Servers scheduled for reload."
 
+    def get_tool_schemas(self):
+        """
+        Returns all discovered MCP tools in an OpenAI-compatible function schema format.
+        Flattens the namespace so each tool appears as `[server_name]__[tool_name]`.
+        """
+        schemas = []
+        for server_name, proxy in self.proxies.items():
+            for t in proxy.tools:
+                # Basic MCP tool format: name, description, inputSchema
+                tool_name = t.get("name", "")
+                
+                # Zentra flattens this using double underscore
+                flat_name = f"{server_name}__{tool_name}"
+                
+                schema = {
+                    "type": "function",
+                    "function": {
+                        "name": flat_name,
+                        "description": t.get("description", f"MCP Tool: {tool_name} from {server_name}"),
+                        "parameters": t.get("inputSchema", {"type": "object", "properties": {}})
+                    }
+                }
+                schemas.append(schema)
+        return schemas
+
 # ── Dynamic Tool Injection ───────────────────────────────────────────────────
 # Custom tools object to satisfy Zentra's loader
 class DynamicTools:
@@ -172,6 +207,10 @@ class DynamicTools:
     def status(self): return self._bridge.status()
     def list(self): return self._bridge.list()
     def reload(self): return self._bridge.reload()
+    
+    def get_mcp_schemas(self):
+        """Hook used by Zentra's plugin_docs.py to merge tools."""
+        return self._bridge.get_tool_schemas()
 
     # NOTE: Zentra's processor looks for methods on this object.
     # To support DYNAMIC tools from MCP servers, we would ideally override __getattr__

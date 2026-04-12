@@ -172,6 +172,35 @@ def extract_and_execute_tools(raw_response, config=None):
             logger.info("[PROCESSOR] Plugin registry empty; performing lazy initialization...")
             plugin_loader.update_capability_registry(current_config, debug_log=False)
             
+        # --- NEW: Universal Tool Routing - Intercept MCP External Providers ---
+        mcp_module = plugin_loader.get_plugin_module("MCP_BRIDGE", legacy=False)
+        mcp_bridge_instance = getattr(mcp_module, "bridge_instance", None) if mcp_module else None
+        
+        if mcp_bridge_instance and hasattr(mcp_bridge_instance, "proxies"):
+            # LLM tools are serialized as MCP_SERVERNAME__toolname
+            # so module_to_call will be MCP_SERVERNAME (or lowercase mcp_servername)
+            target_server = module_to_call[4:].lower() if module_to_call.upper().startswith("MCP_") else module_to_call.lower()
+            
+            resolved_server = None
+            for p_name in mcp_bridge_instance.proxies.keys():
+                if p_name.lower() == target_server:
+                    resolved_server = p_name
+                    break
+
+            if resolved_server:
+                logger.info(f"[SYSTEM] Routing external tool {method_name} to MCP Provider: {resolved_server}")
+                try:
+                    args_dict = action_or_args if isinstance(action_or_args, dict) else {}
+                    result = mcp_bridge_instance.execute_mcp_tool(resolved_server, method_name, **args_dict)
+                    if result:
+                        logger.info(f"[OUTPUT MCP_{resolved_server.upper()}]:\n{result}")
+                        tool_results.append({"id": call_id, "output": str(result), "tag": f"MCP_{resolved_server.upper()}"})
+                except Exception as e:
+                    logger.error(f"[PROCESSOR] MCP Tool error ({resolved_server}:{method_name}): {e}")
+                    tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": f"MCP_{resolved_server.upper()}"})
+                continue # Skip native plugin processing
+        # ----------------------------------------------------------------------
+        
         plugin_obj = plugin_loader.get_plugin_module(module_to_call.upper(), legacy=False)
         is_legacy_oop = False
         if not plugin_obj:
