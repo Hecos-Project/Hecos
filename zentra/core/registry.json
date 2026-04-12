@@ -101,6 +101,7 @@
             "get_mcp_schemas": "Hook used by Zentra's plugin_docs.py to merge tools.",
             "list": "Method",
             "reload": "Method",
+            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
             "status": "Method"
         },
         "status": "No MCP servers connected.",
