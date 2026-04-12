@@ -26,6 +26,7 @@
       </div>
     </div>
     <div class="topbar-actions">
+      <button class="btn btn-sidebar-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Quick Config">⚡</button>
       <button class="btn btn-drive" onclick="window.location='/drive'">← Drive</button>
       <button class="btn btn-save" id="save-btn" disabled>
         <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4.5L10.5 1H2Zm0 1h8v3h3v10H2V2Zm6 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
@@ -34,9 +35,46 @@
     </div>
   </div>
 
-  <!-- ── EDITOR ── -->
-  <div id="editor-container">
-    <div id="monaco-editor"></div>
+  <!-- ── MAIN CONTENT (Sidebar + Editor) ── -->
+  <div id="main-content">
+
+    <!-- ── SIDEBAR ── -->
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <span class="sidebar-title">⚡ Quick Config</span>
+        <button class="sidebar-close-btn" onclick="toggleSidebar()" title="Close">✕</button>
+      </div>
+      <div id="sidebar-body">
+        {% if quick_links %}
+          {% for group in quick_links %}
+          <div class="sb-group">
+            <div class="sb-group-header" onclick="toggleGroup('{{ group.id }}')">
+              <span>{{ group.title }}</span>
+              <span class="sb-chevron" id="chev-{{ group.id }}">▾</span>
+            </div>
+            <ul class="sb-file-list" id="grp-{{ group.id }}">
+              {% for item in group.items %}
+              <li class="sb-file-item {% if item.path == file_path %}active{% endif %}"
+                  onclick="openFile('{{ item.path }}')"
+                  title="{{ item.path }}">
+                <span class="sb-file-icon">{% if item.name.endswith('.yaml') or item.name.endswith('.yml') %}📄{% elif item.name.endswith('.json') %}📋{% else %}📝{% endif %}</span>
+                <span class="sb-file-name">{{ item.name }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p class="sb-empty">No config files found.</p>
+        {% endif %}
+      </div>
+    </aside>
+
+    <!-- ── EDITOR ── -->
+    <div id="editor-container">
+      <div id="monaco-editor"></div>
+    </div>
+
   </div>
 
   <!-- ── STATUS BAR ── -->
@@ -63,6 +101,40 @@
   window.THEME      = {{ theme     | tojson }};
   window.WORD_WRAP  = {{ word_wrap | tojson }};
   window.SPELL_CHK  = {{ spell_check | tojson | lower }};
+
+  // ── Sidebar Logic ──────────────────────────────────────────────────
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed');
+    // Save preference
+    localStorage.setItem('zentra_editor_sidebar', sidebar.classList.contains('collapsed') ? '0' : '1');
+  }
+
+  function toggleGroup(id) {
+    const list = document.getElementById('grp-' + id);
+    const chev = document.getElementById('chev-' + id);
+    if (!list) return;
+    list.classList.toggle('collapsed');
+    chev.textContent = list.classList.contains('collapsed') ? '▸' : '▾';
+  }
+
+  function openFile(path) {
+    if (path === window.FILE_PATH) return; // Already open
+    window.location.href = '/drive/editor?path=' + encodeURIComponent(path);
+  }
+
+  // Restore sidebar state from localStorage
+  document.addEventListener('DOMContentLoaded', () => {
+    const show = localStorage.getItem('zentra_editor_sidebar');
+    if (show === '0') {
+      document.getElementById('sidebar').classList.add('collapsed');
+    }
+    // Auto-scroll to active item
+    const active = document.querySelector('.sb-file-item.active');
+    if (active) {
+      active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  });
 </script>
 <script src="/editor_static/js/editor.js"></script>
 </body>

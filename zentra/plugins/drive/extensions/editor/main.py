@@ -71,6 +71,77 @@ def _get_config() -> dict:
     return defaults
 
 
+def _get_quick_links(root_dir: str) -> list:
+    """
+    Scans well-known Zentra directories and returns a list of groups,
+    each with a title, icon, and a list of {name, path} items.
+    """
+    SCAN_GROUPS = [
+        {
+            "id":    "system",
+            "title": "⚙️ System Config",
+            "dirs":  ["zentra/config/data"],
+            "exts":  {".yaml", ".yml", ".json"},
+            "exclude": {".example"},  # skip *.example files
+        },
+        {
+            "id":    "souls",
+            "title": "🧠 Personality Souls",
+            "dirs":  ["zentra/personality"],
+            "exts":  {".yaml", ".yml"},
+        },
+        {
+            "id":    "rp_chars",
+            "title": "🎭 Roleplay Characters",
+            "dirs":  ["zentra/plugins/roleplay/characters"],
+            "exts":  {".yaml", ".yml", ".json"},
+        },
+        {
+            "id":    "rp_scenes",
+            "title": "🎬 Roleplay Scenes",
+            "dirs":  ["zentra/plugins/roleplay/scenes"],
+            "exts":  {".yaml", ".yml", ".json"},
+        },
+        {
+            "id":    "routing",
+            "title": "🔀 Routing & Overrides",
+            "dirs":  ["zentra/config"],
+            "exts":  {".yaml", ".yml"},
+            "recursive": False,  # only top-level files in that extra dir
+        },
+    ]
+
+    groups = []
+    for grp in SCAN_GROUPS:
+        items = []
+        exclude_suffixes = grp.get("exclude", set())
+        recursive = grp.get("recursive", True)
+
+        for rel_dir in grp["dirs"]:
+            abs_dir = os.path.normpath(os.path.join(root_dir, rel_dir))
+            if not os.path.isdir(abs_dir):
+                continue
+
+            walk_iter = os.walk(abs_dir) if recursive else [(abs_dir, [], os.listdir(abs_dir))]
+            for dirpath, _, filenames in walk_iter:
+                for fname in sorted(filenames):
+                    ext = os.path.splitext(fname)[1].lower()
+                    if ext not in grp["exts"]:
+                        continue
+                    # Skip excluded suffixes (e.g., ".example")
+                    if any(fname.endswith(s) for s in exclude_suffixes):
+                        continue
+                    abs_file = os.path.join(dirpath, fname)
+                    # Build a path relative to root_dir, using forward slashes for URLs
+                    rel_path = os.path.relpath(abs_file, root_dir).replace("\\", "/")
+                    items.append({"name": fname, "path": rel_path})
+
+        if items:
+            groups.append({"id": grp["id"], "title": grp["title"], "items": items})
+
+    return groups
+
+
 def _safe_path(root: str, rel_path: str) -> str | None:
     """
     Resolves a relative path against the drive root, OR accepts an absolute path 
@@ -149,6 +220,10 @@ def drive_editor_page():
     lang = LANG_MAP.get(ext, "plaintext")
     filename = os.path.basename(target)
 
+    # Scan Zentra root for known config dirs to populate the sidebar
+    zentra_root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
+    quick_links = _get_quick_links(zentra_root)
+
     return render_template(
         "editor.html",
         file_path=rel,
@@ -157,6 +232,7 @@ def drive_editor_page():
         theme=cfg["theme"],
         word_wrap="on" if cfg["word_wrap"] else "off",
         spell_check=cfg["spell_check"],
+        quick_links=quick_links,
     )
 
 @editor_bp.route("/drive/api/editor/read")
