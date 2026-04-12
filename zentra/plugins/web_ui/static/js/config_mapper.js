@@ -6,7 +6,8 @@ const RESTART_FIELDS = [
   'system-port',
   'system-api-port',
   'br-voice-stt',
-  'br-voice-enabled'
+  'br-voice-enabled',
+  'sys-https-enabled'
 ];
 
 /**
@@ -140,26 +141,41 @@ function populateUI() {
 }
 
 function initRestartIndicators() {
+  console.log("[CONFIG] Initializing Restart Indicators for:", RESTART_FIELDS);
   RESTART_FIELDS.forEach(id => {
     const el = document.getElementById(id);
-    if (!el) return;
+    if (!el) {
+      console.warn("[CONFIG] Element not found for restart indicator:", id);
+      return;
+    }
 
     // Create badge if not exists
-    let badge = el.parentElement.querySelector('.restart-badge');
+    let badge = document.getElementById('badge-' + id);
     if (!badge) {
       badge = document.createElement('span');
+      badge.id = 'badge-' + id;
       badge.className = 'restart-badge';
       badge.textContent = 'Restart Required';
-      // If the parent is a 'field', append to label
-      const label = el.parentElement.querySelector('label');
-      if (label) {
-        label.appendChild(badge);
+      
+      // Smart placement
+      const parentField = el.closest('.field');
+      const parentToggle = el.closest('.toggle-row');
+      
+      if (parentField) {
+        const label = parentField.querySelector('label');
+        if (label) label.appendChild(badge);
+        else parentField.appendChild(badge);
+      } else if (parentToggle) {
+        const info = parentToggle.querySelector('.toggle-info');
+        if (info) info.appendChild(badge);
+        else parentToggle.appendChild(badge);
       } else {
         el.parentElement.appendChild(badge);
       }
     }
 
     const initialValue = el.type === 'checkbox' ? el.checked : el.value;
+    console.debug(`[CONFIG] Monitoring ${id}, initial:`, initialValue);
 
     const check = () => {
       const current = el.type === 'checkbox' ? el.checked : el.value;
