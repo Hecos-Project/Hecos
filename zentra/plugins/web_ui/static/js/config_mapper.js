@@ -17,9 +17,15 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
   // Clear existing
   el.innerHTML = '';
   
+  // Convert object { "name": "id" } to array [ { "id": "id", "name": "name" } ]
+  let items = list;
+  if (list && typeof list === 'object' && !Array.isArray(list)) {
+      items = Object.entries(list).map(([name, id]) => ({ id, name }));
+  }
+
   // Basic validation
-  if (!Array.isArray(list) || list.length === 0) {
-    if (isInitialLoading) {
+  if (!items || (Array.isArray(items) && items.length === 0)) {
+    if (typeof isInitialLoading !== 'undefined' && isInitialLoading) {
       const opt = document.createElement('option');
       opt.textContent = "Loading...";
       opt.disabled = true;
@@ -33,13 +39,26 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
     cleanValue = currentValue.split(/[\\/]/).pop();
   }
 
-  list.forEach(item => {
+  const itemsArr = Array.isArray(items) ? items : [items];
+  itemsArr.forEach(item => {
     const opt = document.createElement('option');
-    const shortItem = (isFilenameOnly && (item.includes('\\') || item.includes('/'))) ? item.split(/[\\/]/).pop() : item;
     
-    opt.value = item;
-    opt.textContent = shortItem;
-    if (cleanValue && (item === cleanValue || item.endsWith(cleanValue))) opt.selected = true;
+    // Determine value and text based on type
+    let val, text;
+    if (typeof item === 'object' && item !== null) {
+        val = item.id || item.value || '';
+        text = item.name || item.text || val;
+    } else {
+        val = item;
+        text = item;
+    }
+
+    const shortText = (isFilenameOnly && (text.includes('\\') || text.includes('/'))) ? text.split(/[\\/]/).pop() : text;
+    const shortVal = (isFilenameOnly && (val.includes('\\') || val.includes('/'))) ? val.split(/[\\/]/).pop() : val;
+    
+    opt.value = val;
+    opt.textContent = shortText;
+    if (cleanValue && (val === cleanValue || val.endsWith(cleanValue) || shortVal === cleanValue)) opt.selected = true;
     el.appendChild(opt);
   });
 }
