@@ -48,10 +48,16 @@ class MCPProxy:
             logger.error(f"[MCP:{self.name}] Failed to start: {e}")
 
     def _fetch_tools(self):
-        res = self.call("tools/list")
-        if res and "result" in res:
-            self.tools = res["result"].get("tools", [])
-            logger.info(f"[MCP:{self.name}] Discovered {len(self.tools)} tools.")
+        for i in range(5):
+            res = self.call("tools/list")
+            if res and "result" in res:
+                self.tools = res["result"].get("tools", [])
+                logger.info(f"[MCP:{self.name}] Discovered {len(self.tools)} tools.")
+                return
+            if i < 4:
+                logger.info(f"[MCP:{self.name}] Tool discovery retry {i+1}/5...")
+                time.sleep(3)
+        logger.error(f"[MCP:{self.name}] Failed to discover tools after 5 attempts.")
 
     def call(self, method: str, params: Dict[str, Any] = {}):
         if not self.process or not self.process.stdin or not self.process.stdout: 
