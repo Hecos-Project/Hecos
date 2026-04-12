@@ -275,8 +275,8 @@
         "is_mcp": true,
         "server_name": "wikipedia"
     },
-    "MCP_ASTRO": {
-        "description": "External Tool Provider (astro) via Model Context Protocol.",
+    "MCP_EXA_MCP_SERVER": {
+        "description": "External Tool Provider (exa_mcp_server) via Model Context Protocol.",
         "commands": {
             "<dynamic_tools>": "Tools are dynamically discovered upon connection."
         },
@@ -285,30 +285,6 @@
         "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
         "is_class_based": false,
         "is_mcp": true,
-        "server_name": "astro"
-    },
-    "MCP_EXA": {
-        "description": "External Tool Provider (exa) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "exa"
-    },
-    "MCP_TITANSNEAKER_PAPER_SEARCH_MCP_OPENAI_V2": {
-        "description": "External Tool Provider (titansneaker_paper_search_mcp_openai_v2) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "titansneaker_paper_search_mcp_openai_v2"
+        "server_name": "exa_mcp_server"
     }
 }

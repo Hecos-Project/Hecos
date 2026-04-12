@@ -49,8 +49,8 @@ class MCPProxy:
             self._stderr_thread = threading.Thread(target=self._read_stderr, daemon=True)
             self._stderr_thread.start()
 
-            # Initialize connection
-            self._fetch_tools()
+            # Initialize connection in background to avoid blocking boot
+            threading.Thread(target=self._fetch_tools, daemon=True).start()
         except Exception as e:
             logger.error(f"[MCP:{self.name}] Failed to start: {e}")
 
