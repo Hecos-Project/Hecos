@@ -16,6 +16,8 @@ class AIConfig(BaseModel):
     save_special_instructions: bool = False
     special_instructions: str = ""
     avatar_size: str = "medium" # small, medium, large
+    roleplay_mode: bool = False
+    roleplay_disclaimer: str = ""
 
 
 
