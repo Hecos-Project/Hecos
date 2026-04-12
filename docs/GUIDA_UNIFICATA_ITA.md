@@ -43,6 +43,11 @@ L'IA può scrivere ed eseguire codice Python in una sandbox sicura (AST) per cal
 ### 🔒 PKI Professionale (HTTPS)
 Zentra genera i propri certificati SSL per abilitare il "Lucchetto Verde" sulla tua LAN, sbloccando l'uso di Microfono e Fotocamera sul browser.
 
+### ⚡ Comandi Diretti (Bypass IA)
+Se vuoi eseguire azioni rapide o generare immagini saltando i filtri morali/sicurezza dell'IA (es. Gemini):
+- `/img [descrizione]`: Genera un'immagine direttamente tramite il provider (HuggingFace/Flux, ecc.).
+- `/foto [descrizione]`: Versione italiana del comando d'immagine.
+
 ---
 
 ## 📱 5. Interfaccia Mobile

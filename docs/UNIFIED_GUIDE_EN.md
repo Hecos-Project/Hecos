@@ -25,6 +25,12 @@ Zentra requires mandatory authentication to protect your data:
 
 ---
 
+### ⚡ Direct Commands (AI Bypass)
+To perform fast actions or bypass LLM safety filters for images:
+- `/img [prompt]`: Triggers direct image generation via provider (Hugging Face, Pollinations, etc.).
+
+---
+
 ## ✨ 4. Key Features (v0.17.0)
 
 ### 🔌 MCP Bridge & Discovery (Universal Tool Hub)

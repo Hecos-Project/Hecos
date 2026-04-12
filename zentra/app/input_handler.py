@@ -60,6 +60,15 @@ class InputHandler:
             return None, testo
             
         testo_pulito = testo.strip()
+        
+        # --- NEW: Direct Image Commands (Bypass AI) ---
+        if testo_pulito.lower().startswith(("/img ", "/foto ")):
+            prompt = testo_pulito[5:].strip()
+            if prompt:
+                self._handle_direct_image(prompt, prefisso)
+                return "PROCESSED", ""
+        # ----------------------------------------------
+
         if testo_pulito.startswith("/istruzione") or testo_pulito.startswith("/instruction"):
             istruzione = testo_pulito.replace("/istruzione", "").replace("/instruction", "").strip()
             self.config.set(istruzione, 'ai', 'special_instructions')
@@ -259,3 +268,44 @@ class InputHandler:
                     sys.stdout.flush()
                     return "CANCELLED", ""
             time.sleep(0.05)
+
+    def _handle_direct_image(self, prompt, prefix):
+        """Generates an image directly, bypassing the LLM analysis."""
+        self.state.system_processing = True
+        self.state.system_status = translator.t("generating_image")
+        
+        # Visual feedback in console
+        print(f"{prefix}\033[92mAdmin: /img {prompt}\033[0m")
+        print(f"\033[93m[SYSTEM] Direct Image Request — Bypassing AI Analysis...\033[0m")
+        
+        interface.start_thinking()
+        self.state.add_event("processing_start")
+
+        try:
+            # Import and call plugin directly
+            from zentra.plugins.image_gen.main import tools as image_gen_tools
+            result = image_gen_tools.generate_image(prompt)
+            
+            # Show response in console
+            interface.write_zentra(result)
+            
+            # Save to memory so the AI can "know" what happened in next turns
+            brain_interface.save_message("user", f"/img {prompt}")
+            brain_interface.save_message("assistant", result)
+
+            # Update WebUI
+            self.state.add_event("system_response", {"user": f"/img {prompt}", "ai": result})
+            
+        except Exception as e:
+            logger.error(f"[INPUT] Direct Image Error: {e}")
+            err_msg = f"❌ Errore generazione diretta: {e}"
+            print(f"\n\033[91m{err_msg}\033[0m")
+            self.state.add_event("system_response", {"user": f"/img {prompt}", "ai": err_msg})
+
+        interface.stop_thinking()
+        self.state.system_status = translator.t("ready")
+        self.state.system_processing = False
+        
+        # Restore prompt
+        sys.stdout.write(prefix)
+        sys.stdout.flush()
