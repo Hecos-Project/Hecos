@@ -252,6 +252,21 @@ def clear_history(days: int = None, user_id: str = "admin") -> bool:
         return False
 
 
+def get_memory_stats(user_id: str = "admin") -> dict:
+    """Returns basic metrics for a user's memory vault."""
+    try:
+        db = _db_path(user_id)
+        count = 0
+        if os.path.exists(db):
+            conn = sqlite3.connect(db)
+            count = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
+            conn.close()
+        return {"total_messages": count, "db_path": db}
+    except Exception as e:
+        logger.error(f"Memory Stats Error: {e}")
+        return {"total_messages": 0, "error": str(e)}
+
+
 # ── Aliases ────────────────────────────────────────────────────────────────────
 
 def get_memory_context(config: dict = None, user_id: str = "admin") -> str:

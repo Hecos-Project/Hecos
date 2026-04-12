@@ -173,7 +173,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 try: days = int(days)
                 except: days = None
             
-            from memory.brain_interface import clear_history
+            from zentra.memory.brain_interface import clear_history
             cleared = clear_history(days=days)
             if cleared:
                 msg = f"History cleared (days={days if days else 'all'})."
@@ -188,15 +188,14 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def memory_status():
         """Returns memory row count and config."""
         try:
-            import sqlite3, os
-            from memory.brain_interface import PATH_DB
-            count = 0
-            if os.path.exists(PATH_DB):
-                conn = sqlite3.connect(PATH_DB)
-                count = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
-                conn.close()
+            from zentra.memory.brain_interface import get_memory_stats
+            stats = get_memory_stats()
             cog = cfg_mgr.config.get("cognition", {})
-            return jsonify({"ok": True, "total_messages": count, "cognition": cog})
+            return jsonify({
+                "ok": True, 
+                "total_messages": stats.get("total_messages", 0), 
+                "cognition": cog
+            })
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
 
