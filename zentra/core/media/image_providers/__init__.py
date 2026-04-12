@@ -62,8 +62,13 @@ def generate_image(prompt: str, provider: str, model: str, width: int, height: i
             log_debug(f"[ImageEngine] SUCCESS via {provider} → {filename}")
             return filename
         except Exception as e:
-            log_debug(f"[ImageEngine] {provider} failed: {e}")
-            logger.error(f"[ImageEngine] {provider} failed: {e}. No automatic fallback.")
-            raise Exception(f"{provider.capitalize()} failed to generate image: {e}")
+            err_msg = str(e)
+            # Standardize common safety-related HTTP errors if possible
+            if "400" in err_msg:
+                err_msg = f"Potential safety/content block ({err_msg})"
+            
+            log_debug(f"[ImageEngine] {provider} failed: {err_msg}")
+            logger.error(f"[ImageEngine] {provider} failed: {err_msg}. No automatic fallback.")
+            raise Exception(f"Artist [{provider.capitalize()}] rejected: {err_msg}")
 
     raise Exception(f"Il provider '{provider}' non possiede un motore nativo per la generazione di immagini. Selezionare un provider compatibile (es. OpenAI, Gemini Native, Pollinations, Hugging Face).")

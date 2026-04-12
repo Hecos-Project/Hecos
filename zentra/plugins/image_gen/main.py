@@ -74,7 +74,12 @@ class ImageGenTools:
 
         except Exception as e:
             logger.error(f"[IMAGE_GEN] Generation failed: {e}")
-            return f"⚠️ Image generation failed ({e}). Check that the provider is configured in the Media tab."
+            # If 'Artist' is already in the message (from the engine), use it as is
+            err_str = str(e)
+            if "Artist" not in err_str:
+                err_str = f"Artist [{provider.capitalize()}] rejected: {err_str}"
+            
+            return f"⚠️ Image generation failed. {err_str}. Verify provider config or prompt safety."
 
 
 # Export instance
