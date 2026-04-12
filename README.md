@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Zentra Logo">
 </p>
 
-# Zentra Core - Version 0.16.0 (Runtime Alpha)
+# Zentra Core - Version 0.17.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,7 +12,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 ---
 
 > [!WARNING]
-> **Runtime Alpha Status**: Zentra Core is currently in `v0.16.0`. This repository contains the engine, backend, AI reasoning modules, and the main native WebUI. Features may change, and the system is not yet considered stable. Use with caution.
+> **Runtime Alpha Status**: Zentra Core is currently in `v0.17.0`. This repository contains the engine, backend, AI reasoning modules, and the main native WebUI. Features may change, and the system is not yet considered stable. Use with caution.
 
 ## 🚀 Overview
 **Zentra Core** is a local-first AI assistant platform that runs entirely on your machine.
@@ -22,9 +22,10 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.16.0 off
 
 ---
 
-## ✨ Key Features (v0.16.0)
-* 🧭 **3-Tier Hybrid Configuration** — A powerful layered override system: Plugin Manifest defaults → User YAML Overrides (`routing_overrides.yaml`) → Core Fallback. Customize AI routing behavior per-plugin without ever touching source code.
-* 📝 **In-WebUI Routing Editor** — A new built-in key-value editor in the **Routing** tab lets you add, edit, and delete plugin-specific routing instructions directly from the browser. One click to open the full YAML file in the Zentra Code Editor.
+## ✨ Key Features (v0.17.0)
+* 🔌 **Universal Tool Hub (MCP Integration)** — Zentra now natively supports the **Model Context Protocol**. Connect to thousands of external AI tools (Brave Search, GitHub, Google Maps, etc.) with a single click. Discover and manage tools via the new **MCP Bridge** dashboard with real-time inventory.
+* 👥 **Multi-User & Identity Profiles** — Complete support for multiple accounts with isolated memories. Every user has their own personal profile, custom avatar, and private "Bio Notes" (contextual memories) that the AI uses to identify them exactly.
+* 💾 **Isolated Per-User Vaults** — Personal files, avatars, and memories are stored in secure, separated "Vaults" (`memory/vaults/username`), ensuring maximum privacy in shared environments.
 * 🤖 **Autonomous Agentic Loop** — Zentra can now reason step-by-step (Chain of Thought), dynamically select tools, and solve complex multi-step problems autonomously.
 * 🛡️ **Zentra Code Jail (AST Sandbox)** — A native, highly secure Python sandbox that allows the AI to execute algorithms, math, and data logic safely.
 * 👁️ **Native Vision Support** — Multimodal AI capabilities for Gemini, OpenAI, and Ollama (LLaVA). Analyze images, photos, and screenshots directly in chat.

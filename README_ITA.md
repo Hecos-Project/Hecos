@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.16.0 (Runtime Alpha)
+# Zentra Core - Versione 0.17.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,19 +12,20 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ---
 
 > [!WARNING]
-> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.16.0`. Questa repository contiene il motore, il backend, i moduli di ragionamento IA e la WebUI nativa principale. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
+> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.17.0`. Questa repository contiene il motore, il backend, i moduli di ragionamento IA e la WebUI nativa principale. Le funzionalità possono cambiare e il sistema non è ancora considerato stabile. Usare con cautela.
 
 ## 🚀 Panoramica
 **Zentra Core** è una piattaforma di assistenza AI local-first che gira interamente sulla tua macchina.
 Combina LLM locali, interazione vocale, automazione di sistema e un'architettura a plugin modulari per creare un compagno digitale completamente personalizzabile.
 
-Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.16.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
+Ora completamente migrato a una **architettura stabile a Plugin Nativi**, Zentra 0.17.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
-## ✨ Caratteristiche Principali (v0.16.0)
-* 🧭 **Configurazione Ibrida a 3 Livelli** — Un sistema di override stratificato: Default del Manifest Plugin → Override YAML Utente (`routing_overrides.yaml`) → Fallback Core. Personalizza il comportamento di routing dell'IA per singolo plugin senza mai toccare il codice sorgente.
-* 📝 **Editor di Routing Integrato** — Un nuovo editor chiave-valore nella scheda **Routing** permette di aggiungere, modificare e rimuovere istruzioni di routing per plugin, direttamente dal browser. Un click per aprire il file YAML completo nello Zentra Code Editor.
+## ✨ Caratteristiche Principali (v0.17.0)
+* 🔌 **Universal Tool Hub (Integrazione MCP)** — Zentra ora supporta nativamente il **Model Context Protocol**. Collegati a migliaia di tool AI esterni (Brave Search, GitHub, Google Maps, ecc.) con un solo click. Scopri e gestisci i tool tramite la nuova dashboard **MCP Bridge** con inventario in tempo reale.
+* 👥 **Multi-User & Identity Profiles** — Supporto completo per account multipli con memorie isolate. Ogni utente ha il proprio profilo personale, avatar personalizzato e "Bio Note" private (memorie contestuali) che l'IA usa per identificarti con precisione.
+* 💾 **Vault Isolati per Utente** — File personali, avatar e memorie sono archiviati in "Vault" sicuri e separati (`memory/vaults/username`), garantendo la massima privacy in ambienti condivisi.
 * 🤖 **Agente Cognitivo Autonomo** — Zentra ora ragiona step-by-step (Chain of Thought), sceglie dinamicamente gli strumenti e risolve task complessi in autonomia.
 * 🛡️ **Zentra Code Jail (Sandbox AST)** — Un ambiente di esecuzione nativo e isolato che permette all'IA di eseguire calcoli Python, algoritmi e test in totale sicurezza.
 * 👁️ **Supporto Visione Nativa** — Capacità AI multimodali per Gemini, OpenAI e Ollama (LLaVA). Analizza immagini, foto e screenshot direttamente in chat.
