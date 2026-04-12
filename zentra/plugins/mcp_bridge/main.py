@@ -188,6 +188,22 @@ class MCPBridgePlugin:
                 output += item.get("text", "")
         return output if output else "Tool executed successfully (no output)."
 
+    def search_mcp(self, query: str, registry: str = "smithery"):
+        """Searches for MCP servers in the specified registry."""
+        import subprocess
+        try:
+            if registry == "smithery":
+                cmd = ["npx.cmd", "-y", "@smithery/cli", "mcp", "search", query]
+            else: # mcp-get / mcpskills
+                cmd = ["npx.cmd", "-y", "mcp-get", "search", query, "--json"]
+                
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode != 0:
+                return f"Search Error: {res.stderr}"
+            return res.stdout
+        except Exception as e:
+            return f"Search Exception: {e}"
+
     # ── Zentra Skill Methods ──────────────────────────────────────────────────
     def status(self):
         """Displays the list of active servers and their tools."""
@@ -265,11 +281,22 @@ class DynamicTools:
         :param tool: Name of the tool to call
         :param arguments_json: JSON string with tool arguments
         """
+    def call_tool(self, server: str, tool: str, arguments_json: str):
+        """
+        Executes an MCP tool.
+        :param server: Name of the MCP server (e.g. 'google-maps')
+        :param tool: Name of the tool to call
+        :param arguments_json: JSON string with tool arguments
+        """
         try:
             args = json.loads(arguments_json)
         except:
             args = {}
         return self._bridge.execute_mcp_tool(server, tool, **args)
+
+    def search(self, query: str, registry: str = "smithery"):
+        """Search for MCP servers on Smithery or MCPSkills (mcp-get)."""
+        return self._bridge.search_mcp(query, registry)
 
 bridge_instance = MCPBridgePlugin()
 tools = DynamicTools(bridge_instance)
@@ -279,15 +306,16 @@ def execute(comando: str) -> str:
     return tools.status()
 
 def info() -> dict:
-    return {
-        "tag": "MCP_BRIDGE",
-        "description": tools.desc,
-        "commands": {
-            "status": "Show status",
-            "list": "List tools",
-            "call_tool": "Call an MCP tool [server, tool, arguments]"
+        return {
+            "tag": "MCP_BRIDGE",
+            "description": tools.desc,
+            "commands": {
+                "status": "Show status",
+                "list": "List tools",
+                "call_tool": "Call an MCP tool [server, tool, arguments]",
+                "search": "Search for MCP servers [query, registry='smithery'|'mcp-get']"
+            }
         }
-    }
 
 # Initialization hook
 def on_load(config):

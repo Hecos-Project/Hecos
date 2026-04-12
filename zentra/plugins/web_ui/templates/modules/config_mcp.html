@@ -59,12 +59,16 @@
   </div>
 
   <div class="config-section" style="margin-top: 30px; border-top: 1px solid #1f2833; padding-top: 20px;">
-    <h3>🔍 MCP Explorer (Smithery Discovery)</h3>
-    <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Search and discover hundreds of external tools on Smithery.ai without leaving Zentra.</p>
+    <h3>🔍 MCP Explorer (Cross-Registry)</h3>
+    <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Search and discover external tools across multiple registries (Smithery, MCPSkills) without leaving Zentra.</p>
     
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <select id="mcp-explore-registry" class="input-dark" style="flex: 0.3; padding: 10px; border-radius: 8px; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(0,0,0,0.3); color: #fff;">
+        <option value="smithery" selected>Smithery.ai</option>
+        <option value="mcp-get">MCPSkills (mcp-get)</option>
+      </select>
       <input type="text" id="mcp-explore-query" class="input-dark" placeholder="e.g. google, notion, search, spotify..." style="flex: 1; padding: 10px; border-radius: 8px;">
-      <button type="button" class="btn btn-primary" onclick="searchSmithery()" id="mcp-explore-btn">Search</button>
+      <button type="button" class="btn btn-primary" onclick="searchRegistry()" id="mcp-explore-btn">Search</button>
     </div>
 
     <div id="mcp-explore-results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; min-height: 50px;">
@@ -274,20 +278,22 @@
     }
   }
 
-  async function searchSmithery() {
+  async function searchRegistry() {
     const qEl = document.getElementById('mcp-explore-query');
+    const rEl = document.getElementById('mcp-explore-registry');
     const btn = document.getElementById('mcp-explore-btn');
     const container = document.getElementById('mcp-explore-results');
     
     const query = qEl.value.trim();
+    const registry = rEl.value;
     if (!query) return;
 
     btn.disabled = true;
     btn.innerText = 'Searching...';
-    container.innerHTML = '<p style="color:var(--muted); font-size:12px; grid-column:1/-1; text-align:center;">🔍 Contacting Smithery.ai Registry...</p>';
+    container.innerHTML = `<p style="color:var(--muted); font-size:12px; grid-column:1/-1; text-align:center;">🔍 Contacting ${registry} Registry...</p>`;
 
     try {
-      const response = await fetch(`/api/mcp/explore?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/mcp/explore?q=${encodeURIComponent(query)}&reg=${registry}`);
       const data = await response.json();
       
       if (!data.ok) {
@@ -296,17 +302,20 @@
       }
 
       if (!data.results || data.results.length === 0) {
-        container.innerHTML = '<p style="color:var(--muted); font-size:12px; grid-column:1/-1; text-align:center;">No results found for "' + query + '".</p>';
+        container.innerHTML = '<p style="color:var(--muted); font-size:12px; grid-column:1/-1; text-align:center;">No results found for "' + query + '" in ' + registry + '.</p>';
         return;
       }
 
       let html = '';
       data.results.forEach(res => {
         // Prepare data for the Add button
+        // For smithery, qualifiedName is npx package. 
+        // For mcp-get, res.name might be the package or we might need further lookup.
+        const packageIdent = res.qualifiedName || res.name;
         const cardData = {
-          name: res.qualifiedName || res.name,
+          name: res.name.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
           cmd: 'npx',
-          args: `-y ${res.qualifiedName || res.name}`
+          args: `-y ${packageIdent}`
         };
         const dataStr = btoa(JSON.stringify(cardData));
 
@@ -315,7 +324,7 @@
             <div>
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
                 <span style="color:#66fcf1; font-weight:bold; font-size:13px; font-family:'JetBrains Mono', monospace;">${res.name}</span>
-                <span style="font-size:10px; color:rgba(255,255,255,0.3);">Used ${res.useCount || 0}x</span>
+                <span style="font-size:10px; color:rgba(255,255,255,0.3);">${res.useCount || res.downloads || 0} ${registry === 'smithery' ? 'uses' : 'dls'}</span>
               </div>
               <p style="font-size:11px; color:#c5c6c7; line-height:1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${res.description || 'No description available.'}</p>
             </div>
@@ -361,7 +370,7 @@
     const qEl = document.getElementById('mcp-explore-query');
     if (qEl) {
       qEl.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchSmithery();
+        if (e.key === 'Enter') searchRegistry();
       });
     }
     

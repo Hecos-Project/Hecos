@@ -11,41 +11,51 @@ def init_mcp_explore_routes(app, cfg_mgr, logger):
         Usage: /api/mcp/explore?q=term
         """
         query = request.args.get("q", "").strip()
+        registry = request.args.get("reg", "smithery").lower()
         if not query:
             return jsonify({"ok": True, "results": []})
 
         try:
-            logger.info(f"[MCP-EXPLORE] Searching Smithery for: '{query}'")
-            
-            # Use npx --yes to avoid interactive prompts
-            # We map 'npx' to 'npx.cmd' on Windows for compatibility
+            logger.info(f"[MCP-EXPLORE] Searching {registry} for: '{query}'")
             npx_cmd = "npx.cmd" if os.name == "nt" else "npx"
             
-            # Execute search
+            if registry == "mcp-get":
+                cmd = [npx_cmd, "-y", "mcp-get", "search", query, "--json"]
+            else:
+                cmd = [npx_cmd, "-y", "@smithery/cli", "mcp", "search", query]
+
             result = subprocess.run(
-                [npx_cmd, "-y", "@smithery/cli", "mcp", "search", query],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=False,
                 encoding='utf-8',
-                timeout=15  # Limit execution time
+                timeout=20
             )
 
             if result.returncode != 0:
-                logger.error(f"[MCP-EXPLORE] Smithery CLI error: {result.stderr}")
-                return jsonify({"ok": False, "error": "Search failed or timed out."}), 500
+                logger.error(f"[MCP-EXPLORE] {registry} CLI error: {result.stderr}")
+                return jsonify({"ok": False, "error": f"Search on {registry} failed."}), 500
 
-            # Parse NDJSON output
             results = []
-            for line in result.stdout.strip().split("\n"):
-                if not line.strip(): continue
+            if registry == "mcp-get":
                 try:
-                    data = json.loads(line)
-                    results.append(data)
+                    # mcp-get returns a single JSON object with a "data" list
+                    data = json.loads(result.stdout)
+                    results = data.get("data", [])
                 except json.JSONDecodeError:
-                    continue
+                    logger.error("[MCP-EXPLORE] Failed to parse mcp-get JSON output")
+            else:
+                # Smithery returns NDJSON (one object per line)
+                for line in result.stdout.strip().split("\n"):
+                    if not line.strip() or line.startswith("-"): continue
+                    try:
+                        data = json.loads(line)
+                        results.append(data)
+                    except json.JSONDecodeError:
+                        continue
 
-            logger.info(f"[MCP-EXPLORE] Found {len(results)} results for '{query}'")
+            logger.info(f"[MCP-EXPLORE] Found {len(results)} results in {registry} for '{query}'")
             return jsonify({"ok": True, "results": results})
 
         except subprocess.TimeoutExpired:
