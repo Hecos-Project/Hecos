@@ -1,6 +1,14 @@
 // config_mapper.js
 // Extracts DOM mapping and Payload Building from config_core.js
 
+const RESTART_FIELDS = [
+  'backend-type',
+  'system-port',
+  'system-api-port',
+  'br-voice-stt',
+  'br-voice-enabled'
+];
+
 /**
  * Utility to populate a <select> element
  */
@@ -124,10 +132,47 @@ function populateUI() {
     });
 
     renderPlugins(c.plugins || {});
+    initRestartIndicators();
     console.log("UI Populated successfully.");
   } catch (err) {
     console.error("UI Population failed:", err);
   }
+}
+
+function initRestartIndicators() {
+  RESTART_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // Create badge if not exists
+    let badge = el.parentElement.querySelector('.restart-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'restart-badge';
+      badge.textContent = 'Restart Required';
+      // If the parent is a 'field', append to label
+      const label = el.parentElement.querySelector('label');
+      if (label) {
+        label.appendChild(badge);
+      } else {
+        el.parentElement.appendChild(badge);
+      }
+    }
+
+    const initialValue = el.type === 'checkbox' ? el.checked : el.value;
+
+    const check = () => {
+      const current = el.type === 'checkbox' ? el.checked : el.value;
+      if (current !== initialValue) {
+        badge.classList.add('visible');
+      } else {
+        badge.classList.remove('visible');
+      }
+    };
+
+    el.addEventListener('change', check);
+    el.addEventListener('input', check);
+  });
 }
 
 function renderPlugins(plugins) {

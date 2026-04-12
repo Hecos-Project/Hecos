@@ -300,3 +300,24 @@ input:checked + .slider:before { transform: translateX(20px); background: white;
 .lvl-DEBUG { color: #38bdf8; }
 .lvl-ERROR { color: #f87171; }
 .lvl-WARN  { color: #fbbf24; }
+ 
+ .restart-badge {
+   display: inline-block;
+   background: rgba(251, 191, 36, 0.1);
+   color: var(--yellow);
+   border: 1px solid rgba(251, 191, 36, 0.3);
+   padding: 1px 6px;
+   border-radius: 4px;
+   font-size: 9px;
+   font-weight: 700;
+   margin-left: 8px;
+   text-transform: uppercase;
+   vertical-align: middle;
+   opacity: 0;
+   transition: opacity 0.3s;
+   pointer-events: none;
+ }
+ 
+ .restart-badge.visible {
+   opacity: 1;
+ }
