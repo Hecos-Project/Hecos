@@ -70,6 +70,9 @@
     if (typeof window.startWebAudioRecording === 'function') {
       window.startWebAudioRecording();
     }
+    if (navigator.mediaSession) {
+      navigator.mediaSession.playbackState = 'playing';
+    }
   }
 
   function stopListening() {
@@ -80,6 +83,9 @@
     window.isLockedMode = false;
     if (typeof window.stopWebAudioRecording === 'function') {
       window.stopWebAudioRecording();
+    }
+    if (navigator.mediaSession) {
+      navigator.mediaSession.playbackState = 'paused';
     }
   }
 
@@ -158,8 +164,8 @@
     navigator.mediaSession.setActionHandler('play', startListening);
     navigator.mediaSession.setActionHandler('pause', stopListening);
     
-    // Set state to playing to stay "active" for hardware keys
-    navigator.mediaSession.playbackState = 'playing';
+    // Set initial state to paused to prevent auto-triggering on mobile
+    navigator.mediaSession.playbackState = 'paused';
     log('MediaSession handlers installed.');
   }
 
@@ -223,6 +229,14 @@
 
   // ── Boot ───────────────────────────────────────────────────────────────────
   function boot() {
+    // Safety check: do not initialize if plugin is disabled in config
+    if (window.cfg && window.cfg.plugins && window.cfg.plugins.REMOTE_TRIGGERS) {
+      if (window.cfg.plugins.REMOTE_TRIGGERS.enabled === false) {
+        log('Plugin is DISABLED in config. Aborting boot.');
+        return;
+      }
+    }
+
     log('Booting Remote Triggers 2.0...');
     setupMediaSession();
     setupVolumeKeys();

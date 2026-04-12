@@ -29,24 +29,28 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_docs_routes(app, cfg_mgr, root_dir, logger)
     
     # Zentra Drive — HTTP File Manager
-    try:
-        from . . drive.routes import init_drive_routes
-        init_drive_routes(app, logger)
-    except Exception as e:
+    drive_enabled = cfg_mgr.config.get('plugins', {}).get('DRIVE', {}).get('enabled', True)
+    if drive_enabled:
         try:
-            from zentra.plugins.drive.routes import init_drive_routes
+            from . . drive.routes import init_drive_routes
             init_drive_routes(app, logger)
-        except Exception:
-            logger.warning(f"[WebUI] Zentra Drive non disponibile: {e}")
+        except Exception as e:
+            try:
+                from zentra.plugins.drive.routes import init_drive_routes
+                init_drive_routes(app, logger)
+            except Exception:
+                logger.warning(f"[WebUI] Zentra Drive non disponibile: {e}")
 
     # Remote Triggers — Tasti hardware iPhone e Webhooks Arduino 
-    try:
-        from . . remote_triggers.routes import init_remote_triggers_routes
-        init_remote_triggers_routes(app, logger)
-    except Exception as e:
+    rt_enabled = cfg_mgr.config.get('plugins', {}).get('REMOTE_TRIGGERS', {}).get('enabled', True)
+    if rt_enabled:
         try:
-            from zentra.plugins.remote_triggers.routes import init_remote_triggers_routes
+            from . . remote_triggers.routes import init_remote_triggers_routes
             init_remote_triggers_routes(app, logger)
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                from zentra.plugins.remote_triggers.routes import init_remote_triggers_routes
+                init_remote_triggers_routes(app, logger)
+            except Exception:
+                pass
 
