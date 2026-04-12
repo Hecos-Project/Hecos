@@ -237,9 +237,20 @@ class ConfigManager:
 
             personality_dict = {str(i + 1): name for i, name in enumerate(files)}
             current = self.get("ai", "available_personalities")
+            
+            # --- ROBUST FALLBACK CHECK ---
+            active = self.get("ai", "active_personality")
+            if active not in files:
+                logger.warning(f"[CONFIG] Active personality '{active}' not found in filesystem. Reverting to Zentra_System_Soul.yaml.")
+                self.set("Zentra_System_Soul.yaml", "ai", "active_personality")
+                # No early save needed here as we save below if dictionary changed or if we just set it
+
             if personality_dict != current:
                 self.set(personality_dict, "ai", "available_personalities")
                 self.save()
                 logger.info("[CONFIG] Personality list synchronized with filesystem.")
+            elif active not in files:
+                # Discrepancy found (missing active) but list was same (unlikely but safe)
+                self.save()
 
         return files

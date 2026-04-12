@@ -209,6 +209,13 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     
     personality_path = os.path.join(PERSONALITY_DIR, personality_name)
     personality_prompt = "You are Zentra, an advanced AI."
+    
+    # --- ROBUST FALLBACK CHECK ---
+    if not os.path.exists(personality_path):
+        logger.warning(f"BRAIN: Active personality '{personality_name}' missing! Falling back to 'Zentra_System_Soul.yaml'.")
+        personality_name = "Zentra_System_Soul.yaml"
+        personality_path = os.path.join(PERSONALITY_DIR, personality_name)
+
     if os.path.exists(personality_path):
         try:
             import yaml as pyyaml
