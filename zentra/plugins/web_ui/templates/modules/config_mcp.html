@@ -39,8 +39,8 @@
           <option value="everything">Educational: Everything (Mock tools)</option>
           <option value="sequentialthinking">Reasoning: Sequential Thinking (Better logic)</option>
           <option value="bravesearch">Web Search: Brave Search (Requires API Key)</option>
-          <option value="wikipedia">Knowledge: Wikipedia (Free)</option>
-          <option value="fetch">Knowledge: Fetch URL (Free)</option>
+          <option value="wikipedia">Knowledge: Wikipedia (Community)</option>
+          <option value="sequentialthinking">Reasoning: Sequential Thinking (Free)</option>
           <option value="google-maps">Maps: Google Maps (Requires API Key)</option>
           <option value="github">Developer: GitHub (Requires PAT)</option>
           <option value="filesystem">Utility: Local File System</option>
@@ -109,9 +109,8 @@
     'google-maps': { name: 'google_maps', cmd: 'npx', args: '-y @modelcontextprotocol/server-google-maps' },
     'github': { name: 'github', cmd: 'npx', args: '-y @modelcontextprotocol/server-github' },
     'filesystem': { name: 'filesystem', cmd: 'npx', args: '-y @modelcontextprotocol/server-filesystem /path/to/expose' },
-    'postgres': { name: 'postgres', cmd: 'npx', args: '-y @modelcontextprotocol/server-postgres postgres://usr:pass@localhost:5432/db' },
-    'wikipedia': { name: 'wikipedia', cmd: 'npx', args: '-y @modelcontextprotocol/server-wikipedia' },
-    'fetch': { name: 'fetch', cmd: 'npx', args: '-y @modelcontextprotocol/server-fetch' },
+    'wikipedia': { name: 'wikipedia', cmd: 'npx', args: '-y mcp-server-wikipedia' },
+    'sequentialthinking': { name: 'sequential_thinking', cmd: 'npx', args: '-y @modelcontextprotocol/server-sequential-thinking' },
     'weather': { name: 'weather', cmd: 'npx', args: '-y @modelcontextprotocol/server-weather' }
   };
 
