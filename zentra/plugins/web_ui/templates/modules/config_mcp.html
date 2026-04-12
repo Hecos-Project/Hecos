@@ -159,6 +159,12 @@
     
     const servers = window.cfg.plugins.MCP_BRIDGE.servers;
     
+    // Sync the main toggle state
+    const mainToggle = document.getElementById('mcp-enabled');
+    if (mainToggle) {
+        mainToggle.checked = window.cfg.plugins.MCP_BRIDGE.enabled;
+    }
+    
     if (Object.keys(servers).length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); font-size:12px; padding: 20px;">No external providers configured.</td></tr>';
       return;

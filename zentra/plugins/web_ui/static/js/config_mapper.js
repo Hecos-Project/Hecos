@@ -115,6 +115,14 @@ function populateUI() {
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
 
+    // Sync all standalone plugin toggles
+    document.querySelectorAll('[data-plugin]').forEach(cb => {
+        const tag = cb.dataset.plugin;
+        if (c.plugins && c.plugins[tag]) {
+            cb.checked = c.plugins[tag].enabled !== false;
+        }
+    });
+
     renderPlugins(c.plugins || {});
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -138,7 +146,8 @@ function renderPlugins(plugins) {
     WEB_UI:      I18N.plugin_desc_webui,
     IMAGE_GEN:   'Generazione Immagini AI (Pollinations)',
     DRIVE:       I18N.webui_conf_plugin_desc_drive || 'Gestore File HTTP (Zentra Drive)',
-    REMOTE_TRIGGERS: 'PTT via Media Keys (iPhone), Bluetooth & Webhooks'
+    REMOTE_TRIGGERS: 'PTT via Media Keys (iPhone), Bluetooth & Webhooks',
+    MCP_BRIDGE:  'Universal Protocol Hub (Connect external AI tools via MCP)'
   };
   let html = '';
   for (const [tag, pCfg] of Object.entries(plugins)) {
