@@ -130,6 +130,46 @@
       },
       "verification_step": "Check that no 'logs/', 'snapshots/', or 'data/' folders are created in the project root after execution.",
       "notes": "Introduced in v0.15.2 to improve repository cleanliness and privacy."
+    },
+    {
+      "id": "pki_https",
+      "description": "Professional Zentra PKI (Root CA). Automatically generates and signs host-specific SSL certificates to enable HTTPS and browser features (Mic/Cam) across LAN.",
+      "risk": "medium",
+      "available_in": ["web", "plugin"],
+      "implementation": {
+        "core_files": ["scripts/setup_pki.py", "zentra/core/system/ssl_manager.py"],
+        "entry_points": ["scripts/setup_pki.py", "plugins/web_ui/server.py startup"],
+        "config_keys": ["plugins.WEB_UI.https_enabled"]
+      },
+      "verification_step": "Run scripts/setup_pki.py and check if 'certs/root_ca.crt' is generated.",
+      "notes": "Allows 'Green Lock' SSL on all LAN devices."
+    },
+    {
+      "id": "multi_user_auth",
+      "description": "Secure multi-user authentication system with SQLite-based credentials management and role-based access.",
+      "risk": "high",
+      "available_in": ["cli", "web"],
+      "implementation": {
+        "core_files": ["zentra/core/auth/auth_manager.py", "memory/users.db"],
+        "entry_points": ["FastAPI Auth Middleware", "scripts/reset_admin.py"],
+        "config_keys": ["system.auth_required"]
+      },
+      "verification_step": "Login with default admin/zentra credentials on WebUI.",
+      "notes": "Mandatory for v0.17.0+ deployment."
+    },
+    {
+      "id": "zentra_vaults",
+      "description": "Isolated per-user encrypted/private storage for files, avatars, and episodic memory.",
+      "risk": "high",
+      "available_in": ["cli", "web", "ai"],
+      "implementation": {
+        "core_files": ["zentra/memory/vault_interface.py"],
+        "entry_points": ["User-session contextual routing"],
+        "config_keys": []
+      },
+      "verification_step": "Verify folder 'memory/vaults/[username]' is created after user registration.",
+      "notes": "Ensures privacy in multi-user environments."
     }
+
   ]
 }

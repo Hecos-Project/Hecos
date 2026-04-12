@@ -16,16 +16,30 @@
     },
     {
       "id": "web_ui",
-      "description": "Native Browser Interface (localhost:7070) providing Chat and Configuration panels.",
+      "description": "Native Browser Interface (localhost:7070) providing Chat and Configuration panels. Now migrated to Core Plugin structure.",
       "risk": "low",
       "available_in": ["cli", "web"],
       "implementation": {
-        "core_files": ["plugins/web_ui/server.py", "plugins/web_ui/main.py"],
+        "core_files": ["zentra/plugins/web_ui/server.py", "zentra/plugins/web_ui/main.py"],
         "entry_points": ["FastAPI app on localhost:7070"],
         "config_keys": ["plugins.WEB_UI.enabled"]
       },
       "verification_step": "Navigate to http://127.0.0.1:7070/chat to verify UI loads."
     },
+    {
+      "id": "mcp_multi_registry",
+      "description": "Multi-Registry MCP Discovery Hub. Search and auto-install AI tools from Smithery.ai, MCPSkills, GitHub, and Hugging Face.",
+      "risk": "medium",
+      "available_in": ["web", "ai"],
+      "implementation": {
+        "core_files": ["zentra/plugins/mcp_bridge/main.py", "zentra/plugins/mcp_bridge/discovery.py"],
+        "entry_points": ["WebUI -> MCP Bridge -> Discovery Tab"],
+        "config_keys": ["plugins.MCP_BRIDGE.discovery_enabled"]
+      },
+      "verification_step": "Search for 'Brave' in the MCP Discovery tab and verify results appear from Smithery.",
+      "notes": "Simplifies tool expansion via npx auto-execution."
+    }
+,
     {
       "id": "DRIVE_plugin",
       "description": "Zentra Drive HTTP File Manager. Native browser-based dual-panel interface with Absolute Path Navigation to all host volumes (C:, D:) and Monaco Remote Code Editor Extension.",
