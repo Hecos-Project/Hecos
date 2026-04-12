@@ -286,5 +286,29 @@
         "is_class_based": false,
         "is_mcp": true,
         "server_name": "exa_mcp_server"
+    },
+    "MCP_MCP_WEB_SEARCH": {
+        "description": "External Tool Provider (mcp_web_search) via Model Context Protocol.",
+        "commands": {
+            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
+        },
+        "status": "EXTERNAL",
+        "example": "",
+        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
+        "is_class_based": false,
+        "is_mcp": true,
+        "server_name": "mcp_web_search"
+    },
+    "MCP_IMAGESORCERY_MCP": {
+        "description": "External Tool Provider (imagesorcery_mcp) via Model Context Protocol.",
+        "commands": {
+            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
+        },
+        "status": "EXTERNAL",
+        "example": "",
+        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
+        "is_class_based": false,
+        "is_mcp": true,
+        "server_name": "imagesorcery_mcp"
     }
 }
