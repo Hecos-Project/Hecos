@@ -80,9 +80,8 @@ def _get_quick_links(root_dir: str) -> list:
                         continue
                     if any(fname.endswith(s) for s in exclude_suffixes):
                         continue
-                    abs_file = os.path.join(dirpath, fname)
-                    rel_path = os.path.relpath(abs_file, root_dir).replace("\\", "/")
-                    items.append({"name": fname, "path": rel_path})
+                    abs_file = os.path.join(dirpath, fname).replace("\\", "/")
+                    items.append({"name": fname, "path": abs_file})
 
         if items:
             groups.append({"id": grp["id"], "title": grp["title"], "items": items})

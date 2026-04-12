@@ -464,6 +464,9 @@ async function loadQuickLinks() {
           <div class="ql-item" onclick="openQuickLink('${esc(item.path)}', ${item.path.includes('.')})">
             <span class="ql-icon">${esc(grp.icon || '📄')}</span>
             <span class="ql-name" title="${esc(item.name)}">${esc(item.name)}</span>
+            ${item.path.includes('.') && isEditable(item.name) 
+              ? `<span class="ql-edit" title="Modifica" onclick="event.stopPropagation(); openEditor('${esc(item.path)}')">✏️</span>` 
+              : ''}
           </div>
         `).join("")}
       </div>`;

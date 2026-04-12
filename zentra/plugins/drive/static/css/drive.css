@@ -133,6 +133,16 @@ input[type="file"] { display:none; }
 .tree-node .icon { flex-shrink:0; }
 .tree-node .label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tree-children { }
+.ql-edit {
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.ql-item:hover .ql-edit { opacity: 0.6; }
+.ql-item .ql-edit:hover { opacity: 1; background: rgba(102,252,241,0.1); }
+.tree-children { }
 
 /* ── File area ───────────────────────────────────────────── */
 #file-area {
@@ -358,6 +368,15 @@ td.actions-cell button:hover { background:rgba(255,75,75,.15); }
 }
 .ql-icon { font-size: 13px; opacity: 0.8; }
 .ql-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.ql-edit {
+  font-size: 11px;
+  opacity: 0.4;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 2px;
+}
+.ql-item:hover .ql-edit { opacity: 0.8; }
+.ql-edit:hover { opacity: 1 !important; transform: scale(1.2); }
 
 .sb-empty {
   padding: 10px 12px;
