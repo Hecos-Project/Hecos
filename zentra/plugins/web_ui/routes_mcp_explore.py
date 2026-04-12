@@ -45,6 +45,38 @@ def init_mcp_explore_routes(app, cfg_mgr, logger):
                     results = data.get("data", [])
                 except json.JSONDecodeError:
                     logger.error("[MCP-EXPLORE] Failed to parse mcp-get JSON output")
+            elif registry == "github":
+                try:
+                    import urllib.request
+                    url = f"https://api.github.com/search/repositories?q={query}+topic:mcp-server&sort=stars"
+                    req = urllib.request.Request(url, headers={"User-Agent": "Zentra-Core"})
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        data = json.loads(response.read())
+                        for repo in data.get("items", []):
+                            results.append({
+                                "name": repo["full_name"],
+                                "description": repo["description"] or "MCP Server repository",
+                                "qualifiedName": f"github:{repo['full_name']}",
+                                "downloads": repo["stargazers_count"]
+                            })
+                except Exception as e:
+                    logger.error(f"[MCP-EXPLORE] GitHub API error: {e}")
+            elif registry == "huggingface":
+                try:
+                    import urllib.request
+                    url = f"https://huggingface.co/api/spaces?search={query}"
+                    req = urllib.request.Request(url, headers={"User-Agent": "Zentra-Core"})
+                    with urllib.request.urlopen(req, timeout=10) as response:
+                        data = json.loads(response.read())
+                        for space in data[:15]:
+                            results.append({
+                                "name": space["id"],
+                                "description": f"Hugging Face Space ({space.get('sdk', 'mcp')})",
+                                "qualifiedName": f"hf:{space['id']}",
+                                "downloads": space.get("likes", 0)
+                            })
+                except Exception as e:
+                    logger.error(f"[MCP-EXPLORE] Hugging Face API error: {e}")
             else:
                 # Smithery returns NDJSON (one object per line)
                 for line in result.stdout.strip().split("\n"):

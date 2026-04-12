@@ -66,6 +66,8 @@
       <select id="mcp-explore-registry" class="input-dark" style="flex: 0.3; padding: 10px; border-radius: 8px; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(0,0,0,0.3); color: #fff;">
         <option value="smithery" selected>Smithery.ai</option>
         <option value="mcp-get">MCPSkills (mcp-get)</option>
+        <option value="github">GitHub (Topic: mcp-server)</option>
+        <option value="huggingface">Hugging Face (Spaces)</option>
       </select>
       <input type="text" id="mcp-explore-query" class="input-dark" placeholder="e.g. google, notion, search, spotify..." style="flex: 1; padding: 10px; border-radius: 8px;">
       <button type="button" class="btn btn-primary" onclick="searchRegistry()" id="mcp-explore-btn">Search</button>
@@ -312,10 +314,20 @@
         // For smithery, qualifiedName is npx package. 
         // For mcp-get, res.name might be the package or we might need further lookup.
         const packageIdent = res.qualifiedName || res.name;
+        let cmdArgs = `-y ${packageIdent}`;
+        
+        // Custom handling for specific registries
+        if (packageIdent.startsWith('github:')) {
+          cmdArgs = `-y ${packageIdent}`; // github:user/repo works with npx
+        } else if (packageIdent.startsWith('hf:')) {
+          const spaceId = packageIdent.replace('hf:', '');
+          cmdArgs = `-y @llmindset/hf-mcp-server --space ${spaceId}`;
+        }
+
         const cardData = {
-          name: res.name.replace(/[^a-z0-9]/gi, '_').toLowerCase(),
+          name: res.name.split('/').pop().replace(/[^a-z0-9]/gi, '_').toLowerCase(),
           cmd: 'npx',
-          args: `-y ${packageIdent}`
+          args: cmdArgs
         };
         const dataStr = btoa(JSON.stringify(cardData));
 
