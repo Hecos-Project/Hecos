@@ -80,8 +80,10 @@ function populateUI() {
     populateSelect('ia-personality', sysOptions.personalities || [], c.ai?.active_personality, true);
     setVal('ia-avatar-size', c.ai?.avatar_size || 'medium');
     setVal('ia-instructions', c.ai?.special_instructions || '');
-
     setCheck('ia-save-instructions', c.ai?.save_special_instructions || false);
+
+    setCheck('ia-roleplay-mode', c.ai?.roleplay_mode || false);
+    setVal('ia-roleplay-disclaimer', c.ai?.roleplay_disclaimer || '');
     
     // Load the avatar preview for the currently selected persona
     if (typeof window.loadPersonaAvatar === 'function') {
@@ -264,8 +266,9 @@ function buildPayload() {
     out.ai.active_personality = document.getElementById('ia-personality').value;
     out.ai.avatar_size = document.getElementById('ia-avatar-size').value;
     out.ai.special_instructions = document.getElementById('ia-instructions').value;
-
     out.ai.save_special_instructions = document.getElementById('ia-save-instructions').checked;
+    out.ai.roleplay_mode = document.getElementById('ia-roleplay-mode').checked;
+    out.ai.roleplay_disclaimer = document.getElementById('ia-roleplay-disclaimer').value;
 
     out.bridge = out.bridge || {};
     out.bridge.use_processor        = document.getElementById('br-processor').checked;

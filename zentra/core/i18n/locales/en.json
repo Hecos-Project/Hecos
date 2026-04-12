@@ -455,6 +455,11 @@
         "doc_tech_desc": "System architecture, execution pipeline and developer best practices.",
         "lang_en": "English",
         "lang_it": "Italiano",
-        "lang_es": "Español"
+        "lang_es": "Español",
+        "label_roleplay_mode": "Activate Global Roleplay Booster",
+        "label_roleplay_disclaimer": "Safety Disclaimer (Custom)",
+        "help_roleplay_mode": "Signals AI safety filters that this is a narrative context to prevent unjustified blocks (e.g. action scenes).",
+        "help_roleplay_disclaimer": "Define the disclaimer to send to the AI. If empty, the default one will be used.",
+        "title_roleplay_booster": "AI Safety Booster (Roleplay Context)"
     }
 }

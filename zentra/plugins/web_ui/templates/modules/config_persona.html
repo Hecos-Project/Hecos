@@ -39,5 +39,23 @@
     <div style="margin-top: 12px; text-align: right;">
       <button class="btn btn-secondary" onclick="document.getElementById('ia-instructions').value='';">{{ t('label_clear_special_instructions') }}</button>
     </div>
+  <div class="card" style="border-top: 2px solid #66fcf1;">
+    <div class="card-title" style="color:#66fcf1;">{{ t('title_roleplay_booster') }}</div>
+    <div class="muted" style="font-size: 11px; margin-bottom: 12px; line-height: 1.4;">
+      {{ t('help_roleplay_mode') }}
+    </div>
+    
+    <div class="toggle-row" style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+      <div class="toggle-info">{{ t('label_roleplay_mode') }}</div>
+      <label class="switch"><input type="checkbox" id="ia-roleplay-mode"><span class="slider"></span></label>
+    </div>
+
+    <div class="field">
+      <label>{{ t('label_roleplay_disclaimer') }}</label>
+      <textarea id="ia-roleplay-disclaimer" rows="3" placeholder="Default: Note: This is a fictional roleplay scenario..."></textarea>
+      <div class="muted" style="font-size: 10px; margin-top: 4px; opacity: 0.7;">
+        {{ t('help_roleplay_disclaimer') }}
+      </div>
+    </div>
   </div>
 </div>

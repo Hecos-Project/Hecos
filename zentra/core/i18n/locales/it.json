@@ -470,6 +470,11 @@
         "doc_tech_desc": "Architettura di sistema, pipeline di esecuzione e best practice per sviluppatori.",
         "lang_en": "Inglese",
         "lang_it": "Italiano",
-        "lang_es": "Spagnolo"
+        "lang_es": "Spagnolo",
+        "label_roleplay_mode": "Attiva Booster Roleplay Globale",
+        "label_roleplay_disclaimer": "Testo di Salvaguardia (Custom)",
+        "help_roleplay_mode": "Segnala ai filtri di sicurezza dell'IA che si tratta di un contesto narrativo per prevenire blocchi ingiustificati (es. scene d'azione).",
+        "help_roleplay_disclaimer": "Definisci il disclaimer da inviare all'IA. Se vuoto, verrà usato quello predefinito.",
+        "title_roleplay_booster": "Booster Sicurezza AI (Contesto Roleplay)"
     }
 }
