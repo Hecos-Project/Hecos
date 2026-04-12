@@ -139,28 +139,6 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     logger.debug("BRAIN", f"User text: '{user_text}'")
     logger.debug("BRAIN", f"external_config provided: {external_config is not None}")
     
-    # --- FASE 6: AI Vision - Avatar Auto-Injection ---
-    if user_text and isinstance(user_text, str):
-        identity_keywords = r'\b(who am i|what do i look like|my face|my photo|my picture|my avatar|chi sono|come sono|il mio viso|la mia foto|il mio aspetto)\b'
-        if re.search(identity_keywords, user_text, re.IGNORECASE):
-            profile = auth_mgr.get_profile(user_id)
-            if profile and profile.get("avatar_path"):
-                vault = get_vault_path(user_id)
-                avatar_file = os.path.join(vault, "avatar.jpg")
-                if os.path.exists(avatar_file):
-                    try:
-                        with open(avatar_file, "rb") as af:
-                            b64_avatar = base64.b64encode(af.read()).decode("utf-8")
-                        if images is None:
-                            images = []
-                        images.append({
-                            "data_b64": b64_avatar,
-                            "mime_type": "image/jpeg",
-                            "name": f"avatar_{user_id}.jpg"
-                        })
-                        logger.info(f"[BRAIN] Injected user avatar for Vision AI based on contextual trigger.")
-                    except Exception as e:
-                        logger.error(f"[BRAIN] Failed to inject avatar: {e}")
     # --------------------------------------------------
     
     # If processor provides updated config, use it; otherwise, load from file
@@ -178,6 +156,47 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     
     logger.debug("BRAIN", f"Config loaded. Backend type: {config.get('backend', {}).get('type', 'unspecified')}")
 
+    # --- FASE 6: AI Vision - Avatar Auto-Injection (User & AI) ---
+    if user_text and isinstance(user_text, str):
+        # 1. USER IDENTITY TRIGGER
+        user_id_keywords = r'\b(who am i|what do i look like|my face|my photo|my picture|my avatar|chi sono|come sono|il mio viso|la mia foto|il mio aspetto|la mia immagine)\b'
+        if re.search(user_id_keywords, user_text, re.IGNORECASE):
+            profile = auth_mgr.get_profile(user_id)
+            if profile and profile.get("avatar_path"):
+                vault = get_vault_path(user_id)
+                avatar_file = os.path.join(vault, "avatar.jpg")
+                if os.path.exists(avatar_file):
+                    try:
+                        with open(avatar_file, "rb") as af:
+                            b64_avatar = base64.b64encode(af.read()).decode("utf-8")
+                        if images is None: images = []
+                        images.append({"data_b64": b64_avatar, "mime_type": "image/jpeg", "name": f"user_avatar_{user_id}.jpg"})
+                        logger.info(f"[BRAIN] Injected user avatar for Vision AI.")
+                    except Exception as e:
+                        logger.error(f"[BRAIN] Failed to inject user avatar: {e}")
+
+        # 2. AI SELF-PERCEPTION TRIGGER
+        ai_id_keywords = r'\b(how do you look|describe yourself|describe your face|your photo|your picture|your avatar|che aspetto hai|descriviti|il tuo volto|la tua foto|come sei fatt[oa])\b'
+        if re.search(ai_id_keywords, user_text, re.IGNORECASE):
+            personality_name = config.get('ai', {}).get('active_personality', 'Zentra_System_Soul.yaml').replace(".yaml", "")
+            persona_avatar_dir = os.path.join(_ZENTRA_DIR, "assets", "avatars", personality_name)
+            if os.path.exists(persona_avatar_dir):
+                try:
+                    # Find first image in the persona folder
+                    for f in os.listdir(persona_avatar_dir):
+                        if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                            av_path = os.path.join(persona_avatar_dir, f)
+                            with open(av_path, "rb") as af:
+                                b64_av = base64.b64encode(af.read()).decode("utf-8")
+                            if images is None: images = []
+                            import mimetypes
+                            mime, _ = mimetypes.guess_type(av_path)
+                            images.append({"data_b64": b64_av, "mime_type": mime or "image/png", "name": f"ai_avatar_{personality_name}{os.path.splitext(f)[1]}"})
+                            logger.info(f"[BRAIN] Injected AI persona avatar ({personality_name}) for self-perception.")
+                            break
+                except Exception as e:
+                    logger.error(f"[BRAIN] Failed to inject AI avatar: {e}")
+    # --------------------------------------------------
     # 1. Retrieve personality
     personality_name = config.get('ai', {}).get('active_personality', 'Zentra_System_Soul.yaml')
     if not personality_name:
