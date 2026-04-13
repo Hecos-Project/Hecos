@@ -40,7 +40,22 @@ window.startPrompt = function(text) {
   }
 };
 
-window.clearChat = function() {
+window.clearChat = async function() {
+  // If chat history manager is available, create a new session (handles auto-wipe internally)
+  if (window.newChatSession) {
+    await window.newChatSession();
+    return;  // newChatSession already calls clearChat UI-side
+  }
+  // Fallback: just clear the DOM
+  window.chatHistory = [];
+  if (chatArea) chatArea.innerHTML = '';
+  if (welcome) {
+      chatArea.appendChild(welcome);
+      welcome.style.display = 'flex';
+  }
+};
+
+window._clearChatDOM = function() {
   window.chatHistory = [];
   if (chatArea) chatArea.innerHTML = '';
   if (welcome) {

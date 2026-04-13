@@ -161,24 +161,6 @@
         "icon": "",
         "category": "PLUGINS"
     },
-    "ROLEPLAY": {
-        "description": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
-        "commands": {
-            "list_characters": "Lists all characters available for roleplaying.",
-            "list_scenes": "Lists all scenes available for roleplaying.",
-            "load_character": "Loads a character by name to interpret their role.",
-            "load_scene": "Loads a specific setting or scene for roleplaying.",
-            "reset_roleplay": "Complete reset of active characters and scenes.",
-            "unload_character": "Deactivates the current character and returns to the normal personality.",
-            "unload_scene": "Removes the current scene or setting."
-        },
-        "status": "plugin_roleplay_status_online",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
     "SYSTEM": {
         "description": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
         "commands": {

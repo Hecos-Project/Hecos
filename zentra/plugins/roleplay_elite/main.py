@@ -49,7 +49,7 @@ class RoleplayTools:
     """
 
     def __init__(self):
-        self.tag = "ROLEPLAY"
+        self.tag = "ROLEPLAY_ELITE"
         self.desc = translator.t("plugin_roleplay_desc")
         self.config_schema = {
             "characters_dir": {
@@ -82,14 +82,14 @@ class RoleplayTools:
 
     def _get_characters_dir(self) -> str:
         cfg = ConfigManager()
-        path = cfg.get_plugin_config("ROLEPLAY", "characters_dir", _DEFAULT_CHARACTERS_DIR)
+        path = cfg.get_plugin_config("ROLEPLAY_ELITE", "characters_dir", _DEFAULT_CHARACTERS_DIR)
         if not os.path.isabs(path):
             path = os.path.join(os.path.dirname(__file__), path)
         return path
 
     def _get_scenes_dir(self) -> str:
         cfg = ConfigManager()
-        path = cfg.get_plugin_config("ROLEPLAY", "scenes_dir", _DEFAULT_SCENES_DIR)
+        path = cfg.get_plugin_config("ROLEPLAY_ELITE", "scenes_dir", _DEFAULT_SCENES_DIR)
         if not os.path.isabs(path):
             path = os.path.join(os.path.dirname(__file__), path)
         return path

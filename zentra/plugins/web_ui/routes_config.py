@@ -26,6 +26,9 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def post_config():
         try:
             incoming = request.get_json(force=True)
+            print(f"\n[DEBUG-POST] Config payload received. Keys: {list(incoming.keys())}")
+            if "ai" in incoming: print(f"[DEBUG-POST] AI Persona: {incoming['ai'].get('active_personality')}")
+            
             if not isinstance(incoming, dict):
                 return jsonify({"ok": False, "error": "Invalid payload"}), 400
             # Estrai il flag custom Frontend per forzare il riavvio (o auto-save silenzioso)
@@ -70,7 +73,9 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                             os.remove(".config_saved_by_app")
                         except Exception: pass
                         
+                print("[DEBUG-POST] Config save SUCCESS")
                 return jsonify({"ok": True})
+            print("[DEBUG-POST] Config save FAILED in cfg_mgr.update_config")
             return jsonify({"ok": False, "error": "Save failed"}), 500
         except Exception as exc:
             logger.error(f"[WebUI] POST /config error: {exc}")

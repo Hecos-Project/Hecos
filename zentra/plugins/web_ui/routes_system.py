@@ -17,7 +17,8 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             data = request.get_json(force=True) or {}
             page_type = data.get("type", "unknown")
-            hb_file = os.path.join(LOGS_DIR, "webui_heartbeat.json")
+            import tempfile
+            hb_file = os.path.join(tempfile.gettempdir(), "zentra_webui_heartbeat.json")
             hb_data = {}
             if os.path.exists(hb_file):
                 try:

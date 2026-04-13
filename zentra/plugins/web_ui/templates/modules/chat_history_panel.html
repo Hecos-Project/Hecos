@@ -1,0 +1,74 @@
+<!-- CHAT HISTORY PANEL - included in chat_sidebar.html -->
+<div class="sidebar-section" id="chat-history-section">
+  <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center;">
+    <span>CONVERSAZIONI</span>
+    <div style="display:flex; gap:4px;">
+      <!-- Privacy mode quick toggle -->
+      <div id="privacy-indicator" class="privacy-indicator" onclick="cyclePrivacyMode()" title="Modalità Privacy">
+        👁 <span>Normal</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Chat buttons -->
+  <div style="display:flex; gap:5px; margin-bottom:8px;">
+    <button class="sidebar-btn" onclick="window.newChatSession('normal')" style="flex:1; justify-content:center; font-size:12px; padding:8px 6px;">
+      <span class="icon">💬</span> Nuova Chat
+    </button>
+    <button class="sidebar-btn" onclick="window.newChatSession('incognito')" style="padding:8px 10px;" title="Nuova Chat Incognito">
+      <span class="icon">🕵️</span>
+    </button>
+  </div>
+
+  <!-- Session list -->
+  <div id="chat-history-list" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+    <div class="history-empty" style="font-size:12px; color:var(--muted); padding:8px 4px;">Caricamento...</div>
+  </div>
+</div>
+
+<style>
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s;
+  border: 1px solid transparent;
+}
+.history-item:hover { background: rgba(102,252,241,0.05); border-color: rgba(102,252,241,0.15); }
+.history-item.active { background: rgba(102,252,241,0.1); border-color: rgba(102,252,241,0.3); }
+.history-item-main { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
+.history-icon { font-size:14px; flex-shrink:0; }
+.history-item-info { flex:1; min-width:0; }
+.history-title { font-size:12px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+.history-action-btn { background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; opacity:.5; transition:opacity .15s; }
+.history-action-btn:hover { opacity:1; }
+.history-empty { font-size:12px; color:var(--muted); padding:8px 4px; text-align:center; }
+.history-item-actions { display:none; }
+.history-item:hover .history-item-actions { display:flex; }
+
+/* Privacy indicator */
+.privacy-indicator {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; padding: 2px 6px;
+  border-radius: 6px; cursor: pointer;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  transition: all .2s;
+}
+.privacy-indicator:hover { border-color: var(--accent); }
+.privacy-indicator.mode-autowipe  { border-color: #f59e0b; color: #f59e0b; }
+.privacy-indicator.mode-incognito { border-color: #8b5cf6; color: #8b5cf6; }
+</style>
+
+<script>
+window.cyclePrivacyMode = function() {
+  const modes = ['normal', 'auto_wipe', 'incognito'];
+  const cur = window.chatHistoryState?.activeMode || 'normal';
+  const next = modes[(modes.indexOf(cur) + 1) % modes.length];
+  if (window.setPrivacyMode) window.setPrivacyMode(next);
+};
+</script>

@@ -51,9 +51,15 @@ window.sendMessage = async function() {
   let aiText = '';
 
   try {
+    const payload = {
+      message: fullMessage, 
+      history: window.chatHistory, 
+      images: attachImgs,
+      session_id: window.chatHistoryState?.activeSessionId
+    };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message: fullMessage, history: window.chatHistory, images: attachImgs})
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
@@ -114,9 +120,15 @@ window.sendInternalMessage = async function(text) {
   let aiText = '';
 
   try {
+    const payload = {
+      message: text, 
+      history: window.chatHistory, 
+      images: [],
+      session_id: window.chatHistoryState?.activeSessionId
+    };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message: text, history: window.chatHistory, images: []})
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');

@@ -94,6 +94,13 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
 
+        try:
+            from zentra.memory.brain_interface import save_message
+            save_message("user", user_message, session_id=session_id)
+            save_message("assistant", full_text, session_id=session_id)
+        except Exception as e:
+            _chat_log.error(f"[Chat] DB Save Error: {e}")
+
         audio_status = _maybe_generate_tts(full_text, cfg_mgr)
         if audio_status == "web":
             sess["queue"].put({"type": "audio_ready", "text": ""})
@@ -279,7 +286,9 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
             
         uid = current_user.username if current_user.is_authenticated else "admin"
         
-        sid  = str(uuid.uuid4())
+        from zentra.core.privacy import privacy_manager
+        sid = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
+        
         sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
         with _sessions_lock:
             _sessions[sid] = sess
@@ -329,8 +338,12 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         from flask import request, jsonify
         from flask_login import current_user
         from zentra.memory.brain_interface import get_history
+        from zentra.core.privacy import privacy_manager
+        
         uid = current_user.username if current_user.is_authenticated else "admin"
-        hist = get_history(user_id=uid)
+        sid = privacy_manager.get_session_id()
+        
+        hist = get_history(user_id=uid, session_id=sid)
         return jsonify([{"role": role, "content": msg} for role, msg in hist])
 
     @app.route("/api/audio")

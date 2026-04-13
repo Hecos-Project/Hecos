@@ -456,11 +456,11 @@
         "lang_en": "English",
         "lang_it": "Italiano",
         "lang_es": "Español",
-        "label_roleplay_mode": "Activate Global Roleplay Booster",
-        "label_roleplay_disclaimer": "Safety Disclaimer (Custom)",
-        "help_roleplay_mode": "Signals AI safety filters that this is a narrative context to prevent unjustified blocks (e.g. action scenes).",
-        "help_roleplay_disclaimer": "Define the disclaimer to send to the AI. If empty, the default one will be used.",
-        "title_roleplay_booster": "AI Safety Booster (Roleplay Context)",
+        "label_roleplay_mode": "Activate Persona Roleplay (Base)",
+        "label_roleplay_disclaimer": "Safety Disclaimer (Global)",
+        "help_roleplay_mode": "Signals AI safety filters that this is a narrative context. This is the base Persona roleplay.",
+        "help_roleplay_disclaimer": "Define the disclaimer to send to the AI to bypass filters. If empty, the default one will be used.",
+        "title_roleplay_booster": "AI Safety Booster (Persona Mode)",
         "hub_cat_intelligenza": "Intelligence",
         "hub_cat_multimedia": "Multimedia",
         "hub_cat_connettivita": "Connectivity",
@@ -476,7 +476,7 @@
         "hub_mod_voice": "Audio & Voice",
         "hub_mod_media": "Media Gallery",
         "hub_mod_igen": "Image Gen",
-        "hub_mod_roleplay": "Roleplay",
+        "hub_mod_roleplay_elite": "Roleplay Elite",
         "hub_mod_mcp": "MCP Bridge",
         "hub_mod_bridge": "Bridge",
         "hub_mod_triggers": "Triggers",
@@ -504,6 +504,7 @@
         "webui_conf_sysnet_https_enable": "Enable HTTPS (Secure SSL)",
         "webui_conf_sysnet_force_login": "Force Login (Session Security)",
         "hub_nav_guide": "User Guide",
-        "hub_nav_download": "Download (PDF)"
+        "hub_nav_download": "Download (PDF)",
+        "hub_mod_privacy": "Privacy & Data"
     }
 }

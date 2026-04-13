@@ -1,4 +1,4 @@
-﻿"""
+"""
 MODULE: Brain Interface - Zentra Memory Vault
 DESCRIPTION: Centralized manager for semantic and episodic memory.
              Respects the 'cognition' config section for all operations.
@@ -50,7 +50,7 @@ def get_max_history(config: dict = None) -> int:
 # â”€â”€ Vault management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def initialize_vault():
-    """Creates the folder and databases if they don't exist."""
+    """Creates the folder and databases if they don't exist, then runs schema migrations."""
     if not os.path.exists(BASE_DIR):
         os.makedirs(BASE_DIR)
     
@@ -68,6 +68,13 @@ def initialize_vault():
     conn.commit()
     conn.close()
     logger.info(f"[MEMORY] Vault initialized at: {os.path.abspath(PATH_DB)}")
+
+    # Run session manager migration (non-destructive)
+    try:
+        from zentra.memory.session_manager import migrate_schema
+        migrate_schema()
+    except Exception as e:
+        logger.warning(f"[MEMORY] Session schema migration skipped: {e}")
 
 
 def maybe_clear_on_restart(config: dict):
@@ -154,17 +161,36 @@ def update_profile(key, value):
 
 # â”€â”€ Episodic memory (chat history) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-def save_message(role, message, config: dict = None):
-    """Stores an exchange in episodic memory (DB), respecting config flags."""
+def save_message(role, message, config: dict = None, session_id: str = None):
+    """Stores an exchange in episodic memory (DB), respecting config flags and privacy mode."""
+    # Respect incognito mode — write nothing
+    try:
+        from zentra.core.privacy import privacy_manager
+        if privacy_manager.is_incognito():
+            return
+        # Pick up session_id from privacy manager if not explicitly passed
+        if session_id is None:
+            session_id = privacy_manager.get_session_id()
+    except Exception:
+        pass
+
     if not is_memory_enabled(config):
         return
     try:
-        conn = sqlite3.connect(PATH_DB)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO history (timestamp, role, message) VALUES (?, ?, ?)",
-                       (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message))
-        conn.commit()
-        conn.close()
+        with sqlite3.connect(PATH_DB, timeout=20) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO history (timestamp, role, message, session_id) VALUES (?, ?, ?, ?)",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message, session_id)
+            )
+            conn.commit()
+        # Update session timestamp
+        if session_id:
+            try:
+                from zentra.memory.session_manager import touch_session
+                touch_session(session_id)
+            except Exception:
+                pass
     except Exception as e:
         logger.error(f"Memory Save Error: {e}")
 
@@ -174,12 +200,11 @@ def get_history(limit: int = None, config: dict = None) -> list:
     if limit is None:
         limit = get_max_history(config)
     try:
-        conn = sqlite3.connect(PATH_DB)
-        cursor = conn.cursor()
-        cursor.execute("SELECT role, message FROM history ORDER BY id DESC LIMIT ?", (limit,))
-        rows = cursor.fetchall()
-        conn.close()
-        
+        with sqlite3.connect(PATH_DB, timeout=20) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT role, message FROM history ORDER BY id DESC LIMIT ?", (limit,))
+            rows = cursor.fetchall()
+            
         # Return in chronological order (oldest first)
         rows.reverse()
         return rows

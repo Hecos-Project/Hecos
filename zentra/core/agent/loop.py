@@ -128,7 +128,8 @@ class AgentExecutor:
                 agent_context=agent_context,
                 save_history=save_hist,
                 images=images,
-                user_id=self.current_user_id
+                user_id=self.current_user_id,
+                session_id=None # brain can get it from privacy_manager if None
             )
             
             # 2. Extract tools using the processor utility

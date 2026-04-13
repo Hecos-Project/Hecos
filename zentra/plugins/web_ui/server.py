@@ -139,6 +139,9 @@ class ZentraWebUIServer:
             
             from .routes_mcp import init_mcp_routes
             init_mcp_routes(app, self.config_manager, self.logger)
+            
+            from .routes_history import history_bp
+            app.register_blueprint(history_bp)
         except Exception as e:
             import traceback
             print(f"[DEBUG BOOT] CRITICAL ERROR during route registration: {e}", flush=True)
@@ -153,39 +156,51 @@ class ZentraWebUIServer:
                 use_https = webui_cfg.get("https_enabled", False)
                 scheme = "https" if use_https else "http"
 
-                if use_https:
-                    # 1. Determina l'IP per passarlo nel SAN del certificato
-                    try:
-                        import socket
-                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        s.connect(('10.254.254.254', 1))
-                        lan_ip = s.getsockname()[0]
-                        s.close()
-                    except Exception:
-                        lan_ip = "127.0.0.1"
+                # Calculate internal LAN IP
+                try:
+                    import socket
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(('10.254.254.254', 1))
+                    lan_ip = s.getsockname()[0]
+                    s.close()
+                except Exception:
+                    lan_ip = "127.0.0.1"
 
-                    # 2. Genera Root CA e Certificato Host
-                    from zentra.core.security.pki import CAManager, CertGenerator
-                    try:
-                        ca = CAManager()
-                        cert_gen = CertGenerator(ca)
-                        cert_file, key_file = cert_gen.generate_host_cert(lan_ip)
+                if use_https:
+                    cert_file = webui_cfg.get("cert_file")
+                    key_file = webui_cfg.get("key_file")
+                    
+                    # Auto-generate if missing (Zentra PKI Integration)
+                    if not cert_file or not key_file or not os.path.exists(cert_file) or not os.path.exists(key_file):
+                        try:
+                            from zentra.core.security.pki.ca_manager import CAManager
+                            from zentra.core.security.pki.cert_generator import CertGenerator
+                            
+                            self.logger.info("[PKI] Certificates missing or invalid. Initializing Zentra Root CA...")
+                            ca_mgr = CAManager()
+                            cert_gen = CertGenerator(ca_mgr)
+                            
+                            # Use the calculated lan_ip for the certificate SAN
+                            c_path, k_path = cert_gen.generate_host_cert(lan_ip)
+                            
+                            # Update config and save once to avoid redundant watchdog triggers
+                            webui_cfg = self.config_manager.config.get("plugins", {}).get("WEB_UI", {})
+                            webui_cfg["cert_file"] = c_path
+                            webui_cfg["key_file"] = k_path
+                            self.config_manager.save()
+                            
+                            cert_file = c_path
+                            key_file = k_path
+                            self.logger.info(f"[PKI] New certificates generated and saved for {lan_ip}.")
+                        except Exception as pki_e:
+                            self.logger.error(f"[PKI] Automation failed: {pki_e}")
+
+                    if cert_file and key_file and os.path.exists(cert_file) and os.path.exists(key_file):
                         ssl_context = (cert_file, key_file)
-                    except Exception as e:
-                        import traceback
-                        self.logger.error(f"[WebUI] Errore CRITICO generazione Zentra PKI: {e}\n{traceback.format_exc()}")
-                        self.logger.warning("[WebUI] Fallback forzato a HTTP a causa di errore certificato.")
+                    else:
+                        self.logger.warning("[WebUI] HTTPS enabled but cert/key not found. Fallback to HTTP.")
                         scheme = "http"
-                        
-                else:
-                    try:
-                        import socket
-                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        s.connect(('10.254.254.254', 1))
-                        lan_ip = s.getsockname()[0]
-                        s.close()
-                    except Exception:
-                        lan_ip = "127.0.0.1"
+                        use_https = False
 
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
@@ -320,7 +335,8 @@ if __name__ == "__main__":
     def is_webui_already_open(root_dir):
         """Check if a WebUI tab is already active via heartbeat file."""
         # hb_file is in zentra/logs/
-        hb_file = os.path.join(LOGS_DIR, "webui_heartbeat.json")
+        import tempfile
+        hb_file = os.path.join(tempfile.gettempdir(), "zentra_webui_heartbeat.json")
         if not os.path.exists(hb_file): 
             return False
         try:

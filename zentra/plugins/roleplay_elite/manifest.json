@@ -1,5 +1,5 @@
 {
-    "tag": "ROLEPLAY",
+    "tag": "ROLEPLAY_ELITE",
     "description": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
     "lazy_load": true,
     "is_class_based": true,
@@ -17,7 +17,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__list_characters",
+                "name": "ROLEPLAY_ELITE__list_characters",
                 "description": "Lists all characters available for roleplaying.",
                 "parameters": {
                     "type": "object",
@@ -29,7 +29,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__list_scenes",
+                "name": "ROLEPLAY_ELITE__list_scenes",
                 "description": "Lists all scenes available for roleplaying.",
                 "parameters": {
                     "type": "object",
@@ -41,7 +41,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__load_character",
+                "name": "ROLEPLAY_ELITE__load_character",
                 "description": "Loads a character by name to interpret their role.",
                 "parameters": {
                     "type": "object",
@@ -60,7 +60,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__load_scene",
+                "name": "ROLEPLAY_ELITE__load_scene",
                 "description": "Loads a specific setting or scene for roleplaying.",
                 "parameters": {
                     "type": "object",
@@ -79,7 +79,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__reset_roleplay",
+                "name": "ROLEPLAY_ELITE__reset_roleplay",
                 "description": "Complete reset of active characters and scenes.",
                 "parameters": {
                     "type": "object",
@@ -91,7 +91,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__unload_character",
+                "name": "ROLEPLAY_ELITE__unload_character",
                 "description": "Deactivates the current character and returns to the normal personality.",
                 "parameters": {
                     "type": "object",
@@ -103,7 +103,7 @@
         {
             "type": "function",
             "function": {
-                "name": "ROLEPLAY__unload_scene",
+                "name": "ROLEPLAY_ELITE__unload_scene",
                 "description": "Removes the current scene or setting.",
                 "parameters": {
                     "type": "object",

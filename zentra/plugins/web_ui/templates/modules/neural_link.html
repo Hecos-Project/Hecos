@@ -1,9 +1,8 @@
-<!-- neural_link.html (Dual-Mode: Hub Panel & Chat Overlay) -->
-<div id="tab-neural-link" class="panel">
+<div id="tab-neural-link">
     <div id="neural-link-overlay" class="neural-overlay">
         <div class="neural-card card">
             <div class="neural-logo">
-                <img src="/assets/Zentra_Core_Logo_NBG.png?v=0.15.2" alt="Zentra Logo">
+                <img src="/assets/Zentra_Core_Logo_NBG.png?v=0.20.0" alt="Zentra Logo">
             </div>
             <h1 class="neural-title">NEURAL LINK</h1>
             <p class="neural-subtitle">Advanced encrypted connection for media synchronization.</p>
@@ -11,7 +10,7 @@
             <div class="neural-status-grid">
                 <div class="status-item">
                     <span class="status-label">Voice Engine</span>
-                    <span id="st-voice" class="status-val active">READY</span>
+                    <span id="st-voice" class="status-val pending">SEARCHING</span>
                 </div>
                 <div class="status-item">
                     <span class="status-label">Neural Audio</span>
@@ -34,7 +33,7 @@
             </div>
             
             <div class="neural-footer">
-                Zentra Core v0.18.0 | Advanced Neural Interface
+                Zentra Core v0.20.0 | Advanced Neural Interface
             </div>
         </div>
     </div>
@@ -182,6 +181,13 @@ body:not(.config-page) #neural-link-overlay {
     background: #66fcf1;
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(102, 252, 241, 0.4);
+}
+
+.connect-btn.loading {
+    background: #1f2833 !important;
+    color: #45a29e !important;
+    cursor: wait !important;
+    border: 1px solid #45a29e !important;
 }
 
 .neural-footer {

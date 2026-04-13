@@ -21,6 +21,23 @@ from zentra.core.system import instance_lock
 DEFAULT_MAIN_SCRIPT = os.path.join("zentra", "main.py")
 CONFIG_FILE = os.path.join("zentra", "config", "data", "system.yaml")
 
+# Logging configuration
+LOGS_DIR = os.path.join("zentra", "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+MONITOR_LOG = os.path.join(LOGS_DIR, "zentra_monitor.log")
+
+def monitor_log(msg):
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    formatted = f"{ts} [MONITOR] {msg}"
+    print(formatted)
+    try:
+        with open(MONITOR_LOG, "a", encoding="utf-8") as f:
+            f.write(formatted + "\n")
+    except: pass
+
+# Replace print calls with monitor_log
+def print_trace(msg): monitor_log(msg)
+
 def get_translator():
     language = "en"
     if os.path.exists(CONFIG_FILE):
@@ -67,7 +84,7 @@ def start_and_monitor(script_to_run):
             return False
 
     last_config_time = get_file_timestamp(CONFIG_FILE)
-    print(t("starting", script=script_to_run))
+    monitor_log(t("starting", script=script_to_run))
     
     # Process startup: handle both direct scripts and module-style runs
     # Inietta la root nel PYTHONPATH del sottoprocesso per garantire la risoluzione di 'zentra'
@@ -93,7 +110,7 @@ def start_and_monitor(script_to_run):
                     last_config_time = current_config_time
                     continue
                 
-                print(f"\n{t('config_changed')}")
+                monitor_log(f"system.yaml change detected (delta: {current_config_time - last_config_time}s). Terminating...")
                 process.terminate()
                 # Wait for process to close (max 5 seconds)
                 try:
@@ -101,7 +118,7 @@ def start_and_monitor(script_to_run):
                 except subprocess.TimeoutExpired:
                     process.kill() # Force close if unresponsive
                 
-                print(t("reset_complete"))
+                monitor_log(t("reset_complete"))
                 time.sleep(2) # Safety pause for GPU
                 return True
                 
@@ -110,7 +127,7 @@ def start_and_monitor(script_to_run):
             time.sleep(1) # Safety pause before new incarnation
             return True # Restart on request code 42
         else:
-            print(f"[MONITOR] Process exited with code: {process.returncode}")
+            monitor_log(f"Process exited with code: {process.returncode}")
             return False # Normal closure or different error, do not restart
                     
     except Exception as e:
@@ -126,7 +143,7 @@ if __name__ == "__main__":
 
     print(f"\n{'-'*55}")
     print(f" [MONITOR] Zentra Core Watchdog Active")
-    print(f" Target: {args.script}")
+    monitor_log(f"Target: {args.script}")
     print(f"{'-'*55}\n")
     
     # Determine lock name based on script

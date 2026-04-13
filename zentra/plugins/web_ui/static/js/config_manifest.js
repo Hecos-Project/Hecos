@@ -26,7 +26,7 @@ window.CONFIG_HUB = {
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA' },
         { id: 'igen',      label: 'hub_mod_igen',         icon: '🎨', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
-        { id: 'roleplay',  label: 'hub_mod_roleplay',     icon: '🎭', cat: 'MULTIMEDIA', pluginTag: 'ROLEPLAY' },
+        { id: 'roleplay_elite', label: 'hub_mod_roleplay_elite', icon: '🎭', cat: 'MULTIMEDIA', pluginTag: 'ROLEPLAY_ELITE' },
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '🔌', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE' },
         { id: 'bridge',    label: 'hub_mod_bridge',       icon: '🌉', cat: 'CONNETTIVITÀ' },
@@ -48,7 +48,8 @@ window.CONFIG_HUB = {
         { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true },
         { id: 'security',  label: 'hub_mod_security',     icon: '🛡️', cat: 'SISTEMA', adminOnly: true },
         { id: 'plugins',   label: 'hub_mod_plugins',      icon: '🧩', cat: 'SISTEMA' },
-        { id: 'logs',      label: 'hub_mod_logs',         icon: '📜', cat: 'SISTEMA' }
+        { id: 'logs',      label: 'hub_mod_logs',         icon: '📜', cat: 'SISTEMA' },
+        { id: 'privacy',   label: 'hub_mod_privacy',      icon: '🕵️', cat: 'SISTEMA' }
     ],
 
     // Fallback Icons based on keywords (for MCP or new plugins)
@@ -96,7 +97,7 @@ window.CONFIG_HUB.tagMap = {
     'DASHBOARD': 'dashboard',
     'DOMOTICA': 'domotica',
     'EXECUTOR': 'executor',
-    'ROLEPLAY': 'roleplay',
+    'ROLEPLAY_ELITE': 'roleplay_elite',
     'WEB': 'web',
     'WEBCAM': 'webcam',
     'DRIVE_EDITOR': 'drive-editor'

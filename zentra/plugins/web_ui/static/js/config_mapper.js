@@ -113,8 +113,8 @@ function populateUI() {
     setVal('ia-instructions', c.ai?.special_instructions || '');
     setCheck('ia-save-instructions', c.ai?.save_special_instructions || false);
 
-    setCheck('ia-roleplay-mode', c.ai?.roleplay_mode || false);
-    setVal('ia-roleplay-disclaimer', c.ai?.roleplay_disclaimer || '');
+    setCheck('ia-roleplay-mode', c.ai.persona_roleplay_mode);
+    setVal('ia-roleplay-disclaimer', c.ai.safety_disclaimer || '');
     
     // Load the avatar preview for the currently selected persona
     if (typeof window.loadPersonaAvatar === 'function') {
@@ -155,8 +155,9 @@ function populateUI() {
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
     
-    // 7. Roleplay & WebUI Dispatch
+    // 7. Roleplay, Privacy & WebUI Dispatch
     populateRoleplayUI();
+    populatePrivacyUI();
     populateWebUIConfig();
 
     // Sync all standalone plugin toggles
@@ -324,8 +325,13 @@ function buildPayload() {
     out.ai.avatar_size = document.getElementById('ia-avatar-size').value;
     out.ai.special_instructions = document.getElementById('ia-instructions').value;
     out.ai.save_special_instructions = document.getElementById('ia-save-instructions').checked;
-    out.ai.roleplay_mode = document.getElementById('ia-roleplay-mode').checked;
-    out.ai.roleplay_disclaimer = document.getElementById('ia-roleplay-disclaimer').value;
+    out.ai.persona_roleplay_mode = document.getElementById('ia-roleplay-mode').checked;
+    out.ai.safety_disclaimer = document.getElementById('ia-roleplay-disclaimer').value;
+
+    out.privacy = out.privacy || {};
+    out.privacy.default_mode = document.getElementById('pr-default-mode').value;
+    out.privacy.auto_wipe_enabled = document.getElementById('pr-auto-wipe').checked;
+    out.privacy.incognito_shortcut = document.getElementById('pr-incognito-shortcut').checked;
 
     out.bridge = out.bridge || {};
     out.bridge.use_processor        = document.getElementById('br-processor').checked;
@@ -382,9 +388,15 @@ function buildPayload() {
         out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
     }
 
-    // Roleplay & WebUI Payload
-    Object.assign(out.ai, buildRoleplayPayload().ai || {});
-    const webuiPart = buildWebUIPayload();
+    // Roleplay & Other AI Extras
+    const rpPart = buildRoleplayPayload();
+    if (rpPart.ai) {
+        // Sync roleplay-specific items ONLY if they are not the ones managed in the main Persona tab
+        // Or better: only take special_instructions if roleplay-tab is providing it
+        if (rpPart.ai.special_instructions) {
+            out.ai.special_instructions = rpPart.ai.special_instructions;
+        }
+    }
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
         Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
@@ -514,6 +526,14 @@ function populateIgenUI() {
     setVal('igen-height', g.height || 1024);
 }
 
+function populatePrivacyUI() {
+    const c = window.cfg;
+    if (!c || !c.privacy) return;
+    setVal('pr-default-mode', c.privacy.default_mode || 'normal');
+    setCheck('pr-auto-wipe', c.privacy.auto_wipe_enabled ?? false);
+    setCheck('pr-incognito-shortcut', c.privacy.incognito_shortcut ?? true);
+}
+
 // Global Exports
 window.populateSelect = populateSelect;
 window.populateUI = populateUI;
@@ -525,4 +545,5 @@ window.isRestartNeeded = isRestartNeeded;
 window.populateIgenUI = populateIgenUI;
 window.populateRoleplayUI = populateRoleplayUI;
 window.populateWebUIConfig = populateWebUIConfig;
+window.populatePrivacyUI = populatePrivacyUI;
 window.populateIgenUI = populateIgenUI;

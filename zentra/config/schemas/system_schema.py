@@ -8,6 +8,17 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
+# ─── PRIVACY ──────────────────────────────────────────────────────────────────
+
+class PrivacyConfig(BaseModel):
+    default_mode: str = "normal"          # normal | auto_wipe | incognito
+    auto_wipe_on_clear: bool = True       # wipe messages when session cleared
+    wipe_messages: bool = True
+    wipe_profile: bool = False
+    wipe_context: bool = False
+
+
+
 # ─── AI ───────────────────────────────────────────────────────────────────────
 
 class AIConfig(BaseModel):
@@ -16,8 +27,8 @@ class AIConfig(BaseModel):
     save_special_instructions: bool = False
     special_instructions: str = ""
     avatar_size: str = "medium" # small, medium, large
-    roleplay_mode: bool = False
-    roleplay_disclaimer: str = ""
+    persona_roleplay_mode: bool = False
+    safety_disclaimer: str = ""
 
 
 
@@ -157,14 +168,14 @@ class PluginMedia(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
 
-class PluginRoleplay(BaseModel):
+class PluginRoleplayElite(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
     default_character: str = ""
     default_scene: str = ""
     llm_model: str = ""
-    characters_dir: str = "plugins/roleplay/characters"
-    scenes_dir: str = "plugins/roleplay/scenes"
+    characters_dir: str = "plugins/roleplay_elite/characters"
+    scenes_dir: str = "plugins/roleplay_elite/scenes"
 
 class PluginSystem(BaseModel):
     enabled: bool = True
@@ -254,7 +265,7 @@ class PluginsConfig(BaseModel):
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     IMAGE_GEN: PluginImageGen = Field(default_factory=PluginImageGen)
     MEDIA: PluginMedia = Field(default_factory=PluginMedia)
-    ROLEPLAY: PluginRoleplay = Field(default_factory=PluginRoleplay)
+    ROLEPLAY_ELITE: PluginRoleplayElite = Field(default_factory=PluginRoleplayElite)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)
@@ -296,6 +307,7 @@ class SystemConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     monitor: MonitorConfig = Field(default_factory=MonitorConfig)
     plugins: PluginsConfig = Field(default_factory=PluginsConfig)
+    privacy: PrivacyConfig = Field(default_factory=lambda: PrivacyConfig())
     processor: ProcessorConfig = Field(default_factory=ProcessorConfig)
     routing_engine: RoutingEngineConfig = Field(default_factory=RoutingEngineConfig)
     system: SystemFlagsConfig = Field(default_factory=SystemFlagsConfig)
