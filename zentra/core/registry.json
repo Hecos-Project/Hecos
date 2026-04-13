@@ -7,11 +7,12 @@
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Telemetry active)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "DOMOTICA": {
         "description": "Smart Home control. Currently in integration phase.",
@@ -22,7 +23,9 @@
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS"
     },
     "DRIVE": {
         "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
@@ -33,18 +36,21 @@
         "example": "",
         "routing_instructions": "",
         "is_class_based": false,
-        "is_lazy": true
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS"
     },
     "EXECUTOR": {
         "description": "Safe Python execution (AST Sandbox).",
         "commands": {
             "run_python_code": "Executes a block of Python code safely after strict Static Analysis."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Code Jail Active)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "FILE_MANAGER": {
         "description": "System file and directory management with user path and file reading support.",
@@ -53,11 +59,12 @@
             "list_files": "SCANS and lists files/folders in a path to return the names to the AI.",
             "read_file": "Reads the textual content of a file specified by the path."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "HELP": {
         "description": "Displays the list of all active commands and modules in the system.",
@@ -65,22 +72,24 @@
             "list_capabilities": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
             "refresh_registry": "Forces a re-read and update of the central capabilities registry (rescans plugins)."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "IMAGE_GEN": {
-        "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
+        "description": "Generates images from text descriptions using AI image models.",
         "commands": {
             "generate_image": "Generates an image from a text description. Uses the configured provider."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
-        "routing_instructions": "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image.",
+        "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "LAZY_TEST": {
         "description": "Test per architettura Lazy Loading",
@@ -92,22 +101,9 @@
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
-    },
-    "MCP_BRIDGE": {
-        "description": "Bridge to Model Context Protocol (MCP) servers",
-        "commands": {
-            "call_tool": "Executes an MCP tool.",
-            "get_mcp_schemas": "Hook used by Zentra's plugin_docs.py to merge tools.",
-            "list": "Method",
-            "reload": "Method",
-            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
-            "status": "Method"
-        },
-        "status": "No MCP servers connected.",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS"
     },
     "MEDIA": {
         "description": "Hardware volume and mute control.",
@@ -115,11 +111,12 @@
             "set_mute": "Toggles system mute mode on or off.",
             "set_volume": "Sets the system volume to a specific level."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History).",
@@ -133,7 +130,9 @@
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS"
     },
     "MODELS": {
         "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
@@ -146,7 +145,21 @@
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "REMOTE_TRIGGERS": {
+        "description": "PTT activation from hardware devices and remote clients",
+        "commands": {
+            "info": "Method"
+        },
+        "status": "online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
     },
     "ROLEPLAY": {
         "description": "Manages roleplay mode: loads characters and scenes for immersive conversations.",
@@ -159,11 +172,12 @@
             "unload_character": "Deactivates the current character and returns to the normal personality.",
             "unload_scene": "Removes the current scene or setting."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "plugin_roleplay_status_online",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "SYSTEM": {
         "description": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
@@ -179,11 +193,12 @@
             "reboot_system": "Reboots the entire Zentra Core system.",
             "set_configuration": "Modifies a value within the main configuration file (config.json)."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "plugin_sistema_status_online",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
@@ -197,11 +212,12 @@
             "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
             "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "Online",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "WEB": {
         "description": "Network access for Google searches and quick opening of websites.",
@@ -209,22 +225,24 @@
             "open_url": "Opens a specific website in the default browser.",
             "search_web": "Performs an internet search using the default search engine (e.g., Google)."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Browsing & Search)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "WEBCAM": {
-        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
+        "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
         "commands": {
-            "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser."
+            "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Optical Vision)",
         "example": "",
-        "routing_instructions": "WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device, you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.",
+        "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true
+        "icon": "",
+        "category": "PLUGINS"
     },
     "WEB_UI": {
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
@@ -237,78 +255,8 @@
         "status": "Online → http://127.0.0.1:7070/chat",
         "example": "",
         "routing_instructions": "",
-        "is_class_based": true
-    },
-    "AUTOCODER": {
-        "description": "Zentra AutoCoder Tools. Usa questi tool per analizzare o scrivere codice nel sistema in maniera autonoma.",
-        "commands": {
-            "list_dir": "Lists directory contents.",
-            "read_file": "Reads the exact contents of a file. Pass start_line and end_line bounds to limit output verbosity.",
-            "write_file": "Writes or creates a new file. Mode 'w' overwrites."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true
-    },
-    "MCP_EVERYTHING": {
-        "description": "External Tool Provider (everything) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "everything"
-    },
-    "MCP_WIKIPEDIA": {
-        "description": "External Tool Provider (wikipedia) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "wikipedia"
-    },
-    "MCP_EXA_MCP_SERVER": {
-        "description": "External Tool Provider (exa_mcp_server) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "exa_mcp_server"
-    },
-    "MCP_MCP_WEB_SEARCH": {
-        "description": "External Tool Provider (mcp_web_search) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "mcp_web_search"
-    },
-    "MCP_IMAGESORCERY_MCP": {
-        "description": "External Tool Provider (imagesorcery_mcp) via Model Context Protocol.",
-        "commands": {
-            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
-        },
-        "status": "EXTERNAL",
-        "example": "",
-        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
-        "is_class_based": false,
-        "is_mcp": true,
-        "server_name": "imagesorcery_mcp"
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
     }
 }

@@ -200,8 +200,10 @@ class PluginWebUI(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
     port: int = 7070
+    api_port: int = 5000
     auto_open_browser: bool = False
     https_enabled: bool = False
+    force_login: bool = True
     cert_file: str = "certs/cert.pem"
     key_file: str = "certs/key.pem"
 

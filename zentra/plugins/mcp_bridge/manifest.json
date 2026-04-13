@@ -1,6 +1,8 @@
 {
     "tag": "MCP_BRIDGE",
     "description": "Bridge for Model Context Protocol (MCP) servers. Allows Zentra to use external tools from the MCP ecosystem.",
+    "icon": "🔌",
+    "category": "MCP",
     "version": "1.0.0",
     "author": "Antigravity",
     "lazy_load": false,

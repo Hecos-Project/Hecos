@@ -9,7 +9,11 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/zentra/config/ui")
     def config_ui():
         try:
-            return render_template("index.html", zconfig=cfg_mgr.config)
+            from zentra.core.i18n.translator import get_translator
+            translations = get_translator().get_translations()
+            return render_template("index.html", 
+                                 zconfig=cfg_mgr.config, 
+                                 translations=translations)
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
 
@@ -103,7 +107,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 cloud_models_flat.extend(models)
                 provider = cat.replace("Cloud (", "").replace(")", "").lower()
                 cloud_by_provider[provider] = models
-
+ 
         return jsonify({
             "piper_voices": onnx_files,
             "piper_dir":    piper_path_dir,
@@ -174,3 +178,36 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             logger.error(f"[WebUI] POST /zentra/config/routing error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/plugins/registry", methods=["GET"])
+    def get_plugin_registry():
+        try:
+            from zentra.core.system.plugin_state import REGISTRY_PATH
+            if os.path.exists(REGISTRY_PATH):
+                with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+                    return jsonify(json.load(f))
+            return jsonify({})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/api/webui/state', methods=['GET', 'POST'])
+    def handle_ui_state():
+        state_file = os.path.join(root_dir, 'zentra', 'core', 'config', 'ui_state.json')
+        os.makedirs(os.path.dirname(state_file), exist_ok=True)
+        
+        if request.method == 'POST':
+            try:
+                state = request.get_json()
+                with open(state_file, 'w', encoding='utf-8') as f:
+                    json.dump(state, f, indent=4)
+                return jsonify({"status": "success"})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+                
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, 'r', encoding='utf-8') as f:
+                    return jsonify(json.load(f))
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+        return jsonify({})

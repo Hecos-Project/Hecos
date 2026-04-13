@@ -1,45 +1,65 @@
-<!-- neural_link.html -->
-<div id="neural-link-overlay" class="neural-overlay">
-    <div class="neural-card">
-        <div class="neural-logo">
-            <img src="/assets/Zentra_Core_Logo_NBG.png?v=0.15.2" alt="Zentra Logo">
-        </div>
-        <h1 class="neural-title">NEURAL LINK INITIALIZATION</h1>
-        <p class="neural-subtitle">Secure encrypted connection required for full media synchronization.</p>
-        
-        <div class="neural-status-grid">
-            <div class="status-item">
-                <span class="status-label">Voice Engine</span>
-                <span id="st-voice" class="status-val pending">READY</span>
+<!-- neural_link.html (Dual-Mode: Hub Panel & Chat Overlay) -->
+<div id="tab-neural-link" class="panel">
+    <div id="neural-link-overlay" class="neural-overlay">
+        <div class="neural-card card">
+            <div class="neural-logo">
+                <img src="/assets/Zentra_Core_Logo_NBG.png?v=0.15.2" alt="Zentra Logo">
             </div>
-            <div class="status-item">
-                <span class="status-label">Neural Audio</span>
-                <span id="st-audio" class="status-val pending">STANDBY</span>
+            <h1 class="neural-title">NEURAL LINK</h1>
+            <p class="neural-subtitle">Advanced encrypted connection for media synchronization.</p>
+            
+            <div class="neural-status-grid">
+                <div class="status-item">
+                    <span class="status-label">Voice Engine</span>
+                    <span id="st-voice" class="status-val active">READY</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Neural Audio</span>
+                    <span id="st-audio" class="status-val pending">STANDBY</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Visual Core</span>
+                    <span id="st-video" class="status-val pending">ARMED</span>
+                </div>
             </div>
-            <div class="status-item">
-                <span class="status-label">Visual Core</span>
-                <span id="st-video" class="status-val pending">ARMED</span>
-            </div>
-        </div>
 
-        <button id="establish-link-btn" class="connect-btn">
-            ESTABLISH CONNECTION
-        </button>
-        
-        <div style="margin-top: 15px;">
-            <a href="/api/security/download-ca" style="color:#45a29e; font-size:11px; text-decoration:underline; opacity:0.8; transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">
-                📥 Download Zentra Root CA Profile for iOS/Chrome
-            </a>
-        </div>
-        
-        <div class="neural-footer">
-            Zentra Core v0.15.2 | Advanced Neural Interface
+            <button id="establish-link-btn" class="connect-btn btn btn-primary">
+                ESTABLISH CONNECTION
+            </button>
+            
+            <div style="margin-top: 15px;">
+                <a href="/api/security/download-ca" style="color:#45a29e; font-size:11px; text-decoration:underline; opacity:0.8;">
+                    📥 Download Zentra Root CA Profile
+                </a>
+            </div>
+            
+            <div class="neural-footer">
+                Zentra Core v0.18.0 | Advanced Neural Interface
+            </div>
         </div>
     </div>
 </div>
 
 <style>
+/* Reset for Hub Panel Mode (Config Page) */
+#tab-neural-link.panel {
+    display: none;
+    width: 100%;
+    background: transparent;
+}
+#tab-neural-link.panel.active {
+    display: block;
+}
+
+/* Internal Overlay Styles */
 .neural-overlay {
+    transition: opacity 0.8s ease, visibility 0.8s;
+}
+
+/* Chat-Specific Overlay (Fixed Position) */
+/* This rule applies when the parent .panel is NOT present or NOT in Hub mode */
+/* In Zentra, Chat usually has a different container structure. */
+body:not(.config-page) #neural-link-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -50,16 +70,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.8s ease, visibility 0.8s;
 }
 
-.neural-overlay.connected {
+/* Special Case: If it IS in Hub mode, we override the fixed positioning */
+#tab-neural-link.panel #neural-link-overlay {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: auto;
+    height: auto;
+    background: transparent;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+#neural-link-overlay.connected {
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
 .neural-card {
-    width: 90%;
+    width: 100%;
     max-width: 480px;
     background: rgba(31, 40, 51, 0.4);
     backdrop-filter: blur(20px);
@@ -78,7 +112,6 @@
 }
 
 .neural-logo img {
-    width: auto;
     height: 80px;
     margin-bottom: 24px;
     filter: drop-shadow(0 0 15px rgba(102, 252, 241, 0.4));
@@ -102,7 +135,7 @@
 
 .neural-status-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
     margin-bottom: 32px;
 }
@@ -128,9 +161,8 @@
     font-weight: bold;
     font-family: 'JetBrains Mono', monospace;
 }
-
-.status-val.pending { color: #888; }
 .status-val.active { color: #66fcf1; text-shadow: 0 0 8px rgba(102, 252, 241, 0.5); }
+.status-val.pending { color: #888; }
 
 .connect-btn {
     width: 100%;
@@ -144,7 +176,6 @@
     letter-spacing: 2px;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(69, 162, 158, 0.3);
 }
 
 .connect-btn:hover {
@@ -153,15 +184,10 @@
     box-shadow: 0 8px 25px rgba(102, 252, 241, 0.4);
 }
 
-.connect-btn:active {
-    transform: translateY(0);
-}
-
 .neural-footer {
     margin-top: 32px;
     font-size: 10px;
     color: #45a29e;
     opacity: 0.5;
-    letter-spacing: 1px;
 }
 </style>

@@ -145,14 +145,19 @@ function populateUI() {
     // 3. System Module Dispatch
     if (typeof populateSystemUI === 'function') populateSystemUI();
 
-    // 4. Media Module Dispatch
+    // 4. Media & Image Gen Dispatch
     if (typeof populateMediaUI === 'function') populateMediaUI();
+    if (typeof populateIgenUI === 'function') populateIgenUI();
     
     // 5. Drive Module Dispatch
     populateDriveUI();
 
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
+    
+    // 7. Roleplay & WebUI Dispatch
+    populateRoleplayUI();
+    populateWebUIConfig();
 
     // Sync all standalone plugin toggles
     document.querySelectorAll('[data-plugin]').forEach(cb => {
@@ -224,6 +229,7 @@ function initRestartIndicators() {
 function renderPlugins(plugins) {
   const cont = document.getElementById('plugin-list');
   if (!cont) return;
+  const hub = window.CONFIG_HUB;
   const I18N = window.I18N || {};
   const descs = {
     DASHBOARD:   I18N.plugin_desc_dashboard,
@@ -235,21 +241,41 @@ function renderPlugins(plugins) {
     WEB:         I18N.plugin_desc_web,
     WEBCAM:      I18N.plugin_desc_webcam,
     WEB_UI:      I18N.plugin_desc_webui,
-    IMAGE_GEN:   'Generazione Immagini AI (Pollinations)',
+    IMAGE_GEN:   'Generazione Immagini AI (Pollinations/Flux)',
     DRIVE:       I18N.webui_conf_plugin_desc_drive || 'Gestore File HTTP (Zentra Drive)',
     REMOTE_TRIGGERS: 'PTT via Media Keys (iPhone), Bluetooth & Webhooks',
-    MCP_BRIDGE:  'Universal Protocol Hub (Connect external AI tools via MCP)'
+    MCP_BRIDGE:  'Universal Protocol Hub (Connect external AI tools via MCP)',
+    DRIVE_EDITOR: 'Integrated Code & File Editor for Drive'
   };
+
   let html = '';
-  for (const [tag, pCfg] of Object.entries(plugins)) {
+  
+  // Group 1: Native & Static Modules from Hub
+  hub.modules.forEach(m => {
+    if (!m.pluginTag || m.id === 'plugins') return;
+    
+    const tag = m.pluginTag;
+    const pCfg = plugins[tag] || { enabled: true };
     const on = pCfg.enabled !== false;
     const lazyOn = pCfg.lazy_load === true;
+    const desc = descs[tag] || m.label;
+    const icon = m.icon || '🧩';
+
     html += `<div class="plugin-row">
-      <div><div class="plugin-name">${tag} <label style="font-size:10px; color:var(--muted); margin-left:10px; cursor:pointer;" title="Abilita Lazy Loading"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''} style="vertical-align:middle"> Lazy</label></div>${descs[tag] ? `<div class="plugin-desc">${descs[tag]}</div>` : ''}</div>
+      <div class="plugin-info-main">
+        <span class="p-icon">${icon}</span>
+        <div class="plugin-meta">
+            <div class="plugin-name">${m.label} <span class="p-tag">${tag}</span>
+              <label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>
+            </div>
+            <div class="plugin-desc">${desc}</div>
+        </div>
+      </div>
       <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''}><span class="slider"></span></label>
     </div>`;
-  }
-  cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No plugins'}</p>`;
+  });
+
+  cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No modules discovered'}</p>`;
 }
 
 function buildPayload() {
@@ -356,6 +382,14 @@ function buildPayload() {
         out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
     }
 
+    // Roleplay & WebUI Payload
+    Object.assign(out.ai, buildRoleplayPayload().ai || {});
+    const webuiPart = buildWebUIPayload();
+    if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
+        out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
+        Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
+    }
+
     document.querySelectorAll('[data-plugin-lazy]').forEach(cb => {
       const tag = cb.dataset.pluginLazy;
       if (out.plugins[tag]) {
@@ -420,8 +454,64 @@ function buildRemoteTriggersPayload() {
     };
 }
 
+function populateRoleplayUI() {
+    const c = window.cfg;
+    const sysOptions = window.sysOptions;
+    if (!c || !c.ai) return;
+    populateSelect('rp-personality', sysOptions.personalities || [], c.ai.active_personality, true);
+    setCheck('rp-enabled', c.ai.roleplay_mode ?? false);
+    setVal('rp-instructions', c.ai.special_instructions || '');
+}
+
+function buildRoleplayPayload() {
+    const el = document.getElementById('rp-enabled');
+    if (!el) return {};
+    return {
+        ai: {
+            roleplay_mode: el.checked,
+            active_personality: document.getElementById('rp-personality').value,
+            special_instructions: document.getElementById('rp-instructions').value
+        }
+    };
+}
+
+function populateWebUIConfig() {
+    const c = window.cfg;
+    if (!c || !c.plugins || !c.plugins.WEB_UI) return;
+    const w = c.plugins.WEB_UI;
+    setVal('webui-port', w.port || 8080);
+    setVal('webui-api-port', w.api_port || 5000);
+    setCheck('webui-force-login', w.force_login ?? true);
+}
+
+function buildWebUIPayload() {
+    const el = document.getElementById('webui-port');
+    if (!el) return {};
+    return {
+        plugins: {
+            WEB_UI: {
+                port: parseInt(el.value) || 8080,
+                api_port: parseInt(document.getElementById('webui-api-port').value) || 5000,
+                force_login: document.getElementById('webui-force-login').checked
+            }
+        }
+    };
+}
+
 function isRestartNeeded() {
   return document.querySelectorAll('.restart-badge.visible').length > 0;
+}
+
+function populateIgenUI() {
+    const c = window.cfg;
+    if (!c || !c.plugins || !c.plugins.IMAGE_GEN) return;
+    const g = c.plugins.IMAGE_GEN;
+    setCheck('igen-enabled', g.enabled ?? true);
+    setCheck('igen-nologo', g.no_logo ?? false);
+    setVal('igen-provider', g.provider || 'pollinations');
+    setVal('igen-model', g.model || 'flux');
+    setVal('igen-width', g.width || 1024);
+    setVal('igen-height', g.height || 1024);
 }
 
 // Global Exports
@@ -432,3 +522,7 @@ window.setCheck = setCheck;
 window.renderPlugins = renderPlugins;
 window.buildPayload = buildPayload;
 window.isRestartNeeded = isRestartNeeded;
+window.populateIgenUI = populateIgenUI;
+window.populateRoleplayUI = populateRoleplayUI;
+window.populateWebUIConfig = populateWebUIConfig;
+window.populateIgenUI = populateIgenUI;

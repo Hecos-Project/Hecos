@@ -1,6 +1,8 @@
 {
     "tag": "IMAGE_GEN",
     "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
+    "icon": "🎨",
+    "category": "PLUGINS",
     "lazy_load": true,
     "is_class_based": true,
     "status": "ONLINE",

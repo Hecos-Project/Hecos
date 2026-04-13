@@ -17,17 +17,52 @@
   <style>
     @media (max-width: 768px) {
       header {
-        flex-wrap: wrap;
+        flex-direction: column;
         height: auto;
-        padding: 10px 12px;
-        gap: 8px;
-      }
-      header > div:last-child {
-        flex-wrap: wrap;
+        padding: 8px 12px;
         gap: 6px;
-        width: 100%;
       }
-      /* Make tabs row scrollable horizontally */
+      header .logo {
+        justify-content: center;
+        margin-bottom: 2px;
+      }
+      header .logo-text { font-size: 16px; }
+      header .logo img { height: 24px; }
+      
+      header > div:last-child {
+        flex-wrap: nowrap;
+        justify-content: center;
+        gap: 4px;
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+      header .btn, header .view-switcher, header .global-controls {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        height: 28px;
+        display: flex;
+        align-items: center;
+      }
+      header .view-switcher button, header .global-controls button {
+        padding: 0 6px !important;
+        font-size: 11px !important;
+      }
+
+      /* Fix Save Bar (Footer) */
+      .save-bar {
+        padding: 8px 12px !important;
+        gap: 6px !important;
+        height: auto !important;
+      }
+      .save-bar .btn {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        flex: 1;
+        white-space: nowrap;
+      }
+      #save-msg { font-size: 10px; margin-bottom: 4px; width: 100%; text-align: center; }
+
       .tabs {
         display: flex;
         flex-wrap: nowrap;
@@ -44,7 +79,10 @@
       }
       .container {
         padding: 8px;
+        margin-bottom: 80px; /* Space for save-bar */
       }
+      .card { padding: 12px !important; margin-bottom: 12px !important; }
+      .grid-2 { grid-template-columns: 1fr !important; }
     }
   </style>
 </head>
@@ -58,6 +96,18 @@
   <div style="display:flex; align-items:center; gap:20px;">
     <div id="status-dot"><div class="dot"></div> <span id="hdr-model">{{ t("webui_chat_offline") }}</span></div>
     
+    <!-- VIEW SWITCHER -->
+    <div class="view-switcher" style="display:flex; background:rgba(255,255,255,0.05); padding:3px; border-radius:10px; border:1px solid var(--border);">
+      <button class="switcher-btn active" id="view-tabs" onclick="setViewMode('tabs')" title="Tabs View">📂</button>
+      <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View">🧱</button>
+    </div>
+
+    <!-- GLOBAL COLLAPSE -->
+    <div class="global-controls" style="display:flex; background:rgba(255,255,255,0.05); padding:3px; border-radius:10px; border:1px solid var(--border);">
+      <button class="switcher-btn" onclick="toggleAllCategories(true)" title="Expand All">⊕</button>
+      <button class="switcher-btn" onclick="toggleAllCategories(false)" title="Collapse All">⊖</button>
+    </div>
+    
     <!-- AUTHENTICATION WIDGET -->
     {% if current_user.is_authenticated %}
     <div style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.05); padding:4px 12px; border-radius:12px; font-size:12px;">
@@ -67,6 +117,13 @@
       <a href="/logout" style="color:#ff4b4b; text-decoration:none; margin-left:8px; font-weight:bold;">Esci</a>
     </div>
     {% endif %}
+
+    <!-- HELP -->
+    <div style="display:flex; gap:8px;">
+      <a href="/zentra/docs?group=user" target="_blank" class="btn btn-secondary" style="text-decoration:none; display:flex; align-items:center; gap:6px; font-size:12px; padding:6px 12px;">
+        <span>📖</span> {{ t('hub_nav_guide') }}
+      </a>
+    </div>
 
     <a href="/chat" class="btn btn-secondary" style="text-decoration:none;">{{ t("webui_nav_chat") }}</a>
     {% if current_user.is_authenticated %}
@@ -85,29 +142,17 @@
     <div class="stat"><span class="stat-label">Config:</span> <span id="s-config" class="stat-val">—</span></div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('backend')">Backend</button>
-    <button class="tab" onclick="showTab('llm')">LLM Keys</button>
-    <button class="tab" onclick="showTab('keymanager'); kmRefresh()">🔑 Key Manager</button>
-    <button class="tab" onclick="showTab('routing')">Routing</button>
-    <button class="tab" onclick="showTab('ia')">Persona</button>
-    <button class="tab" onclick="showTab('bridge')">Bridge</button>
-    <button class="tab" onclick="showTab('memory')">Memory</button>
-    <button class="tab" onclick="showTab('voice')">Audio</button>
-    <button class="tab" onclick="showTab('media')">Media</button>
-    <button class="tab" onclick="showTab('sysnet')">Sys Net</button>
-    <button class="tab" onclick="showTab('system')">System</button>
-    <button class="tab" onclick="showTab('drive'); loadDriveConfig()">🗂️ Drive</button>
-    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-    <button class="tab" onclick="showTab('users'); loadUsersData()">{{ t('webui_conf_tab_users') }}</button>
-    <button class="tab" onclick="showTab('security')">{{ t('webui_conf_tab_security') }}</button>
-    {% endif %}
-    <button class="tab" onclick="showTab('payload'); loadPayloadData()">Payload</button>
-    <button class="tab" onclick="showTab('plugins')">Plugins</button>
-    <button class="tab" onclick="showTab('studio')">🛠️ Studio</button>
-    <button class="tab" onclick="showTab('mcp')">🔌 MCP Bridge</button>
-    <button class="tab" onclick="showTab('remote-triggers')">📱 Remote Triggers</button>
-    <button class="tab" onclick="showTab('logs'); startLogStream();">Logs</button>
+  <!-- DYNAMIC TABS BAR -->
+  <div class="tabs-container" id="tabs-bar-container">
+     <div id="config-tabs-bar">
+        <!-- Will be populated by config_core.js -->
+        <div style="padding:10px; color:var(--muted); font-size:12px;">Initializing Tab Engine...</div>
+     </div>
+  </div>
+
+  <!-- WALL / GRID VIEW (Hidden by default) -->
+  <div id="config-wall" class="config-wall" style="display:none;">
+    <!-- Will be populated by config_core.js -->
   </div>
 
   <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
@@ -121,6 +166,9 @@
     {% include 'modules/config_voice.html' %}
     {% include 'modules/config_system.html' %}
     {% include 'modules/config_media.html' %}
+    {% include 'modules/config_roleplay.html' %}
+    {% include 'modules/config_igen.html' %}
+    {% include 'modules/config_utils.html' %}
     {% include 'modules/config_sysnet.html' %}
     {% if current_user.is_authenticated and current_user.role == 'admin' %}
     {% include 'modules/config_users.html' %}
@@ -133,6 +181,7 @@
     {% include 'modules/config_remote_triggers.html' %}
     {% include 'modules/config_drive.html' %}
     {% include 'modules/config_logs.html' %}
+    {% include 'modules/neural_link.html' %}
   </form>
 </div>
 
@@ -144,32 +193,34 @@
 </div>
 
 <script>
-  // I18N Strings for external JS
-  window.I18N = {
-    msg_loading: "{{ t('webui_conf_msg_loading') }}",
-    msg_synced: "{{ t('webui_conf_msg_synced') }}",
-    msg_err: "{{ t('webui_conf_msg_err') }}",
-    msg_saving: "{{ t('webui_conf_msg_saving') }}",
-    msg_saved: "{{ t('webui_conf_msg_saved') }}",
-    offline: "{{ t('webui_chat_offline') }}",
-    no_plugins: "{{ t('webui_conf_no_plugins') }}",
-    plugin_desc_dashboard: "{{ t('webui_conf_plugin_desc_dashboard') }}",
-    plugin_desc_file: "{{ t('webui_conf_plugin_desc_file') }}",
-    plugin_desc_help: "{{ t('webui_conf_plugin_desc_help') }}",
-    plugin_desc_media: "{{ t('webui_conf_plugin_desc_media') }}",
-    plugin_desc_roleplay: "{{ t('webui_conf_plugin_desc_roleplay') }}",
-    plugin_desc_system: "{{ t('webui_conf_plugin_desc_system') }}",
-    plugin_desc_web: "{{ t('webui_conf_plugin_desc_web') }}",
-    plugin_desc_webcam: "{{ t('webui_conf_plugin_desc_webcam') }}",
-    plugin_desc_webui: "{{ t('webui_conf_plugin_desc_webui') }}"
+  // Dynamic I18N Catalog from Server
+  window.I18N = {{ translations | tojson | safe }};
+  
+  /**
+   * Global translation function for Frontend JS
+   * @param {string} key - The translation key
+   * @param {object} params - Optional interpolation parameters
+   */
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    if (params) {
+      for (const [pKey, pVal] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+      }
+    }
+    return text;
   };
 </script>
 <script>
   window.cfg = {};
   window.sysOptions = {};
+  window.currentUser = {
+      role: "{{ current_user.role if current_user.is_authenticated else 'user' }}"
+  };
 </script>
+<script src="/static/js/config_manifest.js?v=0.18.0"></script>
 <script src="/static/js/config_mapper.js"></script>
-<script src="/static/js/config_core.js"></script>
+<script src="/static/js/config_core.js?v=0.18.0"></script>
 <script src="/static/js/config_audio_logic.js"></script>
 <script src="/static/js/config_media_logic.js"></script>
 <script src="/static/js/config_system_logic.js"></script>

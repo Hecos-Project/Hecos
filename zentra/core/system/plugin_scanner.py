@@ -113,7 +113,9 @@ def update_capability_registry(config=None, debug_log=True):
                                 "example": manifest_data.get("example", ""),
                                 "routing_instructions": manifest_data.get("routing_instructions", ""),
                                 "is_class_based": manifest_data.get("is_class_based", True),
-                                "is_lazy": True
+                                "is_lazy": True,
+                                "icon": manifest_data.get("icon", ""),
+                                "category": manifest_data.get("category", "PLUGINS")
                             }
                             
                             _lazy_plugins_paths[tag] = os.path.abspath(main_file)
@@ -169,7 +171,9 @@ def update_capability_registry(config=None, debug_log=True):
                         "status": status,
                         "example": "",
                         "routing_instructions": getattr(tools_instance, "routing_instructions", ""),
-                        "is_class_based": True
+                        "is_class_based": True,
+                        "icon": getattr(tools_instance, "icon", ""),
+                        "category": getattr(tools_instance, "category", "PLUGINS")
                     }
                     logger.debug("LOADER", f"Class-based Plugin {plugin_dir} loaded with tag {tag}")
 
@@ -196,7 +200,9 @@ def update_capability_registry(config=None, debug_log=True):
                         "commands": plugin_info.get('comandi') or plugin_info.get('commands', {}),
                         "status": status,
                         "example": plugin_info.get("esempio") or plugin_info.get("example", ""),
-                        "routing_instructions": plugin_info.get("routing_instructions", "")
+                        "routing_instructions": plugin_info.get("routing_instructions", ""),
+                        "icon": plugin_info.get("icon", ""),
+                        "category": plugin_info.get("category", "PLUGINS")
                     }
                     logger.debug("LOADER", f"Plugin {plugin_dir} loaded with tag {tag}")
 
@@ -265,7 +271,9 @@ def update_capability_registry(config=None, debug_log=True):
                         "commands": legacy_commands,
                         "status": status,
                         "example": info_dict.get("example") or info_dict.get("esempio", ""),
-                        "is_legacy": True
+                        "is_legacy": True,
+                        "icon": info_dict.get("icon", ""),
+                        "category": info_dict.get("category", "PLUGINS")
                     }
                     if debug_log: logger.debug("LOADER", f"OOP Legacy Plugin {legacy_dir} loaded with tag {tag}")
             except Exception as e:

@@ -60,10 +60,10 @@ function buildAudioPayload() {
     const sel  = document.getElementById('v-onnx-model').value;
     obj.onnx_model       = (sel.includes('\\') || sel.includes('/')) ? sel : pdir + '\\' + sel;
     
-    obj.speed            = parseFloat(document.getElementById('v-speed').value);
-    obj.noise_scale      = parseFloat(document.getElementById('v-noise').value);
-    obj.noise_w          = parseFloat(document.getElementById('v-noisew').value);
-    obj.sentence_silence = parseFloat(document.getElementById('v-silence').value);
+    obj.speed            = parseFloat(document.getElementById('v-speed').value) || 1.0;
+    obj.noise_scale      = parseFloat(document.getElementById('v-noise').value) || 0.8;
+    obj.noise_w          = parseFloat(document.getElementById('v-noisew').value) || 1.0;
+    obj.sentence_silence = parseFloat(document.getElementById('v-silence').value) || 0.2;
     
     obj.energy_threshold = parseInt(document.getElementById('a-threshold').value) || 450;
     obj.silence_timeout  = parseInt(document.getElementById('a-timeout').value) || 5;
