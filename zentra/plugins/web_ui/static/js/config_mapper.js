@@ -243,11 +243,11 @@ function renderPlugins(plugins) {
     WEB:         I18N.plugin_desc_web,
     WEBCAM:      I18N.plugin_desc_webcam,
     WEB_UI:      I18N.plugin_desc_webui,
-    IMAGE_GEN:   'Generazione Immagini AI (Pollinations/Flux)',
-    DRIVE:       I18N.webui_conf_plugin_desc_drive || 'Gestore File HTTP (Zentra Drive)',
-    REMOTE_TRIGGERS: 'PTT via Media Keys (iPhone), Bluetooth & Webhooks',
-    MCP_BRIDGE:  'Universal Protocol Hub (Connect external AI tools via MCP)',
-    DRIVE_EDITOR: 'Integrated Code & File Editor for Drive'
+    IMAGE_GEN:   window.t ? window.t('webui_desc_igen') : 'AI Image Generation (Pollinations/Flux)',
+    DRIVE:       window.t ? window.t('webui_desc_drive') : 'HTTP File Manager (Zentra Drive)',
+    REMOTE_TRIGGERS: window.t ? window.t('webui_desc_triggers') : 'Remote PTT & Media Keys',
+    MCP_BRIDGE:  window.t ? window.t('webui_desc_mcp') : 'Universal MCP Bridge',
+    DRIVE_EDITOR: window.t ? window.t('webui_desc_editor') : 'Integrated Code Editor'
   };
 
   let html = '';

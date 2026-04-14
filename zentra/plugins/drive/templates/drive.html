@@ -20,38 +20,38 @@
   <div class="nav-links">
     {% if current_user.is_authenticated %}
     <div class="user-badge">
-      <span style="color:#888;">Utente:</span>
+      <span style="color:#888;">{{ t('webui_chat_user') }}:</span>
       <strong>{{ current_user.username }}</strong>
       <span class="role-badge">{{ current_user.role }}</span>
     </div>
     {% endif %}
-    <a href="/zentra/config/ui">⚙️ Config</a>
+    <a href="/zentra/config/ui">⚙️ {{ t('webui_chat_config') }}</a>
     <a href="/chat">💬 Chat</a>
-    <a href="/logout" style="color:var(--red);">Esci</a>
+    <a href="/logout" style="color:var(--red);">{{ t('webui_chat_logout') }}</a>
   </div>
 </header>
 
 <!-- ── Toolbar ────────────────────────────────────────────── -->
 <div id="toolbar">
-  <button class="btn" onclick="navigateTo('')" title="Torna alla root">🏠</button>
-  <button class="btn" onclick="goUp()" title="Cartella superiore">⬆️</button>
+  <button class="btn" onclick="navigateTo('')" title="{{ t('webui_drive_root_hint') or 'Back to root' }}">🏠</button>
+  <button class="btn" onclick="goUp()" title="{{ t('webui_drive_up_hint') or 'Parent directory' }}">⬆️</button>
   <div id="path-bar"><span class="crumb current">🏠 Drive</span></div>
-  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">⬆️ Carica</button>
+  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">⬆️ {{ t('webui_chat_upload') }}</button>
   <input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
-  <button class="btn" onclick="showMkdirModal()">📁 Nuova Cartella</button>
+  <button class="btn" onclick="showMkdirModal()">📁 {{ t('webui_drive_new_folder') or 'New Folder' }}</button>
 </div>
 
 <div id="main-layout">
 
   <!-- ── Sidebar (dir tree + quick links) ───────────────── -->
   <div id="sidebar">
-    <div id="sidebar-header">📂 Cartelle</div>
+    <div id="sidebar-header">📂 {{ t('webui_drive_folders') or 'Folders' }}</div>
     <div id="tree-root"></div>
     
     <div id="quick-links-section">
       <div id="quick-links-header">⭐ Quick Links</div>
       <div id="quick-links-body">
-        <div class="sb-empty">Caricamento links...</div>
+        <div class="sb-empty">{{ t('webui_conf_msg_loading') }}</div>
       </div>
     </div>
   </div>
@@ -61,14 +61,14 @@
 
     <!-- location bar -->
     <div id="location-bar">
-      <div class="loc-left">Posizione corrente: <span id="loc-path" class="loc-path">/</span></div>
+      <div class="loc-left">{{ t('webui_drive_current_pos') or 'Current position' }}: <span id="loc-path" class="loc-path">/</span></div>
       <div class="loc-right">
         <span id="loc-count" style="color:var(--muted)">—</span>
       </div>
     </div>
 
     <!-- upload drop target -->
-    <div id="dropzone">Trascina file qui per caricarli nella cartella corrente</div>
+    <div id="dropzone">{{ t('webui_drive_dropzone') }}</div>
 
     <!-- upload progress -->
     <div id="upload-progress">
@@ -81,14 +81,14 @@
       <table>
         <thead>
           <tr>
-            <th onclick="sortBy('name')">Nome ↕</th>
-            <th onclick="sortBy('size')">Dimensione ↕</th>
-            <th onclick="sortBy('modified')">Modificato ↕</th>
-            <th>Azioni</th>
+            <th onclick="sortBy('name')">{{ t('webui_chat_name') }} ↕</th>
+            <th onclick="sortBy('size')">{{ t('webui_sysnet_proxy_port') == 'Porta' ? 'Dimensione' : 'Size' }} ↕</th>
+            <th onclick="sortBy('modified')">{{ t('webui_sysnet_proxy_port') == 'Porta' ? 'Modificato' : 'Modified' }} ↕</th>
+            <th>{{ t('webui_conf_logs_actions') or 'Actions' }}</th>
           </tr>
         </thead>
         <tbody id="file-tbody">
-          <tr class="empty-row"><td colspan="4">Caricamento...</td></tr>
+          <tr class="empty-row"><td colspan="4">{{ t('webui_conf_msg_loading') }}</td></tr>
         </tbody>
       </table>
     </div>
@@ -105,13 +105,13 @@
 <!-- ── Mkdir Modal ────────────────────────────────────────── -->
 <div class="modal-bg" id="mkdir-modal">
   <div class="modal">
-    <h3>📁 Nuova Cartella</h3>
-    <p id="mkdir-hint">Verrà creata in: <strong id="mkdir-path-hint" style="color:var(--accent);">/</strong></p>
-    <input type="text" id="mkdir-name" placeholder="Nome cartella..."
+    <h3>📁 {{ t('webui_drive_new_folder') or 'New Folder' }}</h3>
+    <p id="mkdir-hint">{{ t('webui_drive_mkdir_hint') or 'Will be created in' }}: <strong id="mkdir-path-hint" style="color:var(--accent);">/</strong></p>
+    <input type="text" id="mkdir-name" placeholder="{{ t('webui_drive_folder_name_ph') or 'Folder name...' }}"
            onkeydown="if(event.key==='Enter')confirmMkdir(); if(event.key==='Escape')closeMkdirModal()">
     <div class="modal-btns">
-      <button class="btn" onclick="closeMkdirModal()">Annulla</button>
-      <button class="btn btn-primary" onclick="confirmMkdir()">Crea</button>
+      <button class="btn" onclick="closeMkdirModal()">{{ t('webui_conf_logs_cancel') or 'Cancel' }}</button>
+      <button class="btn btn-primary" onclick="confirmMkdir()">{{ t('webui_drive_create') or 'Create' }}</button>
     </div>
   </div>
 </div>
@@ -119,6 +119,16 @@
 <!-- ── Notification toast ─────────────────────────────────── -->
 <div id="drive-msg"></div>
 
+<script>
+  window.I18N = {{ translations | tojson | safe }};
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    for (const [k, v] of Object.entries(params)) {
+      text = text.replace(`{${k}}`, v);
+    }
+    return text;
+  };
+</script>
 <script src="/drive_static/js/drive.js"></script>
 </body>
 </html>

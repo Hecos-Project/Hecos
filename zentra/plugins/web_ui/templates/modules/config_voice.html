@@ -12,31 +12,31 @@
     </div>
     
     <div class="field" style="margin-top:10px;">
-      <label>Input (Listening) Routing</label>
+      <label>{{ t('webui_voice_routing_in') }}</label>
       <select id="stt-source">
-         <option value="system">PC Microphone (Local)</option>
-         <option value="web">Web Browser / API (In Sviluppo)</option>
+         <option value="system">{{ t('webui_voice_pc_mic') }}</option>
+         <option value="web">{{ t('webui_voice_web_mic') }}</option>
       </select>
     </div>
     <div class="field" style="margin-top:10px;">
-      <label>Uscita Audio (Voice Routing)</label>
+      <label>{{ t('webui_voice_routing_out') }}</label>
       <select id="tts-destination">
-         <option value="system">🖥️ Casse PC (Locale)</option>
-         <option value="web">🌐 Web Browser (Questo Dispositivo)</option>
+         <option value="system">{{ t('webui_voice_pc_speaker') }}</option>
+         <option value="web">{{ t('webui_voice_web_speaker') }}</option>
       </select>
     </div>
     <div class="field" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
       <label style="display:flex; align-items:center; gap:6px;">
-        🔀 Modalità Audio Dinamica
-        <span style="font-size:11px; color:var(--muted); font-weight:400;">(dove Zentra ascolta e parla)</span>
+        {{ t('webui_voice_dynamic_mode') }}
+        <span style="font-size:11px; color:var(--muted); font-weight:400;">{{ t('webui_voice_dynamic_hint') }}</span>
       </label>
       <select id="audio-mode" style="margin-top:6px;">
-         <option value="console">Console — Sempre su PC</option>
-         <option value="web">Web — Sempre su Browser</option>
-         <option value="auto">Auto — Segue il dispositivo attivo</option>
+         <option value="console">{{ t('webui_voice_mode_pc') }}</option>
+         <option value="web">{{ t('webui_voice_mode_web') }}</option>
+         <option value="auto">{{ t('webui_voice_mode_auto') }}</option>
       </select>
       <p style="font-size:11px; color:var(--muted); margin-top:5px;">
-        In modalità <strong>Auto</strong>, Zentra risponderà sul dispositivo da cui riceve il comando (PC o Browser).
+        {{ t('webui_voice_mode_auto_desc') }}
       </p>
     </div>
   </div>
@@ -92,11 +92,11 @@
     </div>
     
     <div style="margin-top:20px; padding-top:15px; border-top: 1px solid var(--border);">
-      <label style="font-size:12px; color:var(--muted); margin-bottom:8px; display:block;">Test Voice (Piper)</label>
+      <label style="font-size:12px; color:var(--muted); margin-bottom:8px; display:block;">{{ t('webui_voice_test_title') }}</label>
       <div style="display:flex; gap:10px;">
-        <input type="text" id="v-test-text" placeholder="Scrivi qualcosa per testare..." style="flex:1;">
-        <button class="btn btn-secondary" onclick="testVoice('web')" title="Test nel browser">🌐</button>
-        <button class="btn btn-secondary" onclick="testVoice('console')" title="Test su casse PC">💻</button>
+        <input type="text" id="v-test-text" placeholder="{{ t('webui_voice_test_ph') }}" style="flex:1;">
+        <button class="btn btn-secondary" onclick="testVoice('web')" title="{{ t('webui_voice_test_web') }}">🌐</button>
+        <button class="btn btn-secondary" onclick="testVoice('console')" title="{{ t('webui_voice_test_pc') }}">💻</button>
         <button id="v-test-stop" class="btn btn-secondary" style="display:none; background:rgba(248,113,113,0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()" title="Stop Voice">⏹</button>
       </div>
       <div id="v-test-status" style="font-size:11px; margin-top:5px; color:var(--accent);"></div>
@@ -112,15 +112,14 @@
   </div>
 
   <div class="card">
-    <div class="card-title">🎙️ Pulsante Microfono WebUI</div>
+    <div class="card-title">{{ t('webui_voice_mic_btn_title') }}</div>
     <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
-      Scegli per ogni modalità se visualizzare il testo prima dell'invio.
+      {{ t('webui_voice_mic_btn_desc') }}
     </p>
-
     <div class="toggle-row">
       <div class="toggle-info">
-        <strong>Modalità PTT</strong> <span style="font-size:11px;color:var(--muted);">(tieni premuto)</span>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Mostra il testo nel textarea prima di inviare (disattivo = invia subito)</div>
+        <strong>{{ t('webui_voice_ptt_mode') }}</strong> <span style="font-size:11px;color:var(--muted);">{{ t('webui_voice_ptt_hint') }}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ t('webui_voice_preview_label') }}</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="webptt-ptt-preview"
@@ -128,11 +127,10 @@
         <span class="slider"></span>
       </label>
     </div>
-
     <div class="toggle-row" style="margin-top:10px;">
       <div class="toggle-info">
-        <strong>Modalità Toggle</strong> <span style="font-size:11px;color:var(--muted);">(tocco breve per bloccare)</span>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Mostra il testo nel textarea prima di inviare (disattivo = invia subito)</div>
+        <strong>{{ t('webui_voice_toggle_mode') }}</strong> <span style="font-size:11px;color:var(--muted);">{{ t('webui_voice_toggle_hint') }}</span>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ t('webui_voice_preview_label') }}</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="webptt-toggle-preview"
@@ -140,10 +138,8 @@
         <span class="slider"></span>
       </label>
     </div>
-
     <p style="font-size:11px; color:var(--muted); margin-top:10px; padding-top:8px; border-top:1px solid var(--border);">
-      💡 Se l'opzione è <strong>attivata</strong> (ON), leggerai la frase nel campo di testo per confermarla.<br>
-      Se <strong>disattivata</strong> (OFF), la frase viene inviata istantaneamente.
+      {{ t('webui_voice_preview_tip') | safe }}
     </p>
   </div>
 </div>

@@ -5,10 +5,26 @@ import threading
 import sys
 import yaml
 import urllib.parse
+import psutil
 from datetime import datetime
 from flask import request, jsonify
 from zentra.core.constants import LOGS_DIR
 from zentra.core.logging.hub import get_hub
+import subprocess
+
+def get_vram_usage():
+    """Returns VRAM usage percentage via nvidia-smi, or 0 if fails."""
+    try:
+        # Query used and total memory in MiB
+        cmd = ["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"]
+        res = subprocess.check_output(cmd, encoding="utf-8", timeout=2).strip()
+        if res:
+            used, total = [int(x.strip()) for x in res.split(",")]
+            if total > 0:
+                return round((used / total) * 100, 1)
+    except Exception:
+        pass
+    return 0
 
 def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
@@ -144,6 +160,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,
+                "cpu":        psutil.cpu_percent(),
+                "ram":        psutil.virtual_memory().percent,
+                "vram":       get_vram_usage(),
                 "audio_config": {
                     "stt_source": stt_s,
                     "tts_destination": tts_d

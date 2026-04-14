@@ -3,8 +3,7 @@
   <div class="card">
     <div class="card-title">🔍 Context & Token Payload Inspector</div>
     <p style="color: var(--muted); font-size: 13px; margin-bottom: 15px;">
-      Mostra l'ultimo carico di byte/token inviato al modello LLM. <br>
-      Disattivare plugin pesanti (WebCam, Browser, ecc.) ridurrà l'uso della memoria riducendo i costi.
+      {{ t('webui_payload_desc') }}
     </p>
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -12,7 +11,7 @@
         <strong>Model:</strong> <span id="pl-model" style="color: var(--primary);">N/A</span>
       </div>
       <div>
-        <button type="button" class="btn btn-secondary" onclick="loadPayloadData()">🔄 Aggiorna Dati</button>
+        <button type="button" class="btn btn-secondary" onclick="loadPayloadData()">🔄 {{ t('webui_payload_btn_refresh') }}</button>
       </div>
     </div>
 
@@ -20,17 +19,17 @@
     <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
       
       <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
-        <span>System + Memory + Storico</span>
+        <span>{{ t('webui_payload_sys_mem') }}</span>
         <span id="pl-sys" style="font-family: monospace; color: #aaa;">0 chars</span>
       </div>
       
       <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
-        <span>Messaggio Utente</span>
+        <span>{{ t('webui_payload_user_msg') }}</span>
         <span id="pl-usr" style="font-family: monospace; color: #aaa;">0 chars</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
-        <span title="Include le definizioni JSON di tutti i comandi dei plugin abilitati">JSON Tools (Schemi Funzioni)</span>
+        <span title="Include le definizioni JSON di tutti i comandi dei plugin abilitati">{{ t('webui_payload_json_tools') }}</span>
         <span id="pl-tls" style="font-family: monospace; color: #aaa;">0 chars</span>
       </div>
 
@@ -38,12 +37,12 @@
       <div id="pl-plugins-box" style="margin-left: 15px; padding-left: 10px; border-left: 2px solid var(--border); font-size: 13px; color: #aaa; display: none;"></div>
 
       <div style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 5px;">
-        <span>Totale Invio (Caratteri)</span>
+        <span>{{ t('webui_payload_total') }}</span>
         <span id="pl-tot" style="font-family: monospace; color: var(--text-color);">0 chars</span>
       </div>
       
       <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-top: 5px; color: var(--primary);">
-        <span>STIMA COSTO TOKEN</span>
+        <span>{{ t('webui_payload_estimate') }}</span>
         <span id="pl-tks" style="font-family: monospace;">~ 0 Tokens</span>
       </div>
 
@@ -51,9 +50,9 @@
 
     <!-- Developer messages logic -->
     <div style="margin-top:20px;">
-      <div class="card-title" style="font-size:14px; color:var(--muted);">Anteprima Codice Sorgente (Ultimi 2 messaggi)</div>
+      <div class="card-title" style="font-size:14px; color:var(--muted);">{{ t('webui_payload_preview_title') }}</div>
       <div style="background: #111; padding: 10px; border-radius: 6px; border: 1px solid #333; max-height: 250px; overflow-y: auto;">
-        <pre id="pl-preview" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin: 0; color: #8f8f8f; white-space: pre-wrap; word-break: break-all;">Invia un messaggio per catturare il payload...</pre>
+        <pre id="pl-preview" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin: 0; color: #8f8f8f; white-space: pre-wrap; word-break: break-all;">{{ t('webui_payload_preview_ph') }}</pre>
       </div>
     </div>
 
@@ -64,7 +63,7 @@
 async function loadPayloadData() {
   const btn = event ? event.target : null;
   const oldText = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = "Caricamento..."; btn.disabled = true; }
+  if (btn) { btn.textContent = window.t ? window.t('webui_conf_msg_loading') : "Loading..."; btn.disabled = true; }
   
   try {
     const res = await fetch('/api/system/payload');

@@ -4,29 +4,28 @@
   <!-- Header card -->
   <div class="card">
     <div class="card-title" style="display:flex;align-items:center;gap:10px;">
-      🔑 API Key Manager
-      <span id="km-global-status" style="font-size:11px;font-weight:400;margin-left:auto;color:var(--muted)">Caricamento...</span>
+      🔑 {{ t('webui_km_title') }}
+      <span id="km-global-status" style="font-size:11px;font-weight:400;margin-left:auto;color:var(--muted)">{{ t('webui_km_loading') }}</span>
     </div>
     <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">
-      Pool di chiavi per provider. Il sistema ruota automaticamente alla chiave successiva su errore 401/429.
-      Le chiavi vengono caricate da <code>config/keys.yaml</code> e <code>.env</code>.
+      {{ t('webui_km_desc') }}
     </p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn-sm btn-primary" onclick="kmRefresh()">⟳ Aggiorna Status</button>
-      <button class="btn-sm" onclick="kmReloadAll()">↺ Ricarica Pool</button>
+      <button class="btn-sm btn-primary" onclick="kmRefresh()">⟳ {{ t('webui_km_btn_refresh') }}</button>
+      <button class="btn-sm" onclick="kmReloadAll()">↺ {{ t('webui_km_btn_reload') }}</button>
     </div>
   </div>
 
   <!-- Provider pools (dynamic) -->
   <div id="km-providers-container">
     <div class="card" style="color:var(--muted);text-align:center;padding:20px;">
-      Caricamento chiavi...
+      {{ t('webui_km_loading') }}
     </div>
   </div>
 
   <!-- Add Key Card -->
   <div class="card" id="km-add-card">
-    <div class="card-title">➕ Aggiungi Chiave</div>
+    <div class="card-title">➕ {{ t('webui_km_add_title') }}</div>
     <div class="field">
       <label>Provider</label>
       <select id="km-add-provider">
@@ -46,18 +45,18 @@
       <input type="text" id="km-custom-provider-name" placeholder="es: my_provider">
     </div>
     <div class="field">
-      <label>Valore Chiave</label>
+      <label>{{ t('webui_km_add_val') }}</label>
       <input type="password" id="km-add-value" placeholder="sk-... / gsk_... / AIza...">
     </div>
     <div class="field">
-      <label>Descrizione</label>
+      <label>{{ t('webui_km_add_desc') }}</label>
       <input type="text" id="km-add-desc" placeholder="es: Groq Free Tier - account personale">
     </div>
     <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:4px;">
       <input type="checkbox" id="km-add-to-env" style="width:auto;margin:0;">
-      <label for="km-add-to-env" style="font-weight:normal;color:var(--muted);font-size:11px;">Salva nel file <code>.env</code> (formato lavorativo)</label>
+      <label for="km-add-to-env" style="font-weight:normal;color:var(--muted);font-size:11px;">{{ t('webui_km_add_env') }}</label>
     </div>
-    <button class="btn-sm btn-primary" onclick="kmAddKey()" style="margin-top:8px;">Aggiungi al Pool</button>
+    <button class="btn-sm btn-primary" onclick="kmAddKey()" style="margin-top:8px;">{{ t('webui_km_add_btn') }}</button>
     <div id="km-add-feedback" style="font-size:12px;margin-top:8px;"></div>
   </div>
 
@@ -105,10 +104,10 @@
 // ── Key Manager UI ──────────────────────────────────────────────
 function kmStatusBadge(status) {
   const map = {
-    valid:        ['km-badge-valid', '🟢 Valida'],
-    unknown:      ['km-badge-unknown', '⚪ Sconosciuta'],
-    rate_limited: ['km-badge-rate', '🟡 Rate Limited'],
-    invalid:      ['km-badge-invalid', '🔴 Non valida'],
+    valid:        ['km-badge-valid', '🟢 ' + (window.t ? window.t('webui_km_status_valid') : 'Valid')],
+    unknown:      ['km-badge-unknown', '⚪ ' + (window.t ? window.t('webui_km_status_unknown') : 'Unknown')],
+    rate_limited: ['km-badge-rate', '🟡 ' + (window.t ? window.t('webui_km_status_rate') : 'Rate Limited')],
+    invalid:      ['km-badge-invalid', '🔴 ' + (window.t ? window.t('webui_km_status_invalid') : 'Invalid')],
   };
   const [cls, label] = map[status] || ['km-badge-unknown', '⚪ ?'];
   return `<span class="km-badge ${cls}">${label}</span>`;
@@ -120,7 +119,7 @@ function kmRender(data) {
 
   const providers = Object.keys(data);
   if (!providers.length) {
-    container.innerHTML = '<div class="card" style="color:var(--muted);text-align:center;padding:20px;">Nessuna chiave caricata. Aggiungi chiavi in <code>config/keys.yaml</code> o nel form qui sotto.</div>';
+    container.innerHTML = `<div class="card" style="color:var(--muted);text-align:center;padding:20px;">${window.t ? window.t('webui_km_none') : 'No keys loaded.'}</div>`;
     return;
   }
 
@@ -142,7 +141,7 @@ function kmRender(data) {
           <div class="km-key-info">
             <div class="km-key-masked">${k.value}</div>
             ${k.description ? `<div class="km-key-desc">${k.description}</div>` : ''}
-            <div class="km-key-source">fonte: ${k.source} ${cooldownHtml}</div>
+            <div class="km-key-source">${window.t ? window.t('webui_km_source') : 'source'}: ${k.source} ${cooldownHtml}</div>
           </div>
           <div class="km-actions">
             ${canReset ? `<button class="btn-sm-reset" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
@@ -162,14 +161,14 @@ function kmRender(data) {
         ${provider}
       </div>
       <div class="km-count-bar">
-        <span class="km-count-item">Totale: ${keys.length}</span>
-        <span class="km-count-item" style="color:#4cde82">✓ ${avail} disponibili</span>
-        ${rateL ? `<span class="km-count-item" style="color:#ffc740">⏱ ${rateL} in cooldown</span>` : ''}
-        ${inv ? `<span class="km-count-item" style="color:#ff6b6b">✗ ${inv} non valide</span>` : ''}
+        <span class="km-count-item">${window.t ? window.t('webui_km_total') : 'Total'}: ${keys.length}</span>
+        <span class="km-count-item" style="color:#4cde82">✓ ${avail} ${window.t ? window.t('webui_km_available') : 'available'}</span>
+        ${rateL ? `<span class="km-count-item" style="color:#ffc740">⏱ ${rateL} ${window.t ? window.t('webui_km_cooldown') : 'in cooldown'}</span>` : ''}
+        ${inv ? `<span class="km-count-item" style="color:#ff6b6b">✗ ${inv} ${window.t ? window.t('webui_km_status_invalid') : 'invalid'}</span>` : ''}
       </div>
       ${rows}
       <div style="margin-top:8px;">
-        <button class="btn-sm" onclick="kmResetProvider('${provider}')">↺ Reset provider</button>
+        <button class="btn-sm" onclick="kmResetProvider('${provider}')">↺ ${window.t ? window.t('webui_km_btn_reset_prov') : 'Reset provider'}</button>
       </div>
     `;
     container.appendChild(card);

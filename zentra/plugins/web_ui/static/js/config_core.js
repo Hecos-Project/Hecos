@@ -380,15 +380,23 @@ async function refreshStatus() {
     const r = await fetch('/zentra/status');
     const d = await r.json();
     setSpanText('s-backend', d.backend || '—');
-    setSpanText('s-model', d.model || '—');
-    setSpanText('s-bridge', d.bridge || '—');
+    setSpanText('s-cpu', d.cpu !== undefined ? d.cpu + '%' : '—');
+    setSpanText('s-ram', d.ram !== undefined ? d.ram + '%' : '—');
+    setSpanText('s-vram', (d.vram && d.vram > 0) ? d.vram + '%' : '—');
     setSpanText('s-mic', d.mic || '—');
     setSpanText('s-tts', d.tts || '—');
+    setSpanText('s-ptt', d.ptt || '—');
     setSpanText('s-config', d.config || '—');
     setSpanText('hdr-model', d.model || (I18N.offline || 'Offline'));
+
+    const p = document.getElementById('s-ptt');
+    if (p) p.className = 'stat-val ' + (d.ptt === 'ON' ? 'val-ok' : 'val-warn');
     
-    const m = document.getElementById('s-model');
-    if (m) m.className = 'stat-val ' + (d.model && d.model !== '—' ? 'val-ok' : 'val-warn');
+    // Conditional visibility for system metrics
+    const dashEnabled = window.cfg?.plugins?.DASHBOARD?.enabled !== false;
+    document.querySelectorAll('.dashboard-only').forEach(el => {
+        el.style.display = dashEnabled ? '' : 'none';
+    });
   } catch(e) {
     setSpanText('hdr-model', I18N.offline || 'Offline');
   }
