@@ -12,6 +12,24 @@ from zentra.core.constants import LOGS_DIR
 from zentra.core.logging.hub import get_hub
 import subprocess
 
+# ── CPU background sampler ─────────────────────────────────────────────────────
+# psutil.cpu_percent() without interval= always returns 0.0 or 100% on first
+# call because it has no baseline. We cache a reading every 2 seconds instead.
+_cpu_cache = {"value": 0.0}
+
+def _cpu_sampler():
+    # Prime the baseline sample (discarded)
+    psutil.cpu_percent(interval=None)
+    while True:
+        try:
+            _cpu_cache["value"] = psutil.cpu_percent(interval=2)
+        except Exception:
+            pass
+
+_cpu_thread = threading.Thread(target=_cpu_sampler, daemon=True)
+_cpu_thread.start()
+# ──────────────────────────────────────────────────────────────────────────────
+
 def get_vram_usage():
     """Returns VRAM usage percentage via nvidia-smi, or 0 if fails."""
     try:
@@ -160,7 +178,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,
-                "cpu":        psutil.cpu_percent(),
+                "cpu":        _cpu_cache["value"],
                 "ram":        psutil.virtual_memory().percent,
                 "vram":       get_vram_usage(),
                 "audio_config": {

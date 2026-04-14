@@ -84,16 +84,9 @@
 .km-key-source { font-size: 10px; color: var(--muted); opacity: 0.5; }
 .km-cooldown { font-size: 11px; color: #ffc740; }
 .km-actions { display:flex; gap:4px; }
-.btn-sm-danger {
-  background: #4a1a1a; color: #ff6b6b; border: none;
-  border-radius: 6px; padding: 3px 9px; font-size: 11px; cursor: pointer;
-}
-.btn-sm-danger:hover { background: #6a2a2a; }
 .btn-sm-reset {
-  background: var(--surface2); color: var(--text); border: none;
-  border-radius: 6px; padding: 3px 9px; font-size: 11px; cursor: pointer;
+  /* removed */
 }
-.btn-sm-reset:hover { background: var(--surface3); }
 .km-count-bar {
   display: flex; gap:6px; font-size: 11px; margin-bottom: 8px; flex-wrap: wrap;
 }
@@ -144,8 +137,8 @@ function kmRender(data) {
             <div class="km-key-source">${window.t ? window.t('webui_km_source') : 'source'}: ${k.source} ${cooldownHtml}</div>
           </div>
           <div class="km-actions">
-            ${canReset ? `<button class="btn-sm-reset" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
-            ${canRemove ? `<button class="btn-sm-danger" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
+            ${canReset ? `<button class="btn-sm btn-secondary" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
+            ${canRemove ? `<button class="btn-sm" style="border-color:var(--red); color:var(--red); background:rgba(248,113,113,0.1);" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
           </div>
         </div>`;
     }).join('');

@@ -6,45 +6,35 @@
       Enable remote PTT activation via Bluetooth headphones, smartphone media keys, or external HTTP webhooks (Arduino/ESP32).
     </p>
 
-    <div class="field">
-      <label class="switch-container">
-        <input type="checkbox" id="rt-enable-mediasession">
-        <span class="label-text">Enable MediaSession (Bluetooth/iPhone Play-Pause)</span>
-      </label>
-      <div class="field-desc">Allows hijacking headphone buttons. Note: Claims media priority on your device (you might see a "Zentra" notification).</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable MediaSession (Bluetooth/iPhone Play-Pause)</div>
+      <label class="switch"><input type="checkbox" id="rt-enable-mediasession"><span class="slider"></span></label>
     </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Allows hijacking headphone buttons. Note: Claims media priority on your device (you might see a "Zentra" notification).</p>
 
-    <div class="field">
-      <label class="switch-container">
-        <input type="checkbox" id="rt-enable-volume-keys">
-        <span class="label-text">Enable Volume Keys PTT (Standard Keydown)</span>
-      </label>
-      <div class="field-desc">Uses standard button events. Often blocked on Android.</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Volume Keys PTT (Standard Keydown)</div>
+      <label class="switch"><input type="checkbox" id="rt-enable-volume-keys"><span class="slider"></span></label>
     </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Uses standard button events. Often blocked on Android.</p>
     
-    <div class="field">
-      <label class="switch-container">
-        <input type="checkbox" id="rt-enable-volume-loop">
-        <span class="label-text">Advanced Mobile Interception (Volume Loop)</span>
-      </label>
-      <div class="field-desc">High precision hack for Android: detects volume changes even if keys are blocked.</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Advanced Mobile Interception (Volume Loop)</div>
+      <label class="switch"><input type="checkbox" id="rt-enable-volume-loop"><span class="slider"></span></label>
     </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">High precision hack for Android: detects volume changes even if keys are blocked.</p>
 
-    <div class="field">
-      <label class="switch-container">
-        <input type="checkbox" id="rt-feedback-sounds">
-        <span class="label-text">Audio Feedback (Beeps)</span>
-      </label>
-      <div class="field-desc">Short beeps on PTT start and stop.</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Audio Feedback (Beeps)</div>
+      <label class="switch"><input type="checkbox" id="rt-feedback-sounds"><span class="slider"></span></label>
     </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Short beeps on PTT start and stop.</p>
 
-    <div class="field">
-      <label class="switch-container">
-        <input type="checkbox" id="rt-visual-indicator">
-        <span class="label-text">Visual Status Overlay</span>
-      </label>
-      <div class="field-desc">Shows a floating recording indicator.</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Visual Status Overlay</div>
+      <label class="switch"><input type="checkbox" id="rt-visual-indicator"><span class="slider"></span></label>
     </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Shows a floating recording indicator.</p>
 
     <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-top:20px;">
       <div style="font-size:12px; color:var(--accent); font-weight:600; text-transform:uppercase; margin-bottom:8px;">Webhook Endpoints</div>

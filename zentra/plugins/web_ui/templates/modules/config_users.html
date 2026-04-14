@@ -7,10 +7,10 @@
       </div>
       <div class="row" style="gap:25px; align-items: flex-start;">
         <div class="group" style="flex:2; display:flex; flex-direction:column; gap:12px;">
-          <label style="font-weight: 600; color: #45a29e; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">{{ t('webui_conf_user_setup') }}</label>
-          <input type="text" id="my_display_name" class="input-modern" placeholder="{{ t('webui_conf_user_display_name_ph') }}" style="width:100%;">
-          <textarea id="my_bio_notes" class="input-modern" placeholder="{{ t('webui_conf_user_bio_ph') }}" style="height:80px; width:100%;"></textarea>
-          <select id="my_language" class="input-modern" style="width:100%;">
+          <div class="card-title" style="font-size: 13px; margin:0;">{{ t('webui_conf_user_setup') }}</div>
+          <input type="text" id="my_display_name" class="config-input" placeholder="{{ t('webui_conf_user_display_name_ph') }}" style="width:100%;">
+          <textarea id="my_bio_notes" class="config-input" placeholder="{{ t('webui_conf_user_bio_ph') }}" style="height:80px; width:100%; resize:vertical;"></textarea>
+          <select id="my_language" class="config-input" style="width:100%;">
               <option value="en">{{ t('lang_en') }} (US)</option>
               <option value="it">{{ t('lang_it') }} (IT)</option>
               <option value="es">{{ t('lang_es') }} (ES)</option>
@@ -19,15 +19,15 @@
               <button type="button" class="btn btn-primary" onclick="saveMyProfile()" style="padding: 10px 20px;">{{ t('webui_conf_btn_save') or 'Save Profile' }}</button>
           </div>
         </div>
-        <div class="group" style="flex:1; text-align:center; background: rgba(30, 36, 48, 0.5); padding: 20px; border-radius: 12px; border: 1px solid #333;">
-          <label style="display:block; margin-bottom:15px; font-weight: 600; color: #45a29e;">{{ t('label_avatar') or 'Avatar' }}</label>
+        <div class="group" style="flex:1; text-align:center; background: var(--bg2); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+          <div class="card-title" style="font-size: 13px; margin-bottom:15px;">Avatar</div>
           <div style="margin-bottom: 20px; position: relative; display: inline-block;">
-              <img id="my_avatar_preview" src="" alt="Avatar" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #66fcf1; display:none; box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);">
-              <div id="my_avatar_placeholder" style="width:120px; height:120px; border-radius:50%; background:#1e2430; border:2px dashed #444; color:#888; display:flex; align-items:center; justify-content:center; font-size:12px;">No Image</div>
+              <img id="my_avatar_preview" src="" alt="Avatar" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); display:none; box-shadow: var(--shadow);">
+              <div id="my_avatar_placeholder" style="width:120px; height:120px; border-radius:50%; background:var(--bg3); border:2px dashed var(--border); color:var(--muted); display:flex; align-items:center; justify-content:center; font-size:12px;">No Image</div>
           </div>
           <input type="file" id="my_avatar_file" accept="image/jpeg, image/png" style="display:none;" onchange="uploadMyAvatar()">
           <button type="button" class="btn btn-secondary" onclick="document.getElementById('my_avatar_file').click()" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;">
-              <span style="font-size:16px;">📸</span> {{ t('label_change_avatar') }}
+              <span style="font-size:16px;">📸</span> Change Avatar
           </button>
         </div>
       </div>
@@ -39,23 +39,23 @@
       </div>
       <div class="row" style="gap:25px; align-items: stretch;">
         <div class="group" style="flex:2;">
-          <label style="font-weight: 600; color: #45a29e; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">{{ t('webui_conf_registered_accounts') }}</label>
-          <div id="users-table-container" style="background:#161b22; border:1px solid #30363d; border-radius:12px; padding:10px; min-height:180px; overflow-x:auto; margin-top:10px; border: 1px solid #333;">
-              <p style="color:#888; font-size:12px; padding:20px; text-align:center;">{{ t('webui_chat_loading') }}...</p>
+          <div class="card-title" style="font-size:13px; margin:0;">{{ t('webui_conf_registered_accounts') }}</div>
+          <div id="users-table-container" style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:10px; min-height:180px; overflow-x:auto; margin-top:10px;">
+              <p style="color:var(--muted); font-size:12px; padding:20px; text-align:center;">{{ t('webui_chat_loading') }}...</p>
           </div>
         </div>
         
-        <div class="group" style="flex:1; background: rgba(30,36,48,0.3); padding: 20px; border-radius: 12px; border: 1px solid #333; display:flex; flex-direction:column; gap:12px;">
-          <label style="font-weight: 600; color: #45a29e; font-size: 13px; text-transform: uppercase;">{{ t('webui_conf_create_user_title') }}</label>
+        <div class="group" style="flex:1; background: var(--bg2); padding: 20px; border-radius: 12px; border: 1px solid var(--border); display:flex; flex-direction:column; gap:12px;">
+          <div class="card-title" style="font-size:13px; margin:0;">{{ t('webui_conf_create_user_title') }}</div>
           <div style="display:flex; flex-direction:column; gap:12px;">
-              <input type="text" id="new_user_name" class="input-modern" placeholder="Username" autocomplete="off" style="width:100%;">
-              <input type="password" id="new_user_pass" class="input-modern" placeholder="Password" style="width:100%;">
-              <select id="new_user_role" class="input-modern" style="width:100%;">
+              <input type="text" id="new_user_name" class="config-input" placeholder="Username" autocomplete="off" style="width:100%;">
+              <input type="password" id="new_user_pass" class="config-input" placeholder="Password" style="width:100%;">
+              <select id="new_user_role" class="config-input" style="width:100%;">
                   <option value="guest">Guest (Base)</option>
                   <option value="admin">Admin (Master)</option>
               </select>
           </div>
-          <button type="button" class="btn btn-secondary" onclick="createUser()" style="width:100%; margin-top:10px; background:#45a29e !important; color:#0b0c10; font-weight:bold; padding: 12px; border:none; border-radius:6px; cursor:pointer;">+ {{ t('webui_conf_create_user_title') }}</button>
+          <button type="button" class="btn btn-primary" onclick="createUser()" style="width:100%; margin-top:10px; font-weight:bold; padding: 12px;">+ {{ t('webui_conf_create_user_title') }}</button>
         </div>
       </div>
     </div>

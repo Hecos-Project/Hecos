@@ -2,101 +2,89 @@
 <div id="tab-privacy" class="panel" style="padding:20px;">
 
   <div class="card" style="max-width:720px; margin:0 auto;">
-    <h2 style="color:var(--accent); font-size:16px; margin-bottom:4px;">🕵️ Privacy & Confidentiality</h2>
+    <div class="card-title">🕵️ Privacy & Confidentiality</div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:24px;">
       Configure how Zentra handles your conversation data. Changes apply to new sessions.
     </p>
 
     <!-- Default Mode -->
-    <div class="config-row">
-      <div class="config-label">
-        <span class="config-label-title">Default Privacy Mode</span>
-        <span class="config-label-desc">Mode applied to every new chat session.</span>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">Default Privacy Mode</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Mode applied to every new chat session.</div>
       </div>
-      <div class="config-control">
-        <select id="pr-default-mode" class="config-select">
-          <option value="normal">👁 Normal — Full history saved</option>
-          <option value="auto_wipe">🔒 Auto-Wipe — Deleted when you clear the chat</option>
-          <option value="incognito">🕵️ Incognito — Nothing written to disk</option>
-        </select>
-      </div>
+      <select id="pr-default-mode" class="config-input" style="width:250px;">
+        <option value="normal">👁 Normal — Full history saved</option>
+        <option value="auto_wipe">🔒 Auto-Wipe</option>
+        <option value="incognito">🕵️ Incognito</option>
+      </select>
     </div>
 
     <!-- Auto-wipe on clear -->
-    <div class="config-row">
-      <div class="config-label">
-        <span class="config-label-title">Auto-Wipe on Clear</span>
-        <span class="config-label-desc">In Auto-Wipe mode, delete messages when you start a new chat.</span>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">Auto-Wipe on Clear</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">In Auto-Wipe mode, delete messages when you start a new chat.</div>
       </div>
-      <div class="config-control">
-        <label class="switch">
-          <input type="checkbox" id="pr-auto-wipe">
-          <span class="slider"></span>
-        </label>
-      </div>
+      <label class="switch">
+        <input type="checkbox" id="pr-auto-wipe">
+        <span class="slider"></span>
+      </label>
     </div>
 
     <hr style="border-color:var(--border); margin:20px 0;">
-    <h3 style="font-size:13px; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">What to Delete on Wipe</h3>
+    <div class="card-title" style="font-size:13px;">WHAT TO DELETE ON WIPE</div>
 
     <!-- Wipe targets -->
-    <div class="config-row">
-      <div class="config-label">
-        <span class="config-label-title">💬 Messages</span>
-        <span class="config-label-desc">Chat messages from the session.</span>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">💬 Messages</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Chat messages from the session.</div>
       </div>
-      <div class="config-control">
-        <label class="switch">
-          <input type="checkbox" id="priv-wipe-messages" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
+      <label class="switch">
+        <input type="checkbox" id="priv-wipe-messages" checked>
+        <span class="slider"></span>
+      </label>
     </div>
-    <div class="config-row">
-      <div class="config-label">
-        <span class="config-label-title">🧠 Memory Context</span>
-        <span class="config-label-desc">Clear AI identity and context memory.</span>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">🧠 Memory Context</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Clear AI identity and context memory.</div>
       </div>
-      <div class="config-control">
-        <label class="switch">
-          <input type="checkbox" id="priv-wipe-context">
-          <span class="slider"></span>
-        </label>
-      </div>
+      <label class="switch">
+        <input type="checkbox" id="priv-wipe-context">
+        <span class="slider"></span>
+      </label>
     </div>
-    <div class="config-row">
-      <div class="config-label">
-        <span class="config-label-title">👤 User Profile Notes</span>
-        <span class="config-label-desc">Clear admin notes from the user profile.</span>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">👤 User Profile Notes</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Clear admin notes from the user profile.</div>
       </div>
-      <div class="config-control">
-        <label class="switch">
-          <input type="checkbox" id="priv-wipe-profile">
-          <span class="slider"></span>
-        </label>
-      </div>
+      <label class="switch">
+        <input type="checkbox" id="priv-wipe-profile">
+        <span class="slider"></span>
+      </label>
     </div>
     <hr style="border-color:var(--border); margin:20px 0;">
-    <h3 style="font-size:13px; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">App Features</h3>
+    <div class="card-title" style="font-size:13px;">APP FEATURES</div>
     
     <!-- Incognito Shortcut -->
-    <div class="config-row">
-      <div class="config-label">
-        <span class="config-label-title">Incognito Shortcut</span>
-        <span class="config-label-desc">Show a quick incognito toggle in the chat topbar.</span>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">Incognito Shortcut</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Show a quick incognito toggle in the chat topbar.</div>
       </div>
-      <div class="config-control">
-        <label class="switch">
-          <input type="checkbox" id="pr-incognito-shortcut" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
+      <label class="switch">
+        <input type="checkbox" id="pr-incognito-shortcut" checked>
+        <span class="slider"></span>
+      </label>
     </div>
 
     <hr style="border-color:var(--border); margin:20px 0;">
 
     <!-- Manual actions -->
-    <h3 style="font-size:13px; color:var(--text-secondary); margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;">Manual Actions</h3>
+    <div class="card-title" style="font-size:13px;">MANUAL ACTIONS</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button type="button" class="btn btn-secondary" onclick="privacyWipeAll()"
         style="border-color:#f87171; color:#f87171;">

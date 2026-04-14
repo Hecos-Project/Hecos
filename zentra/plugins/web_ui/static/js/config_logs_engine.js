@@ -289,9 +289,8 @@ function playErrorBeep() {
 
 function appendDataLine(win, data) {
     const line = document.createElement('div');
-    line.className = 'log-line';
-    let colorClass = 'lvl-' + data.level;
-    if (data.level === 'MONITOR') colorClass = 'lvl-MONITOR';
+    const colorClass = data.level ? `lvl-${data.level}` : '';
+    line.className = `log-line ${colorClass}`;
 
     let textOut = escapeHtml(data.text);
     if (win.filterQ) {
@@ -307,7 +306,15 @@ function appendDataLine(win, data) {
 
 function appendRawLine(win, text) {
     const line = document.createElement('div');
-    line.className = 'log-line';
+    
+    let lvlClass = '';
+    if (text.includes('[ERROR]') || text.includes('Exception') || text.includes('Traceback')) lvlClass = 'lvl-ERROR';
+    else if (text.includes('[WARNING]') || text.includes('[WARN]')) lvlClass = 'lvl-WARN';
+    else if (text.includes('[DEBUG]')) lvlClass = 'lvl-DEBUG';
+    else if (text.includes('[MONITOR]')) lvlClass = 'lvl-MONITOR';
+    else if (text.includes('[INFO]')) lvlClass = 'lvl-INFO';
+
+    line.className = `log-line ${lvlClass}`;
     
     let textOut = escapeHtml(text);
     if (win.filterQ) {

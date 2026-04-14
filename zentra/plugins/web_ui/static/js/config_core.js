@@ -581,6 +581,7 @@ window.rebootSystem = rebootSystem;
 
 // Listen for global checkbox/select changes for auto-saving
 document.addEventListener('change', (e) => {
+  if (e.target.closest('.no-autosave') || e.target.closest('#tab-logs')) return;
   if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
     // Sync Image Gen enabled status between different UI locations
     if (e.target.id === 'igen-enabled') {

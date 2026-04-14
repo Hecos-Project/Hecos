@@ -1,34 +1,33 @@
 <div id="tab-studio" class="panel">
-  <div class="module-header">
-    <h2>🛠️ Zentra Plugin Studio (Beta)</h2>
-    <p>Create and edit "live" plugins directly from your browser. Changes are saved as first-class Python modules.</p>
-  </div>
+  <div class="card">
+    <div class="card-title">🛠️ Zentra Plugin Studio (Beta)</div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:20px;">Create and edit "live" plugins directly from your browser. Changes are saved as first-class Python modules.</p>
 
-  <div class="config-section" style="display:flex; gap:20px;">
-    <!-- LEFT: Plugin List / New -->
-    <div style="flex: 0 0 250px; background:rgba(255,255,255,0.02); padding:15px; border-radius:8px;">
-      <h3 style="margin-top:0;">Your Skills</h3>
-      <div id="studio-plugin-list" style="display:flex; flex-direction:column; gap:8px;">
-        <button type="button" class="btn btn-secondary" style="width:100%; text-align:left; border:1px dashed #45a29e;">+ New Plugin</button>
-        <div style="font-size:12px; color:#555; padding:10px; border-radius:4px; background:rgba(255,255,255,0.05);">
-          No custom plugins yet.
+    <div style="display:flex; gap:20px; flex-wrap:wrap;">
+      <!-- LEFT: Plugin List / New -->
+      <div style="flex: 0 0 250px; background:var(--bg2); border:1px solid var(--border); padding:15px; border-radius:8px;">
+        <div class="card-title" style="font-size:13px; margin-top:0;">Your Skills</div>
+        <div id="studio-plugin-list" style="display:flex; flex-direction:column; gap:8px;">
+          <button type="button" class="btn btn-secondary" style="width:100%; text-align:left; border:1px dashed var(--accent);">+ New Plugin</button>
+          <div style="font-size:12px; color:var(--muted); padding:10px; border-radius:4px; background:var(--bg3);">
+            No custom plugins yet.
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- RIGHT: IDE Area -->
-    <div style="flex: 1;">
-      <div class="form-group row">
-        <label>Plugin Tag</label>
-        <input type="text" placeholder="e.g. CUSTOM_CMD" style="background:#0b0c10; border:1px solid #45a29e; color:#66fcf1; padding:8px; border-radius:4px;">
-      </div>
-      <div class="form-group row">
-        <label>Description</label>
-        <input type="text" placeholder="What does this plugin do?" style="background:#0b0c10; border:1px solid #1f2833; color:#fff; padding:8px; border-radius:4px; width:100%;">
-      </div>
-      <div class="form-group" style="margin-top:20px;">
-        <label>Python Logic (main.py)</label>
-        <textarea style="width:100%; height:400px; background:#1b1b1b; color:#dcdcdc; font-family:'JetBrains Mono', monospace; padding:15px; border:1px solid #333; border-radius:8px; resize:vertical;" spellcheck="false">
+      <!-- RIGHT: IDE Area -->
+      <div style="flex: 1; background:var(--bg2); border:1px solid var(--border); padding:15px; border-radius:8px;">
+        <div class="field">
+          <label>Plugin Tag</label>
+          <input type="text" class="config-input" placeholder="e.g. CUSTOM_CMD">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input type="text" class="config-input" placeholder="What does this plugin do?">
+        </div>
+        <div class="field" style="margin-top:20px;">
+          <label>Python Logic (main.py)</label>
+          <textarea class="config-input" style="height:400px; font-family:'JetBrains Mono', monospace; resize:vertical;" spellcheck="false">
 import os
 
 class MyTools:
@@ -41,20 +40,13 @@ class MyTools:
         return f"Hello {name}, I am a live Zentra plugin!"
 
 tools = MyTools()
-        </textarea>
-      </div>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
-        <button type="button" class="btn btn-secondary">Test Syntax</button>
-        <button type="button" class="btn btn-primary" style="background:#45a29e; border-color:#45a29e;">Deploy Plugin</button>
+          </textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+          <button type="button" class="btn btn-secondary">Test Syntax</button>
+          <button type="button" class="btn btn-primary">Deploy Plugin</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  #studio textarea:focus {
-    outline: none;
-    border-color: #66fcf1;
-    box-shadow: 0 0 10px rgba(102, 252, 241, 0.2);
-  }
-</style>
