@@ -214,12 +214,12 @@ async function initAll(attempt = 1) {
 
             console.log("Background metadata loaded.");
             renderConfigHub(); // Re-render with all discovered data and collapsed state
+            populateUI();
+            isInitialLoading = false;
             setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + new Date().toLocaleTimeString() + ')', 'ok');
         });
 
         console.log("UI basic layout ready.");
-        populateUI();
-        isInitialLoading = false;
 
     } catch (e) {
         console.warn(`Init attempt ${attempt} failed:`, e);

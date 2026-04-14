@@ -149,8 +149,7 @@ function populateUI() {
 
     // 4. Media & Image Gen Dispatch
     if (typeof populateMediaUI === 'function') populateMediaUI();
-    if (typeof populateIgenUI === 'function') populateIgenUI();
-    
+        
     // 5. Drive Module Dispatch
     populateDriveUI();
 
@@ -517,17 +516,6 @@ function isRestartNeeded() {
   return document.querySelectorAll('.restart-badge.visible').length > 0;
 }
 
-function populateIgenUI() {
-    const c = window.cfg;
-    if (!c || !c.plugins || !c.plugins.IMAGE_GEN) return;
-    const g = c.plugins.IMAGE_GEN;
-    setCheck('igen-enabled', g.enabled ?? true);
-    setCheck('igen-nologo', g.no_logo ?? false);
-    setVal('igen-provider', g.provider || 'pollinations');
-    setVal('igen-model', g.model || 'flux');
-    setVal('igen-width', g.width || 1024);
-    setVal('igen-height', g.height || 1024);
-}
 
 function populatePrivacyUI() {
     const c = window.cfg;
@@ -545,8 +533,4 @@ window.setCheck = setCheck;
 window.renderPlugins = renderPlugins;
 window.buildPayload = buildPayload;
 window.isRestartNeeded = isRestartNeeded;
-window.populateIgenUI = populateIgenUI;
-window.populateRoleplayUI = populateRoleplayUI;
-window.populateWebUIConfig = populateWebUIConfig;
 window.populatePrivacyUI = populatePrivacyUI;
-window.populateIgenUI = populateIgenUI;
