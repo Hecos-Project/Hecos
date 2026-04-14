@@ -316,7 +316,7 @@ function toggleAllCategories(expanded) {
  */
 function setCategoryFilter(cat) {
     window.activeCategoryFilter = cat;
-    renderConfigHub();
+    renderConfigHub(viewMode);
 }
 
 function renderFilterTabs() {
@@ -603,39 +603,67 @@ function renderConfigHub(mode = 'tabs') {
 
     // 2. Render WALL
     let wallHtml = '';
-    let currentCat = null;
-    let currentCatData = null; 
-    filteredModules.forEach(m => {
-        if (m.cat !== currentCat) {
-            if (currentCat !== null) wallHtml += `</div></div>`; // Close previous section
-            currentCat = m.cat;
-            currentCatData = hub.categories[currentCat] || { label: currentCat, icon: '📂' };
-            const isCollapsed = uiState.collapsedCategories.includes(currentCat);
-            const toggleIcon = isCollapsed ? '⊕' : '⊖';
+    // Special Landing Page for ALL view in Wall mode
+    if (window.activeCategoryFilter === 'ALL') {
+        const usedCats = [...new Set(visibleModules.map(m => m.cat))];
+        // Sort cats by order
+        usedCats.sort((a, b) => {
+            const catA = hub.categories[a] || { order: 99 };
+            const catB = hub.categories[b] || { order: 99 };
+            return catA.order - catB.order;
+        });
+
+        usedCats.forEach(catId => {
+            const catData = hub.categories[catId] || { label: catId, icon: '📂' };
+            const count = visibleModules.filter(m => m.cat === catId).length;
+            const translatedLabel = window.t ? window.t(catData.label) : catData.label;
+            
             wallHtml += `
-                <div class="category-group ${isCollapsed ? 'collapsed' : ''}">
-                    <div class="category-header" onclick="toggleCategory('${currentCat}')">
-                        <span class="cat-toggle">${toggleIcon}</span>
-                        <span class="cat-label">${currentCatData.icon} ${window.t ? window.t(currentCatData.label) : currentCatData.label}</span>
-                        <span class="cat-badge">${catCounts[currentCat]}</span>
-                        <div class="cat-line"></div>
-                    </div>
-                    <div class="category-content">
+                <div class="cat-card" onclick="setCategoryFilter('${catId}')">
+                    <div class="cat-card-icon">${catData.icon}</div>
+                    <div class="cat-card-label">${translatedLabel}</div>
+                    <div class="cat-card-badge">${count}</div>
+                </div>
             `;
-        }
-        
-        const activeClass = (activeTab === m.id) ? 'active' : '';
-        const icon = window.getIconForModule(m.id, m.label, m.icon);
-        wallHtml += `
-            <div class="module-card ${activeClass}" onclick="showTab('${m.id}')">
-                <div class="m-icon">${icon}</div>
-                <div class="m-label">${window.t ? window.t(m.label) : m.label}</div>
-                <div class="m-cat">${window.t ? window.t(currentCatData.label) : currentCat}</div>
-            </div>
-        `;
-    });
-    if (filteredModules.length > 0) wallHtml += `</div></div>`; // Close last section
-    wallArea.innerHTML = wallHtml;
+        });
+        wallArea.innerHTML = `<div class="cat-landing-grid">${wallHtml}</div>`;
+    } else {
+        // Standard Detail view for single category or filtered results
+        let currentCat = null;
+        let currentCatData = null; 
+        filteredModules.forEach(m => {
+            if (m.cat !== currentCat) {
+                if (currentCat !== null) wallHtml += `</div></div>`; // Close previous section
+                currentCat = m.cat;
+                currentCatData = hub.categories[currentCat] || { label: currentCat, icon: '📂' };
+                const isCollapsed = uiState.collapsedCategories.includes(currentCat);
+                const toggleIcon = isCollapsed ? '⊕' : '⊖';
+                wallHtml += `
+                    <div class="category-group ${isCollapsed ? 'collapsed' : ''}">
+                        <div class="category-header" onclick="toggleCategory('${currentCat}')">
+                            <span class="cat-toggle">${toggleIcon}</span>
+                            <span class="cat-label">${currentCatData.icon} ${window.t ? window.t(currentCatData.label) : currentCatData.label}</span>
+                            <span class="cat-badge">${catCounts[currentCat]}</span>
+                            <div class="cat-line"></div>
+                        </div>
+                        <div class="category-content">
+                `;
+            }
+            
+            const activeClass = (activeTab === m.id) ? 'active' : '';
+            const icon = window.getIconForModule(m.id, m.label, m.icon);
+            wallHtml += `
+                <div class="module-card ${activeClass}" onclick="showTab('${m.id}')">
+                    <div class="m-icon">${icon}</div>
+                    <div class="m-label">${window.t ? window.t(m.label) : m.label}</div>
+                    <div class="m-cat">${window.t ? window.t(currentCatData.label) : currentCat}</div>
+                </div>
+            `;
+        });
+        if (filteredModules.length > 0) wallHtml += `</div></div>`;
+        wallArea.innerHTML = wallHtml;
+    }
+
 
     // 3. Render FILTER TABS (Categories bar)
     renderFilterTabs();

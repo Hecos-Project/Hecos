@@ -179,6 +179,84 @@ header {
   animation: fadeIn 0.4s ease;
 }
 
+/* Category Landing Grid (Specific for ALL mode in Wall view) */
+.cat-landing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 240px);
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    animation: fadeIn 0.5s ease;
+    box-sizing: border-box;
+}
+
+
+
+.cat-card {
+    background: linear-gradient(135deg, rgba(26, 29, 39, 0.8), rgba(15, 17, 23, 0.9));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    min-width: 0; 
+    box-sizing: border-box;
+    max-width: 280px;
+    width: 100%;
+}
+
+
+
+
+.cat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+}
+
+.cat-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--accent);
+    background: rgba(108, 140, 255, 0.08);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(108, 140, 255, 0.1);
+}
+
+.cat-card-icon {
+    font-size: 48px;
+    filter: drop-shadow(0 0 10px rgba(108, 140, 255, 0.3));
+    transition: transform 0.3s ease;
+}
+
+.cat-card:hover .cat-card-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.cat-card-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cat-card-badge {
+    background: rgba(108, 140, 255, 0.15);
+    color: var(--accent);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    border: 1px solid rgba(108, 140, 255, 0.3);
+}
+
 .config-wall.is-all-mode, 
 #config-tabs-bar.is-all-mode {
     gap: 0 !important;
@@ -812,7 +890,7 @@ input:checked + .slider:before { transform: translateX(20px); background: white;
     display: flex;
     gap: 10px;
     margin-bottom: 25px;
-    padding: 5px;
+    padding: 5px 15px; /* Added internal padding */
     background: rgba(255, 255, 255, 0.05);
     border-radius: 14px;
     border: 1px solid var(--border);
@@ -820,6 +898,15 @@ input:checked + .slider:before { transform: translateX(20px); background: white;
     scrollbar-width: none;
 }
 .filter-tabs::-webkit-scrollbar { display: none; }
+
+/* Force space after the last button in horizontal scroll */
+.filter-tabs::after {
+    content: '';
+    display: block;
+    min-width: 15px;
+    height: 10px;
+}
+
 
 .filter-btn {
     padding: 8px 18px;
