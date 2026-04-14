@@ -94,7 +94,17 @@ function showTab(name, skipScroll = false) {
   }
   if (name === 'payload' && typeof loadPayloadData === 'function') loadPayloadData();
   if (name === 'drive' && typeof loadDriveConfig === 'function') loadDriveConfig();
-  if (name === 'logs' && typeof startLogStream === 'function') startLogStream();
+  if (name === 'logs' && typeof startLogStream === 'function') {
+      startLogStream();
+      if (typeof refreshLogFiles === 'function') refreshLogFiles();
+      setTimeout(() => {
+          if (typeof activeLogWindows !== 'undefined') {
+              activeLogWindows.forEach(w => {
+                  if (w && w.body) w.body.scrollTop = w.body.scrollHeight;
+              });
+          }
+      }, 50);
+  }
   if (name === 'keymanager' && typeof kmRefresh === 'function') kmRefresh();
 }
 

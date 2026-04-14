@@ -9,6 +9,11 @@ import os
 import sys
 import json
 import argparse
+from datetime import datetime
+try:
+    from zentra.core.logging.hub import get_hub
+except ImportError:
+    get_hub = None
 
 # Bootstrap path: ensure project root is in sys.path
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +38,10 @@ def monitor_log(msg):
     try:
         with open(MONITOR_LOG, "a", encoding="utf-8") as f:
             f.write(formatted + "\n")
+        if get_hub:
+            hub = get_hub()
+            if hub:
+                hub.broadcast("INFO", msg, "MONITOR")
     except: pass
 
 # Replace print calls with monitor_log

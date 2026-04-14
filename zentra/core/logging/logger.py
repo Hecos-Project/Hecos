@@ -4,6 +4,7 @@ import sys
 import subprocess
 from datetime import datetime
 from zentra.core.constants import LOGS_DIR
+from .hub import get_hub
 
 # Set verbose levels for internal libraries - default WARNING to avoid chat pollution
 logging.getLogger("requests").setLevel(logging.WARNING)
@@ -87,6 +88,25 @@ class ConsoleTypeFilter(logging.Filter):
         else: # 'both'
             return True
 
+# Hub Handler (for real-time WebUI stream)
+class HubHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            # Try to identify module if in format [MODULE] msg
+            module = "SYSTEM"
+            if msg.startswith("[") and "]" in msg:
+                module = msg[1:msg.find("]")]
+                msg = msg[msg.find("]")+1:].strip()
+            get_hub().broadcast(record.levelname, msg, module)
+        except:
+            pass
+
+hub_handler = HubHandler()
+hub_handler.setLevel(logging.DEBUG)
+# We use a simple formatter for the hub to avoid double-timestamps if possible
+hub_handler.setFormatter(logging.Formatter('%(message)s'))
+
 # Initial setup: just files for now, until init_logger is called
 if not logger.hasHandlers():
     logger.addHandler(info_file_handler)
@@ -141,6 +161,7 @@ def init_logger(config, allow_external_windows=True):
     # RI-AGGIUNTA FILE HANDLERS (Sempre attivi)
     logger.addHandler(info_file_handler)
     logger.addHandler(debug_file_handler)
+    logger.addHandler(hub_handler)
 
     # Remove all existing filters from console_handler before re-adding
     for f in console_handler.filters[:]:

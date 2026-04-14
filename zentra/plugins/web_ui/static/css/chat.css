@@ -68,3 +68,153 @@
   align-items: center;
   gap: 10px;
 }
+
+/* LOG VIEWER */
+/* LOG GRID SYSTEM */
+.log-grid {
+    display: grid;
+    gap: 16px;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+.log-grid.layout-1x1 { grid-template-columns: 1fr; }
+.log-grid.layout-1x2 { grid-template-columns: repeat(2, 1fr); }
+.log-grid.layout-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 400px); }
+.log-grid.layout-auto { grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); }
+.log-grid.single .log-window-card { height: 600px; }
+
+.log-window-card {
+    display: flex;
+    flex-direction: column;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 480px; /* Fixed height to ensure internal scrolling works */
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease;
+}
+
+.log-window-card:hover { border-color: rgba(255,255,255,0.15); }
+
+.log-window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.log-window-header .w-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 0; /* allows children to shrink */
+}
+
+.log-window-header .w-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0; /* prevents actions from being squished */
+}
+
+.log-window-header select {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #c9d1d9;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    min-width: 60px;
+    max-width: 130px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.log-window-header .w-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1;
+}
+.log-window-header .w-btn:hover { background: rgba(255,255,255,0.1); color: var(--fg); }
+.log-window-header .w-close:hover { color: #f85149; }
+
+.log-window-body {
+    flex: 1;
+    overflow-y: scroll !important; /* Force scrollbar */
+    overflow-x: hidden;
+    padding: 12px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11px;
+    background: rgba(0,0,0,0.3);
+    scroll-behavior: smooth;
+    min-height: 0;
+}
+
+/* Custom Scrollbar for Logs - Enhanced Visibility */
+.log-window-body::-webkit-scrollbar { width: 12px; }
+.log-window-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-left: 1px solid rgba(255,255,255,0.05); }
+.log-window-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 6px; border: 2px solid rgba(0,0,0,0.5); }
+.log-window-body::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+.log-window-footer {
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid rgba(255,255,255,0.03);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,0,0,0.4);
+    flex-shrink: 0; /* Footer stays at bottom */
+}
+
+.log-window-footer label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+}
+
+.log-line {
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    padding: 2px 0;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.log-time { color: #58a6ff; margin-right: 8px; font-weight: bold; opacity: 0.8; }
+.log-lvl { 
+    display: inline-block; 
+    width: 60px; 
+    text-align: center; 
+    margin-right: 8px; 
+    border-radius: 3px; 
+    font-weight: bold;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+}
+.log-text { color: #c9d1d9; }
+
+.lvl-INFO    { color: #ffffff; }
+.lvl-DEBUG   { color: #8b949e; opacity: 0.7; }
+.lvl-WARN, .lvl-WARNING { color: #d29922; }
+.lvl-ERROR   { color: #f85149; }
+.lvl-MONITOR { color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); padding: 0 4px; }
+.lvl-FILE    { color: #a371f7; font-style: italic; }

@@ -5,8 +5,10 @@ import threading
 import sys
 import yaml
 import urllib.parse
+from datetime import datetime
 from flask import request, jsonify
 from zentra.core.constants import LOGS_DIR
+from zentra.core.logging.hub import get_hub
 
 def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
@@ -200,77 +202,6 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
 
-    @app.route("/api/logs/stream")
-    def stream_logs():
-        """SSE endpoint that streams latest Info and Debug logs."""
-        from flask import Response, stream_with_context
-        import time
-        from datetime import datetime
-
-        logger.debug("[WebUI-Logs] SSE Connection Request Received")
-
-        def generate():
-            # Get current log file paths (dynamic based on date)
-            today = datetime.now().strftime('%Y-%m-%d')
-            info_path  = os.path.join(LOGS_DIR, f"zentra_info_{today}.log")
-            debug_path = os.path.join(LOGS_DIR, f"zentra_debug_{today}.log")
-            
-            files = {
-                'info':  {'path': info_path,  'pos': 0, 'label': 'INFO'},
-                'debug': {'path': debug_path, 'pos': 0, 'label': 'DEBUG'}
-            }
-
-            # 1. SEND HISTORY (Last 50 lines per file)
-            for k, f_info in files.items():
-                if os.path.exists(f_info['path']):
-                    try:
-                        with open(f_info['path'], 'r', encoding='utf-8', errors='replace') as f:
-                            lines = f.readlines()
-                            f_info['pos'] = f.tell() # Mark current end
-                            
-                            # Send last 50 lines as history
-                            for line in lines[-50:]:
-                                if line.strip():
-                                    data = json.dumps({
-                                        "time":  "---", # Historical
-                                        "level": f_info['label'],
-                                        "text":  line.strip()
-                                    })
-                                    yield f"data: {data}\n\n"
-                    except Exception as e:
-                        logger.error(f"[WebUI] Log history error for {k}: {e}")
-
-            # 2. POLL FOR NEW LINES
-            while True:
-                for k, f_info in files.items():
-                    if not os.path.exists(f_info['path']):
-                        continue
-                    
-                    try:
-                        # Check if file was rotated or truncated
-                        cur_size = os.path.getsize(f_info['path'])
-                        if cur_size < f_info['pos']:
-                            f_info['pos'] = 0 # reset
-                        
-                        with open(f_info['path'], 'r', encoding='utf-8', errors='replace') as f:
-                            f.seek(f_info['pos'])
-                            new_lines = f.readlines()
-                            f_info['pos'] = f.tell()
-                            
-                            for line in new_lines:
-                                if line.strip():
-                                    data = json.dumps({
-                                        "time":  datetime.now().strftime("%H:%M:%S"),
-                                        "level": f_info['label'],
-                                        "text":  line.strip()
-                                    })
-                                    yield f"data: {data}\n\n"
-                    except Exception as e:
-                        pass # Ignore transient errors during rotation
-                
-                time.sleep(1) # Poll for new lines every second
-
-        return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
     @app.route("/api/events")
     def stream_events():

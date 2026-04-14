@@ -129,6 +129,9 @@ class ZentraWebUIServer:
         try:
             init_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
             
+            from .routes_logs import init_log_routes
+            init_log_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
+
             from .routes_chat import init_chat_routes
             init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
             

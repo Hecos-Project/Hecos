@@ -4,51 +4,92 @@
     <div class="card-title">{{ t('webui_conf_logs_title') }}</div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">{{ t('webui_conf_logs_help') }}</p>
     
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; padding: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid var(--border);">
-      <div class="field">
-        <label>{{ t('webui_conf_logs_web_level') }}</label>
-        <select id="web-log-level">
-          <option value="BOTH">Both (Info & Debug)</option>
-          <option value="INFO">Info Only</option>
-          <option value="DEBUG">Debug Only</option>
+    <div class="log-grid-controls" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px solid var(--border); gap:15px; flex-wrap:wrap;">
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-primary" onclick="addLogWindow()" style="padding:6px 15px;"><i class="fas fa-plus"></i> {{ t('webui_conf_logs_add_window') }}</button>
+        <button class="btn btn-secondary" onclick="refreshLogFiles()" style="padding:6px 12px;"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button class="btn btn-secondary" onclick="openLogDeleteModal()" style="padding:6px 12px;" title="Manage Logs"><i class="fas fa-trash-alt"></i> Manage Logs</button>
+      </div>
+      
+      <div style="display:flex; gap:15px; align-items:center;">
+        <label style="font-size:12px; color:var(--muted)">Layout:</label>
+        <select id="log-grid-layout" onchange="updateLogGridLayout()" class="select-sm" style="background:var(--bg-card); border:1px solid var(--border); color:var(--fg); border-radius:4px; padding:2px 5px;">
+          <option value="auto">Auto (Flow)</option>
+          <option value="1x1">1 Column</option>
+          <option value="1x2">2 Columns</option>
+          <option value="2x2">2x2 Grid</option>
         </select>
+        <div style="font-size:12px; color:var(--muted);">SSE: <span id="log-status" class="val-warn">Waiting...</span></div>
+        <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="clearAllLogWindows()">{{ t('webui_chat_btn_clear') }}</button>
       </div>
-      <div class="field">
-        <label>{{ t('webui_conf_logs_web_max') }}</label>
-        <input type="number" id="web-log-max" value="500" min="5" max="2000">
-      </div>
-      <div class="field">
-        <label>{{ t('webui_conf_logs_web_autoscroll') }}</label>
-        <div class="toggle-wrap">
-          <input type="checkbox" id="web-log-autoscroll" checked>
-          <span class="toggle-slider"></span>
+    </div>
+
+    <div id="log-grid" class="log-grid layout-auto">
+      <!-- Grid items will be injected here -->
+    </div>
+
+    <!-- Template for a Log Window (Hidden) -->
+    <template id="log-window-template">
+      <div class="log-window-card" data-id="{id}">
+        <div class="log-window-header">
+          <div class="w-info">
+            <span class="w-icon">📄</span>
+            <select class="w-source-selector" onchange="updateWindowSource('{id}', this.value)">
+              <option value="LIVE">Live Stream (Total)</option>
+            </select>
+          </div>
+          <div class="w-actions">
+            <select class="w-level-selector" onchange="updateWindowLevel('{id}', this.value)">
+              <option value="BOTH">{{ t('webui_conf_logs_level_all') }}</option>
+              <option value="INFO">{{ t('webui_conf_logs_level_info') }}</option>
+              <option value="DEBUG">{{ t('webui_conf_logs_level_debug') }}</option>
+            </select>
+            <button class="w-btn" onclick="clearWindow('{id}')" title="Clear"><i class="fas fa-eraser"></i></button>
+            <button class="w-btn w-close" onclick="removeLogWindow('{id}')">×</button>
+          </div>
+        </div>
+        <div class="log-window-search-bar" style="display:flex; gap:5px; padding:6px 14px; background:rgba(0,0,0,0.5); border-bottom:1px solid rgba(255,255,255,0.03); align-items:center;">
+          <i class="fas fa-search" style="color:var(--muted); font-size:10px;"></i>
+          <input type="text" class="w-search-term" placeholder="Testo da cercare..." style="flex:1; background:rgba(255,255,255,0.1); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
+          <i class="far fa-clock" style="color:var(--muted); font-size:10px; margin-left:3px;"></i>
+          <input type="text" class="w-search-time" placeholder="Ora es: 14:30" style="width:75px; background:rgba(255,255,255,0.1); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
+          <button class="btn btn-secondary w-btn-filter" style="padding:2px 8px; font-size:10px; color:#58a6ff; border-color:rgba(88,166,255,0.3);">Filtra</button>
+          <button class="btn btn-secondary w-btn-reset" style="padding:2px 8px; font-size:10px; border-color:rgba(255,255,255,0.1);" title="Rimuovi filtro"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="log-window-body"></div>
+        <div class="log-window-footer">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <label><input type="checkbox" class="w-autoscroll" checked> Auto</label>
+            <label title="Attiva la visualizzazione a righe alternate (stile Excel)"><input type="checkbox" class="w-striped-btn" onchange="window.toggleStripedRows(this)"> Zebratura</label>
+          </div>
+          <div style="display:flex; align-items:center; gap:5px;">
+            <label>Max:</label>
+            <input type="number" class="w-max-lines" value="500" min="1" max="2500" onchange="window.forceTrimLines(this)" style="width: 50px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:var(--fg); font-size:10px; padding:2px; border-radius:3px;">
+          </div>
+          <span class="w-line-count">0 lines</span>
         </div>
       </div>
-      <div class="field">
-        <label>{{ t('webui_conf_logs_web_split') }}</label>
-        <div class="toggle-wrap">
-          <input type="checkbox" id="web-log-split" onchange="toggleLogSplit()">
-          <span class="toggle-slider"></span>
+    </template>
+
+    <!-- Log Deletion Modal -->
+    <div id="log-delete-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
+      <div class="modal-content" style="background:#0d1117; width:450px; max-height:80vh; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+        <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;"><i class="fas fa-trash-alt" style="color:#f87171;"></i> Manage Log Files</h3>
+          <button onclick="closeLogDeleteModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px;">&times;</button>
+        </div>
+        <div id="log-delete-list" style="padding:15px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
+          <!-- Items injected here -->
+        </div>
+        <div style="padding:15px; border-top:1px solid var(--border); display:flex; justify-content:space-between;">
+          <button class="btn btn-secondary" onclick="deleteSelectedLogs(true)" style="color:#f87171; border-color:rgba(248,113,113,0.3);">Delete All</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" onclick="closeLogDeleteModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="deleteSelectedLogs(false)">Delete Selected</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <div style="font-size:12px; color:var(--muted);">Streaming: <span id="log-status" class="val-warn">Waiting...</span></div>
-      <button class="btn btn-secondary" style="padding:4px 12px; font-size:11px;" onclick="clearLogConsole()">{{ t('webui_chat_btn_clear') }}</button>
-    </div>
-
-    <div id="log-wrapper" class="log-container">
-      <div id="log-group-info" style="display:flex; flex-direction:column; flex:1;">
-        <div class="log-label-split">Info / Error / Warning</div>
-        <div id="log-console">
-          <div style="color:var(--muted)">Clicca sulla tab Logs per avviare il monitoraggio...</div>
-        </div>
-      </div>
-      <div id="log-group-debug" style="display:none; flex-direction:column; flex:1;">
-        <div class="log-label-split">Debug</div>
-        <div id="log-console-debug"></div>
-      </div>
-    </div>
   </div>
 </div>
