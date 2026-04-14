@@ -94,7 +94,7 @@
     <div class="logo-text">Zentra Core</div>
   </div>
   <div style="display:flex; align-items:center; gap:20px;">
-    <div id="status-dot"><div class="dot"></div> <span id="hdr-model">{{ t("webui_chat_offline") }}</span></div>
+    <div id="status-dot"><div class="dot" id="hdr-dot"></div> <span id="hdr-model">{{ t("webui_chat_offline") }}</span></div>
     
     <!-- VIEW SWITCHER -->
     <div class="view-switcher" style="display:flex; background:rgba(255,255,255,0.05); padding:3px; border-radius:10px; border:1px solid var(--border);">
@@ -142,6 +142,7 @@
     <div class="stat"><span class="stat-label">TTS:</span> <span id="s-tts" class="stat-val">—</span></div>
     <div class="stat"><span class="stat-label">PTT:</span> <span id="s-ptt" class="stat-val">—</span></div>
     <div class="stat"><span class="stat-label">Config:</span> <span id="s-config" class="stat-val">—</span></div>
+    <div class="stat"><span class="stat-label">Model:</span> <span id="s-model" class="stat-val">—</span></div>
   </div>
 
   <!-- DYNAMIC TABS BAR -->

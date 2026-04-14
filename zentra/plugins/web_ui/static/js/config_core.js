@@ -404,7 +404,16 @@ async function refreshStatus() {
     
     setSpanText('s-bridge', d.bridge || '—');
     setSpanText('s-config', d.config || '—');
-    setSpanText('hdr-model', d.model || (window.I18N?.webui_chat_offline || 'Offline'));
+    setSpanText('s-model', d.model || '—');
+    
+    const isOnline = !!d.model;
+    setSpanText('hdr-model', isOnline ? 'Online' : (window.I18N?.webui_chat_offline || 'Offline'));
+    const hdrDot = document.getElementById('hdr-dot');
+    if (hdrDot) {
+        hdrDot.style.background = isOnline ? 'var(--green)' : 'var(--red)';
+        hdrDot.style.boxShadow = isOnline ? '0 0 8px var(--green)' : '0 0 8px var(--red)';
+        hdrDot.style.animation = isOnline ? 'pulse 2s infinite' : 'none';
+    }
     
     // Conditional visibility for system metrics
     const dashEnabled = window.cfg?.plugins?.DASHBOARD?.enabled !== false;
@@ -413,6 +422,12 @@ async function refreshStatus() {
     });
   } catch(e) {
     setSpanText('hdr-model', window.I18N?.webui_chat_offline || 'Offline');
+    const hdrDot = document.getElementById('hdr-dot');
+    if (hdrDot) {
+        hdrDot.style.background = 'var(--red)';
+        hdrDot.style.boxShadow = '0 0 8px var(--red)';
+        hdrDot.style.animation = 'none';
+    }
   }
 }
 

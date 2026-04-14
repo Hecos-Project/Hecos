@@ -1,6 +1,12 @@
 <div id="topbar">
   <button id="sidebar-toggle-btn" class="desktop-only" onclick="toggleSidebarDesktop()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; margin-right:15px; display:flex; align-items:center; transition: color .2s;">☰</button>
-  <div><div id="model-badge">🧠 <span id="tb-model">{{ t('webui_chat_loading') }}</span></div></div>
+  <div>
+    <div id="model-badge" style="display:flex; align-items:center; gap:8px;">
+      <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
+      <span id="tb-model">{{ t('webui_chat_loading') }}</span>
+      <style>@keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } } #tb-status-dot.pulsing { animation: pulseDot 2s infinite; }</style>
+    </div>
+  </div>
   <div class="topbar-chips">
     <div class="topbar-chip" id="chip-mic">🎤 MIC: —</div>
     <div class="topbar-chip" id="chip-tts">🔊 TTS: —</div>
