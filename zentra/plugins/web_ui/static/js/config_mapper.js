@@ -65,6 +65,8 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
 
 function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 function setCheck(id, val) { const el = document.getElementById(id); if (el) el.checked = val; }
+function getV(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function getC(id) { const el = document.getElementById(id); return el ? el.checked : false; }
 
 function populateUI() {
   try {
@@ -317,35 +319,35 @@ function buildPayload() {
     });
 
     out.routing_engine = out.routing_engine || {};
-    out.routing_engine.mode       = document.getElementById('route-mode').value;
-    out.routing_engine.legacy_models = document.getElementById('route-models').value;
+    out.routing_engine.mode       = getV('route-mode') || 'auto';
+    out.routing_engine.legacy_models = getV('route-models');
 
     out.ai = out.ai || {};
-    out.ai.active_personality = document.getElementById('ia-personality').value;
-    out.ai.avatar_size = document.getElementById('ia-avatar-size').value;
-    out.ai.special_instructions = document.getElementById('ia-instructions').value;
-    out.ai.save_special_instructions = document.getElementById('ia-save-instructions').checked;
-    out.ai.persona_roleplay_mode = document.getElementById('ia-roleplay-mode').checked;
-    out.ai.safety_disclaimer = document.getElementById('ia-roleplay-disclaimer').value;
+    out.ai.active_personality = getV('ia-personality');
+    out.ai.avatar_size = getV('ia-avatar-size');
+    out.ai.special_instructions = getV('ia-instructions');
+    out.ai.save_special_instructions = getC('ia-save-instructions');
+    out.ai.persona_roleplay_mode = getC('ia-roleplay-mode');
+    out.ai.safety_disclaimer = getV('ia-roleplay-disclaimer');
 
     out.privacy = out.privacy || {};
-    out.privacy.default_mode = document.getElementById('pr-default-mode').value;
-    out.privacy.auto_wipe_enabled = document.getElementById('pr-auto-wipe').checked;
-    out.privacy.incognito_shortcut = document.getElementById('pr-incognito-shortcut').checked;
+    out.privacy.default_mode = getV('pr-default-mode') || 'normal';
+    out.privacy.auto_wipe_enabled = getC('pr-auto-wipe');
+    out.privacy.incognito_shortcut = getC('pr-incognito-shortcut');
 
     out.bridge = out.bridge || {};
-    out.bridge.use_processor        = document.getElementById('br-processor').checked;
-    out.bridge.remove_think_tags    = document.getElementById('br-think-tags').checked;
-    out.bridge.debug_log             = document.getElementById('br-debug').checked;
-    out.bridge.enable_tools         = document.getElementById('br-tools').checked;
-    out.bridge.webui_voice_stt        = document.getElementById('br-voice-stt').checked;
-    out.bridge.webui_voice_enabled = document.getElementById('br-voice-enabled').checked;
-    out.bridge.chunk_delay_ms      = parseInt(document.getElementById('br-delay').value);
+    out.bridge.use_processor        = getC('br-processor');
+    out.bridge.remove_think_tags    = getC('br-think-tags');
+    out.bridge.debug_log             = getC('br-debug');
+    out.bridge.enable_tools         = getC('br-tools');
+    out.bridge.webui_voice_stt        = getC('br-voice-stt');
+    out.bridge.webui_voice_enabled = getC('br-voice-enabled');
+    out.bridge.chunk_delay_ms      = parseInt(getV('br-delay')) || 0;
 
     out.filters = out.filters || {};
-    out.filters.remove_asterisks       = document.getElementById('fl-ast').checked;
-    out.filters.remove_round_brackets  = document.getElementById('fl-tonde').checked;
-    out.filters.remove_square_brackets = document.getElementById('fl-quadre').checked;
+    out.filters.remove_asterisks       = getC('fl-ast');
+    out.filters.remove_round_brackets  = getC('fl-tonde');
+    out.filters.remove_square_brackets = getC('fl-quadre');
 
     // Dispatch to System Logic for its part of the payload
     if (typeof buildSystemPayload === 'function') {
@@ -397,6 +399,7 @@ function buildPayload() {
             out.ai.special_instructions = rpPart.ai.special_instructions;
         }
     }
+    const webuiPart = buildWebUIPayload();
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
         Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
@@ -471,7 +474,7 @@ function populateRoleplayUI() {
     const sysOptions = window.sysOptions;
     if (!c || !c.ai) return;
     populateSelect('rp-personality', sysOptions.personalities || [], c.ai.active_personality, true);
-    setCheck('rp-enabled', c.ai.roleplay_mode ?? false);
+    setCheck('rp-enabled', c.ai.persona_roleplay_mode ?? false);
     setVal('rp-instructions', c.ai.special_instructions || '');
 }
 
@@ -480,9 +483,9 @@ function buildRoleplayPayload() {
     if (!el) return {};
     return {
         ai: {
-            roleplay_mode: el.checked,
-            active_personality: document.getElementById('rp-personality').value,
-            special_instructions: document.getElementById('rp-instructions').value
+            persona_roleplay_mode: el.checked,
+            active_personality: getV('rp-personality'),
+            special_instructions: getV('rp-instructions')
         }
     };
 }
