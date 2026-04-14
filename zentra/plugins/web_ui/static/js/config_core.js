@@ -522,6 +522,7 @@ function renderConfigHub(mode = 'tabs') {
     if (!tabsBar || !wallArea) return;
 
     // Filter modules based on dynamic plugin status
+
     const visibleModules = hub.modules.filter(m => {
         // Admin check
         if (m.adminOnly && userRole !== 'admin') return false;
