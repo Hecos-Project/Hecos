@@ -26,6 +26,38 @@
       <div class="toggle-info" style="font-weight:600; color:var(--text);">Enable Image Generation</div>
       <label class="switch"><input type="checkbox" id="igen-enabled"><span class="slider"></span></label>
     </div>
+
+    <div class="field" style="margin-top:10px;">
+      <label>Negative Prompt</label>
+      <textarea id="igen-neg-prompt" rows="3" placeholder="distorted, extra fingers, malformed limbs..."></textarea>
+      <small style="color:var(--muted);font-size:11px;">Elements to avoid in the generation.</small>
+    </div>
+
+    <div class="grid-2" style="margin-top:10px;">
+      <div class="field">
+        <label>Guidance Scale (CFG)</label>
+        <div style="display:flex; align-items:center;">
+          <input type="range" id="igen-guidance" min="1" max="20" step="0.5" style="flex:1;">
+          <span id="igen-guidance-val" style="margin-left:10px; width:30px; font-weight:bold;">7.5</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Inference Steps</label>
+        <div style="display:flex; align-items:center;">
+          <input type="range" id="igen-steps" min="1" max="100" step="1" style="flex:1;">
+          <span id="igen-steps-val" style="margin-left:10px; width:30px; font-weight:bold;">30</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
+      <div class="toggle-info">
+        <strong>Auto-Enrich Prompt</strong><br>
+        <small style="color:var(--muted);">Automatically adds quality keywords (8k, masterpiece, etc.)</small>
+      </div>
+      <label class="switch"><input type="checkbox" id="igen-auto-enrich"><span class="slider"></span></label>
+    </div>
+
     <div class="toggle-row">
       <div class="toggle-info">Remove Logo/Watermark (Pollinations only)</div>
       <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>

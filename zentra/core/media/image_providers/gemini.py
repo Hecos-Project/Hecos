@@ -9,7 +9,9 @@ class GeminiProvider:
         return ["imagen-3.0-generate-001", "imagen-4.0"]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         if not api_key:
             api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         if not api_key:
@@ -72,7 +74,9 @@ class GeminiNativeProvider:
         ]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         if not api_key:
             api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         if not api_key:

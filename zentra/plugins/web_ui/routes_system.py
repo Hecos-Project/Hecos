@@ -88,9 +88,23 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
             
-            from zentra.core.audio.device_manager import get_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
-            ptt_on     = acfg.get("push_to_talk", False)
+            ptt_on = acfg.get("push_to_talk", False)
+            
+            # ── Integrity Guard ────────────────────────────────────────────────────
+            # PTT requires MIC (continuous listening) to be enabled.
+            # If MIC is OFF but PTT is still ON in config (stale state), correct it
+            # here to ensure the frontend always receives a coherent state.
+            if not mic_on and ptt_on:
+                ptt_on = False
+                acfg["push_to_talk"] = False
+                try:
+                    _save_audio_config(acfg)
+                except Exception:
+                    pass
+            # ──────────────────────────────────────────────────────────────────────
+            
             ptt_status = "ON" if ptt_on else "OFF"
 
             from datetime import datetime

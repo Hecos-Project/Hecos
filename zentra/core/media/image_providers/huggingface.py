@@ -15,7 +15,9 @@ class HuggingFaceProvider:
         ]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "", 
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         """Generate image via Hugging Face Inference API."""
         if not api_key:
             api_key = os.environ.get("HUGGINGFACE_API_KEY", "").strip()
@@ -40,7 +42,10 @@ class HuggingFaceProvider:
             "inputs": eng_prompt,
             "parameters": {
                 "width": width,
-                "height": height
+                "height": height,
+                "negative_prompt": negative_prompt,
+                "guidance_scale": guidance_scale,
+                "num_inference_steps": num_inference_steps
             }
         }
 

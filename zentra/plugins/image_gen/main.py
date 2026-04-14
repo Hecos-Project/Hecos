@@ -66,9 +66,25 @@ class ImageGenTools:
             if not api_key and provider in env_map:
                 api_key = os.environ.get(env_map[provider], "").strip()
 
+            neg_prompt = cfg.get("negative_prompt", "")
+            guidance   = float(cfg.get("guidance_scale", 7.5))
+            steps      = int(cfg.get("num_inference_steps", 30))
+            enrich     = cfg.get("auto_enrich", True)
+
             logger.info(f"[IMAGE_GEN] Generating via {provider}/{model}: {prompt[:60]}")
 
-            filename = generate_image(prompt, provider, model, width, height, api_key)
+            filename = generate_image(
+                prompt=prompt, 
+                provider=provider, 
+                model=model, 
+                width=width, 
+                height=height, 
+                api_key=api_key,
+                negative_prompt=neg_prompt,
+                guidance_scale=guidance,
+                num_inference_steps=steps,
+                auto_enrich=enrich
+            )
             clean_prompt = prompt.strip()[:80]
             return f"Here is the image of **{clean_prompt}**:\n\n[[IMG:{filename}]]"
 

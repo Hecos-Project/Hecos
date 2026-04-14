@@ -84,6 +84,12 @@ window.bindWebPTT = function(buttonId) {
     e.preventDefault();
     if (typeof window.unlockAudioContext === 'function') window.unlockAudioContext();
 
+    // Guard: Web PTT requires MIC (continuous listening) to be enabled.
+    if (!window.currentMicOn) {
+      if (window.showToast) window.showToast('🎤 Abilita prima il MIC per usare la registrazione vocale.');
+      return;
+    }
+
     if (window.isWebAudioRecording) {
       if (window.isLockedMode) {
         window.isLockedMode = false;

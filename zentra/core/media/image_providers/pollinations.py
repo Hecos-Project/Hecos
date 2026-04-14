@@ -21,13 +21,16 @@ class PollinationsProvider:
         return ["flux", "flux-pro", "turbo", "midjourney", "flux-realism"]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         """Returns filename on success, raises Exception on failure."""
         import requests
         encoded = urllib.parse.quote(prompt.strip())
         url = (
             f"https://image.pollinations.ai/prompt/{encoded}"
             f"?width={width}&height={height}&model={model}&nologo=true"
+            f"&negative={urllib.parse.quote(negative_prompt)}"
         )
         log_debug(f"[Pollinations] URL: {url}")
 

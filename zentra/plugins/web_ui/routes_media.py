@@ -2,6 +2,7 @@ import os
 import sys
 import glob
 from flask import request, jsonify
+from zentra.core.constants import IMAGES_DIR, MEDIA_DIR
 
 def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
@@ -21,12 +22,11 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/zentra/api/media/open-folder", methods=["POST"])
     def open_media_folder():
-        """Opens the data/images folder in the OS file explorer."""
+        """Opens the root media/ folder in the OS file explorer."""
         try:
-            images_dir = os.path.join(root_dir, "data", "images")
-            os.makedirs(images_dir, exist_ok=True)
+            os.makedirs(MEDIA_DIR, exist_ok=True)
             from zentra.core.system.os_adapter import OSAdapter
-            OSAdapter.open_path(images_dir)
+            OSAdapter.open_path(MEDIA_DIR)
             return jsonify({"ok": True, "message": "Folder opened"})
         except Exception as exc:
             logger.error(f"[WebUI] open_media_folder error: {exc}")
@@ -34,13 +34,12 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/zentra/api/media/clear", methods=["POST"])
     def clear_media_vault():
-        """Deletes all generated items in data/images/."""
+        """Deletes all generated items in centralized media/images/."""
         try:
-            images_dir = os.path.join(root_dir, "data", "images")
-            if not os.path.exists(images_dir):
+            if not os.path.exists(IMAGES_DIR):
                 return jsonify({"ok": True, "deleted": 0})
             
-            files = glob.glob(os.path.join(images_dir, "*"))
+            files = glob.glob(os.path.join(IMAGES_DIR, "*"))
             count = 0
             for f in files:
                 if os.path.isfile(f):

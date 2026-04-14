@@ -9,7 +9,9 @@ class StabilityProvider:
         return ["sd3-turbo", "sd3", "stable-image-core", "stable-image-ultra"]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         if not api_key:
             api_key = os.environ.get("STABILITY_API_KEY", "").strip()
         if not api_key:
@@ -38,6 +40,12 @@ class StabilityProvider:
         }
         if "sd3" in model_lower:
             data["model"] = "sd3-turbo" if "turbo" in model_lower else "sd3"
+            
+        # Advanced Parameters
+        data["negative_prompt"] = negative_prompt
+        data["cfg_scale"] = guidance_scale
+        if "ultra" not in model_lower:
+            data["aspect_ratio"] = "1:1" # Standard for our UI
 
         log_debug(f"[Stability] endpoint={endpoint}")
         r = requests.post(endpoint, headers=headers, files={"none": ""}, data=data, timeout=60, proxies=get_proxies())

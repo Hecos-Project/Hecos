@@ -132,9 +132,12 @@ window.refreshStatus = async function() {
 
 
 
-    if (window._applyMicState) window._applyMicState(d.mic === 'ON');
+    const micIsOn = (d.mic === 'ON');
+    const pttIsOn = (d.ptt === 'ON');
+    if (window._applyMicState) window._applyMicState(micIsOn);
     if (window._applyTTSState) window._applyTTSState(d.tts === 'ON');
-    if (window._applyPTTState) window._applyPTTState(d.ptt === 'ON');
+    // PTT can only be ON if MIC is also ON — enforce this dependency client-side
+    if (window._applyPTTState) window._applyPTTState(micIsOn && pttIsOn);
     
     const ac = d.audio_config || {};
     if (window._applyRoutingState) window._applyRoutingState(ac.stt_source || 'system', ac.tts_destination || 'web');
