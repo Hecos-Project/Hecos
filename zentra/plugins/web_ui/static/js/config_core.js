@@ -411,7 +411,17 @@ async function saveConfig(silent = false) {
             }
           }
           
+          
           setTimeout(() => location.reload(), 1500);
+      } else {
+          // Provide clear visual feedback for silent background saves
+          setSaveMsg('✓ Modifiche auto-salvate', 'ok');
+          setTimeout(() => {
+              const msgEl = document.getElementById('save-msg');
+              if (msgEl && msgEl.textContent.includes('auto-salvate')) {
+                  setSaveMsg('', 'muted'); // Clear message without reloading
+              }
+          }, 3500);
       }
     } else {
       setSaveMsg('Error saving config.', 'err');
@@ -685,10 +695,12 @@ window.rebootSystem = rebootSystem;
 // window.populateSelect, window.populateUI moved to config_mapper
 // --- Event Listeners (Global/Core) ---
 
-// Listen for global checkbox/select changes for auto-saving
+// Listen for global changes (checkboxes, selects, inputs, textareas) for auto-saving
 document.addEventListener('change', (e) => {
   if (e.target.closest('.no-autosave') || e.target.closest('#tab-logs')) return;
-  if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+  const tag = e.target.tagName;
+  const type = e.target.type;
+  if (tag === 'SELECT' || tag === 'TEXTAREA' || type === 'checkbox' || (tag === 'INPUT' && type !== 'file')) {
     // Sync Image Gen enabled status between different UI locations
     if (e.target.id === 'igen-enabled') {
         const other = document.querySelector('[data-plugin="IMAGE_GEN"]');

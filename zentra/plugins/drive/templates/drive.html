@@ -82,8 +82,8 @@
         <thead>
           <tr>
             <th onclick="sortBy('name')">{{ t('webui_chat_name') }} ↕</th>
-            <th onclick="sortBy('size')">{{ t('webui_sysnet_proxy_port') == 'Porta' ? 'Dimensione' : 'Size' }} ↕</th>
-            <th onclick="sortBy('modified')">{{ t('webui_sysnet_proxy_port') == 'Porta' ? 'Modificato' : 'Modified' }} ↕</th>
+            <th onclick="sortBy('size')">{{ 'Dimensione' if t('webui_sysnet_proxy_port') == 'Porta' else 'Size' }} ↕</th>
+            <th onclick="sortBy('modified')">{{ 'Modificato' if t('webui_sysnet_proxy_port') == 'Porta' else 'Modified' }} ↕</th>
             <th>{{ t('webui_conf_logs_actions') or 'Actions' }}</th>
           </tr>
         </thead>

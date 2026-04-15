@@ -161,7 +161,13 @@ def init_drive_routes(app, logger_instance=None):
 @login_required
 def drive_page():
     """Renders the Zentra Drive HTML page."""
-    return render_template("drive.html")
+    from zentra.app.config import ConfigManager
+    from zentra.core.i18n.translator import get_translator
+    
+    cfg = ConfigManager()
+    translations = get_translator().get_translations()
+    
+    return render_template("drive.html", config=cfg.config, translations=translations)
 
 
 # ─── QUICK LINKS ───────────────────────────────────────────────────────────
