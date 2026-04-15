@@ -75,6 +75,9 @@
     prompt_system: "{{ t('webui_chat_prompt_system') }}",
     prompt_web: "{{ t('webui_chat_prompt_web') }}",
     prompt_webcam: "{{ t('webui_chat_prompt_webcam') }}",
+    prompt_igen: "{{ t('webui_chat_prompt_igen') }}",
+    prompt_drive: "{{ t('webui_chat_prompt_drive') }}",
+    prompt_studio: "{{ t('webui_chat_prompt_studio') }}",
     none: "{{ t('webui_chat_none') }}",
     loading: "{{ t('webui_chat_loading') }}",
     
@@ -89,7 +92,21 @@
     delete_confirm_all: "{{ t('webui_chat_delete_confirm_all') }}",
     interrupted: "{{ t('webui_chat_interrupted') }}"
   };
+
+  /**
+   * Global translation function for Frontend JS
+   */
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    if (params) {
+      for (const [pKey, pVal] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+      }
+    }
+    return text;
+  };
 </script>
+<script src="/static/js/config_manifest.js?v=0.22.0"></script>
 <script>
   // Expose the global history to window so the renderer can read it
   window.historyList = [];

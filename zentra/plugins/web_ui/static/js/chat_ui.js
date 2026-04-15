@@ -163,29 +163,47 @@ window.refreshStatus = async function() {
 
 window.loadPlugins = async function() {
   try {
-    const cfg  = await (await fetch('/zentra/config')).json();
-    const icons = {DASHBOARD:'📊',FILE_MANAGER:'📁',HELP:'❓',MEDIA:'🎵',ROLEPLAY:'🎭',SYSTEM:'⚙',WEB:'🌐',WEBCAM:'📷',WEB_UI:'💻'};
-    const prompts = {
-      DASHBOARD: window.I18N.prompt_dashboard,
-      FILE_MANAGER: 'read: config/system.yaml',
-      HELP: window.I18N.prompt_help,
-      MEDIA: window.I18N.prompt_media,
-      ROLEPLAY: window.I18N.prompt_roleplay,
-      SYSTEM: window.I18N.prompt_system,
-      WEB: window.I18N.prompt_web,
-      WEBCAM: window.I18N.prompt_webcam
+    const cfg = await (await fetch('/zentra/config')).json();
+    const pluginsConfig = cfg.plugins || {};
+    
+    // Define which modules show up in the sidebar and their quick-action prompt keys
+    const sidebarPrompts = {
+      'dashboard': 'webui_chat_prompt_dashboard',
+      'help':      'webui_chat_prompt_help',
+      'media':     'webui_chat_prompt_media',
+      'roleplay_elite': 'webui_chat_prompt_roleplay',
+      'web':       'webui_chat_prompt_web',
+      'webcam':    'webui_chat_prompt_webcam',
+      'igen':      'webui_chat_prompt_igen',
+      'drive':     'webui_chat_prompt_drive',
+      'studio':    'webui_chat_prompt_studio'
     };
+    
     let html = '';
-    for(const [tag,pc] of Object.entries(cfg.plugins||{})) {
-      const on = pc.enabled !== false;
-      const pText = prompts[tag] ? prompts[tag].replace(/'/g, "\\'") : '';
-      const onClick = on && pText ? `onclick="window.startPrompt('${pText}')"` : '';
-      const cursor = on && pText ? 'cursor:pointer;' : (on ? 'cursor:default;' : 'cursor:not-allowed;');
-      html+=`<div class="sidebar-btn" ${onClick} style="font-size:12px;${!on?'opacity:.4;':''}${cursor}"><span class="icon">${icons[tag]||'🧩'}</span> ${tag}</div>`;
+    const modules = window.CONFIG_HUB?.modules || [];
+    
+    // Iterate over centralized modules to ensure consistent metadata
+    for (const m of modules) {
+      if (!m.pluginTag) continue;
+      
+      const isEnabled = pluginsConfig[m.pluginTag]?.enabled !== false;
+      if (!isEnabled) continue; // Only show actually active plugins
+      
+      const promptKey = sidebarPrompts[m.id];
+      if (!promptKey) continue; // Only show those with a specific sidebar action
+      
+      const promptText = (window.I18N[promptKey] || '').replace(/'/g, "\\'");
+      const icon = window.getIconForModule(m.id, m.label, m.icon);
+      const label = window.t ? window.t(m.label) : m.id.toUpperCase();
+      
+      html += `<div class="sidebar-btn" onclick="window.startPrompt('${promptText}')" style="font-size:12px; cursor:pointer;"><span class="icon">${icon}</span> ${label}</div>`;
     }
+    
     const sbP = document.getElementById('sb-plugins');
     if (sbP) sbP.innerHTML = html || `<div style="font-size:12px;color:var(--muted);">${window.I18N.none || 'None'}</div>`;
-  } catch(e){}
+  } catch(e){
+    console.error("[Sidebar] Error loading plugins:", e);
+  }
 };
 
 window.toggleSidebarDesktop = function() {
