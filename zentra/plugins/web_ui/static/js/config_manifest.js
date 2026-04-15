@@ -21,7 +21,7 @@ window.CONFIG_HUB = {
         { id: 'routing',   label: 'hub_mod_routing',      icon: '🚦', cat: 'INTELLIGENZA' },
         { id: 'ia',        label: 'hub_mod_persona',      icon: '🎭', cat: 'INTELLIGENZA' },
         { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA' },
-        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'NEURAL_LINK' },
+        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA' },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA' },
