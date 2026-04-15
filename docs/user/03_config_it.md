@@ -8,8 +8,11 @@ Zentra mette a disposizione i Tasti Funzione (F1-F7) per interagire e riparametr
 * **[ F4 ] TOGGLE ASCOLTO (MIC):** Attiva o disattiva l'acquisizione del microfono.
 * **[ F5 ] TOGGLE VOCE (TTS):** Abilita o silenzia la sintesi vocale di risposta. 
 
-### 🎛️ Il PANNELLO DI CONTROLLO [ F7 ]
-Tramite un'interfaccia grafica basata su menu, offre il controllo granulare su Zentra Core. Permette di modificare impostazioni booleane, numeriche o stringhe.
+### 🎛️ Zentra Hub (Config Panel)
+Accessibile tramite **F7** o via WebUI, l'Hub è il centro di comando di Zentra. Recentemente ridisegnato con un'estetica **Premium e Simmetrica**, offre:
+- **Navigazione a Tab**: Impostazioni organizzate (Backend, LLM, Persona, Voice, etc.) per una gestione ordinata.
+- **Dynamic Switcher**: Passa istantaneamente dalla vista a schede alla vista "Wall" (griglia) per una panoramica totale.
+- **Sync in tempo reale**: Molte impostazioni (come il cambio personalità o voce) vengono applicate istantaneamente senza riavvio.
 
 **Salvataggio e Riavvio:**
-I cambiamenti possono essere scartati con `ESC` o salvati con l'uscita confermata. In caso di modifiche, il sistema eseguirà un **Riavvio a Freddo** automatico in 1 secondo per applicare i nuovi parametri.
+Le modifiche critiche (es. cambio porta o HTTPS) richiedono un **Riavvio a Freddo** automatico gestito dal Watchdog di sistema per garantire l'integrità dei servizi.

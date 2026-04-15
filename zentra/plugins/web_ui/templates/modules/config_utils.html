@@ -1,0 +1,79 @@
+<!-- WEB TOOLS PANEL -->
+<div id="tab-web" class="panel">
+  <div class="card">
+    <div class="card-title">🌍 Web Tools & Connectivity</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Web Search & Crawling</div>
+      <label class="switch"><input type="checkbox" id="web-enabled" data-plugin="WEB"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted);">Allows Zentra to browse the live web and download page contents for analysis.</p>
+  </div>
+</div>
+
+<!-- WEBCAM PANEL -->
+<div id="tab-webcam" class="panel">
+  <div class="card">
+    <div class="card-title">📷 Webcam Interface</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Real-time Vision (Webcam)</div>
+      <label class="switch"><input type="checkbox" id="webcam-enabled" data-plugin="WEBCAM"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted);">Use your device's camera to feed visual data to Zentra's vision modules.</p>
+  </div>
+</div>
+
+<!-- EXECUTOR PANEL -->
+<div id="tab-executor" class="panel">
+  <div class="card">
+    <div class="card-title">⚡ Command Executor</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable System Command Execution</div>
+      <label class="switch"><input type="checkbox" id="executor-enabled" data-plugin="EXECUTOR"><span class="slider"></span></label>
+    </div>
+    <small style="color:var(--red); font-size:11px;">⚠️ USE WITH CAUTION: Allows Zentra to run scripts and system commands.</small>
+  </div>
+</div>
+
+<!-- DASHBOARD PANEL -->
+<div id="tab-dashboard" class="panel">
+  <div class="card">
+    <div class="card-title">📊 OS Dashboard</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Real-time Metrics Dashboard</div>
+      <label class="switch"><input type="checkbox" id="dashboard-enabled" data-plugin="DASHBOARD"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted);">Exposes system telemetry and performance logs in a specialized view.</p>
+  </div>
+</div>
+
+<!-- DOMOTICA PANEL -->
+<div id="tab-domotica" class="panel">
+  <div class="card">
+    <div class="card-title">🏠 Smart Home (Domotica)</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable IoT / Home Automation Bridge</div>
+      <label class="switch"><input type="checkbox" id="domotica-enabled" data-plugin="DOMOTICA"><span class="slider"></span></label>
+    </div>
+  </div>
+</div>
+
+<!-- WEBUI ENGINE PANEL -->
+<div id="tab-webui" class="panel">
+  <div class="card">
+    <div class="card-title">🌐 WebUI Engine (Port & Networking)</div>
+    <div class="grid-2">
+      <div class="field">
+        <label>Web Server Port</label>
+        <input type="number" id="webui-port" placeholder="8080">
+      </div>
+      <div class="field">
+        <label>API Interface Port</label>
+        <input type="number" id="webui-api-port" placeholder="5000">
+      </div>
+    </div>
+    <div class="toggle-row" style="margin-top:10px;">
+        <div class="toggle-info">Force Security (Force Login)</div>
+        <label class="switch"><input type="checkbox" id="webui-force-login"><span class="slider"></span></label>
+    </div>
+  </div>
+</div>

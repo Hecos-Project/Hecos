@@ -1,22 +1,21 @@
 <!-- config_security.html -->
 <div id="tab-security" class="panel">
-    <h2 class="config-section-title">{{ t('webui_conf_pki_title') }}</h2>
-    <p style="color:var(--muted); font-size:14px; margin-bottom:20px;">
-        {{ t('webui_conf_pki_desc') }}
-    </p>
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-title" style="margin-bottom:4px;">{{ t('webui_conf_pki_title') }}</div>
+        <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">
+            {{ t('webui_conf_pki_desc') }}
+        </p>
 
-    <!-- CARD CA DOWNLOAD -->
-    <div class="card p-4" style="background:var(--bg-lighter); border:1px solid var(--border); border-radius:10px; margin-bottom:24px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
             <div>
-                <h4 style="margin:0; color:var(--text); font-family:'JetBrains Mono', monospace;">ROOT CERTIFICATE (rootCA.pem)</h4>
-                <p style="margin:5px 0 0 0; color:var(--muted); font-size:12px;">Identifies this network as a 100% trusted source.</p>
+                <div class="card-title" style="margin:0; font-family:'JetBrains Mono', monospace; font-size:14px;">ROOT CERTIFICATE (rootCA.pem)</div>
+                <div style="margin:5px 0 0 0; color:var(--muted); font-size:12px;">Identifies this network as a 100% trusted source.</div>
             </div>
             <div style="display:flex; gap:10px;">
-                <button class="btn btn-primary" onclick="downloadRootCA()" style="background:#45a29e; border:none; padding:10px 16px; border-radius:8px; font-weight:bold; cursor:pointer; color:#0b0c10;">
+                <button class="btn btn-primary" onclick="downloadRootCA()" style="font-weight:bold;">
                     📥 {{ t('webui_conf_pki_download_btn') }}
                 </button>
-                <button class="btn btn-secondary" onclick="window.open('/zentra/docs/pki_guide.md', '_blank')" style="border-radius:8px; padding:10px 16px;">
+                <button class="btn btn-secondary" onclick="window.open('/zentra/docs/pki_guide.md', '_blank')">
                     {{ t('webui_conf_pki_guide_btn') }}
                 </button>
             </div>
@@ -25,14 +24,14 @@
         <hr style="border-color:var(--border); margin:20px 0;">
         
         <!-- IOS INSTRUCTIONS -->
-        <h5 style="color:var(--accent);">How to install on iPhone / iPad (iOS):</h5>
+        <div class="card-title" style="font-size:13px;">{{ t('webui_security_ios_title') }}</div>
         <ol style="color:var(--muted); font-size:13px; line-height:1.6;">
-            <li>Click the button above and "Allow" the "Configuration Profile" download.</li>
-            <li>Open the <b>Settings</b> app on your iPhone. A "Profile Downloaded" message will appear at the top.</li>
-            <li>Tap it and press <b>Install</b> (you will be asked for your phone's passcode).</li>
-            <li>Go back to Settings > General > About > <b>Certificate Trust Settings</b> (at the bottom).</li>
-            <li>Toggle the switch for <b>Zentra Local Root CA</b> to enable it.</li>
-            <li>Close all Safari/Chrome tabs and reopen Zentra. You will have the green lock!</li>
+            <li>{{ t('webui_security_ios_step1') }}</li>
+            <li>{{ t('webui_security_ios_step2') }}</li>
+            <li>{{ t('webui_security_ios_step3') }}</li>
+            <li>{{ t('webui_security_ios_step4') }}</li>
+            <li>{{ t('webui_security_ios_step5') }}</li>
+            <li>{{ t('webui_security_ios_step6') }}</li>
         </ol>
     </div>
 </div>

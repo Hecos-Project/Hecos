@@ -2,8 +2,6 @@
 // Extracts DOM mapping and Payload Building from config_core.js
 
 const RESTART_FIELDS = [
-  'system-port',
-  'system-api-port',
   'sys-https-enabled'
 ];
 
@@ -65,6 +63,8 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
 
 function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 function setCheck(id, val) { const el = document.getElementById(id); if (el) el.checked = val; }
+function getV(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+function getC(id) { const el = document.getElementById(id); return el ? el.checked : false; }
 
 function populateUI() {
   try {
@@ -113,8 +113,8 @@ function populateUI() {
     setVal('ia-instructions', c.ai?.special_instructions || '');
     setCheck('ia-save-instructions', c.ai?.save_special_instructions || false);
 
-    setCheck('ia-roleplay-mode', c.ai?.roleplay_mode || false);
-    setVal('ia-roleplay-disclaimer', c.ai?.roleplay_disclaimer || '');
+    setCheck('ia-roleplay-mode', c.ai.persona_roleplay_mode);
+    setVal('ia-roleplay-disclaimer', c.ai.safety_disclaimer || '');
     
     // Load the avatar preview for the currently selected persona
     if (typeof window.loadPersonaAvatar === 'function') {
@@ -145,14 +145,19 @@ function populateUI() {
     // 3. System Module Dispatch
     if (typeof populateSystemUI === 'function') populateSystemUI();
 
-    // 4. Media Module Dispatch
+    // 4. Media & Image Gen Dispatch
     if (typeof populateMediaUI === 'function') populateMediaUI();
-    
+        
     // 5. Drive Module Dispatch
     populateDriveUI();
 
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
+    
+    // 7. Roleplay, Privacy & WebUI Dispatch
+    populateRoleplayUI();
+    populatePrivacyUI();
+    populateWebUIConfig();
 
     // Sync all standalone plugin toggles
     document.querySelectorAll('[data-plugin]').forEach(cb => {
@@ -224,6 +229,7 @@ function initRestartIndicators() {
 function renderPlugins(plugins) {
   const cont = document.getElementById('plugin-list');
   if (!cont) return;
+  const hub = window.CONFIG_HUB;
   const I18N = window.I18N || {};
   const descs = {
     DASHBOARD:   I18N.plugin_desc_dashboard,
@@ -235,21 +241,42 @@ function renderPlugins(plugins) {
     WEB:         I18N.plugin_desc_web,
     WEBCAM:      I18N.plugin_desc_webcam,
     WEB_UI:      I18N.plugin_desc_webui,
-    IMAGE_GEN:   'Generazione Immagini AI (Pollinations)',
-    DRIVE:       I18N.webui_conf_plugin_desc_drive || 'Gestore File HTTP (Zentra Drive)',
-    REMOTE_TRIGGERS: 'PTT via Media Keys (iPhone), Bluetooth & Webhooks',
-    MCP_BRIDGE:  'Universal Protocol Hub (Connect external AI tools via MCP)'
+    IMAGE_GEN:   window.t ? window.t('webui_desc_igen') : 'AI Image Generation (Pollinations/Flux)',
+    DRIVE:       window.t ? window.t('webui_desc_drive') : 'HTTP File Manager (Zentra Drive)',
+    REMOTE_TRIGGERS: window.t ? window.t('webui_desc_triggers') : 'Remote PTT & Media Keys',
+    MCP_BRIDGE:  window.t ? window.t('webui_desc_mcp') : 'Universal MCP Bridge',
+    DRIVE_EDITOR: window.t ? window.t('webui_desc_editor') : 'Integrated Code Editor'
   };
+
   let html = '';
-  for (const [tag, pCfg] of Object.entries(plugins)) {
+  
+  // Group 1: Native & Static Modules from Hub
+  hub.modules.forEach(m => {
+    if (!m.pluginTag || m.id === 'plugins') return;
+    
+    const tag = m.pluginTag;
+    const pCfg = plugins[tag] || { enabled: true };
     const on = pCfg.enabled !== false;
     const lazyOn = pCfg.lazy_load === true;
+    const translatedName = window.t ? window.t(m.label) : m.label;
+    const desc = descs[tag] || translatedName;
+    const icon = m.icon || '🧩';
+
     html += `<div class="plugin-row">
-      <div><div class="plugin-name">${tag} <label style="font-size:10px; color:var(--muted); margin-left:10px; cursor:pointer;" title="Abilita Lazy Loading"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''} style="vertical-align:middle"> Lazy</label></div>${descs[tag] ? `<div class="plugin-desc">${descs[tag]}</div>` : ''}</div>
+      <div class="plugin-info-main">
+        <span class="p-icon">${icon}</span>
+        <div class="plugin-meta">
+            <div class="plugin-name">${translatedName} <span class="p-tag">${tag}</span>
+              <label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>
+            </div>
+            <div class="plugin-desc">${desc}</div>
+        </div>
+      </div>
       <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''}><span class="slider"></span></label>
     </div>`;
-  }
-  cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No plugins'}</p>`;
+  });
+
+  cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No modules discovered'}</p>`;
 }
 
 function buildPayload() {
@@ -290,30 +317,35 @@ function buildPayload() {
     });
 
     out.routing_engine = out.routing_engine || {};
-    out.routing_engine.mode       = document.getElementById('route-mode').value;
-    out.routing_engine.legacy_models = document.getElementById('route-models').value;
+    out.routing_engine.mode       = getV('route-mode') || 'auto';
+    out.routing_engine.legacy_models = getV('route-models');
 
     out.ai = out.ai || {};
-    out.ai.active_personality = document.getElementById('ia-personality').value;
-    out.ai.avatar_size = document.getElementById('ia-avatar-size').value;
-    out.ai.special_instructions = document.getElementById('ia-instructions').value;
-    out.ai.save_special_instructions = document.getElementById('ia-save-instructions').checked;
-    out.ai.roleplay_mode = document.getElementById('ia-roleplay-mode').checked;
-    out.ai.roleplay_disclaimer = document.getElementById('ia-roleplay-disclaimer').value;
+    out.ai.active_personality = getV('ia-personality');
+    out.ai.avatar_size = getV('ia-avatar-size');
+    out.ai.special_instructions = getV('ia-instructions');
+    out.ai.save_special_instructions = getC('ia-save-instructions');
+    out.ai.persona_roleplay_mode = getC('ia-roleplay-mode');
+    out.ai.safety_disclaimer = getV('ia-roleplay-disclaimer');
+
+    out.privacy = out.privacy || {};
+    out.privacy.default_mode = getV('pr-default-mode') || 'normal';
+    out.privacy.auto_wipe_enabled = getC('pr-auto-wipe');
+    out.privacy.incognito_shortcut = getC('pr-incognito-shortcut');
 
     out.bridge = out.bridge || {};
-    out.bridge.use_processor        = document.getElementById('br-processor').checked;
-    out.bridge.remove_think_tags    = document.getElementById('br-think-tags').checked;
-    out.bridge.debug_log             = document.getElementById('br-debug').checked;
-    out.bridge.enable_tools         = document.getElementById('br-tools').checked;
-    out.bridge.webui_voice_stt        = document.getElementById('br-voice-stt').checked;
-    out.bridge.webui_voice_enabled = document.getElementById('br-voice-enabled').checked;
-    out.bridge.chunk_delay_ms      = parseInt(document.getElementById('br-delay').value);
+    out.bridge.use_processor        = getC('br-processor');
+    out.bridge.remove_think_tags    = getC('br-think-tags');
+    out.bridge.debug_log             = getC('br-debug');
+    out.bridge.enable_tools         = getC('br-tools');
+    out.bridge.webui_voice_stt        = getC('br-voice-stt');
+    out.bridge.webui_voice_enabled = getC('br-voice-enabled');
+    out.bridge.chunk_delay_ms      = parseInt(getV('br-delay')) || 0;
 
     out.filters = out.filters || {};
-    out.filters.remove_asterisks       = document.getElementById('fl-ast').checked;
-    out.filters.remove_round_brackets  = document.getElementById('fl-tonde').checked;
-    out.filters.remove_square_brackets = document.getElementById('fl-quadre').checked;
+    out.filters.remove_asterisks       = getC('fl-ast');
+    out.filters.remove_round_brackets  = getC('fl-tonde');
+    out.filters.remove_square_brackets = getC('fl-quadre');
 
     // Dispatch to System Logic for its part of the payload
     if (typeof buildSystemPayload === 'function') {
@@ -354,6 +386,21 @@ function buildPayload() {
     if (rtPart && rtPart.plugins && rtPart.plugins.REMOTE_TRIGGERS) {
         out.plugins['REMOTE_TRIGGERS'] = out.plugins['REMOTE_TRIGGERS'] || {};
         out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
+    }
+
+    // Roleplay & Other AI Extras
+    const rpPart = buildRoleplayPayload();
+    if (rpPart.ai) {
+        // Sync roleplay-specific items ONLY if they are not the ones managed in the main Persona tab
+        // Or better: only take special_instructions if roleplay-tab is providing it
+        if (rpPart.ai.special_instructions) {
+            out.ai.special_instructions = rpPart.ai.special_instructions;
+        }
+    }
+    const webuiPart = buildWebUIPayload();
+    if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
+        out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
+        Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
     }
 
     document.querySelectorAll('[data-plugin-lazy]').forEach(cb => {
@@ -420,8 +467,61 @@ function buildRemoteTriggersPayload() {
     };
 }
 
+function populateRoleplayUI() {
+    const c = window.cfg;
+    const sysOptions = window.sysOptions;
+    if (!c || !c.ai) return;
+    populateSelect('rp-personality', sysOptions.personalities || [], c.ai.active_personality, true);
+    setCheck('rp-enabled', c.ai.persona_roleplay_mode ?? false);
+    setVal('rp-instructions', c.ai.special_instructions || '');
+}
+
+function buildRoleplayPayload() {
+    const el = document.getElementById('rp-enabled');
+    if (!el) return {};
+    return {
+        ai: {
+            persona_roleplay_mode: el.checked,
+            active_personality: getV('rp-personality'),
+            special_instructions: getV('rp-instructions')
+        }
+    };
+}
+
+function populateWebUIConfig() {
+    const c = window.cfg;
+    if (!c || !c.plugins || !c.plugins.WEB_UI) return;
+    const w = c.plugins.WEB_UI;
+    setVal('webui-port', w.port || 8080);
+    setVal('webui-api-port', w.api_port || 5000);
+    setCheck('webui-force-login', w.force_login ?? true);
+}
+
+function buildWebUIPayload() {
+    const el = document.getElementById('webui-port');
+    if (!el) return {};
+    return {
+        plugins: {
+            WEB_UI: {
+                port: parseInt(el.value) || 8080,
+                api_port: parseInt(document.getElementById('webui-api-port').value) || 5000,
+                force_login: document.getElementById('webui-force-login').checked
+            }
+        }
+    };
+}
+
 function isRestartNeeded() {
   return document.querySelectorAll('.restart-badge.visible').length > 0;
+}
+
+
+function populatePrivacyUI() {
+    const c = window.cfg;
+    if (!c || !c.privacy) return;
+    setVal('pr-default-mode', c.privacy.default_mode || 'normal');
+    setCheck('pr-auto-wipe', c.privacy.auto_wipe_enabled ?? false);
+    setCheck('pr-incognito-shortcut', c.privacy.incognito_shortcut ?? true);
 }
 
 // Global Exports
@@ -432,3 +532,4 @@ window.setCheck = setCheck;
 window.renderPlugins = renderPlugins;
 window.buildPayload = buildPayload;
 window.isRestartNeeded = isRestartNeeded;
+window.populatePrivacyUI = populatePrivacyUI;

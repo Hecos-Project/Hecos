@@ -9,6 +9,11 @@ import os
 import sys
 import json
 import argparse
+from datetime import datetime
+try:
+    from zentra.core.logging.hub import get_hub
+except ImportError:
+    get_hub = None
 
 # Bootstrap path: ensure project root is in sys.path
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,6 +25,27 @@ from zentra.core.system import instance_lock
 # Path configuration
 DEFAULT_MAIN_SCRIPT = os.path.join("zentra", "main.py")
 CONFIG_FILE = os.path.join("zentra", "config", "data", "system.yaml")
+
+# Logging configuration
+LOGS_DIR = os.path.join("zentra", "logs")
+os.makedirs(LOGS_DIR, exist_ok=True)
+MONITOR_LOG = os.path.join(LOGS_DIR, "zentra_monitor.log")
+
+def monitor_log(msg):
+    ts = time.strftime("%Y-%m-%d %H:%M:%S")
+    formatted = f"{ts} [MONITOR] {msg}"
+    print(formatted)
+    try:
+        with open(MONITOR_LOG, "a", encoding="utf-8") as f:
+            f.write(formatted + "\n")
+        if get_hub:
+            hub = get_hub()
+            if hub:
+                hub.broadcast("INFO", msg, "MONITOR")
+    except: pass
+
+# Replace print calls with monitor_log
+def print_trace(msg): monitor_log(msg)
 
 def get_translator():
     language = "en"
@@ -35,18 +61,18 @@ def get_translator():
     
     translations = {
         "it": {
-            "critical_missing": "[MONITOR] CRITICAL: {file} not found.",
-            "starting": "[MONITOR] Starting Zentra ({script})...",
-            "config_changed": "[MONITOR] system.yaml change detected. Terminating...",
-            "reset_complete": "[MONITOR] Reset complete. Restarting in 2 seconds...",
-            "error": "[MONITOR] Error: {error}"
+            "critical_missing": "CRITICAL: {file} not found.",
+            "starting": "Starting Zentra ({script})...",
+            "config_changed": "system.yaml change detected. Terminating...",
+            "reset_complete": "Reset complete. Restarting in 2 seconds...",
+            "error": "Error: {error}"
         },
         "en": {
-            "critical_missing": "[MONITOR] CRITICAL: {file} not found.",
-            "starting": "[MONITOR] Starting Zentra ({script})...",
-            "config_changed": "[MONITOR] system.yaml change detected. Terminating...",
-            "reset_complete": "[MONITOR] Reset complete. Restarting in 2 seconds...",
-            "error": "[MONITOR] Error: {error}"
+            "critical_missing": "CRITICAL: {file} not found.",
+            "starting": "Starting Zentra ({script})...",
+            "config_changed": "system.yaml change detected. Terminating...",
+            "reset_complete": "Reset complete. Restarting in 2 seconds...",
+            "error": "Error: {error}"
         }
     }
     return lambda key, **kwargs: translations.get(language, translations["en"]).get(key, key).format(**kwargs)
@@ -67,7 +93,7 @@ def start_and_monitor(script_to_run):
             return False
 
     last_config_time = get_file_timestamp(CONFIG_FILE)
-    print(t("starting", script=script_to_run))
+    monitor_log(t("starting", script=script_to_run))
     
     # Process startup: handle both direct scripts and module-style runs
     # Inietta la root nel PYTHONPATH del sottoprocesso per garantire la risoluzione di 'zentra'
@@ -87,13 +113,14 @@ def start_and_monitor(script_to_run):
             current_config_time = get_file_timestamp(CONFIG_FILE)
             if current_config_time > last_config_time + 1:
                 # Check for flag set by app to avoid unnecessary restarts
-                if os.path.exists(".config_saved_by_app"):
-                    try: os.remove(".config_saved_by_app")
+                flag_path = os.path.join(_ROOT, ".config_saved_by_app")
+                if os.path.exists(flag_path):
+                    try: os.remove(flag_path)
                     except: pass
                     last_config_time = current_config_time
                     continue
                 
-                print(f"\n{t('config_changed')}")
+                monitor_log(f"system.yaml change detected (delta: {current_config_time - last_config_time}s). Terminating...")
                 process.terminate()
                 # Wait for process to close (max 5 seconds)
                 try:
@@ -101,7 +128,7 @@ def start_and_monitor(script_to_run):
                 except subprocess.TimeoutExpired:
                     process.kill() # Force close if unresponsive
                 
-                print(t("reset_complete"))
+                monitor_log(t("reset_complete"))
                 time.sleep(2) # Safety pause for GPU
                 return True
                 
@@ -110,7 +137,7 @@ def start_and_monitor(script_to_run):
             time.sleep(1) # Safety pause before new incarnation
             return True # Restart on request code 42
         else:
-            print(f"[MONITOR] Process exited with code: {process.returncode}")
+            monitor_log(f"Process exited with code: {process.returncode}")
             return False # Normal closure or different error, do not restart
                     
     except Exception as e:
@@ -126,7 +153,7 @@ if __name__ == "__main__":
 
     print(f"\n{'-'*55}")
     print(f" [MONITOR] Zentra Core Watchdog Active")
-    print(f" Target: {args.script}")
+    monitor_log(f"Target: {args.script}")
     print(f"{'-'*55}\n")
     
     # Determine lock name based on script

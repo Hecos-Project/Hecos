@@ -1,5 +1,5 @@
 """
-MODULO: Interface & UI - Zentra Core v0.17.0
+MODULO: Interface & UI - Zentra Core v0.18.0
 DESCRIZIONE: Gestisce la UI del terminale, le dashboard hardware e i tasti funzione.
 
 "Nello specifico: Disegna la barra blu di stato (modello, voce, anima) e la barra 

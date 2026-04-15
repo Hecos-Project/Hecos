@@ -1,4 +1,4 @@
-# 🌌 Zentra Core - Unified Guide (v0.17.0)
+# 🌌 Zentra Core - Unified Guide (v0.18.0)
 Welcome to the official Zentra Core guide. This document summarizes everything you need to know to install, configure, and use your private, offline AI assistant.
 
 ---
@@ -25,7 +25,22 @@ Zentra requires mandatory authentication to protect your data:
 
 ---
 
-## ✨ 4. Key Features (v0.17.0)
+### 🛡️ 3.5. 3-Tier Privacy Modes (v0.18.0)
+Zentra now features a refined privacy selector in the chat sidebar:
+- ☁️ **Normal**: Standard persistent session stored in the local SQLite database.
+- 🔒 **Auto-Wipe**: History remains in memory while the system is active, but is **not** written to disk. The session is destroyed upon system restart.
+- 🕵️ **Incognito**: Zero-trace mode. Messages are never stored; if you switch chats, the context is cleared.
+*Note: The session mode is locked after the first message is sent to ensure context integrity.*
+
+---
+
+### ⚡ Direct Commands (AI Bypass)
+To perform fast actions or bypass LLM safety filters for images:
+- `/img`, `/image`, `/photo`, `/foto [prompt]`: Triggers direct image generation via provider (Hugging Face, Pollinations, etc.).
+
+---
+
+## ✨ 4. Key Features (v0.18.0)
 
 ### 🔌 MCP Bridge & Discovery (Universal Tool Hub)
 The Model Context Protocol (MCP) allows Zentra to use external tools.
@@ -55,4 +70,4 @@ Zentra's interface is fully responsive. You can use it from your smartphone like
 - **Official Wiki**: [GitHub Wiki](https://github.com/Zentra-Core/zentra-core.github.io/wiki)
 
 ---
-*Zentra Core is in Runtime Alpha stage (v0.17.0). Use responsibly.*
+*Zentra Core is in Runtime Alpha stage (v0.18.0). Use responsibly.*

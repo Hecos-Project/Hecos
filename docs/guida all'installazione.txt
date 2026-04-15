@@ -1,5 +1,5 @@
 ===================================================
- GUIDA ALL'INSTALLAZIONE DI ZENTRA CORE v0.17.0
+ GUIDA ALL'INSTALLAZIONE DI ZENTRA CORE v0.18.0
           (Per PC "vergine" - da zero)
 ===================================================
 

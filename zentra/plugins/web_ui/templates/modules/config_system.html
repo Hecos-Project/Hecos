@@ -1,21 +1,14 @@
 <!-- SYSTEM PANEL -->
 <div id="tab-system" class="panel">
+  
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_sys_log_title') }}</div>
+    <div class="card-title">Console Logging (Core Node)</div>
     <div class="field">
       <label>{{ t('webui_conf_sys_log_level') }}</label>
       <select id="log-level">
         <option value="INFO">Info</option>
         <option value="DEBUG">Debug</option>
       </select>
-    </div>
-    <div class="toggle-row" style="margin-top:15px;">
-      <div class="toggle-info">Flask Debug Mode (Server)</div>
-      <label class="switch"><input type="checkbox" id="sys-flask-debug"><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info">Abilita HTTPS (WebUI sicura)</div>
-      <label class="switch"><input type="checkbox" id="sys-https-enabled"><span class="slider"></span></label>
     </div>
     <div class="field">
       <label>{{ t('webui_conf_sys_log_type') }}</label>
@@ -33,9 +26,25 @@
         <option value="file_only">{{ t('webui_conf_sys_log_file') }}</option>
       </select>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Log Command Center (WebUI)</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Error Beeps (Audio Alerts)</div>
+      <label class="switch"><input type="checkbox" id="log-error-beeps"><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Server & Boot Settings</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_conf_sys_fastboot') }}</div>
       <label class="switch"><input type="checkbox" id="sys-fastboot"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row" style="margin-top:15px;">
+      <div class="toggle-info">Flask Debug Mode (Server)</div>
+      <label class="switch"><input type="checkbox" id="sys-flask-debug"><span class="slider"></span></label>
     </div>
     <div class="field" style="margin-top:20px;">
       <label>{{ t('webui_conf_sys_lang') }}</label>

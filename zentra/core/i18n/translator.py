@@ -48,6 +48,10 @@ class Translator:
             self.language = language
             self._load_translations()
 
+    def get_translations(self):
+        """Returns the full dictionary for the current language."""
+        return self.translations
+
     def t(self, key, **kwargs):
         """
         Retrieves the translated string and interpolates variables.

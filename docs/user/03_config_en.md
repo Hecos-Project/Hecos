@@ -8,8 +8,11 @@ Zentra provides Function Keys (F1-F7) to interact and re-parameterize the system
 * **[ F4 ] TOGGLE LISTENING (MIC):** Activates or deactivates microphone capture.
 * **[ F5 ] TOGGLE VOICE (TTS):** Enables or silences visual voice synthesis.
 
-### 🎛️ THE [ F7 ] CONTROL PANEL
-Through a menu-based graphical interface, it offers granular control over Zentra Core. It allows editing of boolean, numeric, or string parameters.
+### 🎛️ Zentra Hub (Config Panel)
+Accessible via **F7** or the WebUI, the Hub is Zentra's command center. Recently redesigned with a **Premium Symmetrical aesthetic**, it offers:
+- **Tabbed Navigation**: Organized categories (Backend, LLM, Persona, Voice, etc.) for streamlined management.
+- **Dynamic Switcher**: Toggle instantly between Tab View and "Wall" View for a total system overview.
+- **Real-time Sync**: Many settings (like persona or voice swaps) apply instantly without a full reboot.
 
-**Saving and Rebooting:**
-Changes can be discarded with `ESC` or saved upon confirmed exit. If modified, the system will perform an automatic **Cold Reboot** in 1 second to apply the new parameters.
+**Saving and Restarting:**
+Critical changes (e.g., port changes or HTTPS) trigger an automatic **Cold Reboot** handled by the system Watchdog to ensure service integrity.

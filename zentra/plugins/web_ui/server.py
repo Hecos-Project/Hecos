@@ -16,7 +16,6 @@ from zentra.app.state_manager import StateManager
 from zentra.app.threads import AscoltoThread
 
 import sys
-print(f"[DEBUG BOOT] server.py loaded from: {__file__}", flush=True)
 _server_lock = threading.Lock()
 
 def set_state_manager(sm) -> None:
@@ -43,7 +42,6 @@ class ZentraWebUIServer:
         self.root_dir = root_dir
         self.port = port
         self.logger = logger or logging.getLogger()
-        print(f"[DEBUG BOOT] ZentraWebUIServer init. root_dir={self.root_dir}", flush=True)
         self._thread = None
 
     def start(self) -> None:
@@ -131,6 +129,9 @@ class ZentraWebUIServer:
         try:
             init_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
             
+            from .routes_logs import init_log_routes
+            init_log_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
+
             from .routes_chat import init_chat_routes
             init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
             
@@ -139,6 +140,9 @@ class ZentraWebUIServer:
             
             from .routes_mcp import init_mcp_routes
             init_mcp_routes(app, self.config_manager, self.logger)
+            
+            from .routes_history import history_bp
+            app.register_blueprint(history_bp)
         except Exception as e:
             import traceback
             print(f"[DEBUG BOOT] CRITICAL ERROR during route registration: {e}", flush=True)
@@ -153,39 +157,94 @@ class ZentraWebUIServer:
                 use_https = webui_cfg.get("https_enabled", False)
                 scheme = "https" if use_https else "http"
 
-                if use_https:
-                    # 1. Determina l'IP per passarlo nel SAN del certificato
-                    try:
-                        import socket
-                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        s.connect(('10.254.254.254', 1))
-                        lan_ip = s.getsockname()[0]
-                        s.close()
-                    except Exception:
-                        lan_ip = "127.0.0.1"
+                # Calculate internal LAN IP
+                try:
+                    import socket
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(('10.254.254.254', 1))
+                    lan_ip = s.getsockname()[0]
+                    s.close()
+                except Exception:
+                    lan_ip = "127.0.0.1"
 
-                    # 2. Genera Root CA e Certificato Host
-                    from zentra.core.security.pki import CAManager, CertGenerator
-                    try:
-                        ca = CAManager()
-                        cert_gen = CertGenerator(ca)
-                        cert_file, key_file = cert_gen.generate_host_cert(lan_ip)
-                        ssl_context = (cert_file, key_file)
-                    except Exception as e:
-                        import traceback
-                        self.logger.error(f"[WebUI] Errore CRITICO generazione Zentra PKI: {e}\n{traceback.format_exc()}")
-                        self.logger.warning("[WebUI] Fallback forzato a HTTP a causa di errore certificato.")
+                if use_https:
+                    cert_file = webui_cfg.get("cert_file")
+                    key_file = webui_cfg.get("key_file")
+
+                    # ── Resolve relative paths to absolute (relative to project root) ──────
+                    # system.yaml may store relative paths like "certs/cert.pem".
+                    # os.path.exists() on a relative path depends on CWD, which is unreliable.
+                    # We anchor relative paths to the project root (two levels up from this plugin).
+                    _plugin_dir = os.path.dirname(os.path.abspath(__file__))
+                    _project_root = os.path.normpath(os.path.join(_plugin_dir, "..", "..", ".."))
+
+                    def _resolve(p):
+                        if p and not os.path.isabs(p):
+                            return os.path.join(_project_root, p)
+                        return p
+
+                    cert_file_abs = _resolve(cert_file)
+                    key_file_abs  = _resolve(key_file)
+                    # ─────────────────────────────────────────────────────────────────────────
+
+                    # ── Check if the existing cert covers the current LAN IP ──────────────
+                    # When the LAN IP changes (e.g. DHCP reassignment), or the cert was
+                    # generated for a different IP, we need to regenerate it.
+                    def _cert_covers_ip(cert_path, ip):
+                        """Returns True if the cert has `ip` in its SANs."""
+                        try:
+                            from cryptography import x509
+                            with open(cert_path, "rb") as f:
+                                cert = x509.load_pem_x509_certificate(f.read())
+                            san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+                            import ipaddress as _ip
+                            for entry in san.value:
+                                if isinstance(entry, x509.IPAddress) and str(entry.value) == ip:
+                                    return True
+                                if isinstance(entry, x509.DNSName) and entry.value == ip:
+                                    return True
+                        except Exception:
+                            pass
+                        return False
+
+                    certs_ok = (
+                        cert_file_abs and key_file_abs
+                        and os.path.exists(cert_file_abs)
+                        and os.path.exists(key_file_abs)
+                        and _cert_covers_ip(cert_file_abs, lan_ip)
+                    )
+
+                    # Auto-generate only when truly missing or IP has changed
+                    if not certs_ok:
+                        try:
+                            from zentra.core.security.pki.ca_manager import CAManager
+                            from zentra.core.security.pki.cert_generator import CertGenerator
+
+                            self.logger.info("[PKI] Certificates missing or stale. Regenerating for %s...", lan_ip)
+                            ca_mgr  = CAManager()
+                            cert_gen = CertGenerator(ca_mgr)
+
+                            c_path, k_path = cert_gen.generate_host_cert(lan_ip)
+
+                            # Persist the absolute paths so the next restart resolves correctly
+                            webui_cfg = self.config_manager.config.get("plugins", {}).get("WEB_UI", {})
+                            webui_cfg["cert_file"] = c_path
+                            webui_cfg["key_file"]  = k_path
+                            self.config_manager.save()
+
+                            cert_file_abs = c_path
+                            key_file_abs  = k_path
+                            self.logger.info("[PKI] New certificates saved for %s.", lan_ip)
+                        except Exception as pki_e:
+                            self.logger.error("[PKI] Automation failed: %s", pki_e)
+
+
+                    if cert_file_abs and key_file_abs and os.path.exists(cert_file_abs) and os.path.exists(key_file_abs):
+                        ssl_context = (cert_file_abs, key_file_abs)
+                    else:
+                        self.logger.warning("[WebUI] HTTPS enabled but cert/key not found. Fallback to HTTP.")
                         scheme = "http"
-                        
-                else:
-                    try:
-                        import socket
-                        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        s.connect(('10.254.254.254', 1))
-                        lan_ip = s.getsockname()[0]
-                        s.close()
-                    except Exception:
-                        lan_ip = "127.0.0.1"
+                        use_https = False
 
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
@@ -320,7 +379,8 @@ if __name__ == "__main__":
     def is_webui_already_open(root_dir):
         """Check if a WebUI tab is already active via heartbeat file."""
         # hb_file is in zentra/logs/
-        hb_file = os.path.join(LOGS_DIR, "webui_heartbeat.json")
+        import tempfile
+        hb_file = os.path.join(tempfile.gettempdir(), "zentra_webui_heartbeat.json")
         if not os.path.exists(hb_file): 
             return False
         try:

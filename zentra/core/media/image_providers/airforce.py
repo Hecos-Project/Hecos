@@ -9,7 +9,9 @@ class AirforceProvider:
         return ["flux"]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         """Generate image via Airforce free API."""
         eng_prompt = ensure_english_prompt(prompt)
         import requests

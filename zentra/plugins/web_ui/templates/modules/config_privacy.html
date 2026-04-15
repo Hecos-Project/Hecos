@@ -1,0 +1,100 @@
+<!-- CONFIG PRIVACY PANEL — Zentra Hub Privacy Settings Tab -->
+<div id="tab-privacy" class="panel" style="padding:20px;">
+
+  <div class="card" style="max-width:720px; margin:0 auto;">
+    <div class="card-title">🕵️ Privacy & Confidentiality</div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:24px;">
+      Configure how Zentra handles your conversation data. Changes apply to new sessions.
+    </p>
+
+    <!-- Default Mode -->
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">Default Privacy Mode</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Mode applied to every new chat session.</div>
+      </div>
+      <select id="pr-default-mode" class="config-input" style="width:250px;">
+        <option value="normal">👁 Normal — Full history saved</option>
+        <option value="auto_wipe">🔒 Auto-Wipe</option>
+        <option value="incognito">🕵️ Incognito</option>
+      </select>
+    </div>
+
+    <!-- Auto-wipe on clear -->
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">Auto-Wipe on Clear</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">In Auto-Wipe mode, delete messages when you start a new chat.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="pr-auto-wipe">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <hr style="border-color:var(--border); margin:20px 0;">
+    <div class="card-title" style="font-size:13px;">WHAT TO DELETE ON WIPE</div>
+
+    <!-- Wipe targets -->
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">💬 Messages</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Chat messages from the session.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="priv-wipe-messages" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">🧠 Memory Context</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Clear AI identity and context memory.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="priv-wipe-context">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">👤 User Profile Notes</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Clear admin notes from the user profile.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="priv-wipe-profile">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <hr style="border-color:var(--border); margin:20px 0;">
+    <div class="card-title" style="font-size:13px;">APP FEATURES</div>
+    
+    <!-- Incognito Shortcut -->
+    <div class="toggle-row" style="align-items:flex-start;">
+      <div>
+        <div class="toggle-info">Incognito Shortcut</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Show a quick incognito toggle in the chat topbar.</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="pr-incognito-shortcut" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <hr style="border-color:var(--border); margin:20px 0;">
+
+    <!-- Manual actions -->
+    <div class="card-title" style="font-size:13px;">MANUAL ACTIONS</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" class="btn btn-secondary" onclick="privacyWipeAll()"
+        style="border-color:#f87171; color:#f87171;">
+        🗑️ Wipe All Chat History
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="privacyWipeOld()">
+        🧹 Wipe History Older Than 30 Days
+      </button>
+    </div>
+    <div id="priv-msg" style="margin-top:12px; font-size:12px; color:var(--muted);"></div>
+  </div>
+</div>
+

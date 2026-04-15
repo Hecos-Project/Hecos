@@ -1,22 +1,42 @@
 <!-- SYS NET PANEL -->
 <div id="tab-sysnet" class="panel">
-  <div class="card">
-    <div class="card-title">🌐 Sys Net — Rete &amp; Proxy</div>
-    <p style="color:var(--muted); font-size:13px; margin-bottom:18px;">
-      Configura il proxy per le richieste backend di Zentra (es. Gemini Imagen, cloud AI). 
-      Il proxy viene usato internamente e non richiede una VPN di sistema.<br>
-      Puoi anche chiedere a Zentra in chat: <em>"Stato proxy"</em>
-    </p>
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_sysnet_main_title') }}</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>{{ t('webui_conf_sysnet_web_port') }}</label>
+          <input type="number" id="webui-port" placeholder="8080">
+        </div>
+        <div class="field">
+          <label>{{ t('webui_conf_sysnet_api_port') }}</label>
+          <input type="number" id="webui-api-port" placeholder="5000">
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_sysnet_https_enable') }}</div>
+        <label class="switch"><input type="checkbox" id="sys-https-enabled"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">{{ t('webui_conf_sysnet_force_login') }}</div>
+        <label class="switch"><input type="checkbox" id="webui-force-login"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">{{ t('webui_conf_sysnet_proxy_title') }}</div>
+      <p style="color:var(--muted); font-size:13px; margin-bottom:18px;">
+        {{ t('webui_sysnet_proxy_desc') }}
+      </p>
 
     <!-- Proxy Builder -->
     <div style="background:var(--surface2,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:16px; margin-bottom:16px;">
-      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px;">Configura Proxy</div>
+      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px;">{{ t('webui_sysnet_proxy_config') }}</div>
 
       <div style="display:grid; grid-template-columns: 110px 1fr 80px; gap:10px; align-items:end; margin-bottom:12px;">
         <div class="field" style="margin:0">
-          <label style="font-size:12px;">Protocollo</label>
+          <label style="font-size:12px;">{{ t('webui_sysnet_proxy_proto') }}</label>
           <select id="sysnet-proto" onchange="updateProxyUrl()">
-            <option value="">Nessuno</option>
+            <option value="">{{ t('webui_chat_none') }}</option>
             <option value="http">HTTP</option>
             <option value="https">HTTPS</option>
             <option value="socks4">SOCKS4</option>
@@ -24,11 +44,11 @@
           </select>
         </div>
         <div class="field" style="margin:0">
-          <label style="font-size:12px;">Host / IP</label>
+          <label style="font-size:12px;">{{ t('webui_sysnet_proxy_host') }}</label>
           <input type="text" id="sysnet-host" placeholder="es. 127.0.0.1 o proxy.example.com" oninput="updateProxyUrl()">
         </div>
         <div class="field" style="margin:0">
-          <label style="font-size:12px;">Porta</label>
+          <label style="font-size:12px;">{{ t('webui_sysnet_proxy_port') }}</label>
           <input type="number" id="sysnet-port" placeholder="8080" min="1" max="65535" oninput="updateProxyUrl()">
         </div>
       </div>
@@ -36,39 +56,39 @@
       <!-- Optional auth -->
       <div id="sysnet-auth-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
         <div class="field" style="margin:0">
-          <label style="font-size:12px;">Username (opzionale)</label>
+          <label style="font-size:12px;">{{ t('webui_sysnet_proxy_user') }}</label>
           <input type="text" id="sysnet-user" placeholder="utente" oninput="updateProxyUrl()">
         </div>
         <div class="field" style="margin:0">
-          <label style="font-size:12px;">Password (opzionale)</label>
+          <label style="font-size:12px;">{{ t('webui_sysnet_proxy_pass') }}</label>
           <input type="password" id="sysnet-pass" placeholder="password" oninput="updateProxyUrl()">
         </div>
       </div>
 
       <!-- Resulting URL -->
       <div class="field" style="margin:0 0 12px 0">
-        <label style="font-size:12px;">URL Proxy Generato <small style="color:var(--muted)">(modifica diretta possibile)</small></label>
+        <label style="font-size:12px;">{{ t('webui_sysnet_proxy_gen') }} <small style="color:var(--muted)">{{ t('webui_sysnet_proxy_manual') }}</small></label>
         <input type="text" id="sys-proxy-url" placeholder="Seleziona protocollo, host e porta sopra..." oninput="parseProxyUrl()">
       </div>
 
       <!-- Test Button & Status -->
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
         <button type="button" class="btn btn-primary" style="font-size:13px; padding:6px 18px;"
-          id="sysnet-test-btn" onclick="runProxyTest()">🧪 Testa Connessione</button>
-        <span id="sysnet-test-spinner" style="display:none; color:var(--muted); font-size:13px;">⏳ Test in corso...</span>
+          id="sysnet-test-btn" onclick="runProxyTest()">🧪 {{ t('webui_sysnet_proxy_test_btn') }}</button>
+        <span id="sysnet-test-spinner" style="display:none; color:var(--muted); font-size:13px;">⏳ {{ t('webui_sysnet_proxy_testing') }}</span>
       </div>
 
       <!-- Proxy Location Indicator -->
       <div style="display:flex; align-items:center; gap:8px; font-size:13px; background:#0d0d1a; padding:8px 12px; border-radius:6px; border:1px solid #333; width: fit-content;">
         <div id="sysnet-status-dot" style="width:10px; height:10px; border-radius:50%; background:#ff6b6b; box-shadow: 0 0 5px #ff6b6b; transition: all 0.3s ease;"></div>
-        <div style="color:#c0c0d0;">Stato: <strong id="sysnet-status-text" style="color:#ff6b6b; transition: color 0.3s ease;">Sconosciuto</strong></div>
+        <div style="color:#c0c0d0;">{{ t('webui_sysnet_proxy_status') }}: <strong id="sysnet-status-text" style="color:#ff6b6b; transition: color 0.3s ease;">{{ t('webui_km_status_unknown') }}</strong></div>
         <div style="color:var(--muted); margin-left:8px;" id="sysnet-status-loc"></div>
       </div>
     </div>
 
     <!-- Live log panel -->
     <div id="sysnet-log-panel" style="display:none; margin-bottom:16px;">
-      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;">Log connessione</div>
+      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;">{{ t('webui_sysnet_proxy_log_title') }}</div>
       <div id="sysnet-log-output" style="
         background:#0d0d1a; border:1px solid var(--border,#333); border-radius:6px;
         padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:12px;
@@ -78,7 +98,7 @@
 
     <!-- Quick preset buttons -->
     <div style="margin-bottom:16px;">
-      <div style="font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px;">Preset rapidi</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px;">{{ t('webui_sysnet_proxy_presets') }}</div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
           onclick="applyProxyPreset('socks5','127.0.0.1','2080')">🔒 SOCKS5 :2080</button>
@@ -87,13 +107,12 @@
         <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
           onclick="applyProxyPreset('http','127.0.0.1','8080')">🌐 HTTP :8080</button>
         <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px; background:#422; border-color:#633; color:#f88;"
-          onclick="clearProxy()">✕ Rimuovi Proxy</button>
+          onclick="clearProxy()">✕ {{ t('webui_sysnet_proxy_remove') }}</button>
       </div>
     </div>
 
     <div style="font-size:12px; color:var(--muted); line-height:1.6;">
-      <strong>Nota:</strong> Il proxy viene usato da Zentra internamente. Non è necessaria una VPN di sistema.<br>
-      Salva prima, poi clicca <strong>Testa Connessione</strong> oppure chiedi in chat: <em>"Stato proxy"</em>.
+      {{ t('webui_sysnet_proxy_note') | safe }}
     </div>
   </div>
 </div>

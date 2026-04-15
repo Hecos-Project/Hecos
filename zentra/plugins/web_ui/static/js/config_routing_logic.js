@@ -39,10 +39,10 @@ function renderRoutingOverrides() {
     
     row.innerHTML = `
       <div style="flex: 0 0 120px;">
-        <input type="text" value="${tag}" class="override-tag" style="width:100%; text-transform:uppercase; font-weight:bold; color:var(--cyan);" onchange="updateOverrideKey('${tag}', this.value)">
+        <input type="text" value="${tag}" class="override-tag config-input" style="width:100%; text-transform:uppercase; font-weight:bold; color:var(--cyan);" onchange="updateOverrideKey('${tag}', this.value)">
       </div>
       <div style="flex: 1;">
-        <textarea class="override-instr" style="width:100%; min-height:40px; resize:vertical;" onchange="updateOverrideValue('${tag}', this.value)">${instruction}</textarea>
+        <textarea class="override-instr config-input" style="width:100%; min-height:40px; resize:vertical;" onchange="updateOverrideValue('${tag}', this.value)">${instruction}</textarea>
       </div>
       <button type="button" class="btn btn-secondary" style="padding:4px 8px; color:var(--red);" onclick="deleteOverride('${tag}')">×</button>
     `;

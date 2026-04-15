@@ -73,6 +73,13 @@ def initialize_vault():
     """Creates the legacy base folder (for backward compat). Prefer initialize_user_vault."""
     os.makedirs(BASE_DIR, exist_ok=True)
     logger.info(f"[MEMORY] Legacy vault checked at: {BASE_DIR}")
+    
+    # Run session manager migration to ensure `sessions` table is created
+    try:
+        from zentra.memory import session_manager
+        session_manager.migrate_schema()
+    except Exception as e:
+        logger.error(f"[MEMORY] Failed to migrate session schema: {e}")
 
 
 def initialize_user_vault(user_id: str = "admin"):
@@ -179,45 +186,101 @@ def update_profile(key, value, user_id: str = "admin"):
 
 # ── Episodic memory (chat history) ────────────────────────────────────────────
 
-def save_message(role, message, config: dict = None, user_id: str = "admin"):
-    """Stores an exchange in episodic memory (DB), respecting config flags."""
+def save_message(role, message, config: dict = None, user_id: str = "admin", session_id: str = None):
+    """Stores an exchange in episodic memory, respecting config flags and privacy mode.
+    - incognito → discard entirely (no storage anywhere)
+    - auto_wipe → store in RAM only (vanishes on restart)
+    - normal    → persist in SQLite DB as usual
+    """
     if not is_memory_enabled(config):
         return
+
     try:
-        db = _db_path(user_id)
-        conn = sqlite3.connect(db)
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT, role TEXT, message TEXT
+        from zentra.core.privacy import privacy_manager
+        if not session_id:
+            session_id = privacy_manager.get_session_id()
+
+        if privacy_manager.is_incognito():
+            # Total privacy: discard message, write nothing
+            return
+
+        if privacy_manager.is_auto_wipe():
+            # RAM-only: store in session_manager's in-memory store
+            from zentra.memory import session_manager
+            if session_id:
+                session_manager.add_ram_message(session_id, role, message)
+            return
+
+    except Exception:
+        pass
+
+    try:
+        from zentra.memory import session_manager
+
+        initialize_user_vault(user_id)
+
+        with sqlite3.connect(session_manager.PATH_DB, timeout=20) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO history (timestamp, role, message, session_id) VALUES (?, ?, ?, ?)",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message, session_id)
             )
-        ''')
-        cursor.execute("INSERT INTO history (timestamp, role, message) VALUES (?, ?, ?)",
-                       (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message))
-        conn.commit()
-        conn.close()
+            conn.commit()
+
+        if session_id:
+            try:
+                session_manager.touch_session(session_id)
+            except Exception:
+                pass
+
     except Exception as e:
-        logger.error(f"Memory Save Error: {e}")
+        logger.error(f"[MEMORY] Save Error: {e}")
 
 
-def get_history(limit: int = None, config: dict = None, user_id: str = "admin") -> list:
-    """Retrieves the last N messages from the user's history."""
+def get_history(limit: int = None, config: dict = None, user_id: str = "admin", session_id: str = None) -> list:
+    """Retrieves the last N messages from history, filtered by session if provided.
+    For RAM sessions (auto_wipe/incognito), reads from the in-memory store.
+    """
     if limit is None:
         limit = get_max_history(config)
     try:
-        db = _db_path(user_id)
-        if not os.path.exists(db):
+        from zentra.memory import session_manager
+
+        if not session_id:
+            try:
+                from zentra.core.privacy import privacy_manager
+                session_id = privacy_manager.get_session_id()
+            except:
+                pass
+
+        # ── RAM session (auto_wipe / incognito) ───────────────────────────────
+        if session_id and session_id in session_manager._ram_sessions:
+            messages = session_manager.get_session_messages(session_id)
+            pairs = [(m['role'], m['message']) for m in messages]
+            return pairs[-limit:] if limit else pairs
+
+        # ── Normal DB session ─────────────────────────────────────────────────
+        if not os.path.exists(session_manager.PATH_DB):
             return []
-        conn = sqlite3.connect(db)
-        cursor = conn.cursor()
-        cursor.execute("SELECT role, message FROM history ORDER BY id DESC LIMIT ?", (limit,))
-        rows = cursor.fetchall()
-        conn.close()
+
+        with sqlite3.connect(session_manager.PATH_DB, timeout=20) as conn:
+            cursor = conn.cursor()
+            if session_id:
+                cursor.execute(
+                    "SELECT role, message FROM history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
+                    (session_id, limit)
+                )
+            else:
+                cursor.execute(
+                    "SELECT role, message FROM history ORDER BY id DESC LIMIT ?",
+                    (limit,)
+                )
+            rows = cursor.fetchall()
+
         rows.reverse()
         return rows
     except Exception as e:
-        logger.error(f"Memory Read Error: {e}")
+        logger.error(f"[MEMORY] Read Error: {e}")
         return []
 
 

@@ -45,6 +45,20 @@ function populateMediaUI() {
     setVal('igen-height', igen.height || 1024);
     setCheck('igen-nologo', igen.nologo ?? true);
     setVal('igen-apikey', igen.api_key || '');
+    setVal('igen-apikey-comment', igen.api_key_comment || '');
+    
+    // New Advanced Fields
+    setVal('igen-neg-prompt', igen.negative_prompt || '');
+    setVal('igen-guidance', igen.guidance_scale || 7.5);
+    setVal('igen-steps', igen.num_inference_steps || 30);
+    setCheck('igen-auto-enrich', igen.auto_enrich ?? true);
+
+    // Sync Slider Labels
+    const gVal = document.getElementById('igen-guidance-val');
+    if (gVal) gVal.textContent = igen.guidance_scale || 7.5;
+    const sVal = document.getElementById('igen-steps-val');
+    if (sVal) sVal.textContent = igen.num_inference_steps || 30;
+
     refreshImageModels(igen.model || 'flux');
     onProviderChanged();
 }
@@ -58,7 +72,13 @@ function buildMediaPayload() {
             width: parseInt(document.getElementById('igen-width').value) || 1024,
             height: parseInt(document.getElementById('igen-height').value) || 1024,
             nologo: document.getElementById('igen-nologo').checked,
-            api_key: document.getElementById('igen-apikey').value.trim()
+            api_key: document.getElementById('igen-apikey').value.trim(),
+            api_key_comment: document.getElementById('igen-apikey-comment').value.trim(),
+            negative_prompt: document.getElementById('igen-neg-prompt').value.trim(),
+            guidance_scale: parseFloat(document.getElementById('igen-guidance').value) || 7.5,
+            num_inference_steps: parseInt(document.getElementById('igen-steps').value) || 30,
+            auto_enrich: document.getElementById('igen-auto-enrich').checked,
+            _internal_save_to_env: document.getElementById('igen-save-env')?.checked || false
         }
     };
 }
@@ -141,3 +161,15 @@ window.onProviderChanged = onProviderChanged;
 window.refreshImageModels = refreshImageModels;
 window.openMediaVault = openMediaVault;
 window.clearMediaVault = clearMediaVault;
+
+// --- Event Listeners for Sliders ---
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'igen-guidance') {
+    const val = document.getElementById('igen-guidance-val');
+    if (val) val.textContent = e.target.value;
+  }
+  if (e.target.id === 'igen-steps') {
+    const val = document.getElementById('igen-steps-val');
+    if (val) val.textContent = e.target.value;
+  }
+});

@@ -9,7 +9,11 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/zentra/config/ui")
     def config_ui():
         try:
-            return render_template("index.html", zconfig=cfg_mgr.config)
+            from zentra.core.i18n.translator import get_translator
+            translations = get_translator().get_translations()
+            return render_template("index.html", 
+                                 zconfig=cfg_mgr.config, 
+                                 translations=translations)
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
 
@@ -22,6 +26,8 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def post_config():
         try:
             incoming = request.get_json(force=True)
+            if "ai" in incoming: pass # AI Persona check preserved if needed, but removing print
+            
             if not isinstance(incoming, dict):
                 return jsonify({"ok": False, "error": "Invalid payload"}), 400
             # Estrai il flag custom Frontend per forzare il riavvio (o auto-save silenzioso)
@@ -52,21 +58,9 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 except Exception as e:
                     logger.debug(f"[WebUI] Processor runtime sync error: {e}")
                     
-                # Gestione dell'inibitore del Monitor in base al trigger Frontend
-                if not force_restart:
-                    # Salvataggio silenzioso: scriviamo l'inibitore così il monitor INGNORA il file cambiato
-                    try:
-                        with open(".config_saved_by_app", "w") as f:
-                            f.write("1")
-                    except Exception: pass
-                else:
-                    # Salvataggio esplicito utente: rimuoviamo l'inibitore per forzare il riavvio del processo
-                    if os.path.exists(".config_saved_by_app"):
-                        try:
-                            os.remove(".config_saved_by_app")
-                        except Exception: pass
-                        
+                print("[DEBUG-POST] Config save SUCCESS")
                 return jsonify({"ok": True})
+            print("[DEBUG-POST] Config save FAILED in cfg_mgr.update_config")
             return jsonify({"ok": False, "error": "Save failed"}), 500
         except Exception as exc:
             logger.error(f"[WebUI] POST /config error: {exc}")
@@ -103,7 +97,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 cloud_models_flat.extend(models)
                 provider = cat.replace("Cloud (", "").replace(")", "").lower()
                 cloud_by_provider[provider] = models
-
+ 
         return jsonify({
             "piper_voices": onnx_files,
             "piper_dir":    piper_path_dir,
@@ -128,13 +122,33 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             from zentra.core.media_config import save_media_config, get_media_config
             cfg = get_media_config()
             
-            # Simple deep update
+            # Deep update
+            igen = incoming.get("image_gen", {})
+            save_to_env = igen.pop("_internal_save_to_env", False)
+            logger.info(f"[WebUI] Media Save. save_to_env={save_to_env}")
+            
             for key, val in incoming.items():
                 if isinstance(val, dict) and key in cfg and isinstance(cfg[key], dict):
                     cfg[key].update(val)
                 else:
                     cfg[key] = val
-                    
+            
+            # If requested, save the key to the environment file (pool)
+            if save_to_env:
+                try:
+                    api_key = igen.get("api_key", "").strip()
+                    provider = igen.get("provider", "huggingface").strip().lower()
+                    comment = igen.get("api_key_comment", "").strip()
+                    logger.info(f"[WebUI] Attempting key persistence. Provider={provider}, KeyLen={len(api_key)}")
+                    if api_key:
+                        from zentra.core.keys.key_manager import get_key_manager
+                        res = get_key_manager().add_key(provider, api_key, comment, save_to_env=True)
+                        logger.info(f"[WebUI] Key persistence result: {res}")
+                    else:
+                        logger.warning("[WebUI] Save to .env requested but api_key is empty.")
+                except Exception as e:
+                    logger.error(f"[WebUI] Error saving key to .env: {e}")
+
             if save_media_config(cfg):
                 logger.info("[WebUI] Media configuration saved successfully.")
                 return jsonify({"ok": True})
@@ -174,3 +188,36 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             logger.error(f"[WebUI] POST /zentra/config/routing error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/plugins/registry", methods=["GET"])
+    def get_plugin_registry():
+        try:
+            from zentra.core.system.plugin_state import REGISTRY_PATH
+            if os.path.exists(REGISTRY_PATH):
+                with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
+                    return jsonify(json.load(f))
+            return jsonify({})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/api/webui/state', methods=['GET', 'POST'])
+    def handle_ui_state():
+        state_file = os.path.join(root_dir, 'zentra', 'core', 'config', 'ui_state.json')
+        os.makedirs(os.path.dirname(state_file), exist_ok=True)
+        
+        if request.method == 'POST':
+            try:
+                state = request.get_json()
+                with open(state_file, 'w', encoding='utf-8') as f:
+                    json.dump(state, f, indent=4)
+                return jsonify({"status": "success"})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+                
+        if os.path.exists(state_file):
+            try:
+                with open(state_file, 'r', encoding='utf-8') as f:
+                    return jsonify(json.load(f))
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+        return jsonify({})

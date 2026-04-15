@@ -14,6 +14,11 @@ class ImageGenConfig(BaseModel):
     height: int = 1024
     nologo: bool = True
     api_key: str = ""
+    api_key_comment: str = ""
+    negative_prompt: str = "distorted, extra fingers, malformed limbs, missing limbs, ugly, blurry, low quality"
+    guidance_scale: float = 7.5
+    num_inference_steps: int = 30
+    auto_enrich: bool = True
 
 
 class VideoGenConfig(BaseModel):

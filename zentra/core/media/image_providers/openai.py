@@ -9,7 +9,9 @@ class OpenAIProvider:
         return ["dall-e-3", "dall-e-2"]
 
     @staticmethod
-    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "") -> str:
+    def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
+                 negative_prompt: str = "", guidance_scale: float = 7.5, 
+                 num_inference_steps: int = 30) -> str:
         if not api_key:
             api_key = os.environ.get("OPENAI_API_KEY", "").strip()
         if not api_key:

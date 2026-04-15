@@ -51,12 +51,24 @@ window.sendMessage = async function() {
   let aiText = '';
 
   try {
+    const payload = {
+      message: fullMessage, 
+      history: window.chatHistory, 
+      images: attachImgs,
+      session_id: window.chatHistoryState?.activeSessionId
+    };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message: fullMessage, history: window.chatHistory, images: attachImgs})
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
+
+    // Lock privacy mode on first sent message
+    if (window.chatHistoryState) {
+      window.chatHistoryState.chatModeHasMessages = true;
+      if (window.updateModeUI) window.updateModeUI();
+    }
 
     const evtSrc = new EventSource(`/api/stream/${data.session_id}`);
     evtSrc.onmessage = (e) => {
@@ -70,6 +82,8 @@ window.sendMessage = async function() {
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
+      } else if(ev.type === 'trace_done') {
+        if (window.AgentUI) window.AgentUI.finalize();
       } else if(ev.type === 'audio_ready') {
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
       } else if(ev.type === 'system_audio_playing') {
@@ -84,6 +98,7 @@ window.sendMessage = async function() {
         window.chatHistory.push({role:'user', content:text});
         window.chatHistory.push({role:'assistant', content:aiText});
         window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+        if (window.loadChatSessions) window.loadChatSessions();
       }
     };
     evtSrc.onerror = () => {
@@ -114,12 +129,24 @@ window.sendInternalMessage = async function(text) {
   let aiText = '';
 
   try {
+    const payload = {
+      message: text, 
+      history: window.chatHistory, 
+      images: [],
+      session_id: window.chatHistoryState?.activeSessionId
+    };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({message: text, history: window.chatHistory, images: []})
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
+
+    // Lock privacy mode on first sent message
+    if (window.chatHistoryState) {
+      window.chatHistoryState.chatModeHasMessages = true;
+      if (window.updateModeUI) window.updateModeUI();
+    }
 
     const evtSrc = new EventSource(`/api/stream/${data.session_id}`);
     evtSrc.onmessage = (e) => {
@@ -133,6 +160,8 @@ window.sendInternalMessage = async function(text) {
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
+      } else if(ev.type === 'trace_done') {
+        if (window.AgentUI) window.AgentUI.finalize();
       } else if(ev.type === 'audio_ready') {
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
       } else if(ev.type === 'system_audio_playing') {
@@ -147,6 +176,7 @@ window.sendInternalMessage = async function(text) {
         window.chatHistory.push({role:'user', content:text});
         window.chatHistory.push({role:'assistant', content:aiText});
         window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+        if (window.loadChatSessions) window.loadChatSessions();
       }
     };
     evtSrc.onerror = () => {

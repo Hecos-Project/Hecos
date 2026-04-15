@@ -87,6 +87,12 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
             sess["queue"].put({"type": "token", "text": full_text[i:i+40]})
             time.sleep(0.02)
 
+        # ── Finalize agent trace bubble BEFORE (blocking) TTS synthesis ──────────
+        # This lets the frontend stop the ⚙️ spinner as soon as the text response
+        # is fully rendered, without waiting for Piper to finish generating audio.
+        sess["queue"].put({"type": "trace_done"})
+        # ─────────────────────────────────────────────────────────────────────────
+
         # Emit camera request event AFTER the text tokens so it appears last
         if camera_request_pending:
             sess["queue"].put({"type": "camera_request"})
@@ -256,10 +262,12 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         from flask import render_template, make_response
         from flask_login import current_user
         from zentra.core.auth.auth_manager import auth_mgr
+        from zentra.core.i18n.translator import get_translator
         try:
             profile = auth_mgr.get_profile(current_user.username) if current_user.is_authenticated else None
+            translations = get_translator().get_translations()
             # Pass Zentra config as 'zconfig' to avoid conflict with Flask's 'config'
-            resp = make_response(render_template("chat.html", profile=profile, zconfig=cfg_mgr.config))
+            resp = make_response(render_template("chat.html", profile=profile, zconfig=cfg_mgr.config, translations=translations))
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"
             return resp
@@ -279,7 +287,9 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
             
         uid = current_user.username if current_user.is_authenticated else "admin"
         
-        sid  = str(uuid.uuid4())
+        from zentra.core.privacy import privacy_manager
+        sid = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
+        
         sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
         with _sessions_lock:
             _sessions[sid] = sess
@@ -329,8 +339,12 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         from flask import request, jsonify
         from flask_login import current_user
         from zentra.memory.brain_interface import get_history
+        from zentra.core.privacy import privacy_manager
+        
         uid = current_user.username if current_user.is_authenticated else "admin"
-        hist = get_history(user_id=uid)
+        sid = privacy_manager.get_session_id()
+        
+        hist = get_history(user_id=uid, session_id=sid)
         return jsonify([{"role": role, "content": msg} for role, msg in hist])
 
     @app.route("/api/audio")

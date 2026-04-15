@@ -1,4 +1,4 @@
-# 🌌 Zentra Core - Guida Unificata (v0.17.0)
+# 🌌 Zentra Core - Guida Unificata (v0.18.0)
 Benvenuto nella guida ufficiale di Zentra Core. Questo documento riassume tutto ciò che devi sapere per installare, configurare e utilizzare il tuo assistente AI personale offline.
 
 ---
@@ -25,7 +25,16 @@ Zentra richiede un'autenticazione obbligatoria per proteggere i tuoi dati:
 
 ---
 
-## ✨ 4. Funzionalità Principali (v0.17.0)
+### 🛡️ 3.5. Modalità Privacy a 3 Livelli (v0.18.0)
+Zentra ora include un selettore di privacy raffinato nella barra laterale della chat:
+- ☁️ **Normale**: Sessione standard persistente salvata nel database locale SQLite.
+- 🔒 **Auto-Wipe**: La cronologia rimane in memoria finché il sistema è attivo, ma **non** viene scritta su disco. La sessione viene distrutta al riavvio del sistema.
+- 🕵️ **Incognito**: Modalità a traccia zero. I messaggi non vengono mai salvati; se cambi chat, il contesto viene rimosso.
+*Nota: La modalità della sessione viene bloccata dopo l'invio del primo messaggio per garantire l'integrità del contesto.*
+
+---
+
+## ✨ 4. Funzionalità Principali (v0.18.0)
 
 ### 🔌 MCP Bridge & Discovery (Hub Universale)
 Il Model Context Protocol (MCP) permette a Zentra di usare strumenti esterni.
@@ -38,10 +47,14 @@ Ogni utente ha la propria identità, memoria e avatar.
 - **Bio Notes**: L'IA impara a conoscerti e salva dettagli importanti su di te in modo privato.
 
 ### 🛡️ Zentra Code Jail
-L'IA può scrivere ed eseguire codice Python in una sandbox sicura (AST) per calcoli complessi o manipolazione dati.
+L'IA può scrivere ed eseguire codice Python in una sandbox sicura (AST) for calcoli complessi o manipolazione dati.
 
 ### 🔒 PKI Professionale (HTTPS)
 Zentra genera i propri certificati SSL per abilitare il "Lucchetto Verde" sulla tua LAN, sbloccando l'uso di Microfono e Fotocamera sul browser.
+
+### ⚡ Comandi Diretti (Bypass IA)
+Se vuoi eseguire azioni rapide o generare immagini saltando i filtri morali/sicurezza dell'IA (es. Gemini):
+- `/img`, `/image`, `/photo`, `/foto [descrizione]`: Genera un'immagine direttamente tramite il provider (HuggingFace/Flux, ecc.).
 
 ---
 
@@ -55,4 +68,4 @@ L'interfaccia di Zentra è completamente responsive. Puoi usarla dal tuo smartph
 - **Wiki Ufficiale**: [GitHub Wiki](https://github.com/Zentra-Core/zentra-core.github.io/wiki)
 
 ---
-*Zentra Core è in fase Runtime Alpha (v0.17.0). Usa con responsabilità.*
+*Zentra Core è in fase Runtime Alpha (v0.18.0). Usa con responsabilità.*

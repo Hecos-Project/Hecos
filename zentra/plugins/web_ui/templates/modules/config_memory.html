@@ -31,14 +31,14 @@
     <div class="card-title">📋 Memory Status</div>
     <p id="mem-status-text" style="color:#aaa;font-size:0.9em;">Loading...</p>
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-      <select id="clear-range" class="mode-selector" style="width:140px; margin:0;">
+      <select id="clear-range" class="mode-selector config-input" style="width:140px; margin:0;">
         <option value="all">Full Wipe (Everything)</option>
         <option value="1">Older than 24h</option>
         <option value="7">Older than 7 days</option>
         <option value="30">Older than 30 days</option>
       </select>
-      <button class="btn" style="background:#c0392b; flex:1;" onclick="clearMemoryHistory()">🗑 Clear Selected</button>
-      <button class="btn" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh">🔄</button>
+      <button class="btn btn-secondary" style="background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); color:var(--red); flex:1;" onclick="clearMemoryHistory()">🗑 Clear Selected</button>
+      <button class="btn btn-secondary" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh">🔄</button>
     </div>
     <small style="color:var(--muted); font-size:11px; margin-top:8px; display:block;">
       Note: Identity and User Profile are NOT affected by this.

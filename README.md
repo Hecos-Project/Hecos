@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Zentra Logo">
 </p>
 
-# Zentra Core - Version 0.17.0 (Runtime Alpha)
+# Zentra Core - Version 0.18.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,17 +12,18 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 ---
 
 > [!WARNING]
-> **Runtime Alpha Status**: Zentra Core is currently in `v0.17.0`. This repository contains the engine, backend, AI reasoning modules, and the main native WebUI. Features may change, and the system is not yet considered stable. Use with caution.
+> **Runtime Alpha Status**: Zentra Core is currently in `v0.18.0`. This repository contains the engine, backend, AI reasoning modules, and the main native WebUI. Features may change, and the system is not yet considered stable. Use with caution.
 
 ## 🚀 Overview
 **Zentra Core** is a local-first AI assistant platform that runs entirely on your machine.
 It combines local LLMs, voice interaction, system automation, and a modular plugin architecture to create a fully customizable AI companion.
 
-Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.17.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
+Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.18.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 
-## ✨ Key Features (v0.17.0)
+## ✨ Key Features (v0.18.0)
+* 🛡️ **3-Tier Privacy Architecture** — Unified session management with **Normal**, **Auto-Wipe** (RAM-only store, cleared on exit), and **Incognito** (Zero-trace) modes. Sessions are locked to their privacy mode once chatting begins to ensure cryptographic and behavioral consistency.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Zentra now natively supports the **Model Context Protocol**. Connect to thousands of external AI tools (Brave Search, GitHub, Google Maps, etc.) with a single click. Discover and manage tools via the new **MCP Bridge** dashboard with real-time inventory.
 * 🔎 **Multi-Registry MCP Discovery** — Effortlessly find and install new tools directly from the UI. Zentra integrates with major MCP registries:
     - **Smithery.ai**: The primary hub for MCP servers.
@@ -44,9 +45,10 @@ Now fully migrated to a **stable Native Plugin architecture**, Zentra 0.17.0 off
 * 🔄 **Live-Sync Config** — Change any setting in the Web Panel and see it applied instantly to the core without restarts.
 * 🎭 **Dynamic Personality Discovery** — Personalities added to the `personality/` folder are automatically detected and synced with `config.yaml`.
 * 🎙️ **Integrated Voice Chat** — Native Chat UI with Piper TTS integration and automatic audio playback.
-* 🔌 **Plugin Macro Buttons** — Sidebar plugin list now features clickable macros to inject specialized commands instantly.
+* 🧩 **Dynamic Plugins Sidebar** — Streamlined sidebar that pulls metadata from the central hub, providing clickable quick-action macros with consistent iconography.
+* 🗑️ **Global History Wipe** — One-click bulk deletion for all chat sessions directly from the WebUI.
 * 💾 **Persistent Memory** — SQLite-based long-term memory with shared context across WebUI and Terminal.
-* 👥 **Multi-User & Profile Management** — Complete support for multiple accounts with isolated memories. Every user has their own personal profile, custom avatar, and private "Bio Notes" (contextual memories) that the AI uses to identify them.
+* 👥 **Multi-User & Profile Management** — Complete support for multiple accounts with isolated memories.Every user has their own personal profile, custom avatar, and private "Bio Notes" (contextual memories) that the AI uses to identify them.
 * 💾 **Isolated Per-User Vaults** — Personal files, avatars, and memories are stored in secure, separated "Vaults" (`memory/vaults/username`), ensuring maximum privacy in shared environments.
 * 🗂️ **Zentra Drive (File Manager)** — Native HTTP file manager integrated into the WebUI to upload, download, and organize your system files through a seamless dual-panel interface.
 * 🚀 **Professional English Launchers** — All startup scripts (`.bat` and `.sh`) are now fully internationalized in English, providing clear instructions for Windows and Linux users alike.

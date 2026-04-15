@@ -231,13 +231,13 @@
 <div id="upload-preview"></div>
 <div id="input-toolbar">
   <button class="toolbar-btn" title="Attach a document (PDF, TXT, DOCX, CSV)" onclick="document.getElementById('file-upload-doc').click()">
-    <span class="tb-icon">📎</span> Documento
+    <span class="tb-icon">📎</span> {{ t('webui_chat_toolbar_doc') }}
   </button>
   <button class="toolbar-btn" title="Attach an image (PNG, JPG, WebP)" onclick="document.getElementById('file-upload-img').click()">
-    <span class="tb-icon">🖼</span> Immagine
+    <span class="tb-icon">🖼</span> {{ t('webui_chat_toolbar_img') }}
   </button>
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
-    <span class="tb-icon">📋</span> Incolla testo
+    <span class="tb-icon">📋</span> {{ t('webui_chat_toolbar_paste') }}
   </button>
 </div>
 <input type="file" id="file-upload-doc" accept=".pdf,.txt,.docx,.csv,.md" multiple>
@@ -251,15 +251,15 @@
   <div id="paste-modal-container" style="position:fixed; inset:0; z-index:9002; pointer-events:none; display:flex; align-items:center; justify-content:center;">
     <div class="paste-modal-box" id="paste-modal-box">
       <div class="paste-modal-header" id="paste-modal-drag-handle">
-        <div class="paste-modal-title">📋 Incolla testo lungo</div>
-        <button class="paste-modal-close" onclick="closePasteModal()" title="Chiudi (ESC)">✕</button>
+        <div class="paste-modal-title">📋 {{ t('webui_chat_toolbar_paste_title') }}</div>
+        <button class="paste-modal-close" onclick="closePasteModal()" title="{{ t('webui_chat_toolbar_close') }}">✕</button>
       </div>
       <div class="paste-modal-body">
-        <textarea class="paste-modal-textarea" id="paste-modal-textarea" placeholder="Incolla qui il testo da aggiungere al tuo messaggio..."></textarea>
+        <textarea class="paste-modal-textarea" id="paste-modal-textarea" placeholder="{{ t('webui_chat_toolbar_paste_ph') }}"></textarea>
       </div>
       <div class="paste-modal-footer">
-        <button class="paste-cancel" onclick="closePasteModal()">Annulla</button>
-        <button class="paste-confirm" onclick="confirmPaste()">Inserisci nel messaggio ✓</button>
+        <button class="paste-cancel" onclick="closePasteModal()">{{ t('webui_chat_btn_cancel') }}</button>
+        <button class="paste-confirm" onclick="confirmPaste()">{{ t('webui_chat_toolbar_confirm') }}</button>
       </div>
     </div>
   </div>
@@ -268,8 +268,8 @@
 <!-- ── Drag & Drop Overlay ── -->
 <div id="drop-overlay">
   <div class="drop-icon">📂</div>
-  <div class="drop-label">Rilascia i file qui</div>
-  <div class="drop-sub">PDF, TXT, DOCX, CSV, PNG, JPG supportati</div>
+  <div class="drop-label">{{ t('webui_chat_toolbar_drop') }}</div>
+  <div class="drop-sub">{{ t('webui_chat_toolbar_drop_sub') }}</div>
 </div>
 
 <!-- Chat Toast Notification -->

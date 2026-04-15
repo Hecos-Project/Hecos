@@ -1,14 +1,20 @@
 <div id="topbar">
-  <button id="sidebar-toggle-btn" class="desktop-only" onclick="toggleSidebarDesktop()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; margin-right:15px; display:flex; align-items:center; transition: color .2s;">☰</button>
-  <div><div id="model-badge">🧠 <span id="tb-model">{{ t('webui_chat_loading') }}</span></div></div>
+  <div style="display:flex; align-items:center; gap:15px;">
+    <button id="sidebar-toggle-btn" class="desktop-only" onclick="toggleSidebarDesktop()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; transition: color .2s;">☰</button>
+    <div id="model-badge" style="display:flex; align-items:center; gap:8px;">
+      <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
+      <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
+    </div>
+    <style>@keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } } #tb-status-dot.pulsing { animation: pulseDot 2s infinite; } .mode-chip-autowipe { border-color: rgba(245,158,11,0.5) !important; color: #f59e0b !important; background: rgba(245,158,11,0.1) !important; } .mode-chip-incognito { border-color: rgba(139,92,246,0.5) !important; color: #8b5cf6 !important; background: rgba(139,92,246,0.1) !important; }</style>
+  </div>
   <div class="topbar-chips">
+    <div id="topbar-mode-chip" style="display:none;"></div>
     <div class="topbar-chip" id="chip-mic">🎤 MIC: —</div>
     <div class="topbar-chip" id="chip-tts">🔊 TTS: —</div>
     <div class="topbar-chip" id="chip-ptt">⌨️ PTT: —</div>
     <div class="topbar-chip" id="chip-stt-source" style="font-size:10px;">IN: —</div>
     <div class="topbar-chip" id="chip-tts-dest" style="font-size:10px;">OUT: —</div>
     <button id="topbar-stop-voice-btn" class="topbar-chip on" style="display:none; cursor:pointer; background:rgba(248,113,113,0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()">⏹ Stop Voice</button>
-    <a href="/zentra/docs?group=user" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;background:var(--glass);border:1px solid var(--border);border-radius:6px;transition:all .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">📖 Guide</a>
     <a href="/zentra/config/ui" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;background:var(--glass);border:1px solid var(--border);border-radius:6px;transition:all .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">⚙️ Config</a>
     <a href="/drive" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none;padding:5px 10px;background:var(--glass);border:1px solid var(--border);border-radius:6px;transition:all .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">🗂️ Drive</a>
   </div>

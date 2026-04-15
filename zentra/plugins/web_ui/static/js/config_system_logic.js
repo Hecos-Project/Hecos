@@ -9,12 +9,7 @@ function populateSystemUI() {
     setVal('log-level', slg.level || 'INFO');
     setVal('log-type', slg.message_types || 'both');
     setVal('log-dest', slg.destination || 'console');
-
-    setVal('web-log-level', slg.web_level || 'BOTH');
-    setVal('web-log-max', slg.web_max_history || 500);
-    setCheck('web-log-autoscroll', slg.web_autoscroll !== false);
-    setCheck('web-log-split', slg.web_split === true);
-    toggleLogSplit();
+    setCheck('log-error-beeps', slg.ui_error_beeps ?? true);
 
     const sys = c.system || {};
     setCheck('sys-fastboot', sys.fast_boot ?? false);
@@ -41,6 +36,16 @@ function populateSystemUI() {
     setVal('cog-max-history', cog.max_history_messages ?? 20);
     
     loadMemoryStatus();
+    
+    // Auto-init one log window if it doesn't exist - SEQ AFTER REFRSH
+    initLogsTab();
+}
+
+async function initLogsTab() {
+    await refreshLogFiles();
+    if (activeLogWindows.length === 0) {
+        addLogWindow('LIVE', 'BOTH');
+    }
 }
 
 function buildSystemPayload() {
@@ -50,10 +55,7 @@ function buildSystemPayload() {
             level: document.getElementById('log-level').value,
             destination: document.getElementById('log-dest').value,
             message_types: document.getElementById('log-type').value,
-            web_level: document.getElementById('web-log-level').value,
-            web_max_history: parseInt(document.getElementById('web-log-max').value),
-            web_autoscroll: document.getElementById('web-log-autoscroll').checked,
-            web_split: document.getElementById('web-log-split').checked
+            ui_error_beeps: document.getElementById('log-error-beeps')?.checked ?? true
         },
         system: {
             fast_boot: document.getElementById('sys-fastboot').checked,
@@ -79,81 +81,7 @@ function buildSystemPayload() {
     };
 }
 
-let logEvtSource = null;
-function startLogStream() {
-    if (logEvtSource) return;
-    const consoleEl = document.getElementById('log-console');
-    const statusEl  = document.getElementById('log-status');
-    
-    if (consoleEl) consoleEl.innerHTML = '';
-    if (statusEl) { statusEl.textContent = 'Active'; statusEl.className = 'val-ok'; }
 
-    logEvtSource = new EventSource('/api/logs/stream');
-    logEvtSource.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-        const filterEl = document.getElementById('web-log-level');
-        const filter = filterEl ? filterEl.value : 'BOTH';
-        if (filter !== 'BOTH' && data.level !== filter) return;
-
-        const line = document.createElement('div');
-        line.className = 'log-line';
-        
-        let colorClass = 'lvl-INFO';
-        if (data.text.includes('[DEBUG]')) colorClass = 'lvl-DEBUG';
-        if (data.text.includes('[ERROR]')) colorClass = 'lvl-ERROR';
-        if (data.text.includes('[WARNING]')) colorClass = 'lvl-WARN';
-
-        line.innerHTML = `<span class="log-time">${data.time}</span><span class="log-lvl ${colorClass}">${data.level}</span><span class="log-text">${escapeHtml(data.text)}</span>`;
-        
-        let target = document.getElementById('log-console');
-        const debugEl = document.getElementById('log-console-debug');
-        const splitEl = document.getElementById('web-log-split');
-        const isSplit = splitEl ? splitEl.checked : false;
-        
-        if (isSplit && data.level === 'DEBUG') target = debugEl;
-        
-        if (target) {
-            target.appendChild(line);
-            const mEl = document.getElementById('web-log-max');
-            const m = mEl ? parseInt(mEl.value) : 500;
-            const maxLines = isNaN(m) ? 500 : m;
-            while (target.children.length > maxLines) target.removeChild(target.firstChild);
-            
-            const autoScEl = document.getElementById('web-log-autoscroll');
-            if (autoScEl && autoScEl.checked) {
-                target.scrollTop = target.scrollHeight;
-            }
-        }
-    };
-    logEvtSource.onerror = () => {
-        if (statusEl) { statusEl.textContent = 'Disconnected (Reconnecting...)'; statusEl.className = 'val-err'; }
-    };
-}
-
-function toggleLogSplit() {
-    const splitEl = document.getElementById('web-log-split');
-    const isSplit = splitEl ? splitEl.checked : false;
-    const wrapper = document.getElementById('log-wrapper');
-    const debugG  = document.getElementById('log-group-debug');
-    const mainLog = document.getElementById('log-console');
-    
-    if (isSplit) {
-        if (wrapper) wrapper.classList.add('split');
-        if (debugG) debugG.style.display = 'flex';
-        if (mainLog) mainLog.style.height = 'auto';
-    } else {
-        if (wrapper) wrapper.classList.remove('split');
-        if (debugG) debugG.style.display = 'none';
-        if (mainLog) mainLog.style.height = '500px';
-    }
-}
-
-function clearLogConsole() {
-    const c1 = document.getElementById('log-console');
-    const c2 = document.getElementById('log-console-debug');
-    if (c1) c1.innerHTML = '';
-    if (c2) c2.innerHTML = '';
-}
 
 async function loadMemoryStatus() {
   try {
@@ -215,12 +143,25 @@ async function refreshModels() {
   }
 }
 
+function escapeHtml(text) {
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return (text || '').replace(/[&<>"']/g, m => map[m]);
+}
+
 // Exports for Global Scope
 window.populateSystemUI = populateSystemUI;
 window.buildSystemPayload = buildSystemPayload;
-window.startLogStream = startLogStream;
-window.toggleLogSplit = toggleLogSplit;
-window.clearLogConsole = clearLogConsole;
 window.loadMemoryStatus = loadMemoryStatus;
 window.clearMemoryHistory = clearMemoryHistory;
 window.refreshModels = refreshModels;
+
+// Safely bridge Log Engine functions if they exist
+if (typeof startLogStream !== 'undefined') window.startLogStream = startLogStream;
+if (typeof addLogWindow !== 'undefined') window.addLogWindow = addLogWindow;
+if (typeof removeLogWindow !== 'undefined') window.removeLogWindow = removeLogWindow;
+if (typeof updateWindowSource !== 'undefined') window.updateWindowSource = updateWindowSource;
+if (typeof updateWindowLevel !== 'undefined') window.updateWindowLevel = updateWindowLevel;
+if (typeof updateLogGridLayout !== 'undefined') window.updateLogGridLayout = updateLogGridLayout;
+if (typeof clearWindow !== 'undefined') window.clearWindow = clearWindow;
+if (typeof clearAllLogWindows !== 'undefined') window.clearAllLogWindows = clearAllLogWindows;
+if (typeof refreshLogFiles !== 'undefined') window.refreshLogFiles = refreshLogFiles;

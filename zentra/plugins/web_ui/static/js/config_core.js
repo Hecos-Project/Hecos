@@ -13,28 +13,129 @@ let isInitialLoading = false;
 
 
 const I18N = window.I18N || {};
+let configRegistry = {};
+let uiState = {
+    collapsedCategories: []
+};
+let viewMode = localStorage.getItem('zentra-config-view') || 'tabs';
+let activeTab = 'backend';
+window.activeCategoryFilter = 'ALL';
+
 
 /**
  * Tab switching logic
  */
-function showTab(name) {
+function showTab(name, skipScroll = false) {
+  let targetId = name;
+  const hub = window.CONFIG_HUB;
+  const mod = hub.modules.find(m => m.id === name);
+
+  // 1. Resolve Target ID via tagMap or category
+  if (hub.tagMap && hub.tagMap[mod?.pluginTag]) {
+      targetId = hub.tagMap[mod.pluginTag];
+  } else if (mod && mod.cat === 'MCP') {
+      targetId = 'mcp';
+  }
+
+  // 1.5 Special Redirects
+  if (targetId === 'drive-editor') {
+      window.location.href = '/drive';
+      return;
+  }
+
+  let panel = document.getElementById('tab-' + targetId);
+  
+  // 2. Fallback Redirection (if panel still not found)
+  if (!panel && mod && mod.cat === 'PLUGINS') {
+      console.log(`Panel tab-${targetId} not found. Redirecting to plugins toggle list.`);
+      targetId = 'plugins';
+      panel = document.getElementById('tab-plugins');
+      
+      // SCROLL TO PLUGIN ROW in Global List
+      setTimeout(() => {
+          const row = document.querySelector(`[data-plugin="${mod.pluginTag || name.toUpperCase().replace('-','_')}"]`);
+          if (row) {
+              const parentRow = row.closest('.plugin-row');
+              if (parentRow) {
+                  parentRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  parentRow.style.background = 'rgba(108,140,255,0.1)';
+                  setTimeout(() => { parentRow.style.background = ''; }, 2000);
+              }
+          }
+      }, 300);
+  }
+
+  activeTab = name; // Consolidate the logical active tab
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  const panel = document.getElementById('tab-' + name);
+  document.querySelectorAll('.module-card').forEach(c => c.classList.remove('active'));
+
   if (panel) panel.classList.add('active');
-  if (event && event.target && event.target.classList.contains('tab')) {
-    event.target.classList.add('active');
+
+  // Highlight the correct tab btn
+  const tabBtn = document.querySelector(`.tab[onclick*="'${name}'"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+  else {
+      // If we redirected, highlight the container tab
+      const containerTab = document.querySelector(`.tab[onclick*="'${targetId}'"]`);
+      if (containerTab) containerTab.classList.add('active');
   }
-  
-  // Call specific load functions when switching to their respective tabs
+
+  const card = document.querySelector(`.module-card[onclick*="'${name}'"]`);
+  if (card) card.classList.add('active');
+
+  // Removed automatic setViewMode('tabs') to allow persistent Wall/Grid navigation
+  if (viewMode === 'wall' && panel && !skipScroll) {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Call specific load functions
   if (name === 'users') {
       if (typeof loadMyProfile === 'function') loadMyProfile();
       if (typeof loadUsersData === 'function') loadUsersData();
   }
+  if (name === 'payload' && typeof loadPayloadData === 'function') loadPayloadData();
+  if (name === 'drive' && typeof loadDriveConfig === 'function') loadDriveConfig();
+  if (name === 'logs' && typeof startLogStream === 'function') {
+      startLogStream();
+      if (typeof refreshLogFiles === 'function') refreshLogFiles();
+      setTimeout(() => {
+          if (typeof activeLogWindows !== 'undefined') {
+              activeLogWindows.forEach(w => {
+                  if (w && w.body) w.body.scrollTop = w.body.scrollHeight;
+              });
+          }
+      }, 50);
+  }
+  if (name === 'keymanager' && typeof kmRefresh === 'function') kmRefresh();
+}
+
+function setViewMode(mode, silent = false) {
+    viewMode = mode;
+    localStorage.setItem('zentra-config-view', mode);
+    
+    const tabsContainer = document.getElementById('tabs-bar-container');
+    const wallContainer = document.getElementById('config-wall');
+    const switcherTabs = document.getElementById('view-tabs');
+    const switcherWall = document.getElementById('view-wall');
+
+    if (mode === 'wall') {
+        if (tabsContainer) tabsContainer.style.display = 'none';
+        if (wallContainer) wallContainer.style.display = 'flex';
+        if (switcherWall) switcherWall.classList.add('active');
+        if (switcherTabs) switcherTabs.classList.remove('active');
+        renderConfigHub('wall');
+    } else {
+        if (tabsContainer) tabsContainer.style.display = 'block';
+        if (wallContainer) wallContainer.style.display = 'none';
+        if (switcherTabs) switcherTabs.classList.add('active');
+        if (switcherWall) switcherWall.classList.remove('active');
+        renderConfigHub('tabs');
+    }
 }
 
 async function fetchWithTimeout(resource, options = {}) {
-  const { timeout = 10000 } = options;
+  const { timeout = 30000 } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -56,68 +157,213 @@ async function fetchWithTimeout(resource, options = {}) {
  * Master Initialization
  */
 async function initAll(attempt = 1) {
-  isInitialLoading = true;
-  console.log(`Initializing Configuration (Attempt ${attempt})...`);
-  const start = Date.now();
-  setSaveMsg(I18N.msg_loading || 'Loading...', 'muted');
+    isInitialLoading = true;
+    console.log(`Initializing Configuration (Attempt ${attempt})...`);
+    const start = Date.now();
+    setSaveMsg(I18N.msg_loading || 'Loading...', 'muted');
 
-  try {
-    const [rOpts, rCfg, rAudio, rAudioCfg, rMediaCfg] = await Promise.all([
-      fetchWithTimeout('/zentra/options'),
-      fetchWithTimeout('/zentra/config'),
-      fetchWithTimeout('/api/audio/devices'),
-      fetchWithTimeout('/api/audio/config'),
-      fetchWithTimeout('/zentra/api/config/media')
-    ]);
-    
-    // Check if critical endpoints failed
-    if (!rOpts.ok || !rCfg.ok) {
-        throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
+    try {
+        // 1. Fetch CRITICAL data first
+        const [rOpts, rCfg] = await Promise.all([
+            fetchWithTimeout('/zentra/options'),
+            fetchWithTimeout('/zentra/config')
+        ]);
+
+        if (!rOpts.ok || !rCfg.ok) {
+            throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
+        }
+
+        sysOptions = await rOpts.json();
+        cfg = await rCfg.json();
+        window.cfg = cfg;
+        window.sysOptions = sysOptions;
+
+        // 2. Initial Render (with static modules)
+        setViewMode(viewMode, true);
+        renderConfigHub();
+        showTab(activeTab, true);
+
+        // 3. Lazy-load metadata (Registry, Audio, UI State)
+        console.log("Loading metadata in background...");
+        const metaPromise = Promise.allSettled([
+            fetchWithTimeout('/api/plugins/registry'),
+            fetchWithTimeout('/api/audio/devices'),
+            fetchWithTimeout('/api/audio/config'),
+            fetchWithTimeout('/zentra/api/config/media'),
+            fetch('/api/webui/state')
+        ]);
+
+        metaPromise.then(async (results) => {
+            const [resReg, resAudio, resAudCfg, resMed, resState] = results;
+
+            // Process Registry
+            if (resReg.status === 'fulfilled' && resReg.value.ok) {
+                try {
+                    const registry = await resReg.value.json();
+                    mergeRegistry(registry);
+                } catch (e) { }
+            }
+
+            // Process UI State
+            if (resState.status === 'fulfilled' && resState.value.ok) {
+                try { uiState = Object.assign(uiState, await resState.value.json()); } catch (e) { }
+            }
+
+            // Process Audio/Media if successful
+            if (resAudio.status === 'fulfilled' && resAudio.value.ok) try { audioDevices = await resAudio.value.json(); } catch (e) { }
+            if (resAudCfg.status === 'fulfilled' && resAudCfg.value.ok) try { audioConfig = (await resAudCfg.value.json()).config; } catch (e) { }
+            if (resMed.status === 'fulfilled' && resMed.value.ok) try { mediaConfig = await resMed.value.json(); } catch (e) { }
+
+            console.log("Background metadata loaded.");
+            renderConfigHub(); // Re-render with all discovered data and collapsed state
+            populateUI();
+            isInitialLoading = false;
+            setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + new Date().toLocaleTimeString() + ')', 'ok');
+        });
+
+        console.log("UI basic layout ready.");
+
+    } catch (e) {
+        console.warn(`Init attempt ${attempt} failed:`, e);
+        if (attempt < 3) {
+            const delay = 2000;
+            setSaveMsg(`Retrying in ${delay / 1000}s...`, 'muted');
+            setTimeout(() => initAll(attempt + 1), delay);
+        } else {
+            console.error("Master Init failed after 3 attempts.");
+            setSaveMsg((I18N.msg_err || 'Error') + ': ' + e.message, 'err');
+            isInitialLoading = false;
+        }
     }
-
-    sysOptions = await rOpts.json();
-    cfg = await rCfg.json();
-    
-    // Assign to window for config_mapper.js access
-    window.cfg = cfg;
-    window.sysOptions = sysOptions;
-    
-    try {
-        const acData = await rAudioCfg.json();
-        if (acData.ok) audioConfig = acData.config;
-    } catch(e) { console.warn("Could not load audio config:", e); }
-    
-    try {
-        mediaConfig = await rMediaCfg.json();
-    } catch(e) { console.warn("Could not load media config:", e); }
-    
-    try {
-        const adData = await rAudio.json();
-        if (adData.ok) audioDevices = adData;
-    } catch(e) { console.warn("Could not load audio devices array:", e); }
-    
-    console.log("Config loaded in " + (Date.now() - start) + "ms");
-    populateUI();
-    
-    const now = new Date().toLocaleTimeString();
-    setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + now + ')', 'ok');
-    console.log("UI populated in total " + (Date.now() - start) + "ms");
-    isInitialLoading = false;
-    setTimeout(() => { if (document.getElementById('save-msg').textContent.includes(now)) setSaveMsg('', ''); }, 5000);
-
-  } catch(e) {
-    console.warn(`Init attempt ${attempt} failed:`, e);
-    if (attempt < 3) {
-        const delay = 2000;
-        setSaveMsg(`Retrying in ${delay/1000}s...`, 'muted');
-        setTimeout(() => initAll(attempt + 1), delay);
-    } else {
-        console.error("Master Init failed after 3 attempts.");
-        setSaveMsg((I18N.msg_err || 'Error') + ': ' + e.message, 'err');
-        isInitialLoading = false; // Allow user to try manual saving if they fix things
-    }
-  }
 }
+
+function mergeRegistry(registry) {
+    const hub = window.CONFIG_HUB;
+    Object.keys(registry).forEach(tag => {
+        const plug = registry[tag];
+        const resolvedId = (hub.tagMap && hub.tagMap[tag]) || tag.toLowerCase().replace('_', '-');
+        const existing = hub.modules.find(m => m.id === resolvedId || m.pluginTag === tag);
+
+        if (existing) {
+            if (!existing.icon) existing.icon = plug.icon;
+            if (!existing.pluginTag) existing.pluginTag = tag;
+        } else {
+            hub.modules.push({
+                id: resolvedId,
+                label: tag,
+                icon: plug.icon || '🧩',
+                cat: plug.category || 'CONNETTIVITÀ',
+                pluginTag: tag
+            });
+        }
+    });
+}
+
+/**
+ * Persistence: Load UI state from server
+ */
+async function loadUIState() {
+    try {
+        const r = await fetch('/api/webui/state');
+        if (r.ok) {
+            const data = await r.json();
+            uiState = Object.assign(uiState, data);
+        }
+    } catch(e) { console.warn("Could not load UI state:", e); }
+}
+
+/**
+ * Persistence: Save UI state to server
+ */
+async function saveUIState() {
+    try {
+        await fetch('/api/webui/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(uiState)
+        });
+    } catch(e) { console.error("Could not save UI state:", e); }
+}
+
+function toggleCategory(catId) {
+    const idx = uiState.collapsedCategories.indexOf(catId);
+    if (idx === -1) {
+        uiState.collapsedCategories.push(catId);
+    } else {
+        uiState.collapsedCategories.splice(idx, 1);
+    }
+    
+    saveUIState();
+    renderConfigHub(); // Re-render to update icons and visibility
+}
+
+function toggleAllCategories(expanded) {
+    const hub = window.CONFIG_HUB;
+    if (!hub || !hub.categories) return;
+    
+    if (expanded) {
+        uiState.collapsedCategories = [];
+    } else {
+        uiState.collapsedCategories = Object.keys(hub.categories);
+    }
+    
+    saveUIState();
+    renderConfigHub();
+}
+
+/**
+ * Filter by category selection
+ */
+function setCategoryFilter(cat) {
+    window.activeCategoryFilter = cat;
+    renderConfigHub(viewMode);
+}
+
+function renderFilterTabs() {
+    const container = document.getElementById('config-filter-tabs');
+    const hub = window.CONFIG_HUB;
+    if (!container || !hub) return;
+
+    // Calculate counts for ALL visible modules
+    const userRole = (window.currentUser && window.currentUser.role) || 'user';
+    const allVisible = hub.modules.filter(m => {
+        if (m.adminOnly && userRole !== 'admin') return false;
+        if (m.pluginTag) {
+            const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
+            if (p && p.enabled === false) return false;
+        }
+        return (document.getElementById('tab-' + m.id) || (hub.tagMap && hub.tagMap[m.pluginTag]) || m.cat === 'MCP');
+    });
+
+    const counts = { 'ALL': allVisible.length };
+    allVisible.forEach(m => {
+        counts[m.cat] = (counts[m.cat] || 0) + 1;
+    });
+
+    let html = `
+        <button class="filter-btn ${window.activeCategoryFilter === 'ALL' ? 'active' : ''}" onclick="setCategoryFilter('ALL')">
+            <span>✨</span> ${window.t ? window.t('hub_filter_all') : 'Tutto'}
+            <span class="btn-badge">${counts['ALL']}</span>
+        </button>
+    `;
+
+    Object.keys(hub.categories).forEach(catId => {
+        const cat = hub.categories[catId];
+        const activeClass = (window.activeCategoryFilter === catId) ? 'active' : '';
+        const count = counts[catId] || 0;
+        if (count === 0) return; // Hide empty categories
+
+        html += `
+            <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${catId}')">
+                <span>${cat.icon}</span> ${window.t ? window.t(cat.label) : catId}
+                <span class="btn-badge">${count}</span>
+            </button>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
 
 // (Mapping logic extracted to config_mapper.js)
 
@@ -131,26 +377,25 @@ async function saveConfig(silent = false) {
     const audioPayload = (typeof buildAudioPayload === 'function') ? buildAudioPayload() : {};
     const mediaPayload = (typeof buildMediaPayload === 'function') ? buildMediaPayload() : {};
     
-    const [resCfg, resAud, resMed] = await Promise.all([
-        fetch('/zentra/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        }),
-        fetch('/api/audio/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(audioPayload)
-        }),
-        fetch('/zentra/api/config/media', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(mediaPayload)
-        })
-    ]);
-    
+    const resCfg = await fetch('/zentra/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     const data = await resCfg.json();
+
+    const resAud = await fetch('/api/audio/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(audioPayload)
+    });
     const audData = await resAud.json();
+
+    const resMed = await fetch('/zentra/api/config/media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mediaPayload)
+    });
     const medData = await resMed.json();
     
     if (data.ok && audData.ok && medData.ok) {
@@ -166,7 +411,21 @@ async function saveConfig(silent = false) {
             }
           }
           
+          
           setTimeout(() => location.reload(), 1500);
+      } else {
+          // Provide clear visual feedback for silent background saves
+          setSaveMsg('✓ Changes auto-saved', 'ok');
+          // Reset any designated elements that should only be active for one save cycle
+          document.querySelectorAll('.save-reset').forEach(el => {
+              if (el.type === 'checkbox') el.checked = false;
+          });
+          setTimeout(() => {
+              const msgEl = document.getElementById('save-msg');
+              if (msgEl && msgEl.textContent.includes('auto-saved')) {
+                  setSaveMsg('', 'muted'); // Clear message without reloading
+              }
+          }, 3500);
       }
     } else {
       setSaveMsg('Error saving config.', 'err');
@@ -190,17 +449,55 @@ async function refreshStatus() {
     const r = await fetch('/zentra/status');
     const d = await r.json();
     setSpanText('s-backend', d.backend || '—');
-    setSpanText('s-model', d.model || '—');
-    setSpanText('s-bridge', d.bridge || '—');
-    setSpanText('s-mic', d.mic || '—');
-    setSpanText('s-tts', d.tts || '—');
-    setSpanText('s-config', d.config || '—');
-    setSpanText('hdr-model', d.model || (I18N.offline || 'Offline'));
     
-    const m = document.getElementById('s-model');
-    if (m) m.className = 'stat-val ' + (d.model && d.model !== '—' ? 'val-ok' : 'val-warn');
+    // System Metrics with threshold coloring
+    const updateMetric = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = (val !== undefined && val !== null) ? val + '%' : '—';
+        el.className = 'stat-val ' + (val >= 90 ? 'val-err' : '');
+    };
+    updateMetric('s-cpu', d.cpu);
+    updateMetric('s-ram', d.ram);
+    updateMetric('s-vram', d.vram);
+    
+    // Status indicators with ON/OFF coloring
+    const updateStatus = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = val || '—';
+        el.className = 'stat-val ' + (val === 'ON' ? 'val-ok' : 'val-err');
+    };
+    updateStatus('s-mic', d.mic);
+    updateStatus('s-tts', d.tts);
+    updateStatus('s-ptt', d.ptt);
+    
+    setSpanText('s-bridge', d.bridge || '—');
+    setSpanText('s-config', d.config || '—');
+    setSpanText('s-model', d.model || '—');
+    
+    const isOnline = !!d.model;
+    setSpanText('hdr-model', isOnline ? 'Online' : (window.I18N?.webui_chat_offline || 'Offline'));
+    const hdrDot = document.getElementById('hdr-dot');
+    if (hdrDot) {
+        hdrDot.style.background = isOnline ? 'var(--green)' : 'var(--red)';
+        hdrDot.style.boxShadow = isOnline ? '0 0 8px var(--green)' : '0 0 8px var(--red)';
+        hdrDot.style.animation = isOnline ? 'pulse 2s infinite' : 'none';
+    }
+    
+    // Conditional visibility for system metrics
+    const dashEnabled = window.cfg?.plugins?.DASHBOARD?.enabled !== false;
+    document.querySelectorAll('.dashboard-only').forEach(el => {
+        el.style.display = dashEnabled ? '' : 'none';
+    });
   } catch(e) {
-    setSpanText('hdr-model', I18N.offline || 'Offline');
+    setSpanText('hdr-model', window.I18N?.webui_chat_offline || 'Offline');
+    const hdrDot = document.getElementById('hdr-dot');
+    if (hdrDot) {
+        hdrDot.style.background = 'var(--red)';
+        hdrDot.style.boxShadow = '0 0 8px var(--red)';
+        hdrDot.style.animation = 'none';
+    }
   }
 }
 
@@ -227,17 +524,187 @@ function escapeHtml(text) {
   return (text || '').replace(/[&<>"']/g, m => map[m]);
 }
 
+/**
+ * ZENTRA HUB ENGINE v0.18.0
+ */
+function renderConfigHub(mode = 'tabs') {
+    const hub = window.CONFIG_HUB;
+    const tabsBar = document.getElementById('config-tabs-bar');
+    const wallArea = document.getElementById('config-wall');
+    const userRole = (window.currentUser && window.currentUser.role) || 'user';
+
+    if (!tabsBar || !wallArea) return;
+
+    if (window.activeCategoryFilter === 'ALL') {
+        wallArea.classList.add('is-all-mode');
+        tabsBar.classList.add('is-all-mode');
+    } else {
+        wallArea.classList.remove('is-all-mode');
+        tabsBar.classList.remove('is-all-mode');
+    }
+
+
+    const visibleModules = hub.modules.filter(m => {
+        // Admin check
+        if (m.adminOnly && userRole !== 'admin') return false;
+        
+        // Plugin check
+        if (m.pluginTag) {
+            const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
+            if (p && p.enabled === false) return false;
+        }
+        
+        // Modules with panels always visible. 
+        // Modules from MCP category are always visible 
+        // Modules in tagMap are always visible
+        const hasPanel = document.getElementById('tab-' + m.id);
+        const isMapped = hub.tagMap && hub.tagMap[m.pluginTag];
+        const isMcp = (m.cat === 'MCP');
+        
+        
+        return (hasPanel || isMapped || isMcp);
+    });
+
+    // --- APPLY CATEGORY FILTER ---
+    const filteredModules = visibleModules.filter(m => {
+        if (window.activeCategoryFilter === 'ALL') return true;
+        return m.cat === window.activeCategoryFilter;
+    });
+
+    // Sort by category order then label
+    filteredModules.sort((a, b) => {
+        const catA = hub.categories[a.cat] || { order: 99 };
+        const catB = hub.categories[b.cat] || { order: 99 };
+        if (catA.order !== catB.order) return catA.order - catB.order;
+        return a.label.localeCompare(b.label);
+    });
+
+    // 0. Pre-calculate counts
+    const catCounts = {};
+    filteredModules.forEach(m => {
+        catCounts[m.cat] = (catCounts[m.cat] || 0) + 1;
+    });
+
+    // 1. Render TABS
+    let tabsHtml = '';
+    let currentTabCat = null;
+    filteredModules.forEach(m => {
+        if (m.cat !== currentTabCat) {
+            if (currentTabCat !== null) tabsHtml += `</div></div>`; // Close previous section
+            currentTabCat = m.cat;
+            const catData = hub.categories[currentTabCat] || { label: currentTabCat, icon: '📂' };
+            const isCollapsed = uiState.collapsedCategories.includes(currentTabCat);
+            const toggleIcon = isCollapsed ? '⊕' : '⊖';
+
+            tabsHtml += `
+                <div class="category-group ${isCollapsed ? 'collapsed' : ''}">
+                    <div class="category-header" onclick="toggleCategory('${currentTabCat}')">
+                        <span class="cat-toggle">${toggleIcon}</span>
+                        <span class="cat-label">${catData.icon} ${window.t ? window.t(catData.label) : catData.label}</span>
+                        <span class="cat-badge">${catCounts[currentTabCat]}</span>
+                        <div class="cat-line"></div>
+                    </div>
+                    <div class="category-content tabs">
+            `;
+        }
+        
+        const activeClass = (activeTab === m.id) ? 'active' : '';
+        const icon = window.getIconForModule(m.id, m.label, m.icon);
+        tabsHtml += `<button class="tab ${activeClass}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label}</button>`;
+    });
+    if (filteredModules.length > 0) tabsHtml += `</div></div>`; // Close last section
+    tabsBar.innerHTML = tabsHtml;
+
+    // 2. Render WALL
+    let wallHtml = '';
+    // Special Landing Page for ALL view in Wall mode
+    if (window.activeCategoryFilter === 'ALL') {
+        const usedCats = [...new Set(visibleModules.map(m => m.cat))];
+        // Sort cats by order
+        usedCats.sort((a, b) => {
+            const catA = hub.categories[a] || { order: 99 };
+            const catB = hub.categories[b] || { order: 99 };
+            return catA.order - catB.order;
+        });
+
+        usedCats.forEach(catId => {
+            const catData = hub.categories[catId] || { label: catId, icon: '📂' };
+            const count = visibleModules.filter(m => m.cat === catId).length;
+            const translatedLabel = window.t ? window.t(catData.label) : catData.label;
+            
+            wallHtml += `
+                <div class="cat-card" onclick="setCategoryFilter('${catId}')">
+                    <div class="cat-card-icon">${catData.icon}</div>
+                    <div class="cat-card-label">${translatedLabel}</div>
+                    <div class="cat-card-badge">${count}</div>
+                </div>
+            `;
+        });
+        wallArea.innerHTML = `<div class="cat-landing-grid">${wallHtml}</div>`;
+    } else {
+        // Standard Detail view for single category or filtered results
+        let currentCat = null;
+        let currentCatData = null; 
+        filteredModules.forEach(m => {
+            if (m.cat !== currentCat) {
+                if (currentCat !== null) wallHtml += `</div></div>`; // Close previous section
+                currentCat = m.cat;
+                currentCatData = hub.categories[currentCat] || { label: currentCat, icon: '📂' };
+                const isCollapsed = uiState.collapsedCategories.includes(currentCat);
+                const toggleIcon = isCollapsed ? '⊕' : '⊖';
+                wallHtml += `
+                    <div class="category-group ${isCollapsed ? 'collapsed' : ''}">
+                        <div class="category-header" onclick="toggleCategory('${currentCat}')">
+                            <span class="cat-toggle">${toggleIcon}</span>
+                            <span class="cat-label">${currentCatData.icon} ${window.t ? window.t(currentCatData.label) : currentCatData.label}</span>
+                            <span class="cat-badge">${catCounts[currentCat]}</span>
+                            <div class="cat-line"></div>
+                        </div>
+                        <div class="category-content">
+                `;
+            }
+            
+            const activeClass = (activeTab === m.id) ? 'active' : '';
+            const icon = window.getIconForModule(m.id, m.label, m.icon);
+            wallHtml += `
+                <div class="module-card ${activeClass}" onclick="showTab('${m.id}')">
+                    <div class="m-icon">${icon}</div>
+                    <div class="m-label">${window.t ? window.t(m.label) : m.label}</div>
+                    <div class="m-cat">${window.t ? window.t(currentCatData.label) : currentCat}</div>
+                </div>
+            `;
+        });
+        if (filteredModules.length > 0) wallHtml += `</div></div>`;
+        wallArea.innerHTML = wallHtml;
+    }
+
+
+    // 3. Render FILTER TABS (Categories bar)
+    renderFilterTabs();
+}
+
+
+window.setViewMode = setViewMode;
+window.renderConfigHub = renderConfigHub;
+window.setCategoryFilter = setCategoryFilter;
+window.renderFilterTabs = renderFilterTabs;
+
+
 window.showTab = showTab;
 window.initAll = initAll;
+window.toggleAllCategories = toggleAllCategories;
 window.saveConfig = saveConfig;
 window.refreshStatus = refreshStatus;
 window.rebootSystem = rebootSystem;
 // window.populateSelect, window.populateUI moved to config_mapper
 // --- Event Listeners (Global/Core) ---
 
-// Listen for global checkbox/select changes for auto-saving
+// Listen for global changes (checkboxes, selects, inputs, textareas) for auto-saving
 document.addEventListener('change', (e) => {
-  if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT') {
+  if (e.target.closest('.no-autosave') || e.target.closest('#tab-logs')) return;
+  const tag = e.target.tagName;
+  const type = e.target.type;
+  if (tag === 'SELECT' || tag === 'TEXTAREA' || type === 'checkbox' || (tag === 'INPUT' && type !== 'file')) {
     // Sync Image Gen enabled status between different UI locations
     if (e.target.id === 'igen-enabled') {
         const other = document.querySelector('[data-plugin="IMAGE_GEN"]');

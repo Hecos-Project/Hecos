@@ -46,7 +46,9 @@ def get_models_for_provider(provider_name: str) -> list:
     return []
 
 
-def generate_image(prompt: str, provider: str, model: str, width: int, height: int, api_key: str) -> str:
+def generate_image(prompt: str, provider: str, model: str, width: int, height: int, api_key: str, 
+                   negative_prompt: str = "", guidance_scale: float = 7.5, 
+                   num_inference_steps: int = 30, auto_enrich: bool = False) -> str:
     """
     Main entry point. Returns the filename of the saved image.
     Raises Exception if generation fails.
@@ -54,17 +56,35 @@ def generate_image(prompt: str, provider: str, model: str, width: int, height: i
     provider = provider.lower()
     cls = PROVIDERS.get(provider)
 
-    log_debug(f"[ImageEngine] START provider={provider} model={model} prompt={prompt[:60]}")
+    # 0. Prompt Enrichment
+    final_prompt = prompt
+    if auto_enrich:
+        quality_terms = "masterpiece, 8k wallpaper, highly detailed, realistic, sharp focus, cinematic lighting"
+        if quality_terms not in prompt.lower():
+            final_prompt = f"{prompt}, {quality_terms}"
+
+    log_debug(f"[ImageEngine] START provider={provider} model={model} prompt={final_prompt[:60]}")
 
     if cls:
         try:
-            filename = cls.generate(prompt, width, height, model, api_key)
+            # We use a kwargs approach to be flexible with provider signatures
+            # but for now we update all known providers.
+            filename = cls.generate(
+                prompt=final_prompt, 
+                width=width, 
+                height=height, 
+                model=model, 
+                api_key=api_key,
+                negative_prompt=negative_prompt,
+                guidance_scale=guidance_scale,
+                num_inference_steps=num_inference_steps
+            )
             log_debug(f"[ImageEngine] SUCCESS via {provider} → {filename}")
             return filename
         except Exception as e:
             err_msg = str(e)
-            # Standardize common safety-related HTTP errors if possible
-            if "400" in err_msg:
+            # Standardize common safety-related HTTP errors if possible, unless it's a known hardware/loading issue
+            if "400" in err_msg and "CUDA out of memory" not in err_msg and "loading" not in err_msg:
                 err_msg = f"Potential safety/content block ({err_msg})"
             
             log_debug(f"[ImageEngine] {provider} failed: {err_msg}")

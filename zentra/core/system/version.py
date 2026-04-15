@@ -21,7 +21,7 @@ PROJECT_NAME = "Zentra Core"
 PROJECT_CODENAME = "Runtime Alpha"
 
 # Data di rilascio (aggiorna quando fai una release)
-RELEASE_DATE = "2026-04-12"
+RELEASE_DATE = "2026-04-15"
 
 # Autore e copyright
 AUTHOR = "Antonio Meloni"

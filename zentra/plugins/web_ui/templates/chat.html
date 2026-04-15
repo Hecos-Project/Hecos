@@ -62,23 +62,23 @@
 
 <script>
   // I18N Strings for external JS
-  window.I18N = {
-    offline: "{{ t('webui_chat_offline') }}",
-    chat_hint: "{{ t('webui_chat_hint') }}",
-    ptt_hint: "{{ t('ptt_hint') }}",
-    err_connected: "{{ t('webui_chat_err_connected') }}",
-    err_general: "{{ t('webui_chat_err_general') }}",
-    prompt_dashboard: "{{ t('webui_chat_prompt_dashboard') }}",
-    prompt_help: "{{ t('webui_chat_prompt_help') }}",
-    prompt_media: "{{ t('webui_chat_prompt_media') }}",
-    prompt_roleplay: "{{ t('webui_chat_prompt_roleplay') }}",
-    prompt_system: "{{ t('webui_chat_prompt_system') }}",
-    prompt_web: "{{ t('webui_chat_prompt_web') }}",
-    prompt_webcam: "{{ t('webui_chat_prompt_webcam') }}",
-    none: "{{ t('webui_chat_none') }}",
-    loading: "{{ t('webui_chat_loading') }}"
+  window.I18N = {{ translations | tojson | safe }};
+
+
+  /**
+   * Global translation function for Frontend JS
+   */
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    if (params) {
+      for (const [pKey, pVal] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+      }
+    }
+    return text;
   };
 </script>
+<script src="/static/js/config_manifest.js?v=0.22.0"></script>
 <script>
   // Expose the global history to window so the renderer can read it
   window.historyList = [];
@@ -88,8 +88,8 @@
 <script src="/static/js/chat_renderer.js?v=2"></script>
 <script src="/static/js/agent/agent_traces.js?v=4"></script>
 <!-- Refactored Chat Logic Modules -->
-<script src="/static/js/chat_ui.js?v=1"></script>
-<script src="/static/js/chat_api.js?v=1"></script>
+<script src="/static/js/chat_ui.js?v=2"></script>
+<script src="/static/js/chat_api.js?v=2"></script>
 <script src="/static/js/chat_events.js?v=1"></script>
 <script src="/static/js/audio_controls.js?v=1"></script>
 <script src="/static/js/chat_message_actions.js?v=2"></script>
@@ -102,6 +102,7 @@
 <script src="/static/js/audio_ui.js?v=1"></script>
 <script src="/static/js/mobile/mobile_logic.js?v=1"></script>
 <script src="/static/js/pull_to_refresh.js"></script>
+<script src="/static/js/chat_history.js?v=7"></script>
 <!-- Remote Triggers (Media keys, Arduino Hooks) -->
 {% if zconfig.plugins.REMOTE_TRIGGERS and zconfig.plugins.REMOTE_TRIGGERS.enabled != False %}
 <script src="/remote_triggers_static/js/remote_triggers.js"></script>

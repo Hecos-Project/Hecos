@@ -1,4 +1,4 @@
-﻿"""
+"""
 Plugin: Zentra Drive â€” Routes
 REST API for the HTTP File Manager.
 All routes require authentication.
@@ -86,7 +86,11 @@ def init_drive_routes(app, logger_instance=None):
 @login_required
 def drive_page():
     """Renders the Zentra Drive HTML page."""
-    return render_template("drive.html")
+    from zentra.core.i18n import get_translator
+    tr = get_translator()
+    return render_template("drive.html", 
+                           t=tr.t, 
+                           translations=tr.translations)
 
 
 # â”€â”€â”€ LIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

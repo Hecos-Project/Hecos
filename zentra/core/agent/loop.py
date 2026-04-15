@@ -59,6 +59,47 @@ class AgentExecutor:
         """
         # Privacy-oriented log: avoid echoing private user text on the server physical console.
         self._emit(f"Analyzing incoming user request...", level="info")
+        
+        # --- GLOBAL DIRECT COMMANDS INTERCEPTOR (BYPASS LLM) ---
+        testo_pulito = user_text.strip()
+        if testo_pulito.lower().startswith(("/img ", "/image ", "/photo ", "/foto ")):
+            try:
+                raw_prompt = testo_pulito.split(" ", 1)[1].strip()
+                self._emit(f"Direct Command Intercepted: {testo_pulito[:10]}...", level="info")
+                
+                # Semantic Cleaning: Remove "a photo of", "a picture of", etc. to avoid redundancy
+                clean_target = raw_prompt.lower()
+                for unwanted in ["a photo of ", "a picture of ", "una foto di ", "un'immagine di ", "photo of ", "picture of "]:
+                    clean_target = clean_target.replace(unwanted, "")
+                
+                # Smart Enrichment: If user says 'you/me/tua', add persona visual context
+                enrich_keywords = ["you", "me", "tua", "mia", "tuo", "tuoi", "yourself", "te "]
+                prompt_bypass = clean_target
+                
+                if any(k in raw_prompt.lower() for k in enrich_keywords):
+                    visual_desc = self._get_persona_visual_description()
+                    if visual_desc:
+                        self._emit(f"Enriching prompt with persona YAML context...", level="info")
+                        # Construct a clean, professional prompt for the provider
+                        target_action = clean_target.replace('you', '').replace('your', '').replace('tua', '').replace('me', '').strip()
+                        prompt_bypass = f"A photo of {visual_desc}, {target_action}"
+                
+                from zentra.plugins.image_gen.main import tools as image_gen_tools
+                result = image_gen_tools.generate_image(prompt_bypass)
+                
+                # Save to memory to keep the context consistent
+                from zentra.memory import brain_interface
+                brain_interface.save_message("user", testo_pulito, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id)
+                brain_interface.save_message("assistant", result, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id)
+                
+                # Format for output (video/voice)
+                return processore.clean_final_output(result, [], result, voice_status)
+            except Exception as e:
+                logger.error(f"[AGENT] Direct Bypass Error: {e}")
+                err_msg = f"❌ Error: {e}"
+                return processore.clean_final_output(err_msg, [], err_msg, voice_status)
+        # -------------------------------------------------------
+
         if not self.is_enabled:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1
@@ -87,7 +128,8 @@ class AgentExecutor:
                 agent_context=agent_context,
                 save_history=save_hist,
                 images=images,
-                user_id=self.current_user_id
+                user_id=self.current_user_id,
+                session_id=None # brain can get it from privacy_manager if None
             )
             
             # 2. Extract tools using the processor utility
@@ -249,3 +291,44 @@ class AgentExecutor:
                     self._emit("Maximum thought limit reached.", level="error")
                     video_response, clean_voice = processore.clean_final_output("I have reached the processing limit. " + extracted_text, tool_results, raw_response, voice_status)
                     return video_response, clean_voice
+
+    def _get_persona_visual_description(self):
+        """Attempts to extract a visual description of the current AI identity from YAML or fallback."""
+        try:
+            # 1. Identity the active personality file
+            active_p = self.config.get('ai', 'active_personality', default='Zentra_System_Soul.yaml')
+            
+            # 2. Try to load the YAML file
+            from zentra.config.yaml_utils import load_yaml
+            root_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+            p_path = os.path.join(root_dir, "zentra", "personality", active_p)
+            
+            if os.path.exists(p_path):
+                import yaml
+                with open(p_path, 'r', encoding='utf-8') as f:
+                    p_data = yaml.safe_load(f)
+                
+                # Check for the new dynamic field
+                v_desc = p_data.get("visual_description")
+                if v_desc:
+                    return v_desc
+
+            # 3. Hard-coded fallback for legacy or missing fields
+            name = active_p.lower()
+            if "urania" in name:
+                return "a beautiful futuristic woman with long glowing purple hair, technological cybernetic details, intelligent and seductive expression"
+            elif "motoko" in name:
+                return "Major Motoko Kusanagi from Ghost in the Shell, purple hair, tactical suit"
+            elif "atlas" in name:
+                return "a handsome, professional and futuristic man with a sharp jawline"
+            
+            # Generic fallbacks
+            if "woman" in name or "femmina" in name:
+                return "a beautiful woman"
+            elif "man" in name or "maschio" in name:
+                return "a handsome man"
+                
+            return "a futuristic person"
+        except Exception as e:
+            logger.debug(f"[AGENT] Failed to load dynamic visual description: {e}")
+            return "a digital entity"

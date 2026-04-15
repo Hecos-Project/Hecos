@@ -40,7 +40,22 @@ window.startPrompt = function(text) {
   }
 };
 
-window.clearChat = function() {
+window.clearChat = async function() {
+  // If chat history manager is available, create a new session (handles auto-wipe internally)
+  if (window.newChatSession) {
+    await window.newChatSession();
+    return;  // newChatSession already calls clearChat UI-side
+  }
+  // Fallback: just clear the DOM
+  window.chatHistory = [];
+  if (chatArea) chatArea.innerHTML = '';
+  if (welcome) {
+      chatArea.appendChild(welcome);
+      welcome.style.display = 'flex';
+  }
+};
+
+window._clearChatDOM = function() {
   window.chatHistory = [];
   if (chatArea) chatArea.innerHTML = '';
   if (welcome) {
@@ -70,7 +85,7 @@ window.stopVoice = async function() {
   window.isStreaming = false;
   if (sendBtn) sendBtn.disabled = false;
   if (window._liveBackendAiBubble) {
-    window._liveBackendAiBubble.innerHTML = '<em style="color:var(--muted)">⛔ Interrotto</em>';
+    window._liveBackendAiBubble.innerHTML = `<em style="color:var(--muted)">⛔ ${window.I18N?.webui_chat_interrupted || 'Stopped'}</em>`;
     window._liveBackendAiBubble = null;
   }
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
@@ -100,7 +115,15 @@ window.refreshStatus = async function() {
     if (sbB) sbB.textContent = d.backend || '—';
     if (sbM) sbM.textContent = d.model || '—';
     if (sbS) sbS.textContent = d.persona || '—';
-    if (tbM) tbM.textContent = d.model || (window.I18N.offline || 'Offline');
+
+    const isConnected = !!d.model;
+    if (tbM) tbM.textContent = isConnected ? 'Online' : (window.t ? window.t('webui_chat_offline') : 'Offline');
+    const tbDot = document.getElementById('tb-status-dot');
+    if (tbDot) {
+        tbDot.style.background = isConnected ? 'var(--green)' : 'var(--red)';
+        tbDot.style.boxShadow = isConnected ? '0 0 8px var(--green)' : '0 0 8px var(--red)';
+        tbDot.className = isConnected ? 'pulsing' : '';
+    }
     
     if (d.avatar) {
         window.ZentraAvatar = d.avatar;
@@ -117,44 +140,30 @@ window.refreshStatus = async function() {
 
 
 
-    if (window._applyMicState) window._applyMicState(d.mic === 'ON');
+    const micIsOn = (d.mic === 'ON');
+    const pttIsOn = (d.ptt === 'ON');
+    if (window._applyMicState) window._applyMicState(micIsOn);
     if (window._applyTTSState) window._applyTTSState(d.tts === 'ON');
-    if (window._applyPTTState) window._applyPTTState(d.ptt === 'ON');
+    // PTT can only be ON if MIC is also ON — enforce this dependency client-side
+    if (window._applyPTTState) window._applyPTTState(micIsOn && pttIsOn);
     
     const ac = d.audio_config || {};
     if (window._applyRoutingState) window._applyRoutingState(ac.stt_source || 'system', ac.tts_destination || 'web');
 
   } catch(e) {
-    const tbM = document.getElementById('tb-model');
-    if (tbM) tbM.textContent = window.I18N.offline || 'Offline';
+    const tbDot = document.getElementById('tb-status-dot');
+    if (tbM) tbM.textContent = window.t ? window.t('webui_chat_offline') : 'Offline';
+    if (tbDot) {
+        tbDot.style.background = 'var(--red)';
+        tbDot.style.boxShadow = '0 0 8px var(--red)';
+        tbDot.className = '';
+    }
   }
 };
 
 window.loadPlugins = async function() {
-  try {
-    const cfg  = await (await fetch('/zentra/config')).json();
-    const icons = {DASHBOARD:'📊',FILE_MANAGER:'📁',HELP:'❓',MEDIA:'🎵',ROLEPLAY:'🎭',SYSTEM:'⚙',WEB:'🌐',WEBCAM:'📷',WEB_UI:'💻'};
-    const prompts = {
-      DASHBOARD: window.I18N.prompt_dashboard,
-      FILE_MANAGER: 'read: config/system.yaml',
-      HELP: window.I18N.prompt_help,
-      MEDIA: window.I18N.prompt_media,
-      ROLEPLAY: window.I18N.prompt_roleplay,
-      SYSTEM: window.I18N.prompt_system,
-      WEB: window.I18N.prompt_web,
-      WEBCAM: window.I18N.prompt_webcam
-    };
-    let html = '';
-    for(const [tag,pc] of Object.entries(cfg.plugins||{})) {
-      const on = pc.enabled !== false;
-      const pText = prompts[tag] ? prompts[tag].replace(/'/g, "\\'") : '';
-      const onClick = on && pText ? `onclick="window.startPrompt('${pText}')"` : '';
-      const cursor = on && pText ? 'cursor:pointer;' : (on ? 'cursor:default;' : 'cursor:not-allowed;');
-      html+=`<div class="sidebar-btn" ${onClick} style="font-size:12px;${!on?'opacity:.4;':''}${cursor}"><span class="icon">${icons[tag]||'🧩'}</span> ${tag}</div>`;
-    }
-    const sbP = document.getElementById('sb-plugins');
-    if (sbP) sbP.innerHTML = html || `<div style="font-size:12px;color:var(--muted);">${window.I18N.none || 'None'}</div>`;
-  } catch(e){}
+  // HIDDEN: the user requested to remove the Active Plugins section from the sidebar for now
+  // to save space and unnecessary processing.
 };
 
 window.toggleSidebarDesktop = function() {

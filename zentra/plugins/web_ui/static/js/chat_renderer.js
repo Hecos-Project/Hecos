@@ -196,3 +196,12 @@ window.addBubble = addBubble;
 window.renderMarkdown = renderMarkdown;
 window.tryLoadAudio = tryLoadAudio;
 window.showStopVoiceBtn = showStopVoiceBtn;
+
+// Alias used by chat_history.js to restore historical messages
+window.appendMessage = function(role, text, opts = {}) {
+    if (!text || opts.noSave === undefined) opts.noSave = true;
+    // Only add if there is actual content
+    if (text && text.trim()) {
+        window.addBubble(role, text);
+    }
+};

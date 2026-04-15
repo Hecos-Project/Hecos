@@ -5,10 +5,54 @@ import threading
 import sys
 import yaml
 import urllib.parse
+import psutil
+from datetime import datetime
 from flask import request, jsonify
 from zentra.core.constants import LOGS_DIR
+from zentra.core.logging.hub import get_hub
+import subprocess
+
+# ── CPU background sampler ─────────────────────────────────────────────────────
+# psutil.cpu_percent() without interval= always returns 0.0 or 100% on first
+# call because it has no baseline. We cache a reading every 2 seconds instead.
+_cpu_cache = {"value": 0.0, "enabled": True}
+
+def _cpu_sampler():
+    # Prime the baseline sample (discarded)
+    psutil.cpu_percent(interval=None)
+    while True:
+        try:
+            if _cpu_cache.get("enabled", True):
+                _cpu_cache["value"] = psutil.cpu_percent(interval=2)
+            else:
+                # When disabled, we sleep longer and do nothing to save resources
+                time.sleep(5)
+        except Exception:
+            time.sleep(5)
+
+_cpu_thread = threading.Thread(target=_cpu_sampler, daemon=True)
+_cpu_thread.start()
+# ──────────────────────────────────────────────────────────────────────────────
+
+def get_vram_usage():
+    """Returns VRAM usage percentage via nvidia-smi, or 0 if fails."""
+    try:
+        # Query used and total memory in MiB
+        cmd = ["nvidia-smi", "--query-gpu=memory.used,memory.total", "--format=csv,noheader,nounits"]
+        res = subprocess.check_output(cmd, encoding="utf-8", timeout=2).strip()
+        if res:
+            used, total = [int(x.strip()) for x in res.split(",")]
+            if total > 0:
+                return round((used / total) * 100, 1)
+    except Exception:
+        pass
+    return 0
 
 def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
+    # Set global telemetry flag based on DASHBOARD plugin status
+    global _cpu_cache
+    _cpu_cache["enabled"] = cfg_mgr.config.get("plugins", {}).get("DASHBOARD", {}).get("enabled", True)
+
     def _sm():
         return get_sm() if callable(get_sm) else get_sm
 
@@ -17,7 +61,8 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         try:
             data = request.get_json(force=True) or {}
             page_type = data.get("type", "unknown")
-            hb_file = os.path.join(LOGS_DIR, "webui_heartbeat.json")
+            import tempfile
+            hb_file = os.path.join(tempfile.gettempdir(), "zentra_webui_heartbeat.json")
             hb_data = {}
             if os.path.exists(hb_file):
                 try:
@@ -85,9 +130,23 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
             
-            from zentra.core.audio.device_manager import get_audio_config
+            from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
-            ptt_on     = acfg.get("push_to_talk", False)
+            ptt_on = acfg.get("push_to_talk", False)
+            
+            # ── Integrity Guard ────────────────────────────────────────────────────
+            # PTT requires MIC (continuous listening) to be enabled.
+            # If MIC is OFF but PTT is still ON in config (stale state), correct it
+            # here to ensure the frontend always receives a coherent state.
+            if not mic_on and ptt_on:
+                ptt_on = False
+                acfg["push_to_talk"] = False
+                try:
+                    _save_audio_config(acfg)
+                except Exception:
+                    pass
+            # ──────────────────────────────────────────────────────────────────────
+            
             ptt_status = "ON" if ptt_on else "OFF"
 
             from datetime import datetime
@@ -127,6 +186,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,
+                "cpu":        _cpu_cache["value"] if _cpu_cache["enabled"] else None,
+                "ram":        psutil.virtual_memory().percent if _cpu_cache["enabled"] else None,
+                "vram":       get_vram_usage() if _cpu_cache["enabled"] else None,
                 "audio_config": {
                     "stt_source": stt_s,
                     "tts_destination": tts_d
@@ -199,77 +261,6 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
 
-    @app.route("/api/logs/stream")
-    def stream_logs():
-        """SSE endpoint that streams latest Info and Debug logs."""
-        from flask import Response, stream_with_context
-        import time
-        from datetime import datetime
-
-        logger.debug("[WebUI-Logs] SSE Connection Request Received")
-
-        def generate():
-            # Get current log file paths (dynamic based on date)
-            today = datetime.now().strftime('%Y-%m-%d')
-            info_path  = os.path.join(LOGS_DIR, f"zentra_info_{today}.log")
-            debug_path = os.path.join(LOGS_DIR, f"zentra_debug_{today}.log")
-            
-            files = {
-                'info':  {'path': info_path,  'pos': 0, 'label': 'INFO'},
-                'debug': {'path': debug_path, 'pos': 0, 'label': 'DEBUG'}
-            }
-
-            # 1. SEND HISTORY (Last 50 lines per file)
-            for k, f_info in files.items():
-                if os.path.exists(f_info['path']):
-                    try:
-                        with open(f_info['path'], 'r', encoding='utf-8', errors='replace') as f:
-                            lines = f.readlines()
-                            f_info['pos'] = f.tell() # Mark current end
-                            
-                            # Send last 50 lines as history
-                            for line in lines[-50:]:
-                                if line.strip():
-                                    data = json.dumps({
-                                        "time":  "---", # Historical
-                                        "level": f_info['label'],
-                                        "text":  line.strip()
-                                    })
-                                    yield f"data: {data}\n\n"
-                    except Exception as e:
-                        logger.error(f"[WebUI] Log history error for {k}: {e}")
-
-            # 2. POLL FOR NEW LINES
-            while True:
-                for k, f_info in files.items():
-                    if not os.path.exists(f_info['path']):
-                        continue
-                    
-                    try:
-                        # Check if file was rotated or truncated
-                        cur_size = os.path.getsize(f_info['path'])
-                        if cur_size < f_info['pos']:
-                            f_info['pos'] = 0 # reset
-                        
-                        with open(f_info['path'], 'r', encoding='utf-8', errors='replace') as f:
-                            f.seek(f_info['pos'])
-                            new_lines = f.readlines()
-                            f_info['pos'] = f.tell()
-                            
-                            for line in new_lines:
-                                if line.strip():
-                                    data = json.dumps({
-                                        "time":  datetime.now().strftime("%H:%M:%S"),
-                                        "level": f_info['label'],
-                                        "text":  line.strip()
-                                    })
-                                    yield f"data: {data}\n\n"
-                    except Exception as e:
-                        pass # Ignore transient errors during rotation
-                
-                time.sleep(1) # Poll for new lines every second
-
-        return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
     @app.route("/api/events")
     def stream_events():

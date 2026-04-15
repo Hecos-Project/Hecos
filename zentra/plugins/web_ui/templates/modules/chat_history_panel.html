@@ -1,0 +1,136 @@
+<!-- CHAT HISTORY PANEL - included in chat_sidebar.html -->
+<div class="sidebar-section" id="chat-history-section">
+  <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center; padding-right:10px;">
+    <span>{{ t('webui_chat_history_label') }}</span>
+    <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size:12px; opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)">🗑️</span>
+  </div>
+
+  <!-- ── Mode Picker ──────────────────────────────────────────── -->
+  <div id="chat-mode-picker" class="chat-mode-picker">
+    <button class="mode-btn" id="mode-btn-normal"
+            onclick="window.selectChatMode('normal')"
+            title="{{ t('webui_chat_mode_normal_tip') }}">
+      <span class="mode-icon">☁️</span>
+      <span class="mode-label">Normal</span>
+    </button>
+    <button class="mode-btn" id="mode-btn-auto_wipe"
+            onclick="window.selectChatMode('auto_wipe')"
+            title="{{ t('webui_chat_mode_autowipe_tip') }}">
+      <span class="mode-icon">🧹</span>
+      <span class="mode-label">Auto-Wipe</span>
+    </button>
+    <button class="mode-btn" id="mode-btn-incognito"
+            onclick="window.selectChatMode('incognito')"
+            title="{{ t('webui_chat_mode_incognito_tip') }}">
+      <span class="mode-icon">🕵️</span>
+      <span class="mode-label">Incognito</span>
+    </button>
+  </div>
+  <div id="mode-lock-notice" class="mode-lock-notice" style="display:none;">
+    🔒 {{ t('webui_chat_mode_locked') }}
+  </div>
+  <!-- ──────────────────────────────────────────────────────────── -->
+
+  <!-- New Chat button -->
+  <div style="margin-bottom:8px;">
+    <button class="sidebar-btn" onclick="window.newChatSession()" style="width:100%; justify-content:center; font-size:12px; padding:8px 6px;">
+      <span class="icon">💬</span> {{ t('webui_chat_new') }}
+    </button>
+  </div>
+
+  <!-- Session list -->
+  <div id="chat-history-list" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
+    <div class="history-empty" style="font-size:12px; color:var(--muted); padding:8px 4px;">Caricamento...</div>
+  </div>
+</div>
+
+<style>
+/* ── Container Styling ──────────────────────────────────────────── */
+#chat-history-section {
+  background: rgba(13, 14, 20, 0.6); /* Slightly darker/distinct background */
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 12px 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ── Mode Picker ────────────────────────────────────────────────── */
+.chat-mode-picker {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--glass);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+  user-select: none;
+  line-height: 1.2;
+}
+.mode-btn .mode-icon { font-size: 16px; line-height: 1; }
+.mode-btn .mode-label { font-size: 9px; letter-spacing: 0.3px; text-transform: uppercase; }
+.mode-btn:hover:not(:disabled) { background: var(--glass-b); color: var(--text); }
+
+/* Active state per mode */
+#mode-btn-normal.active    { border-color: var(--accent); color: var(--accent); background: rgba(102,252,241,0.08); box-shadow: 0 0 8px rgba(102,252,241,0.15); }
+#mode-btn-auto_wipe.active { border-color: #f59e0b;       color: #f59e0b;       background: rgba(245,158,11,0.08); box-shadow: 0 0 8px rgba(245,158,11,0.15); }
+#mode-btn-incognito.active { border-color: #8b5cf6;       color: #8b5cf6;       background: rgba(139,92,246,0.08); box-shadow: 0 0 8px rgba(139,92,246,0.15); }
+
+/* Locked state */
+.chat-mode-picker.locked .mode-btn {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.chat-mode-picker.locked .mode-btn.active {
+  opacity: 0.75;
+}
+
+/* Lock notice */
+.mode-lock-notice {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+  padding: 3px 0 6px;
+}
+.mode-lock-notice a { color: var(--accent); text-decoration: none; }
+.mode-lock-notice a:hover { text-decoration: underline; }
+
+/* ── History items ────────────────────────────────────────────── */
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s;
+  border: 1px solid transparent;
+}
+.history-item:hover { background: rgba(102,252,241,0.05); border-color: rgba(102,252,241,0.15); }
+.history-item.active { background: rgba(102,252,241,0.1); border-color: rgba(102,252,241,0.3); }
+.history-item-main { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
+.history-icon { font-size:14px; flex-shrink:0; }
+.history-item-info { flex:1; min-width:0; }
+.history-title { font-size:12px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+.history-action-btn { background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; opacity:.5; transition:opacity .15s; }
+.history-action-btn:hover { opacity:1; }
+.history-empty { font-size:12px; color:var(--muted); padding:8px 4px; text-align:center; }
+.history-item-actions { display:none; }
+.history-item:hover .history-item-actions { display:flex; }
+</style>

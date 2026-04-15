@@ -325,18 +325,5 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                 # Append the raw output for non-image tools (e.g. system commands)
                 video_response += f"\n\n{out}"
                 
-    # DEBUG: trace what REACHES the browser exactly at the exit point
-    try:
-        import datetime
-        _pat = r'\[\[IMG:'
-        _has_vr = bool(_re.search(_pat, video_response))
-        _zentra_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        _logs_dir = os.path.join(_zentra_dir, "logs")
-        with open(os.path.join(_logs_dir, "image_gen_debug.txt"), "a", encoding="utf-8") as _f:
-            _now = datetime.datetime.now().strftime("%H:%M:%S")
-            _f.write(f"[{_now}] [ProcessorExitDebug] Final video_response (len={len(video_response)}, has_img={_has_vr}): {video_response[:200]}\n")
-    except Exception:
-        pass
-
     return video_response, clean_voice_text
 

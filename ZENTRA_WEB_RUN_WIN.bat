@@ -46,6 +46,11 @@ echo.
 echo   * Chat:     %SCHEME%://%LAN_IP%:7070/chat
 echo   * Config:   %SCHEME%://%LAN_IP%:7070/zentra/config/ui
 echo   * Drive:    %SCHEME%://%LAN_IP%:7070/drive
+echo.
+if "%SCHEME%"=="https" (
+  echo   [!] HTTPS Active: Certificates are managed by internal PKI.
+  echo   [!] Root CA: zentra/core/security/pki/ca.pem
+)
 echo  ==============================================================
 echo.
 

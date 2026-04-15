@@ -20,13 +20,14 @@ function pathId(path) {
 // ─── Load directory ──────────────────────────────────────────────────────────
 async function loadDir(path) {
   currentPath = path;
-  setTbody(`<tr class="empty-row"><td colspan="4">⏳ Caricamento...</td></tr>`);
+  const msgLoading = window.t ? window.t('webui_conf_msg_loading') : 'Loading...';
+  setTbody(`<tr class="empty-row"><td colspan="4">⏳ ${msgLoading}</td></tr>`);
 
   try {
     const res  = await fetch(`/drive/api/list?path=${encodeURIComponent(path)}`);
     const data = await res.json();
 
-    if (!data.ok) { showMsg("❌ " + data.error, "err"); return; }
+    if (!data.ok) { showMsg("❌ " + (data.error || "Error"), "err"); return; }
 
     allEntries = data.entries;
 
@@ -79,7 +80,7 @@ async function loadDrives() {
     } else {
       sel.innerHTML = ""; // Clear existing options
     }
-    sel.title  = "Cambio disco / periferica";
+    sel.title  = window.t ? window.t('webui_drive_drive_sel_hint') : "Change drive";
     sel.style.cssText = `
       background: rgba(102,252,241,0.08);
       color: var(--accent);
@@ -128,7 +129,7 @@ async function loadDrives() {
 function renderBreadcrumb(crumbs, rootLabel) {
   const bar = document.getElementById("path-bar");
   // Show the actual root (e.g. "C:/") as the first clickable crumb
-  const rootDisplay = rootLabel || "🏠 Drive";
+  const rootDisplay = rootLabel || (window.t ? "🏠 " + window.t('webui_drive_root_label') : "🏠 Drive");
   let html = `<span class="crumb" onclick="navigateTo('')" title="${rootLabel}">${rootDisplay}</span>`;
   crumbs.forEach((c, i) => {
     const isLast = i === crumbs.length - 1;
@@ -148,10 +149,12 @@ function updateLocationBar(path, entries, absPath, rootLabel) {
 
   const dirs  = entries.filter(e => e.is_dir).length;
   const files = entries.filter(e => !e.is_dir).length;
-  document.getElementById("loc-count").textContent = `${dirs} cart. · ${files} file`;
+  const dirsFilesMsg = window.t ? window.t('webui_drive_dirs_files', {dirs, files}) : `${dirs} folders · ${files} files`;
+  document.getElementById("loc-count").textContent = dirsFilesMsg;
 
+  const dropzoneTpl = window.t ? window.t('webui_drive_upload_to') : 'Drop files here to upload to:';
   document.getElementById("dropzone").textContent =
-    `⬆️  Trascina file qui per caricarli in:  ${dispPath}`;
+    `⬆️  ${dropzoneTpl}  ${dispPath}`;
 }
 
 // ─── File table ───────────────────────────────────────────────────────────────
@@ -188,7 +191,8 @@ function renderTable() {
   });
 
   if (!entries.length) {
-    setTbody(`<tr class="empty-row"><td colspan="4">📂 Cartella vuota</td></tr>`);
+    const emptyMsg = window.t ? window.t('webui_drive_empty') : 'Folder empty';
+    setTbody(`<tr class="empty-row"><td colspan="4">📂 ${emptyMsg}</td></tr>`);
     updateStatusBar();
     return;
   }
@@ -214,9 +218,9 @@ function renderTable() {
           ? `<button onclick="navigateTo('${esc(e.path)}')" title="Apri">📂</button>`
           : `<button onclick="downloadFile('${esc(e.path)}')" title="Scarica">⬇️</button>`}
         ${!e.is_dir && isEditable(e.name)
-          ? `<button onclick="openEditor('${esc(e.path)}')" title="Apri in Zentra Editor" style="color:#58a6ff;">✏️</button>`
+          ? `<button onclick="openEditor('${esc(e.path)}')" title="${window.t ? window.t('webui_drive_edit') : 'Edit'}" style="color:#58a6ff;">✏️</button>`
           : ''}
-        <button onclick="deleteItem('${esc(e.path)}','${esc(e.name)}')" title="Elimina">🗑️</button>
+        <button onclick="deleteItem('${esc(e.path)}','${esc(e.name)}')" title="${window.t ? window.t('webui_conf_logs_delete') : 'Delete'}">🗑️</button>
       </td>
     </tr>`;
   }).join(""));
@@ -231,7 +235,8 @@ function setTbody(html) {
 function updateStatusBar() {
   const dirs  = allEntries.filter(e => e.is_dir).length;
   const files = allEntries.filter(e => !e.is_dir).length;
-  document.getElementById("sb-info").textContent = `${dirs} cartelle  ·  ${files} file`;
+  const infoMsg = window.t ? window.t('webui_drive_dirs_files', {dirs, files}) : `${dirs} folders · ${files} files`;
+  document.getElementById("sb-info").textContent = infoMsg;
 }
 
 // ─── Sidebar Tree ─────────────────────────────────────────────────────────────
@@ -307,7 +312,8 @@ async function uploadFiles(files) {
   bar.value = 0;
 
   const dest = currentPath ? `/${currentPath.replace(/\\/g, "/")}` : "/";
-  label.textContent = `Caricamento in ${dest} ...`;
+  const loadingMsg = window.t ? window.t('webui_conf_msg_loading') : 'Loading...';
+  label.textContent = `${loadingMsg} ${dest} ...`;
 
   const fd = new FormData();
   fd.append("path", currentPath);
@@ -330,8 +336,9 @@ async function uploadFiles(files) {
     });
 
     bar.value = 100;
-    label.textContent = "✅ Upload completato!";
-    showMsg(`✅ ${files.length} file caricati in ${dest}`, "ok");
+    const okMsg = window.t ? window.t('webui_drive_upload_ok') : 'Upload completed!';
+    label.textContent = `✅ ${okMsg}`;
+    showMsg(`✅ ${files.length} ${window.t ? window.t('webui_chat_files') : 'files'} ${window.t ? window.t('webui_drive_upload_ok') : 'uploaded'} ${dest}`, "ok");
     setTimeout(() => { progWrap.style.display = "none"; }, 2500);
     loadDir(currentPath);
   } catch (e) {
@@ -351,7 +358,8 @@ function downloadFile(path) {
 
 // ─── Delete ──────────────────────────────────────────────────────────────────
 async function deleteItem(path, name) {
-  if (!confirm(`Eliminare "${name}"?\nL'operazione è irreversibile.`)) return;
+  const confirmMsg = window.t ? window.t('webui_drive_delete_confirm', {name}) : `Delete ${name}?`;
+  if (!confirm(confirmMsg)) return;
   try {
     const res  = await fetch(`/drive/api/delete?path=${encodeURIComponent(path)}`, { method: "DELETE" });
     const data = await res.json();
@@ -388,7 +396,8 @@ async function confirmMkdir() {
     });
     const data = await res.json();
     if (data.ok) {
-      showMsg(`📁 Cartella "${name}" creata in ${currentPath || "/"}`, "ok");
+      const successMsg = window.t ? window.t('webui_drive_mkdir_success', {name, path: currentPath || "/"}) : `Folder created`;
+      showMsg(`📁 ${successMsg}`, "ok");
       delete treeData[currentPath]; // invalidate cache → tree will expand on next load
       loadDir(currentPath);
     } else { showMsg("❌ " + data.error, "err"); }
@@ -452,7 +461,8 @@ async function loadQuickLinks() {
     const data = await res.json();
 
     if (!data.ok || !data.groups || !data.groups.length) {
-      body.innerHTML = `<div class="sb-empty">Nessun link disponibile.</div>`;
+      const noLinksMsg = window.t ? window.t('webui_drive_no_links') : 'No links available.';
+      body.innerHTML = `<div class="sb-empty">${noLinksMsg}</div>`;
       return;
     }
 

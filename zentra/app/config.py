@@ -130,7 +130,8 @@ class ConfigManager:
 
             # Flag for monitor.py to avoid unnecessary restarts
             try:
-                with open(".config_saved_by_app", "w") as f:
+                flag_path = _os.path.join(_PROJECT_ROOT, ".config_saved_by_app")
+                with open(flag_path, "w") as f:
                     f.write("1")
             except Exception:
                 pass
