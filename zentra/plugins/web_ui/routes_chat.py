@@ -87,6 +87,12 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
             sess["queue"].put({"type": "token", "text": full_text[i:i+40]})
             time.sleep(0.02)
 
+        # ── Finalize agent trace bubble BEFORE (blocking) TTS synthesis ──────────
+        # This lets the frontend stop the ⚙️ spinner as soon as the text response
+        # is fully rendered, without waiting for Piper to finish generating audio.
+        sess["queue"].put({"type": "trace_done"})
+        # ─────────────────────────────────────────────────────────────────────────
+
         # Emit camera request event AFTER the text tokens so it appears last
         if camera_request_pending:
             sess["queue"].put({"type": "camera_request"})

@@ -76,6 +76,8 @@ window.sendMessage = async function() {
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
+      } else if(ev.type === 'trace_done') {
+        if (window.AgentUI) window.AgentUI.finalize();
       } else if(ev.type === 'audio_ready') {
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
       } else if(ev.type === 'system_audio_playing') {
@@ -145,6 +147,8 @@ window.sendInternalMessage = async function(text) {
         if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
       } else if(ev.type === 'camera_request') {
         if (window.ClientCameraManager) window.ClientCameraManager.showCameraButton(aiBubble);
+      } else if(ev.type === 'trace_done') {
+        if (window.AgentUI) window.AgentUI.finalize();
       } else if(ev.type === 'audio_ready') {
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
       } else if(ev.type === 'system_audio_playing') {
