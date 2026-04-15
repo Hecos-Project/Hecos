@@ -46,6 +46,12 @@ def _monitor_backend():
     
     while True:
         try:
+            # Check if plugin is enabled before proceeding
+            # We use get_plugin_config directly from cfg_mgr which is fresh
+            if not cfg_mgr.get_plugin_config("DASHBOARD", "enabled", True):
+                time.sleep(5)
+                continue
+
             # Ricarichiamo il config ad ogni ciclo per recepire modifiche fatte con F7
             cfg_mgr.reload()
             

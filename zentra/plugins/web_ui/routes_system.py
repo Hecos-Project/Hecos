@@ -15,16 +15,20 @@ import subprocess
 # ── CPU background sampler ─────────────────────────────────────────────────────
 # psutil.cpu_percent() without interval= always returns 0.0 or 100% on first
 # call because it has no baseline. We cache a reading every 2 seconds instead.
-_cpu_cache = {"value": 0.0}
+_cpu_cache = {"value": 0.0, "enabled": True}
 
 def _cpu_sampler():
     # Prime the baseline sample (discarded)
     psutil.cpu_percent(interval=None)
     while True:
         try:
-            _cpu_cache["value"] = psutil.cpu_percent(interval=2)
+            if _cpu_cache.get("enabled", True):
+                _cpu_cache["value"] = psutil.cpu_percent(interval=2)
+            else:
+                # When disabled, we sleep longer and do nothing to save resources
+                time.sleep(5)
         except Exception:
-            pass
+            time.sleep(5)
 
 _cpu_thread = threading.Thread(target=_cpu_sampler, daemon=True)
 _cpu_thread.start()
@@ -45,6 +49,10 @@ def get_vram_usage():
     return 0
 
 def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
+    # Set global telemetry flag based on DASHBOARD plugin status
+    global _cpu_cache
+    _cpu_cache["enabled"] = cfg_mgr.config.get("plugins", {}).get("DASHBOARD", {}).get("enabled", True)
+
     def _sm():
         return get_sm() if callable(get_sm) else get_sm
 
@@ -178,9 +186,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,
-                "cpu":        _cpu_cache["value"],
-                "ram":        psutil.virtual_memory().percent,
-                "vram":       get_vram_usage(),
+                "cpu":        _cpu_cache["value"] if _cpu_cache["enabled"] else None,
+                "ram":        psutil.virtual_memory().percent if _cpu_cache["enabled"] else None,
+                "vram":       get_vram_usage() if _cpu_cache["enabled"] else None,
                 "audio_config": {
                     "stt_source": stt_s,
                     "tts_destination": tts_d

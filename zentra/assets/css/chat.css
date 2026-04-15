@@ -165,6 +165,24 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 
 .input-hint { text-align:center; font-size:11px; color:var(--muted); margin-top:8px; }
 
+/* Status label explicitly outside the input layout */
+#web-ptt-status-bar {
+  font-size: 10px;
+  color: var(--muted, #64748b);
+  text-align: center;
+  transition: all 0.2s ease;
+  margin-top: 6px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.85;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
 @media(max-width: 700px) { #sidebar { display:none; } }
 
 /* PTT INDICATOR */

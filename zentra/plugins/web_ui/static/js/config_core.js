@@ -440,7 +440,7 @@ async function refreshStatus() {
     const updateMetric = (id, val) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.textContent = val !== undefined ? val + '%' : '—';
+        el.textContent = (val !== undefined && val !== null) ? val + '%' : '—';
         el.className = 'stat-val ' + (val >= 90 ? 'val-err' : '');
     };
     updateMetric('s-cpu', d.cpu);
