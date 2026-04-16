@@ -191,6 +191,13 @@ window.deleteChatSession = async function (e, sessionId) {
         window.chatHistoryState.activeSessionId = null;
     }
     await window.loadChatSessions();
+    
+    // Fallback: If no sessions left, create a fresh one. If sessions exist but none active, activate the first one.
+    if (window.chatHistoryState.sessions.length === 0) {
+        await window.newChatSession();
+    } else if (!window.chatHistoryState.activeSessionId) {
+        await window.activateChatSession(window.chatHistoryState.sessions[0].id);
+    }
 };
 
 window.deleteAllChatSessions = async function (e) {
@@ -203,6 +210,7 @@ window.deleteAllChatSessions = async function (e) {
         else if (window.chatArea) window.chatArea.innerHTML = '';
         window.chatHistoryState.activeSessionId = null;
         await window.loadChatSessions();
+        await window.newChatSession();
     } else {
         alert('Errore durante l\'eliminazione: ' + res.error);
     }
