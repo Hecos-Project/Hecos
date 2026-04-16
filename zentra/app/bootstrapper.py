@@ -57,6 +57,13 @@ class SystemBootstrapper:
         # Synchronize list of available personalities in config
         self.config_manager.sync_available_personalities()
         
+        # Start KeyManager background health monitor
+        try:
+            from zentra.core.keys.key_manager import get_key_manager
+            get_key_manager().start_background_monitor(interval_seconds=300) # Check every 5 mins
+        except Exception as _km_e:
+            logger.warning("APP", f"KeyManager monitor startup error: {_km_e}")
+        
         config = self.config_manager.config
         self.state_manager.system_status = translator.t("diagnostics")
         diagnostica.run_initial_check(config)

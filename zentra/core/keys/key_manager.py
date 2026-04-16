@@ -43,6 +43,8 @@ class KeyManager:
                 inst._pools: Dict[str, List[ApiKeyEntry]] = {}
                 inst._pool_lock = threading.Lock()
                 inst._loaded = False
+                inst._monitor_active = False
+                inst._monitor_thread: Optional[threading.Thread] = None
                 cls._instance = inst
         return cls._instance  # type: ignore
 
@@ -137,6 +139,60 @@ class KeyManager:
             entry = self.get_entry(provider, value)
             if entry:
                 entry.mark_valid()
+
+    # ─── Background Monitoring ──────────────────────────────────────────────
+
+    def start_background_monitor(self, interval_seconds: int = 600):
+        """
+        Starts a background thread that periodically validates keys.
+        Only runs if not already active and if there are keys to check.
+        """
+        if self._monitor_active:
+            return
+
+        def _monitor_loop():
+            from zentra.core.logging.logger import info as log_info
+            log_info("[KeyManager] Background health monitor started.")
+            self._monitor_active = True
+            
+            while self._monitor_active:
+                try:
+                    # 1. Identify providers that actually have keys
+                    with self._pool_lock:
+                        providers = [p for p, entries in self._pools.items() if entries]
+                    
+                    if not providers:
+                        # Sleep and check again later if no keys are configured
+                        time.sleep(interval_seconds)
+                        continue
+
+                    log_info(f"[KeyManager] Running periodic health check for: {', '.join(providers)}")
+                    for p in providers:
+                        if not self._monitor_active: break
+                        # We only validate "Unknown" or "Valid" keys once in a while.
+                        # Keys already "Invalid" are skipped. "Rate Limited" are also skipped 
+                        # until their cooldown expires (handled by validate_key inside).
+                        self.validate_provider(p)
+                        time.sleep(2) # Prevent self-rate-limiting our validation calls
+                        
+                except Exception as e:
+                    from zentra.core.logging.logger import error as log_error
+                    log_error(f"[KeyManager] Monitor loop error: {e}")
+                
+                # Wait for next interval
+                for _ in range(interval_seconds):
+                    if not self._monitor_active: break
+                    time.sleep(1)
+
+        self._monitor_thread = threading.Thread(target=_monitor_loop, daemon=True, name="KeyHealthMonitor")
+        self._monitor_thread.start()
+
+    def stop_background_monitor(self):
+        """Signals the background monitor thread to stop."""
+        self._monitor_active = False
+        if self._monitor_thread:
+            # We don't join to avoid blocking the main thread if it's shutting down
+            self._monitor_thread = None
 
     def validate_key(self, provider: str, value: str) -> dict:
         """

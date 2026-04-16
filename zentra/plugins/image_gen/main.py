@@ -131,7 +131,9 @@ class ImageGenTools:
                             # Mark as exhausted so get_key returns the next one
                             # Reason varies based on error
                             reason = "rate_limited" if ("402" in err_msg or "429" in err_msg) else "server_overload"
-                            manager.mark_exhausted(provider, api_key, reason=reason)
+                            # If it was a timeout or overload, use a longer cooldown (1 hour) to keep the system responsive
+                            cd_sec = 3600 if reason == "server_overload" else 60.0
+                            manager.mark_exhausted(provider, api_key, reason=reason, cooldown=cd_sec)
                         except Exception:
                             pass
                         continue # Try next key

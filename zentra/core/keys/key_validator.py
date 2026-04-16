@@ -35,22 +35,32 @@ def validate_key(provider: str, value: str) -> dict:
 
 def _validate_hf(key: str) -> dict:
     try:
+        # 1. Base identity check
         url = "https://huggingface.co/api/whoami-v2"
         headers = {"Authorization": f"Bearer {key}"}
-        r = requests.get(url, headers=headers, timeout=10)
+        r = requests.get(url, headers=headers, timeout=5)
         
-        if r.status_code == 200:
-            data = r.json()
-            name = data.get("name", "User")
-            return {"valid": True, "status": "valid", "message": f"Connected as {name}"}
-        elif r.status_code == 401:
-            return {"valid": False, "status": "invalid", "message": "Unauthorized (bad token)"}
-        elif r.status_code == 403:
-            return {"valid": False, "status": "invalid", "message": "Forbidden (invalid permissions or blocked)"}
-        elif r.status_code == 429:
-            return {"valid": False, "status": "rate_limited", "message": "Rate limited by Hugging Face"}
-        else:
+        if r.status_code != 200:
+            if r.status_code == 401:
+                return {"valid": False, "status": "invalid", "message": "Unauthorized (bad token)"}
             return {"valid": False, "status": "unknown", "message": f"HTTP {r.status_code}"}
+        
+        data = r.json()
+        name = data.get("name", "User")
+        
+        # 2. PROACTIVE INFERENCE CHECK (Check if key has access/quota for common models)
+        # We check the status of a popular model. If exhausted, this often returns 429/403.
+        test_model = "black-forest-labs/FLUX.1-schnell"
+        status_url = f"https://api-inference.huggingface.co/status/{test_model}"
+        r_status = requests.get(status_url, headers=headers, timeout=5)
+        
+        if r_status.status_code == 429:
+            return {"valid": False, "status": "rate_limited", "message": "HF Quota Exhausted / Rate Limited"}
+        elif r_status.status_code == 403:
+            return {"valid": False, "status": "invalid", "message": "Key lacks Inference API permissions"}
+            
+        return {"valid": True, "status": "valid", "message": f"Connected as {name}"}
+        
     except Exception as e:
         return {"valid": False, "status": "unknown", "message": f"Network Error: {str(e)}"}
 

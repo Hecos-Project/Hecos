@@ -209,6 +209,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     
     personality_path = os.path.join(PERSONALITY_DIR, personality_name)
     personality_prompt = "You are Zentra, an advanced AI."
+    visual_identity_block = ""
     
     # --- ROBUST FALLBACK CHECK ---
     if not os.path.exists(personality_path):
@@ -222,7 +223,16 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
             with open(personality_path, "r", encoding="utf-8") as f:
                 persona_data = pyyaml.safe_load(f)
                 personality_prompt = persona_data.get("system_prompt", "You are Zentra, an advanced AI.")
-            logger.debug("BRAIN", f"Personality loaded: {len(personality_prompt)} characters")
+                
+                # --- NEW: Visual Identity awareness ---
+                v_desc = persona_data.get("visual_description")
+                if v_desc:
+                    visual_identity_block = (
+                        "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"
+                        f"When asked to describe yourself or when you generate an image of yourself, always use these visual traits: {v_desc}. "
+                        "If you call the image generation tool to produce a photo of you, use this detailed description as the base for the prompt.\n"
+                    )
+            logger.debug("BRAIN", f"Personality loaded: {len(personality_prompt)} characters (Visual awareness: {bool(v_desc)})")
         except Exception as e:
             logger.error(f"BRAIN: Personality reading error: {e}")
             logger.debug("BRAIN", f"Personality reading error: {e}")
@@ -363,6 +373,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
 
     system_prompt = (
         f"{personality_prompt}\n"
+        f"{visual_identity_block}"
         f"{memory_context}\n"
         f"{history_block}\n"
         f"{self_awareness}\n"

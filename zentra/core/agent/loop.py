@@ -72,17 +72,23 @@ class AgentExecutor:
                 for unwanted in ["a photo of ", "a picture of ", "una foto di ", "un'immagine di ", "photo of ", "picture of "]:
                     clean_target = clean_target.replace(unwanted, "")
                 
-                # Smart Enrichment: If user says 'you/me/tua', add persona visual context
-                enrich_keywords = ["you", "me", "tua", "mia", "tuo", "tuoi", "yourself", "te "]
+                # Smart Enrichment: If user says 'you/me/persona_name', add persona visual context
+                active_p = self.config.get('ai', {}).get('active_personality', 'Zentra_System_Soul.yaml')
+                persona_name_raw = active_p.replace('.yaml', '').replace('_', ' ').lower()
+                persona_short = persona_name_raw.split(' ')[0] # e.g. "urania"
+                
+                enrich_keywords = ["you", "me", "tua", "mia", "tuo", "tuoi", "yourself", "te ", persona_short, persona_name_raw]
                 prompt_bypass = clean_target
                 
                 if any(k in raw_prompt.lower() for k in enrich_keywords):
                     visual_desc = self._get_persona_visual_description()
                     if visual_desc:
-                        self._emit(f"Enriching prompt with persona YAML context...", level="info")
+                        self._emit(f"Enriching prompt with persona YAML context: {persona_short}...", level="info")
                         # Construct a clean, professional prompt for the provider
-                        target_action = clean_target.replace('you', '').replace('your', '').replace('tua', '').replace('me', '').strip()
-                        prompt_bypass = f"A photo of {visual_desc}, {target_action}"
+                        target_action = clean_target.replace('you', '').replace('your', '').replace('tua', '').replace('me', '').replace(persona_short, '').strip()
+                        # Clean up punctuation after removal
+                        target_action = target_action.lstrip(',').lstrip('.').strip()
+                        prompt_bypass = f"A photo of {visual_desc}, {target_action}" if target_action else f"A photo of {visual_desc}"
                 
                 from zentra.plugins.image_gen.main import tools as image_gen_tools
                 result = image_gen_tools.generate_image(prompt_bypass)
@@ -296,12 +302,21 @@ class AgentExecutor:
         """Attempts to extract a visual description of the current AI identity from YAML or fallback."""
         try:
             # 1. Identity the active personality file
-            active_p = self.config.get('ai', 'active_personality', default='Zentra_System_Soul.yaml')
+            # Robust dict access for the plain dict 'self.config'
+            active_p = self.config.get('ai', {}).get('active_personality', 'Zentra_System_Soul.yaml')
             
             # 2. Try to load the YAML file
             from zentra.config.yaml_utils import load_yaml
+            # root_dir from zentra/core/agent/loop.py:
+            # os.path.dirname(__file__) -> zentra/core/agent
+            # .. -> zentra/core
+            # .. -> zentra
             root_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-            p_path = os.path.join(root_dir, "zentra", "personality", active_p)
+            p_path = os.path.join(root_dir, "personality", active_p)
+            
+            # If still not found, try one level up (workspace root) just in case
+            if not os.path.exists(p_path):
+                p_path = os.path.join(root_dir, "..", "zentra", "personality", active_p)
             
             if os.path.exists(p_path):
                 import yaml
@@ -316,7 +331,7 @@ class AgentExecutor:
             # 3. Hard-coded fallback for legacy or missing fields
             name = active_p.lower()
             if "urania" in name:
-                return "a beautiful futuristic woman with long glowing purple hair, technological cybernetic details, intelligent and seductive expression"
+                return "a beautiful female cybernetic android with bright turquoise neon-blue hair, bright blue eyes, wearing white and pink-glowing circuitry armor"
             elif "motoko" in name:
                 return "Major Motoko Kusanagi from Ghost in the Shell, purple hair, tactical suit"
             elif "atlas" in name:
