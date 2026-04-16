@@ -49,7 +49,7 @@ class HuggingFaceProvider:
             }
         }
 
-        r = requests.post(url, headers=headers, json=payload, timeout=60, proxies=get_proxies(provider="huggingface"))
+        r = requests.post(url, headers=headers, json=payload, timeout=90, proxies=get_proxies(provider="huggingface"))
         log_debug(f"[HuggingFace] HTTP {r.status_code}, len={len(r.content)}")
 
         if r.status_code != 200:

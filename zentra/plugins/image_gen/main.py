@@ -110,12 +110,13 @@ class ImageGenTools:
                     last_error = e
                     err_msg = str(e)
                     # Check for rate limit, depletion, OOM or loading state
-                    # Check for rate limit, depletion, OOM, loading state or server overload
+                    # Check for rate limit, depletion, OOM, loading state or server overload/timeout
                     is_retriable = any(x.lower() in err_msg.lower() for x in [
                         "HTTP 402", "HTTP 429", "HTTP 503", "HTTP 500", "HTTP 504",
                         "CUDA out of memory", "Model is loading", 
                         "Rate limit reached", "You have reached your limit",
-                        "server is overloaded", "upstream request timeout"
+                        "server is overloaded", "upstream request timeout",
+                        "timed out", "timeout"
                     ])
                     
                     if is_retriable:
