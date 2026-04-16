@@ -49,12 +49,37 @@
     <div class="toggle-row" style="margin-top:10px;">
       <div class="toggle-info">
         <strong>Auto-Enrich Prompt</strong><br>
-        <small style="color:var(--muted);">Automatically adds quality keywords (8k, masterpiece, etc.)</small>
+        <small style="color:var(--muted);">Automatically adds quality keywords</small>
       </div>
       <label class="switch"><input type="checkbox" id="igen-auto-enrich"><span class="slider"></span></label>
     </div>
 
-    <div class="toggle-row">
+    <div class="field" style="margin-top:5px;">
+      <label>Enrichment Keywords</label>
+      <input type="text" id="igen-enrich-keywords" placeholder="masterpiece, 8k, highly detailed...">
+      <small style="color:var(--muted);font-size:11px;">Keywords added when Auto-Enrich is enabled.</small>
+    </div>
+
+    <div class="field" style="margin-top:10px;">
+      <label>Artistic Style</label>
+      <select id="igen-style">
+        <option value="none">None (Raw Prompt)</option>
+        <option value="cinematic">🎬 Cinematic</option>
+        <option value="photography">📷 Photography</option>
+        <option value="anime">✨ Anime</option>
+        <option value="manga">🏴‍☠️ Manga (B&W)</option>
+        <option value="cartoon">🎨 Cartoon</option>
+        <option value="digital_art":>💻 Digital Art</option>
+        <option value="oil_painting">🖼️ Oil Painting</option>
+        <option value="sketch">✏️ Sketch</option>
+        <option value="3d_render">🧊 3D Render</option>
+        <option value="cyberpunk">🌃 Cyberpunk</option>
+        <option value="fantasy">🧙‍♂️ Fantasy</option>
+      </select>
+      <small style="color:var(--muted);font-size:11px;">Applies a predefined artistic mood to the generation.</small>
+    </div>
+
+    <div class="toggle-row" style="margin-top:10px;">
       <div class="toggle-info">Remove Logo/Watermark (Pollinations only)</div>
       <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
     </div>

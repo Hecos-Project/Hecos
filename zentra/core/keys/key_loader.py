@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 from zentra.core.keys.key_store import ApiKeyEntry, STATUS_UNKNOWN
+from zentra.core.logging import logger
 
 # Try to import YAML loader (used by Zentra config)
 try:

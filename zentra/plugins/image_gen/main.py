@@ -50,6 +50,9 @@ class ImageGenTools:
             guidance   = float(cfg.get("guidance_scale", 7.5))
             steps      = int(cfg.get("num_inference_steps", 30))
             enrich     = cfg.get("auto_enrich", True)
+            # New fields: enrich_keywords and style
+            enrich_keywords = cfg.get("enrich_keywords", "")
+            style = cfg.get("style", "none")
 
             max_attempts = 5
             attempt = 0
@@ -101,7 +104,9 @@ class ImageGenTools:
                         negative_prompt=neg_prompt,
                         guidance_scale=guidance,
                         num_inference_steps=steps,
-                        auto_enrich=enrich
+                        auto_enrich=enrich,
+                        enrich_keywords=enrich_keywords,
+                        style=style
                     )
                     clean_prompt = prompt.strip()[:80]
                     return f"Here is the image of **{clean_prompt}**:\n\n[[IMG:{filename}]]"

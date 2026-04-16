@@ -49,6 +49,8 @@ function populateMediaUI() {
     setVal('igen-guidance', igen.guidance_scale || 7.5);
     setVal('igen-steps', igen.num_inference_steps || 30);
     setCheck('igen-auto-enrich', igen.auto_enrich ?? true);
+    setVal('igen-enrich-keywords', igen.enrich_keywords || '');
+    setVal('igen-style', igen.style || 'none');
 
     // Sync Slider Labels
     const gVal = document.getElementById('igen-guidance-val');
@@ -72,7 +74,9 @@ function buildMediaPayload() {
             negative_prompt: document.getElementById('igen-neg-prompt').value.trim(),
             guidance_scale: parseFloat(document.getElementById('igen-guidance').value) || 7.5,
             num_inference_steps: parseInt(document.getElementById('igen-steps').value) || 30,
-            auto_enrich: document.getElementById('igen-auto-enrich').checked
+            auto_enrich: document.getElementById('igen-auto-enrich').checked,
+            enrich_keywords: document.getElementById('igen-enrich-keywords').value.trim(),
+            style: document.getElementById('igen-style').value
         }
     };
 }

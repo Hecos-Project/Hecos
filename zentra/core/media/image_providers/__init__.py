@@ -48,7 +48,8 @@ def get_models_for_provider(provider_name: str) -> list:
 
 def generate_image(prompt: str, provider: str, model: str, width: int, height: int, api_key: str, 
                    negative_prompt: str = "", guidance_scale: float = 7.5, 
-                   num_inference_steps: int = 30, auto_enrich: bool = False) -> str:
+                   num_inference_steps: int = 30, auto_enrich: bool = False,
+                   enrich_keywords: str = "", style: str = "none") -> str:
     """
     Main entry point. Returns the filename of the saved image.
     Raises Exception if generation fails.
@@ -56,12 +57,34 @@ def generate_image(prompt: str, provider: str, model: str, width: int, height: i
     provider = provider.lower()
     cls = PROVIDERS.get(provider)
 
-    # 0. Prompt Enrichment
+    # 0. Style & Prompt Enrichment
     final_prompt = prompt
+    
+    # Apply Style Modifier
+    if style and style.lower() != "none":
+        style_map = {
+            "cinematic": "cinematic photo, highly detailed, dramatic lighting, 8k",
+            "photography": "professional photography, DSLR, ultra-realistic, 8k, sharp focus",
+            "anime": "anime style, vibrant colors, expressive features, clean lines",
+            "manga": "manga style, black and white, detailed ink drawing, hatch lines",
+            "cartoon": "cartoon style, playful, simplified shapes, bright colors, 2d",
+            "digital_art": "digital art, concept art, artistic, detailed illustration",
+            "oil_painting": "oil painting, textured brushstrokes, classical art style, canvas",
+            "sketch": "pencil sketch, hand-drawn, graphite, artist study, white background",
+            "3d_render": "3D rendering, Octane Render, Unreal Engine 5, highly detailed, photorealistic",
+            "cyberpunk": "cyberpunk style, neon lights, rainy streets, futuristic, high tech",
+            "fantasy": "fantasy art, magical, ethereal, epic scale, mythical"
+        }
+        modifier = style_map.get(style.lower())
+        if modifier:
+            final_prompt = f"{final_prompt}, {modifier}"
+
+    # Apply Auto-Enrichment
     if auto_enrich:
-        quality_terms = "masterpiece, 8k wallpaper, highly detailed, realistic, sharp focus, cinematic lighting"
-        if quality_terms not in prompt.lower():
-            final_prompt = f"{prompt}, {quality_terms}"
+        terms = enrich_keywords if enrich_keywords else "masterpiece, 8k wallpaper, highly detailed, realistic, sharp focus, cinematic lighting"
+        # Only add if the core terms aren't already there (simple check)
+        if "masterpiece" not in prompt.lower() and "8k" not in prompt.lower():
+            final_prompt = f"{final_prompt}, {terms}"
 
     log_debug(f"[ImageEngine] START provider={provider} model={model} prompt={final_prompt[:60]}")
 

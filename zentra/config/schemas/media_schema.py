@@ -19,6 +19,8 @@ class ImageGenConfig(BaseModel):
     guidance_scale: float = 7.5
     num_inference_steps: int = 30
     auto_enrich: bool = True
+    enrich_keywords: str = "masterpiece, 8k wallpaper, highly detailed, realistic, sharp focus, cinematic lighting"
+    style: str = "none"
 
 
 class VideoGenConfig(BaseModel):

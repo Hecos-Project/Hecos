@@ -5,7 +5,7 @@ DESCRIPTION: Implements provider-specific validation logic for API keys.
 
 import requests
 import time
-from zentra.core.logging.logger import debug, error, info
+from zentra.core.logging import logger
 
 def validate_key(provider: str, value: str) -> dict:
     """
@@ -30,7 +30,7 @@ def validate_key(provider: str, value: str) -> dict:
         return {"valid": True, "status": "unknown", "message": f"Validation not implemented for {provider}"}
         
     except Exception as e:
-        error(f"[Validator] Unexpected error for {provider}: {e}")
+        logger.error(f"[Validator] Unexpected error for {provider}: {e}")
         return {"valid": False, "status": "unknown", "message": f"Error: {str(e)}"}
 
 def _validate_hf(key: str) -> dict:

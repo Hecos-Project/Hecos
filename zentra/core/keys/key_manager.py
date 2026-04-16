@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 from zentra.core.keys.key_store import ApiKeyEntry, STATUS_VALID, STATUS_UNKNOWN, STATUS_INVALID, STATUS_RATE_LIMITED
 from zentra.core.keys import key_loader as _loader
 from zentra.core.keys import key_validator as _validator
+from zentra.core.logging import logger
 
 # Default cooldown for rate-limited keys (seconds)
 DEFAULT_COOLDOWN = 60.0
@@ -151,8 +152,7 @@ class KeyManager:
             return
 
         def _monitor_loop():
-            from zentra.core.logging.logger import info as log_info
-            log_info("[KeyManager] Background health monitor started.")
+            logger.info("[KeyManager] Background health monitor started.")
             self._monitor_active = True
             
             while self._monitor_active:
@@ -166,7 +166,7 @@ class KeyManager:
                         time.sleep(interval_seconds)
                         continue
 
-                    log_info(f"[KeyManager] Running periodic health check for: {', '.join(providers)}")
+                    logger.info(f"[KeyManager] Running periodic health check for: {', '.join(providers)}")
                     for p in providers:
                         if not self._monitor_active: break
                         # We only validate "Unknown" or "Valid" keys once in a while.
@@ -176,8 +176,7 @@ class KeyManager:
                         time.sleep(2) # Prevent self-rate-limiting our validation calls
                         
                 except Exception as e:
-                    from zentra.core.logging.logger import error as log_error
-                    log_error(f"[KeyManager] Monitor loop error: {e}")
+                    logger.error(f"[KeyManager] Monitor loop error: {e}")
                 
                 # Wait for next interval
                 for _ in range(interval_seconds):
