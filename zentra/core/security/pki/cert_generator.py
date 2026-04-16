@@ -25,8 +25,34 @@ class CertGenerator:
         if not os.path.exists(self.certs_dir):
             os.makedirs(self.certs_dir)
 
+    def _cert_covers_ip(self, ip: str) -> bool:
+        """Returns True if the existing cert on disk already includes *ip* in its SANs."""
+        if not (os.path.exists(self.cert_path) and os.path.exists(self.key_path)):
+            return False
+        try:
+            from cryptography import x509 as _x509
+            import ipaddress as _ip
+            with open(self.cert_path, "rb") as f:
+                cert = _x509.load_pem_x509_certificate(f.read())
+            san = cert.extensions.get_extension_for_class(_x509.SubjectAlternativeName)
+            for entry in san.value:
+                if isinstance(entry, _x509.IPAddress) and str(entry.value) == ip:
+                    return True
+                if isinstance(entry, _x509.DNSName) and entry.value == ip:
+                    return True
+        except Exception:
+            pass
+        return False
+
     def generate_host_cert(self, local_ip="127.0.0.1"):
-        """Generates and signs the final host certificate for the given IP"""
+        """Generates and signs the final host certificate for the given IP.
+        Idempotent: if a valid cert covering *local_ip* already exists on disk,
+        the existing paths are returned immediately without regenerating.
+        """
+        # ── Early exit: cert already valid for this IP ────────────────────────
+        if self._cert_covers_ip(local_ip):
+            return self.cert_path, self.key_path
+        # ─────────────────────────────────────────────────────────────────────
         print(f"[PKI] Generating secure host certificate for: {local_ip}")
         
         ca_key, ca_cert = self.ca.init_ca()
