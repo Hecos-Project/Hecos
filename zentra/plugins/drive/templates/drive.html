@@ -116,19 +116,6 @@
   </div>
 </div>
 
-<!-- ── Preview Modal (Media Lightbox) ──────────────────────── -->
-<div class="modal-bg" id="preview-modal" onclick="closePreview()">
-  <div class="preview-container" onclick="event.stopPropagation()">
-    <div class="preview-header">
-      <span id="preview-title">File Preview</span>
-      <button class="preview-close" onclick="closePreview()">✕</button>
-    </div>
-    <div id="preview-content">
-      <!-- Will be populated by JS with <img> or <video> -->
-    </div>
-  </div>
-</div>
-
 <!-- ── Notification toast ─────────────────────────────────── -->
 <div id="drive-msg"></div>
 
@@ -143,5 +130,6 @@
   };
 </script>
 <script src="/drive_static/js/drive.js"></script>
+<script src="/media_viewer_static/js/media_viewer.js"></script>
 </body>
 </html>

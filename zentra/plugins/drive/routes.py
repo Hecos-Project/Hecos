@@ -152,6 +152,7 @@ def init_drive_routes(app, logger_instance=None):
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
         discover_extensions("DRIVE", plugin_dir)
         load_extension_routes(app, "DRIVE", "editor")
+        load_extension_routes(app, "DRIVE", "media_viewer")
     except Exception as _ext_err:
         import traceback
         tb_str = traceback.format_exc()
@@ -159,7 +160,7 @@ def init_drive_routes(app, logger_instance=None):
             with open("C:\\Zentra-Core\\drive_editor_crash.txt", "w") as f:
                 f.write(f"ERROR: {_ext_err}\n{tb_str}")
         except: pass
-        _log.error(f"[Drive] Failed to load editor extension: {_ext_err}\n{tb_str}")
+        _log.error(f"[Drive] Failed to load extension: {_ext_err}\n{tb_str}")
 
     # ─── Register Drive Blueprint ──────────────────────────────────────────────
     if "zentra_drive" not in app.blueprints:
