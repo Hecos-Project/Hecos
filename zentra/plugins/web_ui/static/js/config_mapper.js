@@ -323,11 +323,16 @@ function renderPlugins(plugins) {
 
   cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No modules discovered'}</p>`;
 
-  // Wire up parent toggles to cascade to children
+  // Wire up parent toggles: cascade to children + live-update window.cfg + re-render tabs
   cont.querySelectorAll('[data-plugin]').forEach(parentCb => {
     parentCb.addEventListener('change', function() {
       const parentTag = this.dataset.plugin;
       const isOn = this.checked;
+
+      // 1. Update live memory → triggers tab visibility refresh
+      syncPluginStateToMemory(parentTag, isOn);
+
+      // 2. Cascade visual disable to extension rows
       cont.querySelectorAll(`[data-extension="true"][data-parent="${parentTag}"]`).forEach(childCb => {
         childCb.disabled = !isOn;
         const row = childCb.closest('.plugin-row-extension');
@@ -338,6 +343,37 @@ function renderPlugins(plugins) {
       });
     });
   });
+
+  // Wire up extension toggles: live-update window.cfg + re-render tabs
+  cont.querySelectorAll('[data-extension="true"]').forEach(extCb => {
+    extCb.addEventListener('change', function() {
+      const parentTag = this.dataset.parent;
+      const extId = this.dataset.extId;
+      syncPluginStateToMemory(parentTag, this.checked, extId);
+    });
+  });
+}
+
+
+/**
+ * Syncs a plugin/extension toggle change immediately into window.cfg
+ * then re-renders the Hub so tabs appear/disappear without waiting for save.
+ */
+function syncPluginStateToMemory(tag, enabled, extId = null) {
+    if (!window.cfg.plugins) window.cfg.plugins = {};
+    window.cfg.plugins[tag] = window.cfg.plugins[tag] || {};
+
+    if (extId) {
+        // Extension state: plugins[parentTag].extensions[extId].enabled
+        window.cfg.plugins[tag].extensions = window.cfg.plugins[tag].extensions || {};
+        window.cfg.plugins[tag].extensions[extId] = window.cfg.plugins[tag].extensions[extId] || {};
+        window.cfg.plugins[tag].extensions[extId].enabled = enabled;
+    } else {
+        // Parent plugin state
+        window.cfg.plugins[tag].enabled = enabled;
+    }
+
+    if (typeof renderConfigHub === 'function') renderConfigHub();
 }
 
 function buildPayload() {
@@ -444,6 +480,17 @@ function buildPayload() {
       const tag = cb.dataset.plugin;
       out.plugins[tag] = out.plugins[tag] || {};
       out.plugins[tag].enabled = cb.checked;
+    });
+
+    // Extension toggles: save as plugins[parentTag].extensions[extId].enabled
+    document.querySelectorAll('[data-extension="true"]').forEach(cb => {
+      const parentTag = cb.dataset.parent;
+      const extId = cb.dataset.extId;
+      if (!parentTag || !extId) return;
+      out.plugins[parentTag] = out.plugins[parentTag] || {};
+      out.plugins[parentTag].extensions = out.plugins[parentTag].extensions || {};
+      out.plugins[parentTag].extensions[extId] = out.plugins[parentTag].extensions[extId] || {};
+      out.plugins[parentTag].extensions[extId].enabled = cb.checked;
     });
 
     // Remote Triggers Payload Part

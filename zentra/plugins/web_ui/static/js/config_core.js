@@ -324,10 +324,22 @@ function renderFilterTabs() {
     const hub = window.CONFIG_HUB;
     if (!container || !hub) return;
 
-    // Calculate counts for ALL visible modules
+    // Calculate counts for ALL visible modules — must match renderConfigHub() logic exactly
     const userRole = (window.currentUser && window.currentUser.role) || 'user';
     const allVisible = hub.modules.filter(m => {
         if (m.adminOnly && userRole !== 'admin') return false;
+
+        // Extension: check parent enabled + own state + panel existence
+        if (m.isExtension && m.parentPluginTag) {
+            const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
+            if (!parent || parent.enabled === false) return false;
+            const extId = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
+            const extState = (parent.extensions || {})[extId];
+            if (extState && extState.enabled === false) return false;
+            return !!document.getElementById('tab-' + m.id);
+        }
+
+        // Standard plugin
         if (m.pluginTag) {
             const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
             if (p && p.enabled === false) return false;
@@ -547,21 +559,31 @@ function renderConfigHub(mode = 'tabs') {
     const visibleModules = hub.modules.filter(m => {
         // Admin check
         if (m.adminOnly && userRole !== 'admin') return false;
-        
-        // Plugin check
+
+        // Extension check: depends on parent plugin being enabled AND its own enabled state
+        if (m.isExtension && m.parentPluginTag) {
+            const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
+            if (!parent || parent.enabled === false) return false; // parent off → hide extension
+            const extId = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
+            const extState = (parent.extensions || {})[extId];
+            if (extState && extState.enabled === false) return false; // extension explicitly off
+            // Extension tab only shown if it has a dedicated panel
+            return !!document.getElementById('tab-' + m.id);
+        }
+
+        // Standard plugin check
         if (m.pluginTag) {
             const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
             if (p && p.enabled === false) return false;
         }
-        
-        // Modules with panels always visible. 
-        // Modules from MCP category are always visible 
+
+        // Modules with panels always visible.
+        // Modules from MCP category are always visible
         // Modules in tagMap are always visible
         const hasPanel = document.getElementById('tab-' + m.id);
         const isMapped = hub.tagMap && hub.tagMap[m.pluginTag];
         const isMcp = (m.cat === 'MCP');
-        
-        
+
         return (hasPanel || isMapped || isMcp);
     });
 
