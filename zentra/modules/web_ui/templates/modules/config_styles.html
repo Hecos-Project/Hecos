@@ -1,0 +1,67 @@
+<div id="tab-aesthetics" class="panel">
+  <div class="card">
+    <div class="card-title">
+      <span>🎨</span> {{ t("hub_mod_aesthetics") or "Aesthetic & Themes" }}
+    </div>
+    <div class="card-body">
+      <p class="muted" style="margin-bottom: 24px;">
+        {{ t("webui_style_desc") or "Customize the look and feel of your Zentra Core interface. Select a theme that fits your mood or environment." }}
+      </p>
+
+      <div class="grid-2">
+        <!-- Cyberpunk (Default) -->
+        <div class="cat-card" onclick="setTheme('cyberpunk', true)" style="padding: 24px; border-radius: 12px; gap: 12px;">
+          <div class="cat-card-icon" style="font-size: 32px;">🌌</div>
+          <div class="cat-card-label" style="font-size: 13px;">Cyberpunk</div>
+          <div class="cat-card-badge" style="font-size: 9px;">Default</div>
+        </div>
+
+        <!-- Turquoise -->
+        <div class="cat-card" onclick="setTheme('turquoise', true)" style="padding: 24px; border-radius: 12px; gap: 12px;">
+          <div class="cat-card-icon" style="font-size: 32px;">💎</div>
+          <div class="cat-card-label" style="font-size: 13px;">Turquoise</div>
+        </div>
+
+        <!-- Pirate -->
+        <div class="cat-card" onclick="setTheme('pirate', true)" style="padding: 24px; border-radius: 12px; gap: 12px;">
+          <div class="cat-card-icon" style="font-size: 32px;">🏴‍☠️</div>
+          <div class="cat-card-label" style="font-size: 13px;">Pirate</div>
+        </div>
+
+        <!-- Elegant (New) -->
+        <div class="cat-card" onclick="setTheme('elegant', true)" style="padding: 24px; border-radius: 12px; gap: 12px;">
+          <div class="cat-card-icon" style="font-size: 32px;">🍸</div>
+          <div class="cat-card-label" style="font-size: 13px;">Elegant</div>
+        </div>
+
+        <!-- Light Mode (New) -->
+        <div class="cat-card" onclick="setTheme('light', true)" style="padding: 24px; border-radius: 12px; gap: 12px; background: #f0f2f5; border-color: #ddd;">
+          <div class="cat-card-icon" style="font-size: 32px; filter: none;">☀️</div>
+          <div class="cat-card-label" style="font-size: 13px; color: #333;">Light Mode</div>
+        </div>
+
+        <!-- Rose / Female (New) -->
+        <div class="cat-card" onclick="setTheme('rose', true)" style="padding: 24px; border-radius: 12px; gap: 12px; border-color: #fca5a5;">
+          <div class="cat-card-icon" style="font-size: 32px; filter: drop-shadow(0 0 8px rgba(251,113,133,0.3));">🌸</div>
+          <div class="cat-card-label" style="font-size: 13px; color: #fb7185;">Rose Blossom</div>
+        </div>
+      </div>
+
+      <div id="theme-save-status" style="margin-top: 15px; text-align: center; color: var(--green); font-size: 12px; font-weight: 800; opacity: 0; transition: opacity 0.3s; height: 18px;">
+          {{ t("webui_style_saved") or "✓ CAMBIAMENTO SALVATO" }}
+      </div>
+
+      <div class="toggle-row" style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 20px;">
+        <div class="toggle-info">
+          <div>{{ t("webui_style_auto") or "Automatic Theme Switching" }}</div>
+          <div class="toggle-sub">{{ t("webui_style_auto_sub") or "Follow system appearance or time-based switching." }}</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="style_auto_mode" onchange="toggleAutoTheme(this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+    </div>
+  </div>
+</div>

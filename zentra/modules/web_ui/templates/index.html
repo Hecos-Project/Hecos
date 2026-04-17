@@ -111,11 +111,8 @@
       <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View">🧱</button>
     </div>
 
-    <!-- THEME SWITCHER -->
-    <div class="view-switcher" style="display:flex; background:rgba(255,255,255,0.05); padding:3px; border-radius:10px; border:1px solid var(--border);">
-      <button class="switcher-btn active" onclick="setTheme('cyberpunk')" title="Cyberpunk Theme">⚡</button>
-      <button class="switcher-btn" onclick="setTheme('turquoise')" title="Turquoise Theme">💎</button>
-      <button class="switcher-btn" onclick="setTheme('pirate')" title="Pirate Theme">🏴‍☠️</button>
+    <div class="global-controls">
+      <div class="logo-text" style="font-size: 11px; font-weight: 800; opacity: 0.6; margin-right: 8px;">V0.25.0</div>
     </div>
 
     <!-- GLOBAL COLLAPSE -->
@@ -191,6 +188,7 @@
     {% include 'modules/config_system.html' %}
     {% include 'modules/config_media.html' %}
     {% include 'modules/config_roleplay.html' %}
+    {% include 'modules/config_styles.html' %}
     {% include 'modules/config_igen.html' %}
     {% include 'modules/config_utils.html' %}
     {% include 'modules/config_sysnet.html' %}
@@ -274,14 +272,42 @@
 
   /**
    * Global Theme Switcher
-   * @param {string} theme - 'cyberpunk', 'turquoise', 'pirate'
+   * @param {string} theme - 'cyberpunk', 'turquoise', 'pirate', 'elegant', 'light', 'rose'
+   * @param {boolean} manual - If true, disables automatic theme switching
    */
-  window.setTheme = function(theme) {
-    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate');
+  window.setTheme = function(theme, manual = false) {
+    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose');
     if (theme !== 'default') {
       document.body.classList.add(`theme-${theme}`);
     }
-    // Update active state in UI
+
+    if (manual) {
+        // Disable auto-mode if user manually picks a theme
+        localStorage.removeItem('zentra-ui-auto-theme');
+        const autoToggle = document.getElementById('style_auto_mode');
+        if (autoToggle) autoToggle.checked = false;
+
+        // Show "Saved" message
+        const status = document.getElementById('theme-save-status');
+        if (status) {
+            status.style.opacity = '1';
+            setTimeout(() => { status.style.opacity = '0'; }, 2000);
+        }
+    }
+    
+    // Highlight active card in Styles panel
+    document.querySelectorAll('#tab-aesthetics .cat-card').forEach(card => {
+        const onClick = card.getAttribute('onclick');
+        if (onClick && onClick.includes(`'${theme}'`)) {
+            card.classList.add('active');
+            card.style.borderColor = 'var(--accent)';
+        } else {
+            card.classList.remove('active');
+            card.style.borderColor = '';
+        }
+    });
+
+    // Update switcher buttons (if any remain)
     document.querySelectorAll('.view-switcher .switcher-btn').forEach(btn => {
       if (btn.onclick && btn.onclick.toString().includes(`setTheme('${theme}')`)) {
         btn.classList.add('active');
@@ -293,9 +319,25 @@
     localStorage.setItem('zentra-ui-theme', theme);
   };
 
+  window.toggleAutoTheme = function(enabled) {
+      if (enabled) {
+          const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          setTheme(isDark ? 'cyberpunk' : 'light');
+          localStorage.setItem('zentra-ui-auto-theme', 'true');
+      } else {
+          localStorage.removeItem('zentra-ui-auto-theme');
+      }
+  };
+
   // Load saved theme on boot
-  const savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
-  setTheme(savedTheme);
+  const autoTheme = localStorage.getItem('zentra-ui-auto-theme') === 'true';
+  if (autoTheme) {
+      document.getElementById('style_auto_mode').checked = true;
+      toggleAutoTheme(true);
+  } else {
+      const savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
+      setTheme(savedTheme);
+  }
 </script>
 </body>
 </html>

@@ -46,3 +46,43 @@
   --text: #f4ecd8;
   --border: #4d3319;
 }
+
+/* Theme: Elegant (Sophisticated Dark) */
+.theme-elegant {
+  --bg: #050505;
+  --bg2: #111;
+  --bg3: #1a1a1a;
+  --accent: #e5e5e5;
+  --accent-rgb: 229, 229, 229;
+  --accent2: #888;
+  --text: #eee;
+  --border: #333;
+}
+
+/* Theme: Light Mode (Clean & Sharp) */
+.theme-light {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --accent: #2563eb;
+  --accent-rgb: 37, 99, 235;
+  --accent2: #7c3aed;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --surface2: #f1f5f9;
+  --surface3: #e2e8f0;
+}
+
+/* Theme: Rose (Soft & Vibrant) */
+.theme-rose {
+  --bg: #0f1117;
+  --bg2: #1e1b26;
+  --bg3: #2a2235;
+  --accent: #fb7185;
+  --accent-rgb: 251, 113, 133;
+  --accent2: #fda4af;
+  --text: #fff1f2;
+  --border: #4c1d24;
+}
+
