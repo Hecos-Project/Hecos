@@ -4,8 +4,8 @@ header {
   padding: 20px 32px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  justify-content: center; /* Centered in index.css */
+  gap: 60px; /* 60px in index.css vs 20px in old layout.css */
   position: sticky;
   top: 0;
   z-index: 100;
@@ -13,7 +13,7 @@ header {
 }
 
 .config-page header {
-  justify-content: space-between;
+  justify-content: center; /* Ensuring consistency with index.css */
 }
 
 .logo {
@@ -28,15 +28,14 @@ header {
   height: 28px;
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.2));
+  filter: drop-shadow(0 0 8px rgba(108,140,255,0.2));
 }
 
 .logo-text {
   background: linear-gradient(90deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
-  -webkit-fill-color: transparent;
+  -webkit-text-fill-color: transparent;
   background-clip: text;
-  color: transparent;
   letter-spacing: -0.5px;
 }
 
@@ -57,12 +56,15 @@ header {
 .stat { display: flex; align-items: center; gap: 6px; }
 .stat-label { color: var(--muted); }
 .stat-val { font-weight: 600; color: var(--text); }
+.val-ok   { color: var(--green); }
+.val-warn { color: var(--yellow); }
+.val-err  { color: var(--red); }
 
 .container {
-  max-width: 1100px;
+  max-width: 960px; /* index.css had 960px whereas old layout.css had 1100px */
   margin: 0 auto;
   padding: 32px 24px;
-  padding-bottom: 120px;
+  padding-bottom: 100px;
 }
 
 .save-bar {
@@ -77,9 +79,11 @@ header {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  z-index: 999;
+  z-index: 99;
   box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
 }
+
+#save-msg { font-size: 13px; color: var(--muted); }
 
 #status-dot {
   display: flex;

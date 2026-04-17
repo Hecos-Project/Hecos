@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <title>Zentra — {{ t('webui_chat_title') }}</title>
-<link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG%20-%20SQR.png">
-<link rel="stylesheet" href="/assets/css/chat.css?v=3">
+<link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG%20-%20SQR.png?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}">
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -13,7 +13,7 @@
 <noscript>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 </noscript>
-<link rel="stylesheet" href="/static/css/mobile/responsive.css?v=5">
+<link rel="stylesheet" href="/static/css/mobile/responsive.css?v={{ version }}">
 <!-- CRITICAL: inline mobile overrides - cache-proof -->
 <style>
   /* Default: hide hamburger/mobile elements on desktop */
@@ -78,31 +78,32 @@
     return text;
   };
 </script>
-<script src="/static/js/config_manifest.js?v=0.22.0"></script>
+<script src="/static/js/config_manifest.js?v={{ version }}"></script>
 <script>
   // Expose the global history to window so the renderer can read it
   window.historyList = [];
   window.ZentraUserAvatar = "{{ profile.avatar_path if (profile and profile.avatar_path) else '' }}";
   window.cfg = {{ zconfig | tojson }};
+  window.ZENTRA_VERSION = "{{ version }}";
 </script>
-<script src="/static/js/chat_renderer.js?v=2"></script>
-<script src="/static/js/agent/agent_traces.js?v=4"></script>
+<script src="/static/js/chat_renderer.js?v={{ version }}"></script>
+<script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
 <!-- Refactored Chat Logic Modules -->
-<script src="/static/js/chat_ui.js?v=2"></script>
-<script src="/static/js/chat_api.js?v=2"></script>
-<script src="/static/js/chat_events.js?v=1"></script>
-<script src="/static/js/audio_controls.js?v=1"></script>
-<script src="/static/js/chat_message_actions.js?v=2"></script>
-<script src="/static/js/chat_input_toolbar.js?v=2"></script>
-<script src="/static/js/chat_image_viewer.js?v=2"></script>
-<script src="/static/js/client_camera.js?v=2"></script>
+<script src="/static/js/chat_ui.js?v={{ version }}"></script>
+<script src="/static/js/chat_api.js?v={{ version }}"></script>
+<script src="/static/js/chat_events.js?v={{ version }}"></script>
+<script src="/static/js/audio_controls.js?v={{ version }}"></script>
+<script src="/static/js/chat_message_actions.js?v={{ version }}"></script>
+<script src="/static/js/chat_input_toolbar.js?v={{ version }}"></script>
+<script src="/static/js/chat_image_viewer.js?v={{ version }}"></script>
+<script src="/static/js/client_camera.js?v={{ version }}"></script>
 <!-- Refactored Audio UI Modules -->
-<script src="/static/js/audio_encoder.js?v=1"></script>
-<script src="/static/js/audio_recorder.js?v=1"></script>
-<script src="/static/js/audio_ui.js?v=1"></script>
-<script src="/static/js/mobile/mobile_logic.js?v=1"></script>
-<script src="/static/js/pull_to_refresh.js"></script>
-<script src="/static/js/chat_history.js?v=7"></script>
+<script src="/static/js/audio_encoder.js?v={{ version }}"></script>
+<script src="/static/js/audio_recorder.js?v={{ version }}"></script>
+<script src="/static/js/audio_ui.js?v={{ version }}"></script>
+<script src="/static/js/mobile/mobile_logic.js?v={{ version }}"></script>
+<script src="/static/js/pull_to_refresh.js?v={{ version }}"></script>
+<script src="/static/js/chat_history.js?v={{ version }}"></script>
 <!-- Remote Triggers (Media keys, Arduino Hooks) -->
 {% if zconfig.plugins.REMOTE_TRIGGERS and zconfig.plugins.REMOTE_TRIGGERS.enabled != False %}
 <script src="/remote_triggers_static/js/remote_triggers.js"></script>

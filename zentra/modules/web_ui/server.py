@@ -68,8 +68,10 @@ class ZentraWebUIServer:
         mimetypes.add_type('text/css', '.css')
         mimetypes.add_type('application/javascript', '.js')
         
-        # Inject translation system into Jinja2 templates
-        app.jinja_env.globals.update(t=t)
+        from zentra.core.system.version import VERSION
+        
+        # Inject translation system and version into Jinja2 templates
+        app.jinja_env.globals.update(t=t, version=VERSION)
 
         # --- ZENTRA AUTH SYSTEM ---
         app.secret_key = self.config_manager.config.get("system", {}).get("flask_secret_key", "zentra_default_secret_key_84nd")
