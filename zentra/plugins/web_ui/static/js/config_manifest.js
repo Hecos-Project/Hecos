@@ -20,11 +20,11 @@ window.CONFIG_HUB = {
         { id: 'keymanager',label: 'hub_mod_keymanager',   icon: '🔐', cat: 'INTELLIGENZA' },
         { id: 'routing',   label: 'hub_mod_routing',      icon: '🚦', cat: 'INTELLIGENZA' },
         { id: 'ia',        label: 'hub_mod_persona',      icon: '🎭', cat: 'INTELLIGENZA' },
-        { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA' },
-        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA' },
+        { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'MEMORY' },
+        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'NEURAL_LINK' },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
-        { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA' },
+        { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA', pluginTag: 'MEDIA' },
         { id: 'igen',      label: 'hub_mod_igen',         icon: '🎨', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
         { id: 'roleplay_elite', label: 'hub_mod_roleplay_elite', icon: '🎭', cat: 'MULTIMEDIA', pluginTag: 'ROLEPLAY_ELITE' },
         
@@ -38,14 +38,14 @@ window.CONFIG_HUB = {
         { id: 'payload',          label: 'hub_mod_payload',      icon: '📦', cat: 'RISORSE' },
         { id: 'studio',           label: 'hub_mod_studio',       icon: '🛠️', cat: 'RISORSE' },
         
-        { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '🌐', cat: 'SISTEMA' },
+        { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '🌐', cat: 'SISTEMA', pluginTag: 'SYS_NET' },
         { id: 'web',       label: 'hub_mod_web',          icon: '🌍', cat: 'SISTEMA', pluginTag: 'WEB' },
         { id: 'webcam',    label: 'hub_mod_webcam',       icon: '📷', cat: 'SISTEMA', pluginTag: 'WEBCAM' },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '⚡', cat: 'SISTEMA', pluginTag: 'EXECUTOR' },
         { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD' },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI' },
-        { id: 'system',    label: 'hub_mod_system',       icon: '⚙️', cat: 'SISTEMA' },
+        { id: 'system',    label: 'hub_mod_system',       icon: '⚙️', cat: 'SISTEMA', pluginTag: 'SYSTEM' },
         { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true },
         { id: 'security',  label: 'hub_mod_security',     icon: '🛡️', cat: 'SISTEMA', adminOnly: true },
         { id: 'plugins',   label: 'hub_mod_plugins',      icon: '🧩', cat: 'SISTEMA' },
@@ -71,7 +71,15 @@ window.CONFIG_HUB = {
         'network': '🌐',
         'database':'🗄️',
         'code':    '💻'
-    }
+    },
+
+    // Plugins that should NOT be shown in the Module Manager UI
+    internalTags: [
+        'FILE_MANAGER',
+        'LAZY_TEST',
+        'WEB_UI',
+        'HELP'
+    ]
 };
 
 window.getIconForModule = function(id, name, metaIcon) {
@@ -101,6 +109,11 @@ window.CONFIG_HUB.tagMap = {
     'ROLEPLAY_ELITE': 'roleplay_elite',
     'WEB': 'web',
     'WEBCAM': 'webcam',
+    'MEMORY': 'memory',
+    'SYSTEM': 'system',
+    'SYS_NET': 'sysnet',
+    'MEDIA': 'media',
+    'MODELS': 'backend',
     'DRIVE_EDITOR': 'drive-editor',
     'DRIVE_MEDIA_VIEWER': 'drive-media-viewer'
 };

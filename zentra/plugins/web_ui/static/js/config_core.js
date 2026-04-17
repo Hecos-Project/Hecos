@@ -236,6 +236,9 @@ async function initAll(attempt = 1) {
 function mergeRegistry(registry) {
     const hub = window.CONFIG_HUB;
     Object.keys(registry).forEach(tag => {
+        // Skip hidden/internal core plugins
+        if (hub.internalTags && hub.internalTags.includes(tag)) return;
+
         const plug = registry[tag];
         const resolvedId = (hub.tagMap && hub.tagMap[tag]) || tag.toLowerCase().replace('_', '-');
         const existing = hub.modules.find(m => m.id === resolvedId || m.pluginTag === tag);
