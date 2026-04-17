@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title }} - Zentra Docs</title>
     <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG%20-%20SQR.png">
+    <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
     <link rel="stylesheet" href="/assets/css/index.css?v={{ version }}">
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,11 +20,12 @@
     <style>
         :root {
             --sidebar-width: 300px;
-            --accent: #66fcf1;
-            --accent2: #45a29e;
-            --bg: #0b0c10;
-            --surface: #1f2833;
-            --text: #c5c6c7;
+            --accent: var(--accent);
+            --accent2: var(--accent2);
+            --bg: var(--bg);
+            --surface: var(--bg2);
+            --text: var(--text);
+            --sidebar-bg: var(--bg);
         }
 
         body {
@@ -39,8 +41,8 @@
         /* Sidebar Style */
         .docs-sidebar {
             width: var(--sidebar-width);
-            background: #0d1117;
-            border-right: 1px solid rgba(255,255,255,0.05);
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             padding: 20px;
@@ -75,7 +77,7 @@
         .nav-label {
             font-size: 10px;
             font-weight: 700;
-            color: #45a29e;
+            color: var(--accent2);
             text-transform: uppercase;
             letter-spacing: 1.5px;
             margin-bottom: 10px;
@@ -88,8 +90,9 @@
             gap: 5px;
             margin-bottom: 20px;
             padding: 5px;
-            background: rgba(255,255,255,0.03);
+            background: var(--glass);
             border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
         .group-btn {
@@ -101,7 +104,7 @@
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
-            color: #888;
+            color: var(--muted);
             border: none;
             background: transparent;
         }
@@ -124,7 +127,7 @@
             padding: 8px 12px;
             border-radius: 6px;
             text-decoration: none;
-            color: #888;
+            color: var(--muted);
             font-size: 13px;
             transition: all 0.2s;
             margin-bottom: 2px;
@@ -133,12 +136,12 @@
 
         .chapter-item:hover {
             color: var(--text);
-            background: rgba(255,255,255,0.03);
+            background: var(--glass);
         }
 
         .chapter-item.active {
             color: var(--accent);
-            background: rgba(102, 252, 241, 0.08);
+            background: rgba(var(--accent-rgb), 0.08);
             border-left-color: var(--accent);
             font-weight: 500;
         }
@@ -149,21 +152,21 @@
             gap: 5px;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid var(--border);
         }
         .lang-link {
             text-decoration: none;
-            color: #666;
+            color: var(--muted);
             font-size: 10px;
             font-weight: 700;
             padding: 4px 8px;
             border-radius: 4px;
-            background: rgba(255,255,255,0.02);
+            background: var(--glass);
             transition: all 0.2s;
         }
         .lang-link:hover, .lang-link.active {
             color: var(--accent);
-            background: rgba(102, 252, 241, 0.1);
+            background: rgba(var(--accent-rgb), 0.1);
         }
 
         /* Content Area */
@@ -173,8 +176,8 @@
         }
         .search-input {
             width: 100%;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--glass);
+            border: 1px solid var(--border);
             border-radius: 8px;
             padding: 10px 12px 10px 35px;
             color: white;
@@ -188,7 +191,7 @@
             left: 12px;
             top: 50%;
             transform: translateY(-50%);
-            color: #666;
+            color: var(--muted);
             font-size: 14px;
         }
 
@@ -208,17 +211,17 @@
             margin-bottom: 20px;
             cursor: pointer;
             transition: transform 0.2s;
-            border: 1px solid rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
         }
         .search-result-item:hover { transform: translateY(-3px); border-color: var(--accent); }
         .search-result-title { color: var(--accent); font-weight: 600; font-size: 18px; margin-bottom: 8px; }
-        .search-result-snippet { color: #888; font-size: 14px; line-height: 1.5; }
-        .search-result-snippet b { color: #fff; background: rgba(102, 252, 241, 0.2); padding: 0 2px; }
+        .search-result-snippet { color: var(--muted); font-size: 14px; line-height: 1.5; }
+        .search-result-snippet b { color: var(--text); background: rgba(var(--accent-rgb), 0.2); padding: 0 2px; }
 
         .close-search {
             position: absolute;
             top: 30px; right: 40px;
-            background: none; border: none; color: #666;
+            background: none; border: none; color: var(--muted);
             font-size: 24px; cursor: pointer;
         }
         .close-search:hover { color: white; }
@@ -228,7 +231,7 @@
             overflow-y: auto;
             padding: 40px 60px;
             box-sizing: border-box;
-            background: radial-gradient(circle at top right, rgba(102, 252, 241, 0.03), transparent 400px);
+            background: radial-gradient(circle at top right, rgba(var(--accent-rgb), 0.03), transparent 400px);
             display: flex;
             flex-direction: column;
         }
@@ -242,17 +245,17 @@
 
         /* Markdown Styles */
         #content-target h1 { color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 15px; margin-bottom: 30px; }
-        #content-target h2 { color: var(--accent2); margin-top: 45px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
-        #content-target h3 { color: #8ef; margin-top: 30px; }
-        #content-target p { margin-bottom: 18px; color: #d1d2d3; }
-        #content-target code { background: rgba(255,255,255,0.07); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; color: #f88; }
-        #content-target pre { background: #0d1117; padding: 20px; border-radius: 12px; overflow-x: auto; border: 1px solid rgba(255,252,241,0.05); margin: 20px 0; }
+        #content-target h2 { color: var(--accent2); margin-top: 45px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        #content-target h3 { color: var(--accent); filter: brightness(1.2); margin-top: 30px; }
+        #content-target p { margin-bottom: 18px; color: var(--text); opacity: 0.9; }
+        #content-target code { background: var(--glass-b); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; color: var(--accent); }
+        #content-target pre { background: var(--bg); padding: 20px; border-radius: 12px; overflow-x: auto; border: 1px solid var(--border); margin: 20px 0; }
         #content-target pre code { background: transparent; padding: 0; color: inherit; }
-        #content-target blockquote { border-left: 4px solid var(--accent); background: rgba(102, 252, 241, 0.02); margin: 25px 0; padding: 15px 25px; color: #888; font-style: italic; }
+        #content-target blockquote { border-left: 4px solid var(--accent); background: var(--glass); margin: 25px 0; padding: 15px 25px; color: var(--muted); font-style: italic; }
         #content-target table { width: 100%; border-collapse: collapse; margin: 30px 0; font-size: 14px; }
-        #content-target th, #content-target td { border: 1px solid rgba(255,255,255,0.08); padding: 14px; text-align: left; }
-        #content-target th { background: rgba(255,255,255,0.04); color: var(--accent); }
-        #content-target img { max-width: 100%; border-radius: 12px; margin: 30px 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #content-target th, #content-target td { border: 1px solid var(--border); padding: 14px; text-align: left; }
+        #content-target th { background: var(--glass); color: var(--accent); }
+        #content-target img { max-width: 100%; border-radius: 12px; margin: 30px 0; box-shadow: var(--shadow); }
 
         /* Pagination Buttons */
         .pagination {
@@ -262,14 +265,14 @@
             display: flex;
             justify-content: space-between;
             padding-top: 30px;
-            border-top: 1px solid rgba(255,255,255,0.05);
+            border-top: 1px solid var(--border);
         }
 
         .pag-btn {
             display: flex;
             flex-direction: column;
             text-decoration: none;
-            color: #666;
+            color: var(--muted);
             transition: all 0.2s;
             max-width: 45%;
         }
@@ -285,9 +288,9 @@
             margin-top: 20px;
             padding: 10px;
             text-align: center;
-            background: rgba(255,255,255,0.03);
+            background: var(--glass);
             border-radius: 8px;
-            color: #888;
+            color: var(--muted);
             text-decoration: none;
             font-size: 12px;
             font-weight: 600;
@@ -312,13 +315,28 @@
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            .docs-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.05); }
+            .docs-sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
             .docs-main { padding: 20px; }
             #loading-overlay { left: 0; }
         }
     </style>
 </head>
 <body>
+<script>
+  (function() {
+    var autoTheme = localStorage.getItem('zentra-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
+    var theme = 'cyberpunk';
+    if (autoTheme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
+    } else {
+      theme = savedTheme;
+    }
+    if (theme !== 'default') {
+      document.body.classList.add('theme-' + theme);
+    }
+  })();
+</script>
 
 <div class="docs-sidebar">
     <div class="sidebar-header">

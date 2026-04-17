@@ -11,26 +11,58 @@ let isModified = false;
 require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
 
-  // 1. Define a extra Zentra-Dark theme
+  // 1. Define static Theme Profiles
+  const autoTheme = localStorage.getItem('zentra-ui-auto-theme') === 'true';
+  const savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
+  let zTheme = savedTheme;
+  if (autoTheme) {
+    zTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
+  }
+  const isLight = (zTheme === 'light') || document.documentElement.classList.contains('theme-light') || document.body.classList.contains('theme-light');
+  console.log('[Zentra Editor] Auto:', autoTheme, 'Saved:', savedTheme, 'Actual:', zTheme, 'isLight:', isLight);
+  
+  // Zentra Light Profile
+  monaco.editor.defineTheme('zentra-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [],
+    colors: {
+      'editor.background': '#ffffff',
+      'editor.lineHighlightBackground': '#f8fafc',
+      'editorLineNumber.foreground': '#94a3b8',
+      'editorLineNumber.activeForeground': '#2563eb',
+      'editor.selectionBackground': '#e2e8f0',
+      'editorWidget.background': '#ffffff',
+      'editorWidget.border': '#e2e8f0',
+      'input.background': '#ffffff',
+    }
+  });
+
+  // Zentra Dark Profile (Default)
   monaco.editor.defineTheme('zentra-dark', {
     base: 'vs-dark',
     inherit: true,
     rules: [],
     colors: {
-      'editor.background': '#0d1117',
-      'editor.lineHighlightBackground': '#161b22',
+      'editor.background': '#0f1117',
+      'editor.lineHighlightBackground': '#1a1d27',
       'editorLineNumber.foreground': '#484f58',
-      'editorLineNumber.activeForeground': '#8b949e',
+      'editorLineNumber.activeForeground': '#6c8cff',
       'editor.selectionBackground': '#264f78',
-      'editor.inactiveSelectionBackground': '#1f3a5f',
+      'editorWidget.background': '#1a1d27',
+      'editorWidget.border': '#2d3351',
+      'input.background': '#0f1117',
     }
   });
+
+  const activeTheme = isLight ? 'zentra-light' : 'zentra-dark';
+  console.log('[Zentra Editor] Active theme:', activeTheme);
 
   // 2. Create editor
   editor = monaco.editor.create(document.getElementById('monaco-editor'), {
     value: 'Loading file…',
     language: window.LANGUAGE,
-    theme: 'zentra-dark',
+    theme: activeTheme,
     fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
     fontSize: 14,
     lineHeight: 22,

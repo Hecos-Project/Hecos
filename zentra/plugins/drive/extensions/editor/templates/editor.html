@@ -7,8 +7,23 @@
 <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap">
-<link rel="stylesheet" href="/assets/css/core/variables.css">
-<link rel="stylesheet" href="/editor_static/css/editor.css?v=3">
+<link rel="stylesheet" href="/assets/css/core/variables.css?v=5">
+<link rel="stylesheet" href="/editor_static/css/editor.css?v=5">
+<script>
+  (function() {
+    var autoTheme = localStorage.getItem('zentra-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
+    var theme = 'cyberpunk';
+    if (autoTheme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
+    } else {
+      theme = savedTheme;
+    }
+    if (theme !== 'default') {
+      document.documentElement.classList.add('theme-' + theme);
+    }
+  })();
+</script>
 </head>
 <body>
 <div id="layout">
@@ -65,6 +80,6 @@
   window.WORD_WRAP  = {{ word_wrap | tojson }};
   window.SPELL_CHK  = {{ spell_check | tojson | lower }};
 </script>
-<script src="/editor_static/js/editor.js"></script>
+<script src="/editor_static/js/editor.js?v=5"></script>
 </body>
 </html>

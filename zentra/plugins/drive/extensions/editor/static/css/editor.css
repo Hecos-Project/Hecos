@@ -1,33 +1,17 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  --bg:         var(--bg);
-  --surface:    var(--bg2);
-  --border:     var(--border);
-  --text:       var(--text);
-  --muted:      var(--muted);
-  --accent:     var(--accent);
-  --accent-dim: rgba(var(--accent-rgb), 0.6);
-  --success:    var(--green);
-  --warn:       var(--yellow);
-  --danger:     var(--red);
-  --tab-h:      44px;
-  --sidebar-w:  260px;
-  --sb-bg:      var(--bg);
-  --sb-hover:   rgba(var(--accent-rgb), 0.08);
-  --sb-active:  rgba(var(--accent-rgb), 0.15);
-  --sb-active-border: var(--accent);
-}
+/* Using global variables from variables.css */
 
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+.theme-light, .theme-light body { background: #ffffff !important; color: #1e293b !important; }
 
 /* ── Top bar ──────────────────────────────────────────────────────── */
 #topbar {
   display: flex;
   align-items: center;
   gap: 0;
-  height: var(--tab-h);
-  background: var(--surface);
+  height: 44px;
+  background: var(--bg2);
   border-bottom: 1px solid var(--border);
   padding: 0 12px;
   user-select: none;
@@ -44,7 +28,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   margin-right: 16px;
   text-decoration: none;
 }
-#topbar .logo img { height: 22px; opacity: 0.8; }
+#topbar .logo img { height: 22px; opacity: 1; }
+.theme-light #topbar .logo img { filter: brightness(0.2); }
 #topbar .logo:hover { color: var(--text); }
 
 .tab-bar {
@@ -62,7 +47,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   font-size: 13px;
   font-family: 'JetBrains Mono', monospace;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg2);
   border-right: 1px solid var(--border);
   border-bottom: 2px solid var(--accent);
   white-space: nowrap;
@@ -82,8 +67,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 3px;
-  background: var(--accent-dim);
-  color: #fff;
+  background: rgba(var(--accent-rgb), 0.3);
+  color: var(--bg);
   letter-spacing: 0.5px;
   flex-shrink: 0;
   text-transform: uppercase;
@@ -109,7 +94,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   transition: all 0.15s;
   white-space: nowrap;
 }
-.btn-save { background: var(--accent-dim); color: #fff; }
+.btn-save { background: var(--accent); color: var(--bg); }
 .btn-save:hover { background: var(--accent); }
 .btn-save:disabled { background: var(--border); color: var(--muted); cursor: default; }
 .btn-drive { background: transparent; color: var(--muted); border: 1px solid var(--border); }
@@ -129,13 +114,15 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   align-items: center;
   gap: 12px;
   height: 24px;
-  background: var(--accent-dim);
+  background: var(--accent);
   padding: 0 14px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  color: #fff;
   flex-shrink: 0;
+  font-weight: 500;
 }
-#statusbar .sep { color: rgba(255,255,255,0.3); }
+.theme-light #statusbar, .theme-light .btn-save, .theme-light .lang-badge { color: #fff !important; }
+#statusbar .sep { opacity: 0.4; margin: 0 4px; }
 #status-msg {
   margin-left: auto;
   font-weight: 500;
@@ -150,7 +137,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   display: flex;
   flex-direction: column;
   height: 100vh;
+  background: var(--bg);
 }
+.theme-light #layout { background: #ffffff !important; }
 #main-content {
   display: flex;
   flex: 1;
@@ -159,9 +148,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 
 /* ── Sidebar ─────────────────────────────────────────────────────── */
 #sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background: var(--sb-bg);
+  width: 260px;
+  min-width: 260px;
+  background: var(--bg);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -184,7 +173,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   padding: 10px 12px 8px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  background: rgba(255,255,255,0.02);
+  background: var(--glass);
 }
 .sidebar-title {
   font-size: 11px;
@@ -203,7 +192,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   border-radius: 3px;
   transition: color 0.15s, background 0.15s;
 }
-.sidebar-close-btn:hover { color: var(--text); background: var(--sb-hover); }
+.sidebar-close-btn:hover { color: var(--text); background: var(--glass); }
 
 /* Sidebar body (scrollable) */
 #sidebar-body {
@@ -231,10 +220,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   text-transform: uppercase;
   cursor: pointer;
   user-select: none;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid var(--border);
   transition: background 0.15s;
 }
-.sb-group-header:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+.sb-group-header:hover { background: var(--bg2); color: var(--text); }
 .sb-chevron { font-size: 10px; transition: transform 0.2s; }
 
 /* File list */
@@ -262,16 +251,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   transition: background 0.12s, color 0.12s;
   border-left: 2px solid transparent;
 }
-.sb-file-item:hover {
-  background: var(--sb-hover);
-  color: var(--text);
-}
-.sb-file-item.active {
-  background: var(--sb-active);
-  color: var(--accent);
-  border-left-color: var(--sb-active-border);
-  font-weight: 600;
-}
+.sb-file-item:hover { background: var(--bg2); color: var(--text); }
+.sb-file-item.active { background: rgba(var(--accent-rgb), 0.15); color: var(--accent); border-left: 2px solid var(--accent); font-weight: 600; }
 .sb-file-icon { font-size: 13px; flex-shrink: 0; }
 .sb-file-name { overflow: hidden; text-overflow: ellipsis; }
 .sb-empty {

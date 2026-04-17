@@ -156,14 +156,21 @@ def init_docs_routes(app, cfg_mgr, root_dir, logger):
     <meta charset="UTF-8">
     <title>{title}</title>
     <style>
-        body {{ font-family: sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 40px; color: #333; }}
-        h1 {{ color: #1e1b4b; border-bottom: 2px solid #6c8cff; }}
-        h2 {{ color: #1e1b4b; margin-top: 40px; }}
-        pre {{ background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }}
-        code {{ background: #eee; padding: 2px 5px; }}
-        blockquote {{ border-left: 4px solid #6c8cff; padding-left: 20px; font-style: italic; color: #666; }}
-        hr {{ border: 0; border-top: 1px solid #eee; margin: 40px 0; }}
-        @media print {{ .no-print {{ display: none; }} }}
+        body {{ font-family: 'Inter', sans-serif; line-height: 1.6; max-width: 900px; margin: 0 auto; padding: 60px 40px; color: #1e293b; background: #fff; }}
+        h1 {{ color: #2563eb; border-bottom: 3px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 30px; font-weight: 800; }}
+        h2 {{ color: #1e293b; margin-top: 50px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; font-weight: 700; }}
+        h3 {{ color: #334155; margin-top: 35px; }}
+        pre {{ background: #0f172a; color: #f8fafc; padding: 20px; border-radius: 12px; overflow-x: auto; margin: 25px 0; border: 1px solid #1e293b; }}
+        code {{ background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; color: #ef4444; }}
+        pre code {{ background: transparent; padding: 0; color: inherit; }}
+        blockquote {{ border-left: 4px solid #2563eb; background: #eff6ff; margin: 30px 0; padding: 15px 30px; color: #64748b; font-style: italic; }}
+        hr {{ border: 0; border-top: 1px solid #e2e8f0; margin: 50px 0; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 30px 0; }}
+        th, td {{ border: 1px solid #e2e8f0; padding: 12px; text-align: left; }}
+        th {{ background: #f8fafc; color: #1e293b; }}
+        img {{ max-width: 100%; height: auto; border-radius: 8px; margin: 30px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
+        .no-print {{ display: block; position: sticky; top: 0; z-index: 1000; background: #fef9c3; border: 1px solid #fde047; padding: 12px; margin-bottom: 40px; border-radius: 8px; text-align: center; font-size: 14px; font-weight: 600; color: #854d0e; }}
+        @media print {{ .no-print {{ display: none; }} body {{ padding: 0; }} }}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
