@@ -5,7 +5,7 @@ import sys
 import time
 import msvcrt
 from zentra.core.logging import logger
-from zentra.core.system import plugin_loader
+from zentra.core.system import module_loader
 from zentra.core.i18n import translator
 from zentra.ui import interface, ui_updater
 from zentra.ui.config_editor.core import ConfigEditor
@@ -46,7 +46,7 @@ class MenuHandler:
         """Help Menu (F1)."""
         ui_updater.stop()
         interface.show_help()
-        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
         ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
         interface.show_complete_ui(
             self.config_manager.config,

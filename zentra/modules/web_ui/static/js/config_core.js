@@ -600,6 +600,26 @@ function renderConfigHub(mode = 'tabs') {
         return a.label.localeCompare(b.label);
     });
 
+    // --- ICON INJECTION LOGIC ---
+    // Automatically add icons to the titles of the configuration panels
+    setTimeout(() => {
+        filteredModules.forEach(m => {
+            const panel = document.getElementById('tab-' + m.id);
+            if (!panel) return;
+            const title = panel.querySelector('.card-title');
+            if (title && !title.getAttribute('data-icon-injected')) {
+                const icon = window.getIconForModule(m.id, m.label, m.icon);
+                // Prevent duplicates: strip logic if it already starts with an emoji or similar
+                let cleanText = title.innerHTML.trim();
+                // Simple regex to remove leading emoji if present (basic range)
+                cleanText = cleanText.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '');
+                
+                title.innerHTML = `${icon} ${cleanText}`;
+                title.setAttribute('data-icon-injected', 'true');
+            }
+        });
+    }, 100);
+
     // 0. Pre-calculate counts
     const catCounts = {};
     filteredModules.forEach(m => {

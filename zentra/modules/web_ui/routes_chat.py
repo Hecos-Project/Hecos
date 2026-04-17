@@ -43,7 +43,7 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
 
     try:
         from zentra.core.agent.loop import AgentExecutor
-        from plugins.web_ui.server import get_state_manager
+        from modules.web_ui.server import get_state_manager
         
         # Instantiate AgentExecutor with shared config and live StateManager
         sm = get_state_manager()

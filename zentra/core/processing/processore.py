@@ -165,15 +165,15 @@ def extract_and_execute_tools(raw_response, config=None):
         
         if module_to_call in BLACKLIST: continue
             
-        from zentra.core.system import plugin_loader
+        from zentra.core.system import module_loader
         
         # FAIL-SAFE: If the registry is empty (happens in standalone child processes), auto-init.
-        if not plugin_loader.get_active_tags():
+        if not module_loader.get_active_tags():
             logger.info("[PROCESSOR] Plugin registry empty; performing lazy initialization...")
-            plugin_loader.update_capability_registry(current_config, debug_log=False)
+            module_loader.update_capability_registry(current_config, debug_log=False)
             
         # --- NEW: Universal Tool Routing - Intercept MCP External Providers ---
-        mcp_module = plugin_loader.get_plugin_module("MCP_BRIDGE", legacy=False)
+        mcp_module = module_loader.get_plugin_module("MCP_BRIDGE", legacy=False)
         mcp_bridge_instance = getattr(mcp_module, "bridge_instance", None) if mcp_module else None
         
         if mcp_bridge_instance and hasattr(mcp_bridge_instance, "proxies"):
@@ -201,10 +201,10 @@ def extract_and_execute_tools(raw_response, config=None):
                 continue # Skip native plugin processing
         # ----------------------------------------------------------------------
         
-        plugin_obj = plugin_loader.get_plugin_module(module_to_call.upper(), legacy=False)
+        plugin_obj = module_loader.get_plugin_module(module_to_call.upper(), legacy=False)
         is_legacy_oop = False
         if not plugin_obj:
-            plugin_obj = plugin_loader.get_plugin_module(module_to_call.upper(), legacy=True)
+            plugin_obj = module_loader.get_plugin_module(module_to_call.upper(), legacy=True)
             if plugin_obj: 
                 is_legacy_oop = True
                 logger.debug("PROCESSOR", f"Found legacy OOP plugin for {module_to_call}")
@@ -326,4 +326,4 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                 video_response += f"\n\n{out}"
                 
     return video_response, clean_voice_text
-
+

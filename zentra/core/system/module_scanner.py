@@ -11,7 +11,7 @@ import glob
 import json
 from zentra.core.logging import logger
 
-from .plugin_state import (
+from .module_state import (
     REGISTRY_PATH,
     _plugin_config_schemas,
     _loaded_plugins,
@@ -40,39 +40,43 @@ def update_capability_registry(config=None, debug_log=True):
             from zentra.app.config import ConfigManager
             config = ConfigManager().config
 
-    # Determine the actual plugins directory
-    # Try local 'plugins' first, then 'zentra/plugins'
-    primary_plugins_dir = "plugins"
+    # Determine the actual plugin and module directories
+    base = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+    modules_dir = os.path.join(base, "modules")
+    if not os.path.exists(modules_dir):
+        modules_dir = "modules"
+
+    primary_plugins_dir = os.path.join(base, "plugins")
     if not os.path.exists(primary_plugins_dir):
-        # We might be in package mode
-        primary_plugins_dir = os.path.join("zentra", "plugins")
-        if not os.path.exists(primary_plugins_dir):
-            # Try absolute path from this file
-            base = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-            primary_plugins_dir = os.path.join(base, "plugins")
+        primary_plugins_dir = "plugins"
 
     # Build list of all directories to scan
     scan_targets = []
+    if os.path.exists(modules_dir):
+        scan_targets.append({"path": modules_dir, "type": "core_module"})
+    
     if os.path.exists(primary_plugins_dir):
-        scan_targets.append(primary_plugins_dir)
+        scan_targets.append({"path": primary_plugins_dir, "type": "plugin"})
         
     # Add external directories from config
     extra_dirs = config.get('plugins', {}).get('extra_dirs', [])
     for ed in extra_dirs:
         if os.path.exists(ed):
-            scan_targets.append(ed)
+            scan_targets.append({"path": ed, "type": "plugin"})
         else:
             logger.warning(f"LOADER: Extra plugins directory not found: {ed}")
 
-    for plugins_dir in scan_targets:
+    for target_info in scan_targets:
+        plugins_dir = target_info["path"]
+        module_type = target_info["type"]
         if not os.path.isdir(plugins_dir): continue
         
-        # Ensure the parent directory is in sys.path so 'plugins.xxx' works
+        # Ensure the parent directory is in sys.path so package imports work
         abs_p_dir = os.path.abspath(plugins_dir)
         parent_dir = os.path.dirname(abs_p_dir)
         if parent_dir not in sys.path:
             sys.path.append(parent_dir)
-        # Also add the dir itself for direct imports if needed
         if abs_p_dir not in sys.path:
             sys.path.append(abs_p_dir)
             
@@ -85,7 +89,6 @@ def update_capability_registry(config=None, debug_log=True):
             main_file = os.path.join(plugins_dir, plugin_dir, "main.py")
             manifest_file = os.path.join(plugins_dir, plugin_dir, "manifest.json")
             if not os.path.exists(main_file):
-                # logger.debug("LOADER", f"Plugin {plugin_dir} without main.py, ignored")
                 continue
 
             # --- NEW SECTION: LAZY LOADING via manifest.json ---
@@ -98,14 +101,12 @@ def update_capability_registry(config=None, debug_log=True):
                     if tag:
                         plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
                         if not plugin_enabled:
-                            if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
+                            if debug_log: logger.debug("LOADER", f"Module {plugin_dir} disabled by config.")
                             continue
                         
-                        # Priorità alla configurazione utente, fallback sul manifest
                         is_lazy = config.get('plugins', {}).get(tag, {}).get('lazy_load', manifest_data.get("lazy_load", False))
                         
                         if is_lazy:
-                            # Register capability without executing Python file
                             skills_map[tag] = {
                                 "description": manifest_data.get("description", ""),
                                 "commands": manifest_data.get("commands", {}),
@@ -115,26 +116,26 @@ def update_capability_registry(config=None, debug_log=True):
                                 "is_class_based": manifest_data.get("is_class_based", True),
                                 "is_lazy": True,
                                 "icon": manifest_data.get("icon", ""),
-                                "category": manifest_data.get("category", "PLUGINS")
+                                "category": manifest_data.get("category", "PLUGINS"),
+                                "module_type": module_type
                             }
                             
                             _lazy_plugins_paths[tag] = os.path.abspath(main_file)
-                            
-                            # Cache the tool schema for LLM prompting without import
-                            from .plugin_state import _lazy_tool_schemas
+                            from .module_state import _lazy_tool_schemas
                             _lazy_tool_schemas[tag] = manifest_data.get("tool_schema", [])
                             
-                            if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} registered efficiently (Lazy Load).")
-                            continue # Skip the dynamic import section entirely
+                            if debug_log: logger.debug("LOADER", f"Module {plugin_dir} registered efficiently (Lazy Load).")
+                            continue
                             
                 except Exception as e:
                     logger.error(f"LOADER: Failed to parse {manifest_file}, falling back to eager load: {e}")
 
             # --- EAGER LOADING (Backward compatibility or Critical Plugins) ---
             try:
-                # Dynamic module import
+                # Dynamic module import - determine prefix based on type
+                pkg_prefix = "modules" if module_type == "core_module" else "plugins"
                 spec = importlib.util.spec_from_file_location(
-                    f"plugins.{plugin_dir}.main",
+                    f"{pkg_prefix}.{plugin_dir}.main",
                     main_file
                 )
                 if spec is None:

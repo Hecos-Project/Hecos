@@ -135,10 +135,10 @@ def scan_plugins(config):
     Supports the 'enabled' flag in config.json to skip or report disabled plugins.
     """
     results = []
-    from zentra.core.system import plugin_loader
+    from zentra.core.system import module_loader
     
     # Ensure registry is fresh
-    plugin_loader.update_capability_registry(config)
+    module_loader.update_capability_registry(config)
     
     plugins_dir = "plugins"
     if not os.path.exists(plugins_dir):

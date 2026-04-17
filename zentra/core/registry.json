@@ -1,17 +1,4 @@
 {
-    "DRIVE": {
-        "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
-        "commands": {
-            "/drive": "Apre il File Manager nel browser"
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": false,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
     "EXECUTOR": {
         "description": "Safe Python execution (AST Sandbox) and System Control.",
         "commands": {
@@ -40,6 +27,102 @@
         "icon": "",
         "category": "PLUGINS"
     },
+    "MCP_BRIDGE": {
+        "description": "Bridge to Model Context Protocol (MCP) servers",
+        "commands": {
+            "call_tool": "Executes an MCP tool.",
+            "get_mcp_schemas": "Hook used by Zentra's module_docs.py to merge tools.",
+            "list": "Method",
+            "reload": "Method",
+            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
+            "status": "Method"
+        },
+        "status": "No MCP servers connected.",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "MEMORY": {
+        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+        "commands": {
+            "read_history": "Extract the last N saved messages from the database history.",
+            "remember_info": "Save important information about the user in the biographical profile.",
+            "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
+            "who_am_i": "Ask Zentra to retrieve identity data for the Admin and the AI (context profile)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
+    "MODELS": {
+        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
+        "commands": {
+            "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
+            "list_models": "Lists all available models for the currently selected backend.",
+            "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
+    "SYS_NET": {
+        "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
+        "commands": {
+            "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
+            "get_proxy_status": "Reports the current proxy configuration status in Zentra, including the URL and whether it is active.",
+            "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
+            "ping_test": "Executes a network ping test to the specified target (IP or domain).",
+            "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
+            "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
+            "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
+        },
+        "status": "Online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "WEB_UI": {
+        "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
+        "commands": {
+            "get_panel_url": "Returns the URL of the chat interface.",
+            "open_browser": "Opens the Zentra web interface in the default browser if not already open."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "DRIVE": {
+        "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
+        "commands": {
+            "/drive": "Apre il File Manager nel browser"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": false,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
     "IMAGE_GEN": {
         "description": "Generates images from text descriptions using AI image models.",
         "commands": {
@@ -65,56 +148,6 @@
         "icon": "",
         "category": "PLUGINS"
     },
-    "MEMORY": {
-        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
-        "commands": {
-            "read_history": "Extract the last N saved messages from the database history.",
-            "remember_info": "Save important information about the user in the biographical profile.",
-            "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
-            "who_am_i": "Ask Zentra to retrieve identity data for the Admin and the AI (context profile)."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
-    "MODELS": {
-        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
-        "commands": {
-            "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
-            "list_models": "Lists all available models for the currently selected backend.",
-            "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
-    "SYS_NET": {
-        "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
-        "commands": {
-            "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
-            "get_proxy_status": "Reports the current proxy configuration status in Zentra, including the URL and whether it is active.",
-            "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
-            "ping_test": "Executes a network ping test to the specified target (IP or domain).",
-            "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
-            "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
-            "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
-            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
-        },
-        "status": "Online",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
     "WEB": {
         "description": "Network access for Google searches and quick opening of websites.",
         "commands": {
@@ -134,19 +167,6 @@
             "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
         },
         "status": "ONLINE (Optical Vision)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
-    "WEB_UI": {
-        "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
-        "commands": {
-            "get_panel_url": "Returns the URL of the chat interface.",
-            "open_browser": "Opens the Zentra web interface in the default browser if not already open."
-        },
-        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,

@@ -15,21 +15,21 @@ window.CONFIG_HUB = {
 
     // Core Modules (not discovered via plugin loader)
     modules: [
-        { id: 'backend',   label: 'hub_mod_backend',      icon: '🧠', cat: 'INTELLIGENZA' },
+        { id: 'backend',   label: 'hub_mod_backend',      icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
 
-        { id: 'keymanager',label: 'hub_mod_keymanager',   icon: '🔐', cat: 'INTELLIGENZA' },
-        { id: 'routing',   label: 'hub_mod_routing',      icon: '🚦', cat: 'INTELLIGENZA' },
-        { id: 'ia',        label: 'hub_mod_persona',      icon: '🎭', cat: 'INTELLIGENZA' },
-        { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'MEMORY' },
-        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'NEURAL_LINK' },
+        { id: 'keymanager',label: 'hub_mod_keymanager',   icon: '🔐', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'routing',   label: 'hub_mod_routing',      icon: '🚦', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'ia',        label: 'hub_mod_persona',      icon: '🎭', cat: 'INTELLIGENZA', isCore: true },
+        { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
+        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'NEURAL_LINK', isCore: true },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA', pluginTag: 'MEDIA' },
         { id: 'igen',      label: 'hub_mod_igen',         icon: '🎨', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
         { id: 'roleplay_elite', label: 'hub_mod_roleplay_elite', icon: '🎭', cat: 'MULTIMEDIA', pluginTag: 'ROLEPLAY_ELITE' },
         
-        { id: 'mcp',       label: 'hub_mod_mcp',          icon: '🔌', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE' },
-        { id: 'bridge',    label: 'hub_mod_bridge',       icon: '🌉', cat: 'CONNETTIVITÀ' },
+        { id: 'mcp',       label: 'hub_mod_mcp',          icon: '🔌', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
+        { id: 'bridge',    label: 'hub_mod_bridge',       icon: '🌉', cat: 'CONNETTIVITÀ', isCore: true },
         { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '📱', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '🗂️', cat: 'RISORSE', pluginTag: 'DRIVE' },
@@ -38,14 +38,15 @@ window.CONFIG_HUB = {
         { id: 'payload',          label: 'hub_mod_payload',      icon: '📦', cat: 'RISORSE' },
         { id: 'studio',           label: 'hub_mod_studio',       icon: '🛠️', cat: 'RISORSE' },
         
-        { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '🌐', cat: 'SISTEMA', pluginTag: 'SYS_NET' },
+        { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '🌐', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'web',       label: 'hub_mod_web',          icon: '🌍', cat: 'SISTEMA', pluginTag: 'WEB' },
         { id: 'webcam',    label: 'hub_mod_webcam',       icon: '📷', cat: 'SISTEMA', pluginTag: 'WEBCAM' },
-        { id: 'executor',  label: 'hub_mod_executor',     icon: '⚡', cat: 'SISTEMA', pluginTag: 'EXECUTOR' },
-        { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD' },
+        { id: 'executor',  label: 'hub_mod_executor',     icon: '⚡', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
+        { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
-        { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI' },
-        { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true },
+        { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
+        { id: 'help',      label: 'hub_mod_help',         icon: '❓', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
+        { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true, isCore: true },
         { id: 'security',  label: 'hub_mod_security',     icon: '🛡️', cat: 'SISTEMA', adminOnly: true },
         { id: 'plugins',   label: 'hub_mod_plugins',      icon: '🧩', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '📜', cat: 'SISTEMA' },

@@ -4,7 +4,7 @@ Module responsible for initializing the Zentra Core system and showing boot sequ
 import sys
 import time
 from zentra.core.logging import logger
-from zentra.core.system import plugin_loader, diagnostica
+from zentra.core.system import module_loader, diagnostica
 from zentra.core.i18n import translator
 from zentra.ui import interface, graphics, ui_updater
 from zentra.memory import brain_interface
@@ -34,12 +34,12 @@ class SystemBootstrapper:
         
         # IMPORTANT: pass current config to plugin loader
         self.state_manager.system_status = translator.t("loading_plugins")
-        plugin_loader.update_capability_registry(self.config_manager.config)
+        module_loader.update_capability_registry(self.config_manager.config)
         self.state_manager.system_status = translator.t("sync_plugins")
-        plugin_loader.sync_plugin_config(self.config_manager)
+        module_loader.sync_plugin_config(self.config_manager)
 
         # MCP Bridge Bootstrap
-        mcp_bridge = plugin_loader.get_plugin_module("MCP_BRIDGE")
+        mcp_bridge = module_loader.get_plugin_module("MCP_BRIDGE")
         if mcp_bridge and hasattr(mcp_bridge, "on_load"):
             try:
                 logger.info("[APP] Bootstrapping MCP Bridge...")
@@ -49,7 +49,7 @@ class SystemBootstrapper:
         
         # Inject state_manager into WebUI server after plugin load (for audio toggle routes)
         try:
-            from plugins.web_ui.server import set_state_manager
+            from modules.web_ui.server import set_state_manager
             set_state_manager(self.state_manager)
         except Exception as _e:
             logger.warning("APP", f"Could not inject state_manager into WebUI: {_e}")
@@ -78,7 +78,7 @@ class SystemBootstrapper:
             logger.warning("APP", f"Audio device scan skipped: {_ae}")
 
         # Avvia il monitoraggio backend solo se il plugin è attivo
-        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod:
             ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
         else:
@@ -99,7 +99,7 @@ class SystemBootstrapper:
         self.state_manager.system_status = translator.t("speaking")
         
         # Show Web UI access links if active
-        if plugin_loader.get_plugin_module("WEB_UI"):
+        if module_loader.get_plugin_module("WEB_UI"):
             interface.show_web_access_info(self.config_manager.config)
             
         message = self.config_manager.config.get("behavior", {}).get("welcome_message", translator.t("system_ready"))
@@ -109,7 +109,7 @@ class SystemBootstrapper:
         self.state_manager.system_status = translator.t("ready")
         
         # Start the background UI updater
-        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
         ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
         
         # Update just the status bar in place, avoid clearing the screen

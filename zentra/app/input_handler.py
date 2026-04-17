@@ -10,7 +10,7 @@ from zentra.ui import interface
 from zentra.core.processing import processore
 from zentra.core.audio import voice
 from zentra.core.logging import logger
-from zentra.core.system import plugin_loader
+from zentra.core.system import module_loader
 from zentra.core.i18n import translator
 from zentra.memory import brain_interface
 # sys è importato a livello di modulo - NON usare 'import sys' inline nei metodi
@@ -37,7 +37,7 @@ class InputHandler:
 
     def handle_voice_input(self, prefix):
         """Handles voice input."""
-        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod:
             tools = getattr(dashboard_mod, "tools", None)
             raw_fn = getattr(tools, "_get_raw_backend_status", None) if tools else None
@@ -78,7 +78,7 @@ class InputHandler:
             print(msg)
             return "CLEAR", ""
             
-        dashboard_mod = plugin_loader.get_plugin_module("DASHBOARD")
+        dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
         if dashboard_mod:
             tools = getattr(dashboard_mod, "tools", None)
             raw_fn = getattr(tools, "_get_raw_backend_status", None) if tools else None
@@ -209,7 +209,7 @@ class InputHandler:
             elif self.state.voice_status and clean_voice_text and self.state.tts_destination == 'web':
                 # Generate audio file but don't play locally, just notify WebUI
                 from zentra.core.audio.device_manager import get_audio_config
-                from zentra.plugins.web_ui.routes_chat import generate_voice_file
+                from zentra.modules.web_ui.routes_chat import generate_voice_file
                 try:
                     path = generate_voice_file(clean_voice_text, get_audio_config())
                     if path:
@@ -300,4 +300,4 @@ class InputHandler:
         
         # Restore prompt
         sys.stdout.write(prefix)
-        sys.stdout.flush()
+        sys.stdout.flush()

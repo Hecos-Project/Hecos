@@ -55,7 +55,7 @@ echo  ==============================================================
 echo.
 
 :: Starting the monitor
-python zentra\monitor.py --script zentra.plugins.web_ui.server
+python zentra\monitor.py --script zentra.modules.web_ui.server
 
 echo.
 echo [!] Watchdog terminated.

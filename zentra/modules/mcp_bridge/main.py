@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 
 try:
     from zentra.core.logging import logger
-    from zentra.core.system import plugin_loader
+    from zentra.core.system import module_loader
 except ImportError:
     # Standalone support
     class _L:
@@ -267,7 +267,7 @@ class DynamicTools:
     def reload(self): return self._bridge.reload()
     
     def get_mcp_schemas(self):
-        """Hook used by Zentra's plugin_docs.py to merge tools."""
+        """Hook used by Zentra's module_docs.py to merge tools."""
         return self._bridge.get_tool_schemas()
 
     # NOTE: Zentra's processor looks for methods on this object.

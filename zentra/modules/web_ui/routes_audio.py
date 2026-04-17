@@ -65,7 +65,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             if sm: sm.system_speaking = False
             
             try:
-                from plugins.web_ui.routes_chat import stop_voice_generation
+                from modules.web_ui.routes_chat import stop_voice_generation
                 stop_voice_generation()
             except Exception as e:
                 logger.debug(f"[WebUI] Could not stop web generation: {e}")

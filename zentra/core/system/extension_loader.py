@@ -20,7 +20,7 @@ _extension_paths = {}
 def discover_extensions(plugin_tag: str, plugin_dir: str):
     """
     Scans the extensions/ subfolder of a plugin and registers found extensions.
-    Called by plugin_scanner during the capability scan.
+    Called by module_scanner during the capability scan.
     """
     ext_root = os.path.join(plugin_dir, "extensions")
     if not os.path.isdir(ext_root):

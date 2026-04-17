@@ -1,20 +1,18 @@
 <div id="tab-mcp" class="panel">
-  <div class="module-header">
-    <h2>🔌 MCP Bridge (Universal Protocol)</h2>
-    <p>Connect Zentra to external AI tools and resources using the Model Context Protocol. Discover servers on <a href="https://smithery.ai" target="_blank" style="color:#66fcf1; text-decoration:none; font-weight:bold;">Smithery.ai</a>.</p>
-  </div>
-
-  <div class="config-section">
-    <div class="form-group row">
-      <label>Enable MCP Bridge</label>
-      <div class="toggle-wrapper">
-        <input type="checkbox" id="mcp-enabled" class="config-toggle" data-plugin="MCP_BRIDGE">
-      </div>
+  <div class="card">
+    <div class="card-title">{{ t('webui_conf_mcp_title') or 'MCP Bridge (Universal Protocol)' }}</div>
+    <div class="field">
+      <p style="font-size: 11px; opacity:0.8;">Connect Zentra to external AI tools and resources using the Model Context Protocol. Discover servers on <a href="https://smithery.ai" target="_blank" style="color:#66fcf1; text-decoration:none; font-weight:bold;">Smithery.ai</a>.</p>
+    </div>
+    
+    <div class="toggle-row" style="margin-bottom: 20px;">
+      <div class="toggle-info">Enable MCP Bridge</div>
+      <label class="switch"><input type="checkbox" id="mcp-enabled" data-plugin="MCP_BRIDGE"><span class="slider"></span></label>
     </div>
   </div>
 
-  <div class="config-section">
-    <h3>Active Servers</h3>
+  <div class="card">
+    <div class="card-title">Active Servers</div>
     <table class="config-table" id="mcp-servers-table" style="margin-bottom: 20px;">
       <thead>
         <tr>
@@ -58,8 +56,8 @@
     </div>
   </div>
 
-  <div class="config-section" style="margin-top: 30px; border-top: 1px solid #1f2833; padding-top: 20px;">
-    <h3>🔍 MCP Explorer (Cross-Registry)</h3>
+  <div class="card">
+    <div class="card-title">MCP Explorer (Cross-Registry)</div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Search and discover external tools across multiple registries (Smithery, MCPSkills) without leaving Zentra.</p>
     
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -79,8 +77,8 @@
     </div>
   </div>
 
-  <div class="config-section" style="margin-top: 30px; border-top: 1px solid #1f2833; padding-top: 20px;">
-    <h3>🛠️ Discovered Tools Inventory</h3>
+  <div class="card">
+    <div class="card-title">Discovered Tools Inventory</div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Real-time list of capabilities available through active MCP servers.</p>
     <div id="mcp-inventory-list" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
         <p style="color: var(--muted); font-size: 12px;">Waiting for server response...</p>

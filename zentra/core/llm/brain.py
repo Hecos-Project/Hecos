@@ -10,7 +10,7 @@ from zentra.memory import brain_interface
 from zentra.core.llm import client
 from zentra.core.i18n import translator
 from zentra.core.llm.manager import manager
-from zentra.core.system.plugin_loader import get_tools_schema, get_legacy_schema, get_active_tags
+from zentra.core.system.module_loader import get_tools_schema, get_legacy_schema, get_active_tags
 from zentra.config import load_yaml
 from zentra.config.schemas.routing_schema import RoutingOverrides
 
@@ -112,7 +112,7 @@ def load_capabilities():
 
 def generate_self_awareness(personality_name):
     try:
-        from zentra.core.system.plugin_loader import get_active_tags
+        from zentra.core.system.module_loader import get_active_tags
         active_plugins = get_active_tags()
         
         # Simplified listing to save tokens

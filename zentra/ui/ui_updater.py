@@ -11,7 +11,7 @@ import threading
 import re
 from colorama import Fore, Style
 from zentra.ui import graphics
-from zentra.core.system import plugin_loader
+from zentra.core.system import module_loader
 from zentra.ui.interface import get_hardware_row
 
 # Blocco globale per proteggere l'accesso simultaneo allo stdout

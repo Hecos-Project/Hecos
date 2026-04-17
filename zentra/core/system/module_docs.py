@@ -10,14 +10,14 @@ import glob
 from zentra.core.logging import logger
 from zentra.core.i18n import translator
 
-from .plugin_state import (
+from .module_state import (
     REGISTRY_PATH,
     _loaded_plugins,
     _loaded_legacy_plugins,
     _lazy_plugins_paths,
     _lazy_tool_schemas
 )
-from .plugin_scanner import update_capability_registry
+from .module_scanner import update_capability_registry
 
 def get_formatted_capabilities():
     """Returns a readable string for the terminal."""

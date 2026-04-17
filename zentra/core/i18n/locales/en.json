@@ -423,7 +423,7 @@
         "webui_conf_sys_log_file": "File only",
         "webui_conf_sys_fastboot": "Fast Boot (skip integrity checks)",
         "webui_conf_sys_lang": "Language",
-        "webui_conf_plugin_active_title": "Active Plugins",
+        "webui_conf_plugin_active_title": "Zentra Module Manager",
         "webui_conf_plugin_desc_dashboard": "CPU/RAM/GPU Monitor",
         "webui_conf_plugin_desc_file": "Local File management",
         "webui_conf_plugin_desc_help": "Dynamic Guide",

@@ -21,7 +21,7 @@ _server_lock = threading.Lock()
 def set_state_manager(sm) -> None:
     """Inject the live StateManager so audio-toggle routes can use it."""
     # We use sys to share the state manager because this module is often double-imported
-    # (once as __main__ and once as plugins.web_ui.server).
+    # (once as __main__ and once as modules.web_ui.server).
     sys.zentra_state_manager = sm
 
 
@@ -277,7 +277,7 @@ class ZentraWebUIServer:
 def start_if_needed(config_manager, root_dir: str, port: int = 7070) -> None:
     """Singleton entry point — safe to call multiple times, even with two module instances."""
     # We use sys to share the singleton because this module is often double-imported
-    # (once as __main__ and once as plugins.web_ui.server).
+    # (once as __main__ and once as modules.web_ui.server).
     import sys
     
     # We also need a shared lock
@@ -340,11 +340,11 @@ if __name__ == "__main__":
     maybe_clear_on_restart(cfg.config)
     
     # Initialize plugin registry (needed for plugin execution from WebUI process)
-    from zentra.core.system import plugin_loader
-    plugin_loader.update_capability_registry(cfg.config)
+    from zentra.core.system import module_loader
+    module_loader.update_capability_registry(cfg.config)
     
     # Initialize MCP Bridge for Universal External Tools
-    mcp_bridge = plugin_loader.get_plugin_module("MCP_BRIDGE", legacy=False)
+    mcp_bridge = module_loader.get_plugin_module("MCP_BRIDGE", legacy=False)
     if mcp_bridge and hasattr(mcp_bridge, "on_load"):
         try:
             logger.info("[WebUI Standalone] Bootstrapping MCP Bridge...")

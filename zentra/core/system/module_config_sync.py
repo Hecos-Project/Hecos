@@ -4,7 +4,7 @@ DESCRIPTION: Synchronizes plugin configurations with the main config.json file.
 """
 
 from zentra.core.logging import logger
-from .plugin_state import _plugin_config_schemas
+from .module_state import _plugin_config_schemas
 
 def sync_plugin_config(config_manager=None):
     """

@@ -253,7 +253,10 @@ function renderPlugins(plugins) {
     DRIVE_EDITOR: window.t ? window.t('webui_desc_editor') : 'Integrated Code Editor'
   };
 
-  let html = '';
+  let htmlCore = '<details open style="margin-bottom:10px;"><summary style="cursor:pointer; margin-bottom:12px; padding-bottom:5px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none;"><strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Core Modules (Level 1)</strong></summary>';
+  let htmlPlugins = '<details open style="margin-top:15px; margin-bottom:10px;"><summary style="cursor:pointer; margin-bottom:12px; padding-bottom:5px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none;"><strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Native Plugins & Extensions (Level 2 & 3)</strong></summary>';
+  let addedCore = false;
+  let addedPlugins = false;
   
   // Group 1: Native & Static Modules from Hub
   hub.modules.forEach(m => {
@@ -269,12 +272,20 @@ function renderPlugins(plugins) {
     const descKey = 'webui_desc_' + tag.toLowerCase().replace(/_/g, '_');
     const desc = t(descKey) !== descKey ? t(descKey) : (I18N['plugin_desc_' + tag.toLowerCase()] || name);
     const icon = m.icon || '🧩';
+    const mType = m.isCore ? 'core_module' : (pCfg.module_type || 'plugin');
 
-    html += `<div class="plugin-row">
+    let badges = `<span class="p-tag">${tag}</span>`;
+    if (mType === 'core_module') {
+        badges += ` <span class="p-tag" style="font-size:9px; background:rgba(255,50,50,0.15); color:#ff5555; border-color:#ff5555;">CORE</span>`;
+    } else {
+        badges += ` <span class="p-tag" style="font-size:9px; background:rgba(255,200,50,0.15); color:#ffcc33; border-color:#ffcc33;">PLUGIN</span>`;
+    }
+
+    let rowHtml = `<div class="plugin-row">
       <div class="plugin-info-main">
         <span class="p-icon">${icon}</span>
         <div class="plugin-meta">
-          <div class="plugin-name">${name} <span class="p-tag">${tag}</span>
+          <div class="plugin-name">${name} ${badges}
             <label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>
           </div>
           <div class="plugin-desc">${desc}</div>
@@ -288,7 +299,6 @@ function renderPlugins(plugins) {
       if (!child.isExtension || child.parentPluginTag !== tag) return;
 
       const childTag = child.pluginTag;
-      // extId = everything after PARENT_TAG_ lowercased, e.g. DRIVE_EDITOR → editor
       const extId = childTag.replace(tag + '_', '').toLowerCase();
       const extCfg = (pCfg.extensions || {})[extId] || {};
       const extOn = extCfg.enabled !== false;
@@ -299,7 +309,7 @@ function renderPlugins(plugins) {
       const disabledAttr = !on ? 'disabled' : '';
       const dimStyle = !on ? 'opacity:0.4; pointer-events:none;' : '';
 
-      html += `<div class="plugin-row plugin-row-extension" style="margin-left:28px; border-left:2px solid rgba(102,252,241,0.15); padding-left:12px; ${dimStyle}">
+      rowHtml += `<div class="plugin-row plugin-row-extension" style="margin-left:28px; border-left:2px solid rgba(102,252,241,0.15); padding-left:12px; ${dimStyle}">
         <div class="plugin-info-main">
           <span class="p-icon" style="font-size:14px;">└─ ${childIcon}</span>
           <div class="plugin-meta">
@@ -319,7 +329,22 @@ function renderPlugins(plugins) {
         ><span class="slider"></span></label>
       </div>`;
     });
+    
+    if (mType === 'core_module') {
+        htmlCore += rowHtml;
+        addedCore = true;
+    } else {
+        htmlPlugins += rowHtml;
+        addedPlugins = true;
+    }
   });
+
+  if (addedCore) htmlCore += '</details>';
+  if (addedPlugins) htmlPlugins += '</details>';
+
+  let html = '';
+  if (addedCore) html += htmlCore;
+  if (addedPlugins) html += htmlPlugins;
 
   cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No modules discovered'}</p>`;
 

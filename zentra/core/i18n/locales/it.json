@@ -437,7 +437,7 @@
         "webui_conf_sys_log_file": "Solo File",
         "webui_conf_sys_fastboot": "Fast Boot (salta controlli integrità)",
         "webui_conf_sys_lang": "Lingua",
-        "webui_conf_plugin_active_title": "Plugin Attivi",
+        "webui_conf_plugin_active_title": "Zentra Module Manager",
         "webui_conf_plugin_desc_dashboard": "Monitor CPU/RAM/GPU",
         "webui_conf_plugin_desc_file": "Gestione File locale",
         "webui_conf_plugin_desc_drive": "Archiviazione e Gestione File HTTP (Drive)",
