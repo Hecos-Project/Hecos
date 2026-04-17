@@ -1,7 +1,7 @@
 /* View Switcher & Filter Tabs (Categories Bar) */
 .view-switcher, .global-controls {
   display: flex;
-  background: rgba(255,255,255,0.05);
+  background: var(--glass-b);
   padding: 3px;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -22,7 +22,7 @@
   justify-content: center;
 }
 
-.switcher-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.switcher-btn:hover { color: var(--text); background: var(--glass-b); }
 .switcher-btn.active { background: var(--accent); color: white; box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.4); }
 
 .filter-tabs {
@@ -32,7 +32,7 @@
   gap: 8px; /* Reduced gap */
   margin-bottom: 30px;
   padding: 8px 12px; /* Reduced vertical padding */
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-b);
   border-radius: 16px;
   border: 1px solid var(--border);
   overflow-x: auto; /* Allow scrolling if too narrow */
@@ -61,7 +61,7 @@
   flex-shrink: 0; /* Don't squash buttons */
 }
 
-.filter-btn:hover { background: rgba(255, 255, 255, 0.1); color: var(--text); }
+.filter-btn:hover { background: var(--glass-c); color: var(--text); }
 .filter-btn.active {
   background: rgba(var(--accent-rgb), 0.15);
   border-color: var(--accent);
@@ -71,7 +71,7 @@
 
 .filter-btn .btn-badge {
     font-size: 10px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--glass-c);
     padding: 2px 6px;
     border-radius: 6px;
     color: var(--muted);
@@ -98,8 +98,8 @@
     gap: 12px;
     margin: 10px 0;
     padding: 12px 18px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
     border-radius: 14px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -108,7 +108,7 @@
 }
 
 .category-header:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--glass-b);
     border-color: rgba(var(--accent-rgb), 0.3);
     transform: translateX(2px);
 }
@@ -226,7 +226,7 @@
 }
 
 .cat-card {
-  background: linear-gradient(135deg, rgba(26, 29, 39, 0.8), rgba(15, 17, 23, 0.9));
+  background: linear-gradient(135deg, var(--bg2), var(--bg));
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 35px 20px;

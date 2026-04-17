@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <div class="card" style="box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05);">
+    <div class="card" style="box-shadow: var(--shadow); border: 1px solid var(--border);">
       <div class="card-title" style="display:flex; align-items:center; gap:10px;">
           <span style="font-size:18px;">🛡️</span> {{ t('webui_conf_users_roles_title') }}
       </div>
@@ -152,7 +152,7 @@
                 let html = `
                 <table style="width:100%; border-collapse: collapse; text-align: left; font-size:13px;">
                     <thead>
-                        <tr style="background: rgba(102, 252, 241, 0.05); color:#66fcf1; border-bottom: 2px solid #30363d;">
+                        <tr style="background: rgba(var(--accent-rgb), 0.05); color:var(--accent); border-bottom: 2px solid var(--border);">
                             <th style="padding: 12px; font-weight: 500;">ID</th>
                             <th style="padding: 12px; font-weight: 500;">Username</th>
                             <th style="padding: 12px; font-weight: 500;">Role</th>
@@ -175,10 +175,10 @@
                     }
 
                     html += `
-                        <tr style="border-bottom: 1px solid #1e2430; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                            <td style="padding: 12px; color:#555;">#${u.id}</td>
-                            <td style="padding: 12px; font-weight:600; color:#c5c6c7;">${u.username}</td>
-                            <td style="padding: 12px;"><span style="background: rgba(69, 162, 158, 0.2); color:#45a29e; padding:2px 6px; border-radius:4px; font-size:10px; text-transform:uppercase; font-weight:bold;">${u.role}</span></td>
+                        <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;" onmouseover="this.style.background='var(--glass)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding: 12px; color:var(--muted);">#${u.id}</td>
+                            <td style="padding: 12px; font-weight:600; color:var(--text);">${u.username}</td>
+                            <td style="padding: 12px;"><span style="background: rgba(var(--accent-rgb), 0.2); color:var(--accent); padding:2px 6px; border-radius:4px; font-size:10px; text-transform:uppercase; font-weight:bold;">${u.role}</span></td>
                             <td style="padding: 12px; text-align:right;">${actions}</td>
                         </tr>
                     `;

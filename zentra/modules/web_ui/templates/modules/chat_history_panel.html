@@ -47,12 +47,12 @@
 <style>
 /* ── Container Styling ──────────────────────────────────────────── */
 #chat-history-section {
-  background: rgba(13, 14, 20, 0.6); /* Slightly darker/distinct background */
+  background: var(--glass-b); /* Distinct but theme-aware background */
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
   margin: 12px 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px var(--shadow);
 }
 
 /* ── Mode Picker ────────────────────────────────────────────────── */
@@ -86,7 +86,7 @@
 .mode-btn:hover:not(:disabled) { background: var(--glass-b); color: var(--text); }
 
 /* Active state per mode */
-#mode-btn-normal.active    { border-color: var(--accent); color: var(--accent); background: rgba(102,252,241,0.08); box-shadow: 0 0 8px rgba(102,252,241,0.15); }
+#mode-btn-normal.active    { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb),0.08); box-shadow: 0 0 8px rgba(var(--accent-rgb),0.15); }
 #mode-btn-auto_wipe.active { border-color: #f59e0b;       color: #f59e0b;       background: rgba(245,158,11,0.08); box-shadow: 0 0 8px rgba(245,158,11,0.15); }
 #mode-btn-incognito.active { border-color: #8b5cf6;       color: #8b5cf6;       background: rgba(139,92,246,0.08); box-shadow: 0 0 8px rgba(139,92,246,0.15); }
 
@@ -121,8 +121,8 @@
   transition: background .15s;
   border: 1px solid transparent;
 }
-.history-item:hover { background: rgba(102,252,241,0.05); border-color: rgba(102,252,241,0.15); }
-.history-item.active { background: rgba(102,252,241,0.1); border-color: rgba(102,252,241,0.3); }
+.history-item:hover { background: rgba(var(--accent-rgb),0.05); border-color: rgba(var(--accent-rgb),0.15); }
+.history-item.active { background: rgba(var(--accent-rgb),0.1); border-color: rgba(var(--accent-rgb),0.3); }
 .history-item-main { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
 .history-icon { font-size:14px; flex-shrink:0; }
 .history-item-info { flex:1; min-width:0; }

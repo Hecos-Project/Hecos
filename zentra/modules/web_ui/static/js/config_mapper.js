@@ -253,8 +253,36 @@ function renderPlugins(plugins) {
     DRIVE_EDITOR: window.t ? window.t('webui_desc_editor') : 'Integrated Code Editor'
   };
 
-  let htmlCore = '<details open style="margin-bottom:10px;"><summary style="cursor:pointer; margin-bottom:12px; padding-bottom:5px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none;"><strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Core Modules (Level 1)</strong></summary>';
-  let htmlPlugins = '<details open style="margin-top:15px; margin-bottom:10px;"><summary style="cursor:pointer; margin-bottom:12px; padding-bottom:5px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none;"><strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Native Plugins & Extensions (Level 2 & 3)</strong></summary>';
+  // Count categories for headers
+  let coreCount = 0;
+  let pluginCount = 0;
+  let extensionCount = 0;
+
+  hub.modules.forEach(m => {
+    if (!m.pluginTag || m.id === 'plugins') return;
+    if (m.isExtension) {
+        extensionCount++;
+    } else if (m.isCore) {
+        coreCount++;
+    } else {
+        pluginCount++;
+    }
+  });
+
+  let htmlCore = `<details open style="margin-bottom:10px;">
+    <summary style="cursor:pointer; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none; display:flex; align-items:center; gap:10px;">
+      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Core Modules (Level 1)</strong>
+      <span class="p-tag core">CORE</span>
+      <span style="margin-left:auto; font-size:10px; color:var(--muted); font-weight:800; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px;">${coreCount}</span>
+    </summary>`;
+
+  let htmlPlugins = `<details open style="margin-top:25px; margin-bottom:10px;">
+    <summary style="cursor:pointer; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none; display:flex; align-items:center; gap:10px;">
+      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Native Plugins & Extensions (Level 2 & 3)</strong>
+      <span class="p-tag plugin">PLUGIN</span>
+      <span class="p-tag extension">EXT</span>
+      <span style="margin-left:auto; font-size:10px; color:var(--muted); font-weight:800; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px;">${pluginCount + extensionCount}</span>
+    </summary>`;
   let addedCore = false;
   let addedPlugins = false;
   
@@ -276,9 +304,9 @@ function renderPlugins(plugins) {
 
     let badges = `<span class="p-tag">${tag}</span>`;
     if (mType === 'core_module') {
-        badges += ` <span class="p-tag" style="font-size:9px; background:rgba(255,50,50,0.15); color:#ff5555; border-color:#ff5555;">CORE</span>`;
+        badges += ` <span class="p-tag core" style="font-size:9px;">CORE</span>`;
     } else {
-        badges += ` <span class="p-tag" style="font-size:9px; background:rgba(255,200,50,0.15); color:#ffcc33; border-color:#ffcc33;">PLUGIN</span>`;
+        badges += ` <span class="p-tag plugin" style="font-size:9px;">PLUGIN</span>`;
     }
 
     let rowHtml = `<div class="plugin-row">

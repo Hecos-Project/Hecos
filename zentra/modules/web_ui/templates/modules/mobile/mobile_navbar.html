@@ -1,12 +1,12 @@
 <!-- mobile_navbar.html -->
-<div class="mobile-navbar mobile-only" style="padding: 10px 15px; background: rgba(11, 12, 16, 0.9); border-bottom: 1px solid rgba(102, 252, 241, 0.1); align-items: center; justify-content: space-between; backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 900;">
+<div class="mobile-navbar mobile-only" style="padding: 10px 15px; background: var(--bg-blur); border-bottom: 1px solid var(--glass-border); align-items: center; justify-content: space-between; backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 900;">
     <div style="display:flex; align-items: center; gap: 12px;">
-        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" style="background: transparent; border: none; color: #66fcf1; font-size: 24px; cursor: pointer; padding: 0; z-index: 901; position: relative;">☰</button>
-        <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: bold; color: #c5c6c7;">Zentra <span style="color:#45a29e;">Core</span></span>
+        <button id="mobile-menu-btn" onclick="toggleMobileMenu()" style="background: transparent; border: none; color: var(--accent); font-size: 24px; cursor: pointer; padding: 0; z-index: 901; position: relative;">☰</button>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: bold; color: var(--text);">Zentra <span style="color:var(--accent);">Core</span></span>
     </div>
     <div style="display: flex; gap: 8px;">
         <!-- Elementi rapidi per mobile se necessari -->
-        <span id="mobile-status-dot" style="display:inline-block; width:8px; height:8px; background:#45a29e; border-radius:50%; box-shadow:0 0 5px #45a29e;"></span>
+        <span id="mobile-status-dot" style="display:inline-block; width:8px; height:8px; background:var(--accent); border-radius:50%; box-shadow:0 0 5px var(--accent);"></span>
     </div>
 </div>
 
@@ -30,9 +30,9 @@ function toggleMobileMenu() {
         sidebar.style.setProperty('height', '100%', 'important');
         sidebar.style.setProperty('width', '260px', 'important');
         sidebar.style.setProperty('z-index', '1000', 'important');
-        sidebar.style.setProperty('background', '#0d1117', 'important');
+        sidebar.style.setProperty('background', 'var(--bg2)', 'important');
         sidebar.style.setProperty('overflow-y', 'auto', 'important');
-        sidebar.style.setProperty('box-shadow', '4px 0 20px rgba(0,0,0,0.9)', 'important');
+        sidebar.style.setProperty('box-shadow', '4px 0 20px var(--shadow)', 'important');
         sidebar.dataset.mobileOpen = 'true';
         if (overlay) { overlay.style.display = 'block'; }
     } else {

@@ -1,5 +1,5 @@
 header {
-  background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--bg) 100%);
   border-bottom: 1px solid var(--border);
   padding: 20px 32px;
   display: flex;

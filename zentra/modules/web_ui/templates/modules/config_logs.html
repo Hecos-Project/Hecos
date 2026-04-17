@@ -4,7 +4,7 @@
     <div class="card-title">{{ t('webui_conf_logs_title') }}</div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">{{ t('webui_conf_logs_help') }}</p>
     
-    <div class="log-grid-controls" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px solid var(--border); gap:15px; flex-wrap:wrap;">
+    <div class="log-grid-controls" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:var(--glass); border-radius:8px; border:1px solid var(--border); gap:15px; flex-wrap:wrap;">
       <div style="display:flex; gap:10px; align-items:center;">
         <button class="btn btn-primary" onclick="addLogWindow()" style="padding:6px 15px;"><i class="fas fa-plus"></i> {{ t('webui_conf_logs_add_window') }}</button>
         <button class="btn btn-secondary" onclick="refreshLogFiles()" style="padding:6px 12px;"><i class="fas fa-sync-alt"></i> Refresh</button>
@@ -48,13 +48,13 @@
             <button class="w-btn w-close" onclick="removeLogWindow('{id}')">×</button>
           </div>
         </div>
-        <div class="log-window-search-bar" style="display:flex; gap:5px; padding:6px 14px; background:rgba(0,0,0,0.5); border-bottom:1px solid rgba(255,255,255,0.03); align-items:center;">
+        <div class="log-window-search-bar" style="display:flex; gap:5px; padding:6px 14px; background:var(--bg-blur); border-bottom:1px solid var(--border); align-items:center;">
           <i class="fas fa-search" style="color:var(--muted); font-size:10px;"></i>
-          <input type="text" class="w-search-term" placeholder="{{ t('webui_conf_logs_search_text') }}" style="flex:1; background:rgba(255,255,255,0.1); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
+          <input type="text" class="w-search-term" placeholder="{{ t('webui_conf_logs_search_text') }}" style="flex:1; background:var(--glass-b); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
           <i class="far fa-clock" style="color:var(--muted); font-size:10px; margin-left:3px;"></i>
-          <input type="text" class="w-search-time" placeholder="{{ t('webui_conf_logs_search_time') }}" style="width:75px; background:rgba(255,255,255,0.1); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
-          <button class="btn btn-secondary w-btn-filter" style="padding:2px 8px; font-size:10px; color:#58a6ff; border-color:rgba(88,166,255,0.3);">{{ t('webui_conf_logs_btn_filter') }}</button>
-          <button class="btn btn-secondary w-btn-reset" style="padding:2px 8px; font-size:10px; border-color:rgba(255,255,255,0.1);" title="{{ t('webui_conf_logs_btn_reset') }}"><i class="fas fa-times"></i></button>
+          <input type="text" class="w-search-time" placeholder="{{ t('webui_conf_logs_search_time') }}" style="width:75px; background:var(--glass-b); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
+          <button class="btn btn-secondary w-btn-filter" style="padding:2px 8px; font-size:10px; color:var(--accent); border-color:rgba(var(--accent-rgb), 0.3);">{{ t('webui_conf_logs_btn_filter') }}</button>
+          <button class="btn btn-secondary w-btn-reset" style="padding:2px 8px; font-size:10px; border-color:var(--border);" title="{{ t('webui_conf_logs_btn_reset') }}"><i class="fas fa-times"></i></button>
         </div>
         <div class="log-window-body"></div>
         <div class="log-window-footer">
@@ -64,7 +64,7 @@
           </div>
           <div style="display:flex; align-items:center; gap:5px;">
             <label>Max:</label>
-            <input type="number" class="w-max-lines" value="500" min="1" max="2500" onchange="window.forceTrimLines(this)" style="width: 50px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:var(--fg); font-size:10px; padding:2px; border-radius:3px;">
+            <input type="number" class="w-max-lines" value="500" min="1" max="2500" onchange="window.forceTrimLines(this)" style="width: 50px; background:var(--glass); border:1px solid var(--border); color:var(--fg); font-size:10px; padding:2px; border-radius:3px;">
           </div>
           <span class="w-line-count">0 lines</span>
         </div>
@@ -73,7 +73,7 @@
 
     <!-- Log Deletion Modal -->
     <div id="log-delete-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
-      <div class="modal-content" style="background:#0d1117; width:450px; max-height:80vh; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+      <div class="modal-content" style="background:var(--bg2); width:450px; max-height:80vh; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; box-shadow:var(--shadow);">
         <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
           <h3 style="margin:0; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;"><i class="fas fa-trash-alt" style="color:#f87171;"></i> Manage Log Files</h3>
           <button onclick="closeLogDeleteModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px;">&times;</button>

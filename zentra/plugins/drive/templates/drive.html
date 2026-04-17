@@ -7,9 +7,25 @@
   <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/core/variables.css">
   <link rel="stylesheet" href="/drive_static/css/drive.css">
 </head>
 <body>
+<script>
+  (function() {
+    var autoTheme = localStorage.getItem('zentra-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
+    var theme = 'cyberpunk';
+    if (autoTheme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
+    } else {
+      theme = savedTheme;
+    }
+    if (theme !== 'default') {
+      document.body.classList.add('theme-' + theme);
+    }
+  })();
+</script>
 
 <!-- ── Header ─────────────────────────────────────────────── -->
 <header>
@@ -20,7 +36,7 @@
   <div class="nav-links">
     {% if current_user.is_authenticated %}
     <div class="user-badge">
-      <span style="color:#888;">{{ t('webui_chat_user') }}:</span>
+      <span style="color:var(--muted);">{{ t('webui_chat_user') }}:</span>
       <strong>{{ current_user.username }}</strong>
       <span class="role-badge">{{ current_user.role }}</span>
     </div>

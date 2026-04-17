@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <title>Zentra — {{ t('webui_chat_title') }}</title>
 <link rel="icon" type="image/png" href="/assets/Zentra_Core_Logo_NBG%20-%20SQR.png?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}">
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,8 +36,8 @@
       z-index: 1000 !important;
       transition: left 0.3s ease !important;
       overflow-y: auto !important;
-      background: #0d1117 !important;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.8) !important;
+      background: var(--bg2) !important;
+      box-shadow: 4px 0 20px var(--shadow) !important;
     }
     #sidebar.open { left: 0 !important; }
     #mobile-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; }
@@ -47,6 +48,22 @@
 {% include 'modules/chat_image_viewer.html' %}
 </head>
 <body>
+
+<script>
+  (function() {
+    var autoTheme = localStorage.getItem('zentra-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('zentra-ui-theme') || 'cyberpunk';
+    var theme = 'cyberpunk';
+    if (autoTheme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
+    } else {
+      theme = savedTheme;
+    }
+    if (theme !== 'default') {
+      document.body.classList.add('theme-' + theme);
+    }
+  })();
+</script>
 
 {% include 'modules/chat_sidebar.html' %}
 {% include 'modules/neural_link.html' %}

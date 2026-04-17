@@ -22,6 +22,13 @@
   --surface3: #2d3351;
   --radius:   10px;
   --shadow:   0 4px 24px rgba(0,0,0,0.4);
+  --bg-blur:  rgba(26, 29, 39, 0.85);
+  
+  /* Glass Tokens */
+  --glass:       rgba(255, 255, 255, 0.04);
+  --glass-b:     rgba(255, 255, 255, 0.08);
+  --glass-c:     rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.08);
   
   /* Dashboard Specific Tokens */
   --card-title-color: var(--accent);
@@ -45,6 +52,7 @@
   --accent2: #8b4513;
   --text: #f4ecd8;
   --border: #4d3319;
+  --bg-blur: rgba(38, 24, 10, 0.85);
 }
 
 /* Theme: Elegant (Sophisticated Dark) */
@@ -57,6 +65,7 @@
   --accent2: #888;
   --text: #eee;
   --border: #333;
+  --bg-blur: rgba(17, 17, 17, 0.85);
 }
 
 /* Theme: Light Mode (Clean & Sharp) */
@@ -72,6 +81,13 @@
   --border: #e2e8f0;
   --surface2: #f1f5f9;
   --surface3: #e2e8f0;
+
+  /* Inverse Glass Tokens */
+  --glass:       rgba(0, 0, 0, 0.04);
+  --glass-b:     rgba(0, 0, 0, 0.08);
+  --glass-c:     rgba(0, 0, 0, 0.15);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --bg-blur:     rgba(255, 255, 255, 0.85);
 }
 
 /* Theme: Rose (Soft & Vibrant) */
@@ -84,5 +100,6 @@
   --accent2: #fda4af;
   --text: #fff1f2;
   --border: #4c1d24;
+  --bg-blur: rgba(30, 27, 38, 0.85);
 }
 

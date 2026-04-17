@@ -82,7 +82,7 @@ async function loadDrives() {
     }
     sel.title  = window.t ? window.t('webui_drive_drive_sel_hint') : "Change drive";
     sel.style.cssText = `
-      background: rgba(102,252,241,0.08);
+      background: var(--glass);
       color: var(--accent);
       border: 1px solid var(--border);
       border-radius: 5px;
@@ -225,7 +225,7 @@ function renderTable() {
           ? `<button onclick="navigateTo('${esc(e.path)}')" title="Apri">📂</button>`
           : `<button onclick="downloadFile('${esc(e.path)}')" title="Scarica">⬇️</button>`}
         ${!e.is_dir && isEditable(e.name)
-          ? `<button onclick="openEditor('${esc(e.path)}')" title="${window.t ? window.t('webui_drive_edit') : 'Edit'}" style="color:#58a6ff;">✏️</button>`
+          ? `<button onclick="openEditor('${esc(e.path)}')" title="${window.t ? window.t('webui_drive_edit') : 'Edit'}" style="color:var(--accent);">✏️</button>`
           : ''}
         <button onclick="deleteItem('${esc(e.path)}','${esc(e.name)}')" title="${window.t ? window.t('webui_conf_logs_delete') : 'Delete'}">🗑️</button>
       </td>

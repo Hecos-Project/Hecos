@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-title">{{ t('webui_conf_mcp_title') or 'MCP Bridge (Universal Protocol)' }}</div>
     <div class="field">
-      <p style="font-size: 11px; opacity:0.8;">Connect Zentra to external AI tools and resources using the Model Context Protocol. Discover servers on <a href="https://smithery.ai" target="_blank" style="color:#66fcf1; text-decoration:none; font-weight:bold;">Smithery.ai</a>.</p>
+      <p style="font-size: 11px; opacity:0.8;">Connect Zentra to external AI tools and resources using the Model Context Protocol. Discover servers on <a href="https://smithery.ai" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:bold;">Smithery.ai</a>.</p>
     </div>
     
     <div class="toggle-row" style="margin-bottom: 20px;">
@@ -27,8 +27,8 @@
       </tbody>
     </table>
 
-    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border: 1px dashed #45a29e;">
-      <h4 style="margin-top: 0; color: #c5c6c7; font-size: 14px; margin-bottom: 10px;">➕ Add New Server</h4>
+    <div style="background: var(--bg3); padding: 15px; border-radius: 8px; border: 1px dashed var(--accent);">
+      <h4 style="margin-top: 0; color: var(--text); font-size: 14px; margin-bottom: 10px;">➕ Add New Server</h4>
       
       <!-- Preset Selector -->
       <div style="margin-bottom: 10px;">
@@ -61,7 +61,7 @@
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Search and discover external tools across multiple registries (Smithery, MCPSkills) without leaving Zentra.</p>
     
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-      <select id="mcp-explore-registry" class="input-dark" style="flex: 0.3; padding: 10px; border-radius: 8px; border: 1px solid rgba(102, 252, 241, 0.2); background: rgba(0,0,0,0.3); color: #fff;">
+      <select id="mcp-explore-registry" class="input-dark" style="flex: 0.3; padding: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg3); color: var(--text);">
         <option value="smithery" selected>Smithery.ai</option>
         <option value="mcp-get">MCPSkills (mcp-get)</option>
         <option value="github">GitHub (Topic: mcp-server)</option>
@@ -80,7 +80,7 @@
   <div class="card">
     <div class="card-title">Discovered Tools Inventory</div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Real-time list of capabilities available through active MCP servers.</p>
-    <div id="mcp-inventory-list" style="max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+    <div id="mcp-inventory-list" style="max-height: 300px; overflow-y: auto; background: var(--bg3); padding: 15px; border-radius: 8px;">
         <p style="color: var(--muted); font-size: 12px;">Waiting for server response...</p>
     </div>
   </div>
@@ -88,9 +88,9 @@
 
 <style>
   .tag-mcp-tool {
-    background: rgba(102, 252, 241, 0.1);
-    color: #66fcf1;
-    border: 1px solid rgba(102, 252, 241, 0.3);
+    background: rgba(var(--accent-rgb), 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
     padding: 2px 8px;
     border-radius: 4px;
     font-size: 11px;
@@ -99,8 +99,8 @@
     transition: all 0.2s;
   }
   .tag-mcp-tool:hover {
-    background: rgba(102, 252, 241, 0.2);
-    border-color: #66fcf1;
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: var(--accent);
   }
 </style>
 
@@ -199,7 +199,7 @@
       
       html += `
         <tr>
-          <td style="color: #66fcf1; font-weight: bold;">${name}</td>
+          <td style="color: var(--accent); font-weight: bold;">${name}</td>
           <td style="font-family: 'JetBrains Mono', monospace; font-size:11px; color: #a4a5a6;">
             <span style="color: #fff;">${configData.command}</span> ${cmds}
           </td>
@@ -210,7 +210,7 @@
              </div>
           </td>
           <td>
-            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; border-color: #633; color: #f88; background: transparent;" onclick="removeMCPServer('${name}')">✕</button>
+            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; border-color: var(--border); color: var(--red); background: transparent;" onclick="removeMCPServer('${name}')">✕</button>
           </td>
         </tr>
       `;
@@ -330,13 +330,13 @@
         const dataStr = btoa(JSON.stringify(cardData));
 
         html += `
-          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(102, 252, 241, 0.1); display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="background: var(--glass); padding: 15px; border-radius: 10px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; justify-content: space-between;">
             <div>
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
-                <span style="color:#66fcf1; font-weight:bold; font-size:13px; font-family:'JetBrains Mono', monospace;">${res.name}</span>
+                <span style="color:var(--accent); font-weight:bold; font-size:13px; font-family:'JetBrains Mono', monospace;">${res.name}</span>
                 <span style="font-size:10px; color:rgba(255,255,255,0.3);">${res.useCount || res.downloads || 0} ${registry === 'smithery' ? 'uses' : 'dls'}</span>
               </div>
-              <p style="font-size:11px; color:#c5c6c7; line-height:1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${res.description || 'No description available.'}</p>
+              <p style="font-size:11px; color:var(--muted); line-height:1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${res.description || 'No description available.'}</p>
             </div>
             <button type="button" class="btn btn-secondary" style="width:100%; font-size:11px; padding: 6px;" onclick="addFromExplore('${dataStr}')">Add to Zentra</button>
           </div>
@@ -361,7 +361,7 @@
       
       // Highlight the add section
       const addSection = document.querySelector('h4[style*="Add New Server"]').parentNode;
-      addSection.style.boxShadow = '0 0 15px rgba(102, 252, 241, 0.4)';
+      addSection.style.boxShadow = '0 0 15px rgba(var(--accent-rgb), 0.4)';
       setTimeout(() => { addSection.style.boxShadow = 'none'; }, 2000);
       
       // Auto-scroll to form

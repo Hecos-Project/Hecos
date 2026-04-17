@@ -22,7 +22,7 @@ class AgentTraceUI {
       .agent-trace-wrap {
         margin: 4px 0 12px 54px;
         padding: 6px 12px;
-        background: rgba(15, 17, 26, 0.6);
+        background: var(--glass-b);
         border-left: 3px solid var(--accent);
         border-radius: 4px;
         color: var(--muted);

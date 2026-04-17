@@ -1,22 +1,22 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:         #0d1117;
-  --surface:    #161b22;
-  --border:     #30363d;
-  --text:       #e6edf3;
-  --muted:      #8b949e;
-  --accent:     #58a6ff;
-  --accent-dim: #1f6feb;
-  --success:    #3fb950;
-  --warn:       #d29922;
-  --danger:     #f85149;
+  --bg:         var(--bg);
+  --surface:    var(--bg2);
+  --border:     var(--border);
+  --text:       var(--text);
+  --muted:      var(--muted);
+  --accent:     var(--accent);
+  --accent-dim: rgba(var(--accent-rgb), 0.6);
+  --success:    var(--green);
+  --warn:       var(--yellow);
+  --danger:     var(--red);
   --tab-h:      44px;
   --sidebar-w:  260px;
-  --sb-bg:      #0e1116;
-  --sb-hover:   rgba(88, 166, 255, 0.08);
-  --sb-active:  rgba(88, 166, 255, 0.15);
-  --sb-active-border: #58a6ff;
+  --sb-bg:      var(--bg);
+  --sb-hover:   rgba(var(--accent-rgb), 0.08);
+  --sb-active:  rgba(var(--accent-rgb), 0.15);
+  --sb-active-border: var(--accent);
 }
 
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
