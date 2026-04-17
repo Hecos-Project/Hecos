@@ -1,0 +1,110 @@
+<!-- DRIVE EDITOR CONFIG PANEL -->
+<!-- Extension of: DRIVE | ID: drive-editor -->
+<div id="tab-drive-editor" class="panel">
+
+  <!-- Extension dependency notice -->
+  <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:rgba(69,162,158,0.08); border:1px solid rgba(69,162,158,0.2); border-radius:10px; margin-bottom:18px; font-size:12px; color:#45a29e;">
+    <span style="font-size:16px;">🔗</span>
+    <span>Extension di <strong>Zentra Drive</strong> — richiede il modulo Drive attivo.</span>
+    <a href="/drive" target="_blank" style="margin-left:auto; color:#66fcf1; text-decoration:none; font-size:11px;">Apri Drive →</a>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 Drive Editor — Configurazione</div>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">
+      Editor di codice e testo integrato in Zentra Drive. Supporta syntax highlighting per oltre 50 linguaggi, navigazione rapida e anteprima live.
+    </p>
+
+    <!-- EDITOR BEHAVIOUR -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px;">⚙️ Comportamento</div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Auto-Save</div>
+      <label class="switch"><input type="checkbox" id="drive-editor-autosave"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Salva automaticamente il file durante la modifica (ogni 30 secondi).</p>
+
+    <div class="field" style="margin-bottom:16px;">
+      <label>⏱️ Intervallo Auto-Save (secondi)</label>
+      <input type="number" id="drive-editor-autosave-interval" min="5" max="300" value="30" style="width:120px;">
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Conferma prima di chiudere con modifiche non salvate</div>
+      <label class="switch"><input type="checkbox" id="drive-editor-confirm-close" checked><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">Avvisa se si tenta di navigare via con modifiche pendenti.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Backup automatico prima del salvataggio</div>
+      <label class="switch"><input type="checkbox" id="drive-editor-backup"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">Crea un file <code>.bak</code> nella stessa cartella prima di sovrascrivere.</p>
+
+    <!-- EDITOR DISPLAY -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px; border-top:1px solid var(--border); padding-top:16px;">🎨 Vista Editor</div>
+
+    <div class="field">
+      <label>🎨 Tema Editor</label>
+      <select id="drive-editor-theme">
+        <option value="vs-dark">Dark (default)</option>
+        <option value="vs">Light</option>
+        <option value="hc-black">High Contrast Black</option>
+        <option value="dracula">Dracula</option>
+        <option value="monokai">Monokai</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>📏 Dimensione Tab (spazi)</label>
+      <select id="drive-editor-tab-size">
+        <option value="2">2 spazi</option>
+        <option value="4" selected>4 spazi</option>
+        <option value="8">8 spazi</option>
+      </select>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Mostra numeri di riga</div>
+      <label class="switch"><input type="checkbox" id="drive-editor-line-numbers" checked><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;"></p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Word Wrap (a capo automatico)</div>
+      <label class="switch"><input type="checkbox" id="drive-editor-word-wrap"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Se attivo, le righe lunghe vengono spezzate visualmente senza modificare il file.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Minimap laterale</div>
+      <label class="switch"><input type="checkbox" id="drive-editor-minimap" checked><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">Preview compatta del file a destra dell'editor.</p>
+
+    <!-- LIMITS -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px; border-top:1px solid var(--border); padding-top:16px;">🔒 Limiti</div>
+
+    <div class="field">
+      <label>📦 Dimensione massima file apribile (MB)</label>
+      <input type="number" id="drive-editor-max-file-mb" min="1" max="50" value="10">
+      <small style="color:var(--muted); font-size:11px;">File più grandi vengono aperti in modalità sola lettura.</small>
+    </div>
+
+    <div class="field">
+      <label>🚫 Estensioni non apribili (sola lettura)</label>
+      <input type="text" id="drive-editor-readonly-ext" placeholder="es: exe,dll,zip,iso">
+      <small style="color:var(--muted); font-size:11px;">Lista separata da virgola. Questi file si apriranno solo in anteprima/sola lettura.</small>
+    </div>
+
+    <!-- INFO BOX -->
+    <div style="margin-top:20px; padding:14px; background:rgba(102,252,241,0.05); border:1px solid rgba(102,252,241,0.15); border-radius:8px;">
+      <div style="font-size:12px; color:#66fcf1; font-weight:600; margin-bottom:8px;">ℹ️ Note tecniche</div>
+      <div style="font-size:11px; color:var(--muted); line-height:1.7;">
+        L'editor usa <strong>Monaco Editor</strong> (la base di VS Code).<br>
+        Il syntax highlighting è automatico in base all'estensione del file.<br>
+        I file vengono salvati via API Drive (<code>POST /api/drive/save</code>).
+      </div>
+    </div>
+  </div>
+</div>

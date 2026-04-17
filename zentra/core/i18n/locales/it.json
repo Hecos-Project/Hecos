@@ -647,6 +647,7 @@
         "webui_desc_mcp": "Hub Universale Protocolli (Connetti strumenti AI esterni via MCP)",
         "webui_desc_editor": "Editor di Codice e File integrato per Drive",
         "webui_drive_dirs_files": "{dirs} cartelle · {files} file",
+        "webui_conf_logs_actions": "Azioni",
         "cpu": "CPU",
         "ram": "RAM",
         "vram": "VRAM",

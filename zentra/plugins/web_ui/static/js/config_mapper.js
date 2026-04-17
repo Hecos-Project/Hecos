@@ -534,17 +534,86 @@ function populateDriveUI() {
     setVal('drive-root-dir', d.root_dir || '');
     setVal('drive-max-upload-mb', d.max_upload_mb ?? 100);
     setVal('drive-allowed-ext', d.allowed_extensions || '');
+
+    const exts = d.extensions || {};
+    
+    // Editor
+    const ed = exts.editor || {};
+    setCheck('drive-editor-autosave', ed.autosave ?? false);
+    setVal('drive-editor-autosave-interval', ed.autosave_interval ?? 30);
+    setCheck('drive-editor-confirm-close', ed.confirm_close ?? true);
+    setCheck('drive-editor-backup', ed.backup_on_save ?? false);
+    setVal('drive-editor-theme', ed.theme || 'vs-dark');
+    setVal('drive-editor-tab-size', ed.tab_size ?? 4);
+    setCheck('drive-editor-line-numbers', ed.line_numbers ?? true);
+    setCheck('drive-editor-word-wrap', ed.word_wrap ?? false);
+    setCheck('drive-editor-minimap', ed.minimap ?? true);
+    setVal('drive-editor-max-file-mb', ed.max_file_mb ?? 10);
+    setVal('drive-editor-readonly-ext', ed.readonly_ext || '');
+
+    // Media Viewer
+    const mv = exts.media_viewer || {};
+    setVal('drive-viewer-default-zoom', mv.default_zoom || 'fit');
+    setCheck('drive-viewer-show-exif', mv.show_exif ?? false);
+    setCheck('drive-viewer-slideshow', mv.slideshow ?? false);
+    setVal('drive-viewer-slideshow-interval', mv.slideshow_interval ?? 5);
+    setCheck('drive-viewer-video-autoplay', mv.video_autoplay ?? false);
+    setCheck('drive-viewer-video-loop', mv.video_loop ?? false);
+    setCheck('drive-viewer-video-controls', mv.video_controls ?? true);
+    setCheck('drive-viewer-audio-autoplay', mv.audio_autoplay ?? false);
+    setCheck('drive-viewer-audio-waveform', mv.audio_waveform ?? true);
+    setVal('drive-viewer-image-ext', mv.image_ext || 'jpg,jpeg,png,gif,webp,svg,bmp,ico');
+    setVal('drive-viewer-video-ext', mv.video_ext || 'mp4,webm,mkv,avi,mov');
+    setVal('drive-viewer-audio-ext', mv.audio_ext || 'mp3,ogg,wav,flac,aac,m4a');
 }
 
 function buildDrivePayload() {
     const rootEl = document.getElementById('drive-root-dir');
     if (!rootEl) return {}; // Not in DOM
+    const c = window.cfg && window.cfg.plugins && window.cfg.plugins.DRIVE ? window.cfg.plugins.DRIVE : {};
+    const exts = c.extensions || {};
+    const newExts = JSON.parse(JSON.stringify(exts));
+
+    if (document.getElementById('drive-editor-theme')) {
+        newExts.editor = Object.assign({}, newExts.editor, {
+            autosave: document.getElementById('drive-editor-autosave').checked,
+            autosave_interval: parseInt(document.getElementById('drive-editor-autosave-interval').value) || 30,
+            confirm_close: document.getElementById('drive-editor-confirm-close').checked,
+            backup_on_save: document.getElementById('drive-editor-backup').checked,
+            theme: document.getElementById('drive-editor-theme').value || 'vs-dark',
+            tab_size: parseInt(document.getElementById('drive-editor-tab-size').value) || 4,
+            line_numbers: document.getElementById('drive-editor-line-numbers').checked,
+            word_wrap: document.getElementById('drive-editor-word-wrap').checked,
+            minimap: document.getElementById('drive-editor-minimap').checked,
+            max_file_mb: parseInt(document.getElementById('drive-editor-max-file-mb').value) || 10,
+            readonly_ext: document.getElementById('drive-editor-readonly-ext').value
+        });
+    }
+
+    if (document.getElementById('drive-viewer-default-zoom')) {
+        newExts.media_viewer = Object.assign({}, newExts.media_viewer, {
+            default_zoom: document.getElementById('drive-viewer-default-zoom').value || 'fit',
+            show_exif: document.getElementById('drive-viewer-show-exif').checked,
+            slideshow: document.getElementById('drive-viewer-slideshow').checked,
+            slideshow_interval: parseInt(document.getElementById('drive-viewer-slideshow-interval').value) || 5,
+            video_autoplay: document.getElementById('drive-viewer-video-autoplay').checked,
+            video_loop: document.getElementById('drive-viewer-video-loop').checked,
+            video_controls: document.getElementById('drive-viewer-video-controls').checked,
+            audio_autoplay: document.getElementById('drive-viewer-audio-autoplay').checked,
+            audio_waveform: document.getElementById('drive-viewer-audio-waveform').checked,
+            image_ext: document.getElementById('drive-viewer-image-ext').value,
+            video_ext: document.getElementById('drive-viewer-video-ext').value,
+            audio_ext: document.getElementById('drive-viewer-audio-ext').value
+        });
+    }
+
     return {
         plugins: {
             DRIVE: {
                 root_dir: rootEl.value.trim(),
                 max_upload_mb: parseInt(document.getElementById('drive-max-upload-mb').value) || 100,
-                allowed_extensions: document.getElementById('drive-allowed-ext').value.trim()
+                allowed_extensions: document.getElementById('drive-allowed-ext').value.trim(),
+                extensions: newExts
             }
         }
     };

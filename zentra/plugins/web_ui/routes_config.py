@@ -6,6 +6,46 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
         return get_sm() if callable(get_sm) else get_sm
 
+    def _build_options_dict(cfg_mgr):
+        import glob
+        cfg = cfg_mgr.reload()
+        
+        piper_path_dir = r"C:\piper"
+        try:
+            onnx_files = [os.path.basename(f) for f in glob.glob(os.path.join(piper_path_dir, "*.onnx"))]
+            if not onnx_files: onnx_files = ["en_US-lessac-medium.onnx"]
+        except:
+            onnx_files = ["en_US-lessac-medium.onnx"]
+            
+        from app.model_manager import ModelManager
+        mm = ModelManager(cfg_mgr)
+        categorized = mm.get_available_models()
+        
+        ollama_models = categorized.get("Ollama (Local)", [])
+        
+        # Ensure config.json is in sync with filesystem personalities before returning
+        cfg_mgr.sync_available_personalities()
+        cfg = cfg_mgr.reload()
+        personalita = list(cfg.get("ai", {}).get("available_personalities", {}).values())
+        
+        # Flatten cloud models for the simple dropdown
+        cloud_models_flat = []
+        cloud_by_provider = {}
+        for cat, models in categorized.items():
+            if "Cloud" in cat:
+                cloud_models_flat.extend(models)
+                provider = cat.replace("Cloud (", "").replace(")", "").lower()
+                cloud_by_provider[provider] = models
+ 
+        return {
+            "piper_voices": onnx_files,
+            "piper_dir":    piper_path_dir,
+            "ollama_models": ollama_models,
+            "personalities": personalita,
+            "cloud_models":  cloud_by_provider,
+            "all_cloud":     cloud_models_flat
+        }
+
     @app.route("/zentra/config/ui")
     def config_ui():
         try:
@@ -13,6 +53,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             translations = get_translator().get_translations()
             return render_template("index.html", 
                                  zconfig=cfg_mgr.config, 
+                                 zoptions=_build_options_dict(cfg_mgr),
                                  translations=translations)
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
@@ -69,44 +110,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/zentra/options", methods=["GET"])
     def get_options():
-        import glob
-        cfg = cfg_mgr.reload()
-        
-        piper_path_dir = r"C:\piper"
-        try:
-            onnx_files = [os.path.basename(f) for f in glob.glob(os.path.join(piper_path_dir, "*.onnx"))]
-            if not onnx_files: onnx_files = ["en_US-lessac-medium.onnx"]
-        except:
-            onnx_files = ["en_US-lessac-medium.onnx"]
-            
-        from app.model_manager import ModelManager
-        mm = ModelManager(cfg_mgr)
-        categorized = mm.get_available_models()
-        
-        ollama_models = categorized.get("Ollama (Local)", [])
-        
-        # Ensure config.json is in sync with filesystem personalities before returning
-        cfg_mgr.sync_available_personalities()
-        cfg = cfg_mgr.reload()
-        personalita = list(cfg.get("ai", {}).get("available_personalities", {}).values())
-        
-        # Flatten cloud models for the simple dropdown
-        cloud_models_flat = []
-        cloud_by_provider = {}
-        for cat, models in categorized.items():
-            if "Cloud" in cat:
-                cloud_models_flat.extend(models)
-                provider = cat.replace("Cloud (", "").replace(")", "").lower()
-                cloud_by_provider[provider] = models
- 
-        return jsonify({
-            "piper_voices": onnx_files,
-            "piper_dir":    piper_path_dir,
-            "ollama_models": ollama_models,
-            "personalities": personalita,
-            "cloud_models":  cloud_by_provider,
-            "all_cloud":     cloud_models_flat
-        })
+        return jsonify(_build_options_dict(cfg_mgr))
 
     @app.route("/zentra/api/config/media", methods=["GET"])
     def get_media_config_api():

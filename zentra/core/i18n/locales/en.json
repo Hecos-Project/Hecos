@@ -633,6 +633,7 @@
         "webui_desc_editor": "Integrated Code & File Editor for Drive",
         "webui_desc_media_viewer": "Integrated Media Viewer for Drive (images, video, audio)",
         "webui_drive_dirs_files": "{dirs} folders · {files} files",
+        "webui_conf_logs_actions": "Actions",
         "cpu": "CPU",
         "ram": "RAM",
         "vram": "VRAM",

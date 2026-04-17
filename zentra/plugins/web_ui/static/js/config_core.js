@@ -37,11 +37,8 @@ function showTab(name, skipScroll = false) {
       targetId = 'mcp';
   }
 
-  // 1.5 Special Redirects
-  if (targetId === 'drive-editor') {
-      window.location.href = '/drive';
-      return;
-  }
+  // No special redirects for drive-editor anymore, it has a config panel
+  // if (targetId === 'drive-editor') ...
 
   let panel = document.getElementById('tab-' + targetId);
   
@@ -163,20 +160,19 @@ async function initAll(attempt = 1) {
     setSaveMsg(I18N.msg_loading || 'Loading...', 'muted');
 
     try {
-        // 1. Fetch CRITICAL data first
-        const [rOpts, rCfg] = await Promise.all([
-            fetchWithTimeout('/zentra/options'),
-            fetchWithTimeout('/zentra/config')
-        ]);
-
-        if (!rOpts.ok || !rCfg.ok) {
-            throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
+        // 1. Fetch CRITICAL data first (only if not preloaded by Jinja)
+        if (Object.keys(window.cfg || {}).length === 0 || Object.keys(window.sysOptions || {}).length === 0) {
+            console.log("No preloaded config, fetching from API...");
+            const [rOpts, rCfg] = await Promise.all([
+                fetchWithTimeout('/zentra/options'),
+                fetchWithTimeout('/zentra/config')
+            ]);
+            if (!rOpts.ok || !rCfg.ok) throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
+            window.sysOptions = await rOpts.json();
+            window.cfg = await rCfg.json();
+        } else {
+            console.log("Using server-injected configuration data.");
         }
-
-        sysOptions = await rOpts.json();
-        cfg = await rCfg.json();
-        window.cfg = cfg;
-        window.sysOptions = sysOptions;
 
         // 2. Initial Render (with static modules)
         setViewMode(viewMode, true);

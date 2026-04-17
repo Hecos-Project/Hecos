@@ -188,6 +188,8 @@
     {% include 'modules/config_mcp.html' %}
     {% include 'modules/config_remote_triggers.html' %}
     {% include 'modules/config_drive.html' %}
+    {% include 'modules/config_drive_editor.html' %}
+    {% include 'modules/config_drive_media_viewer.html' %}
     {% include 'modules/config_logs.html' %}
     {% include 'modules/config_privacy.html' %}
   </form>
@@ -220,15 +222,15 @@
   };
 </script>
 <script>
-  window.cfg = {};
-  window.sysOptions = {};
+  window.cfg = {{ zconfig | tojson | safe }};
+  window.sysOptions = {% if zoptions %}{{ zoptions | tojson | safe }}{% else %}{}{% endif %};
   window.currentUser = {
       role: "{{ current_user.role if current_user.is_authenticated else 'user' }}"
   };
 </script>
 <script src="/static/js/config_manifest.js?v=0.23.0"></script>
 <script src="/static/js/config_mapper.js?v=0.23.0"></script>
-<script src="/static/js/config_core.js?v=0.23.0"></script>
+<script src="/static/js/config_core.js?v=0.24.0"></script>
 <script src="/static/js/config_audio_logic.js?v=0.22.0"></script>
 <script src="/static/js/config_media_logic.js?v=0.22.0"></script>
 <script src="/static/js/config_logs_engine.js?v=0.22.0"></script>
