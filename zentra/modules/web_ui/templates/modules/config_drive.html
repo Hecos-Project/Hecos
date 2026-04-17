@@ -1,31 +1,31 @@
 <!-- DRIVE CONFIG PANEL -->
 <div id="tab-drive" class="panel">
   <div class="card">
-    <div class="card-title">🗂️ Zentra Drive — File Manager</div>
+    <div class="card-title">Zentra Drive — File Manager</div>
     <p style="font-size:12px; color:#888; margin-bottom:16px;">
-      Configura il modulo HTTP File Manager. Accessibile via <a href="/drive" target="_blank" style="color:#66fcf1;">/drive</a> (solo utenti autenticati).
+      Configure the HTTP File Manager module. Accessible via <a href="/drive" target="_blank" style="color:#66fcf1;">/drive</a> (authenticated users only).
     </p>
 
     <div class="field">
       <label>📁 Root Directory</label>
-      <input type="text" id="drive-root-dir" placeholder="Vuoto = Home utente (es. C:\Users\Asus o /home/user)">
-      <small style="color:#666; font-size:11px;">La navigazione è limitata a questa cartella. Non è possibile salire al di sopra della root.</small>
+      <input type="text" id="drive-root-dir" placeholder="Empty = User Home (e.g. C:\Users\User or /home/user)">
+      <small style="color:#666; font-size:11px;">Navigation is restricted to this folder. It is not possible to go above the root.</small>
     </div>
 
     <div class="field">
-      <label>⬆️ Dimensione massima upload (MB)</label>
+      <label>⬆️ Maximum Upload Size (MB)</label>
       <input type="number" id="drive-max-upload-mb" min="1" max="2048" value="100">
     </div>
 
     <div class="field">
-      <label>🔒 Estensioni consentite in upload</label>
-      <input type="text" id="drive-allowed-ext" placeholder="Vuoto = tutte (es: jpg,png,pdf,txt,mp3)">
-      <small style="color:#666; font-size:11px;">Lista separata da virgola. Lascia vuoto per consentire tutti i tipi di file.</small>
+      <label>🔒 Allowed Upload Extensions</label>
+      <input type="text" id="drive-allowed-ext" placeholder="Empty = all (e.g. jpg,png,pdf,txt,mp3)">
+      <small style="color:#666; font-size:11px;">Comma-separated list. Leave empty to allow all file types.</small>
     </div>
 
     <div style="margin-top:18px; padding:12px; background:rgba(102,252,241,0.05); border:1px solid rgba(102,252,241,0.15); border-radius:8px;">
-      <div style="font-size:12px; color:#66fcf1; margin-bottom:8px;">🔗 Accesso rapido</div>
-      <a href="/drive" target="_blank" class="btn btn-secondary" style="text-decoration:none; font-size:12px;">Apri Zentra Drive →</a>
+      <div style="font-size:12px; color:#66fcf1; margin-bottom:8px;">🔗 Quick Access</div>
+      <a href="/drive" target="_blank" class="btn btn-secondary" style="text-decoration:none; font-size:12px;">Open Zentra Drive →</a>
     </div>
   </div>
 </div>
