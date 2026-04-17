@@ -259,29 +259,85 @@ function renderPlugins(plugins) {
   hub.modules.forEach(m => {
     if (!m.pluginTag || m.id === 'plugins') return;
     
+    if (m.isExtension) return; // handled below, under parent
+
     const tag = m.pluginTag;
     const pCfg = plugins[tag] || { enabled: true };
     const on = pCfg.enabled !== false;
     const lazyOn = pCfg.lazy_load === true;
-    const translatedName = window.t ? window.t(m.label) : m.label;
-    const desc = descs[tag] || translatedName;
+    const name = t(m.label);
+    const descKey = 'webui_desc_' + tag.toLowerCase().replace(/_/g, '_');
+    const desc = t(descKey) !== descKey ? t(descKey) : (I18N['plugin_desc_' + tag.toLowerCase()] || name);
     const icon = m.icon || '🧩';
 
     html += `<div class="plugin-row">
       <div class="plugin-info-main">
         <span class="p-icon">${icon}</span>
         <div class="plugin-meta">
-            <div class="plugin-name">${translatedName} <span class="p-tag">${tag}</span>
-              <label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>
-            </div>
-            <div class="plugin-desc">${desc}</div>
+          <div class="plugin-name">${name} <span class="p-tag">${tag}</span>
+            <label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>
+          </div>
+          <div class="plugin-desc">${desc}</div>
         </div>
       </div>
       <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''}><span class="slider"></span></label>
     </div>`;
+
+    // Render child extensions of this plugin
+    hub.modules.forEach(child => {
+      if (!child.isExtension || child.parentPluginTag !== tag) return;
+
+      const childTag = child.pluginTag;
+      // extId = everything after PARENT_TAG_ lowercased, e.g. DRIVE_EDITOR → editor
+      const extId = childTag.replace(tag + '_', '').toLowerCase();
+      const extCfg = (pCfg.extensions || {})[extId] || {};
+      const extOn = extCfg.enabled !== false;
+      const childName = t(child.label);
+      const childDescKey = 'webui_desc_' + childTag.toLowerCase().replace(/_/g, '_');
+      const childDesc = t(childDescKey) !== childDescKey ? t(childDescKey) : childName;
+      const childIcon = child.icon || '🧩';
+      const disabledAttr = !on ? 'disabled' : '';
+      const dimStyle = !on ? 'opacity:0.4; pointer-events:none;' : '';
+
+      html += `<div class="plugin-row plugin-row-extension" style="margin-left:28px; border-left:2px solid rgba(102,252,241,0.15); padding-left:12px; ${dimStyle}">
+        <div class="plugin-info-main">
+          <span class="p-icon" style="font-size:14px;">└─ ${childIcon}</span>
+          <div class="plugin-meta">
+            <div class="plugin-name" style="font-size:12px;">${childName}
+              <span class="p-tag" style="font-size:9px; opacity:0.6;">${childTag}</span>
+              <span class="p-tag" style="font-size:9px; background:rgba(69,162,158,0.2); color:#45a29e; border-color:#45a29e;">EXT</span>
+            </div>
+            <div class="plugin-desc" style="font-size:11px; opacity:0.7;">${childDesc}</div>
+          </div>
+        </div>
+        <label class="switch is-small"><input type="checkbox"
+          data-extension="true"
+          data-parent="${tag}"
+          data-ext-id="${extId}"
+          ${extOn?'checked':''}
+          ${disabledAttr}
+        ><span class="slider"></span></label>
+      </div>`;
+    });
   });
 
   cont.innerHTML = html || `<p style="color:var(--muted)">${I18N.no_plugins || 'No modules discovered'}</p>`;
+
+  // Wire up parent toggles to cascade to children
+  cont.querySelectorAll('[data-plugin]').forEach(parentCb => {
+    parentCb.addEventListener('change', function() {
+      const parentTag = this.dataset.plugin;
+      const isOn = this.checked;
+      cont.querySelectorAll(`[data-extension="true"][data-parent="${parentTag}"]`).forEach(childCb => {
+        childCb.disabled = !isOn;
+        const row = childCb.closest('.plugin-row-extension');
+        if (row) {
+          row.style.opacity = isOn ? '' : '0.4';
+          row.style.pointerEvents = isOn ? '' : 'none';
+        }
+      });
+    });
+  });
 }
 
 function buildPayload() {

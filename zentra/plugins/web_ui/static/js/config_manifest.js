@@ -32,10 +32,11 @@ window.CONFIG_HUB = {
         { id: 'bridge',    label: 'hub_mod_bridge',       icon: '🌉', cat: 'CONNETTIVITÀ' },
         { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '📱', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
         
-        { id: 'drive',     label: 'hub_mod_drive',        icon: '🗂️', cat: 'RISORSE', pluginTag: 'DRIVE' },
-        { id: 'drive-editor', label: 'hub_mod_editor',    icon: '📝', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR' },
-        { id: 'payload',   label: 'hub_mod_payload',      icon: '📦', cat: 'RISORSE' },
-        { id: 'studio',    label: 'hub_mod_studio',       icon: '🛠️', cat: 'RISORSE' },
+        { id: 'drive',             label: 'hub_mod_drive',        icon: '🗂️', cat: 'RISORSE', pluginTag: 'DRIVE' },
+        { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '📝', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
+        { id: 'drive-media-viewer', label: 'hub_mod_media_viewer', icon: '🖼️', cat: 'RISORSE', pluginTag: 'DRIVE_MEDIA_VIEWER', parentPluginTag: 'DRIVE', isExtension: true },
+        { id: 'payload',          label: 'hub_mod_payload',      icon: '📦', cat: 'RISORSE' },
+        { id: 'studio',           label: 'hub_mod_studio',       icon: '🛠️', cat: 'RISORSE' },
         
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '🌐', cat: 'SISTEMA' },
         { id: 'web',       label: 'hub_mod_web',          icon: '🌍', cat: 'SISTEMA', pluginTag: 'WEB' },
@@ -100,5 +101,6 @@ window.CONFIG_HUB.tagMap = {
     'ROLEPLAY_ELITE': 'roleplay_elite',
     'WEB': 'web',
     'WEBCAM': 'webcam',
-    'DRIVE_EDITOR': 'drive-editor'
+    'DRIVE_EDITOR': 'drive-editor',
+    'DRIVE_MEDIA_VIEWER': 'drive-media-viewer'
 };
