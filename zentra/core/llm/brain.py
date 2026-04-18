@@ -365,8 +365,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"{force_clause}"
         f"{plugin_guidelines}"
         f"{RoutingManager.get_dynamic_instructions(config)}"
-        f"{special_instructions_block}"
         f"{safety_instructions_block}"
+        f"{special_instructions_block}"
         f"{vision_note}"
     )
 
