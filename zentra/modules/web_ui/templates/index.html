@@ -167,7 +167,7 @@
   <div class="tabs-container" id="tabs-bar-container">
      <div id="config-tabs-bar">
         <!-- Will be populated by config_core.js -->
-        <div style="padding:10px; color:var(--muted); font-size:12px;">Initializing Tab Engine...</div>
+        <div style="padding:10px; color:var(--muted); font-size: var(--font-size-sm);">Initializing Tab Engine...</div>
      </div>
   </div>
 
@@ -211,7 +211,7 @@
 
 <div class="save-bar">
   <div id="save-msg"></div>
-  <button type="button" class="btn btn-secondary" style="background:#422; border-color:#633; color:#f88;" onclick="rebootSystem()">{{ t("label_reboot_system") }}</button>
+  <button type="button" class="btn btn-danger" onclick="rebootSystem()">{{ t("label_reboot_system") }}</button>
   <button type="button" class="btn btn-secondary" onclick="window.location.reload()">{{ t("webui_conf_btn_reload") }}</button>
   <button type="button" class="btn btn-primary" onclick="saveConfig()">{{ t("webui_conf_btn_save") }}</button>
 </div>

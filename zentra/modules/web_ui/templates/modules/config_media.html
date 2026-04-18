@@ -9,7 +9,7 @@
     </p>
     <div style="display:flex; gap:10px;">
       <button class="btn btn-secondary" onclick="openMediaVault()">📂 Open Storage Folder</button>
-      <button class="btn btn-secondary" style="background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.3); color:var(--red);" onclick="clearMediaVault()">🗑️ Clear All Generated Media</button>
+      <button class="btn btn-danger" onclick="clearMediaVault()">🗑️ {{ t('webui_media_clear_all') or 'Clear All Generated Media' }}</button>
     </div>
   </div>
 </div>

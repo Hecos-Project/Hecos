@@ -75,20 +75,20 @@
   font-size: 10px; font-weight: 600; padding: 2px 7px;
   border-radius: 10px; white-space: nowrap; text-transform: uppercase;
 }
-.km-badge-valid     { background: rgba(var(--green-rgb, 76, 222, 130), 0.15); color: var(--green); }
+.km-badge-valid     { background: rgba(var(--green-rgb), 0.15); color: var(--green); }
 .km-badge-unknown   { background: var(--glass-b); color: var(--muted); }
-.km-badge-rate      { background: rgba(255, 199, 64, 0.15); color: #ffc740; }
-.km-badge-invalid   { background: rgba(var(--red-rgb, 248, 113, 113), 0.15); color: var(--red); }
+.km-badge-rate      { background: rgba(var(--yellow-rgb), 0.15); color: var(--yellow); }
+.km-badge-invalid   { background: rgba(var(--red-rgb), 0.15); color: var(--red); }
 .km-key-info { flex: 1; min-width: 0; }
 .km-key-masked { font-family: monospace; font-size: 12px; color: var(--muted); }
 .km-key-desc  { font-size: 11px; color: var(--muted); opacity: 0.7; }
 .km-key-source { font-size: 10px; color: var(--muted); opacity: 0.5; }
-.km-cooldown { font-size: 11px; color: #ffc740; }
+.km-cooldown { font-size: 11px; color: var(--yellow); }
 .km-actions { display:flex; gap:4px; }
 .km-count-bar {
   display: flex; gap:6px; font-size: 11px; margin-bottom: 8px; flex-wrap: wrap;
 }
-.km-count-item { padding: 2px 8px; border-radius: 8px; background: var(--surface2); }
+.km-count-item { padding: 2px 8px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); }
 </style>
 
 <script>
@@ -137,7 +137,7 @@ function kmRender(data) {
           <div class="km-actions">
             <button class="btn-sm btn-secondary" onclick="kmValidateKey('${provider}','${k.value}', ${idx})" title="${window.t ? window.t('webui_km_btn_validate') : 'Test Key'}">🔍 ${window.t ? window.t('webui_km_btn_validate') : 'Test'}</button>
             ${canReset ? `<button class="btn-sm btn-secondary" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
-            ${canRemove ? `<button class="btn-sm" style="border-color:var(--red); color:var(--red); background:rgba(var(--red-rgb, 248,113,113),0.1);" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
+            ${canRemove ? `<button class="btn btn-danger btn-sm" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -155,7 +155,7 @@ function kmRender(data) {
       <div class="km-count-bar">
         <span class="km-count-item">${window.t ? window.t('webui_km_total') : 'Total'}: ${keys.length}</span>
         <span class="km-count-item" style="color:var(--green)">✓ ${avail} ${window.t ? window.t('webui_km_available') : 'available'}</span>
-        ${rateL ? `<span class="km-count-item" style="color:#ffc740">⏱ ${rateL} ${window.t ? window.t('webui_km_cooldown') : 'in cooldown'}</span>` : ''}
+        ${rateL ? `<span class="km-count-item" style="color:var(--yellow)">⏱ ${rateL} ${window.t ? window.t('webui_km_cooldown') : 'in cooldown'}</span>` : ''}
         ${inv ? `<span class="km-count-item" style="color:var(--red)">✗ ${inv} ${window.t ? window.t('webui_km_status_invalid') : 'invalid'}</span>` : ''}
       </div>
       ${rows}
@@ -169,7 +169,7 @@ function kmRender(data) {
 
   const gs = document.getElementById('km-global-status');
   gs.textContent = `${providers.length} provider · ${totalAvail}/${totalAll} chiavi disponibili`;
-  gs.style.color = totalAvail === 0 ? '#ff6b6b' : totalAvail < totalAll ? '#ffc740' : '#4cde82';
+  gs.style.color = totalAvail === 0 ? 'var(--red)' : totalAvail < totalAll ? 'var(--yellow)' : 'var(--green)';
 }
 
 function kmRefresh() {
@@ -256,8 +256,8 @@ function kmAddKey() {
   const toEnv = document.getElementById('km-add-to-env').checked;
   const fb    = document.getElementById('km-add-feedback');
 
-  if (!provider) { fb.textContent = '⚠️ Specifica il nome del provider.'; fb.style.color='#ff6b6b'; return; }
-  if (!value)    { fb.textContent = '⚠️ Inserisci il valore della chiave.'; fb.style.color='#ff6b6b'; return; }
+  if (!provider) { fb.textContent = '⚠️ Specifica il nome del provider.'; fb.style.color='var(--red)'; return; }
+  if (!value)    { fb.textContent = '⚠️ Inserisci il valore della chiave.'; fb.style.color='var(--red)'; return; }
 
   fetch('/api/keys/add', {
     method: 'POST',
@@ -266,13 +266,13 @@ function kmAddKey() {
   }).then(r => r.json()).then(d => {
     if (d.ok) {
       fb.textContent = toEnv ? '✅ Chiave aggiunta al file .env' : '✅ Chiave aggiunta a keys.yaml';
-      fb.style.color = '#4cde82';
+      fb.style.color = 'var(--green)';
       document.getElementById('km-add-value').value = '';
       document.getElementById('km-add-desc').value  = '';
       setTimeout(kmRefresh, 400);
     } else {
       fb.textContent = '⚠️ ' + (d.error || 'Errore aggiunta chiave');
-      fb.style.color = '#ff6b6b';
+      fb.style.color = 'var(--red)';
     }
   });
 }

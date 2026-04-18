@@ -111,15 +111,15 @@ body:not(.config-page) #neural-link-overlay {
 }
 
 .neural-logo img {
-    height: 80px;
+    height: 70px;
     margin-bottom: 24px;
     filter: drop-shadow(0 0 15px rgba(var(--accent-rgb), 0.4));
 }
 
 .neural-title {
     color: var(--accent);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 20px;
+    font-family: var(--font-mono);
+    font-size: var(--sidebar-logo-sz);
     letter-spacing: 4px;
     margin-bottom: 8px;
     font-weight: 500;
@@ -127,7 +127,7 @@ body:not(.config-page) #neural-link-overlay {
 
 .neural-subtitle {
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--font-size-base);
     margin-bottom: 32px;
     opacity: 0.8;
 }
@@ -148,7 +148,7 @@ body:not(.config-page) #neural-link-overlay {
 
 .status-label {
     display: block;
-    font-size: 9px;
+    font-size: var(--font-size-xs);
     color: var(--muted);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -156,21 +156,21 @@ body:not(.config-page) #neural-link-overlay {
 }
 
 .status-val {
-    font-size: 11px;
+    font-size: var(--font-size-sm);
     font-weight: bold;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
 }
 .status-val.active { color: var(--accent); text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.5); }
-.status-val.pending { color: #888; }
+.status-val.pending { color: var(--muted); }
 
 .connect-btn {
     width: 100%;
     padding: 16px;
     background: var(--accent);
-    color: var(--bg);
+    color: white;
     border: none;
     border-radius: 14px;
-    font-size: 15px;
+    font-size: var(--font-size-base);
     font-weight: bold;
     letter-spacing: 2px;
     cursor: pointer;
@@ -192,7 +192,7 @@ body:not(.config-page) #neural-link-overlay {
 
 .neural-footer {
     margin-top: 32px;
-    font-size: 10px;
+    font-size: var(--font-size-xs);
     color: var(--muted);
     opacity: 0.5;
 }

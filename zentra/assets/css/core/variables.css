@@ -11,8 +11,11 @@
   
   /* Semantic Colors */
   --green:    #34d399;
+  --green-rgb: 52, 211, 153;
   --red:      #f87171;
+  --red-rgb:  248, 113, 113;
   --yellow:   #fbbf24;
+  --yellow-rgb: 251, 191, 36;
   --text:     #e2e8f0;
   --muted:    #64748b;
   
@@ -23,6 +26,15 @@
   --radius:   10px;
   --shadow:   0 4px 24px rgba(0,0,0,0.4);
   --bg-blur:  rgba(26, 29, 39, 0.85);
+
+  /* Typography Tokens */
+  --font-sans:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:      'JetBrains Mono', 'Fira Code', monospace;
+  --font-size-xs:   10.5px;
+  --font-size-sm:   12px;
+  --font-size-base: 14px;
+  --header-logo-sz: 18px;
+  --sidebar-logo-sz: 16px;
   
   /* Glass Tokens */
   --glass:       rgba(255, 255, 255, 0.04);
@@ -68,27 +80,6 @@
   --bg-blur: rgba(17, 17, 17, 0.85);
 }
 
-/* Theme: Light Mode (Clean & Sharp) */
-.theme-light {
-  --bg: #f8fafc;
-  --bg2: #ffffff;
-  --bg3: #f1f5f9;
-  --accent: #2563eb;
-  --accent-rgb: 37, 99, 235;
-  --accent2: #7c3aed;
-  --text: #1e293b;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --surface2: #f1f5f9;
-  --surface3: #e2e8f0;
-
-  /* Inverse Glass Tokens */
-  --glass:       rgba(0, 0, 0, 0.04);
-  --glass-b:     rgba(0, 0, 0, 0.08);
-  --glass-c:     rgba(0, 0, 0, 0.15);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --bg-blur:     rgba(255, 255, 255, 0.85);
-}
 
 /* Theme: Rose (Soft & Vibrant) */
 .theme-rose {
@@ -101,5 +92,24 @@
   --text: #fff1f2;
   --border: #4c1d24;
   --bg-blur: rgba(30, 27, 38, 0.85);
+  --glass: rgba(251, 113, 133, 0.04);
+  --glass-b: rgba(251, 113, 133, 0.08);
+}
+
+/* Theme: Light Mode (Sky Blue / Premium) - MOVED TO BOTTOM FOR MAX PRIORITY */
+.theme-light {
+  --bg:          #ffffff;
+  --bg2:         #f0f2f5; /* Light Gray-Blue (FB Style) */
+  --bg3:         #e4e6eb;
+  --text:        #1e293b;
+  --muted:       #64748b;
+  --accent:      #1877f2; /* Professional Azure/Blue */
+  --accent-rgb:  24, 119, 242;
+  --accent2:     #2563eb;
+  --glass:       rgba(0, 0, 0, 0.02);
+  --glass-b:     rgba(0, 0, 0, 0.04); /* Neutral Gray, NO PINK ALLOWED */
+  --border:      #d1d5db;
+  --shadow:      0 4px 12px rgba(0, 0, 0, 0.05);
+  --bg-blur:     rgba(255, 255, 255, 0.95);
 }
 

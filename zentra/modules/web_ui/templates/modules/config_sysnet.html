@@ -29,8 +29,8 @@
       </p>
 
     <!-- Proxy Builder -->
-    <div style="background:var(--surface2,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:16px; margin-bottom:16px;">
-      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px;">{{ t('webui_sysnet_proxy_config') }}</div>
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px;">
+      <div style="font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px;">{{ t('webui_sysnet_proxy_config') }}</div>
 
       <div style="display:grid; grid-template-columns: 110px 1fr 80px; gap:10px; align-items:end; margin-bottom:12px;">
         <div class="field" style="margin:0">
@@ -79,20 +79,20 @@
       </div>
 
       <!-- Proxy Location Indicator -->
-      <div style="display:flex; align-items:center; gap:8px; font-size:13px; background:#0d0d1a; padding:8px 12px; border-radius:6px; border:1px solid #333; width: fit-content;">
-        <div id="sysnet-status-dot" style="width:10px; height:10px; border-radius:50%; background:#ff6b6b; box-shadow: 0 0 5px #ff6b6b; transition: all 0.3s ease;"></div>
-        <div style="color:#c0c0d0;">{{ t('webui_sysnet_proxy_status') }}: <strong id="sysnet-status-text" style="color:#ff6b6b; transition: color 0.3s ease;">{{ t('webui_km_status_unknown') }}</strong></div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:13px; background:var(--bg3); padding:8px 12px; border-radius:6px; border:1px solid var(--border); width: fit-content;">
+        <div id="sysnet-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--red); box-shadow: 0 0 5px var(--red); transition: all 0.3s ease;"></div>
+        <div style="color:var(--text);">{{ t('webui_sysnet_proxy_status') }}: <strong id="sysnet-status-text" style="color:var(--red); transition: color 0.3s ease;">{{ t('webui_km_status_unknown') }}</strong></div>
         <div style="color:var(--muted); margin-left:8px;" id="sysnet-status-loc"></div>
       </div>
     </div>
 
     <!-- Live log panel -->
     <div id="sysnet-log-panel" style="display:none; margin-bottom:16px;">
-      <div style="font-size:12px; color:var(--accent,#7c83fd); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;">{{ t('webui_sysnet_proxy_log_title') }}</div>
+      <div style="font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;">{{ t('webui_sysnet_proxy_log_title') }}</div>
       <div id="sysnet-log-output" style="
-        background:#0d0d1a; border:1px solid var(--border,#333); border-radius:6px;
+        background:var(--bg3); border:1px solid var(--border); border-radius:6px;
         padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:12px;
-        max-height:220px; overflow-y:auto; line-height:1.7; color:#c0c0d0;
+        max-height:220px; overflow-y:auto; line-height:1.7; color:var(--text);
       "></div>
     </div>
 
@@ -106,7 +106,7 @@
           onclick="applyProxyPreset('socks5','127.0.0.1','1080')">🔒 SOCKS5 :1080</button>
         <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
           onclick="applyProxyPreset('http','127.0.0.1','8080')">🌐 HTTP :8080</button>
-        <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px; background:#422; border-color:#633; color:#f88;"
+        <button type="button" class="btn btn-danger btn-sm"
           onclick="clearProxy()">✕ {{ t('webui_sysnet_proxy_remove') }}</button>
       </div>
     </div>
@@ -196,9 +196,9 @@ function runProxyTest() {
   spinner.style.display = 'inline';
   btn.disabled = true;
   
-  dot.style.background = '#ffd66b';
-  dot.style.boxShadow = '0 0 5px #ffd66b';
-  txt.style.color = '#ffd66b';
+  dot.style.background = 'var(--yellow)';
+  dot.style.boxShadow = '0 0 5px var(--yellow)';
+  txt.style.color = 'var(--yellow)';
   txt.textContent = 'Verifica in corso...';
   loc.innerHTML = '';
   let proxySuccess = false;
@@ -208,7 +208,7 @@ function runProxyTest() {
   const encoded = encodeURIComponent(proxyUrl);
   _proxyTestEvt = new EventSource(`/api/sysnet/test-proxy?url=${encoded}`);
 
-  const colors = { OK: '#6ffa88', ERR: '#ff6b6b', WARN: '#ffd66b', DONE: 'var(--muted)', INFO: '#c0c0d0' };
+  const colors = { OK: 'var(--green)', ERR: 'var(--red)', WARN: 'var(--yellow)', DONE: 'var(--muted)', INFO: 'var(--text)' };
 
   _proxyTestEvt.onmessage = (e) => {
     const data = JSON.parse(e.data);
@@ -218,9 +218,9 @@ function runProxyTest() {
             const payload = JSON.parse(data.msg);
             if (payload.status === 'active') {
                 proxySuccess = true;
-                dot.style.background = '#6ffa88';
-                dot.style.boxShadow = '0 0 5px #6ffa88';
-                txt.style.color = '#6ffa88';
+                dot.style.background = 'var(--green)';
+                dot.style.boxShadow = '0 0 5px var(--green)';
+                txt.style.color = 'var(--green)';
                 txt.textContent = 'Attivo';
                 loc.innerHTML = `🌍 IP: <b>${payload.ip}</b> — Regione: <b>${payload.loc}</b>`;
             }
@@ -241,9 +241,9 @@ function runProxyTest() {
       btn.disabled = false;
       
       if (!proxySuccess) {
-          dot.style.background = '#ff6b6b';
-          dot.style.boxShadow = '0 0 5px #ff6b6b';
-          txt.style.color = '#ff6b6b';
+          dot.style.background = 'var(--red)';
+          dot.style.boxShadow = '0 0 5px var(--red)';
+          txt.style.color = 'var(--red)';
           txt.textContent = 'Inattivo / Fallito';
       }
     }
@@ -251,13 +251,13 @@ function runProxyTest() {
 
   _proxyTestEvt.onerror = () => {
     const line = document.createElement('div');
-    line.innerHTML = `<span style="color:#ff6b6b">❌ Connessione SSE interrotta.</span>`;
+    line.innerHTML = `<span style="color:var(--red)">❌ Connessione SSE interrotta.</span>`;
     logOut.appendChild(line);
     spinner.style.display = 'none';
     btn.disabled = false;
-    dot.style.background = '#ff6b6b';
-    dot.style.boxShadow = '0 0 5px #ff6b6b';
-    txt.style.color = '#ff6b6b';
+    dot.style.background = 'var(--red)';
+    dot.style.boxShadow = '0 0 5px var(--red)';
+    txt.style.color = 'var(--red)';
     txt.textContent = 'Errore Connessione';
     if (_proxyTestEvt) { _proxyTestEvt.close(); _proxyTestEvt = null; }
   };

@@ -95,6 +95,12 @@
 .btn-secondary { background: var(--bg3); color: var(--text); border-color: var(--border); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: rgba(var(--accent-rgb), 0.05); }
 
+.btn-danger { background: rgba(var(--red-rgb), 0.1); color: var(--red); border-color: rgba(var(--red-rgb), 0.2); }
+.btn-danger:hover { background: var(--red); color: white; border-color: var(--red); }
+
+.btn-warning { background: rgba(var(--yellow-rgb), 0.1); color: var(--yellow); border-color: rgba(var(--yellow-rgb), 0.2); }
+.btn-warning:hover { background: var(--yellow); color: #0b0c10; border-color: var(--yellow); }
+
 .btn-sm { padding: 6px 14px; font-size: 12px; }
 
 /* Toggles & Switches */
@@ -137,7 +143,12 @@ input:checked + .slider { background: var(--accent); border-color: var(--accent)
 input:checked + .slider:before { transform: translateX(20px); background: white; }
 
 /* Status Indicators */
-.val-ok   { color: var(--green); }
+.val-ok { color: var(--green); }
+
+/* Utility Classes */
+.muted {
+    color: var(--muted);
+}
 .val-warn { color: var(--yellow); }
 .val-err  { color: var(--red); }
 

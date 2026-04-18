@@ -145,7 +145,7 @@
             if (res.ok) {
                 if (res.users.length === 0) {
                     const noUsersMsg = (window.I18N && window.I18N.msg_no_users) || "No users registered.";
-                    container.innerHTML = `<p style="color:#888; font-size:13px; padding:20px; text-align:center;">${noUsersMsg}</p>`;
+                    container.innerHTML = `<p style="color:var(--muted); font-size:13px; padding:20px; text-align:center;">${noUsersMsg}</p>`;
                     return;
                 }
                 
@@ -170,7 +170,7 @@
                     } else {
                          actions = `
                             <button type="button" class="btn btn-secondary" style="padding:4px 10px; font-size:11px; border-radius:4px; margin-right:4px;" onclick="promptChangePass('${u.username}')">Pass</button>
-                            <button type="button" class="btn btn-secondary" style="padding:4px 10px; font-size:11px; border-radius:4px; background:#422 !important; border-color:#633; color:#f88;" onclick="deleteUser('${u.username}')">Elimina</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deleteUser('${u.username}')">Elimina</button>
                         `;
                     }
 
@@ -186,10 +186,10 @@
                 html += `</tbody></table>`;
                 container.innerHTML = html;
             } else {
-                container.innerHTML = `<p style="color:#f88; font-size:13px; padding:20px;">Errore: ${res.error}</p>`;
+                container.innerHTML = `<p style="color:var(--red); font-size:13px; padding:20px;">Errore: ${res.error}</p>`;
             }
         } catch (e) {
-            container.innerHTML = `<p style="color:#f88; font-size:13px; padding:20px;">Connessione al server fallita.</p>`;
+            container.innerHTML = `<p style="color:var(--red); font-size:13px; padding:20px;">Connessione al server fallita.</p>`;
         }
     }
 

@@ -75,14 +75,14 @@
     <div id="log-delete-modal" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;">
       <div class="modal-content" style="background:var(--bg2); width:450px; max-height:80vh; border-radius:8px; border:1px solid var(--border); display:flex; flex-direction:column; box-shadow:var(--shadow);">
         <div style="padding:15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-          <h3 style="margin:0; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;"><i class="fas fa-trash-alt" style="color:#f87171;"></i> Manage Log Files</h3>
+          <h3 style="margin:0; font-size:16px; color:var(--text); display:flex; align-items:center; gap:8px;"><i class="fas fa-trash-alt" style="color:var(--red);"></i> Manage Log Files</h3>
           <button onclick="closeLogDeleteModal()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:20px;">&times;</button>
         </div>
         <div id="log-delete-list" style="padding:15px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px;">
           <!-- Items injected here -->
         </div>
         <div style="padding:15px; border-top:1px solid var(--border); display:flex; justify-content:space-between;">
-          <button class="btn btn-secondary" onclick="deleteSelectedLogs(true)" style="color:#f87171; border-color:rgba(248,113,113,0.3);">Delete All</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSelectedLogs(true)">Delete All</button>
           <div style="display:flex; gap:10px;">
             <button class="btn btn-secondary" onclick="closeLogDeleteModal()">Cancel</button>
             <button class="btn btn-primary" onclick="deleteSelectedLogs(false)">Delete Selected</button>

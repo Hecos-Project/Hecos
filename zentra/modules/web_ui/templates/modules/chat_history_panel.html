@@ -2,7 +2,7 @@
 <div class="sidebar-section" id="chat-history-section">
   <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center; padding-right:10px;">
     <span>{{ t('webui_chat_history_label') }}</span>
-    <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size:12px; opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)">🗑️</span>
+    <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size: var(--font-size-sm); opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)">🗑️</span>
   </div>
 
   <!-- ── Mode Picker ──────────────────────────────────────────── -->
@@ -33,14 +33,14 @@
 
   <!-- New Chat button -->
   <div style="margin-bottom:8px;">
-    <button class="sidebar-btn" onclick="window.newChatSession()" style="width:100%; justify-content:center; font-size:12px; padding:8px 6px;">
+    <button class="sidebar-btn" onclick="window.newChatSession()" style="width:100%; justify-content:center; font-size: var(--font-size-sm); padding:8px 6px;">
       <span class="icon">💬</span> {{ t('webui_chat_new') }}
     </button>
   </div>
 
   <!-- Session list -->
   <div id="chat-history-list" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">
-    <div class="history-empty" style="font-size:12px; color:var(--muted); padding:8px 4px;">Caricamento...</div>
+    <div class="history-empty" style="font-size: var(--font-size-sm); color:var(--muted); padding:8px 4px;">Caricamento...</div>
   </div>
 </div>
 
@@ -74,15 +74,15 @@
   background: var(--glass);
   color: var(--muted);
   font-family: inherit;
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   font-weight: 500;
   cursor: pointer;
   transition: all .2s;
   user-select: none;
   line-height: 1.2;
 }
-.mode-btn .mode-icon { font-size: 16px; line-height: 1; }
-.mode-btn .mode-label { font-size: 9px; letter-spacing: 0.3px; text-transform: uppercase; }
+.mode-btn .mode-icon { font-size: 14px; line-height: 1; }
+.mode-btn .mode-label { font-size: 8.5px; letter-spacing: 0.3px; text-transform: uppercase; }
 .mode-btn:hover:not(:disabled) { background: var(--glass-b); color: var(--text); }
 
 /* Active state per mode */
@@ -102,7 +102,7 @@
 
 /* Lock notice */
 .mode-lock-notice {
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   color: var(--muted);
   text-align: center;
   padding: 3px 0 6px;
@@ -126,11 +126,11 @@
 .history-item-main { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
 .history-icon { font-size:14px; flex-shrink:0; }
 .history-item-info { flex:1; min-width:0; }
-.history-title { font-size:12px; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.history-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+.history-title { font-size: var(--font-size-sm); font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.history-meta { font-size: var(--font-size-xs); color:var(--muted); margin-top:1px; }
 .history-action-btn { background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; opacity:.5; transition:opacity .15s; }
 .history-action-btn:hover { opacity:1; }
-.history-empty { font-size:12px; color:var(--muted); padding:8px 4px; text-align:center; }
+.history-empty { font-size: var(--font-size-sm); color:var(--muted); padding:8px 4px; text-align:center; }
 .history-item-actions { display:none; }
 .history-item:hover .history-item-actions { display:flex; }
 </style>

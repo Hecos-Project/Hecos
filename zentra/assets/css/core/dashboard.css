@@ -15,7 +15,7 @@
   padding: 6px 12px;
   cursor: pointer;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -50,7 +50,7 @@
   border: 1px solid transparent;
   border-radius: 12px;
   color: var(--muted);
-  font-size: 13px; /* Slightly smaller font */
+  font-size: var(--font-size-sm); /* Slightly smaller font */
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -127,11 +127,11 @@
 .category-header:hover::before { opacity: 1; }
 
 .cat-label {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
     font-weight: 800;
     color: var(--accent);
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1.5px;
     white-space: nowrap;
 }
 
@@ -196,8 +196,8 @@
 }
 
 .module-card .m-icon { font-size: 32px; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.2)); }
-.module-card .m-label { font-size: 13px; font-weight: 600; color: var(--text); }
-.module-card .m-cat { font-size: 9px; text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
+.module-card .m-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--text); }
+.module-card .m-cat { font-size: var(--font-size-xs); text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
 
 .module-card.active { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.1); }
 .module-card.active::after {
@@ -259,7 +259,7 @@
 }
 
 .cat-card-icon { font-size: 56px; filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), 0.4)); }
-.cat-card-label { font-size: 16px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 2px; }
+.cat-card-label { font-size: var(--font-size-base); font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 2px; }
 .cat-card-badge {
     background: rgba(var(--accent-rgb), 0.15);
     color: var(--accent);
@@ -285,7 +285,7 @@
   background: none;
   color: var(--muted);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   font-weight: 500;
   transition: all .2s;
 }

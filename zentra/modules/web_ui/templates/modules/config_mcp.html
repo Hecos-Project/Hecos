@@ -146,9 +146,9 @@
       
       let html = '';
       for (const [sName, sData] of Object.entries(servers)) {
-        const color = sData.status === 'connected' ? '#0f0' : (sData.status === 'crashed' ? '#f00' : '#888');
+        const color = sData.status === 'connected' ? 'var(--green)' : (sData.status === 'crashed' ? 'var(--red)' : 'var(--muted)');
         html += `<div style="margin-bottom: 20px;">
-          <h4 style="margin:0; color:#fff; font-size:13px; display:flex; align-items:center; gap:8px;">
+          <h4 style="margin:0; color:var(--text); font-size:13px; display:flex; align-items:center; gap:8px;">
             <span style="width:8px; height:8px; border-radius:50%; background:${color}; display:inline-block;"></span>
             ${sName.toUpperCase()} 
             <span style="font-size:10px; color:var(--muted); font-weight:normal;">[${sData.status}]</span>
@@ -160,7 +160,7 @@
             html += `<span class="tag-mcp-tool" title="${t.description || 'No description'}">${t.name}</span>`;
           });
         } else {
-          html += `<span style="color:#555; font-size:11px; font-style:italic;">No tools discovered yet.</span>`;
+          html += `<span style="color:var(--muted); font-size:11px; font-style:italic;">No tools discovered yet.</span>`;
         }
         
         html += `</div></div>`;
@@ -200,8 +200,8 @@
       html += `
         <tr>
           <td style="color: var(--accent); font-weight: bold;">${name}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size:11px; color: #a4a5a6;">
-            <span style="color: #fff;">${configData.command}</span> ${cmds}
+          <td style="font-family: 'JetBrains Mono', monospace; font-size:11px; color: var(--muted);">
+            <span style="color: var(--text);">${configData.command}</span> ${cmds}
           </td>
           <td>
              <div class="toggle-wrapper" style="transform: scale(0.8); transform-origin: left center; margin: 0;">
@@ -210,7 +210,7 @@
              </div>
           </td>
           <td>
-            <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; border-color: var(--border); color: var(--red); background: transparent;" onclick="removeMCPServer('${name}')">✕</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeMCPServer('${name}')">✕</button>
           </td>
         </tr>
       `;
@@ -297,7 +297,7 @@
       const data = await response.json();
       
       if (!data.ok) {
-        container.innerHTML = `<p style="color:#f88; font-size:12px; grid-column:1/-1; text-align:center;">Error: ${data.error || 'Failed to fetch results'}</p>`;
+        container.innerHTML = `<p style="color:var(--red); font-size:12px; grid-column:1/-1; text-align:center;">Error: ${data.error || 'Failed to fetch results'}</p>`;
         return;
       }
 
@@ -334,7 +334,7 @@
             <div>
               <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 8px;">
                 <span style="color:var(--accent); font-weight:bold; font-size:13px; font-family:'JetBrains Mono', monospace;">${res.name}</span>
-                <span style="font-size:10px; color:rgba(255,255,255,0.3);">${res.useCount || res.downloads || 0} ${registry === 'smithery' ? 'uses' : 'dls'}</span>
+                <span style="font-size:10px; color:var(--muted);">${res.useCount || res.downloads || 0} ${registry === 'smithery' ? 'uses' : 'dls'}</span>
               </div>
               <p style="font-size:11px; color:var(--muted); line-height:1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${res.description || 'No description available.'}</p>
             </div>
@@ -345,7 +345,7 @@
       container.innerHTML = html;
 
     } catch (e) {
-      container.innerHTML = '<p style="color:#f88; font-size:12px; grid-column:1/-1; text-align:center;">Network error. Make sure Zentra is online.</p>';
+      container.innerHTML = '<p style="color:var(--red); font-size:12px; grid-column:1/-1; text-align:center;">Network error. Make sure Zentra is online.</p>';
     } finally {
       btn.disabled = false;
       btn.innerText = 'Search';
