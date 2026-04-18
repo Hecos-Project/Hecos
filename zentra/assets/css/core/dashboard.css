@@ -23,7 +23,7 @@
 }
 
 .switcher-btn:hover { color: var(--text); background: var(--glass-b); }
-.switcher-btn.active { background: var(--accent); color: white; box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.4); }
+.switcher-btn.active { background: var(--accent); color: white; box-shadow: var(--shadow-glow); }
 
 .filter-tabs {
   display: flex;
@@ -66,7 +66,7 @@
   background: rgba(var(--accent-rgb), 0.15);
   border-color: var(--accent);
   color: var(--accent);
-  box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.2);
+  box-shadow: var(--shadow-glow);
 }
 
 .filter-btn .btn-badge {
@@ -193,7 +193,7 @@
   border-color: var(--accent);
   transform: translateY(-5px);
   background: var(--bg3);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-glow);
 }
 
 .module-card .m-icon { font-size: 32px; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.2)); }
@@ -256,7 +256,7 @@
   transform: translateY(-10px);
   border-color: var(--accent);
   background: rgba(var(--accent-rgb), 0.1);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(var(--accent-rgb), 0.15);
+  box-shadow: var(--shadow-glow-active);
 }
 
 .cat-card-icon { font-size: 56px; filter: drop-shadow(0 0 12px rgba(var(--accent-rgb), 0.4)); }

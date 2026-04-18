@@ -11,8 +11,8 @@
       {{ t('webui_km_desc') }}
     </p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn-sm btn-primary" onclick="kmRefresh()">⟳ {{ t('webui_km_btn_refresh') }}</button>
-      <button class="btn-sm" onclick="kmReloadAll()">↺ {{ t('webui_km_btn_reload') }}</button>
+      <button class="btn btn-primary" style="padding:4px 10px; font-size:11px;" onclick="kmRefresh()">⟳ {{ t('webui_km_btn_refresh') }}</button>
+      <button class="btn btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="kmReloadAll()">↺ {{ t('webui_km_btn_reload') }}</button>
     </div>
   </div>
 
@@ -57,7 +57,7 @@
       <input type="checkbox" id="km-add-to-env" style="width:auto;margin:0;">
       <label for="km-add-to-env" style="font-weight:normal;color:var(--muted);font-size:11px;">{{ t('webui_km_add_env') }}</label>
     </div>
-    <button class="btn-sm btn-primary" onclick="kmAddKey()" style="margin-top:8px;">{{ t('webui_km_add_btn') }}</button>
+    <button class="btn btn-primary" onclick="kmAddKey()" style="margin-top:8px;">{{ t('webui_km_add_btn') }}</button>
     <div id="km-add-feedback" style="font-size:12px;margin-top:8px;"></div>
   </div>
 
@@ -89,6 +89,7 @@
   display: flex; gap:6px; font-size: 11px; margin-bottom: 8px; flex-wrap: wrap;
 }
 .km-count-item { padding: 2px 8px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); }
+.btn-km-sm { padding: 4px 10px !important; font-size: 11px !important; }
 </style>
 
 <script>
@@ -135,9 +136,9 @@ function kmRender(data) {
             <div class="km-key-source" id="km-msg-${provider}-${idx}">${window.t ? window.t('webui_km_source') : 'source'}: ${k.source} ${cooldownHtml}</div>
           </div>
           <div class="km-actions">
-            <button class="btn-sm btn-secondary" onclick="kmValidateKey('${provider}','${k.value}', ${idx})" title="${window.t ? window.t('webui_km_btn_validate') : 'Test Key'}">🔍 ${window.t ? window.t('webui_km_btn_validate') : 'Test'}</button>
-            ${canReset ? `<button class="btn-sm btn-secondary" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
-            ${canRemove ? `<button class="btn btn-danger btn-sm" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
+            <button class="btn btn-secondary btn-km-sm" onclick="kmValidateKey('${provider}','${k.value}', ${idx})" title="${window.t ? window.t('webui_km_btn_validate') : 'Test Key'}">🔍 ${window.t ? window.t('webui_km_btn_validate') : 'Test'}</button>
+            ${canReset ? `<button class="btn btn-secondary btn-km-sm" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
+            ${canRemove ? `<button class="btn btn-danger btn-km-sm" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -160,8 +161,8 @@ function kmRender(data) {
       </div>
       ${rows}
       <div style="margin-top:8px; display:flex; gap:8px;">
-        <button class="btn-sm btn-secondary" onclick="kmValidateProvider('${provider}')">🔍 ${window.t ? window.t('webui_km_btn_validate_prov') : 'Validate All'}</button>
-        <button class="btn-sm" onclick="kmResetProvider('${provider}')">↺ ${window.t ? window.t('webui_km_btn_reset_prov') : 'Reset provider'}</button>
+        <button class="btn btn-secondary btn-km-sm" onclick="kmValidateProvider('${provider}')">🔍 ${window.t ? window.t('webui_km_btn_validate_prov') : 'Validate All'}</button>
+        <button class="btn btn-secondary btn-km-sm" onclick="kmResetProvider('${provider}')">↺ ${window.t ? window.t('webui_km_btn_reset_prov') : 'Reset provider'}</button>
       </div>
     `;
     container.appendChild(card);
