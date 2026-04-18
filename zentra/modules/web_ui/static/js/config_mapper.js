@@ -15,10 +15,13 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
   // Clear existing
   el.innerHTML = '';
   
-  // Convert object { "name": "id" } to array [ { "id": "id", "name": "name" } ]
+  // Convert object to array [ { "id": "val", "name": "val" / "key" } ]
   let items = list;
   if (list && typeof list === 'object' && !Array.isArray(list)) {
-      items = Object.entries(list).map(([name, id]) => ({ id, name }));
+      items = Object.entries(list).map(([k, v]) => ({ 
+          id: v, 
+          name: k.match(/^\d+$/) ? String(v).replace('.yaml', '') : k 
+      }));
   }
 
   // Basic validation
@@ -41,7 +44,6 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
   itemsArr.forEach(item => {
     const opt = document.createElement('option');
     
-    // Determine value and text based on type
     let val, text;
     if (typeof item === 'object' && item !== null) {
         val = item.id || item.value || '';
@@ -56,9 +58,25 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
     
     opt.value = val;
     opt.textContent = shortText;
-    if (cleanValue && (val === cleanValue || val.endsWith(cleanValue) || shortVal === cleanValue)) opt.selected = true;
+    
+    // Improved selection logic: exact match or filename match
+    if (cleanValue) {
+        if (val === cleanValue || shortVal === cleanValue || val.toLowerCase() === cleanValue.toLowerCase() || shortVal.toLowerCase() === cleanValue.toLowerCase()) {
+            opt.selected = true;
+        }
+    }
     el.appendChild(opt);
   });
+
+  // Final fallback force selection
+  if (cleanValue && !el.value) {
+      for (let i = 0; i < el.options.length; i++) {
+          if (el.options[i].value.toLowerCase().includes(cleanValue.toLowerCase().replace('.yaml',''))) {
+              el.selectedIndex = i;
+              break;
+          }
+      }
+  }
 }
 
 function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
@@ -108,17 +126,16 @@ function populateUI() {
     setVal('route-mode', rm.mode || 'auto');
     setVal('route-models', rm.legacy_models || '');
 
-    populateSelect('ia-personality', sysOptions.personalities || [], c.ai?.active_personality, true);
+    populateSelect('ia-personality-main', sysOptions.personalities || [], c.ai?.active_personality, true);
     setVal('ia-avatar-size', c.ai?.avatar_size || 'medium');
     setVal('ia-instructions', c.ai?.special_instructions || '');
     setCheck('ia-save-instructions', c.ai?.save_special_instructions || false);
 
-    setCheck('ia-roleplay-mode', c.ai.persona_roleplay_mode);
-    setVal('ia-roleplay-disclaimer', c.ai.safety_disclaimer || '');
+
     
     // Load the avatar preview for the currently selected persona
     if (typeof window.loadPersonaAvatar === 'function') {
-        const personaEl = document.getElementById('ia-personality');
+        const personaEl = document.getElementById('ia-personality-main');
         if (personaEl && personaEl.value) {
             window.loadPersonaAvatar(personaEl.value);
         }
@@ -159,8 +176,8 @@ function populateUI() {
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
     
-    // 7. Roleplay, Privacy & WebUI Dispatch
-    populateRoleplayUI();
+    // 7. Privacy & WebUI Dispatch
+
     populatePrivacyUI();
     populateWebUIConfig();
 
@@ -241,7 +258,7 @@ function renderPlugins(plugins) {
     FILE_MANAGER:I18N.plugin_desc_file,
     HELP:        I18N.plugin_desc_help,
     MEDIA:       I18N.plugin_desc_media,
-    ROLEPLAY:    I18N.plugin_desc_roleplay,
+
     SYSTEM:      I18N.plugin_desc_system,
     WEB:         I18N.plugin_desc_web,
     WEBCAM:      I18N.plugin_desc_webcam,
@@ -437,32 +454,30 @@ function buildPayload() {
   out.backend.kobold = out.backend.kobold || {};
 
   try {
-    out.backend.type                  = document.getElementById('backend-type').value;
-    out.backend.cloud.model           = document.getElementById('cloud-model').value;
-    out.backend.cloud.temperature     = parseFloat(document.getElementById('cloud-temp').value) || 0.7;
-    out.backend.ollama.model          = document.getElementById('ollama-model').value;
-    out.backend.ollama.temperature    = parseFloat(document.getElementById('ollama-temp').value) || 0.3;
-    out.backend.ollama.num_gpu        = parseInt(document.getElementById('ollama-gpu').value) || 33;
-    out.backend.ollama.num_predict    = parseInt(document.getElementById('ollama-predict').value) || 1024;
-    out.backend.ollama.num_ctx        = parseInt(document.getElementById('ollama-ctx').value) || 4096;
-    out.backend.ollama.top_p          = parseFloat(document.getElementById('ollama-top-p').value) || 0.95;
-    out.backend.ollama.repeat_penalty = parseFloat(document.getElementById('ollama-repeat').value) || 1.1;
-    out.backend.kobold.url            = document.getElementById('kobold-url').value;
-    out.backend.kobold.model          = document.getElementById('kobold-model').value;
-    out.backend.kobold.temperature    = parseFloat(document.getElementById('kobold-temp').value) || 0.7;
-    out.backend.kobold.max_length     = parseInt(document.getElementById('kobold-max').value) || 512;
-    out.backend.kobold.top_p          = parseFloat(document.getElementById('kobold-top-p').value) || 0.95;
-    out.backend.kobold.rep_pen        = parseFloat(document.getElementById('kobold-rep').value) || 1.1;
+    out.backend.type                  = getV('backend-type') || 'cloud';
+    out.backend.cloud.model           = getV('cloud-model');
+    out.backend.cloud.temperature     = parseFloat(getV('cloud-temp')) || 0.7;
+    out.backend.ollama.model          = getV('ollama-model');
+    out.backend.ollama.temperature    = parseFloat(getV('ollama-temp')) || 0.3;
+    out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu')) || 33;
+    out.backend.ollama.num_predict    = parseInt(getV('ollama-predict')) || 1024;
+    out.backend.ollama.num_ctx        = parseInt(getV('ollama-ctx')) || 4096;
+    out.backend.ollama.top_p          = parseFloat(getV('ollama-top-p')) || 0.95;
+    out.backend.ollama.repeat_penalty = parseFloat(getV('ollama-repeat')) || 1.1;
+    out.backend.kobold.url            = getV('kobold-url');
+    out.backend.kobold.model          = getV('kobold-model');
+    out.backend.kobold.temperature    = parseFloat(getV('kobold-temp')) || 0.7;
+    out.backend.kobold.max_length     = parseInt(getV('kobold-max')) || 512;
+    out.backend.kobold.top_p          = parseFloat(getV('kobold-top-p')) || 0.95;
+    out.backend.kobold.rep_pen        = parseFloat(getV('kobold-rep')) || 1.1;
 
     out.llm = out.llm || {};
-    out.llm.allow_cloud = document.getElementById('llm-allow-cloud').checked;
-    out.llm.debug_llm = document.getElementById('llm-debug').checked;
+    out.llm.allow_cloud = getC('llm-allow-cloud');
+    out.llm.debug_llm = getC('llm-debug');
     out.llm.providers = out.llm.providers || {};
     ['openai','anthropic','groq','gemini'].forEach(p => {
       out.llm.providers[p] = out.llm.providers[p] || {};
-
-
-      const rawM = document.getElementById('models-'+p).value.trim();
+      const rawM = getV('models-'+p).trim();
       if (rawM) out.llm.providers[p].models = rawM.split('\n').map(s=>s.trim()).filter(Boolean);
     });
 
@@ -471,12 +486,26 @@ function buildPayload() {
     out.routing_engine.legacy_models = getV('route-models');
 
     out.ai = out.ai || {};
-    out.ai.active_personality = getV('ia-personality');
+    const personaEl = document.getElementById('ia-personality-main');
+                      
+    if (personaEl) {
+        out.ai.active_personality = personaEl.value;
+    } else {
+        // Urgent search for ANY select with personality
+        const emergency = document.querySelector('select[id*="personality"]');
+        if (emergency) {
+            out.ai.active_personality = emergency.value;
+        } else if (window.cfg && window.cfg.ai && window.cfg.ai.active_personality) {
+            out.ai.active_personality = window.cfg.ai.active_personality;
+        } else {
+            out.ai.active_personality = 'Zentra_System_Soul.yaml';
+        }
+    }
+    
     out.ai.avatar_size = getV('ia-avatar-size');
     out.ai.special_instructions = getV('ia-instructions');
     out.ai.save_special_instructions = getC('ia-save-instructions');
-    out.ai.persona_roleplay_mode = getC('ia-roleplay-mode');
-    out.ai.safety_disclaimer = getV('ia-roleplay-disclaimer');
+
 
     out.privacy = out.privacy || {};
     out.privacy.default_mode = getV('pr-default-mode') || 'normal';
@@ -553,15 +582,7 @@ function buildPayload() {
         out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
     }
 
-    // Roleplay & Other AI Extras
-    const rpPart = buildRoleplayPayload();
-    if (rpPart.ai) {
-        // Sync roleplay-specific items ONLY if they are not the ones managed in the main Persona tab
-        // Or better: only take special_instructions if roleplay-tab is providing it
-        if (rpPart.ai.special_instructions) {
-            out.ai.special_instructions = rpPart.ai.special_instructions;
-        }
-    }
+
     const webuiPart = buildWebUIPayload();
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
@@ -575,6 +596,7 @@ function buildPayload() {
       }
     });
 
+    console.log("[PERSISTENCE-TRACE] buildPayload - FINAL AI BLOCK:", JSON.stringify(out.ai));
   } catch (err) { console.error("buildPayload err:", err); }
 
   return out;
@@ -701,26 +723,7 @@ function buildRemoteTriggersPayload() {
     };
 }
 
-function populateRoleplayUI() {
-    const c = window.cfg;
-    const sysOptions = window.sysOptions;
-    if (!c || !c.ai) return;
-    populateSelect('rp-personality', sysOptions.personalities || [], c.ai.active_personality, true);
-    setCheck('rp-enabled', c.ai.persona_roleplay_mode ?? false);
-    setVal('rp-instructions', c.ai.special_instructions || '');
-}
 
-function buildRoleplayPayload() {
-    const el = document.getElementById('rp-enabled');
-    if (!el) return {};
-    return {
-        ai: {
-            persona_roleplay_mode: el.checked,
-            active_personality: getV('rp-personality'),
-            special_instructions: getV('rp-instructions')
-        }
-    };
-}
 
 function populateWebUIConfig() {
     const c = window.cfg;

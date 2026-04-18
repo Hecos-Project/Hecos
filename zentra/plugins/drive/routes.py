@@ -41,18 +41,6 @@ def _get_quick_links(root_dir: str) -> list:
             "exts":  {".yaml", ".yml"},
         },
         {
-            "id":    "rp_chars",
-            "title": "🎭 Roleplay Characters",
-            "dirs":  ["zentra/plugins/roleplay/characters"],
-            "exts":  {".yaml", ".yml", ".json"},
-        },
-        {
-            "id":    "rp_scenes",
-            "title": "🎬 Roleplay Scenes",
-            "dirs":  ["zentra/plugins/roleplay/scenes"],
-            "exts":  {".yaml", ".yml", ".json"},
-        },
-        {
             "id":    "routing",
             "title": "🔀 Routing & Overrides",
             "dirs":  ["zentra/config"],

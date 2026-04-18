@@ -184,7 +184,6 @@
     {% include 'modules/config_voice.html' %}
     {% include 'modules/config_system.html' %}
     {% include 'modules/config_media.html' %}
-    {% include 'modules/config_roleplay.html' %}
     {% include 'modules/config_styles.html' %}
     {% include 'modules/config_igen.html' %}
     {% include 'modules/config_utils.html' %}
@@ -239,9 +238,9 @@
       role: "{{ current_user.role if current_user.is_authenticated else 'user' }}"
   };
 </script>
-<script src="/static/js/config_manifest.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper.js?v={{ version }}"></script>
-<script src="/static/js/config_core.js?v={{ version }}"></script>
+<script src="/static/js/config_manifest.js?v={{ version }}-persistence-v3"></script>
+<script src="/static/js/config_mapper.js?v={{ version }}-persistence-v3"></script>
+<script src="/static/js/config_core.js?v={{ version }}-persistence-v3"></script>
 <script src="/static/js/config_audio_logic.js?v={{ version }}"></script>
 <script src="/static/js/config_media_logic.js?v={{ version }}"></script>
 <script src="/static/js/config_logs_engine.js?v={{ version }}"></script>

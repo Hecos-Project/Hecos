@@ -22,7 +22,7 @@ async function uploadAvatar() {
     const input = document.getElementById('ia-avatar-input');
     const preview = document.getElementById('ia-avatar-preview');
     const loader = document.getElementById('ia-avatar-loading');
-    const select = document.getElementById('ia-personality');
+    const select = document.getElementById('ia-personality-main');
     
     if (!input.files || !input.files[0]) return;
     if (!select.value) {
@@ -70,7 +70,7 @@ async function uploadAvatar() {
 
 // On page load and on persona selection change, load the correct avatar
 document.addEventListener('DOMContentLoaded', () => {
-    const select = document.getElementById('ia-personality');
+    const select = document.getElementById('ia-personality-main');
     if (!select) return;
     
     // Load avatar for the currently selected persona on page load

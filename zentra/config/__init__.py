@@ -1,4 +1,4 @@
-﻿"""
+"""
 MODULE: YAML Config Utilities
 DESCRIPTION: Shared helpers to load, save and migrate configuration files
              from/to YAML with Pydantic v2 validation. Ensures comments are preserved.
@@ -9,7 +9,11 @@ from __future__ import annotations
 import os
 import json
 import shutil
+import logging
 from typing import Any, Dict, Optional, Type, TypeVar
+
+# Logger configuration
+logger = logging.getLogger("zentra.config")
 
 try:
     import ruamel.yaml
@@ -98,7 +102,7 @@ def save_yaml(path: str, model: BaseModel) -> bool:
             ryaml.preserve_quotes = True
             ryaml.indent(mapping=2, sequence=4, offset=2)
             
-            if os.path.exists(path):
+            if os.path.exists(path) and "system.yaml" not in path.lower():
                 with open(path, "r", encoding="utf-8") as f:
                     data = ryaml.load(f) or {}
                 if not isinstance(data, dict):
@@ -107,6 +111,7 @@ def save_yaml(path: str, model: BaseModel) -> bool:
                 with open(path, "w", encoding="utf-8") as f:
                     ryaml.dump(data, f)
             else:
+                # Direct overwrite for system.yaml or new files to avoid merge bugs
                 with open(path, "w", encoding="utf-8") as f:
                     ryaml.dump(new_data, f)
             return True
@@ -115,7 +120,9 @@ def save_yaml(path: str, model: BaseModel) -> bool:
                 yaml.dump(new_data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
             return True
     except Exception as e:
-        print(f"[YAML-UTILS] Error saving {path}: {e}")
+        import traceback
+        logger.error(f"[YAML-UTILS] CRITICAL ERROR saving {path}: {e}")
+        logger.error(traceback.format_exc())
         return False
 
 

@@ -33,7 +33,7 @@ class LLMManager:
 
     def get_model_for_tag(self, tag: str, config_override: dict = None) -> str:
         """
-        Restituisce il modello configurato per un determinato tag (es. 'ROLEPLAY', 'WEB').
+        Restituisce il modello configurato per un determinato tag (es. 'WEB', 'IMAGE_GEN').
         Se non specificato o vuoto, restituisce None (per usare il default globale).
         """
         cfg = config_override if config_override is not None else self._config

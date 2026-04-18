@@ -333,12 +333,14 @@ def show_models_menu(categorized_models, current):
 
 
 def show_personality_menu(file_list, current):
-    """Prints the selection for personality TXT files."""
+    """Prints the selection for personality files (F3)."""
     head = translator.t("select_personality")
     print(f"\n{MAGENTA}{head}{RESET}")
     for i, f in enumerate(file_list, 1):
+        # We expect file names here. We display without .yaml suffix for cleaner UI.
+        name_display = f.replace('.yaml', '')
         pref = f"{GREEN} >> " if f == current else "    "
-        print(f"{pref}{i}. {f.replace('.yaml', '')}{RESET}")
+        print(f"{pref}{i}. {name_display}{RESET}")
     print(f"{MAGENTA}{'═' * len(head)}{RESET}")
     print(f"{YELLOW}{translator.t('help_footer')}{RESET}")
 

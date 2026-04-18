@@ -67,7 +67,9 @@ class MenuHandler:
     def _handle_f3(self):
         """Personality selection (F3)."""
         ui_updater.stop()
-        souls = interface.list_personalities()
+        # Use sync_available_personalities for a consistently ordered list
+        # (Zentra_System_Soul first, then alphabetical).
+        souls = self.config_manager.sync_available_personalities()
         current = self.config_manager.config.get("ai", {}).get("active_personality", "N/D")
         interface.show_personality_menu(souls, current)
         self.personality_manager.handle_personality(self._input_digitale_sicuro, soul_files=souls)

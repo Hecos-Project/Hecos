@@ -27,7 +27,6 @@ window.CONFIG_HUB = {
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '🎨', cat: 'MULTIMEDIA', isCore: true },
         { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA', pluginTag: 'MEDIA' },
         { id: 'igen',      label: 'hub_mod_igen',         icon: '🎨', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
-        { id: 'roleplay_elite', label: 'hub_mod_roleplay_elite', icon: '🎭', cat: 'MULTIMEDIA', pluginTag: 'ROLEPLAY_ELITE' },
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '🔌', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
         { id: 'bridge',    label: 'hub_mod_bridge',       icon: '🌉', cat: 'CONNETTIVITÀ', isCore: true },
@@ -105,7 +104,6 @@ window.CONFIG_HUB.tagMap = {
     'DASHBOARD': 'dashboard',
     'DOMOTICA': 'domotica',
     'EXECUTOR': 'executor',
-    'ROLEPLAY_ELITE': 'roleplay_elite',
     'WEB': 'web',
     'WEBCAM': 'webcam',
     'MEMORY': 'memory',

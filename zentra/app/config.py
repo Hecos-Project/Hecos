@@ -137,6 +137,8 @@ class ConfigManager:
                 pass
 
             _, save_yaml = _get_yaml_utils()
+            active_p = self._model.ai.active_personality if hasattr(self._model, "ai") else "Unknown"
+            logger.info(f"[CONFIG] Attempting to write to YAML. Active Personality in Model: {active_p}")
             save_yaml(self._yaml_path, self._model)
             self._sync_dict()
 
@@ -194,14 +196,28 @@ class ConfigManager:
 
     def update_config(self, new_data: dict):
         """Deep merge new_data into current config and save."""
+        logger.info(f"[CONFIG-CORE] update_config CALLED with: {new_data.get('ai', {}).get('active_personality')}")
         self.reload()
         self._deep_update(self.config, new_data)
         try:
             SystemConfig = _get_schema()
-            self._model = SystemConfig.model_validate(self.config)
+            # Attempt validation
+            new_model = SystemConfig.model_validate(self.config)
+            
+            # MANUAL SYNC CHECK
+            if hasattr(new_model, 'ai') and 'ai' in new_data and 'active_personality' in new_data['ai']:
+                logger.info(f"[CONFIG-CORE] Force setting active_personality to: {new_data['ai']['active_personality']}")
+                new_model.ai.active_personality = new_data['ai']['active_personality']
+            
+            self._model = new_model
+            self._sync_dict() 
+            res = self.save()
+            return res
         except Exception as e:
-            logger.warning(f"[CONFIG] Validation warning after update: {e}")
-        return self.save()
+            import traceback
+            logger.error(f"[CONFIG-CORE] CRITICAL ERROR during update_config: {e}")
+            logger.error(traceback.format_exc())
+            return False
 
     def _deep_update(self, base: dict, patch: dict):
         for k, v in patch.items():
@@ -247,30 +263,32 @@ class ConfigManager:
             except Exception:
                 pass
 
+        # 1. Get all YAML files and sort them alphabetically
         files = sorted([_os.path.basename(f) for f in glob.glob(_os.path.join(folder, "*.yaml"))])
 
         if files:
-            # Force Zentra_System_Soul to position #1 if present
-            if "Zentra_System_Soul.yaml" in files:
-                files.remove("Zentra_System_Soul.yaml")
-                files.insert(0, "Zentra_System_Soul.yaml")
+            # 2. Force Zentra_System_Soul to position #1 if present
+            primary = "Zentra_System_Soul.yaml"
+            if primary in files:
+                files.remove(primary)
+                files.insert(0, primary)
 
+            # 3. Create the mapping dictionary
             personality_dict = {str(i + 1): name for i, name in enumerate(files)}
-            current = self.get("ai", "available_personalities")
+            current_dict = self.config.get("ai", {}).get("available_personalities", {})
             
             # --- ROBUST FALLBACK CHECK ---
-            active = self.get("ai", "active_personality")
-            if active not in files:
-                logger.warning(f"[CONFIG] Active personality '{active}' not found in filesystem. Reverting to Zentra_System_Soul.yaml.")
-                self.set("Zentra_System_Soul.yaml", "ai", "active_personality")
-                # No early save needed here as we save below if dictionary changed or if we just set it
+            active = self.config.get("ai", {}).get("active_personality")
+            # Case-insensitive comparison
+            files_lower = [f.lower() for f in files]
+            if active and active.lower() not in files_lower:
+                logger.warning(f"[CONFIG] Active personality '{active}' not found in filesystem. Reverting to {primary}.")
+                self.set(primary, "ai", "active_personality")
 
-            if personality_dict != current:
+            # 4. Save if the list changed or if we reverted the active one
+            if personality_dict != current_dict or (active and active.lower() not in files_lower):
                 self.set(personality_dict, "ai", "available_personalities")
                 self.save()
                 logger.info("[CONFIG] Personality list synchronized with filesystem.")
-            elif active not in files:
-                # Discrepancy found (missing active) but list was same (unlikely but safe)
-                self.save()
 
         return files

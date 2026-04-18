@@ -5,7 +5,7 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml
 
 from __future__ import annotations
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ─── PRIVACY ──────────────────────────────────────────────────────────────────
@@ -22,19 +22,20 @@ class PrivacyConfig(BaseModel):
 # ─── AI ───────────────────────────────────────────────────────────────────────
 
 class AIConfig(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     active_personality: str = "Zentra_System_Soul.yaml"
     available_personalities: Dict[str, str] = {}
     save_special_instructions: bool = False
     special_instructions: str = ""
     avatar_size: str = "medium" # small, medium, large
-    persona_roleplay_mode: bool = False
-    safety_disclaimer: str = ""
+
 
 
 
 # ─── BACKEND ──────────────────────────────────────────────────────────────────
 
 class CloudBackendConfig(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     model: str = "gemini/gemini-2.5-flash"
     temperature: float = 0.7
 
@@ -135,6 +136,7 @@ class ProviderConfig(BaseModel):
 
 
 class LLMConfig(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     allow_cloud: bool = True
     debug_llm: bool = True
     providers: Dict[str, ProviderConfig] = Field(default_factory=lambda: {
@@ -194,15 +196,6 @@ class PluginImageGen(BaseModel):
 class PluginMedia(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
-
-class PluginRoleplayElite(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = False
-    default_character: str = ""
-    default_scene: str = ""
-    llm_model: str = ""
-    characters_dir: str = "plugins/roleplay_elite/characters"
-    scenes_dir: str = "plugins/roleplay_elite/scenes"
 
 class PluginSystem(BaseModel):
     enabled: bool = True
@@ -292,7 +285,6 @@ class PluginsConfig(BaseModel):
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     IMAGE_GEN: PluginImageGen = Field(default_factory=PluginImageGen)
     MEDIA: PluginMedia = Field(default_factory=PluginMedia)
-    ROLEPLAY_ELITE: PluginRoleplayElite = Field(default_factory=PluginRoleplayElite)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)
@@ -323,6 +315,7 @@ class SystemFlagsConfig(BaseModel):
 # ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 class SystemConfig(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     """Root schema for config/system.yaml"""
     ai: AIConfig = Field(default_factory=AIConfig)
     backend: BackendConfig = Field(default_factory=BackendConfig)

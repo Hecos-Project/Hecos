@@ -423,7 +423,7 @@ async function saveConfig(silent = false) {
           }
           
           
-          setTimeout(() => location.reload(), 1500);
+          // setTimeout(() => location.reload(), 1500);
       } else {
           // Provide clear visual feedback for silent background saves
           setSaveMsg('✓ Changes auto-saved', 'ok');
@@ -754,6 +754,14 @@ document.addEventListener('change', (e) => {
         const other = document.getElementById('igen-enabled');
         if (other) other.checked = e.target.checked;
     }
+    
+    // Sync Persona Selectors + mark the changed one as dirty
+    if (e.target.id === 'ia-personality-main') {
+        // Avatar preview update on persona change
+        if (typeof loadPersonaAvatar === 'function') loadPersonaAvatar(e.target.value);
+    }
+
+
     
     // Auto-stop voice if toggle is turned off
     if (e.target.id === 'sys-voice-status' && !e.target.checked) {

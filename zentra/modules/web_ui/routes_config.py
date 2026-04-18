@@ -51,6 +51,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/zentra/config/ui")
     def config_ui():
         try:
+            cfg_mgr.reload()
             from zentra.core.i18n.translator import get_translator
             translations = get_translator().get_translations()
             return render_template("index.html", 
@@ -69,18 +70,20 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def post_config():
         try:
             incoming = request.get_json(force=True)
-            if "ai" in incoming: pass # AI Persona check preserved if needed, but removing print
             
             if not isinstance(incoming, dict):
                 return jsonify({"ok": False, "error": "Invalid payload"}), 400
             # Estrai il flag custom Frontend per forzare il riavvio (o auto-save silenzioso)
             force_restart = incoming.pop("_force_restart", False)
             
-            # DEBUG: Log exact state of plugins toggle
-            p_state = incoming.get("plugins", {}).get("IMAGE_GEN", {}).get("enabled")
-            logger.info(f"[CONFIG] Incoming Save Request. IMAGE_GEN enabled: {p_state}")
+            # DEBUG: Log the full AI block we receive
+            ai_block = incoming.get("ai", {})
+            logger.info(f"[CONFIG-DEBUG] Incoming payload - ai.active_personality: {ai_block.get('active_personality', '<<NOT PRESENT>>')}")
             
-            if cfg_mgr.update_config(incoming):
+            save_result = cfg_mgr.update_config(incoming)
+            logger.info(f"[CONFIG-DEBUG] update_config returned: {save_result}")
+            
+            if save_result:
                 # Dynamically update the global translator language without reboot
                 from zentra.core.i18n.translator import get_translator
                 get_translator().set_language(incoming.get("language", "en"))
@@ -102,13 +105,12 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 except Exception as e:
                     logger.debug(f"[WebUI] Processor runtime sync error: {e}")
                     
-                print("[DEBUG-POST] Config save SUCCESS")
                 return jsonify({"ok": True})
-            print("[DEBUG-POST] Config save FAILED in cfg_mgr.update_config")
             return jsonify({"ok": False, "error": "Save failed"}), 500
         except Exception as exc:
             logger.error(f"[WebUI] POST /config error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
 
     @app.route("/zentra/options", methods=["GET"])
     def get_options():
