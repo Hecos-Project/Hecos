@@ -66,4 +66,4 @@ class HuggingFaceProvider:
         if r.content.startswith(b"<!DOCTYPE") or r.content.startswith(b"<html"):
             raise Exception("HuggingFace returned HTML instead of image")
 
-        return save_image_bytes(r.content, "jpg")
+        return save_image_bytes(r.content, "jpg", prompt=prompt)

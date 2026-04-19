@@ -490,6 +490,7 @@
         "hub_mod_dashboard": "Dashboard",
         "hub_mod_domotica": "Smart Home",
         "hub_mod_webui": "WebUI Engine",
+        "hub_mod_help": "Help & Support",
         "hub_mod_system": "System & Logs",
         "hub_mod_users": "Users",
         "hub_mod_security": "Security (CA)",

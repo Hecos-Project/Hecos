@@ -49,7 +49,7 @@ class OpenAIProvider:
                 response_format="b64_json"
             )
             img_bytes = base64.b64decode(response.data[0].b64_json)
-            return save_image_bytes(img_bytes, "png")
+            return save_image_bytes(img_bytes, "png", prompt=prompt)
 
         except ImportError:
             raise Exception("openai not installed. Run: pip install openai")

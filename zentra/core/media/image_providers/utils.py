@@ -26,13 +26,48 @@ def log_debug(msg: str):
     except Exception:
         pass
 
-def save_image_bytes(data: bytes, ext: str = "jpg") -> str:
-    """Save raw image bytes and return filename."""
+def save_image_bytes(data: bytes, ext: str = "jpg", prompt: str = "") -> str:
+    """
+    Save raw image bytes and return filename.
+    Adds creation date and prompt snippet to filename.
+    Saves full prompt and timestamp in a sidecar .txt file.
+    """
+    import re
     os.makedirs(IMAGES_DIR, exist_ok=True)
-    filename = f"gen_{uuid.uuid4().hex[:8]}.{ext}"
+    
+    # 1. Generate descriptive filename
+    now = datetime.datetime.now()
+    timestamp = now.strftime("%Y%m%d_%H%M%S")
+    
+    # Clean prompt for filename (limit to 50 chars, alnum only)
+    safe_prompt = re.sub(r'[^a-zA-Z0-9]', '_', prompt[:50]).strip('_')
+    if not safe_prompt:
+        safe_prompt = "generation"
+    
+    filename = f"gen_{timestamp}_{safe_prompt}.{ext}"
     path = os.path.join(IMAGES_DIR, filename)
+    
+    # Check for collisions (rare with timestamp but possible)
+    if os.path.exists(path):
+        filename = f"gen_{timestamp}_{uuid.uuid4().hex[:4]}_{safe_prompt}.{ext}"
+        path = os.path.join(IMAGES_DIR, filename)
+
+    # 2. Save image
     with open(path, "wb") as f:
         f.write(data)
+        
+    # 3. Save sidecar metadata (.txt)
+    try:
+        meta_filename = filename.rsplit('.', 1)[0] + ".txt"
+        meta_path = os.path.join(IMAGES_DIR, meta_filename)
+        with open(meta_path, "w", encoding="utf-8") as f:
+            f.write(f"ZENTRA IMAGE METADATA\n")
+            f.write(f"=====================\n")
+            f.write(f"Date: {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Prompt: {prompt}\n")
+    except Exception as e:
+        logger.error(f"[ImageEngine] Failed to save metadata: {e}")
+
     return filename
 
 def get_proxies(provider: str = "") -> dict:

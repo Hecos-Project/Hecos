@@ -45,12 +45,15 @@ function populateMediaUI() {
     setVal('igen-height', igen.height || 1024);
     setCheck('igen-nologo', igen.nologo ?? true);
     // New Advanced Fields
+    setCheck('igen-use-neg-prompt', igen.enable_negative_prompt ?? true);
     setVal('igen-neg-prompt', igen.negative_prompt || '');
     setVal('igen-guidance', igen.guidance_scale || 7.5);
     setVal('igen-steps', igen.num_inference_steps || 30);
     setCheck('igen-auto-enrich', igen.auto_enrich ?? true);
     setVal('igen-enrich-keywords', igen.enrich_keywords || '');
     setVal('igen-style', igen.style || 'none');
+    setCheck('igen-optimize-flux', igen.optimize_for_flux ?? true);
+    setVal('igen-flux-instructions', igen.flux_refiner_instructions || '');
 
     // Sync Slider Labels
     const gVal = document.getElementById('igen-guidance-val');
@@ -71,12 +74,15 @@ function buildMediaPayload() {
             width: parseInt(document.getElementById('igen-width').value) || 1024,
             height: parseInt(document.getElementById('igen-height').value) || 1024,
             nologo: document.getElementById('igen-nologo').checked,
+            enable_negative_prompt: document.getElementById('igen-use-neg-prompt').checked,
             negative_prompt: document.getElementById('igen-neg-prompt').value.trim(),
             guidance_scale: parseFloat(document.getElementById('igen-guidance').value) || 7.5,
             num_inference_steps: parseInt(document.getElementById('igen-steps').value) || 30,
             auto_enrich: document.getElementById('igen-auto-enrich').checked,
             enrich_keywords: document.getElementById('igen-enrich-keywords').value.trim(),
-            style: document.getElementById('igen-style').value
+            style: document.getElementById('igen-style').value,
+            optimize_for_flux: document.getElementById('igen-optimize-flux').checked,
+            flux_refiner_instructions: document.getElementById('igen-flux-instructions').value.trim()
         }
     };
 }
@@ -135,6 +141,49 @@ async function clearMediaVault() {
   }
 }
 
+async function refineDraftPrompt(btn) {
+    const draft = document.getElementById('igen-flux-draft').value.trim();
+    if (!draft) return;
+    const instructions = document.getElementById('igen-flux-instructions').value.trim();
+    const origText = btn.innerHTML;
+    btn.innerHTML = '&#8987; ...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/zentra/api/media/refine-prompt', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: draft, instructions: instructions })
+        });
+        const data = await res.json();
+        if (data.ok && data.refined) {
+            document.getElementById('igen-flux-result').value = data.refined;
+        } else {
+            alert("Error: " + (data.error || "Unknown error"));
+        }
+    } catch(e) {
+        console.error(e);
+        alert("Network error.");
+    } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
+}
+
+function sendPromptToChat() {
+    const res = document.getElementById('igen-flux-result').value.trim();
+    if (!res) return;
+    
+    // Inject into the chat input window (assuming we are in an iframe inside the main UI)
+    const chatInput = window.parent.document.getElementById('chat-input');
+    if (chatInput) {
+        chatInput.value = "/img " + res;
+        chatInput.focus();
+    } else {
+        alert("Chat input not found. Copy the prompt manually.");
+    }
+}
+
 // Exports for Global Scope
 window.populateMediaUI = populateMediaUI;
 window.buildMediaPayload = buildMediaPayload;
@@ -142,6 +191,8 @@ window.onProviderChanged = onProviderChanged;
 window.refreshImageModels = refreshImageModels;
 window.openMediaVault = openMediaVault;
 window.clearMediaVault = clearMediaVault;
+window.refineDraftPrompt = refineDraftPrompt;
+window.sendPromptToChat = sendPromptToChat;
 
 // --- Event Listeners for Sliders ---
 document.addEventListener('input', (e) => {

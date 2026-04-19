@@ -48,4 +48,4 @@ class PollinationsProvider:
         if r.content.startswith(b"<!DOCTYPE") or r.content.startswith(b"<html"):
             raise Exception(f"Pollinations returned HTML (not an image)")
 
-        return save_image_bytes(r.content, "jpg")
+        return save_image_bytes(r.content, "jpg", prompt=prompt)

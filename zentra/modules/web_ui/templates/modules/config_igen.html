@@ -24,7 +24,13 @@
     </div>
 
     <div class="field" style="margin-top:10px;">
-      <label>Negative Prompt</label>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="margin:0;">Negative Prompt</label>
+        <div style="display:flex; align-items:center; gap:8px;">
+           <small style="color:var(--muted);font-size:11px;">Enable</small>
+           <label class="switch"><input type="checkbox" id="igen-use-neg-prompt"><span class="slider"></span></label>
+        </div>
+      </div>
       <textarea id="igen-neg-prompt" rows="3" placeholder="distorted, extra fingers, malformed limbs..."></textarea>
       <small style="color:var(--muted);font-size:11px;">Elements to avoid in the generation.</small>
     </div>
@@ -82,6 +88,46 @@
     <div class="toggle-row" style="margin-top:10px;">
       <div class="toggle-info">Remove Logo/Watermark (Pollinations only)</div>
       <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
+    </div>
+
+    <!-- FLUX OPTIMIZATION SECTION -->
+    <div style="margin-top:20px; padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(255,165,0,0.05);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">✨</span>
+                <strong>Flux Prompt Studio</strong>
+            </div>
+            <!-- Backend auto optimization toggle -->
+            <div style="display:flex; align-items:center; gap:8px;">
+                <small style="font-size:11px; font-weight:600; color:var(--text);">Auto-Optimize (Backend)</small>
+                <label class="switch"><input type="checkbox" id="igen-optimize-flux"><span class="slider"></span></label>
+            </div>
+        </div>
+        
+        <div style="margin-top:10px;">
+            <label style="font-size:11px; color:var(--text); opacity:0.8;">Refiner Instructions (AI Rules)</label>
+            <textarea id="igen-flux-instructions" rows="2" style="font-size:12px; margin-top:4px;" placeholder="Rewrite as a detailed photograph description..."></textarea>
+        </div>
+        
+        <hr style="border-color:var(--border); margin:12px 0; opacity:0.5;">
+        
+        <div style="margin-top:10px;">
+            <label style="font-size:11px; color:var(--text); opacity:0.8;">Manual Test: Draft Prompt (Keywords)</label>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+                <textarea id="igen-flux-draft" rows="2" style="font-size:12px; flex:1;" placeholder="cyberpunk girl, neon, rainy street..."></textarea>
+                <button onclick="refineDraftPrompt(this)" style="padding:0 15px; border-radius:8px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer;">&#10024; Refine</button>
+            </div>
+        </div>
+        
+        <div style="margin-top:10px;">
+            <label style="font-size:11px; color:var(--text); opacity:0.8;">Manual Test: Refined Result</label>
+            <div style="display:flex; gap:8px; margin-top:4px;">
+                <textarea id="igen-flux-result" rows="3" style="font-size:12px; flex:1;" placeholder="Refined prompt will appear here..."></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+                 <button onclick="sendPromptToChat()" style="padding:6px 15px; font-size:12px; border-radius:8px; border:1px solid var(--border); background:var(--accent); color:#fff; cursor:pointer; font-weight:600;">&#10148; Send to Chat as /img</button>
+            </div>
+        </div>
     </div>
   </div>
 </div>

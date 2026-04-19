@@ -15,12 +15,15 @@ class ImageGenConfig(BaseModel):
     nologo: bool = True
     api_key: str = ""
     api_key_comment: str = ""
+    enable_negative_prompt: bool = True
     negative_prompt: str = "distorted, extra fingers, malformed limbs, missing limbs, ugly, blurry, low quality"
     guidance_scale: float = 7.5
     num_inference_steps: int = 30
     auto_enrich: bool = True
     enrich_keywords: str = "masterpiece, 8k wallpaper, highly detailed, realistic, sharp focus, cinematic lighting"
     style: str = "none"
+    optimize_for_flux: bool = True
+    flux_refiner_instructions: str = "Convert keywords into a descriptive natural language paragraph for Flux. Output ONLY the optimized prompt, no preamble."
 
 
 class VideoGenConfig(BaseModel):

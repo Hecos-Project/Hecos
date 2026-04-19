@@ -28,4 +28,4 @@ class AirforceProvider:
         if r.content.startswith(b"<!DOCTYPE") or r.content.startswith(b"<html"):
             raise Exception("Airforce returned HTML")
             
-        return save_image_bytes(r.content, "jpg")
+        return save_image_bytes(r.content, "jpg", prompt=prompt)
