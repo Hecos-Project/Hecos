@@ -113,7 +113,6 @@ def start_and_monitor(script_to_run):
         return max_t
 
     last_code_time = get_max_py_mtime(zentra_folder)
-    monitor_log(t("starting", script=script_to_run))
     
     # Process startup
     env = os.environ.copy()

@@ -137,8 +137,6 @@ class ConfigManager:
                 pass
 
             _, save_yaml = _get_yaml_utils()
-            active_p = self._model.ai.active_personality if hasattr(self._model, "ai") else "Unknown"
-            logger.info(f"[CONFIG] Attempting to write to YAML. Active Personality in Model: {active_p}")
             save_yaml(self._yaml_path, self._model)
             self._sync_dict()
 
@@ -196,7 +194,6 @@ class ConfigManager:
 
     def update_config(self, new_data: dict):
         """Deep merge new_data into current config and save."""
-        logger.info(f"[CONFIG-CORE] update_config CALLED with: {new_data.get('ai', {}).get('active_personality')}")
         self.reload()
         self._deep_update(self.config, new_data)
         try:
@@ -206,7 +203,6 @@ class ConfigManager:
             
             # MANUAL SYNC CHECK
             if hasattr(new_model, 'ai') and 'ai' in new_data and 'active_personality' in new_data['ai']:
-                logger.info(f"[CONFIG-CORE] Force setting active_personality to: {new_data['ai']['active_personality']}")
                 new_model.ai.active_personality = new_data['ai']['active_personality']
             
             self._model = new_model
