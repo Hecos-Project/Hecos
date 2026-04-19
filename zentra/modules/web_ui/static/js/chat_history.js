@@ -59,6 +59,8 @@ window.loadChatSessions = async function () {
     if (resActive.ok) {
         window.chatHistoryState.activeSessionId = resActive.session_id;
         window.chatHistoryState.activeMode      = resActive.mode || 'normal';
+        // Ensure chatHistory is empty for a new session until messages are loaded
+        window.chatHistory = []; 
         if (resActive.session_id) {
             localStorage.setItem('zentra_active_session_id', resActive.session_id);
         }
@@ -290,9 +292,15 @@ window.updatePrivacyIndicator = updateModeUI;
 window.renderHistoryMessages = function (messages) {
     const chatArea = document.getElementById('chat-area');
     if (!chatArea) return;
-    messages.forEach(msg => {
+    // Sync the internal history state for the LLM context and actions
+    window.chatHistory = messages.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : (m.role === 'ai' ? 'assistant' : 'user'),
+        content: m.message
+    }));
+
+    messages.forEach((msg, idx) => {
         if (typeof window.appendMessage === 'function') {
-            window.appendMessage(msg.role, msg.message, { timestamp: msg.timestamp, noSave: true });
+            window.appendMessage(msg.role, msg.message, { timestamp: msg.timestamp, noSave: true, historyIndex: idx });
         }
     });
 };

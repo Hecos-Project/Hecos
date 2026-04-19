@@ -657,6 +657,21 @@
         "webui_logout": "Logout",
         "webui_label_safety_instructions": "Safety & Context Disclaimer",
         "webui_help_safety_instructions": "Used for safety disclaimers or acting context (prepended to AI instructions).",
-        "webui_chat_docs": "User Guide"
+        "webui_chat_docs": "User Guide",
+        "chat_btn_copy": "Copy",
+        "chat_btn_edit": "Edit",
+        "chat_btn_regenerate": "Regenerate",
+        "chat_btn_delete": "Delete",
+        "chat_msg_copied": "Copied!",
+        "chat_msg_copy_failed": "Copy failed",
+        "chat_msg_deleted": "Message deleted",
+        "chat_msg_modified": "Message modified",
+        "chat_regen_toast": "Regenerating...",
+        "chat_regen_no_prev": "No previous message to regenerate",
+        "chat_regen_invalid": "Invalid action on this message",
+        "chat_regen_no_question": "Cannot find preceding question",
+        "chat_regen_err_internal": "Internal error: sendInternalMessage missing",
+        "chat_edit_cancel": "Cancel",
+        "chat_edit_save": "Save"
     }
 }

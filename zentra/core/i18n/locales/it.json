@@ -671,6 +671,21 @@
         "webui_logout": "Esci",
         "webui_label_safety_instructions": "Disclaimer di Sicurezza & Contesto",
         "webui_help_safety_instructions": "Usato per disclaimer di sicurezza o contesto di recitazione (inizializza le istruzioni AI).",
-        "webui_chat_docs": "Manuale Operativo"
+        "webui_chat_docs": "Manuale Operativo",
+        "chat_btn_copy": "Copia",
+        "chat_btn_edit": "Modifica",
+        "chat_btn_regenerate": "Rigenera",
+        "chat_btn_delete": "Elimina",
+        "chat_msg_copied": "Copiato!",
+        "chat_msg_copy_failed": "Copia fallita",
+        "chat_msg_deleted": "Messaggio eliminato",
+        "chat_msg_modified": "Messaggio modificato",
+        "chat_regen_toast": "Rigenerazione...",
+        "chat_regen_no_prev": "Nessun messaggio precedente da rigenerare",
+        "chat_regen_invalid": "Azione non valida su questo messaggio",
+        "chat_regen_no_question": "Impossibile trovare la domanda precedente",
+        "chat_regen_err_internal": "Errore interno: sendInternalMessage mancante",
+        "chat_edit_cancel": "Annulla",
+        "chat_edit_save": "Salva"
     }
 }

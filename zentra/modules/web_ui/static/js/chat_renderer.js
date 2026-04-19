@@ -68,7 +68,9 @@ function addBubble(role, text, id, opts) {
       chatArea.scrollTop = chatArea.scrollHeight;
   }
   
-  const hIdx = (window.historyList) ? window.historyList.length : -1;
+  const hIdx = (opts && opts.historyIndex !== undefined) ? opts.historyIndex : 
+               ((window.chatHistory) ? window.chatHistory.length - 1 : -1);
+
   if (typeof window.attachMessageActions === 'function') {
     window.attachMessageActions(msg, isUser ? 'user' : 'ai', hIdx);
   }

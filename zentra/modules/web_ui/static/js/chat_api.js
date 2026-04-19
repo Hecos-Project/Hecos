@@ -37,10 +37,12 @@ window.sendMessage = async function() {
     userHtml = imgHtml + userHtml;
   }
   
+  window.chatHistory.push({role:'user', content:text});
   const { bubble: userBubble } = window.addBubble('user', userHtml);
   userBubble.innerHTML = userHtml;
   if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(userBubble);
 
+  window.chatHistory.push({role:'assistant', content:''});
   const { bubble: aiBubble } = window.addBubble('ai', '', 'ai-'+Date.now());
   const cursor = document.createElement('span');
   cursor.className = 'cursor';
@@ -95,8 +97,12 @@ window.sendMessage = async function() {
         cursor.remove();
         aiBubble.innerHTML = window.renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
         evtSrc.close();
-        window.chatHistory.push({role:'user', content:text});
-        window.chatHistory.push({role:'assistant', content:aiText});
+        
+        // Final sync 
+        if (window.chatHistory.length > 0) {
+          window.chatHistory[window.chatHistory.length - 1].content = aiText;
+        }
+
         window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
         if (window.loadChatSessions) window.loadChatSessions();
       }
@@ -173,8 +179,12 @@ window.sendInternalMessage = async function(text) {
         cursor.remove();
         aiBubble.innerHTML = window.renderMarkdown(aiText||(ev.type==='error'?'❌ '+ev.text:''));
         evtSrc.close();
-        window.chatHistory.push({role:'user', content:text});
-        window.chatHistory.push({role:'assistant', content:aiText});
+
+        // Sync internal history
+        if (window.chatHistory.length > 0) {
+          window.chatHistory[window.chatHistory.length - 1].content = aiText;
+        }
+
         window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
         if (window.loadChatSessions) window.loadChatSessions();
       }
