@@ -47,12 +47,23 @@
 }
 
 .log-window-header select {
-    background: var(--glass-b);
-    border: 1px solid var(--glass-border);
+    background: var(--bg3);
+    border: 1px solid var(--border);
     color: var(--text);
     font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+}
+
+.log-window-header select option {
+    background: var(--bg3);
+    color: var(--text);
+}
+
+.log-window-header select:hover {
+    border-color: var(--accent);
 }
 
 .log-window-body {
@@ -128,7 +139,9 @@
 }
 .restart-badge.visible { opacity: 1; }
 
-.log-window-body.striped-rows .log-line:nth-child(even) { background: var(--glass); }
+.log-window-body.striped-rows .log-line:nth-child(even) { 
+    background: rgba(var(--accent-rgb), 0.07); 
+}
 
 /* Custom Scrollbar */
 .log-window-body::-webkit-scrollbar { width: 10px; }
