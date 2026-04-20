@@ -33,6 +33,8 @@ window.initEvents = function() {
       
       if (ev.standalone) {
           // In standalone mode, the frontend orchestrates generation
+          if (window.addBubble) window.addBubble('user', ev.text);
+          if (window.chatHistory) window.chatHistory.push({role: 'user', content: ev.text, images: []});
           if (window.sendInternalMessage) window.sendInternalMessage(ev.text);
       } else {
           // Native system is already processing it, just show the bubbles

@@ -1,0 +1,261 @@
+"""
+MODULE: PTT Input Bus - Zentra Core
+DESCRIPTION: Centralized Push-to-Talk signal bus using Pynput for global hooks.
+             Decouples PTT detection from the audio processing stack.
+"""
+
+import threading
+import time
+import os
+import logging
+import sys
+from zentra.core.logging import logger as zentra_logger
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEDICATED LOGGING FOR PTT BUS
+# ─────────────────────────────────────────────────────────────────────────────
+
+ptt_log = logging.getLogger("PTT-BUS")
+ptt_log.setLevel(logging.DEBUG)
+
+_this_dir = os.path.dirname(os.path.abspath(__file__))
+_zentra_dir = os.path.normpath(os.path.join(_this_dir, "..", ".."))
+_log_dir = os.path.join(_zentra_dir, "logs")
+
+if not os.path.exists(_log_dir):
+    os.makedirs(_log_dir, exist_ok=True)
+
+_log_file = os.path.join(_log_dir, "ptt_bus.log")
+# Force encoding to avoid Windows console issues
+fh = logging.FileHandler(_log_file, encoding='utf-8', mode='a')
+fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+ptt_log.addHandler(fh)
+
+def debug_log(msg: str):
+    """Log to both Zentra system log and dedicated ptt_bus.log"""
+    ptt_log.debug(msg)
+    zentra_logger.debug("PTT-BUS", msg)
+
+def info_log(msg: str):
+    """Log to both Zentra system log and dedicated ptt_bus.log"""
+    ptt_log.info(msg)
+    zentra_logger.info("PTT-BUS", msg)
+
+info_log(f"PTT Bus Module loaded (pynput engine initialized). Log: {_log_file}")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SHARED STATE
+# ─────────────────────────────────────────────────────────────────────────────
+
+ptt_active: bool = False          # Read by listen.py
+_state_ref = None                 # Optional StateManager reference
+_last_source: str = ""            # For UI feedback / debugging
+_listeners: list = []             # Active pynput listeners
+_hb_stop_event = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CORE SIGNAL — called by ALL sources
+# ─────────────────────────────────────────────────────────────────────────────
+
+def fire_ptt(action: str, source: str = "unknown") -> bool:
+    global ptt_active, _last_source
+    prev = ptt_active
+
+    if action == "start":
+        ptt_active = True
+    elif action == "stop":
+        ptt_active = False
+    elif action == "toggle":
+        ptt_active = not ptt_active
+    else:
+        debug_log(f"Unknown action: {action}")
+        return ptt_active
+
+    if ptt_active != prev:
+        _last_source = source
+        info_log(f"[{source.upper()}] PTT {'ACTIVE ▶' if ptt_active else 'STOPPED ■'}")
+
+    if _state_ref is not None:
+        try:
+            _state_ref.add_event("ptt_status", {"active": ptt_active, "source": source})
+        except Exception as e:
+            debug_log(f"Failed to notify StateManager: {e}")
+
+    return ptt_active
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PYNPUT GLOBAL LISTENER
+# ─────────────────────────────────────────────────────────────────────────────
+
+_pressed_keys = set()
+
+def _on_press(key):
+    """Global key press handler."""
+    global _pressed_keys
+    try:
+        from pynput.keyboard import Key
+        
+        # IGNORE AUTO-REPEAT: If key is already pressed, don't fire events
+        if key in _pressed_keys:
+            return
+            
+        _pressed_keys.add(key)
+        
+        # Log RAW input for debugging
+        key_name = ""
+        if hasattr(key, 'name'):
+            key_name = key.name
+        elif hasattr(key, 'char'):
+            key_name = key.char
+        else:
+            key_name = str(key)
+            
+        # Log hardware signal to debug log
+        vk = getattr(key, 'vk', None)
+        ptt_log.debug(f"[RAW-INPUT] Key: {key_name} | Raw: {key} | VK: {vk}")
+
+        # Extract config for matching
+        from zentra.core.audio.device_manager import get_audio_config
+        cfg = get_audio_config()
+        sources = cfg.get("ptt_sources", {})
+        hotkey_str = cfg.get("ptt_hotkey", "ctrl+shift").lower()
+        custom_key_str = cfg.get("custom_ptt_key", "").lower().strip()
+
+        # 1. Media Play/Pause (WATCH BUTTON)
+        if sources.get("media_play_pause", False):
+            # Check for standard names or common VK codes (179 = Play/Pause)
+            if key == Key.media_play_pause or key_name == 'media_play_pause' or vk == 179:
+                debug_log(f"WATCH SIGNAL: Media key detected ({key_name}/VK:{vk}).")
+                fire_ptt("toggle", "media_play_pause")
+
+        # 2. Custom Hotkey (Hold behavior)
+        if sources.get("custom_key", False) and custom_key_str:
+            if key_name and key_name.lower() == custom_key_str:
+                fire_ptt("start", "custom_key")
+
+        # 3. Standard Hotkey (Ctrl+Shift) - DEFAULT
+        if sources.get("keyboard_hotkey", True) and hotkey_str == "ctrl+shift":
+            # Check for ANY Ctrl and ANY Shift
+            is_ctrl = any(k in _pressed_keys for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r])
+            is_shift = any(k in _pressed_keys for k in [Key.shift, Key.shift_l, Key.shift_r])
+            if is_ctrl and is_shift:
+                fire_ptt("start", "keyboard_hotkey")
+
+    except Exception as e:
+        ptt_log.error(f"Error in on_press handler: {e}")
+
+def _on_release(key):
+    """Global key release handler."""
+    global _pressed_keys
+    try:
+        from pynput.keyboard import Key
+        if key in _pressed_keys:
+            _pressed_keys.remove(key)
+
+        key_name = key.name if hasattr(key, 'name') else (key.char if hasattr(key, 'char') else str(key))
+
+        from zentra.core.audio.device_manager import get_audio_config
+        cfg = get_audio_config()
+        sources = cfg.get("ptt_sources", {})
+        hotkey_str = cfg.get("ptt_hotkey", "ctrl+shift").lower()
+        custom_key_str = cfg.get("custom_ptt_key", "").lower().strip()
+
+        # Handle release for hold-to-talk sources
+        if sources.get("keyboard_hotkey", True) and hotkey_str == "ctrl+shift":
+             is_ctrl = any(k in _pressed_keys for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r])
+             is_shift = any(k in _pressed_keys for k in [Key.shift, Key.shift_l, Key.shift_r])
+             if not (is_ctrl and is_shift):
+                 fire_ptt("stop", "keyboard_hotkey")
+
+        if custom_key_str and key_name and key_name.lower() == custom_key_str:
+            fire_ptt("stop", "custom_key")
+    except Exception:
+        pass
+
+
+def _heartbeat_loop(stop_event: threading.Event):
+    """Separate loop just for heartbeat and log flushing."""
+    last_hb = 0
+    while not stop_event.is_set():
+        now = time.time()
+        if now - last_hb > 15:
+            debug_log("[HEARTBEAT] PTT Bus Listener active (pynput engine).")
+            # Flush log handlers
+            for h in ptt_log.handlers:
+                h.flush()
+            last_hb = now
+        time.sleep(1)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BUS LIFECYCLE
+# ─────────────────────────────────────────────────────────────────────────────
+
+def start(state=None):
+    global _state_ref, _listeners, _hb_stop_event
+    _state_ref = state
+
+    # Stop any existing
+    stop()
+    time.sleep(0.1)
+
+    try:
+        from pynput import keyboard
+        
+        # Start the global keyboard listener
+        l = keyboard.Listener(on_press=_on_press, on_release=_on_release)
+        l.daemon = True
+        l.start()
+        _listeners.append(l)
+        debug_log("Pynput Global Keyboard Listener started.")
+
+        # Start Heartbeat thread
+        _hb_stop_event = threading.Event()
+        hb_thread = threading.Thread(target=_heartbeat_loop, args=(_hb_stop_event,), daemon=True, name="ptt-heartbeat")
+        hb_thread.start()
+
+    except Exception as e:
+        info_log(f"Failed to start PTT Bus listeners: {e}")
+
+
+def stop():
+    global _listeners, _hb_stop_event
+    
+    # Stop pynput listeners
+    for l in _listeners:
+        try:
+            l.stop()
+        except Exception:
+            pass
+    _listeners = []
+
+    # Stop heartbeat
+    if _hb_stop_event:
+        _hb_stop_event.set()
+        _hb_stop_event = None
+
+    info_log("PTT Bus stopped.")
+
+
+def reload(state=None):
+    stop()
+    start(state)
+    info_log("PTT Bus reloaded.")
+
+
+def get_status() -> dict:
+    return {
+        "ptt_active": ptt_active,
+        "last_source": _last_source,
+        "active_listeners": [l.__class__.__name__ for l in _listeners],
+        "log_file": _log_file,
+        "engine": "pynput"
+    }
+
+def is_ptt_active() -> bool:
+    return ptt_active
+
+def get_last_source() -> str:
+    return _last_source

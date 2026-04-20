@@ -266,14 +266,15 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def stream_events():
         from flask import Response, stream_with_context
         import time
-        sm = _sm()
-        
         def generate():
             while True:
-                if sm:
+                # Dynamic SM resolution: ensures we pick up the Correct state manager 
+                # even if it's injected/swapped after the SSE connection is established.
+                sm_live = _sm()
+                if sm_live:
                     # Drain the event queue — voice_detected is emitted by handle_voice_input()
                     # via add_event(), NOT via detected_voice_command directly (race condition risk)
-                    events = sm.pop_events()
+                    events = sm_live.pop_events()
                     for ev in events:
                         out_ev = {"type": ev.get("type")}
                         data = ev.get("data")
