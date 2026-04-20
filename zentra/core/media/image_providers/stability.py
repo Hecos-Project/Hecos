@@ -10,8 +10,10 @@ class StabilityProvider:
 
     @staticmethod
     def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
-                 negative_prompt: str = "", guidance_scale: float = 7.5, 
-                 num_inference_steps: int = 30) -> str:
+                 negative_prompt: str = "", guidance_scale: float = 7.5,
+                 num_inference_steps: int = 30, seed: int = -1,
+                 sampler: str = "", scheduler: str = "",
+                 aspect_ratio: str = "1:1") -> str:
         if not api_key:
             api_key = os.environ.get("STABILITY_API_KEY", "").strip()
         if not api_key:
@@ -44,8 +46,14 @@ class StabilityProvider:
         # Advanced Parameters
         data["negative_prompt"] = negative_prompt
         data["cfg_scale"] = guidance_scale
+        # Use the aspect_ratio from config (Stability native field; ignored for Ultra which uses WxH)
         if "ultra" not in model_lower:
-            data["aspect_ratio"] = "1:1" # Standard for our UI
+            # Map common ratios; Stability accepts these string values natively
+            data["aspect_ratio"] = aspect_ratio if aspect_ratio and aspect_ratio != "custom" else "1:1"
+        if seed is not None and seed != -1:
+            data["seed"] = seed
+        if sampler and sampler.lower() not in ("", "none"):
+            data["sampler"] = sampler
 
         log_debug(f"[Stability] endpoint={endpoint}")
         r = requests.post(endpoint, headers=headers, files={"none": ""}, data=data, timeout=60, proxies=get_proxies())

@@ -17,7 +17,8 @@ class HuggingFaceProvider:
     @staticmethod
     def generate(prompt: str, width: int, height: int, model: str, api_key: str = "", 
                  negative_prompt: str = "", guidance_scale: float = 7.5, 
-                 num_inference_steps: int = 30) -> str:
+                 num_inference_steps: int = 30, seed: int = -1,
+                 sampler: str = "", scheduler: str = "") -> str:
         """Generate image via Hugging Face Inference API."""
         if not api_key:
             api_key = os.environ.get("HUGGINGFACE_API_KEY", "").strip()
@@ -45,11 +46,36 @@ class HuggingFaceProvider:
                 "height": height,
                 "negative_prompt": negative_prompt,
                 "guidance_scale": guidance_scale,
-                "num_inference_steps": num_inference_steps
+                "num_inference_steps": num_inference_steps,
             }
         }
+        # Optional params — add only when explicitly set
+        params = payload["parameters"]
+        if seed is not None and seed != -1:
+            params["seed"] = seed
+            
+        # Flux models typically reject classical schedulers in Diffusers API
+        if "flux" not in model.lower() and scheduler and scheduler.lower() not in ("", "none"):
+            params["scheduler"] = scheduler
 
-        r = requests.post(url, headers=headers, json=payload, timeout=90, proxies=get_proxies(provider="huggingface"))
+        prox = get_proxies(provider="huggingface")
+        r = requests.post(url, headers=headers, json=payload, timeout=90, proxies=prox)
+        
+        # Automatic fallback for parameters rejected by specific pipelines (e.g. Flux, custom moes)
+        if r.status_code == 400:
+            err_text = r.text
+            did_retry = False
+            if "unexpected keyword argument 'scheduler'" in err_text and "scheduler" in params:
+                params.pop("scheduler", None)
+                did_retry = True
+            elif "unexpected keyword argument 'guidance_scale'" in err_text and "guidance_scale" in params:
+                params.pop("guidance_scale", None)
+                did_retry = True
+            
+            if did_retry:
+                log_debug(f"[HuggingFace] Retrying without incompatible parameter...")
+                r = requests.post(url, headers=headers, json=payload, timeout=90, proxies=prox)
+
         log_debug(f"[HuggingFace] HTTP {r.status_code}, len={len(r.content)}")
 
         if r.status_code != 200:

@@ -5,6 +5,7 @@
 
 function populateMediaUI() {
     const igen = (mediaConfig && mediaConfig.image_gen) ? mediaConfig.image_gen : {};
+    window.igen_custom_hf_models = igen.custom_hf_models || [];
 
     // --- Dynamic Image Providers Population ---
     const imgProvSelect = document.getElementById('igen-provider');
@@ -13,10 +14,7 @@ function populateMediaUI() {
         const globalProviders = Object.keys(cfg.llm.providers);
         globalProviders.push("ollama");
         const extraImageProviders = ["pollinations", "airforce", "stability", "gemini_native", "huggingface"];
-        
-        // Merge without duplicates
         const allSet = new Set([...globalProviders, ...extraImageProviders]);
-        
         const labels = {
             "pollinations": "Pollinations.ai (Free)",
             "airforce": "Airforce API (Free/Experimental)",
@@ -30,7 +28,6 @@ function populateMediaUI() {
             "ollama": "Ollama (Testo - Non supporta immagini)",
             "lmstudio": "LM Studio (Testo - Non supporta immagini)"
         };
-
         allSet.forEach(prov => {
             const opt = document.createElement('option');
             opt.value = prov;
@@ -39,56 +36,82 @@ function populateMediaUI() {
         });
     }
 
-    setCheck('igen-enabled', igen.enabled !== false);
-    setVal('igen-provider', igen.provider || 'pollinations');
-    setVal('igen-width', igen.width  || 1024);
-    setVal('igen-height', igen.height || 1024);
-    setCheck('igen-nologo', igen.nologo ?? true);
-    // New Advanced Fields
-    setCheck('igen-use-neg-prompt', igen.enable_negative_prompt ?? true);
-    setVal('igen-neg-prompt', igen.negative_prompt || '');
-    setVal('igen-guidance', igen.guidance_scale || 7.5);
-    setVal('igen-steps', igen.num_inference_steps || 30);
-    setCheck('igen-auto-enrich', igen.auto_enrich ?? true);
-    setVal('igen-enrich-keywords', igen.enrich_keywords || '');
-    setVal('igen-style', igen.style || 'none');
-    setCheck('igen-optimize-flux', igen.optimize_for_flux ?? true);
-    setVal('igen-flux-instructions', igen.flux_refiner_instructions || '');
+    setCheck('igen-enabled',          igen.enabled !== false);
+    setVal('igen-provider',           igen.provider || 'pollinations');
+    setVal('igen-aspect-ratio',       igen.aspect_ratio || '1:1');
+    setVal('igen-width',              igen.width  || 1024);
+    setVal('igen-height',             igen.height || 1024);
+    setVal('igen-seed',               igen.seed ?? -1);
+    setVal('igen-sampler',            igen.sampler || 'euler_a');
+    setVal('igen-scheduler',          igen.scheduler || 'euler');
+    setCheck('igen-nologo',           igen.nologo ?? true);
+    setCheck('igen-use-neg-prompt',   igen.enable_negative_prompt ?? true);
+    setVal('igen-neg-prompt',         igen.negative_prompt || '');
+    setVal('igen-guidance',           igen.guidance_scale || 7.5);
+    setVal('igen-steps',              igen.num_inference_steps || 30);
+    setCheck('igen-auto-enrich',      igen.auto_enrich ?? true);
+    setVal('igen-enrich-keywords',    igen.enrich_keywords || '');
+    setVal('igen-style',              igen.style || 'none');
+    setCheck('igen-optimize-flux',    igen.optimize_for_flux ?? true);
+    setVal('igen-flux-instructions',  igen.flux_refiner_instructions || '');
+    setCheck('igen-show-metadata',    igen.show_metadata_in_chat ?? false);
 
-    // Sync Slider Labels
+    // Sync slider display values
     const gVal = document.getElementById('igen-guidance-val');
     if (gVal) gVal.textContent = igen.guidance_scale || 7.5;
     const sVal = document.getElementById('igen-steps-val');
     if (sVal) sVal.textContent = igen.num_inference_steps || 30;
+
+    // Show/hide custom dimension inputs
+    if (typeof onAspectRatioChanged === 'function') onAspectRatioChanged();
+
+    // Load preset list
+    if (typeof loadIgenPresets === 'function') loadIgenPresets();
+    if (igen.active_preset) {
+        const ps = document.getElementById('igen-preset');
+        if (ps) ps.value = igen.active_preset;
+    }
 
     refreshImageModels(igen.model || 'flux');
     onProviderChanged();
 }
 
 function buildMediaPayload() {
+    const aspectRatio = (document.getElementById('igen-aspect-ratio') || {}).value || '1:1';
     return {
         image_gen: {
-            enabled: document.getElementById('igen-enabled').checked,
-            provider: document.getElementById('igen-provider').value,
-            model: document.getElementById('igen-model').value,
-            width: parseInt(document.getElementById('igen-width').value) || 1024,
-            height: parseInt(document.getElementById('igen-height').value) || 1024,
-            nologo: document.getElementById('igen-nologo').checked,
-            enable_negative_prompt: document.getElementById('igen-use-neg-prompt').checked,
-            negative_prompt: document.getElementById('igen-neg-prompt').value.trim(),
-            guidance_scale: parseFloat(document.getElementById('igen-guidance').value) || 7.5,
-            num_inference_steps: parseInt(document.getElementById('igen-steps').value) || 30,
-            auto_enrich: document.getElementById('igen-auto-enrich').checked,
-            enrich_keywords: document.getElementById('igen-enrich-keywords').value.trim(),
-            style: document.getElementById('igen-style').value,
-            optimize_for_flux: document.getElementById('igen-optimize-flux').checked,
-            flux_refiner_instructions: document.getElementById('igen-flux-instructions').value.trim()
+            enabled:               document.getElementById('igen-enabled').checked,
+            provider:              document.getElementById('igen-provider').value,
+            model:                 document.getElementById('igen-model').value,
+            aspect_ratio:          aspectRatio,
+            width:                 parseInt((document.getElementById('igen-width') || {}).value) || 1024,
+            height:                parseInt((document.getElementById('igen-height') || {}).value) || 1024,
+            seed:                  parseInt(document.getElementById('igen-seed').value) || -1,
+            sampler:               document.getElementById('igen-sampler').value || 'euler_a',
+            scheduler:             document.getElementById('igen-scheduler').value || 'euler',
+            nologo:                document.getElementById('igen-nologo').checked,
+            enable_negative_prompt:document.getElementById('igen-use-neg-prompt').checked,
+            negative_prompt:       document.getElementById('igen-neg-prompt').value.trim(),
+            guidance_scale:        parseFloat(document.getElementById('igen-guidance').value) || 7.5,
+            num_inference_steps:   parseInt(document.getElementById('igen-steps').value) || 30,
+            auto_enrich:           document.getElementById('igen-auto-enrich').checked,
+            enrich_keywords:       document.getElementById('igen-enrich-keywords').value.trim(),
+            style:                 document.getElementById('igen-style').value,
+            optimize_for_flux:     document.getElementById('igen-optimize-flux').checked,
+            flux_refiner_instructions: document.getElementById('igen-flux-instructions').value.trim(),
+            show_metadata_in_chat: document.getElementById('igen-show-metadata').checked,
+            active_preset:         (document.getElementById('igen-preset') || {}).value || '',
+            custom_hf_models:      window.igen_custom_hf_models || []
         }
     };
 }
 
 function onProviderChanged() {
-  // Provider UI toggles if any future ones are needed
+  const prov = (document.getElementById('igen-provider') || {}).value;
+  const hfWrapper = document.getElementById('igen-hf-explorer-wrapper');
+  if (hfWrapper) {
+    hfWrapper.style.display = (prov === 'huggingface') ? 'block' : 'none';
+  }
 }
 
 async function refreshImageModels(restoreValue) {
@@ -109,7 +132,15 @@ async function refreshImageModels(restoreValue) {
         if (restoreValue && m === restoreValue) opt.selected = true;
         sel.appendChild(opt);
       });
-      if (status) status.textContent = `${d.models.length} models`;
+      // Ensure custom models in HF are restored even if not in backend list yet
+      if (restoreValue && provider === 'huggingface' && !d.models.includes(restoreValue)) {
+        const opt = document.createElement('option');
+        opt.value = restoreValue; opt.textContent = restoreValue;
+        opt.selected = true;
+        sel.appendChild(opt);
+      }
+      if (status) status.textContent = `${d.models.length + (window.igen_custom_hf_models||[]).length} models`;
+      if (typeof checkCustomModelSelect === 'function') checkCustomModelSelect();
     } else {
       if (status) status.textContent = 'Using defaults';
     }
@@ -194,11 +225,82 @@ window.clearMediaVault = clearMediaVault;
 window.refineDraftPrompt = refineDraftPrompt;
 window.sendPromptToChat = sendPromptToChat;
 
-// --- Event Listeners for Sliders ---
+// Make checkCustomModelSelect and removeSelectedHFModel available globally
+window.checkCustomModelSelect = function() {
+    const sel = document.getElementById('igen-model');
+    const btn = document.getElementById('igen-model-remove-btn');
+    if (!sel || !btn) return;
+    
+    // Check if current selected model is in the custom HF models list
+    const isCustom = (window.igen_custom_hf_models || []).includes(sel.value);
+    btn.style.display = isCustom ? 'inline-block' : 'none';
+};
+
+window.removeSelectedHFModel = async function() {
+    const sel = document.getElementById('igen-model');
+    const modelId = sel.value;
+    if (!window.igen_custom_hf_models.includes(modelId)) return;
+    
+    // Remove from array
+    window.igen_custom_hf_models = window.igen_custom_hf_models.filter(m => m !== modelId);
+    
+    // Auto-save the update
+    if (typeof window.saveConfig === 'function') {
+        await window.saveConfig(true); 
+    }
+    
+    // Refresh models list, fallback to first generic model
+    refreshImageModels("black-forest-labs/FLUX.1-schnell");
+};
+
+// Auto-add model to custom list when picked from HuggingFace Explorer
+const originalUseHFModel = window.useHFModel;
+if (typeof originalUseHFModel !== 'undefined') {
+    // Override slightly to push to global list
+    window.useHFModel = async function(modelId) {
+        if (!window.igen_custom_hf_models) window.igen_custom_hf_models = [];
+        if (!window.igen_custom_hf_models.includes(modelId)) {
+            window.igen_custom_hf_models.push(modelId);
+        }
+        
+        // Execute original UI injection logic mapped in HTML if exists
+        const sel = document.getElementById('igen-model');
+        if (sel) {
+            let exists = Array.from(sel.options).some(o => o.value === modelId);
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = modelId; opt.textContent = modelId;
+                sel.appendChild(opt);
+            }
+            sel.value = modelId;
+            sel.style.transition = "border-color 0.2s, box-shadow 0.2s";
+            sel.style.borderColor = "var(--accent)";
+            sel.style.boxShadow = "0 0 5px var(--accent)";
+            setTimeout(() => { sel.style.borderColor = ""; sel.style.boxShadow = ""; }, 800);
+            
+            window.checkCustomModelSelect();
+            
+            // Critical: Automatically save the configuration in the background!
+            if (typeof window.saveConfig === 'function') {
+                await window.saveConfig(true); // save silently
+            }
+        }
+    };
+}
+
+// Preset & dimension helpers defined in config_igen.html (inline scripts)
+// but exported here for any external callers
+if (typeof loadIgenPresets !== 'undefined') window.loadIgenPresets = loadIgenPresets;
+if (typeof saveIgenPreset !== 'undefined') window.saveIgenPreset = saveIgenPreset;
+if (typeof deleteIgenPreset !== 'undefined') window.deleteIgenPreset = deleteIgenPreset;
+if (typeof onAspectRatioChanged !== 'undefined') window.onAspectRatioChanged = onAspectRatioChanged;
+
+// Slider event listeners (also handled inline in HTML for immediate feedback,
+// kept here as a safety net for dynamically injected elements)
 document.addEventListener('input', (e) => {
   if (e.target.id === 'igen-guidance') {
     const val = document.getElementById('igen-guidance-val');
-    if (val) val.textContent = e.target.value;
+    if (val) val.textContent = parseFloat(e.target.value).toFixed(1);
   }
   if (e.target.id === 'igen-steps') {
     const val = document.getElementById('igen-steps-val');

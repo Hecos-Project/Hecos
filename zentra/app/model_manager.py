@@ -88,9 +88,16 @@ class ModelManager:
                     if api_key:
                         cloud_models = self._fetch_cloud_models(provider_name, api_key)
                     
-                    # Fallback to static models in config if fetching failed or no API key exists
+                    # Merge user-defined custom models from config with dynamically fetched ones
+                    custom_user_models = p_data.get('models', [])
+                    for cm in custom_user_models:
+                        # Normalize name
+                        m_clean = cm.replace(f"{provider_name}/", "")
+                        if m_clean not in cloud_models:
+                            cloud_models.insert(0, m_clean)  # Put user models at the top
+                            
                     if not cloud_models:
-                        cloud_models = p_data.get('models', [])
+                        cloud_models = ["default-model-missing"]
                     
                     prov_key = f"Cloud ({provider_name.capitalize()})"
                     if prov_key not in categorized_models:

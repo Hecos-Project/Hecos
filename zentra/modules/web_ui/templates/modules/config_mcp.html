@@ -466,14 +466,12 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     // Initial render
-    setTimeout(() => {
-      renderMCPServers();
-      fetchMCPInventory();
-      if (window.ZentraMCPSearchResults) {
-        document.getElementById('mcp-explore-results').innerHTML = window.ZentraMCPSearchResults;
-        document.getElementById('mcp-explore-clear-btn').style.display = 'block';
-      }
-    }, 1000);
+    renderMCPServers();
+    fetchMCPInventory();
+    if (window.ZentraMCPSearchResults) {
+      document.getElementById('mcp-explore-results').innerHTML = window.ZentraMCPSearchResults;
+      document.getElementById('mcp-explore-clear-btn').style.display = 'block';
+    }
 
     const qEl = document.getElementById('mcp-explore-query');
     if (qEl) {
