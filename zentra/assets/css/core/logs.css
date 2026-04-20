@@ -1,15 +1,15 @@
 /* Log Grid System */
 .log-grid {
   display: grid;
-  gap: 20px;
+  gap: 30px; /* Increased gap for better separation */
   margin-top: 10px;
-  transition: all 0.3s ease;
   align-items: start;
+  grid-auto-rows: min-content;
 }
 
 .log-grid.layout-1x1 { grid-template-columns: 1fr; }
 .log-grid.layout-1x2 { grid-template-columns: repeat(2, 1fr); }
-.log-grid.layout-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 500px); }
+.log-grid.layout-2x2 { grid-template-columns: repeat(2, 1fr); }
 .log-grid.layout-auto { grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); }
 
 .log-window-card {

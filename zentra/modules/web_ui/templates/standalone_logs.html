@@ -80,10 +80,11 @@
     z-index: 1000;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   }
-  /* Estetica Standalone Override: finestre log full height se singole */
+  /* Estetica Standalone Override: ridimensionamento dinamico */
   .log-window-card {
-    max-height: none !important; /* Allow grid to determine height */
-    height: 100%;
+    max-height: 550px; /* Default max */
+    height: auto;
+    transition: max-height 0.3s ease;
   }
   
   /* Badge Standalone Version */
@@ -179,6 +180,39 @@
   window.escapeHtml = function(text) {
     if (!text) return "";
     return text.toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  };
+
+  // Override forceTrimLines to also update card height
+  const originalForceTrimLines = window.forceTrimLines;
+  window.forceTrimLines = function(inputEl) {
+      if (typeof originalForceTrimLines === 'function') {
+          originalForceTrimLines(inputEl);
+      }
+      updateCardDynamicHeight(inputEl.closest('.log-window-card'), parseInt(inputEl.value));
+  };
+
+  function updateCardDynamicHeight(card, maxLines) {
+      if (!card) return;
+      // Header (~45) + Search (~45) + Footer (~45) + Padding/Borders (~25) = ~160px
+      // Line height in logs.css is 1.5 * 12px font + 6px padding = ~24px
+      // Let's use 22px as a safe average for the height calc
+      const estimatedHeight = 160 + (maxLines * 22);
+      // Limit to a reasonable viewport height but don't be smaller than headers
+      const finalMaxHeight = Math.min(Math.max(estimatedHeight, 180), 900);
+      card.style.maxHeight = finalMaxHeight + 'px';
+  }
+
+  // Override addLogWindow to set height on creation
+  const originalAddLogWindow = window.addLogWindow;
+  window.addLogWindow = function(source, level) {
+      if (typeof originalAddLogWindow === 'function') {
+          originalAddLogWindow(source, level);
+          const w = window.activeLogWindows[window.activeLogWindows.length - 1];
+          if (w) {
+              const maxL = w.element.querySelector('.w-max-lines');
+              if (maxL) updateCardDynamicHeight(w.element, parseInt(maxL.value));
+          }
+      }
   };
 
   document.addEventListener('DOMContentLoaded', async () => {
@@ -310,7 +344,10 @@
                       striped.checked = !!wData.striped;
                       if (striped.checked) w.body.classList.add('striped-rows');
                   }
-                  if (maxL) maxL.value = wData.maxLines || 500;
+                  if (maxL) {
+                      maxL.value = wData.maxLines || 500;
+                      updateCardDynamicHeight(w.element, maxL.value);
+                  }
                   
                   // If source was not LIVE, trigger a tail load because updateWindowSource might not have been called correctly during add
                   if (w.source !== 'LIVE' && window.loadLogTailIntoWindow) {
@@ -320,7 +357,11 @@
           }
       } catch (e) {
           console.error("Load layout failed", e);
-          if (window.addLogWindow) window.addLogWindow('LIVE');
+          if (window.addLogWindow) {
+              window.addLogWindow('LIVE');
+              const w = window.activeLogWindows[window.activeLogWindows.length-1];
+              if (w) updateCardDynamicHeight(w.element, 500);
+          }
       }
   };
 
