@@ -1,8 +1,8 @@
 // --- Multi-Window Log Grid Engine ---
 
-let logEvtSource = null;
-let activeLogWindows = [];
-let availableLogFiles = [];
+window.logEvtSource = null;
+window.activeLogWindows = [];
+window.availableLogFiles = [];
 
 async function refreshLogFiles() {
     try {
@@ -471,3 +471,9 @@ async function deleteSelectedLogs(all = false) {
 window.openLogDeleteModal = openLogDeleteModal;
 window.closeLogDeleteModal = closeLogDeleteModal;
 window.deleteSelectedLogs = deleteSelectedLogs;
+window.addLogWindow = addLogWindow;
+window.refreshLogFiles = refreshLogFiles;
+window.updateLogGridLayout = updateLogGridLayout;
+window.startLogStream = startLogStream;
+window.loadLogTailIntoWindow = loadLogTailIntoWindow;
+window.loadLogSearchIntoWindow = loadLogSearchIntoWindow;
