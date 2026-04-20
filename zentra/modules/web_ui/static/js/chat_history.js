@@ -8,7 +8,8 @@ window.chatHistoryState = {
     sessions: [],
     activeSessionId: null,
     activeMode: 'normal',
-    chatModeHasMessages: false  // true after first message → mode picker locks
+    chatModeHasMessages: false,  // true after first message → mode picker locks
+    showArchived: false
 };
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ async function _historyPost(url, body = {}, method = 'POST') {
 
 window.loadChatSessions = async function () {
     const [resSessions, resActive] = await Promise.all([
-        _historyGet('/api/chat/sessions'),
+        _historyGet(`/api/chat/sessions${window.chatHistoryState.showArchived ? '?archived=1' : ''}`),
         _historyGet('/api/chat/sessions/active')
     ]);
 
@@ -98,6 +99,11 @@ function renderSessionList() {
         const dateStr  = s.updated_at ? s.updated_at.slice(0, 16).replace('T', ' ') : '';
         const title    = escapeHistoryHtml(s.title || 'Chat senza titolo');
 
+        const isNormal = s.privacy_mode === 'normal';
+        const actionIcon = isNormal ? (window.chatHistoryState.showArchived ? '♻️' : '✖️') : '🗑️';
+        const actionTitle = isNormal ? (window.chatHistoryState.showArchived ? 'Ripristina' : 'Chiudi (Archivia)') : 'Elimina';
+        const actionFn = isNormal ? `archiveChatSession(event, '${s.id}', ${!window.chatHistoryState.showArchived})` : `deleteChatSession(event, '${s.id}')`;
+
         return `
         <div class="history-item${isActive ? ' active' : ''}" data-id="${s.id}" onclick="activateChatSession('${s.id}')">
           <div class="history-item-main">
@@ -108,7 +114,7 @@ function renderSessionList() {
             </div>
           </div>
           <div class="history-item-actions">
-            <button class="history-action-btn" title="Elimina" onclick="deleteChatSession(event, '${s.id}')">🗑️</button>
+            <button class="history-action-btn" title="${actionTitle}" onclick="${actionFn}">${actionIcon}</button>
           </div>
         </div>`;
     }).join('');
@@ -181,6 +187,45 @@ window.activateChatSession = async function (sessionId) {
 
     renderSessionList();
     updateModeUI();
+};
+
+window.archiveChatSession = async function (e, sessionId, archiveState = true) {
+    e.stopPropagation();
+    const msg = archiveState 
+        ? "Chiudere questa conversazione? Verrà nascosta ma non eliminata dal database."
+        : "Ripristinare questa conversazione dall'archivio?";
+        
+    if (!confirm(msg)) return;
+    
+    await _historyPost(`/api/chat/sessions/${sessionId}/archive`, { archived: archiveState });
+    
+    if (archiveState && window.chatHistoryState.activeSessionId === sessionId) {
+        if (window._clearChatDOM) window._clearChatDOM();
+        else if (window.chatArea) window.chatArea.innerHTML = '';
+        window.chatHistoryState.activeSessionId = null;
+    }
+    
+    await window.loadChatSessions();
+    
+    // Auto-activate something if we archived the current one
+    if (archiveState && !window.chatHistoryState.sessions.find(s => s.id === window.chatHistoryState.activeSessionId)) {
+        if (window.chatHistoryState.sessions.length > 0) {
+            await window.activateChatSession(window.chatHistoryState.sessions[0].id);
+        } else {
+            await window.newChatSession();
+        }
+    }
+};
+
+window.toggleShowArchived = async function() {
+    window.chatHistoryState.showArchived = !window.chatHistoryState.showArchived;
+    const btn = document.getElementById('toggle-archive-btn');
+    if (btn) {
+        btn.textContent = window.chatHistoryState.showArchived ? '💬' : '📂';
+        btn.title = window.chatHistoryState.showArchived ? 'Vedi Chat Attive' : 'Vedi Archivio';
+        btn.style.opacity = window.chatHistoryState.showArchived ? '1' : '0.5';
+    }
+    await window.loadChatSessions();
 };
 
 window.deleteChatSession = async function (e, sessionId) {

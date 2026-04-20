@@ -2,7 +2,10 @@
 <div class="sidebar-section" id="chat-history-section">
   <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center; padding-right:10px;">
     <span>{{ t('webui_chat_history_label') }}</span>
-    <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size: var(--font-size-sm); opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)">🗑️</span>
+    <div style="display:flex; gap:8px; align-items:center;">
+       <span id="toggle-archive-btn" title="Vedi Archivio" style="cursor:pointer; font-size: 11px; opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.toggleShowArchived()">📂</span>
+       <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size: var(--font-size-sm); opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)">🗑️</span>
+    </div>
   </div>
 
   <!-- ── Mode Picker ──────────────────────────────────────────── -->
