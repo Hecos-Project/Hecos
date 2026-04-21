@@ -61,6 +61,15 @@ _listeners: list = []             # Active pynput listeners
 _hb_stop_event = None
 
 
+def _beep_async(freq, duration_ms):
+    if sys.platform == "win32":
+        try:
+            import winsound
+            import threading
+            threading.Thread(target=winsound.Beep, args=(freq, duration_ms), daemon=True).start()
+        except:
+            pass
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CORE SIGNAL — called by ALL sources
 # ─────────────────────────────────────────────────────────────────────────────
@@ -82,6 +91,30 @@ def fire_ptt(action: str, source: str = "unknown") -> bool:
     if ptt_active != prev:
         _last_source = source
         info_log(f"[{source.upper()}] PTT {'ACTIVE ▶' if ptt_active else 'STOPPED ■'}")
+
+        # Local audio and visual feedback (TUI)
+        try:
+            if ptt_active:
+                _beep_async(880, 80)
+            else:
+                _beep_async(440, 120)
+                
+            if _state_ref is not None:
+                from zentra.ui import interface, ui_updater
+                cfg = ui_updater._config_ref.config if getattr(ui_updater, '_config_ref', None) else {}
+                
+                status_text = "🔴 LISTENING" if ptt_active else "READY"
+                _state_ref.system_status = status_text
+                
+                interface.update_status_bar_in_place(
+                    cfg, 
+                    getattr(_state_ref, 'voice_status', False), 
+                    getattr(_state_ref, 'listening_status', True), 
+                    status_text, 
+                    ptt_status=getattr(_state_ref, 'push_to_talk', True)
+                )
+        except Exception as e:
+            debug_log(f"Failed local UI feedback: {e}")
 
         if _state_ref is not None:
             try:

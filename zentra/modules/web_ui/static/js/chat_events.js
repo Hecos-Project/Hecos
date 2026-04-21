@@ -19,12 +19,23 @@ window.initEvents = function() {
       
     } else if (ev.type === 'ptt_status') {
       const pttInd = document.getElementById('ptt-indicator');
+      const sttSource = document.getElementById('stt-source');
+      const isWebMic = sttSource && sttSource.value === 'web';
+      
       if (ev.active) {
           if (pttInd) pttInd.classList.add('active');
           if (window._webptt_beep) window._webptt_beep(880, 0.08); // High tone for START
+          
+          if (isWebMic && window.currentMicOn && window.startWebAudioRecording && !window.isWebAudioRecording) {
+              window.startWebAudioRecording();
+          }
       } else {
           if (pttInd) pttInd.classList.remove('active');
           if (window._webptt_beep) window._webptt_beep(440, 0.12); // Low tone for END
+          
+          if (isWebMic && window.currentMicOn && window.stopWebAudioRecording && window.isWebAudioRecording) {
+              window.stopWebAudioRecording();
+          }
       }
       
     } else if (ev.type === 'voice_detected' && ev.text) {
