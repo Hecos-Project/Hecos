@@ -39,17 +39,16 @@ def _on_press(key):
         
         # We handle ONLY watch_button (or future experimental triggers)
         if sources.get("watch_button", False):
-            # The smartwatch acts as a keyboard that blindly pulses CTRL_L
-            is_ctrl_l = key == Key.ctrl_l or key_name == 'ctrl_l'
-            is_shift_down = any(k in _pressed_keys for k in [Key.shift, Key.shift_l, Key.shift_r])
-            is_alt_down   = any(k in _pressed_keys for k in [Key.alt,   Key.alt_l,  Key.alt_r])
-
-            if is_ctrl_l and not is_shift_down and not is_alt_down:
+            # The smartwatch acts as a hardware trigger. 
+            # Note: We use F24 as a non-colliding placeholder. CTRL_L was causing issues.
+            is_trigger = key == Key.f24 or key_name == 'f24'
+            
+            if is_trigger:
                 now = time.time()
-                # Debounce to avoid double triggers if the watch sends multiple signals instantly
+                # Debounce to avoid double triggers if the device sends multiple signals instantly
                 if now - _last_press_time > 0.5:
                     _last_press_time = now
-                    logger.info("SMARTWATCH", "Hardware voice button triggered. Toggling PTT...")
+                    logger.info("SMARTWATCH", "Hardware voice button triggered (F24). Toggling PTT...")
                     # Since it pulses (down then instantly up), we use a TOGGLE!
                     ptt_bus.fire_ptt("toggle", "watch_button")
                     

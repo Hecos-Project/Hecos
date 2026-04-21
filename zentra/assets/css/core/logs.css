@@ -92,7 +92,7 @@
 
 /* Logging Content styling */
 .log-line {
-    border-bottom: 1px solid var(--glass);
+    border-bottom: 1px solid var(--glass-border);
     padding: 3px 0;
     line-height: 1.5;
     white-space: pre-wrap;
@@ -140,7 +140,7 @@
 .restart-badge.visible { opacity: 1; }
 
 .log-window-body.striped-rows .log-line:nth-child(even) { 
-    background: rgba(var(--accent-rgb), 0.07); 
+    background: var(--glass-c); 
 }
 
 /* Custom Scrollbar */
