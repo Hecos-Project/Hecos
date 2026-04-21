@@ -18,7 +18,7 @@ VERSION = "0.18.2"
 
 # Nome del progetto
 PROJECT_NAME = "Zentra Core"
-PROJECT_CODENAME = "Native Runtime"
+PROJECT_CODENAME = "Runtime Alpha"
 
 # Data di rilascio
 RELEASE_DATE = "2026-04-21"

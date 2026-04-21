@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Zentra Logo">
 </p>
 
-# Zentra Core - Version 0.18.2 (Native Runtime)
+# Zentra Core - Version 0.18.2 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,7 +12,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 ---
 
 > [!IMPORTANT]
-> **Native Runtime Status**: Zentra Core is currently in `v0.18.2`. This is a Native AI Operating Layer that bridges high-level reasoning with root-level system execution.
+> **Runtime Alpha Status**: Zentra Core is currently in `v0.18.2`. This is a Local AI Operating Layer that bridges high-level reasoning with root-level system execution.
 
 ## 🚀 Overview
 **Zentra Core** is a **Native Modular AI Operating System**: a private, local-first ecosystem that bridges AI reasoning with root-level system execution and advanced networking. It transforms local hardware into a sovereign digital entity through an integrated OS-style dashboard and professional-grade security infrastructure.
@@ -22,7 +22,7 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional OS-style dashboard and a modular design that makes advanced AI orchestration intuitive.
 
-Now fully migrated to a **stable Native Runtime architecture**, Zentra 0.18.2 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
+Now fully migrated to a **stable Runtime Alpha architecture**, Zentra 0.18.2 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 

@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
 </p>
 
-# Zentra Core - Versión 0.18.2 (Native Runtime)
+# Zentra Core - Versión 0.18.2 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,7 +12,7 @@ Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ES
 ---
 
 > [!IMPORTANT]
-> **Estado Native Runtime**: Zentra Core se encuentra actualmente en `v0.18.2`. Es una Capa Operativa de IA Nativa que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
+> **Estado Runtime Alpha**: Zentra Core se encuentra actualmente en `v0.18.2`. Es una Capa Operativa de IA local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
 
 ## 🚀 Resumen General
 **Zentra Core** es un **Sistema Operativo IA Nativo y Modular**: un ecosistema local que une el razonamiento de IA con la ejecución del sistema a nivel root y redes avanzadas. Transforma el hardware local en una entidad digital soberana a través de un tablero profesional estilo SO y una infraestructura de seguridad avanzada.
@@ -22,7 +22,7 @@ Basado en tres pilares fundamentales:
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional estilo SO y diseño modular que hace intuitiva la orquestación de IA avanzada.
 
-Ahora completamente migrado a una **arquitectura estable de Runtime Nativo**, Zentra 0.18.2 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
+Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Zentra 0.18.2 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
 

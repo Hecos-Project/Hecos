@@ -15,4 +15,4 @@ Zentra's WebUI is the modern graphical interface accessible through your browser
   - `🕵️ Incognito`: Zero-trace. Messages are never written and context is removed when switching chats.
 - **Enhanced Chat Headers (v0.18.2)**: New visual headers showing User/Persona names, exact timestamps, and a more accessible button bar for quick message actions (Copy, Edit, Regenerate).
 - **Flux Prompt Studio (v0.18.2)**: Dedicated imaging interface for Flux.1 with real-time prompt optimization and automatic generation of `.txt` sidecars containing metadata.
-- **Current Version**: `0.18.2` (Native Runtime)
+- **Current Version**: `0.18.2` (Runtime Alpha)

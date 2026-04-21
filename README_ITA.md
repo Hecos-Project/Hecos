@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo Zentra">
 </p>
 
-# Zentra Core - Versione 0.18.2 (Native Runtime)
+# Zentra Core - Versione 0.18.2 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -12,7 +12,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ---
 
 > [!IMPORTANT]
-> **Stato Native Runtime**: Zentra Core è attualmente in `v0.18.2`. Questo è un Livello Operativo IA Nativo che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
+> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.18.2`. Questo è un Livello Operativo IA locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 
 ## 🚀 Panoramica
 **Zentra Core** è un **Sistema Operativo IA Nativo e Modulare**: un ecosistema locale che unisce AI reasoning, controllo di sistema root e networking avanzato. Trasforma l'hardware locale in un'entità digitale sovrana attraverso una dashboard professionale stile OS e un'infrastruttura di sicurezza avanzata.
@@ -22,7 +22,7 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea.
 * 🧊 **Semplicità Assoluta** — Dashboard professionale stile OS e design modulare che rende intuitiva l'orchestrazione IA avanzata.
 
-Ora completamente migrato a una **architettura stabile a Runtime Nativo**, Zentra 0.18.2 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
+Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Zentra 0.18.2 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
