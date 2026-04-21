@@ -2,6 +2,13 @@
 MODULE: PTT Input Bus - Zentra Core
 DESCRIPTION: Centralized Push-to-Talk signal bus using Pynput for global hooks.
              Decouples PTT detection from the audio processing stack.
+             
+================================================================================
+⚠️ CRITICAL WARNING: CORE SYSTEM LOGIC
+   DO NOT MODIFY THE BASE BEHAVIOR OF THIS MODULE (CTRL+SHIFT OR MEDIA KEYS).
+   DO NOT ADD SMARTWATCH OR OTHER EXPERIMENTAL HARDWARE LOGIC HERE.
+   THIS MODULE MUST REMAIN 100% STABLE FOR STANDARD KEYBOARD OPERATION.
+================================================================================
 """
 
 import threading
@@ -96,24 +103,18 @@ def _on_press(key):
     global _pressed_keys
     try:
         from pynput.keyboard import Key
-        
+
         # IGNORE AUTO-REPEAT: If key is already pressed, don't fire events
         if key in _pressed_keys:
             return
-            
+
         _pressed_keys.add(key)
-        
-        # Log RAW input for debugging
-        key_name = ""
-        if hasattr(key, 'name'):
-            key_name = key.name
-        elif hasattr(key, 'char'):
-            key_name = key.char
-        else:
-            key_name = str(key)
-            
-        # Log hardware signal to debug log
+
+        # Extract key identity
+        key_name = getattr(key, 'name', None) or getattr(key, 'char', None) or str(key)
         vk = getattr(key, 'vk', None)
+
+        # Log hardware signal to debug log
         ptt_log.debug(f"[RAW-INPUT] Key: {key_name} | Raw: {key} | VK: {vk}")
 
         # Extract config for matching
@@ -122,12 +123,17 @@ def _on_press(key):
         sources = cfg.get("ptt_sources", {})
         hotkey_str = cfg.get("ptt_hotkey", "ctrl+shift").lower()
         custom_key_str = cfg.get("custom_ptt_key", "").lower().strip()
+        push_to_talk_enabled = cfg.get("push_to_talk", False)
 
-        # 1. Media Play/Pause (WATCH BUTTON)
+        if not push_to_talk_enabled:
+            # Visible in log even when PTT is disabled — useful for diagnostics
+            ptt_log.debug(f"[SIGNAL-IGNORED] PTT disabled in config. Key: {key_name}")
+            return
+
+        # 1. Media Play/Pause (BT headset or other HID media key, VK 179)
         if sources.get("media_play_pause", False):
-            # Check for standard names or common VK codes (179 = Play/Pause)
             if key == Key.media_play_pause or key_name == 'media_play_pause' or vk == 179:
-                debug_log(f"WATCH SIGNAL: Media key detected ({key_name}/VK:{vk}).")
+                debug_log(f"HID MEDIA: Play/Pause key detected ({key_name}/VK:{vk}).")
                 fire_ptt("toggle", "media_play_pause")
 
         # 2. Custom Hotkey (Hold behavior)
@@ -137,8 +143,7 @@ def _on_press(key):
 
         # 3. Standard Hotkey (Ctrl+Shift) - DEFAULT
         if sources.get("keyboard_hotkey", True) and hotkey_str == "ctrl+shift":
-            # Check for ANY Ctrl and ANY Shift
-            is_ctrl = any(k in _pressed_keys for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r])
+            is_ctrl  = any(k in _pressed_keys for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r])
             is_shift = any(k in _pressed_keys for k in [Key.shift, Key.shift_l, Key.shift_r])
             if is_ctrl and is_shift:
                 fire_ptt("start", "keyboard_hotkey")
@@ -154,23 +159,31 @@ def _on_release(key):
         if key in _pressed_keys:
             _pressed_keys.remove(key)
 
-        key_name = key.name if hasattr(key, 'name') else (key.char if hasattr(key, 'char') else str(key))
+        key_name = getattr(key, 'name', None) or getattr(key, 'char', None) or str(key)
 
         from zentra.core.audio.device_manager import get_audio_config
         cfg = get_audio_config()
         sources = cfg.get("ptt_sources", {})
         hotkey_str = cfg.get("ptt_hotkey", "ctrl+shift").lower()
         custom_key_str = cfg.get("custom_ptt_key", "").lower().strip()
+        push_to_talk_enabled = cfg.get("push_to_talk", False)
 
-        # Handle release for hold-to-talk sources
+        if not push_to_talk_enabled:
+            return
+
+
+
+        # 1. Standard Hotkey (Ctrl+Shift) release
         if sources.get("keyboard_hotkey", True) and hotkey_str == "ctrl+shift":
-             is_ctrl = any(k in _pressed_keys for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r])
-             is_shift = any(k in _pressed_keys for k in [Key.shift, Key.shift_l, Key.shift_r])
-             if not (is_ctrl and is_shift):
-                 fire_ptt("stop", "keyboard_hotkey")
+            is_ctrl  = any(k in _pressed_keys for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r])
+            is_shift = any(k in _pressed_keys for k in [Key.shift, Key.shift_l, Key.shift_r])
+            if not (is_ctrl and is_shift):
+                fire_ptt("stop", "keyboard_hotkey")
 
+        # 2. Custom key release
         if custom_key_str and key_name and key_name.lower() == custom_key_str:
             fire_ptt("stop", "custom_key")
+
     except Exception:
         pass
 

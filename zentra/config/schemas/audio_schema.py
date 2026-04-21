@@ -9,7 +9,8 @@ from pydantic import BaseModel
 class PttSources(BaseModel):
     """Toggleable PTT input sources for the PTT Bus."""
     keyboard_hotkey:  bool = True    # Ctrl+Shift (configurable via ptt_hotkey)
-    media_play_pause: bool = False   # Smartwatch / BT headset Play-Pause key
+    media_play_pause: bool = False   # BT headset media Play-Pause key (VK 179)
+    watch_button:     bool = False   # Smartwatch HID: sends CTRL_L hold-to-talk
     webhook:          bool = False   # HTTP /api/remote-triggers/ptt/*
     custom_key:       bool = False   # Arbitrary key defined by custom_ptt_key
 

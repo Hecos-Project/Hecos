@@ -95,7 +95,7 @@ def listen(state=None):
                     # DRAIN THE AUDIO STREAM to prevent PyAudio IOError (Input Overflow)
                     # If we don't read while waiting, the OS buffer fills up and crashes on the first read.
                     try:
-                        source.stream.read(source.CHUNK, exception_on_overflow=False)
+                        source.stream.read(source.CHUNK)
                     except Exception:
                         pass
                         
@@ -107,7 +107,7 @@ def listen(state=None):
                 # Signal PTT START to WebUI
                 if state:
                     state.add_event("ptt_status", {"active": True})
-                logger.info("VOICE", f"[PTT] Recording... Source: {ptt_bus.get_last_source()}")
+                logger.info("VOICE", f"[PTT] Recording started. Source: {ptt_bus.get_last_source()} | Device: {device_index}")
 
                 # Capture audio while PTT remains active
                 audio_data = bytearray()
@@ -116,7 +116,7 @@ def listen(state=None):
                         buffer = source.stream.read(source.CHUNK)
                         audio_data.extend(buffer)
                     except Exception as e:
-                        logger.error(f"[LISTEN] Error: {e}")
+                        logger.error(f"[LISTEN] PTT capture error: {e}")
                         if state:
                             state.add_event("ptt_status", {"active": False})
                         return ""
@@ -127,21 +127,30 @@ def listen(state=None):
                 if state:
                     state.add_event("ptt_status", {"active": False})
 
-                if len(audio_data) < 4000:  # Too short to be a phrase
-                    logger.info("VOICE", "[PTT] Transcription cancelled: audio too short.")
+                captured_bytes = len(audio_data)
+                logger.info("VOICE", f"[PTT] Capture complete. Bytes: {captured_bytes} | SampleRate: {source.SAMPLE_RATE} | Width: {source.SAMPLE_WIDTH}")
+
+                if captured_bytes < 4000:  # Too short to be a phrase
+                    logger.info("VOICE", f"[PTT] Cancelled: audio too short ({captured_bytes} bytes).")
                     return ""
 
-                logger.info("VOICE", "[PTT] Transcribing audio...")
+                logger.info("VOICE", "[PTT] Sending to Google STT...")
                 audio = sr.AudioData(bytes(audio_data), source.SAMPLE_RATE, source.SAMPLE_WIDTH)
 
             # If system started speaking WHILE listening, discard everything
             if (state and state.system_speaking) or voice.is_speaking:
                 return ""
 
-            text = _recognizer.recognize_google(audio, language="it-IT", show_all=False)
-            return text.lower()
+            try:
+                text = _recognizer.recognize_google(audio, language="it-IT", show_all=False)
+                logger.info("VOICE", f"[PTT] Transcribed: '{text}'")
+                return text.lower()
+            except sr.UnknownValueError:
+                logger.info("VOICE", "[PTT] Google STT: speech not understood.")
+                return ""
 
     except Exception as e:
-        if "device" not in str(e).lower():
+        if "device" not in str(e).lower() and "UnknownValueError" not in str(e):
             logger.error(f"[LISTEN] Recognition error: {e}")
-        return ""
+        return ""
+

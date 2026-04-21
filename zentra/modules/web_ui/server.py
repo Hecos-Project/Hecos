@@ -163,6 +163,13 @@ class ZentraWebUIServer:
         except Exception as e:
             self.logger.warning(f"[WebUI] PTT Bus could not start: {e}")
 
+        # Start Experimental Smartwatch Bus (strictly isolated toggle mode)
+        try:
+            from zentra.core.audio import smartwatch_bus
+            smartwatch_bus.start(state=get_state_manager())
+        except Exception as e:
+            self.logger.warning(f"[WebUI] Smartwatch Bus could not start: {e}")
+
         def _run():
             try:
                 # SSL Setup
