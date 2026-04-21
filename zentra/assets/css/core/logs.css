@@ -124,8 +124,18 @@
 .lvl-MONITOR { color: var(--green); border: 1px solid rgba(var(--green-rgb), 0.3); padding: 0 6px; }
 .lvl-FILE    { color: var(--accent2); font-style: italic; }
 
-.log-text { color: var(--text); }
+.log-text { color: inherit; }
 .log-line.lvl-ERROR .log-text { color: var(--red); }
+.log-line.lvl-WARN .log-text, .log-line.lvl-WARNING .log-text { color: var(--yellow); }
+.log-line.lvl-MONITOR .log-text { color: var(--green); }
+.log-line.lvl-DEBUG .log-text { color: var(--muted); opacity: 0.8; }
+
+/* Filter indicator */
+.w-btn-reset.active {
+    color: var(--red) !important;
+    border-color: rgba(var(--red-rgb), 0.3) !important;
+    background: rgba(var(--red-rgb), 0.05);
+}
 
 /* Badges & Overrides */
 .restart-badge {

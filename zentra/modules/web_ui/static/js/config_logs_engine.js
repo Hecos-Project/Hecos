@@ -63,9 +63,9 @@ function addLogWindow(source = 'LIVE', level = 'BOTH') {
     
     // Bind search UI IDs
     const termInp = winCard.querySelector('.w-search-term');
-    if (termInp) termInp.setAttribute('onkeypress', `if(event.key === 'Enter') window.applyWindowSearch('${id}')`);
+    if (termInp) termInp.setAttribute('oninput', `window.applyWindowSearch('${id}')`);
     const timeInp = winCard.querySelector('.w-search-time');
-    if (timeInp) timeInp.setAttribute('onkeypress', `if(event.key === 'Enter') window.applyWindowSearch('${id}')`);
+    if (timeInp) timeInp.setAttribute('oninput', `window.applyWindowSearch('${id}')`);
     const btnFilt = winCard.querySelector('.w-btn-filter');
     if (btnFilt) btnFilt.setAttribute('onclick', `window.applyWindowSearch('${id}')`);
     const btnRes = winCard.querySelector('.w-btn-reset');
@@ -183,8 +183,23 @@ function applyWindowSearch(id) {
     if (!w) return;
     const termEl = w.element.querySelector('.w-search-term');
     const timeEl = w.element.querySelector('.w-search-time');
-    w.filterQ = termEl ? termEl.value.trim() : '';
-    w.filterT = timeEl ? timeEl.value.trim() : '';
+    const btnRes = w.element.querySelector('.w-btn-reset');
+    
+    const newQ = termEl ? termEl.value.trim() : '';
+    const newT = timeEl ? timeEl.value.trim() : '';
+
+    // If both empty, auto-reset to full view
+    if (!newQ && !newT) {
+        if (w.filterQ || w.filterT) {
+            clearWindowSearch(id);
+        }
+        if (btnRes) btnRes.classList.remove('active');
+        return;
+    }
+
+    w.filterQ = newQ;
+    w.filterT = newT;
+    if (btnRes) btnRes.classList.add('active');
     
     w.body.innerHTML = '';
     w.lineCount = 0;
@@ -196,8 +211,12 @@ function clearWindowSearch(id) {
     if (!w) return;
     const termEl = w.element.querySelector('.w-search-term');
     const timeEl = w.element.querySelector('.w-search-time');
+    const btnRes = w.element.querySelector('.w-btn-reset');
+    
     if (termEl) termEl.value = '';
     if (timeEl) timeEl.value = '';
+    if (btnRes) btnRes.classList.remove('active');
+    
     w.filterQ = '';
     w.filterT = '';
     
@@ -317,11 +336,12 @@ function appendRawLine(win, text) {
     const line = document.createElement('div');
     
     let lvlClass = '';
-    if (text.includes('[ERROR]') || text.includes('Exception') || text.includes('Traceback')) lvlClass = 'lvl-ERROR';
-    else if (text.includes('[WARNING]') || text.includes('[WARN]')) lvlClass = 'lvl-WARN';
-    else if (text.includes('[DEBUG]')) lvlClass = 'lvl-DEBUG';
-    else if (text.includes('[MONITOR]')) lvlClass = 'lvl-MONITOR';
-    else if (text.includes('[INFO]')) lvlClass = 'lvl-INFO';
+    const upperText = text.toUpperCase();
+    if (upperText.includes('[ERROR]') || upperText.includes('EXCEPTION') || upperText.includes('TRACEBACK') || upperText.includes(' CRITICAL ')) lvlClass = 'lvl-ERROR';
+    else if (upperText.includes('[WARNING]') || upperText.includes('[WARN]') || upperText.includes(' WARNING ')) lvlClass = 'lvl-WARN';
+    else if (upperText.includes('[DEBUG]')) lvlClass = 'lvl-DEBUG';
+    else if (upperText.includes('[MONITOR]')) lvlClass = 'lvl-MONITOR';
+    else if (upperText.includes('[INFO]')) lvlClass = 'lvl-INFO';
 
     line.className = `log-line ${lvlClass}`;
     

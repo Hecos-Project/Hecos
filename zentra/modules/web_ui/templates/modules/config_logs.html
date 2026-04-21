@@ -52,9 +52,9 @@
         </div>
         <div class="log-window-search-bar" style="display:flex; gap:5px; padding:6px 14px; background:var(--bg-blur); border-bottom:1px solid var(--border); align-items:center;">
           <i class="fas fa-search" style="color:var(--muted); font-size:10px;"></i>
-          <input type="text" class="w-search-term" placeholder="{{ t('webui_conf_logs_search_text') }}" style="flex:1; background:var(--glass-b); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
+          <input type="text" class="w-search-term" placeholder="{{ t('webui_conf_logs_search_text') }}" oninput="window.applyWindowSearch('{id}')" style="flex:1; background:var(--glass-b); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
           <i class="far fa-clock" style="color:var(--muted); font-size:10px; margin-left:3px;"></i>
-          <input type="text" class="w-search-time" placeholder="{{ t('webui_conf_logs_search_time') }}" style="width:75px; background:var(--glass-b); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
+          <input type="text" class="w-search-time" placeholder="{{ t('webui_conf_logs_search_time') }}" oninput="window.applyWindowSearch('{id}')" style="width:75px; background:var(--glass-b); border:none; color:var(--text); border-radius:3px; padding:3px 6px; font-size:10px; outline:none;">
           <button class="btn btn-secondary w-btn-filter" style="padding:2px 8px; font-size:10px; color:var(--accent); border-color:rgba(var(--accent-rgb), 0.3);">{{ t('webui_conf_logs_btn_filter') }}</button>
           <button class="btn btn-secondary w-btn-reset" style="padding:2px 8px; font-size:10px; border-color:var(--border);" title="{{ t('webui_conf_logs_btn_reset') }}"><i class="fas fa-times"></i></button>
         </div>
