@@ -35,9 +35,10 @@
         <div class="log-window-header">
           <div class="w-info">
             <span class="w-icon">📄</span>
-            <select class="w-source-selector" onchange="updateWindowSource('{id}', this.value)">
+            <select class="w-source-selector">
               <option value="LIVE">Live Stream (Total)</option>
             </select>
+            <button class="w-btn w-raw-btn" onclick="window.openRawLog('{id}')" title="View Full Raw File" style="margin-left:5px; color:var(--muted);"><i class="fas fa-file-alt"></i></button>
           </div>
           <div class="w-actions">
             <select class="w-level-selector" onchange="updateWindowLevel('{id}', this.value)">
@@ -65,7 +66,7 @@
           </div>
           <div style="display:flex; align-items:center; gap:5px;">
             <label>Max:</label>
-            <input type="number" class="w-max-lines" value="500" min="1" max="2500" onchange="window.forceTrimLines(this)" style="width: 50px; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:10px; padding:2px; border-radius:3px;">
+            <input type="number" class="w-max-lines" value="500" min="1" max="10000" onchange="window.forceTrimLines(this)" style="width: 55px; background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:10px; padding:2px; border-radius:3px;">
           </div>
           <span class="w-line-count">0 lines</span>
         </div>

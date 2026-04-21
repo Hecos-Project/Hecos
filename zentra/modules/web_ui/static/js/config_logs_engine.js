@@ -39,6 +39,7 @@ function addLogWindow(source = 'LIVE', level = 'BOTH') {
     // Setup elements
     const winCard = clone.querySelector('.log-window-card');
     winCard.dataset.id = id;
+    winCard.dataset.source = source;
     
     // Populate source selector
     const sel = winCard.querySelector('.w-source-selector');
@@ -56,6 +57,9 @@ function addLogWindow(source = 'LIVE', level = 'BOTH') {
     winCard.querySelector('.w-level-selector').setAttribute('onchange', `updateWindowLevel('${id}', this.value)`);
     winCard.querySelector('.w-btn').setAttribute('onclick', `clearWindow('${id}')`);
     winCard.querySelector('.w-close').setAttribute('onclick', `removeLogWindow('${id}')`);
+    
+    const btnRaw = winCard.querySelector('.w-raw-btn');
+    if (btnRaw) btnRaw.setAttribute('onclick', `window.openRawLog('${id}')`);
     
     // Bind search UI IDs
     const termInp = winCard.querySelector('.w-search-term');
@@ -113,6 +117,7 @@ function updateWindowSource(id, source) {
     const w = activeLogWindows.find(win => win.id === id);
     if (!w) return;
     w.source = source;
+    w.element.dataset.source = source;
     w.body.innerHTML = '';
     w.lineCount = 0;
     if (w.filterQ || w.filterT) {
@@ -142,7 +147,9 @@ function clearAllLogWindows() {
 
 async function loadLogTailIntoWindow(winObj, filename) {
     try {
-        const r = await fetch(`/api/logs/tail/${filename}?n=100`);
+        const maxLinesEl = winObj.element.querySelector('.w-max-lines');
+        const n = maxLinesEl ? (parseInt(maxLinesEl.value) || 500) : 500;
+        const r = await fetch(`/api/logs/tail/${filename}?n=${n}`);
         const d = await r.json();
         if (d.ok) {
             d.lines.forEach(line => {
@@ -156,7 +163,9 @@ async function loadLogSearchIntoWindow(winObj, filename) {
     try {
         const sq = encodeURIComponent(winObj.filterQ || '');
         const st = encodeURIComponent(winObj.filterT || '');
-        const r = await fetch(`/api/logs/search/${filename}?n=200&q=${sq}&time=${st}`);
+        const maxLinesEl = winObj.element.querySelector('.w-max-lines');
+        const n = maxLinesEl ? (parseInt(maxLinesEl.value) || 500) : 500;
+        const r = await fetch(`/api/logs/search/${filename}?n=${n}&q=${sq}&time=${st}`);
         const d = await r.json();
         if (d.ok) {
             if (d.type === 'events') {
@@ -362,6 +371,16 @@ function forceTrimLines(inputEl) {
     if (!win) return;
     
     const maxLines = parseInt(inputEl.value) || 500;
+
+    // If source is a file (not LIVE) and we increase the limit, reload to fill history
+    if (win.source !== 'LIVE' && maxLines > win.lineCount) {
+        win.body.innerHTML = '';
+        win.lineCount = 0;
+        if (win.filterQ || win.filterT) loadLogSearchIntoWindow(win, win.source);
+        else loadLogTailIntoWindow(win, win.source);
+        return;
+    }
+
     while (win.lineCount > maxLines) {
         if (win.body.firstChild) win.body.removeChild(win.body.firstChild);
         win.lineCount--;
@@ -468,6 +487,12 @@ async function deleteSelectedLogs(all = false) {
     }
 }
 
+function openRawLog(id) {
+    const w = activeLogWindows.find(win => win.id === id);
+    if (!w || w.source === 'LIVE') return;
+    window.open(`/api/logs/raw/${w.source}`, '_blank');
+}
+
 window.openLogDeleteModal = openLogDeleteModal;
 window.closeLogDeleteModal = closeLogDeleteModal;
 window.deleteSelectedLogs = deleteSelectedLogs;
@@ -477,3 +502,4 @@ window.updateLogGridLayout = updateLogGridLayout;
 window.startLogStream = startLogStream;
 window.loadLogTailIntoWindow = loadLogTailIntoWindow;
 window.loadLogSearchIntoWindow = loadLogSearchIntoWindow;
+window.openRawLog = openRawLog;

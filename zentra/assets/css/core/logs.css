@@ -46,6 +46,11 @@
   color: var(--muted);
 }
 
+/* Hide raw view button for LIVE streams */
+.log-window-card[data-source="LIVE"] .w-raw-btn {
+    display: none;
+}
+
 .log-window-header select {
     background: var(--bg3);
     border: 1px solid var(--border);

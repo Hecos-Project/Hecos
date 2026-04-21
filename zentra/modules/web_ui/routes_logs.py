@@ -72,6 +72,7 @@ def init_log_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 return jsonify({"ok": False, "error": "File not found"}), 404
             
             n = int(request.args.get("n", 100))
+            if n > 100000: n = 100000 # Safety cap
             with open(path, 'r', encoding='utf-8', errors='replace') as f:
                 lines = f.readlines()
                 return jsonify({"ok": True, "lines": lines[-n:]})
@@ -87,6 +88,7 @@ def init_log_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             q = request.args.get("q", "").lower()
             t_filter = request.args.get("time", "").lower()
             n = int(request.args.get("n", 500))
+            if n > 100000: n = 100000 # Safety cap
             
             if filename == "LIVE":
                 hub = get_hub()
@@ -113,6 +115,23 @@ def init_log_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 return jsonify({"ok": True, "type": "lines", "data": results[-n:]})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/logs/raw/<filename>")
+    def raw_log_file(filename):
+        """Returns the entire log file as plain text."""
+        try:
+            if ".." in filename or "/" in filename or "\\" in filename:
+                return "Invalid filename", 400
+            
+            path = os.path.join(LOGS_DIR, filename)
+            if not os.path.exists(path):
+                return "File not found", 404
+            
+            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+                content = f.read()
+            return Response(content, mimetype="text/plain")
+        except Exception as e:
+            return str(e), 500
 
     @app.route("/api/logs/stream")
     def stream_logs():
