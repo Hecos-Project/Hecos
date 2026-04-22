@@ -13,11 +13,15 @@
 
     <div class="container">
         <header>
-            <div class="logo glitch" data-text="ZENTRA CORE">ZENTRA CORE</div>
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo-sqr.png" alt="Zentra Logo" class="logo-img" style="height: 40px; margin-right: 15px;">
+                <span class="glitch" data-text="ZENTRA CORE">ZENTRA CORE</span>
+            </a>
             <nav>
                 <ul>
                     <li><a href="index.html">Home</a></li>
-                    <li><a href="#details">Details</a></li>
+                    <li><a href="index.html#about">About</a></li>
+                    <li><a href="features.html">Features</a></li>
                     <li><a href="https://github.com/Zentra-Core/zentra-core.github.io/wiki/">Docs</a></li>
                     <li><a href="community/">Community</a></li>
                     <li><a href="download/">Download</a></li>
@@ -29,17 +33,25 @@
             <h1 class="section-title glitch" data-text="FEATURES">FEATURES</h1>
             
             <div class="grid" id="details">
-                <div class="card">
-                    <h3>🧠 Neural Architecture</h3>
-                    <p>Zentra Core acts as a technical bridge for Ollama and KoboldCPP backends. It manages the inference lifecycle, ensuring that even large-scale reasoning models run efficiently on local consumer hardware without cloud leakage.</p>
-                </div>
-                <div class="card">
-                    <h3>⚡ Structured Logic Engine</h3>
-                    <p>Instead of unpredictable text replies, our core engine generates validated JSON action tokens. These tokens interface directly with Python-based plugins, providing a deterministic bridge between AI thought and system execution.</p>
-                </div>
                 <div class="card" style="border-left: 4px solid var(--neon-cyan);">
+                    <h3>🪐 Core Modules</h3>
+                    <p>The system kernel is built on <strong>Core Modules</strong>. These form the essential foundation for memory management, configuration persistence, and inter-process communication between AI layers.</p>
+                </div>
+                <div class="card">
+                    <h3>🧩 Plugin Ecosystem</h3>
+                    <p>Logic is modular. Enable or disable specialized plugins for file management, web search, or media control on the fly without rebooting the system core.</p>
+                </div>
+                <div class="card" style="border-left: 4px solid var(--neon-magenta);">
+                    <h3>🛠️ Extensions</h3>
+                    <p>Power-user tools for deep desktop integration. Extensions allow Zentra to interact with external software, system environments, and advanced CLI pipelines.</p>
+                </div>
+                <div class="card">
+                    <h3>🌐 MCP Native Bridge</h3>
+                    <p>Native Model Context Protocol support. Connect to any <strong>MCP Server</strong> to instantly grant the AI access to remote databases, APIs, and standardized toolkits.</p>
+                </div>
+                <div class="card">
                     <h3>🤖 Autonomous Agentic Loop</h3>
-                    <p>Watch Zentra think in real-time. By utilizing multiple steps of reasoning and dynamically selecting tools, the AI can accomplish complex, multi-stage missions without giving up.</p>
+                    <p>Watch Zentra reason in real-time. By utilizes multi-step Chain-of-Thought, the AI breaks down complex missions, self-corrects, and executes until completion.</p>
                 </div>
                 <div class="card" style="border-left: 4px solid var(--neon-magenta);">
                     <h3>🛡️ AST-Security Jail</h3>

@@ -50,9 +50,13 @@
 
     <div class="container">
         <header>
-            <div class="logo glitch" data-text="ZENTRA CORE">ZENTRA CORE</div>
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo-sqr.png" alt="Zentra Logo" class="logo-img" style="height: 40px; margin-right: 15px;">
+                <span class="glitch" data-text="ZENTRA CORE">ZENTRA CORE</span>
+            </a>
             <nav>
                 <ul>
+                    <li><a href="index.html">Home</a></li>
                     <li><a href="#about">About</a></li>
                     <li><a href="features.html">Features</a></li>
                     <li><a href="#roadmap">Roadmap</a></li>
@@ -75,9 +79,13 @@
             <h1 class="glitch" data-text="ZENTRA">ZENTRA</h1>
             <p>The Native Modular AI Operating System. Privacy. Speed. Simplicity.</p>
             <p style="font-size: 1.1rem; max-width: 800px; margin-top: -20px;">A local-first AI ecosystem that bridges intelligence with system execution. Total control, zero cloud, extreme performance.</p>
+            
+            <div class="video-container">
+                <iframe width="100%" height="auto" src="https://www.youtube.com/embed/lWI71-sPUTk?rel=0" title="Zentra Core Presentation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <p style="font-size: 0.9rem; opacity: 0.6; margin-top: -30px;"><a href="https://www.youtube.com/watch?v=lWI71-sPUTk" target="_blank" style="color: var(--neon-cyan); text-decoration: none;">Can't see the video? Watch directly on YouTube</a></p>
             <div class="hero-actions">
-                <a href="download/" class="btn">Download Now</a>
-                <a href="https://github.com/Zentra-Core/zentra-core.github.io/wiki/" class="btn btn-secondary">Explore Documentation</a>
+                <!-- Buttons removed for cleaner hero as requested by user -->
             </div>
         </section>
 
@@ -85,61 +93,25 @@
             <h2 class="section-title glitch" data-text="WHY ZENTRA?">WHY ZENTRA?</h2>
             <div class="grid">
                 <div class="card">
-                    <h3>Privacy by design</h3>
-                    <p>Everything runs locally. No data leaves your device. Your privacy is guaranteed by your own hardware.</p>
+                    <h3>AI OS vs Agent</h3>
+                    <p>Zentra isn't just an agent; it's the <strong>Operating Environment</strong>. It manages resources, drivers, and cognitive profiles, allowing multiple agents to coexist and operate in a unified system.</p>
+                </div>
+                <div class="card" style="border-left: 4px solid var(--neon-cyan);">
+                    <h3>Modular Tiering</h3>
+                    <p>Architecture divided into <strong>Core Modules</strong> (Stability), <strong>Plugins</strong> (Logic), and <strong>Extensions</strong> (System Tools). Fully customizable for any mission.</p>
                 </div>
                 <div class="card">
-                    <h3>Modular to the core</h3>
-                    <p>Every function is a plugin. Add, remove, or create your own. Customize your AI for your specific needs.</p>
+                    <h3>MCP Native Support</h3>
+                    <p>Integrated Model Context Protocol (MCP) bridge. Connect seamlessly to standardized servers for infinite data and tool orchestration.</p>
                 </div>
                 <div class="card">
-                    <h3>Cyberpunk ready</h3>
-                    <p>Integration with home automation, automotive, and robotics. Expand control over your physical environment without limits.</p>
-                </div>
-                <div class="card">
-                    <h3>Dual-backend</h3>
-                    <p>Supports Ollama and KoboldCPP. Choose the model you want, including uncensored versions, without artificial restrictions.</p>
+                    <h3>Local-First Privacy</h3>
+                    <p>Total control, zero cloud. Every inference, file, and voice command stays on your own hardware. Your PC, your rules.</p>
                 </div>
             </div>
         </section>
 
-        <section class="section">
-            <h2 class="section-title glitch" data-text="CORE FEATURES">CORE FEATURES</h2>
-            <div class="grid">
-                <div class="card">
-                    <h3>Total Control</h3>
-                    <p>Turn on lights, open doors, and command your PC with voice or structured text commands.</p>
-                </div>
-                <div class="card">
-                    <h3>Autonomous Agentic Loop</h3>
-                    <p>Reasoning mode enabled. Zentra can break down complex tasks, search, and self-correct using a Chain of Thought visible in real-time.</p>
-                </div>
-                <div class="card">
-                    <h3>Zentra Code Jail</h3>
-                    <p>Native AST-based Python sandbox. Zentra writes and executes code securely to solve math, logic, and data problems automatically.</p>
-                </div>
-                <div class="card">
-                    <h3>Infinite Personalities</h3>
-                    <p>Load .txt anime profiles, change voice, and character. AI dynamically auto-syncs personalities without manual config.</p>
-                </div>
-                <div class="card">
-                    <h3>Persistent Memory</h3>
-                    <p>Remembers conversations and learns from you thanks to a secure local SQLite archive.</p>
-                </div>
-                <div class="card">
-                    <h3>Hardware Monitoring</h3>
-                    <p>CPU, RAM, and VRAM in real-time. Keep an eye on your local spaceship's performance.</p>
-                </div>
-                <div class="card">
-                    <h3>Local Voice Synthesis</h3>
-                    <p>Integrated Piper TTS for clear, responsive, and completely offline voice interactions.</p>
-                </div>
-                <div class="card">
-                    <h3>Bridge for Open WebUI</h3>
-                    <p>Use Zentra as the engine for advanced locally-maintained web interfaces.</p>
-                </div>
-            </div>
-        </section>
+        <!-- Old redundant Features section removed. Detailed features are now in features.html accessible from the menu. -->
 
         <section id="roadmap" class="section">
             <h2 class="section-title glitch" data-text="ROADMAP">ROADMAP</h2>
@@ -163,9 +135,8 @@
             <h2 class="section-title glitch" data-text="COMMUNITY">COMMUNITY</h2>
             <p>Join the pioneers of autonomous computing.</p>
             <div class="community-links">
-                <a href="https://discord.gg/..." target="_blank">Discord</a>
-                <a href="https://t.me/..." target="_blank">Telegram</a>
-                <a href="https://github.com/antonio-meloni/Zentra-Core" target="_blank">GitHub</a>
+                <a href="https://www.youtube.com/@ZentraCoreSystems" target="_blank">YouTube Official Channel</a>
+                <a href="https://github.com/Zentra-Core/zentra-core.github.io" target="_blank">GitHub Repository</a>
             </div>
         </section>
 

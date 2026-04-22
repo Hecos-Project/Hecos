@@ -20,9 +20,10 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     line-height: 1.6;
     background-image: 
-        linear-gradient(rgba(0, 255, 204, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 255, 204, 0.05) 1px, transparent 1px);
-    background-size: 50px 50px;
+        linear-gradient(rgba(0, 255, 204, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 204, 0.15) 1px, transparent 1px);
+    background-size: 60px 60px;
+    background-attachment: fixed; /* Ensures it stays consistent across different screen sizes */
     overflow-x: hidden;
 }
 
@@ -86,6 +87,35 @@ header {
     font-weight: 900;
     color: var(--neon-cyan);
     text-shadow: var(--shadow-glow);
+    display: flex;
+    align-items: center;
+}
+
+.logo-img {
+    height: 48px;
+    width: auto;
+    filter: drop-shadow(0 0 5px rgba(0, 255, 204, 0.4));
+}
+
+.video-container {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 */
+    height: 0;
+    overflow: hidden;
+    width: 100%;
+    max-width: 900px;
+    margin: 40px auto;
+    border: 1px solid var(--neon-cyan);
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+}
+
+.video-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
 }
 
 nav ul {
@@ -112,7 +142,8 @@ nav a:hover {
 }
 
 .hero {
-    height: 80vh;
+    min-height: 80vh;
+    padding: 120px 0 60px 0;
     display: flex;
     flex-direction: column;
     justify-content: center;

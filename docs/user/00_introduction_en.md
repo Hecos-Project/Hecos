@@ -1,17 +1,17 @@
-# ✨ Welcome to Zentra Core
+# 🪐 Welcome to Zentra Core
 
-Zentra Core is an advanced neural interface designed to transform your computer into an intelligent companion capable of listening, speaking, and acting.
+Zentra Core is a **Native Modular AI Operating System (AI OS)** designed to orchestrate intelligence, tools, and visual interfaces into a unified, privacy-first computing environment.
 
 ## 👤 What is Zentra?
-Think of Zentra as your computer's "brain." It’s not just a simple chat program, but a digital entity that can adopt different **Souls (Personalities)** to help you with your daily tasks, from file management to creative conversation.
+More than a simple chatbot, Zentra is an **Agentic Layer** for your computer. Following the "LLM-as-CPU" paradigm, Zentra acts as the master orchestrator, managing memory, specialized tools, and cognitive profiles to assist you in complex workflows—from advanced file management to local code execution.
 
-## 🗣️ Natural Interaction: Talk and Listen
-Zentra is designed for natural use, just as you would talk to a person:
-- **It Listens to You**: Using the "Push-to-Talk" system, you can speak to Zentra. The system will instantly transform your voice into text.
-- **It Replies to You**: Zentra doesn’t just write messages; it has its own voice. Every response is read aloud using clear and natural speech synthesis.
+## 🧠 Core Architecture: Modular & Extensible
+The heart of Zentra lies in its **Modularity**. Every function—be it a specialized Vision engine, a Web searcher, or a custom Tool—is a pluggable component. This allows Zentra to grow and adapt to the rapidly evolving AI landscape without legacy constraints.
 
-## 🎭 Personalities (Souls)
-Zentra doesn’t have a fixed character. You can load different "Souls" to change how it interacts. Want a serious and professional assistant? Or maybe an AI with a more informal and friendly character? You can change it at any time with a simple click.
+## 🗣️ Multi-Modal Interaction
+Zentra bridges the gap between human and machine through high-fidelity interfaces:
+- **Neural Voice Pipeline**: Using low-latency "Push-to-Talk" and advanced TTS, you can operate the system entirely via voice, just as you would with a colleague.
+- **Cognitive Personas**: Zentra can swap its "Persona" or cognitive profile instantly, adapting its tone, knowledge base, and tool-access permissions to match your current mission.
 
 ## 🖥️ Two Sides of the Same Coin: Console and WebUI
 Zentra is a modern system that offers two ways to interact:

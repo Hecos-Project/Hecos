@@ -16,10 +16,10 @@ $DocsDir = Join-Path $RepoRoot.FullName "docs"
 
 Write-Host "--- Starting Documentation Sync to Wiki ---"
 
-# Step 0: Clean up destination (except for git metadata)
+# Step 0: Clean up destination (except for git metadata and sidebar)
 Write-Host "Cleaning destination Wiki folder..." -ForegroundColor Gray
-# Use Filter for better reliability on Windows
-Get-ChildItem -Path $WikiPath -Filter *.md -File | Remove-Item -Force
+# Exclude _Sidebar.md from cleanup to preserve navigation
+Get-ChildItem -Path $WikiPath -Filter *.md -File | Where-Object { $_.Name -ne "_Sidebar.md" } | Remove-Item -Force
 Write-Host "Clean complete."
 
 # Define source groups
@@ -39,6 +39,13 @@ foreach ($Group in $Groups) {
         Copy-Item -Path $File.FullName -Destination $TargetPath -Force
         Write-Host "  Copied: $TargetName"
     }
+}
+
+# Step 2: Copy _Sidebar.md if exists in docs root
+$SidebarSrc = Join-Path $DocsDir "_Sidebar.md"
+if (Test-Path $SidebarSrc) {
+    Copy-Item -Path $SidebarSrc -Destination $WikiPath -Force
+    Write-Host "`nCopied: _Sidebar.md" -ForegroundColor Cyan
 }
 
 Write-Host "`nSync Complete!"
