@@ -10,12 +10,12 @@
         <div style="flex: 1;">
             <div class="field" style="margin-bottom: 8px;"><label>{{ t('webui_conf_persona') }}</label><select id="ia-personality-main"></select></div>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 12px; flex: 1;" onclick="document.getElementById('ia-avatar-input').click()">Change Avatar</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 12px; flex: 1;" onclick="document.getElementById('ia-avatar-input').click()">{{ t('label_change_avatar') }}</button>
                 <div class="field" style="margin: 0; flex: 1;">
                     <select id="ia-avatar-size" class="config-input" style="padding: 4px; font-size: 11px;">
-                        <option value="small">Small</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="large">Large</option>
+                        <option value="small">{{ t('label_size_small') }}</option>
+                        <option value="medium" selected>{{ t('label_size_medium') }}</option>
+                        <option value="large">{{ t('label_size_large') }}</option>
                     </select>
                 </div>
             </div>

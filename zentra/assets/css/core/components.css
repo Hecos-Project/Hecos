@@ -57,7 +57,7 @@
   padding: 10px 14px;
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text);
   font-family: inherit;
   font-size: 14px;
@@ -73,7 +73,7 @@
 /* Buttons */
 .btn {
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid transparent;
   background: var(--bg3);
   color: var(--text);
@@ -101,7 +101,7 @@
 .btn-warning { background: rgba(var(--yellow-rgb), 0.1); color: var(--yellow); border-color: rgba(var(--yellow-rgb), 0.2); }
 .btn-warning:hover { background: var(--yellow); color: #0b0c10; border-color: var(--yellow); }
 
-.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 10px; }
 
 /* Toggles & Switches */
 .toggle-row {
@@ -142,15 +142,32 @@
 input:checked + .slider { background: var(--accent); border-color: var(--accent); }
 input:checked + .slider:before { transform: translateX(20px); background: white; }
 
+/* Status & Indicator Badges (Pills) */
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--glass-b);
+  color: var(--muted);
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  height: 24px;
+}
+
 /* Status Indicators */
 .val-ok { color: var(--green); }
-
-/* Utility Classes */
-.muted {
-    color: var(--muted);
-}
 .val-warn { color: var(--yellow); }
 .val-err  { color: var(--red); }
+
+/* Utility Classes */
+.muted { color: var(--muted); }
 
 /* Grid Helpers */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }

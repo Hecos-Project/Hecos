@@ -22,8 +22,9 @@ class PollinationsProvider:
 
     @staticmethod
     def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
-                 negative_prompt: str = "", guidance_scale: float = 7.5, 
-                 num_inference_steps: int = 30) -> str:
+                 negative_prompt: str = "", guidance_scale: float = 7.5,
+                 num_inference_steps: int = 30, seed: int = -1,
+                 sampler: str = "", scheduler: str = "") -> str:
         """Returns filename on success, raises Exception on failure."""
         import requests
         encoded = urllib.parse.quote(prompt.strip())
@@ -32,6 +33,9 @@ class PollinationsProvider:
             f"?width={width}&height={height}&model={model}&nologo=true"
             f"&negative={urllib.parse.quote(negative_prompt)}"
         )
+        # Seed support (Pollinations accepts &seed=N)
+        if seed is not None and seed != -1:
+            url += f"&seed={seed}"
         log_debug(f"[Pollinations] URL: {url}")
 
         headers = {

@@ -18,8 +18,11 @@ _os.makedirs(AUDIO_DIR, exist_ok=True)
 _RISPOSTA_WAV = _os.path.join(AUDIO_DIR, "risposta.wav")
 
 def _get_project_root():
-    # C:\Zentra-Core\zentra\core\audio\voice.py -> C:\Zentra-Core
-    return _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))))
+    # c:\Zentra-Core\zentra\core\audio\voice.py -> c:\Zentra-Core
+    current_file = _os.path.abspath(__file__)
+    # Go up 4 levels to reach the project root
+    root = _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.dirname(current_file))))
+    return _os.path.normpath(root)
 
 is_speaking = False
 _current_piper_proc = None
@@ -87,11 +90,30 @@ def speak(text, state=None):
         piper_path    = audio_cfg.get("piper_path", default_piper)
         model_path    = audio_cfg.get("onnx_model", default_model)
 
-        # Force project path if legacy C:\piper is found and doesn't exist
-        if (r"C:\piper" in piper_path or r"C:\piper" in model_path) and not _os.path.exists(piper_path):
-            logger.debug("VOICE", "Legacy Piper path not found. Switching to project-relative paths.")
-            piper_path = default_piper
-            model_path = default_model
+        # 3. Validation and Fallback to defaults
+        # If the configured piper_path doesn't exist, we MUST fallback to the default internal path
+        if not _os.path.exists(piper_path):
+            if _os.path.exists(default_piper):
+                logger.debug("VOICE", f"Configured Piper path '{piper_path}' not found. Falling back to default: {default_piper}")
+                piper_path = default_piper
+            else:
+                logger.error("VOICE", f"Piper executable not found at configured path OR default project path ({default_piper})")
+
+        if not _os.path.exists(model_path):
+            if _os.path.exists(default_model):
+                logger.debug("VOICE", f"Configured model path '{model_path}' not found. Falling back to default: {default_model}")
+                model_path = default_model
+            else:
+                logger.error("VOICE", f"ONNX model not found at configured path OR default project path ({default_model})")
+
+        # 4. Extract and Round TTS Parameters
+        # length_scale is inverse of speed (e.g. speed 1.2 -> 0.833 duration multiplier)
+        speed            = audio_cfg.get("speed", 1.0)
+        length_scale     = round(1.0 / speed, 3) if speed > 0 else 1.0
+        noise_scale      = round(audio_cfg.get("noise_scale", 0.667), 3)
+        noise_w          = round(audio_cfg.get("noise_w", 0.8), 3)
+        sentence_silence = round(audio_cfg.get("sentence_silence", 0.2), 3)
+
     except Exception as e:
         logger.debug("VOICE", f"Configuration error: {e}")
         root = _get_project_root()
@@ -120,13 +142,18 @@ def speak(text, state=None):
         proc = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=False
         )
         _current_piper_proc = proc
-        proc.communicate(input=clean_text.encode('utf-8'))
+        stdout, stderr = proc.communicate(input=clean_text.encode('utf-8'))
         _current_piper_proc = None
+
+        if proc.returncode != 0:
+            error_msg = stderr.decode('utf-8', errors='ignore')
+            logger.error("VOICE", f"Piper synthesis failed (code {proc.returncode}): {error_msg}")
+            return
 
         if not is_speaking:
             logger.debug("VOICE", "Generation interrupted by user.")

@@ -1,5 +1,5 @@
 /**
- * Zentra Core v0.18.1 - Config UI Manifest
+ * Zentra Core v0.18.2 - Config UI Manifest
  * Centralized registry for configuration modules, icons, and categories.
  */
 
@@ -22,7 +22,6 @@ window.CONFIG_HUB = {
         { id: 'ia',        label: 'hub_mod_persona',      icon: '🎭', cat: 'INTELLIGENZA', isCore: true },
         { id: 'filters',   label: 'hub_mod_filters',      icon: '📝', cat: 'INTELLIGENZA', isCore: true },
         { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
-        { id: 'neural-link', label: 'hub_mod_neural_link', icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'NEURAL_LINK', isCore: true },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '🎨', cat: 'MULTIMEDIA', isCore: true },
@@ -46,10 +45,11 @@ window.CONFIG_HUB = {
         { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
-        { id: 'help',      label: 'hub_mod_help',         icon: '❓', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
+        { id: 'help',      label: 'webui_help_about_title', icon: '❓', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true, isCore: true },
         { id: 'security',  label: 'hub_mod_security',     icon: '🛡️', cat: 'SISTEMA', adminOnly: true },
         { id: 'plugins',   label: 'hub_mod_plugins',      icon: '🧩', cat: 'SISTEMA' },
+        { id: 'system',    label: 'hub_mod_system',       icon: '⚙️', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '📜', cat: 'SISTEMA' },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '🕵️', cat: 'SISTEMA' }
     ],
@@ -65,7 +65,6 @@ window.CONFIG_HUB = {
         'drive':  '🗂️',
         'tools':  '🛠️',
         'image':  '🎨',
-        'vision': '👁️',
         'audio':  '🎙️',
         'voice':  '🗣️',
         'security':'🛡️',
@@ -101,7 +100,6 @@ window.CONFIG_HUB.tagMap = {
     'REMOTE_TRIGGERS': 'remote-triggers',
     'AUTOCODER': 'studio',
     'PLUGIN_STUDIO': 'studio',
-    'NEURAL_LINK': 'neural-link',
     'DASHBOARD': 'dashboard',
     'DOMOTICA': 'domotica',
     'EXECUTOR': 'executor',

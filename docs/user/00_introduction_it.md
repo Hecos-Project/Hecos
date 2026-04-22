@@ -1,17 +1,17 @@
-# ✨ Benvenuti in Zentra Core
+# 🪐 Benvenuti in Zentra Core
 
-Zentra Core è un'interfaccia neurale avanzata progettata per trasformare il tuo computer in un compagno intelligente capace di ascoltare, parlare e agire.
+Zentra Core è un **AI Operating System (AI OS) Modulare Nativo**, progettato per orchestrare intelligenza, strumenti e interfacce grafiche in un ambiente di calcolo unificato e orientato alla privacy.
 
 ## 👤 Cos'è Zentra?
-Pensa a Zentra come al "cervello" del tuo computer. Non è un semplice programma di chat, ma un'entità digitale che può adottare diverse **Anime (Personalità)** per aiutarti nelle tue attività quotidiane, dalla gestione dei file alla conversazione creativa.
+Molto più di un semplice chatbot, Zentra è un **Layer Agentico** per il tuo computer. Seguendo il paradigma dell'LLM come processore centrale ("LLM-as-CPU"), Zentra agisce come orchestratore di sistema, gestendo memoria, strumenti specializzati e profili cognitivi per assisterti in flussi di lavoro complessi—dalla gestione avanzata dei file all'esecuzione locale di codice.
 
-## 🗣️ Interazione Naturale: Parla e Ascolta
-Zentra è progettato per un uso naturale, proprio come faresti con una persona:
-- **Ti Ascolta**: Usando il sistema "Push-to-Talk", puoi parlare a Zentra. Il sistema trasformerà istantaneamente la tua voce in testo.
-- **Ti Risponde**: Zentra non si limita a scrivere messaggi; ha una propria voce. Ogni risposta viene letta ad alta voce utilizzando una sintesi vocale chiara e naturale.
+## 🧠 Architettura Core: Modulare ed Estensibile
+Il cuore di Zentra risiede nella sua **Modularità**. Ogni funzione—che si tratti di un motore di Visione specializzato, un modulo di ricerca Web o uno strumento personalizzato—è un componente plug-and-play. Questo permette a Zentra di crescere e adattarsi al panorama AI in rapida evoluzione senza i vincoli dei sistemi legacy.
 
-## 🎭 Personalità (Anime)
-Zentra non ha un carattere fisso. Puoi caricare diverse "Anime" per cambiare il modo in cui interagisce. Vuoi un assistente serio e professionale? O magari un'IA con un carattere più informale e amichevole? Puoi cambiarlo in qualsiasi momento con un semplice clic.
+## 🗣️ Interazione Multi-Modale
+Zentra colma il divario tra uomo e macchina attraverso interfacce ad alta fedeltà:
+- **Pipeline Vocale Neurale**: Utilizzando la tecnologia "Push-to-Talk" a bassa latenza e sintesi vocale avanzata, puoi operare il sistema interamente a voce, proprio come faresti con un collega.
+- **Persona Cognitiva**: Zentra può cambiare la sua "Persona" o profilo cognitivo istantaneamente, adattando tono, base di conoscenza e permessi di accesso agli strumenti per corrispondere alla tua missione attuale.
 
 ## 🖥️ Due Facce della stessa Medaglia: Console e WebUI
 Zentra è un sistema moderno che offre due modi per interagire:

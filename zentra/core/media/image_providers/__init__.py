@@ -46,13 +46,18 @@ def get_models_for_provider(provider_name: str) -> list:
     return []
 
 
-def generate_image(prompt: str, provider: str, model: str, width: int, height: int, api_key: str, 
-                   negative_prompt: str = "", guidance_scale: float = 7.5, 
+def generate_image(prompt: str, provider: str, model: str, width: int, height: int, api_key: str,
+                   negative_prompt: str = "", guidance_scale: float = 7.5,
                    num_inference_steps: int = 30, auto_enrich: bool = False,
-                   enrich_keywords: str = "", style: str = "none") -> str:
+                   enrich_keywords: str = "", style: str = "none",
+                   seed: int = -1, sampler: str = "", scheduler: str = "") -> str:
     """
-    Main entry point. Returns the filename of the saved image.
-    Raises Exception if generation fails.
+    Main entry point for the image generation engine.
+    Returns the filename of the saved image, raises Exception on failure.
+
+    NOTE: prompt enrichment (style/enrich) should be applied BEFORE calling this
+    function (via plugins/image_gen/prompt_engine.py). The auto_enrich/style params
+    are kept for backwards compatibility with any direct callers.
     """
     provider = provider.lower()
     cls = PROVIDERS.get(provider)
@@ -90,17 +95,18 @@ def generate_image(prompt: str, provider: str, model: str, width: int, height: i
 
     if cls:
         try:
-            # We use a kwargs approach to be flexible with provider signatures
-            # but for now we update all known providers.
             filename = cls.generate(
-                prompt=final_prompt, 
-                width=width, 
-                height=height, 
-                model=model, 
+                prompt=final_prompt,
+                width=width,
+                height=height,
+                model=model,
                 api_key=api_key,
                 negative_prompt=negative_prompt,
                 guidance_scale=guidance_scale,
-                num_inference_steps=num_inference_steps
+                num_inference_steps=num_inference_steps,
+                seed=seed,
+                sampler=sampler,
+                scheduler=scheduler,
             )
             log_debug(f"[ImageEngine] SUCCESS via {provider} → {filename}")
             return filename

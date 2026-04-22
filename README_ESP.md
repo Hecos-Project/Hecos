@@ -3,28 +3,30 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
 </p>
 
-# Zentra Core - Versión 0.18.1 (Runtime Alpha)
+# Zentra Core - Versión 0.18.2 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
-**Tu Asistente de IA Personal Offline (Privado, Modular, Potente)**
+**Sistema Operativo IA Nativo y Modular (Privado, Rápido, Simple)**
 
 ---
 
-> [!WARNING]
-> **Estado Runtime Alpha**: Zentra Core se encuentra actualmente en una fase temprana **Alpha**. Está bajo desarrollo y depuración activos. Las funciones pueden cambiar y el sistema aún no se considera estable. Usar con precaución.
+> [!IMPORTANT]
+> **Estado Runtime Alpha**: Zentra Core se encuentra actualmente en `v0.18.2`. Es una Capa Operativa de IA local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
 
 ## 🚀 Resumen General
-**Zentra Core** es una plataforma de asistencia de IA "local-first" que se ejecuta íntegramente en tu propia máquina.
-Combina LLMs locales, interacción por voz, automatización del sistema y una arquitectura de plugins modulares para crear un compañero digital totalmente personalizable.
+**Zentra Core** es un **Sistema Operativo IA Nativo y Modular**: un ecosistema local que une el razonamiento de IA con la ejecución del sistema a nivel root y redes avanzadas. Transforma el hardware local en una entidad digital soberana a través de un tablero profesional estilo SO y una infraestructura de seguridad avanzada.
 
+Basado en tres pilares fundamentales:
+* 🛡️ **Privacidad Primero** — Funcionamiento 100% local, cero dependencia de la nube y arquitectura de privacidad de 3 niveles.
+* ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
+* 🧊 **Simplicidad Total** — Tablero profesional estilo SO y diseño modular que hace intuitiva la orquestación de IA avanzada.
+
+Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Zentra 0.18.2 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
-Ahora completamente migrado a una **arquitectura estable de Plugins Nativos**, Zentra 0.15.2 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
----
-
-## ✨ Características Principales (v0.18.1)
+## ✨ Características Principales (v0.18.2)
 * 🎨 **Flux Prompt Studio** — Ingeniería de prompts en tiempo real para Flux.1 con persistenza automatica di metadati sidecar.
 * 🖼️ **Image Metadata Injection** — Los resultados de IA generativa ahora incluyen archivos sidecar JSON (.txt) con prompt, semilla e info del sampler para flujos profesionales.
 * 🎭 **Chat UI Mejorada** — Nuevos encabezados de chat con nombres de Usuario/Persona, marcas de tiempo y mejor posición de botones (Copiar/Editar/Regenerate).

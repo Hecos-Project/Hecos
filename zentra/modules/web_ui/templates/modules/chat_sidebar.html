@@ -4,7 +4,7 @@
       <img src="/assets/Zentra_Core_Logo_NBG.png?v={{ version }}" alt="Zentra Logo">
       <span class="logo-text">ZENTRA CORE</span>
     </div>
-    <div class="logo-sub">Neural Cognitive Engine</div>
+    <div class="logo-sub">Agentic OS & Orchestrator</div>
   </div>
   <div class="status-pill">
     <div class="dot-pulse"></div>
@@ -47,18 +47,21 @@
         transition:opacity .2s;">
       ⏹ Stop Voice
     </button>
-    <div class="mode-label">INPUT ROUTING</div>
-    <select class="mode-selector" id="stt-source-select" onchange="setAudioRouting('stt_source', this.value)" title="Choose where Zentra listens">
-      <option value="system">🖥️ PC Mic (Local)</option>
-      <option value="web">🌐 Web Browser (Developing)</option>
+    <div class="mode-label" style="display:flex; justify-content:space-between; align-items:center;">
+      {{ t('webui_voice_routing_in') }}
+      <a href="/zentra/config/ui?tab=voice" target="_blank" style="font-size:12px; text-decoration:none;" title="Configure Hardware Devices">⚙️</a>
+    </div>
+    <select class="mode-selector" id="stt-source-select" onchange="setAudioRouting('stt_source', this.value)" title="Choose capture mode">
+      <option value="system">{{ t('webui_voice_pc_mic') }}</option>
+      <option value="web">{{ t('webui_voice_web_mic') }}</option>
     </select>
     <div class="mode-label" style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
-      OUTPUT ROUTING
+      {{ t('webui_voice_routing_out') }}
       <a href="javascript:void(0)" onclick="testSidebarAudio()" style="font-size:10px; color:var(--accent); text-decoration:none;">🧪 Test</a>
     </div>
-    <select class="mode-selector" id="tts-dest-select" onchange="setAudioRouting('tts_destination', this.value)" title="Choose where Zentra speaks">
-      <option value="system">🖥️ PC Speakers</option>
-      <option value="web">🌐 Web Audio</option>
+    <select class="mode-selector" id="tts-dest-select" onchange="setAudioRouting('tts_destination', this.value)" title="Choose output point">
+      <option value="system">{{ t('webui_voice_pc_speaker') }}</option>
+      <option value="web">{{ t('webui_voice_web_speaker') }}</option>
     </select>
   </div>
 

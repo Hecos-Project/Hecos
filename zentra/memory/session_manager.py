@@ -57,15 +57,21 @@ def migrate_schema():
             created_at  TEXT NOT NULL,
             updated_at  TEXT NOT NULL,
             privacy_mode TEXT DEFAULT 'normal',
-            is_incognito INTEGER DEFAULT 0
+            is_incognito INTEGER DEFAULT 0,
+            is_archived  INTEGER DEFAULT 0
         )
     """)
 
     # 2. Add session_id to history (if not already there)
-    existing_cols = [row[1] for row in cur.execute("PRAGMA table_info(history)").fetchall()]
-    if "session_id" not in existing_cols:
+    hist_cols = [row[1] for row in cur.execute("PRAGMA table_info(history)").fetchall()]
+    if "session_id" not in hist_cols:
         cur.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
         logger.info("[SESSION] Added session_id column to history table.")
+        
+    sess_cols = [row[1] for row in cur.execute("PRAGMA table_info(sessions)").fetchall()]
+    if "is_archived" not in sess_cols:
+        cur.execute("ALTER TABLE sessions ADD COLUMN is_archived INTEGER DEFAULT 0")
+        logger.info("[SESSION] Added is_archived column to sessions table.")
 
     # 3. Clean up any legacy auto_wipe/incognito sessions that were wrongly saved to DB in the past
     cur.execute("DELETE FROM history WHERE session_id IN (SELECT id FROM sessions WHERE privacy_mode IN ('auto_wipe', 'incognito'))")
@@ -130,7 +136,7 @@ def create_session(title: str = None, privacy_mode: str = "normal") -> str:
     return session_id
 
 
-def get_sessions() -> list:
+def get_sessions(include_archived: bool = False) -> list:
     """Returns all sessions: DB sessions + active RAM sessions, ordered by most recent."""
     results = []
 
@@ -139,15 +145,24 @@ def get_sessions() -> list:
         conn = sqlite3.connect(PATH_DB)
         conn.row_factory = sqlite3.Row
         cur  = conn.cursor()
-        cur.execute("""
-            SELECT s.id, s.title, s.created_at, s.updated_at, s.privacy_mode, s.is_incognito,
+        
+        query = """
+            SELECT s.id, s.title, s.created_at, s.updated_at, s.privacy_mode, s.is_incognito, s.is_archived,
                    COUNT(h.id) as message_count
             FROM sessions s
             LEFT JOIN history h ON h.session_id = s.id
             WHERE s.privacy_mode = 'normal'
+        """
+        if not include_archived:
+            query += " AND s.is_archived = 0 "
+        else:
+            query += " AND s.is_archived = 1 "
+            
+        query += """
             GROUP BY s.id
             ORDER BY s.updated_at DESC
-        """)
+        """
+        cur.execute(query)
         results = [dict(r) for r in cur.fetchall()]
         conn.close()
     except Exception as e:
@@ -163,6 +178,7 @@ def get_sessions() -> list:
             "updated_at":    sess["updated_at"],
             "privacy_mode":  sess["privacy_mode"],
             "is_incognito":  sess["is_incognito"],
+            "is_archived":   0,
             "message_count": len(sess["messages"])
         })
 
@@ -238,6 +254,27 @@ def add_ram_message(session_id: str, role: str, message: str):
     })
     _ram_sessions[session_id]["updated_at"] = now
     logger.debug(f"[SESSION] RAM message added ({role}) to {session_id}")
+
+
+def archive_session(session_id: str, archived: bool = True) -> bool:
+    """Archives or restores a session (DB only)."""
+    if session_id in _ram_sessions:
+        # RAM sessions don't support persistence/archiving; "closing" them implies deletion.
+        # But we return True to avoid API errors if the UI calls it.
+        return True
+    try:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = sqlite3.connect(PATH_DB)
+        cur  = conn.cursor()
+        cur.execute("UPDATE sessions SET is_archived = ?, updated_at = ? WHERE id = ?", 
+                    (1 if archived else 0, now, session_id))
+        conn.commit()
+        conn.close()
+        logger.info(f"[SESSION] {'Archived' if archived else 'Restored'} {session_id}")
+        return True
+    except Exception as e:
+        logger.error(f"[SESSION] archive_session error: {e}")
+        return False
 
 
 def rename_session(session_id: str, new_title: str) -> bool:

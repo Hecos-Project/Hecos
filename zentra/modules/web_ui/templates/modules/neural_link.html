@@ -1,64 +1,52 @@
-<div id="tab-neural-link">
-    <div id="neural-link-overlay" class="neural-overlay">
-        <div class="neural-card card">
-            <div class="neural-logo">
-                <img src="/assets/Zentra_Core_Logo_NBG.png?v={{ version }}" alt="Zentra Logo">
+<div id="neural-link-overlay" class="neural-overlay">
+    <div class="neural-card card">
+        <div class="neural-logo">
+            <img src="/assets/Zentra_Core_Logo_NBG.png?v={{ version }}" alt="Zentra Logo">
+        </div>
+        <h1 class="neural-title">NEURAL LINK</h1>
+        <p class="neural-subtitle">Advanced encrypted connection for media synchronization.</p>
+        
+        <div class="neural-status-grid">
+            <div class="status-item">
+                <span class="status-label">Voice Engine</span>
+                <span id="st-voice" class="status-val pending">SEARCHING</span>
             </div>
-            <h1 class="neural-title">NEURAL LINK</h1>
-            <p class="neural-subtitle">Advanced encrypted connection for media synchronization.</p>
-            
-            <div class="neural-status-grid">
-                <div class="status-item">
-                    <span class="status-label">Voice Engine</span>
-                    <span id="st-voice" class="status-val pending">SEARCHING</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Neural Audio</span>
-                    <span id="st-audio" class="status-val pending">STANDBY</span>
-                </div>
-                <div class="status-item">
-                    <span class="status-label">Visual Core</span>
-                    <span id="st-video" class="status-val pending">ARMED</span>
-                </div>
+            <div class="status-item">
+                <span class="status-label">Neural Audio</span>
+                <span id="st-audio" class="status-val pending">STANDBY</span>
             </div>
+            <div class="status-item">
+                <span class="status-label">Visual Core</span>
+                <span id="st-video" class="status-val pending">ARMED</span>
+            </div>
+        </div>
 
-            <button id="establish-link-btn" type="button" class="connect-btn btn btn-primary">
-                ESTABLISH CONNECTION
-            </button>
-            
-            <div style="margin-top: 15px;">
-                <a href="/api/security/download-ca" style="color:var(--accent); font-size:11px; text-decoration:underline; opacity:0.8;">
-                    📥 Download Zentra Root CA Profile
-                </a>
-            </div>
-            
-            <div class="neural-footer">
-                Zentra Core v{{ version }} | Advanced Neural Interface
-            </div>
+        <button id="establish-link-btn" type="button" class="connect-btn btn btn-primary">
+            ESTABLISH CONNECTION
+        </button>
+        
+        <div style="margin-top: 15px;">
+            <a href="/api/security/download-ca" style="color:var(--accent); font-size:11px; text-decoration:underline; opacity:0.8;">
+                📥 Download Zentra Root CA Profile
+            </a>
+        </div>
+        
+        <div class="neural-footer">
+            Zentra Core v{{ version }} | Advanced Neural Interface
         </div>
     </div>
 </div>
 
 <style>
-/* Reset for Hub Panel Mode (Config Page) */
-#tab-neural-link.panel {
-    display: none;
-    width: 100%;
-    background: transparent;
-}
-#tab-neural-link.panel.active {
-    display: block;
-}
-
 /* Internal Overlay Styles */
 .neural-overlay {
     transition: opacity 0.8s ease, visibility 0.8s;
 }
 
 /* Chat-Specific Overlay (Fixed Position) */
-/* This rule applies when the parent .panel is NOT present or NOT in Hub mode */
-/* In Zentra, Chat usually has a different container structure. */
-body:not(.config-page) #neural-link-overlay {
+/* This rule applies when NOT on the config page or when included directly in chat */
+body:not(.config-page) .neural-overlay,
+.neural-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -71,21 +59,7 @@ body:not(.config-page) #neural-link-overlay {
     justify-content: center;
 }
 
-/* Special Case: If it IS in Hub mode, we override the fixed positioning */
-#tab-neural-link.panel #neural-link-overlay {
-    position: relative;
-    top: auto;
-    left: auto;
-    width: auto;
-    height: auto;
-    background: transparent;
-    z-index: 1;
-    display: flex;
-    justify-content: center;
-    padding: 20px 0;
-}
-
-#neural-link-overlay.connected {
+.neural-overlay.connected {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;

@@ -30,7 +30,8 @@ def _pm():
 def list_sessions():
     """Returns all saved chat sessions."""
     try:
-        sessions = _sm().get_sessions()
+        show_archived = request.args.get("archived", "0") == "1"
+        sessions = _sm().get_sessions(include_archived=show_archived)
         return jsonify({"ok": True, "sessions": sessions})
     except Exception as e:
         logger.error(f"[HISTORY] list_sessions error: {e}")
@@ -124,6 +125,19 @@ def delete_all_sessions():
         return jsonify({"ok": ok})
     except Exception as e:
         logger.error(f"[HISTORY] delete_all_sessions error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@history_bp.route("/api/chat/sessions/<session_id>/archive", methods=["POST"])
+def archive_session(session_id):
+    """Archives or restores a session. Body: {archived: bool}"""
+    try:
+        data = request.get_json(silent=True) or {}
+        state = data.get("archived", True)
+        ok = _sm().archive_session(session_id, archived=state)
+        return jsonify({"ok": ok})
+    except Exception as e:
+        logger.error(f"[HISTORY] archive_session error: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 

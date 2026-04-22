@@ -1,4 +1,4 @@
-﻿import os
+import os
 
 def _get_version():
     """Legge la versione dal file centralizzato core/version."""
@@ -14,25 +14,25 @@ def _get_version():
     return "0.0.0"
 
 # Versione del core (letta dal file centralizzato)
-VERSION = _get_version()
+VERSION = "0.18.2"
 
 # Nome del progetto
 PROJECT_NAME = "Zentra Core"
 PROJECT_CODENAME = "Runtime Alpha"
 
-# Data di rilascio (aggiorna quando fai una release)
-RELEASE_DATE = "2026-03-24"
+# Data di rilascio
+RELEASE_DATE = "2026-04-21"
 
 # Autore e copyright
 AUTHOR = "Antonio Meloni"
 COPYRIGHT = f"Copyright (c) 2026 {AUTHOR}. Tutti i diritti riservati."
 
 # Repository e link
-REPOSITORY = "https://github.com/yourusername/zentra-core"
-DOCUMENTATION = "https://github.com/yourusername/zentra-core/wiki"
+REPOSITORY = "https://github.com/Zentra-Core/zentra-core.github.io"
+DOCUMENTATION = "https://zentra-core.github.io/docs"
 
 # Descrizione breve
-DESCRIPTION = "Zentra - EntitÃ  Digitale Evoluta, assistente personale con accesso root al sistema"
+DESCRIPTION = "Zentra Core è un Sistema Operativo IA Nativo e Modulare: un ecosistema locale che unisce AI reasoning, controllo di sistema root e networking avanzato. Privacy, Velocità e Semplicità."
 
 # Informazioni aggiuntive
 BUILD_INFO = {

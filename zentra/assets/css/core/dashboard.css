@@ -3,7 +3,7 @@
   display: flex;
   background: var(--glass-b);
   padding: 3px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   gap: 2px;
 }
@@ -33,7 +33,7 @@
   margin-bottom: 30px;
   padding: 8px 12px; /* Reduced vertical padding */
   background: var(--bg2); /* Switched from glass for better theming */
-  border-radius: 16px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   overflow-x: auto; /* Allow scrolling if too narrow */
   scrollbar-width: none; /* Hide scrollbar for clean look */
@@ -48,7 +48,7 @@
   padding: 8px 14px; /* Reduced padding */
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 10px;
   color: var(--muted);
   font-size: var(--font-size-sm); /* Slightly smaller font */
   font-weight: 600;
@@ -70,12 +70,17 @@
 }
 
 .filter-btn .btn-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 20px;
     font-size: 10px;
-    background: var(--bg3);
-    padding: 2px 6px;
-    border-radius: 6px;
-    color: var(--muted);
+    font-weight: 600;
     border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    height: 18px;
 }
 .filter-btn.active .btn-badge {
     background: var(--accent);
@@ -101,7 +106,7 @@
     padding: 12px 18px;
     background: var(--bg2); /* Switched from glass for better theming */
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -143,14 +148,18 @@
 }
 
 .cat-badge {
-    background: var(--bg3);
-    color: var(--accent);
-    padding: 2px 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
     border-radius: 20px;
     font-size: 10px;
     font-weight: 800;
-    margin-left: 12px;
     border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--accent);
+    height: 18px;
+    margin-left: 12px;
 }
 
 .category-content {
@@ -174,7 +183,7 @@
 .module-card {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 10px;
   padding: 20px 10px;
   text-align: center;
   cursor: pointer;
@@ -198,7 +207,17 @@
 
 .module-card .m-icon { font-size: 32px; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.2)); }
 .module-card .m-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--text); }
-.module-card .m-cat { font-size: var(--font-size-xs); text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
+.module-card .m-cat { 
+    font-size: 9px; 
+    text-transform: uppercase; 
+    color: var(--accent); 
+    letter-spacing: 1px; 
+    background: rgba(var(--accent-rgb), 0.1); 
+    padding: 2px 8px; 
+    border-radius: 20px; 
+    border: 1px solid rgba(var(--accent-rgb), 0.1);
+    font-weight: 700;
+}
 
 .module-card.active { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.1); }
 .module-card.active::after {
@@ -229,7 +248,7 @@
 .cat-card {
   background: linear-gradient(135deg, var(--bg2), var(--bg));
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 35px 20px;
   text-align: center;
   cursor: pointer;
@@ -281,7 +300,7 @@
 }
 .tab {
   padding: 10px 18px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--bg2); /* Solid background to avoid leakage */
   color: var(--muted);

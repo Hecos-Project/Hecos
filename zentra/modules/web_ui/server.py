@@ -145,11 +145,30 @@ class ZentraWebUIServer:
             
             from .routes_history import history_bp
             app.register_blueprint(history_bp)
+
+            from .routes_remote_triggers import init_remote_trigger_routes
+            init_remote_trigger_routes(app, self.logger, get_state_manager)
+
         except Exception as e:
             import traceback
             print(f"[DEBUG BOOT] CRITICAL ERROR during route registration: {e}", flush=True)
             print(traceback.format_exc(), flush=True)
             return
+
+        # Start PTT Bus (background listeners for keyboard/media-keys/custom-key sources)
+        try:
+            from zentra.core.audio import ptt_bus
+            ptt_bus.start(state=get_state_manager())
+            self.logger.info("[WebUI] PTT Bus started.")
+        except Exception as e:
+            self.logger.warning(f"[WebUI] PTT Bus could not start: {e}")
+
+        # Start Experimental Smartwatch Bus (strictly isolated toggle mode)
+        try:
+            from zentra.core.audio import smartwatch_bus
+            smartwatch_bus.start(state=get_state_manager())
+        except Exception as e:
+            self.logger.warning(f"[WebUI] Smartwatch Bus could not start: {e}")
 
         def _run():
             try:

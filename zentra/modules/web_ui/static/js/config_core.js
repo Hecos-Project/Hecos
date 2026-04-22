@@ -163,6 +163,13 @@ async function initAll(attempt = 1) {
 
     try {
         // 1. Fetch CRITICAL data first (only if not preloaded by Jinja)
+        // Draw the UI immediately using injected data first (instant render)
+        if (Object.keys(window.cfg || {}).length > 0 && Object.keys(window.sysOptions || {}).length > 0) {
+            setViewMode(viewMode, true);
+            renderConfigHub(viewMode);
+            showTab(activeTab, true);
+        }
+
         if (Object.keys(window.cfg || {}).length === 0 || Object.keys(window.sysOptions || {}).length === 0) {
             console.log("No preloaded config, fetching from API...");
             const [rOpts, rCfg] = await Promise.all([
@@ -172,14 +179,14 @@ async function initAll(attempt = 1) {
             if (!rOpts.ok || !rCfg.ok) throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
             window.sysOptions = await rOpts.json();
             window.cfg = await rCfg.json();
+            
+            // Re-render now that we fetched them
+            setViewMode(viewMode, true);
+            renderConfigHub(viewMode);
+            showTab(activeTab, true);
         } else {
             console.log("Using server-injected configuration data.");
         }
-
-        // 2. Initial Render (with static modules)
-        setViewMode(viewMode, true);
-        renderConfigHub();
-        showTab(activeTab, true);
 
         // 3. Lazy-load metadata (Registry, Audio, UI State)
         console.log("Loading metadata in background...");
@@ -538,7 +545,7 @@ function escapeHtml(text) {
 }
 
 /**
- * ZENTRA HUB ENGINE v0.18.1
+ * ZENTRA HUB ENGINE v0.18.2
  */
 function renderConfigHub(mode = 'tabs') {
     const hub = window.CONFIG_HUB;

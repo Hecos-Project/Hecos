@@ -1,8 +1,8 @@
 // --- Multi-Window Log Grid Engine ---
 
-let logEvtSource = null;
-let activeLogWindows = [];
-let availableLogFiles = [];
+window.logEvtSource = null;
+window.activeLogWindows = [];
+window.availableLogFiles = [];
 
 async function refreshLogFiles() {
     try {
@@ -39,6 +39,7 @@ function addLogWindow(source = 'LIVE', level = 'BOTH') {
     // Setup elements
     const winCard = clone.querySelector('.log-window-card');
     winCard.dataset.id = id;
+    winCard.dataset.source = source;
     
     // Populate source selector
     const sel = winCard.querySelector('.w-source-selector');
@@ -57,11 +58,14 @@ function addLogWindow(source = 'LIVE', level = 'BOTH') {
     winCard.querySelector('.w-btn').setAttribute('onclick', `clearWindow('${id}')`);
     winCard.querySelector('.w-close').setAttribute('onclick', `removeLogWindow('${id}')`);
     
+    const btnRaw = winCard.querySelector('.w-raw-btn');
+    if (btnRaw) btnRaw.setAttribute('onclick', `window.openRawLog('${id}')`);
+    
     // Bind search UI IDs
     const termInp = winCard.querySelector('.w-search-term');
-    if (termInp) termInp.setAttribute('onkeypress', `if(event.key === 'Enter') window.applyWindowSearch('${id}')`);
+    if (termInp) termInp.setAttribute('oninput', `window.applyWindowSearch('${id}')`);
     const timeInp = winCard.querySelector('.w-search-time');
-    if (timeInp) timeInp.setAttribute('onkeypress', `if(event.key === 'Enter') window.applyWindowSearch('${id}')`);
+    if (timeInp) timeInp.setAttribute('oninput', `window.applyWindowSearch('${id}')`);
     const btnFilt = winCard.querySelector('.w-btn-filter');
     if (btnFilt) btnFilt.setAttribute('onclick', `window.applyWindowSearch('${id}')`);
     const btnRes = winCard.querySelector('.w-btn-reset');
@@ -113,6 +117,7 @@ function updateWindowSource(id, source) {
     const w = activeLogWindows.find(win => win.id === id);
     if (!w) return;
     w.source = source;
+    w.element.dataset.source = source;
     w.body.innerHTML = '';
     w.lineCount = 0;
     if (w.filterQ || w.filterT) {
@@ -142,7 +147,9 @@ function clearAllLogWindows() {
 
 async function loadLogTailIntoWindow(winObj, filename) {
     try {
-        const r = await fetch(`/api/logs/tail/${filename}?n=100`);
+        const maxLinesEl = winObj.element.querySelector('.w-max-lines');
+        const n = maxLinesEl ? (parseInt(maxLinesEl.value) || 500) : 500;
+        const r = await fetch(`/api/logs/tail/${filename}?n=${n}`);
         const d = await r.json();
         if (d.ok) {
             d.lines.forEach(line => {
@@ -156,7 +163,9 @@ async function loadLogSearchIntoWindow(winObj, filename) {
     try {
         const sq = encodeURIComponent(winObj.filterQ || '');
         const st = encodeURIComponent(winObj.filterT || '');
-        const r = await fetch(`/api/logs/search/${filename}?n=200&q=${sq}&time=${st}`);
+        const maxLinesEl = winObj.element.querySelector('.w-max-lines');
+        const n = maxLinesEl ? (parseInt(maxLinesEl.value) || 500) : 500;
+        const r = await fetch(`/api/logs/search/${filename}?n=${n}&q=${sq}&time=${st}`);
         const d = await r.json();
         if (d.ok) {
             if (d.type === 'events') {
@@ -174,8 +183,23 @@ function applyWindowSearch(id) {
     if (!w) return;
     const termEl = w.element.querySelector('.w-search-term');
     const timeEl = w.element.querySelector('.w-search-time');
-    w.filterQ = termEl ? termEl.value.trim() : '';
-    w.filterT = timeEl ? timeEl.value.trim() : '';
+    const btnRes = w.element.querySelector('.w-btn-reset');
+    
+    const newQ = termEl ? termEl.value.trim() : '';
+    const newT = timeEl ? timeEl.value.trim() : '';
+
+    // If both empty, auto-reset to full view
+    if (!newQ && !newT) {
+        if (w.filterQ || w.filterT) {
+            clearWindowSearch(id);
+        }
+        if (btnRes) btnRes.classList.remove('active');
+        return;
+    }
+
+    w.filterQ = newQ;
+    w.filterT = newT;
+    if (btnRes) btnRes.classList.add('active');
     
     w.body.innerHTML = '';
     w.lineCount = 0;
@@ -187,8 +211,12 @@ function clearWindowSearch(id) {
     if (!w) return;
     const termEl = w.element.querySelector('.w-search-term');
     const timeEl = w.element.querySelector('.w-search-time');
+    const btnRes = w.element.querySelector('.w-btn-reset');
+    
     if (termEl) termEl.value = '';
     if (timeEl) timeEl.value = '';
+    if (btnRes) btnRes.classList.remove('active');
+    
     w.filterQ = '';
     w.filterT = '';
     
@@ -308,11 +336,12 @@ function appendRawLine(win, text) {
     const line = document.createElement('div');
     
     let lvlClass = '';
-    if (text.includes('[ERROR]') || text.includes('Exception') || text.includes('Traceback')) lvlClass = 'lvl-ERROR';
-    else if (text.includes('[WARNING]') || text.includes('[WARN]')) lvlClass = 'lvl-WARN';
-    else if (text.includes('[DEBUG]')) lvlClass = 'lvl-DEBUG';
-    else if (text.includes('[MONITOR]')) lvlClass = 'lvl-MONITOR';
-    else if (text.includes('[INFO]')) lvlClass = 'lvl-INFO';
+    const upperText = text.toUpperCase();
+    if (upperText.includes('[ERROR]') || upperText.includes('EXCEPTION') || upperText.includes('TRACEBACK') || upperText.includes(' CRITICAL ')) lvlClass = 'lvl-ERROR';
+    else if (upperText.includes('[WARNING]') || upperText.includes('[WARN]') || upperText.includes(' WARNING ')) lvlClass = 'lvl-WARN';
+    else if (upperText.includes('[DEBUG]')) lvlClass = 'lvl-DEBUG';
+    else if (upperText.includes('[MONITOR]')) lvlClass = 'lvl-MONITOR';
+    else if (upperText.includes('[INFO]')) lvlClass = 'lvl-INFO';
 
     line.className = `log-line ${lvlClass}`;
     
@@ -362,6 +391,16 @@ function forceTrimLines(inputEl) {
     if (!win) return;
     
     const maxLines = parseInt(inputEl.value) || 500;
+
+    // If source is a file (not LIVE) and we increase the limit, reload to fill history
+    if (win.source !== 'LIVE' && maxLines > win.lineCount) {
+        win.body.innerHTML = '';
+        win.lineCount = 0;
+        if (win.filterQ || win.filterT) loadLogSearchIntoWindow(win, win.source);
+        else loadLogTailIntoWindow(win, win.source);
+        return;
+    }
+
     while (win.lineCount > maxLines) {
         if (win.body.firstChild) win.body.removeChild(win.body.firstChild);
         win.lineCount--;
@@ -468,6 +507,19 @@ async function deleteSelectedLogs(all = false) {
     }
 }
 
+function openRawLog(id) {
+    const w = activeLogWindows.find(win => win.id === id);
+    if (!w || w.source === 'LIVE') return;
+    window.open(`/api/logs/raw/${w.source}`, '_blank');
+}
+
 window.openLogDeleteModal = openLogDeleteModal;
 window.closeLogDeleteModal = closeLogDeleteModal;
 window.deleteSelectedLogs = deleteSelectedLogs;
+window.addLogWindow = addLogWindow;
+window.refreshLogFiles = refreshLogFiles;
+window.updateLogGridLayout = updateLogGridLayout;
+window.startLogStream = startLogStream;
+window.loadLogTailIntoWindow = loadLogTailIntoWindow;
+window.loadLogSearchIntoWindow = loadLogSearchIntoWindow;
+window.openRawLog = openRawLog;

@@ -1,48 +1,179 @@
 <!-- REMOTE TRIGGERS PANEL -->
 <div id="tab-remote-triggers" class="panel">
   <div class="card">
-    <div class="card-title">📱 Remote Triggers — PTT & Hardware</div>
+    <div class="card-title">📡 Remote Triggers — PTT Input Bus</div>
     <p style="color:var(--muted); font-size:13px; margin-bottom:18px;">
-      Enable remote PTT activation via Bluetooth headphones, smartphone media keys, or external HTTP webhooks (Arduino/ESP32).
+      Activate Push-to-Talk from any source: keyboard shortcut, smartwatch / Bluetooth media keys, HTTP webhooks, or a custom hotkey. Toggle each source independently. The audio module reads a single shared state — no conflicts.
     </p>
 
-    <div class="toggle-row">
-      <div class="toggle-info">Enable MediaSession (Bluetooth/iPhone Play-Pause)</div>
-      <label class="switch"><input type="checkbox" id="rt-enable-mediasession"><span class="slider"></span></label>
+    <!-- ── LIVE STATUS ──────────────────────────────────────────── -->
+    <div id="rt-status-bar" style="display:flex; align-items:center; gap:10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-bottom:20px;">
+      <div id="rt-ptt-dot" style="width:10px; height:10px; border-radius:50%; background:var(--red); transition:background 0.3s;"></div>
+      <span style="font-size:12px; font-weight:600; color:var(--muted);" id="rt-status-label">PTT Idle</span>
+      <span style="font-size:11px; color:var(--muted); margin-left:auto;" id="rt-active-sources">Loading sources...</span>
+      <button type="button" class="btn btn-secondary" style="font-size:10px; padding:2px 10px;" onclick="rtRefreshStatus()">↻ Refresh</button>
     </div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Allows hijacking headphone buttons. Note: Claims media priority on your device (you might see a "Zentra" notification).</p>
 
-    <div class="toggle-row">
-      <div class="toggle-info">Enable Volume Keys PTT (Standard Keydown)</div>
-      <label class="switch"><input type="checkbox" id="rt-enable-volume-keys"><span class="slider"></span></label>
+    <!-- ── SOURCE 1: KEYBOARD HOTKEY ──────────────────────────── -->
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px;">
+      <div class="toggle-row" style="margin-bottom:6px;">
+        <div>
+          <div class="toggle-info" style="font-weight:600;">⌨️ Keyboard Hotkey</div>
+          <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">Hold to talk. Hotkey configured in Voice settings (<code>ptt_hotkey</code>). Enabled by default.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="rt-src-keyboard" onchange="rtSaveSource('keyboard_hotkey', this.checked)"><span class="slider"></span></label>
+      </div>
     </div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Uses standard button events. Often blocked on Android.</p>
-    
-    <div class="toggle-row">
-      <div class="toggle-info">Advanced Mobile Interception (Volume Loop)</div>
-      <label class="switch"><input type="checkbox" id="rt-enable-volume-loop"><span class="slider"></span></label>
-    </div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">High precision hack for Android: detects volume changes even if keys are blocked.</p>
 
-    <div class="toggle-row">
-      <div class="toggle-info">Audio Feedback (Beeps)</div>
-      <label class="switch"><input type="checkbox" id="rt-feedback-sounds"><span class="slider"></span></label>
+    <!-- ── SOURCE 2: SMARTWATCH / BT MEDIA KEYS ───────────────── -->
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px;">
+      <div class="toggle-row" style="margin-bottom:6px;">
+        <div>
+          <div class="toggle-info" style="font-weight:600;">⌚ Smartwatch / Bluetooth Media Keys</div>
+          <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">Uses the Play/Pause media key. Compatible with smartwatches (H13, etc.) and Bluetooth headsets. <strong>Toggle mode</strong>: first press starts recording, second press stops.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="rt-src-media" onchange="rtSaveSource('media_play_pause', this.checked)"><span class="slider"></span></label>
+      </div>
+      <button type="button" class="btn btn-secondary" style="font-size:11px; margin-top:4px;" onclick="rtTestMediaKey()">🎵 Test Media Key</button>
+      <span id="rt-media-test-result" style="font-size:11px; color:var(--muted); margin-left:10px;"></span>
     </div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Short beeps on PTT start and stop.</p>
 
-    <div class="toggle-row">
-      <div class="toggle-info">Visual Status Overlay</div>
-      <label class="switch"><input type="checkbox" id="rt-visual-indicator"><span class="slider"></span></label>
+    <!-- ── SOURCE 3: CUSTOM KEY ───────────────────────────────── -->
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:12px;">
+      <div class="toggle-row" style="margin-bottom:6px;">
+        <div>
+          <div class="toggle-info" style="font-weight:600;">🎯 Custom Key (Hold-to-Talk)</div>
+          <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">Any single key or combo (e.g. <code>f8</code>, <code>ctrl+alt+space</code>). Hold to record.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="rt-src-custom" onchange="rtSaveSource('custom_key', this.checked)"><span class="slider"></span></label>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; margin-top:8px;">
+        <input type="text" id="rt-custom-key-input" class="config-input" placeholder="e.g. f8 or ctrl+alt+space" style="flex:1; font-size:12px;">
+        <button type="button" class="btn btn-primary" style="font-size:11px; padding:4px 12px;" onclick="rtSaveCustomKey()">Save Key</button>
+      </div>
     </div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Shows a floating recording indicator.</p>
 
-    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-top:20px;">
-      <div style="font-size:12px; color:var(--accent); font-weight:600; text-transform:uppercase; margin-bottom:8px;">Webhook Endpoints</div>
-      <div style="font-family:'JetBrains Mono', monospace; font-size:11px; line-height:1.6; color:#c0c0d0;">
-        <div>PTT Start: <span style="color:var(--green)">GET /api/remote-triggers/ptt/start</span></div>
-        <div>PTT Stop: <span style="color:var(--red)">GET /api/remote-triggers/ptt/stop</span></div>
-        <div>PTT Toggle: <span style="color:var(--muted)">GET /api/remote-triggers/ptt/toggle</span></div>
+    <!-- ── SOURCE 4: WEBHOOK ──────────────────────────────────── -->
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:20px;">
+      <div class="toggle-row" style="margin-bottom:10px;">
+        <div>
+          <div class="toggle-info" style="font-weight:600;">🌐 HTTP Webhook (Arduino / ESP32 / Automation)</div>
+          <p style="font-size:12px; color:var(--muted); margin:4px 0 0;">External devices can trigger PTT via GET/POST request. No authentication required for local network use.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="rt-src-webhook" onchange="rtSaveSource('webhook', this.checked)"><span class="slider"></span></label>
+      </div>
+      <div style="font-family:'JetBrains Mono', monospace; font-size:11px; line-height:1.8; color:#c0c0d0;">
+        <div>Start: <span style="color:var(--green)">GET /api/remote-triggers/ptt/start</span>
+          <button type="button" class="btn btn-secondary" style="font-size:10px; padding:1px 8px; margin-left:8px;" onclick="rtFirePTT('start')">▶ Test</button>
+        </div>
+        <div>Stop: <span style="color:var(--red)">GET /api/remote-triggers/ptt/stop</span>
+          <button type="button" class="btn btn-secondary" style="font-size:10px; padding:1px 8px; margin-left:8px;" onclick="rtFirePTT('stop')">■ Test</button>
+        </div>
+        <div>Toggle: <span style="color:var(--muted)">GET /api/remote-triggers/ptt/toggle</span>
+          <button type="button" class="btn btn-secondary" style="font-size:10px; padding:1px 8px; margin-left:8px;" onclick="rtFirePTT('toggle')">⇄ Test</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+// ── Remote Triggers JS ────────────────────────────────────────────────────
+
+async function rtRefreshStatus() {
+  try {
+    const r = await fetch('/api/remote-triggers/status');
+    const d = await r.json();
+    if (!d.ok) return;
+
+    const dot   = document.getElementById('rt-ptt-dot');
+    const label = document.getElementById('rt-status-label');
+    const srcs  = document.getElementById('rt-active-sources');
+
+    dot.style.background   = d.ptt_active ? 'var(--green)' : 'var(--red)';
+    label.textContent      = d.ptt_active ? `PTT ACTIVE — ${d.last_source}` : 'PTT Idle';
+    srcs.textContent       = 'Active listeners: ' + (d.active_listeners?.join(', ') || 'none');
+  } catch (e) { /* server offline */ }
+}
+
+async function rtLoadConfig() {
+  try {
+    const r = await fetch('/api/remote-triggers/config');
+    const d = await r.json();
+    if (!d.ok) return;
+
+    const s = d.ptt_sources || {};
+    document.getElementById('rt-src-keyboard').checked = s.keyboard_hotkey  ?? true;
+    document.getElementById('rt-src-media').checked    = s.media_play_pause ?? false;
+    document.getElementById('rt-src-custom').checked   = s.custom_key       ?? false;
+    document.getElementById('rt-src-webhook').checked  = s.webhook          ?? false;
+
+    if (d.custom_ptt_key)
+      document.getElementById('rt-custom-key-input').value = d.custom_ptt_key;
+  } catch (e) { console.warn('[RT] Could not load config', e); }
+}
+
+async function rtSaveSource(source, enabled) {
+  try {
+    await fetch('/api/remote-triggers/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ptt_sources: { [source]: enabled } })
+    });
+    rtRefreshStatus();
+  } catch (e) { console.error('[RT] Save source error', e); }
+}
+
+async function rtSaveCustomKey() {
+  const key = document.getElementById('rt-custom-key-input').value.trim();
+  if (!key) return;
+  try {
+    await fetch('/api/remote-triggers/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ custom_ptt_key: key })
+    });
+    // Also enable the source if a key is provided
+    document.getElementById('rt-src-custom').checked = true;
+    await rtSaveSource('custom_key', true);
+  } catch (e) { console.error('[RT] Save custom key error', e); }
+}
+
+async function rtFirePTT(action) {
+  try {
+    const r = await fetch(`/api/remote-triggers/ptt/${action}`);
+    const d = await r.json();
+    console.log(`[RT] PTT ${action}:`, d);
+    setTimeout(rtRefreshStatus, 300);
+  } catch (e) { console.error('[RT] Fire PTT error', e); }
+}
+
+function rtTestMediaKey() {
+  const result = document.getElementById('rt-media-test-result');
+  result.textContent = 'Press Play/Pause on your device...';
+  result.style.color = 'var(--accent)';
+
+  // Listen for the next PTT event via status polling
+  let polls = 0;
+  const interval = setInterval(async () => {
+    polls++;
+    const r = await fetch('/api/remote-triggers/status').then(x => x.json()).catch(() => ({}));
+    if (r.ptt_active && r.last_source === 'media_play_pause') {
+      result.textContent = '✅ Media key detected!';
+      result.style.color = 'var(--green)';
+      clearInterval(interval);
+    } else if (polls > 150) {
+      result.textContent = '⚠ No signal after 15s. Is the device connected?';
+      result.style.color = 'var(--red)';
+      clearInterval(interval);
+    }
+  }, 100);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  rtLoadConfig();
+  rtRefreshStatus();
+  setInterval(rtRefreshStatus, 3000);
+});
+</script>

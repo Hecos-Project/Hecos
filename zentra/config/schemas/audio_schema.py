@@ -6,6 +6,14 @@ DESCRIPTION: Pydantic v2 model for config/audio.yaml
 from pydantic import BaseModel
 
 
+class PttSources(BaseModel):
+    """Toggleable PTT input sources for the PTT Bus."""
+    keyboard_hotkey:  bool = True    # Ctrl+Shift (configurable via ptt_hotkey)
+    media_play_pause: bool = False   # BT headset media Play-Pause key (VK 179)
+    watch_button:     bool = False   # Smartwatch HID: sends CTRL_L hold-to-talk
+    webhook:          bool = False   # HTTP /api/remote-triggers/ptt/*
+    custom_key:       bool = False   # Arbitrary key defined by custom_ptt_key
+
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""
 
@@ -39,3 +47,7 @@ class AudioConfig(BaseModel):
     stt_source: str = "web"      # 'system' | 'web'
     tts_destination: str = "web" # 'system' | 'web'
     audio_mode: str = "console"  # 'console' | 'web' | 'auto'
+
+    # --- PTT Sources ---
+    ptt_sources:    PttSources = PttSources()
+    custom_ptt_key: str = ""           # e.g. "f8" or "ctrl+alt+space"

@@ -112,41 +112,40 @@
   <div class="logo">
     <img src="/assets/Zentra_Core_Logo_NBG.png" alt="Zentra Logo">
     <div class="logo-text">Zentra Core</div>
-    <span style="display:inline-flex; align-items:center; font-size:10px; font-weight:600; padding:2px 8px; border-radius:20px; border:1px solid var(--border); background:var(--glass); color:var(--muted); opacity:0.8;">v{{ version }}</span>
+    <span class="badge-pill" style="opacity:0.8;">v{{ version }}</span>
   </div>
   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
 
     <!-- ONLINE STATUS -->
-    <div id="status-dot" style="display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid var(--border); background:var(--glass); color:var(--muted);">
+    <div id="status-dot" class="badge-pill">
       <div class="dot" id="hdr-dot"></div>
       <span id="hdr-model">{{ t("webui_chat_offline") }}</span>
     </div>
 
     <!-- VIEW SWITCHER -->
-    <div class="view-switcher" style="display:flex; background:var(--bg2); padding:3px; border-radius:20px; border:1px solid var(--border); gap:2px;">
+    <div class="view-switcher">
       <button class="switcher-btn active" id="view-tabs" onclick="setViewMode('tabs')" title="Tabs View">📂</button>
       <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View">🧱</button>
     </div>
 
     <!-- GLOBAL COLLAPSE -->
-    <div class="global-controls" style="display:flex; background:var(--bg2); padding:3px; border-radius:20px; border:1px solid var(--border); gap:2px;">
+    <div class="global-controls">
       <button class="switcher-btn" onclick="toggleAllCategories(true)" title="Expand All">⊕</button>
       <button class="switcher-btn" onclick="toggleAllCategories(false)" title="Collapse All">⊖</button>
     </div>
 
     <!-- NAV LINKS -->
-    <a href="/chat" class="btn btn-secondary" style="text-decoration:none; border-radius:20px; padding:4px 12px; font-size:11px;">💬 {{ t("webui_nav_chat") }}</a>
+    <a href="/chat" class="btn btn-sm btn-secondary" style="text-decoration:none;">💬 {{ t("webui_nav_chat") }}</a>
     {% if current_user.is_authenticated %}
-    <a href="/drive" class="btn btn-secondary" style="text-decoration:none; border-radius:20px; padding:4px 12px; font-size:11px;">🗂️ Drive</a>
+    <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;">🗂️ Drive</a>
     {% endif %}
-    <a href="/zentra/docs?group=user" target="_blank" class="btn btn-secondary" style="text-decoration:none; border-radius:20px; padding:4px 12px; font-size:11px;">📖 {{ t('webui_chat_docs') }}</a>
 
     <!-- AUTHENTICATION WIDGET -->
     {% if current_user.is_authenticated %}
-    <div style="display:inline-flex; align-items:center; gap:8px; background:var(--bg2); padding:4px 12px; border-radius:20px; border:1px solid var(--border);">
+    <div class="badge-pill" style="height:32px; padding:0 12px; gap:10px; background:var(--bg2);">
       <span style="color:var(--muted); font-size:11px;">{{ t('webui_user_label') or 'User' }}:</span>
       <strong style="color:var(--accent); font-size:11px;">{{ current_user.username }}</strong>
-      <span style="background:var(--accent); color:var(--bg); padding:1px 6px; border-radius:6px; font-size:10px; font-weight:bold; text-transform:uppercase;">{{ current_user.role }}</span>
+      <span class="badge-pill" style="background:var(--accent); color:var(--bg); border:none; height:18px; padding:0 6px; font-size:9px;">{{ current_user.role }}</span>
       <a href="/logout" style="color:var(--red); text-decoration:none; font-size:11px; font-weight:bold; opacity:0.8; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">{{ t('webui_logout') or 'Logout' }}</a>
     </div>
     {% endif %}
@@ -214,14 +213,15 @@
     {% include 'modules/config_drive_media_viewer.html' %}
     {% include 'modules/config_logs.html' %}
     {% include 'modules/config_privacy.html' %}
+    {% include 'modules/config_help.html' %}
   </form>
 </div>
 
 <div class="save-bar">
   <div id="save-msg"></div>
-  <button type="button" class="btn btn-danger" style="border-radius:20px; padding:6px 16px; font-size:12px;" onclick="rebootSystem()">{{ t("label_reboot_system") }}</button>
-  <button type="button" class="btn btn-secondary" style="border-radius:20px; padding:6px 16px; font-size:12px;" onclick="window.location.reload()">{{ t("webui_conf_btn_reload") }}</button>
-  <button type="button" class="btn btn-primary" style="border-radius:20px; padding:6px 20px; font-size:12px;" onclick="saveConfig()">{{ t("webui_conf_btn_save") }}</button>
+  <button type="button" class="btn btn-danger" onclick="rebootSystem()">{{ t("label_reboot_system") }}</button>
+  <button type="button" class="btn btn-secondary" onclick="window.location.reload()">{{ t("webui_conf_btn_reload") }}</button>
+  <button type="button" class="btn btn-primary" onclick="saveConfig()">{{ t("webui_conf_btn_save") }}</button>
 </div>
 
 <script>
