@@ -36,14 +36,15 @@
   <div class="nav-links">
     {% if current_user.is_authenticated %}
     <div class="user-badge">
-      <span style="color:var(--muted);">{{ t('webui_chat_user') }}:</span>
+      <span style="color:var(--muted); font-size:11px;">{{ t('webui_chat_user') }}:</span>
       <strong>{{ current_user.username }}</strong>
       <span class="role-badge">{{ current_user.role }}</span>
+      <span style="color:var(--border); margin:0 4px;">|</span>
+      <a href="/logout" style="color:var(--red); border:none; background:none; padding:0; font-weight:600;">{{ t('webui_logout') }}</a>
     </div>
     {% endif %}
     <a href="/zentra/config/ui">⚙️ {{ t('webui_chat_config') }}</a>
-    <a href="/chat">💬 Chat</a>
-    <a href="/logout" class="hide-on-mobile" style="color:var(--red);">{{ t('webui_chat_logout') }}</a>
+    <a href="/chat">💬 {{ t('webui_nav_chat') }}</a>
   </div>
 </header>
 

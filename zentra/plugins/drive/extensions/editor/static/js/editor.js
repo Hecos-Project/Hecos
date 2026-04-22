@@ -104,6 +104,29 @@ require(['vs/editor/editor.main'], function() {
     }
   });
 
+  // Zentra Dark Profile (Default Cyberpunk — Deep Space Navy)
+  monaco.editor.defineTheme('zentra-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '6b7280', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '6c8cff', fontStyle: 'bold' },
+      { token: 'string', foreground: '34d399' },
+      { token: 'number', foreground: 'a78bfa' },
+    ],
+    colors: {
+      'editor.background': '#0d0f18',         // Deep space navy
+      'editor.foreground': '#e2e8f0',
+      'editor.lineHighlightBackground': '#141726',
+      'editorLineNumber.foreground': '#252b46',
+      'editorLineNumber.activeForeground': '#6c8cff',
+      'editor.selectionBackground': '#252b46',
+      'editorWidget.background': '#141726',
+      'editorWidget.border': '#252b46',
+      'input.background': '#1c2033',
+    }
+  });
+
   const activeTheme = isCorporate ? 'zentra-corporate' : (isSolar ? 'zentra-solarpunk' : (isLight ? 'zentra-light' : 'zentra-dark'));
   console.log('[Zentra Editor] Active theme:', activeTheme);
 

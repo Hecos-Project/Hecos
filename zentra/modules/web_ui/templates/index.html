@@ -146,7 +146,7 @@
     <div style="display:inline-flex; align-items:center; gap:8px; background:var(--bg2); padding:4px 12px; border-radius:20px; border:1px solid var(--border);">
       <span style="color:var(--muted); font-size:11px;">{{ t('webui_user_label') or 'User' }}:</span>
       <strong style="color:var(--accent); font-size:11px;">{{ current_user.username }}</strong>
-      <span style="background:var(--accent); color:var(--bg); padding:1px 6px; border-radius:6px; font-size:10px; font-weight:bold; text-transform:uppercase;">{{ current_user.role }}</span>
+      <span style="background:var(--accent); color:var(--bg); padding:1px 8px; border-radius:20px; font-size:10px; font-weight:bold; text-transform:uppercase;">{{ current_user.role }}</span>
       <a href="/logout" style="color:var(--red); text-decoration:none; font-size:11px; font-weight:bold; opacity:0.8; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">{{ t('webui_logout') or 'Logout' }}</a>
     </div>
     {% endif %}

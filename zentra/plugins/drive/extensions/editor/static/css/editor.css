@@ -3,6 +3,10 @@
 /* Using global variables from variables.css */
 
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+.theme-turquoise, .theme-turquoise body, .theme-pirate, .theme-pirate body, .theme-elegant, .theme-elegant body, .theme-rose, .theme-rose body, .theme-cyberpunk, .theme-cyberpunk body {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}
 .theme-light, .theme-light body, .theme-solarpunk, .theme-solarpunk body, .theme-corporate, .theme-corporate body { 
   background: var(--bg) !important; 
   color: var(--text) !important; 
@@ -88,14 +92,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 12px;
-  border-radius: 5px;
+  padding: 5px 14px;
+  border-radius: 20px;
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
-  border: none;
+  border: 1px solid var(--border);
   transition: all 0.15s;
   white-space: nowrap;
+  background: var(--bg3);
+  color: var(--text);
+  text-decoration: none;
 }
 .btn-save { background: var(--accent); color: var(--bg); }
 .btn-save:hover { background: var(--accent); }

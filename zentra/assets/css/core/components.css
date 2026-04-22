@@ -57,7 +57,7 @@
   padding: 10px 14px;
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 20px;
   color: var(--text);
   font-family: inherit;
   font-size: 14px;
@@ -73,7 +73,7 @@
 /* Buttons */
 .btn {
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: 20px;
   border: 1px solid transparent;
   background: var(--bg3);
   color: var(--text);
@@ -101,7 +101,7 @@
 .btn-warning { background: rgba(var(--yellow-rgb), 0.1); color: var(--yellow); border-color: rgba(var(--yellow-rgb), 0.2); }
 .btn-warning:hover { background: var(--yellow); color: #0b0c10; border-color: var(--yellow); }
 
-.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 20px; }
 
 /* Toggles & Switches */
 .toggle-row {
