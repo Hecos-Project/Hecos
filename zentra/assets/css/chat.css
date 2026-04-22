@@ -91,9 +91,20 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 
 /* Topbar audio indicator chips */
 .topbar-chips { display:flex; gap:6px; align-items:center; }
-.topbar-chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600;
-  padding:3px 9px; border-radius:12px; border:1px solid var(--border);
-  background:var(--glass); color:var(--muted); letter-spacing:.3px; transition:all .25s; }
+.topbar-chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--glass-b);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all .25s;
+}
 .topbar-chip.on  { background:rgba(var(--green-rgb),.1);  border-color:rgba(var(--green-rgb),.3);  color:var(--green); }
 .topbar-chip.off { background:rgba(var(--red-rgb),.07); border-color:rgba(var(--red-rgb),.25); color:var(--red); }
 
@@ -102,7 +113,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   font-weight: 600;
   text-decoration: none;
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--glass);
   color: var(--muted);

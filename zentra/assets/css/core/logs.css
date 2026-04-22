@@ -17,7 +17,7 @@
   flex-direction: column;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 10px;
   max-height: 550px;
   overflow: hidden;
   position: relative;
@@ -57,7 +57,7 @@
     color: var(--text);
     font-size: 11px;
     padding: 3px 8px;
-    border-radius: 20px;
+    border-radius: 10px;
     outline: none;
     cursor: pointer;
 }
@@ -106,15 +106,16 @@
 
 .log-time { color: var(--accent); margin-right: 10px; font-weight: bold; opacity: 0.8; }
 .log-lvl { 
-  display: inline-block; 
+  display: inline-flex; 
+  align-items: center;
+  justify-content: center;
   width: 65px; 
-  text-align: center; 
   margin-right: 10px; 
-  border-radius: 4px; 
+  border-radius: 20px; 
   font-weight: 800;
   font-size: 10px;
   letter-spacing: 0.5px;
-  padding: 1px 0;
+  height: 18px;
 }
 
 .lvl-INFO    { color: var(--text); }
@@ -139,18 +140,17 @@
 
 /* Badges & Overrides */
 .restart-badge {
-   display: inline-block;
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
    background: rgba(251, 191, 36, 0.1);
    color: var(--yellow);
    border: 1px solid rgba(251, 191, 36, 0.3);
-   padding: 1px 6px;
    border-radius: 20px;
+   height: 14px;
+   padding: 0 6px;
    font-size: 9px;
-   font-weight: 700;
    margin-left: 8px;
-   text-transform: uppercase;
-   opacity: 0;
-   transition: opacity 0.3s;
 }
 .restart-badge.visible { opacity: 1; }
 

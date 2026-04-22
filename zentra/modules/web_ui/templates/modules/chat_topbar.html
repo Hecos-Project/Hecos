@@ -12,10 +12,10 @@
     <div class="topbar-chip" id="chip-mic">🎤 MIC: —</div>
     <div class="topbar-chip" id="chip-tts">🔊 TTS: —</div>
     <div class="topbar-chip" id="chip-ptt">⌨️ PTT: —</div>
-    <div class="topbar-chip" id="chip-stt-source" style="font-size:10px;">IN: —</div>
-    <div class="topbar-chip" id="chip-tts-dest" style="font-size:10px;">OUT: —</div>
+    <div class="topbar-chip" id="chip-stt-source">IN: —</div>
+    <div class="topbar-chip" id="chip-tts-dest">OUT: —</div>
     <button id="topbar-stop-voice-btn" class="topbar-chip on" style="display:none; cursor:pointer; background:rgba(var(--red-rgb),0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()">⏹ Stop Voice</button>
-    <a href="/zentra/config/ui" target="_blank" class="topbar-link">⚙️ <span>Config</span></a>
-    <a href="/drive" target="_blank" class="topbar-link">🗂️ <span>Drive</span></a>
+    <a href="/zentra/config/ui" target="_blank" class="topbar-link">⚙️ <span>{{ t('webui_chat_config') }}</span></a>
+    <a href="/drive" target="_blank" class="topbar-link">🗂️ <span>{{ t('hub_mod_drive') or 'Drive' }}</span></a>
   </div>
 </div>
