@@ -58,8 +58,9 @@
   color: var(--text);
   background: var(--glass-c);
   padding: 3px 10px;
-  border-radius: 6px;
+  border-radius: 20px;
   text-transform: uppercase;
+  height: 24px;
   letter-spacing: 0.5px;
   border: 1px solid var(--glass-border);
   display: inline-flex;
@@ -100,7 +101,7 @@
   padding: 12px 18px;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;

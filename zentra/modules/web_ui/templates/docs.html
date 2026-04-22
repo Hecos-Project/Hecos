@@ -20,12 +20,6 @@
     <style>
         :root {
             --sidebar-width: 300px;
-            --accent: var(--accent);
-            --accent2: var(--accent2);
-            --bg: var(--bg);
-            --surface: var(--bg2);
-            --text: var(--text);
-            --sidebar-bg: var(--bg);
         }
 
         body {
@@ -41,7 +35,7 @@
         /* Sidebar Style */
         .docs-sidebar {
             width: var(--sidebar-width);
-            background: var(--sidebar-bg);
+            background: var(--bg);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
@@ -109,11 +103,11 @@
             background: transparent;
         }
 
-        .group-btn:hover { color: #ccc; }
+        .group-btn:hover { color: var(--text); }
         .group-btn.active {
-            background: var(--surface);
+            background: var(--bg2);
             color: var(--accent);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         .chapter-list {
@@ -141,7 +135,7 @@
 
         .chapter-item.active {
             color: var(--accent);
-            background: rgba(var(--accent-rgb), 0.08);
+            background: var(--glass-b);
             border-left-color: var(--accent);
             font-weight: 500;
         }
@@ -180,12 +174,12 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 10px 12px 10px 35px;
-            color: white;
+            color: var(--text);
             font-size: 14px;
             outline: none;
             transition: all 0.2s;
         }
-        .search-input:focus { border-color: var(--accent); background: rgba(255,255,255,0.08); }
+        .search-input:focus { border-color: var(--accent); background: var(--glass-b); }
         .search-icon {
             position: absolute;
             left: 12px;
@@ -205,7 +199,7 @@
             overflow-y: auto;
         }
         .search-result-item {
-            background: var(--surface);
+            background: var(--bg2);
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
@@ -216,7 +210,7 @@
         .search-result-item:hover { transform: translateY(-3px); border-color: var(--accent); }
         .search-result-title { color: var(--accent); font-weight: 600; font-size: 18px; margin-bottom: 8px; }
         .search-result-snippet { color: var(--muted); font-size: 14px; line-height: 1.5; }
-        .search-result-snippet b { color: var(--text); background: rgba(var(--accent-rgb), 0.2); padding: 0 2px; }
+        .search-result-snippet b { color: var(--accent); background: var(--glass-c); padding: 0 2px; }
 
         .close-search {
             position: absolute;
@@ -224,7 +218,7 @@
             background: none; border: none; color: var(--muted);
             font-size: 24px; cursor: pointer;
         }
-        .close-search:hover { color: white; }
+        .close-search:hover { color: var(--accent); }
 
         .docs-main {
             flex: 1;
@@ -296,7 +290,7 @@
             font-weight: 600;
             transition: all 0.2s;
         }
-        .back-link:hover { background: var(--surface); color: white; }
+        .back-link:hover { background: var(--surface2); color: var(--accent); }
 
         #loading-overlay {
             position: fixed;

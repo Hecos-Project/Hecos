@@ -183,7 +183,7 @@
 .module-card {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 10px;
   padding: 20px 10px;
   text-align: center;
   cursor: pointer;
@@ -207,7 +207,17 @@
 
 .module-card .m-icon { font-size: 32px; filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.2)); }
 .module-card .m-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--text); }
-.module-card .m-cat { font-size: var(--font-size-xs); text-transform: uppercase; color: var(--muted); letter-spacing: 1px; }
+.module-card .m-cat { 
+    font-size: 9px; 
+    text-transform: uppercase; 
+    color: var(--accent); 
+    letter-spacing: 1px; 
+    background: rgba(var(--accent-rgb), 0.1); 
+    padding: 2px 8px; 
+    border-radius: 20px; 
+    border: 1px solid rgba(var(--accent-rgb), 0.1);
+    font-weight: 700;
+}
 
 .module-card.active { border-color: var(--accent); background: rgba(var(--accent-rgb), 0.1); }
 .module-card.active::after {
@@ -238,7 +248,7 @@
 .cat-card {
   background: linear-gradient(135deg, var(--bg2), var(--bg));
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 35px 20px;
   text-align: center;
   cursor: pointer;

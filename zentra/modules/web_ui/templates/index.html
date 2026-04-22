@@ -139,7 +139,6 @@
     {% if current_user.is_authenticated %}
     <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;">🗂️ Drive</a>
     {% endif %}
-    <a href="/zentra/docs?group=user" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;">📖 {{ t('webui_chat_docs') }}</a>
 
     <!-- AUTHENTICATION WIDGET -->
     {% if current_user.is_authenticated %}
@@ -214,6 +213,7 @@
     {% include 'modules/config_drive_media_viewer.html' %}
     {% include 'modules/config_logs.html' %}
     {% include 'modules/config_privacy.html' %}
+    {% include 'modules/config_help.html' %}
   </form>
 </div>
 
