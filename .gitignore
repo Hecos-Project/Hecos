@@ -229,6 +229,9 @@ snapshots/*
 !zentra/assets/Zentra_Core_Logo_NBG\ -\ SQR.ico
 !zentra/assets/Zentra_Core_Project_001.jpg
 
+# Website assets
+!docs/assets/images/*
+
 # ── PERSONA YAML: block all, whitelist only built-ins ─────────────────────
 # Block any NEW yaml added to zentra/personality/
 zentra/personality/*.yaml
