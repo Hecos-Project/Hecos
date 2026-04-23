@@ -79,18 +79,27 @@ Si prefieres gestionar los componentes por separado o realizar tareas de manteni
 | Plataforma | Script | Descripción |
 | :--- | :--- | :--- |
 | **Todas** | `main.py` | Inicia el sistema completo (Tray + WebUI + Backend) |
-| **Windows** | `ZENTRA_WEB_RUN_WIN.bat` | Inicia SOLO la Interfaz Web y el Servidor |
-| **Linux** | `zentra_web_run.sh` | Inicia SOLO la Interfaz Web y el Servidor |
-| **Windows** | `ZENTRA_CONSOLE_RUN_WIN.bat` | Inicia SOLO la Consola de Terminal (TUI) |
-| **Linux** | `ZENTRA_CONSOLE_RUN.sh` | Inicia SOLO la Consola de Terminal (TUI) |
-| **Windows** | `INSTALL_SERVICE_WIN.bat` | Instala Zentra como Servicio de Windows |
-| **Linux** | `INSTALL_SERVICE_LINUX.sh` | Instala Zentra como servicio de usuario systemd |
-| **Windows** | `UNINSTALL_SERVICE_WIN.bat` | Elimina de forma segura el Servicio de Windows |
-| **Linux** | `UNINSTALL_SERVICE_LINUX.sh` | Elimina de forma segura el servicio systemd |
-| **Windows** | `INSTALL_ZENTRA_WIN.bat` | Instalación manual de dependencias y Piper |
-| **Linux** | `INSTALL_ZENTRA_LINUX.sh` | Instalación manual de dependencias y Piper |
+| **Windows** | `RESTART_TRAY_ICON_WIN.bat` | Restaurar el icono de bandeja si se cerró |
+| **Linux** | `RESTART_TRAY_ICON_LINUX.sh` | Restaurar el icono de bandeja si se cerró |
+| **Windows** | `scripts\windows\run\ZENTRA_WEB_RUN_WIN.bat` | Inicia SOLO la Interfaz Web y el Servidor |
+| **Linux** | `scripts/linux/run/zentra_web_run.sh` | Inicia SOLO la Interfaz Web y el Servidor |
+| **Windows** | `scripts\windows\run\ZENTRA_CONSOLE_RUN_WIN.bat` | Inicia SOLO la Consola de Terminal (TUI) |
+| **Linux** | `scripts/linux/run/ZENTRA_CONSOLE_RUN.sh` | Inicia SOLO la Consola de Terminal (TUI) |
+| **Windows** | `scripts\windows\service\INSTALL_SERVICE_WIN.bat` | Instala Zentra como Servicio de Windows |
+| **Linux** | `scripts/linux/service/INSTALL_SERVICE_LINUX.sh` | Instala Zentra como servicio de usuario systemd |
+| **Windows** | `scripts\windows\service\UNINSTALL_SERVICE_WIN.bat` | Elimina de forma segura el Servicio de Windows |
+| **Linux** | `scripts/linux/service/UNINSTALL_SERVICE_LINUX.sh` | Elimina de forma segura el servicio systemd |
+| **Windows** | `scripts\windows\setup\INSTALL_ZENTRA_WIN.bat` | Instalación manual de dependencias y Piper |
+| **Linux** | `scripts/linux/setup/INSTALL_ZENTRA_LINUX.sh` | Instalación manual de dependencias y Piper |
 
 ### 4. Configuración y Primera Ejecución
+
+### 🛡️ Modo Silencioso (Sin Ventanas)
+Si desea que Zentra Core se ejecute completamente en segundo plano sin ventanas de terminal visibles:
+1.  **Instalar el Servicio**: Ejecute `scripts\windows\service\INSTALL_SERVICE_WIN.bat` como Administrador.
+2.  **Usar el Icono de Bandeja**: Inicie Zentra a través del icono de la bandeja. Gestionará el servicio de forma invisible.
+3.  **Inicio Silencioso**: Use `START_ZENTRA_SILENT_WIN.vbs` para un inicio 100% invisible (sin ventanas de consola).
+4.  **Recuperación Manual**: Si cierra accidentalmente el icono, use `RESTART_TRAY_ICON_WIN.bat`.
 
 ---
 

@@ -228,10 +228,10 @@ def _build_menu(icon_ref: list):
         import subprocess
         try:
             if sys.platform == "win32":
-                script = os.path.join(_ROOT, "ZENTRA_CONSOLE_RUN_WIN.bat")
+                script = os.path.join(_ROOT, "scripts", "windows", "run", "ZENTRA_CONSOLE_RUN_WIN.bat")
                 subprocess.Popen(["start", "cmd", "/c", script], shell=True)
             else:
-                script = os.path.join(_ROOT, "ZENTRA_CONSOLE_RUN.sh")
+                script = os.path.join(_ROOT, "scripts", "linux", "run", "ZENTRA_CONSOLE_RUN.sh")
                 subprocess.Popen(["x-terminal-emulator", "-e", script])
         except Exception as e:
             print(f"[TRAY] Failed to open console: {e}")

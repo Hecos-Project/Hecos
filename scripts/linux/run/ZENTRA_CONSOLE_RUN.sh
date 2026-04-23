@@ -1,8 +1,9 @@
 #!/bin/bash
 # ZENTRA CORE - ACTIVE SESSION RUNNER (Native Text Console)
 
-# Spostati nella cartella in cui si trova questo script
-cd "$(dirname "$0")"
+# Spostati nella cartella principale del progetto
+cd "$(dirname "$0")/../../.."
+ROOT_DIR=$(pwd)
 
 VERSION=$(cat zentra/core/version 2>/dev/null || echo "Unknown")
 

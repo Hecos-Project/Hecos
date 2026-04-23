@@ -1,7 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
 title ZENTRA CORE - ACTIVE SESSION RUNNER (Native Text Console)
-cd /d "%~dp0"
+pushd "%~dp0"
+cd ..\..\..
+set ROOT_DIR=%CD%
+popd
+cd /d "%ROOT_DIR%"
 
 echo.
 set ZENTRA_VERSION=Unknown
@@ -11,10 +15,8 @@ echo   ZENTRA CORE NATIVE TERMINAL v%ZENTRA_VERSION%
 echo  ==============================================================
 echo.
 
-:: Priority to the isolated portable python runtime
-set PYTHON_CMD=python
-if exist "%CD%\python_env\python.exe" (
-  set PYTHON_CMD="%CD%\python_env\python.exe"
+if exist "python_env\python.exe" (
+  set PYTHON_CMD="%ROOT_DIR%\python_env\python.exe"
 ) else if exist "venv\Scripts\python.exe" (
   set PYTHON_CMD="%CD%\venv\Scripts\python.exe"
 ) else if exist "venv\Scripts\activate.bat" (
@@ -28,7 +30,7 @@ if %ERRORLEVEL% NEQ 0 (
   echo [!] Problema di configurazione rilevato.
   echo [!] Lancio del Setup Wizard riparatore...
   timeout /t 3
-  call ZENTRA_SETUP_CONSOLE_WIN.bat
+  call scripts\windows\setup\ZENTRA_SETUP_CONSOLE_WIN.bat
 )
 
 echo [*] Starting interactive terminal...

@@ -59,9 +59,9 @@ def install_dependencies():
 
 def manage_service(action="install"):
     if os.name == 'nt':
-        script = "INSTALL_SERVICE_WIN.bat" if action == "install" else "UNINSTALL_SERVICE_WIN.bat"
+        script = os.path.join("scripts", "windows", "service", "INSTALL_SERVICE_WIN.bat" if action == "install" else "UNINSTALL_SERVICE_WIN.bat")
     else:
-        script = "INSTALL_SERVICE_LINUX.sh" if action == "install" else "UNINSTALL_SERVICE_LINUX.sh"
+        script = os.path.join("scripts", "linux", "service", "INSTALL_SERVICE_LINUX.sh" if action == "install" else "UNINSTALL_SERVICE_LINUX.sh")
     
     script_path = os.path.join(CWD, script)
     if not os.path.exists(script_path):

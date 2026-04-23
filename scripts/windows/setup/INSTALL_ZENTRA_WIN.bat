@@ -12,8 +12,11 @@ echo globale richiesta sul tuo PC.
 echo ==============================================================================
 echo.
 
-cd /d "%~dp0"
+pushd "%~dp0"
+cd ..\..\..
 set ROOT_DIR=%CD%
+popd
+cd /d "%ROOT_DIR%"
 
 :: Versions and URLs
 set PYTHON_VERSION=3.11.9
@@ -90,7 +93,7 @@ set SHORTCUT_SCRIPT=%TEMP%\CreateZentraShortcut.vbs
 echo Set oWS = WScript.CreateObject("WScript.Shell") > "%SHORTCUT_SCRIPT%"
 echo sLinkFile = oWS.SpecialFolders("Desktop") ^& "\Zentra AI.lnk" >> "%SHORTCUT_SCRIPT%"
 echo Set oLink = oWS.CreateShortcut(sLinkFile) >> "%SHORTCUT_SCRIPT%"
-echo oLink.TargetPath = "%ROOT_DIR%\ZENTRA_WEB_RUN_WIN.bat" >> "%SHORTCUT_SCRIPT%"
+echo oLink.TargetPath = "%ROOT_DIR%\scripts\windows\run\ZENTRA_WEB_RUN_WIN.bat" >> "%SHORTCUT_SCRIPT%"
 echo oLink.WorkingDirectory = "%ROOT_DIR%" >> "%SHORTCUT_SCRIPT%"
 echo oLink.Description = "Avvia Zentra Web UI" >> "%SHORTCUT_SCRIPT%"
 :: Usiamo un'icona di sistema neutra oppure l'exe di Zentra stesso (es python.exe per ora)
@@ -110,4 +113,4 @@ echo Premi un tasto per avviare Zentra.
 echo ==============================================================================
 pause
 
-start "" "%ROOT_DIR%\ZENTRA_WEB_RUN_WIN.bat"
+start "" "%ROOT_DIR%\scripts\windows\run\ZENTRA_WEB_RUN_WIN.bat"

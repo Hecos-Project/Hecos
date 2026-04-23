@@ -12,6 +12,12 @@ echo  ==============================================================
 echo.
 
 :: Activate virtual environment if it exists
+pushd "%~dp0"
+cd ..\..\..
+set ROOT_DIR=%CD%
+popd
+cd /d "%ROOT_DIR%"
+
 if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
@@ -57,10 +63,10 @@ echo.
 
 :: Priority to the isolated portable python runtime
 set PYTHON_CMD=python
-if exist "%CD%\python_env\python.exe" (
-  set PYTHON_CMD="%CD%\python_env\python.exe"
+if exist "python_env\python.exe" (
+  set PYTHON_CMD="%ROOT_DIR%\python_env\python.exe"
 ) else if exist "venv\Scripts\python.exe" (
-  set PYTHON_CMD="%CD%\venv\Scripts\python.exe"
+  set PYTHON_CMD="%ROOT_DIR%\venv\Scripts\python.exe"
 )
 
 :: Starting the monitor

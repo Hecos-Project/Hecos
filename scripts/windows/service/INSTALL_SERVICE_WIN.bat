@@ -66,10 +66,10 @@ if exist "%SITE_PKG%\pywin32_system32" (
 :: STEP 5: Install the Windows Service
 :: -----------------------------------------------------
 echo  [*] Registering Zentra Core as a Windows Service...
-%PYTHON_CMD% scripts\install_as_service.py --install
+%PYTHON_CMD% scripts\utils\install_as_service.py --install
 if %errorlevel% neq 0 (
     echo  [-] Service installation failed.
-    echo  [!] Try running: python scripts\install_as_service.py --install
+    echo  [!] Try running: python scripts\utils\install_as_service.py --install
     pause
     exit /b 1
 )
