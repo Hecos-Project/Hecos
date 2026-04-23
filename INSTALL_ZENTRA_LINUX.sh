@@ -53,6 +53,7 @@ if [ ! -f "$PIPER_DIR/piper" ]; then
     tar -xzf piper.tar.gz -C "$ROOT_DIR/bin"
     rm piper.tar.gz
     # The tarball extracts a folder natively called "piper"
+    chmod +x "$PIPER_DIR/piper"
 else
     echo "[+] Piper TTS gia presente."
 fi

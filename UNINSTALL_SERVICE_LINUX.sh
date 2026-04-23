@@ -6,7 +6,13 @@
 set -e
 
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON=$([ -f "$INSTALL_DIR/venv/bin/python" ] && echo "$INSTALL_DIR/venv/bin/python" || which python3)
+if [ -f "$INSTALL_DIR/python_env/bin/python" ]; then
+    PYTHON="$INSTALL_DIR/python_env/bin/python"
+elif [ -f "$INSTALL_DIR/venv/bin/python" ]; then
+    PYTHON="$INSTALL_DIR/venv/bin/python"
+else
+    PYTHON=$(which python3)
+fi
 
 echo ""
 echo "═══════════════════════════════════════════════════"

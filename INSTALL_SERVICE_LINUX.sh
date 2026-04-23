@@ -23,7 +23,10 @@ echo ""
 # ─────────────────────────────────────────────────────
 # STEP 1: Find Python
 # ─────────────────────────────────────────────────────
-if [ -f "$INSTALL_DIR/venv/bin/python" ]; then
+if [ -f "$INSTALL_DIR/python_env/bin/python" ]; then
+    PYTHON="$INSTALL_DIR/python_env/bin/python"
+    echo -e "${GREEN}[+] Using portable Python: $PYTHON${NC}"
+elif [ -f "$INSTALL_DIR/venv/bin/python" ]; then
     PYTHON="$INSTALL_DIR/venv/bin/python"
     echo -e "${GREEN}[+] Using virtualenv Python: $PYTHON${NC}"
 else

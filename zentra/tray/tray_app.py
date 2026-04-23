@@ -132,6 +132,20 @@ def _build_menu(icon_ref: list):
     def open_chat(icon, item):
         webbrowser.open(chat_url)
 
+    def open_console(icon, item):
+        import subprocess
+        try:
+            if sys.platform == "win32":
+                # Use start command to open in a new actual console window
+                script = os.path.join(_ROOT, "ZENTRA_CONSOLE_RUN_WIN.bat")
+                subprocess.Popen(["start", "cmd", "/c", script], shell=True)
+            else:
+                script = os.path.join(_ROOT, "ZENTRA_CONSOLE_RUN.sh")
+                # Try common terminals for Linux
+                subprocess.Popen(["x-terminal-emulator", "-e", script])
+        except Exception as e:
+            print(f"[TRAY] Failed to open console: {e}")
+
     def open_config(icon, item):
         webbrowser.open(config_url)
 
@@ -156,6 +170,7 @@ def _build_menu(icon_ref: list):
         pystray.MenuItem(status_label, None, enabled=False),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("🌐 Open Chat", open_chat),
+        pystray.MenuItem("⌨️  Open Console", open_console),
         pystray.MenuItem("⚙️  Open Config", open_config),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("🔄 Restart Service", restart_service),

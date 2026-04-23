@@ -33,7 +33,9 @@ if [ -z "$LAN_IP" ]; then
 fi
 
 # Recupera lo schema HTTP/HTTPS da system.yaml
-SCHEME=$(python3 -c "import yaml; print('https' if yaml.safe_load(open('zentra/config/data/system.yaml')).get('plugins',{}).get('WEB_UI',{}).get('https_enabled',False) else 'http')" 2>/dev/null)
+# We use the currently active python (from venv) to ensure 'yaml' is importable
+CUR_PY=$(which python3 || which python)
+SCHEME=$($CUR_PY -c "import yaml; print('https' if yaml.safe_load(open('zentra/config/data/system.yaml')).get('plugins',{}).get('WEB_UI',{}).get('https_enabled',False) else 'http')" 2>/dev/null)
 if [ -z "$SCHEME" ]; then
     SCHEME="http"
 fi
