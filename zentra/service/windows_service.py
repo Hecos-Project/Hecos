@@ -66,12 +66,33 @@ if WIN32_AVAILABLE:
             env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
             env["ZENTRA_SERVICE_MODE"] = "1"
 
+            # Ensure logs directory exists
+            log_dir = os.path.join(_ROOT, "zentra", "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file_path = os.path.join(log_dir, "zentra_service.log")
+
+            # In a pywin32 service, sys.executable is usually 'pythonservice.exe'.
+            # We need the real 'python.exe' to execute our monitor.
+            python_exe = os.path.join(sys.prefix, "python.exe")
+            if not os.path.exists(python_exe):
+                python_exe = sys.executable.lower().replace("pythonservice.exe", "python.exe")
+            if not os.path.exists(python_exe):
+                python_exe = "python"  # ultimate fallback
+
             while True:
-                self.process = subprocess.Popen(
-                    [sys.executable, MONITOR_PATH, "--script", "zentra.modules.web_ui.server"],
-                    cwd=_ROOT,
-                    env=env
-                )
+                with open(log_file_path, "a", encoding="utf-8") as f:
+                    try:
+                        f.write(f"\n--- Starting Zentra Service {time.ctime()} ---\n")
+                        f.flush()
+                        self.process = subprocess.Popen(
+                            [python_exe, MONITOR_PATH, "--script", "zentra.modules.web_ui.server"],
+                            cwd=_ROOT,
+                            env=env,
+                            stdout=f,
+                            stderr=subprocess.STDOUT
+                        )
+                    except Exception as e:
+                        f.write(f"Failed to start process: {e}\n")
 
                 # Wait until the process exits or stop is signaled
                 while self.process.poll() is None:

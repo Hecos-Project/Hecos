@@ -154,7 +154,13 @@ def _control_service(action: str):
     import subprocess
     try:
         if sys.platform == "win32":
-            subprocess.run(["sc", action, "ZentraCore"], check=True)
+            if action == "restart":
+                # sc.exe has no 'restart' subcommand — stop then start
+                subprocess.run(["sc", "stop", "ZentraCore"], capture_output=True)
+                time.sleep(3)  # Give the service time to fully stop
+                subprocess.run(["sc", "start", "ZentraCore"], check=True, capture_output=True)
+            else:
+                subprocess.run(["sc", action, "ZentraCore"], check=True, capture_output=True)
         else:
             subprocess.run(["systemctl", "--user", action, "zentra"], check=True)
     except subprocess.CalledProcessError as e:
@@ -234,10 +240,19 @@ def _build_menu(icon_ref: list):
         webbrowser.open(config_url)
 
     def restart_service(icon, item):
-        _control_service("restart")
+        """Stop + Start the backend service. The tray stays alive."""
+        def _do_restart():
+            threading.Thread(target=_control_service, args=("restart",), daemon=True).start()
+        threading.Thread(target=_do_restart, daemon=True).start()
+
+    def stop_service(icon, item):
+        """Stop only the backend service. The tray stays alive."""
+        threading.Thread(target=_control_service, args=("stop",), daemon=True).start()
 
     def stop_service_and_quit(icon, item):
-        _control_service("stop")
+        """Stop the backend service AND close the tray icon."""
+        threading.Thread(target=_control_service, args=("stop",), daemon=True).start()
+        time.sleep(1)
         icon.stop()
 
     def show_about(icon, item):
@@ -303,7 +318,8 @@ def _build_menu(icon_ref: list):
 
         # --- MAINTENANCE SECTION ---
         pystray.MenuItem("🔄 Restart Service", restart_service),
-        pystray.MenuItem("⏹  Stop Service & Quit", stop_service_and_quit),
+        pystray.MenuItem("⏹  Stop Service", stop_service),
+        pystray.MenuItem("⏹  Stop Service + Quit Tray", stop_service_and_quit),
         pystray.Menu.SEPARATOR,
 
         pystray.MenuItem(f"🖧  LAN: {lan_ip}:{ZENTRA_PORT}", None, enabled=False),
