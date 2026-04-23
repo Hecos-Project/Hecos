@@ -169,13 +169,23 @@ def _build_menu(icon_ref: list):
         pystray.MenuItem(f"ZENTRA CORE  v{version}", None, enabled=False),
         pystray.MenuItem(status_label, None, enabled=False),
         pystray.Menu.SEPARATOR,
+        
+        # --- TERMINAL SECTION ---
+        pystray.MenuItem("══ TERMINAL CONSOLE ══", None, enabled=False),
+        pystray.MenuItem("🖥️  Launch Console", open_console),
+        pystray.Menu.SEPARATOR,
+        
+        # --- WEB UI SECTION ---
+        pystray.MenuItem("══ NATIVE WEB UI ══", None, enabled=False),
         pystray.MenuItem("🌐 Open Chat", open_chat),
-        pystray.MenuItem("⌨️  Open Console", open_console),
         pystray.MenuItem("⚙️  Open Config", open_config),
         pystray.Menu.SEPARATOR,
+        
+        # --- MAINTENANCE SECTION ---
         pystray.MenuItem("🔄 Restart Service", restart_service),
         pystray.MenuItem("⏹  Stop Service", stop_service),
         pystray.Menu.SEPARATOR,
+        
         pystray.MenuItem(f"🖧  LAN: {lan_ip}:{ZENTRA_PORT}", None, enabled=False),
         pystray.MenuItem(f"🔌 {scheme.upper()} | {scheme}://localhost:{ZENTRA_PORT}/chat", None, enabled=False),
         pystray.Menu.SEPARATOR,
