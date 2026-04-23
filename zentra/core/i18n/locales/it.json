@@ -699,6 +699,11 @@
         "chat_regen_no_question": "Impossibile trovare la domanda precedente",
         "chat_regen_err_internal": "Errore interno: sendInternalMessage mancante",
         "chat_edit_cancel": "Annulla",
-        "chat_edit_save": "Salva"
+        "chat_edit_save": "Salva",
+        "webui_help_full_check": "Check Completo",
+        "webui_help_fix_paths": "Ripara Percorsi",
+        "webui_help_install_svc": "Installa Servizio",
+        "webui_help_uninstall_svc": "Rimuovi Servizio",
+        "webui_help_diag_log_title": "Output Diagnostica"
     }
 }

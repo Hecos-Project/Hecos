@@ -503,7 +503,58 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     yield emit(f"❌ Errore: {err_msg[:150]}", "ERR")
 
             yield emit("--- Fine test ---", "DONE")
-
         return Response(stream_with_context(generate()), mimetype="text/event-stream",
                         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+    # ── Diagnostic & Maintenance Endpoints ─────────────────────────────────────
+
+    @app.route("/api/system/diagnostic/full-check", methods=["POST"])
+    def diagnostic_full_check():
+        try:
+            from zentra.setup.engine import check_python_version, check_dependencies, auto_fix_piper_path
+            import io
+            from contextlib import redirect_stdout
+            
+            output = io.StringIO()
+            with redirect_stdout(output):
+                check_python_version()
+                check_dependencies()
+                auto_fix_piper_path()
+            
+            return jsonify({"ok": True, "log": output.getvalue()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/system/diagnostic/fix-paths", methods=["POST"])
+    def diagnostic_fix_paths():
+        try:
+            from zentra.setup.engine import auto_fix_piper_path
+            import io
+            from contextlib import redirect_stdout
+            
+            output = io.StringIO()
+            with redirect_stdout(output):
+                auto_fix_piper_path()
+            
+            return jsonify({"ok": True, "log": output.getvalue()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/system/diagnostic/service", methods=["POST"])
+    def diagnostic_service_manage():
+        try:
+            data = request.get_json(force=True) or {}
+            action = data.get("action", "install") # "install" or "uninstall"
+            
+            from zentra.setup.engine import manage_service
+            import io
+            from contextlib import redirect_stdout
+            
+            output = io.StringIO()
+            with redirect_stdout(output):
+                success = manage_service(action)
+            
+            return jsonify({"ok": success, "log": output.getvalue()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 

@@ -142,5 +142,5 @@ echo  ^|   To check:  services.msc -^> "Zentra Core"        ^|
 echo  ^|   To remove: UNINSTALL_SERVICE_WIN.bat           ^|
 echo  +--------------------------------------------------+
 echo.
-pause
+if not "%ZENTRA_SETUP_UNATTENDED%"=="1" pause
 

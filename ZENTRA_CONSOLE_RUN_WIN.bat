@@ -21,6 +21,16 @@ if exist "%CD%\python_env\python.exe" (
   call venv\Scripts\activate.bat
 )
 
+:: Auto-check environment before starting
+echo [*] Verifica configurazione ambiente...
+!PYTHON_CMD! zentra\setup_wizard.py --auto
+if %ERRORLEVEL% NEQ 0 (
+  echo [!] Problema di configurazione rilevato.
+  echo [!] Lancio del Setup Wizard riparatore...
+  timeout /t 3
+  call ZENTRA_SETUP_CONSOLE_WIN.bat
+)
+
 echo [*] Starting interactive terminal...
 echo [*] Press F9 for a Safe Restart of the program.
 echo.

@@ -685,6 +685,11 @@
         "chat_regen_no_question": "Cannot find preceding question",
         "chat_regen_err_internal": "Internal error: sendInternalMessage missing",
         "chat_edit_cancel": "Cancel",
-        "chat_edit_save": "Save"
+        "chat_edit_save": "Save",
+        "webui_help_full_check": "Full System Check",
+        "webui_help_fix_paths": "Fix Broken Paths",
+        "webui_help_install_svc": "Install Service",
+        "webui_help_uninstall_svc": "Uninstall Service",
+        "webui_help_diag_log_title": "Diagnostic Output"
     }
 }

@@ -28,4 +28,4 @@ echo.
 echo  [+] Service removed successfully.
 echo  [*] You can still use Zentra manually with ZENTRA_WEB_RUN_WIN.bat
 echo.
-pause
+if not "%ZENTRA_SETUP_UNATTENDED%"=="1" pause

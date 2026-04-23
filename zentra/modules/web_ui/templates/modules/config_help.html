@@ -48,9 +48,69 @@
                 <strong style="color: var(--text); margin-top: 4px;">Modular Native OS</strong>
             </div>
         </div>
+        </div>
+        
+        <!-- Maintenance Section -->
+        <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 12px; font-weight: bold;">🔧 MAINTENANCE & REPAIR</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('full-check')" style="font-size: 11px;">🔍 {{ t('webui_help_full_check') }}</button>
+                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('fix-paths')" style="font-size: 11px;">📂 {{ t('webui_help_fix_paths') }}</button>
+                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('service', 'install')" style="font-size: 11px;">⚙️ {{ t('webui_help_install_svc') }}</button>
+                <button type="button" class="btn btn-danger" onclick="runDiagnostic('service', 'uninstall')" style="font-size: 11px;">🗑️ {{ t('webui_help_uninstall_svc') }}</button>
+            </div>
+            
+            <div id="diag-log-container" style="display: none; margin-top: 15px;">
+                <div style="font-size: 10px; color: var(--muted); margin-bottom: 5px;">{{ t('webui_help_diag_log_title') }}</div>
+                <div id="diag-log-output" style="
+                    background: #000; border: 1px solid var(--border); border-radius: 8px;
+                    padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+                    color: var(--accent); max-height: 150px; overflow-y: auto; white-space: pre-wrap;
+                "></div>
+            </div>
+        </div>
+
         <div style="margin-top: 15px; font-size: 11px; color: var(--muted); text-align: center; opacity: 0.6;">
             &copy; 2026 Antonio Meloni. Tutti i diritti riservati.
         </div>
     </div>
 
 </div>
+
+<script>
+async function runDiagnostic(type, action = null) {
+    const outCont = document.getElementById('diag-log-container');
+    const outBox = document.getElementById('diag-log-output');
+    
+    outCont.style.display = 'block';
+    outBox.textContent = "Processing... please wait.";
+    outBox.style.color = "var(--accent)";
+
+    try {
+        const url = `/api/system/diagnostic/${type}`;
+        const body = action ? { action: action } : {};
+        
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        
+        const data = await r.json();
+        if (data.ok) {
+            outBox.textContent = data.log || "Done. No output.";
+            if (type === 'service' && action === 'uninstall') {
+                outBox.style.color = "var(--red)";
+            }
+        } else {
+            outBox.textContent = "ERROR: " + (data.error || "Unknown error");
+            outBox.style.color = "var(--red)";
+        }
+    } catch(e) {
+        outBox.textContent = "FAILED: " + e.message;
+        outBox.style.color = "var(--red)";
+    }
+    outBox.scrollTop = outBox.scrollHeight;
+}
+</script>
+
