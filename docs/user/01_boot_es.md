@@ -10,5 +10,18 @@ Por defecto, el sistema verifica:
 - Respuesta del servidor de IA (Backend).
 - Escaneo de Plugins activos/desactivados.
 
-### ⚡ Arranque Rápido (Fast Boot)
-Puedes activar el **Arranque Rápido** en el panel de control **F7** bajo `SYSTEM` para saltar el diagnóstico y reducir el tiempo de carga a **~0.5 segundos**.
+### ⚡ Bootstrap One-Click
+La forma recomendada de iniciar Zentra es utilizar los scripts de inicio universales en la carpeta raíz:
+- **Windows:** `START_SETUP_HERE_WIN.bat`
+- **Linux:** `START_SETUP_HERE_LINUX.sh`
+
+Estos scripts gestionan automáticamente la comprobación del entorno, las dependencias e inician el **Asistente de Configuración**.
+
+### 🧩 Inicio de Componentes Individuales
+Para usuarios avanzados, los componentes se pueden iniciar por separado:
+- **Interfaz Web:** `ZENTRA_WEB_RUN_WIN.bat` (Win) / `zentra_web_run.sh` (Linux)
+- **Consola de Terminal:** `ZENTRA_CONSOLE_RUN_WIN.bat` (Win) / `ZENTRA_CONSOLE_RUN.sh` (Linux)
+- **Paquete Completo:** `main.py` (Inicia el Tray + Backend)
+
+### 🏎️ Inicio Rápido (Fast Boot)
+Puedes activar el **Inicio Rápido** en el Panel de Control (**F7**) bajo `SYSTEM` para omitir el chequeo inicial y reducir el tiempo de carga a **~0.5 segundos**.

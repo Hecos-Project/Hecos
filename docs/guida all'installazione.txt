@@ -1,29 +1,33 @@
 ===================================================
- GUIDA ALL'INSTALLAZIONE DI ZENTRA CORE v0.18.0
+ GUIDA ALL'INSTALLAZIONE DI ZENTRA CORE v0.19.0
           (Per PC "vergine" - da zero)
 ===================================================
 
-1. INSTALLARE PYTHON
+1. INSTALLARE PYTHON (OBBLIGATORIO)
    - Vai su https://www.python.org/downloads/
    - Scarica Python 3.10 o superiore (consigliato 3.11/3.12)
    - Durante l'installazione, spunta "Add Python to PATH"
 
-2. INSTALLARE OLLAMA (CONSIGLIATO)
-   - Scarica da https://ollama.com
-   - Esegui: ollama pull gemma2
+2. AVVIO RAPIDO (CONSIGLIATO)
+   - Estrai Zentra in una cartella
+   - Esegui lo script di bootstrap per la tua piattaforma:
+     * Windows: Doppio click su START_SETUP_HERE_WIN.bat
+     * Linux: Esegui bash START_SETUP_HERE_LINUX.sh
+   - Questo script installerà le dipendenze e avvierà il Wizard di Setup nel browser.
 
-3. SCARICARE ZENTRA CORE
-   - Estrai la repository in una cartella (es. C:\ZentraCore)
+3. AVVIO MANUALE (PER UTENTI AVANZATI)
+   - Installa dipendenze: pip install -r requirements.txt
+   - Avvia sistema completo: python main.py
+   - Avvia solo WebUI: ZENTRA_WEB_RUN_WIN.bat (Win) o zentra_web_run.sh (Linux)
+   - Avvia solo Console: ZENTRA_CONSOLE_RUN_WIN.bat (Win) o ZENTRA_CONSOLE_RUN.sh (Linux)
 
-4. INSTALLARE DIPENDENZE E CERTIFICATI
-   - Apri il terminale nella cartella di Zentra.
-   - Esegui: pip install -r requirements.txt
-   - Esegui: python scripts/setup_pki.py (per abilitare HTTPS/SSL locale)
+4. SERVIZIO DI SISTEMA
+   - Per far girare Zentra in background ad ogni avvio:
+     * Windows: Esegui INSTALL_SERVICE_WIN.bat
+     * Linux: Esegui INSTALL_SERVICE_LINUX.sh
 
-5. PRIMO AVVIO
-   - Esegui: python main.py
-   - Accedi alla WebUI: http://localhost:7070
-   - Login default: admin / zentra
+5. LOGIN DEFAULT
+   - User: admin / Pass: zentra  (Cambiala subito nel Pannello di Controllo!)
 
 6. MCP & TOOL HUB
-   - Vai in Configurazione -> MCP Bridge per installare nuovi tool da Smithery o GitHub.
+   - Vai in Configurazione -> MCP Bridge per installare nuovi tool da Smithery o GitHub.

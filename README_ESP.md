@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/Zentra-Core/zentra-core.github.io/main/zentra/assets/Zentra_Core_Logo.jpg" width="400" alt="Logo de Zentra">
 </p>
 
-# Zentra Core - Versión 0.18.2 (Runtime Alpha)
+# Zentra Core - Versión 0.19.0 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Zentra Core
@@ -22,7 +22,7 @@ Basado en tres pilares fundamentales:
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional estilo SO y diseño modular que hace intuitiva la orquestación de IA avanzada.
 
-Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Zentra 0.18.2 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
+Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Zentra 0.19.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
 
@@ -51,7 +51,8 @@ La IA genera comandos estructurados que son interpretados y ejecutados a través
 
 ---
 
-## ⚡ Inicio Rápido
+## ⚡ Inicio Rápido (Instalación One-Click)
+La forma más sencilla de instalar y configurar Zentra Core desde cero es utilizar el **Asistente de Configuración Universal**.
 
 ### 1. Clonar el repositorio
 ```bash
@@ -59,15 +60,37 @@ git clone https://github.com/Zentra-Core/zentra-core.github.io.git
 cd zentra-core.github.io
 ```
 
-### 2. Instalar dependencias
-```bash
-pip install -r requirements.txt
+### 2. Lanzar el Asistente de Configuración
+Ejecuta el script de inicio para tu plataforma. Esto comprobará automáticamente Python, instalará las dependencias e iniciará el asistente de configuración en tu navegador.
+
+**Windows:**
+```powershell
+.\START_SETUP_HERE_WIN.bat
 ```
 
-### 3. Ejecutar Zentra
+**Linux:**
 ```bash
-python main.py
+bash START_SETUP_HERE_LINUX.sh
 ```
+
+### 3. Componentes Manuales y Scripts de Utilidad
+Si prefieres gestionar los componentes por separado o realizar tareas de mantenimiento manual, utiliza estos scripts dedicados:
+
+| Plataforma | Script | Descripción |
+| :--- | :--- | :--- |
+| **Todas** | `main.py` | Inicia el sistema completo (Tray + WebUI + Backend) |
+| **Windows** | `ZENTRA_WEB_RUN_WIN.bat` | Inicia SOLO la Interfaz Web y el Servidor |
+| **Linux** | `zentra_web_run.sh` | Inicia SOLO la Interfaz Web y el Servidor |
+| **Windows** | `ZENTRA_CONSOLE_RUN_WIN.bat` | Inicia SOLO la Consola de Terminal (TUI) |
+| **Linux** | `ZENTRA_CONSOLE_RUN.sh` | Inicia SOLO la Consola de Terminal (TUI) |
+| **Windows** | `INSTALL_SERVICE_WIN.bat` | Instala Zentra como Servicio de Windows |
+| **Linux** | `INSTALL_SERVICE_LINUX.sh` | Instala Zentra como servicio de usuario systemd |
+| **Windows** | `UNINSTALL_SERVICE_WIN.bat` | Elimina de forma segura el Servicio de Windows |
+| **Linux** | `UNINSTALL_SERVICE_LINUX.sh` | Elimina de forma segura el servicio systemd |
+| **Windows** | `INSTALL_ZENTRA_WIN.bat` | Instalación manual de dependencias y Piper |
+| **Linux** | `INSTALL_ZENTRA_LINUX.sh` | Instalación manual de dependencias y Piper |
+
+### 4. Configuración y Primera Ejecución
 
 ---
 
