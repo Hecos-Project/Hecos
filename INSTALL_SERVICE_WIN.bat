@@ -76,6 +76,49 @@ if %errorlevel% neq 0 (
 echo.
 
 :: -----------------------------------------------------
+:: STEP 6: Launch Tray icon immediately (no reboot needed)
+:: -----------------------------------------------------
+echo  [*] Starting Zentra Tray icon...
+
+:: Find pythonw (no console window). Fallback to python if pythonw missing.
+set PYTHONW_CMD=%PYTHON_CMD:"=%
+set PYTHONW_CMD=%PYTHONW_CMD:python.exe=pythonw.exe%
+if not exist "%PYTHONW_CMD%" set PYTHONW_CMD=%PYTHON_CMD:"=%
+
+:: Write a tiny VBScript launcher to avoid quote-escaping hell
+set VBS_LAUNCHER=%TEMP%\zentra_tray_launch.vbs
+(
+echo Set oShell = CreateObject("WScript.Shell"^)
+echo oShell.CurrentDirectory = "%CD%"
+echo oShell.Run """%PYTHONW_CMD%"" -c ""import os,sys; os.chdir(r'%CD%'); sys.path.insert(0,r'%CD%'); from zentra.tray.tray_app import run_tray; run_tray()"" ", 0, False
+) > "%VBS_LAUNCHER%"
+
+:: Kill any existing stale tray first, then launch fresh
+taskkill /F /FI "WINDOWTITLE eq zentra_core" >nul 2>&1
+wscript //nologo "%VBS_LAUNCHER%"
+echo  [+] Tray icon launched.
+echo.
+
+:: Wait up to 20 seconds for the WebUI to become available, then open the browser
+echo  [*] Waiting for Zentra WebUI to become available (up to 20s)...
+set ZENTRA_READY=0
+for /L %%i in (1,1,20) do (
+    if !ZENTRA_READY! == 0 (
+        powershell -NonInteractive -Command "try{(New-Object Net.Sockets.TcpClient('127.0.0.1',7070)).Close();exit 0}catch{exit 1}" >nul 2>&1
+        if !errorlevel! == 0 ( set ZENTRA_READY=1 ) else ( timeout /t 1 /nobreak >nul )
+    )
+)
+
+if !ZENTRA_READY! == 1 (
+    echo  [+] Zentra is online! Opening WebUI in your browser...
+    start "" "http://127.0.0.1:7070/chat"
+) else (
+    echo  [!] WebUI not ready yet - Zentra may need a moment to initialize.
+    echo  [*] The tray icon will open it automatically once ready.
+)
+echo.
+
+:: -----------------------------------------------------
 :: DONE
 :: -----------------------------------------------------
 echo  +--------------------------------------------------+
