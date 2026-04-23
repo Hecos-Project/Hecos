@@ -1,0 +1,22 @@
+[Unit]
+Description=Zentra Core — Agentic OS
+Documentation=https://github.com/Zentra-Core/zentra-core.github.io/wiki
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Replace 'your_user' with your Linux username, or use EnvironmentFile
+User=%i
+WorkingDirectory=/opt/zentra
+ExecStart=/opt/zentra/venv/bin/python zentra/monitor.py --script zentra.modules.web_ui.server
+ExecStop=/bin/kill -SIGTERM $MAINPID
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=15
+StandardOutput=journal
+StandardError=journal
+Environment=ZENTRA_SERVICE_MODE=1
+
+[Install]
+WantedBy=multi-user.target

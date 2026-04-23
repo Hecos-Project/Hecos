@@ -164,7 +164,10 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
     print(hw_row)
     
     # --- ROW 5: HINT BAR (Yellow) if PTT is ON ---
-    if ptt_status:
+    if "LISTENING" in str(system_status).upper() or "RECORDING" in str(system_status).upper():
+        rec_text = " 🔴 RECORDING... "
+        print(f"{Back.RED}{Fore.WHITE}{Style.BRIGHT}{rec_text.center(L)}{Style.RESET_ALL}")
+    elif ptt_status:
         hint_text = f" {translator.t('ptt_hint')} "
         print(f"{Fore.YELLOW}{hint_text.center(L)}{Style.RESET_ALL}")
     else:
@@ -270,7 +273,11 @@ def update_status_bar_in_place(config, voice_status, listening_status, system_st
         _update_dashboard_os(formatted_row, 3)
         
         # Update Row 5: Hint or Divider
-        if ptt_status:
+        if "LISTENING" in str(system_status).upper() or "RECORDING" in str(system_status).upper():
+            rec_text = " 🔴 RECORDING... "
+            formatted_hint = f"{Back.RED}{Fore.WHITE}{Style.BRIGHT}{rec_text.center(L)}{Style.RESET_ALL}"
+            _update_dashboard_os(formatted_hint, 5)
+        elif ptt_status:
             hint_text = f" {translator.t('ptt_hint')} "
             formatted_hint = f"{Fore.YELLOW}{hint_text.center(L)}{Style.RESET_ALL}"
             _update_dashboard_os(formatted_hint, 5)
