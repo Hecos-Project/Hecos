@@ -86,12 +86,27 @@ def migrate_schema():
         cur.execute("SELECT id FROM sessions WHERE id = ?", (legacy_id,))
         if not cur.fetchone():
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            legacy_title = "Chat " + datetime.now().strftime("%d/%m/%Y")
             cur.execute(
                 "INSERT INTO sessions (id, title, created_at, updated_at, privacy_mode) VALUES (?, ?, ?, ?, ?)",
-                (legacy_id, "Legacy Conversations", now, now, "normal")
+                (legacy_id, legacy_title, now, now, "normal")
             )
         cur.execute("UPDATE history SET session_id = ? WHERE session_id IS NULL", (legacy_id,))
         logger.info(f"[SESSION] Migrated {legacy_count} legacy messages to session '{legacy_id}'.")
+
+    # 5. One-time rename of any sessions still carrying the old "Legacy Conversations" label
+    cur.execute("SELECT id, created_at FROM sessions WHERE title = 'Legacy Conversations'")
+    old_legacy_rows = cur.fetchall()
+    for row_id, row_created in old_legacy_rows:
+        try:
+            # Use the session's own created_at date for the new title
+            dt = datetime.strptime(row_created[:10], "%Y-%m-%d")
+            new_title = "Chat " + dt.strftime("%d/%m/%Y")
+        except Exception:
+            new_title = "Chat (storica)"
+        cur.execute("UPDATE sessions SET title = ? WHERE id = ?", (new_title, row_id))
+    if old_legacy_rows:
+        logger.info(f"[SESSION] Renamed {len(old_legacy_rows)} legacy session(s) to date-based titles.")
 
     conn.commit()
     conn.close()

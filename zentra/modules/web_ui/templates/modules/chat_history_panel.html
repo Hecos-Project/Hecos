@@ -136,4 +136,31 @@
 .history-empty { font-size: var(--font-size-sm); color:var(--muted); padding:8px 4px; text-align:center; }
 .history-item-actions { display:none; }
 .history-item:hover .history-item-actions { display:flex; }
+
+/* ── Date group separators ───────────────────────────────────────── */
+.history-date-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 2px 4px;
+}
+.history-date-group:first-child { margin-top: 2px; }
+.history-date-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.history-date-group::before,
+.history-date-group::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.5;
+}
 </style>
