@@ -110,8 +110,19 @@ window.sendMessage = async function() {
     };
     evtSrc.onerror = () => {
       cursor.remove();
-      if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error');
+      if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
+      else aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Zentra to restart...</span>';
       evtSrc.close(); window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+
+      if (!window.isReconnectingAuto) {
+        window.isReconnectingAuto = true;
+        const poller = setInterval(async () => {
+            try {
+                const r = await fetch('/zentra/status');
+                if(r.ok) { clearInterval(poller); window.location.reload(); }
+            } catch(e) {}
+        }, 2000);
+      }
     };
   } catch(err) {
     cursor.remove();
@@ -193,8 +204,19 @@ window.sendInternalMessage = async function(text) {
     };
     evtSrc.onerror = () => {
       cursor.remove();
-      if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error');
+      if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
+      else aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Zentra to restart...</span>';
       evtSrc.close(); window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+
+      if (!window.isReconnectingAuto) {
+        window.isReconnectingAuto = true;
+        const poller = setInterval(async () => {
+            try {
+                const r = await fetch('/zentra/status');
+                if(r.ok) { clearInterval(poller); window.location.reload(); }
+            } catch(e) {}
+        }, 2000);
+      }
     };
   } catch(err) {
     cursor.remove();

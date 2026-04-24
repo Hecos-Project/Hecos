@@ -12,14 +12,14 @@
     </div>
     
     <div class="field" style="margin-top:10px;">
-      <label>{{ t('webui_voice_routing_in') }}</label>
+      <label title="{{ t('webui_voice_routing_in_hint') }}">{{ t('webui_voice_routing_in') }}</label>
       <select id="stt-source">
          <option value="system">{{ t('webui_voice_pc_mic') }}</option>
          <option value="web">{{ t('webui_voice_web_mic') }}</option>
       </select>
     </div>
     <div class="field" style="margin-top:10px;">
-      <label>{{ t('webui_voice_routing_out') }}</label>
+      <label title="{{ t('webui_voice_routing_out_hint') }}">{{ t('webui_voice_routing_out') }}</label>
       <select id="tts-destination">
          <option value="system">{{ t('webui_voice_pc_speaker') }}</option>
          <option value="web">{{ t('webui_voice_web_speaker') }}</option>
@@ -93,17 +93,6 @@
       <div class="field"><label>{{ t('webui_conf_voice_noise') }}</label><input type="number" id="v-noise" min="0" max="1" step="0.01"></div>
       <div class="field"><label>{{ t('webui_conf_voice_noisew') }}</label><input type="number" id="v-noisew" min="0" max="1" step="0.01"></div>
       <div class="field"><label>{{ t('webui_conf_voice_silence') }}</label><input type="number" id="v-silence" min="0" max="2" step="0.05"></div>
-    </div>
-    
-    <div style="margin-top:20px; padding-top:15px; border-top: 1px solid var(--border);">
-      <label style="font-size:12px; color:var(--muted); margin-bottom:8px; display:block;">{{ t('webui_voice_test_title') }}</label>
-      <div style="display:flex; gap:10px;">
-        <input type="text" id="v-test-text" placeholder="{{ t('webui_voice_test_ph') }}" style="flex:1;">
-        <button class="btn btn-secondary" onclick="testVoice('web')" title="{{ t('webui_voice_test_web') }}">🌐</button>
-        <button class="btn btn-secondary" onclick="testVoice('console')" title="{{ t('webui_voice_test_pc') }}">💻</button>
-        <button id="v-test-stop" class="btn btn-danger" style="display:none;" onclick="stopVoice()" title="Stop Voice">⏹</button>
-      </div>
-      <div id="v-test-status" style="font-size:11px; margin-top:5px; color:var(--accent);"></div>
     </div>
   </div>
   <div class="card">
