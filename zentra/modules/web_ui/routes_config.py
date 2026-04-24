@@ -91,10 +91,8 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 # Keep state_manager in sync with toggles
                 sm = _sm()
                 if sm is not None:
-                    from zentra.core.audio.device_manager import get_audio_config
-                    acfg = get_audio_config()
-                    sm.audio_mode = acfg.get("audio_mode", "auto")
-                
+                    # Update local state based on config toggles
+                    sm.listening_status = incoming.get("listening", {}).get("enabled", sm.listening_status)
                 # Update the processor and registry at runtime
                 try:
                     from zentra.core.processing import processore, filtri

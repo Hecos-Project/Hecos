@@ -1,27 +1,17 @@
 """
 MODULE: Audio Device Manager - Zentra Core
-DESCRIPTION: Facade module for audio device configuration and discovery.
-             Logic has been split into:
-             - audio_config.py
-             - beep_generator.py
-             - device_scanner.py
+DESCRIPTION: Facade module for audio device configuration.
+             Logic has been heavily simplified to delegate to the OS.
 """
 
 from .audio_config import (
     _load_audio_config, 
     _save_audio_config, 
     _migrate_from_main_config,
-    get_output_device, 
-    get_input_device, 
-    get_audio_config,
-    set_output_device, 
-    set_input_device
+    get_audio_config
 )
 from .device_scanner import (
     list_devices, 
-    test_output_device, 
-    test_input_device,
-    _score_device_name, 
     scan_and_select, 
     maybe_scan_on_startup
 )

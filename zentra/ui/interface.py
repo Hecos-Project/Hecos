@@ -105,11 +105,8 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
     # 1. CLEAR SCREEN (Ensures Row 1 of Viewport is Row 1 of the header)
     os.system('cls' if os.name == 'nt' else 'clear')
     
-    import shutil
-    L = 90
-    try:
-        L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
-    except: pass
+    from zentra.ui.ui_updater import get_cached_L
+    L = get_cached_L()
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     
     # --- ROW 1: TITLE BAR (CYAN) ---
@@ -132,10 +129,13 @@ def show_complete_ui(config, voice_status, listening_status, system_status="READ
     try:
         from zentra.app.model_manager import ModelManager
         _, model_eff = ModelManager.get_effective_model_info(config)
-    except:
+    except Exception as e:
+        logger.debug(f"UI: Error getting effective model: {e}")
         model_eff = "N/D"
 
-    soul = config.get('ai', {}).get('active_personality', 'N/D')
+    # Use .get() with robust fallbacks
+    ai_conf = config.get('ai') or {}
+    soul = ai_conf.get('active_personality', 'N/D')
     if soul:
         soul = str(soul).replace('.yaml', '')
     else:
@@ -182,9 +182,8 @@ def get_hardware_row(config=None, dashboard_mod=None):
     Returns the formatted string for the hardware row (CPU, RAM, VRAM, backend).
     Guarantees it respects the terminal width to avoid UI corruption/wrap.
     """
-    import re
-    import shutil
-    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    from zentra.ui.ui_updater import get_cached_L
+    L = get_cached_L()
     
     if dashboard_mod is None:
         dashboard_mod = module_loader.get_plugin_module("DASHBOARD")
@@ -244,7 +243,8 @@ def update_status_bar_in_place(config, voice_status, listening_status, system_st
     
     # 2. Rebuild the Status Bar row
     backend_type, model = ModelManager.get_effective_model_info(config)
-    soul = config.get('ai', {}).get('active_personality', 'N/D').replace('.yaml', '')
+    ai_conf = config.get('ai') or {}
+    soul = ai_conf.get('active_personality', 'N/D').replace('.yaml', '')
     
     mic_str = "ON" if listening_status else f"{Fore.RED}OFF{Fore.WHITE}"
     spk_str = "ON" if voice_status else f"{Fore.RED}OFF{Fore.WHITE}"

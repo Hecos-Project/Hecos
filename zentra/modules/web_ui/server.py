@@ -387,13 +387,10 @@ if __name__ == "__main__":
     
     sm = StateManager(
         initial_voice_status=acfg.get('voice_status', True),
-        initial_listening_status=acfg.get('listening_status', True),
-        initial_audio_mode=acfg.get('audio_mode', 'auto')
+        initial_listening_status=acfg.get('listening_status', True)
     )
     sm.push_to_talk    = acfg.get('push_to_talk', False)
     sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
-    sm.stt_source      = acfg.get('stt_source', 'system')
-    sm.tts_destination = acfg.get('tts_destination', 'web')
     set_state_manager(sm)
 
     # Start the listening thread (Whisper + PTT)

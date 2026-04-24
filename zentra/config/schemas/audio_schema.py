@@ -17,17 +17,6 @@ class PttSources(BaseModel):
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""
 
-    # --- Device ---
-    output_device_index: int = -1
-    output_device_name: str = ""
-    input_device_index: int = -1
-    input_device_name: str = ""
-    auto_select: bool = True
-    test_on_startup: bool = True
-    fallback_on_error: bool = True
-    beep_on_select: bool = True
-    last_scan: str = ""
-
     # --- TTS (Piper) ---
     voice_status: bool = True
     piper_path: str = "C:/piper/piper.exe"
@@ -44,9 +33,6 @@ class AudioConfig(BaseModel):
     phrase_limit: int = 15
     push_to_talk: bool = False
     ptt_hotkey: str = "ctrl+shift"
-    stt_source: str = "system"    # 'system' | 'web'
-    tts_destination: str = "auto" # 'system' | 'web' | 'auto'
-    audio_mode: str = "auto"      # 'console' | 'web' | 'auto'
 
     # --- PTT Sources ---
     ptt_sources:    PttSources = PttSources()

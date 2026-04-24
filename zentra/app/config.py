@@ -19,8 +19,8 @@ def _get_schema():
     return SystemConfig
 
 # Project root and Zentra package root
-_PROJECT_ROOT = _os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", ".."))
-_ZENTRA_DIR = _os.path.join(_PROJECT_ROOT, "zentra")
+_PROJECT_ROOT = _os.path.abspath(_os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", "..")))
+_ZENTRA_DIR = _os.path.abspath(_os.path.normpath(_os.path.join(_PROJECT_ROOT, "zentra")))
 
 _CONFIG_YAML_PATH = _os.path.join(_ZENTRA_DIR, "config", "data", "system.yaml")
 _CONFIG_JSON_PATH = _os.path.join(_ZENTRA_DIR, "config", "data", "system.json")

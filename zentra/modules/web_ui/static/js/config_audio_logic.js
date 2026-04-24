@@ -20,9 +20,6 @@ function populateAudioUI() {
 
     setCheck('sys-mic-status', (audioConfig || {}).listening_status ?? false);
     setCheck('sys-voice-status', (audioConfig || {}).voice_status ?? false);
-    setVal('stt-source', (audioConfig || {}).stt_source || 'system');
-    setVal('tts-destination', (audioConfig || {}).tts_destination || 'web');
-    setVal('audio-mode', (audioConfig || {}).audio_mode || 'console');
 
     if (audioDevices) {
         const inSel = document.getElementById('audio-input-device');
@@ -68,24 +65,6 @@ function buildAudioPayload() {
     obj.energy_threshold = parseInt(document.getElementById('a-threshold').value) || 450;
     obj.silence_timeout  = parseInt(document.getElementById('a-timeout').value) || 5;
     obj.phrase_limit     = parseInt(document.getElementById('a-limit').value) || 15;
-    
-    obj.stt_source = document.getElementById('stt-source').value;
-    obj.tts_destination = document.getElementById('tts-destination').value;
-    const modeEl = document.getElementById('audio-mode');
-    if (modeEl) obj.audio_mode = modeEl.value;
-    
-    const inSel = document.getElementById('audio-input-device');
-    const outSel = document.getElementById('audio-output-device');
-    if (inSel && inSel.value !== "") {
-        obj.input_device_index = parseInt(inSel.value);
-        let txt = inSel.options[inSel.selectedIndex]?.text || '';
-        obj.input_device_name = txt.includes(':') ? txt.split(': ').slice(1).join(': ') : txt;
-    }
-    if (outSel && outSel.value !== "") {
-        obj.output_device_index = parseInt(outSel.value);
-        let txt = outSel.options[outSel.selectedIndex]?.text || '';
-        obj.output_device_name = txt.includes(':') ? txt.split(': ').slice(1).join(': ') : txt;
-    }
     
     return obj;
 }
@@ -145,51 +124,6 @@ async function stopVoice() {
     if(sts) sts.textContent = "Stopped.";
 }
 
-async function scanAudioDevices() {
-    const sts = document.getElementById('audio-scan-status');
-    if (sts) sts.textContent = "Scanning... (Wait for beep)";
-    try {
-        const r = await fetch('/api/audio/devices/scan', { method: 'POST' });
-        const data = await r.json();
-        if (data.ok) {
-            if (sts) sts.textContent = `Done. Selected In: ${data.input_device_index}, Out: ${data.output_device_index}`;
-            const rr = await fetch('/api/audio/devices');
-            const rrData = await rr.json();
-            if (rrData.ok) {
-                audioDevices = rrData;
-                if (typeof populateUI === 'function') populateUI();
-            }
-        } else {
-            if (sts) sts.textContent = "Error: " + data.error;
-        }
-    } catch(e) {
-        if (sts) sts.textContent = "Request failed.";
-    }
-}
-
-async function applyAudioDevice() {
-    const sts = document.getElementById('audio-scan-status');
-    const inIdx = document.getElementById('audio-input-device').value;
-    const outIdx = document.getElementById('audio-output-device').value;
-    
-    if (sts) sts.textContent = "Applying...";
-    try {
-        const r = await fetch('/api/audio/devices/select', {
-            method: 'POST',
-            body: JSON.stringify({ input_index: inIdx, output_index: outIdx })
-        });
-        const data = await r.json();
-        if (data.ok) {
-            if (sts) sts.textContent = "Saved to audio configuration.";
-            setTimeout(() => { if(sts && sts.textContent.includes("Saved")) sts.textContent = ""; }, 3000);
-        } else {
-            if (sts) sts.textContent = "Error: " + data.error;
-        }
-    } catch(e) {
-        if (sts) sts.textContent = "Request failed.";
-    }
-}
-
 // Key Listener
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') stopVoice();
@@ -200,5 +134,3 @@ window.populateAudioUI = populateAudioUI;
 window.buildAudioPayload = buildAudioPayload;
 window.testVoice = testVoice;
 window.stopVoice = stopVoice;
-window.scanAudioDevices = scanAudioDevices;
-window.applyAudioDevice = applyAudioDevice;

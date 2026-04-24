@@ -49,23 +49,15 @@ class ZentraApplication:
         
         cv    = acfg.get('voice_status', True)
         ca    = acfg.get('listening_status', True)
-        stt_s = acfg.get('stt_source', 'system')
-        tts_d = acfg.get('tts_destination', 'web')
         ptt   = acfg.get('push_to_talk', False)
         hk    = acfg.get('ptt_hotkey', 'ctrl+shift')
         
-        # audio_mode is now stored in config_audio.json
-        am = acfg.get('audio_mode', 'auto')
-        
         self.state_manager = StateManager(
             initial_voice_status=cv, 
-            initial_listening_status=ca, 
-            initial_audio_mode=am
+            initial_listening_status=ca
         )
         self.state_manager.push_to_talk    = ptt
         self.state_manager.ptt_hotkey      = hk
-        self.state_manager.stt_source      = stt_s
-        self.state_manager.tts_destination = tts_d
         
         self.input_handler = InputHandler(self.state_manager, self.config_manager)
         self.model_manager = ModelManager(self.config_manager)
@@ -82,6 +74,9 @@ class ZentraApplication:
 
     def run(self):
         """Starts the main application loop."""
+        from zentra.ui.ui_updater import update_cached_L
+        update_cached_L()
+        
         self.bootstrapper.initialize()
         
         config = self.config_manager.config
@@ -139,8 +134,10 @@ class ZentraApplication:
         ascolto_thread = AscoltoThread(self.state_manager)
         ascolto_thread.start()
 
-        sys.stdout.write(prefisso)
-        sys.stdout.flush()
+        from zentra.ui.ui_updater import stdout_lock
+        with stdout_lock:
+            sys.stdout.write(prefisso)
+            sys.stdout.flush()
 
         # Main loop
         while self.running:
@@ -194,17 +191,30 @@ class ZentraApplication:
                     else:
                         ui_updater.stop()
                     
-                sys.stdout.write(prefisso + input_utente)
-                sys.stdout.flush()
+                from zentra.ui.ui_updater import stdout_lock
+                with stdout_lock:
+                    sys.stdout.write(prefisso + input_utente)
+                    sys.stdout.flush()
             elif evento == "PROCESSED":
                 pass
             elif evento == "CLEAR":
                 input_utente = ""
-                sys.stdout.write(f"\r{prefisso}")
-                sys.stdout.flush()
+                from zentra.ui.ui_updater import stdout_lock
+                with stdout_lock:
+                    sys.stdout.write(f"\r{prefisso}")
+                    sys.stdout.flush()
 
-            time.sleep(0.01)
+            time.sleep(0.025) # Optimized sleep for responsiveness and stability
 
 if __name__ == "__main__":
-    app = ZentraApplication()
-    app.run()
+    try:
+        app = ZentraApplication()
+        app.run()
+    except Exception as e:
+        import traceback
+        crash_msg = f"FATAL ERROR AT STARTUP: {e}\n{traceback.format_exc()}"
+        print(f"\n\033[91m{crash_msg}\033[0m")
+        # Save to file as well for the user to share
+        with open("crash_dump.txt", "w", encoding="utf-8") as f:
+            f.write(crash_msg)
+        sys.exit(1)

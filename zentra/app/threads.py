@@ -17,8 +17,7 @@ class AscoltoThread(threading.Thread):
         logger.info("[LISTENING THREAD] Initialized.")
         while True:
             # Skip mic listening if web UI owns audio
-            if (self.state.stt_source == 'system' and
-                self.state.listening_status and 
+            if (self.state.listening_status and 
                 not self.state.system_speaking and 
                 not self.state.system_processing):
                 text = listen.listen(state=self.state)

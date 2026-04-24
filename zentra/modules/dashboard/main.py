@@ -132,7 +132,7 @@ class DashboardTools:
         """
         Returns a summary of system CPU and RAM usage.
         """
-        cpu = psutil.cpu_percent(interval=0.1)
+        cpu = psutil.cpu_percent(interval=None)
         ram = psutil.virtual_memory().percent
         return translator.t("plugin_dashboard_stats_cpu_ram", cpu=cpu, ram=ram)
 
@@ -178,7 +178,7 @@ class DashboardTools:
         Returns a complete report of all hardware resources and AI backend status.
         Useful if the user asks 'how are you' or 'system report'.
         """
-        cpu = psutil.cpu_percent(interval=0.1)
+        cpu = psutil.cpu_percent(interval=None)
         ram = psutil.virtual_memory().percent
         
         with _lock:
@@ -211,7 +211,7 @@ tools = DashboardTools()
 def get_stats():
     """Wrapper per compatibilità con interface.py e ui_updater.py"""
     # Usiamo un dizionario compatibile con il vecchio formato atteso
-    cpu = psutil.cpu_percent(interval=0.1)
+    cpu = psutil.cpu_percent(interval=None)
     ram = psutil.virtual_memory().percent
     
     with _lock:

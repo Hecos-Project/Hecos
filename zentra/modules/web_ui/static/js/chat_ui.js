@@ -152,15 +152,7 @@ window.refreshStatus = async function() {
     // PTT can only be ON if MIC is also ON — enforce this dependency client-side
     if (window._applyPTTState) window._applyPTTState(micIsOn && pttIsOn);
     
-    const ac = d.audio_config || {};
-    // Guard: don't overwrite routing selects if the user just changed them (within 5s)
-    // or if a routing dropdown is currently focused (user is actively choosing).
-    const sttFocused = document.activeElement === document.getElementById('stt-source-select');
-    const ttsFocused = document.activeElement === document.getElementById('tts-dest-select');
-    const recentChange = (Date.now() - (window._lastRoutingChange || 0)) < 5000;
-    if (!sttFocused && !ttsFocused && !recentChange) {
-      if (window._applyRoutingState) window._applyRoutingState(ac.stt_source || 'system', ac.tts_destination || 'auto');
-    }
+
 
   } catch(e) {
     const tbM = document.getElementById('tb-model');

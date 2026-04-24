@@ -198,49 +198,27 @@ def stop_voice_generation():
 
 def _maybe_generate_tts(text: str, cfg_mgr):
     """
-    Generate TTS audio based on tts_destination setting.
-
-    Routing logic (single source of truth — tts_destination):
-      - 'auto'   → we are inside the WebUI chat route, so treat as 'web'
-      - 'web'    → generate WAV file and return URL for browser playback
-      - 'system' → play via PC speakers (system audio)
-      - anything else / voice_status=False → skip TTS
+    Generate TTS audio for the WebUI.
+    Since this route is used exclusively by the WebUI client, we unconditionally 
+    generate a WAV file and defer playback to the browser's audio context.
     """
     global _last_audio_path
     try:
         from zentra.core.audio.device_manager import get_audio_config
         voice_cfg  = get_audio_config()
-
         voice_on   = voice_cfg.get("voice_status", False)
-        tts_dest   = voice_cfg.get("tts_destination", "auto")
-
-        # In the WebUI context, 'auto' always means 'web' — the browser is the active output.
-        if tts_dest == "auto":
-            tts_dest = "web"
-            _chat_log.debug("[Chat] tts_destination=auto → resolved to 'web' (WebUI context).")
 
         if not voice_on:
             _chat_log.debug("[Chat] TTS skipped: voice_status=False.")
             return None
 
-        if tts_dest == "system":
-            from zentra.core.audio import voice
-            import threading
-            _chat_log.info(f"[Chat] TTS → PC speakers: {text[:40]}...")
-            threading.Thread(target=voice.speak, args=(text,), daemon=True).start()
-            return "system"
-
-        if tts_dest == "web":
-            path = generate_voice_file(text, voice_cfg)
-            if path:
-                _last_audio_path = path
-                _chat_log.info(f"[Chat] TTS → browser WAV: {path}")
-                return "web"
-            return None
-
-        _chat_log.warning(f"[Chat] Unknown tts_destination='{tts_dest}', skipping TTS.")
+        path = generate_voice_file(text, voice_cfg)
+        if path:
+            _last_audio_path = path
+            _chat_log.info(f"[Chat] TTS → browser WAV: {path}")
+            return "web"
+            
         return None
-
     except Exception as e:
         _chat_log.debug(f"[Chat] TTS error: {e}")
         return None

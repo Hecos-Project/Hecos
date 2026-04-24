@@ -40,41 +40,9 @@ def _save_audio_config(cfg: dict) -> bool:
 # PUBLIC GETTERS / SETTERS (same API as before)
 # ──────────────────────────────────────────────────────────────────────────────
 
-def get_output_device() -> int:
-    """Returns the configured output device index (-1 = system default)."""
-    cfg = _load_audio_config()
-    return cfg.get("output_device_index", -1)
-
-
-def get_input_device():
-    """Returns the configured input device index (None = system default)."""
-    cfg = _load_audio_config()
-    idx = cfg.get("input_device_index", -1)
-    return idx if idx >= 0 else None
-
-
 def get_audio_config() -> dict:
     """Returns the full audio configuration dict."""
     return _load_audio_config()
-
-
-def set_output_device(index: int, name: str = "") -> bool:
-    """Manually sets the output device and saves."""
-    cfg = _load_audio_config()
-    cfg["output_device_index"] = index
-    cfg["output_device_name"] = name
-    cfg["auto_select"] = False
-    return _save_audio_config(cfg)
-
-
-def set_input_device(index: int, name: str = "") -> bool:
-    """Manually sets the input device and saves."""
-    cfg = _load_audio_config()
-    cfg["input_device_index"] = index
-    cfg["input_device_name"] = name
-    cfg["auto_select"] = False
-    return _save_audio_config(cfg)
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # BACKWARD COMPAT STUBS

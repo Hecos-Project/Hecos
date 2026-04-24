@@ -23,14 +23,6 @@ _recognizer.energy_threshold = 450
 _is_calibrated = False
 
 
-def _get_mic_device_index():
-    """Returns the microphone device index from config_audio.json, or None for system default."""
-    try:
-        from zentra.core.audio.device_manager import get_input_device
-        return get_input_device()
-    except Exception:
-        return None
-
 
 def listen(state=None):
     global _is_calibrated, _recognizer
@@ -45,19 +37,11 @@ def listen(state=None):
     except Exception:
         conf = {}
 
-    # Resolve microphone device index
-    device_index = _get_mic_device_index()
-
     # Update recognizer settings from config if needed
     _recognizer.energy_threshold = conf.get("energy_threshold", 450)
 
-    # Open Microphone with explicit device index if available
-    mic_kwargs = {}
-    if device_index is not None:
-        mic_kwargs["device_index"] = device_index
-
     try:
-        with sr.Microphone(**mic_kwargs) as source:
+        with sr.Microphone() as source:
             # Calibrate once per session or on first run
             if not _is_calibrated:
                 logger.debug("LISTEN", "First run: calibrating for ambient noise (0.5s)...")
@@ -107,7 +91,7 @@ def listen(state=None):
                 # Signal PTT START to WebUI
                 if state:
                     state.add_event("ptt_status", {"active": True})
-                logger.info("VOICE", f"[PTT] Recording started. Source: {ptt_bus.get_last_source()} | Device: {device_index}")
+                logger.info("VOICE", f"[PTT] Recording started. Source: {ptt_bus.get_last_source()} | Device: OS Default")
 
                 # Capture audio while PTT remains active
                 audio_data = bytearray()

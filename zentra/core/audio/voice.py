@@ -47,18 +47,10 @@ def _play_wav(wav_path: str, device_index: int = -1):
         try:
             data, sample_rate = sf.read(wav_path, dtype="float32")
             kwargs = {"samplerate": sample_rate, "blocking": False}
-            if device_index >= 0:
-                kwargs["device"] = device_index
             sd.play(data, **kwargs)
             return len(data) / sample_rate
         except Exception as e:
-            # More descriptive error for device index issues
-            error_msg = str(e)
-            if "Invalid device" in error_msg or "PaErrorCode -9996" in error_msg:
-                logger.info("VOICE", f"sounddevice error: Invalid Output Device (index {device_index}). "
-                            f"Please check your Speaker selection in config_audio.json. Falling back to winsound...")
-            else:
-                logger.debug("VOICE", f"sounddevice playback error: {e} — falling back to winsound")
+            logger.debug("VOICE", f"sounddevice playback error: {e} — falling back to winsound")
             # Fall through to winsound below
     # Fallback: winsound (no device selection, async)
     import winsound as ws
@@ -80,8 +72,6 @@ def speak(text, state=None):
         if not audio_cfg.get("voice_status", True):
             return
             
-        output_device    = audio_cfg.get("output_device_index", -1)
-        
         # --- DYNAMIC PATH RESOLUTION ---
         root = _get_project_root()
         default_piper = _os.path.join(root, "bin", "piper", "piper.exe")
@@ -120,7 +110,6 @@ def speak(text, state=None):
         length_scale, noise_scale, noise_w, sentence_silence = 1.0, 0.667, 0.8, 0.2
         piper_path = _os.path.join(root, "bin", "piper", "piper.exe")
         model_path = _os.path.join(root, "bin", "piper", "it_IT-paola-medium.onnx")
-        output_device = -1
 
     is_speaking = True
     if state:
@@ -161,7 +150,7 @@ def speak(text, state=None):
 
         wav_path = _RISPOSTA_WAV
         if os.path.exists(wav_path):
-            actual_duration = _play_wav(wav_path, device_index=output_device)
+            actual_duration = _play_wav(wav_path, device_index=-1)
 
             if actual_duration is not None:
                 # sounddevice async path: wait exactly actual_duration, checking for stops

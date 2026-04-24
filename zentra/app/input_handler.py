@@ -158,8 +158,10 @@ class InputHandler:
             
             self.state.system_status = translator.t("ready")
             self.state.system_processing = False
-            sys.stdout.write(prefix)
-            sys.stdout.flush()
+            from zentra.ui.ui_updater import stdout_lock
+            with stdout_lock:
+                sys.stdout.write(prefix)
+                sys.stdout.flush()
             return
         
         thread.join()
@@ -180,7 +182,7 @@ class InputHandler:
             # Broadcast the response to the WebUI (so it renders the text if the Console processed it)
             self.state.add_event("system_response", {"user": text, "ai": video_response})
 
-            if self.state.voice_status and clean_voice_text and self.state.tts_destination in ('system', 'auto'):
+            if self.state.voice_status and clean_voice_text:
                 self.state.system_status = translator.t("speaking")
                 interface.update_status_bar_in_place(
                     self.config.config, 
@@ -205,18 +207,6 @@ class InputHandler:
                             )
                 
                 threading.Thread(target=_speak_task, daemon=True).start()
-            
-            elif self.state.voice_status and clean_voice_text and self.state.tts_destination == 'web':
-                # Generate audio file but don't play locally, just notify WebUI
-                from zentra.core.audio.device_manager import get_audio_config
-                from zentra.modules.web_ui.routes_chat import generate_voice_file
-                try:
-                    path = generate_voice_file(clean_voice_text, get_audio_config())
-                    if path:
-                        self.state.add_event("audio_ready")
-                except Exception as e:
-                    logger.debug(f"[INPUT] Web audio generation failed: {e}")
-                # At the end of voice, returns to READY (already handled below)
 
         self.state.system_status = translator.t("ready")
         self.state.system_processing = False
@@ -225,9 +215,10 @@ class InputHandler:
             self.config.config, self.state.voice_status, self.state.listening_status, self.state.system_status,
             ptt_status=self.state.push_to_talk
         )
-        # Restore prompt for next input
-        sys.stdout.write(prefix)
-        sys.stdout.flush()
+        from zentra.ui.ui_updater import stdout_lock
+        with stdout_lock:
+            sys.stdout.write(prefix)
+            sys.stdout.flush()
 
     def _handle_esc(self, prefix):
         """Handles ESC key: stops voice and, if necessary, asks for exit confirmation."""
@@ -240,8 +231,10 @@ class InputHandler:
             return "PROCESSED", "" # Back to prompt
             
         # Otherwise, ask for exit confirmation
-        sys.stdout.write(f"\n\033[93m[SYSTEM] {translator.t('confirm_exit')} (Y/N): \033[0m")
-        sys.stdout.flush()
+        from zentra.ui.ui_updater import stdout_lock
+        with stdout_lock:
+            sys.stdout.write(f"\n\033[93m[SYSTEM] {translator.t('confirm_exit')} (Y/N): \033[0m")
+            sys.stdout.flush()
         
         # Wait for Y or N character
         while True:
@@ -256,8 +249,10 @@ class InputHandler:
                     sys.stdout.flush()
                     return "CANCELLED", "" # Back to prompt without exiting
                 elif ch == '\x1b': # ESC again to cancel
-                    sys.stdout.write(f"\r{' ' * 50}\r{prefix}")
-                    sys.stdout.flush()
+                    from zentra.ui.ui_updater import stdout_lock
+                    with stdout_lock:
+                        sys.stdout.write(f"\r{' ' * 50}\r{prefix}")
+                        sys.stdout.flush()
                     return "CANCELLED", ""
             time.sleep(0.05)
 
@@ -298,6 +293,7 @@ class InputHandler:
         self.state.system_status = translator.t("ready")
         self.state.system_processing = False
         
-        # Restore prompt
-        sys.stdout.write(prefix)
-        sys.stdout.flush()
+        from zentra.ui.ui_updater import stdout_lock
+        with stdout_lock:
+            sys.stdout.write(prefix)
+            sys.stdout.flush()

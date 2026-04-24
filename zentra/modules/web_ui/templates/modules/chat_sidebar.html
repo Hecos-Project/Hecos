@@ -47,21 +47,7 @@
         transition:opacity .2s;">
       ⏹ Stop Voice
     </button>
-    <div class="mode-label" style="display:flex; justify-content:space-between; align-items:center;">
-      {{ t('webui_voice_routing_in') }}
-    </div>
-    <select class="mode-selector" id="stt-source-select" onchange="setAudioRouting('stt_source', this.value)" title="Choose capture mode">
-      <option value="system">{{ t('webui_voice_pc_mic') }}</option>
-      <option value="web">{{ t('webui_voice_web_mic') }}</option>
-    </select>
-    <div class="mode-label" style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
-      {{ t('webui_voice_routing_out') }}
-    </div>
-    <select class="mode-selector" id="tts-dest-select" onchange="setAudioRouting('tts_destination', this.value)" title="Choose output point">
-      <option value="system">{{ t('webui_voice_pc_speaker') }}</option>
-      <option value="web">{{ t('webui_voice_web_speaker') }}</option>
-      <option value="auto">{{ t('webui_voice_auto_speaker') }}</option>
-    </select>
+
   </div>
 
 

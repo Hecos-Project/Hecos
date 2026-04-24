@@ -14,17 +14,28 @@ from zentra.ui import graphics
 from zentra.core.system import module_loader
 from zentra.ui.interface import get_hardware_row
 
-# Blocco globale per proteggere l'accesso simultaneo allo stdout
-stdout_lock = threading.Lock()
-
-DASHBOARD_ROW = 3
-_L = 90
-
 _config_ref     = None
 _state_ref      = None
 _dashboard_mod  = None
 _updater_active = False
 _updater_thread = None
+_cached_L       = 115
+
+# Global block to protect simultaneous stdout access
+stdout_lock = threading.Lock()
+
+def get_cached_L():
+    global _cached_L
+    return _cached_L
+
+def update_cached_L():
+    global _cached_L
+    try:
+        import shutil
+        _cached_L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    except:
+        pass
+    return _cached_L
 
 # --- Win32 API per il cursore (già presente nel tuo file, lo manteniamo)
 if os.name == 'nt':
@@ -79,36 +90,26 @@ def _update_title_bar(row_text):
 
 def _update_dashboard_os(text, row_index):
     """
-    Intelligent Console Update.
-    - If user is scrolling history: Updates absolute buffer rows 1-3 (Safe).
-    - If user is at prompt: Updates Row 1-3 only if they are still visible.
-    - Prevents duplication in history and viewport jumps.
+    Intelligent Console Update using ANSI and Win32 fallback.
     """
     if os.name == 'nt':
         try:
             handle = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
             csbi = CONSOLE_SCREEN_BUFFER_INFO()
             if kernel32.GetConsoleScreenBufferInfo(handle, ctypes.byref(csbi)):
-                # Detect if we are at the bottom of the prompt
-                at_bottom = csbi.srWindow.Bottom >= csbi.dwCursorPosition.Y - 2
-                
-                if at_bottom:
-                    # If we are at the bottom, Row 3 must be visible to be updated.
-                    # Typical terminal height is 30, so if prompt is > 30, Row 3 is gone.
-                    if csbi.dwCursorPosition.Y > 30:
-                        return # Scrolled off, stop console updates to keep history clean
-                
-                # Use absolute Buffer positioning (Safe, prevents jumps)
-                old_pos = csbi.dwCursorPosition
-                target_pos = COORD(0, row_index - 1)
-                kernel32.SetConsoleCursorPosition(handle, target_pos)
-                sys.stdout.write(text.rstrip() + "\033[K")
-                sys.stdout.flush()
-                kernel32.SetConsoleCursorPosition(handle, old_pos)
-                return
+                # Only update if the row is still within the visible buffer to avoid jumps
+                view_height = csbi.srWindow.Bottom - csbi.srWindow.Top
+                if csbi.dwCursorPosition.Y - csbi.srWindow.Top < view_height:
+                    old_pos = csbi.dwCursorPosition
+                    target_pos = COORD(0, row_index - 1)
+                    kernel32.SetConsoleCursorPosition(handle, target_pos)
+                    sys.stdout.write(text.rstrip() + "\033[K")
+                    sys.stdout.flush()
+                    kernel32.SetConsoleCursorPosition(handle, old_pos)
+                    return
         except: pass
 
-    # Non-Windows fallback
+    # Generic ANSI fallback (Safe, but might flicker on some terminals)
     sys.stdout.write(f"\0337\033[{row_index};1H\033[K{text}\033[0m\0338")
     sys.stdout.flush()
 
@@ -121,11 +122,8 @@ def _update_cycle(interval: float):
                 # 1. Update title bar (Clean)
                 _update_title_bar("")
                 
-                # 2. RESTORED: Update dashboard in Row 4 of the screen
-                # ONLY if we are at the bottom to prevent scroll-jumps.
-                if is_viewport_at_bottom():
-                    # Row 4 is the hardware row in the five-row layout
-                    _update_dashboard_os(row, 4)
+                # RESTORED: Update dashboard in Row 4 of the screen
+                _update_dashboard_os(row, 4)
         
         # Wait in small intervals to allow prompt termination
         for _ in range(int(interval * 10)):

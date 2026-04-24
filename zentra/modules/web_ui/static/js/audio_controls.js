@@ -69,19 +69,7 @@ function _applyPTTState(on) {
   }
 }
 
-function _applyRoutingState(stt, tts) {
-  window.currentSTTSource = stt;
-  window.currentTTSDest   = tts;
-  const sttSelect  = document.getElementById('stt-source-select');
-  const ttsSelect  = document.getElementById('tts-dest-select');
-  if (sttSelect) for(let opt of sttSelect.options) { opt.selected = opt.value === stt; }
-  if (ttsSelect) for(let opt of ttsSelect.options) { opt.selected = opt.value === tts; }
-  
-  const chipStt = document.getElementById('chip-stt-source');
-  const chipTts = document.getElementById('chip-tts-dest');
-  if (chipStt) chipStt.textContent = 'IN: ' + stt.toUpperCase();
-  if (chipTts) chipTts.textContent   = 'OUT: ' + tts.toUpperCase();
-}
+
 
 window.toggleMic = async function() {
   try {
@@ -130,64 +118,6 @@ window.togglePTT = async function() {
   } catch(e) { console.error('[DEBUG-UI] togglePTT exception:', e); }
 };
 
-window.setAudioRouting = async function(key, val) {
-  if (key === 'stt_source' && val === 'web') {
-    if (window.showToast) showToast('⚠️ L\'ascolto da browser è in sviluppo. Il MIC di sistema verrà silenziato.', 'warn');
-  }
-
-  // Set guard: suppress polling overwrite for 5s after a user-initiated change
-  window._lastRoutingChange = Date.now();
-
-  // Optimistically update the local state so it reflects immediately
-  if (key === 'stt_source') window.currentSTTSource = val;
-  if (key === 'tts_destination') window.currentTTSDest = val;
-
-  try {
-    const payload = {};
-    payload[key] = val;
-    await fetch('/api/audio/config', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload)
-    });
-    // refreshStatus will pick up the confirmed value on next cycle
-  } catch(e) { console.error('[Audio] setAudioRouting failed', e); }
-};
-
-window.testSidebarAudio = async function() {
-  const dest = document.getElementById('tts-dest-select').value;
-  const msg = dest === 'web' ? '🌐 Test Audio in corso nel browser...' : '🖥️ Test Audio in corso sulle casse del PC...';
-  if (window.showToast) showToast(msg);
-  
-  // Unlock audio context for mobile (requires user interaction, which this click is)
-  if (window.unlockAudioContext) window.unlockAudioContext();
-  
-  try {
-    const r = await fetch('/api/audio/test', {
-      method: 'POST',
-      body: JSON.stringify({ text: "Sincronizzazione audio completata. Tutto funziona correttamente.", mode: dest })
-    });
-    const data = await r.json();
-    if (data.ok && dest === 'web' && data.url) {
-       const player = window.ZentraTTSPlayer || new Audio();
-       try {
-         const resp = await fetch(data.url);
-         const blob = await resp.blob();
-         const blobUrl = URL.createObjectURL(blob);
-         player.src = blobUrl;
-         player.play().catch(e => {
-           console.warn("[Audio] Test autoplay blocked:", e);
-           if (window.showToast) showToast('👆 Clicca Play per ascoltare il test (Blocco Browser)', 'info');
-           // If it's a new audio element, we should probably append it somewhere if it fails
-         });
-       } catch (e) {
-         console.error("[Audio] Test fetch failed:", e);
-         if (window.showToast) showToast('❌ Errore caricamento audio test', 'error');
-       }
-    }
-  } catch(e) { console.error('[Audio] Sidebar test failed', e); }
-};
-
 window._applyMicState = _applyMicState;
 window._applyTTSState = _applyTTSState;
 window._applyPTTState = _applyPTTState;
-window._applyRoutingState = _applyRoutingState;

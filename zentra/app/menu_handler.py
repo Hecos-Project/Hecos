@@ -131,8 +131,9 @@ class MenuHandler:
             self.state_manager.voice_status = not self.state_manager.voice_status
             from zentra.core.audio.device_manager import get_audio_config, _save_audio_config
             acfg = get_audio_config()
-            acfg["voice_status"] = self.state_manager.voice_status
-            _save_audio_config(acfg)
+            if acfg:
+                acfg["voice_status"] = self.state_manager.voice_status
+                _save_audio_config(acfg)
             processore.configure(config)
             verb = "ON" if self.state_manager.voice_status else "OFF"
             color = "\033[96m" if self.state_manager.voice_status else "\033[91m"

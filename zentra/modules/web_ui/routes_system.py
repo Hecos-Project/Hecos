@@ -132,13 +132,11 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             if sm is not None:
                 mic_on     = sm.listening_status
                 tts_on     = sm.voice_status
-                audio_mode = sm.audio_mode
             else:
                 from zentra.core.audio.device_manager import get_audio_config
                 acfg = get_audio_config()
                 mic_on     = acfg.get("listening_status", False)
                 tts_on     = acfg.get("voice_status", False)
-                audio_mode = acfg.get("audio_mode", "auto")
 
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
@@ -166,10 +164,6 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             config_path = cfg_mgr.yaml_path
             mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0
             ts    = datetime.fromtimestamp(mtime).strftime("%H:%M:%S") if mtime else "?"
-
-            # Granular routing
-            stt_s = sm.stt_source if sm else acfg.get("stt_source", "system")
-            tts_d = sm.tts_destination if sm else acfg.get("tts_destination", "web")
 
             persona = cfg.get("ai", {}).get("active_personality", "?")
             if persona.endswith(".yaml"): persona = persona[:-5]
@@ -202,10 +196,6 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "cpu":        _cpu_cache["value"] if _cpu_cache["enabled"] else None,
                 "ram":        psutil.virtual_memory().percent if _cpu_cache["enabled"] else None,
                 "vram":       get_vram_usage() if _cpu_cache["enabled"] else None,
-                "audio_config": {
-                    "stt_source": stt_s,
-                    "tts_destination": tts_d
-                },
                 "config":     f"last save {ts}",
             })
         except Exception as exc:

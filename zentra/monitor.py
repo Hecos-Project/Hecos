@@ -135,16 +135,19 @@ def start_and_monitor(script_to_run):
         process = subprocess.Popen([sys.executable, script_to_run], env=env)
 
     try:
+        iterations = 0
         while process.poll() is None:
-            time.sleep(1)
+            time.sleep(2)  # Increased sleep for stability
+            iterations += 1
             
-            
-            # 1. system.yaml check
+            # 1. system.yaml check (every 2 seconds)
             current_config_time = get_file_timestamp(CONFIG_FILE)
             if current_config_time > last_config_time + 1:
                 flag_path = os.path.join(_ROOT, ".config_saved_by_app")
                 if os.path.exists(flag_path):
-                    try: os.remove(flag_path)
+                    try:
+                        os.remove(flag_path)
+                        monitor_log("Config save by app acknowledged (ignoring restart).")
                     except: pass
                     last_config_time = current_config_time
                     continue
@@ -154,13 +157,14 @@ def start_and_monitor(script_to_run):
                 process.wait(timeout=5)
                 return True
 
-            # 2. Code files check (.py)
-            current_code_time = get_max_py_mtime(zentra_folder)
-            if current_code_time > last_code_time + 1:
-                monitor_log(f"Code change detected in zentra/ folder. Restarting...")
-                process.terminate()
-                process.wait(timeout=5)
-                return True
+            # 2. Code files check (.py) - Every 10 seconds (5 * 2s)
+            if iterations % 5 == 0:
+                current_code_time = get_max_py_mtime(zentra_folder)
+                if current_code_time > last_code_time + 2:
+                    monitor_log(f"Code change detected in zentra/ folder. Restarting...")
+                    process.terminate()
+                    process.wait(timeout=5)
+                    return True
                 
         # Natural exit:
         if process.returncode == 42:
