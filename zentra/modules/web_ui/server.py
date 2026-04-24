@@ -332,6 +332,14 @@ if __name__ == "__main__":
     import sys
     from dotenv import load_dotenv
     load_dotenv()
+
+    # Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with emojis/box-drawing)
+    if sys.platform == "win32":
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except AttributeError:
+            pass
     
     # We are in zentra/plugins/web_ui/server.py -> need 3 levels up to reach root
     root = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))

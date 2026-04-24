@@ -10,6 +10,15 @@ import sys
 import json
 import argparse
 from datetime import datetime
+
+# Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with emojis/box-drawing)
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        pass
+
 try:
     from zentra.core.logging.hub import get_hub
 except ImportError:
@@ -117,6 +126,8 @@ def start_and_monitor(script_to_run):
     # Process startup
     env = os.environ.copy()
     env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    if "PYTHONIOENCODING" not in env:
+        env["PYTHONIOENCODING"] = "utf-8"
 
     if is_module:
         process = subprocess.Popen([sys.executable, "-m", script_to_run], env=env)
