@@ -9,9 +9,33 @@ import os
 import sys
 import json
 import argparse
+import signal
 from datetime import datetime
 
+# Global reference to child process for signal handling
+_current_child_process = None
+
+def _signal_handler(sig, frame):
+    """Handle termination signals (SIGTERM, SIGINT) and kill the child process."""
+    monitor_log(f"Received signal {sig}. Terminating child process...")
+    if _current_child_process and _current_child_process.poll() is None:
+        try:
+            _current_child_process.terminate()
+            _current_child_process.wait(timeout=5)
+        except Exception:
+            try:
+                _current_child_process.kill()
+            except: pass
+    sys.exit(0)
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, _signal_handler)
+signal.signal(signal.SIGINT, _signal_handler)
+if hasattr(signal, "SIGBREAK"):
+    signal.signal(signal.SIGBREAK, _signal_handler)
+
 # Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with emojis/box-drawing)
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -124,8 +148,11 @@ def start_and_monitor(script_to_run):
     last_code_time = get_max_py_mtime(zentra_folder)
     
     # Process startup
+    global _current_child_process
     env = os.environ.copy()
+    env["ZENTRA_MONITORED_PROCESS"] = "1"
     env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
+
     if "PYTHONIOENCODING" not in env:
         env["PYTHONIOENCODING"] = "utf-8"
 
@@ -133,6 +160,8 @@ def start_and_monitor(script_to_run):
         process = subprocess.Popen([sys.executable, "-m", script_to_run], env=env)
     else:
         process = subprocess.Popen([sys.executable, script_to_run], env=env)
+    
+    _current_child_process = process
 
     try:
         iterations = 0
@@ -155,7 +184,9 @@ def start_and_monitor(script_to_run):
                 monitor_log(f"system.yaml change detected. Terminating...")
                 process.terminate()
                 process.wait(timeout=5)
+                _current_child_process = None
                 return True
+
 
             # 2. Code files check (.py) - Every 10 seconds (5 * 2s)
             if iterations % 5 == 0:
@@ -216,4 +247,10 @@ if __name__ == "__main__":
                 print(f"\n[MONITOR] unexpected error in watchdog loop: {e}")
                 time.sleep(5) # Long pause before retry if something crashed
     finally:
-        instance_lock.release_lock(lock_name)
+        # Final safety kill for the child process before exiting
+        if _current_child_process and _current_child_process.poll() is None:
+            try: 
+                _current_child_process.terminate()
+                _current_child_process.wait(timeout=2)
+            except: pass
+        instance_lock.release_lock(lock_name)

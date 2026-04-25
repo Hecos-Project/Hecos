@@ -29,6 +29,7 @@ if sys.platform == "win32":
 
 from zentra.app.application import ZentraApplication
 from zentra.core.logging import logger
+from zentra.core.system import instance_lock
 
 # Register the guaranteed cleanup hook
 atexit.register(logger.close_all_consoles)
@@ -43,8 +44,15 @@ def main():
         logger.close_all_consoles()
 
 if __name__ == "__main__":
+    if not os.environ.get("ZENTRA_MONITORED_PROCESS"):
+        if not instance_lock.acquire_lock("zentra_console"):
+            print("\n[ERROR] Another instance of Zentra Console is already running.")
+            sys.exit(1)
+        
     try:
         main()
+
+
     except KeyboardInterrupt:
         logger.info("[MAIN] Manual stop.")
     except Exception as e:

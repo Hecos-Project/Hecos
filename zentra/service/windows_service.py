@@ -46,12 +46,16 @@ if WIN32_AVAILABLE:
         def SvcStop(self):
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
             if self.process and self.process.poll() is None:
-                self.process.terminate()
+                pid = self.process.pid
+                # Force kill the entire process tree (watchdog + backend)
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
                 try:
-                    self.process.wait(timeout=10)
+                    self.process.wait(timeout=5)
                 except Exception:
-                    self.process.kill()
+                    pass
             win32event.SetEvent(self.stop_event)
+
+
 
         def SvcDoRun(self):
             servicemanager.LogMsg(

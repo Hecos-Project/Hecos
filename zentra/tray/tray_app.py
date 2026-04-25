@@ -23,6 +23,7 @@ import json
 import threading
 import time
 import webbrowser
+import subprocess
 from datetime import datetime
 
 try:
@@ -52,11 +53,14 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 
 # === Configuration ===
 ZENTRA_PORT = 7070
-STATUS_POLL_INTERVAL = 10  # seconds
+STATUS_POLL_INTERVAL = 3  # seconds (reduced for better responsiveness)
 LOGO_PATH = os.path.join(_ROOT, "zentra", "assets", "Zentra_Core_Logo_NBG - SQR.png")
 VERSION_FILE = os.path.join(_ROOT, "zentra", "core", "version")
 SYSTEM_YAML = os.path.join(_ROOT, "zentra", "config", "data", "system.yaml")
 SETTINGS_FILE = os.path.join(_ROOT, "zentra_tray_settings.json")
+
+# Global list of Popen objects for tracked console windows
+_managed_consoles = []
 
 
 # ─────────────────────────────────────────────────────────────
@@ -200,6 +204,50 @@ def _load_icon(online: bool) -> "Image.Image":
     return img
 
 
+def _launch_console(script_path: str):
+    """Launches a script in a new tracked console window."""
+    global _managed_consoles
+    # Clean up dead handles first
+    _managed_consoles = [p for p in _managed_consoles if p.poll() is None]
+    
+    try:
+        if sys.platform == "win32":
+            # CREATE_NEW_CONSOLE = 0x00000010
+            # We launch cmd.exe directly to keep the handle
+            p = subprocess.Popen(
+                ["cmd.exe", "/c", script_path],
+                creationflags=0x00000010,
+                cwd=_ROOT
+            )
+            _managed_consoles.append(p)
+        else:
+            p = subprocess.Popen(["x-terminal-emulator", "-e", script_path], cwd=_ROOT)
+            _managed_consoles.append(p)
+    except Exception as e:
+        print(f"[TRAY] Failed to launch console: {e}")
+
+
+def _terminate_consoles():
+    """Closes all console windows tracked by the Tray App."""
+    global _managed_consoles
+    for p in _managed_consoles:
+        if p.poll() is None:
+            try:
+                p.terminate()
+            except: pass
+    _managed_consoles = []
+
+
+def _refresh_ui(icon: "pystray.Icon"):
+    """Forces an immediate update of the icon and menu based on current online status."""
+
+    if not icon: return
+    online = _is_zentra_online()
+    icon.icon = _load_icon(online)
+    icon.menu = _build_menu([icon])
+
+
+
 # ─────────────────────────────────────────────────────────────
 #  Menu builder
 # ─────────────────────────────────────────────────────────────
@@ -225,16 +273,12 @@ def _build_menu(icon_ref: list):
         webbrowser.open(chat_url)
 
     def open_console(icon, item):
-        import subprocess
-        try:
-            if sys.platform == "win32":
-                script = os.path.join(_ROOT, "scripts", "windows", "run", "ZENTRA_CONSOLE_RUN_WIN.bat")
-                subprocess.Popen(["start", "cmd", "/c", script], shell=True)
-            else:
-                script = os.path.join(_ROOT, "scripts", "linux", "run", "ZENTRA_CONSOLE_RUN.sh")
-                subprocess.Popen(["x-terminal-emulator", "-e", script])
-        except Exception as e:
-            print(f"[TRAY] Failed to open console: {e}")
+        if sys.platform == "win32":
+            script = os.path.join(_ROOT, "scripts", "windows", "run", "ZENTRA_CONSOLE_RUN_WIN.bat")
+        else:
+            script = os.path.join(_ROOT, "scripts", "linux", "run", "ZENTRA_CONSOLE_RUN.sh")
+        _launch_console(script)
+
 
     def open_config(icon, item):
         webbrowser.open(config_url)
@@ -242,18 +286,31 @@ def _build_menu(icon_ref: list):
     def restart_service(icon, item):
         """Stop + Start the backend service. The tray stays alive."""
         def _do_restart():
-            threading.Thread(target=_control_service, args=("restart",), daemon=True).start()
+            _terminate_consoles() # Close consoles on restart too
+            _control_service("restart")
+
+            time.sleep(2)  # Wait for service to settle
+            _refresh_ui(icon)
         threading.Thread(target=_do_restart, daemon=True).start()
 
     def stop_service(icon, item):
         """Stop only the backend service. The tray stays alive."""
-        threading.Thread(target=_control_service, args=("stop",), daemon=True).start()
+        def _do_stop():
+            _terminate_consoles() # Close consoles when stopping service
+            _control_service("stop")
+
+            time.sleep(1.5)  # Wait for service to settle
+            _refresh_ui(icon)
+        threading.Thread(target=_do_stop, daemon=True).start()
 
     def stop_service_and_quit(icon, item):
         """Stop the backend service AND close the tray icon."""
-        threading.Thread(target=_control_service, args=("stop",), daemon=True).start()
-        time.sleep(1)
-        icon.stop()
+        def _do_quit():
+            _control_service("stop")
+            time.sleep(1)
+            icon.stop()
+        threading.Thread(target=_do_quit, daemon=True).start()
+
 
     def show_about(icon, item):
         icon.notify(
@@ -262,7 +319,9 @@ def _build_menu(icon_ref: list):
         )
 
     def quit_tray(icon, item):
+        _terminate_consoles() # Ensure consoles die with the tray
         icon.stop()
+
 
     def show_qr(icon, item):
         threading.Thread(target=_show_qr_popup, args=(_get_scheme(), _get_lan_ip(), ZENTRA_PORT), daemon=True).start()
@@ -275,13 +334,15 @@ def _build_menu(icon_ref: list):
         _save_settings(s)
         if s["service_enabled"]:
             print("[TRAY] Service toggled ON — starting service…")
-            threading.Thread(target=_control_service, args=("start",), daemon=True).start()
+            _control_service("start")
         else:
             print("[TRAY] Service toggled OFF — stopping service…")
-            threading.Thread(target=_control_service, args=("stop",), daemon=True).start()
+            _control_service("stop")
+        
         # Rebuild menu after a short delay so sc has time to respond
-        time.sleep(1.5)
-        icon.menu = _build_menu([icon])
+        time.sleep(2.0)
+        _refresh_ui(icon)
+
 
     # ── Toggle: Auto-open WebUI ───────────────────────────────
 
@@ -393,6 +454,81 @@ def _show_qr_popup(scheme: str, lan_ip: str, port: int):
 
 
 # ─────────────────────────────────────────────────────────────
+#  Global Hotkeys for PTT (Session 1 Override)
+# ─────────────────────────────────────────────────────────────
+
+class TrayHotKeyManager:
+    """
+    Manages the Ctrl+Shift global hotkey directly from the user's active graphical
+    session. Because the Zentra core runs as a Window Service in Session 0, it cannot
+    see the interactive keyboard. This hooks from the Tray App and fires an HTTP webhook.
+    """
+    def __init__(self):
+        self.listener = None
+        self.pressed = set()
+        self.is_active = False
+
+    def start(self):
+        try:
+            from pynput.keyboard import Key, Listener
+        except ImportError:
+            print("[TRAY-PTT] pynput not installed. Global hotkeys via Tray App disabled.")
+            return
+
+        def _is_mod(target):
+            if target == "ctrl":
+                return Key.ctrl in self.pressed or Key.ctrl_l in self.pressed or Key.ctrl_r in self.pressed
+            if target == "shift":
+                return Key.shift in self.pressed or Key.shift_l in self.pressed or Key.shift_r in self.pressed
+            return False
+
+        def on_press(key):
+            try:
+                self.pressed.add(key)
+                
+                # We need Ctrl + Shift exclusively or alongside other keys? The old ptt_bus triggered on just Ctrl+Shift.
+                if _is_mod("ctrl") and _is_mod("shift") and not self.is_active:
+                    self.is_active = True
+                    self._fire_trigger("start")
+            except Exception:
+                pass
+
+        def on_release(key):
+            if key in self.pressed:
+                try:
+                    self.pressed.remove(key)
+                except KeyError:
+                    pass
+
+            if self.is_active and not (_is_mod("ctrl") and _is_mod("shift")):
+                self.is_active = False
+                self._fire_trigger("stop")
+
+        self.listener = Listener(on_press=on_press, on_release=on_release)
+        self.listener.daemon = True
+        self.listener.start()
+        print("[TRAY-PTT] Global Hotkey (Ctrl+Shift) Listener started in User Session.")
+
+    def _fire_trigger(self, action):
+        def _do_fire():
+            import urllib.request
+            import ssl
+            scheme = _get_scheme()
+            url = f"{scheme}://127.0.0.1:{ZENTRA_PORT}/api/remote-triggers/ptt/{action}"
+            try:
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                urllib.request.urlopen(url, timeout=2, context=ctx)
+            except Exception as e:
+                pass
+                
+        # Fire in a background thread so we don't block the pynput loop
+        threading.Thread(target=_do_fire, daemon=True).start()
+
+_tray_hotkeys = TrayHotKeyManager()
+
+# ─────────────────────────────────────────────────────────────
 #  Background monitor
 # ─────────────────────────────────────────────────────────────
 
@@ -417,8 +553,11 @@ def _monitor_status(icon: "pystray.Icon"):
                 print("[TRAY] service_enabled=True but service offline — starting service…")
                 threading.Thread(target=_control_service, args=("start",), daemon=True).start()
 
-            icon.icon = _load_icon(online)
-            icon.menu = _build_menu([icon])
+            # icon.icon = _load_icon(online)
+            # icon.menu = _build_menu([icon])
+            # Use centralized refresh for consistency
+            _refresh_ui(icon)
+
 
             # Open browser once when the service first comes online
             if online and not has_opened_browser and settings["autoopen_webui"]:
@@ -466,6 +605,9 @@ def run_tray():
     # Start background health monitor thread
     monitor_thread = threading.Thread(target=_monitor_status, args=(icon,), daemon=True)
     monitor_thread.start()
+
+    # Start the global PTT hotkey listener (Session 1 Cross-Boundary)
+    _tray_hotkeys.start()
 
     print("[TRAY] Zentra Core tray icon started.")
     icon.run()

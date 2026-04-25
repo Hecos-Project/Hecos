@@ -14,9 +14,13 @@ def get_lock_file_path(lock_name: str) -> str:
     return os.path.join(lock_dir, f"{lock_name}.lock")
 
 def is_process_running(pid: int) -> bool:
-    """Checks if a process with the given PID is currently running."""
+    """Checks if a process with the given PID is currently running and is a Python/Zentra instance."""
     try:
-        return psutil.pid_exists(pid)
+        if not psutil.pid_exists(pid):
+            return False
+        p = psutil.Process(pid)
+        name = p.name().lower()
+        return 'python' in name or 'zentra' in name
     except Exception:
         return False
 

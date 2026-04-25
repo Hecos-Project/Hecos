@@ -444,7 +444,15 @@ if __name__ == "__main__":
     import threading
     threading.Thread(target=_delayed_browser, daemon=True).start()
 
+    from zentra.core.system import instance_lock
+    if not os.environ.get("ZENTRA_MONITORED_PROCESS"):
+        if not instance_lock.acquire_lock("zentra_web"):
+            print("\n[ERROR] Another instance of Zentra Web is already running.")
+            sys.exit(1)
+
     start_if_needed(cfg, root, port=7070)
+
+
 
     import time
     try:
