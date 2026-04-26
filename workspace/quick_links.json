@@ -1,8 +1,8 @@
 [
   {
-    "id": "f69ab748-cc1a-4c24-86b6-5dd5ef622ead",
+    "id": "dd7ba960-8cc6-4cbd-87f2-1b2f0dc57d4e",
     "label": "Log Command Center - Standalone",
-    "url": "http://127.0.0.1:7070/zentra/logs",
+    "url": "https://127.0.0.1:7070/zentra/logs",
     "icon": "🔗",
     "target": "_blank"
   }
