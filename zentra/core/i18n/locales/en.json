@@ -694,6 +694,7 @@
         "webui_help_fix_paths": "Fix Broken Paths",
         "webui_help_install_svc": "Install Service",
         "webui_help_uninstall_svc": "Uninstall Service",
-        "webui_help_diag_log_title": "Diagnostic Output"
+        "webui_help_diag_log_title": "Diagnostic Output",
+        "webui_media_clear_all": "Clear All Generated Media"
     }
 }

@@ -708,6 +708,7 @@
         "webui_help_fix_paths": "Ripara Percorsi",
         "webui_help_install_svc": "Installa Servizio",
         "webui_help_uninstall_svc": "Rimuovi Servizio",
-        "webui_help_diag_log_title": "Output Diagnostica"
+        "webui_help_diag_log_title": "Output Diagnostica",
+        "webui_media_clear_all": "Svuota Tutti i Media Generati"
     }
 }
