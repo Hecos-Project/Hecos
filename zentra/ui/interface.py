@@ -197,7 +197,7 @@ def get_hardware_row(config=None, dashboard_mod=None):
     
     if dashboard_mod:
         try:
-            stats = dashboard_mod.get_stats()
+            stats = dashboard_mod.get_stats(config)
             cpu = stats['cpu']
             ram = stats['ram']
             vram = stats['vram']

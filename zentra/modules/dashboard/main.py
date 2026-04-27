@@ -288,31 +288,37 @@ def safe_get_gpus():
         return []
 
 # --- COMPATIBILITY SHIMS (Legacy call support) ---
-def get_stats():
+def get_stats(config=None):
     """Wrapper per compatibilità con interface.py e ui_updater.py"""
-    # Usiamo un dizionario compatibile con il vecchio formato atteso
-    cpu = psutil.cpu_percent(interval=None)
-    ram = psutil.virtual_memory().percent
+    # Se abbiamo il config, controlliamo se la telemetria è abilitata per la console
+    dsb_cfg = config.get("plugins", {}).get("DASHBOARD", {}) if config else {}
+    col_tel = dsb_cfg.get("console_telemetry_enabled", True)
     
+    cpu = 0.0
+    ram = 0.0
+    vram_info = "OFF"
+    gpu_load = "OFF"
+    stato_gpu = "OFF"
+
+    if col_tel:
+        cpu = psutil.cpu_percent(interval=None)
+        ram = psutil.virtual_memory().percent
+        
+        if GPUTIL_AVAILABLE:
+            try:
+                gpus = safe_get_gpus()
+                if gpus:
+                    # Su portatili Dual-GPU, ordinare per maggiore VRAM
+                    gpus.sort(key=lambda x: x.memoryTotal, reverse=True)
+                    gpu = gpus[0]
+                    vram_p = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
+                    vram_info = f"{int(vram_p)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
+                    gpu_load = f"{int(gpu.load * 100)}%"
+                    stato_gpu = "WAITING" if vram_p > 80 else "READY"
+            except: pass
+
     with _lock:
         b_status = _backend_status
-
-    vram_info = "N/A"
-    gpu_load = "N/A"
-    stato_gpu = "N/A"
-
-    if GPUTIL_AVAILABLE:
-        try:
-            gpus = safe_get_gpus()
-            if gpus:
-                # Su portatili Dual-GPU, ordinare per maggiore VRAM
-                gpus.sort(key=lambda x: x.memoryTotal, reverse=True)
-                gpu = gpus[0]
-                vram_p = (gpu.memoryUsed / gpu.memoryTotal) * 100 if gpu.memoryTotal > 0 else 0
-                vram_info = f"{int(vram_p)}% ({int(gpu.memoryUsed)}MB/{int(gpu.memoryTotal)}MB)"
-                gpu_load = f"{int(gpu.load * 100)}%"
-                stato_gpu = "WAITING" if vram_p > 80 else "READY"
-        except: pass
 
     return {
         "cpu": cpu,

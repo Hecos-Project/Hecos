@@ -116,7 +116,10 @@ def _update_dashboard_os(text, row_index):
 def _update_cycle(interval: float):
     global _updater_active
     while _updater_active:
-        row = get_hardware_row(config=None, dashboard_mod=_dashboard_mod)
+        # Reload config to pick up changes from the WebUI (separate process)
+        cfg = _config_ref.reload() if _config_ref else None
+        
+        row = get_hardware_row(config=cfg, dashboard_mod=_dashboard_mod)
         if _updater_active:
             with stdout_lock:
                 # 1. Update title bar (Clean)

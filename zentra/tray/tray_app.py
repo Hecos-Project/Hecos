@@ -57,6 +57,19 @@ def _monitor_status(icon: "pystray.Icon"):
 
 
 def run_tray():
+    # --- SINGLE INSTANCE LOCK ---
+    import socket
+    # Using a global reference to ensure the socket stays open for the life of the process
+    global _singleton_socket
+    _singleton_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        # We bind to a specific high-range port to ensure only one Tray instance runs per machine
+        _singleton_socket.bind(("127.0.0.1", 17099))
+    except (socket.error, OverflowError):
+        # Already running
+        print("[TRAY] Zentra Tray is already running. Exiting current instance.")
+        sys.exit(0)
+
     # Redirect all stdout/stderr to a log file to avoid pythonw.exe silent crashing
     log_dir = os.path.join(_ROOT, "zentra", "logs")
     os.makedirs(log_dir, exist_ok=True)
