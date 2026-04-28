@@ -101,14 +101,13 @@ def update_ui_in_place(icon_instance, config, state, dashboard_mod):
     if not _updater_active:
         return
         
-    stats = dashboard_mod.get_stats(config)
     L = get_cached_L()
     
     # Render rows
     row1 = interface.get_header_row(L)
     row2 = interface.get_system_menu_row(L)
     row3 = interface.get_status_bar(config, state.voice_status, state.listening_status, state.system_status, L, ptt_status=state.push_to_talk)
-    row4 = interface.get_hardware_row(stats, config, L)
+    row4 = interface.get_hardware_row(config, dashboard_mod)
     row5 = interface.get_ptt_hint_row(L)
     
     with stdout_lock:
@@ -135,17 +134,26 @@ def _update_dashboard_os(text, row_index):
 def _update_cycle(interval: float):
     global _updater_active
     while _updater_active:
-        # Reload config to pick up changes from the WebUI (separate process)
-        cfg_manager = _config_ref
-        if cfg_manager:
-            # We call the full update that handles rows 1-5
-            update_ui_in_place(None, cfg_manager.config, _state_ref, _dashboard_mod)
-        
-        # Wait in small intervals to allow prompt termination
-        for _ in range(int(interval * 10)):
-            if not _updater_active:
-                break
-            time.sleep(0.1)
+        try:
+            # Reload config to pick up changes from the WebUI (separate process)
+            cfg_manager = _config_ref
+            if cfg_manager:
+                # We call the full update that handles rows 1-5
+                update_ui_in_place(None, cfg_manager.config, _state_ref, _dashboard_mod)
+            
+            # Wait in small intervals to allow prompt termination
+            for _ in range(int(interval * 10)):
+                if not _updater_active:
+                    break
+                time.sleep(0.1)
+        except Exception as e:
+            # Prevent thread death, log error to standard logger if available
+            try:
+                from zentra.core.logging import logger
+                logger.debug(f"UI Updater Thread Error: {e}")
+            except:
+                pass
+            time.sleep(1) # Prevent tight crash loop
 
 def start(config_manager, state_manager, dashboard_module, interval: float = 2.0):
     global _config_ref, _state_ref, _dashboard_mod, _updater_active, _updater_thread
