@@ -20,6 +20,7 @@ _dashboard_mod  = None
 _updater_active = False
 _updater_thread = None
 _cached_L       = 115
+_cached_H       = 30
 
 # Global block to protect simultaneous stdout access
 stdout_lock = threading.Lock()
@@ -28,11 +29,17 @@ def get_cached_L():
     global _cached_L
     return _cached_L
 
+def get_cached_H():
+    global _cached_H
+    return _cached_H
+
 def update_cached_L():
-    global _cached_L
+    global _cached_L, _cached_H
     try:
         import shutil
-        _cached_L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+        size = shutil.get_terminal_size((115, 30))
+        _cached_L = max(90, size.columns - 1)
+        _cached_H = max(20, size.lines)
     except:
         pass
     return _cached_L
@@ -88,27 +95,39 @@ def _update_title_bar(row_text):
     except:
         pass
 
+def update_ui_in_place(icon_instance, config, state, dashboard_mod):
+    """Updates the TUI header Rows 1-5 using ANSI absolute positioning."""
+    from zentra.ui import interface
+    if not _updater_active:
+        return
+        
+    stats = dashboard_mod.get_hardware_stats(config)
+    L = get_cached_L()
+    
+    # Render rows
+    row1 = interface.get_header_row(L)
+    row2 = interface.get_system_menu_row(L)
+    row3 = interface.get_status_bar(config, state.voice_status, state.listening_status, state.system_status, L, ptt_status=state.push_to_talk)
+    row4 = interface.get_hardware_row(stats, config, L)
+    row5 = interface.get_ptt_hint_row(L)
+    
+    with stdout_lock:
+        # Save cursor position before touching the header rows
+        sys.stdout.write("\0337")
+        # Update rows 1-5 with absolute ANSI positioning
+        sys.stdout.write("\033[1;1H" + row1)
+        sys.stdout.write("\033[2;1H" + row2)
+        sys.stdout.write("\033[3;1H" + row3)
+        sys.stdout.write("\033[4;1H" + row4)
+        sys.stdout.write("\033[5;1H" + row5)
+        # Restore cursor to exactly where it was before (prompt line during input, body during boot)
+        sys.stdout.write("\0338")
+        sys.stdout.flush()
+
 def _update_dashboard_os(text, row_index):
     """
     Intelligent Console Update using ANSI and Win32 fallback.
     """
-    if os.name == 'nt':
-        try:
-            handle = kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
-            csbi = CONSOLE_SCREEN_BUFFER_INFO()
-            if kernel32.GetConsoleScreenBufferInfo(handle, ctypes.byref(csbi)):
-                # Only update if the row is still within the visible buffer to avoid jumps
-                view_height = csbi.srWindow.Bottom - csbi.srWindow.Top
-                if csbi.dwCursorPosition.Y - csbi.srWindow.Top < view_height:
-                    old_pos = csbi.dwCursorPosition
-                    target_pos = COORD(0, row_index - 1)
-                    kernel32.SetConsoleCursorPosition(handle, target_pos)
-                    sys.stdout.write(text.rstrip() + "\033[K")
-                    sys.stdout.flush()
-                    kernel32.SetConsoleCursorPosition(handle, old_pos)
-                    return
-        except: pass
-
     # Generic ANSI fallback (Safe, but might flicker on some terminals)
     sys.stdout.write(f"\0337\033[{row_index};1H\033[K{text}\033[0m\0338")
     sys.stdout.flush()
@@ -117,16 +136,10 @@ def _update_cycle(interval: float):
     global _updater_active
     while _updater_active:
         # Reload config to pick up changes from the WebUI (separate process)
-        cfg = _config_ref.reload() if _config_ref else None
-        
-        row = get_hardware_row(config=cfg, dashboard_mod=_dashboard_mod)
-        if _updater_active:
-            with stdout_lock:
-                # 1. Update title bar (Clean)
-                _update_title_bar("")
-                
-                # RESTORED: Update dashboard in Row 4 of the screen
-                _update_dashboard_os(row, 4)
+        cfg_manager = _config_ref
+        if cfg_manager:
+            # We call the full update that handles rows 1-5
+            update_ui_in_place(None, cfg_manager.config, _state_ref, _dashboard_mod)
         
         # Wait in small intervals to allow prompt termination
         for _ in range(int(interval * 10)):

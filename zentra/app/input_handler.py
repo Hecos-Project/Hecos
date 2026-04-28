@@ -94,6 +94,10 @@ class InputHandler:
 
     def _execute_exchange(self, text, prefix, is_voice=False):
         """Executes the exchange (text -> response) with ESC support."""
+        # Disable prompt tracking so background logs don't redraw the old prompt buffer
+        interface.set_active_prompt("", "")
+        interface._prompt_active = False
+        
         self.state.system_processing = True
         self.state.system_status = translator.t("thinking")
         
@@ -217,6 +221,8 @@ class InputHandler:
         )
         from zentra.ui.ui_updater import stdout_lock
         with stdout_lock:
+            # Re-enable prompt tracking and reset input buffer
+            interface.set_active_prompt(prefix, "")
             sys.stdout.write(prefix)
             sys.stdout.flush()
 
@@ -245,12 +251,14 @@ class InputHandler:
                     return "EXIT", None
                 elif ch == 'N':
                     print("N")
+                    interface.set_active_prompt(prefix, "")
                     sys.stdout.write(f"\r{' ' * 50}\r{prefix}")
                     sys.stdout.flush()
                     return "CANCELLED", "" # Back to prompt without exiting
                 elif ch == '\x1b': # ESC again to cancel
                     from zentra.ui.ui_updater import stdout_lock
                     with stdout_lock:
+                        interface.set_active_prompt(prefix, "")
                         sys.stdout.write(f"\r{' ' * 50}\r{prefix}")
                         sys.stdout.flush()
                     return "CANCELLED", ""
@@ -258,6 +266,10 @@ class InputHandler:
 
     def _handle_direct_image(self, prompt, prefix):
         """Generates an image directly, bypassing the LLM analysis."""
+        # Disable prompt tracking so background logs don't redraw the old prompt buffer
+        interface.set_active_prompt("", "")
+        interface._prompt_active = False
+        
         self.state.system_processing = True
         self.state.system_status = translator.t("generating_image")
         
@@ -295,5 +307,7 @@ class InputHandler:
         
         from zentra.ui.ui_updater import stdout_lock
         with stdout_lock:
+            interface.set_active_prompt(prefix, "")
             sys.stdout.write(prefix)
             sys.stdout.flush()
+        return "PROCESSED", ""

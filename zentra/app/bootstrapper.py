@@ -85,7 +85,8 @@ class SystemBootstrapper:
             logger.warning("APP", "DASHBOARD plugin disabled; hardware monitoring inactive.")
 
     def show_boot_animation(self):
-        """Shows boot animation."""
+        """Shows boot animation inside the scrolling body area."""
+        interface.move_to_body()
         sys.stdout.write(f"\n\033[96m[SYSTEM] {translator.t('boot_sync_msg')}\033[0m\n")
         for progress in range(0, 101, 5):
             bar = graphics.create_bar(progress, width=40, style="cyber")

@@ -19,7 +19,7 @@ COLORS = {
 }
 
 # Terminal Constants
-STILE_INPUT = f"\n{Fore.RED}# {Style.RESET_ALL}"
+STILE_INPUT = f"{Fore.RED}# {Style.RESET_ALL}"
 
 def create_bar(percentage, width=20, style="cyber"):
     """

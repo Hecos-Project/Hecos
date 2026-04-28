@@ -22,8 +22,8 @@ except ImportError:
     GPUtil = None
 from zentra.ui import graphics
 from colorama import init, Fore, Back, Style
+from zentra.core.logging import logger
 from zentra.core.system import module_loader, version
-from zentra.core.system.version import get_version_string
 from zentra.core.i18n import translator
 
 # "Inizializzazione Colorama per colori ANSI e sfondi su Windows"
@@ -72,12 +72,27 @@ def get_status_color(s):
     return Fore.WHITE
 
 def setup_console():
-    """Cleans screen and forces UTF-8."""
+    """Cleans screen and forces UTF-8. No scrolling region — we use readline-style redraw."""
     if sys.platform == 'win32':
         os.system('chcp 65001 > nul')
-    # Reset scrolling region and clear screen
-    sys.stdout.write("\033[r")
-    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    from zentra.ui.ui_updater import update_cached_L
+    update_cached_L()
+    
+    # Clear screen fully and reset any previous scrolling region
+    sys.stdout.write("\033[r\033[2J")
+    # Position cursor at Row 6 (body start, right after the 5-row header)
+    sys.stdout.write("\033[6;1H")
+    sys.stdout.flush()
+
+def move_to_body():
+    """Moves the cursor to the body start (Row 6), right below the header."""
+    sys.stdout.write("\033[6;1H")
+    sys.stdout.flush()
+
+def move_to_prompt():
+    """No-op: prompt now appears naturally — no forced jump to H."""
+    pass
 
 def check_ollama():
     """Checks if Ollama server is active for the status bar."""
@@ -616,7 +631,7 @@ def show_help():
     setup_console()
 
 def show_web_access_info(config):
-    """Prints Web UI access links if the plugin is active."""
+    """Prints Web UI access links. At startup, it flows from Row 6."""
     web_opts = config.get("plugins", {}).get("WEB_UI", {})
     port = web_opts.get("port", 7070)
     use_https = web_opts.get("https_enabled", False)
@@ -633,26 +648,65 @@ def show_web_access_info(config):
         
     base_url = f"{scheme}://{lan_ip}:{port}"
     
-    import shutil
-    L = max(90, shutil.get_terminal_size((115, 30)).columns - 1)
+    from zentra.ui.ui_updater import get_cached_L
+    L = get_cached_L()
     
+    # We do NOT use print_scrolling here because we want natural flow from Row 6 at boot
     print(f"{Fore.CYAN}┌{'─' * (L-2)}┐{Style.RESET_ALL}")
     print(f"{Fore.CYAN}│{Style.RESET_ALL} {Fore.YELLOW}{'WEB INTERFACE ACCESS'.center(L-4)}{Style.RESET_ALL} {Fore.CYAN}│{Style.RESET_ALL}")
     print(f"{Fore.CYAN}├{'─' * (L-2)}┤{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Chat:  {Style.RESET_ALL} {base_url}/chat".ljust(L-1))
-    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Config:{Style.RESET_ALL} {base_url}/zentra/config/ui".ljust(L-1))
-    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Drive: {Style.RESET_ALL} {base_url}/drive".ljust(L-1))
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Chat:  {Style.RESET_ALL} {base_url}/chat".ljust(L-1+13) + f"{Fore.CYAN}│{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Config:{Style.RESET_ALL} {base_url}/zentra/config/ui".ljust(L-1+13) + f"{Fore.CYAN}│{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}│{Style.RESET_ALL}  • {Fore.WHITE}Drive: {Style.RESET_ALL} {base_url}/drive".ljust(L-1+13) + f"{Fore.CYAN}│{Style.RESET_ALL}")
     print(f"{Fore.CYAN}└{'─' * (L-2)}┘{Style.RESET_ALL}")
     print()
 
+# --- Readline-style prompt state ---
+# These are set by set_active_prompt() once the main input loop starts.
+_prompt_active = False
+_active_prompt_prefix = ""
+_active_input_buffer = ""
+_current_prompt_len = 0  # kept for backwards compat
+
+def set_active_prompt(prefix: str, buf: str = ""):
+    """Called by the main loop to register the current prompt state for safe log printing."""
+    global _prompt_active, _active_prompt_prefix, _active_input_buffer
+    _prompt_active = True
+    _active_prompt_prefix = prefix
+    _active_input_buffer = buf
+
+def print_scrolling(text):
+    """Readline-style safe print: erases the prompt, prints the message, then redraws the prompt."""
+    from zentra.ui.ui_updater import stdout_lock
+    global _prompt_active, _active_prompt_prefix, _active_input_buffer
+    with stdout_lock:
+        if _prompt_active:
+            # 1. 2K clears entire line, \r moves to the beginning
+            sys.stdout.write("\033[2K\r")
+            # 2. Print the new message on its own line
+            sys.stdout.write(text + "\n")
+            # 3. Reprint the prompt + whatever the user has typed so far
+            sys.stdout.write(_active_prompt_prefix + _active_input_buffer)
+            sys.stdout.flush()
+        else:
+            # During boot: just print normally
+            print(text)
+
 def write_zentra(text):
-    """Prints Zentra's response highlighting it in CYAN."""
+    """Prints Zentra's response safely without clobbering the prompt."""
     from zentra.core.processing import filtri
-    # Ensure terminal safety
     text = filtri.clean_for_video(text)
-    print(Fore.CYAN + "ZENTRA: " + Style.RESET_ALL + text)
+    prefix = f"{Fore.CYAN}ZENTRA:{Style.RESET_ALL} "
+    print_scrolling(prefix + text)
+    print_scrolling("")  # Add an empty line for visual spacing before the prompt
     
 def read_keyboard_input(prefix, current_input):
+    global _current_prompt_len, _active_input_buffer, _active_prompt_prefix
+    # Keep prompt state in sync for readline-style redraw
+    _active_prompt_prefix = prefix
+    _active_input_buffer = current_input
+    _current_prompt_len = len(prefix) + len(current_input)
+    
     if msvcrt.kbhit():
         ch_raw = msvcrt.getch()
         # Function keys F1-F6
@@ -671,9 +725,10 @@ def read_keyboard_input(prefix, current_input):
 
         if ch_raw == b'\x1b':  # ESC
             if current_input:
-                return "CLEAR", ""       # clear all
+                _active_input_buffer = ""
+                return "CLEAR", ""
             else:
-                return "ESC", current_input   # otherwise exit
+                return "ESC", current_input
 
         try: ch = ch_raw.decode('utf-8')
         except: return None, current_input
@@ -682,11 +737,13 @@ def read_keyboard_input(prefix, current_input):
         elif ch == '\b':
             if len(current_input) > 0:
                 current_input = current_input[:-1]
+                _active_input_buffer = current_input
                 sys.stdout.write('\b \b')
                 sys.stdout.flush()
             return "CHAR", current_input
         else:
             current_input += ch
+            _active_input_buffer = current_input
             sys.stdout.write(ch)
             sys.stdout.flush()
             return "CHAR", current_input

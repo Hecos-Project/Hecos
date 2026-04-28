@@ -67,7 +67,7 @@ MONITOR_LOG = os.path.join(LOGS_DIR, "zentra_monitor.log")
 def monitor_log(msg):
     ts = time.strftime("%Y-%m-%d %H:%M:%S")
     formatted = f"{ts} [MONITOR] {msg}"
-    print(formatted)
+    # Removed print(formatted) as the user requested to keep the console completely clean
     try:
         with open(MONITOR_LOG, "a", encoding="utf-8") as f:
             f.write(formatted + "\n")

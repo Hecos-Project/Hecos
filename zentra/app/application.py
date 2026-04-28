@@ -128,6 +128,7 @@ class ZentraApplication:
                 except Exception as _ws_e:
                     logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
 
+        interface.move_to_body()
         self.bootstrapper.show_welcome()
 
         # Avvia bus audio PTT (necessario per Console autonoma)
@@ -143,9 +144,11 @@ class ZentraApplication:
         ascolto_thread = AscoltoThread(self.state_manager)
         ascolto_thread.start()
 
+        # Activate readline-style prompt tracking (protects prompt from log clobbering)
+        interface.set_active_prompt(prefisso, "")
         from zentra.ui.ui_updater import stdout_lock
         with stdout_lock:
-            sys.stdout.write(prefisso)
+            sys.stdout.write("\n" + prefisso)
             sys.stdout.flush()
 
         # Main loop

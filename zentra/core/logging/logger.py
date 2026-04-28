@@ -88,6 +88,26 @@ class ConsoleTypeFilter(logging.Filter):
         else: # 'both'
             return True
 
+# Scrolling TUI Handler (for zentra.ui.interface)
+class ScrollingTUIHandler(logging.Handler):
+    """Log handler that uses Zentra's TUI scrolling region to avoid prompt clobbering."""
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            # Try to import interface inline to avoid circular dependencies
+            from zentra.ui import interface
+            if hasattr(interface, 'print_scrolling'):
+                interface.print_scrolling(msg)
+            else:
+                sys.stdout.write(msg + "\n")
+                sys.stdout.flush()
+        except:
+            pass
+
+scrolling_tui_handler = ScrollingTUIHandler()
+scrolling_tui_handler.setLevel(logging.INFO)
+scrolling_tui_handler.setFormatter(console_formatter)
+
 # Hub Handler (for real-time WebUI stream)
 class HubHandler(logging.Handler):
     def emit(self, record):
@@ -106,12 +126,13 @@ hub_handler = HubHandler()
 hub_handler.setLevel(logging.DEBUG)
 # We use a simple formatter for the hub to avoid double-timestamps if possible
 hub_handler.setFormatter(logging.Formatter('%(message)s'))
-
 # Initial setup: just files for now, until init_logger is called
 if not logger.hasHandlers():
     logger.addHandler(info_file_handler)
     logger.addHandler(debug_file_handler)
-    # Default to console if not initialized yet
+    # Check if we should use TUI scrolling or standard console
+    # If running as a basic script, console_handler is fine.
+    # But for the main app, init_logger will refine this.
     logger.addHandler(console_handler)
 
 if not litellm_log.hasHandlers():
@@ -216,7 +237,10 @@ def init_logger(config, allow_external_windows=True):
         # Destinazione standard: CHAT (nel terminale principale)
         close_activity_log()
         close_debug_log()
-        logger.addHandler(console_handler)
+        # [MODIFIED] The user requested NO background logs in the console chat
+        # to preserve the prompt completely. All monitoring is written to files.
+        # We NO LONGER add any console handler here.
+        pass
 
 def open_debug_log():
     """Opens a dedicated console for DEBUG logs (e.g., LiteLLM)."""
