@@ -21,10 +21,11 @@
    - Avvia solo WebUI: ZENTRA_WEB_RUN_WIN.bat (Win) o zentra_web_run.sh (Linux)
    - Avvia solo Console: ZENTRA_CONSOLE_RUN_WIN.bat (Win) o ZENTRA_CONSOLE_RUN.sh (Linux)
 
-4. SERVIZIO DI SISTEMA
-   - Per far girare Zentra in background ad ogni avvio:
-     * Windows: Esegui INSTALL_SERVICE_WIN.bat
-     * Linux: Esegui INSTALL_SERVICE_LINUX.sh
+4. ICONA TRAY E BACKGROUND
+   - Per far girare Zentra in background e gestirlo comodamente:
+     * Avvia Zentra normalmente; l'icona apparirà nella barra di sistema (Tray).
+     * Dall'icona puoi aprire la WebUI, la Console o chiudere il sistema.
+     * Usa START_ZENTRA_TRAY_WIN.bat se l'icona sparisce accidentalmente.
 
 5. LOGIN DEFAULT
    - User: admin / Pass: zentra  (Cambiala subito nel Pannello di Controllo!)

@@ -12,7 +12,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 ---
 
 > [!IMPORTANT]
-> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.18.2`. Questo è un Livello Operativo IA locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
+> **Stato Runtime Alpha**: Zentra Core è attualmente in `v0.19.0`. Questo è un Livello Operativo IA locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 
 ## 🚀 Panoramica
 **Zentra Core** è un **Sistema Operativo IA Nativo e Modulare**: un ecosistema locale che unisce AI reasoning, controllo di sistema root e networking avanzato. Trasforma l'hardware locale in un'entità digitale sovrana attraverso una dashboard professionale stile OS e un'infrastruttura di sicurezza avanzata.
@@ -26,7 +26,7 @@ Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Zentra
 
 ---
 
-## ✨ Caratteristiche Principali (v0.18.2)
+## ✨ Caratteristiche Principali (v0.19.0)
 * 🎨 **Flux Prompt Studio** — Prompt engineering in tempo reale per Flux.1 con persistenza automatica dei metadati sidecar.
 * 🖼️ **Image Metadata Injection** — I risultati dell'IA generativa ora includono sidecar JSON nascosti (.txt) contenenti prompt, seed e info sul sampler per workflow professionali.
 * 🎭 **Chat UI Potenziata** — Nuovi header della chat con nomi Utente/Persona visibili, timestamp e posizionamento migliorato delle azioni messaggio (Copia/Modifica/Rigenera).
@@ -86,10 +86,6 @@ Se preferisci gestire i componenti singolarmente o eseguire manutenzione manuale
 | **Linux** | `scripts/linux/run/zentra_web_run.sh` | Avvia SOLO l'interfaccia Web e il Server |
 | **Windows** | `scripts\windows\run\ZENTRA_CONSOLE_RUN_WIN.bat` | Avvia SOLO la Console Terminale (TUI) |
 | **Linux** | `scripts/linux/run/ZENTRA_CONSOLE_RUN.sh` | Avvia SOLO la Console Terminale (TUI) |
-| **Windows** | `scripts\windows\service\INSTALL_SERVICE_WIN.bat` | Installa Zentra come Servizio Windows |
-| **Linux** | `scripts/linux/service/INSTALL_SERVICE_LINUX.sh` | Installa Zentra come servizio utente systemd |
-| **Windows** | `scripts\windows\service\UNINSTALL_SERVICE_WIN.bat` | Rimuove in sicurezza il Servizio Windows |
-| **Linux** | `scripts/linux/service/UNINSTALL_SERVICE_LINUX.sh` | Rimuove in sicurezza il servizio systemd |
 | **Windows** | `scripts\windows\setup\INSTALL_ZENTRA_WIN.bat` | Installazione manuale dipendenze e Piper |
 | **Linux** | `scripts/linux/setup/INSTALL_ZENTRA_LINUX.sh` | Installazione manuale dipendenze e Piper |
 
@@ -97,10 +93,9 @@ Se preferisci gestire i componenti singolarmente o eseguire manutenzione manuale
 
 ### 🛡️ Modalità Stealth (Senza Finestre)
 Se desideri che Zentra Core giri completamente in background senza alcuna finestra di terminale visibile:
-1.  **Installa il Servizio**: Esegui `scripts\windows\service\INSTALL_SERVICE_WIN.bat` come Amministratore.
-2.  **Usa l'Icona Tray**: Avvia Zentra tramite l'icona nella barra di sistema. Gestirà il servizio in modo invisibile.
+1.  **Usa l'Icona Tray**: Avvia Zentra tramite l'icona nella barra di sistema. Gestirà i componenti di sistema in modo invisibile in background.
 3.  **Avvio Silenzioso**: Usa `START_ZENTRA_SILENT_WIN.vbs` per un avvio al 100% invisibile (senza finestre di console).
-4.  **Recupero Manuale**: Se chiudi l'icona per errore, usa `RESTART_TRAY_ICON_WIN.bat`.
+3.  **Recupero Manuale**: Se chiudi l'icona per errore, usa `START_ZENTRA_TRAY_WIN.bat`.
 
 ---
 
@@ -181,7 +176,7 @@ Email Ufficiale: zentra.core.systems@gmail.com
 ---
 
 ## 📚 Documentazione
-- 📖 **[Guida Unificata (ITA)](docs/GUIDA_UNIFICATA_ITA.md)**: Tutto ciò che devi sapere sulla v0.17.0.
+- 📖 **[Guida Unificata (ITA)](docs/GUIDA_UNIFICATA_ITA.md)**: Tutto ciò che devi sapere sulla v0.19.0.
 - 🏗️ **[Guida all'Architettura](docs/TECHNICAL_GUIDE.md)**
 
 - 🔌 **[Sviluppo Plugin](docs/PLUGINS_DEV.md)**

@@ -12,7 +12,7 @@ Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ES
 ---
 
 > [!IMPORTANT]
-> **Estado Runtime Alpha**: Zentra Core se encuentra actualmente en `v0.18.2`. Es una Capa Operativa de IA local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
+> **Estado Runtime Alpha**: Zentra Core se encuentra actualmente en `v0.19.0`. Es una Capa Operativa de IA local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
 
 ## 🚀 Resumen General
 **Zentra Core** es un **Sistema Operativo IA Nativo y Modular**: un ecosistema local que une el razonamiento de IA con la ejecución del sistema a nivel root y redes avanzadas. Transforma el hardware local en una entidad digital soberana a través de un tablero profesional estilo SO y una infraestructura de seguridad avanzada.
@@ -26,7 +26,7 @@ Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Zen
 
 ---
 
-## ✨ Características Principales (v0.18.2)
+## ✨ Características Principales (v0.19.0)
 * 🎨 **Flux Prompt Studio** — Ingeniería de prompts en tiempo real para Flux.1 con persistenza automatica di metadati sidecar.
 * 🖼️ **Image Metadata Injection** — Los resultados de IA generativa ahora incluyen archivos sidecar JSON (.txt) con prompt, semilla e info del sampler para flujos profesionales.
 * 🎭 **Chat UI Mejorada** — Nuevos encabezados de chat con nombres de Usuario/Persona, marcas de tiempo y mejor posición de botones (Copiar/Editar/Regenerate).
@@ -41,7 +41,7 @@ Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Zen
 ---
 
 ## 🧠 Cómo Funciona
-**Zentra Core está actualmente en `v0.15.2`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
+**Zentra Core está actualmente en `v0.19.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
 * **Plugins** → Acciones y capacidades (sistema, web, multimedia, etc.).
 * **Memory** → Identidad y almacenamiento persistente.
 * **UI** → Capa de interacción con el usuario.
@@ -85,10 +85,6 @@ Si prefieres gestionar los componentes por separado o realizar tareas de manteni
 | **Linux** | `scripts/linux/run/zentra_web_run.sh` | Inicia SOLO la Interfaz Web y el Servidor |
 | **Windows** | `scripts\windows\run\ZENTRA_CONSOLE_RUN_WIN.bat` | Inicia SOLO la Consola de Terminal (TUI) |
 | **Linux** | `scripts/linux/run/ZENTRA_CONSOLE_RUN.sh` | Inicia SOLO la Consola de Terminal (TUI) |
-| **Windows** | `scripts\windows\service\INSTALL_SERVICE_WIN.bat` | Instala Zentra como Servicio de Windows |
-| **Linux** | `scripts/linux/service/INSTALL_SERVICE_LINUX.sh` | Instala Zentra como servicio de usuario systemd |
-| **Windows** | `scripts\windows\service\UNINSTALL_SERVICE_WIN.bat` | Elimina de forma segura el Servicio de Windows |
-| **Linux** | `scripts/linux/service/UNINSTALL_SERVICE_LINUX.sh` | Elimina de forma segura el servicio systemd |
 | **Windows** | `scripts\windows\setup\INSTALL_ZENTRA_WIN.bat` | Instalación manual de dependencias y Piper |
 | **Linux** | `scripts/linux/setup/INSTALL_ZENTRA_LINUX.sh` | Instalación manual de dependencias y Piper |
 
@@ -96,10 +92,9 @@ Si prefieres gestionar los componentes por separado o realizar tareas de manteni
 
 ### 🛡️ Modo Silencioso (Sin Ventanas)
 Si desea que Zentra Core se ejecute completamente en segundo plano sin ventanas de terminal visibles:
-1.  **Instalar el Servicio**: Ejecute `scripts\windows\service\INSTALL_SERVICE_WIN.bat` como Administrador.
-2.  **Usar el Icono de Bandeja**: Inicie Zentra a través del icono de la bandeja. Gestionará el servicio de forma invisible.
+1.  **Usar el Icono de Bandeja**: Inicie Zentra a través del icono de la bandeja. Gestionará los componentes del sistema de forma invisible en segundo plano.
 3.  **Inicio Silencioso**: Use `START_ZENTRA_SILENT_WIN.vbs` para un inicio 100% invisible (sin ventanas de consola).
-4.  **Recuperación Manual**: Si cierra accidentalmente el icono, use `RESTART_TRAY_ICON_WIN.bat`.
+3.  **Recuperación Manual**: Si cierra accidentalmente el icono, use `START_ZENTRA_TRAY_WIN.bat`.
 
 ---
 
