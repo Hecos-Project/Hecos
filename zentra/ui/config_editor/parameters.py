@@ -29,43 +29,6 @@ def build_parameter_list(config):
     """
     params = []
 
-    # --- Audio Devices Section ---
-    try:
-        from zentra.core.audio.device_manager import get_audio_config, list_devices
-        acfg = get_audio_config()
-        out_name = acfg.get("output_device_name", "") or "(not configured)"
-        in_name  = acfg.get("input_device_name",  "") or "(not configured)"
-        last_scan = acfg.get("last_scan", "") or "never"
-
-        # Try to build dropdown lists of available devices for manual override
-        devs = list_devices()
-        output_options = [(str(d["index"]) + " – " + d["name"]) for d in devs["output"]]
-        input_options  = [(str(d["index"]) + " – " + d["name"]) for d in devs["input"]]
-    except Exception:
-        acfg = {}
-        out_name = in_name = "(unavailable)"
-        last_scan = "never"
-        output_options = []
-        input_options  = []
-
-    params.append(Parameter('audio_device', 'output_device_name',
-        f'🔊 Output Device (Piper TTS)',  'info',
-        readonly=True, info_value=out_name))
-    params.append(Parameter('audio_device', 'input_device_name',
-        f'🎤 Input Device (Microphone)',   'info',
-        readonly=True, info_value=in_name))
-    params.append(Parameter('audio_device', 'last_scan',
-        'Last Device Scan',              'info',
-        readonly=True, info_value=last_scan))
-    params.append(Parameter('audio_device', 'auto_select',
-        'Auto-select device on startup', 'bool'))
-    params.append(Parameter('audio_device', 'test_on_startup',
-        'Test devices on startup',       'bool'))
-    params.append(Parameter('audio_device', 'beep_on_select',
-        'Play beep when device selected','bool'))
-    params.append(Parameter('audio_device', 'rescan_devices',
-        '🔄 Re-scan Audio Devices Now',  'command', command='rescan_audio_devices'))
-
     # --- Backend e Modelli (esistenti) ---
     from app.model_manager import ModelManager
     backend_type, active_model_value = ModelManager.get_effective_model_info(config)
@@ -137,11 +100,6 @@ def build_parameter_list(config):
     params.append(Parameter('voice', 'sentence_silence', translator.t("label_sentence_silence"), 'float', 
                            min=0.0, max=3.0, step=0.1))
 
-    # --- WebUI Bridge ---
-    bridge = config.get('bridge', {})
-    params.append(Parameter('bridge', 'webui_voice_enabled', 'WebUI Voice (Local TTS)', 'bool'))
-    params.append(Parameter('bridge', 'webui_voice_stt', 'WebUI Microphone (Browser STT)', 'bool'))
-
     # --- Listening ---
     listening = config.get('listening', {})
     params.append(Parameter('listening', 'energy_threshold', translator.t("label_energy_threshold"), 'int', 
@@ -182,76 +140,6 @@ def build_parameter_list(config):
                            command='reboot'))
     params.append(Parameter('system', 'save_exit', translator.t("label_save_exit"), 'command', 
                            command='save_exit'))
-
-    # --- Routing Engine (Dual Engine) ---
-    params.append(Parameter('routing_engine', 'mode', translator.t("label_routing_mode"), 'str', 
-                           options=['auto', 'forza_nativo', 'forza_legacy']))
-    params.append(Parameter('routing_engine', 'legacy_models', translator.t("label_routing_models"), 'str'))
-
-    # --- Selezione Dinamica Modelli Legacy ---
-    import requests
-    models_by_provider = {
-        'ollama': [],
-        'kobold': [],
-        'openai': [],
-        'anthropic': [],
-        'groq': [],
-        'gemini': [],
-        'other': []
-    }
-    
-    def _add_model(name):
-        if '/' in name:
-            prov = name.split('/')[0].lower()
-            if prov in models_by_provider:
-                if name not in models_by_provider[prov]: models_by_provider[prov].append(name)
-            else:
-                if name not in models_by_provider['other']: models_by_provider['other'].append(name)
-        else:
-            if name not in models_by_provider['ollama']: models_by_provider['ollama'].append(name)
-
-    # 0. Persistent models in config
-    for b_type in ['ollama', 'kobold']:
-        b_conf = config.get('backend', {}).get(b_type, {})
-        for m_name in b_conf.get('available_models', {}).values():
-            _add_model(m_name)
-    
-    # 1. Scansione Live OLLAMA
-    try:
-        r = requests.get("http://localhost:11434/api/tags", timeout=1.0)
-        if r.status_code == 200:
-            for m in r.json().get('models', []): _add_model(m['name'])
-    except: pass
-    
-    # 2. Scansione Live KOBOLD
-    try:
-        kb_url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
-        r = requests.get(kb_url, timeout=0.5)
-        if r.status_code == 200:
-            kb_model = r.json().get('result')
-            if kb_model: _add_model(kb_model)
-    except: pass
-
-    # 3. Cloud (from config)
-    allow_cloud = config.get('llm', {}).get('allow_cloud', False)
-    if allow_cloud:
-        providers = config.get('llm', {}).get('providers', {})
-        for p_name, p_data in providers.items():
-            for m_name in p_data.get('models', []):
-                full_name = f"{p_name}/{m_name}" if not m_name.startswith(p_name+"/") else m_name
-                _add_model(full_name)
-                    
-    # 4. Models already in legacy string
-    legacy_str = config.get('routing_engine', {}).get('legacy_models', '')
-    for m in [s.strip() for s in legacy_str.split(',') if s.strip()]:
-        _add_model(m)
-
-    # Genera i parametri raggruppati
-    for provider, models in models_by_provider.items():
-        if not models: continue
-        section_name = f"legacy_{provider}"
-        for model in sorted(models):
-            params.append(Parameter(section_name, model, f"Legacy Mode: {model}", 'bool'))
 
     # --- PLUGINS (dinamici) ---
     plugins_section = config.get('plugins', {})

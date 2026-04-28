@@ -33,20 +33,17 @@ class UIManager:
         
         # Define visual order priority
         self.order_standard = [
-            "🔊 AUDIO DEVICES",
             translator.t("section_models"), 
             translator.t("section_ia"),
             translator.t("section_llm"), 
             "🌐 OpenAI", "🌐 Anthropic", "🌐 Groq", "🌐 Gemini", 
             translator.t("section_generation"), 
             translator.t("section_voice"), 
-            "🌐 BRIDGE WEBUI",
             translator.t("section_listening"), 
             translator.t("section_filters"), 
             translator.t("section_logging"), 
             translator.t("section_cognition"),
             translator.t("section_system"),
-            translator.t("section_routing")
         ]
         
         # Helper to get priority index
@@ -56,8 +53,6 @@ class UIManager:
                 return self.order_standard.index(title)
             except ValueError:
                 if title.startswith("🔌"): return 200 # Plugins last
-                if title.startswith("🦋") or title.startswith("🕊️") or title.startswith("🦙") or title.startswith("🐲"): 
-                    return 150 # Legacy models
                 return 100 # Other
                 
         # Sort param_list to MATCH the visual order
@@ -80,7 +75,7 @@ class UIManager:
 
                 if key == KEY_ESC:
                     if self.modified:
-                        print(f"\n\n{GIALLO}Hai delle modifiche non salvate. [S] = Salva ed Esci | [N] = Scarta Modifiche | [ESC] = Annulla{RESET}")
+                        print(f"\n\n{GIALLO}You have unsaved changes. [S] = Save and Exit | [N] = Discard Changes | [ESC] = Cancel{RESET}")
                         while True:
                             c = self._wait_for_key()
                             if c in (ord('s'), ord('S'), ord('y'), ord('Y'), KEY_ENTER):
@@ -277,30 +272,10 @@ class UIManager:
                 return translator.t("section_generation")
         elif param.section in ('ollama', 'kobold'):
             return translator.t("section_generation")
-        elif param.section == 'routing_engine':
-            return translator.t("section_routing")
-        elif param.section == 'legacy_ollama':
-            return "🦙 OLLAMA (Local)"
-        elif param.section == 'legacy_kobold':
-            return "🐲 KOBOLD (Local)"
-        elif param.section == 'legacy_openai':
-            return "🕊️ OPENAI (Cloud)"
-        elif param.section == 'legacy_anthropic':
-            return "🕊️ ANTHROPIC (Cloud)"
-        elif param.section == 'legacy_groq':
-            return "🕊️ GROQ (Cloud)"
-        elif param.section == 'legacy_gemini':
-            return "🕊️ GEMINI (Cloud)"
-        elif param.section == 'legacy_other':
-            return "🛠️ LEGACY (Other)"
-        elif param.section == 'bridge':
-            return "🌐 BRIDGE WEBUI"
-        elif param.section == 'audio_device':
-            return "🔊 AUDIO DEVICES"
         elif param.section == 'plugin':
             return f"🔌 {param.plugin_tag}"
         else:
-            return "ALTRO"
+            return "OTHER"
 
     def _draw(self):
         # Riposizioniamo il cursore invece di pulire tutto (evita flickering)
@@ -325,8 +300,8 @@ class UIManager:
             PANEL_WIDTH = 80
             safe_limit = 30
             
-        # Intestazione
-        intestazione = f" {get_version_string()} - PANNELLO DI CONTROLLO "
+        # Header
+        intestazione = f" {get_version_string()} - CONTROL PANEL "
         outprint(f"\033[44m\033[97m{intestazione.center(PANEL_WIDTH)}\033[0m")
         
         # 1. Generate flat list of renderable rows based on the ALREADY SORTED list
