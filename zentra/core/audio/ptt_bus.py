@@ -245,17 +245,44 @@ def _on_release(key):
 
 
 def _heartbeat_loop(stop_event: threading.Event):
-    """Separate loop just for heartbeat and log flushing."""
-    last_hb = 0
+    """Separate loop for heartbeat, log flushing, and hardware key polling watchdog."""
+    global ptt_active, _pressed_keys, _ptt_cache
+    
+    last_hb = time.time()
     while not stop_event.is_set():
         now = time.time()
+        
+        # 1. Hardware watchdog to prevent "stuck" keys (Windows OS often drops Ctrl+Shift releases)
+        if ptt_active and _last_source == "keyboard_hotkey" and _ptt_cache.get("hotkey") == "ctrl+shift" and sys.platform == "win32":
+            try:
+                import ctypes
+                # VK_CONTROL = 0x11, VK_SHIFT = 0x10. Most significant bit is set if pressed.
+                ctrl_down = (ctypes.windll.user32.GetAsyncKeyState(0x11) & 0x8000) != 0
+                shift_down = (ctypes.windll.user32.GetAsyncKeyState(0x10) & 0x8000) != 0
+                
+                if not (ctrl_down and shift_down):
+                    # Hardware disagrees with pynput (key was released but event dropped)
+                    debug_log("PTT-BUS WATCHDOG: Keys physically released, overriding pynput state.")
+                    
+                    # Force clear the pressed keys array of the modifiers
+                    from pynput.keyboard import Key
+                    for k in [Key.ctrl, Key.ctrl_l, Key.ctrl_r, Key.shift, Key.shift_l, Key.shift_r]:
+                        if k in _pressed_keys:
+                            _pressed_keys.remove(k)
+                            
+                    fire_ptt("stop", "keyboard_hotkey")
+            except Exception as e:
+                pass
+        
+        # 2. Status heartbeat
         if now - last_hb > 300:  # 5 minutes
             debug_log("[HEARTBEAT] PTT Bus Listener active (pynput engine).")
-            # Flush log handlers
             for h in ptt_log.handlers:
                 h.flush()
             last_hb = now
-        time.sleep(1)
+            
+        # Poll faster if PTT is active to make the watchdog responsive (100ms)
+        time.sleep(0.1 if ptt_active else 1.0)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

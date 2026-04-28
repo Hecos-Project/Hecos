@@ -88,9 +88,7 @@ def listen(state=None):
                     if state and (not state.listening_status or not state.push_to_talk):
                         return ""
 
-                # Signal PTT START to WebUI
-                if state:
-                    state.add_event("ptt_status", {"active": True})
+                # Signal PTT START to WebUI (Handled by ptt_bus)
                 logger.info("VOICE", f"[PTT] Recording started. Source: {ptt_bus.get_last_source()} | Device: OS Default")
 
                 # Capture audio while PTT remains active
@@ -101,15 +99,11 @@ def listen(state=None):
                         audio_data.extend(buffer)
                     except Exception as e:
                         logger.error(f"[LISTEN] PTT capture error: {e}")
-                        if state:
-                            state.add_event("ptt_status", {"active": False})
                         return ""
                     if state and not state.listening_status:
                         break
 
-                # Signal PTT END to WebUI
-                if state:
-                    state.add_event("ptt_status", {"active": False})
+                # Signal PTT END to WebUI (Handled by ptt_bus)
 
                 captured_bytes = len(audio_data)
                 logger.info("VOICE", f"[PTT] Capture complete. Bytes: {captured_bytes} | SampleRate: {source.SAMPLE_RATE} | Width: {source.SAMPLE_WIDTH}")
