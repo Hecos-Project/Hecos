@@ -6,6 +6,7 @@ Zentra Core is designed to be a private, modular, and powerful companion that ru
 
 ## Quick Navigation
 
+- [✨ Quick Start Guide](user/01a_quick_start_en.md)
 - [Installation Guide](install.md)
 - [Plugin System](plugins.md)
 - [API Reference](api.md)
