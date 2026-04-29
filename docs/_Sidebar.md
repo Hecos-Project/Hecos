@@ -8,6 +8,7 @@
 ### 🇺🇸 English Guide
 **User Manual**
 - [[00. Welcome|00_introduction_en]]
+- [[00a. ✨ Quick Start|01a_quick_start_en]]
 - [[01. Boot & Diagnostics|01_boot_en]]
 - [[02. User Interface (TUI)|02_ui_en]]
 - [[03. Dynamic Config|03_config_en]]
@@ -37,6 +38,7 @@
 ### 🇮🇹 Guida in Italiano
 **Manuale Operativo**
 - [[00. Benvenuti|00_introduction_it]]
+- [[00a. ✨ Inizio Rapido|01a_quick_start_it]]
 - [[01. Avvio e Diagnostica|01_boot_it]]
 - [[02. Interfaccia Utente|02_ui_it]]
 - [[03. Config Parametri|03_config_it]]
@@ -66,6 +68,7 @@
 ### 🇪🇸 Guía en Español
 **Manual de Usuario**
 - [[00. Introducción|00_introduction_es]]
+- [[00a. ✨ Inicio Rápido|01a_quick_start_es]]
 - [[01. Arranque|01_boot_es]]
 - [[02. Interfaz de Usuario|02_ui_es]]
 - [[03. Configuración|03_config_es]]
