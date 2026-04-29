@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://zentra-core.github.io/sitemap.xml
