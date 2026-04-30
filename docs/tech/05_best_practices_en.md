@@ -1,6 +1,6 @@
 # 🛠️ 5. Developer Best Practices
 
-When developing new plugins or extending Zentra Core, follow these guidelines:
+When developing new plugins or extending Hecos, follow these guidelines:
 
 1.  **Modularity**: Keep plugin logic isolated and use provided system APIs (e.g., `self.core.speak()`).
 2.  **Validation**: Always use Pydantic to define new configuration schemas.

@@ -20,7 +20,7 @@
       "risk": "low",
       "available_in": ["cli", "web"],
       "implementation": {
-        "core_files": ["zentra/plugins/web_ui/server.py", "zentra/plugins/web_ui/main.py"],
+        "core_files": ["hecos/plugins/web_ui/server.py", "hecos/plugins/web_ui/main.py"],
         "entry_points": ["FastAPI app on localhost:7070"],
         "config_keys": ["plugins.WEB_UI.enabled"]
       },
@@ -32,7 +32,7 @@
       "risk": "medium",
       "available_in": ["web", "ai"],
       "implementation": {
-        "core_files": ["zentra/plugins/mcp_bridge/main.py", "zentra/plugins/mcp_bridge/discovery.py"],
+        "core_files": ["hecos/plugins/mcp_bridge/main.py", "hecos/plugins/mcp_bridge/discovery.py"],
         "entry_points": ["WebUI -> MCP Bridge -> Discovery Tab"],
         "config_keys": ["plugins.MCP_BRIDGE.discovery_enabled"]
       },
@@ -42,7 +42,7 @@
 ,
     {
       "id": "DRIVE_plugin",
-      "description": "Zentra Drive HTTP File Manager. Native browser-based dual-panel interface with Absolute Path Navigation to all host volumes (C:, D:) and Monaco Remote Code Editor Extension.",
+      "description": "Hecos Drive HTTP File Manager. Native browser-based dual-panel interface with Absolute Path Navigation to all host volumes (C:, D:) and Monaco Remote Code Editor Extension.",
       "risk": "medium",
       "available_in": ["web"],
       "implementation": {
@@ -94,7 +94,7 @@
     },
     {
       "id": "EXECUTOR_plugin",
-      "description": "Safe Python code execution environment (Zentra AST Code Jail). Can execute algorithmic tasks, math, data processing. Blocks dangerous imports (os, sys, etc).",
+      "description": "Safe Python code execution environment (Hecos AST Code Jail). Can execute algorithmic tasks, math, data processing. Blocks dangerous imports (os, sys, etc).",
       "risk": "medium",
       "available_in": ["ai", "plugin"],
       "implementation": {

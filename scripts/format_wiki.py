@@ -1,7 +1,7 @@
 import os
 import re
 
-WIKI_DIR = r"C:\Zentra-Core-Wiki"
+WIKI_DIR = r"C:\Hecos-Wiki"
 
 LANGUAGES = {
     "en": {"label": "🇬🇧 English", "flag": "🇬🇧"},

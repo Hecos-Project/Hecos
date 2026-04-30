@@ -1,6 +1,6 @@
 # 🚀 1. Arranque y Controles Iniciales
 
-Al iniciar el ejecutable o el script de Python, Zentra comienza su secuencia de **Arranque Sincronizado**.
+Al iniciar el ejecutable o el script de Python, Hecos comienza su secuencia de **Arranque Sincronizado**.
 
 ### Diagnóstico Previo
 Por defecto, el sistema verifica:
@@ -11,7 +11,7 @@ Por defecto, el sistema verifica:
 - Escaneo de Plugins activos/desactivados.
 
 ### ⚡ Bootstrap One-Click
-La forma recomendada de iniciar Zentra es utilizar los scripts de inicio universales en la carpeta raíz:
+La forma recomendada de iniciar Hecos es utilizar los scripts de inicio universales en la carpeta raíz:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
@@ -19,8 +19,8 @@ Estos scripts gestionan automáticamente la comprobación del entorno, las depen
 
 ### 🧩 Inicio de Componentes Individuales
 Para usuarios avanzados, los componentes se pueden iniciar por separado:
-- **Interfaz Web:** `ZENTRA_WEB_RUN_WIN.bat` (Win) / `zentra_web_run.sh` (Linux)
-- **Consola de Terminal:** `ZENTRA_CONSOLE_RUN_WIN.bat` (Win) / `ZENTRA_CONSOLE_RUN.sh` (Linux)
+- **Interfaz Web:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)
+- **Consola de Terminal:** `HECOS_CONSOLE_RUN_WIN.bat` (Win) / `HECOS_CONSOLE_RUN.sh` (Linux)
 - **Paquete Completo:** `main.py` (Inicia el Tray + Backend)
 
 ### 🏎️ Inicio Rápido (Fast Boot)

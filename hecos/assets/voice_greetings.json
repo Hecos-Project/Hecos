@@ -1,0 +1,8 @@
+{
+    "en": "Hello, I am Hecos.",
+    "it": "Hecos, molto piacere!",
+    "es": "Hola, soy Hecos.",
+    "fr": "Bonjour, je suis Hecos.",
+    "de": "Hallo, ich bin Hecos.",
+    "fallback": "System Ready."
+}

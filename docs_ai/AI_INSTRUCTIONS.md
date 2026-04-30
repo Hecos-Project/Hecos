@@ -1,4 +1,4 @@
-# AI OPERATIONAL INSTRUCTIONS - ZENTRA CORE
+# AI OPERATIONAL INSTRUCTIONS - HECOS CORE
 
 > [!CAUTION]
 > **PROTOCOLLO ZERO ATTIVO.** L'inosservanza di questo protocollo invalida la coerenza del sistema e può portare a regressioni funzionali gravi.

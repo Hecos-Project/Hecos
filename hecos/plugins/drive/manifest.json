@@ -1,0 +1,33 @@
+{
+    "tag": "DRIVE",
+    "display_name": "Hecos Drive",
+    "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
+    "version": "1.1.0",
+    "author": "Hecos Team",
+    "lazy_load": false,
+    "is_class_based": false,
+    "status": "ONLINE",
+    "config_schema": {
+        "root_dir": {
+            "type": "str",
+            "default": "",
+            "description": "Root directory del Drive (vuoto = C:\\ su Windows, / su Linux)."
+        },
+        "max_upload_mb": {
+            "type": "int",
+            "default": 100,
+            "min": 1,
+            "max": 2048,
+            "description": "Dimensione massima upload in MB."
+        },
+        "allowed_extensions": {
+            "type": "str",
+            "default": "",
+            "description": "Estensioni consentite in upload (es: jpg,png,pdf,txt). Vuoto = tutte."
+        }
+    },
+    "commands": {
+        "/drive": "Apre il File Manager nel browser"
+    },
+    "tool_schema": []
+}

@@ -2,8 +2,8 @@ import os
 import re
 
 # Centralized configuration
-TARGET_DIR = r"C:\Zentra-Core"
-VERSION_FILE = os.path.join(TARGET_DIR, "zentra", "core", "version")
+TARGET_DIR = r"C:\Hecos-Core"
+VERSION_FILE = os.path.join(TARGET_DIR, "hecos", "core", "version")
 OLD_VERSION = "0.15.2"  # The version to replace
 
 def get_current_version():
@@ -13,13 +13,13 @@ def get_current_version():
     return "0.0.0"
 
 NEW_VERSION = get_current_version()
-print(f"--- Zentra Version Bumper ---")
+print(f"--- Hecos Version Bumper ---")
 print(f"Targeting: {OLD_VERSION} -> {NEW_VERSION}")
 
 # Fixes for common paths
 PATH_FIXES = {
-    "main/zentra/assets/Zentra_Core_Logo.jpg": "main/zentra/assets/Zentra_Core_Logo.jpg",
-    "main/zentra/assets/Zentra_Core_Logo_NBG.png": "main/zentra/assets/Zentra_Core_Logo_NBG.png"
+    "main/hecos/assets/Hecos_Core_Logo.jpg": "main/hecos/assets/Hecos_Core_Logo.jpg",
+    "main/hecos/assets/Hecos_Core_Logo_NBG.png": "main/hecos/assets/Hecos_Core_Logo_NBG.png"
 }
 
 count = 0

@@ -1,0 +1,37 @@
+# ============================================================
+# HECOS — API Key Pool (TEMPLATE)
+# This file is for the YAML-based key pool.
+# Rename this file to keys.yaml and insert your keys.
+# ============================================================
+
+groq:
+  - value: ""
+    description: "Groq - Primary Account"
+
+gemini:
+  - value: ""
+    description: "Google AI Studio - Primary Account"
+
+openai:
+  - value: ""
+    description: "OpenAI - Primary Account"
+
+anthropic:
+  - value: ""
+    description: "Anthropic Claude - Primary Account"
+
+mistral:
+  - value: ""
+    description: "Mistral AI - Primary Account"
+
+perplexity:
+  - value: ""
+    description: "Perplexity AI - Primary Account"
+
+stability:
+  - value: ""
+    description: "Stability AI - Images"
+
+pollinations:
+  - value: ""
+    description: "Pollinations - Free Images"

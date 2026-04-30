@@ -1,0 +1,10 @@
+# ── Hecos Agentic Loop Configuration ──
+
+# Enable or disable the Agentic Loop. 
+enabled: true
+
+# Maximum number of autonomous interactions ("chained thoughts")
+max_iterations: 5
+
+# Show the AI's internal reasoning steps
+verbose_traces: true

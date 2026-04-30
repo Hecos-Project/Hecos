@@ -1,6 +1,6 @@
 # 🔄 2. Flusso di Dati
 
-Il flusso di informazioni in Zentra segue un percorso strutturato per garantire velocità e sicurezza.
+Il flusso di informazioni in Hecos segue un percorso strutturato per garantire velocità e sicurezza.
 
 1.  **Input**: Ricezione tramite Terminale (testo), Microfono (audio) o WebUI.
 2.  **Processing**: L'Agentic Loop analizza la richiesta usando il modello IA selezionato.

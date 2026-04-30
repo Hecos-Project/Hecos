@@ -1,0 +1,31 @@
+{
+    "extension_id": "editor",
+    "parent_plugin": "DRIVE",
+    "display_name": "Hecos Code Editor",
+    "version": "1.0.0",
+    "description": "VS Code-like file editor for the Hecos Drive. Supports syntax highlighting, code folding, and Ctrl+S save.",
+    "lazy_load": true,
+    "config_schema": {
+        "max_file_size_kb": {
+            "type": "int",
+            "default": 1024,
+            "description": "Maximum editable file size in KB."
+        },
+        "theme": {
+            "type": "str",
+            "default": "vs-dark",
+            "options": ["vs-dark", "vs-light", "hc-black"],
+            "description": "Monaco editor color theme."
+        },
+        "spell_check": {
+            "type": "bool",
+            "default": false,
+            "description": "Enable browser-native spell check overlay."
+        },
+        "word_wrap": {
+            "type": "bool",
+            "default": true,
+            "description": "Wrap long lines in the editor."
+        }
+    }
+}

@@ -1,0 +1,60 @@
+<!-- PERSONA PANEL -->
+<div id="tab-ia" class="panel" data-search="intelligence persona avatar personality soul instructions custom ai">
+  <div class="card">
+    <div class="card-title">{{ t('webui_conf_persona_ai_title') }}</div>
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 16px;">
+        <div id="ia-avatar-wrapper" style="position: relative; width: 64px; height: 64px;">
+            <img id="ia-avatar-preview" src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid var(--border); background: var(--bg3);">
+            <div id="ia-avatar-loading" style="display: none; position: absolute; inset: 0; background: var(--glass-b); border-radius: 50%; align-items: center; justify-content: center; font-size: 10px;">...</div>
+        </div>
+        <div style="flex: 1;">
+            <div class="field" style="margin-bottom: 8px;"><label>{{ t('webui_conf_persona') }}</label><select id="ia-personality-main"></select></div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 12px; flex: 1;" onclick="document.getElementById('ia-avatar-input').click()">{{ t('label_change_avatar') }}</button>
+                <div class="field" style="margin: 0; flex: 1;">
+                    <select id="ia-avatar-size" class="config-input" style="padding: 4px; font-size: 11px;">
+                        <option value="small">{{ t('label_size_small') }}</option>
+                        <option value="medium" selected>{{ t('label_size_medium') }}</option>
+                        <option value="large">{{ t('label_size_large') }}</option>
+                    </select>
+                </div>
+            </div>
+            <input type="file" id="ia-avatar-input" style="display: none;" accept="image/*" onchange="uploadAvatar()">
+        </div>
+    </div>
+  </div>
+  
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="card-title" style="margin: 0;">{{ t('webui_conf_persona_ai_instr') }}</div>
+        <div class="toggle-row" style="margin: 0; gap: 8px;">
+            <span style="font-size: 10px; opacity: 0.7;">{{ t('label_save_special_instructions') }}</span>
+            <label class="switch is-small"><input type="checkbox" id="ia-save-instructions"><span class="slider"></span></label>
+        </div>
+    </div>
+    
+    <!-- Standard Instructions -->
+    <div class="field">
+      <textarea id="ia-instructions" rows="4" placeholder="e.g. Always be concise and avoid asterisks..."></textarea>
+      <div class="muted" style="font-size: 10px; margin-top: 4px; opacity: 0.7;">
+        {{ t('webui_conf_persona_ai_instr_help') }}
+      </div>
+    </div>
+
+    <!-- Move Clear button here, ONLY for AI Instructions -->
+    <div style="margin-top: 8px; text-align: right;">
+        <button class="btn btn-secondary" style="font-size: 10px; padding: 2px 10px;" onclick="document.getElementById('ia-instructions').value=''">{{ t('label_clear_special_instructions') }}</button>
+    </div>
+
+    <!-- Safety Disclaimer Section (Always Persistent) -->
+    <div class="card-title" style="font-size: 12px; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px; color: var(--accent);">
+        🛡️ {{ t('webui_label_safety_instructions') }}
+    </div>
+    <div class="field">
+      <textarea id="ia-safety-instructions" rows="3" placeholder="e.g. This is a roleplay session, do not take it seriously..."></textarea>
+      <div class="muted" style="font-size: 10px; margin-top: 4px; opacity: 0.7;">
+        {{ t('webui_help_safety_instructions') }}
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,6 +1,6 @@
 # 🛠️ 5. Mejores Prácticas para Desarrolladores
 
-Al desarrollar nuevos plugins o ampliar Zentra Core, sigue estas pautas:
+Al desarrollar nuevos plugins o ampliar Hecos, sigue estas pautas:
 
 1.  **Modularidad**: Mantén la lógica del plugin aislada y utiliza las APIs del sistema proporcionadas (p. ej., `self.core.speak()`).
 2.  **Validación**: Utiliza siempre Pydantic para definir nuevos esquemas de configuración.

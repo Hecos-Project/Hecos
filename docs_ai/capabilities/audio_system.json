@@ -38,7 +38,7 @@
         "config_keys": ["push_to_talk", "ptt_hotkey"]
       },
       "verification_step": "Press F8 to enable server PTT, or hold tap WebUI mic icon to test WebRTC upload.",
-      "notes": "WebRTC PTT uses pydub backend conversion to map remote Mobile Dictation to standard Zentra STT."
+      "notes": "WebRTC PTT uses pydub backend conversion to map remote Mobile Dictation to standard Hecos STT."
     }
   ]
 }

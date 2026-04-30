@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build-meta"
 
 [project]
-name = "zentra-core"
+name = "hecos-core"
 version = "0.19.0"
-description = "Modular AI Agentic Operating System"
+description = "Helping Companion System"
 dependencies = [
     "pydantic>=2.0",
     "pyyaml",
@@ -21,8 +21,7 @@ service = [
 ]
 
 [project.scripts]
-zentra-service = "zentra.service.windows_service:main"
-zentra-tray    = "zentra.tray.tray_app:run_tray"
+hecos-tray    = "hecos.tray.tray_app:run_tray"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,8 +1,8 @@
 # Auto-Wiki-Deploy.ps1
-# This script automates the synchronization and deployment of Zentra Core documentation to GitHub Wiki.
+# This script automates the synchronization and deployment of Hecos documentation to GitHub Wiki.
 
 param(
-    [string]$WikiPath = "C:\Zentra-Core-Wiki",
+    [string]$WikiPath = "C:\Hecos-Wiki",
     [string]$CommitMsg = "Automated Documentation Update"
 )
 
