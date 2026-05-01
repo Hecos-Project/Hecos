@@ -1,6 +1,6 @@
 # 🌌 Hecos Project
 <p align="center">
-  <img src="./hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
+  <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
 # Hecos - Version 0.19.0 (Runtime Alpha)
@@ -56,8 +56,8 @@ The easiest way to install and configure Hecos from scratch is using the **Unive
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/Hecos-Core/hecos-core.github.io.git
-cd hecos-core.github.io
+git clone https://github.com/Hecos-Project/Hecos.git
+cd Hecos
 ```
 
 ### 2. Launch the Setup Wizard
@@ -199,7 +199,7 @@ Detailed guides are located in the `docs/` folder:
 
 
 ### Online Access
-The documentation is also synchronized with the **[GitHub Wiki](https://github.com/Hecos-Core/hecos-core.github.io/wiki)**.
+The documentation is also synchronized with the **[GitHub Wiki](https://github.com/Hecos-Project/Hecos/wiki)**.
 
 ---
 

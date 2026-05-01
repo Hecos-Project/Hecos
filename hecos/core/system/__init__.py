@@ -28,8 +28,8 @@ AUTHOR = "Antonio Meloni"
 COPYRIGHT = f"Copyright (c) 2026 {AUTHOR}. Tutti i diritti riservati."
 
 # Repository e link
-REPOSITORY = "https://github.com/Hecos-Core/hecos-core.github.io"
-DOCUMENTATION = "https://hecos-core.github.io/docs"
+REPOSITORY = "https://github.com/Hecos-Project/Hecos"
+DOCUMENTATION = "https://hecos-project.github.io/docs"
 
 # Descrizione breve
 DESCRIPTION = "Hecos è un Sistema Operativo IA Nativo e Modulare: un ecosistema locale che unisce AI reasoning, controllo di sistema root e networking avanzato. Privacy, Velocità e Semplicità."

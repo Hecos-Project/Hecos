@@ -1,6 +1,6 @@
 # 🌌 Progetto Hecos
 <p align="center">
-  <img src="./hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
+  <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
 # Hecos - Versione 0.19.0 (Runtime Alpha)
@@ -56,8 +56,8 @@ Il modo più semplice per installare e configurare Hecos da zero è utilizzare i
 
 ### 1. Clona il repository
 ```bash
-git clone https://github.com/Hecos-Core/hecos-core.github.io.git
-cd hecos-core.github.io
+git clone https://github.com/Hecos-Project/Hecos.git
+cd Hecos
 ```
 
 ### 2. Lancia il Setup Wizard
