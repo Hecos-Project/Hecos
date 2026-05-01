@@ -180,36 +180,36 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Zentra Core - Black Box Protection
+# Hecos Core - Black Box Protection
 # Ignore only data/private folders, NOT the entire directories to avoid losing code
-zentra/logs/*
-!zentra/logs/.gitkeep
+hecos/logs/*
+!hecos/logs/.gitkeep
 
 # Memory: Ignore databases and user-specific data, keep source code
-zentra/memory/*.db
-zentra/memory/*.db-journal
-zentra/memory/users/
-zentra/memory/vaults/
-zentra/memory/core_identity.json
-zentra/memory/user_profile.json
+hecos/memory/*.db
+hecos/memory/*.db-journal
+hecos/memory/users/
+hecos/memory/vaults/
+hecos/memory/core_identity.json
+hecos/memory/user_profile.json
 
 # Media: Ignore generated content
-zentra/media/audio/*
-!zentra/media/audio/.gitkeep
-zentra/media/images/*
-!zentra/media/images/.gitkeep
+hecos/media/audio/*
+!hecos/media/audio/.gitkeep
+hecos/media/images/*
+!hecos/media/images/.gitkeep
 
 # Certs: Ignore generated certificates
-zentra/certs/*
-!zentra/certs/.gitkeep
+hecos/certs/*
+!hecos/certs/.gitkeep
 
 # Avatars: Ignore user avatar uploads
-zentra/media/avatars/*
-!zentra/media/avatars/.gitkeep
+hecos/media/avatars/*
+!hecos/media/avatars/.gitkeep
 
 # Screenshots: Ignore any captured screenshots
-zentra/media/screenshots/*
-zentra/core/snapshots/*
+hecos/media/screenshots/*
+hecos/core/snapshots/*
 snapshots/*
 
 # ── Image files: default BLOCK (privacy - user photos, generated content) ──────
@@ -221,56 +221,56 @@ snapshots/*
 *.gif
 *.bmp
 
-# ...EXCEPT official Zentra assets (logos, project photos)
-!zentra/assets/Tony_Admin.jpg
-!zentra/assets/Zentra_Core_Logo.jpg
-!zentra/assets/Zentra_Core_Logo_NBG.png
-!zentra/assets/Zentra_Core_Logo_NBG\ -\ SQR.png
-!zentra/assets/Zentra_Core_Logo_NBG\ -\ SQR.ico
-!zentra/assets/Zentra_Core_Project_001.jpg
+# ...EXCEPT official Hecos assets (logos, project photos)
+!hecos/assets/Tony_Admin.jpg
+!hecos/assets/Hecos_Logo_Banner.png
+!hecos/assets/Hecos_Logo_Banner.jpg
+!hecos/assets/Hecos_Logo_SQR_NBG_.png
+!hecos/assets/Hecos_Logo_SQR_NBG_LogoOnly.png
+!hecos/assets/Hecos_Logo_SQR_NBG_LogoOnly.ico
 
 # Website assets
 !docs/assets/images/*
 
 # ── PERSONA YAML: block all, whitelist only built-ins ─────────────────────
-# Block any NEW yaml added to zentra/personality/
-zentra/personality/*.yaml
+# Block any NEW yaml added to hecos/personality/
+hecos/personality/*.yaml
 # ...but allow the 7 official built-in personas:
-!zentra/personality/Atlas_Man.yaml
-!zentra/personality/MacGyver.yaml
-!zentra/personality/Motoko Kusanagi.yaml
-!zentra/personality/Nova_X-01.yaml
-!zentra/personality/Sebastian_Pro.yaml
-!zentra/personality/Urania_9800_Woman.yaml
-!zentra/personality/Zentra_System_Soul.yaml
+!hecos/personality/Atlas_Man.yaml
+!hecos/personality/MacGyver.yaml
+!hecos/personality/Motoko Kusanagi.yaml
+!hecos/personality/Nova_X-01.yaml
+!hecos/personality/Sebastian_Pro.yaml
+!hecos/personality/Urania_9800_Woman.yaml
+!hecos/personality/Zentra_System_Soul.yaml
 
 # ── PERSONA AVATARS: block custom, whitelist standard 7 ──────────────────
-# Block any new avatar folder added to zentra/assets/avatars/
-zentra/assets/avatars/*/
+# Block any new avatar folder added to hecos/assets/avatars/
+hecos/assets/avatars/*/
 # ...but allow the 7 built-in avatar folders and their images:
-!zentra/assets/avatars/Atlas_Man/
-!zentra/assets/avatars/Atlas_Man/*.png
-!zentra/assets/avatars/MacGyver/
-!zentra/assets/avatars/MacGyver/*.png
-!zentra/assets/avatars/Motoko_Kusanagi/
-!zentra/assets/avatars/Motoko_Kusanagi/*.png
-!zentra/assets/avatars/Nova_X-01/
-!zentra/assets/avatars/Nova_X-01/*.png
-!zentra/assets/avatars/Sebastian_Pro/
-!zentra/assets/avatars/Sebastian_Pro/*.png
-!zentra/assets/avatars/Urania_9800_Woman/
-!zentra/assets/avatars/Urania_9800_Woman/*.png
-!zentra/assets/avatars/Zentra_System_Soul/
-!zentra/assets/avatars/Zentra_System_Soul/*.png
+!hecos/assets/avatars/Atlas_Man/
+!hecos/assets/avatars/Atlas_Man/*.png
+!hecos/assets/avatars/MacGyver/
+!hecos/assets/avatars/MacGyver/*.png
+!hecos/assets/avatars/Motoko_Kusanagi/
+!hecos/assets/avatars/Motoko_Kusanagi/*.png
+!hecos/assets/avatars/Nova_X-01/
+!hecos/assets/avatars/Nova_X-01/*.png
+!hecos/assets/avatars/Sebastian_Pro/
+!hecos/assets/avatars/Sebastian_Pro/*.png
+!hecos/assets/avatars/Urania_9800_Woman/
+!hecos/assets/avatars/Urania_9800_Woman/*.png
+!hecos/assets/avatars/Zentra_System_Soul/
+!hecos/assets/avatars/Zentra_System_Soul/*.png
 
 # Config data: Ignore active configs, keep templates
-zentra/config/data/*
-!zentra/config/data/*.example
+hecos/config/data/*
+!hecos/config/data/*.example
 
 # API Keys - CRITICAL: never push these to git
-zentra/config/keys.yaml
+hecos/config/keys.yaml
 config/keys.yaml
-zentra/config/data/keys.yaml
+hecos/config/data/keys.yaml
 
 # Temporary and build files
 tmp/
@@ -282,21 +282,21 @@ brain/
 .env
 
 # WebUI session / export files (privacy data)
-zentra/memory/sessions/
-zentra/memory/exports/
-zentra/memory/chat_exports/
+hecos/memory/sessions/
+hecos/memory/exports/
+hecos/memory/chat_exports/
 
 # System YAML active config (runtime state, not source)
 # Uncomment if you don't want to share your personal system.yaml
-# zentra/config/data/system.yaml
+# hecos/config/data/system.yaml
 
-# Root Level Protection (prevent leakage outside zentra/)
+# Root Level Protection (prevent leakage outside hecos/)
 /snapshots/
 /logs/
 /data/
 /data/images/
-/zentra/core/snapshots/
-/zentra/core/logs/
+/hecos/core/snapshots/
+/hecos/core/logs/
 
 # Watchdog inhibitor temp file
 .config_saved_by_app
