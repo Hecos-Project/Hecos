@@ -1,6 +1,6 @@
 @echo off
 echo ==================================================
-echo   HECOS CORE - AUTOSTART REPAIR TOOL
+echo   HECOS - AUTOSTART REPAIR TOOL
 echo ==================================================
 echo.
 

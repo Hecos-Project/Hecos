@@ -237,12 +237,11 @@ snapshots/*
 hecos/personality/*.yaml
 # ...but allow the 7 official built-in personas:
 !hecos/personality/Atlas_Man.yaml
-!hecos/personality/MacGyver.yaml
+!hecos/personality/Hecos_System_Soul.yaml
 !hecos/personality/Motoko Kusanagi.yaml
 !hecos/personality/Nova_X-01.yaml
 !hecos/personality/Sebastian_Pro.yaml
 !hecos/personality/Urania_9800_Woman.yaml
-!hecos/personality/Zentra_System_Soul.yaml
 
 # ── PERSONA AVATARS: block custom, whitelist standard 7 ──────────────────
 # Block any new avatar folder added to hecos/assets/avatars/
@@ -250,8 +249,8 @@ hecos/assets/avatars/*/
 # ...but allow the 7 built-in avatar folders and their images:
 !hecos/assets/avatars/Atlas_Man/
 !hecos/assets/avatars/Atlas_Man/*.png
-!hecos/assets/avatars/MacGyver/
-!hecos/assets/avatars/MacGyver/*.png
+!hecos/assets/avatars/Hecos_System_Soul/
+!hecos/assets/avatars/Hecos_System_Soul/*.png
 !hecos/assets/avatars/Motoko_Kusanagi/
 !hecos/assets/avatars/Motoko_Kusanagi/*.png
 !hecos/assets/avatars/Nova_X-01/
@@ -260,8 +259,6 @@ hecos/assets/avatars/*/
 !hecos/assets/avatars/Sebastian_Pro/*.png
 !hecos/assets/avatars/Urania_9800_Woman/
 !hecos/assets/avatars/Urania_9800_Woman/*.png
-!hecos/assets/avatars/Zentra_System_Soul/
-!hecos/assets/avatars/Zentra_System_Soul/*.png
 
 # Config data: Ignore active configs, keep templates
 hecos/config/data/*

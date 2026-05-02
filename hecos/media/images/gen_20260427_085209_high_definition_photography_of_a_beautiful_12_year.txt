@@ -1,8 +1,0 @@
-HECOS IMAGE METADATA
-=====================
-Date: 2026-04-27 08:52:09
-Provider: huggingface
-Model: black-forest-labs/FLUX.1-schnell
-Guidance Scale: 1.0
-Inference Steps: 4
-Prompt: high definition photography of a beautiful 12 years old girl, in panties, big beautiful legs open, laying in bed.
