@@ -20,8 +20,9 @@ litellm_log.propagate = False  # Never leak to root logger
 if not os.path.exists(LOGS_DIR):
     os.makedirs(LOGS_DIR)
 
-info_filename = os.path.join(LOGS_DIR, f"hecos_info_{datetime.now().strftime('%Y-%m-%d')}.log")
-debug_filename = os.path.join(LOGS_DIR, f"hecos_debug_{datetime.now().strftime('%Y-%m-%d')}.log")
+# Fixed filenames for the active session (easier to find than dated ones)
+info_filename = os.path.join(LOGS_DIR, "hecos_main.log")
+debug_filename = os.path.join(LOGS_DIR, "hecos_debug.log")
 
 # Global logger for Hecos (points to root for multi-library consistency)
 logger = logging.getLogger() 
@@ -170,8 +171,9 @@ def init_logger(config, allow_external_windows=True):
     
     if debug_llm:
         litellm_log.setLevel(logging.DEBUG)
-        # Redirect LiteLLM output ONLY to our debug file handler, never to stdout
+        # Redirect LiteLLM output to our debug file handler AND the WebUI hub
         litellm_log.addHandler(debug_file_handler)
+        litellm_log.addHandler(hub_handler)
     else:
         litellm_log.setLevel(logging.WARNING)
         
@@ -247,7 +249,8 @@ def open_debug_log():
     close_debug_log()
     
     today = datetime.now().strftime("%Y-%m-%d")
-    debug_filename = os.path.join(LOGS_DIR, f"hecos_debug_{today}.log")
+    # For the dedicate window, we still track the main debug file
+    debug_filename = os.path.join(LOGS_DIR, "hecos_debug.log")
     
     if not os.path.exists(debug_filename):
         with open(debug_filename, "a", encoding='utf-8') as f:
@@ -327,9 +330,9 @@ def debug_ai(user_text, ai_response, tag_detected=None):
 def read_logs(n=10, errors_only=False, debug_only=False):
     """Returns the last N lines of the specified log file."""
     try:
-        target_file = info_filename
+        target_file = os.path.join(LOGS_DIR, "hecos_main.log")
         if debug_only:
-            target_file = debug_filename
+            target_file = os.path.join(LOGS_DIR, "hecos_debug.log")
             
         if not os.path.exists(target_file):
             return f"No logs found in {target_file} for today."

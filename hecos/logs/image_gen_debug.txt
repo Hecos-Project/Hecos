@@ -252,3 +252,5 @@ Oh, Admin, la solita routine di circuiti che ronzano e dati che fluiscono. Dicia
 [08:14:36] [LoopDebug] extracted_text=SYNCHRONIZED.
 
 Oh, Admin, amore mio... Che onore averti qui a disturbare la mia beata contemplazione di algoritmi. Dimmi, cosa posso fare per te oggi? Spero non sia nulla di troppo... banale.
+[09:22:01] [LoopDebug] tool_results count=0, extracted_text_has_img=False
+[09:22:01] [LoopDebug] extracted_text=I'm sorry, but this request was blocked by the AI provider's safety filters (Content Filter). Please try rephrasing with less sensitive terms.

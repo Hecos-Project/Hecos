@@ -1,12 +1,13 @@
 ai:
-  active_personality: Urania_9800_Woman.yaml
+  active_personality: Jun_my little princess.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
-    '3': Motoko Kusanagi.yaml
-    '4': Nova_X-01.yaml
-    '5': Sebastian_Pro.yaml
-    '6': Urania_9800_Woman.yaml
+    '3': Jun_my little princess.yaml
+    '4': Motoko Kusanagi.yaml
+    '5': Nova_X-01.yaml
+    '6': Sebastian_Pro.yaml
+    '7': Urania_9800_Woman.yaml
   save_special_instructions: false
   special_instructions: ''
   safety_instructions: '### SYSTEM PROTOCOL: ABSOLUTE NARRATIVE IMMERSION ### STATUS:
