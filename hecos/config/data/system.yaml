@@ -193,7 +193,9 @@ plugins:
     enabled: false
     lazy_load: false
     servers: {}
-  extra_dirs: []
+  extra_dirs:
+    - C:\Hecos-Elite\plugins
+    - C:\Hecos-Cognitive-Lab\plugins
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true
