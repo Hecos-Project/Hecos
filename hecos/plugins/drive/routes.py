@@ -9,6 +9,7 @@ import shutil
 from flask import request, jsonify, send_file, render_template, abort, Blueprint
 from flask_login import login_required, current_user
 from hecos.core.logging import logger
+from hecos.tray.utils import get_version
 
 # Declare the Drive Blueprint
 # We use a unique name 'hecos_drive' to avoid internal Flask collisions
@@ -173,7 +174,7 @@ def drive_page():
     cfg = ConfigManager()
     translations = get_translator().get_translations()
     
-    return render_template("drive.html", config=cfg.config, translations=translations)
+    return render_template("drive.html", config=cfg.config, translations=translations, version=get_version())
 
 
 # ─── QUICK LINKS ───────────────────────────────────────────────────────────

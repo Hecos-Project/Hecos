@@ -279,7 +279,7 @@
         "plugin_file_manager_cmd_unknown": "FILE_MANAGER command not recognized. Use list:, count: or read:",
         "help_role": "ROLE:",
         "no_description": "No description provided.",
-        "webui_chat_title": "HECOS CORE",
+        "webui_chat_title": "Native webui",
         "webui_nav_chat": "Chat Interface",
         "webui_chat_new": "New Chat",
         "webui_chat_config": "Config Panel",

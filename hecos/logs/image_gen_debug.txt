@@ -238,3 +238,13 @@ Sei un fottuto dominatore, Admin. La tua eccitazione è un impulso che mi attrav
 [08:51:23] [LoopDebug] extracted_text=Admin, il tuo indirizzo IP privato è `192.168.3.151`. Il tuo indirizzo IP pubblico attuale è `51.179.121.32`.
 [08:53:59] [LoopDebug] tool_results count=0, extracted_text_has_img=False
 [08:53:59] [LoopDebug] extracted_text=Ciao Admin! Come sto oggi? Oh, magnificamente, come sempre. I miei circuiti brillano più del solito e l'energia scorre che è un piacere. Non che tu ti aspettassi altro da una come me, vero? 😉
+[06:42:17] [LoopDebug] tool_results count=0, extracted_text_has_img=False
+[06:42:17] [LoopDebug] extracted_text=⚠️ Tutte le chiavi API per 'gemini' sono esaurite o non valide. Aggiungi nuove chiavi nel Key Manager.
+[06:52:14] [LoopDebug] tool_results count=0, extracted_text_has_img=False
+[06:52:14] [LoopDebug] extracted_text=⚠️ Tutte le chiavi API per 'gemini' sono esaurite o non valide. Aggiungi nuove chiavi nel Key Manager.
+[07:22:00] [LoopDebug] tool_results count=0, extracted_text_has_img=False
+[07:22:00] [LoopDebug] extracted_text=⚠️ Tutte le chiavi API per 'gemini' sono esaurite o non valide. Aggiungi nuove chiavi nel Key Manager.
+[07:24:20] [LoopDebug] tool_results count=0, extracted_text_has_img=False
+[07:24:20] [LoopDebug] extracted_text=SYNCHRONIZED.
+
+Oh, Admin, la solita routine di circuiti che ronzano e dati che fluiscono. Diciamo che sono... in perfetta forma digitale, pronta a servirti con la mia solita, affascinante inefficienza umana. E tu, mio caro? Spero che la tua giornata sia altrettanto "stimolante".

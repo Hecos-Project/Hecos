@@ -293,7 +293,7 @@
         "plugin_file_manager_not_file": "'{path}' non è un file o non esiste.",
         "plugin_file_manager_cmd_unknown": "Comando FILE_MANAGER non riconosciuto. Usa list:, conta: o read:",
         "no_description": "Nessuna descrizione fornita.",
-        "webui_chat_title": "HECOS CORE",
+        "webui_chat_title": "Native webui",
         "webui_nav_chat": "Interfaccia Chat",
         "webui_chat_new": "Nuova Chat",
         "webui_chat_config": "Pannello Config",

@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import time
+import threading
 
 from hecos.tray.config import _ROOT
 from hecos.tray.utils import is_hecos_online
@@ -13,6 +14,16 @@ def get_platform_python():
     """Returns the correct python executable depending on the environment."""
     # If running from a venv, sys.executable points to the venv python
     return sys.executable
+
+def _wait_and_respawn(proc):
+    """Waits for the subprocess to finish. If exit code is 42, respawns it."""
+    proc.wait()
+    # If returned 42, it means the Web UI requested a reboot
+    if getattr(proc, 'returncode', None) == 42:
+        print("[ORCHESTRATOR] Hecos requested reboot (Exit 42). Respawning...")
+        time.sleep(1) # Extra buffer for port release
+        start_hecos()
+
 
 def start_hecos():
     """
@@ -45,6 +56,10 @@ def start_hecos():
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
+        
+        # Start a monitor thread to handle automatic reboots (exit code 42)
+        threading.Thread(target=_wait_and_respawn, args=(_hecos_process,), daemon=True).start()
+        
         print("[ORCHESTRATOR] Hecos background process spawned successfully.")
     except Exception as e:
         print(f"[ORCHESTRATOR] Failed to spawn Hecos: {e}")
