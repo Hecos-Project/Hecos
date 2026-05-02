@@ -62,6 +62,7 @@
         "webui_chat_loading": "cargando...",
         "webui_chat_offline": "offline",
         "webui_chat_welcome_title": "Bienvenido",
+        "webui_chat_welcome_sub": "Siempre a tu lado. El alma del sistema a tu servicio.",
         "webui_chat_placeholder": "Escribe un mensaje para Hecos...",
         "webui_chat_hint": "Enter para enviar · Shift+Enter para nueva línea",
         "webui_chat_btn_clear": "Limpiar chat",
