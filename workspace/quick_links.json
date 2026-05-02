@@ -2,7 +2,7 @@
   {
     "id": "dd7ba960-8cc6-4cbd-87f2-1b2f0dc57d4e",
     "label": "Log Command Center - Standalone",
-    "url": "https://127.0.0.1:7070/zentra/logs",
+    "url": "https://127.0.0.1:7070/hecos/logs",
     "icon": "🔗",
     "target": "_blank"
   }

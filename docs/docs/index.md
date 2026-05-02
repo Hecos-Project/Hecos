@@ -1,8 +1,8 @@
-# Zentra Core Documentation
+# Hecos Documentation
 
-Welcome to the official documentation for **Zentra Core**, your personal, offline AI assistant.
+Welcome to the official documentation for **Hecos**, your personal, offline AI assistant.
 
-Zentra Core is designed to be a private, modular, and powerful companion that runs entirely on your hardware.
+Hecos is designed to be a private, modular, and powerful companion that runs entirely on your hardware.
 
 ## Quick Navigation
 
@@ -11,6 +11,6 @@ Zentra Core is designed to be a private, modular, and powerful companion that ru
 - [Plugin System](plugins.md)
 - [API Reference](api.md)
 
-## What is Zentra Core?
+## What is Hecos?
 
-Zentra Core combines local LLMs (Large Language Models), voice interaction, system automation, and a modular architecture to provide a fully customizable AI experience without cloud dependencies.
+Hecos combines local LLMs (Large Language Models), voice interaction, system automation, and a modular architecture to provide a fully customizable AI experience without cloud dependencies.

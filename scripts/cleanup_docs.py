@@ -1,6 +1,6 @@
 import os
 
-docs_dir = r"c:\Zentra-Core\docs"
+docs_dir = r"c:\Hecos-Core\docs"
 user_dir = os.path.join(docs_dir, "user")
 tech_dir = os.path.join(docs_dir, "tech")
 
@@ -72,6 +72,6 @@ clean_dir(tech_dir, tech_map)
 webui_en = os.path.join(user_dir, "08_webui_en.md")
 if not os.path.exists(webui_en):
     with open(webui_en, "w", encoding="utf-8") as f:
-        f.write("# 💻 Native WebUI\n\nZentra's WebUI is the modern graphical interface.")
+        f.write("# 💻 Native WebUI\n\nHecos's WebUI is the modern graphical interface.")
 
 print("Done.")

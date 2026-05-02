@@ -1,0 +1,13 @@
+<div id="chat-area">
+  <div id="welcome">
+    <div class="welcome-logo"><img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Hecos Logo"></div>
+    <div class="welcome-title">{{ t('webui_chat_welcome_title') }}</div>
+    <div class="welcome-sub">{{ t('webui_chat_welcome_sub') }}</div>
+    <div class="quick-chips">
+      <div class="chip" onclick="startPrompt('Come stai? Fammi un report del sistema')">📊 {{ t('webui_chat_chip_report') }}</div>
+      <div class="chip" onclick="startPrompt('Quali plugin hai disponibili?')">🧩 {{ t('webui_chat_chip_plugins') }}</div>
+      <div class="chip" onclick="startPrompt('Apri Chrome')">🚀 {{ t('webui_chat_chip_program') }}</div>
+      <div class="chip" onclick="startPrompt('Cerca online le ultime notizie')">🌐 {{ t('webui_chat_chip_web') }}</div>
+    </div>
+  </div>
+</div>

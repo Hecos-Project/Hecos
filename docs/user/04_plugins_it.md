@@ -1,6 +1,6 @@
 # 🔌 4. Sistema Modular / Plugins
 
-Zentra è costruito su un'architettura **Plugin-Native**. Ogni capacità (gestione file, hardware, multimedia) è gestita da un modulo indipendente.
+Hecos è costruito su un'architettura **Plugin-Native**. Ogni capacità (gestione file, hardware, multimedia) è gestita da un modulo indipendente.
 
 - **Flessibilità**: I plugin possono essere abilitati o disabilitati in tempo reale tramite il Pannello Config.
 - **Integrità**: Ogni plugin opera nel proprio spazio isolato, garantendo che un errore in un modulo non blocchi l'intero sistema.

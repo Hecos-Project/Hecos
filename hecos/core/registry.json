@@ -1,0 +1,174 @@
+{
+    "DASHBOARD": {
+        "description": "Hardware monitoring and AI backend status.",
+        "commands": {
+            "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
+            "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
+            "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
+            "get_system_resources": "Returns a summary of system CPU and RAM usage."
+        },
+        "status": "ONLINE (Telemetry active)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "EXECUTOR": {
+        "description": "Safe Python execution (AST Sandbox) and System Control.",
+        "commands": {
+            "execute_shell_command": "Executes a shell command (cmd.exe) in the background.",
+            "get_time": "Returns the current local time.",
+            "reboot_system": "Reboots the entire Hecos system.",
+            "run_python_code": "Executes a block of Python code safely after strict Static Analysis."
+        },
+        "status": "ONLINE (Core Tools Active)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "HELP": {
+        "description": "Displays the list of all active commands and modules in the system.",
+        "commands": {
+            "list_capabilities": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
+            "refresh_registry": "Forces a re-read and update of the central capabilities registry (rescans plugins)."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "MEMORY": {
+        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+        "commands": {
+            "read_history": "Extract the last N saved messages from the database history.",
+            "remember_info": "Save important information about the user in the biographical profile.",
+            "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
+            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
+    "MODELS": {
+        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
+        "commands": {
+            "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
+            "list_models": "Lists all available models for the currently selected backend.",
+            "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
+    "SYS_NET": {
+        "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
+        "commands": {
+            "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
+            "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
+            "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
+            "ping_test": "Executes a network ping test to the specified target (IP or domain).",
+            "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
+            "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
+            "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
+        },
+        "status": "Online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "WEB_UI": {
+        "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
+        "commands": {
+            "get_panel_url": "Returns the URL of the chat interface.",
+            "open_browser": "Opens the Hecos web interface in the default browser if not already open."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "DRIVE": {
+        "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
+        "commands": {
+            "/drive": "Apre il File Manager nel browser"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": false,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
+    "IMAGE_GEN": {
+        "description": "Generates images from text descriptions using AI image models.",
+        "commands": {
+            "generate_image": "Generates an image from a text description."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "MEDIA": {
+        "description": "Hardware volume and mute control.",
+        "commands": {
+            "set_mute": "Toggles system mute mode on or off.",
+            "set_volume": "Sets the system volume to a specific level."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "WEB": {
+        "description": "Network access for Google searches and quick opening of websites.",
+        "commands": {
+            "open_url": "Opens a specific website in the default browser.",
+            "search_web": "Performs an internet search using the default search engine (e.g., Google)."
+        },
+        "status": "ONLINE (Browsing & Search)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
+    "WEBCAM": {
+        "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
+        "commands": {
+            "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
+        },
+        "status": "ONLINE (Optical Vision)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    }
+}

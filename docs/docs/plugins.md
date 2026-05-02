@@ -1,6 +1,6 @@
 # Plugin System
 
-Zentra Core features a dynamic and modular plugin architecture. Every capability is a standalone module that can be enabled or disabled.
+Hecos features a dynamic and modular plugin architecture. Every capability is a standalone module that can be enabled or disabled.
 
 ## Core Plugins
 
@@ -14,4 +14,4 @@ Zentra Core features a dynamic and modular plugin architecture. Every capability
 | **Memory** | Persistent storage of conversations, user preferences, and context. |
 
 ## Creating Plugins
-Developers can extend Zentra by adding new folders to the `plugins/` directory. Each plugin must follow the standard structure with a `main.py` entry point and register its capabilities with the core.
+Developers can extend Hecos by adding new folders to the `plugins/` directory. Each plugin must follow the standard structure with a `main.py` entry point and register its capabilities with the core.

@@ -1,6 +1,6 @@
 # 🧭 14. Enrutamiento de Instrucciones de IA (3 Niveles)
 
-Zentra utiliza un sistema de enrutamiento de tres niveles para decidir cómo debe responder la IA a cada comando.
+Hecos utiliza un sistema de enrutamiento de tres niveles para decidir cómo debe responder la IA a cada comando.
 
 1.  **Defaults del Plugin**: Instrucciones básicas proporcionadas por el desarrollador del plugin.
 2.  **Overrides de Usuario**: Tus personalizaciones guardadas en el archivo `routing_overrides.yaml`. Estas tienen prioridad sobre los valores por defecto.

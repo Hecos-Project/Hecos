@@ -1,6 +1,6 @@
-# MASTER CONTEXT - Zentra Core
+# MASTER CONTEXT - Hecos
 
-Questo documento stabilisce le regole d'oro per l'evoluzione e la manutenzione di Zentra-Core. Deve essere consultato prima di ogni modifica strutturale.
+Questo documento stabilisce le regole d'oro per l'evoluzione e la manutenzione di Hecos-Core. Deve essere consultato prima di ogni modifica strutturale.
 
 ## Regole Globali
 
@@ -23,5 +23,5 @@ Questo documento stabilisce le regole d'oro per l'evoluzione e la manutenzione d
 ---
 
 > [!IMPORTANT]
-> Zentra-Core è in una fase stabile di **v0.18.0 (Alpha)**. La sicurezza PKI (Root CA), l'interfaccia mobile-first, l'**Architettura Privacy a 3 Livelli** (Normal, Auto-Wipe, Incognito), l'autenticazione Multi-Utente, i Vault isolati, il **Multi-Registry MCP Discovery Hub** e il sandbox AST Code Jail sono standard di sistema operativi che devono essere rigorosamente documentati e preservati in ogni modifica.
+> Hecos-Core è in una fase stabile di **v0.18.0 (Alpha)**. La sicurezza PKI (Root CA), l'interfaccia mobile-first, l'**Architettura Privacy a 3 Livelli** (Normal, Auto-Wipe, Incognito), l'autenticazione Multi-Utente, i Vault isolati, il **Multi-Registry MCP Discovery Hub** e il sandbox AST Code Jail sono standard di sistema operativi che devono essere rigorosamente documentati e preservati in ogni modifica.
 

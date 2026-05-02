@@ -1,4 +1,4 @@
-# DEVELOPMENT RULES - Zentra Core
+# DEVELOPMENT RULES - Hecos
 
 Regole tecniche per lo sviluppo del sistema standalone (Flask-based).
 
@@ -12,7 +12,7 @@ Ogni modulo Python che introduce una nuova interazione deve essere accompagnato 
 - **No Translation:** Non tradurre termini tecnici nella lingua della conversazione. Il codebase deve essere internazionalizzato.
 
 ### 3. Architettura a Plugin (Flask Blueprints)
-Zentra non è più un bridge, ma un ecosistema nativo.
+Hecos non è più un bridge, ma un ecosistema nativo.
 - Le interfacce Web (Chat, Config, Dashboard) devono essere sviluppate come **Flask Blueprints**.
 - Ogni plugin deve trovarsi nella cartella `/plugins/` e registrare il proprio `web_bp` (Blueprint) nel sistema.
 
@@ -38,7 +38,7 @@ Zentra non è più un bridge, ma un ecosistema nativo.
 - Questo garantisce la compatibilità cross-platform e l'accessibilità internazionale.
 
 ### 9. Secure Contexts (PKI)
-- Con l'introduzione di **Zentra PKI**, gran parte del traffico WebUI avviene su HTTPS.
+- Con l'introduzione di **Hecos PKI**, gran parte del traffico WebUI avviene su HTTPS.
 - Utilizzare percorsi assoluti (quando possibile via Flask `url_for`) per gli asset e caricare i file tramite protocolli sicuri per evitare avvisi di "Contenuto Misto" sui browser moderni.
 
 ---

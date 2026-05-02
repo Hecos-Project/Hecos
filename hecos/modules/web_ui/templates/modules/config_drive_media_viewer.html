@@ -1,0 +1,114 @@
+<!-- DRIVE MEDIA VIEWER CONFIG PANEL -->
+<!-- Extension of: DRIVE | ID: drive-media-viewer -->
+<div id="tab-drive-media-viewer" class="panel">
+
+  <!-- Extension dependency notice -->
+  <div style="display:flex; align-items:center; gap:10px; padding:10px 16px; background:rgba(69,162,158,0.08); border:1px solid rgba(69,162,158,0.2); border-radius:10px; margin-bottom:18px; font-size:12px; color:#45a29e;">
+    <span style="font-size:16px;">🔗</span>
+    <span>Extension of <strong>Hecos Drive</strong> — requires the Drive module to be active.</span>
+    <a href="/drive" target="_blank" style="margin-left:auto; color:#66fcf1; text-decoration:none; font-size:11px;">Open Drive →</a>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Drive Media Viewer — Configuration</div>
+    <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">
+      Integrated multimedia viewer for Hecos Drive. Supports images (JPG, PNG, WebP, GIF, SVG), video (MP4, WebM, MKV), and audio (MP3, OGG, WAV, FLAC).
+    </p>
+
+    <!-- IMAGE SETTINGS -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px;">🖼️ Images</div>
+
+    <div class="field">
+      <label>🔍 Default Zoom</label>
+      <select id="drive-viewer-default-zoom">
+        <option value="fit">Fit to window (default)</option>
+        <option value="100">100% (original size)</option>
+        <option value="50">50%</option>
+        <option value="200">200%</option>
+      </select>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Show image metadata (EXIF)</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-show-exif"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Displays EXIF info: camera, date, GPS, etc.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Automatic Slideshow Mode</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-slideshow"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Starts the presentation automatically when entering an image folder.</p>
+
+    <div class="field" style="margin-bottom:20px;">
+      <label>⏱️ Slideshow Interval (seconds)</label>
+      <input type="number" id="drive-viewer-slideshow-interval" min="1" max="60" value="5" style="width:120px;">
+    </div>
+
+    <!-- VIDEO SETTINGS -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px; border-top:1px solid var(--border); padding-top:16px;">🎬 Video</div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Autoplay video</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-video-autoplay"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Starts the video automatically upon opening (muted by browser policy).</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Loop video</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-video-loop"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Repeats the video in loop when finished.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Show player controls</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-video-controls" checked><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">Shows play/pause, progress bar, volume and fullscreen.</p>
+
+    <!-- AUDIO SETTINGS -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px; border-top:1px solid var(--border); padding-top:16px;">🎵 Audio</div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Autoplay audio</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-audio-autoplay"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Starts audio files automatically upon opening.</p>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Show waveform visualizer</div>
+      <label class="switch"><input type="checkbox" id="drive-viewer-audio-waveform" checked><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:20px;">Shows animated waveform during audio playback.</p>
+
+    <!-- GENERAL -->
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--accent); margin-bottom:12px; border-top:1px solid var(--border); padding-top:16px;">🔧 General</div>
+
+    <div class="field">
+      <label>📁 Supported image extensions</label>
+      <input type="text" id="drive-viewer-image-ext" value="jpg,jpeg,png,gif,webp,svg,bmp,ico">
+      <small style="color:var(--muted); font-size:11px;">Files with these extensions will open in the image viewer. Comma-separated.</small>
+    </div>
+
+    <div class="field">
+      <label>🎬 Supported video extensions</label>
+      <input type="text" id="drive-viewer-video-ext" value="mp4,webm,mkv,avi,mov">
+      <small style="color:var(--muted); font-size:11px;">Files with these extensions will open in the video player.</small>
+    </div>
+
+    <div class="field">
+      <label>🎵 Supported audio extensions</label>
+      <input type="text" id="drive-viewer-audio-ext" value="mp3,ogg,wav,flac,aac,m4a">
+      <small style="color:var(--muted); font-size:11px;">Files with these extensions will open in the audio player.</small>
+    </div>
+
+    <!-- INFO BOX -->
+    <div style="margin-top:20px; padding:14px; background:rgba(102,252,241,0.05); border:1px solid rgba(102,252,241,0.15); border-radius:8px;">
+      <div style="font-size:12px; color:#66fcf1; font-weight:600; margin-bottom:8px;">ℹ️ Formats and Compatibility</div>
+      <div style="font-size:11px; color:var(--muted); line-height:1.7;">
+        Playback depends on browser capabilities. For MKV and AVI, consider converting to MP4/WebM.<br>
+        Media files are streamed from Drive (<code>GET /api/drive/stream/&lt;path&gt;</code>).
+      </div>
+    </div>
+  </div>
+</div>

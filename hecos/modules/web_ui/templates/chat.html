@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="{{ zconfig.language or 'en' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<title>Hecos — {{ t('webui_chat_title') }}</title>
+<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'" onerror="this.onerror=null;this.removeAttribute('media');">
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+</noscript>
+<link rel="stylesheet" href="/assets/css/mobile/responsive.css?v={{ version }}">
+<!-- WEB_UI Sidebar Widget Extensions -->
+<link rel="stylesheet" href="/ext/quick_links/static/css/quick_links.css?v={{ version }}">
+<!-- CRITICAL: inline mobile overrides - cache-proof -->
+<style>
+  /* Default: hide hamburger/mobile elements on desktop */
+  .mobile-only { display: none !important; }
+  /* Mobile: show hamburger, hide desktop topbar */
+  @media (max-width: 768px) {
+    .mobile-only { display: flex !important; }
+    #topbar { display: none !important; }
+    #main { margin-left: 0 !important; width: 100%; }
+    /* CRITICAL FIX: override chat.css that sets display:none on #sidebar at 700px */
+    /* Use off-canvas (left:-100%) instead so it can slide in */
+    #sidebar {
+      display: block !important;
+      position: fixed !important;
+      left: -110% !important;
+      top: 0 !important;
+      height: 100% !important;
+      width: 260px !important;
+      z-index: 1000 !important;
+      transition: left 0.3s ease !important;
+      overflow-y: auto !important;
+      background: var(--bg2) !important;
+      box-shadow: 4px 0 20px var(--shadow) !important;
+    }
+    #sidebar.open { left: 0 !important; }
+    #mobile-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; }
+    #mobile-overlay.active { display: block !important; }
+  }
+</style>
+{% include 'modules/chat_message_actions.html' %}
+{% include 'modules/chat_image_viewer.html' %}
+</head>
+<body>
+
+<script>
+  (function() {
+    window.setTheme = function(theme, manual) {
+      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate');
+      if (theme && theme !== 'default') {
+        document.body.classList.add('theme-' + theme);
+      }
+      if (manual) localStorage.setItem('hecos-ui-theme', theme);
+    };
+
+    var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+    var theme = autoTheme ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light') : savedTheme;
+    
+    window.setTheme(theme);
+  })();
+</script>
+
+{% include 'modules/chat_sidebar.html' %}
+{% include 'modules/neural_link.html' %}
+
+<div id="main">
+  {% include 'modules/mobile/mobile_navbar.html' %}
+  {% include 'modules/chat_topbar.html' %}
+  {% include 'modules/chat_area.html' %}
+  {% include 'modules/chat_input.html' %}
+</div>
+
+<script src="/static/js/neural_link/neural_link_logic.js"></script>
+
+<script>
+  // I18N Strings for external JS
+  window.I18N = {{ translations | tojson | safe }};
+
+
+  /**
+   * Global translation function for Frontend JS
+   */
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    if (params) {
+      for (const [pKey, pVal] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+      }
+    }
+    return text;
+  };
+</script>
+<script src="/static/js/config_manifest.js?v={{ version }}"></script>
+<script>
+  // Expose the global history to window so the renderer can read it
+  window.chatHistory = [];
+  window.HecosUserAvatar = "{{ profile.avatar_path if (profile and profile.avatar_path) else '' }}";
+  window.HecosUserName = "{{ current_user.username if current_user.is_authenticated else t('webui_user_label') }}";
+  window.cfg = {{ zconfig | tojson }};
+  window.HECOS_VERSION = "{{ version }}";
+</script>
+<script src="/static/js/chat_renderer.js?v={{ version }}"></script>
+<script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
+<!-- Refactored Chat Logic Modules -->
+<script src="/static/js/chat_ui.js?v={{ version }}"></script>
+<script src="/static/js/chat_api.js?v={{ version }}"></script>
+<script src="/static/js/chat_events.js?v={{ version }}"></script>
+<script src="/static/js/audio_controls.js?v={{ version }}"></script>
+<script src="/static/js/chat_message_actions.js?v={{ version }}"></script>
+<script src="/static/js/chat_input_toolbar.js?v={{ version }}"></script>
+<script src="/static/js/chat_image_viewer.js?v={{ version }}"></script>
+<script src="/static/js/client_camera.js?v={{ version }}"></script>
+<!-- Refactored Audio UI Modules -->
+<script src="/static/js/audio_encoder.js?v={{ version }}"></script>
+<script src="/static/js/audio_recorder.js?v={{ version }}"></script>
+<script src="/static/js/audio_ui.js?v={{ version }}"></script>
+<script src="/static/js/mobile/mobile_logic.js?v={{ version }}"></script>
+<script src="/static/js/pull_to_refresh.js?v={{ version }}"></script>
+<script src="/static/js/chat_history.js?v={{ version }}"></script>
+<!-- Remote Triggers (Media keys, Arduino Hooks) -->
+{% if zconfig.plugins.REMOTE_TRIGGERS and zconfig.plugins.REMOTE_TRIGGERS.enabled != False %}
+<script src="/remote_triggers_static/js/remote_triggers.js"></script>
+{% endif %}
+<!-- WEB_UI Sidebar Widget Extensions -->
+<script src="/ext/quick_links/static/js/quick_links.js?v={{ version }}"></script>
+</body>
+</html>
+

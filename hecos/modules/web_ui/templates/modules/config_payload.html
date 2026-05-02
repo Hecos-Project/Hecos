@@ -1,0 +1,108 @@
+<!-- PAYLOAD VIEWER PANEL -->
+<div id="tab-payload" class="panel">
+  <div class="card">
+    <div class="card-title">🔍 Context & Token Payload Inspector</div>
+    <p style="color: var(--muted); font-size: 13px; margin-bottom: 15px;">
+      {{ t('webui_payload_desc') }}
+    </p>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+      <div class="toggle-info">
+        <strong>Model:</strong> <span id="pl-model" style="color: var(--accent); font-weight:600;">N/A</span>
+      </div>
+      <div>
+        <button type="button" class="btn btn-secondary" onclick="loadPayloadData()">🔄 {{ t('webui_payload_btn_refresh') }}</button>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div style="display: flex; flex-direction: column; gap: 10px; background: var(--bg3); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+      
+      <div class="toggle-row" style="padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+        <div class="toggle-info">{{ t('webui_payload_sys_mem') }}</div>
+        <span id="pl-sys" style="font-family: monospace; color: var(--muted);">0 chars</span>
+      </div>
+      
+      <div class="toggle-row" style="padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+        <div class="toggle-info">{{ t('webui_payload_user_msg') }}</div>
+        <span id="pl-usr" style="font-family: monospace; color: var(--muted);">0 chars</span>
+      </div>
+
+      <div class="toggle-row" style="padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.1);">
+        <div class="toggle-info" title="Include le definizioni JSON di tutti i comandi dei plugin abilitati">{{ t('webui_payload_json_tools') }}</div>
+        <span id="pl-tls" style="font-family: monospace; color: var(--muted);">0 chars</span>
+      </div>
+
+      <!-- Plugins Cost Breakdown -->
+      <div id="pl-plugins-box" style="margin-left: 15px; padding-left: 10px; border-left: 2px solid var(--border); font-size: 13px; color: var(--muted); display: none;"></div>
+
+      <div class="toggle-row" style="padding: 8px 0 0 0; font-weight: bold; border-bottom:none;">
+        <div class="toggle-info" style="font-weight:600; color:var(--text);">{{ t('webui_payload_total') }}</div>
+        <span id="pl-tot" style="font-family: monospace; color: var(--text);">0 chars</span>
+      </div>
+      
+      <div class="toggle-row" style="padding: 4px 0; font-weight: bold; font-size: 16px; color: var(--accent); border-bottom:none;">
+        <div class="toggle-info" style="color:var(--accent); font-weight:600; font-size:15px;">{{ t('webui_payload_estimate') }}</div>
+        <span id="pl-tks" style="font-family: monospace; font-size:15px;">~ 0 Tokens</span>
+      </div>
+
+    </div>
+
+    <!-- Developer messages logic -->
+    <div style="margin-top:20px;">
+      <div class="card-title" style="font-size:14px; color:var(--muted);">{{ t('webui_payload_preview_title') }}</div>
+      <div style="background: #111; padding: 10px; border-radius: 6px; border: 1px solid #333; max-height: 250px; overflow-y: auto;">
+        <pre id="pl-preview" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin: 0; color: #8f8f8f; white-space: pre-wrap; word-break: break-all;">{{ t('webui_payload_preview_ph') }}</pre>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function loadPayloadData() {
+  const btn = event ? event.target : null;
+  const oldText = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = window.t ? window.t('webui_conf_msg_loading') : "Loading..."; btn.disabled = true; }
+  
+  try {
+    const res = await fetch('/api/system/payload');
+    const data = await res.json();
+    
+    if (data.ok && data.payload) {
+      const pl = data.payload;
+      document.getElementById('pl-model').textContent = pl.model || "N/A";
+      document.getElementById('pl-sys').textContent   = (pl.system_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-usr').textContent   = (pl.user_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-tls').textContent   = (pl.tools_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-tot').textContent   = (pl.total_chars || 0).toLocaleString() + " chars";
+      document.getElementById('pl-tks').textContent   = "~ " + (pl.approx_tokens || 0).toLocaleString() + " Tokens";
+      
+      const pBox = document.getElementById('pl-plugins-box');
+      if (pl.plugins_cost && Object.keys(pl.plugins_cost).length > 0) {
+        let html = "";
+        for (const [tag, cost] of Object.entries(pl.plugins_cost)) {
+            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span>➤ ${tag}</span> <span>${cost.toLocaleString()} chars</span>
+                     </div>`;
+        }
+        pBox.innerHTML = html;
+        pBox.style.display = "block";
+      } else {
+        pBox.style.display = "none";
+      }
+
+      let preText = "Nessun dato disponibile.";
+      if (pl.messages_count > 0 && Array.isArray(pl.messages_preview)) {
+         preText = JSON.stringify(pl.messages_preview, null, 2);
+      }
+      document.getElementById('pl-preview').textContent = preText;
+    }
+  } catch (err) {
+    console.error("Errore fetch payload", err);
+    document.getElementById('pl-preview').textContent = "Errore di connessione a Hecos: " + err.message;
+  } finally {
+    if (btn) { btn.textContent = oldText; btn.disabled = false; }
+  }
+}
+</script>

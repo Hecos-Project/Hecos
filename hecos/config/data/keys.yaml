@@ -1,0 +1,46 @@
+# ============================================================
+# HECOS CORE — API Key Pool
+# This file is GITIGNORED. Never commit real keys here.
+# Add as many keys as you want per provider.
+# ============================================================
+
+groq:
+  - value: ""
+    description: "Groq - account principale"
+  # - value: "gsk_XXXXXX"
+  #   description: "Groq - account backup"
+
+gemini:
+  - value: ""
+    description: "Google AI Studio - progetto Hecos"
+  # - value: "AIzaSy..."
+  #   description: "Google AI Studio - account backup"
+
+openai:
+  - value: ""
+    description: "OpenAI - account principale"
+
+anthropic:
+  - value: ""
+    description: "Anthropic Claude - account principale"
+
+mistral:
+  - value: ""
+    description: "Mistral AI - account principale"
+
+perplexity:
+  - value: ""
+    description: "Perplexity AI - account principale"
+
+stability:
+  - value: ""
+    description: "Stability AI - immagini"
+
+pollinations:
+  - value: ""
+    description: "Pollinations - immagini gratuite"
+
+# Aggiungi altri provider liberamente:
+# mio_provider:
+#   - value: "MY_KEY_HERE"
+#     description: "Il mio provider custom"

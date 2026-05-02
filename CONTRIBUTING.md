@@ -1,6 +1,6 @@
-# Zentra Core - Contributing Guidelines (v0.15.2)
+# Hecos - Contributing Guidelines (v0.15.2)
 
-Thank you for contributing to Zentra Core! To ensure the project remains accessible and professional for international developers, please follow these language and coding standards.
+Thank you for contributing to Hecos! To ensure the project remains accessible and professional for international developers, please follow these language and coding standards.
 
 ## 🌍 Language Standard
 - **Code:** All variable names, function names, classes, and internal documentation MUST be in **English**.
@@ -11,7 +11,7 @@ Thank you for contributing to Zentra Core! To ensure the project remains accessi
 ## 🏗️ Configuration & Path Logic
 - If you add or modify configuration keys, ensure they are descriptive and follow the camel_case or snake_case convention (snake_case preferred for Python).
 - Always update `app/config.py` (default config) when introducing new parameters.
-- **Path Integrity:** Always use `zentra/core/constants.py` for file operations. NEVER hardcode absolute or relative paths pointing to the project root. All operational data must reside within the `zentra/` directory.
+- **Path Integrity:** Always use `hecos/core/constants.py` for file operations. NEVER hardcode absolute or relative paths pointing to the project root. All operational data must reside within the `hecos/` directory.
 
 ## 🧪 Internationalization (i18n)
 - **Strings:** Never hardcode user-facing strings in Python or HTML. Always use the `translator.t()` function.
@@ -22,4 +22,4 @@ Thank you for contributing to Zentra Core! To ensure the project remains accessi
 2. Verify that local backends (Ollama/Kobold) still function correctly.
 3. Update the `walkthrough.md` or `README.md` if you introduce major features.
 
-*Zentra Core is built for a global future. Let's keep it clear and unified.*
+*Hecos is built for a global future. Let's keep it clear and unified.*

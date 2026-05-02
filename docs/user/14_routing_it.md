@@ -1,6 +1,6 @@
 # 🧭 14. Routing delle Istruzioni IA (3 Livelli)
 
-Zentra utilizza un sistema di routing a tre livelli per decidere come l'IA deve rispondere a ogni comando.
+Hecos utilizza un sistema di routing a tre livelli per decidere come l'IA deve rispondere a ogni comando.
 
 1.  **Defaults di Plugin**: Le istruzioni base fornite dallo sviluppatore del plugin.
 2.  **Override Utente**: Le tue personalizzazioni salvate nel file `routing_overrides.yaml`. Queste hanno la precedenza sui default.

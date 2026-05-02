@@ -1,5 +1,5 @@
 ===================================================
- GUIDA ALL'INSTALLAZIONE DI ZENTRA CORE v0.19.0
+ GUIDA ALL'INSTALLAZIONE DI HECOS CORE v0.19.1
           (Per PC "vergine" - da zero)
 ===================================================
 
@@ -9,7 +9,7 @@
    - Durante l'installazione, spunta "Add Python to PATH"
 
 2. AVVIO RAPIDO (CONSIGLIATO)
-   - Estrai Zentra in una cartella
+   - Estrai Hecos in una cartella
    - Esegui lo script di bootstrap per la tua piattaforma:
      * Windows: Doppio click su START_SETUP_HERE_WIN.bat
      * Linux: Esegui bash START_SETUP_HERE_LINUX.sh
@@ -18,17 +18,17 @@
 3. AVVIO MANUALE (PER UTENTI AVANZATI)
    - Installa dipendenze: pip install -r requirements.txt
    - Avvia sistema completo: python main.py
-   - Avvia solo WebUI: ZENTRA_WEB_RUN_WIN.bat (Win) o zentra_web_run.sh (Linux)
-   - Avvia solo Console: ZENTRA_CONSOLE_RUN_WIN.bat (Win) o ZENTRA_CONSOLE_RUN.sh (Linux)
+   - Avvia solo WebUI: HECOS_WEB_RUN_WIN.bat (Win) o hecos_web_run.sh (Linux)
+   - Avvia solo Console: HECOS_CONSOLE_RUN_WIN.bat (Win) o HECOS_CONSOLE_RUN.sh (Linux)
 
 4. ICONA TRAY E BACKGROUND
-   - Per far girare Zentra in background e gestirlo comodamente:
-     * Avvia Zentra normalmente; l'icona apparirà nella barra di sistema (Tray).
+   - Per far girare Hecos in background e gestirlo comodamente:
+     * Avvia Hecos normalmente; l'icona apparirà nella barra di sistema (Tray).
      * Dall'icona puoi aprire la WebUI, la Console o chiudere il sistema.
-     * Usa START_ZENTRA_TRAY_WIN.bat se l'icona sparisce accidentalmente.
+     * Usa START_HECOS_TRAY_WIN.bat se l'icona sparisce accidentalmente.
 
 5. LOGIN DEFAULT
-   - User: admin / Pass: zentra  (Cambiala subito nel Pannello di Controllo!)
+   - User: admin / Pass: hecos  (Cambiala subito nel Pannello di Controllo!)
 
 6. MCP & TOOL HUB
    - Vai in Configurazione -> MCP Bridge per installare nuovi tool da Smithery o GitHub.

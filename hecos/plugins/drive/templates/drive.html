@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="{{ config.language or 'en' }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hecos Drive</title>
+  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/core/variables.css">
+  <link rel="stylesheet" href="/drive_static/css/drive.css">
+</head>
+<body>
+<script>
+  (function() {
+    var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+    var theme = 'cyberpunk';
+    if (autoTheme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
+    } else {
+      theme = savedTheme;
+    }
+    if (theme !== 'default') {
+      document.body.classList.add('theme-' + theme);
+    }
+  })();
+</script>
+
+<!-- ── Header ─────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos">
+    <div class="logo-text">Hecos <span>Drive</span></div>
+  </div>
+  <div class="nav-links">
+    {% if current_user.is_authenticated %}
+    <div class="user-badge">
+      <span style="color:var(--muted); font-size:11px;">{{ t('webui_chat_user') }}:</span>
+      <strong>{{ current_user.username }}</strong>
+      <span class="role-badge">{{ current_user.role }}</span>
+      <span style="color:var(--border); margin:0 4px;">|</span>
+      <a href="/logout" style="color:var(--red); border:none; background:none; padding:0; font-weight:600;">{{ t('webui_logout') }}</a>
+    </div>
+    {% endif %}
+    <a href="/hecos/config/ui">⚙️ {{ t('webui_chat_config') }}</a>
+    <a href="/chat">💬 {{ t('webui_nav_chat') }}</a>
+  </div>
+</header>
+
+<!-- ── Toolbar ────────────────────────────────────────────── -->
+<div id="toolbar">
+  <button class="btn" onclick="navigateTo('')" title="{{ t('webui_drive_root_hint') or 'Back to root' }}">🏠</button>
+  <button class="btn" onclick="goUp()" title="{{ t('webui_drive_up_hint') or 'Parent directory' }}">⬆️</button>
+  <div id="path-bar"><span class="crumb current">🏠 Drive</span></div>
+  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">⬆️ {{ t('webui_chat_upload') }}</button>
+  <input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
+  <button class="btn" onclick="showMkdirModal()">📁 {{ t('webui_drive_new_folder') or 'New Folder' }}</button>
+</div>
+
+<div id="main-layout">
+
+  <!-- ── Sidebar (dir tree + quick links) ───────────────── -->
+  <div id="sidebar">
+    <div id="sidebar-header">📂 {{ t('webui_drive_folders') or 'Folders' }}</div>
+    <div id="tree-root"></div>
+    
+    <div id="quick-links-section">
+      <div id="quick-links-body">
+        <div class="sb-empty">{{ t('webui_conf_msg_loading') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── File Area ──────────────────────────────────────── -->
+  <div id="file-area">
+
+    <!-- location bar -->
+    <div id="location-bar">
+      <div class="loc-left">{{ t('webui_drive_current_pos') or 'Current position' }}: <span id="loc-path" class="loc-path">/</span></div>
+      <div class="loc-right">
+        <span id="loc-count" style="color:var(--muted)">—</span>
+      </div>
+    </div>
+
+    <!-- upload drop target -->
+    <div id="dropzone" class="hide-on-mobile">{{ t('webui_drive_dropzone') }}</div>
+
+    <!-- upload progress -->
+    <div id="upload-progress">
+      <progress id="upload-bar" value="0" max="100"></progress>
+      <div id="upload-label"></div>
+    </div>
+
+    <!-- files table -->
+    <div id="file-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">{{ t('webui_chat_name') }} ↕</th>
+            <th onclick="sortBy('size')">{{ 'Dimensione' if t('webui_sysnet_proxy_port') == 'Porta' else 'Size' }} ↕</th>
+            <th onclick="sortBy('modified')">{{ 'Modificato' if t('webui_sysnet_proxy_port') == 'Porta' else 'Modified' }} ↕</th>
+            <th>{{ t('webui_conf_logs_actions') or 'Actions' }}</th>
+          </tr>
+        </thead>
+        <tbody id="file-tbody">
+          <tr class="empty-row"><td colspan="4">{{ t('webui_conf_msg_loading') }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- status bar -->
+    <div id="statusbar">
+      <span id="sb-info">—</span>
+      <span id="sb-selected" style="color:var(--accent)"></span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Mkdir Modal ────────────────────────────────────────── -->
+<div class="modal-bg" id="mkdir-modal">
+  <div class="modal">
+    <h3>📁 {{ t('webui_drive_new_folder') or 'New Folder' }}</h3>
+    <p id="mkdir-hint">{{ t('webui_drive_mkdir_hint') or 'Will be created in' }}: <strong id="mkdir-path-hint" style="color:var(--accent);">/</strong></p>
+    <input type="text" id="mkdir-name" placeholder="{{ t('webui_drive_folder_name_ph') or 'Folder name...' }}"
+           onkeydown="if(event.key==='Enter')confirmMkdir(); if(event.key==='Escape')closeMkdirModal()">
+    <div class="modal-btns">
+      <button class="btn" onclick="closeMkdirModal()">{{ t('webui_conf_logs_cancel') or 'Cancel' }}</button>
+      <button class="btn btn-primary" onclick="confirmMkdir()">{{ t('webui_drive_create') or 'Create' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Notification toast ─────────────────────────────────── -->
+<div id="drive-msg"></div>
+
+<script>
+  window.I18N = {{ translations | tojson | safe }};
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    for (const [k, v] of Object.entries(params)) {
+      text = text.replace(`{${k}}`, v);
+    }
+    return text;
+  };
+</script>
+<script src="/drive_static/js/drive.js"></script>
+<script src="/media_viewer_static/js/media_viewer.js"></script>
+</body>
+</html>

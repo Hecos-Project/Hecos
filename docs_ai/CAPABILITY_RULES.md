@@ -51,12 +51,12 @@ Ogni entry nei file `capabilities/*.json` deve seguire questo schema rigoroso (a
 
 ## Integrità dei Percorsi & Privacy (v0.18.0)
 
-1. **Hermetic Storage**: È vietata la creazione di cartelle o file al di fuori della directory `zentra/` (eccetto file di configurazione temporanei approvati).
+1. **Hermetic Storage**: È vietata la creazione di cartelle o file al di fuori della directory `hecos/` (eccetto file di configurazione temporanei approvati).
 2. **3-Tier Privacy Enforcement**: Tutte le operazioni di scrittura su disco devono rispettare la modalità di privacy attiva (`Normal`, `Auto-Wipe`, `Incognito`). Le sessioni `Auto-Wipe` e `Incognito` non devono mai persistere nel database `history.db` su disco.
-3. **Centralized Paths**: Ogni operazione di I/O su file (Logs, Snapshots, Medie) deve importare e utilizzare le costanti definite in `zentra.core.constants` (`LOGS_DIR`, `SNAPSHOTS_DIR`, ecc.).
+3. **Centralized Paths**: Ogni operazione di I/O su file (Logs, Snapshots, Medie) deve importare e utilizzare le costanti definite in `hecos.core.constants` (`LOGS_DIR`, `SNAPSHOTS_DIR`, ecc.).
 3. **Hardcoding Prohibited**: È severamente vietato calcolare percorsi relativi o assoluti tramite `os.path.join(..., "..", "logs")` o simili. Utilizzare sempre la costante dedicata.
 
 ---
 
 > [!NOTE]
-> Queste regole servono a garantire che Zentra rimanga un assistente potente ma sicuro.
+> Queste regole servono a garantire che Hecos rimanga un assistente potente ma sicuro.

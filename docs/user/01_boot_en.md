@@ -1,6 +1,6 @@
 # 🚀 1. Boot & Initial Checks
 
-Upon launching the executable or Python script, Zentra begins its **Synchronized Boot** sequence.
+Upon launching the executable or Python script, Hecos begins its **Synchronized Boot** sequence.
 
 ### Pre-Flight Diagnostics
 By default, the system checks:
@@ -11,7 +11,7 @@ By default, the system checks:
 - Active/Disabled Plugin scan.
 
 ### ⚡ One-Click Bootstrap
-The recommended way to start Zentra is using the universal bootstrap scripts in the root directory:
+The recommended way to start Hecos is using the universal bootstrap scripts in the root directory:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
@@ -19,8 +19,8 @@ These scripts automatically handle environment checks, dependencies, and launch 
 
 ### 🧩 Individual Component Launch
 For advanced users, components can be started individually:
-- **Web Interface:** `ZENTRA_WEB_RUN_WIN.bat` (Win) / `zentra_web_run.sh` (Linux)
-- **Terminal Console:** `ZENTRA_CONSOLE_RUN_WIN.bat` (Win) / `ZENTRA_CONSOLE_RUN.sh` (Linux)
+- **Web Interface:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)
+- **Terminal Console:** `HECOS_CONSOLE_RUN_WIN.bat` (Win) / `HECOS_CONSOLE_RUN.sh` (Linux)
 - **Full Bundle:** `main.py` (Launches Tray + Backend)
 
 ### 🏎️ Fast Boot

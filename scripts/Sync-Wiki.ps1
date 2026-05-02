@@ -1,5 +1,5 @@
 # Sync-Wiki.ps1
-# Usage: .\Sync-Wiki.ps1 -WikiPath "C:\path\to\Zentra-Core.wiki"
+# Usage: .\Sync-Wiki.ps1 -WikiPath "C:\path\to\Hecos.wiki"
 
 param(
     [Parameter(Mandatory=$true)]

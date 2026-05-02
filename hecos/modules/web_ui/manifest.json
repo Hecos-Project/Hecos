@@ -1,0 +1,64 @@
+{
+    "tag": "WEB_UI",
+    "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
+    "lazy_load": true,
+    "is_class_based": true,
+    "status": "Online → http://127.0.0.1:7070/chat",
+    "commands": {
+        "get_panel_url": "Returns the URL of the chat interface.",
+        "open_browser": "Opens the Hecos web interface in the default browser if not already open.",
+        "set_state_manager": "Injects the live StateManager from the main application."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB_UI__get_panel_url",
+                "description": "Returns the URL of the chat interface.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB_UI__open_browser",
+                "description": "Opens the Hecos web interface in the default browser if not already open.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "kwargs": {
+                            "type": "string",
+                            "description": "Parameter kwargs"
+                        }
+                    },
+                    "required": [
+                        "kwargs"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB_UI__set_state_manager",
+                "description": "Injects the live StateManager from the main application.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "sm": {
+                            "type": "string",
+                            "description": "Parameter sm"
+                        }
+                    },
+                    "required": [
+                        "sm"
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,68 @@
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Hecos Logo">
+      <span class="logo-text">HECOS CORE</span>
+    </div>
+    <div class="logo-sub">Helping Companion System</div>
+  </div>
+  <div class="status-pill">
+    <div class="dot-pulse"></div>
+    <div><div class="status-text">{{ t('webui_chat_backend') }}</div><div class="status-val" id="sb-backend">—</div></div>
+  </div>
+  <div class="status-pill">
+    <div style="width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);flex-shrink:0;"></div>
+    <div style="overflow:hidden;"><div class="status-text">{{ t('webui_chat_model') }}</div><div class="status-val" id="sb-model" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
+  </div>
+  <div class="status-pill">
+    <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0;"></div>
+    <div style="overflow:hidden;"><div class="status-text">{{ t('header_soul') }}</div><div class="status-val" id="sb-soul" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
+  </div>
+  <div class="sidebar-section mobile-only">
+    <div class="sidebar-label">NAVIGATION</div>
+    <a class="sidebar-btn" href="/hecos/config/ui" target="_blank"><span class="icon">⚙️</span> Config Panel</a>
+    <a class="sidebar-btn" href="/drive" target="_blank"><span class="icon">🗂️</span> Drive</a>
+  </div>
+
+  {% include 'modules/chat_history_panel.html' %}
+
+  <!-- ── WEB_UI Sidebar Widgets (Shared Extensions) ── -->
+  {% if sidebar_widgets %}
+  <div id="sidebar-widgets-zone">
+    {% for widget in sidebar_widgets %}
+      {% include widget %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Audio Controls ── -->
+
+  <div class="audio-controls">
+    <div class="sidebar-label" style="padding:0 2px;margin-bottom:8px;">🔊 AUDIO</div>
+    <div class="audio-toggle-row">
+      <button class="audio-toggle-btn" id="mic-btn" onclick="toggleMic()" title="Toggle Microphone (F4)">
+        🎤 <span id="mic-label">MIC</span>
+      </button>
+      <button class="audio-toggle-btn" id="tts-btn" onclick="toggleTTS()" title="Toggle Voice Output (F6)">
+        🔊 <span id="tts-label">TTS</span>
+      </button>
+      <button class="audio-toggle-btn" id="ptt-btn" onclick="togglePTT()" title="Toggle Push-To-Talk (F8)">
+        ⌨️ <span id="ptt-label">PTT</span>
+      </button>
+    </div>
+      <button id="sidebar-stop-voice-btn" onclick="stopVoice()" title="Stop Voice (ESC)" style="
+        display:none; margin:0 0 8px; width:100%; padding:6px 10px;
+        background:rgba(var(--red-rgb),.15); border:1px solid rgba(var(--red-rgb),.4);
+        border-radius:8px; color:var(--red); font-size:12px; cursor:pointer;
+        transition:opacity .2s;">
+      ⏹ Stop Voice
+    </button>
+
+  </div>
+
+
+
+  <div class="sidebar-footer">
+    <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos — Web Interface<br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
+  </div>
+</div>

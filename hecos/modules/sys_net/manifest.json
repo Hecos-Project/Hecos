@@ -1,0 +1,134 @@
+{
+    "tag": "SYS_NET",
+    "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
+    "lazy_load": true,
+    "is_class_based": true,
+    "status": "Online",
+    "commands": {
+        "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
+        "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
+        "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
+        "ping_test": "Executes a network ping test to the specified target (IP or domain).",
+        "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
+        "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
+        "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+        "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__get_network_info",
+                "description": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__get_proxy_status",
+                "description": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__get_public_ip",
+                "description": "Interrogates an external service to find the current public outbound IP address.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__ping_test",
+                "description": "Executes a network ping test to the specified target (IP or domain).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "target": {
+                            "type": "string",
+                            "description": "The domain name (e.g., 'google.com') or IP address to ping."
+                        }
+                    },
+                    "required": [
+                        "target"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__reset_dns",
+                "description": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__scan_local_network",
+                "description": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__set_dns_servers",
+                "description": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "primary": {
+                            "type": "string",
+                            "description": "The primary DNS IPv4 address."
+                        },
+                        "secondary": {
+                            "type": "string",
+                            "description": "The secondary DNS IPv4 address."
+                        }
+                    },
+                    "required": [
+                        "primary",
+                        "secondary"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__test_proxy",
+                "description": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        }
+    ]
+}

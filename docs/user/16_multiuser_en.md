@@ -1,5 +1,5 @@
 # 👥 Multi-User & Profile Management
-Zentra Core supports multiple independent users, each with their own isolated data and settings.
+Hecos supports multiple independent users, each with their own isolated data and settings.
 
 ## Features
 - **Isolated Memories**: Conversations and learning context are private to each user.

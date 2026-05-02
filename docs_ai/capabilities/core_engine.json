@@ -85,7 +85,7 @@
       "risk": "medium",
       "available_in": ["cli", "ai"],
       "implementation": {
-        "core_files": ["app/application.py", "app/bootstrapper.py", "ZENTRA_RUN.bat"],
+        "core_files": ["app/application.py", "app/bootstrapper.py", "HECOS_RUN.bat"],
         "entry_points": ["F6 in app/application.py -> _handle_function_key", "SYSTEM plugin -> reboot"],
         "config_keys": []
       },
@@ -94,12 +94,12 @@
     },
     {
       "id": "process_manager",
-      "description": "Process monitoring tool to prevent duplicate instances and manage Zentra threads.",
+      "description": "Process monitoring tool to prevent duplicate instances and manage Hecos threads.",
       "risk": "medium",
       "available_in": ["cli"],
       "implementation": {
-        "core_files": ["zentra_proc_manager.py", "ZENTRA_PROC_MANAGER.bat"],
-        "entry_points": ["Execution of ZENTRA_PROC_MANAGER.bat"],
+        "core_files": ["hecos_proc_manager.py", "HECOS_PROC_MANAGER.bat"],
+        "entry_points": ["Execution of HECOS_PROC_MANAGER.bat"],
         "config_keys": []
       },
       "verification_step": "Run process manager bat, verify it lists active main.py pids.",
@@ -120,11 +120,11 @@
     },
     {
       "id": "path_standardization",
-      "description": "Hermetic path management system. Ensures all operational data (logs, snapshots, media) is contained within the 'zentra/' directory by using centralized constants.",
+      "description": "Hermetic path management system. Ensures all operational data (logs, snapshots, media) is contained within the 'hecos/' directory by using centralized constants.",
       "risk": "low",
       "available_in": ["cli", "web", "ai", "plugin"],
       "implementation": {
-        "core_files": ["zentra/core/constants.py"],
+        "core_files": ["hecos/core/constants.py"],
         "entry_points": ["Importing constants.py in any module"],
         "config_keys": []
       },
@@ -133,11 +133,11 @@
     },
     {
       "id": "pki_https",
-      "description": "Professional Zentra PKI (Root CA). Automatically generates and signs host-specific SSL certificates to enable HTTPS and browser features (Mic/Cam) across LAN.",
+      "description": "Professional Hecos PKI (Root CA). Automatically generates and signs host-specific SSL certificates to enable HTTPS and browser features (Mic/Cam) across LAN.",
       "risk": "medium",
       "available_in": ["web", "plugin"],
       "implementation": {
-        "core_files": ["scripts/setup_pki.py", "zentra/core/system/ssl_manager.py"],
+        "core_files": ["scripts/setup_pki.py", "hecos/core/system/ssl_manager.py"],
         "entry_points": ["scripts/setup_pki.py", "plugins/web_ui/server.py startup"],
         "config_keys": ["plugins.WEB_UI.https_enabled"]
       },
@@ -150,20 +150,20 @@
       "risk": "high",
       "available_in": ["cli", "web"],
       "implementation": {
-        "core_files": ["zentra/core/auth/auth_manager.py", "memory/users.db"],
+        "core_files": ["hecos/core/auth/auth_manager.py", "memory/users.db"],
         "entry_points": ["FastAPI Auth Middleware", "scripts/reset_admin.py"],
         "config_keys": ["system.auth_required"]
       },
-      "verification_step": "Login with default admin/zentra credentials on WebUI.",
+      "verification_step": "Login with default admin/hecos credentials on WebUI.",
       "notes": "Mandatory for v0.17.0+ deployment."
     },
     {
-      "id": "zentra_vaults",
+      "id": "hecos_vaults",
       "description": "Isolated per-user encrypted/private storage for files, avatars, and episodic memory.",
       "risk": "high",
       "available_in": ["cli", "web", "ai"],
       "implementation": {
-        "core_files": ["zentra/memory/vault_interface.py"],
+        "core_files": ["hecos/memory/vault_interface.py"],
         "entry_points": ["User-session contextual routing"],
         "config_keys": []
       },

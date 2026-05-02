@@ -1,6 +1,6 @@
 # 📱 10. Mobile-First & WebRTC Audio
 
-Zentra is optimized for mobile devices.
+Hecos is optimized for mobile devices.
 - **Hamburger Menu**: Sidebar collapses into a drawer (accessible via `☰`).
 - **Push-to-Talk (PTT)**: Use the Microphone button next to the chat box.
   - **Walkie-Talkie (Hold)**: Hold 🎙️, talk, release to send.

@@ -1,0 +1,20 @@
+voice_status: false
+piper_path: C:\Hecos-Core\bin\piper\piper.exe
+onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
+speed: 1.2
+noise_scale: 0.817
+noise_w: 0.9
+sentence_silence: 0.1
+listening_status: true
+energy_threshold: 450
+silence_timeout: 5
+phrase_limit: 15
+push_to_talk: true
+ptt_hotkey: ctrl+shift
+ptt_sources:
+  keyboard_hotkey: true
+  media_play_pause: false
+  watch_button: false
+  webhook: false
+  custom_key: false
+custom_ptt_key: ''

@@ -1,6 +1,6 @@
 # 🚀 1. Avvio e Controllo Iniziale
 
-All'avvio dell'eseguibile o dello script Python, Zentra inizia la sua sequenza di **Avvio Sincronizzato**.
+All'avvio dell'eseguibile o dello script Python, Hecos inizia la sua sequenza di **Avvio Sincronizzato**.
 
 ### Diagnostica Pre-Volo
 Per impostazione predefinita, il sistema controlla:
@@ -11,7 +11,7 @@ Per impostazione predefinita, il sistema controlla:
 - Scansione dei Plugin Attivi/Disattivati.
 
 ### ⚡ Bootstrap One-Click
-Il modo consigliato per avviare Zentra è utilizzare gli script di bootstrap universale nella cartella principale:
+Il modo consigliato per avviare Hecos è utilizzare gli script di bootstrap universale nella cartella principale:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
@@ -19,8 +19,8 @@ Questi script gestiscono automaticamente il controllo dell'ambiente, le dipenden
 
 ### 🧩 Avvio Componenti Singoli
 Per utenti avanzati, i componenti possono essere avviati singolarmente:
-- **Interfaccia Web:** `ZENTRA_WEB_RUN_WIN.bat` (Win) / `zentra_web_run.sh` (Linux)
-- **Console Terminale:** `ZENTRA_CONSOLE_RUN_WIN.bat` (Win) / `ZENTRA_CONSOLE_RUN.sh` (Linux)
+- **Interfaccia Web:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)
+- **Console Terminale:** `HECOS_CONSOLE_RUN_WIN.bat` (Win) / `HECOS_CONSOLE_RUN.sh` (Linux)
 - **Bundle Completo:** `main.py` (Avvia Tray + Backend)
 
 ### 🏎️ Avvio Rapido

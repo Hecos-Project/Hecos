@@ -1,0 +1,43 @@
+<!-- config_security.html -->
+<div id="tab-security" class="panel">
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-title" style="margin-bottom:4px;">{{ t('webui_conf_pki_title') }}</div>
+        <p style="color:var(--muted); font-size:13px; margin-bottom:20px;">
+            {{ t('webui_conf_pki_desc') }}
+        </p>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+            <div>
+                <div class="card-title" style="margin:0; font-family:'JetBrains Mono', monospace; font-size:14px;">ROOT CERTIFICATE (rootCA.pem)</div>
+                <div style="margin:5px 0 0 0; color:var(--muted); font-size:12px;">Identifies this network as a 100% trusted source.</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-primary" onclick="downloadRootCA()" style="font-weight:bold;">
+                    📥 {{ t('webui_conf_pki_download_btn') }}
+                </button>
+                <button class="btn btn-secondary" onclick="window.open('/hecos/docs/pki_guide.md', '_blank')">
+                    {{ t('webui_conf_pki_guide_btn') }}
+                </button>
+            </div>
+        </div>
+        
+        <hr style="border-color:var(--border); margin:20px 0;">
+        
+        <!-- IOS INSTRUCTIONS -->
+        <div class="card-title" style="font-size:13px;">{{ t('webui_security_ios_title') }}</div>
+        <ol style="color:var(--muted); font-size:13px; line-height:1.6;">
+            <li>{{ t('webui_security_ios_step1') }}</li>
+            <li>{{ t('webui_security_ios_step2') }}</li>
+            <li>{{ t('webui_security_ios_step3') }}</li>
+            <li>{{ t('webui_security_ios_step4') }}</li>
+            <li>{{ t('webui_security_ios_step5') }}</li>
+            <li>{{ t('webui_security_ios_step6') }}</li>
+        </ol>
+    </div>
+</div>
+
+<script>
+function downloadRootCA() {
+    window.location.href = '/api/security/download-ca';
+}
+</script>

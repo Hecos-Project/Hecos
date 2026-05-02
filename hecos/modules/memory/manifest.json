@@ -1,0 +1,77 @@
+{
+    "tag": "MEMORY",
+    "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+    "lazy_load": true,
+    "is_class_based": true,
+    "status": "ONLINE (Vault Access Granted)",
+    "commands": {
+        "read_history": "Extract the last N saved messages from the database history.",
+        "remember_info": "Save important information about the user in the biographical profile.",
+        "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
+        "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__read_history",
+                "description": "Extract the last N saved messages from the database history.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "n": {
+                            "type": "string",
+                            "description": "The number of previous messages to extract (e.g. '10')."
+                        }
+                    },
+                    "required": [
+                        "n"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__remember_info",
+                "description": "Save important information about the user in the biographical profile.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The detailed information to remember (e.g. 'The user likes coffee')."
+                        }
+                    },
+                    "required": [
+                        "text"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__reset_memory",
+                "description": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__who_am_i",
+                "description": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        }
+    ]
+}

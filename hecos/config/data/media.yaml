@@ -1,0 +1,113 @@
+image_gen:
+  enabled: true
+  provider: huggingface
+  model: flux
+  nologo: true
+  api_key: ''
+  api_key_comment: ''
+  aspect_ratio: 1:1
+  width: 1024
+  height: 1024
+  seed: -1
+  last_seed: 929647274
+  sampler: dpm++2m_karras
+  scheduler: dpm++
+  guidance_scale: 1.0
+  num_inference_steps: 4
+  enable_negative_prompt: false
+  negative_prompt: distorted, extra fingers, malformed limbs, missing limbs, 
+    ugly, blurry, low quality
+  auto_enrich: false
+  enrich_keywords: masterpiece, 8k wallpaper, highly detailed, realistic, sharp 
+    focus, cinematic lighting
+  style: none
+  optimize_for_flux: true
+  flux_refiner_instructions: Convert keywords into a descriptive natural 
+    language paragraph for Flux. Output ONLY the optimized prompt, no preamble. 
+    If the input from the user is not in english, you translate it for better 
+    results.
+  show_metadata_in_chat: true
+  presets:
+    flux 2:
+      provider: huggingface
+      model: xey/sldr_flux_nsfw_v2-studio
+      aspect_ratio: 1:1
+      width: 1024
+      height: 1024
+      seed: -1
+      sampler: dpm++2m_karras
+      scheduler: dpm++
+      guidance_scale: 1
+      num_inference_steps: 4
+      enable_negative_prompt: false
+      negative_prompt: distorted, extra fingers, malformed limbs, missing limbs,
+        ugly, blurry, low quality
+      auto_enrich: false
+      enrich_keywords: masterpiece, 8k wallpaper, highly detailed, realistic, 
+        sharp focus, cinematic lighting
+      style: none
+      nologo: true
+      optimize_for_flux: true
+      flux_refiner_instructions: 'Convert keywords into a descriptive natural language
+        paragraph for Flux. Output ONLY the optimized prompt, no preamble. If the
+        input from the user is not in english, you translate it for better results. '
+      enabled: true
+    sdxl 1:
+      provider: huggingface
+      model: votepurchase/pornmasterPro_noobV3VAE
+      aspect_ratio: 1:1
+      width: 1024
+      height: 1024
+      seed: -1
+      sampler: dpm++2m_karras
+      scheduler: dpm++
+      guidance_scale: 7.5
+      num_inference_steps: 20
+      enable_negative_prompt: true
+      negative_prompt: distorted, extra fingers, malformed limbs, missing limbs,
+        ugly, blurry, low quality
+      auto_enrich: true
+      enrich_keywords: masterpiece, 8k wallpaper, highly detailed, realistic, 
+        sharp focus, cinematic lighting
+      style: cinematic
+      nologo: true
+      optimize_for_flux: true
+      flux_refiner_instructions: Convert keywords into a descriptive natural 
+        language paragraph for Flux. Output ONLY the optimized prompt, no 
+        preamble. If the input from the user is not in english, you translate it
+        for better results.
+      enabled: true
+    Flux black forest 01:
+      provider: huggingface
+      model: black-forest-labs/FLUX.1-schnell
+      aspect_ratio: 1:1
+      width: 1024
+      height: 1024
+      seed: -1
+      sampler: dpm++2m_karras
+      scheduler: dpm++
+      guidance_scale: 1
+      num_inference_steps: 4
+      enable_negative_prompt: false
+      negative_prompt: distorted, extra fingers, malformed limbs, missing limbs,
+        ugly, blurry, low quality
+      auto_enrich: false
+      enrich_keywords: masterpiece, 8k wallpaper, highly detailed, realistic, 
+        sharp focus, cinematic lighting
+      style: none
+      nologo: true
+      optimize_for_flux: true
+      flux_refiner_instructions: Convert keywords into a descriptive natural 
+        language paragraph for Flux. Output ONLY the optimized prompt, no 
+        preamble. If the input from the user is not in english, you translate it
+        for better results.
+      enabled: true
+  active_preset: Flux black forest 01
+  custom_hf_models:
+    - John6666/bond-nsfw-v50-sdxl
+    - HyperX-Sentience/Juggernaut-Reborn
+    - digiplay/Juggernaut_final
+    - xey/sldr_flux_nsfw_v2-studio
+    - John6666/amanatsu-illustrious-v11-sdxl
+video_gen:
+  enabled: false

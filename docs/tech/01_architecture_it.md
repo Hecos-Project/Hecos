@@ -1,6 +1,6 @@
 # 🏗️ 1. Architettura di Sistema
 
-Zentra Core è progettato con un'architettura modulare e scalabile, basata su principi di programmazione orientata agli oggetti (OOP).
+Hecos è progettato con un'architettura modulare e scalabile, basata su principi di programmazione orientata agli oggetti (OOP).
 
 - **Core Engine**: Il cuore del sistema che gestisce l'orchestrazione dei plugin, il caricamento delle configurazioni e il ciclo di ragionamento dell'Agente.
 - **Plugin System**: Un'infrastruttura dinamica che permette l'estensione delle capacità IA senza modificare il nucleo centrale.
