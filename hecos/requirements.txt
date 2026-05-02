@@ -1,5 +1,5 @@
 # ============================================================
-# HECOS CORE v0.19.0 - REQUISITI COMPLETI
+# HECOS CORE v0.19.1 - REQUISITI COMPLETI
 # ============================================================
 
 # ------------------------------
@@ -22,10 +22,10 @@ flask-login>=0.6.3          # Gestione sessioni e auth WebUI
 psutil>=5.9.0               # Monitoraggio CPU, RAM, processi
 gputil>=1.4.0               # Monitoraggio GPU/VRAM (opzionale)
 keyboard>=0.13.5            # Gestione eventi tastiera globali
-pywin32>=305                # Accesso API Windows + Windows Service (v0.19.0)
+pywin32>=305                # Accesso API Windows + Windows Service (v0.19.1)
 
 # ------------------------------
-# SYSTEM TRAY ICON (v0.19.0)
+# SYSTEM TRAY ICON (v0.19.1)
 # ------------------------------
 pystray>=0.19.0             # Icona nel system tray (cross-platform)
 pillow>=9.0.0               # Rendering icone per pystray

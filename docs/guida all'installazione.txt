@@ -1,5 +1,5 @@
 ===================================================
- GUIDA ALL'INSTALLAZIONE DI HECOS CORE v0.19.0
+ GUIDA ALL'INSTALLAZIONE DI HECOS CORE v0.19.1
           (Per PC "vergine" - da zero)
 ===================================================
 

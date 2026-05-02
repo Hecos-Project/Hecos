@@ -4,7 +4,7 @@ build-backend = "setuptools.build-meta"
 
 [project]
 name = "hecos-core"
-version = "0.19.0"
+version = "0.19.1"
 description = "Helping Companion System"
 dependencies = [
     "pydantic>=2.0",
