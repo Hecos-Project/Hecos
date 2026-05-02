@@ -22,7 +22,8 @@ ai:
 
     Please acknowledge that you have received this safety and narrative protocol by
     starting your next response with the word: ''SYNCHRONIZED''.'
-  avatar_size: medium
+  avatar_size: large
+  enable_safety_instructions: true
 backend:
   type: cloud
   cloud:

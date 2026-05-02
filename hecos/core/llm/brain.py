@@ -302,7 +302,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     special_instructions_block = f"\n### SPECIAL INSTRUCTIONS ###\n{special_instructions}\n" if special_instructions else ""
 
     safety_instructions = config.get('ai', {}).get('safety_instructions', '').strip()
-    safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{safety_instructions}\n" if safety_instructions else ""
+    enable_safety = config.get('ai', {}).get('enable_safety_instructions', True)
+    safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{safety_instructions}\n" if safety_instructions and enable_safety else ""
 
 
     # --- ROUTING ENGINE (DUAL ENGINE) ---

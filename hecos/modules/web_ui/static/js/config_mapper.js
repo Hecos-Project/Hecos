@@ -135,6 +135,7 @@ function populateUI() {
     if (instrEl) instrEl.value = ai.special_instructions || '';
     if (safetyEl) safetyEl.value = ai.safety_instructions || '';
     if (saveInstEl) saveInstEl.checked = ai.save_special_instructions || false;
+    setCheck('ia-enable-safety-instructions', ai.enable_safety_instructions ?? true);
     setVal('ia-avatar-size', c.ai?.avatar_size || 'medium');
 
 
@@ -519,6 +520,7 @@ function buildPayload() {
     out.ai.special_instructions      = getV('ia-instructions');
     out.ai.safety_instructions       = getV('ia-safety-instructions');
     out.ai.save_special_instructions = getC('ia-save-instructions');
+    out.ai.enable_safety_instructions= getC('ia-enable-safety-instructions');
     out.ai.avatar_size               = getV('ia-avatar-size');
     out.privacy.default_mode = getV('pr-default-mode') || 'normal';
     out.privacy.auto_wipe_enabled = getC('pr-auto-wipe');
