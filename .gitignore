@@ -278,6 +278,8 @@ hecos/config/data/keys.yaml
 tmp/
 brain/
 *.log
+*debug*.txt
+*_debug.txt
 *.wav
 *.mp3
 *.db
