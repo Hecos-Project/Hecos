@@ -59,6 +59,9 @@ class ModelManager:
         # 3. CLOUD Models
         if config.get('llm', {}).get('allow_cloud', False):
             providers = config.get('llm', {}).get('providers', {})
+            backend_type = config.get('backend', {}).get('type', 'ollama')
+            active_cloud_model = config.get('backend', {}).get('cloud', {}).get('model', '')
+
             if fast_mode:
                 for provider_name, p_data in providers.items():
                     cloud_models = p_data.get('models', [])
@@ -95,6 +98,12 @@ class ModelManager:
                         m_clean = cm.replace(f"{provider_name}/", "")
                         if m_clean not in cloud_models:
                             cloud_models.insert(0, m_clean)  # Put user models at the top
+                            
+                    # ALWAYS inject the currently active model if it belongs to this provider
+                    if active_cloud_model.startswith(f"{provider_name}/"):
+                        active_clean = active_cloud_model.replace(f"{provider_name}/", "")
+                        if active_clean not in cloud_models:
+                            cloud_models.insert(0, active_clean)
                             
                     if not cloud_models:
                         cloud_models = ["default-model-missing"]
