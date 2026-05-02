@@ -170,5 +170,31 @@
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS"
+    },
+    "DOMOTICA": {
+        "description": "Smart Home control. Currently in integration phase.",
+        "commands": {
+            "get_home_status": "Provides a summary of the status of smart home devices (e.g., temperature, lights on)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
+    "REMOTE_TRIGGERS": {
+        "description": "PTT activation from hardware devices and remote clients",
+        "commands": {
+            "info": "Method"
+        },
+        "status": "online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
     }
 }

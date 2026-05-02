@@ -98,10 +98,23 @@ def build_menu(icon_ref: list):
         threading.Thread(target=_do_quit, daemon=True).start()
 
     def show_about(icon, item):
-        icon.notify(
-            f"Hecos — v{version}\nHelping Companion System\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat",
-            "About Hecos"
-        )
+        def _do_about():
+            try:
+                import tkinter as tk
+                from tkinter import messagebox
+                root = tk.Tk()
+                root.withdraw()
+                root.lift()
+                root.attributes('-topmost', True)
+                msg = f"Hecos — v{version}\nHelping Companion System\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat"
+                messagebox.showinfo("About Hecos", msg, master=root)
+                root.destroy()
+            except Exception:
+                icon.notify(
+                    f"Hecos — v{version}\nHelping Companion System\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat",
+                    "About Hecos"
+                )
+        threading.Thread(target=_do_about, daemon=True).start()
 
     def quit_tray(icon, item):
         terminate_consoles()
