@@ -139,7 +139,8 @@ plugins:
   SYS_NET:
     enabled: true
     lazy_load: false
-    proxy_url: socks5://localhost:9150
+    proxy_url: socks5://admin:hecos@localhost:9150
+    proxy_enabled: false
   WEB:
     enabled: true
     lazy_load: false

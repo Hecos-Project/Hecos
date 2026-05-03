@@ -21,6 +21,7 @@ function populateSystemUI() {
     setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
 
     const sysNet = (c.plugins || {}).SYS_NET || {};
+    setCheck('sys-proxy-enabled', sysNet.proxy_enabled ?? false);
     if (typeof restoreProxyFields === 'function') {
       restoreProxyFields(sysNet.proxy_url || '');
     } else {
@@ -72,6 +73,7 @@ function buildSystemPayload() {
         },
         plugins: {
             SYS_NET: {
+                proxy_enabled: document.getElementById('sys-proxy-enabled')?.checked || false,
                 proxy_url: proxyEl ? proxyEl.value.trim() : ""
             },
             WEB_UI: {
