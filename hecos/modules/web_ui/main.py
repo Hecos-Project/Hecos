@@ -64,7 +64,6 @@ class WebUIPlugin:
         self._port = 7070
         self._auto_open = False
         self._server_started = False
-        self._url = f"http://127.0.0.1:{self._port}"
 
     def _set_config_manager(self, cfg_mgr):
         """Injects the live ConfigManager from the main application."""
@@ -72,7 +71,6 @@ class WebUIPlugin:
         if cfg_mgr:
             self._port = cfg_mgr.config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
             self._auto_open = cfg_mgr.config.get("plugins", {}).get("WEB_UI", {}).get("auto_open_browser", False)
-            self._url = f"http://127.0.0.1:{self._port}"
 
     def _set_state_manager(self, sm):
         """Injects the live StateManager from the main application."""
@@ -85,11 +83,15 @@ class WebUIPlugin:
             try:
                 from .server import start_if_needed
                 start_if_needed(self._cfg_mgr, _ROOT, port=self._port)
-                logger.info(f"[WEB_UI] Server started → {self._url}/chat")
+                
+                scheme = self._get_scheme()
+                url = f"{scheme}://127.0.0.1:{self._port}"
+                logger.info(f"[WEB_UI] Server started → {url}/chat")
                 self._server_started = True
+                
                 if self._auto_open:
                     if not self._is_ui_active():
-                        threading.Timer(5.0, lambda: webbrowser.open(f"{self._url}/chat")).start()
+                        threading.Timer(5.0, lambda: webbrowser.open(f"{url}/chat")).start()
                     else:
                         logger.info("[WEB_UI] Web interface already active. Skipping auto-open.")
             except Exception as e:
