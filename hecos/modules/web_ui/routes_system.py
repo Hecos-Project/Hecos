@@ -174,13 +174,19 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0
             ts    = datetime.fromtimestamp(mtime).strftime("%H:%M:%S") if mtime else "?"
 
-            persona = cfg.get("ai", {}).get("active_personality", "?")
+            persona = cfg.get("ai", {}).get("active_personality", "Hecos_System_Soul")
             if persona.endswith(".yaml"): persona = persona[:-5]
             
             avatar_path = "/assets/Hecos_Logo_NBG.png"
             try:
                 p_dir = os.path.join(root_dir, "hecos", "personality")
                 p_file = os.path.join(p_dir, f"{persona}.yaml")
+                
+                # Check for existence of the persona file. Fallback if not found.
+                if not os.path.exists(p_file):
+                    persona = "Hecos_System_Soul"
+                    p_file = os.path.join(p_dir, f"{persona}.yaml")
+                    
                 if os.path.exists(p_file):
                     with open(p_file, "r", encoding="utf-8") as f:
                         data = yaml.safe_load(f)

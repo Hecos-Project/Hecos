@@ -51,12 +51,20 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/hecos/config/ui")
     def config_ui():
         try:
-            cfg_mgr.reload()
             from hecos.core.i18n.translator import get_translator
             translations = get_translator().get_translations()
+            
+            # CRITICAL: Build options FIRST. This method triggers sync_available_personalities() 
+            # which performs safety checks (e.g., verifying if the active personality was deleted) 
+            # and modifies cfg_mgr by reverting to defaults if necessary.
+            zoptions_data = _build_options_dict(cfg_mgr, fast=True)
+            
+            # Now we can safely grab the config, knowing that any fallback overrides have been applied
+            zconfig_data = cfg_mgr.reload()
+            
             return render_template("index.html", 
-                                 zconfig=cfg_mgr.config, 
-                                 zoptions=_build_options_dict(cfg_mgr, fast=True),
+                                 zconfig=zconfig_data, 
+                                 zoptions=zoptions_data,
                                  translations=translations)
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
