@@ -16,6 +16,13 @@ class StateManager:
         self._last_voice_stop = 0
         self._push_to_talk = False
         self._ptt_hotkey = "ctrl+shift"
+        
+        # Telemetry for Dashboard live widgets
+        self._last_tool = None
+        self._last_model = None
+        self._last_tokens_prompt = 0
+        self._last_tokens_completion = 0
+        
         self._event_queue = []
         self._lock = threading.Lock()
 
@@ -131,3 +138,36 @@ class StateManager:
     def ptt_hotkey(self, value):
         with self._lock:
             self._ptt_hotkey = value
+
+    # --- Telemetry Properties ---
+    @property
+    def last_tool(self):
+        with self._lock: return self._last_tool
+
+    @last_tool.setter
+    def last_tool(self, value):
+        with self._lock: self._last_tool = value
+
+    @property
+    def last_model(self):
+        with self._lock: return self._last_model
+
+    @last_model.setter
+    def last_model(self, value):
+        with self._lock: self._last_model = value
+
+    @property
+    def last_tokens_prompt(self):
+        with self._lock: return self._last_tokens_prompt
+
+    @last_tokens_prompt.setter
+    def last_tokens_prompt(self, value):
+        with self._lock: self._last_tokens_prompt = value
+
+    @property
+    def last_tokens_completion(self):
+        with self._lock: return self._last_tokens_completion
+
+    @last_tokens_completion.setter
+    def last_tokens_completion(self, value):
+        with self._lock: self._last_tokens_completion = value

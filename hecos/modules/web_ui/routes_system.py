@@ -133,16 +133,27 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 ("tools",       br.get("enable_tools")),
             ] if v]
 
-            # Read live state from state_manager if available
             sm = _sm()
+            last_tool = None
+            tokens_p = 0
+            tokens_c = 0
+            last_model_live = None
+
             if sm is not None:
                 mic_on     = sm.listening_status
                 tts_on     = sm.voice_status
+                last_tool  = sm.last_tool
+                tokens_p   = sm.last_tokens_prompt
+                tokens_c   = sm.last_tokens_completion
+                last_model_live = sm.last_model
             else:
                 from hecos.core.audio.device_manager import get_audio_config
                 acfg = get_audio_config()
                 mic_on     = acfg.get("listening_status", False)
                 tts_on     = acfg.get("voice_status", False)
+
+            # Prefers the dynamic last_model over static config 'model'
+            active_model = last_model_live if last_model_live else model
 
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
@@ -198,7 +209,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             
             return jsonify({
                 "backend":    backend.upper(),
-                "model":      model,
+                "model":      active_model,   # Dynamically updated
                 "persona":    persona,
                 "avatar":     avatar_path,
                 "avatar_size": cfg.get("ai", {}).get("avatar_size", "medium"),
@@ -210,6 +221,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "ram":        ram_val,
                 "vram":       vram_val,
                 "config":     f"last save {ts}",
+                "last_tool":  last_tool,
+                "tokens_p":   tokens_p,
+                "tokens_c":   tokens_c
             })
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500

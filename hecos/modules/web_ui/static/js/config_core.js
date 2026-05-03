@@ -496,6 +496,14 @@ async function refreshStatus() {
     setSpanText('s-bridge', d.bridge || '—');
     setSpanText('s-config', d.config || '—');
     setSpanText('s-model', d.model || '—');
+    setSpanText('s-tool', d.last_tool || '—');
+    
+    // Format tokens: P/C
+    let tokensText = '—';
+    if (d.tokens_p > 0 || d.tokens_c > 0) {
+        tokensText = `${d.tokens_p} / ${d.tokens_c}`;
+    }
+    setSpanText('s-tokens', tokensText);
     
     const isOnline = !!d.model;
     const hdrModel = document.getElementById('hdr-model');

@@ -20,6 +20,8 @@ LAST_PAYLOAD_INFO = {
     "tools_chars": 0,
     "total_chars": 0,
     "approx_tokens": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
     "messages_count": 0,
     "plugins_cost": {}
 }
@@ -222,6 +224,8 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             "tools_chars": tls_chars,
             "total_chars": tot_chars,
             "approx_tokens": tot_chars // 3,  # Approximate 1 token ~ 3-4 chars
+            "prompt_tokens": 0,               # Reset prior counters
+            "completion_tokens": 0,
             "messages_count": len(params.get("messages", [])),
             "plugins_cost": plugins_cost
         })
@@ -271,6 +275,16 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
 
             if stream:
                 return response  # Restituisce il generatore per il bridge WebUI
+
+            # UPDATE TELEMETRY WITH REAL DATA
+            try:
+                usage = getattr(response, "usage", None)
+                if usage:
+                    LAST_PAYLOAD_INFO["prompt_tokens"] = getattr(usage, "prompt_tokens", 0)
+                    LAST_PAYLOAD_INFO["completion_tokens"] = getattr(usage, "completion_tokens", 0)
+                    LAST_PAYLOAD_INFO["approx_tokens"] = getattr(usage, "total_tokens", LAST_PAYLOAD_INFO["approx_tokens"])
+            except Exception:
+                pass
 
             # CONTROLLO SE HA USATO TOOLS
             choice = response.choices[0]
