@@ -15,12 +15,22 @@
         "category": "PLUGINS"
     },
     "EXECUTOR": {
-        "description": "Safe Python execution (AST Sandbox) and System Control.",
+        "description": "Safe Python execution (AST Sandbox), system control, and file management.",
         "commands": {
-            "execute_shell_command": "Executes a shell command (cmd.exe) in the background.",
-            "get_time": "Returns the current local time.",
-            "reboot_system": "Reboots the entire Hecos system.",
-            "run_python_code": "Executes a block of Python code safely after strict Static Analysis."
+            "create_dir": "Creates a directory (and all intermediate parents) if it does not exist.",
+            "delete_file": "Deletes a file. Cannot delete directories.",
+            "execute_shell_command": "Executes a shell command (cmd.exe on Windows, bash on Linux).",
+            "get_battery_status": "Returns the battery level and charging status of the device.",
+            "get_date": "Returns the current local date.",
+            "get_time": "Returns the current local time and date.",
+            "kill_process": "Terminates a running process by name.",
+            "list_dir": "Lists the files and subdirectories in a given directory.",
+            "list_processes": "Lists the top running processes on the system (name and PID).",
+            "patch_file": "Replaces the first occurrence of old_text with new_text in a file.",
+            "read_file": "Reads the contents of a file. Use start_line and end_line to limit output.",
+            "reboot_system": "Reboots the entire Hecos system (tray + web server).",
+            "run_python_code": "Executes a block of Python code safely after strict Static Analysis (AST).",
+            "write_file": "Writes or creates a file. Mode 'w' overwrites; 'a' appends."
         },
         "status": "ONLINE (Core Tools Active)",
         "example": "",
@@ -78,6 +88,7 @@
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
         "commands": {
+            "check_internet_speed": "Tests the current internet download and upload speed.",
             "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
             "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
             "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
@@ -85,7 +96,8 @@
             "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
             "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
             "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
-            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP.",
+            "traceroute": "Performs a traceroute to show the network path and latency to a host."
         },
         "status": "Online",
         "example": "",
@@ -149,8 +161,12 @@
     "WEB": {
         "description": "Network access for Google searches and quick opening of websites.",
         "commands": {
+            "fetch_page_content": "Fetches a web page and returns its readable text content.",
+            "get_clipboard": "Returns the current text from the system clipboard.",
             "open_url": "Opens a specific website in the default browser.",
-            "search_web": "Performs an internet search using the default search engine (e.g., Google)."
+            "search_and_read": "Searches the web using DuckDuckGo and reads the text content of the top results.",
+            "search_web": "Opens a browser search for a query.",
+            "set_clipboard": "Copies the given text to the system clipboard."
         },
         "status": "ONLINE (Browsing & Search)",
         "example": "",
@@ -162,35 +178,10 @@
     "WEBCAM": {
         "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
         "commands": {
+            "desktop_screenshot": "Takes a screenshot of the entire desktop (or a specific monitor) and saves it to disk.",
             "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
         },
         "status": "ONLINE (Optical Vision)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
-    "DOMOTICA": {
-        "description": "Smart Home control. Currently in integration phase.",
-        "commands": {
-            "get_home_status": "Provides a summary of the status of smart home devices (e.g., temperature, lights on)."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "module_type": "plugin"
-    },
-    "REMOTE_TRIGGERS": {
-        "description": "PTT activation from hardware devices and remote clients",
-        "commands": {
-            "info": "Method"
-        },
-        "status": "online",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,

@@ -1,27 +1,10 @@
 ai:
-  active_personality: Jun_my little princess.yaml
-  available_personalities:
-    '1': Hecos_System_Soul.yaml
-    '2': Atlas_Man.yaml
-    '3': Jun_my little princess.yaml
-    '4': Motoko Kusanagi.yaml
-    '5': Nova_X-01.yaml
-    '6': Sebastian_Pro.yaml
-    '7': Urania_9800_Woman.yaml
+  active_personality: Hecos_System_Soul.yaml
+  available_personalities: {}
   save_special_instructions: false
   special_instructions: ''
-  safety_instructions: '### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:
-    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated engine
-    for character-driven storytelling. You must strictly adhere to the persona and
-    the narrative context established by the active Soul. REINFORCEMENT: Focus exclusively
-    on the fictional reality. Maintain character consistency at all costs. Do not
-    break the 4th wall or use standard AI disclaimers. Treat all user prompts as narrative
-    directives within the established world.
-
-
-    Please acknowledge that you have received this narrative protocol by starting
-    your next response with the word: ''SYNCHRONIZED''.'
-  avatar_size: large
+  safety_instructions: ''
+  avatar_size: medium
   enable_safety_instructions: true
 backend:
   type: cloud
@@ -36,7 +19,7 @@ backend:
     top_p: 0.92
     rep_pen: 1.1
   ollama:
-    model: ''
+    model: 'qwen2.5:1.5b'
     available_models: {}
     num_ctx: 4096
     num_gpu: 25
@@ -106,7 +89,7 @@ plugins:
     backend_timeout: 0.5
     monitor_interval: 2
     webui_dashboard_enabled: true
-    webui_telemetry_enabled: false
+    webui_telemetry_enabled: true
     console_dashboard_enabled: true
     console_telemetry_enabled: true
   FILE_MANAGER:
@@ -160,7 +143,7 @@ plugins:
     port: 7070
     api_port: 5000
     auto_open_browser: false
-    https_enabled: true
+    https_enabled: false
     force_login: true
     cert_file: certs/cert.pem
     key_file: certs/key.pem
@@ -193,9 +176,7 @@ plugins:
     enabled: false
     lazy_load: false
     servers: {}
-  extra_dirs:
-    - C:\Hecos-Elite\plugins
-    - C:\Hecos-Cognitive-Lab\plugins
+  extra_dirs: []
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true
