@@ -1,29 +1,198 @@
 {
     "tag": "EXECUTOR",
-    "description": "Safe Python execution (AST Sandbox).",
+    "name": "Executor",
+    "version": "2.0",
+    "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
+    "icon": "⚙️",
     "lazy_load": true,
     "is_class_based": true,
-    "status": "ONLINE (Code Jail Active)",
+    "status": "ONLINE (Core Tools Active)",
     "commands": {
-        "run_python_code": "Executes a block of Python code safely after strict Static Analysis."
+        "run_python_code": "Execute Python safely in AST sandbox.",
+        "execute_shell_command": "Run shell commands (cmd/bash).",
+        "get_time": "Current local time and date.",
+        "get_date": "Current local date.",
+        "get_battery_status": "Device battery level and charging state.",
+        "list_processes": "List top running processes.",
+        "kill_process": "Terminate a process by name.",
+        "reboot_system": "Restart the Hecos system.",
+        "read_file": "Read a file content by line range.",
+        "write_file": "Write or create a file (overwrite or append).",
+        "patch_file": "Surgically replace a text block inside a file.",
+        "delete_file": "Delete a file.",
+        "create_dir": "Create a directory tree.",
+        "list_dir": "List a directory contents."
     },
     "tool_schema": [
         {
             "type": "function",
             "function": {
                 "name": "EXECUTOR__run_python_code",
-                "description": "Executes a block of Python code safely after strict Static Analysis.",
+                "description": "Executes a block of Python code safely inside a strict AST sandbox. Use for math, data manipulation, and algorithm building. File system and network access are blocked.",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "code": {
-                            "type": "string",
-                            "description": "The Python script to execute."
-                        }
+                        "code": { "type": "string", "description": "The Python script to execute." }
                     },
-                    "required": [
-                        "code"
-                    ]
+                    "required": ["code"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__execute_shell_command",
+                "description": "Runs a raw shell command (cmd.exe on Windows, bash on Linux). Use for operations not covered by other tools. Output is truncated at 2000 chars.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "command": { "type": "string", "description": "The shell command to run." }
+                    },
+                    "required": ["command"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__get_time",
+                "description": "Returns the current local date and time.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__get_date",
+                "description": "Returns today's date in a human-readable format.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__get_battery_status",
+                "description": "Returns the device battery percentage and whether it is charging.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__list_processes",
+                "description": "Lists the top running processes on the system, ordered by CPU usage.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__kill_process",
+                "description": "Terminates a running process by its name (e.g. 'notepad.exe').",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "The process name to terminate." }
+                    },
+                    "required": ["name"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__reboot_system",
+                "description": "Restarts the entire Hecos system (tray app + web server). Use only when explicitly asked.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__read_file",
+                "description": "Reads the contents of a local file. Use start_line and end_line to limit output for large files.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "file_path": { "type": "string", "description": "Absolute path to the file to read." },
+                        "start_line": { "type": "integer", "description": "First line to read (1-indexed). Default: 1." },
+                        "end_line": { "type": "integer", "description": "Last line to read (inclusive). Use -1 for the full file. Default: -1." }
+                    },
+                    "required": ["file_path"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__write_file",
+                "description": "Writes or creates a file at the specified path. Mode 'w' overwrites; 'a' appends. Parent directories are created automatically. System paths are protected.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "file_path": { "type": "string", "description": "Absolute path to the file to write or create." },
+                        "content": { "type": "string", "description": "The full text content to write." },
+                        "mode": { "type": "string", "enum": ["w", "a"], "description": "'w' to overwrite (default), 'a' to append." }
+                    },
+                    "required": ["file_path", "content"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__patch_file",
+                "description": "Replaces the FIRST occurrence of old_text with new_text inside a file. Use this for surgical code/text edits instead of rewriting the whole file. Returns an error with a file preview if old_text is not found.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "file_path": { "type": "string", "description": "Absolute path to the file to patch." },
+                        "old_text": { "type": "string", "description": "The exact text block to find and replace (whitespace must match exactly)." },
+                        "new_text": { "type": "string", "description": "The replacement text block." }
+                    },
+                    "required": ["file_path", "old_text", "new_text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__delete_file",
+                "description": "Deletes a file at the specified path. Cannot delete directories. System paths are protected.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "file_path": { "type": "string", "description": "Absolute path to the file to delete." }
+                    },
+                    "required": ["file_path"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__create_dir",
+                "description": "Creates a directory and all intermediate parent directories if they do not exist.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "directory_path": { "type": "string", "description": "Absolute path to the directory to create." }
+                    },
+                    "required": ["directory_path"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__list_dir",
+                "description": "Lists the files and subdirectories inside a given directory.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "directory_path": { "type": "string", "description": "Absolute path to the directory to list." }
+                    },
+                    "required": ["directory_path"]
                 }
             }
         }
