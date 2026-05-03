@@ -234,7 +234,11 @@ class ExecutorTools:
             return f"I/O Error: {e}"
 
         cfg = ConfigManager()
-        timeout = cfg.get_plugin_config(self.tag, "timeout_seconds", 10)
+        try:
+            timeout = int(cfg.get_plugin_config(self.tag, "timeout_seconds", 10))
+        except (ValueError, TypeError):
+            timeout = 10
+
         try:
             process = subprocess.Popen(
                 [sys.executable, script_path],
@@ -264,12 +268,16 @@ class ExecutorTools:
         if not os.path.exists(file_path):
             return f"[EXECUTOR] File not found: {file_path}"
         try:
+            # Robustness: The LLM often sends arguments as strings.
+            s_line = int(start_line)
+            e_line = int(end_line)
+            
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
-            if end_line == -1:
-                end_line = len(lines)
-            chunk = "".join(lines[max(0, start_line - 1):end_line])
-            return f"--- {file_path} (lines {start_line}–{end_line}) ---\n{chunk}"
+            if e_line == -1:
+                e_line = len(lines)
+            chunk = "".join(lines[max(0, s_line - 1):e_line])
+            return f"--- {file_path} (lines {s_line}–{e_line}) ---\n{chunk}"
         except Exception as e:
             return f"[EXECUTOR] Read error: {e}"
 

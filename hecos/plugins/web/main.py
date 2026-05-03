@@ -184,20 +184,32 @@ class WebTools:
             logger.error(f"PLUGIN_{self.tag}: Error: {e}")
             return translator.t("plugin_web_error_network", error=str(e))
 
-    def fetch_page_content(self, url: str) -> str:
+    def fetch_page_content(self, url: str, max_chars_override: int = None) -> str:
         """
         Fetches a web page and returns its readable text content.
         Use this to read articles, documentation, Wikipedia pages, or any URL.
         Does NOT open a browser window — reads and returns the text directly.
         :param url: Full URL of the page (e.g., 'https://en.wikipedia.org/wiki/Python').
+        :param max_chars_override: Optional limit for content length (overrides config).
         """
         url = _ensure_https(url)
         logger.info(f"[WEB] fetch_page_content: {url}")
         html = self._http_get(url)
         if html is None:
             return f"[WEB] Failed to fetch page: {url}. Check the URL and network connection."
+        
         cfg = ConfigManager()
         max_chars = cfg.get_plugin_config(self.tag, "max_content_chars", 4000)
+        
+        # Robustness: force integer types
+        try:
+            if max_chars_override is not None:
+                max_chars = int(max_chars_override)
+            else:
+                max_chars = int(max_chars)
+        except (ValueError, TypeError):
+            max_chars = 4000
+
         text = _extract_text(html, max_chars)
         if not text or len(text.strip()) < 50:
             return f"[WEB] Page fetched but no readable content found at: {url}"
@@ -211,6 +223,12 @@ class WebTools:
         :param query: The search terms (e.g., 'Python 3.13 new features', 'weather Rome today').
         :param max_results: How many pages to read (1–5). Default: 3.
         """
+        # Robustness: The LLM often sends arguments as strings. Force integer for comparison.
+        try:
+            max_res_int = int(max_results)
+        except (ValueError, TypeError):
+            max_res_int = 3
+
         q = query.strip()
         logger.info(f"[WEB] search_and_read: {q}")
         search_url = f"https://html.duckduckgo.com/html/?q={urllib.parse.quote(q)}"
@@ -229,14 +247,18 @@ class WebTools:
                 urls.append(decoded)
             except Exception:
                 continue
-            if len(urls) >= max(1, min(max_results, 5)):
+            if len(urls) >= max(1, min(max_res_int, 5)):
                 break
 
         if not urls:
             return f"[WEB] No results found for: '{q}'. Try rephrasing."
 
         cfg = ConfigManager()
-        max_chars = cfg.get_plugin_config(self.tag, "max_content_chars", 4000)
+        try:
+            max_chars = int(cfg.get_plugin_config(self.tag, "max_content_chars", 4000))
+        except (ValueError, TypeError):
+            max_chars = 4000
+            
         per_page = max(800, max_chars // len(urls))
 
         results = [f"🔍 Search results for: \"{q}\"\n"]
