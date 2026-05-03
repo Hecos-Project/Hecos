@@ -530,9 +530,24 @@ async function refreshStatus() {
     }
 
     const dashEnabled = globalDashEnabled && webuiDashEnabled && webuiTelemetryEnabled;
+    const trackCpu = dsb.track_cpu !== false;
+    const trackRam = dsb.track_ram !== false;
+    const trackVram = dsb.track_vram !== false;
+    
     document.querySelectorAll('.dashboard-only').forEach(el => {
         el.style.display = dashEnabled ? '' : 'none';
     });
+    
+    if (dashEnabled) {
+        const eCpu = document.getElementById('s-cpu');
+        if(eCpu && eCpu.parentElement) eCpu.parentElement.style.display = trackCpu ? '' : 'none';
+        
+        const eRam = document.getElementById('s-ram');
+        if(eRam && eRam.parentElement) eRam.parentElement.style.display = trackRam ? '' : 'none';
+        
+        const eVram = document.getElementById('s-vram');
+        if(eVram && eVram.parentElement) eVram.parentElement.style.display = trackVram ? '' : 'none';
+    }
   } catch(e) {
     const hdrModel = document.getElementById('hdr-model');
     if (hdrModel) {

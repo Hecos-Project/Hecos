@@ -202,16 +202,19 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             telemetry_active = global_enabled and webui_telemetry
             
             # Sync background CPU thread enabled state
-            _cpu_cache["enabled"] = telemetry_active
+            _cpu_cache["enabled"] = telemetry_active and dsb_cfg.get("track_cpu", True)
 
             cpu_val  = None
             ram_val  = None
             vram_val = None
 
             if telemetry_active:
-                cpu_val  = _cpu_cache.get("value", 0)
-                ram_val  = psutil.virtual_memory().percent
-                vram_val = get_vram_usage()
+                if dsb_cfg.get("track_cpu", True):
+                    cpu_val  = _cpu_cache.get("value", 0)
+                if dsb_cfg.get("track_ram", True):
+                    ram_val  = psutil.virtual_memory().percent
+                if dsb_cfg.get("track_vram", True):
+                    vram_val = get_vram_usage()
             
             return jsonify({
                 "backend":    backend.upper(),

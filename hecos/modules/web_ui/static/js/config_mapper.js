@@ -192,6 +192,9 @@ function populateUI() {
     const dsb = c.plugins?.DASHBOARD || {};
     setCheck('dashboard-webui-enabled', dsb.webui_dashboard_enabled ?? true);
     setCheck('telemetry-webui-enabled', dsb.webui_telemetry_enabled ?? true);
+    setCheck('track-cpu-enabled', dsb.track_cpu ?? true);
+    setCheck('track-ram-enabled', dsb.track_ram ?? true);
+    setCheck('track-vram-enabled', dsb.track_vram ?? true);
     setCheck('dashboard-console-enabled', dsb.console_dashboard_enabled ?? true);
     setCheck('telemetry-console-enabled', dsb.console_telemetry_enabled ?? true);
 
@@ -594,6 +597,9 @@ function buildPayload() {
         out.plugins['DASHBOARD'] = out.plugins['DASHBOARD'] || {};
         out.plugins['DASHBOARD'].webui_dashboard_enabled = getC('dashboard-webui-enabled');
         out.plugins['DASHBOARD'].webui_telemetry_enabled = getC('telemetry-webui-enabled');
+        out.plugins['DASHBOARD'].track_cpu = getC('track-cpu-enabled');
+        out.plugins['DASHBOARD'].track_ram = getC('track-ram-enabled');
+        out.plugins['DASHBOARD'].track_vram = getC('track-vram-enabled');
         out.plugins['DASHBOARD'].console_dashboard_enabled = getC('dashboard-console-enabled');
         out.plugins['DASHBOARD'].console_telemetry_enabled = getC('telemetry-console-enabled');
     }

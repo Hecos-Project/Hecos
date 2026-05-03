@@ -95,7 +95,7 @@ plugins:
     backend_timeout: 0.5
     monitor_interval: 2
     webui_dashboard_enabled: true
-    webui_telemetry_enabled: false
+    webui_telemetry_enabled: true
     console_dashboard_enabled: true
     console_telemetry_enabled: true
   FILE_MANAGER:
