@@ -5,6 +5,7 @@ DESCRIPTION: Centralized manager for semantic and episodic memory.
 """
 
 import json
+import yaml
 import os
 import sqlite3
 from datetime import datetime
@@ -14,7 +15,7 @@ from hecos.core.logging import logger
 ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 BASE_DIR = os.path.join(ROOT_DIR, "memory")
 PATH_IDENTITY = os.path.join(BASE_DIR, "core_identity.json")
-PATH_PROFILE   = os.path.join(BASE_DIR, "user_profile.json")
+PATH_PROFILE   = os.path.join(BASE_DIR, "user_profile.yaml")
 PATH_DB        = os.path.join(BASE_DIR, "chat_history.db")
 
 # â”€â”€ Config helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -101,7 +102,7 @@ def get_context(config: dict = None, dynamic_name: str = None) -> str:
             id_data = json.load(f)
         
         with open(PATH_PROFILE, "r", encoding="utf-8") as f:
-            prof_data = json.load(f)
+            prof_data = yaml.safe_load(f) or {}
             
         from hecos.core.system.version import VERSION
         context = f"\n[ACTIVE IDENTITY MEMORY]\n"
@@ -152,7 +153,7 @@ def update_profile(key, value):
             data["author"][key] = value
             
         with open(PATH_PROFILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
+            yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
         return True
     except Exception as e:
         logger.error(f"Profile Update Error: {e}")
