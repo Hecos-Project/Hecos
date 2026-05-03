@@ -16,16 +16,32 @@ import subprocess
 # psutil.cpu_percent() without interval= always returns 0.0 or 100% on first
 # call because it has no baseline. We cache a reading every 2 seconds instead.
 _cpu_cache = {"value": 0.0, "enabled": True}
+_last_cpu_times = None
 
 def _cpu_sampler():
-    # Prime the baseline sample (discarded)
-    psutil.cpu_percent(interval=None)
+    global _last_cpu_times
+    _last_cpu_times = psutil.cpu_times()
     while True:
         try:
             if _cpu_cache.get("enabled", True):
-                _cpu_cache["value"] = psutil.cpu_percent(interval=2)
+                current_times = psutil.cpu_times()
+                
+                t1_all = sum(_last_cpu_times)
+                t1_busy = t1_all - getattr(_last_cpu_times, 'idle', 0.0)
+                
+                t2_all = sum(current_times)
+                t2_busy = t2_all - getattr(current_times, 'idle', 0.0)
+                
+                if t2_all > t1_all:
+                    busy_delta = max(0.0, t2_busy - t1_busy)
+                    all_delta = max(0.0, t2_all - t1_all)
+                    percent = (busy_delta / all_delta) * 100.0 if all_delta > 0 else 0.0
+                    _cpu_cache["value"] = round(min(100.0, percent), 1)
+                
+                _last_cpu_times = current_times
+                time.sleep(2)
             else:
-                # When disabled, we sleep longer and do nothing to save resources
+                _last_cpu_times = psutil.cpu_times()
                 time.sleep(5)
         except Exception:
             time.sleep(5)
