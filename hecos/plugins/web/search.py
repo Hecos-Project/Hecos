@@ -146,6 +146,7 @@ def search_and_read_tool(query: str, tag: str, max_results: int = 3) -> str:
     per_page = max(800, max_chars // len(urls))
 
     results = [f"🔍 Search results for: \"{q}\"\n"]
+    good_results = 0
     for i, url in enumerate(urls, 1):
         logger.info(f"[{tag}] Reading result {i}/{len(urls)}: {url}")
         page_html = http_get(url, tag)
@@ -155,7 +156,15 @@ def search_and_read_tool(query: str, tag: str, max_results: int = 3) -> str:
         text = extract_text(page_html, per_page)
         if text and len(text.strip()) > 50:
             results.append(f"[{i}] 📄 {url}\n{text}\n")
+            good_results += 1
         else:
             results.append(f"[{i}] ⚠️  No readable content at: {url}")
+
+    if good_results == 0:
+        return (
+            f"[{tag}] Unable to read any results for '{q}'. "
+            f"This is likely a temporary network issue — please retry in a moment. "
+            f"Checked {len(urls)} URL(s)."
+        )
 
     return "\n---\n".join(results)

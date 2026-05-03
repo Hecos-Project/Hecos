@@ -50,7 +50,11 @@ def http_get(url: str, tag: str = "WEB") -> str | None:
     """Fetches raw HTML from a URL using httpx → requests → urllib fallback."""
     cfg = ConfigManager()
     timeout = cfg.get_plugin_config(tag, "fetch_timeout", 10)
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; Hecos/1.0; +https://hecos.ai)"}
+    try:
+        timeout = int(timeout)
+    except (ValueError, TypeError):
+        timeout = 10
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}
     try:
         import httpx
         r = httpx.get(url, headers=headers, timeout=timeout, follow_redirects=True)
@@ -58,6 +62,9 @@ def http_get(url: str, tag: str = "WEB") -> str | None:
         return r.text
     except ImportError:
         pass
+    except Exception as e:
+        logger.error(f"[{tag}] httpx fetch failed for {url}: {type(e).__name__}: {e}")
+        return None
     try:
         import requests
         r = requests.get(url, headers=headers, timeout=timeout)
@@ -65,11 +72,14 @@ def http_get(url: str, tag: str = "WEB") -> str | None:
         return r.text
     except ImportError:
         pass
+    except Exception as e:
+        logger.error(f"[{tag}] requests fetch failed for {url}: {type(e).__name__}: {e}")
+        return None
     try:
         import urllib.request as ureq
         req = ureq.Request(url, headers=headers)
         with ureq.urlopen(req, timeout=timeout) as resp:
             return resp.read().decode("utf-8", errors="replace")
     except Exception as e:
-        logger.error(f"[{tag}] HTTP fetch failed for {url}: {e}")
+        logger.error(f"[{tag}] urllib fetch failed for {url}: {type(e).__name__}: {e}")
         return None
