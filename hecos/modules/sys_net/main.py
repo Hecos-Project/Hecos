@@ -45,17 +45,26 @@ class SysNetTools:
         self.status = "Online"
         
         self.config_schema = {
+            "proxy_enabled": {
+                "type": "bool",
+                "default": False,
+                "description": "Attiva o disattiva globalmente l'utilizzo del proxy configurato."
+            },
             "proxy_url": {
                 "type": "str",
-                "default": "",
-                "description": "URL completo del Proxy (es. socks5://127.0.0.1:2080 o http://ip:port). Lascia vuoto per non usare nessun proxy."
+                "default": "socks5://localhost:9150",
+                "description": "URL completo del Proxy (es. socks5://127.0.0.1:9150 o http://ip:port)."
             }
         }
 
     def _get_proxy_url(self) -> str:
-        """Helper: returns the configured proxy_url from SYS_NET settings."""
+        """Helper: returns the configured proxy_url from SYS_NET settings if enabled."""
         try:
-            return ConfigManager().get_plugin_config(self.tag, "proxy_url", "").strip()
+            cfg = ConfigManager()
+            is_enabled = cfg.get_plugin_config(self.tag, "proxy_enabled", False)
+            if not is_enabled:
+                return ""
+            return cfg.get_plugin_config(self.tag, "proxy_url", "").strip()
         except:
             return ""
 
@@ -148,8 +157,8 @@ class SysNetTools:
             cmd = OSAdapter.get_network_info_cmd()
             output = subprocess.check_output(cmd, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT)
             
-            cfg_proxy = ConfigManager().get_plugin_config(self.tag, "proxy_url", "")
-            proxy_info = f"\nHecos Configured Proxy: {cfg_proxy if cfg_proxy else 'None'}"
+            cfg_proxy = self._get_proxy_url()
+            proxy_info = f"\nHecos Configured Proxy (Active): {cfg_proxy if cfg_proxy else 'None'}"
             
             if OSAdapter.get_os() != 'windows':
                 return output[:2000] + proxy_info
@@ -168,8 +177,8 @@ class SysNetTools:
                 if "IPv4" in l or "Gateway" in l or "DNS Servers" in l and "IPv6" not in l:
                     results.append(f"[{adapter_name}] {l}")
             
-            cfg_proxy = ConfigManager().get_plugin_config(self.tag, "proxy_url", "")
-            proxy_info = f"\nHecos Configured Proxy: {cfg_proxy if cfg_proxy else 'None'}"
+            cfg_proxy = self._get_proxy_url()
+            proxy_info = f"\nHecos Configured Proxy (Active): {cfg_proxy if cfg_proxy else 'None'}"
             
             if not results:
                 return output[:1000] + proxy_info

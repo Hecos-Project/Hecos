@@ -218,6 +218,7 @@ class PluginSystem(BaseModel):
 class PluginSysNet(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
+    proxy_enabled: bool = False
     proxy_url: str = "socks5://localhost:9150"
 
 class PluginWeb(BaseModel):
