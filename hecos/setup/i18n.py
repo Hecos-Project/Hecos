@@ -9,7 +9,7 @@ SPLASH_DONE = False
 
 T_DATA = {
     "en": {
-        "header": "HECOS CORE - SETUP WIZARD & ONBOARDING",
+        "header": "HECOS - SETUP WIZARD & ONBOARDING",
         "welcome": "Welcome to Hecos",
         "select_setup_lang": "Choose your Setup Language:",
         "button_continue": "Continue to Setup",
@@ -45,7 +45,7 @@ T_DATA = {
         "step_lang": "System Language Configuration",
         "step_finish": "Final Configuration Fixes",
         "step_install": "Full Installation & Activation",
-        "onboarding_done": "[+] HECOS CORE IS READY!",
+        "onboarding_done": "[+] HECOS IS READY!",
         "tip_onboarding": "Tip: Use this if it's your first time. It installs everything needed to run Hecos.",
         "tip_diagnostics": "Tip: Use these tools to check if your system is compatible or to fix broken paths.",
         "tip_service": "Tip: Installing as a service allows Hecos to run in the background and start with Windows.",
@@ -64,7 +64,7 @@ T_DATA = {
         "tip_uninstall_svc": "Removes Hecos service from the system."
     },
     "it": {
-        "header": "HECOS CORE - SETUP WIZARD & ONBOARDING",
+        "header": "HECOS - SETUP WIZARD & ONBOARDING",
         "python_check": "[*] Controllo compatibilità Python...",
         "python_ok": "[+] Python {v} è compatibile (installato in: {path}).",
         "python_err": "[-] Errore: È richiesto Python 3.10+. Trovato: {v}",
@@ -96,7 +96,7 @@ T_DATA = {
         "step_lang": "Configurazione Lingua di Sistema",
         "step_finish": "Fix Finali della Configurazione",
         "step_install": "Installazione e Attivazione Integrale",
-        "onboarding_done": "[+] HECOS CORE E' PRONTO!",
+        "onboarding_done": "[+] HECOS E' PRONTO!",
         "tip_onboarding": "Suggerimento: Usa questa opzione se è la prima volta. Installa tutto il necessario per avviare Hecos.",
         "tip_diagnostics": "Suggerimento: Usa questi strumenti per controllare se il sistema è compatibile o per riparare percorsi interrotti.",
         "tip_service": "Suggerimento: Installare come servizio permette a Hecos di avviarsi automaticamente con Windows.",
@@ -115,7 +115,7 @@ T_DATA = {
         "tip_uninstall_svc": "Rimuove il servizio Hecos dal sistema."
     },
     "es": {
-        "header": "HECOS CORE - ASISTENTE DE CONFIGURACIÓN",
+        "header": "HECOS - ASISTENTE DE CONFIGURACIÓN",
         "welcome": "Bienvenido a Hecos",
         "select_setup_lang": "Elige el idioma de configuración:",
         "button_continue": "Continuar con la configuración",

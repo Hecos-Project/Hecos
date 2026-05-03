@@ -108,7 +108,7 @@ def run_tray():
     icon = pystray.Icon(
         name="hecos_core",
         icon=icon_image,
-        title="HECOS CORE — Helping Companion System",
+        title="HECOS — Helping Companion System",
         menu=build_menu([None])
     )
 

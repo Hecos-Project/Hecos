@@ -145,7 +145,7 @@ def build_menu(icon_ref: list):
         icon.menu = build_menu([icon])
 
     return pystray.Menu(
-        pystray.MenuItem(f"HECOS CORE  v{version}", None, enabled=False),
+        pystray.MenuItem(f"HECOS  v{version}", None, enabled=False),
         pystray.MenuItem(status_label, None, enabled=False),
         pystray.Menu.SEPARATOR,
 

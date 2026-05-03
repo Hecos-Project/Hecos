@@ -1,9 +1,9 @@
 @echo off
-title HECOS CORE - Configuration UI Launcher
+title HECOS - Configuration UI Launcher
 color 0E
 
 echo ===================================================
-echo           HECOS CORE: CONTROL PANEL
+echo           HECOS: CONTROL PANEL
 echo ===================================================
 echo.
 echo [SYSTEM] Opening configuration interface...
