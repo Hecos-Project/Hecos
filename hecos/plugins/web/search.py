@@ -114,15 +114,20 @@ def search_and_read_tool(query: str, tag: str, max_results: int = 3) -> str:
     html = http_get(search_url, tag)
     if html is None:
         return f"[{tag}] Could not reach DuckDuckGo. Check your internet connection."
+    # DDG HTML encodes '&' as '&amp;' inside href values, which truncates URLs
+    # with the old [^&] regex. Capture up to the closing quote, then clean manually.
+    raw_links = re.findall(r'uddg=(https?[^"\'>\s]+)', html, re.IGNORECASE)
 
-    raw_links = re.findall(r'uddg=(https?(?:%3A|:)[^&"\'\\s]+)', html, re.IGNORECASE)
-    redirect_links = re.findall(r'href="//duckduckgo\.com/l/\?uddg=(https?(?:%3A|:)[^&"]+)"', html, re.IGNORECASE)
-    raw_links.extend(redirect_links)
-
-    seen_urls: dict[str, None] = {}
+    seen_urls = {}
     for raw in raw_links:
         try:
-            decoded = urllib.parse.unquote(raw).strip()
+            # Resolve HTML entities before unquoting
+            cleaned = raw.replace("&amp;", "&").replace("&#x3D;", "=")
+            decoded = urllib.parse.unquote(cleaned).strip()
+            # Strip DDG tracking params appended after the real URL
+            for sep in ("&rut=", "&s=", "&dc=", "&b="):
+                if sep in decoded:
+                    decoded = decoded.split(sep)[0]
             if any(bad in decoded for bad in BLOCKED_DOMAINS):
                 continue
             if not decoded.startswith(("http://", "https://")):
@@ -151,14 +156,14 @@ def search_and_read_tool(query: str, tag: str, max_results: int = 3) -> str:
         logger.info(f"[{tag}] Reading result {i}/{len(urls)}: {url}")
         page_html = http_get(url, tag)
         if page_html is None:
-            results.append(f"[{i}] ⚠️  Could not read: {url}")
+            results.append(f"[{i}] ⚠️ Could not read: **[{url}]({url})**")
             continue
         text = extract_text(page_html, per_page)
         if text and len(text.strip()) > 50:
-            results.append(f"[{i}] 📄 {url}\n{text}\n")
+            results.append(f"[{i}] 📄 **[{url}]({url})**\n{text}\n")
             good_results += 1
         else:
-            results.append(f"[{i}] ⚠️  No readable content at: {url}")
+            results.append(f"[{i}] ⚠️ No readable content at: **[{url}]({url})**")
 
     if good_results == 0:
         return (
