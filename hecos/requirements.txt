@@ -42,7 +42,10 @@ winsound                    # Incluso in Python standard (non serve pip)
 # ------------------------------
 # PLUGIN WEB
 # ------------------------------
-beautifulsoup4>=4.12.0      # Parsing HTML (plugin web)
+beautifulsoup4>=4.12.0      # Parsing HTML (fallback text extraction)
+httpx>=0.27.0               # HTTP client per fetch_page_content e search_and_read
+trafilatura>=1.8.0          # Estrazione testo articoli (qualità superiore a BS4)
+pyperclip>=1.8.2            # Accesso clipboard (get/set_clipboard)
 requests                    # Già incluso sopra
 
 # ------------------------------

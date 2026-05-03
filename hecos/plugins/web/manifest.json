@@ -1,19 +1,26 @@
 {
     "tag": "WEB",
-    "description": "Network access for Google searches and quick opening of websites.",
+    "name": "Web",
+    "version": "2.0",
+    "description": "Web browsing, live search with content reading, and clipboard integration.",
+    "icon": "🌐",
     "lazy_load": true,
     "is_class_based": true,
-    "status": "ONLINE (Browsing & Search)",
+    "status": "ONLINE",
     "commands": {
-        "open_url": "Opens a specific website in the default browser.",
-        "search_web": "Performs an internet search using the default search engine (e.g., Google)."
+        "open_url": "Opens a URL in the default browser.",
+        "search_web": "Opens a browser search for a query.",
+        "fetch_page_content": "Reads the text content of any URL without opening a browser.",
+        "search_and_read": "Searches DDG and reads the top N result pages — returns live text content.",
+        "get_clipboard": "Returns the current system clipboard text.",
+        "set_clipboard": "Copies text to the system clipboard."
     },
     "tool_schema": [
         {
             "type": "function",
             "function": {
                 "name": "WEB__open_url",
-                "description": "Opens a specific website in the default browser.",
+                "description": "Opens a specific website in the default browser. Use this only when the user explicitly wants to open a page. Use fetch_page_content if you need to READ the content.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -22,9 +29,7 @@
                             "description": "The website address to open (e.g., 'youtube.com', 'wikipedia.org')."
                         }
                     },
-                    "required": [
-                        "url"
-                    ]
+                    "required": ["url"]
                 }
             }
         },
@@ -32,7 +37,7 @@
             "type": "function",
             "function": {
                 "name": "WEB__search_web",
-                "description": "Performs an internet search using the default search engine (e.g., Google).",
+                "description": "Opens a browser search for a query. Use search_and_read instead if you need the actual TEXT of the results.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -41,9 +46,73 @@
                             "description": "The terms to search for on the internet."
                         }
                     },
-                    "required": [
-                        "query"
-                    ]
+                    "required": ["query"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB__fetch_page_content",
+                "description": "Fetches a web page and returns its readable text content WITHOUT opening any browser. Use this to read articles, Wikipedia pages, documentation, or any other URL.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": "Full URL of the page to read (e.g., 'https://en.wikipedia.org/wiki/Python')."
+                        }
+                    },
+                    "required": ["url"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB__search_and_read",
+                "description": "Searches the web using DuckDuckGo and reads the text content of the top results. Use this when you need CURRENT information, news, prices, or live facts that may not be in your training data. Returns text — does NOT open any browser window.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The search terms (e.g., 'Python 3.13 new features', 'weather Rome today')."
+                        },
+                        "max_results": {
+                            "type": "integer",
+                            "description": "How many pages to read (1–5). Default: 3."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB__get_clipboard",
+                "description": "Returns the current text from the system clipboard. Use when the user says 'use what I just copied', 'fix this code', or 'translate this text'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEB__set_clipboard",
+                "description": "Copies the given text to the system clipboard so the user can paste it anywhere.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The text to copy to the clipboard."
+                        }
+                    },
+                    "required": ["text"]
                 }
             }
         }

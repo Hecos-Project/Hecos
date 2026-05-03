@@ -4,8 +4,6 @@ import time
 try:
     from hecos.core.logging import logger
     from hecos.core.i18n import translator
-    from hecos.core.constants import SNAPSHOTS_DIR
-    # NOTE: SNAPSHOTS_DIR now points to hecos/media/screenshots (centralized media)
     from app.config import ConfigManager
 except ImportError:
     class DummyLogger:
@@ -34,7 +32,7 @@ class WebcamTools:
         self.config_schema = {
             "save_directory": {
                 "type": "str",
-                "default": "screenshots",
+                "default": "snapshots",
                 "description": translator.t("plugin_webcam_save_dir_desc")
             },
             "image_format": {
@@ -81,11 +79,6 @@ class WebcamTools:
         delay = cfg.get_plugin_config(self.tag, "stabilization_delay", 0.5)
         
         try:
-            # Standardize snapshot directory to stay inside hecos/
-            # If the user sets a relative path, we join it with SNAPSHOTS_DIR root
-            if not os.path.isabs(save_dir):
-                save_dir = os.path.join(os.path.dirname(SNAPSHOTS_DIR), save_dir)
-            
             if not os.path.exists(save_dir):
                 os.makedirs(save_dir)
 
