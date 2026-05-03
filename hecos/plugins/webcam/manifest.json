@@ -6,7 +6,8 @@
     "status": "ONLINE (Optical Vision)",
     "routing_instructions": "WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device, you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.",
     "commands": {
-        "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser."
+        "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser.",
+        "desktop_screenshot": "Captures the entire desktop screen (or a specific monitor) and saves it as an image file for visual analysis."
     },
     "tool_schema": [
         {
@@ -24,6 +25,23 @@
                         }
                     },
                     "required": ["target"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "WEBCAM__desktop_screenshot",
+                "description": "Captures the entire desktop screen (or a specific monitor) and saves it as an image file. Use this when the user asks 'what is on my screen?', 'look at my screen', 'can you see my screen?', or to debug/analyze anything displayed on the monitor.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "monitor": {
+                            "type": "integer",
+                            "description": "Monitor to capture: 1 = primary screen (default), 0 = all monitors combined."
+                        }
+                    },
+                    "required": []
                 }
             }
         }

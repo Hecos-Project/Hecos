@@ -53,6 +53,8 @@ requests                    # Già incluso sopra
 # ------------------------------
 opencv-python>=4.8.0        # Accesso webcam
 numpy>=1.24.0               # Dipendenza OpenCV
+mss>=9.0.1                  # Screenshot desktop multi-monitor (desktop_screenshot)
+# speedtest-cli>=2.1.3     # Opzionale — test velocità internet (SYS_NET check_internet_speed)
 
 # ------------------------------
 # UTILITY E FILE SYSTEM
