@@ -461,19 +461,8 @@ if __name__ == "__main__":
         return False
 
     # Auto-open browser in standalone mode ONLY if not already open
-    def _delayed_browser():
-        import time
-        import webbrowser
-        time.sleep(2.0)
-        if not is_webui_already_open(root):
-            webui_cfg = cfg.config.get("plugins", {}).get("WEB_UI", {})
-            scheme = "https" if webui_cfg.get("https_enabled", False) else "http"
-            webbrowser.open(f"{scheme}://127.0.0.1:7070/chat")
-        else:
-            print("[WEB] WebUI already active in a tab (heartbeat detected). Skipping auto-open.")
-    
-    import threading
-    threading.Thread(target=_delayed_browser, daemon=True).start()
+    # [Removed] - Auto-open logic is now fully managed by tray_app.py or plugin wrappers 
+    # to avoid race conditions and redundant browser tabs.
 
     from hecos.core.system import instance_lock
     if not os.environ.get("HECOS_MONITORED_PROCESS"):
