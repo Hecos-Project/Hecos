@@ -98,6 +98,9 @@ plugins:
     webui_telemetry_enabled: true
     console_dashboard_enabled: true
     console_telemetry_enabled: true
+    track_cpu: false
+    track_ram: false
+    track_vram: true
   FILE_MANAGER:
     enabled: true
     lazy_load: false

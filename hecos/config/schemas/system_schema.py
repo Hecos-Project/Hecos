@@ -179,6 +179,9 @@ class PluginDashboard(BaseModel):
     webui_telemetry_enabled: bool = True
     console_dashboard_enabled: bool = True
     console_telemetry_enabled: bool = True
+    track_cpu: bool = True
+    track_ram: bool = True
+    track_vram: bool = True
 
 class PluginFileManager(BaseModel):
     enabled: bool = True

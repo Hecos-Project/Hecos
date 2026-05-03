@@ -1,4 +1,4 @@
-﻿"""
+"""
 MODULE: System Config Schema
 DESCRIPTION: Pydantic v2 models for config/system.yaml
 """
@@ -129,6 +129,13 @@ class PluginDashboard(BaseModel):
     lazy_load: bool = False
     backend_timeout: float = 0.5
     monitor_interval: int = 2
+    webui_dashboard_enabled: bool = True
+    webui_telemetry_enabled: bool = True
+    console_dashboard_enabled: bool = True
+    console_telemetry_enabled: bool = True
+    track_cpu: bool = True
+    track_ram: bool = True
+    track_vram: bool = True
 
 class PluginFileManager(BaseModel):
     enabled: bool = True
