@@ -33,11 +33,6 @@
       <label class="switch"><input type="checkbox" id="executor-enabled" data-plugin="EXECUTOR"><span class="slider"></span></label>
     </div>
     <p style="font-size:12px; color:var(--muted);">{{ t('webui_executor_enable_desc') or 'Master switch for all Executor capabilities: file management, shell commands, and Python sandbox.' }}</p>
-    <div class="toggle-row" style="margin-top:12px;">
-      <div class="toggle-info">{{ t('webui_executor_action_console') or 'Action Console (Chat Window)' }}</div>
-      <label class="switch"><input type="checkbox" id="executor-action-console" onchange="savePluginKey('EXECUTOR','action_console_enabled',this.checked)"><span class="slider"></span></label>
-    </div>
-    <p style="font-size:12px; color:var(--muted);">{{ t('webui_executor_action_console_desc') or 'Show a live terminal window in the chat whenever Executor runs a command.' }}</p>
   </div>
 
   <!-- PYTHON SANDBOX -->

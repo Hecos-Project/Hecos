@@ -733,8 +733,6 @@
         "webui_agent_action_console_desc": "Shows real-time terminal windows for shell commands and python scripts (Action Logger).",
         "webui_executor_enable": "Enable Executor Module",
         "webui_executor_enable_desc": "Master switch for all Executor capabilities: file management, shell commands, and Python sandbox.",
-        "webui_executor_action_console": "Action Console (Chat Window)",
-        "webui_executor_action_console_desc": "Show a live terminal window in the chat whenever Executor runs a command.",
         "webui_executor_sandbox_desc": "The Sandbox executes Python code in a strict AST security jail. Network and filesystem access are blocked inside the sandbox.",
         "webui_executor_timeout": "Execution Timeout (seconds)",
         "webui_executor_timeout_hint": "Maximum seconds a sandbox script is allowed to run before it is forcibly killed.",

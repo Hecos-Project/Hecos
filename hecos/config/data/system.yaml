@@ -171,7 +171,6 @@ plugins:
     timeout_seconds: 10
     enable_shell_commands: true
     shell_timeout: 15
-    action_console_enabled: true
     max_read_lines: 200
     workspace_dir: workspace/sandbox
   DRIVE:

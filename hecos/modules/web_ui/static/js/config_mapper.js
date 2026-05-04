@@ -859,7 +859,6 @@ window.populateExecutorUI = function() {
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
     const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
 
-    chk('executor-action-console', p.action_console_enabled ?? true);
     set('executor-timeout',        p.timeout_seconds ?? 10);
     chk('executor-shell-enabled',  p.enable_shell_commands ?? true);
     set('executor-shell-timeout',  p.shell_timeout ?? 15);
