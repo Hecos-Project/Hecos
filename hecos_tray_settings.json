@@ -1,4 +1,5 @@
 {
   "service_enabled": true,
-  "autoopen_webui": true
+  "autoopen_webui": true,
+  "start_hecos_on_launch": true
 }

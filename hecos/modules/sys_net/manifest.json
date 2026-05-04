@@ -12,6 +12,8 @@
         "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
         "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
         "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+        "traceroute": "Performs a traceroute to show the network path and hop-by-hop latency to a host.",
+        "check_internet_speed": "Tests download/upload internet speed using speedtest-cli or a CDN fallback.",
         "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
     },
     "tool_schema": [
@@ -123,6 +125,35 @@
             "function": {
                 "name": "SYS_NET__test_proxy",
                 "description": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__traceroute",
+                "description": "Performs a traceroute to show the network path and hop-by-hop latency to a host. Useful for diagnosing routing issues or high-latency connections.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "host": {
+                            "type": "string",
+                            "description": "Domain or IP to trace (e.g., 'google.com', '8.8.8.8')."
+                        }
+                    },
+                    "required": ["host"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "SYS_NET__check_internet_speed",
+                "description": "Tests the current internet download and upload speed. Uses speedtest-cli if installed, otherwise falls back to a timed Cloudflare CDN download.",
                 "parameters": {
                     "type": "object",
                     "properties": {},

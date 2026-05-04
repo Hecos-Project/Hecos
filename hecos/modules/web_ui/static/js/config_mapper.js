@@ -187,11 +187,15 @@ function populateUI() {
 
     populatePrivacyUI();
     populateWebUIConfig();
+    populateAgentUI();
 
     // Sync Dashboard specialized toggles
     const dsb = c.plugins?.DASHBOARD || {};
     setCheck('dashboard-webui-enabled', dsb.webui_dashboard_enabled ?? true);
     setCheck('telemetry-webui-enabled', dsb.webui_telemetry_enabled ?? true);
+    setCheck('track-cpu-enabled', dsb.track_cpu ?? true);
+    setCheck('track-ram-enabled', dsb.track_ram ?? true);
+    setCheck('track-vram-enabled', dsb.track_vram ?? true);
     setCheck('dashboard-console-enabled', dsb.console_dashboard_enabled ?? true);
     setCheck('telemetry-console-enabled', dsb.console_telemetry_enabled ?? true);
 
@@ -204,6 +208,7 @@ function populateUI() {
     });
 
     renderPlugins(c.plugins || {});
+    if (window.populateExecutorUI) window.populateExecutorUI();
     initRestartIndicators();
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -594,6 +599,9 @@ function buildPayload() {
         out.plugins['DASHBOARD'] = out.plugins['DASHBOARD'] || {};
         out.plugins['DASHBOARD'].webui_dashboard_enabled = getC('dashboard-webui-enabled');
         out.plugins['DASHBOARD'].webui_telemetry_enabled = getC('telemetry-webui-enabled');
+        out.plugins['DASHBOARD'].track_cpu = getC('track-cpu-enabled');
+        out.plugins['DASHBOARD'].track_ram = getC('track-ram-enabled');
+        out.plugins['DASHBOARD'].track_vram = getC('track-vram-enabled');
         out.plugins['DASHBOARD'].console_dashboard_enabled = getC('dashboard-console-enabled');
         out.plugins['DASHBOARD'].console_telemetry_enabled = getC('telemetry-console-enabled');
     }
@@ -606,10 +614,14 @@ function buildPayload() {
     }
 
 
-    const webuiPart = buildWebUIPayload();
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
         Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
+    }
+
+    const agentPart = buildAgentPayload();
+    if (agentPart && agentPart.agent) {
+        out.agent = agentPart.agent;
     }
 
     document.querySelectorAll('[data-plugin-lazy]').forEach(cb => {
@@ -784,6 +796,29 @@ function populatePrivacyUI() {
     setCheck('pr-incognito-shortcut', c.privacy.incognito_shortcut ?? true);
 }
 
+function populateAgentUI() {
+    const c = window.cfg;
+    if (!c || !c.agent) return;
+    const a = c.agent;
+    setCheck('agent-enabled', a.enabled ?? true);
+    setVal('agent-max-iter', a.max_iterations ?? 10);
+    setCheck('agent-verbose', a.verbose_traces ?? true);
+    setCheck('agent-action-console', a.action_console_enabled ?? true);
+}
+
+function buildAgentPayload() {
+    const el = document.getElementById('agent-enabled');
+    if (!el) return {};
+    return {
+        agent: {
+            enabled: document.getElementById('agent-enabled').checked,
+            max_iterations: parseInt(document.getElementById('agent-max-iter').value) || 10,
+            verbose_traces: document.getElementById('agent-verbose').checked,
+            action_console_enabled: document.getElementById('agent-action-console').checked
+        }
+    };
+}
+
 // Global Exports
 window.populateSelect = populateSelect;
 window.populateUI = populateUI;
@@ -805,7 +840,33 @@ window.saveDsb = function(key, val) {
     // We let the global change listener in config_core.js handle the actual saveConfig(true)
 };
 
-// --- CUSTOM TEXT FILTERS HANDLER ---
+/**
+ * Generic helper: writes a key/value into cfg.plugins.<PLUGIN> and auto-saves.
+ * Used by panels like Executor that don't have a dedicated save fn.
+ */
+window.savePluginKey = function(pluginTag, key, val) {
+    if (!window.cfg.plugins) window.cfg.plugins = {};
+    if (!window.cfg.plugins[pluginTag]) window.cfg.plugins[pluginTag] = {};
+    window.cfg.plugins[pluginTag][key] = val;
+    if (typeof window.saveConfig === 'function') window.saveConfig(true);
+};
+
+/**
+ * Populates Executor configuration UI from window.cfg
+ */
+window.populateExecutorUI = function() {
+    const p = (window.cfg.plugins || {}).EXECUTOR || {};
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+    set('executor-timeout',        p.timeout_seconds ?? 10);
+    chk('executor-shell-enabled',  p.enable_shell_commands ?? true);
+    set('executor-shell-timeout',  p.shell_timeout ?? 15);
+    set('executor-max-read-lines', p.max_read_lines ?? 200);
+    set('executor-workspace-dir',  p.workspace_dir ?? 'workspace/sandbox');
+};
+
+
 window.HecosTextFilters = {
     populate: function(filters) {
         const container = document.getElementById('custom-filters-container');

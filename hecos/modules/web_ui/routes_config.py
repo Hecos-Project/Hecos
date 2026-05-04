@@ -51,12 +51,20 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/hecos/config/ui")
     def config_ui():
         try:
-            cfg_mgr.reload()
             from hecos.core.i18n.translator import get_translator
             translations = get_translator().get_translations()
+            
+            # CRITICAL: Build options FIRST. This method triggers sync_available_personalities() 
+            # which performs safety checks (e.g., verifying if the active personality was deleted) 
+            # and modifies cfg_mgr by reverting to defaults if necessary.
+            zoptions_data = _build_options_dict(cfg_mgr, fast=True)
+            
+            # Now we can safely grab the config, knowing that any fallback overrides have been applied
+            zconfig_data = cfg_mgr.reload()
+            
             return render_template("index.html", 
-                                 zconfig=cfg_mgr.config, 
-                                 zoptions=_build_options_dict(cfg_mgr, fast=True),
+                                 zconfig=zconfig_data, 
+                                 zoptions=zoptions_data,
                                  translations=translations)
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
@@ -194,6 +202,39 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             return jsonify({"ok": False, "error": "Save failed"}), 500
         except Exception as exc:
             logger.error(f"[WebUI] POST /hecos/config/routing error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/hecos/config/agent", methods=["GET"])
+    def get_agent_config():
+        try:
+            from hecos.config import load_yaml
+            from hecos.config.schemas.agent_schema import AgentConfig
+            path = os.path.join(root_dir, "hecos", "config", "data", "agent.yaml")
+            model = load_yaml(path, AgentConfig)
+            return jsonify(model.model_dump())
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/hecos/config/agent", methods=["POST"])
+    def post_agent_config():
+        try:
+            incoming = request.get_json(force=True)
+            if not isinstance(incoming, dict):
+                return jsonify({"ok": False, "error": "Invalid payload"}), 400
+            
+            from hecos.config import save_yaml
+            from hecos.config.schemas.agent_schema import AgentConfig
+            path = os.path.join(root_dir, "hecos", "config", "data", "agent.yaml")
+            
+            # Re-validate and save
+            model = AgentConfig(**incoming)
+            if save_yaml(path, model):
+                logger.info("[WebUI] Agent configuration saved successfully.")
+                # We update the loop config dynamically if it was cached (AgentExecutor loads on init but let's be safe)
+                return jsonify({"ok": True})
+            return jsonify({"ok": False, "error": "Save failed"}), 500
+        except Exception as exc:
+            logger.error(f"[WebUI] POST /hecos/config/agent error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
 
     @app.route("/api/plugins/registry", methods=["GET"])

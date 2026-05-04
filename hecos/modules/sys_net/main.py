@@ -1,5 +1,6 @@
 """Modulo principale del plugin Sys_Net. Gestione di Rete e DNS."""
 import subprocess
+import sys
 import re
 import os
 import ctypes
@@ -44,17 +45,26 @@ class SysNetTools:
         self.status = "Online"
         
         self.config_schema = {
+            "proxy_enabled": {
+                "type": "bool",
+                "default": False,
+                "description": "Attiva o disattiva globalmente l'utilizzo del proxy configurato."
+            },
             "proxy_url": {
                 "type": "str",
-                "default": "",
-                "description": "URL completo del Proxy (es. socks5://127.0.0.1:2080 o http://ip:port). Lascia vuoto per non usare nessun proxy."
+                "default": "socks5://localhost:9150",
+                "description": "URL completo del Proxy (es. socks5://127.0.0.1:9150 o http://ip:port)."
             }
         }
 
     def _get_proxy_url(self) -> str:
-        """Helper: returns the configured proxy_url from SYS_NET settings."""
+        """Helper: returns the configured proxy_url from SYS_NET settings if enabled."""
         try:
-            return ConfigManager().get_plugin_config(self.tag, "proxy_url", "").strip()
+            cfg = ConfigManager()
+            is_enabled = cfg.get_plugin_config(self.tag, "proxy_enabled", False)
+            if not is_enabled:
+                return ""
+            return cfg.get_plugin_config(self.tag, "proxy_url", "").strip()
         except:
             return ""
 
@@ -147,8 +157,8 @@ class SysNetTools:
             cmd = OSAdapter.get_network_info_cmd()
             output = subprocess.check_output(cmd, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT)
             
-            cfg_proxy = ConfigManager().get_plugin_config(self.tag, "proxy_url", "")
-            proxy_info = f"\nHecos Configured Proxy: {cfg_proxy if cfg_proxy else 'None'}"
+            cfg_proxy = self._get_proxy_url()
+            proxy_info = f"\nHecos Configured Proxy (Active): {cfg_proxy if cfg_proxy else 'None'}"
             
             if OSAdapter.get_os() != 'windows':
                 return output[:2000] + proxy_info
@@ -167,8 +177,8 @@ class SysNetTools:
                 if "IPv4" in l or "Gateway" in l or "DNS Servers" in l and "IPv6" not in l:
                     results.append(f"[{adapter_name}] {l}")
             
-            cfg_proxy = ConfigManager().get_plugin_config(self.tag, "proxy_url", "")
-            proxy_info = f"\nHecos Configured Proxy: {cfg_proxy if cfg_proxy else 'None'}"
+            cfg_proxy = self._get_proxy_url()
+            proxy_info = f"\nHecos Configured Proxy (Active): {cfg_proxy if cfg_proxy else 'None'}"
             
             if not results:
                 return output[:1000] + proxy_info
@@ -291,6 +301,81 @@ class SysNetTools:
         except subprocess.CalledProcessError as e:
             return f"Error resetting DNS: {e.output}"
 
+    def traceroute(self, host: str) -> str:
+        """
+        Performs a traceroute to show the network path and latency to a host.
+        Useful for diagnosing routing issues or high-latency connections.
+        :param host: Domain or IP address to trace (e.g., 'google.com', '8.8.8.8').
+        """
+        host = host.strip()
+        logger.info(f"[SYS_NET] traceroute: {host}")
+        try:
+            if sys.platform == "win32":
+                cmd = ["tracert", "-d", "-w", "1000", "-h", "20", host]
+            else:
+                cmd = ["traceroute", "-n", "-m", "20", host]
+            output = subprocess.check_output(
+                cmd, text=True, stderr=subprocess.STDOUT,
+                errors="replace", timeout=60
+            )
+            return f"Traceroute to {host}:\n{output[:3000]}"
+        except subprocess.TimeoutExpired:
+            return f"[SYS_NET] Traceroute timeout — {host} took too long to respond."
+        except Exception as e:
+            return f"[SYS_NET] Traceroute error: {e}"
+
+    def check_internet_speed(self) -> str:
+        """
+        Tests the current internet download and upload speed.
+        Uses speedtest-cli if available, otherwise falls back to a timed CDN download.
+        """
+        logger.info("[SYS_NET] check_internet_speed started")
+
+        # Attempt 1: official speedtest-cli
+        try:
+            import speedtest
+            st = speedtest.Speedtest(secure=True)
+            st.get_best_server()
+            st.download()
+            st.upload()
+            r = st.results.dict()
+            dl = r["download"] / 1_000_000
+            ul = r["upload"] / 1_000_000
+            ping = r["ping"]
+            isp = r.get("client", {}).get("isp", "unknown")
+            return (
+                f"🌐 Internet Speed Test (speedtest-cli)\n"
+                f"  Download : {dl:.1f} Mbps\n"
+                f"  Upload   : {ul:.1f} Mbps\n"
+                f"  Ping     : {ping:.0f} ms\n"
+                f"  ISP      : {isp}"
+            )
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.error(f"[SYS_NET] speedtest error: {e}")
+
+        # Fallback: timed download from Cloudflare CDN (10 MB file)
+        try:
+            import urllib.request
+            import time as _time
+            test_url = "https://speed.cloudflare.com/__down?bytes=10000000"
+            start = _time.perf_counter()
+            with urllib.request.urlopen(test_url, timeout=30) as resp:
+                data = resp.read()
+            elapsed = _time.perf_counter() - start
+            mb = len(data) / 1_048_576
+            mbps = (mb * 8) / elapsed
+            return (
+                f"🌐 Internet Speed (CDN fallback — Cloudflare 10 MB)\n"
+                f"  Download : {mbps:.1f} Mbps\n"
+                f"  Note     : Upload not measured (install speedtest-cli for full test)\n"
+                f"  Cmd      : pip install speedtest-cli"
+            )
+        except Exception as e:
+            return f"[SYS_NET] Speed test failed: {e}"
+
+
 # Export the tools
 tools = SysNetTools()
 
@@ -316,6 +401,11 @@ def execute(comando: str) -> str:
     elif c_lower.startswith("ping:") or c_lower.startswith("ping_test:"):
         target = c.split(":", 1)[1].strip()
         return tools.ping_test(target)
+    elif c_lower.startswith("traceroute:") or c_lower.startswith("tracert:"):
+        target = c.split(":", 1)[1].strip()
+        return tools.traceroute(target)
+    elif c_lower in ("speed", "speed_test", "check_internet_speed", "internet_speed"):
+        return tools.check_internet_speed()
     elif c_lower.startswith("set_dns:"):
         parts = c.split(":", 1)[1].strip().split(",")
         primary = parts[0].strip() if parts else ""

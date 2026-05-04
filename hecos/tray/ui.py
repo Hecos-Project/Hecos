@@ -68,6 +68,14 @@ def build_menu(icon_ref: list):
     def open_config(icon, item):
         webbrowser.open(config_url)
 
+    def start_core_btn(icon, item):
+        def _do_start():
+            play_beep(400, 100)
+            start_hecos()
+            time.sleep(2)
+            refresh_ui(icon)
+        threading.Thread(target=_do_start, daemon=True).start()
+
     def restart_core(icon, item):
         def _do_restart():
             play_beep(400, 100)
@@ -98,10 +106,23 @@ def build_menu(icon_ref: list):
         threading.Thread(target=_do_quit, daemon=True).start()
 
     def show_about(icon, item):
-        icon.notify(
-            f"Hecos — v{version}\nHelping Companion System\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat",
-            "About Hecos"
-        )
+        def _do_about():
+            try:
+                import tkinter as tk
+                from tkinter import messagebox
+                root = tk.Tk()
+                root.withdraw()
+                root.lift()
+                root.attributes('-topmost', True)
+                msg = f"Hecos — v{version}\nHelping Companion System\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat"
+                messagebox.showinfo("About Hecos", msg, master=root)
+                root.destroy()
+            except Exception:
+                icon.notify(
+                    f"Hecos — v{version}\nHelping Companion System\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat",
+                    "About Hecos"
+                )
+        threading.Thread(target=_do_about, daemon=True).start()
 
     def quit_tray(icon, item):
         terminate_consoles()
@@ -115,12 +136,7 @@ def build_menu(icon_ref: list):
         s = load_settings()
         s["start_hecos_on_launch"] = not s["start_hecos_on_launch"]
         save_settings(s)
-        if s["start_hecos_on_launch"]:
-            start_hecos()
-        else:
-            stop_hecos()
-        time.sleep(2.0)
-        refresh_ui(icon)
+        icon.menu = build_menu([icon])
 
     def toggle_autoopen(icon, item):
         s = load_settings()
@@ -129,7 +145,7 @@ def build_menu(icon_ref: list):
         icon.menu = build_menu([icon])
 
     return pystray.Menu(
-        pystray.MenuItem(f"HECOS CORE  v{version}", None, enabled=False),
+        pystray.MenuItem(f"HECOS  v{version}", None, enabled=False),
         pystray.MenuItem(status_label, None, enabled=False),
         pystray.Menu.SEPARATOR,
 
@@ -148,6 +164,7 @@ def build_menu(icon_ref: list):
         pystray.MenuItem(f"{web_check} Auto-open WebUI on Startup", toggle_autoopen),
         pystray.Menu.SEPARATOR,
 
+        pystray.MenuItem("▶️ Start System Core", start_core_btn),
         pystray.MenuItem("🔄 Restart System Core", restart_core),
         pystray.MenuItem("⏹  Stop System Core", stop_core),
         pystray.MenuItem("⏹  Stop Core + Quit Tray", stop_core_and_quit),

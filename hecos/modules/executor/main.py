@@ -1,173 +1,128 @@
 import os
-import ast
-import subprocess
-import sys
-import datetime
-import winsound
+
 try:
-    from hecos.core.logging import logger
     from hecos.core.i18n import translator
     from app.config import ConfigManager
 except ImportError:
-    class DummyLogger:
-        def debug(self, *args, **kwargs): print("[EXE_DEBUG]", *args)
-        def info(self, *args, **kwargs): print("[EXE_INFO]", *args)
-        def error(self, *args, **kwargs): print("[EXE_ERR]", *args)
-    logger = DummyLogger()
     class DummyTranslator:
         def t(self, key, **kwargs): return key
     translator = DummyTranslator()
+    
     class DummyConfigMgr:
         def __init__(self): self.config = {}
         def get_plugin_config(self, tag, key, default): return default
-    ConfigManager = DummyConfigMgr
+    def FakeConfigManager(): return DummyConfigMgr()
+    ConfigManager = FakeConfigManager
 
-# --- AST SECURITY ANALYZER ---
-FORBIDDEN_IMPORTS = {
-    'os', 'sys', 'subprocess', 'shutil', 'socket', 'pathlib', 
-    'pty', 'tempfile', 'requests', 'urllib', 'ftplib', 'ctypes', 'winreg'
-}
+# Relative imports from our extracted modules
+from .sys_tools import (
+    get_time_tool, get_date_tool, get_battery_status_tool, 
+    list_processes_tool, kill_process_tool, reboot_system_tool, execute_shell_command_tool
+)
+from .sandbox import run_python_code_tool
+from .file_manager import (
+    read_file_tool, write_file_tool, patch_file_tool, 
+    delete_file_tool, create_dir_tool, list_dir_tool
+)
 
-FORBIDDEN_CALLS = {'eval', 'exec', 'compile', 'open'}
-
-class SecurityAnalyzer(ast.NodeVisitor):
-    def __init__(self):
-        self.errors = []
-        
-    def visit_Import(self, node):
-        for alias in node.names:
-            base_module = alias.name.split('.')[0]
-            if base_module in FORBIDDEN_IMPORTS:
-                self.errors.append(f"Import non consentito: {alias.name}")
-        self.generic_visit(node)
-        
-    def visit_ImportFrom(self, node):
-        if node.module:
-            base_module = node.module.split('.')[0]
-            if base_module in FORBIDDEN_IMPORTS:
-                self.errors.append(f"Import non consentito da: {node.module}")
-        self.generic_visit(node)
-        
-    def visit_Call(self, node):
-        if isinstance(node.func, ast.Name):
-            if node.func.id in FORBIDDEN_CALLS:
-                self.errors.append(f"Funzione non consentita: {node.func.id}")
-        self.generic_visit(node)
-
-# --- PLUGIN CLASS ---
 class ExecutorTools:
     """
-    Plugin: Hecos Code Jail (AST Sandbox)
-    Allows safe algorithmic execution and root system control.
+    Hecos Executor — System Control, Code Jail, and File Management.
+    Replaces and absorbs the former standalone AutoCoder plugin.
     """
 
     def __init__(self):
         self.tag = "EXECUTOR"
-        self.desc = "Safe Python execution (AST Sandbox) and System Control."
+        self.desc = "Safe Python execution (AST Sandbox), system control, and file management."
         self.status = "ONLINE (Core Tools Active)"
-        
+
         self.config_schema = {
             "timeout_seconds": {
                 "type": "int",
                 "default": 10,
-                "description": "Timeout in secondi per prevenire loop infiniti."
+                "description": "Timeout in seconds for Python sandbox execution."
             },
             "enable_shell_commands": {
                 "type": "bool",
                 "default": True,
-                "description": "Permette l'esecuzione di comandi shell diretti (pericoloso)."
+                "description": "Permits direct shell command execution (use with caution)."
             }
         }
-        
+
         self.workspace_dir = os.path.abspath(os.path.join(os.getcwd(), "workspace", "sandbox"))
         os.makedirs(self.workspace_dir, exist_ok=True)
 
-    # --- NATIVE TOOLS (Bypass Sandbox) ---
+    # ── System Tools ──────────────────────────────────────────────────────────
 
     def get_time(self) -> str:
-        """Returns the current local time."""
-        ora = datetime.datetime.now().strftime("%H:%M")
-        return f"Current local time: {ora}"
+        return get_time_tool()
+
+    def get_date(self) -> str:
+        return get_date_tool()
+
+    def get_battery_status(self) -> str:
+        return get_battery_status_tool()
+
+    def list_processes(self) -> str:
+        return list_processes_tool()
+
+    def kill_process(self, name: str) -> str:
+        return kill_process_tool(name)
 
     def reboot_system(self) -> str:
-        """Reboots the entire Hecos system."""
-        logger.info("System reboot triggered via EXECUTOR.")
-        if sys.platform == "win32":
-            winsound.Beep(600, 150)
-            winsound.Beep(400, 150)
-        os._exit(42)
-        return "Rebooting..."
+        return reboot_system_tool()
 
     def execute_shell_command(self, command: str) -> str:
-        """Executes a shell command (cmd.exe) in the background."""
-        cfg = ConfigManager()
-        if not cfg.get_plugin_config(self.tag, "enable_shell_commands", True):
-            return "Error: Shell commands are disabled in configuration."
+        return execute_shell_command_tool(command, self.tag)
 
-        try:
-            output = subprocess.check_output(command, shell=True, text=True, errors='replace', stderr=subprocess.STDOUT, timeout=15)
-            return output if output.strip() else "Command executed successfully (no output)."
-        except Exception as e:
-            return f"Shell Error: {e}"
-
-    # --- SANDBOXED TOOLS ---
+    # ── Code Sandbox ──────────────────────────────────────────────────────────
 
     def run_python_code(self, code: str) -> str:
-        """
-        Executes a block of Python code safely after strict Static Analysis.
-        Use for math, data manipulation, algorithm building.
-        """
-        try:
-            tree = ast.parse(code)
-        except Exception as e:
-            return f"Parsing Error: {e}"
-            
-        analyzer = SecurityAnalyzer()
-        analyzer.visit(tree)
-        
-        if analyzer.errors:
-            return f"SECURITY VIOLATION: {', '.join(analyzer.errors)}"
+        return run_python_code_tool(code, self.workspace_dir, self.tag)
 
-        script_path = os.path.join(self.workspace_dir, "ai_last_script.py")
-        try:
-            with open(script_path, "w", encoding="utf-8") as f:
-                f.write(code)
-        except Exception as e:
-            return f"I/O Error: {e}"
-            
-        cfg = ConfigManager()
-        timeout = cfg.get_plugin_config(self.tag, "timeout_seconds", 10)
-        
-        try:
-            process = subprocess.Popen(
-                [sys.executable, script_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                encoding="utf-8",
-                cwd=self.workspace_dir
-            )
-            output, _ = process.communicate(timeout=timeout)
-            return output[-2000:] if len(output or "") > 2000 else (output or "")
-        except subprocess.TimeoutExpired:
-            process.kill()
-            return f"Timeout Error: Execution expired after {timeout}s."
-        except Exception as e:
-            return f"Internal Error: {e}"
+    # ── File Management ───────────────────────────────────────────────────────
 
-# Singleton
+    def read_file(self, file_path: str, start_line: int = 1, end_line: int = -1) -> str:
+        return read_file_tool(file_path, start_line, end_line)
+
+    def write_file(self, file_path: str, content: str, mode: str = "w") -> str:
+        return write_file_tool(file_path, content, mode)
+
+    def patch_file(self, file_path: str, old_text: str, new_text: str) -> str:
+        return patch_file_tool(file_path, old_text, new_text)
+
+    def delete_file(self, file_path: str) -> str:
+        return delete_file_tool(file_path)
+
+    def create_dir(self, directory_path: str) -> str:
+        return create_dir_tool(directory_path)
+
+    def list_dir(self, directory_path: str) -> str:
+        return list_dir_tool(directory_path)
+
+
+# ── Singleton ──────────────────────────────────────────────────────────────────
 tools = ExecutorTools()
 
-# --- Plugin standard interface ---
 def info():
     return {
         "tag": tools.tag,
         "desc": tools.desc,
         "commands": {
-            "run_python_code": "Esegui script Python in sandbox sicura.",
-            "execute_shell_command": "Esegui comandi CMD nel sistema.",
-            "get_time": "Ottieni l'ora locale corrente.",
-            "reboot_system": "Riavvia il sistema Hecos."
+            "run_python_code": "Execute Python safely in AST sandbox.",
+            "execute_shell_command": "Run shell commands (cmd/bash).",
+            "get_time": "Current local time and date.",
+            "get_date": "Current local date.",
+            "get_battery_status": "Device battery level and charging state.",
+            "list_processes": "List top running processes.",
+            "kill_process": "Terminate a process by name.",
+            "reboot_system": "Restart the Hecos system.",
+            "read_file": "Read a file's content by line range.",
+            "write_file": "Write or create a file (overwrite or append).",
+            "patch_file": "Surgically replace a text block inside a file.",
+            "delete_file": "Delete a file.",
+            "create_dir": "Create a directory tree.",
+            "list_dir": "List a directory's contents.",
         }
     }
 
@@ -176,3 +131,5 @@ def status():
 
 def get_plugin():
     return tools
+
+

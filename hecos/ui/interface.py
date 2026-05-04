@@ -380,7 +380,7 @@ def show_help():
     if lang == 'it':
         # ─── HEADER ─────────────────────────────────────────────────────────────────
         lines.append(f"{CYAN}╔════════════════════════════════════════════════════════════════════════════════════════╗{RESET}")
-        lines.append(f"{CYAN}║{WHITE}                      HECOS CORE — GUIDA UTENTE (F1)                                   {CYAN}║{RESET}")
+        lines.append(f"{CYAN}║{WHITE}                         HECOS — GUIDA UTENTE (F1)                                     {CYAN}║{RESET}")
         lines.append(f"{CYAN}╚════════════════════════════════════════════════════════════════════════════════════════╝{RESET}")
         lines.append("")
         lines.append(f"{WHITE}Benvenuto! Hecos è un sistema IA modulare. Puoi comunicare usando il linguaggio")
@@ -476,7 +476,7 @@ def show_help():
     else:
         # ─── HEADER ─────────────────────────────────────────────────────────────────
         lines.append(f"{CYAN}╔════════════════════════════════════════════════════════════════════════════════════════╗{RESET}")
-        lines.append(f"{CYAN}║{WHITE}                      HECOS CORE — USER GUIDE (F1)                                     {CYAN}║{RESET}")
+        lines.append(f"{CYAN}║{WHITE}                         HECOS — USER GUIDE (F1)                                       {CYAN}║{RESET}")
         lines.append(f"{CYAN}╚════════════════════════════════════════════════════════════════════════════════════════╝{RESET}")
         lines.append("")
         lines.append(f"{WHITE}Welcome! Hecos is a modular AI system. You can communicate using natural language:")

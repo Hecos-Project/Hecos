@@ -9,7 +9,8 @@ window.chatHistoryState = {
     activeSessionId: null,
     activeMode: 'normal',
     chatModeHasMessages: false,  // true after first message → mode picker locks
-    showArchived: false
+    showArchived: false,
+    isUIRendered: false
 };
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
@@ -191,13 +192,14 @@ window.newChatSession = async function (mode = null) {
         window._clearChatDOM = window.clearChat;
         window.chatArea && (window.chatArea.innerHTML = '');
     }
+    window.chatHistoryState.isUIRendered = true;
 
     // Reload session list (also calls updateModeUI internally)
     await window.loadChatSessions();
 };
 
 window.activateChatSession = async function (sessionId) {
-    if (sessionId === window.chatHistoryState.activeSessionId) return;
+    if (sessionId === window.chatHistoryState.activeSessionId && window.chatHistoryState.isUIRendered) return;
 
     // Fetch messages of the clicked session
     const res = await _historyGet(`/api/chat/sessions/${sessionId}/messages`);
@@ -390,6 +392,8 @@ window.updatePrivacyIndicator = updateModeUI;
 window.renderHistoryMessages = function (messages) {
     const chatArea = document.getElementById('chat-area');
     if (!chatArea) return;
+    window.chatHistoryState.isUIRendered = true;
+    
     // Sync the internal history state for the LLM context and actions
     window.chatHistory = messages.map(m => ({
         role: m.role === 'assistant' ? 'assistant' : (m.role === 'ai' ? 'assistant' : 'user'),

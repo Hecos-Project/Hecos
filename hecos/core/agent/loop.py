@@ -60,6 +60,9 @@ class AgentExecutor:
         # Privacy-oriented log: avoid echoing private user text on the server physical console.
         self._emit(f"Analyzing incoming user request...", level="info")
         
+        # Bind the global state manager so that decentralized tools (like Executor) can emit action logs to the UI
+        AgentTracer.bind(self.state_manager)
+        
         # --- GLOBAL DIRECT COMMANDS INTERCEPTOR (BYPASS LLM) ---
         testo_pulito = user_text.strip()
         if testo_pulito.lower().startswith(("/img ", "/image ", "/photo ", "/foto ")):
@@ -149,6 +152,17 @@ class AgentExecutor:
             
             # 2. Extract tools using the processor utility
             tools_called, tool_results, extracted_text = processore.extract_and_execute_tools(raw_response, self.config)
+            
+            # --- TELEMETRY SYNC ---
+            if self.state_manager:
+                try:
+                    from hecos.core.llm.client import LAST_PAYLOAD_INFO
+                    self.state_manager.last_model = LAST_PAYLOAD_INFO.get("model")
+                    self.state_manager.last_tokens_prompt = LAST_PAYLOAD_INFO.get("prompt_tokens", 0)
+                    self.state_manager.last_tokens_completion = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
+                except Exception as e:
+                    logger.debug(f"[AGENT] Telemetry sync error: {e}")
+            # ----------------------
             
             if not tools_called:
                 # BREAK CONDITION: The LLM didn't call any tools, so it produced the final response.
@@ -244,6 +258,9 @@ class AgentExecutor:
                 # Also accumulate for final response rendering (e.g. [[IMG:...]] tags)
                 accumulated_tool_results.extend(tool_results)
                 for res in tool_results:
+                    if self.state_manager:
+                        self.state_manager.last_tool = res.get("tag")
+                        
                     self._emit(f"Tool execution result: {res.get('tag')}", level="tool")
                     
                     output_text = res.get("output")

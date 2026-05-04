@@ -179,6 +179,9 @@ class PluginDashboard(BaseModel):
     webui_telemetry_enabled: bool = True
     console_dashboard_enabled: bool = True
     console_telemetry_enabled: bool = True
+    track_cpu: bool = True
+    track_ram: bool = True
+    track_vram: bool = True
 
 class PluginFileManager(BaseModel):
     enabled: bool = True
@@ -215,6 +218,7 @@ class PluginSystem(BaseModel):
 class PluginSysNet(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
+    proxy_enabled: bool = False
     proxy_url: str = "socks5://localhost:9150"
 
 class PluginWeb(BaseModel):
@@ -248,6 +252,10 @@ class PluginExecutor(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
     timeout_seconds: int = 10
+    enable_shell_commands: bool = True
+    shell_timeout: int = 15
+    max_read_lines: int = 200
+    workspace_dir: str = "workspace/sandbox"
 
 class PluginRemoteTriggers(BaseModel):
     enabled: bool = True

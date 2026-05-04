@@ -1,8 +1,8 @@
 #!/bin/bash
-# HECOS CORE - Configuration UI Launcher
+# HECOS - Configuration UI Launcher
 
 echo "==================================================="
-echo "        HECOS CORE: CONTROL PANEL"
+echo "        HECOS: CONTROL PANEL"
 echo "==================================================="
 echo ""
 echo "[SYSTEM] Opening configuration interface..."

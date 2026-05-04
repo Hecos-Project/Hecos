@@ -15,12 +15,22 @@
         "category": "PLUGINS"
     },
     "EXECUTOR": {
-        "description": "Safe Python execution (AST Sandbox) and System Control.",
+        "description": "Safe Python execution (AST Sandbox), system control, and file management.",
         "commands": {
-            "execute_shell_command": "Executes a shell command (cmd.exe) in the background.",
-            "get_time": "Returns the current local time.",
-            "reboot_system": "Reboots the entire Hecos system.",
-            "run_python_code": "Executes a block of Python code safely after strict Static Analysis."
+            "create_dir": "Method",
+            "delete_file": "Method",
+            "execute_shell_command": "Method",
+            "get_battery_status": "Method",
+            "get_date": "Method",
+            "get_time": "Method",
+            "kill_process": "Method",
+            "list_dir": "Method",
+            "list_processes": "Method",
+            "patch_file": "Method",
+            "read_file": "Method",
+            "reboot_system": "Method",
+            "run_python_code": "Method",
+            "write_file": "Method"
         },
         "status": "ONLINE (Core Tools Active)",
         "example": "",
@@ -78,6 +88,7 @@
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
         "commands": {
+            "check_internet_speed": "Tests the current internet download and upload speed.",
             "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
             "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
             "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
@@ -85,7 +96,8 @@
             "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
             "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
             "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
-            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP.",
+            "traceroute": "Performs a traceroute to show the network path and latency to a host."
         },
         "status": "Online",
         "example": "",
@@ -149,8 +161,12 @@
     "WEB": {
         "description": "Network access for Google searches and quick opening of websites.",
         "commands": {
+            "fetch_page_content": "Fetches a web page and returns its readable text content.",
+            "get_clipboard": "Returns the current text from the system clipboard.",
             "open_url": "Opens a specific website in the default browser.",
-            "search_web": "Performs an internet search using the default search engine (e.g., Google)."
+            "search_and_read": "Searches the web using DuckDuckGo and reads the text content of the top results.",
+            "search_web": "Opens a browser search for a query.",
+            "set_clipboard": "Copies the given text to the system clipboard."
         },
         "status": "ONLINE (Browsing & Search)",
         "example": "",
@@ -162,6 +178,7 @@
     "WEBCAM": {
         "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
         "commands": {
+            "desktop_screenshot": "Takes a screenshot of the entire desktop (or a specific monitor) and saves it to disk.",
             "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
         },
         "status": "ONLINE (Optical Vision)",

@@ -30,6 +30,7 @@ STATUS_POLL_INTERVAL = 3
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
     was_online = False
+    opened_ui = False
 
     while True:
         try:
@@ -40,6 +41,15 @@ def _monitor_status(icon: "pystray.Icon"):
             if online and not was_online:
                 play_beep(400, 100)
                 play_beep(600, 150)
+                
+                if settings.get("autoopen_webui", True) and not opened_ui:
+                    from hecos.tray.utils import get_urls
+                    chat_url, _ = get_urls()
+                    # Sleep slightly to allow python server to fully bind routes
+                    time.sleep(1.0)
+                    webbrowser.open(chat_url)
+                    opened_ui = True
+                    
             was_online = online
 
             # Auto-start service if the toggle says it should be running
@@ -98,7 +108,7 @@ def run_tray():
     icon = pystray.Icon(
         name="hecos_core",
         icon=icon_image,
-        title="HECOS CORE — Helping Companion System",
+        title="HECOS — Helping Companion System",
         menu=build_menu([None])
     )
 

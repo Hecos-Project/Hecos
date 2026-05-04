@@ -16,16 +16,32 @@ import subprocess
 # psutil.cpu_percent() without interval= always returns 0.0 or 100% on first
 # call because it has no baseline. We cache a reading every 2 seconds instead.
 _cpu_cache = {"value": 0.0, "enabled": True}
+_last_cpu_times = None
 
 def _cpu_sampler():
-    # Prime the baseline sample (discarded)
-    psutil.cpu_percent(interval=None)
+    global _last_cpu_times
+    _last_cpu_times = psutil.cpu_times()
     while True:
         try:
             if _cpu_cache.get("enabled", True):
-                _cpu_cache["value"] = psutil.cpu_percent(interval=2)
+                current_times = psutil.cpu_times()
+                
+                t1_all = sum(_last_cpu_times)
+                t1_busy = t1_all - getattr(_last_cpu_times, 'idle', 0.0)
+                
+                t2_all = sum(current_times)
+                t2_busy = t2_all - getattr(current_times, 'idle', 0.0)
+                
+                if t2_all > t1_all:
+                    busy_delta = max(0.0, t2_busy - t1_busy)
+                    all_delta = max(0.0, t2_all - t1_all)
+                    percent = (busy_delta / all_delta) * 100.0 if all_delta > 0 else 0.0
+                    _cpu_cache["value"] = round(min(100.0, percent), 1)
+                
+                _last_cpu_times = current_times
+                time.sleep(2)
             else:
-                # When disabled, we sleep longer and do nothing to save resources
+                _last_cpu_times = psutil.cpu_times()
                 time.sleep(5)
         except Exception:
             time.sleep(5)
@@ -133,16 +149,27 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 ("tools",       br.get("enable_tools")),
             ] if v]
 
-            # Read live state from state_manager if available
             sm = _sm()
+            last_tool = None
+            tokens_p = 0
+            tokens_c = 0
+            last_model_live = None
+
             if sm is not None:
                 mic_on     = sm.listening_status
                 tts_on     = sm.voice_status
+                last_tool  = sm.last_tool
+                tokens_p   = sm.last_tokens_prompt
+                tokens_c   = sm.last_tokens_completion
+                last_model_live = sm.last_model
             else:
                 from hecos.core.audio.device_manager import get_audio_config
                 acfg = get_audio_config()
                 mic_on     = acfg.get("listening_status", False)
                 tts_on     = acfg.get("voice_status", False)
+
+            # Prefers the dynamic last_model over static config 'model'
+            active_model = last_model_live if last_model_live else model
 
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
@@ -163,13 +190,19 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0
             ts    = datetime.fromtimestamp(mtime).strftime("%H:%M:%S") if mtime else "?"
 
-            persona = cfg.get("ai", {}).get("active_personality", "?")
+            persona = cfg.get("ai", {}).get("active_personality", "Hecos_System_Soul")
             if persona.endswith(".yaml"): persona = persona[:-5]
             
             avatar_path = "/assets/Hecos_Logo_NBG.png"
             try:
                 p_dir = os.path.join(root_dir, "hecos", "personality")
                 p_file = os.path.join(p_dir, f"{persona}.yaml")
+                
+                # Check for existence of the persona file. Fallback if not found.
+                if not os.path.exists(p_file):
+                    persona = "Hecos_System_Soul"
+                    p_file = os.path.join(p_dir, f"{persona}.yaml")
+                    
                 if os.path.exists(p_file):
                     with open(p_file, "r", encoding="utf-8") as f:
                         data = yaml.safe_load(f)
@@ -185,20 +218,23 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             telemetry_active = global_enabled and webui_telemetry
             
             # Sync background CPU thread enabled state
-            _cpu_cache["enabled"] = telemetry_active
+            _cpu_cache["enabled"] = telemetry_active and dsb_cfg.get("track_cpu", True)
 
             cpu_val  = None
             ram_val  = None
             vram_val = None
 
             if telemetry_active:
-                cpu_val  = _cpu_cache.get("value", 0)
-                ram_val  = psutil.virtual_memory().percent
-                vram_val = get_vram_usage()
+                if dsb_cfg.get("track_cpu", True):
+                    cpu_val  = _cpu_cache.get("value", 0)
+                if dsb_cfg.get("track_ram", True):
+                    ram_val  = psutil.virtual_memory().percent
+                if dsb_cfg.get("track_vram", True):
+                    vram_val = get_vram_usage()
             
             return jsonify({
                 "backend":    backend.upper(),
-                "model":      model,
+                "model":      active_model,   # Dynamically updated
                 "persona":    persona,
                 "avatar":     avatar_path,
                 "avatar_size": cfg.get("ai", {}).get("avatar_size", "medium"),
@@ -210,6 +246,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 "ram":        ram_val,
                 "vram":       vram_val,
                 "config":     f"last save {ts}",
+                "last_tool":  last_tool,
+                "tokens_p":   tokens_p,
+                "tokens_c":   tokens_c
             })
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500

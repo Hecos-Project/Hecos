@@ -1,11 +1,11 @@
 import cv2
 import os
 import time
+import sys
+
 try:
     from hecos.core.logging import logger
     from hecos.core.i18n import translator
-    from hecos.core.constants import SNAPSHOTS_DIR
-    # NOTE: SNAPSHOTS_DIR now points to hecos/media/screenshots (centralized media)
     from app.config import ConfigManager
 except ImportError:
     class DummyLogger:
@@ -20,21 +20,23 @@ except ImportError:
         def get_plugin_config(self, tag, key, default): return default
     ConfigManager = DummyConfigMgr
 
+
 class WebcamTools:
     """
-    Plugin: Webcam & Hardware Sensor
-    Allows Hecos to take photographs using the system webcam.
+    Plugin: Webcam & Vision
+    Captures images from the system webcam or takes desktop screenshots.
+    Both outputs can be passed to a Vision AI model for analysis.
     """
 
     def __init__(self):
         self.tag = "WEBCAM"
         self.desc = translator.t("plugin_webcam_desc")
         self.status = translator.t("plugin_webcam_status_online")
-        
+
         self.config_schema = {
             "save_directory": {
                 "type": "str",
-                "default": "screenshots",
+                "default": "snapshots",
                 "description": translator.t("plugin_webcam_save_dir_desc")
             },
             "image_format": {
@@ -59,73 +61,138 @@ class WebcamTools:
             }
         }
 
+    # ── Private helpers ────────────────────────────────────────────────────────
+
+    def _get_save_dir(self) -> str:
+        cfg = ConfigManager()
+        save_dir = cfg.get_plugin_config(self.tag, "save_directory", "snapshots")
+        os.makedirs(save_dir, exist_ok=True)
+        return save_dir
+
+    def _get_format(self) -> str:
+        cfg = ConfigManager()
+        return cfg.get_plugin_config(self.tag, "image_format", "jpg")
+
+    # ── Public Tools ───────────────────────────────────────────────────────────
+
     def take_snapshot(self, target: str = "server") -> str:
         """
         Takes a photo using the computer's webcam and saves it to disk.
-        Use this tool when the user asks to take a photo or look at something.
-        
+        Use this when the user asks to take a photo or to see what is in front of the camera.
+
         Args:
             target (str): "server" to use the local OS webcam hardware.
-                          "client" to ask the user's remote device (smartphone/browser) 
-                                   to take a picture and auto-upload it.
+                          "client" to ask the user's browser/mobile device to take and upload a picture.
         """
-        logger.debug(f"PLUGIN_{self.tag}", f"Executing snapshot protocol (Target: {target})")
-        
+        logger.debug(f"PLUGIN_{self.tag}", f"Snapshot protocol (target={target})")
+
         if target.lower() == "client":
             return "[CAMERA_SNAPSHOT_REQUEST]"
-        
+
         cfg = ConfigManager()
-        save_dir = cfg.get_plugin_config(self.tag, "save_directory", "snapshots")
-        img_format = cfg.get_plugin_config(self.tag, "image_format", "jpg")
+        save_dir = self._get_save_dir()
+        img_format = self._get_format()
         camera_index = cfg.get_plugin_config(self.tag, "camera_index", 0)
         delay = cfg.get_plugin_config(self.tag, "stabilization_delay", 0.5)
-        
-        try:
-            # Standardize snapshot directory to stay inside hecos/
-            # If the user sets a relative path, we join it with SNAPSHOTS_DIR root
-            if not os.path.isabs(save_dir):
-                save_dir = os.path.join(os.path.dirname(SNAPSHOTS_DIR), save_dir)
-            
-            if not os.path.exists(save_dir):
-                os.makedirs(save_dir)
 
+        try:
             cap = cv2.VideoCapture(camera_index)
-            
             if not cap.isOpened():
                 return translator.t("plugin_webcam_error_sensor")
 
-            # Flush the stale buffer to avoid grabbing old cached OS frames
-            # We read a few transient frames during the stabilization period
             flush_frames = 5
-            for i in range(flush_frames):
+            for _ in range(flush_frames):
                 cap.read()
                 if delay > 0:
                     time.sleep(delay / flush_frames)
-            
-            # Now take the final fresh frame
+
             ret, frame = cap.read()
-            if ret:
-                timestamp = int(time.time())
-                filename = f"hecos_snap_{timestamp}.{img_format}"
-                full_path = os.path.join(save_dir, filename)
-                cv2.imwrite(full_path, frame)
-                cap.release()
-                logger.debug(f"PLUGIN_{self.tag}", f"Snapshot saved at {full_path}")
-                return translator.t("plugin_webcam_snap_saved", path=full_path)
-            
             cap.release()
-            return translator.t("plugin_webcam_error_read")
+
+            if not ret:
+                return translator.t("plugin_webcam_error_read")
+
+            timestamp = int(time.time())
+            filename = f"hecos_snap_{timestamp}.{img_format}"
+            full_path = os.path.join(save_dir, filename)
+            cv2.imwrite(full_path, frame)
+            logger.debug(f"PLUGIN_{self.tag}", f"Snapshot saved at {full_path}")
+            return translator.t("plugin_webcam_snap_saved", path=full_path)
 
         except Exception as e:
             logger.error(f"PLUGIN_{self.tag}: Error: {e}")
             return translator.t("plugin_webcam_error_critical", error=str(e))
 
-# Publicly instantiate the tool for exporting to Core
+    def desktop_screenshot(self, monitor: int = 1) -> str:
+        """
+        Takes a screenshot of the entire desktop (or a specific monitor) and saves it to disk.
+        Use this to let the AI see and describe what is currently on the screen.
+        The returned file path can be sent to a Vision AI model for visual analysis.
+
+        :param monitor: Monitor number to capture (1 = primary, 0 = all monitors combined). Default: 1.
+        """
+        save_dir = self._get_save_dir()
+        img_format = self._get_format()
+        timestamp = int(time.time())
+        filename = f"hecos_screen_{timestamp}.{img_format}"
+        full_path = os.path.join(os.path.abspath(save_dir), filename)
+
+        # Try mss (fastest, supports multi-monitor)
+        try:
+            import mss
+            import mss.tools
+            with mss.mss() as sct:
+                monitors = sct.monitors
+                idx = monitor if monitor < len(monitors) else 1
+                shot = sct.grab(monitors[idx])
+                mss.tools.to_png(shot.rgb, shot.size, output=full_path.replace(f".{img_format}", ".png"))
+                # Rename if not PNG
+                png_path = full_path.replace(f".{img_format}", ".png")
+                if img_format != "png" and os.path.exists(png_path):
+                    from PIL import Image
+                    Image.open(png_path).save(full_path)
+                    os.remove(png_path)
+                elif img_format == "png":
+                    full_path = png_path
+            logger.info(f"[WEBCAM] desktop_screenshot (mss): {full_path}")
+            return f"[WEBCAM] Desktop screenshot saved: {full_path}"
+        except ImportError:
+            pass  # mss not available, try Pillow
+
+        # Fallback: Pillow ImageGrab (Windows/macOS only)
+        try:
+            from PIL import ImageGrab
+            img = ImageGrab.grab(all_screens=(monitor == 0))
+            img.save(full_path)
+            logger.info(f"[WEBCAM] desktop_screenshot (Pillow): {full_path}")
+            return f"[WEBCAM] Desktop screenshot saved: {full_path}"
+        except ImportError:
+            pass
+
+        # Final fallback: Windows API via pyautogui
+        try:
+            import pyautogui
+            img = pyautogui.screenshot()
+            img.save(full_path)
+            logger.info(f"[WEBCAM] desktop_screenshot (pyautogui): {full_path}")
+            return f"[WEBCAM] Desktop screenshot saved: {full_path}"
+        except ImportError:
+            pass
+
+        return (
+            "[WEBCAM] desktop_screenshot requires at least one of: "
+            "mss (recommended), Pillow, or pyautogui.\n"
+            "Install with: pip install mss  OR  pip install pillow"
+        )
+
+
+# ── Singleton ──────────────────────────────────────────────────────────────────
 tools = WebcamTools()
 
-# --- COMPATIBILITY SHIMS ---
+
 def info():
     return {"tag": tools.tag, "desc": tools.desc}
+
 
 def status():
     return tools.status

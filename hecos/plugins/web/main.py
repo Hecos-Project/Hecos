@@ -1,41 +1,23 @@
-import webbrowser
-import urllib.parse
-import webbrowser
-import urllib.parse
 try:
-    from hecos.core.logging import logger
     from hecos.core.i18n import translator
-    from app.config import ConfigManager
 except ImportError:
-    class DummyLogger:
-        def debug(self, *args, **kwargs): print("[WEB_DEBUG]", *args)
-        def error(self, *args, **kwargs): print("[WEB_ERR]", *args)
-        def info(self, *args, **kwargs): print("[WEB_INFO]", *args)
-        def warning(self, *args, **kwargs): print("[WEB_WARNING]", *args)
-    logger = DummyLogger()
-
     class DummyTranslator:
         def t(self, key, **kwargs): return key
     translator = DummyTranslator()
 
-    class DummyConfig:
-        def get_plugin_config(self, tag, key, default): return default
-    
-    # Per supportare ConfigManager()
-    def FakeConfigManager(): return DummyConfig()
-    ConfigManager = FakeConfigManager
+from .search import open_url_tool, search_web_tool, fetch_page_content_tool, search_and_read_tool
+from .clipboard import get_clipboard, set_clipboard
 
 class WebTools:
     """
-    Plugin: Web Browsing
-    Allows performing internet searches or opening specific websites in the browser.
+    Hecos Web Plugin — Browsing, search, content reading, and clipboard.
     """
 
     def __init__(self):
         self.tag = "WEB"
         self.desc = translator.t("plugin_web_desc")
         self.status = translator.t("plugin_web_status_online")
-        
+
         self.config_schema = {
             "search_engine": {
                 "type": "str",
@@ -52,78 +34,75 @@ class WebTools:
                 "type": "bool",
                 "default": False,
                 "description": translator.t("plugin_web_open_in_new_tab_desc")
+            },
+            "fetch_timeout": {
+                "type": "int",
+                "default": 10,
+                "description": "HTTP timeout in seconds for fetch_page_content and search_and_read."
+            },
+            "max_content_chars": {
+                "type": "int",
+                "default": 4000,
+                "description": "Max characters returned by fetch_page_content and search_and_read."
             }
         }
 
-    # --- METODI PRIVATI ---
-
-    def _get_search_url(self, query: str) -> str:
-        """Restituisce l'URL di ricerca configurato."""
-        cfg = ConfigManager()
-        engine = cfg.get_plugin_config(self.tag, "search_engine", "google")
-        query_encoded = urllib.parse.quote(query)
-        
-        if engine == "google":
-            return f"https://www.google.com/search?q={query_encoded}"
-        elif engine == "duckduckgo":
-            return f"https://duckduckgo.com/?q={query_encoded}"
-        elif engine == "bing":
-            return f"https://www.bing.com/search?q={query_encoded}"
-        else:
-            return f"https://www.google.com/search?q={query_encoded}"
-
-    def _open_target_url(self, url: str):
-        """Apre un URL secondo le impostazioni di configurazione."""
-        cfg = ConfigManager()
-        use_https = cfg.get_plugin_config(self.tag, "use_https", True)
-        open_new = cfg.get_plugin_config(self.tag, "open_in_new_tab", False)
-        
-        if use_https and not url.startswith(("http://", "https://")):
-            url = "https://" + url
-        
-        if open_new:
-            webbrowser.open_new_tab(url)
-        else:
-            webbrowser.open(url)
-
-    # --- METODI PUBBLICI (TOOLS) ---
+    # ── Public Tools ───────────────────────────────────────────────────────────
 
     def open_url(self, url: str) -> str:
         """
         Opens a specific website in the default browser.
-        
+        NOTE: this only opens the browser. Use fetch_page_content to read the page content.
         :param url: The website address to open (e.g., 'youtube.com', 'wikipedia.org').
         """
-        indirizzo = url.strip()
-        logger.debug(f"PLUGIN_{self.tag}", f"Opening site: {indirizzo}")
-        try:
-            self._open_target_url(indirizzo)
-            return translator.t("plugin_web_open_success", url=indirizzo)
-        except Exception as e:
-            logger.error(f"PLUGIN_{self.tag}: Error: {e}")
-            return translator.t("plugin_web_error_network", error=str(e))
+        return open_url_tool(url, self.tag)
 
     def search_web(self, query: str) -> str:
         """
-        Performs an internet search using the default search engine (e.g., Google).
-        Automatically opens the browser with the search results.
-        
+        Opens a browser search for a query.
+        NOTE: use search_and_read instead if you need the actual text content of results.
         :param query: The terms to search for on the internet.
         """
-        ricerca = query.strip()
-        logger.debug(f"PLUGIN_{self.tag}", f"Searching: {ricerca}")
-        try:
-            url_ricerca = self._get_search_url(ricerca)
-            self._open_target_url(url_ricerca)
-            return translator.t("plugin_web_search_success", query=ricerca)
-        except Exception as e:
-            logger.error(f"PLUGIN_{self.tag}: Error: {e}")
-            return translator.t("plugin_web_error_network", error=str(e))
+        return search_web_tool(query, self.tag)
 
-# Istanzia pubblicamente lo strumento per l'esportazione verso il Core
+    def fetch_page_content(self, url: str, max_chars_override: int = None) -> str:
+        """
+        Fetches a web page and returns its readable text content.
+        Use this to read articles, documentation, Wikipedia pages, or any URL.
+        Does NOT open a browser window — reads and returns the text directly.
+        :param url: Full URL of the page (e.g., 'https://en.wikipedia.org/wiki/Python').
+        :param max_chars_override: Optional limit for content length (overrides config).
+        """
+        return fetch_page_content_tool(url, self.tag, max_chars_override=max_chars_override)
+
+    def search_and_read(self, query: str, max_results: int = 3) -> str:
+        """
+        Searches the web using DuckDuckGo and reads the text content of the top results.
+        Use this when you need CURRENT information, facts, news, prices, or live data.
+        Does NOT open any browser window — results are returned as text directly.
+        :param query: The search terms (e.g., 'Python 3.13 new features', 'weather Rome today').
+        :param max_results: How many pages to read (1–5). Default: 3.
+        """
+        return search_and_read_tool(query, self.tag, max_results=max_results)
+
+    def get_clipboard(self) -> str:
+        """
+        Returns the current text from the system clipboard.
+        Use this when the user says 'use what I just copied' or 'fix this code'.
+        """
+        return get_clipboard()
+
+    def set_clipboard(self, text: str) -> str:
+        """
+        Copies the given text to the system clipboard.
+        :param text: The text to copy to clipboard.
+        """
+        return set_clipboard(text)
+
+
+# ── Singleton ──────────────────────────────────────────────────────────────────
 tools = WebTools()
 
-# --- COMPATIBILITY SHIMS ---
 def info():
     return {"tag": tools.tag, "desc": tools.desc}
 
@@ -131,15 +110,15 @@ def status():
     return tools.status
 
 def execute(comando: str) -> str:
-    """Compatibilità legacy: smista i comandi testuali ai nuovi metodi ad oggetti."""
+    """Legacy shim for old tag-based routing."""
     c = comando.strip()
     c_lower = c.lower()
-    
-    if c_lower.startswith("search:") or c_lower.startswith("cerca:") or c_lower.startswith("search_web:"):
-        q = c.split(":", 1)[1].strip()
-        return tools.search_web(q)
-    elif c_lower.startswith("url:") or c_lower.startswith("apri:") or c_lower.startswith("open_url:"):
-        u = c.split(":", 1)[1].strip()
-        return tools.open_url(u)
-        
-    return f"Errore: Comando legacy '{comando}' non supportato o mancante."
+    if c_lower.startswith(("search:", "cerca:", "search_web:")):
+        return tools.search_web(c.split(":", 1)[1].strip())
+    elif c_lower.startswith(("url:", "apri:", "open_url:")):
+        return tools.open_url(c.split(":", 1)[1].strip())
+    elif c_lower.startswith(("fetch:", "read:", "fetch_page_content:")):
+        return tools.fetch_page_content(c.split(":", 1)[1].strip())
+    elif c_lower.startswith(("search_and_read:", "leggi:")):
+        return tools.search_and_read(c.split(":", 1)[1].strip())
+    return f"[WEB] Unknown legacy command: '{comando}'"

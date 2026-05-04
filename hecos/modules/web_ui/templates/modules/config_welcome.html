@@ -1,0 +1,21 @@
+<!-- WELCOME PANEL -->
+<div id="tab-welcome" class="panel active" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 40px 20px; animation: fadeIn 0.8s ease;">
+    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos Hub" style="width:100px; margin-bottom:15px; filter:drop-shadow(0 0 10px rgba(108,140,255,0.4)); pointer-events:none;">
+    <h1 style="font-size:1.8em; margin-bottom:8px; color:var(--text);">Hecos Central Hub</h1>
+    <p style="color:var(--muted); max-width:450px; line-height:1.5; margin-bottom:25px; font-size:0.95em;">
+        {{ t('webui_welcome_desc') or 'Benvenuto nel cuore della configurazione di Hecos. Qui puoi regolare i moduli, il comportamento del sistema e gestire i plugin AI.' }}
+    </p>
+
+    <div style="display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:550px; margin-bottom:30px;">
+        <div style="background:var(--bg2); padding:12px; border-radius:12px; border:1px solid var(--border-color); flex:1; min-width:180px;">
+            <div style="font-size:20px; margin-bottom:8px;">🔍</div>
+            <h3 style="margin-bottom:4px; font-size:0.9em; color:var(--text);">{{ t('webui_welcome_search') or 'Quick Search' }}</h3>
+            <p style="font-size:0.8em; color:var(--muted); margin:0;">{{ t('webui_welcome_search_desc') or 'Use the search bar at the top to instantly find any setting.' }}</p>
+        </div>
+        <div style="background:var(--bg2); padding:12px; border-radius:12px; border:1px solid var(--border-color); flex:1; min-width:180px;">
+            <div style="font-size:20px; margin-bottom:8px;">💾</div>
+            <h3 style="margin-bottom:4px; font-size:0.9em; color:var(--text);">{{ t('webui_welcome_save') or 'Auto Save' }}</h3>
+            <p style="font-size:0.8em; color:var(--muted); margin:0;">{{ t('webui_welcome_save_desc') or 'Changes are persisted automatically as you tweak them.' }}</p>
+        </div>
+    </div>
+</div>

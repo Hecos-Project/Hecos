@@ -130,6 +130,21 @@ class DashboardTools:
                 "min": 0.1,
                 "max": 5.0,
                 "description": translator.t("plugin_dashboard_timeout_desc")
+            },
+            "track_cpu": {
+                "type": "bool",
+                "default": True,
+                "description": "Enable CPU telemetry polling"
+            },
+            "track_ram": {
+                "type": "bool",
+                "default": True,
+                "description": "Enable RAM telemetry polling"
+            },
+            "track_vram": {
+                "type": "bool",
+                "default": True,
+                "description": "Enable GPU/VRAM telemetry polling"
             }
         }
         
@@ -288,11 +303,18 @@ def safe_get_gpus():
         return []
 
 # --- COMPATIBILITY SHIMS (Legacy call support) ---
+_last_dashboard_cpu_times = None
+
 def get_stats(config=None):
     """Wrapper per compatibilità con interface.py e ui_updater.py"""
+    global _last_dashboard_cpu_times
     # Se abbiamo il config, controlliamo se la telemetria è abilitata per la console
     dsb_cfg = config.get("plugins", {}).get("DASHBOARD", {}) if config else {}
     col_tel = dsb_cfg.get("console_telemetry_enabled", True)
+    
+    track_cpu = dsb_cfg.get("track_cpu", True)
+    track_ram = dsb_cfg.get("track_ram", True)
+    track_vram = dsb_cfg.get("track_vram", True)
     
     cpu = 0.0
     ram = 0.0
@@ -301,10 +323,32 @@ def get_stats(config=None):
     stato_gpu = "OFF"
 
     if col_tel:
-        cpu = psutil.cpu_percent(interval=None)
-        ram = psutil.virtual_memory().percent
+        if track_cpu:
+            if _last_dashboard_cpu_times is None:
+                _last_dashboard_cpu_times = psutil.cpu_times()
+                cpu = 0.0
+            else:
+                try:
+                    current_times = psutil.cpu_times()
+                    t1_all = sum(_last_dashboard_cpu_times)
+                    t1_busy = t1_all - getattr(_last_dashboard_cpu_times, 'idle', 0.0)
+                    t2_all = sum(current_times)
+                    t2_busy = t2_all - getattr(current_times, 'idle', 0.0)
+                    
+                    if t2_all > t1_all:
+                        busy_delta = max(0.0, t2_busy - t1_busy)
+                        all_delta = max(0.0, t2_all - t1_all)
+                        percent = (busy_delta / all_delta) * 100.0 if all_delta > 0 else 0.0
+                        cpu = round(min(100.0, percent), 1)
+                    else:
+                        cpu = 0.0
+                    _last_dashboard_cpu_times = current_times
+                except Exception:
+                    cpu = 0.0
+        if track_ram:
+            ram = psutil.virtual_memory().percent
         
-        if GPUTIL_AVAILABLE:
+        if GPUTIL_AVAILABLE and track_vram:
             try:
                 gpus = safe_get_gpus()
                 if gpus:

@@ -18,8 +18,10 @@ let uiState = {
     collapsedCategories: []
 };
 let viewMode = localStorage.getItem('hecos-config-view') || 'tabs';
-let activeTab = sessionStorage.getItem('hecos-config-tab') || 'backend';
-window.activeCategoryFilter = 'ALL';
+const navType = window.performance?.getEntriesByType("navigation")[0]?.type;
+const isRefresh = navType === 'reload';
+let activeTab = isRefresh ? (sessionStorage.getItem('hecos-config-tab') || 'backend') : 'welcome';
+window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
 
 
 /**
@@ -28,7 +30,23 @@ window.activeCategoryFilter = 'ALL';
 function showTab(name, skipScroll = false) {
   let targetId = name;
   const hub = window.CONFIG_HUB;
-  const mod = hub.modules.find(m => m.id === name);
+  const mod = (hub && hub.modules) ? hub.modules.find(m => m.id === name) : null;
+
+  // Conditional UI Visibility: Hide main UI when showing Welcome Screen, and vice versa
+  const mainWrapper      = document.getElementById('config-main-ui-wrapper');
+  const welcomeContainer = document.getElementById('config-welcome-container');
+  const tBar             = document.getElementById('tabs-bar-container');
+  const wall             = document.getElementById('config-wall');
+  
+  if (name === 'welcome') {
+      if (welcomeContainer) welcomeContainer.style.display = 'block';
+      if (mainWrapper) mainWrapper.style.setProperty('display', 'none', 'important');
+  } else {
+      if (welcomeContainer) welcomeContainer.style.display = 'none';
+      if (mainWrapper) mainWrapper.style.display = 'block';
+      if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
+      if (wall && viewMode === 'wall') wall.style.display = 'flex';
+  }
 
   // 1. Resolve Target ID via tagMap or category
   if (hub.tagMap && hub.tagMap[mod?.pluginTag]) {
@@ -64,6 +82,12 @@ function showTab(name, skipScroll = false) {
 
   activeTab = name; // Consolidate the logical active tab
   sessionStorage.setItem('hecos-config-tab', name);
+  
+  // As soon as user moves away from welcome, hide it forever in this session
+  if (name !== 'welcome' && activeTab === 'welcome') {
+    sessionStorage.setItem('hecos-config-welcome-seen', 'true');
+    uiState.collapsedCategories = []; // Ensure everything is expanded on first entry
+  }
   
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -172,13 +196,15 @@ async function initAll(attempt = 1) {
 
         if (Object.keys(window.cfg || {}).length === 0 || Object.keys(window.sysOptions || {}).length === 0) {
             console.log("No preloaded config, fetching from API...");
-            const [rOpts, rCfg] = await Promise.all([
+            const [rOpts, rCfg, rAgent] = await Promise.all([
                 fetchWithTimeout('/hecos/options'),
-                fetchWithTimeout('/hecos/config')
+                fetchWithTimeout('/hecos/config'),
+                fetchWithTimeout('/hecos/config/agent')
             ]);
-            if (!rOpts.ok || !rCfg.ok) throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
+            if (!rOpts.ok || !rCfg.ok || !rAgent.ok) throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}, Agent=${rAgent.status}`);
             window.sysOptions = await rOpts.json();
             window.cfg = await rCfg.json();
+            window.cfg.agent = await rAgent.json();
             
             // Re-render now that we fetched them
             setViewMode(viewMode, true);
@@ -324,6 +350,24 @@ function toggleAllCategories(expanded) {
  */
 function setCategoryFilter(cat) {
     window.activeCategoryFilter = cat;
+    sessionStorage.setItem('hecos-config-filter', cat);
+
+    // If on Welcome screen, dismiss it when user clicks a category
+    if (activeTab === 'welcome') {
+        const welcomeContainer = document.getElementById('config-welcome-container');
+        if (welcomeContainer) welcomeContainer.style.display = 'none';
+        
+        sessionStorage.setItem('hecos-config-welcome-seen', 'true');
+        activeTab = ''; // Clear so we don't think we're still in welcome
+        uiState.collapsedCategories = []; // Ensure everything is expanded on first entry
+        
+        const mainWrapper = document.getElementById('config-main-ui-wrapper');
+        if (mainWrapper) mainWrapper.style.display = 'block';
+        
+        const wall = document.getElementById('config-wall');
+        if (wall && viewMode === 'wall') wall.style.display = 'flex';
+    }
+
     renderConfigHub(viewMode);
 }
 
@@ -417,8 +461,16 @@ async function saveConfig(silent = false) {
       body: JSON.stringify(mediaPayload)
     });
     const medData = await resMed.json();
+
+    const agentPayload = (typeof buildAgentPayload === 'function') ? buildAgentPayload() : {};
+    const resAgent = await fetch('/hecos/config/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(agentPayload.agent || {})
+    });
+    const agentData = await resAgent.json();
     
-    if (data.ok && audData.ok && medData.ok) {
+    if (data.ok && audData.ok && medData.ok && agentData.ok) {
       if (!silent) {
           setSaveMsg(I18N.msg_saved || 'Saved', 'ok');
           
@@ -496,6 +548,14 @@ async function refreshStatus() {
     setSpanText('s-bridge', d.bridge || '—');
     setSpanText('s-config', d.config || '—');
     setSpanText('s-model', d.model || '—');
+    setSpanText('s-tool', d.last_tool || '—');
+    
+    // Format tokens: P/C
+    let tokensText = '—';
+    if (d.tokens_p > 0 || d.tokens_c > 0) {
+        tokensText = `${d.tokens_p} / ${d.tokens_c}`;
+    }
+    setSpanText('s-tokens', tokensText);
     
     const isOnline = !!d.model;
     const hdrModel = document.getElementById('hdr-model');
@@ -522,9 +582,24 @@ async function refreshStatus() {
     }
 
     const dashEnabled = globalDashEnabled && webuiDashEnabled && webuiTelemetryEnabled;
+    const trackCpu = dsb.track_cpu !== false;
+    const trackRam = dsb.track_ram !== false;
+    const trackVram = dsb.track_vram !== false;
+    
     document.querySelectorAll('.dashboard-only').forEach(el => {
         el.style.display = dashEnabled ? '' : 'none';
     });
+    
+    if (dashEnabled) {
+        const eCpu = document.getElementById('s-cpu');
+        if(eCpu && eCpu.parentElement) eCpu.parentElement.style.display = trackCpu ? '' : 'none';
+        
+        const eRam = document.getElementById('s-ram');
+        if(eRam && eRam.parentElement) eRam.parentElement.style.display = trackRam ? '' : 'none';
+        
+        const eVram = document.getElementById('s-vram');
+        if(eVram && eVram.parentElement) eVram.parentElement.style.display = trackVram ? '' : 'none';
+    }
   } catch(e) {
     const hdrModel = document.getElementById('hdr-model');
     if (hdrModel) {
@@ -686,35 +761,11 @@ function renderConfigHub(mode = 'tabs') {
 
     // 2. Render WALL
     let wallHtml = '';
-    // Special Landing Page for ALL view in Wall mode
-    if (window.activeCategoryFilter === 'ALL') {
-        const usedCats = [...new Set(visibleModules.map(m => m.cat))];
-        // Sort cats by order
-        usedCats.sort((a, b) => {
-            const catA = hub.categories[a] || { order: 99 };
-            const catB = hub.categories[b] || { order: 99 };
-            return catA.order - catB.order;
-        });
-
-        usedCats.forEach(catId => {
-            const catData = hub.categories[catId] || { label: catId, icon: '📂' };
-            const count = visibleModules.filter(m => m.cat === catId).length;
-            const translatedLabel = window.t ? window.t(catData.label) : catData.label;
-            
-            wallHtml += `
-                <div class="cat-card" onclick="setCategoryFilter('${catId}')">
-                    <div class="cat-card-icon">${catData.icon}</div>
-                    <div class="cat-card-label">${translatedLabel}</div>
-                    <div class="cat-card-badge">${count}</div>
-                </div>
-            `;
-        });
-        wallArea.innerHTML = `<div class="cat-landing-grid">${wallHtml}</div>`;
-    } else {
-        // Standard Detail view for single category or filtered results
-        let currentCat = null;
-        let currentCatData = null; 
-        filteredModules.forEach(m => {
+    
+    // Standard Detail view for single category or filtered results
+    let currentCat = null;
+    let currentCatData = null; 
+    filteredModules.forEach(m => {
             if (m.cat !== currentCat) {
                 if (currentCat !== null) wallHtml += `</div></div>`; // Close previous section
                 currentCat = m.cat;
@@ -745,7 +796,7 @@ function renderConfigHub(mode = 'tabs') {
         });
         if (filteredModules.length > 0) wallHtml += `</div></div>`;
         wallArea.innerHTML = wallHtml;
-    }
+    
 
 
     // 3. Render FILTER TABS (Categories bar)

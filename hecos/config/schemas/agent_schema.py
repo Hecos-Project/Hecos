@@ -11,3 +11,4 @@ class AgentConfig(BaseModel):
     enabled: bool = True
     max_iterations: int = 5
     verbose_traces: bool = True
+    action_console_enabled: bool = True

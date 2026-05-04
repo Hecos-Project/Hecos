@@ -154,6 +154,10 @@
 </header>
 
 <div class="container">
+  <div id="config-welcome-container">
+    {% include 'modules/config_welcome.html' %}
+  </div>
+
   <div id="live-status">
     <div class="stat"><span class="stat-label">System:</span> <span id="s-backend" class="stat-val">—</span></div>
     <div class="stat dashboard-only" style="display:none;"><span class="stat-label">CPU:</span> <span id="s-cpu" class="stat-val">—</span></div>
@@ -164,6 +168,8 @@
     <div class="stat"><span class="stat-label">PTT:</span> <span id="s-ptt" class="stat-val">—</span></div>
     <div class="stat"><span class="stat-label">Config:</span> <span id="s-config" class="stat-val">—</span></div>
     <div class="stat"><span class="stat-label">Model:</span> <span id="s-model" class="stat-val">—</span></div>
+    <div class="stat dashboard-only" title="Last executed tool" style="display:none;"><span class="stat-label">Tool:</span> <span id="s-tool" class="stat-val val-ok">—</span></div>
+    <div class="stat dashboard-only" title="Token Context Usage" style="display:none;"><span class="stat-label">Tokens:</span> <span id="s-tokens" class="stat-val">—</span></div>
   </div>
 
   <!-- CATEGORY FILTER TABS -->
@@ -179,9 +185,11 @@
      </div>
   </div>
 
-  <!-- WALL / GRID VIEW (Hidden by default) -->
-  <div id="config-wall" class="config-wall" style="display:none;">
-    <!-- Will be populated by config_core.js -->
+  <div id="config-main-ui-wrapper">
+    <!-- WALL / GRID VIEW (Hidden by default) -->
+    <div id="config-wall" class="config-wall" style="display:none;">
+      <!-- Will be populated by config_core.js -->
+    </div>
   </div>
 
   <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
@@ -189,6 +197,7 @@
     {% include 'modules/key_manager.html' %}
 
     {% include 'modules/config_routing.html' %}
+    {% include 'modules/config_agent.html' %}
     {% include 'modules/config_persona.html' %}
     {% include 'modules/config_filters.html' %}
     {% include 'modules/config_bridge.html' %}

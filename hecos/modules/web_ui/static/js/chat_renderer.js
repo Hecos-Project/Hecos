@@ -68,6 +68,9 @@ function addBubble(role, text, id, opts) {
       chatArea.scrollTop = chatArea.scrollHeight;
   }
   
+  // Track last real AI bubble for audio_ready (don't use :last-child which breaks when action-log divs follow)
+  if (!isUser) window._lastAiBubble = bubble;
+  
   const hIdx = (opts && opts.historyIndex !== undefined) ? opts.historyIndex : 
                ((window.chatHistory) ? window.chatHistory.length - 1 : -1);
 

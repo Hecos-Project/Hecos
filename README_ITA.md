@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.19.1 (Runtime Alpha)
+# Hecos - Versione 0.19.2 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato Runtime Alpha**: Hecos è attualmente in `v0.19.1`. Questo è un Helping Companion System locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
+> **Stato Runtime Alpha**: Hecos è attualmente in `v0.19.2`. Questo è un Helping Companion System locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 
 ## 🚀 Panoramica
 **Hecos** è un **Helping Companion System**: un ecosistema locale che unisce AI reasoning, controllo di sistema root e networking avanzato. Trasforma l'hardware locale in un'entità digitale sovrana attraverso una dashboard professionale e un'infrastruttura di sicurezza avanzata.
@@ -21,11 +21,11 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea.
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata.
 
-Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.19.1 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
+Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.19.2 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
-## ✨ Caratteristiche Principali (v0.19.1)
+## ✨ Caratteristiche Principali (v0.19.2)
 * 🎨 **Flux Prompt Studio** — Prompt engineering in tempo reale per Flux.1 con persistenza automatica dei metadati sidecar.
 * 🖼️ **Image Metadata Injection** — I risultati dell'IA generativa ora includono sidecar JSON nascosti (.txt) contenenti prompt, seed e info sul sampler per workflow professionali.
 * 🎭 **Chat UI Potenziata** — Nuovi header della chat con nomi Utente/Persona visibili, timestamp e posizionamento migliorato delle azioni messaggio (Copia/Modifica/Rigenera).
@@ -175,7 +175,7 @@ Email Ufficiale: hecos.project@gmail.com
 ---
 
 ## 📚 Documentazione
-- 📖 **[Guida Unificata (ITA)](docs/GUIDA_UNIFICATA_ITA.md)**: Tutto ciò che devi sapere sulla v0.19.1.
+- 📖 **[Guida Unificata (ITA)](docs/GUIDA_UNIFICATA_ITA.md)**: Tutto ciò che devi sapere sulla v0.19.2.
 - 🏗️ **[Guida all'Architettura](docs/TECHNICAL_GUIDE.md)**
 
 - 🔌 **[Sviluppo Plugin](docs/PLUGINS_DEV.md)**

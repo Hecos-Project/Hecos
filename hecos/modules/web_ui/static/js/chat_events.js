@@ -17,6 +17,64 @@ window.initEvents = function() {
     if (ev.type === 'agent_trace') {
       if (window.AgentUI) window.AgentUI.handleEvent(ev);
       
+    } else if (ev.type === 'action_console') {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'msg action-log';
+      msgDiv.style.opacity = '0.9';
+      
+      const avatar = document.createElement('img');
+      avatar.className = 'msg-avatar';
+      // Use existing avatar, or a default terminal icon
+      avatar.src = '/static/images/hecos_light.png'; 
+      avatar.style.filter = "grayscale(100%) brightness(0.6)"; 
+      
+      const content = document.createElement('div');
+      content.className = 'action-console-block';
+      content.style = "background: var(--bg2); color: var(--text); padding: 10px 15px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85em; width: 100%; overflow-x: auto; border: 1px solid var(--border-color); margin: 5px 0;";
+      
+      const header = document.createElement('div');
+      header.style = "color: var(--accent); font-weight: bold; margin-bottom: 5px;";
+      header.innerText = "┌── [ACTION] " + (ev.tool_name || 'SYSTEM');
+      
+      const cmd = document.createElement('div');
+      cmd.style = "color: var(--cyan); margin-bottom: 5px;";
+      cmd.innerText = "│ $ " + (ev.command || '');
+      
+      const outBlock = document.createElement('div');
+      outBlock.style = "white-space: pre-wrap; margin-left: 2px; color: var(--muted);";
+      let previewText = (ev.output || '').trim();
+      if (previewText.length > 500) {
+          previewText = previewText.substring(0, 500) + "\n...[truncated]";
+      }
+      outBlock.innerText = previewText.split('\n').map(l => "│   " + l).join('\n');
+      
+      const footer = document.createElement('div');
+      footer.style = "color: var(--accent); margin-top: 5px;";
+      footer.innerText = "└" + "─".repeat(25);
+      
+      content.appendChild(header);
+      content.appendChild(cmd);
+      content.appendChild(outBlock);
+      content.appendChild(footer);
+      
+      msgDiv.appendChild(avatar);
+      msgDiv.appendChild(content);
+      
+      if (window.chatArea) {
+          // If the AI is typing right now, we should insert this BEFORE the typing bubble
+          if (window._liveBackendAiBubble) {
+              const liveMsgContainer = window._liveBackendAiBubble.closest('.msg');
+              if (liveMsgContainer) {
+                  window.chatArea.insertBefore(msgDiv, liveMsgContainer);
+              } else {
+                  window.chatArea.appendChild(msgDiv);
+              }
+          } else {
+              window.chatArea.appendChild(msgDiv);
+          }
+          window.chatArea.scrollTop = window.chatArea.scrollHeight;
+      }
+      
     } else if (ev.type === 'ptt_status') {
       const pttInd = document.getElementById('ptt-indicator');
       const sttSource = document.getElementById('stt-source');
@@ -92,7 +150,9 @@ window.initEvents = function() {
 
     } else if (ev.type === 'audio_ready') {
       console.log("[Audio] Global audio ready from backend");
-      const targetBubble = document.querySelector('.msg.ai:last-child .msg-bubble');
+      // Use _lastAiBubble tracked at bubble creation time.
+      // The old .msg.ai:last-child selector broke when action-log divs were inserted after.
+      const targetBubble = window._lastAiBubble;
       if (targetBubble && window.tryLoadAudio) {
         window.tryLoadAudio(targetBubble);
       }

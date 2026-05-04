@@ -209,6 +209,7 @@ hecos/media/avatars/*
 
 # Screenshots: Ignore any captured screenshots
 hecos/media/screenshots/*
+hecos/media/snapshots/*
 hecos/core/snapshots/*
 snapshots/*
 
@@ -260,6 +261,10 @@ hecos/assets/avatars/*/
 !hecos/assets/avatars/Urania_9800_Woman/
 !hecos/assets/avatars/Urania_9800_Woman/*.png
 
+# ── PRIVATE ASSETS: Always block these (Privacy / Copyright) ─────────────
+hecos/assets/avatars/Jun_my_little_princess/
+hecos/personality/Jun_my_little_princess.yaml
+
 # Config data: Ignore active configs, keep templates
 hecos/config/data/*
 !hecos/config/data/*.example
@@ -273,6 +278,8 @@ hecos/config/data/keys.yaml
 tmp/
 brain/
 *.log
+*debug*.txt
+*_debug.txt
 *.wav
 *.mp3
 *.db
