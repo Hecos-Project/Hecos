@@ -187,6 +187,7 @@ function populateUI() {
 
     populatePrivacyUI();
     populateWebUIConfig();
+    populateAgentUI();
 
     // Sync Dashboard specialized toggles
     const dsb = c.plugins?.DASHBOARD || {};
@@ -612,10 +613,14 @@ function buildPayload() {
     }
 
 
-    const webuiPart = buildWebUIPayload();
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
         Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
+    }
+
+    const agentPart = buildAgentPayload();
+    if (agentPart && agentPart.agent) {
+        out.agent = agentPart.agent;
     }
 
     document.querySelectorAll('[data-plugin-lazy]').forEach(cb => {
@@ -788,6 +793,29 @@ function populatePrivacyUI() {
     setVal('pr-default-mode', c.privacy.default_mode || 'normal');
     setCheck('pr-auto-wipe', c.privacy.auto_wipe_enabled ?? false);
     setCheck('pr-incognito-shortcut', c.privacy.incognito_shortcut ?? true);
+}
+
+function populateAgentUI() {
+    const c = window.cfg;
+    if (!c || !c.agent) return;
+    const a = c.agent;
+    setCheck('agent-enabled', a.enabled ?? true);
+    setVal('agent-max-iter', a.max_iterations ?? 10);
+    setCheck('agent-verbose', a.verbose_traces ?? true);
+    setCheck('agent-action-console', a.action_console_enabled ?? true);
+}
+
+function buildAgentPayload() {
+    const el = document.getElementById('agent-enabled');
+    if (!el) return {};
+    return {
+        agent: {
+            enabled: document.getElementById('agent-enabled').checked,
+            max_iterations: parseInt(document.getElementById('agent-max-iter').value) || 10,
+            verbose_traces: document.getElementById('agent-verbose').checked,
+            action_console_enabled: document.getElementById('agent-action-console').checked
+        }
+    };
 }
 
 // Global Exports

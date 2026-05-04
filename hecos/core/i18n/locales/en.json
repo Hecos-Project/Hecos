@@ -481,6 +481,7 @@
         "hub_mod_persona": "Soul",
         "hub_mod_filters": "Output Filters",
         "hub_mod_memory": "AI Memory",
+        "hub_mod_agent": "Agent Engine",
         "hub_mod_neural_link": "Neural Link",
         "hub_mod_voice": "Audio & Voice",
         "hub_mod_media": "Media Gallery",
@@ -712,6 +713,16 @@
         "webui_chat_delete": "Delete",
         "webui_chat_delete_confirm": "Delete this conversation? This operation cannot be undone.",
         "webui_chat_rename_hint": "Double click to rename",
-        "webui_chat_rename_prompt": "Rename conversation:"
+        "webui_chat_rename_prompt": "Rename conversation:",
+        "webui_agent_config_title": "Agentic Loop Settings",
+        "webui_agent_config_desc": "Configure autonomous behavior, iterations, and tool visualization.",
+        "webui_agent_enabled": "Autonomous Agentic Loop",
+        "webui_agent_enabled_desc": "Allows the AI to use multiple steps and tools to solve complex tasks.",
+        "webui_agent_max_iter": "Maximum Thought Iterations",
+        "webui_agent_max_iter_help": "How many times the AI can think and use tools in a single turn.",
+        "webui_agent_verbose": "Verbose Reasoning Traces",
+        "webui_agent_verbose_desc": "Emits cyan/yellow reasoning steps during the loop.",
+        "webui_agent_action_console": "Action Console Visualization",
+        "webui_agent_action_console_desc": "Shows real-time terminal windows for shell commands and python scripts (Action Logger)."
     }
 }

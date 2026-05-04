@@ -2,12 +2,17 @@ import os
 
 try:
     from hecos.core.logging import logger
+    from hecos.core.agent.traces import AgentTracer
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[EXE_DEBUG]", *args)
         def info(self, *args, **kwargs): print("[EXE_INFO]", *args)
         def error(self, *args, **kwargs): print("[EXE_ERR]", *args)
     logger = DummyLogger()
+    class DummyTracer:
+        @staticmethod
+        def emit_action(t, c, o): print(f"[ACTION] {t}: {c}\n{o}")
+    AgentTracer = DummyTracer()
 
 # ── Path Safety Guard ─────────────────────────────────────────────────────────
 # Directories that Executor must never write to or delete from.
@@ -46,7 +51,9 @@ def read_file_tool(file_path: str, start_line: int = 1, end_line: int = -1) -> s
         if e_line == -1:
             e_line = len(lines)
         chunk = "".join(lines[max(0, s_line - 1):e_line])
-        return f"--- {file_path} (lines {s_line}–{e_line}) ---\n{chunk}"
+        res = f"--- {file_path} (lines {s_line}–{e_line}) ---\n{chunk}"
+        AgentTracer.emit_action("read_file", f"Reading {file_path}", f"{len(lines)} lines total")
+        return res
     except Exception as e:
         return f"[EXECUTOR] Read error: {e}"
 
@@ -66,7 +73,9 @@ def write_file_tool(file_path: str, content: str, mode: str = "w") -> str:
         with open(file_path, mode, encoding="utf-8") as f:
             f.write(content)
         logger.info(f"[EXECUTOR] write_file OK: {file_path} (mode={mode})")
-        return f"[EXECUTOR] File written successfully: {file_path}"
+        res = f"[EXECUTOR] File written successfully: {file_path}"
+        AgentTracer.emit_action("write_file", f"Mode: {mode} -> {file_path}", f"{len(content)} characters written")
+        return res
     except Exception as e:
         return f"[EXECUTOR] Write error: {e}"
 
@@ -93,7 +102,9 @@ def patch_file_tool(file_path: str, old_text: str, new_text: str) -> str:
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(patched)
         logger.info(f"[EXECUTOR] patch_file OK: {file_path}")
-        return f"[EXECUTOR] File patched successfully: {file_path}"
+        res = f"[EXECUTOR] File patched successfully: {file_path}"
+        AgentTracer.emit_action("patch_file", f"Patching {file_path}", f"Replaced text block successfully")
+        return res
     except Exception as e:
         return f"[EXECUTOR] Patch error: {e}"
 
@@ -111,7 +122,9 @@ def delete_file_tool(file_path: str) -> str:
     try:
         os.remove(file_path)
         logger.info(f"[EXECUTOR] delete_file OK: {file_path}")
-        return f"[EXECUTOR] File deleted: {file_path}"
+        res = f"[EXECUTOR] File deleted: {file_path}"
+        AgentTracer.emit_action("delete_file", f"Deleting {file_path}", res)
+        return res
     except Exception as e:
         return f"[EXECUTOR] Delete error: {e}"
 
@@ -125,7 +138,9 @@ def create_dir_tool(directory_path: str) -> str:
     try:
         os.makedirs(directory_path, exist_ok=True)
         logger.info(f"[EXECUTOR] create_dir OK: {directory_path}")
-        return f"[EXECUTOR] Directory created: {directory_path}"
+        res = f"[EXECUTOR] Directory created: {directory_path}"
+        AgentTracer.emit_action("create_dir", f"mkdir {directory_path}", res)
+        return res
     except Exception as e:
         return f"[EXECUTOR] Create dir error: {e}"
 
@@ -143,6 +158,9 @@ def list_dir_tool(directory_path: str) -> str:
             full = os.path.join(directory_path, item)
             tag = "[DIR] " if os.path.isdir(full) else "[FILE]"
             lines.append(f"  {tag} {item}")
-        return "\n".join(lines)
+        
+        res = "\n".join(lines)
+        AgentTracer.emit_action("list_dir", f"ls {directory_path}", f"{len(items)} items listed")
+        return res
     except Exception as e:
         return f"[EXECUTOR] List dir error: {e}"

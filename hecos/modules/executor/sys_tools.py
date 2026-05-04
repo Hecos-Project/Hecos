@@ -11,12 +11,17 @@ except ImportError:
 
 try:
     from hecos.core.logging import logger
+    from hecos.core.agent.traces import AgentTracer
 except ImportError:
     class DummyLogger:
         def debug(self, *args, **kwargs): print("[EXE_DEBUG]", *args)
         def info(self, *args, **kwargs): print("[EXE_INFO]", *args)
         def error(self, *args, **kwargs): print("[EXE_ERR]", *args)
     logger = DummyLogger()
+    class DummyTracer:
+        @staticmethod
+        def emit_action(t, c, o): print(f"[ACTION] {t}: {c}\n{o}")
+    AgentTracer = DummyTracer()
 
 try:
     from app.config import ConfigManager
@@ -122,8 +127,15 @@ def execute_shell_command_tool(command: str, tag: str) -> str:
             command, shell=True, text=True,
             errors='replace', stderr=subprocess.STDOUT, timeout=15
         )
-        return output if output.strip() else "Command executed successfully (no output)."
+        final_output = output if output.strip() else "Command executed successfully (no output)."
+        AgentTracer.emit_action(tag, command, final_output)
+        return final_output
     except subprocess.CalledProcessError as e:
-        return f"Shell Error (exit code {e.returncode}): {e.output or str(e)}"
+        err_msg = f"Shell Error (exit code {e.returncode}): {e.output or str(e)}"
+        AgentTracer.emit_action(tag, command, err_msg)
+        return err_msg
     except Exception as e:
-        return f"Shell Error: {e}"
+        err_msg = f"Shell Error: {e}"
+        AgentTracer.emit_action(tag, command, err_msg)
+        return err_msg
+

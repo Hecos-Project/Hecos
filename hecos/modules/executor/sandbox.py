@@ -5,12 +5,17 @@ import subprocess
 
 try:
     from app.config import ConfigManager
+    from hecos.core.agent.traces import AgentTracer
 except ImportError:
     class DummyConfigMgr:
         def __init__(self): self.config = {}
         def get_plugin_config(self, tag, key, default): return default
     def FakeConfigManager(): return DummyConfigMgr()
     ConfigManager = FakeConfigManager
+    class DummyTracer:
+        @staticmethod
+        def emit_action(t, c, o): print(f"[ACTION] {t}: {c}\n{o}")
+    AgentTracer = DummyTracer()
 
 # ── AST Security Analyzer ───────────────────────────────────────────────────────
 FORBIDDEN_IMPORTS = {
@@ -50,22 +55,30 @@ def run_python_code_tool(code: str, workspace_dir: str, tag: str) -> str:
     Use for math, data manipulation, and algorithm building.
     :param code: The Python script to execute.
     """
+    cmd_preview = "Python Code Sandbox:\n" + code[:100] + ("..." if len(code) > 100 else "")
+    
     try:
         tree = ast.parse(code)
     except Exception as e:
-        return f"Parsing Error: {e}"
+        err = f"Parsing Error: {e}"
+        AgentTracer.emit_action(tag, cmd_preview, err)
+        return err
 
     analyzer = SecurityAnalyzer()
     analyzer.visit(tree)
     if analyzer.errors:
-        return f"SECURITY VIOLATION: {', '.join(analyzer.errors)}"
+        err = f"SECURITY VIOLATION: {', '.join(analyzer.errors)}"
+        AgentTracer.emit_action(tag, cmd_preview, err)
+        return err
 
     script_path = os.path.join(workspace_dir, "ai_last_script.py")
     try:
         with open(script_path, "w", encoding="utf-8") as f:
             f.write(code)
     except Exception as e:
-        return f"I/O Error: {e}"
+        err = f"I/O Error: {e}"
+        AgentTracer.emit_action(tag, cmd_preview, err)
+        return err
 
     cfg = ConfigManager()
     try:
@@ -83,9 +96,15 @@ def run_python_code_tool(code: str, workspace_dir: str, tag: str) -> str:
             cwd=workspace_dir
         )
         output, _ = process.communicate(timeout=timeout)
-        return output[-2000:] if len(output or "") > 2000 else (output or "")
+        final_out = output[-2000:] if len(output or "") > 2000 else (output or "")
+        AgentTracer.emit_action(tag, cmd_preview, final_out)
+        return final_out
     except subprocess.TimeoutExpired:
         process.kill()
-        return f"Timeout Error: Execution expired after {timeout}s."
+        err = f"Timeout Error: Execution expired after {timeout}s."
+        AgentTracer.emit_action(tag, cmd_preview, err)
+        return err
     except Exception as e:
-        return f"Internal Error: {e}"
+        err = f"Internal Error: {e}"
+        AgentTracer.emit_action(tag, cmd_preview, err)
+        return err

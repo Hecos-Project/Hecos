@@ -11,3 +11,4 @@ max_iterations: 12
 
 # Show the AI's internal reasoning steps on the terminal log or the WebUI.
 verbose_traces: true
+action_console_enabled: true

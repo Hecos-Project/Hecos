@@ -1,0 +1,51 @@
+<div id="tab-agent" class="panel">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title-group">
+                <div class="card-title">{{ t('webui_agent_config_title') or 'Agentic Loop Settings' }}</div>
+                <div class="card-desc">{{ t('webui_agent_config_desc') or 'Configure autonomous behavior, iterations, and tool visualization.' }}</div>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <!-- ENABLE AGENT LOOP -->
+            <div class="toggle-row">
+                <div class="toggle-info">{{ t('webui_agent_enabled') or 'Autonomous Agentic Loop' }}<div class="toggle-sub">{{ t('webui_agent_enabled_desc') or 'Allows the AI to use multiple steps and tools to solve complex tasks.' }}</div></div>
+                <label class="switch">
+                    <input type="checkbox" id="agent-enabled">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- MAX ITERATIONS -->
+            <div class="field">
+                <label for="agent-max-iter">
+                    {{ t('webui_agent_max_iter') or 'Maximum Thought Iterations' }}
+                    <span class="restart-badge" id="badge-agent-max-iter" style="display:none;">Restart Required</span>
+                </label>
+                <input type="number" id="agent-max-iter" min="1" max="20" step="1">
+                <div class="field-help">{{ t('webui_agent_max_iter_help') or 'How many times the AI can think and use tools in a single turn.' }}</div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid var(--border-color); margin: 20px 0;">
+
+            <!-- VERBOSE TRACES -->
+            <div class="toggle-row">
+                <div class="toggle-info">{{ t('webui_agent_verbose') or 'Verbose Reasoning Traces' }}<div class="toggle-sub">{{ t('webui_agent_verbose_desc') or 'Emits cyan/yellow reasoning steps during the loop.' }}</div></div>
+                <label class="switch">
+                    <input type="checkbox" id="agent-verbose">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- ACTION CONSOLE -->
+            <div class="toggle-row">
+                <div class="toggle-info"><span style="color:var(--accent);">{{ t('webui_agent_action_console') or 'Action Console Visualization' }}</span><div class="toggle-sub">{{ t('webui_agent_action_console_desc') or 'Shows real-time terminal windows for shell commands and python scripts (Action Logger).' }}</div></div>
+                <label class="switch">
+                    <input type="checkbox" id="agent-action-console">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>

@@ -22,6 +22,7 @@ window.CONFIG_HUB = {
         { id: 'ia',        label: 'hub_mod_persona',      icon: '🎭', cat: 'INTELLIGENZA', isCore: true },
         { id: 'filters',   label: 'hub_mod_filters',      icon: '📝', cat: 'INTELLIGENZA', isCore: true },
         { id: 'memory',    label: 'hub_mod_memory',       icon: '🧠', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
+        { id: 'agent',     label: 'hub_mod_agent',        icon: '🤖', cat: 'INTELLIGENZA', isCore: true },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '🎨', cat: 'MULTIMEDIA', isCore: true },

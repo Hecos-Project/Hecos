@@ -60,6 +60,9 @@ class AgentExecutor:
         # Privacy-oriented log: avoid echoing private user text on the server physical console.
         self._emit(f"Analyzing incoming user request...", level="info")
         
+        # Bind the global state manager so that decentralized tools (like Executor) can emit action logs to the UI
+        AgentTracer.bind(self.state_manager)
+        
         # --- GLOBAL DIRECT COMMANDS INTERCEPTOR (BYPASS LLM) ---
         testo_pulito = user_text.strip()
         if testo_pulito.lower().startswith(("/img ", "/image ", "/photo ", "/foto ")):

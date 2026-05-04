@@ -172,13 +172,15 @@ async function initAll(attempt = 1) {
 
         if (Object.keys(window.cfg || {}).length === 0 || Object.keys(window.sysOptions || {}).length === 0) {
             console.log("No preloaded config, fetching from API...");
-            const [rOpts, rCfg] = await Promise.all([
+            const [rOpts, rCfg, rAgent] = await Promise.all([
                 fetchWithTimeout('/hecos/options'),
-                fetchWithTimeout('/hecos/config')
+                fetchWithTimeout('/hecos/config'),
+                fetchWithTimeout('/hecos/config/agent')
             ]);
-            if (!rOpts.ok || !rCfg.ok) throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}`);
+            if (!rOpts.ok || !rCfg.ok || !rAgent.ok) throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}, Agent=${rAgent.status}`);
             window.sysOptions = await rOpts.json();
             window.cfg = await rCfg.json();
+            window.cfg.agent = await rAgent.json();
             
             // Re-render now that we fetched them
             setViewMode(viewMode, true);
@@ -417,8 +419,16 @@ async function saveConfig(silent = false) {
       body: JSON.stringify(mediaPayload)
     });
     const medData = await resMed.json();
+
+    const agentPayload = (typeof buildAgentPayload === 'function') ? buildAgentPayload() : {};
+    const resAgent = await fetch('/hecos/config/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(agentPayload.agent || {})
+    });
+    const agentData = await resAgent.json();
     
-    if (data.ok && audData.ok && medData.ok) {
+    if (data.ok && audData.ok && medData.ok && agentData.ok) {
       if (!silent) {
           setSaveMsg(I18N.msg_saved || 'Saved', 'ok');
           

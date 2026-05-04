@@ -496,6 +496,7 @@
         "hub_mod_persona": "Anima",
         "hub_mod_filters": "Filtri Testo",
         "hub_mod_memory": "Memoria IA",
+        "hub_mod_agent": "Motore Agente",
         "hub_mod_neural_link": "Neural Link",
         "hub_mod_voice": "Audio & Voce",
         "hub_mod_media": "Galleria Media",
@@ -726,6 +727,16 @@
         "webui_chat_delete": "Elimina",
         "webui_chat_delete_confirm": "Eliminare questa conversazione? L'operazione non è reversibile.",
         "webui_chat_rename_hint": "Doppio click per rinominare",
-        "webui_chat_rename_prompt": "Rinomina conversazione:"
+        "webui_chat_rename_prompt": "Rinomina conversazione:",
+        "webui_agent_config_title": "Configurazione Agente",
+        "webui_agent_config_desc": "Configura il comportamento autonomo, le iterazioni e la visualizzazione dei tool.",
+        "webui_agent_enabled": "Loop Agente Autonomo",
+        "webui_agent_enabled_desc": "Permette all'IA di eseguire più passaggi e usare i tool per compiti complessi.",
+        "webui_agent_max_iter": "Iterazioni Massime del Pensiero",
+        "webui_agent_max_iter_help": "Quante volte l'IA può 'pensare' e usare tool in un singolo turno.",
+        "webui_agent_verbose": "Tracce del Ragionamento Verbose",
+        "webui_agent_verbose_desc": "Mostra i passaggi di ragionamento in ciano/giallo durante il loop.",
+        "webui_agent_action_console": "Visualizzazione Action Console",
+        "webui_agent_action_console_desc": "Mostra finestre terminali in tempo reale per comandi shell e script python."
     }
 }
