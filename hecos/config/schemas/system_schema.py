@@ -252,6 +252,11 @@ class PluginExecutor(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
     timeout_seconds: int = 10
+    enable_shell_commands: bool = True
+    shell_timeout: int = 15
+    action_console_enabled: bool = True
+    max_read_lines: int = 200
+    workspace_dir: str = "workspace/sandbox"
 
 class PluginRemoteTriggers(BaseModel):
     enabled: bool = True

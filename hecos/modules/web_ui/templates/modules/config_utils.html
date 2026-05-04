@@ -24,14 +24,67 @@
 
 <!-- EXECUTOR PANEL -->
 <div id="tab-executor" class="panel">
+
+  <!-- GENERAL -->
   <div class="card">
     <div class="card-title">⚡ Command Executor</div>
     <div class="toggle-row">
-      <div class="toggle-info">Enable System Command Execution</div>
+      <div class="toggle-info">{{ t('webui_executor_enable') or 'Enable Executor Module' }}</div>
       <label class="switch"><input type="checkbox" id="executor-enabled" data-plugin="EXECUTOR"><span class="slider"></span></label>
     </div>
-    <small style="color:var(--red); font-size:11px;">⚠️ USE WITH CAUTION: Allows Hecos to run scripts and system commands.</small>
+    <p style="font-size:12px; color:var(--muted);">{{ t('webui_executor_enable_desc') or 'Master switch for all Executor capabilities: file management, shell commands, and Python sandbox.' }}</p>
+    <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">{{ t('webui_executor_action_console') or 'Action Console (Chat Window)' }}</div>
+      <label class="switch"><input type="checkbox" id="executor-action-console" onchange="savePluginKey('EXECUTOR','action_console_enabled',this.checked)"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted);">{{ t('webui_executor_action_console_desc') or 'Show a live terminal window in the chat whenever Executor runs a command.' }}</p>
   </div>
+
+  <!-- PYTHON SANDBOX -->
+  <div class="card">
+    <div class="card-title">🐍 Python Sandbox</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_sandbox_desc') or 'The Sandbox executes Python code in a strict AST security jail. Network and filesystem access are blocked inside the sandbox.' }}</p>
+    <div class="field">
+      <label>{{ t('webui_executor_timeout') or 'Execution Timeout (seconds)' }}</label>
+      <input type="number" id="executor-timeout" min="1" max="120" placeholder="10"
+             onchange="savePluginKey('EXECUTOR','timeout_seconds',parseInt(this.value))">
+      <small style="color:var(--muted); font-size:11px;">{{ t('webui_executor_timeout_hint') or 'Maximum seconds a sandbox script is allowed to run before it is forcibly killed.' }}</small>
+    </div>
+  </div>
+
+  <!-- SHELL COMMANDS -->
+  <div class="card">
+    <div class="card-title">💻 Shell Command Execution</div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_executor_shell_enable') or 'Allow Shell Commands (cmd / bash)' }}</div>
+      <label class="switch"><input type="checkbox" id="executor-shell-enabled" onchange="savePluginKey('EXECUTOR','enable_shell_commands',this.checked)"><span class="slider"></span></label>
+    </div>
+    <small style="color:var(--red); font-size:11px;">⚠️ {{ t('webui_executor_shell_warning') or 'USE WITH CAUTION: Grants Hecos direct access to your system shell.' }}</small>
+    <div class="field" style="margin-top:14px;">
+      <label>{{ t('webui_executor_shell_timeout') or 'Shell Command Timeout (seconds)' }}</label>
+      <input type="number" id="executor-shell-timeout" min="5" max="300" placeholder="15"
+             onchange="savePluginKey('EXECUTOR','shell_timeout',parseInt(this.value))">
+    </div>
+  </div>
+
+  <!-- FILE MANAGER -->
+  <div class="card">
+    <div class="card-title">📂 File Manager Limits</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_fm_desc') or 'Configure safety boundaries for file read/write operations.' }}</p>
+    <div class="field">
+      <label>{{ t('webui_executor_max_read_lines') or 'Max Lines to Read per Request' }}</label>
+      <input type="number" id="executor-max-read-lines" min="10" max="5000" placeholder="200"
+             onchange="savePluginKey('EXECUTOR','max_read_lines',parseInt(this.value))">
+      <small style="color:var(--muted); font-size:11px;">{{ t('webui_executor_max_read_hint') or 'Limits how many lines the read_file tool can return in a single call.' }}</small>
+    </div>
+    <div class="field">
+      <label>{{ t('webui_executor_workspace') or 'Sandbox Workspace Directory' }}</label>
+      <input type="text" id="executor-workspace-dir" placeholder="workspace/sandbox"
+             onchange="savePluginKey('EXECUTOR','workspace_dir',this.value)">
+      <small style="color:var(--muted); font-size:11px;">{{ t('webui_executor_workspace_hint') or 'Directory where Python sandbox scripts are temporarily saved before execution.' }}</small>
+    </div>
+  </div>
+
 </div>
 
 <!-- DASHBOARD PANEL -->

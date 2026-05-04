@@ -745,6 +745,21 @@
         "webui_agent_verbose": "Tracce del Ragionamento Verbose",
         "webui_agent_verbose_desc": "Mostra i passaggi di ragionamento in ciano/giallo durante il loop.",
         "webui_agent_action_console": "Visualizzazione Action Console",
-        "webui_agent_action_console_desc": "Mostra finestre terminali in tempo reale per comandi shell e script python."
+        "webui_agent_action_console_desc": "Mostra finestre terminali in tempo reale per comandi shell e script python.",
+        "webui_executor_enable": "Abilita Modulo Executor",
+        "webui_executor_enable_desc": "Interruttore principale per tutte le funzionalità di Executor: gestione file, comandi shell e sandbox Python.",
+        "webui_executor_action_console": "Action Console (Finestra Chat)",
+        "webui_executor_action_console_desc": "Mostra una finestra terminale live nella chat ogni volta che Executor esegue un comando.",
+        "webui_executor_sandbox_desc": "La Sandbox esegue codice Python in un ambiente isolato (AST jail). L'accesso alla rete e al filesystem è bloccato all'interno della sandbox.",
+        "webui_executor_timeout": "Timeout Esecuzione (secondi)",
+        "webui_executor_timeout_hint": "Secondi massimi per l'esecuzione di uno script nella sandbox prima che venga terminato forzatamente.",
+        "webui_executor_shell_enable": "Permetti Comandi Shell (cmd / bash)",
+        "webui_executor_shell_warning": "USA CON CAUTELA: Concede a Hecos l'accesso diretto alla shell del tuo sistema.",
+        "webui_executor_shell_timeout": "Timeout Comandi Shell (secondi)",
+        "webui_executor_fm_desc": "Configura i limiti di sicurezza per le operazioni di lettura/scrittura dei file.",
+        "webui_executor_max_read_lines": "Linee Massime per Lettura",
+        "webui_executor_max_read_hint": "Limita quante linee il tool read_file può restituire in una singola chiamata.",
+        "webui_executor_workspace": "Directory Workspace Sandbox",
+        "webui_executor_workspace_hint": "Directory dove gli script della sandbox vengono salvati temporaneamente prima dell'esecuzione."
     }
 }

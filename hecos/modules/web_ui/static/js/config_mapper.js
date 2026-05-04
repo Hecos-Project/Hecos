@@ -208,6 +208,7 @@ function populateUI() {
     });
 
     renderPlugins(c.plugins || {});
+    if (window.populateExecutorUI) window.populateExecutorUI();
     initRestartIndicators();
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -839,7 +840,34 @@ window.saveDsb = function(key, val) {
     // We let the global change listener in config_core.js handle the actual saveConfig(true)
 };
 
-// --- CUSTOM TEXT FILTERS HANDLER ---
+/**
+ * Generic helper: writes a key/value into cfg.plugins.<PLUGIN> and auto-saves.
+ * Used by panels like Executor that don't have a dedicated save fn.
+ */
+window.savePluginKey = function(pluginTag, key, val) {
+    if (!window.cfg.plugins) window.cfg.plugins = {};
+    if (!window.cfg.plugins[pluginTag]) window.cfg.plugins[pluginTag] = {};
+    window.cfg.plugins[pluginTag][key] = val;
+    if (typeof window.saveConfig === 'function') window.saveConfig(true);
+};
+
+/**
+ * Populates Executor configuration UI from window.cfg
+ */
+window.populateExecutorUI = function() {
+    const p = (window.cfg.plugins || {}).EXECUTOR || {};
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+    chk('executor-action-console', p.action_console_enabled ?? true);
+    set('executor-timeout',        p.timeout_seconds ?? 10);
+    chk('executor-shell-enabled',  p.enable_shell_commands ?? true);
+    set('executor-shell-timeout',  p.shell_timeout ?? 15);
+    set('executor-max-read-lines', p.max_read_lines ?? 200);
+    set('executor-workspace-dir',  p.workspace_dir ?? 'workspace/sandbox');
+};
+
+
 window.HecosTextFilters = {
     populate: function(filters) {
         const container = document.getElementById('custom-filters-container');
