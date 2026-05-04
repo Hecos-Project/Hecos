@@ -21,7 +21,7 @@ let viewMode = localStorage.getItem('hecos-config-view') || 'tabs';
 const navType = window.performance?.getEntriesByType("navigation")[0]?.type;
 const isRefresh = navType === 'reload';
 let activeTab = isRefresh ? (sessionStorage.getItem('hecos-config-tab') || 'backend') : 'welcome';
-window.activeCategoryFilter = 'ALL';
+window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
 
 
 /**
@@ -350,6 +350,7 @@ function toggleAllCategories(expanded) {
  */
 function setCategoryFilter(cat) {
     window.activeCategoryFilter = cat;
+    sessionStorage.setItem('hecos-config-filter', cat);
 
     // If on Welcome screen, dismiss it when user clicks a category
     if (activeTab === 'welcome') {
