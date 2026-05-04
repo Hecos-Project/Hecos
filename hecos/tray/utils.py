@@ -51,7 +51,7 @@ def get_version():
         with open(VERSION_FILE, "r") as f:
             return f.read().strip()
     except Exception:
-        return "0.19.1"
+        return "0.19.2"
 
 def is_hecos_online():
     """Checks if the Hecos backend is responding on port 7070."""
