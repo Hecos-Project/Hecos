@@ -18,7 +18,9 @@ let uiState = {
     collapsedCategories: []
 };
 let viewMode = localStorage.getItem('hecos-config-view') || 'tabs';
-let activeTab = sessionStorage.getItem('hecos-config-tab') || 'backend';
+const navType = window.performance?.getEntriesByType("navigation")[0]?.type;
+const isRefresh = navType === 'reload';
+let activeTab = isRefresh ? (sessionStorage.getItem('hecos-config-tab') || 'backend') : 'welcome';
 window.activeCategoryFilter = 'ALL';
 
 
@@ -28,7 +30,23 @@ window.activeCategoryFilter = 'ALL';
 function showTab(name, skipScroll = false) {
   let targetId = name;
   const hub = window.CONFIG_HUB;
-  const mod = hub.modules.find(m => m.id === name);
+  const mod = (hub && hub.modules) ? hub.modules.find(m => m.id === name) : null;
+
+  // Conditional UI Visibility: Hide main UI when showing Welcome Screen, and vice versa
+  const mainWrapper      = document.getElementById('config-main-ui-wrapper');
+  const welcomeContainer = document.getElementById('config-welcome-container');
+  const tBar             = document.getElementById('tabs-bar-container');
+  const wall             = document.getElementById('config-wall');
+  
+  if (name === 'welcome') {
+      if (welcomeContainer) welcomeContainer.style.display = 'block';
+      if (mainWrapper) mainWrapper.style.setProperty('display', 'none', 'important');
+  } else {
+      if (welcomeContainer) welcomeContainer.style.display = 'none';
+      if (mainWrapper) mainWrapper.style.display = 'block';
+      if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
+      if (wall && viewMode === 'wall') wall.style.display = 'flex';
+  }
 
   // 1. Resolve Target ID via tagMap or category
   if (hub.tagMap && hub.tagMap[mod?.pluginTag]) {
@@ -64,6 +82,12 @@ function showTab(name, skipScroll = false) {
 
   activeTab = name; // Consolidate the logical active tab
   sessionStorage.setItem('hecos-config-tab', name);
+  
+  // As soon as user moves away from welcome, hide it forever in this session
+  if (name !== 'welcome' && activeTab === 'welcome') {
+    sessionStorage.setItem('hecos-config-welcome-seen', 'true');
+    uiState.collapsedCategories = []; // Ensure everything is expanded on first entry
+  }
   
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -326,6 +350,23 @@ function toggleAllCategories(expanded) {
  */
 function setCategoryFilter(cat) {
     window.activeCategoryFilter = cat;
+
+    // If on Welcome screen, dismiss it when user clicks a category
+    if (activeTab === 'welcome') {
+        const welcomeContainer = document.getElementById('config-welcome-container');
+        if (welcomeContainer) welcomeContainer.style.display = 'none';
+        
+        sessionStorage.setItem('hecos-config-welcome-seen', 'true');
+        activeTab = ''; // Clear so we don't think we're still in welcome
+        uiState.collapsedCategories = []; // Ensure everything is expanded on first entry
+        
+        const mainWrapper = document.getElementById('config-main-ui-wrapper');
+        if (mainWrapper) mainWrapper.style.display = 'block';
+        
+        const wall = document.getElementById('config-wall');
+        if (wall && viewMode === 'wall') wall.style.display = 'flex';
+    }
+
     renderConfigHub(viewMode);
 }
 
@@ -719,35 +760,11 @@ function renderConfigHub(mode = 'tabs') {
 
     // 2. Render WALL
     let wallHtml = '';
-    // Special Landing Page for ALL view in Wall mode
-    if (window.activeCategoryFilter === 'ALL') {
-        const usedCats = [...new Set(visibleModules.map(m => m.cat))];
-        // Sort cats by order
-        usedCats.sort((a, b) => {
-            const catA = hub.categories[a] || { order: 99 };
-            const catB = hub.categories[b] || { order: 99 };
-            return catA.order - catB.order;
-        });
-
-        usedCats.forEach(catId => {
-            const catData = hub.categories[catId] || { label: catId, icon: '📂' };
-            const count = visibleModules.filter(m => m.cat === catId).length;
-            const translatedLabel = window.t ? window.t(catData.label) : catData.label;
-            
-            wallHtml += `
-                <div class="cat-card" onclick="setCategoryFilter('${catId}')">
-                    <div class="cat-card-icon">${catData.icon}</div>
-                    <div class="cat-card-label">${translatedLabel}</div>
-                    <div class="cat-card-badge">${count}</div>
-                </div>
-            `;
-        });
-        wallArea.innerHTML = `<div class="cat-landing-grid">${wallHtml}</div>`;
-    } else {
-        // Standard Detail view for single category or filtered results
-        let currentCat = null;
-        let currentCatData = null; 
-        filteredModules.forEach(m => {
+    
+    // Standard Detail view for single category or filtered results
+    let currentCat = null;
+    let currentCatData = null; 
+    filteredModules.forEach(m => {
             if (m.cat !== currentCat) {
                 if (currentCat !== null) wallHtml += `</div></div>`; // Close previous section
                 currentCat = m.cat;
@@ -778,7 +795,7 @@ function renderConfigHub(mode = 'tabs') {
         });
         if (filteredModules.length > 0) wallHtml += `</div></div>`;
         wallArea.innerHTML = wallHtml;
-    }
+    
 
 
     // 3. Render FILTER TABS (Categories bar)

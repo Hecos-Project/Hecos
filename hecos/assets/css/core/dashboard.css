@@ -28,7 +28,7 @@
 .filter-tabs {
   display: flex;
   flex-wrap: nowrap; /* Force single row */
-  justify-content: center;
+  justify-content: flex-start; /* Changed from center to prevent clipping when overflowing */
   gap: 8px; /* Reduced gap */
   margin-bottom: 30px;
   padding: 8px 12px; /* Reduced vertical padding */

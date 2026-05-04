@@ -1,14 +1,4 @@
-# ── Hecos Agentic Loop Configuration ──
-
-# Enable or disable the Agentic Loop. 
-# If set to 'false', Hecos will process a single response without autonomously referring to tools or external plugins.
 enabled: true
-
-# Maximum number of autonomous interactions ("chained thoughts") 
-# allowed in the loop before forcibly returning control to the user.
-# Prevents infinite loops during complex tasks.
 max_iterations: 12
-
-# Show the AI's internal reasoning steps on the terminal log or the WebUI.
 verbose_traces: true
 action_console_enabled: true

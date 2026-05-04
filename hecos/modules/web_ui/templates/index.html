@@ -154,6 +154,10 @@
 </header>
 
 <div class="container">
+  <div id="config-welcome-container">
+    {% include 'modules/config_welcome.html' %}
+  </div>
+
   <div id="live-status">
     <div class="stat"><span class="stat-label">System:</span> <span id="s-backend" class="stat-val">—</span></div>
     <div class="stat dashboard-only" style="display:none;"><span class="stat-label">CPU:</span> <span id="s-cpu" class="stat-val">—</span></div>
@@ -181,9 +185,11 @@
      </div>
   </div>
 
-  <!-- WALL / GRID VIEW (Hidden by default) -->
-  <div id="config-wall" class="config-wall" style="display:none;">
-    <!-- Will be populated by config_core.js -->
+  <div id="config-main-ui-wrapper">
+    <!-- WALL / GRID VIEW (Hidden by default) -->
+    <div id="config-wall" class="config-wall" style="display:none;">
+      <!-- Will be populated by config_core.js -->
+    </div>
   </div>
 
   <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
