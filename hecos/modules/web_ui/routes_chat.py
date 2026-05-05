@@ -335,7 +335,15 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
             return Response(stream_with_context(err()), mimetype="text/event-stream")
 
         def generate():
+            from hecos.modules.web_ui.server import get_state_manager
+            sm = get_state_manager()
             while True:
+                # ── WebUI ESC Interceptor ──
+                if sm and getattr(sm, "webui_stop_requested", False):
+                    sm.webui_stop_requested = False
+                    yield "data: " + json.dumps({"type": "error", "text": "⛔ Elaborazione annullata."}) + "\n\n"
+                    break
+                # ───────────────────────────
                 try:
                     # Shorter timeout to check sess["done"] frequently 
                     ev = sess["queue"].get(timeout=0.5)
