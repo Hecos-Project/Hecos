@@ -82,18 +82,10 @@ window.initEvents = function() {
       
       if (ev.active) {
           if (pttInd) pttInd.classList.add('active');
-          if (window._webptt_beep) window._webptt_beep(880, 0.08); // High tone for START
-          
-          if (isWebMic && window.currentMicOn && window.startWebAudioRecording && !window.isWebAudioRecording) {
-              window.startWebAudioRecording();
-          }
+          // Bypassing browser beep and auto-recording on backend PTT hardware events
+          // to avoid double-echoing and double-recording contexts.
       } else {
           if (pttInd) pttInd.classList.remove('active');
-          if (window._webptt_beep) window._webptt_beep(440, 0.12); // Low tone for END
-          
-          if (isWebMic && window.currentMicOn && window.stopWebAudioRecording && window.isWebAudioRecording) {
-              window.stopWebAudioRecording();
-          }
       }
       
     } else if (ev.type === 'voice_detected' && ev.text) {
