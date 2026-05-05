@@ -1,0 +1,148 @@
+{# reminder_widget.html — Sidebar widget for the Reminder plugin #}
+{# Injected into chat.html sidebar via extension_loader + ChoiceLoader #}
+<div class="sidebar-section" id="reminder-widget">
+    <div class="ql-category" style="cursor:pointer;" onclick="reminderWidget.toggleBody()">
+        <span class="ql-category-title"><i class="fas fa-bell" style="font-size:0.9em;margin-right:6px;opacity:0.8;"></i> Promemoria</span>
+        <span class="ql-category-icon" id="reminder-widget-toggle" style="opacity:0.5;font-size:10px;">▼</span>
+    </div>
+    
+    <div id="reminder-widget-body" class="ql-items-container" style="display:flex; flex-direction:column; gap:4px; margin-top:2px; margin-bottom:8px;">
+        {# ── Upcoming list ── #}
+        <div id="reminder-list" style="display:flex;flex-direction:column;gap:4px;">
+          <span style="color:var(--muted);font-size:0.8em;padding-left:12px;">Caricamento...</span>
+        </div>
+
+        {# ── Quick-add form ── #}
+        <form id="reminder-quick-add" onsubmit="reminderWidget.quickAdd(event)"
+              style="margin-top:6px;display:flex;flex-direction:column;gap:6px;padding:0 8px;">
+          <input id="reminder-title-input" type="text" placeholder="Cosa ricordare..."
+                 style="width:100%;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);
+                        background:rgba(0,0,0,0.2);color:var(--text);font-size:11px;"
+                 autocomplete="off" required>
+          <div style="display:flex;gap:4px;">
+              <input id="reminder-when-input" type="text" placeholder="Es: tra 30 min"
+                     style="flex:1;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);
+                            background:rgba(0,0,0,0.2);color:var(--text);font-size:11px;"
+                     autocomplete="off" required>
+              <button type="submit" class="ql-item" style="border:none;padding:4px 10px;justify-content:center;min-height:unset;">
+                  +
+              </button>
+          </div>
+          <div id="reminder-quick-msg" style="font-size:10px;min-height:12px;text-align:center;"></div>
+        </form>
+    </div>
+</div>
+
+<script>
+window.reminderWidget = (function() {
+  let _collapsed = false;
+
+  function toggleBody() {
+    _collapsed = !_collapsed;
+    const body = document.getElementById('reminder-widget-body');
+    const tog  = document.getElementById('reminder-widget-toggle');
+    if (body) body.style.display = _collapsed ? 'none' : '';
+    if (tog)  tog.textContent = _collapsed ? '▸' : '▾';
+  }
+
+  function _fmt(r) {
+    // Format scheduled time for display
+    if (r.repeat && r.cron_expr) return '🔁 ricorrente';
+    if (r.when_iso) {
+      try {
+        const d = new Date(r.when_iso);
+        const now = new Date();
+        const diff = d - now;
+        if (diff < 0)      return '⏰ scaduto';
+        if (diff < 60000)  return '⏰ <1 min';
+        if (diff < 3600000) return `⏰ ${Math.round(diff/60000)}m`;
+        if (diff < 86400000) return `⏰ ${Math.round(diff/3600000)}h`;
+        return `📅 ${d.toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}`;
+      } catch(e) { return r.when_iso; }
+    }
+    return '';
+  }
+
+  function refresh() {
+    fetch('/api/ext/reminder?n=5')
+      .then(r => r.json())
+      .then(data => {
+        const list = document.getElementById('reminder-list');
+        if (!list) return;
+        if (!data.ok || !data.reminders || data.reminders.length === 0) {
+          list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Nessun promemoria attivo</span>';
+          return;
+        }
+        list.innerHTML = data.reminders.map(r => `
+          <div class="ql-item" style="padding:4px 8px;display:flex;align-items:center;min-height:28px;">
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${r.title}">${r.title}</span>
+            <span style="color:var(--muted);font-size:10px;white-space:nowrap;margin:0 6px;">${_fmt(r)}</span>
+            <div style="display:flex;gap:2px;">
+                <button onclick="reminderWidget.snooze('${r.id}')" title="Snooze 15 min"
+                        style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:0 2px;">zzz</button>
+                <button onclick="reminderWidget.cancel('${r.id}')" title="Cancella"
+                        style="background:none;border:none;cursor:pointer;font-size:12px;color:rgba(255,80,80,0.8);padding:0 2px;">✕</button>
+            </div>
+          </div>
+        `).join('');
+      })
+      .catch(() => {
+        const list = document.getElementById('reminder-list');
+        if (list) list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Errore caricamento</span>';
+      });
+  }
+
+  function quickAdd(e) {
+    e.preventDefault();
+    const title = document.getElementById('reminder-title-input').value.trim();
+    const when  = document.getElementById('reminder-when-input').value.trim();
+    const msg   = document.getElementById('reminder-quick-msg');
+    if (!title || !when) return;
+
+    fetch('/api/ext/reminder', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, when })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (msg) {
+        msg.style.color = data.ok ? 'var(--accent)' : '#e05';
+        msg.textContent = data.ok ? '✅ Promemoria impostato!' : (data.error || data.message || 'Errore');
+        setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+      }
+      if (data.ok) {
+        document.getElementById('reminder-title-input').value = '';
+        document.getElementById('reminder-when-input').value = '';
+        refresh();
+      }
+    })
+    .catch(() => { if (msg) { msg.style.color='#e05'; msg.textContent='Errore di rete'; } });
+  }
+
+  function cancel(id) {
+    if (!confirm('Cancellare il promemoria?')) return;
+    fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
+      .then(() => refresh());
+  }
+
+  function snooze(id) {
+    fetch(`/api/ext/reminder/${id}/snooze`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ minutes: 15 })
+    }).then(() => refresh());
+  }
+
+  // Auto-refresh every 60 seconds
+  setInterval(refresh, 60000);
+  // Initial load on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refresh);
+  } else {
+    setTimeout(refresh, 500);
+  }
+
+  return { refresh, quickAdd, cancel, snooze, toggleBody };
+})();
+</script>

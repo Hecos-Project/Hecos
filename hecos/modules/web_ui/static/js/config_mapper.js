@@ -183,6 +183,9 @@ function populateUI() {
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
     
+    // Reminder Dispatch
+    if (typeof populateReminderUI === 'function') populateReminderUI();
+    
     // 7. Privacy & WebUI Dispatch
 
     populatePrivacyUI();
@@ -613,6 +616,20 @@ function buildPayload() {
         out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
     }
 
+    // Reminder Payload Part
+    const remPart = (typeof buildReminderPayload === 'function') ? buildReminderPayload() : {};
+    if (remPart && remPart.plugins && remPart.plugins.REMOTE_TRIGGERS) {
+        // Fallback for buildReminderPayload structure
+    }
+
+    if (remPart && remPart.plugins && remPart.plugins.REMINDER) {
+        out.plugins['REMINDER'] = out.plugins['REMINDER'] || {};
+        out.plugins['REMINDER'].tts_enabled = remPart.plugins.REMINDER.tts_enabled;
+        out.plugins['REMINDER'].time_format = remPart.plugins.REMINDER.time_format;
+        out.plugins['REMINDER'].max_reminders = remPart.plugins.REMINDER.max_reminders;
+        out.plugins['REMINDER'].snooze_default_minutes = remPart.plugins.REMINDER.snooze_default_minutes;
+    }
+
 
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
@@ -815,6 +832,31 @@ function buildAgentPayload() {
             max_iterations: parseInt(document.getElementById('agent-max-iter').value) || 10,
             verbose_traces: document.getElementById('agent-verbose').checked,
             action_console_enabled: document.getElementById('agent-action-console').checked
+        }
+    };
+}
+
+function populateReminderUI() {
+    const c = window.cfg;
+    if (!c || !c.plugins || !c.plugins.REMINDER) return;
+    const s = c.plugins.REMINDER;
+    setCheck('rem-tts', s.tts_enabled ?? true);
+    setVal('rem-time-format', s.time_format || '24h');
+    setVal('rem-max', s.max_reminders ?? 50);
+    setVal('rem-snooze', s.snooze_default_minutes ?? 15);
+}
+
+function buildReminderPayload() {
+    const el = document.getElementById('rem-tts');
+    if (!el) return {};
+    return {
+        plugins: {
+            REMINDER: {
+                tts_enabled: document.getElementById('rem-tts').checked,
+                time_format: document.getElementById('rem-time-format').value || '24h',
+                max_reminders: parseInt(document.getElementById('rem-max').value) || 50,
+                snooze_default_minutes: parseInt(document.getElementById('rem-snooze').value) || 15
+            }
         }
     };
 }

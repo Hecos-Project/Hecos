@@ -156,9 +156,93 @@ window.initEvents = function() {
       if (targetBubble && window.tryLoadAudio) {
         window.tryLoadAudio(targetBubble);
       }
+
+    } else if (ev.type === 'reminder_fire') {
+      // ── Reminder Alert Banner ────────────────────────────────────────────
+      // Shows a dismissable banner at the top of the chat when a reminder fires.
+      const title = (ev.data && ev.data.title) ? ev.data.title : 'Promemoria';
+      _showReminderBanner(title);
+      // Refresh sidebar widget if present
+      if (window.reminderWidget && window.reminderWidget.refresh) {
+        window.reminderWidget.refresh();
+      }
     }
   };
 };
+
+/**
+ * Displays a dismissable reminder alert banner at the top of the chat area.
+ * Auto-dismisses after 10 seconds.
+ */
+function _showReminderBanner(title) {
+  // Remove existing banner if present
+  const existing = document.getElementById('hecos-reminder-banner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'hecos-reminder-banner';
+  banner.style.cssText = [
+    'position: fixed',
+    'top: 70px',
+    'left: 50%',
+    'transform: translateX(-50%)',
+    'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+    'color: #fff',
+    'border: 1px solid rgba(255,200,60,0.5)',
+    'border-radius: 12px',
+    'padding: 14px 20px',
+    'z-index: 9999',
+    'display: flex',
+    'align-items: center',
+    'gap: 12px',
+    'box-shadow: 0 8px 32px rgba(0,0,0,0.4)',
+    'min-width: 300px',
+    'max-width: 500px',
+    'animation: hecos-slide-down 0.3s ease',
+  ].join(';');
+
+  banner.innerHTML = `
+    <span style="font-size:1.5em;">🔔</span>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:0.95em;color:#ffc83c;">Promemoria</div>
+      <div style="font-size:0.9em;color:#e0e0e0;margin-top:2px;">${_escapeHtml(title)}</div>
+    </div>
+    <button onclick="document.getElementById('hecos-reminder-banner').remove()"
+      style="background:none;border:none;color:#aaa;cursor:pointer;font-size:1.1em;padding:0 4px;"
+      title="Chiudi">✕</button>
+  `;
+
+  // Inject keyframe if not already present
+  if (!document.getElementById('hecos-reminder-style')) {
+    const style = document.createElement('style');
+    style.id = 'hecos-reminder-style';
+    style.textContent = `
+      @keyframes hecos-slide-down {
+        from { opacity:0; transform: translateX(-50%) translateY(-20px); }
+        to   { opacity:1; transform: translateX(-50%) translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(banner);
+
+  // Auto-dismiss after 10 seconds
+  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 10000);
+
+  // Optional: browser notification if tab is not focused
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+    new Notification('Hecos — Promemoria', { body: title, icon: '/static/images/hecos_light.png' });
+  }
+}
+
+function _escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     window.initEvents();

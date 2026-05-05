@@ -9,7 +9,7 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: -1
+  last_seed: 901096299
   sampler: dpm++2m_karras
   scheduler: dpm++
   guidance_scale: 1.0

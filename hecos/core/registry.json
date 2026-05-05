@@ -158,6 +158,21 @@
         "icon": "",
         "category": "PLUGINS"
     },
+    "REMINDER": {
+        "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
+        "commands": {
+            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
+            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
     "WEB": {
         "description": "Network access for Google searches and quick opening of websites.",
         "commands": {

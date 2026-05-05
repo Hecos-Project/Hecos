@@ -1,0 +1,122 @@
+<!-- REMINDER MODULE CONFIG -->
+<div id="tab-reminder" class="panel">
+    <div class="card">
+        <div class="card-title">⏰ Reminder Settings</div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+            Configure the local scheduler for time-based reminders and natural language recurrence.
+        </p>
+
+        <!-- Dynamic config toggles mapped for window.cfg.plugins.REMINDER -->
+        <div class="toggle-row">
+            <div class="toggle-info">
+                <strong>TTS Audio Alerts</strong>
+                <p>Play a voice alert when a reminder fires.</p>
+            </div>
+            <label class="switch"><input type="checkbox" id="rem-tts"><span class="slider"></span></label>
+        </div>
+
+        <div class="field mt-3">
+            <label>Time Format</label>
+            <select id="rem-time-format">
+                <option value="24h">24h (15:00)</option>
+                <option value="12h">12h (03:00 PM)</option>
+            </select>
+        </div>
+
+        <div class="field mt-3">
+            <label>Max Active Reminders</label>
+            <input type="number" id="rem-max" value="50" min="1" max="500">
+        </div>
+
+        <div class="field mt-3">
+            <label>Default Snooze Time (minutes)</label>
+            <input type="number" id="rem-snooze" value="15" min="1" max="60">
+        </div>
+
+    </div>
+
+    <!-- Active Reminders List -->
+    <div class="card" id="card-active-reminders">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>📋 Active Reminders</span>
+            <button type="button" class="btn btn-outline-accent btn-sm" onclick="window.refreshReminderConfig()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div id="reminder-config-list" style="margin-top:10px; max-height: 400px; overflow-y: auto;">
+            <p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading reminders...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+window.refreshReminderConfig = function() {
+    const list = document.getElementById('reminder-config-list');
+    if (!list) return;
+
+    fetch('/api/ext/reminder/all')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok || !data.reminders || data.reminders.length === 0) {
+                list.innerHTML = '<p class="text-muted" style="font-size:13px; margin:10px 0;">No active reminders at the moment.</p>';
+                return;
+            }
+
+            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+            data.reminders.forEach(r => {
+                let timeInfo = '';
+                if (r.repeat && r.cron_expr) {
+                    timeInfo = `<span class="badge bg-primary" style="font-size:10px;margin-right:6px;">Recurring</span> <small>${r.cron_expr}</small>`;
+                } else if (r.when_iso) {
+                    const d = new Date(r.when_iso);
+                    timeInfo = `<i class="far fa-calendar-alt"></i> ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                } else {
+                    timeInfo = 'N/A';
+                }
+
+                const statusColor = r.status === 'active' ? 'color:var(--green);' : (r.status === 'fired' ? 'color:var(--yellow);' : 'color:var(--red);');
+                
+                html += `
+                <div style="background:rgba(0,0,0,0.1); border:1px solid rgba(255,255,255,0.05); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="font-size:14px; color:var(--text);">${r.title}</strong><br>
+                        <small style="color:var(--muted); font-size:11px;">
+                            ${timeInfo} | Status: <span style="${statusColor}">${r.status.toUpperCase()}</span>
+                        </small>
+                    </div>
+                    <div>
+                        ${r.status === 'active' ? `<button type="button" class="btn btn-sm btn-outline-danger" style="padding:4px 8px; border:none; background:rgba(255,0,0,0.2);" onclick="window.cancelReminderFromConfig('${r.id}')">✕</button>` : ''}
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            list.innerHTML = html;
+        })
+        .catch(e => {
+            list.innerHTML = '<p style="color:var(--red); font-size:13px;">Error loading reminders.</p>';
+        });
+};
+
+window.cancelReminderFromConfig = function(id) {
+    if (!confirm('Are you sure you want to cancel this reminder?')) return;
+    fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            window.refreshReminderConfig();
+        });
+};
+
+// Initial load hook
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+            if (m.target.id === 'tab-reminder' && m.target.classList.contains('active')) {
+                window.refreshReminderConfig();
+            }
+        });
+    });
+    
+    const panel = document.getElementById('tab-reminder');
+    if (panel) observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+});
+</script>

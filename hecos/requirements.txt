@@ -84,3 +84,9 @@ qrcode[pil]>=7.4.2          # Generazione QR Code per accesso mobile
 # uvicorn>=0.24.0            # Server ASGI
 # websockets>=12.0           # Per comunicazioni real-time
 # sqlalchemy>=2.0.0          # ORM alternativo a SQLite puro
+
+# ------------------------------
+# v0.20.0 — REMINDER MODULE
+# ------------------------------
+APScheduler>=3.10.0         # Scheduler background (CRON + one-shot) — modulo REMINDER
+dateparser>=1.2.0           # Parsing linguaggio naturale per date/orari — modulo REMINDER
