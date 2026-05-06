@@ -290,6 +290,7 @@ class PluginReminder(BaseModel):
     time_format: str = "24h"
     max_reminders: int = 50
     snooze_default_minutes: int = 15
+    reminder_snooze_ui: bool = False
 
 class MCPServerConfig(BaseModel):
     command: str

@@ -147,6 +147,32 @@ def init_routes(app, root_dir: str = None):
         result = plugin.snooze_reminder(reminder_id, minutes)
         return jsonify({"ok": "❌" not in result, "message": result})
 
+    # ── POST /api/ext/reminder/stop — stop audio ──────────────────────────────
+    @app.route("/api/ext/reminder/stop", methods=["POST"])
+    @login_required
+    def reminder_stop_audio():
+        """Stops an active reminder audio loop."""
+        plugin = _get_plugin()
+        if not plugin:
+            return jsonify({"ok": False, "error": "Reminder plugin not loaded"}), 503
+        result = plugin.stop_audio()
+        return jsonify({"ok": True, "message": result})
+
+    # ── POST /api/ext/reminder/<id>/interactive — toggle mode ─────────────────
+    @app.route("/api/ext/reminder/<reminder_id>/interactive", methods=["POST"])
+    @login_required
+    def reminder_set_interactive(reminder_id):
+        """Sets or toggles the interactive flag for a specific reminder."""
+        store = _get_store()
+        if not store:
+            return jsonify({"ok": False, "error": "Store not available"}), 503
+        body = request.get_json(silent=True) or {}
+        interactive = body.get("interactive")  # True or False
+        if interactive is None:
+            return jsonify({"ok": False, "error": "Missing 'interactive' field"}), 400
+        ok = store.update_interactive(reminder_id, bool(interactive))
+        return jsonify({"ok": ok})
+
     # ── GET /hecos/config/reminder — config tab page ──────────────────────────
     @app.route("/hecos/config/reminder")
     @login_required

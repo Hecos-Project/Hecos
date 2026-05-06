@@ -1,0 +1,10 @@
+{
+    "extension_id": "calendar",
+    "parent_plugin": "WEB_UI",
+    "display_name": "Calendar",
+    "version": "1.0.0",
+    "description": "Full-featured calendar sidebar widget and config panel. Powered by FullCalendar.js. Used by Reminder and other modules for datetime picking.",
+    "sidebar_widget": true,
+    "eager_load": true,
+    "config_schema": {}
+}

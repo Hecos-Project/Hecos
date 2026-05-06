@@ -1,0 +1,185 @@
+/* ── Hecos Calendar Extension Styles ─────────────────────────────────────── */
+
+/* ── Sidebar Widget ─────────────────────────────────────────────────────── */
+#calendar-widget .cal-event-card {
+  background: rgba(52, 152, 219, 0.07);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+#calendar-widget .cal-event-card .cal-event-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+#calendar-widget .cal-event-card .cal-event-time {
+  font-size: 10px;
+  color: var(--muted);
+}
+#calendar-widget .cal-event-card .cal-event-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Full Calendar Overrides ────────────────────────────────────────────── */
+#hecos-fullcalendar {
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+}
+#hecos-fullcalendar .fc-toolbar-title {
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--text);
+}
+#hecos-fullcalendar .fc-button {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  color: var(--text) !important;
+  border-radius: 6px !important;
+  padding: 3px 10px !important;
+  font-size: 12px !important;
+}
+#hecos-fullcalendar .fc-button:hover {
+  background: rgba(255,255,255,0.12) !important;
+}
+#hecos-fullcalendar .fc-button-active,
+#hecos-fullcalendar .fc-button-primary:not(:disabled).fc-button-active {
+  background: rgba(var(--accent-rgb, 52,152,219), 0.25) !important;
+  border-color: rgba(var(--accent-rgb, 52,152,219), 0.5) !important;
+}
+#hecos-fullcalendar .fc-col-header-cell-cushion,
+#hecos-fullcalendar .fc-daygrid-day-number {
+  color: var(--muted) !important;
+  font-size: 11px;
+  text-decoration: none !important;
+}
+#hecos-fullcalendar .fc-day-today {
+  background: rgba(var(--accent-rgb, 52,152,219), 0.07) !important;
+}
+#hecos-fullcalendar .fc-daygrid-event {
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  padding: 1px 4px !important;
+}
+#hecos-fullcalendar .fc-scrollgrid {
+  border-color: rgba(255,255,255,0.06) !important;
+}
+#hecos-fullcalendar td, #hecos-fullcalendar th {
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* ── Event Detail Popup ─────────────────────────────────────────────────── */
+#cal-event-popup {
+  position: fixed;
+  z-index: 10000;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(52,152,219,0.3);
+  border-radius: 12px;
+  padding: 16px 20px;
+  min-width: 220px;
+  max-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  color: var(--text);
+  font-size: 13px;
+}
+#cal-event-popup .pop-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #3498db; }
+#cal-event-popup .pop-time  { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+#cal-event-popup .pop-notes { color: var(--text); font-size: 12px; margin-bottom: 10px; }
+#cal-event-popup .pop-actions { display: flex; gap: 8px; }
+#cal-event-popup button { border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 12px; font-weight: 600; }
+#cal-event-popup .pop-delete { background: rgba(255,50,50,0.2); color: #ff5555; border: 1px solid rgba(255,50,50,0.3); }
+#cal-event-popup .pop-close  { background: rgba(255,255,255,0.07); color: var(--muted); border: 1px solid rgba(255,255,255,0.1); }
+
+/* ── Wheel Picker ───────────────────────────────────────────────────────── */
+#hwp-overlay {
+  position: fixed; inset: 0; z-index: 19999;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+#hwp-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255,200,60,0.25);
+  border-radius: 16px;
+  width: 380px;
+  max-width: 96vw;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+}
+#hwp-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#hwp-title { font-weight: 700; font-size: 14px; color: #ffc83c; }
+#hwp-close { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; }
+#hwp-wheels-wrap {
+  position: relative; padding: 0 16px;
+}
+#hwp-wheels {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 8px 0;
+}
+.hwp-col {
+  display: flex; flex-direction: column; align-items: center;
+}
+.hwp-track {
+  height: 200px; overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  padding: calc((200px / 2) - 20px) 0; /* center items */
+}
+.hwp-track::-webkit-scrollbar { display: none; }
+.hwp-item {
+  height: 40px; line-height: 40px;
+  scroll-snap-align: center;
+  text-align: center;
+  font-size: 22px; font-weight: 600;
+  color: rgba(255,255,255,0.35);
+  width: 56px;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+  user-select: none;
+}
+.hwp-sep {
+  font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.3);
+  padding: 0 4px; align-self: center;
+}
+#hwp-highlight {
+  position: absolute;
+  top: 50%; left: 16px; right: 16px;
+  height: 40px; margin-top: -20px;
+  border-top: 1px solid rgba(255,200,60,0.35);
+  border-bottom: 1px solid rgba(255,200,60,0.35);
+  pointer-events: none;
+}
+#hwp-footer {
+  display: flex; gap: 10px; padding: 14px 18px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  justify-content: flex-end;
+}
+#hwp-cancel {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--muted); border-radius: 8px;
+  padding: 8px 18px; cursor: pointer; font-size: 13px;
+}
+#hwp-confirm {
+  background: rgba(255,200,60,0.2);
+  border: 1px solid rgba(255,200,60,0.45);
+  color: #ffc83c; border-radius: 8px;
+  padding: 8px 22px; cursor: pointer;
+  font-size: 13px; font-weight: 700;
+}
+#hwp-confirm:hover { background: rgba(255,200,60,0.3); }

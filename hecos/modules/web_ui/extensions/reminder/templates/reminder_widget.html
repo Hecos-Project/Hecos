@@ -11,20 +11,50 @@
           <span style="color:var(--muted);font-size:0.8em;padding-left:12px;">{{ t('webui_chat_loading') }}</span>
         </div>
 
-        {# ── Quick-add form ── #}
+        {# ── Dual-Mode Add Form ── #}
         <form id="reminder-quick-add" onsubmit="reminderWidget.quickAdd(event)"
               style="display:flex;flex-direction:column;gap:6px;">
           <input id="reminder-title-input" class="ql-input" type="text" placeholder="What to remind you about..."
                  autocomplete="off" required>
-          <div style="display:flex;gap:4px;">
-              <input id="reminder-when-input" class="ql-input" type="text" placeholder="Ex: in 30 min"
-                     autocomplete="off" required>
+          
+          <div style="display:flex;gap:4px;align-items:center;">
+              <input id="reminder-when-input" class="ql-input" type="text" placeholder="Ex: in 5 min, tomorrow 12:30..."
+                     autocomplete="off" required style="flex:1;">
+              
+              <button type="button" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;background:rgba(255,200,60,0.15);border-color:rgba(255,200,60,0.3);color:#ffc83c;" onclick="reminderWidget.pickWheelTime()" title="Pick Exact Time">
+                  🕒
+              </button>
+              
               <button type="submit" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;">
                   +
               </button>
           </div>
+          
+          <!-- Quick Chips -->
+          <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px; justify-content:center;">
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 5 min')">+ 5m</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 15 min')">+ 15m</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 30 min')">+ 30m</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 1 hour')">+ 1h</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 10 min')">Pasta 🍝</span>
+          </div>
+
           <div id="reminder-quick-msg" style="font-size:10px;min-height:12px;text-align:center;"></div>
         </form>
+
+        <style>
+        .rem-chip {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: var(--muted);
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .rem-chip:hover { background: rgba(52,152,219,0.2); color: #3498db; border-color: rgba(52,152,219,0.4); }
+        </style>
     </div>
 </div>
 
@@ -67,18 +97,54 @@ window.reminderWidget = (function() {
           list.innerHTML = `<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">${t('ext_reminder_none')}</span>`;
           return;
         }
-        list.innerHTML = data.reminders.map(r => `
-          <div class="ql-item" style="padding:4px 8px;display:flex;align-items:center;min-height:28px;">
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="${r.title}">${r.title}</span>
-            <span style="color:var(--muted);font-size:10px;white-space:nowrap;margin:0 6px;">${_fmt(r)}</span>
-            <div style="display:flex;gap:2px;">
-                <button onclick="reminderWidget.snooze('${r.id}')" title="Snooze 15 min"
-                        style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:0 2px;">zzz</button>
-                <button onclick="reminderWidget.cancel('${r.id}')" title="Cancel"
-                        style="background:none;border:none;cursor:pointer;font-size:12px;color:rgba(255,80,80,0.8);padding:0 2px;">✕</button>
+        list.innerHTML = data.reminders.map(r => {
+          let isInt = r.interactive === 1;
+          if (r.interactive === null || r.interactive === undefined) {
+             isInt = !!(window.cfg && window.cfg.plugins && window.cfg.plugins.REMINDER && window.cfg.plugins.REMINDER.reminder_snooze_ui);
+          }
+          const modePillStyle = isInt 
+            ? 'background:rgba(255,200,60,0.15);border:1px solid rgba(255,200,60,0.3);color:#ffc83c;padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;'
+            : 'background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;';
+          const modeLabel = isInt ? 'INTERACTIVE' : 'SIMPLE';
+          const nextMode = isInt ? false : true;
+
+          let fullDate = '';
+          if (r.when_iso) {
+            try {
+              const d = new Date(r.when_iso);
+              fullDate = d.toLocaleDateString(undefined, {day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString(undefined, {hour:'2-digit',minute:'2-digit'});
+            } catch(e){}
+          } else if (r.repeat) {
+            fullDate = 'Recurring'
+          }
+
+          return `
+          <div class="ql-item" style="background:rgba(255,200,60,0.05); border:1px solid rgba(255,200,60,0.15); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                <span style="flex:1; font-size:13px; color:var(--text); line-height:1.4; word-break:break-word;">
+                    <i class="far fa-clock" style="color:#ffc83c; margin-right:4px;"></i> <strong>${r.title}</strong>
+                </span>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="reminderWidget.snooze('${r.id}')" title="Snooze 15 min"
+                            style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.6);padding:0;">zzz</button>
+                    <button onclick="reminderWidget.cancel('${r.id}')" title="Cancel"
+                            style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,80,80,0.8);padding:0;">✕</button>
+                </div>
             </div>
+            
+            <div style="font-size:10px; color:var(--muted); line-height:1.3;">
+                <i class="far fa-calendar-alt" style="margin-right:2px;"></i> ${fullDate} <span style="opacity:0.75;margin-left:4px;">(${_fmt(r)})</span>
+            </div>
+            
+            <div style="display:flex; justify-content:flex-start; margin-top:4px;">
+                <button onclick="reminderWidget.toggleMode('${r.id}', ${nextMode})" title="Change Mode"
+                        style="${modePillStyle} cursor:pointer; outline:none;" class="reminder-mode-toggle">${modeLabel}</button>
+            </div>
+
           </div>
-        `).join('');
+          `;
+        }).join('');
       })
       .catch(() => {
         const list = document.getElementById('reminder-list');
@@ -116,6 +182,7 @@ window.reminderWidget = (function() {
 
   function cancel(id) {
     if (!confirm('Cancel this reminder?')) return;
+    fetch('/api/ext/reminder/stop', { method: 'POST' });
     fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
       .then(() => refresh());
   }
@@ -128,6 +195,42 @@ window.reminderWidget = (function() {
     }).then(() => refresh());
   }
 
+  function toggleMode(id, nextMode) {
+    fetch(`/api/ext/reminder/${id}/interactive`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ interactive: nextMode })
+    }).then(() => refresh());
+  }
+
+  function pickWheelTime() {
+    if (typeof HecosWheelPicker === 'undefined') {
+      console.warn('HecosWheelPicker is not available.');
+      return;
+    }
+    HecosWheelPicker.open({
+      mode: 'datetime',
+      onConfirm: (isoString) => {
+        const inp = document.getElementById('reminder-when-input');
+        if (inp) {
+            inp.value = isoString;
+            // Provide a quick visual feedback
+            inp.style.backgroundColor = 'rgba(52,152,219,0.2)';
+            setTimeout(() => inp.style.backgroundColor = '', 400);
+        }
+      }
+    });
+  }
+
+  function setChip(val) {
+    const inp = document.getElementById('reminder-when-input');
+    if (inp) {
+        inp.value = val;
+        inp.style.backgroundColor = 'rgba(52,152,219,0.2)';
+        setTimeout(() => inp.style.backgroundColor = '', 400);
+    }
+  }
+
   // Auto-refresh every 60 seconds
   setInterval(refresh, 60000);
   
@@ -135,9 +238,9 @@ window.reminderWidget = (function() {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', refresh);
   } else {
-    setTimeout(refresh, 500);
+    refresh();
   }
 
-  return { refresh, quickAdd, cancel, snooze, toggleBody };
+  return { refresh, quickAdd, cancel, snooze, toggleBody, toggleMode, pickWheelTime, setChip };
 })();
 </script>

@@ -1,0 +1,89 @@
+<link rel="stylesheet" href="/ext/calendar/static/css/calendar.css">
+
+<div class="sidebar-card" id="calendar-widget">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; gap:6px; margin-bottom:6px; padding:0;" onclick="calendarWidget.toggleBody()">
+        <span class="ql-icon">📅</span>
+        <span class="ql-title">Calendar</span>
+        <span class="ql-chevron" id="calendar-widget-toggle">▾</span>
+    </div>
+
+    <div id="calendar-widget-body" class="ql-body">
+        <div id="calendar-upcoming-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+            <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Loading...</span>
+        </div>
+        <button onclick="calendarWidget.openFull()"
+                style="width:100%;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.25);color:#3498db;border-radius:6px;padding:6px;cursor:pointer;font-size:11px;font-weight:600;">
+            📅 Open Full Calendar
+        </button>
+    </div>
+</div>
+
+<script>
+window.calendarWidget = (function() {
+    let _collapsed = false;
+
+    function toggleBody() {
+        _collapsed = !_collapsed;
+        const body = document.getElementById('calendar-widget-body');
+        const tog  = document.getElementById('calendar-widget-toggle');
+        if (body) body.style.display = _collapsed ? 'none' : '';
+        if (tog) tog.classList.toggle('collapsed', _collapsed);
+    }
+
+    function _fmtDate(iso) {
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString(undefined, {weekday:'short', day:'2-digit', month:'short'})
+                + ' ' + d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
+        } catch(e) { return iso; }
+    }
+
+    function refresh() {
+        fetch('/api/ext/calendar/upcoming?n=4')
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('calendar-upcoming-list');
+                if (!list) return;
+                if (!data.ok || !data.events || data.events.length === 0) {
+                    list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">No upcoming events</span>';
+                    return;
+                }
+                list.innerHTML = data.events.map(ev => {
+                    const color = ev.color || '#3498db';
+                    return `
+                    <div class="cal-event-card">
+                        <div class="cal-event-title">
+                            <span class="cal-event-dot" style="background:${color};"></span>
+                            ${ev.title}
+                        </div>
+                        <div class="cal-event-time">📅 ${_fmtDate(ev.start_iso)}</div>
+                    </div>`;
+                }).join('');
+            })
+            .catch(() => {
+                const list = document.getElementById('calendar-upcoming-list');
+                if (list) list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Unavailable</span>';
+            });
+    }
+
+    function openFull() {
+        // Navigate to the Calendar config tab
+        if (typeof loadConfigSection === 'function') {
+            loadConfigSection('calendar');
+        } else {
+            window.location.href = '/?section=calendar';
+        }
+    }
+
+    // Auto-refresh every 5 minutes
+    setInterval(refresh, 300000);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', refresh);
+    } else {
+        setTimeout(refresh, 400);
+    }
+
+    return { refresh, toggleBody, openFull };
+})();
+</script>

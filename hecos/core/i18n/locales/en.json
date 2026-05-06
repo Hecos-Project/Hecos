@@ -758,6 +758,7 @@
         "ext_reminder_not_found": "❌ No reminder found with ID `{id}`.",
         "ext_reminder_cancelled": "🗑️ Reminder **{title}** cancelled.",
         "ext_reminder_snoozed": "💤 Reminder **{title}** snoozed until {time}.",
-        "ext_reminder_at": "at"
+        "ext_reminder_at": "at",
+        "ext_reminder_snooze": "Snooze"
     }
 }

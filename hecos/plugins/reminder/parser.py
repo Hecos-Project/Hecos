@@ -148,17 +148,28 @@ def parse_datetime(text: str) -> datetime | None:
 
 
 def _basic_parse(text: str) -> datetime | None:
-    """Minimal fallback parser for simple expressions when dateparser is unavailable."""
+    """Minimal fallback parser for simple expressions when dateparser is unavailable or fails."""
     text_lower = text.lower().strip()
     now = datetime.now()
 
+    # Map common Italian word-numbers to digits to fortify the fallback
+    text_lower = re.sub(r"\bun['’一]?", "1 ", text_lower)
+    replacements = {
+        r"\b(?:uno|una)\b": "1", r"\bdue\b": "2", r"\btre\b": "3", r"\bquattro\b": "4",
+        r"\bcinque\b": "5", r"\bsei\b": "6", r"\bsette\b": "7", r"\botto\b": "8",
+        r"\bnove\b": "9", r"\bdieci\b": "10", r"\bundici\b": "11", r"\bdodici\b": "12",
+        r"\bquindici\b": "15", r"\bventi\b": "20", r"\bmezz'ora\b": "30 minut", r"\bmezzora\b": "30 minut"
+    }
+    for pat, rep in replacements.items():
+        text_lower = re.sub(pat, rep, text_lower)
+
     # "(tra) N minuti"
-    m = re.search(r"(?:tra\s+)?(\d+)\s+minut", text_lower)
+    m = re.search(r"(?:(?:tra|fra|in)\s+)?(\d+)\s*minut", text_lower)
     if m:
         return now + timedelta(minutes=int(m.group(1)))
 
     # "(tra) N ore"
-    m = re.search(r"(?:tra\s+)?(\d+)\s+or[ae]", text_lower)
+    m = re.search(r"(?:(?:tra|fra|in)\s+)?(\d+)\s*or[ae]", text_lower)
     if m:
         return now + timedelta(hours=int(m.group(1)))
 

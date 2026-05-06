@@ -626,6 +626,7 @@ function buildPayload() {
         out.plugins['REMINDER'].time_format = r.time_format;
         out.plugins['REMINDER'].max_reminders = r.max_reminders;
         out.plugins['REMINDER'].snooze_default_minutes = r.snooze_default_minutes;
+        out.plugins['REMINDER'].reminder_snooze_ui = r.reminder_snooze_ui;
     }
 
 
@@ -843,6 +844,7 @@ function populateReminderUI() {
     setVal('rem-time-format', s.time_format || '24h');
     setVal('rem-max', s.max_reminders ?? 50);
     setVal('rem-snooze', s.snooze_default_minutes ?? 15);
+    setCheck('rem-snooze-ui', s.reminder_snooze_ui ?? false);
 }
 
 function buildReminderPayload() {
@@ -855,7 +857,8 @@ function buildReminderPayload() {
                 ringtone_path: document.getElementById('rem-ringtone').value || '',
                 time_format: document.getElementById('rem-time-format').value || '24h',
                 max_reminders: parseInt(document.getElementById('rem-max').value) || 50,
-                snooze_default_minutes: parseInt(document.getElementById('rem-snooze').value) || 15
+                snooze_default_minutes: parseInt(document.getElementById('rem-snooze').value) || 15,
+                reminder_snooze_ui: getC('rem-snooze-ui')
             }
         }
     };

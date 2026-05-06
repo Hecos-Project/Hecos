@@ -773,6 +773,7 @@
         "ext_reminder_not_found": "❌ Nessun promemoria trovato con ID `{id}`.",
         "ext_reminder_cancelled": "🗑️ Promemoria **{title}** cancellato.",
         "ext_reminder_snoozed": "💤 Promemoria **{title}** posticipato alle {time}.",
-        "ext_reminder_at": "alle"
+        "ext_reminder_at": "alle",
+        "ext_reminder_snooze": "Posponi"
     }
 }

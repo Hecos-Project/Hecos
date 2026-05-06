@@ -164,7 +164,8 @@
             "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
             "list_reminders": "Lists all active reminders with their scheduled time and ID.",
             "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
-            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now."
+            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
+            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
         },
         "status": "ONLINE",
         "example": "",

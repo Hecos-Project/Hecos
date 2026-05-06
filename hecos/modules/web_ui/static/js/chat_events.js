@@ -152,8 +152,12 @@ window.initEvents = function() {
     } else if (ev.type === 'reminder_fire') {
       // ── Reminder Alert Banner ────────────────────────────────────────────
       // Shows a dismissable banner at the top of the chat when a reminder fires.
-      const title = (ev.data && ev.data.title) ? ev.data.title : 'Promemoria';
-      _showReminderBanner(title);
+      console.log('[Reminder] SSE reminder_fire received:', ev);
+      const titleText = ev.title || (ev.data && ev.data.title) || 'Reminder';
+      const rid = ev.id || (ev.data && ev.data.id) || '';
+      const isInteractive = (typeof ev.interactive === 'boolean') ? ev.interactive
+                          : !!(window.cfg && window.cfg.plugins && window.cfg.plugins.REMINDER && window.cfg.plugins.REMINDER.reminder_snooze_ui);
+      _showReminderBanner(titleText, rid, isInteractive);
       // Refresh sidebar widget if present
       if (window.reminderWidget && window.reminderWidget.refresh) {
         window.reminderWidget.refresh();
@@ -163,10 +167,12 @@ window.initEvents = function() {
 };
 
 /**
- * Displays a dismissable reminder alert banner at the top of the chat area.
- * Auto-dismisses after 10 seconds.
+ * Displays a dismissable reminder alert banner.
+ * @param {string} title - Reminder title
+ * @param {string} rid   - Reminder ID
+ * @param {boolean} isInteractive - True = interactive mode (looping + Snooze/Stop buttons)
  */
-function _showReminderBanner(title) {
+function _showReminderBanner(title, rid, isInteractive) {
   // Remove existing banner if present
   const existing = document.getElementById('hecos-reminder-banner');
   if (existing) existing.remove();
@@ -189,22 +195,40 @@ function _showReminderBanner(title) {
     'gap: 12px',
     'box-shadow: 0 8px 32px rgba(0,0,0,0.4)',
     'min-width: 300px',
-    'max-width: 500px',
+    'max-width: 520px',
     'animation: hecos-slide-down 0.3s ease',
   ].join(';');
 
+  const snoozeLabel = window.t ? window.t('ext_reminder_snooze') || 'Snooze' : 'Snooze';
+
+  let actionHtml = '';
+  if (isInteractive && rid) {
+    actionHtml = `
+      <div style="display:flex;gap:8px;">
+        <button onclick="
+          fetch('/api/ext/reminder/${rid}/snooze', {method:'POST'});
+          fetch('/api/ext/reminder/stop', {method:'POST'});
+          document.getElementById('hecos-reminder-banner').remove();
+        "
+        style="background:rgba(255,200,60,0.2);border:1px solid rgba(255,200,60,0.5);color:#ffc83c;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.85em;font-weight:bold;">${snoozeLabel}</button>
+        <button onclick="
+          fetch('/api/ext/reminder/stop', {method:'POST'});
+          document.getElementById('hecos-reminder-banner').remove();
+        "
+        style="background:rgba(255,50,50,0.2);border:1px solid rgba(255,50,50,0.5);color:#ff5555;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:0.85em;font-weight:bold;">Stop</button>
+      </div>`;
+  }
+
   banner.innerHTML = `
-    <span style="font-size:1.5em;">🔔</span>
+    <span style="font-size:1.5em;">⏰</span>
     <div style="flex:1">
-      <div style="font-weight:600;font-size:0.95em;color:#ffc83c;">Promemoria</div>
+      <div style="font-weight:600;font-size:0.95em;color:#ffc83c;">Reminder</div>
       <div style="font-size:0.9em;color:#e0e0e0;margin-top:2px;">${_escapeHtml(title)}</div>
     </div>
-    <button onclick="document.getElementById('hecos-reminder-banner').remove()"
-      style="background:none;border:none;color:#aaa;cursor:pointer;font-size:1.1em;padding:0 4px;"
-      title="Chiudi">✕</button>
+    ${actionHtml}
   `;
 
-  // Inject keyframe if not already present
+  // Inject keyframe animation
   if (!document.getElementById('hecos-reminder-style')) {
     const style = document.createElement('style');
     style.id = 'hecos-reminder-style';
@@ -219,12 +243,23 @@ function _showReminderBanner(title) {
 
   document.body.appendChild(banner);
 
-  // Auto-dismiss after 10 seconds
-  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 10000);
+  if (!isInteractive) {
+    // Simple mode: dismiss on any user interaction
+    const _dismiss = () => {
+      if (banner.parentNode) banner.remove();
+      ['mousemove','keydown','click','scroll','touchstart'].forEach(evt =>
+        document.removeEventListener(evt, _dismiss)
+      );
+    };
+    ['mousemove','keydown','click','scroll','touchstart'].forEach(evt =>
+      document.addEventListener(evt, _dismiss, { once: true })
+    );
+    setTimeout(_dismiss, 20000);
+  }
 
-  // Optional: browser notification if tab is not focused
+  // Browser notification if tab not focused
   if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
-    new Notification('Hecos — Promemoria', { body: title, icon: '/static/images/hecos_light.png' });
+    new Notification('Hecos — Reminder', { body: title, icon: '/static/images/hecos_light.png' });
   }
 }
 
@@ -239,3 +274,6 @@ function _escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', () => {
     window.initEvents();
 });
+
+// Expose globally for testing from browser console: window.showReminderBanner('Test', '')
+window.showReminderBanner = _showReminderBanner;

@@ -28,6 +28,7 @@ class ReminderTools:
         self.tag    = "REMINDER"
         self.desc   = "Scheduler for time-based reminders with TTS alerts and WebUI notifications."
         self.status = "ONLINE"
+        self.stop_flag = False
 
         self.config_schema = {
             "reminder_mode": {
@@ -56,20 +57,29 @@ class ReminderTools:
                 "type": "int",
                 "default": 15,
                 "description": "Default snooze duration in minutes."
+            },
+            "reminder_snooze_ui": {
+                "type": "bool",
+                "default": False,
+                "description": "If enabled, reminder audio loops continuously until dismissed or snoozed."
             }
         }
 
     # ── Public Tools ──────────────────────────────────────────────────────────
 
-    def set_reminder(self, title: str, when: str, repeat: str = None) -> str:
+    def set_reminder(self, title: str, when: str, repeat: str = None, interactive: bool = None) -> str:
         """
         Creates a new reminder. Fires a TTS alert and WebUI notification when due.
         :param title: What to remind the user about (e.g. 'Call the doctor').
-        :param when: When to fire the reminder. Accepts natural language like
-                     'tomorrow at 15:00', 'in 20 minutes', 'every Monday at 9:00',
-                     'ogni giorno alle 8', 'tra 30 minuti'.
+        :param when: The scheduled time. **CRITICAL**: Use your native intelligence to calculate the 
+                     exact Target Date/Time based on the user's request and the current time. 
+                     Return it STRCITLY as 'YYYY-MM-DD HH:MM' or a clean 'in X minutes'.
+                     Only if the user uses an extremely ambiguous request, pass exactly what they said.
         :param repeat: Optional override CRON expression (e.g. '0 9 * * 1').
                        If omitted, `when` is parsed for recurrence automatically.
+        :param interactive: True = interactive snooze (alarm loops, banner with Snooze/Stop buttons).
+                            False = simple (plays once, banner auto-dismisses on interaction).
+                            None (default) = use the system default setting from config.
         """
         # Determine trigger
         cron_expr = None
@@ -77,7 +87,6 @@ class ReminderTools:
         is_repeat = False
 
         if repeat:
-            # Explicit CRON override
             cron_expr = repeat
             is_repeat = True
             trigger_type = "cron"
@@ -85,7 +94,6 @@ class ReminderTools:
             trigger_type, trigger_value = parser.smart_parse(when)
 
             if trigger_type == "cron":
-                # Serialise CronTrigger fields to '5-field' string for storage
                 tf = trigger_value.fields
                 field_map = {f.name: str(f) for f in tf}
                 cron_expr = " ".join([
@@ -113,7 +121,8 @@ class ReminderTools:
             title=title,
             when_iso=when_iso,
             cron_expr=cron_expr,
-            repeat=is_repeat
+            repeat=is_repeat,
+            interactive=interactive
         )
 
         # Schedule
@@ -207,7 +216,16 @@ class ReminderTools:
 
         time_str = new_dt.strftime("%H:%M")
         logger.info("REMINDER", f"Snoozed: [{rid}] '{reminder['title']}' → {new_iso}")
+        self.stop_audio()  # Stop currently ringing alarm
         return translator.t("ext_reminder_snoozed", title=reminder["title"], time=time_str)
+
+    def stop_audio(self) -> str:
+        """
+        Signals the notifier to stop any currently playing or looping audio.
+        """
+        self.stop_flag = True
+        logger.info("REMINDER", "Audio loop interrupted by user.")
+        return "Audio stopped."
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

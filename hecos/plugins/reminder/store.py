@@ -27,13 +27,18 @@ _CREATE_SQL = """
 CREATE TABLE IF NOT EXISTS reminders (
     id          TEXT PRIMARY KEY,
     title       TEXT NOT NULL,
-    when_iso    TEXT,           -- ISO datetime for one-shot reminders
-    cron_expr   TEXT,           -- CRON string for recurring reminders (optional)
-    repeat      INTEGER NOT NULL DEFAULT 0,  -- 1 = recurring
-    status      TEXT NOT NULL DEFAULT 'active',  -- active|fired|cancelled|snoozed
-    created_at  TEXT NOT NULL
+    when_iso    TEXT,
+    cron_expr   TEXT,
+    repeat      INTEGER NOT NULL DEFAULT 0,
+    status      TEXT NOT NULL DEFAULT 'active',
+    created_at  TEXT NOT NULL,
+    interactive INTEGER          -- NULL=use default, 1=interactive, 0=simple
 );
 """
+
+_MIGRATE_SQL = [
+    "ALTER TABLE reminders ADD COLUMN interactive INTEGER",
+]
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -41,37 +46,42 @@ def _get_conn() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute(_CREATE_SQL)
+    # Run any pending migrations (safe: silently ignore if already done)
+    for stmt in _MIGRATE_SQL:
+        try:
+            conn.execute(stmt)
+        except Exception:
+            pass
     conn.commit()
     return conn
 
 
 # ── CRUD ──────────────────────────────────────────────────────────────────────
 
-def add(title: str, when_iso: str = None, cron_expr: str = None, repeat: bool = False) -> dict:
+def add(title: str, when_iso: str = None, cron_expr: str = None,
+        repeat: bool = False, interactive: bool = None) -> dict:
     """
     Inserts a new reminder and returns it as a dict.
-    :param title: Human-readable description.
-    :param when_iso: ISO 8601 datetime string for one-shot (e.g. '2025-05-05T15:00:00').
-    :param cron_expr: CRON expression for recurring (e.g. '0 9 * * 1' for every Monday 9:00).
-    :param repeat: True if this is a recurring reminder.
+    :param interactive: True=interactive snooze, False=simple, None=use system default.
     """
     reminder = {
-        "id":         str(uuid.uuid4()),
-        "title":      title,
-        "when_iso":   when_iso,
-        "cron_expr":  cron_expr,
-        "repeat":     1 if repeat else 0,
-        "status":     "active",
-        "created_at": datetime.now().isoformat()
+        "id":          str(uuid.uuid4()),
+        "title":       title,
+        "when_iso":    when_iso,
+        "cron_expr":   cron_expr,
+        "repeat":      1 if repeat else 0,
+        "status":      "active",
+        "created_at":  datetime.now().isoformat(),
+        "interactive": (1 if interactive else (0 if interactive is False else None)),
     }
     try:
         with _get_conn() as conn:
             conn.execute(
-                "INSERT INTO reminders (id, title, when_iso, cron_expr, repeat, status, created_at) "
-                "VALUES (:id, :title, :when_iso, :cron_expr, :repeat, :status, :created_at)",
+                "INSERT INTO reminders (id, title, when_iso, cron_expr, repeat, status, created_at, interactive) "
+                "VALUES (:id, :title, :when_iso, :cron_expr, :repeat, :status, :created_at, :interactive)",
                 reminder
             )
-        logger.debug("REMINDER", f"Added: [{reminder['id']}] '{title}'")
+        logger.debug("REMINDER", f"Added: [{reminder['id']}] '{title}' interactive={interactive}")
     except Exception as e:
         logger.error(f"[REMINDER] store.add error: {e}")
     return reminder
@@ -138,6 +148,21 @@ def update_when(reminder_id: str, new_iso: str) -> bool:
         return True
     except Exception as e:
         logger.error(f"[REMINDER] store.update_when error: {e}")
+        return False
+
+
+def update_interactive(reminder_id: str, interactive: bool) -> bool:
+    """Sets the per-reminder interactive flag (overrides system default)."""
+    try:
+        val = 1 if interactive else 0
+        with _get_conn() as conn:
+            conn.execute(
+                "UPDATE reminders SET interactive = ? WHERE id = ?",
+                (val, reminder_id)
+            )
+        return True
+    except Exception as e:
+        logger.error(f"[REMINDER] store.update_interactive error: {e}")
         return False
 
 

@@ -201,7 +201,8 @@ plugins:
     ringtone_path: Default_System_Alert.mp3
     time_format: 24h
     max_reminders: 50
-    snooze_default_minutes: 15
+    snooze_default_minutes: 1
+    reminder_snooze_ui: false
   MCP_BRIDGE:
     enabled: false
     lazy_load: false
@@ -222,4 +223,3 @@ routing_engine:
 system:
   fast_boot: true
   flask_debug: false
-
