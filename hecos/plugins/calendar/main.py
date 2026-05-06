@@ -14,6 +14,7 @@ class CalendarTools:
 
     def __init__(self, config_manager=None):
         self._cfg = config_manager
+        self.tag = "CALENDAR"
 
     # ── LLM Tools ─────────────────────────────────────────────────────────────
 

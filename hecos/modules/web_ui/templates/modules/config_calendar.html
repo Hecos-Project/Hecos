@@ -167,6 +167,19 @@
             },
         });
         _calendar.render();
+
+        // Fix FullCalendar sizing issues when initialized in a hidden tab
+        const tabEl = document.getElementById('tab-calendar');
+        if (tabEl) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'class' && tabEl.classList.contains('active')) {
+                        setTimeout(() => { if (_calendar) _calendar.render(); }, 50);
+                    }
+                });
+            });
+            observer.observe(tabEl, { attributes: true });
+        }
     }
 
     function setView(view) {
