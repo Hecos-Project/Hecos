@@ -65,6 +65,14 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   margin: 12px 14px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.sidebar-card.full-width {
+  margin-left: 0;
+  margin-right: 0;
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+  width: 100%;
+}
 
 .sidebar-card:hover { border-color: rgba(var(--accent-rgb), 0.3); }
 
@@ -78,7 +86,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   padding: 0 4px;
 }
 
-.status-pill { display:flex; align-items:center; gap:8px; padding:6px 12px; background:var(--glass); border:1px solid var(--border); border-radius:10px; font-size: var(--font-size-xs); margin-bottom:6px; min-height: 32px; width: 100%; transition: background 0.2s; }
+.status-pill { display:flex; align-items:center; gap:8px; padding:6px 12px; background:var(--glass); border:1px solid var(--border); border-radius:20px; font-size: var(--font-size-xs); margin-bottom:6px; min-height: 32px; width: 100%; transition: background 0.2s; }
 .status-pill:last-child { margin-bottom: 0; }
 .status-pill:hover { background: var(--glass-b); }
 .dot-pulse { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:dpulse 2s infinite; flex-shrink:0; }
