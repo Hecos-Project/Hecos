@@ -194,11 +194,6 @@ plugins:
       enable_volume_loop: false
       feedback_sounds: true
       visual_indicator: true
-  MCP_BRIDGE:
-    enabled: false
-    lazy_load: false
-    servers: {}
-  extra_dirs: []
   REMINDER:
     enabled: true
     lazy_load: false
@@ -207,6 +202,11 @@ plugins:
     time_format: 24h
     max_reminders: 50
     snooze_default_minutes: 15
+  MCP_BRIDGE:
+    enabled: false
+    lazy_load: false
+    servers: {}
+  extra_dirs: []
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true
