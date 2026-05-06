@@ -282,6 +282,15 @@ class PluginDrive(BaseModel):
         "spell_check": False
     })
 
+class PluginReminder(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = False
+    reminder_mode: str = "voice"
+    ringtone_path: str = "Default_System_Alert.mp3"
+    time_format: str = "24h"
+    max_reminders: int = 50
+    snooze_default_minutes: int = 15
+
 class MCPServerConfig(BaseModel):
     command: str
     args: List[str] = []
@@ -307,6 +316,7 @@ class PluginsConfig(BaseModel):
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
     REMOTE_TRIGGERS: PluginRemoteTriggers = Field(default_factory=PluginRemoteTriggers)
+    REMINDER: PluginReminder = Field(default_factory=PluginReminder)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     extra_dirs: List[str] = []
 

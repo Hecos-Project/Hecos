@@ -62,7 +62,6 @@
   border-radius: 7px;
   padding: 0 4px 0 0;
   transition: background 0.15s;
-  group: 1;
 }
 .ql-item:hover { background: rgba(var(--accent-rgb, 99,102,241), 0.08); }
 

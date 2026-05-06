@@ -146,6 +146,18 @@ def cancel(reminder_id: str) -> bool:
     return update_status(reminder_id, "cancelled")
 
 
+def clear_history() -> bool:
+    """Deletes all 'fired' and 'cancelled' reminders from the history."""
+    try:
+        with _get_conn() as conn:
+            conn.execute("DELETE FROM reminders WHERE status IN ('fired', 'cancelled')")
+        logger.debug("REMINDER", "Deleted historical reminders.")
+        return True
+    except Exception as e:
+        logger.error(f"[REMINDER] store.clear_history error: {e}")
+        return False
+
+
 def get_upcoming(n: int = 5) -> list:
     """Returns the next N active reminders sorted by scheduled time."""
     try:

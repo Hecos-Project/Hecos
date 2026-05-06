@@ -108,7 +108,7 @@ plugins:
     console_telemetry_enabled: true
     track_cpu: false
     track_ram: false
-    track_vram: true
+    track_vram: false
   FILE_MANAGER:
     enabled: true
     lazy_load: false
@@ -199,6 +199,14 @@ plugins:
     lazy_load: false
     servers: {}
   extra_dirs: []
+  REMINDER:
+    enabled: true
+    lazy_load: false
+    reminder_mode: both
+    ringtone_path: Default_System_Alert.mp3
+    time_format: 24h
+    max_reminders: 50
+    snooze_default_minutes: 15
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true

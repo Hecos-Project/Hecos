@@ -108,6 +108,32 @@ def init_routes(app, root_dir: str = None):
         result = plugin.cancel_reminder(reminder_id)
         return jsonify({"ok": "❌" not in result, "message": result})
 
+    # ── GET /api/ext/reminder/ringtones — list preset ringtones ─────────────
+    @app.route("/api/ext/reminder/ringtones", methods=["GET"])
+    @login_required
+    def reminder_get_ringtones():
+        """Lists preset ringtones from assets/sounds."""
+        _base = root_dir or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+        r_dir = os.path.join(_base, "assets", "sounds")
+        files = []
+        if os.path.exists(r_dir):
+            for f in os.listdir(r_dir):
+                if f.lower().endswith(('.wav', '.mp3', '.ogg')):
+                    files.append(f)
+        return jsonify({"ok": True, "ringtones": files})
+
+    # ── DELETE /api/ext/reminder/history — clear history ────────────────────────
+    @app.route("/api/ext/reminder/history", methods=["DELETE"])
+    @login_required
+    def reminder_clear_history():
+        """Deletes all fired or cancelled reminders."""
+        store = _get_store()
+        if not store:
+            return jsonify({"ok": False, "error": "Reminder plugin not available"}), 503
+        
+        ok = store.clear_history()
+        return jsonify({"ok": ok})
+
     # ── POST /api/ext/reminder/<id>/snooze — snooze ───────────────────────────
     @app.route("/api/ext/reminder/<reminder_id>/snooze", methods=["POST"])
     @login_required

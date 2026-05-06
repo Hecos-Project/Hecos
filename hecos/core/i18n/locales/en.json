@@ -743,6 +743,11 @@
         "webui_executor_max_read_lines": "Max Lines to Read per Request",
         "webui_executor_max_read_hint": "Limits how many lines the read_file tool can return in a single call.",
         "webui_executor_workspace": "Sandbox Workspace Directory",
-        "webui_executor_workspace_hint": "Directory where Python sandbox scripts are temporarily saved before execution."
+        "webui_executor_workspace_hint": "Directory where Python sandbox scripts are temporarily saved before execution.",
+        "ext_reminder_title": "Reminder",
+        "ext_reminder_expired": "expired",
+        "ext_reminder_recurrent": "recurring",
+        "ext_reminder_none": "No active reminders",
+        "ext_reminder_err": "Load error"
     }
 }

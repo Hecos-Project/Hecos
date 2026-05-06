@@ -30,10 +30,16 @@ class ReminderTools:
         self.status = "ONLINE"
 
         self.config_schema = {
-            "tts_enabled": {
-                "type": "bool",
-                "default": True,
-                "description": "Play a TTS voice alert when a reminder fires."
+            "reminder_mode": {
+                "type": "str",
+                "default": "voice",
+                "options": ["voice", "ringtone", "both"],
+                "description": "How alerts are played: voice (TTS), ringtone, or both."
+            },
+            "ringtone_path": {
+                "type": "str",
+                "default": "",
+                "description": "Absolute path to a custom audio file (.wav, .mp3) to play. Note: Hecos must have read access."
             },
             "time_format": {
                 "type": "str",

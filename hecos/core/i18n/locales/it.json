@@ -758,6 +758,11 @@
         "webui_executor_max_read_lines": "Linee Massime per Lettura",
         "webui_executor_max_read_hint": "Limita quante linee il tool read_file può restituire in una singola chiamata.",
         "webui_executor_workspace": "Directory Workspace Sandbox",
-        "webui_executor_workspace_hint": "Directory dove gli script della sandbox vengono salvati temporaneamente prima dell'esecuzione."
+        "webui_executor_workspace_hint": "Directory dove gli script della sandbox vengono salvati temporaneamente prima dell'esecuzione.",
+        "ext_reminder_title": "Promemoria",
+        "ext_reminder_expired": "scaduto",
+        "ext_reminder_recurrent": "ricorrente",
+        "ext_reminder_none": "Nessun promemoria attivo",
+        "ext_reminder_err": "Errore caricamento"
     }
 }

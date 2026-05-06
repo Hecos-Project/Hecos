@@ -1,20 +1,43 @@
 <!-- REMINDER MODULE CONFIG -->
 <div id="tab-reminder" class="panel">
     <div class="card">
-        <div class="card-title">⏰ Reminder Settings</div>
+        <div class="card-title">Reminder Settings</div>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
             Configure the local scheduler for time-based reminders and natural language recurrence.
         </p>
 
         <!-- Dynamic config toggles mapped for window.cfg.plugins.REMINDER -->
-        <div class="toggle-row">
-            <div class="toggle-info">
-                <strong>TTS Audio Alerts</strong>
-                <p>Play a voice alert when a reminder fires.</p>
-            </div>
-            <label class="switch"><input type="checkbox" id="rem-tts"><span class="slider"></span></label>
+        <div class="field mt-3">
+            <label>Reminder Alert Mode</label>
+            <select id="rem-mode" data-cfg-plugin="REMINDER" data-cfg-key="reminder_mode">
+                <option value="voice">Voice Only (TTS)</option>
+                <option value="ringtone">Ringtone Only</option>
+                <option value="both">Both (Voice + Ringtone)</option>
+            </select>
         </div>
 
+        <div class="field mt-3">
+            <label>Preset Ringtone</label>
+            <div style="display:flex; gap:6px;">
+                <select id="rem-preset" style="flex:1;" onchange="document.getElementById('rem-ringtone').value = this.value; saveConfig();">
+                    <option value="Default_System_Alert.mp3">Default System Alert</option>
+                </select>
+                <button type="button" class="btn btn-outline-accent btn-sm" onclick="window.refreshPresetRingtones()" title="Refresh folder">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">Add your sounds (.wav, .mp3, .ogg) to <code>assets/sounds</code> folder.</p>
+        </div>
+
+        <div class="field mt-3">
+            <label>Custom Ringtone Path (Absolute Path)</label>
+            <div style="display:flex; gap:6px;">
+                <input style="flex:1;" type="text" id="rem-ringtone" data-cfg-plugin="REMINDER" data-cfg-key="ringtone_path" placeholder="Filename or absolute path">
+                <button type="button" class="btn btn-secondary" onclick="HecosFilePicker.open({title:'Select Ringtone', mode:'file', onSelect: p => { document.getElementById('rem-ringtone').value = p; saveConfig(); window.refreshPresetRingtones(); }})">
+                    <i class="fas fa-folder-open"></i> Browse...
+                </button>
+            </div>
+        </div>
         <div class="field mt-3">
             <label>Time Format</label>
             <select id="rem-time-format">
@@ -39,9 +62,14 @@
     <div class="card" id="card-active-reminders">
         <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
             <span>📋 Active Reminders</span>
-            <button type="button" class="btn btn-outline-accent btn-sm" onclick="window.refreshReminderConfig()">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
+            <div style="display:flex; gap:6px;">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="window.clearReminderHistory()">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+                <button type="button" class="btn btn-outline-accent btn-sm" onclick="window.refreshReminderConfig()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
         </div>
         <div id="reminder-config-list" style="margin-top:10px; max-height: 400px; overflow-y: auto;">
             <p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading reminders...</p>
@@ -106,12 +134,43 @@ window.cancelReminderFromConfig = function(id) {
         });
 };
 
+window.clearReminderHistory = function() {
+    if (!confirm('Clear all finished and cancelled reminders for privacy?')) return;
+    fetch(`/api/ext/reminder/history`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            window.refreshReminderConfig();
+        });
+};
+
+window.refreshPresetRingtones = function() {
+    fetch('/api/ext/reminder/ringtones')
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById('rem-preset');
+            if (!select) return;
+            const currentVal = document.getElementById('rem-ringtone').value;
+            let html = '<option value="">Default System Alert</option>';
+            if (data.ok && data.ringtones) {
+                data.ringtones.forEach(f => {
+                    html += `<option value="${f}">${f}</option>`;
+                });
+            }
+            select.innerHTML = html;
+            // Match dropdown 
+            if (data.ringtones && data.ringtones.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        });
+};
+
 // Initial load hook
 document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((m) => {
             if (m.target.id === 'tab-reminder' && m.target.classList.contains('active')) {
                 window.refreshReminderConfig();
+                window.refreshPresetRingtones();
             }
         });
     });

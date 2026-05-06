@@ -1,30 +1,25 @@
-{# reminder_widget.html — Sidebar widget for the Reminder plugin #}
-{# Injected into chat.html sidebar via extension_loader + ChoiceLoader #}
-<div class="sidebar-section" id="reminder-widget">
-    <div class="ql-category" style="cursor:pointer;" onclick="reminderWidget.toggleBody()">
-        <span class="ql-category-title"><i class="fas fa-bell" style="font-size:0.9em;margin-right:6px;opacity:0.8;"></i> Promemoria</span>
-        <span class="ql-category-icon" id="reminder-widget-toggle" style="opacity:0.5;font-size:10px;">▼</span>
+<div class="ql-panel" id="reminder-widget" style="margin: 12px 0;">
+    <div class="ql-header" style="cursor:pointer;" onclick="reminderWidget.toggleBody()">
+        <span class="ql-icon">⏰</span>
+        <span class="ql-title">{{ t('ext_reminder_title') }}</span>
+        <span class="ql-chevron" id="reminder-widget-toggle">▾</span>
     </div>
     
-    <div id="reminder-widget-body" class="ql-items-container" style="display:flex; flex-direction:column; gap:4px; margin-top:2px; margin-bottom:8px;">
+    <div id="reminder-widget-body" class="ql-body">
         {# ── Upcoming list ── #}
-        <div id="reminder-list" style="display:flex;flex-direction:column;gap:4px;">
-          <span style="color:var(--muted);font-size:0.8em;padding-left:12px;">Caricamento...</span>
+        <div id="reminder-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+          <span style="color:var(--muted);font-size:0.8em;padding-left:12px;">{{ t('webui_chat_loading') }}</span>
         </div>
 
         {# ── Quick-add form ── #}
         <form id="reminder-quick-add" onsubmit="reminderWidget.quickAdd(event)"
-              style="margin-top:6px;display:flex;flex-direction:column;gap:6px;padding:0 8px;">
-          <input id="reminder-title-input" type="text" placeholder="Cosa ricordare..."
-                 style="width:100%;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);
-                        background:rgba(0,0,0,0.2);color:var(--text);font-size:11px;"
+              style="display:flex;flex-direction:column;gap:6px;">
+          <input id="reminder-title-input" class="ql-input" type="text" placeholder="What to remind you about..."
                  autocomplete="off" required>
           <div style="display:flex;gap:4px;">
-              <input id="reminder-when-input" type="text" placeholder="Es: tra 30 min"
-                     style="flex:1;padding:4px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.1);
-                            background:rgba(0,0,0,0.2);color:var(--text);font-size:11px;"
+              <input id="reminder-when-input" class="ql-input" type="text" placeholder="Ex: in 30 min"
                      autocomplete="off" required>
-              <button type="submit" class="ql-item" style="border:none;padding:4px 10px;justify-content:center;min-height:unset;">
+              <button type="submit" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;">
                   +
               </button>
           </div>
@@ -42,22 +37,21 @@ window.reminderWidget = (function() {
     const body = document.getElementById('reminder-widget-body');
     const tog  = document.getElementById('reminder-widget-toggle');
     if (body) body.style.display = _collapsed ? 'none' : '';
-    if (tog)  tog.textContent = _collapsed ? '▸' : '▾';
+    if (tog)  tog.classList.toggle('collapsed', _collapsed);
   }
 
   function _fmt(r) {
-    // Format scheduled time for display
-    if (r.repeat && r.cron_expr) return '🔁 ricorrente';
+    if (r.repeat && r.cron_expr) return '🔁 ' + t('ext_reminder_recurrent');
     if (r.when_iso) {
       try {
         const d = new Date(r.when_iso);
         const now = new Date();
         const diff = d - now;
-        if (diff < 0)      return '⏰ scaduto';
+        if (diff < 0)      return '⏰ ' + t('ext_reminder_expired');
         if (diff < 60000)  return '⏰ <1 min';
         if (diff < 3600000) return `⏰ ${Math.round(diff/60000)}m`;
         if (diff < 86400000) return `⏰ ${Math.round(diff/3600000)}h`;
-        return `📅 ${d.toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}`;
+        return `📅 ${d.toLocaleDateString(undefined, {day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString(undefined, {hour:'2-digit',minute:'2-digit'})}`;
       } catch(e) { return r.when_iso; }
     }
     return '';
@@ -70,7 +64,7 @@ window.reminderWidget = (function() {
         const list = document.getElementById('reminder-list');
         if (!list) return;
         if (!data.ok || !data.reminders || data.reminders.length === 0) {
-          list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Nessun promemoria attivo</span>';
+          list.innerHTML = `<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">${t('ext_reminder_none')}</span>`;
           return;
         }
         list.innerHTML = data.reminders.map(r => `
@@ -80,7 +74,7 @@ window.reminderWidget = (function() {
             <div style="display:flex;gap:2px;">
                 <button onclick="reminderWidget.snooze('${r.id}')" title="Snooze 15 min"
                         style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:0 2px;">zzz</button>
-                <button onclick="reminderWidget.cancel('${r.id}')" title="Cancella"
+                <button onclick="reminderWidget.cancel('${r.id}')" title="Cancel"
                         style="background:none;border:none;cursor:pointer;font-size:12px;color:rgba(255,80,80,0.8);padding:0 2px;">✕</button>
             </div>
           </div>
@@ -88,7 +82,7 @@ window.reminderWidget = (function() {
       })
       .catch(() => {
         const list = document.getElementById('reminder-list');
-        if (list) list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Errore caricamento</span>';
+        if (list) list.innerHTML = `<span style="color:var(--muted);font-size:0.8em;">${t('ext_reminder_err')}</span>`;
       });
   }
 
@@ -108,7 +102,7 @@ window.reminderWidget = (function() {
     .then(data => {
       if (msg) {
         msg.style.color = data.ok ? 'var(--accent)' : '#e05';
-        msg.textContent = data.ok ? '✅ Promemoria impostato!' : (data.error || data.message || 'Errore');
+        msg.textContent = data.ok ? '✅ ' + (window.I18N.command_executed || 'Done') : (data.error || data.message || 'Error');
         setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
       }
       if (data.ok) {
@@ -117,11 +111,11 @@ window.reminderWidget = (function() {
         refresh();
       }
     })
-    .catch(() => { if (msg) { msg.style.color='#e05'; msg.textContent='Errore di rete'; } });
+    .catch(() => { if (msg) { msg.style.color='#e05'; msg.textContent='Network error'; } });
   }
 
   function cancel(id) {
-    if (!confirm('Cancellare il promemoria?')) return;
+    if (!confirm('Cancel this reminder?')) return;
     fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
       .then(() => refresh());
   }
@@ -136,7 +130,8 @@ window.reminderWidget = (function() {
 
   // Auto-refresh every 60 seconds
   setInterval(refresh, 60000);
-  // Initial load on DOMContentLoaded
+  
+  // Initial load
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', refresh);
   } else {
