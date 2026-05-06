@@ -43,6 +43,7 @@ window.CONFIG_HUB = {
         { id: 'web',       label: 'hub_mod_web',          icon: '🌍', cat: 'SISTEMA', pluginTag: 'WEB' },
         { id: 'webcam',    label: 'hub_mod_webcam',       icon: '📷', cat: 'SISTEMA', pluginTag: 'WEBCAM' },
         { id: 'reminder',  label: 'Reminder',             icon: '⏰', cat: 'SISTEMA', pluginTag: 'REMINDER' },
+        { id: 'calendar',  label: 'Calendar',             icon: '📅', cat: 'SISTEMA', pluginTag: 'CALENDAR' },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '⚡', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
@@ -114,5 +115,6 @@ window.CONFIG_HUB.tagMap = {
     'MODELS': 'backend',
     'DRIVE_EDITOR': 'drive-editor',
     'REMINDER': 'reminder',
+    'CALENDAR': 'calendar',
     'DRIVE_MEDIA_VIEWER': 'drive-media-viewer'
 };

@@ -247,11 +247,11 @@ function _showReminderBanner(title, rid, isInteractive) {
     // Simple mode: dismiss on any user interaction
     const _dismiss = () => {
       if (banner.parentNode) banner.remove();
-      ['mousemove','keydown','click','scroll','touchstart'].forEach(evt =>
+      ['keydown','click','touchstart'].forEach(evt =>
         document.removeEventListener(evt, _dismiss)
       );
     };
-    ['mousemove','keydown','click','scroll','touchstart'].forEach(evt =>
+    ['keydown','click','touchstart'].forEach(evt =>
       document.addEventListener(evt, _dismiss, { once: true })
     );
     setTimeout(_dismiss, 20000);

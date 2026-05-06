@@ -146,11 +146,18 @@
   scroll-snap-align: center;
   text-align: center;
   font-size: 22px; font-weight: 600;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.25);
   width: 56px;
   cursor: pointer;
-  transition: color 0.15s, transform 0.15s;
+  transition: color 0.15s, transform 0.15s, background 0.15s;
   user-select: none;
+}
+.hwp-col-active {
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+}
+.hwp-col-active .hwp-item {
+  color: rgba(255,255,255,0.6);
 }
 .hwp-sep {
   font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.3);

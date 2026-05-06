@@ -90,6 +90,19 @@
     };
 
     const tracks = {};
+    const colKeys = [];
+    let activeColIdx = 0;
+
+    function _setActiveCol(idx) {
+      if (idx < 0) idx = 0;
+      if (idx >= colKeys.length) idx = colKeys.length - 1;
+      activeColIdx = idx;
+      
+      wheelsEl.querySelectorAll('.hwp-col').forEach(c => c.classList.remove('hwp-col-active'));
+      const activeKey = colKeys[activeColIdx];
+      const activeDiv = wheelsEl.querySelector(`.hwp-col[data-id="${activeKey}"]`);
+      if (activeDiv) activeDiv.classList.add('hwp-col-active');
+    }
 
     function build() {
       wheelsEl.innerHTML = '';
@@ -141,9 +154,22 @@
       wheelsEl.appendChild(mEl);
       tracks.minute = minTrk;
 
-      // Attach scroll listeners to update state
+      // Register ordered keys for keyboard navigation
+      if (mode === 'datetime') {
+          colKeys.push('year', 'month', 'day', 'hour', 'minute');
+      } else {
+          colKeys.push('hour', 'minute');
+      }
+
+      // Attach scroll listeners and click-to-activate
       Object.entries(tracks).forEach(([key, trk]) => {
         let timer;
+        
+        // Let user click a column to make it active
+        trk.parentElement.addEventListener('mousedown', () => {
+          _setActiveCol(colKeys.indexOf(key));
+        });
+
         trk.addEventListener('scroll', () => {
           clearTimeout(timer);
           timer = setTimeout(() => {
@@ -165,6 +191,33 @@
     }
 
     build();
+    _setActiveCol(0);
+
+    // Keyboard Navigation
+    function _handleKeydown(e) {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        _setActiveCol(activeColIdx - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        _setActiveCol(activeColIdx + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const trk = tracks[colKeys[activeColIdx]];
+        if (trk) trk.scrollTop -= ITEM_H;
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const trk = tracks[colKeys[activeColIdx]];
+        if (trk) trk.scrollTop += ITEM_H;
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        overlay.querySelector('#hwp-confirm').click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        overlay.querySelector('#hwp-cancel').click();
+      }
+    }
+    document.addEventListener('keydown', _handleKeydown);
 
     // ── Confirm ────────────────────────────────────────────────────────────────
     overlay.querySelector('#hwp-confirm').addEventListener('click', () => {
@@ -180,12 +233,15 @@
         iso = `${vals.year}-${vals.month}-${vals.day}T${vals.hour}:${vals.minute}:00`;
       }
       overlay.remove();
+      document.removeEventListener('keydown', _handleKeydown);
       onConfirm(iso);
     });
 
-    overlay.querySelector('#hwp-cancel').addEventListener('click', () => { overlay.remove(); onCancel(); });
-    overlay.querySelector('#hwp-close').addEventListener('click',  () => { overlay.remove(); onCancel(); });
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); onCancel(); } });
+    const _close = () => { overlay.remove(); document.removeEventListener('keydown', _handleKeydown); onCancel(); };
+
+    overlay.querySelector('#hwp-cancel').addEventListener('click', _close);
+    overlay.querySelector('#hwp-close').addEventListener('click',  _close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) _close(); });
   }
 
   global.HecosWheelPicker = { open };

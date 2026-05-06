@@ -1,4 +1,6 @@
+<!-- ── Global imports for Chat Page context ── -->
 <link rel="stylesheet" href="/ext/calendar/static/css/calendar.css">
+<script src="/ext/calendar/static/js/hecos_wheel_picker.js"></script>
 
 <div class="sidebar-card" id="calendar-widget">
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; gap:6px; margin-bottom:6px; padding:0;" onclick="calendarWidget.toggleBody()">
@@ -67,11 +69,11 @@ window.calendarWidget = (function() {
     }
 
     function openFull() {
-        // Navigate to the Calendar config tab
         if (typeof loadConfigSection === 'function') {
             loadConfigSection('calendar');
         } else {
-            window.location.href = '/?section=calendar';
+            sessionStorage.setItem('hecos-config-tab', 'calendar');
+            window.location.href = '/hecos/config/ui';
         }
     }
 
