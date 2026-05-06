@@ -763,6 +763,16 @@
         "ext_reminder_expired": "scaduto",
         "ext_reminder_recurrent": "ricorrente",
         "ext_reminder_none": "Nessun promemoria attivo",
-        "ext_reminder_err": "Errore caricamento"
+        "ext_reminder_err": "Errore caricamento",
+        "ext_reminder_parse_err": "[REMINDER] ❌ Non riesco a interpretare '{when}'. Prova con: 'domani alle 15', 'tra 30 minuti', 'ogni lunedi alle 9'.",
+        "ext_reminder_limit_err": "[REMINDER] ❌ Limite massimo di promemoria attivi raggiunto (50).",
+        "ext_reminder_set_success": "✅ Promemoria impostato!",
+        "ext_reminder_set_error": "⚠️ Promemoria salvato ma non schedulato (scheduler off).",
+        "ext_reminder_list_title": "📋 **Promemoria attivi:**",
+        "ext_reminder_unknown_date": "❓ data sconosciuta",
+        "ext_reminder_not_found": "❌ Nessun promemoria trovato con ID `{id}`.",
+        "ext_reminder_cancelled": "🗑️ Promemoria **{title}** cancellato.",
+        "ext_reminder_snoozed": "💤 Promemoria **{title}** posticipato alle {time}.",
+        "ext_reminder_at": "alle"
     }
 }

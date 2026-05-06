@@ -748,6 +748,16 @@
         "ext_reminder_expired": "expired",
         "ext_reminder_recurrent": "recurring",
         "ext_reminder_none": "No active reminders",
-        "ext_reminder_err": "Load error"
+        "ext_reminder_err": "Load error",
+        "ext_reminder_parse_err": "[REMINDER] ❌ I can't interpret '{when}'. Try: 'tomorrow at 15', 'in 30 minutes', 'every Monday at 9'.",
+        "ext_reminder_limit_err": "[REMINDER] ❌ Maximum limit of active reminders reached (50).",
+        "ext_reminder_set_success": "✅ Reminder set!",
+        "ext_reminder_set_error": "⚠️ Reminder saved but not scheduled (scheduler off).",
+        "ext_reminder_list_title": "📋 **Active Reminders:**",
+        "ext_reminder_unknown_date": "❓ unknown date",
+        "ext_reminder_not_found": "❌ No reminder found with ID `{id}`.",
+        "ext_reminder_cancelled": "🗑️ Reminder **{title}** cancelled.",
+        "ext_reminder_snoozed": "💤 Reminder **{title}** snoozed until {time}.",
+        "ext_reminder_at": "at"
     }
 }

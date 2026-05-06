@@ -101,15 +101,12 @@ class ReminderTools:
                 when_iso = trigger_value.isoformat()
 
             else:
-                return (
-                    f"[REMINDER] ❌ Non riesco a interpretare '{when}'. "
-                    "Prova con: 'domani alle 15', 'tra 30 minuti', 'ogni lunedì alle 9'."
-                )
+                return translator.t("ext_reminder_parse_err", when=when)
 
         # Check capacity
         active = store.get_all(status_filter="active")
         if len(active) >= 50:
-            return "[REMINDER] ❌ Limite massimo di promemoria attivi raggiunto (50)."
+            return translator.t("ext_reminder_limit_err")
 
         # Store
         reminder = store.add(
@@ -125,27 +122,29 @@ class ReminderTools:
         # Build response
         if trigger_type == "date":
             dt = datetime.fromisoformat(when_iso)
-            time_str = dt.strftime("%d/%m/%Y alle %H:%M")
+            at_word = translator.t("ext_reminder_at")
+            time_str = dt.strftime(f"%d/%m/%Y {at_word} %H:%M")
             sched_info = f"📅 {time_str}"
         elif trigger_type == "cron":
-            sched_info = f"🔁 ricorrente ({when})"
+            recurrent_word = translator.t("ext_reminder_recurrent")
+            sched_info = f"🔁 {recurrent_word} ({when})"
         else:
             sched_info = when
 
         if scheduled:
             logger.info("REMINDER", f"Set: '{title}' — {sched_info}")
+            msg = translator.t("ext_reminder_set_success")
+            short_id = reminder['id'][:8]
             return (
-                f"✅ Promemoria impostato!\n"
+                f"{msg}\n"
                 f"📌 **{title}**\n"
                 f"⏰ {sched_info}\n"
-                f"🆔 ID: `{reminder['id'][:8]}...`"
+                f"🆔 ID: `{short_id}...`"
             )
         else:
-            return (
-                f"⚠️ Promemoria salvato nel database ma non schedulato "
-                f"(APScheduler potrebbe non essere disponibile). "
-                f"ID: `{reminder['id'][:8]}...`"
-            )
+            msg = translator.t("ext_reminder_set_error")
+            short_id = reminder['id'][:8]
+            return f"{msg} ID: `{short_id}...`"
 
     def list_reminders(self) -> str:
         """
@@ -153,9 +152,9 @@ class ReminderTools:
         """
         reminders = store.get_all(status_filter="active")
         if not reminders:
-            return "📭 Nessun promemoria attivo."
+            return translator.t("ext_reminder_none")
 
-        lines = ["📋 **Promemoria attivi:**\n"]
+        lines = [f"{translator.t('ext_reminder_list_title')}\n"]
         for r in reminders:
             short_id = r["id"][:8]
             if r.get("repeat") and r.get("cron_expr"):
@@ -167,7 +166,7 @@ class ReminderTools:
                 except Exception:
                     time_info = r["when_iso"]
             else:
-                time_info = "❓ data sconosciuta"
+                time_info = translator.t("ext_reminder_unknown_date")
 
             lines.append(f"• **{r['title']}** — {time_info} — ID: `{short_id}`")
 
@@ -181,13 +180,13 @@ class ReminderTools:
         # Support short IDs (first 8 chars)
         reminder = _resolve_id(reminder_id)
         if not reminder:
-            return f"[REMINDER] ❌ Nessun promemoria trovato con ID `{reminder_id}`."
+            return translator.t("ext_reminder_not_found", id=reminder_id)
 
         rid = reminder["id"]
         scheduler.cancel_job(rid)
         store.cancel(rid)
         logger.info("REMINDER", f"Cancelled: [{rid}] '{reminder['title']}'")
-        return f"🗑️ Promemoria **{reminder['title']}** cancellato."
+        return translator.t("ext_reminder_cancelled", title=reminder["title"])
 
     def snooze_reminder(self, reminder_id: str, minutes: int = 15) -> str:
         """
@@ -197,7 +196,7 @@ class ReminderTools:
         """
         reminder = _resolve_id(reminder_id)
         if not reminder:
-            return f"[REMINDER] ❌ Nessun promemoria trovato con ID `{reminder_id}`."
+            return translator.t("ext_reminder_not_found", id=reminder_id)
 
         rid = reminder["id"]
         new_dt  = datetime.now() + timedelta(minutes=int(minutes))
@@ -208,7 +207,7 @@ class ReminderTools:
 
         time_str = new_dt.strftime("%H:%M")
         logger.info("REMINDER", f"Snoozed: [{rid}] '{reminder['title']}' → {new_iso}")
-        return f"💤 Promemoria **{reminder['title']}** posticipato alle {time_str}."
+        return translator.t("ext_reminder_snoozed", title=reminder["title"], time=time_str)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

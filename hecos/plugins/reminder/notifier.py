@@ -9,6 +9,13 @@ DESCRIPTION: Fires a reminder alert.
 import threading
 from hecos.core.logging import logger
 
+try:
+    from hecos.core.i18n import translator
+except ImportError:
+    class _DummyTranslator:
+        def t(self, key, **kwargs): return key
+    translator = _DummyTranslator()
+
 
 def fire_reminder(reminder: dict) -> None:
     """
@@ -78,7 +85,8 @@ def fire_reminder(reminder: dict) -> None:
         if mode in ("voice", "both"):
             try:
                 from hecos.core.audio.voice import speak
-                speak(f"Reminder: {title}")
+                msg = translator.t("ext_reminder_title")
+                speak(f"{msg}: {title}")
             except Exception as e:
                 logger.debug("REMINDER", f"TTS alert error: {e}")
 
