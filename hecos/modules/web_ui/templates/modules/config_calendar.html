@@ -18,7 +18,7 @@
         <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">📅 Calendar</div>
         <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Format: 
-                <select id="cal-set-locale" onchange="hcal.saveSettings()" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
+                <select id="cal-set-locale" onchange="hcal.saveSettings()" class="hcal-select">
                     <option value="en-US">English (US)</option>
                     <option value="en-GB">English (UK)</option>
                     <option value="it">Italiano</option>
@@ -28,7 +28,7 @@
                 </select>
             </label>
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Holidays: 
-                <select id="cal-set-country" onchange="hcal.saveSettings()" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
+                <select id="cal-set-country" onchange="hcal.saveSettings()" class="hcal-select">
                     <option value="US">🇺🇸 USA</option>
                     <option value="GB">🇬🇧 UK</option>
                     <option value="IT">🇮🇹 Italy</option>
@@ -37,13 +37,13 @@
                     <option value="DE">🇩🇪 Germany</option>
                 </select>
             </label>
-            <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--muted); border-radius:4px; padding:3px 8px; cursor:pointer; font-size:12px;">🎨 Colors</button>
-            <button onclick="hcal.toggleSyncSettings()" id="cal-btn-sync" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--muted); border-radius:4px; padding:3px 8px; cursor:pointer; font-size:12px;">🔄 iSync</button>
+            <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" class="hcal-btn-sec">🎨 Colors</button>
+            <button onclick="hcal.toggleSyncSettings()" id="cal-btn-sync" class="hcal-btn-sec">🔄 iSync</button>
         </div>
     </div>
 
     <!-- Day Colors Settings (Expansion) -->
-    <div id="cal-color-settings" style="display:none; background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.05);">
+    <div id="cal-color-settings" class="hcal-panel" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div style="font-size:12px; color:var(--muted); font-weight:bold;">Day Background Colors</div>
         </div>
@@ -81,7 +81,7 @@
     </div>
 
     <!-- External Sync Settings (Expansion) -->
-    <div id="cal-sync-settings" style="display:none; background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.05);">
+    <div id="cal-sync-settings" class="hcal-panel" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div style="font-size:12px; color:var(--muted); font-weight:bold;">Sincronizzazione Esterna (iCal)</div>
             <button onclick="hcal.runManualSync()" id="btn-sync-now" style="background:var(--accent); color:white; border:none; border-radius:4px; padding:4px 10px; font-size:11px; cursor:pointer;">Sync Now</button>
@@ -90,8 +90,8 @@
             <!-- URLs populated here -->
         </div>
         <div style="display:flex; gap:8px;">
-            <input type="text" id="cal-sync-new-url" placeholder="Incolla URL iCal (es. Google/Apple...)" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:6px 10px; font-size:12px;">
-            <button onclick="hcal.addSyncUrl()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:6px 12px; font-size:12px; cursor:pointer;">Aggiungi</button>
+            <input type="text" id="cal-sync-new-url" placeholder="Incolla URL iCal (es. Google/Apple...)" class="hcal-input" style="flex:1;">
+            <button onclick="hcal.addSyncUrl()" class="hcal-btn-sec">Aggiungi</button>
         </div>
         <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Usa l'indirizzo privato (iCal) dalle impostazioni del tuo calendario Google o Apple. Gli eventi verranno scaricati automaticamente.</div>
     </div>
@@ -103,15 +103,14 @@
             <button onclick="hcal.setView('timeGridWeek')"  id="cal-btn-week"   class="cal-view-btn">Week</button>
             <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">List</button>
         </div>
-        <button onclick="hcal.openNewEventForm()"
-                style="background:rgba(52,152,219,0.15);border:1px solid rgba(52,152,219,0.35);color:#3498db;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:700;">
+        <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
             ＋ Add Event
         </button>
     </div>
 
     <!-- FullCalendar mount point -->
     <div id="hecos-fullcalendar" style="min-height:600px;"></div>
-    <div id="cal-sync-status" style="margin-top:12px; font-size:11px; color:#2ecc71; opacity:0; transition:opacity 0.3s; text-align:right;">
+    <div id="cal-sync-status" style="margin-top:12px; font-size:11px; color:var(--green); opacity:0; transition:opacity 0.3s; text-align:right;">
         <span style="display:inline-flex; align-items:center; gap:4px;">✔ Synced</span>
     </div>
 </div>
@@ -129,8 +128,7 @@
             <div style="display:flex;gap:8px;align-items:center;">
                 <input id="cal-f-start-display" type="text" class="form-control" placeholder="Click to pick..." readonly
                        style="cursor:pointer;flex:1;" onclick="hcal.pickStart()">
-                <button onclick="hcal.pickStart()"
-                    style="background:rgba(255,200,60,0.1);border:1px solid rgba(255,200,60,0.25);color:#ffc83c;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;">⏰</button>
+                <button onclick="hcal.pickStart()" class="hcal-btn-sec">⏰</button>
             </div>
             <input id="cal-f-start" type="hidden">
         </div>
@@ -139,8 +137,7 @@
             <div style="display:flex;gap:8px;align-items:center;">
                 <input id="cal-f-end-display" type="text" class="form-control" placeholder="Click to pick..." readonly
                        style="cursor:pointer;flex:1;" onclick="hcal.pickEnd()">
-                <button onclick="hcal.pickEnd()"
-                    style="background:rgba(255,200,60,0.1);border:1px solid rgba(255,200,60,0.25);color:#ffc83c;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px;">⏰</button>
+                <button onclick="hcal.pickEnd()" class="hcal-btn-sec">⏰</button>
             </div>
             <input id="cal-f-end" type="hidden">
         </div>
@@ -157,23 +154,23 @@
                 </label>
             </div>
             <div style="flex:1;min-width:140px;display:flex;align-items:flex-end;padding-bottom:4px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#f1c40f;">
-                    <input id="cal-f-remind" type="checkbox" style="accent-color:#f1c40f;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--yellow);">
+                    <input id="cal-f-remind" type="checkbox" style="accent-color:var(--yellow);">
                     🔔 Remind me at this time
                 </label>
             </div>
         </div>
         
         <!-- NEW: Alarm Type selection (only visible/relevant if remindme is checked) -->
-        <div id="cal-reminder-options" style="display:none; background:rgba(255,255,255,0.03); padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); margin-top:-4px;">
+        <div id="cal-reminder-options" class="hcal-panel" style="display:none; padding:10px; margin-top:-4px;">
             <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">Alarm Type:</div>
             <div style="display:flex; gap:16px;">
                 <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px;">
                     <input type="radio" name="cal-remind-type" value="simple" checked style="accent-color:var(--accent);">
                     Standard
                 </label>
-                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:#f1c40f;">
-                    <input type="radio" name="cal-remind-type" value="interactive" style="accent-color:#f1c40f;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:var(--yellow);">
+                    <input type="radio" name="cal-remind-type" value="interactive" style="accent-color:var(--yellow);">
                     Interactive (Snooze)
                 </label>
             </div>
@@ -184,12 +181,10 @@
             <textarea id="cal-f-notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button onclick="hcal.cancelForm()"
-                style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--muted);border-radius:8px;padding:8px 18px;cursor:pointer;font-size:13px;">
+            <button onclick="hcal.cancelForm()" class="hcal-btn-sec">
                 Cancel
             </button>
-            <button id="cal-submit-btn" onclick="hcal.submitForm()"
-                style="background:rgba(52,152,219,0.2);border:1px solid rgba(52,152,219,0.4);color:#3498db;border-radius:8px;padding:8px 22px;cursor:pointer;font-size:13px;font-weight:700;">
+            <button id="cal-submit-btn" onclick="hcal.submitForm()" class="btn btn-accent" style="padding:8px 22px; font-weight:700;">
                 Save Event
             </button>
         </div>
@@ -199,8 +194,8 @@
 
 <style>
 .cal-view-btn {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--glass-b);
+    border: 1px solid var(--border);
     color: var(--muted);
     border-radius: 6px;
     padding: 5px 14px;
@@ -208,11 +203,12 @@
     font-size: 12px;
     transition: all 0.15s;
 }
-.cal-view-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+.cal-view-btn:hover { background: var(--glass-c); color: var(--text); }
 .active-view {
-    background: rgba(52,152,219,0.2) !important;
-    border-color: rgba(52,152,219,0.4) !important;
-    color: #3498db !important;
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: white !important;
+    box-shadow: var(--shadow-glow);
 }
 .fc-event {
     cursor: pointer !important;
@@ -663,15 +659,8 @@
         const btn = document.getElementById('cal-btn-colors');
         const isHidden = panel.style.display === 'none';
         
-        if (isHidden) {
-            document.getElementById('cal-sync-settings').style.display = 'none';
-            document.getElementById('cal-btn-sync').style.background = '';
-            document.getElementById('cal-btn-sync').style.color = '';
-        }
-
         panel.style.display = isHidden ? 'block' : 'none';
-        btn.style.background = isHidden ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)';
-        btn.style.color = isHidden ? '#3498db' : 'var(--muted)';
+        btn.classList.toggle('active-view', isHidden);
     }
 
     function toggleSyncSettings() {
@@ -679,15 +668,8 @@
         const btn = document.getElementById('cal-btn-sync');
         const isHidden = panel.style.display === 'none';
 
-        if (isHidden) {
-            document.getElementById('cal-color-settings').style.display = 'none';
-            document.getElementById('cal-btn-colors').style.background = '';
-            document.getElementById('cal-btn-colors').style.color = '';
-        }
-
         panel.style.display = isHidden ? 'block' : 'none';
-        btn.style.background = isHidden ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)';
-        btn.style.color = isHidden ? '#3498db' : 'var(--muted)';
+        btn.classList.toggle('active-view', isHidden);
     }
 
     let _syncUrls = [];

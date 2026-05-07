@@ -1,12 +1,12 @@
 ai:
-  active_personality: Urania_9800_Woman.yaml
+  active_personality: Hecos_System_Soul.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
     '3': Motoko Kusanagi.yaml
     '4': Nova_X-01.yaml
     '5': Sebastian_Pro.yaml
-    '6': Urania_9800_Woman.yaml
+    '6': Urania_9800.yaml
   save_special_instructions: false
   special_instructions: ''
   enable_safety_instructions: true

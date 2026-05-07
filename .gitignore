@@ -242,7 +242,7 @@ hecos/personality/*.yaml
 !hecos/personality/Motoko Kusanagi.yaml
 !hecos/personality/Nova_X-01.yaml
 !hecos/personality/Sebastian_Pro.yaml
-!hecos/personality/Urania_9800_Woman.yaml
+!hecos/personality/Urania_9800.yaml
 
 # ── PERSONA AVATARS: block custom, whitelist standard 7 ──────────────────
 # Block any new avatar folder added to hecos/assets/avatars/
@@ -258,8 +258,8 @@ hecos/assets/avatars/*/
 !hecos/assets/avatars/Nova_X-01/*.png
 !hecos/assets/avatars/Sebastian_Pro/
 !hecos/assets/avatars/Sebastian_Pro/*.png
-!hecos/assets/avatars/Urania_9800_Woman/
-!hecos/assets/avatars/Urania_9800_Woman/*.png
+!hecos/assets/avatars/Urania_9800/
+!hecos/assets/avatars/Urania_9800/*.png
 
 # ── PRIVATE ASSETS: Always block these (Privacy / Copyright) ─────────────
 hecos/assets/avatars/Jun_my_little_princess/
