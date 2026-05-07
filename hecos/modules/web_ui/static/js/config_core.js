@@ -20,7 +20,7 @@ let uiState = {
 let viewMode = localStorage.getItem('hecos-config-view') || 'tabs';
 const navType = window.performance?.getEntriesByType("navigation")[0]?.type;
 const isRefresh = navType === 'reload';
-let activeTab = isRefresh ? (sessionStorage.getItem('hecos-config-tab') || 'backend') : 'welcome';
+let activeTab = sessionStorage.getItem('hecos-config-tab') || (isRefresh ? 'backend' : 'welcome');
 window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
 
 

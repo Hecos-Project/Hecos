@@ -1,21 +1,89 @@
-<!-- ── Global imports for Chat Page context ── -->
-<link rel="stylesheet" href="/ext/calendar/static/css/calendar.css">
-<script src="/ext/calendar/static/js/hecos_wheel_picker.js"></script>
+<style>
+.sidebar-cal-group {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    overflow: hidden;
+    transition: background 0.2s;
+}
+.sidebar-cal-group:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.sidebar-cal-header {
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    user-select: none;
+}
+.sidebar-cal-header .group-chevron {
+    font-size: 10px;
+    transition: transform 0.3s;
+    opacity: 0.6;
+}
+.sidebar-cal-header.collapsed .group-chevron {
+    transform: rotate(-90deg);
+}
+.sidebar-cal-content {
+    padding: 0 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.sidebar-cal-content.collapsed {
+    display: none;
+}
+/* Premium Event Card */
+.cal-sidebar-card {
+    background: rgba(0,0,0,0.15);
+    padding: 6px 8px;
+    border-radius: 6px;
+    border-left: 3px solid #3498db;
+    transition: transform 0.15s, background 0.15s;
+}
+.cal-sidebar-card:hover {
+    transform: translateX(2px);
+    background: rgba(255,255,255,0.05);
+}
+.cal-sidebar-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #eee;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cal-sidebar-time {
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+</style>
 
 <div class="sidebar-card" id="calendar-widget">
-    <div class="sidebar-card-title" style="cursor:pointer; display:flex; gap:6px; margin-bottom:6px; padding:0;" onclick="calendarWidget.toggleBody()">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; gap:6px; margin-bottom:10px; padding:0;" onclick="calendarWidget.toggleBody()">
         <span class="ql-icon">📅</span>
-        <span class="ql-title">Calendar</span>
+        <span class="ql-title">CALENDAR</span>
         <span class="ql-chevron" id="calendar-widget-toggle">▾</span>
     </div>
 
     <div id="calendar-widget-body" class="ql-body">
-        <div id="calendar-upcoming-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
-            <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Loading...</span>
+        <div id="calendar-upcoming-list" style="display:flex;flex-direction:column;gap:2px;margin-bottom:10px;">
+            <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Synchronizing...</span>
         </div>
         <button onclick="calendarWidget.openFull()"
-                style="width:100%;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.25);color:#3498db;border-radius:6px;padding:6px;cursor:pointer;font-size:11px;font-weight:600;">
-            📅 Open Full Calendar
+                style="width:100%;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);color:#3498db;border-radius:6px;padding:8px;cursor:pointer;font-size:11px;font-weight:600;transition: background 0.2s;"
+                onmouseover="this.style.background='rgba(52,152,219,0.2)'"
+                onmouseout="this.style.background='rgba(52,152,219,0.1)'">
+            ⚙️ OPEN FULL CALENDAR
         </button>
     </div>
 </div>
@@ -32,47 +100,90 @@ window.calendarWidget = (function() {
         if (tog) tog.classList.toggle('collapsed', _collapsed);
     }
 
-    function _fmtDate(iso) {
+    function _getDayLabel(iso) {
+        const d = new Date(iso);
+        const today = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+
+        if (d.toDateString() === today.toDateString()) return 'OGGI';
+        if (d.toDateString() === tomorrow.toDateString()) return 'DOMANI';
+        
+        return d.toLocaleDateString(undefined, {weekday:'short', day:'2-digit', month:'short'}).toUpperCase();
+    }
+
+    function _fmtTime(iso) {
         try {
             const d = new Date(iso);
-            return d.toLocaleDateString(undefined, {weekday:'short', day:'2-digit', month:'short'})
-                + ' ' + d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
-        } catch(e) { return iso; }
+            return d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
+        } catch(e) { return ''; }
+    }
+
+    function toggleGroup(el) {
+        const header = el.closest('.sidebar-cal-header');
+        const content = header.nextElementSibling;
+        const isCollapsed = content.classList.toggle('collapsed');
+        header.classList.toggle('collapsed', isCollapsed);
     }
 
     function refresh() {
-        fetch('/api/ext/calendar/upcoming?n=4')
+        // Fetch more events to support grouping
+        fetch('/api/ext/calendar/upcoming?n=12')
             .then(r => r.json())
             .then(data => {
                 const list = document.getElementById('calendar-upcoming-list');
                 if (!list) return;
                 if (!data.ok || !data.events || data.events.length === 0) {
-                    list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">No upcoming events</span>';
+                    list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">No events scheduled</span>';
                     return;
                 }
-                list.innerHTML = data.events.map(ev => {
-                    const color = ev.color || '#3498db';
+
+                // Grouping Logic
+                const groups = {};
+                data.events.forEach(ev => {
+                    const label = _getDayLabel(ev.start_iso);
+                    if (!groups[label]) groups[label] = [];
+                    groups[label].push(ev);
+                });
+
+                list.innerHTML = Object.entries(groups).map(([label, events], idx) => {
+                    // Auto-expand the first group (usually Oggi)
+                    const isCollapsed = idx > 0;
                     return `
-                    <div class="cal-event-card">
-                        <div class="cal-event-title">
-                            <span class="cal-event-dot" style="background:${color};"></span>
-                            ${ev.title}
+                    <div class="sidebar-cal-group">
+                        <div class="sidebar-cal-header ${isCollapsed ? 'collapsed' : ''}" onclick="calendarWidget.toggleGroup(this)">
+                            <span>${label}</span>
+                            <span class="group-chevron">▼</span>
                         </div>
-                        <div class="cal-event-time">📅 ${_fmtDate(ev.start_iso)}</div>
+                        <div class="sidebar-cal-content ${isCollapsed ? 'collapsed' : ''}">
+                            ${events.map(ev => `
+                                <div class="cal-sidebar-card" style="border-left-color: ${ev.color || '#3498db'}">
+                                    <div class="cal-sidebar-title">${ev.title}</div>
+                                    <div class="cal-sidebar-time">🕒 ${_fmtTime(ev.start_iso)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>`;
                 }).join('');
             })
             .catch(() => {
                 const list = document.getElementById('calendar-upcoming-list');
-                if (list) list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Unavailable</span>';
+                if (list) list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Sync error</span>';
             });
     }
 
     function openFull() {
-        if (typeof loadConfigSection === 'function') {
-            loadConfigSection('calendar');
+        // Correctly handle deep linking and storage
+        sessionStorage.setItem('hecos-config-tab', 'calendar');
+        // If we are already on the config page but in another tab
+        if (window.location.pathname === '/hecos/config/ui') {
+            if (typeof showTab === 'function') {
+                showTab('calendar');
+            } else {
+                window.location.reload();
+            }
         } else {
-            sessionStorage.setItem('hecos-config-tab', 'calendar');
+            // Standard redirect
             window.location.href = '/hecos/config/ui';
         }
     }
@@ -86,6 +197,6 @@ window.calendarWidget = (function() {
         setTimeout(refresh, 400);
     }
 
-    return { refresh, toggleBody, openFull };
+    return { refresh, toggleBody, openFull, toggleGroup };
 })();
 </script>
