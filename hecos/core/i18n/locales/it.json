@@ -797,6 +797,13 @@
         "day_3": "Mer",
         "day_4": "Gio",
         "day_5": "Ven",
-        "day_6": "Sab"
+        "day_6": "Sab",
+        "ext_calendar_month": "Mese",
+        "ext_calendar_week": "Settimana",
+        "ext_calendar_list": "Lista",
+        "ext_calendar_placeholder_title": "Titolo evento",
+        "ext_calendar_placeholder_notes": "Note opzionali",
+        "ext_calendar_msg_saved": "Evento salvato!",
+        "ext_calendar_msg_error": "Errore"
     }
 }

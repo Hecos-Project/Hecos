@@ -99,9 +99,9 @@
     <!-- Toolbar: view switcher + Add Event button -->
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
         <div style="display:flex; gap:8px;">
-            <button onclick="hcal.setView('dayGridMonth')"  id="cal-btn-month"  class="cal-view-btn active-view">Month</button>
-            <button onclick="hcal.setView('timeGridWeek')"  id="cal-btn-week"   class="cal-view-btn">Week</button>
-            <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">List</button>
+            <button onclick="hcal.setView('dayGridMonth')"  id="cal-btn-month"  class="cal-view-btn active-view">{{ translations['ext_calendar_month'] }}</button>
+            <button onclick="hcal.setView('timeGridWeek')"  id="cal-btn-week"   class="cal-view-btn">{{ translations['ext_calendar_week'] }}</button>
+            <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">{{ translations['ext_calendar_list'] }}</button>
         </div>
         <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
             ➕ {{ translations['ext_calendar_add_event'] }}
@@ -111,7 +111,7 @@
     <!-- FullCalendar mount point -->
     <div id="hecos-fullcalendar" style="min-height:600px;"></div>
     <div id="cal-sync-status" style="margin-top:12px; font-size:11px; color:var(--green); opacity:0; transition:opacity 0.3s; text-align:right;">
-        <span style="display:inline-flex; align-items:center; gap:4px;">✔ Synced</span>
+        <span style="display:inline-flex; align-items:center; gap:4px;">✔ {{ translations['webui_logs_btn_clear'] }}</span>
     </div>
 </div>
 
@@ -121,7 +121,7 @@
     <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_title_label'] }} *</label>
-            <input id="cal-f-title" type="text" class="form-control hcal-input" placeholder="Event title" autocomplete="off">
+            <input id="cal-f-title" type="text" class="form-control hcal-input" placeholder="{{ translations['ext_calendar_placeholder_title'] }}" autocomplete="off">
         </div>
         <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_start_label'] }} *</label>
@@ -178,7 +178,7 @@
 
         <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_notes_label'] }}</label>
-            <textarea id="cal-f-notes" class="form-control hcal-input" rows="2" placeholder="Optional notes..."></textarea>
+            <textarea id="cal-f-notes" class="form-control hcal-input" rows="2" placeholder="{{ translations['ext_calendar_placeholder_notes'] }}"></textarea>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button onclick="hcal.cancelForm()" class="hcal-btn-sec">
@@ -551,7 +551,7 @@
         const notes  = (document.getElementById('cal-f-notes').value || '').trim() || null;
         const msg    = document.getElementById('cal-form-msg');
 
-        if (!title || !start) { msg.style.color='#e05'; msg.textContent='Title and start are required.'; return; }
+        if (!title || !start) { msg.style.color='#e05'; msg.textContent="{{ translations['ext_calendar_msg_error'] }}"; return; }
 
         const url = _currentEditId ? `/api/ext/calendar/events/${_currentEditId}` : '/api/ext/calendar/events';
         const method = _currentEditId ? 'PUT' : 'POST';
@@ -564,7 +564,7 @@
         .then(r => r.json())
         .then(data => {
             msg.style.color = data.ok ? 'var(--accent)' : '#e05';
-            msg.textContent = data.ok ? '✅ Event saved!' : (data.error || 'Error');
+            msg.textContent = data.ok ? '✅ ' + "{{ translations['ext_calendar_msg_saved'] }}" : (data.error || "{{ translations['ext_calendar_msg_error'] }}");
             if (data.ok) {
                 if (_calendar) _calendar.refetchEvents();
                 if (window.calendarWidget) calendarWidget.refresh();
@@ -572,7 +572,7 @@
                 setTimeout(cancelForm, 1200);
             }
         })
-        .catch(() => { msg.style.color='#e05'; msg.textContent='Network error.'; });
+        .catch(() => { msg.style.color='#e05'; msg.textContent="{{ translations['ext_calendar_msg_error'] }}"; });
     }
 
     function deleteEvent(id) {
