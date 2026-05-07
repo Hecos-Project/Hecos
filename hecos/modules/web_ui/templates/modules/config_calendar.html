@@ -200,6 +200,33 @@
 .fc-event {
     cursor: pointer !important;
 }
+/* Today Highlight: Premium Glow and Border */
+#hecos-fullcalendar .fc-day-today {
+    background: rgba(52, 152, 219, 0.1) !important;
+    outline: 2px solid var(--accent) !important;
+    outline-offset: -2px;
+    z-index: 2;
+    box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.2);
+}
+#hecos-fullcalendar .fc-day-today .fc-daygrid-day-number {
+    font-weight: 800;
+    color: var(--accent) !important;
+}
+
+/* Interactive Card Effect on Hover */
+#hecos-fullcalendar .fc-daygrid-day {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+    cursor: pointer;
+}
+#hecos-fullcalendar .fc-daygrid-day:hover {
+    transform: scale(1.02);
+    z-index: 5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.03);
+}
+#hecos-fullcalendar .fc-daygrid-day:active {
+    transform: scale(0.98);
+}
 </style>
 
 <script>
