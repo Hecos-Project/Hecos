@@ -23,14 +23,15 @@ def _get_db_path() -> str:
 # ── Schema ─────────────────────────────────────────────────────────────────────
 _CREATE_SQL = """
 CREATE TABLE IF NOT EXISTS calendar_events (
-    id          TEXT PRIMARY KEY,
-    title       TEXT NOT NULL,
-    start_iso   TEXT NOT NULL,
-    end_iso     TEXT,
-    all_day     INTEGER NOT NULL DEFAULT 0,
-    color       TEXT,
-    notes       TEXT,
-    created_at  TEXT NOT NULL
+    id                  TEXT PRIMARY KEY,
+    title               TEXT NOT NULL,
+    start_iso           TEXT NOT NULL,
+    end_iso             TEXT,
+    all_day             INTEGER NOT NULL DEFAULT 0,
+    color               TEXT,
+    notes               TEXT,
+    linked_reminder_id  TEXT,
+    created_at          TEXT NOT NULL
 );
 """
 
@@ -40,6 +41,12 @@ def _get_conn() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute(_CREATE_SQL)
+    # Run any pending migrations (safe: silently ignore if already done)
+    for stmt in ["ALTER TABLE calendar_events ADD COLUMN linked_reminder_id TEXT"]:
+        try:
+            conn.execute(stmt)
+        except Exception:
+            pass
     conn.commit()
     return conn
 
@@ -53,22 +60,23 @@ def _row_to_dict(row) -> dict:
 # ── CRUD ───────────────────────────────────────────────────────────────────────
 
 def add(title: str, start_iso: str, end_iso: str = None, all_day: bool = False,
-        color: str = None, notes: str = None) -> dict:
+        color: str = None, notes: str = None, linked_reminder_id: str = None) -> dict:
     """Add a new calendar event. Returns the created event dict."""
     eid = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
     conn = _get_conn()
     try:
         conn.execute(
-            "INSERT INTO calendar_events (id, title, start_iso, end_iso, all_day, color, notes, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?)",
-            (eid, title, start_iso, end_iso, int(all_day), color, notes, now)
+            "INSERT INTO calendar_events (id, title, start_iso, end_iso, all_day, color, notes, linked_reminder_id, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (eid, title, start_iso, end_iso, int(all_day), color, notes, linked_reminder_id, now)
         )
         conn.commit()
         logger.debug("CALENDAR", f"Event created: [{eid}] '{title}' @ {start_iso}")
         return {
             "id": eid, "title": title, "start_iso": start_iso, "end_iso": end_iso,
-            "all_day": all_day, "color": color, "notes": notes, "created_at": now
+            "all_day": all_day, "color": color, "notes": notes,
+            "linked_reminder_id": linked_reminder_id, "created_at": now
         }
     finally:
         conn.close()

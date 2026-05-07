@@ -114,7 +114,12 @@ def fire_reminder(reminder: dict) -> None:
         from hecos.app.config import ConfigManager
         plugin_config = ConfigManager().config.get("plugins", {}).get("REMINDER", {})
 
-        mode = plugin_config.get("reminder_mode", "voice").lower()
+        mode = reminder.get("mode") # Per-reminder override
+        if not mode:
+            mode = plugin_config.get("reminder_mode", "voice").lower()
+        else:
+            mode = mode.lower()
+            
         ringtone_path = plugin_config.get("ringtone_path", "").strip()
 
         # Per-reminder interactive setting overrides system default

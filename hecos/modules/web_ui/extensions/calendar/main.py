@@ -59,13 +59,16 @@ def init_routes(app, root_dir: str = None):
                     "title":    ev["title"],
                     "start":    ev["start_iso"],
                     "allDay":   ev["all_day"],
+                    "extendedProps": {
+                        "notes":               ev.get("notes"),
+                        "linked_reminder_id":  ev.get("linked_reminder_id"),
+                        "has_reminder":        bool(ev.get("linked_reminder_id")),
+                    }
                 }
                 if ev.get("end_iso"):
                     fc_ev["end"] = ev["end_iso"]
                 if ev.get("color"):
                     fc_ev["color"] = ev["color"]
-                if ev.get("notes"):
-                    fc_ev["extendedProps"] = {"notes": ev["notes"]}
                 fc_events.append(fc_ev)
 
             return jsonify({"ok": True, "events": fc_events})
@@ -138,20 +141,36 @@ def init_routes(app, root_dir: str = None):
             return jsonify({"ok": False, "error": "Calendar plugin unavailable"}), 503
 
         data = request.get_json(silent=True) or {}
-        title = (data.get("title") or "").strip()
-        start = (data.get("start") or "").strip()
-        end = (data.get("end") or "").strip() or None
+        title   = (data.get("title") or "").strip()
+        start   = (data.get("start") or "").strip()
+        end     = (data.get("end") or "").strip() or None
         all_day = bool(data.get("allDay", False))
-        color = (data.get("color") or "").strip() or None
-        notes = (data.get("notes") or "").strip() or None
+        color   = (data.get("color") or "").strip() or None
+        notes   = (data.get("notes") or "").strip() or None
+        remind  = bool(data.get("remindMe", False))
+        interactive = bool(data.get("interactive", False))
 
         if not title or not start:
             return jsonify({"ok": False, "error": "title and start are required"}), 400
 
         try:
+            linked_reminder_id = None
+            if remind and not all_day:
+                # Create a reminder via the Reminder plugin
+                try:
+                    from hecos.plugins.reminder import store as r_store, scheduler as r_sched
+                    # Let global config decide the mode (voice/ringtone/both) by passing mode=None
+                    rem = r_store.add(title=f"📅 {title}", when_iso=start, interactive=interactive, mode=None)
+                    r_sched.add_job(rem)
+                    linked_reminder_id = rem["id"]
+                    logger.info("CALENDAR", f"Linked reminder [{linked_reminder_id}] created (interactive={interactive}) for event '{title}'")
+                except Exception as re:
+                    logger.error(f"CALENDAR: Failed to create reminder: {re}")
+
             event = store.add(
                 title=title, start_iso=start, end_iso=end,
-                all_day=all_day, color=color, notes=notes
+                all_day=all_day, color=color, notes=notes,
+                linked_reminder_id=linked_reminder_id
             )
             return jsonify({"ok": True, "event": event})
         except Exception as e:
@@ -179,6 +198,19 @@ def init_routes(app, root_dir: str = None):
                 kwargs[field] = data[field]
 
         try:
+            # If start_iso is changing, we might need to reschedule the linked reminder
+            event = store.get_by_id(eid)
+            if event and "start_iso" in kwargs and event.get("linked_reminder_id"):
+                new_start = kwargs["start_iso"]
+                if new_start != event["start_iso"]:
+                    try:
+                        from hecos.plugins.reminder import store as r_store, scheduler as r_sched
+                        r_store.update_when(event["linked_reminder_id"], new_start)
+                        r_sched.reschedule_job(event["linked_reminder_id"], new_start)
+                        logger.info("CALENDAR", f"Rescheduled linked reminder [{event['linked_reminder_id']}] to {new_start}")
+                    except Exception as re:
+                        logger.error(f"CALENDAR: Failed to reschedule reminder: {re}")
+
             updated = store.update(eid, **kwargs)
             return jsonify({"ok": updated})
         except Exception as e:
@@ -193,6 +225,17 @@ def init_routes(app, root_dir: str = None):
             return jsonify({"ok": False, "error": "Calendar plugin unavailable"}), 503
 
         try:
+            # If a linked reminder exists, cancel it
+            event = store.get_by_id(eid)
+            if event and event.get("linked_reminder_id"):
+                try:
+                    from hecos.plugins.reminder import store as r_store, scheduler as r_sched
+                    r_sched.cancel_job(event["linked_reminder_id"])
+                    r_store.cancel(event["linked_reminder_id"])
+                    logger.info("CALENDAR", f"Cancelled linked reminder [{event['linked_reminder_id']}]")
+                except Exception as re:
+                    logger.error(f"CALENDAR: Failed to cancel reminder: {re}")
+
             deleted = store.delete(eid)
             return jsonify({"ok": deleted})
         except Exception as e:

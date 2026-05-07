@@ -32,12 +32,14 @@ CREATE TABLE IF NOT EXISTS reminders (
     repeat      INTEGER NOT NULL DEFAULT 0,
     status      TEXT NOT NULL DEFAULT 'active',
     created_at  TEXT NOT NULL,
-    interactive INTEGER          -- NULL=use default, 1=interactive, 0=simple
+    interactive INTEGER,         -- NULL=use default, 1=interactive, 0=simple
+    mode        TEXT             -- NULL=use default, 'voice', 'ringtone', 'both'
 );
 """
 
 _MIGRATE_SQL = [
     "ALTER TABLE reminders ADD COLUMN interactive INTEGER",
+    "ALTER TABLE reminders ADD COLUMN mode TEXT",
 ]
 
 
@@ -59,10 +61,11 @@ def _get_conn() -> sqlite3.Connection:
 # ── CRUD ──────────────────────────────────────────────────────────────────────
 
 def add(title: str, when_iso: str = None, cron_expr: str = None,
-        repeat: bool = False, interactive: bool = None) -> dict:
+        repeat: bool = False, interactive: bool = None, mode: str = None) -> dict:
     """
     Inserts a new reminder and returns it as a dict.
     :param interactive: True=interactive snooze, False=simple, None=use system default.
+    :param mode: 'voice', 'ringtone', 'both', or None for system default.
     """
     reminder = {
         "id":          str(uuid.uuid4()),
@@ -73,12 +76,13 @@ def add(title: str, when_iso: str = None, cron_expr: str = None,
         "status":      "active",
         "created_at":  datetime.now().isoformat(),
         "interactive": (1 if interactive else (0 if interactive is False else None)),
+        "mode":        mode,
     }
     try:
         with _get_conn() as conn:
             conn.execute(
-                "INSERT INTO reminders (id, title, when_iso, cron_expr, repeat, status, created_at, interactive) "
-                "VALUES (:id, :title, :when_iso, :cron_expr, :repeat, :status, :created_at, :interactive)",
+                "INSERT INTO reminders (id, title, when_iso, cron_expr, repeat, status, created_at, interactive, mode) "
+                "VALUES (:id, :title, :when_iso, :cron_expr, :repeat, :status, :created_at, :interactive, :mode)",
                 reminder
             )
         logger.debug("REMINDER", f"Added: [{reminder['id']}] '{title}' interactive={interactive}")
