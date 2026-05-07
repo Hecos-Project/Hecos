@@ -6,5 +6,16 @@
     "description": "Full-featured calendar sidebar widget and config panel. Powered by FullCalendar.js. Used by Reminder and other modules for datetime picking.",
     "sidebar_widget": true,
     "eager_load": true,
-    "config_schema": {}
+    "config_schema": {
+        "calendar_locale": {
+            "type": "string",
+            "default": "it",
+            "description": "Date format locale (e.g., 'it' for Italian, 'en-gb' for UK English) for the visual calendar."
+        },
+        "calendar_country": {
+            "type": "string",
+            "default": "IT",
+            "description": "ISO Country code for public holidays (e.g., 'IT', 'US', 'FR')."
+        }
+    }
 }

@@ -118,7 +118,18 @@
         tracks.year = yTrk;
 
         // Month column
-        const months = Array.from({length: 12}, (_, i) => ({ label: _pad(i+1), value: _pad(i+1) }));
+        let months = [];
+        try {
+           const fmt = new Intl.DateTimeFormat(opts.locale || 'it', { month: 'short' });
+           for (let i = 0; i < 12; i++) {
+               const d = new Date(2000, i, 1);
+               const n = fmt.format(d) || _pad(i+1);
+               const capitalized = n.charAt(0).toUpperCase() + n.slice(1);
+               months.push({ label: capitalized, value: _pad(i+1) });
+           }
+        } catch(e) {
+           months = Array.from({length: 12}, (_, i) => ({ label: _pad(i+1), value: _pad(i+1) }));
+        }
         const { col: mCol, track: mTrk } = _buildColumn('month', months, state.month - 1);
         wheelsEl.appendChild(mCol);
         tracks.month = mTrk;

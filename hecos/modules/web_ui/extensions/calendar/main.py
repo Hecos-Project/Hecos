@@ -73,6 +73,61 @@ def init_routes(app, root_dir: str = None):
             logger.debug("CALENDAR", f"GET /events error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    # ── GET /api/ext/calendar/holidays ────────────────────────────────────────
+    @app.route("/api/ext/calendar/holidays", methods=["GET"])
+    @login_required
+    def calendar_get_holidays():
+        try:
+            import holidays
+        except ImportError:
+            return jsonify([])
+
+        start_param = request.args.get("start")
+        end_param = request.args.get("end")
+        
+        from datetime import datetime
+        years = []
+        if start_param and end_param:
+            try:
+                y1 = datetime.fromisoformat(start_param[:10]).year
+                y2 = datetime.fromisoformat(end_param[:10]).year
+                years = list(range(y1, y2 + 1))
+            except:
+                years = [datetime.now().year]
+        else:
+            years = [datetime.now().year]
+
+        from hecos.core.config import get_config_manager
+        cfg_mgr = get_config_manager()
+        country = "IT"
+        try:
+            # Depending on core config layout, extensions conf is usually inside "extensions"
+            c = cfg_mgr.get_extension_config("calendar") or {}
+            tmp = c.get("calendar_country")
+            if not tmp:
+                c2 = getattr(cfg_mgr, "config", {}).get("extensions", {}).get("calendar", {})
+                tmp = c2.get("calendar_country")
+            if tmp:
+                country = str(tmp).upper()
+        except:
+            pass
+
+        try:
+            country_holidays = holidays.country_holidays(country, years=years)
+            fc_events = []
+            for dt, name in sorted(country_holidays.items()):
+                fc_events.append({
+                    "title": name,
+                    "start": dt.isoformat(),
+                    "allDay": True,
+                    "display": "list-item",
+                    "classNames": ["cal-holiday-event"]
+                })
+            return jsonify(fc_events)
+        except Exception as e:
+            logger.debug("CALENDAR", f"Holidays error: {e}")
+            return jsonify([])
+
     # ── POST /api/ext/calendar/events ─────────────────────────────────────────
     @app.route("/api/ext/calendar/events", methods=["POST"])
     @login_required

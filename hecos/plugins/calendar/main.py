@@ -83,6 +83,58 @@ class CalendarTools:
             logger.debug("CALENDAR", f"delete_event error: {e}")
             return f"⚠️ Failed to delete event: {e}"
 
+    def get_date_info(self, country: str = "IT", year: int = None) -> str:
+        """Returns today's date formatted natively, current holidays, and upcoming public holidays."""
+        now = datetime.now()
+        target_year = year if year else now.year
+        
+        try:
+            import babel.dates
+            import holidays
+        except ImportError:
+            return "⚠️ Temporal awareness requires the `babel` and `holidays` packages. Please run `pip install babel holidays` in the Hecos environment."
+        
+        # Format "today" natively using babel. Defaulting to Italian if not found in config.
+        # Fallback to general if self._cfg isn't populated or structure varies.
+        locale_str = "it_IT"
+        try:
+            if self._cfg and hasattr(self._cfg, "config"):
+                lang = self._cfg.config.get("language", "it")
+                if "it" in lang.lower(): locale_str = "it_IT"
+                elif "en" in lang.lower(): locale_str = "en_US"
+        except:
+            pass
+
+        today_fmt = babel.dates.format_datetime(now, format="full", locale=locale_str)
+        
+        lines = [f"🕒 **Current Datetime Awareness:**", f"Today is {today_fmt}."]
+        
+        # Check holidays
+        try:
+            country_holidays = holidays.country_holidays(country, years=target_year)
+            # Is today a holiday?
+            today_date = now.date()
+            if today_date in country_holidays:
+                lines.append(f"✨ **Today is a public holiday in {country}:** {country_holidays.get(today_date)}")
+            else:
+                lines.append(f"📅 Today is NOT a public holiday in {country}.")
+                
+            # Upcoming holidays
+            upcoming = []
+            for dt, name in sorted(country_holidays.items()):
+                if dt > today_date:
+                    upcoming.append(f"  - {dt.strftime('%d %b %Y')}: {name}")
+                if len(upcoming) >= 4:
+                    break
+            
+            if upcoming:
+                lines.append(f"🗓️ **Upcoming Holidays in {country}:**\n" + "\n".join(upcoming))
+                
+        except Exception as e:
+            lines.append(f"⚠️ Could not pull holidays for country '{country}': {e}")
+            
+        return "\n\n".join(lines)
+
     # ── Helpers ────────────────────────────────────────────────────────────────
 
     def _parse_date(self, when: str) -> str | None:
@@ -113,7 +165,16 @@ class CalendarTools:
         """Formats an ISO date string for display."""
         try:
             dt = datetime.fromisoformat(iso)
-            return dt.strftime("%A %d %B %Y at %H:%M")
+            try:
+                import babel.dates
+                locale_str = "it_IT"
+                if self._cfg and hasattr(self._cfg, "config"):
+                    lang = self._cfg.config.get("language", "it")
+                    if "it" in lang.lower(): locale_str = "it_IT"
+                    elif "en" in lang.lower(): locale_str = "en_US"
+                return babel.dates.format_datetime(dt, format="full", locale=locale_str)
+            except ImportError:
+                return dt.strftime("%A %d %B %Y at %H:%M")
         except Exception:
             return iso
 

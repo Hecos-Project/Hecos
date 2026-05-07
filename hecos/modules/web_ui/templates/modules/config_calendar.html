@@ -14,8 +14,13 @@
 
 <div id="tab-calendar" class="panel">
 <div class="card" style="padding:20px; margin-bottom:16px;">
-    <div class="card-title" style="margin-bottom:16px;">
-        📅 Calendar
+    <div class="card-title" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <span>Calendar</span>
+        <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
+            <label style="color:var(--muted);">Format Locale: <input id="cal-set-locale" type="text" value="it" style="width:60px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px 6px;"></label>
+            <label style="color:var(--muted);">Holidays Country: <input id="cal-set-country" type="text" value="IT" style="width:50px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px 6px;"></label>
+            <button onclick="hcal.saveSettings()" style="background:rgba(46,204,113,0.2); border:1px solid rgba(46,204,113,0.4); color:#2ecc71; border-radius:4px; padding:3px 10px; cursor:pointer;">Save</button>
+        </div>
     </div>
 
     <!-- Toolbar: view switcher + Add Event button -->
@@ -111,6 +116,17 @@
     border-color: rgba(52,152,219,0.4) !important;
     color: #3498db !important;
 }
+.cal-holiday-event {
+    background: transparent !important;
+    border: none !important;
+    color: #e74c3c !important;
+    font-weight: bold;
+    font-size: 0.9em;
+    pointer-events: none; /* Make it unclickable */
+}
+.cal-holiday-event .fc-list-event-dot {
+    border-color: #e74c3c !important;
+}
 </style>
 
 <script>
@@ -146,20 +162,41 @@
         popup.style.left = Math.min(r.left, window.innerWidth - 340) + 'px';
     }
 
-    function init() {
+    async function init() {
         const el = document.getElementById('hecos-fullcalendar');
         if (!el || !window.FullCalendar) return;
 
+        let localeStr = 'it';
+        try {
+            const resp = await fetch('/api/config');
+            const data = await resp.json();
+            const calCfg = data.config?.extensions?.calendar || {};
+            localeStr = calCfg.calendar_locale || 'it';
+            
+            // Populate inputs
+            document.getElementById('cal-set-locale').value = localeStr;
+            document.getElementById('cal-set-country').value = calCfg.calendar_country || 'IT';
+        } catch(e) {}
+
         _calendar = new FullCalendar.Calendar(el, {
+            locale: localeStr,
             initialView: 'dayGridMonth',
             headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
             height: 'auto',
-            events: function(fetchInfo, successCallback, failureCallback) {
-                fetch(`/api/ext/calendar/events?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
-                    .then(r => r.json())
-                    .then(data => successCallback(data.ok ? data.events : []))
-                    .catch(failureCallback);
-            },
+            eventSources: [
+                {
+                    events: function(fetchInfo, successCallback, failureCallback) {
+                        fetch(`/api/ext/calendar/events?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
+                            .then(r => r.json())
+                            .then(data => successCallback(data.ok ? data.events : []))
+                            .catch(failureCallback);
+                    }
+                },
+                {
+                    url: '/api/ext/calendar/holidays',
+                    className: 'cal-holiday-event'
+                }
+            ],
             eventClick: function(info) { _showPopup(info); },
             dateClick: function(info) {
                 // Pre-fill the form with the clicked date and open it
@@ -209,6 +246,7 @@
     function pickStart() {
         HecosWheelPicker.open({
             mode: 'datetime',
+            locale: document.getElementById('cal-set-locale')?.value || 'it',
             onConfirm: (iso) => {
                 document.getElementById('cal-f-start').value = iso;
                 document.getElementById('cal-f-start-display').value = _fmt(iso);
@@ -219,6 +257,7 @@
     function pickEnd() {
         HecosWheelPicker.open({
             mode: 'datetime',
+            locale: document.getElementById('cal-set-locale')?.value || 'it',
             onConfirm: (iso) => {
                 document.getElementById('cal-f-end').value = iso;
                 document.getElementById('cal-f-end-display').value = _fmt(iso);
@@ -268,6 +307,25 @@
             });
     }
 
+    function saveSettings() {
+        const locale = document.getElementById('cal-set-locale').value.trim();
+        const country = document.getElementById('cal-set-country').value.trim();
+        fetch('/api/config/extensions/calendar', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ calendar_locale: locale, calendar_country: country })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok) {
+                alert('Calendar settings saved! Calendar will reload.');
+                if (_calendar) _calendar.destroy();
+                init();
+            } else { alert('Error saving settings.'); }
+        })
+        .catch(e => alert('Network error.'));
+    }
+
     // Close popup on outside click
     document.addEventListener('click', function(e) {
         const popup = document.getElementById('cal-event-popup');
@@ -282,7 +340,7 @@
         setTimeout(init, 100);
     }
 
-    window.hcal = { setView, openNewEventForm, cancelForm, pickStart, pickEnd, submitForm, deleteEvent,
+    window.hcal = { setView, openNewEventForm, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, saveSettings,
                     refresh: () => { if (_calendar) _calendar.refetchEvents(); } };
 })();
 </script>

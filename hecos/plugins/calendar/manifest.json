@@ -11,7 +11,8 @@
     "commands": {
         "add_event": "Adds an event to the calendar.",
         "list_events": "Lists upcoming calendar events.",
-        "delete_event": "Deletes a calendar event by ID."
+        "delete_event": "Deletes a calendar event by ID.",
+        "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
     },
     "tool_schema": [
         {
@@ -81,6 +82,26 @@
                         }
                     },
                     "required": ["event_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CALENDAR__get_date_info",
+                "description": "Returns robust temporal awareness containing the current date/time natively translated, checks if today is a public holiday, and lists upcoming public holidays in a specified country. Crucial for understanding relative dates ('il prossimo ponte', 'oggi \u00e8 festa?', 'when is christmas?').",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "country": {
+                            "type": "string",
+                            "description": "The ISO country code (e.g., 'IT' for Italy, 'US' for USA). Default: 'IT'."
+                        },
+                        "year": {
+                            "type": "integer",
+                            "description": "Optional year to check holidays for. Defaults to current year."
+                        }
+                    }
                 }
             }
         }
