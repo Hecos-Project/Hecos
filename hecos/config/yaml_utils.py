@@ -83,9 +83,12 @@ def load_yaml(path: str, schema_cls: Type[T], *, auto_migrate_json: bool = True)
             merged = _deep_merge(defaults, raw)
             return schema_cls.model_validate(merged)
         except Exception as e:
-            print(f"[YAML-UTILS] Warning: could not load {path}: {e}. Using defaults.")
+            # CRITICAL: Do NOT return defaults and overwrite! 
+            # This would wipe the user's config if a transient error occurs.
+            print(f"[YAML-UTILS] CRITICAL ERROR: could not load {path}: {e}")
+            raise e
 
-    # Fallback: write defaults and return
+    # Fallback: only if file COMPLETELY missing, write defaults
     model = schema_cls()
     save_yaml(path, model)
     return model
@@ -100,6 +103,10 @@ def save_yaml(path: str, model: BaseModel) -> bool:
         path = os.path.abspath(path)
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        # Create a backup before overwriting
+        if os.path.exists(path):
+            shutil.copy2(path, path + ".bak")
+            
         new_data = model.model_dump()
         
         if HAS_RUAMEL:

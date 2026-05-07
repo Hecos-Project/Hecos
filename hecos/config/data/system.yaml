@@ -165,7 +165,7 @@ plugins:
     port: 7070
     api_port: 5000
     auto_open_browser: false
-    https_enabled: false
+    https_enabled: true
     force_login: true
     cert_file: certs/cert.pem
     key_file: certs/key.pem
