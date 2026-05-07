@@ -15,7 +15,7 @@
 <div id="tab-calendar" class="panel">
 <div class="card" style="padding:20px; margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">Calendar</div>
+        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">📅 Calendar</div>
         <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Format: 
                 <select id="cal-set-locale" onchange="hcal.saveSettings()" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
@@ -762,8 +762,12 @@
         setTimeout(init, 100);
     }
 
-    window.hcal = { setView, openNewEventForm, editEvent, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, saveSettings, previewColors, handleColorInput, toggleColorSettings,
-                    refresh: () => { if (_calendar) _calendar.refetchEvents(); } };
+    window.hcal = { 
+        setView, openNewEventForm, editEvent, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, 
+        saveSettings, previewColors, handleColorInput, toggleColorSettings, toggleSyncSettings,
+        addSyncUrl, removeSyncUrl, runManualSync,
+        refresh: () => { if (_calendar) _calendar.refetchEvents(); } 
+    };
 })();
 </script>
 </div>

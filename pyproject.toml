@@ -12,6 +12,8 @@ dependencies = [
     "litellm",
     "babel",
     "holidays",
+    "requests",
+    "icalendar",
 ]
 
 [project.optional-dependencies]
