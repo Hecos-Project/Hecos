@@ -63,6 +63,9 @@ class HecosWebUIServer:
                     static_folder=stc_dir,
                     static_url_path='/static')
         
+        # Attach config manager for extensions to access
+        app.hecos_config_manager = self.config_manager
+        
         # FIX: Force CSS/JS mimetypes to prevent Windows Registry corruption issues leading to blank pages
         import mimetypes
         mimetypes.add_type('text/css', '.css')

@@ -16,6 +16,14 @@
             "type": "string",
             "default": "IT",
             "description": "ISO Country code for public holidays (e.g., 'IT', 'US', 'FR')."
+        },
+        "day_colors": {
+            "type": "object",
+            "default": {
+                "0": "rgba(231, 76, 60, 0.1)",
+                "5": "rgba(46, 204, 113, 0.08)"
+            },
+            "description": "Background colors for days of the week (0=Sun, 1=Mon, ..., 6=Sat)."
         }
     }
 }

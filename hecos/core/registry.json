@@ -119,6 +119,21 @@
         "icon": "",
         "category": "PLUGINS"
     },
+    "CALENDAR": {
+        "description": "Calendar plugin",
+        "commands": {
+            "add_event": "Creates a new calendar event. Returns a confirmation string.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
+            "list_events": "Returns a formatted list of upcoming calendar events."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
     "DRIVE": {
         "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
         "commands": {

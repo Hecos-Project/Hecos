@@ -77,42 +77,43 @@ def init_routes(app, root_dir: str = None):
     @app.route("/api/ext/calendar/holidays", methods=["GET"])
     @login_required
     def calendar_get_holidays():
+        import traceback
         try:
-            import holidays
-        except ImportError:
-            return jsonify([])
-
-        start_param = request.args.get("start")
-        end_param = request.args.get("end")
-        
-        from datetime import datetime
-        years = []
-        if start_param and end_param:
             try:
-                y1 = datetime.fromisoformat(start_param[:10]).year
-                y2 = datetime.fromisoformat(end_param[:10]).year
-                years = list(range(y1, y2 + 1))
-            except:
+                import holidays
+            except ImportError:
+                return jsonify([])
+
+            start_param = request.args.get("start")
+            end_param = request.args.get("end")
+            
+            from datetime import datetime
+            years = []
+            if start_param and end_param:
+                try:
+                    y1 = datetime.fromisoformat(start_param[:10]).year
+                    y2 = datetime.fromisoformat(end_param[:10]).year
+                    years = list(range(y1, y2 + 1))
+                except Exception:
+                    years = [datetime.now().year]
+            else:
                 years = [datetime.now().year]
-        else:
-            years = [datetime.now().year]
 
-        from hecos.core.config import get_config_manager
-        cfg_mgr = get_config_manager()
-        country = "IT"
-        try:
-            # Depending on core config layout, extensions conf is usually inside "extensions"
-            c = cfg_mgr.get_extension_config("calendar") or {}
-            tmp = c.get("calendar_country")
-            if not tmp:
-                c2 = getattr(cfg_mgr, "config", {}).get("extensions", {}).get("calendar", {})
-                tmp = c2.get("calendar_country")
-            if tmp:
-                country = str(tmp).upper()
-        except:
-            pass
+            country = "IT"
+            try:
+                # Use the config manager attached to the app in modules/web_ui/server.py
+                cfg_mgr = getattr(app, 'hecos_config_manager', None)
+                if cfg_mgr:
+                    cal_cfg = cfg_mgr.config.get("extensions", {}).get("calendar", {})
+                    tmp = cal_cfg.get("calendar_country")
+                    if tmp:
+                        country = str(tmp).upper()
+                    logger.info(f"CALENDAR: holidays country={country!r} cal_cfg={cal_cfg}")
+                else:
+                    logger.warning("CALENDAR: config manager not found on app object in holidays endpoint.")
+            except Exception as err:
+                logger.error(f"CALENDAR: holidays config read error: {err}")
 
-        try:
             country_holidays = holidays.country_holidays(country, years=years)
             fc_events = []
             for dt, name in sorted(country_holidays.items()):
@@ -120,13 +121,13 @@ def init_routes(app, root_dir: str = None):
                     "title": name,
                     "start": dt.isoformat(),
                     "allDay": True,
-                    "display": "list-item",
-                    "classNames": ["cal-holiday-event"]
+                    "color": "#e74c3c"
                 })
             return jsonify(fc_events)
         except Exception as e:
-            logger.debug("CALENDAR", f"Holidays error: {e}")
-            return jsonify([])
+            err_details = traceback.format_exc()
+            print(f"[CALENDAR-HOLIDAYS-ERROR] {err_details}")
+            return jsonify({"ok": False, "error": str(e), "trace": err_details}), 500
 
     # ── POST /api/ext/calendar/events ─────────────────────────────────────────
     @app.route("/api/ext/calendar/events", methods=["POST"])

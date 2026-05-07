@@ -340,12 +340,13 @@ class SystemFlagsConfig(BaseModel):
 # ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 class SystemConfig(BaseModel):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra='allow')
     """Root schema for config/system.yaml"""
     ai: AIConfig = Field(default_factory=AIConfig)
     backend: BackendConfig = Field(default_factory=BackendConfig)
     bridge: BridgeConfig = Field(default_factory=BridgeConfig)
     cognition: CognitionConfig = Field(default_factory=CognitionConfig)
+    extensions: Dict[str, Any] = Field(default_factory=dict)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
     language: str = "en"
     llm: LLMConfig = Field(default_factory=LLMConfig)

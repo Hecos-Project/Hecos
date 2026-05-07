@@ -12,9 +12,10 @@ from hecos.core.logging import logger
 class CalendarTools:
     """Hecos Calendar plugin — exposes all calendar LLM tools."""
 
-    def __init__(self, config_manager=None):
-        self._cfg = config_manager
+    def __init__(self, config=None):
+        self._cfg = config # This will be the config dict passed by on_load
         self.tag = "CALENDAR"
+        self.desc = "Calendar plugin"
 
     # ── LLM Tools ─────────────────────────────────────────────────────────────
 
@@ -94,12 +95,22 @@ class CalendarTools:
         except ImportError:
             return "⚠️ Temporal awareness requires the `babel` and `holidays` packages. Please run `pip install babel holidays` in the Hecos environment."
         
-        # Format "today" natively using babel. Defaulting to Italian if not found in config.
-        # Fallback to general if self._cfg isn't populated or structure varies.
-        locale_str = "it_IT"
+        # Try to get defaults from extensions config
+        cal_cfg = {}
+        if self._cfg and isinstance(self._cfg, dict):
+            cal_cfg = self._cfg.get("extensions", {}).get("calendar", {})
+
+        # Use configured country if "IT" (default) is passed and we have a preference
+        if country == "IT":
+            cfg_country = cal_cfg.get("calendar_country")
+            if cfg_country:
+                country = str(cfg_country).upper()
+
+        # Format "today" natively using babel.
+        locale_str = cal_cfg.get("calendar_locale") or "it_IT"
         try:
-            if self._cfg and hasattr(self._cfg, "config"):
-                lang = self._cfg.config.get("language", "it")
+            if not cal_cfg and self._cfg and isinstance(self._cfg, dict):
+                lang = self._cfg.get("language", "it")
                 if "it" in lang.lower(): locale_str = "it_IT"
                 elif "en" in lang.lower(): locale_str = "en_US"
         except:
@@ -168,10 +179,14 @@ class CalendarTools:
             try:
                 import babel.dates
                 locale_str = "it_IT"
-                if self._cfg and hasattr(self._cfg, "config"):
-                    lang = self._cfg.config.get("language", "it")
-                    if "it" in lang.lower(): locale_str = "it_IT"
-                    elif "en" in lang.lower(): locale_str = "en_US"
+                if self._cfg and isinstance(self._cfg, dict):
+                    cal_cfg = self._cfg.get("extensions", {}).get("calendar", {})
+                    locale_str = cal_cfg.get("calendar_locale")
+                    if not locale_str:
+                        lang = self._cfg.get("language", "it")
+                        if "it" in lang.lower(): locale_str = "it_IT"
+                        elif "en" in lang.lower(): locale_str = "en_US"
+                        else: locale_str = "en_US"
                 return babel.dates.format_datetime(dt, format="full", locale=locale_str)
             except ImportError:
                 return dt.strftime("%A %d %B %Y at %H:%M")
@@ -179,5 +194,10 @@ class CalendarTools:
             return iso
 
 
-# ── Singleton ──────────────────────────────────────────────────────────────────
+# ── Singleton & Hooks ──────────────────────────────────────────────────────────
 tools = CalendarTools()
+
+def on_load(config):
+    """Called by module_scanner when the plugin is loaded."""
+    tools._cfg = config
+    logger.debug("CALENDAR", "Plugin loaded and config injected.")
