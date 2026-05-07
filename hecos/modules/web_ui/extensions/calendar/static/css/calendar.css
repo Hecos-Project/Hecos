@@ -67,12 +67,17 @@
   border-color: var(--accent) !important;
   box-shadow: var(--shadow-glow) !important;
 }
+#hecos-fullcalendar .fc-col-header-cell {
+  background: var(--bg2) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
 #hecos-fullcalendar .fc-col-header-cell-cushion,
 #hecos-fullcalendar .fc-daygrid-day-number {
   color: var(--text) !important;
   font-size: 11px;
   text-decoration: none !important;
-  opacity: 0.8;
+  opacity: 0.9;
+  padding: 4px 8px !important;
 }
 #hecos-fullcalendar .fc-day-today {
   background: var(--glass-b) !important;
@@ -90,7 +95,6 @@
 #hecos-fullcalendar .fc-scrollgrid,
 #hecos-fullcalendar td, #hecos-fullcalendar th {
   border-color: var(--border) !important;
-  opacity: 0.6;
 }
 
 /* ── Event Detail Popup ─────────────────────────────────────────────────── */
@@ -213,19 +217,26 @@
 #hwp-confirm:hover { box-shadow: var(--shadow-glow); transform: translateY(-1px); }
 
 /* ── Universal Form Helpers ─────────────────────────────────────────────── */
-.hcal-select, .hcal-input {
+.hcal-select, .hcal-input, .form-control {
   background: var(--bg3) !important;
   border: 1px solid var(--border) !important;
   color: var(--text) !important;
   border-radius: 6px !important;
-  padding: 4px 8px !important;
-  font-size: 12px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
-.hcal-select:hover, .hcal-input:focus {
+.hcal-select:hover, .hcal-input:focus, .form-control:focus {
   border-color: var(--accent) !important;
+  box-shadow: 0 0 8px var(--glass-border) !important;
   outline: none;
+}
+textarea.form-control {
+  resize: vertical;
+  min-height: 60px;
 }
 .hcal-btn-sec {
   background: var(--glass-b) !important;

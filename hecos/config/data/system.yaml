@@ -1,5 +1,5 @@
 ai:
-  active_personality: Hecos_System_Soul.yaml
+  active_personality: Urania_9800.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -52,7 +52,7 @@ cognition:
   max_history_messages: 20
 extensions:
   calendar:
-    calendar_locale: fr
+    calendar_locale: it
     calendar_country: IT
     day_colors:
       - rgba(172,47,47,0.35)

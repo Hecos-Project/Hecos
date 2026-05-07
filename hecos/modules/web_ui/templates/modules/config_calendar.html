@@ -15,9 +15,9 @@
 <div id="tab-calendar" class="panel">
 <div class="card" style="padding:20px; margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">📅 Calendar</div>
+        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">📅 {{ translations['ext_calendar_title'] }}</div>
         <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
-            <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Format: 
+            <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_locale'] }}: 
                 <select id="cal-set-locale" onchange="hcal.saveSettings()" class="hcal-select">
                     <option value="en-US">English (US)</option>
                     <option value="en-GB">English (UK)</option>
@@ -27,7 +27,7 @@
                     <option value="de">Deutsch</option>
                 </select>
             </label>
-            <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Holidays: 
+            <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_holidays'] }}: 
                 <select id="cal-set-country" onchange="hcal.saveSettings()" class="hcal-select">
                     <option value="US">🇺🇸 USA</option>
                     <option value="GB">🇬🇧 UK</option>
@@ -45,35 +45,35 @@
     <!-- Day Colors Settings (Expansion) -->
     <div id="cal-color-settings" class="hcal-panel" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div style="font-size:12px; color:var(--muted); font-weight:bold;">Day Background Colors</div>
+            <div style="font-size:12px; color:var(--muted); font-weight:bold;">{{ translations['ext_calendar_color_label'] }}</div>
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Sun</label>
+                <label style="font-size:11px;">{{ translations['day_0'] }}</label>
                 <input type="color" id="color-day-0" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Mon</label>
+                <label style="font-size:11px;">{{ translations['day_1'] }}</label>
                 <input type="color" id="color-day-1" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Tue</label>
+                <label style="font-size:11px;">{{ translations['day_2'] }}</label>
                 <input type="color" id="color-day-2" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Wed</label>
+                <label style="font-size:11px;">{{ translations['day_3'] }}</label>
                 <input type="color" id="color-day-3" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Thu</label>
+                <label style="font-size:11px;">{{ translations['day_4'] }}</label>
                 <input type="color" id="color-day-4" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Fri</label>
+                <label style="font-size:11px;">{{ translations['day_5'] }}</label>
                 <input type="color" id="color-day-5" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">Sat</label>
+                <label style="font-size:11px;">{{ translations['day_6'] }}</label>
                 <input type="color" id="color-day-6" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
         </div>
@@ -83,15 +83,15 @@
     <!-- External Sync Settings (Expansion) -->
     <div id="cal-sync-settings" class="hcal-panel" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div style="font-size:12px; color:var(--muted); font-weight:bold;">Sincronizzazione Esterna (iCal)</div>
+            <div style="font-size:12px; color:var(--muted); font-weight:bold;">{{ translations['ext_calendar_sync'] }}</div>
             <button onclick="hcal.runManualSync()" id="btn-sync-now" style="background:var(--accent); color:white; border:none; border-radius:4px; padding:4px 10px; font-size:11px; cursor:pointer;">Sync Now</button>
         </div>
         <div id="cal-sync-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
             <!-- URLs populated here -->
         </div>
         <div style="display:flex; gap:8px;">
-            <input type="text" id="cal-sync-new-url" placeholder="Incolla URL iCal (es. Google/Apple...)" class="hcal-input" style="flex:1;">
-            <button onclick="hcal.addSyncUrl()" class="hcal-btn-sec">Aggiungi</button>
+            <input type="text" id="cal-sync-new-url" placeholder="iCal URL (Google/Apple...)" class="hcal-input" style="flex:1;">
+            <button onclick="hcal.addSyncUrl()" class="hcal-btn-sec">{{ translations['webui_chat_chip_plugins'] }}</button>
         </div>
         <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Usa l'indirizzo privato (iCal) dalle impostazioni del tuo calendario Google o Apple. Gli eventi verranno scaricati automaticamente.</div>
     </div>
@@ -104,7 +104,7 @@
             <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">List</button>
         </div>
         <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
-            ＋ Add Event
+            ➕ {{ translations['ext_calendar_add_event'] }}
         </button>
     </div>
 
@@ -117,25 +117,25 @@
 
 <!-- Add Event Form Card (visible when user clicks + Add Event) -->
 <div class="card" id="cal-add-form" style="padding:20px; display:none;">
-    <div id="cal-form-title" class="card-title" style="margin-bottom:14px;">➕ New Event</div>
+    <div id="cal-form-title" class="card-title" style="margin-bottom:14px;">➕ {{ translations['ext_calendar_new_event'] }}</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Title *</label>
-            <input id="cal-f-title" type="text" class="form-control" placeholder="Event title" autocomplete="off">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_title_label'] }} *</label>
+            <input id="cal-f-title" type="text" class="form-control hcal-input" placeholder="Event title" autocomplete="off">
         </div>
         <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Start *</label>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_start_label'] }} *</label>
             <div style="display:flex;gap:8px;align-items:center;">
-                <input id="cal-f-start-display" type="text" class="form-control" placeholder="Click to pick..." readonly
+                <input id="cal-f-start-display" type="text" class="form-control hcal-input" placeholder="Click to pick..." readonly
                        style="cursor:pointer;flex:1;" onclick="hcal.pickStart()">
                 <button onclick="hcal.pickStart()" class="hcal-btn-sec">⏰</button>
             </div>
             <input id="cal-f-start" type="hidden">
         </div>
         <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">End (optional)</label>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_end_label'] }}</label>
             <div style="display:flex;gap:8px;align-items:center;">
-                <input id="cal-f-end-display" type="text" class="form-control" placeholder="Click to pick..." readonly
+                <input id="cal-f-end-display" type="text" class="form-control hcal-input" placeholder="Click to pick..." readonly
                        style="cursor:pointer;flex:1;" onclick="hcal.pickEnd()">
                 <button onclick="hcal.pickEnd()" class="hcal-btn-sec">⏰</button>
             </div>
@@ -143,9 +143,9 @@
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <div style="flex:1;min-width:140px;">
-                <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Color</label>
-                <input id="cal-f-color" type="color" value="#3498db"
-                       style="width:100%;height:36px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:transparent;cursor:pointer;">
+                <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_color_label'] }}</label>
+                <input id="cal-f-color" type="color" value="#3498db" class="hcal-input"
+                       style="height:32px;border:none;background:none;cursor:pointer;padding:0;">
             </div>
             <div style="flex:1;min-width:140px;display:flex;align-items:flex-end;padding-bottom:4px;">
                 <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
@@ -177,15 +177,15 @@
         </div>
 
         <div>
-            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Notes</label>
-            <textarea id="cal-f-notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_notes_label'] }}</label>
+            <textarea id="cal-f-notes" class="form-control hcal-input" rows="2" placeholder="Optional notes..."></textarea>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button onclick="hcal.cancelForm()" class="hcal-btn-sec">
-                Cancel
+                {{ translations['ext_calendar_btn_cancel'] }}
             </button>
             <button id="cal-submit-btn" onclick="hcal.submitForm()" class="btn btn-accent" style="padding:8px 22px; font-weight:700;">
-                Save Event
+                {{ translations['ext_calendar_btn_save'] }}
             </button>
         </div>
         <div id="cal-form-msg" style="font-size:11px;min-height:14px;text-align:center;"></div>
@@ -317,9 +317,9 @@
             <div class="pop-time">📅 ${_fmt(ev.startStr)}${ev.endStr ? ' → ' + _fmt(ev.endStr) : ''}</div>
             ${notes ? `<div class="pop-notes">${notes}</div>` : ''}
             <div class="pop-actions" style="margin-top:12px; display:flex; gap:8px;">
-                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">✎ Edit</button>
-                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')">🗑 Delete</button>
-                <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">Close</button>
+                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">✎ {{ translations['chat_btn_edit'] }}</button>
+                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')">🗑 {{ translations['chat_btn_delete'] }}</button>
+                <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">{{ translations['ext_calendar_btn_cancel'] }}</button>
             </div>
         `;
         popup.style.display = 'block';
@@ -440,8 +440,8 @@
     function openNewEventForm(prefilledStart) {
         hcal.cancelForm();
         document.getElementById('cal-add-form').style.display = 'block';
-        document.getElementById('cal-form-title').textContent = 'Add Event';
-        document.getElementById('cal-submit-btn').textContent = 'Confirm Event';
+        document.getElementById('cal-form-title').textContent = '➕ ' + "{{ translations['ext_calendar_add_event'] }}";
+        document.getElementById('cal-submit-btn').textContent = "{{ translations['ext_calendar_add_event'] }}";
         document.getElementById('cal-f-title').focus();
         
         if (prefilledStart) {
@@ -469,8 +469,8 @@
         
         _currentEditId = id;
         document.getElementById('cal-add-form').style.display = 'block';
-        document.getElementById('cal-form-title').textContent = 'Edit Event';
-        document.getElementById('cal-submit-btn').textContent = 'Update Event';
+        document.getElementById('cal-form-title').textContent = '✎ ' + "{{ translations['chat_btn_edit'] }}";
+        document.getElementById('cal-submit-btn').textContent = "{{ translations['webui_conf_btn_save'] }}";
         
         document.getElementById('cal-f-title').value = ev.title;
         document.getElementById('cal-f-start').value = ev.startStr;
@@ -501,8 +501,8 @@
     function cancelForm() {
         _currentEditId = null;
         document.getElementById('cal-add-form').style.display = 'none';
-        document.getElementById('cal-form-title').textContent = 'Add Event';
-        document.getElementById('cal-submit-btn').textContent = 'Confirm Event';
+        document.getElementById('cal-form-title').textContent = '➕ ' + "{{ translations['ext_calendar_new_event'] }}";
+        document.getElementById('cal-submit-btn').textContent = "{{ translations['ext_calendar_add_event'] }}";
         ['cal-f-title','cal-f-start','cal-f-start-display','cal-f-end','cal-f-end-display','cal-f-notes'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
@@ -611,8 +611,9 @@
         const locale = document.getElementById('cal-set-locale').value;
         const country = document.getElementById('cal-set-country').value;
         
-        let dayColors = [];
-        for (let i=0; i<7; i++) {
+        // Ensure dayColors is a full array of 7 strings to avoid Pydantic validation errors
+        let dayColors = ["", "", "", "", "", "", ""];
+        for (let i = 0; i < 7; i++) {
             const picker = document.getElementById(`color-day-${i}`);
             if (picker && picker.value) {
                 dayColors[i] = _hexToRgba(picker.value, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
