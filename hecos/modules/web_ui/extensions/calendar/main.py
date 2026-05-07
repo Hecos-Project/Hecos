@@ -63,6 +63,7 @@ def init_routes(app, root_dir: str = None):
                         "notes":               ev.get("notes"),
                         "linked_reminder_id":  ev.get("linked_reminder_id"),
                         "has_reminder":        bool(ev.get("linked_reminder_id")),
+                        "interactive":         bool(ev.get("interactive", False)),
                     }
                 }
                 if ev.get("end_iso"):
@@ -170,7 +171,8 @@ def init_routes(app, root_dir: str = None):
             event = store.add(
                 title=title, start_iso=start, end_iso=end,
                 all_day=all_day, color=color, notes=notes,
-                linked_reminder_id=linked_reminder_id
+                linked_reminder_id=linked_reminder_id,
+                interactive=interactive
             )
             return jsonify({"ok": True, "event": event})
         except Exception as e:
@@ -187,29 +189,45 @@ def init_routes(app, root_dir: str = None):
 
         data = request.get_json(silent=True) or {}
         kwargs = {}
-        for field in ("title", "start_iso", "end_iso", "all_day", "color", "notes"):
+        for field in ("title", "start_iso", "end_iso", "all_day", "color", "notes", "interactive"):
             # Map FullCalendar camelCase to snake_case
             fc_key = {"start_iso": "start", "end_iso": "end", "all_day": "allDay"}.get(field, field)
             if fc_key in data:
                 kwargs[field] = data[fc_key]
         # Also accept snake_case from our own widget
-        for field in ("title", "start_iso", "end_iso", "all_day", "color", "notes"):
+        for field in ("title", "start_iso", "end_iso", "all_day", "color", "notes", "interactive"):
             if field in data:
                 kwargs[field] = data[field]
 
         try:
-            # If start_iso is changing, we might need to reschedule the linked reminder
+            # Sync changes to linked reminder
             event = store.get_by_id(eid)
-            if event and "start_iso" in kwargs and event.get("linked_reminder_id"):
-                new_start = kwargs["start_iso"]
-                if new_start != event["start_iso"]:
-                    try:
-                        from hecos.plugins.reminder import store as r_store, scheduler as r_sched
-                        r_store.update_when(event["linked_reminder_id"], new_start)
-                        r_sched.reschedule_job(event["linked_reminder_id"], new_start)
-                        logger.info("CALENDAR", f"Rescheduled linked reminder [{event['linked_reminder_id']}] to {new_start}")
-                    except Exception as re:
-                        logger.error(f"CALENDAR: Failed to reschedule reminder: {re}")
+            if event and event.get("linked_reminder_id"):
+                rid = event["linked_reminder_id"]
+                try:
+                    from hecos.plugins.reminder import store as r_store, scheduler as r_sched
+                    
+                    # 1. Update Title
+                    if "title" in kwargs and kwargs["title"] != event["title"]:
+                        r_store.update_title(rid, f"📅 {kwargs['title']}")
+                        logger.info("CALENDAR", f"Updated linked reminder [{rid}] title")
+
+                    # 2. Update Time
+                    if "start_iso" in kwargs and kwargs["start_iso"] != event["start_iso"]:
+                        r_store.update_when(rid, kwargs["start_iso"])
+                        r_sched.reschedule_job(rid, kwargs["start_iso"])
+                        logger.info("CALENDAR", f"Rescheduled linked reminder [{rid}]")
+
+                    # 3. Update Interactive Status
+                    if "interactive" in kwargs and bool(kwargs["interactive"]) != bool(event.get("interactive")):
+                        r_store.update_interactive(rid, bool(kwargs["interactive"]))
+                        # Re-schedule job to ensure interactive flag is picked up by the worker
+                        rem = r_store.get_by_id(rid)
+                        if rem: r_sched.add_job(rem)
+                        logger.info("CALENDAR", f"Updated linked reminder [{rid}] interactive flag")
+
+                except Exception as re:
+                    logger.error(f"CALENDAR: Failed to sync reminder update: {re}")
 
             updated = store.update(eid, **kwargs)
             return jsonify({"ok": updated})

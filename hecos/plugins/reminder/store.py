@@ -141,6 +141,20 @@ def update_status(reminder_id: str, status: str) -> bool:
         return False
 
 
+def update_title(reminder_id: str, title: str) -> bool:
+    """Updates the title of a reminder."""
+    try:
+        with _get_conn() as conn:
+            conn.execute(
+                "UPDATE reminders SET title = ? WHERE id = ?",
+                (title, reminder_id)
+            )
+        return True
+    except Exception as e:
+        logger.error(f"[REMINDER] store.update_title error: {e}")
+        return False
+
+
 def update_when(reminder_id: str, new_iso: str) -> bool:
     """Updates the scheduled datetime of a reminder (used for snooze)."""
     try:

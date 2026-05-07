@@ -97,7 +97,7 @@
 
 <!-- Add Event Form Card (visible when user clicks + Add Event) -->
 <div class="card" id="cal-add-form" style="padding:20px; display:none;">
-    <div class="card-title" style="margin-bottom:14px;">➕ New Event</div>
+    <div id="cal-form-title" class="card-title" style="margin-bottom:14px;">➕ New Event</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Title *</label>
@@ -167,7 +167,7 @@
                 style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:var(--muted);border-radius:8px;padding:8px 18px;cursor:pointer;font-size:13px;">
                 Cancel
             </button>
-            <button onclick="hcal.submitForm()"
+            <button id="cal-submit-btn" onclick="hcal.submitForm()"
                 style="background:rgba(52,152,219,0.2);border:1px solid rgba(52,152,219,0.4);color:#3498db;border-radius:8px;padding:8px 22px;cursor:pointer;font-size:13px;font-weight:700;">
                 Save Event
             </button>
@@ -272,7 +272,8 @@
             </div>
             <div class="pop-time">📅 ${_fmt(ev.startStr)}${ev.endStr ? ' → ' + _fmt(ev.endStr) : ''}</div>
             ${notes ? `<div class="pop-notes">${notes}</div>` : ''}
-            <div class="pop-actions">
+            <div class="pop-actions" style="margin-top:12px; display:flex; gap:8px;">
+                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">✎ Edit</button>
                 <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')">🗑 Delete</button>
                 <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">Close</button>
             </div>
@@ -389,8 +390,12 @@
     }
 
     function openNewEventForm(prefilledStart) {
+        hcal.cancelForm();
         document.getElementById('cal-add-form').style.display = 'block';
-        document.getElementById('cal-add-form').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('cal-form-title').textContent = 'Add Event';
+        document.getElementById('cal-submit-btn').textContent = 'Confirm Event';
+        document.getElementById('cal-f-title').focus();
+        
         if (prefilledStart) {
             document.getElementById('cal-f-start').value = prefilledStart;
             document.getElementById('cal-f-start-display').value = _fmt(prefilledStart);
@@ -405,8 +410,51 @@
         }
     }
 
+    let _currentEditId = null;
+
+    function editEvent(id) {
+        const ev = _calendar.getEventById(id);
+        if (!ev) return;
+        
+        document.getElementById('cal-event-popup').style.display = 'none';
+        hcal.cancelForm();
+        
+        _currentEditId = id;
+        document.getElementById('cal-add-form').style.display = 'block';
+        document.getElementById('cal-form-title').textContent = 'Edit Event';
+        document.getElementById('cal-submit-btn').textContent = 'Update Event';
+        
+        document.getElementById('cal-f-title').value = ev.title;
+        document.getElementById('cal-f-start').value = ev.startStr;
+        document.getElementById('cal-f-start-display').value = _fmt(ev.startStr);
+        document.getElementById('cal-f-end').value = ev.endStr || '';
+        document.getElementById('cal-f-end-display').value = ev.endStr ? _fmt(ev.endStr) : '';
+        document.getElementById('cal-f-color').value = ev.backgroundColor || '#3498db';
+        document.getElementById('cal-f-allday').checked = ev.allDay;
+        document.getElementById('cal-f-notes').value = ev.extendedProps.notes || '';
+        
+        const hasRemind = ev.extendedProps.has_reminder;
+        const cb = document.getElementById('cal-f-remind');
+        const opts = document.getElementById('cal-reminder-options');
+        if (cb) {
+            cb.checked = hasRemind;
+            if (opts) opts.style.display = hasRemind ? 'block' : 'none';
+        }
+        
+        if (hasRemind) {
+            const isInt = ev.extendedProps.interactive;
+            const radios = document.getElementsByName('cal-remind-type');
+            radios.forEach(r => { if(r.value === (isInt ? 'interactive' : 'simple')) r.checked = true; });
+        }
+
+        document.getElementById('cal-add-form').scrollIntoView({ behavior: 'smooth' });
+    }
+
     function cancelForm() {
+        _currentEditId = null;
         document.getElementById('cal-add-form').style.display = 'none';
+        document.getElementById('cal-form-title').textContent = 'Add Event';
+        document.getElementById('cal-submit-btn').textContent = 'Confirm Event';
         ['cal-f-title','cal-f-start','cal-f-start-display','cal-f-end','cal-f-end-display','cal-f-notes'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
@@ -457,8 +505,11 @@
 
         if (!title || !start) { msg.style.color='#e05'; msg.textContent='Title and start are required.'; return; }
 
-        fetch('/api/ext/calendar/events', {
-            method: 'POST',
+        const url = _currentEditId ? `/api/ext/calendar/events/${_currentEditId}` : '/api/ext/calendar/events';
+        const method = _currentEditId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ title, start, end, color, allDay, notes, remindMe, interactive })
         })
@@ -550,7 +601,7 @@
         setTimeout(init, 100);
     }
 
-    window.hcal = { setView, openNewEventForm, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, saveSettings, toggleColorSettings,
+    window.hcal = { setView, openNewEventForm, editEvent, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, saveSettings, toggleColorSettings,
                     refresh: () => { if (_calendar) _calendar.refetchEvents(); } };
 })();
 </script>
