@@ -125,7 +125,8 @@
             "add_event": "Creates a new calendar event. Returns a confirmation string.",
             "delete_event": "Deletes a calendar event by ID.",
             "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
-            "list_events": "Returns a formatted list of upcoming calendar events."
+            "list_events": "Returns a formatted list of upcoming calendar events.",
+            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
         },
         "status": "ONLINE",
         "example": "",

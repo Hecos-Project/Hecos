@@ -300,6 +300,7 @@ class CalendarExtensionConfig(BaseModel):
     calendar_locale: str = "en"
     calendar_country: str = "US"
     day_colors: List[str] = Field(default_factory=lambda: [""] * 7)
+    calendar_sync_urls: List[str] = Field(default_factory=list)
 
     @field_validator('day_colors', mode='before')
     @classmethod

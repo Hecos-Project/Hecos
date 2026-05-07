@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     notes               TEXT,
     linked_reminder_id  TEXT,
     interactive         INTEGER NOT NULL DEFAULT 0,
+    external_id         TEXT,
+    sync_source         TEXT,
     created_at          TEXT NOT NULL
 );
 """
@@ -45,7 +47,9 @@ def _get_conn() -> sqlite3.Connection:
     # Run any pending migrations (safe: silently ignore if already done)
     migrations = [
         "ALTER TABLE calendar_events ADD COLUMN linked_reminder_id TEXT",
-        "ALTER TABLE calendar_events ADD COLUMN interactive INTEGER NOT NULL DEFAULT 0"
+        "ALTER TABLE calendar_events ADD COLUMN interactive INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE calendar_events ADD COLUMN external_id TEXT",
+        "ALTER TABLE calendar_events ADD COLUMN sync_source TEXT"
     ]
     for stmt in migrations:
         try:
@@ -66,23 +70,24 @@ def _row_to_dict(row) -> dict:
 
 def add(title: str, start_iso: str, end_iso: str = None, all_day: bool = False,
         color: str = None, notes: str = None, linked_reminder_id: str = None,
-        interactive: bool = False) -> dict:
+        interactive: bool = False, external_id: str = None, sync_source: str = None) -> dict:
     """Add a new calendar event. Returns the created event dict."""
     eid = str(uuid.uuid4())
     now = datetime.utcnow().isoformat()
     conn = _get_conn()
     try:
         conn.execute(
-            "INSERT INTO calendar_events (id, title, start_iso, end_iso, all_day, color, notes, linked_reminder_id, interactive, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?)",
-            (eid, title, start_iso, end_iso, int(all_day), color, notes, linked_reminder_id, int(interactive), now)
+            "INSERT INTO calendar_events (id, title, start_iso, end_iso, all_day, color, notes, linked_reminder_id, interactive, external_id, sync_source, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (eid, title, start_iso, end_iso, int(all_day), color, notes, linked_reminder_id, int(interactive), external_id, sync_source, now)
         )
         conn.commit()
         logger.debug("CALENDAR", f"Event created: [{eid}] '{title}' @ {start_iso}")
         return {
             "id": eid, "title": title, "start_iso": start_iso, "end_iso": end_iso,
             "all_day": all_day, "color": color, "notes": notes,
-            "linked_reminder_id": linked_reminder_id, "interactive": interactive, "created_at": now
+            "linked_reminder_id": linked_reminder_id, "interactive": interactive,
+            "external_id": external_id, "sync_source": sync_source, "created_at": now
         }
     finally:
         conn.close()

@@ -38,6 +38,7 @@
                 </select>
             </label>
             <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--muted); border-radius:4px; padding:3px 8px; cursor:pointer; font-size:12px;">🎨 Colors</button>
+            <button onclick="hcal.toggleSyncSettings()" id="cal-btn-sync" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--muted); border-radius:4px; padding:3px 8px; cursor:pointer; font-size:12px;">🔄 iSync</button>
         </div>
     </div>
 
@@ -77,6 +78,22 @@
             </div>
         </div>
         <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Selections are saved automatically after a short delay.</div>
+    </div>
+
+    <!-- External Sync Settings (Expansion) -->
+    <div id="cal-sync-settings" style="display:none; background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.05);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:12px; color:var(--muted); font-weight:bold;">Sincronizzazione Esterna (iCal)</div>
+            <button onclick="hcal.runManualSync()" id="btn-sync-now" style="background:var(--accent); color:white; border:none; border-radius:4px; padding:4px 10px; font-size:11px; cursor:pointer;">Sync Now</button>
+        </div>
+        <div id="cal-sync-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            <!-- URLs populated here -->
+        </div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="cal-sync-new-url" placeholder="Incolla URL iCal (es. Google/Apple...)" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:6px 10px; font-size:12px;">
+            <button onclick="hcal.addSyncUrl()" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:6px 12px; font-size:12px; cursor:pointer;">Aggiungi</button>
+        </div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Usa l'indirizzo privato (iCal) dalle impostazioni del tuo calendario Google o Apple. Gli eventi verranno scaricati automaticamente.</div>
     </div>
 
     <!-- Toolbar: view switcher + Add Event button -->
@@ -360,6 +377,10 @@
                     }
                 }
             }
+            // Populate sync URLs
+            _syncUrls = calCfg.calendar_sync_urls || [];
+            _renderSyncList();
+
         } catch(e) { console.warn('Calendar config fetch error:', e); }
 
         _calendar = new FullCalendar.Calendar(el, {
@@ -611,7 +632,8 @@
                     calendar: { 
                         calendar_locale: locale, 
                         calendar_country: country,
-                        day_colors: dayColors
+                        day_colors: dayColors,
+                        calendar_sync_urls: _syncUrls
                     } 
                 } 
             })
@@ -640,9 +662,90 @@
         const panel = document.getElementById('cal-color-settings');
         const btn = document.getElementById('cal-btn-colors');
         const isHidden = panel.style.display === 'none';
+        
+        if (isHidden) {
+            document.getElementById('cal-sync-settings').style.display = 'none';
+            document.getElementById('cal-btn-sync').style.background = '';
+            document.getElementById('cal-btn-sync').style.color = '';
+        }
+
         panel.style.display = isHidden ? 'block' : 'none';
         btn.style.background = isHidden ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)';
         btn.style.color = isHidden ? '#3498db' : 'var(--muted)';
+    }
+
+    function toggleSyncSettings() {
+        const panel = document.getElementById('cal-sync-settings');
+        const btn = document.getElementById('cal-btn-sync');
+        const isHidden = panel.style.display === 'none';
+
+        if (isHidden) {
+            document.getElementById('cal-color-settings').style.display = 'none';
+            document.getElementById('cal-btn-colors').style.background = '';
+            document.getElementById('cal-btn-colors').style.color = '';
+        }
+
+        panel.style.display = isHidden ? 'block' : 'none';
+        btn.style.background = isHidden ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)';
+        btn.style.color = isHidden ? '#3498db' : 'var(--muted)';
+    }
+
+    let _syncUrls = [];
+    function _renderSyncList() {
+        const list = document.getElementById('cal-sync-list');
+        if (!list) return;
+        if (_syncUrls.length === 0) {
+            list.innerHTML = '<div style="font-size:11px; color:rgba(255,255,255,0.2); font-style:italic;">Nessun calendario esterno configurato.</div>';
+            return;
+        }
+        list.innerHTML = _syncUrls.map((url, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+                <div style="font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${url}</div>
+                <button onclick="hcal.removeSyncUrl(${idx})" style="background:none; border:none; color:#e05; cursor:pointer; font-size:14px; margin-left:10px;">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    function addSyncUrl() {
+        const input = document.getElementById('cal-sync-new-url');
+        const url = (input.value || '').trim();
+        if (!url) return;
+        if (!url.startsWith('http')) { alert('URL non valido.'); return; }
+        _syncUrls.push(url);
+        input.value = '';
+        _renderSyncList();
+        saveSettings();
+    }
+
+    function removeSyncUrl(idx) {
+        if (!confirm('Rimuovere questo calendario?')) return;
+        _syncUrls.splice(idx, 1);
+        _renderSyncList();
+        saveSettings();
+    }
+
+    function runManualSync() {
+        const btn = document.getElementById('btn-sync-now');
+        const originalText = btn.textContent;
+        btn.textContent = 'Syncing...';
+        btn.disabled = true;
+
+        fetch('/api/ext/calendar/sync', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            btn.textContent = d.ok ? '✅ Done' : '❌ Error';
+            if (d.ok && _calendar) _calendar.refetchEvents();
+            if (d.ok && window.calendarWidget) calendarWidget.refresh();
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }, 2000);
+        })
+        .catch(() => {
+            btn.textContent = '❌ Fail';
+            btn.disabled = false;
+            setTimeout(() => { btn.textContent = originalText; }, 2000);
+        });
     }
 
     // Close popup on outside click

@@ -259,6 +259,25 @@ def init_routes(app, root_dir: str = None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    # ── POST /api/ext/calendar/sync ───────────────────────────────────────────
+    @app.route("/api/ext/calendar/sync", methods=["POST"])
+    @login_required
+    def calendar_manual_sync():
+        try:
+            from hecos.plugins.calendar import sync_manager
+            cfg_mgr = getattr(app, 'hecos_config_manager', None)
+            if not cfg_mgr:
+                return jsonify({"ok": False, "error": "Config manager not found"}), 500
+            
+            sync_urls = cfg_mgr.config.get("extensions", {}).get("calendar", {}).get("calendar_sync_urls", [])
+            
+            # Run sync (might take a few seconds)
+            count = sync_manager.sync_all(sync_urls)
+            return jsonify({"ok": True, "count": count})
+        except Exception as e:
+            logger.error(f"Manual sync error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     # ── GET /api/ext/calendar/upcoming?n=3 ────────────────────────────────────
     @app.route("/api/ext/calendar/upcoming", methods=["GET"])
     @login_required

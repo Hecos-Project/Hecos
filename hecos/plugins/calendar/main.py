@@ -84,6 +84,23 @@ class CalendarTools:
             logger.debug("CALENDAR", f"delete_event error: {e}")
             return f"⚠️ Failed to delete event: {e}"
 
+    def sync_calendars(self) -> str:
+        """Manually triggers synchronization with external Google/Apple calendars."""
+        from hecos.plugins.calendar import sync_manager
+        try:
+            sync_urls = []
+            if self._cfg and isinstance(self._cfg, dict):
+                sync_urls = self._cfg.get("extensions", {}).get("calendar", {}).get("calendar_sync_urls", [])
+            
+            if not sync_urls:
+                return "ℹ️ No external calendar URLs configured. Add them in the Calendar settings."
+            
+            count = sync_manager.sync_all(sync_urls)
+            return f"🔄 Synchronization complete. Found and added {count} new events from external feeds."
+        except Exception as e:
+            logger.error(f"sync_calendars tool error: {e}")
+            return f"⚠️ Error during synchronization: {e}"
+
     def get_date_info(self, country: str = "IT", year: int = None) -> str:
         """Returns today's date formatted natively, current holidays, and upcoming public holidays."""
         now = datetime.now()
@@ -201,3 +218,16 @@ def on_load(config):
     """Called by module_scanner when the plugin is loaded."""
     tools._cfg = config
     logger.debug("CALENDAR", "Plugin loaded and config injected.")
+    
+    # Trigger an initial background sync
+    try:
+        import threading
+        def _bg_sync():
+            from hecos.plugins.calendar import sync_manager
+            urls = config.get("extensions", {}).get("calendar", {}).get("calendar_sync_urls", [])
+            if urls:
+                sync_manager.sync_all(urls)
+        
+        threading.Thread(target=_bg_sync, daemon=True).start()
+    except Exception as e:
+        logger.warning(f"Failed to start initial calendar sync: {e}")
