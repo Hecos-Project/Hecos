@@ -18,7 +18,7 @@
         <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">Calendar</div>
         <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Format: 
-                <select id="cal-set-locale" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
+                <select id="cal-set-locale" onchange="hcal.saveSettings()" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
                     <option value="en-US">English (US)</option>
                     <option value="en-GB">English (UK)</option>
                     <option value="it">Italiano</option>
@@ -28,7 +28,7 @@
                 </select>
             </label>
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">Holidays: 
-                <select id="cal-set-country" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
+                <select id="cal-set-country" onchange="hcal.saveSettings()" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; padding:2px; cursor:pointer; font-size:12px;">
                     <option value="US">🇺🇸 USA</option>
                     <option value="GB">🇬🇧 UK</option>
                     <option value="IT">🇮🇹 Italy</option>
@@ -38,44 +38,44 @@
                 </select>
             </label>
             <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--muted); border-radius:4px; padding:3px 8px; cursor:pointer; font-size:12px;">🎨 Colors</button>
-            <button onclick="hcal.saveSettings()" style="background:rgba(46,204,113,0.2); border:1px solid rgba(46,204,113,0.4); color:#2ecc71; border-radius:4px; padding:3px 10px; cursor:pointer;">Save</button>
         </div>
     </div>
 
     <!-- Day Colors Settings (Expansion) -->
-    <div id="cal-color-settings" style="display:none; background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.05);">
-        <div style="font-size:12px; color:var(--muted); margin-bottom:10px; font-weight:bold;">Day Background Colors</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:12px; color:var(--muted); font-weight:bold;">Day Background Colors</div>
+        </div>
         <div style="display:flex; flex-wrap:wrap; gap:10px;">
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Sun</label>
-                <input type="color" id="color-day-0" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-0" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Mon</label>
-                <input type="color" id="color-day-1" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-1" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Tue</label>
-                <input type="color" id="color-day-2" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-2" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Wed</label>
-                <input type="color" id="color-day-3" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-3" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Thu</label>
-                <input type="color" id="color-day-4" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-4" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Fri</label>
-                <input type="color" id="color-day-5" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-5" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
             <div style="display:flex; align-items:center; gap:6px;">
                 <label style="font-size:11px;">Sat</label>
-                <input type="color" id="color-day-6" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
+                <input type="color" id="color-day-6" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
             </div>
         </div>
-        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Colors are applied with transparency to cells.</div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Selections are saved automatically after a short delay.</div>
     </div>
 
     <!-- Toolbar: view switcher + Add Event button -->
@@ -92,7 +92,10 @@
     </div>
 
     <!-- FullCalendar mount point -->
-    <div id="hecos-fullcalendar" style="min-height:500px;"></div>
+    <div id="hecos-fullcalendar" style="min-height:600px;"></div>
+    <div id="cal-sync-status" style="margin-top:12px; font-size:11px; color:#2ecc71; opacity:0; transition:opacity 0.3s; text-align:right;">
+        <span style="display:inline-flex; align-items:center; gap:4px;">✔ Synced</span>
+    </div>
 </div>
 
 <!-- Add Event Form Card (visible when user clicks + Add Event) -->
@@ -540,16 +543,34 @@
             });
     }
 
-    function saveSettings() {
-        const locale = document.getElementById('cal-set-locale').value.trim();
-        const country = document.getElementById('cal-set-country').value.trim();
-        
-        const dayColors = {};
+    function previewColors() {
+        let dayColors = [];
         for (let i=0; i<7; i++) {
             const picker = document.getElementById(`color-day-${i}`);
             if (picker && picker.value) {
-                // Save as subtle rgba - increased opacity for better visibility
-                dayColors[i] = _hexToRgba(picker.value, (i === 0 ? 0.25 : 0.15));
+                dayColors[i] = _hexToRgba(picker.value, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
+                if (picker.value === '#000000') dayColors[i] = 'transparent';
+            }
+        }
+        _applyDayColors(dayColors);
+    }
+
+    let _saveTimeout = null;
+    function handleColorInput() {
+        previewColors();
+        clearTimeout(_saveTimeout);
+        _saveTimeout = setTimeout(saveSettings, 1500); 
+    }
+
+    function saveSettings() {
+        const locale = document.getElementById('cal-set-locale').value;
+        const country = document.getElementById('cal-set-country').value;
+        
+        let dayColors = [];
+        for (let i=0; i<7; i++) {
+            const picker = document.getElementById(`color-day-${i}`);
+            if (picker && picker.value) {
+                dayColors[i] = _hexToRgba(picker.value, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
                 if (picker.value === '#000000') dayColors[i] = 'transparent';
             }
         }
@@ -570,12 +591,21 @@
         .then(r => r.json())
         .then(d => {
             if (d.ok) {
-                alert('Calendar settings saved!');
                 _applyDayColors(dayColors);
-                if (_calendar) _calendar.render();
-            } else { alert('Error saving settings.'); }
+                if (_calendar) {
+                    _calendar.setOption('locale', locale);
+                    _calendar.refetchEvents();
+                    _calendar.render();
+                }
+                
+                const status = document.getElementById('cal-sync-status');
+                if (status) {
+                    status.style.opacity = '1';
+                    setTimeout(() => { status.style.opacity = '0'; }, 2000);
+                }
+            }
         })
-        .catch(e => alert('Network error.'));
+        .catch(e => console.error('CALENDAR: Auto-save failed', e));
     }
 
     function toggleColorSettings() {
@@ -601,7 +631,7 @@
         setTimeout(init, 100);
     }
 
-    window.hcal = { setView, openNewEventForm, editEvent, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, saveSettings, toggleColorSettings,
+    window.hcal = { setView, openNewEventForm, editEvent, cancelForm, pickStart, pickEnd, submitForm, deleteEvent, saveSettings, previewColors, handleColorInput, toggleColorSettings,
                     refresh: () => { if (_calendar) _calendar.refetchEvents(); } };
 })();
 </script>

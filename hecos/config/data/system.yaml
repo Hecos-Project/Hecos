@@ -52,8 +52,16 @@ cognition:
   max_history_messages: 20
 extensions:
   calendar:
-    calendar_locale: it
+    calendar_locale: fr
     calendar_country: IT
+    day_colors:
+      - rgba(172,47,47,0.35)
+      - transparent
+      - transparent
+      - transparent
+      - transparent
+      - rgba(33,186,13,0.2)
+      - rgba(127,122,122,0.2)
 filters:
   remove_asterisks: both
   remove_round_brackets: voice
@@ -157,7 +165,7 @@ plugins:
     port: 7070
     api_port: 5000
     auto_open_browser: false
-    https_enabled: true
+    https_enabled: false
     force_login: true
     cert_file: certs/cert.pem
     key_file: certs/key.pem
@@ -193,7 +201,7 @@ plugins:
   REMINDER:
     enabled: true
     lazy_load: false
-    reminder_mode: both
+    reminder_mode: voice
     ringtone_path: Default_System_Alert.mp3
     time_format: 24h
     max_reminders: 50
@@ -224,4 +232,3 @@ agent:
   enabled: true
   max_iterations: 12
   verbose_traces: true
-

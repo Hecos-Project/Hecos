@@ -4,8 +4,8 @@ DESCRIPTION: Pydantic v2 models for config/system.yaml
 """
 
 from __future__ import annotations
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ─── PRIVACY ──────────────────────────────────────────────────────────────────
@@ -292,6 +292,31 @@ class PluginReminder(BaseModel):
     snooze_default_minutes: int = 15
     reminder_snooze_ui: bool = False
 
+
+# ─── EXTENSIONS ───────────────────────────────────────────────────────────────
+
+class CalendarExtensionConfig(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    calendar_locale: str = "en"
+    calendar_country: str = "US"
+    day_colors: List[str] = Field(default_factory=lambda: [""] * 7)
+
+    @field_validator('day_colors', mode='before')
+    @classmethod
+    def validate_day_colors(cls, v):
+        if isinstance(v, dict):
+            # Convert dictionary like {'0': '...', '1': '...'} to list
+            try:
+                sorted_keys = sorted(v.keys(), key=lambda x: int(x))
+                return [v[k] for k in sorted_keys]
+            except (ValueError, TypeError):
+                return list(v.values())
+        return v
+
+class ExtensionsConfig(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    calendar: CalendarExtensionConfig = Field(default_factory=CalendarExtensionConfig)
+
 class MCPServerConfig(BaseModel):
     command: str
     args: List[str] = []
@@ -346,7 +371,7 @@ class SystemConfig(BaseModel):
     backend: BackendConfig = Field(default_factory=BackendConfig)
     bridge: BridgeConfig = Field(default_factory=BridgeConfig)
     cognition: CognitionConfig = Field(default_factory=CognitionConfig)
-    extensions: Dict[str, Any] = Field(default_factory=dict)
+    extensions: ExtensionsConfig = Field(default_factory=ExtensionsConfig)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
     language: str = "en"
     llm: LLMConfig = Field(default_factory=LLMConfig)
