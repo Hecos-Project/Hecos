@@ -172,11 +172,11 @@ function openEditor(path) {
   window.open(`/drive/editor?path=${encodeURIComponent(path)}`, '_blank');
 }
 
-// ─── Media Preview — handled by media_viewer extension ──────────────────────
-// Stub functions kept here only as fallbacks in case the extension JS hasn't
-// loaded yet. The real implementation lives in media_viewer.js.
+// ─── Media Preview — handled by Hecos Media Player plugin ────────────────────
+// The real implementation lives in media_player.js (standalone plugin).
+// drive.js calls HecosMediaPlayer.openFromDrive() to open the gallery.
 function isPreviewable(name) {
-  return typeof window.DriveMediaViewer !== 'undefined' && false; // extension handles it
+  return typeof window.HecosMediaPlayer !== 'undefined';
 }
 
 function sortBy(key) {
@@ -234,9 +234,9 @@ function renderTable() {
 
   updateStatusBar();
 
-  // Notify the media viewer extension to inject thumbnails
-  if (typeof window.DriveMediaViewer?.onTableRendered === 'function') {
-    window.DriveMediaViewer.onTableRendered(allEntries, currentPath);
+  // Notify the Hecos Media Player to inject Drive thumbnails
+  if (typeof window.HecosMediaPlayer?.injectDriveThumbnails === 'function') {
+    window.HecosMediaPlayer.injectDriveThumbnails(allEntries, currentPath);
   }
 }
 

@@ -69,7 +69,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             if sm: sm.system_speaking = False
             
             try:
-                from modules.web_ui.routes_chat import stop_voice_generation
+                from hecos.modules.web_ui.routes_chat import stop_voice_generation
                 stop_voice_generation()
             except Exception as e:
                 logger.debug(f"[WebUI] Could not stop web generation: {e}")
@@ -303,7 +303,7 @@ def init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             voice_cfg["onnx_model"] = onnx_model
 
             # Generate the WAV file
-            from modules.web_ui.routes_chat import generate_voice_file, set_last_audio_path
+            from hecos.modules.web_ui.routes_chat import generate_voice_file, set_last_audio_path
             wav_path = generate_voice_file(text, voice_cfg)
 
             if not wav_path:

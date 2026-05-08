@@ -1,0 +1,262 @@
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Hecos Media Player — Shared CSS (media_player.css)
+   All selectors prefixed with #hmp- or .hmp- to avoid collisions.
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ── Lightbox overlay ─────────────────────────────────────────────────────── */
+#hmp-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(7, 9, 14, 0.97);
+  backdrop-filter: blur(8px);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+#hmp-lightbox.open { display: flex; }
+
+/* ── Header bar ───────────────────────────────────────────────────────────── */
+#hmp-header {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  gap: 12px;
+}
+#hmp-title {
+  flex: 1;
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#hmp-counter {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+#hmp-close {
+  flex-shrink: 0;
+  background: rgba(255, 75, 75, 0.12);
+  border: 1px solid rgba(255, 75, 75, 0.4);
+  color: #ff6b6b;
+  font-size: 13px;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#hmp-close:hover { background: rgba(255, 75, 75, 0.3); }
+
+/* ── Stage ────────────────────────────────────────────────────────────────── */
+#hmp-stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 60px 70px;
+  box-sizing: border-box;
+}
+
+/* ── Image ────────────────────────────────────────────────────────────────── */
+.hmp-img-wrap {
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.hmp-img-wrap img {
+  max-width: 100%;
+  max-height: calc(100vh - 160px);
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: transform 0.2s;
+  cursor: zoom-in;
+}
+.hmp-img-wrap img.hmp-img-zoomed {
+  max-width: none;
+  max-height: none;
+  transform: scale(2);
+  transform-origin: center center;
+  cursor: zoom-out;
+}
+
+/* ── Video ────────────────────────────────────────────────────────────────── */
+.hmp-video {
+  max-width: 100%;
+  max-height: calc(100vh - 160px);
+  border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  outline: none;
+  background: #000;
+}
+
+/* ── Audio ────────────────────────────────────────────────────────────────── */
+#hmp-audio-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.hmp-audio-icon {
+  font-size: 80px;
+  filter: drop-shadow(0 4px 16px rgba(var(--accent-rgb, 102,252,241), 0.3));
+  animation: hmp-pulse 2s infinite alternate;
+}
+@keyframes hmp-pulse {
+  from { transform: scale(1);    opacity: 0.8; }
+  to   { transform: scale(1.08); opacity: 1;   }
+}
+.hmp-audio-name {
+  font-size: 15px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  max-width: 400px;
+  word-break: break-all;
+}
+#hmp-audio-cover audio {
+  width: min(480px, 90vw);
+  margin-top: 8px;
+}
+
+/* ── Nav arrows ───────────────────────────────────────────────────────────── */
+.hmp-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(var(--accent-rgb, 102,252,241), 0.08);
+  border: 1px solid rgba(var(--accent-rgb, 102,252,241), 0.18);
+  color: var(--accent);
+  font-size: 24px;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  z-index: 10;
+  user-select: none;
+}
+.hmp-nav:hover { background: rgba(var(--accent-rgb, 102,252,241), 0.2); transform: translateY(-50%) scale(1.08); }
+.hmp-nav:disabled { opacity: 0.2; cursor: default; }
+#hmp-prev { left: 14px; }
+#hmp-next { right: 14px; }
+
+/* ── Filmstrip ────────────────────────────────────────────────────────────── */
+#hmp-filmstrip {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px 16px;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+.hmp-film-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.hmp-film-dot.active { background: var(--accent); transform: scale(1.4); }
+
+.hmp-film-thumb {
+  width: 52px;
+  height: 38px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.hmp-film-thumb img  { width: 100%; height: 100%; object-fit: cover; }
+.hmp-film-thumb.active { border-color: var(--accent); }
+.hmp-film-thumb:hover  { transform: translateY(-2px); }
+
+/* ── Drive file-list thumbnail injection ─────────────────────────────────── */
+.hmp-thumb-wrap {
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.hmp-thumb-wrap:hover { transform: scale(1.05); box-shadow: 0 4px 16px rgba(var(--accent-rgb, 102,252,241), 0.2); }
+.mv-size-small  .hmp-thumb-wrap { width: 40px;  height: 40px; }
+.mv-size-medium .hmp-thumb-wrap { width: 80px;  height: 80px; }
+.mv-size-large  .hmp-thumb-wrap { width: 140px; height: 140px; }
+.hmp-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hmp-thumb-icon { font-size: 22px; width: 100%; text-align: center; }
+
+/* ── Drive size picker toolbar (shared with drive.js) ────────────────────── */
+#mv-size-picker {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(var(--accent-rgb, 102,252,241), 0.12);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+.mv-size-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 8px;
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+.mv-size-btn:hover  { color: var(--accent); border-color: rgba(var(--accent-rgb, 102,252,241), 0.3); }
+.mv-size-btn.active { color: var(--bg); background: var(--accent); border-color: var(--accent); font-weight: 700; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  #hmp-stage        { padding: 56px 46px 60px; }
+  .hmp-nav          { width: 40px; height: 40px; font-size: 18px; }
+  #hmp-prev         { left: 6px; }
+  #hmp-next         { right: 6px; }
+  .hmp-film-thumb   { width: 40px; height: 28px; }
+  .hmp-audio-icon   { font-size: 56px; }
+}

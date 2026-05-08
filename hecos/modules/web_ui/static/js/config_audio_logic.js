@@ -152,7 +152,7 @@ async function autoFixPiperPath() {
 
 // ── Browse for piper.exe via NEW web-native explorer ─────────────────────────
 async function browsePiperPath() {
-    const currentPath = document.getElementById('v-piper').value || 'C:\\Hecos-Core\\bin\\piper';
+    const currentPath = document.getElementById('v-piper').value || 'C:\\Hecos\\bin\\piper';
     HecosFilePicker.open({
         title: window.t('webui_conf_voice_select_piper'),
         initialPath: currentPath,

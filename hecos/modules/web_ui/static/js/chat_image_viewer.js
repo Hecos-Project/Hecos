@@ -1,16 +1,74 @@
 /**
  * MODULE: chat_image_viewer.js
- * PURPOSE: Handle AI image rendering, lightbox, and drag-to-folder.
- * Loaded by chat.html.
+ * PURPOSE: Handle AI image rendering, single-click lightbox, and
+ *          double-click gallery (powered by HecosMediaPlayer plugin).
  *
  * HOW AI SENDS IMAGES:
- * - The AI includes a special tag in its response: [[IMG:filename.ext]]
- * - renderMarkdown() (in chat.html) calls processAiImages() to replace those
- *   tags with rendered <img> inside a .chat-img-wrap container.
- * - Files must exist under /api/images/<filename> (served by routes_chat.py).
+ * - The AI includes [[IMG:filename.ext]] or [[IMG:https://...]] tags.
+ * - renderMarkdown() calls processAiImages() to replace those tags with
+ *   rendered <img> inside a .chat-img-wrap container.
+ * - Files are served by routes_chat.py at /api/images/<filename>.
+ *
+ * CLICK BEHAVIOUR:
+ * - Single click → classic full-screen lightbox (single image).
+ * - Double click → HecosMediaPlayer gallery with all chat images + filmstrip.
  */
 
-// ── Convert [[IMG:name]] tags in AI text to rendered image HTML ──
+// ── Gallery helper — collects all chat images for the media player ────────────
+function _getChatGalleryItems() {
+  return Array.from(document.querySelectorAll('.chat-img-wrap')).map(wrap => ({
+    name: wrap.dataset.imgName || 'Image',
+    type: 'image',
+    url:  wrap.dataset.imgUrl  || wrap.querySelector('img')?.src || ''
+  }));
+}
+
+function _getChatGalleryIndex(url) {
+  const items = _getChatGalleryItems();
+  const idx = items.findIndex(item => item.url === url);
+  return idx >= 0 ? idx : 0;
+}
+
+// ── Open gallery (double-click) ───────────────────────────────────────────────
+window.openChatGallery = function(url) {
+  if (typeof window.HecosMediaPlayer === 'undefined') {
+    // Lazy load the media player script and CSS if not already present
+    if (!document.getElementById('hmp-css')) {
+      const link = document.createElement('link');
+      link.id   = 'hmp-css';
+      link.rel  = 'stylesheet';
+      link.href = '/media_player_static/css/media_player.css';
+      document.head.appendChild(link);
+    }
+
+    const scripts = [
+      '/media_player_static/js/player_image.js',
+      '/media_player_static/js/player_video.js',
+      '/media_player_static/js/player_audio.js',
+      '/media_player_static/js/player_filmstrip.js',
+      '/media_player_static/js/media_player.js',
+    ];
+
+    // Load scripts sequentially then open
+    scripts.reduce((promise, src) => promise.then(() => new Promise((resolve) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = resolve; // fail silently, open anyway
+      document.head.appendChild(s);
+    })), Promise.resolve()).then(() => {
+      if (typeof window.HecosMediaPlayer !== 'undefined') {
+        window.HecosMediaPlayer.open(_getChatGalleryItems(), _getChatGalleryIndex(url));
+      }
+    });
+    return;
+  }
+
+  window.HecosMediaPlayer.open(_getChatGalleryItems(), _getChatGalleryIndex(url));
+};
+
+// ── Convert [[IMG:name]] tags in AI text to rendered image HTML ──────────────
 window.processAiImages = function(html) {
   return html.replace(/\[\[IMG:([^\]]+)\]\]/g, (match, identifier) => {
     identifier = identifier.trim();
@@ -22,10 +80,12 @@ window.processAiImages = function(html) {
 <div class="chat-img-wrap" draggable="true" data-img-url="${url}" data-img-name="${displayTitle}">
   <img src="${url}" alt="${displayTitle}" loading="lazy"
        onerror="this.parentElement.style.display='none'"
-       onclick="if(window.openLightbox) window.openLightbox('${url}')">
+       onclick="if(window.openLightbox) window.openLightbox('${url}')"
+       ondblclick="if(window.openChatGallery) window.openChatGallery('${url}'); return false;">
   <div class="chat-img-overlay">
     <button class="img-action-btn" onclick="downloadChatImage('${url}','${displayTitle}')">⬇ Scarica</button>
     <button class="img-action-btn" onclick="openLightbox('${url}')">🔍 Zoom</button>
+    <button class="img-action-btn" onclick="openChatGallery('${url}')">🖼 Gallery</button>
   </div>
 </div>`;
   });
@@ -41,7 +101,7 @@ window.downloadChatImage = function(url, name) {
   document.body.removeChild(a);
 };
 
-// ── Lightbox ──────────────────────────────────────────────────────
+// ── Single-image lightbox (single click) ─────────────────────────
 window.openLightbox = function(url) {
   const lb = document.getElementById('img-lightbox');
   const lbImg = document.getElementById('img-lightbox-img');
@@ -56,12 +116,9 @@ function closeLightbox() {
 }
 
 // ── Drag image to OS folder ───────────────────────────────────────
-// Uses the File System Access API (showDirectoryPicker) where available,
-// falls back to a simple download.
 function setupImageDragToFolder() {
   const banner = document.getElementById('img-drop-banner');
 
-  // Delegate drag events on dynamically created images inside chat
   document.addEventListener('dragstart', (e) => {
     const wrap = e.target.closest('.chat-img-wrap');
     if (!wrap) return;
@@ -80,7 +137,7 @@ function setupImageDragToFolder() {
   });
 }
 
-// ── ESC closes lightbox ───────────────────────────────────────────
+// ── Keyboard shortcuts ─────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeLightbox();
 });
@@ -95,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupImageDragToFolder();
 
-  // Lightbox close button
+  // Single-image lightbox controls
   const closeBtn = document.getElementById('img-lightbox-close');
   const lb = document.getElementById('img-lightbox');
   if (closeBtn) closeBtn.addEventListener('click', closeLightbox);
