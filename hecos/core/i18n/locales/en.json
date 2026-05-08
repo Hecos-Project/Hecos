@@ -819,6 +819,10 @@
         "webui_mp_repeat": "Repeat queue",
         "webui_mp_autoplay_video": "Autoplay video in browser gallery",
         "webui_mp_autoplay_audio": "Autoplay audio in browser gallery",
-        "webui_mp_filmstrip": "Show filmstrip in gallery"
+        "webui_mp_filmstrip": "Show filmstrip in gallery",
+
+        "webui_media_vault_title": "Media Vault & Privacy",
+        "webui_media_vault_desc": "Manage images, audio and video generated and saved by Hecos on your local disk.",
+        "webui_media_open_folder": "Open Storage Folder"
     }
 }

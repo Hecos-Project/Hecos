@@ -1,0 +1,110 @@
+<!-- Media Player — Sidebar Widget -->
+<!-- Injected by chat_sidebar.html via sidebar_widgets context -->
+<div class="sidebar-card" id="mp-widget-card" style="user-select: none;">
+  <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:6px; padding:0;"
+       onclick="mpWidgetToggle()" title="Click to collapse/expand">
+    <span>🎵</span>
+    <span>MEDIA PLAYER</span>
+    <span id="mp-widget-chevron" style="margin-left:auto; font-size:10px; color:var(--muted);">▾</span>
+  </div>
+
+  <div id="mp-widget-body">
+    <!-- Track name -->
+    <div id="mp-widget-track" style="
+      font-size:12px; font-weight:600; color:var(--text);
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      margin-bottom:6px; min-height:16px;">—</div>
+
+    <!-- Progress bar -->
+    <div style="height:3px; background:var(--border); border-radius:2px; margin-bottom:8px; overflow:hidden;">
+      <div id="mp-widget-progress" style="height:100%; background:var(--accent); width:0%; transition:width 1.2s linear;"></div>
+    </div>
+
+    <!-- Controls -->
+    <div style="display:flex; gap:5px; align-items:center; margin-bottom:8px;">
+      <button class="audio-toggle-btn" style="flex:0; padding:3px 7px; font-size:13px;" onclick="mpWCtrl('prev')" title="Previous">⏮</button>
+      <button class="audio-toggle-btn" id="mp-widget-play-btn" style="flex:1; font-size:12px;" onclick="mpWPlayPause()" title="Play/Pause">▶</button>
+      <button class="audio-toggle-btn" style="flex:0; padding:3px 7px; font-size:13px;" onclick="mpWCtrl('stop')" title="Stop">⏹</button>
+      <button class="audio-toggle-btn" style="flex:0; padding:3px 7px; font-size:13px;" onclick="mpWCtrl('next')" title="Next">⏭</button>
+    </div>
+
+    <!-- Volume -->
+    <div style="display:flex; align-items:center; gap:5px;">
+      <span style="font-size:11px; color:var(--muted);">🔊</span>
+      <input type="range" id="mp-widget-vol" min="0" max="100" value="80" style="flex:1; height:3px;"
+             oninput="mpWVolume(this.value)">
+      <span id="mp-widget-vol-val" style="font-size:10px; color:var(--muted); min-width:22px; text-align:right;">80</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let _playing = false;
+  let _poll = null;
+
+  window.mpWidgetToggle = function() {
+    const body = document.getElementById('mp-widget-body');
+    const ch   = document.getElementById('mp-widget-chevron');
+    if (!body) return;
+    const hidden = body.style.display === 'none';
+    body.style.display = hidden ? '' : 'none';
+    if (ch) ch.textContent = hidden ? '▾' : '▸';
+    if (hidden) mpWRefresh();
+  };
+
+  async function mpWSend(action, extra) {
+    const body = { action, ...(extra || {}) };
+    try {
+      await fetch('/api/media_player/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      setTimeout(mpWRefresh, 300);
+    } catch(e) {}
+  }
+
+  window.mpWCtrl = function(action) { mpWSend(action); };
+
+  window.mpWPlayPause = function() {
+    mpWSend(_playing ? 'pause' : 'play');
+  };
+
+  window.mpWVolume = function(vol) {
+    const vv = document.getElementById('mp-widget-vol-val');
+    if (vv) vv.textContent = vol;
+    mpWSend('volume', { volume: parseInt(vol) });
+  };
+
+  async function mpWRefresh() {
+    try {
+      const r = await fetch('/api/media_player/status');
+      const d = await r.json();
+      if (!d.ok) return;
+
+      _playing = !!d.playing;
+
+      const trackEl = document.getElementById('mp-widget-track');
+      if (trackEl) trackEl.textContent = d.track ? d.track.split(/[\\/]/).pop() : '—';
+
+      const prog = document.getElementById('mp-widget-progress');
+      if (prog) prog.style.width = (d.length > 0) ? ((d.position / d.length) * 100).toFixed(1) + '%' : '0%';
+
+      const btn = document.getElementById('mp-widget-play-btn');
+      if (btn) btn.textContent = _playing ? '⏸' : '▶';
+
+      const volEl = document.getElementById('mp-widget-vol');
+      const volVl = document.getElementById('mp-widget-vol-val');
+      if (volEl && d.volume >= 0) { volEl.value = d.volume; }
+      if (volVl && d.volume >= 0) { volVl.textContent = d.volume; }
+    } catch(e) {}
+  }
+
+  // Start polling when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    mpWRefresh();
+    _poll = setInterval(mpWRefresh, 5000);
+  });
+})();
+</script>

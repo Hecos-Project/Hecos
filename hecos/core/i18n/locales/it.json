@@ -834,6 +834,10 @@
         "webui_mp_repeat": "Ripeti la coda",
         "webui_mp_autoplay_video": "Avvia video automaticamente nella galleria browser",
         "webui_mp_autoplay_audio": "Avvia audio automaticamente nella galleria browser",
-        "webui_mp_filmstrip": "Mostra filmstrip nella galleria"
+        "webui_mp_filmstrip": "Mostra filmstrip nella galleria",
+
+        "webui_media_vault_title": "Media Vault & Privacy",
+        "webui_media_vault_desc": "Gestisci immagini, audio e video generati e salvati da Hecos sul disco locale.",
+        "webui_media_open_folder": "Apri Cartella Media"
     }
 }

@@ -30,8 +30,11 @@ except ImportError:
 def _has_vlc() -> bool:
     try:
         import vlc  # noqa
+        # Also verify the instance can be created (DLL presence check)
+        _test = vlc.Instance("--quiet")
+        del _test
         return True
-    except ImportError:
+    except (ImportError, OSError, Exception):
         return False
 
 def _has_mpv() -> bool:

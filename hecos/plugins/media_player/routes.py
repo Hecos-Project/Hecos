@@ -279,6 +279,55 @@ def player_status():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+# ─── Media Vault ───────────────────────────────────────────────────────────────
+
+@media_player_bp.route("/hecos/api/media/open", methods=["POST"])
+@login_required
+def media_vault_open():
+    """POST /hecos/api/media/open — Open the media folder in the OS file explorer."""
+    import subprocess, sys
+    from hecos.core.constants import MEDIA_DIR
+    try:
+        os.makedirs(MEDIA_DIR, exist_ok=True)
+        if sys.platform == "win32":
+            subprocess.Popen(["explorer", os.path.normpath(MEDIA_DIR)])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", MEDIA_DIR])
+        else:
+            subprocess.Popen(["xdg-open", MEDIA_DIR])
+        return jsonify({"ok": True, "path": MEDIA_DIR})
+    except Exception as e:
+        logger.error(f"[MediaPlayer] vault open error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@media_player_bp.route("/hecos/api/media/clear", methods=["POST"])
+@login_required
+def media_vault_clear():
+    """POST /hecos/api/media/clear — Delete all files in media/ (images, audio, video, screenshots)."""
+    import shutil
+    from hecos.core.constants import MEDIA_DIR, IMAGES_DIR, AUDIO_DIR, SNAPSHOTS_DIR, VIDEO_DIR
+    deleted = 0
+    errors = []
+    # Wipe sub-directories contents but keep the directories themselves
+    for subdir in [IMAGES_DIR, AUDIO_DIR, SNAPSHOTS_DIR, VIDEO_DIR]:
+        if not os.path.isdir(subdir):
+            continue
+        for filename in os.listdir(subdir):
+            fpath = os.path.join(subdir, filename)
+            try:
+                if os.path.isfile(fpath) or os.path.islink(fpath):
+                    os.remove(fpath)
+                    deleted += 1
+                elif os.path.isdir(fpath):
+                    shutil.rmtree(fpath)
+                    deleted += 1
+            except Exception as e:
+                errors.append(str(e))
+    logger.info(f"[MediaPlayer] Media Vault cleared: {deleted} items removed.")
+    return jsonify({"ok": True, "deleted": deleted, "errors": errors})
+
+
 # ─── Plugin entry point ────────────────────────────────────────────────────────
 
 def init_routes(app):
@@ -288,3 +337,4 @@ def init_routes(app):
         logger.info("[MediaPlayer] Blueprint 'hecos_media_player' registered.")
     else:
         logger.debug("[MediaPlayer] Blueprint already registered, skipping.")
+

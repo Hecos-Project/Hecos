@@ -1,15 +1,318 @@
 <!-- MEDIA PANEL -->
 <div id="tab-media" class="panel">
 
-  <!-- Media Vault -->
+  <!-- ── Media Vault ─────────────────────────────────────────────── -->
   <div class="card" id="card-media-vault">
-    <div class="card-title">🔐 Media Vault & Privacy</div>
+    <div class="card-title">🔐 {{ t('webui_media_vault_title') }}</div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
-      Manage the images generated and saved by the AI on your local disk.
+      {{ t('webui_media_vault_desc') }}
     </p>
-    <div style="display:flex; gap:10px;">
-      <button class="btn btn-secondary" onclick="openMediaVault()">📂 Open Storage Folder</button>
-      <button class="btn btn-danger" onclick="clearMediaVault()">🗑️ {{ t('webui_media_clear_all') or 'Clear All Generated Media' }}</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="openMediaVault()">
+        📂 {{ t('webui_media_open_folder') }}
+      </button>
+      <button class="btn btn-danger" onclick="clearMediaVault()">
+        🗑️ {{ t('webui_media_clear_all') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Now Playing ────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">🎵 {{ t('webui_mp_nowplaying') }}</div>
+    <div style="background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:14px;">
+      <div id="mp-track-name" style="font-weight:600; font-size:14px; margin-bottom:10px; min-height:20px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
+      <div style="height:4px; background:var(--border); border-radius:2px; margin-bottom:10px; overflow:hidden;">
+        <div id="mp-progress-fill" style="height:100%; background:var(--accent); width:0%; transition:width 1s linear;"></div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="mpControl('prev')">⏮</button>
+        <button class="btn btn-primary btn-sm" onclick="mpControl('pause')">⏸ Pausa</button>
+        <button class="btn btn-secondary btn-sm" onclick="mpControl('stop')">⏹</button>
+        <button class="btn btn-secondary btn-sm" onclick="mpControl('next')">⏭</button>
+        <span style="font-size:12px; color:var(--muted); margin-left:auto;" id="mp-status-text"></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+        <span style="font-size:12px; color:var(--muted);">🔊</span>
+        <input type="range" id="mp-volume" min="0" max="100" value="80" style="flex:1;"
+               oninput="mpSetVolume(this.value)">
+        <span id="mp-volume-val" style="font-size:12px; color:var(--muted); min-width:28px;">80</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Playlists ──────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">📋 {{ t('webui_mp_playlists') }}</div>
+    <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <input type="text" id="mp-new-playlist" placeholder="{{ t('webui_mp_playlist_name_ph') }}" style="flex:1; min-width:150px;">
+      <button class="btn btn-secondary btn-sm" onclick="mpCreatePlaylist()">+ {{ t('webui_mp_create') }}</button>
+    </div>
+    <div id="mp-playlists-list" style="min-height:30px; font-size:13px; color:var(--muted);">
+      {{ t('webui_mp_no_playlists') }}
+    </div>
+
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <div style="font-size:13px; font-weight:600; margin-bottom:8px;">{{ t('webui_mp_scan_folder') }}</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:4px; flex:2; min-width:160px;">
+          <input type="text" id="mp-scan-folder" placeholder="{{ t('webui_mp_folder_ph') }}" style="flex:1;">
+          <button type="button" class="btn btn-secondary" onclick="mpBrowseScanFolder()" title="Browse folder">📁</button>
+        </div>
+        <input type="text" id="mp-scan-save-as" placeholder="{{ t('webui_mp_save_as_ph') }}" style="flex:1; min-width:130px;">
+        <button class="btn btn-secondary btn-sm" onclick="mpScanFolder()">🔍 {{ t('webui_mp_scan') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Media Player Settings ──────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">⚙️ {{ t('webui_mp_settings') }}</div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label>{{ t('webui_mp_volume') }}</label>
+        <input type="number" id="mp-cfg-volume" min="0" max="100" step="1" value="80">
+      </div>
+      <div class="field">
+        <label>{{ t('webui_mp_backend') }}</label>
+        <select id="mp-cfg-backend">
+          <option value="auto">auto (VLC → mpv → system)</option>
+          <option value="vlc">VLC</option>
+          <option value="mpv">mpv</option>
+          <option value="system">System default</option>
+        </select>
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_backend_hint') }}</p>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>{{ t('webui_mp_media_root') }}</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="mp-cfg-root" placeholder="{{ t('webui_mp_media_root_ph') }}" style="flex:1;">
+          <button type="button" class="btn btn-secondary" onclick="mpBrowseRoot()" title="{{ t('webui_mp_media_root') }}">📁</button>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_media_root_hint') }}</p>
+      </div>
+      <div class="field">
+        <label>{{ t('webui_mp_default_playlist') }}</label>
+        <input type="text" id="mp-cfg-autoload" placeholder="{{ t('webui_mp_default_playlist_ph') }}">
+      </div>
+      <div class="field">
+        <label>{{ t('webui_mp_thumb') }}</label>
+        <select id="mp-cfg-thumb">
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="font-size:13px; font-weight:600; margin:12px 0 8px;">{{ t('webui_mp_options') }}</div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_auto_advance') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-autoadvance" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_shuffle') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-shuffle"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_repeat') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-repeat"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_autoplay_video') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-autoplay-video"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_autoplay_audio') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-autoplay-audio"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_filmstrip') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-filmstrip" checked><span class="slider"></span></label>
     </div>
   </div>
 </div>
+
+<script>
+/* ── Media Player Dashboard Logic ───────────────────────────────────────── */
+
+// Eagerly init when panel is already active on page load
+(function initMPPanel() {
+  populateMPSettings();
+  mpLoadPlaylists();
+  mpRefreshStatus();
+  if (window._mpStatusPoll) clearInterval(window._mpStatusPoll);
+  window._mpStatusPoll = setInterval(mpRefreshStatus, 5000);
+})();
+
+function mpControl(action, extra) {
+  const body = { action };
+  if (extra) Object.assign(body, extra);
+  fetch('/api/media_player/control', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).then(r => r.json()).then(() => mpRefreshStatus())
+    .catch(e => console.warn('[MP] control error', e));
+}
+
+function mpSetVolume(vol) {
+  const el = document.getElementById('mp-volume-val');
+  if (el) el.textContent = vol;
+  mpControl('volume', { volume: parseInt(vol) });
+}
+
+async function mpRefreshStatus() {
+  try {
+    const r = await fetch('/api/media_player/status');
+    const d = await r.json();
+    if (!d.ok) return;
+    const trackEl = document.getElementById('mp-track-name');
+    if (trackEl) trackEl.textContent = d.track ? d.track.split(/[\\/]/).pop() : '—';
+    const fill = document.getElementById('mp-progress-fill');
+    if (fill && d.length > 0) fill.style.width = ((d.position / d.length) * 100).toFixed(1) + '%';
+    if (fill && !(d.length > 0)) fill.style.width = '0%';
+    const volSlider = document.getElementById('mp-volume');
+    if (volSlider && d.volume >= 0) {
+      volSlider.value = d.volume;
+      const vv = document.getElementById('mp-volume-val');
+      if (vv) vv.textContent = d.volume;
+    }
+    const stEl = document.getElementById('mp-status-text');
+    if (stEl) stEl.textContent = d.playing ? `▶ ${d.queue_idx + 1}/${d.queue_len}` : (d.track ? '⏸ Paused' : '');
+  } catch(e) {}
+}
+
+async function mpLoadPlaylists() {
+  try {
+    const r = await fetch('/api/media_player/playlists');
+    const d = await r.json();
+    const cont = document.getElementById('mp-playlists-list');
+    if (!cont) return;
+    if (!d.ok || !d.playlists || d.playlists.length === 0) {
+      cont.innerHTML = '<span style="color:var(--muted); font-size:13px;">Nessuna playlist.</span>';
+      return;
+    }
+    cont.innerHTML = d.playlists.map(pl => `
+      <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border);">
+        <span style="flex:1; font-size:13px;">🎵 ${pl.name} <span style="color:var(--muted);">(${pl.items.length} tracce)</span></span>
+        <button class="btn btn-secondary btn-sm" onclick="mpControl('play_playlist',{name:'${pl.name}'})">▶</button>
+        <button class="btn btn-danger btn-sm" onclick="mpDeletePlaylist('${pl.name}')">🗑</button>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function mpCreatePlaylist() {
+  const nameEl = document.getElementById('mp-new-playlist');
+  const name = (nameEl && nameEl.value.trim()) || '';
+  if (!name) return;
+  await fetch('/api/media_player/playlists', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, items: [] })
+  });
+  if (nameEl) nameEl.value = '';
+  mpLoadPlaylists();
+}
+
+async function mpDeletePlaylist(name) {
+  if (!confirm('Eliminare la playlist "' + name + '"?')) return;
+  await fetch('/api/media_player/playlists/' + encodeURIComponent(name), { method: 'DELETE' });
+  mpLoadPlaylists();
+}
+
+async function mpScanFolder() {
+  const folder = (document.getElementById('mp-scan-folder') || {}).value || '';
+  const saveAs = (document.getElementById('mp-scan-save-as') || {}).value || '';
+  if (!folder) return;
+  const stEl = document.getElementById('mp-status-text');
+  if (stEl) stEl.textContent = 'Scanning...';
+  try {
+    const r = await fetch('/api/media_player/control', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'scan_folder', path: folder, save_as: saveAs, recursive: true })
+    });
+    const d = await r.json();
+    if (stEl) stEl.textContent = d.ok ? '✅ Done' : '❌ ' + d.error;
+    if (d.ok) { mpLoadPlaylists(); }
+  } catch(e) {
+    if (stEl) stEl.textContent = '❌ Errore';
+  }
+}
+
+function mpBrowseRoot() {
+  const current = (document.getElementById('mp-cfg-root') || {}).value || 'C:\\';
+  if (typeof HecosFilePicker !== 'undefined') {
+    HecosFilePicker.open({
+      title: 'Seleziona cartella media principale',
+      initialPath: current,
+      mode: 'folder',
+      onSelect: (path) => {
+        const el = document.getElementById('mp-cfg-root');
+        if (el) el.value = path;
+      }
+    });
+  } else {
+    alert('File Picker non disponibile. Inserisci il percorso manualmente.');
+  }
+}
+
+function mpBrowseScanFolder() {
+  const current = (document.getElementById('mp-scan-folder') || {}).value || 'C:\\';
+  if (typeof HecosFilePicker !== 'undefined') {
+    HecosFilePicker.open({
+      title: 'Seleziona cartella da scansionare',
+      initialPath: current,
+      mode: 'folder',
+      onSelect: (path) => {
+        const el = document.getElementById('mp-scan-folder');
+        if (el) el.value = path;
+      }
+    });
+  } else {
+    alert('File Picker non disponibile. Inserisci il percorso manualmente.');
+  }
+}
+
+function populateMPSettings() {
+  const mp = (typeof mediaConfig !== 'undefined' && mediaConfig && mediaConfig.media_player) ? mediaConfig.media_player : {};
+  const setV = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
+  const setC = (id, val) => { const e = document.getElementById(id); if (e) e.checked = !!val; };
+  setV('mp-cfg-volume',     mp.default_volume ?? 80);
+  setV('mp-cfg-backend',    mp.preferred_backend || 'auto');
+  setV('mp-cfg-root',       mp.media_root_dir || '');
+  setV('mp-cfg-autoload',   mp.autoload_playlist || '');
+  setV('mp-cfg-thumb',      mp.drive_thumb_size || 'medium');
+  setC('mp-cfg-autoadvance',    mp.auto_advance !== false);
+  setC('mp-cfg-shuffle',        mp.shuffle_default ?? false);
+  setC('mp-cfg-repeat',         mp.repeat_queue ?? false);
+  setC('mp-cfg-autoplay-video', mp.autoplay_video ?? false);
+  setC('mp-cfg-autoplay-audio', mp.autoplay_audio ?? false);
+  setC('mp-cfg-filmstrip',      mp.show_filmstrip !== false);
+  const volSlider = document.getElementById('mp-volume');
+  const volVal = document.getElementById('mp-volume-val');
+  if (volSlider) volSlider.value = mp.default_volume ?? 80;
+  if (volVal) volVal.textContent = mp.default_volume ?? 80;
+}
+
+function buildMPPayload() {
+  const get = id => { const el = document.getElementById(id); return el ? el.value : null; };
+  const ck  = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  return {
+    default_volume:     parseInt(get('mp-cfg-volume')) || 80,
+    preferred_backend:  get('mp-cfg-backend') || 'auto',
+    media_root_dir:     get('mp-cfg-root') || '',
+    autoload_playlist:  get('mp-cfg-autoload') || '',
+    drive_thumb_size:   get('mp-cfg-thumb') || 'medium',
+    auto_advance:       ck('mp-cfg-autoadvance'),
+    shuffle_default:    ck('mp-cfg-shuffle'),
+    repeat_queue:       ck('mp-cfg-repeat'),
+    autoplay_video:     ck('mp-cfg-autoplay-video'),
+    autoplay_audio:     ck('mp-cfg-autoplay-audio'),
+    show_filmstrip:     ck('mp-cfg-filmstrip'),
+  };
+}
+window.buildMPPayload = buildMPPayload;
+</script>

@@ -26,7 +26,7 @@ window.CONFIG_HUB = {
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '🎨', cat: 'MULTIMEDIA', isCore: true },
-        { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA', pluginTag: 'MEDIA' },
+        { id: 'media',     label: 'Media Player',        icon: '🎵', cat: 'MULTIMEDIA', pluginTag: 'MEDIA' },
         { id: 'igen',      label: 'hub_mod_igen',         icon: '🎨', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '🔌', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
