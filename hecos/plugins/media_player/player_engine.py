@@ -14,6 +14,7 @@ import sys
 import subprocess
 import threading
 import time
+import platform
 
 try:
     from hecos.core.logging import logger
@@ -66,11 +67,26 @@ def _has_mpv() -> bool:
     except Exception:
         return False
 
+def _has_ffplay() -> bool:
+    try:
+        result = subprocess.run(["ffplay", "-version"], capture_output=True, timeout=2)
+        return result.returncode == 0
+    except Exception:
+        return False
+
 def _detect_backend() -> str:
     if _has_vlc():
         return "vlc"
+    
+    # Check for architecture mismatch warning
+    if sys.platform == "win32" and platform.architecture()[0] == "64bit":
+        if os.path.isdir(r"C:\Program Files (x86)\VideoLAN\VLC") and not os.path.isdir(r"C:\Program Files\VideoLAN\VLC"):
+            logger.warning("[MediaEngine] ⚠️ 32-bit VLC detected on 64-bit Python. Volume control and seek will be limited. Please install 64-bit VLC.")
+
     if _has_mpv():
         return "mpv"
+    if _has_ffplay():
+        return "ffplay"
     return "system"
 
 BACKEND = _detect_backend()
@@ -93,6 +109,9 @@ class VLCPlayer:
 
     def pause(self):
         self._player.pause()
+
+    def set_pause(self, do_pause: bool):
+        self._player.set_pause(1 if do_pause else 0)
 
     def stop(self):
         self._player.stop()
@@ -129,16 +148,19 @@ class MpvPlayer:
     def __init__(self):
         self._proc: subprocess.Popen | None = None
 
-    def play(self, path_or_url: str):
+    def play(self, path_or_url: str, volume: int = 80):
         self.stop()
         self._proc = subprocess.Popen(
-            ["mpv", "--no-terminal", path_or_url],
+            ["mpv", "--no-terminal", f"--volume={volume}", path_or_url],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
     def pause(self):
         logger.warning("[MediaEngine] mpv backend: pause not supported in subprocess mode.")
+
+    def set_pause(self, do_pause: bool):
+        pass
 
     def stop(self):
         if self._proc and self._proc.poll() is None:
@@ -148,9 +170,55 @@ class MpvPlayer:
         self._proc = None
 
     def set_volume(self, vol: int):
-        logger.warning("[MediaEngine] mpv backend: volume control not supported.")
+        logger.warning("[MediaEngine] mpv backend: volume control during playback not supported.")
 
     def get_volume(self) -> int: return -1
+    def seek(self, seconds: float): pass
+    def get_position(self) -> float: return 0.0
+    def get_length(self) -> float: return 0.0
+
+    def is_playing(self) -> bool:
+        return self._proc is not None and self._proc.poll() is None
+
+    def is_finished(self) -> bool:
+        return self._proc is None or self._proc.poll() is not None
+
+
+# ─── ffplay Backend ─────────────────────────────────────────────────────────────
+
+class FFplayPlayer:
+    def __init__(self):
+        self._proc: subprocess.Popen | None = None
+        self._volume = 80
+
+    def play(self, path_or_url: str, volume: int = 80):
+        self.stop()
+        self._volume = volume
+        cmd = ["ffplay", "-nodisp", "-autoexit", "-volume", str(volume), path_or_url]
+        self._proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    def pause(self):
+        logger.warning("[MediaEngine] ffplay backend: pause not supported.")
+
+    def set_pause(self, do_pause: bool):
+        pass
+
+    def stop(self):
+        if self._proc and self._proc.poll() is None:
+            self._proc.terminate()
+            try: self._proc.wait(timeout=3)
+            except Exception: self._proc.kill()
+        self._proc = None
+
+    def set_volume(self, vol: int):
+        self._volume = vol
+        logger.warning("[MediaEngine] ffplay backend: volume change only affects next track.")
+
+    def get_volume(self) -> int: return self._volume
     def seek(self, seconds: float): pass
     def get_position(self) -> float: return 0.0
     def get_length(self) -> float: return 0.0
@@ -315,6 +383,9 @@ class SystemPlayer:
         # winsound/afplay/ffplay don't support mid-track pause
         logger.warning("[MediaEngine] System backend: pause not supported. Use stop/play.")
 
+    def set_pause(self, do_pause: bool):
+        pass
+
     def stop(self):
         self._stop_event.set()
         if sys.platform == "win32":
@@ -364,9 +435,10 @@ def create_engine():
             return VLCPlayer()
         except Exception as e:
             logger.warning(f"[MediaEngine] VLC init failed ({e}), falling back to mpv.")
-    if BACKEND in ("mpv", "vlc"):
+    if BACKEND in ("mpv", "vlc", "ffplay"):
         try:
+            if BACKEND == "ffplay": return FFplayPlayer()
             return MpvPlayer()
         except Exception as e:
-            logger.warning(f"[MediaEngine] mpv init failed ({e}), falling back to system.")
+            logger.warning(f"[MediaEngine] {BACKEND} init failed ({e}), falling back to system.")
     return SystemPlayer()

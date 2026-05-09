@@ -125,7 +125,7 @@ class MediaPlayerTools:
 
     # ── LLM TOOLS ─────────────────────────────────────────────────────────────────
 
-    def play(self, path_or_url: str, playlist_name: str = None) -> str:
+    def play(self, path_or_url: str = None, playlist_name: str = None) -> str:
         """
         Play a media file or URL.
         Optionally specify a playlist_name to load a full queue.
@@ -136,6 +136,15 @@ class MediaPlayerTools:
         with self._lock:
             if playlist_name:
                 return self.play_playlist(playlist_name)
+
+            if not path_or_url:
+                # Resume logic
+                engine = self._get_engine()
+                if not engine.is_playing() and not engine.is_finished():
+                    engine.set_pause(False)
+                    logger.info("[MediaPlayer] Resumed playback.")
+                    return "▶️ Resumed"
+                return "⚠️ Nothing to play."
 
             # Resolve path
             if not path_or_url.startswith("http"):

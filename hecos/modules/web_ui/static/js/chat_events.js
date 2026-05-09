@@ -22,12 +22,6 @@ window.initEvents = function() {
       msgDiv.className = 'msg action-log';
       msgDiv.style.opacity = '0.9';
       
-      const avatar = document.createElement('img');
-      avatar.className = 'msg-avatar';
-      // Use existing avatar, or a default terminal icon
-      avatar.src = '/static/images/hecos_light.png'; 
-      avatar.style.filter = "grayscale(100%) brightness(0.6)"; 
-      
       const content = document.createElement('div');
       content.className = 'action-console-block';
       content.style = "background: var(--bg2); color: var(--text); padding: 10px 15px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85em; width: 100%; overflow-x: auto; border: 1px solid var(--border-color); margin: 5px 0;";
@@ -57,7 +51,6 @@ window.initEvents = function() {
       content.appendChild(outBlock);
       content.appendChild(footer);
       
-      msgDiv.appendChild(avatar);
       msgDiv.appendChild(content);
       
       if (window.chatArea) {

@@ -214,7 +214,7 @@
       const current = sel.value;
       let html = `<option value="">-- {{ t('webui_mp_select_playlist') }} --</option>`;
       (d.playlists || []).forEach(pl => {
-        html += `<option value="${pl.name}" ${pl.name === current ? 'selected' : ''}>${pl.name} (${pl.items ? pl.items.length : 0})</option>`;
+        html += `<option value="${pl.name}" ${pl.name === current ? 'selected' : ''}>${pl.name} (${pl.count || 0})</option>`;
       });
       sel.innerHTML = html;
     } catch(e) { console.warn('[MPWidget] playlist error:', e); }

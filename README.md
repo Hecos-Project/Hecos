@@ -122,6 +122,11 @@ Fast, optimized, and easy to run locally as a background service.
 - **Download**: 👉 https://ollama.com/download
 - **Setup**: Once installed, open your terminal/command prompt and run `ollama run llama3.2` to download and test a lightweight fast model. Hecos will instantly detect it.
 
+### 🔹 3. VLC Media Player (Optional, for Multimedia)
+Required for high-fidelity media playback, volume control, and seeking.
+- **IMPORTANT**: If using 64-bit Python (default), you **MUST** install the **64-bit version** of VLC.
+- **Download**: 👉 https://www.videolan.org/vlc/
+
 ### 🔹 2. KoboldCpp (Alternative)
 Perfect for GGUF manual models and older hardware without heavy installation.
 - **Download**: 👉 https://github.com/LostRuins/koboldcpp/releases
