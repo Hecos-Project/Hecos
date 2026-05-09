@@ -174,14 +174,9 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             mic_status = "ON" if mic_on else "OFF"
             tts_status = "ON" if tts_on else "OFF"
             
-            from hecos.core.audio.device_manager import get_audio_config, _save_audio_config
+            from hecos.core.audio.device_manager import get_audio_config
             acfg = get_audio_config()
             ptt_on = acfg.get("push_to_talk", False)
-            if not mic_on and ptt_on:
-                ptt_on = False
-                acfg["push_to_talk"] = False
-                try: _save_audio_config(acfg)
-                except Exception: pass
             
             ptt_status = "ON" if ptt_on else "OFF"
 

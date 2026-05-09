@@ -26,7 +26,7 @@ window.CONFIG_HUB = {
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '🎙️', cat: 'MULTIMEDIA' },
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '🎨', cat: 'MULTIMEDIA', isCore: true },
-        { id: 'media',     label: 'hub_mod_media',        icon: '🖼️', cat: 'MULTIMEDIA', pluginTag: 'MEDIA' },
+        { id: 'media',         label: 'webui_mp_title',   icon: '🎵', cat: 'MULTIMEDIA', pluginTag: 'MEDIA_PLAYER' },
         { id: 'igen',      label: 'hub_mod_igen',         icon: '🎨', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '🔌', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
@@ -35,16 +35,18 @@ window.CONFIG_HUB = {
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '🗂️', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '📝', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
-        { id: 'drive-media-viewer', label: 'hub_mod_media_viewer', icon: '🖼️', cat: 'RISORSE', pluginTag: 'DRIVE_MEDIA_VIEWER', parentPluginTag: 'DRIVE', isExtension: true },
         { id: 'payload',          label: 'hub_mod_payload',      icon: '📦', cat: 'RISORSE' },
         { id: 'studio',           label: 'hub_mod_studio',       icon: '🛠️', cat: 'RISORSE' },
         
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '🌐', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'web',       label: 'hub_mod_web',          icon: '🌍', cat: 'SISTEMA', pluginTag: 'WEB' },
         { id: 'webcam',    label: 'hub_mod_webcam',       icon: '📷', cat: 'SISTEMA', pluginTag: 'WEBCAM' },
+        { id: 'reminder',  label: 'Reminder',             icon: '⏰', cat: 'SISTEMA', pluginTag: 'REMINDER' },
+        { id: 'calendar',  label: 'Calendar',             icon: '📅', cat: 'SISTEMA', pluginTag: 'CALENDAR' },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '⚡', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
+
         { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '❓', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true, isCore: true },
@@ -108,8 +110,9 @@ window.CONFIG_HUB.tagMap = {
     'WEBCAM': 'webcam',
     'MEMORY': 'memory',
     'SYS_NET': 'sysnet',
-    'MEDIA': 'media',
     'MODELS': 'backend',
     'DRIVE_EDITOR': 'drive-editor',
-    'DRIVE_MEDIA_VIEWER': 'drive-media-viewer'
+    'REMINDER': 'reminder',
+    'CALENDAR': 'calendar',
+    'MEDIA_PLAYER': 'media'
 };

@@ -151,48 +151,36 @@ async function refreshImageModels(restoreValue) {
 }
 
 async function openMediaVault() {
-  const rootDir = 'C:\\Hecos-Core\\hecos\\media';
-  
-  // Use the Tray App Bridge to open the folder natively in Windows
   try {
-    const res = await fetch('/api/bridge/command', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cmd: 'open_folder', path: rootDir })
-    });
+    const res = await fetch('/hecos/api/media/open', { method: 'POST' });
     const data = await res.json();
-    if (data.ok) {
-      // Command queued for tray app
-      return;
+    if (!data.ok) {
+      alert('❌ Impossibile aprire la cartella: ' + (data.error || 'Errore sconosciuto'));
     }
   } catch(e) {
-    console.warn("Bridge failed, falling back to Picker:", e);
-  }
-
-  // Fallback to Picker if bridge fails (e.g. tray app not running)
-  if (typeof HecosFilePicker !== 'undefined') {
-    HecosFilePicker.open({
-      title: 'Hecos Media Vault (Picker Fallback)',
-      initialPath: rootDir,
-      hideSelect: true
-    });
+    console.warn('openMediaVault error:', e);
+    alert('❌ Errore di connessione al server.');
   }
 }
 
 async function clearMediaVault() {
-  if (!confirm('Sei sicuro? Questa operazione ELIMINERÀ DEFINITIVAMENTE tutte le immagini salvate in locale.\n\nVuoi procedere?')) return;
+  const confirmed = confirm(
+    'Sei sicuro? Questa operazione ELIMINERÀ DEFINITIVAMENTE tutte le immagini, audio e video generati da Hecos.\n\nVuoi procedere?'
+  );
+  if (!confirmed) return;
   try {
     const res = await fetch('/hecos/api/media/clear', { method: 'POST' });
     const data = await res.json();
     if (data.ok) {
-      alert(`Media Vault svuotato con successo.\nFile eliminati: ${data.deleted}`);
+      alert(`✅ Media Vault svuotato con successo.\nFile eliminati: ${data.deleted}`);
     } else {
-      alert("Errore durante l'eliminazione: " + data.error);
+      alert("❌ Errore durante l'eliminazione: " + (data.error || 'Errore sconosciuto'));
     }
   } catch(e) {
-    alert('Errore di connessione al server.');
+    alert('❌ Errore di connessione al server.');
   }
 }
+
 
 async function refineDraftPrompt(btn) {
     const draft = document.getElementById('igen-flux-draft').value.trim();

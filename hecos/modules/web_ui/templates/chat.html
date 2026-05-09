@@ -17,6 +17,8 @@
 <link rel="stylesheet" href="/assets/css/mobile/responsive.css?v={{ version }}">
 <!-- WEB_UI Sidebar Widget Extensions -->
 <link rel="stylesheet" href="/ext/quick_links/static/css/quick_links.css?v={{ version }}">
+<!-- WEB_UI Emoticons Extension -->
+<link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
 <!-- CRITICAL: inline mobile overrides - cache-proof -->
 <style>
   /* Default: hide hamburger/mobile elements on desktop */
@@ -54,7 +56,7 @@
 <script>
   (function() {
     window.setTheme = function(theme, manual) {
-      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate');
+      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
       if (theme && theme !== 'default') {
         document.body.classList.add('theme-' + theme);
       }
@@ -63,9 +65,25 @@
 
     var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
     var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    var theme = autoTheme ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light') : savedTheme;
     
-    window.setTheme(theme);
+    function applyAutoTheme() {
+      window.setTheme('native', false);
+    }
+
+    if (autoTheme) {
+      applyAutoTheme();
+    } else {
+      window.setTheme(savedTheme, false);
+    }
+
+    // Explicit listener in case we want to support non-CSS themes for Auto in the future,
+    // though currently 'native' handles transitions purely in CSS.
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+      if (localStorage.getItem('hecos-ui-auto-theme') === 'true') {
+        applyAutoTheme();
+      }
+    });
+
   })();
 </script>
 
@@ -97,6 +115,19 @@
       }
     }
     return text;
+  };
+
+  /**
+   * Global helper for opening the configuration panel from widgets.
+   * Handles responsive behavior: new tab on PC (>768px), same tab on mobile.
+   */
+  window.hecosOpenConfig = function(hash) {
+    const url = '/hecos/config/ui' + (hash || '');
+    if (window.innerWidth > 768) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = url;
+    }
   };
 </script>
 <script src="/static/js/config_manifest.js?v={{ version }}"></script>
@@ -132,6 +163,8 @@
 {% endif %}
 <!-- WEB_UI Sidebar Widget Extensions -->
 <script src="/ext/quick_links/static/js/quick_links.js?v={{ version }}"></script>
+<!-- WEB_UI Emoticons Extension -->
+<script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
 </body>
 </html>
 

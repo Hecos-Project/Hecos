@@ -119,6 +119,22 @@
         "icon": "",
         "category": "PLUGINS"
     },
+    "CALENDAR": {
+        "description": "Calendar plugin",
+        "commands": {
+            "add_event": "Creates a new calendar event. Returns a confirmation string.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
+            "list_events": "Returns a formatted list of upcoming calendar events.",
+            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
     "DRIVE": {
         "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
         "commands": {
@@ -145,11 +161,41 @@
         "icon": "",
         "category": "PLUGINS"
     },
-    "MEDIA": {
-        "description": "Hardware volume and mute control.",
+    "MEDIA_PLAYER": {
+        "description": "Media player: play audio/video, manage playlists via AI or dashboard.",
         "commands": {
-            "set_mute": "Toggles system mute mode on or off.",
-            "set_volume": "Sets the system volume to a specific level."
+            "add_to_playlist": "Add a file to an existing playlist (creates it if missing).",
+            "create_playlist": "Create a named playlist with a list of file paths.",
+            "delete_playlist": "Delete a named playlist permanently.",
+            "get_playlist": "Show the contents of a saved playlist.",
+            "get_status": "Return the current playback status (track name, position, volume).",
+            "list_playlists": "List all saved playlists with their track count.",
+            "next_track": "Skip to the next track in the current queue.",
+            "pause": "Pause or resume the current track.",
+            "play": "Play a media file or URL.",
+            "play_by_index": "Jump directly to a track by position in the current queue (0-based).",
+            "play_playlist": "Load and play a saved playlist.",
+            "prev_track": "Go back to the previous track in the current queue.",
+            "remove_from_playlist": "Remove a track from a playlist by its position (1-based).",
+            "scan_folder": "Scan a folder for audio/video files and optionally save as a playlist.",
+            "set_volume": "Set playback volume.",
+            "stop": "Stop playback completely."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "🎵",
+        "category": "MULTIMEDIA"
+    },
+    "REMINDER": {
+        "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
+        "commands": {
+            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
+            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
+            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
         },
         "status": "ONLINE",
         "example": "",

@@ -1,0 +1,261 @@
+/* ── Hecos Calendar Extension Styles ─────────────────────────────────────── */
+
+/* ── Sidebar Widget ─────────────────────────────────────────────────────── */
+#calendar-widget .cal-event-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: transform 0.2s, background 0.2s;
+}
+#calendar-widget .cal-event-card:hover {
+  background: var(--glass-b);
+  transform: translateX(4px);
+}
+#calendar-widget .cal-event-card .cal-event-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-word;
+}
+#calendar-widget .cal-event-card .cal-event-time {
+  font-size: 10px;
+  color: var(--muted);
+}
+#calendar-widget .cal-event-card .cal-event-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Full Calendar Overrides ────────────────────────────────────────────── */
+#hecos-fullcalendar {
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+}
+#hecos-fullcalendar .fc-toolbar-title {
+  font-size: 1em;
+  font-weight: 700;
+  color: var(--text);
+}
+#hecos-fullcalendar .fc-button {
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 8px !important;
+  padding: 5px 14px !important;
+  font-size: 12px !important;
+  transition: all 0.2s !important;
+}
+#hecos-fullcalendar .fc-button:hover {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
+#hecos-fullcalendar .fc-button-active,
+#hecos-fullcalendar .fc-button-primary:not(:disabled).fc-button-active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+  box-shadow: var(--shadow-glow) !important;
+}
+#hecos-fullcalendar .fc-col-header-cell {
+  background: var(--bg2) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+#hecos-fullcalendar .fc-col-header-cell-cushion,
+#hecos-fullcalendar .fc-daygrid-day-number {
+  color: var(--text) !important;
+  font-size: 11px;
+  text-decoration: none !important;
+  opacity: 0.9;
+  padding: 4px 8px !important;
+}
+#hecos-fullcalendar .fc-day-today {
+  background: var(--glass-b) !important;
+}
+#hecos-fullcalendar .fc-day-today .fc-daygrid-day-number {
+  color: var(--accent) !important;
+  font-weight: bold;
+  opacity: 1;
+}
+#hecos-fullcalendar .fc-daygrid-event {
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  padding: 1px 4px !important;
+}
+#hecos-fullcalendar .fc-scrollgrid,
+#hecos-fullcalendar td, #hecos-fullcalendar th {
+  border-color: var(--border) !important;
+}
+
+/* ── Event Detail Popup ─────────────────────────────────────────────────── */
+#cal-event-popup {
+  position: fixed;
+  z-index: 10000;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  min-width: 240px;
+  max-width: 320px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+}
+#cal-event-popup .pop-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: var(--accent); }
+#cal-event-popup .pop-time  { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+#cal-event-popup .pop-notes { color: var(--text); font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
+#cal-event-popup .pop-actions { display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; }
+#cal-event-popup button { border: none; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 12px; font-weight: 600; transition: opacity 0.2s; }
+#cal-event-popup .pop-delete { background: var(--red); color: white; }
+#cal-event-popup .pop-close  { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+#cal-event-popup button:hover { opacity: 0.8; }
+
+/* ── Wheel Picker ───────────────────────────────────────────────────────── */
+#hwp-overlay {
+  position: fixed; inset: 0; z-index: 19999;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+#hwp-modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 400px;
+  max-width: 96vw;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(15px);
+}
+#hwp-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+#hwp-title { font-weight: 700; font-size: 15px; color: var(--accent); }
+#hwp-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+#hwp-wheels-wrap {
+  position: relative; padding: 0 16px;
+}
+#hwp-wheels {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; padding: 8px 0;
+}
+.hwp-col {
+  display: flex; flex-direction: column; align-items: center;
+}
+.hwp-track {
+  height: 200px; overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  padding: calc((200px / 2) - 20px) 0; /* center items */
+}
+.hwp-track::-webkit-scrollbar { display: none; }
+.hwp-item {
+  height: 40px; line-height: 40px;
+  scroll-snap-align: center;
+  text-align: center;
+  font-size: 22px; font-weight: 600;
+  color: var(--muted);
+  width: 56px;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s, background 0.15s;
+  user-select: none;
+  opacity: 0.3;
+}
+.hwp-col-active {
+  background: var(--glass);
+  border-radius: 8px;
+}
+.hwp-col-active .hwp-item {
+  color: var(--text);
+  opacity: 0.6;
+}
+.hwp-sep {
+  font-size: 22px; font-weight: 700; color: var(--muted); opacity: 0.4;
+  padding: 0 4px; align-self: center;
+}
+#hwp-highlight {
+  position: absolute;
+  top: 50%; left: 16px; right: 16px;
+  height: 40px; margin-top: -20px;
+  border-top: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  pointer-events: none;
+  background: var(--glass);
+}
+#hwp-footer {
+  display: flex; gap: 12px; padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  justify-content: flex-end;
+  background: var(--bg3);
+}
+#hwp-cancel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px;
+  padding: 8px 18px; cursor: pointer; font-size: 13px; font-weight: 600;
+}
+#hwp-confirm {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: white; border-radius: 8px;
+  padding: 8px 24px; cursor: pointer;
+  font-size: 13px; font-weight: 700;
+}
+#hwp-confirm:hover { box-shadow: var(--shadow-glow); transform: translateY(-1px); }
+
+/* ── Universal Form Helpers ─────────────────────────────────────────────── */
+.hcal-select, .hcal-input, .form-control {
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  border-radius: 6px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.hcal-select:hover, .hcal-input:focus, .form-control:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 8px var(--glass-border) !important;
+  outline: none;
+}
+textarea.form-control {
+  resize: vertical;
+  min-height: 60px;
+}
+.hcal-btn-sec {
+  background: var(--glass-b) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text) !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.hcal-btn-sec:hover {
+  background: var(--glass-c) !important;
+  border-color: var(--accent) !important;
+}
+.hcal-panel {
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  margin-bottom: 20px !important;
+}

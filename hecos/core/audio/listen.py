@@ -102,6 +102,16 @@ def listen(state=None):
                         return ""
                     if state and not state.listening_status:
                         break
+                
+                # Keep listening for a short 350ms tail to prevent word truncation on fast release
+                if not (state and not state.listening_status):
+                    grace_end = time.time() + 0.35
+                    while time.time() < grace_end:
+                        try:
+                            buffer = source.stream.read(source.CHUNK)
+                            audio_data.extend(buffer)
+                        except Exception:
+                            pass
 
                 # Signal PTT END to WebUI (Handled by ptt_bus)
 

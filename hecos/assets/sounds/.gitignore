@@ -1,0 +1,6 @@
+# Ignora tutto tranne i file audio utili
+*
+!.gitignore
+!*.wav
+!*.mp3
+!*.ogg

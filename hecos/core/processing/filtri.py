@@ -130,13 +130,7 @@ def clean_for_video(text):
     if should_filter(conf.get("remove_square_brackets", "none"), "text"):
         text = re.sub(r"\[.*?\]", "", text)
         
-    try:
-        # Encode in cp1252 with 'replace' (replaces unsupported characters with '?')
-        # then decode back to a Python string - the terminal can now always print it
-        return text.encode('cp1252', errors='replace').decode('cp1252')
-    except Exception:
-        # Ultra-safe fallback: remove everything non-pure-ASCII
-        return text.encode('ascii', errors='replace').decode('ascii')
+    return text
 
 def safe_print(*args, **kwargs):
     """

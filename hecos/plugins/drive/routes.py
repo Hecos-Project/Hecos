@@ -141,7 +141,8 @@ def init_drive_routes(app, logger_instance=None):
         plugin_dir = os.path.dirname(os.path.abspath(__file__))
         discover_extensions("DRIVE", plugin_dir)
         load_extension_routes(app, "DRIVE", "editor")
-        load_extension_routes(app, "DRIVE", "media_viewer")
+        # Note: media_viewer is no longer a Drive extension.
+        # It is now the standalone 'hecos_media_player' plugin loaded in server.py.
     except Exception as _ext_err:
         import traceback
         tb_str = traceback.format_exc()

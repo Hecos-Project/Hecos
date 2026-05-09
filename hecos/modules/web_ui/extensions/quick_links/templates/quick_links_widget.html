@@ -1,13 +1,13 @@
 <!-- Quick Links Sidebar Widget -->
 <!-- Injected by chat_sidebar.html via sidebar_widgets context -->
-<div class="ql-panel" id="quick-links-panel">
-  <div class="ql-header" onclick="qlToggle()" title="Click to collapse/expand">
+<div class="sidebar-card" id="quick-links-panel" style="padding:10px 12px;">
+  <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom: 0; padding:0;" onclick="qlToggle()" title="Click to collapse/expand">
     <span class="ql-icon">⚡</span>
     <span class="ql-title">QUICK LINKS</span>
-    <span class="ql-chevron" id="ql-chevron">▾</span>
+    <span class="ql-chevron" id="ql-chevron" style="margin-left:auto;">▾</span>
   </div>
 
-  <div class="ql-body" id="ql-body">
+  <div class="ql-body" id="ql-body" style="margin-top:10px;">
     <ul class="ql-list" id="ql-list">
       <!-- Populated by quick_links.js -->
     </ul>

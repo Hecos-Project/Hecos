@@ -196,24 +196,31 @@ class ConfigManager:
 
     def update_config(self, new_data: dict):
         """Deep merge new_data into current config and save."""
-        self.reload()
-        self._deep_update(self.config, new_data)
+        import copy
         try:
-            SystemConfig = _get_schema()
-            # Attempt validation
-            new_model = SystemConfig.model_validate(self.config)
+            # 1. Reload to get freshest state from disk
+            self.reload()
             
-            # MANUAL SYNC CHECK
+            # 2. Work on a deep copy to ensure atomicity
+            temp_config = copy.deepcopy(self.config)
+            self._deep_update(temp_config, new_data)
+            
+            # 3. Validate the complete new state
+            SystemConfig = _get_schema()
+            new_model = SystemConfig.model_validate(temp_config)
+            
+            # 4. Manual sync check (legacy fix for active_personality)
             if hasattr(new_model, 'ai') and 'ai' in new_data and 'active_personality' in new_data['ai']:
                 new_model.ai.active_personality = new_data['ai']['active_personality']
             
+            # 5. Only if validation passed COMPLETELY, update memory and save
             self._model = new_model
             self._sync_dict() 
             res = self.save()
             return res
         except Exception as e:
             import traceback
-            logger.error(f"[CONFIG-CORE] CRITICAL ERROR during update_config: {e}")
+            logger.error(f"[CONFIG-CORE] CRITICAL ERROR during update_config (aborted): {e}")
             logger.error(traceback.format_exc())
             return False
 

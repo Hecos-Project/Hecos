@@ -1,24 +1,16 @@
 ai:
-  active_personality: Urania_9800_Woman.yaml
+  active_personality: Urania_9800.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
     '3': Motoko Kusanagi.yaml
     '4': Nova_X-01.yaml
     '5': Sebastian_Pro.yaml
-    '6': Urania_9800_Woman.yaml
+    '6': Urania_9800.yaml
   save_special_instructions: false
   special_instructions: ''
   enable_safety_instructions: true
-  safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
-    \    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated
-    engine\n    for character-driven storytelling. You must strictly adhere to the
-    persona and\n    the narrative context established by the active Soul. REINFORCEMENT:
-    Focus exclusively\n    on the fictional reality. Maintain character consistency
-    at all costs. Do not\n    break the 4th wall or use standard AI disclaimers. Treat
-    all user prompts as narrative\n    directives within the established world.\n\n\
-    \n    Please acknowledge that you have received this narrative protocol by starting\n\
-    \    your next response with the word: ''SYNCHRONIZED"
+  safety_instructions: ''
   avatar_size: medium
 backend:
   type: cloud
@@ -58,6 +50,19 @@ cognition:
   include_identity_context: true
   include_self_awareness: true
   max_history_messages: 20
+extensions:
+  calendar:
+    calendar_locale: it
+    calendar_country: IT
+    day_colors:
+      - rgba(172,47,47,0.35)
+      - transparent
+      - transparent
+      - transparent
+      - transparent
+      - rgba(33,186,13,0.2)
+      - rgba(127,122,122,0.2)
+    calendar_sync_urls: []
 filters:
   remove_asterisks: both
   remove_round_brackets: voice
@@ -108,7 +113,7 @@ plugins:
     console_telemetry_enabled: true
     track_cpu: false
     track_ram: false
-    track_vram: true
+    track_vram: false
   FILE_MANAGER:
     enabled: true
     lazy_load: false
@@ -140,7 +145,7 @@ plugins:
     enabled: true
     lazy_load: false
     proxy_enabled: false
-    proxy_url: socks5://admin:hecos@localhost:9150
+    proxy_url: socks5://localhost:9150
   WEB:
     enabled: true
     lazy_load: false
@@ -194,6 +199,15 @@ plugins:
       enable_volume_loop: false
       feedback_sounds: true
       visual_indicator: true
+  REMINDER:
+    enabled: true
+    lazy_load: false
+    reminder_mode: voice
+    ringtone_path: Default_System_Alert.mp3
+    time_format: 24h
+    max_reminders: 50
+    snooze_default_minutes: 15
+    reminder_snooze_ui: false
   MCP_BRIDGE:
     enabled: false
     lazy_load: false
@@ -214,4 +228,8 @@ routing_engine:
 system:
   fast_boot: true
   flask_debug: false
-
+agent:
+  action_console_enabled: true
+  enabled: true
+  max_iterations: 12
+  verbose_traces: true

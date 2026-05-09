@@ -1,0 +1,109 @@
+{
+    "tag": "CALENDAR",
+    "name": "Calendar",
+    "version": "1.0.0",
+    "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+    "icon": "📅",
+    "lazy_load": false,
+    "is_class_based": true,
+    "on_load": true,
+    "status": "ONLINE",
+    "commands": {
+        "add_event": "Adds an event to the calendar.",
+        "list_events": "Lists upcoming calendar events.",
+        "delete_event": "Deletes a calendar event by ID.",
+        "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "CALENDAR__add_event",
+                "description": "Adds a new event to the Hecos calendar. Use this when the user says 'add to calendar', 'schedule a meeting', 'remember that on [date]', 'crea un evento', 'segna sul calendario'. Accepts natural language dates.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "Title/label of the event (e.g. 'Doctor appointment', 'Team standup', 'Dentist')."
+                        },
+                        "start": {
+                            "type": "string",
+                            "description": "Start date/time in natural language or ISO format ('tomorrow at 10:00', 'next Monday at 14:30', '2026-06-01 09:00')."
+                        },
+                        "end": {
+                            "type": "string",
+                            "description": "Optional: End date/time. If omitted, the event defaults to 1 hour duration."
+                        },
+                        "all_day": {
+                            "type": "boolean",
+                            "description": "If true, the event spans the full day with no specific time. Default: false."
+                        },
+                        "notes": {
+                            "type": "string",
+                            "description": "Optional: Additional notes or description for the event."
+                        },
+                        "color": {
+                            "type": "string",
+                            "description": "Optional: Color code for the event (e.g. '#3498db', 'red', 'green'). Defaults to the system accent color."
+                        }
+                    },
+                    "required": ["title", "start"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CALENDAR__list_events",
+                "description": "Returns a formatted list of upcoming calendar events. Use when the user asks 'what do I have scheduled?', 'show my calendar', 'cosa ho sul calendario', 'eventi di questa settimana'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "n": {
+                            "type": "integer",
+                            "description": "Max number of events to return. Default: 10."
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CALENDAR__delete_event",
+                "description": "Deletes a calendar event. Use when the user says 'cancel that appointment', 'remove the event', 'elimina l'evento'. Ask for the event title or ID first using list_events if unsure.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "event_id": {
+                            "type": "string",
+                            "description": "The ID (full UUID or first 8 chars) of the event to delete."
+                        }
+                    },
+                    "required": ["event_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CALENDAR__get_date_info",
+                "description": "Returns robust temporal awareness containing the current date/time natively translated, checks if today is a public holiday, and lists upcoming public holidays in a specified country. Crucial for understanding relative dates ('il prossimo ponte', 'oggi \u00e8 festa?', 'when is christmas?').",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "country": {
+                            "type": "string",
+                            "description": "The ISO country code (e.g., 'IT' for Italy, 'US' for USA). Default: 'IT'."
+                        },
+                        "year": {
+                            "type": "integer",
+                            "description": "Optional year to check holidays for. Defaults to current year."
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

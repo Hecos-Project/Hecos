@@ -129,6 +129,10 @@ class AgentExecutor:
         accumulated_tool_results = []
         
         while iteration < self.max_iterations:
+            if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
+                self._emit("Operation aborted by user.", level="error")
+                break
+                
             iteration += 1
             logger.info(f"[AGENT] --- Iteration {iteration}/{self.max_iterations} ---")
             
@@ -149,6 +153,11 @@ class AgentExecutor:
                 user_id=self.current_user_id,
                 session_id=None # brain can get it from privacy_manager if None
             )
+            
+            # Immediately halt if stopped during long generation wait
+            if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
+                self._emit("Operation aborted by user.", level="error")
+                break
             
             # 2. Extract tools using the processor utility
             tools_called, tool_results, extracted_text = processore.extract_and_execute_tools(raw_response, self.config)

@@ -1,5 +1,5 @@
-voice_status: true
-piper_path: C:\Hecos-Core\bin\piper\piper.exe
+voice_status: false
+piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
 speed: 1.2
 noise_scale: 0.817

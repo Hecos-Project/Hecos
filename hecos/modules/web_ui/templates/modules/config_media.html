@@ -1,15 +1,596 @@
 <!-- MEDIA PANEL -->
 <div id="tab-media" class="panel">
 
-  <!-- Media Vault -->
+  <!-- ── Media Vault ─────────────────────────────────────────────── -->
   <div class="card" id="card-media-vault">
-    <div class="card-title">🔐 Media Vault & Privacy</div>
+    <div class="card-title">🔐 {{ t('webui_media_vault_title') }}</div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
-      Manage the images generated and saved by the AI on your local disk.
+      {{ t('webui_media_vault_desc') }}
     </p>
-    <div style="display:flex; gap:10px;">
-      <button class="btn btn-secondary" onclick="openMediaVault()">📂 Open Storage Folder</button>
-      <button class="btn btn-danger" onclick="clearMediaVault()">🗑️ {{ t('webui_media_clear_all') or 'Clear All Generated Media' }}</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="openMediaVault()">
+        📂 {{ t('webui_media_open_folder') }}
+      </button>
+      <button class="btn btn-danger" onclick="clearMediaVault()">
+        🗑️ {{ t('webui_media_clear_all') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Now Playing ────────────────────────────────────────────── -->
+  <div class="card" id="card-now-playing" style="position:relative; overflow:hidden;">
+    <div class="card-title">🎵 {{ t('webui_mp_nowplaying') }}</div>
+    
+    <div class="mp-dashboard-player" style="background:rgba(0,0,0,0.15); border:1px solid var(--border); border-radius:var(--radius); padding:16px; position:relative;">
+      
+      <!-- Track Header -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+        <div style="flex:1; overflow:hidden;">
+          <div id="mp-playlist-name" style="font-size:10px; color:var(--accent); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:2px; opacity:0.8;"></div>
+          <div id="mp-track-name" style="font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+        </div>
+        <div id="mp-status-badge" style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--bg2); color:var(--muted); font-weight:700;">OFF</div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div style="margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-bottom:4px;">
+          <span id="mp-time-current">0:00</span>
+          <span id="mp-time-total">0:00</span>
+        </div>
+        <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; cursor:pointer;" onclick="mpSeek(event)">
+          <div id="mp-progress-fill" style="height:100%; background:var(--accent); width:0%; transition:width 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <!-- Main Controls -->
+      <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin-bottom:16px;">
+        <button class="btn btn-secondary btn-circle" onclick="mpControl('prev')" title="Previous" style="width:36px; height:36px; padding:0;">⏮</button>
+        <button id="mp-btn-play" class="btn btn-primary btn-circle" onclick="mpTogglePlay()" style="width:44px; height:44px; padding:0; font-size:18px;">▶</button>
+        <button class="btn btn-secondary btn-circle" onclick="mpControl('stop')" title="Stop" style="width:36px; height:36px; padding:0;">⏹</button>
+        <button class="btn btn-secondary btn-circle" onclick="mpControl('next')" title="Next" style="width:36px; height:36px; padding:0;">⏭</button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; background:rgba(0,0,0,0.2); border-radius:8px;">
+        <span style="font-size:14px; opacity:0.7;">🔊</span>
+        <input type="range" id="mp-volume" min="0" max="100" value="80" style="flex:1; height:4px;" oninput="mpSetVolume(this.value)">
+        <span id="mp-volume-val" style="font-size:11px; color:var(--muted); min-width:24px; text-align:right;">80</span>
+      </div>
+
+      <!-- Bottom Bar: Shuffle/Repeat -->
+      <div style="display:flex; gap:10px; margin-top:12px; font-size:12px;">
+        <button id="mp-btn-shuffle" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('shuffle')">🔀 Shuffle</button>
+        <button id="mp-btn-repeat" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('repeat')">🔁 Repeat</button>
+      </div>
+
+      <!-- QUEUE DRAWER -->
+      <div id="mp-queue-container" style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px; display:none;">
+        <div style="font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between;">
+          <span>Queue / Playlist</span>
+          <span id="mp-queue-count">0 tracks</span>
+        </div>
+        <div id="mp-queue-list" style="max-height:180px; overflow-y:auto; font-size:12px;">
+          <!-- Queue items here -->
+        </div>
+      </div>
+      
+      <div style="text-align:center; margin-top:8px;">
+        <button class="btn btn-ghost btn-xs" id="mp-toggle-queue" style="font-size:10px; color:var(--muted);" onclick="mpToggleQueueView()">{{ t('webui_mp_show_queue') }} ▼</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Playlists ──────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">📋 {{ t('webui_mp_playlists') }}</div>
+    <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <input type="text" id="mp-new-playlist" placeholder="{{ t('webui_mp_playlist_name_ph') }}" style="flex:1; min-width:150px;">
+      <button class="btn btn-secondary btn-sm" onclick="mpCreatePlaylist()">+ {{ t('webui_mp_create') }}</button>
+    </div>
+    
+    <div id="mp-playlists-list" class="mp-playlists-container" style="min-height:30px;">
+      <span style="color:var(--muted); font-size:13px;">{{ t('webui_mp_no_playlists') }}</span>
+    </div>
+
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <div style="font-size:13px; font-weight:600; margin-bottom:8px;">{{ t('webui_mp_scan_folder') }}</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:4px; flex:2; min-width:160px;">
+          <input type="text" id="mp-scan-folder" placeholder="{{ t('webui_mp_folder_ph') }}" style="flex:1;">
+          <button type="button" class="btn btn-secondary" onclick="mpBrowseScanFolder()" title="Browse folder">📁</button>
+        </div>
+        <input type="text" id="mp-scan-save-as" placeholder="{{ t('webui_mp_save_as_ph') }}" style="flex:1; min-width:130px;">
+        <button class="btn btn-secondary btn-sm" onclick="mpScanFolder()">🔍 {{ t('webui_mp_scan') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #tab-media input[type="text"], 
+    #tab-media input[type="number"], 
+    #tab-media select {
+      background: var(--bg3) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 8px;
+      padding: 10px 14px !important;
+      font-size: 14px !important;
+      outline: none;
+    }
+
+    #tab-media .card {
+      background: var(--bg2);
+    }
+
+    .mp-playlists-container .playlist-row {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      overflow: hidden;
+      background: var(--bg3);
+      transition: all 0.2s ease;
+    }
+    .mp-playlists-container .playlist-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .mp-playlists-container .playlist-header:hover {
+      background: rgba(var(--accent-rgb), 0.1);
+    }
+    .mp-playlists-container .playlist-title {
+      flex: 1;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .mp-playlists-container .playlist-meta {
+      font-size: 11px;
+      color: var(--muted);
+      background: var(--bg2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .mp-playlists-container .playlist-items {
+      display: none;
+      padding: 0 12px 12px;
+      background: rgba(0,0,0,0.3);
+      border-top: 1px solid var(--border);
+    }
+    .mp-playlists-container .track-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      transition: background 0.2s;
+    }
+    .mp-playlists-container .track-row:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    .mp-playlists-container .track-name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+  </style>
+
+  <!-- ── Media Player Settings ──────────────────────────────────── -->
+  <div class="card">
+    <div class="card-title">⚙️ {{ t('webui_mp_settings') }}</div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label>{{ t('webui_mp_volume') }}</label>
+        <input type="number" id="mp-cfg-volume" min="0" max="100" step="1" value="80">
+      </div>
+      <div class="field">
+        <label>{{ t('webui_mp_backend') }}</label>
+        <select id="mp-cfg-backend">
+          <option value="auto">auto (VLC → mpv → system)</option>
+          <option value="vlc">VLC</option>
+          <option value="mpv">mpv</option>
+          <option value="system">System default</option>
+        </select>
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_backend_hint') }}</p>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>{{ t('webui_mp_media_root') }}</label>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="mp-cfg-root" placeholder="{{ t('webui_mp_media_root_ph') }}" style="flex:1;">
+          <button type="button" class="btn btn-secondary" onclick="mpBrowseRoot()" title="{{ t('webui_mp_media_root') }}">📁</button>
+        </div>
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_media_root_hint') }}</p>
+      </div>
+      <div class="field">
+        <label>{{ t('webui_mp_default_playlist') }}</label>
+        <input type="text" id="mp-cfg-autoload" placeholder="{{ t('webui_mp_default_playlist_ph') }}">
+      </div>
+      <div class="field">
+        <label>{{ t('webui_mp_thumb') }}</label>
+        <select id="mp-cfg-thumb">
+          <option value="small">Small</option>
+          <option value="medium">Medium</option>
+          <option value="large">Large</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="font-size:13px; font-weight:600; margin:12px 0 8px;">{{ t('webui_mp_options') }}</div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_auto_advance') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-autoadvance" checked><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_shuffle') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-shuffle"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_repeat') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-repeat"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_autoplay_video') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-autoplay-video"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_autoplay_audio') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-autoplay-audio"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">{{ t('webui_mp_filmstrip') }}</div>
+      <label class="switch"><input type="checkbox" id="mp-cfg-filmstrip" checked><span class="slider"></span></label>
     </div>
   </div>
 </div>
+
+<script>
+/* ── Media Player Dashboard Logic (Unified) ───────────────────────── */
+
+let mpLastQueueHash = "";
+
+(function initMPPanel() {
+  populateMPSettings();
+  mpLoadPlaylists();
+  mpRefreshStatus();
+  if (window._mpStatusPoll) clearInterval(window._mpStatusPoll);
+  window._mpStatusPoll = setInterval(mpRefreshStatus, 5000);
+})();
+
+function mpControl(action, extra) {
+  const body = { action };
+  if (extra) Object.assign(body, extra);
+  fetch('/api/media_player/control', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).then(r => r.json()).then(d => {
+    mpRefreshStatus();
+    if (action === 'shuffle' || action === 'repeat') {
+      // Small delay to let backend update status
+      setTimeout(mpRefreshStatus, 200);
+    }
+  }).catch(e => console.warn('[MP] control error', e));
+}
+
+function mpTogglePlay() {
+  mpControl('pause');
+}
+
+function mpToggleQueueView() {
+  const qc = document.getElementById('mp-queue-container');
+  const btn = document.getElementById('mp-toggle-queue');
+  if (qc.style.display === 'none') {
+    qc.style.display = 'block';
+    btn.textContent = `{{ t('webui_mp_hide_queue') }} ▲`;
+    mpRefreshQueue();
+  } else {
+    qc.style.display = 'none';
+    btn.textContent = `{{ t('webui_mp_show_queue') }} ▼`;
+  }
+}
+
+function mpSeek(e) {
+  const bar = e.currentTarget;
+  const rect = bar.getBoundingClientRect();
+  const percent = (e.clientX - rect.left) / rect.width;
+  // We need the total duration from the status
+  const total = parseFloat(document.getElementById('mp-time-total').dataset.seconds || 0);
+  if (total > 0) {
+    const seekTo = percent * total;
+    mpControl('seek', { position: seekTo });
+  }
+}
+
+function mpSetVolume(vol) {
+  const el = document.getElementById('mp-volume-val');
+  if (el) el.textContent = vol;
+  mpControl('volume', { volume: parseInt(vol) });
+}
+
+async function mpRefreshStatus() {
+  try {
+    const r = await fetch('/api/media_player/status');
+    const d = await r.json();
+    if (!d.ok) return;
+
+    // Track Name & Playlist
+    document.getElementById('mp-track-name').textContent = d.track ? d.track.split(/[\\/]/).pop() : '—';
+    document.getElementById('mp-playlist-name').textContent = d.playlist || `{{ t('webui_mp_no_playlist') }}`;
+    
+    // Status Badge
+    const badge = document.getElementById('mp-status-badge');
+    if (d.playing) {
+      badge.textContent = `{{ t('webui_mp_playing') }}`;
+    } else if (d.track) {
+      badge.textContent = `{{ t('webui_mp_paused') }}`;
+    } else {
+      badge.textContent = `{{ t('webui_mp_idle') }}`;
+    }
+    badge.style.background = d.playing ? 'var(--accent)' : 'var(--bg2)';
+    badge.style.color = d.playing ? 'black' : 'var(--muted)';
+
+    // Play/Pause Button
+    document.getElementById('mp-btn-play').textContent = d.playing ? '⏸' : '▶';
+
+    // Progress bar and times
+    const fill = document.getElementById('mp-progress-fill');
+    const timeCurr = document.getElementById('mp-time-current');
+    const timeTotal = document.getElementById('mp-time-total');
+    
+    if (fill && d.length > 0) {
+      const per = (d.position / d.length) * 100;
+      fill.style.width = per.toFixed(1) + '%';
+      timeCurr.textContent = formatTime(d.position);
+      timeTotal.textContent = formatTime(d.length);
+      timeTotal.dataset.seconds = d.length;
+    } else {
+      if (fill) fill.style.width = '0%';
+      timeCurr.textContent = '0:00';
+      timeTotal.textContent = '0:00';
+    }
+
+    // Volume
+    const volSlider = document.getElementById('mp-volume');
+    if (volSlider && d.volume >= 0 && !volSlider.matches(':active')) {
+      volSlider.value = d.volume;
+      document.getElementById('mp-volume-val').textContent = d.volume;
+    }
+
+    // Shuffle / Repeat visual states
+    const shBtn = document.getElementById('mp-btn-shuffle');
+    const reBtn = document.getElementById('mp-btn-repeat');
+    shBtn.style.opacity = d.shuffle ? '1' : '0.5';
+    shBtn.style.color = d.shuffle ? 'var(--accent)' : 'inherit';
+    reBtn.style.opacity = d.repeat ? '1' : '0.5';
+    reBtn.style.color = d.repeat ? 'var(--accent)' : 'inherit';
+
+    // If queue is visible, refresh it periodically
+    if (document.getElementById('mp-queue-container').style.display === 'block') {
+      mpRefreshQueue();
+    }
+
+  } catch(e) { console.error("[MP] status error", e); }
+}
+
+async function mpRefreshQueue() {
+  try {
+    const r = await fetch('/api/media_player/queue');
+    const d = await r.json();
+    if (!d.ok) return;
+
+    const hash = JSON.stringify(d.queue) + d.index;
+    if (hash === mpLastQueueHash) return;
+    mpLastQueueHash = hash;
+
+    document.getElementById('mp-queue-count').textContent = `${d.queue.length} {{ t('webui_mp_tracks') }}`;
+    const list = document.getElementById('mp-queue-list');
+    
+    list.innerHTML = d.queue.map((item, i) => {
+      const active = (i === d.index);
+      return `
+        <div onclick="mpControl('play_at', {index:${i}})" style="padding:4px 8px; border-radius:4px; margin-bottom:2px; cursor:pointer; background:${active ? 'rgba(102,252,241,0.1)' : 'transparent'}; color:${active ? 'var(--accent)' : 'inherit'};">
+          <span style="opacity:0.5; font-size:10px; min-width:18px; display:inline-block;">${i+1}</span>
+          ${item.name}
+        </div>
+      `;
+    }).join('');
+  } catch(e) {}
+}
+
+function formatTime(s) {
+  if (!s || isNaN(s)) return "0:00";
+  const m = Math.floor(s / 60);
+  const rs = Math.floor(s % 60);
+  return `${m}:${rs < 10 ? '0' : ''}${rs}`;
+}
+
+async function mpLoadPlaylists() {
+  try {
+    const r = await fetch('/api/media_player/playlists');
+    const d = await r.json();
+    const cont = document.getElementById('mp-playlists-list');
+    if (!cont) return;
+    if (!d.ok || !d.playlists || d.playlists.length === 0) {
+      cont.innerHTML = `<span style="color:var(--muted); font-size:13px;">{{ t('webui_mp_no_playlists') }}</span>`;
+      return;
+    }
+    
+    cont.innerHTML = d.playlists.map(pl => `
+      <div class="playlist-row" id="pl-${pl.name}">
+        <div class="playlist-header" onclick="mpTogglePlaylistItems('${pl.name}')">
+          <span style="font-size:16px;">📂</span>
+          <span class="playlist-title">${pl.name}</span>
+          <span class="playlist-meta">${pl.items ? pl.items.length : 0} {{ t('webui_mp_tracks') }}</span>
+          <button class="btn btn-secondary btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpControl('play_playlist',{name:'${pl.name}'})" title="Play All">▶</button>
+          <button class="btn btn-danger btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpDeletePlaylist('${pl.name}')">🗑</button>
+        </div>
+        <div class="playlist-items" id="pl-items-${pl.name}">
+           <!-- Loaded on demand -->
+           <div style="padding:10px; text-align:center; opacity:0.5; font-size:11px;">Loading tracks...</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { console.error("[MP] load playlists error", e); }
+}
+
+async function mpTogglePlaylistItems(name) {
+  const container = document.getElementById(`pl-items-${name}`);
+  if (!container) return;
+  
+  if (container.style.display === 'block') {
+    container.style.display = 'none';
+    return;
+  }
+  
+  // Show and fetch
+  container.style.display = 'block';
+  try {
+    const r = await fetch(`/api/media_player/playlists/${encodeURIComponent(name)}`);
+    const d = await r.json();
+    if (!d.ok || !d.playlist) {
+      container.innerHTML = `<div style="padding:10px; color:var(--red); font-size:11px;">Error loading playlist</div>`;
+      return;
+    }
+    
+    const items = d.playlist.items || [];
+    if (items.length === 0) {
+      container.innerHTML = `<div style="padding:10px; opacity:0.5; font-size:11px;">No tracks in this playlist</div>`;
+      return;
+    }
+    
+    container.innerHTML = `
+      <div style="margin-top:8px;">
+        ${items.map((item, i) => `
+          <div class="track-row">
+            <span style="opacity:0.3; font-size:10px; width:16px;">${i+1}</span>
+            <span class="track-name" onclick="mpControl('play_playlist', {name:'${name}', index:${i}})">${item.name}</span>
+            <button class="btn btn-ghost btn-xs" onclick="mpRemoveTrackFromPlaylist('${name}', ${i})" style="color:var(--red); opacity:0.6; padding:2px 4px;">🗑</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } catch(e) {
+    container.innerHTML = `<div style="padding:10px; color:var(--red); font-size:11px;">Fetch error</div>`;
+  }
+}
+
+async function mpRemoveTrackFromPlaylist(playlistName, index) {
+  if (!confirm(window.t('webui_mp_delete_track_confirm'))) return;
+  
+  try {
+    const r = await fetch(`/api/media_player/playlists/${encodeURIComponent(playlistName)}/items/${index}`, {
+      method: 'DELETE'
+    });
+    const d = await r.json();
+    if (d.ok) {
+      // Reload the items view and the header count
+      await mpLoadPlaylists(); // Refresh counts
+      document.getElementById(`pl-items-${playlistName}`).style.display = 'block'; // Ensure it stays open
+      mpTogglePlaylistItems(playlistName); // Re-render items (toggle off then on correctly)
+    }
+  } catch(e) { console.error("[MP] remove track error", e); }
+}
+
+async function mpCreatePlaylist() {
+  const nameEl = document.getElementById('mp-new-playlist');
+  const name = (nameEl && nameEl.value.trim()) || '';
+  if (!name) return;
+  await fetch('/api/media_player/playlists', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, items: [] })
+  });
+  if (nameEl) nameEl.value = '';
+  mpLoadPlaylists();
+}
+
+async function mpDeletePlaylist(name) {
+  if (!confirm(window.t('webui_mp_delete_confirm', {name: name}))) return;
+  await fetch('/api/media_player/playlists/' + encodeURIComponent(name), { method: 'DELETE' });
+  mpLoadPlaylists();
+}
+
+async function mpScanFolder() {
+  const folder = (document.getElementById('mp-scan-folder') || {}).value || '';
+  const saveAs = (document.getElementById('mp-scan-save-as') || {}).value || '';
+  if (!folder) return;
+  try {
+    const r = await fetch('/api/media_player/control', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'scan_folder', path: folder, save_as: saveAs, recursive: true })
+    });
+    const d = await r.json();
+    if (d.ok) { 
+      mpLoadPlaylists();
+      mpRefreshStatus(); 
+    } else {
+      alert(`{{ t('webui_mp_scan_error') }}: ` + d.error);
+    }
+  } catch(e) { }
+}
+
+function mpBrowseRoot() {
+  const current = (document.getElementById('mp-cfg-root') || {}).value || 'C:\\';
+  if (typeof HecosFilePicker !== 'undefined') {
+    HecosFilePicker.open({
+      title: `{{ t('webui_mp_picker_media_root') }}`,
+      initialPath: current,
+      mode: 'folder',
+      onSelect: (path) => { document.getElementById('mp-cfg-root').value = path; }
+    });
+  } else { alert(`{{ t('webui_mp_file_picker_missing') }}`); }
+}
+
+function mpBrowseScanFolder() {
+  const current = (document.getElementById('mp-scan-folder') || {}).value || 'C:\\';
+  if (typeof HecosFilePicker !== 'undefined') {
+    HecosFilePicker.open({
+      title: `{{ t('webui_mp_picker_scan') }}`,
+      initialPath: current,
+      mode: 'folder',
+      onSelect: (path) => { document.getElementById('mp-scan-folder').value = path; }
+    });
+  } else { alert(`{{ t('webui_mp_file_picker_missing') }}`); }
+}
+
+function populateMPSettings() {
+  const mp = (typeof mediaConfig !== 'undefined' && mediaConfig && mediaConfig.media_player) ? mediaConfig.media_player : {};
+  const setV = (id, val) => { const e = document.getElementById(id); if (e) e.value = val; };
+  const setC = (id, val) => { const e = document.getElementById(id); if (e) e.checked = !!val; };
+  setV('mp-cfg-volume',     mp.default_volume ?? 80);
+  setV('mp-cfg-backend',    mp.preferred_backend || 'auto');
+  setV('mp-cfg-root',       mp.media_root_dir || '');
+  setV('mp-cfg-autoload',   mp.autoload_playlist || '');
+  setV('mp-cfg-thumb',      mp.drive_thumb_size || 'medium');
+  setC('mp-cfg-autoadvance',    mp.auto_advance !== false);
+  setC('mp-cfg-shuffle',        mp.shuffle_default ?? false);
+  setC('mp-cfg-repeat',         mp.repeat_queue ?? false);
+  setC('mp-cfg-autoplay-video', mp.autoplay_video ?? false);
+  setC('mp-cfg-autoplay-audio', mp.autoplay_audio ?? false);
+  setC('mp-cfg-filmstrip',      mp.show_filmstrip !== false);
+}
+
+function buildMPPayload() {
+  const get = id => { const el = document.getElementById(id); return el ? el.value : null; };
+  const ck  = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+  return {
+    default_volume:     parseInt(get('mp-cfg-volume')) || 80,
+    preferred_backend:  get('mp-cfg-backend') || 'auto',
+    media_root_dir:     get('mp-cfg-root') || '',
+    autoload_playlist:  get('mp-cfg-autoload') || '',
+    drive_thumb_size:   get('mp-cfg-thumb') || 'medium',
+    auto_advance:       ck('mp-cfg-autoadvance'),
+    shuffle_default:    ck('mp-cfg-shuffle'),
+    repeat_queue:       ck('mp-cfg-repeat'),
+    autoplay_video:     ck('mp-cfg-autoplay-video'),
+    autoplay_audio:     ck('mp-cfg-autoplay-audio'),
+    show_filmstrip:     ck('mp-cfg-filmstrip'),
+  };
+}
+window.buildMPPayload = buildMPPayload;
+</script>

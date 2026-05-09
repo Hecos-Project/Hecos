@@ -1,0 +1,93 @@
+{
+    "tag": "REMINDER",
+    "name": "Reminder",
+    "version": "1.0.0",
+    "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+    "icon": "🔔",
+    "lazy_load": false,
+    "is_class_based": true,
+    "on_load": true,
+    "status": "ONLINE",
+    "commands": {
+        "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+        "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+        "cancel_reminder": "Cancels an active reminder by ID.",
+        "snooze_reminder": "Postpones a reminder by N minutes from now."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "REMINDER__set_reminder",
+                "description": "Creates a new reminder that fires a voice alert and WebUI notification at the specified time. Supports natural language ('tomorrow at 15:00', 'in 20 minutes', 'ogni lunedì alle 9') and CRON-style recurrence ('every Monday at 9:00', 'ogni giorno alle 8'). Always use this when the user says 'remind me', 'ricordami', 'svegliami', 'imposta un promemoria'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "What to remind the user about. Be concise and descriptive (e.g. 'Call the doctor', 'Check the oven', 'Daily standup')."
+                        },
+                        "when": {
+                            "type": "string",
+                            "description": "When to fire the reminder. Accepts natural language: 'domani alle 15:00', 'tra 20 minuti', 'every Monday at 9:00', 'ogni giorno alle 8', 'next Friday at 18:30'. For one-shot reminders use a specific time; for recurring use patterns like 'ogni lunedì', 'every morning', 'ogni giorno'."
+                        },
+                        "repeat": {
+                            "type": "string",
+                            "description": "Optional: explicit CRON expression (5 fields: min hour day month day_of_week) for advanced recurring schedules. Example: '0 9 * * 1' for every Monday at 9:00. Leave empty and use `when` for natural language recurrence."
+                        }
+                    },
+                    "required": ["title", "when"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "REMINDER__list_reminders",
+                "description": "Returns a formatted list of all active reminders (title, scheduled time, ID). Use this when the user asks 'what reminders do I have?', 'mostrami i promemoria', 'lista promemoria'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "REMINDER__cancel_reminder",
+                "description": "Cancels an active reminder. The reminder_id can be the full UUID or the first 8 characters shown in list_reminders. Use this when the user says 'cancel reminder', 'cancella promemoria', 'elimina promemoria'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "reminder_id": {
+                            "type": "string",
+                            "description": "The full ID or first 8 characters of the reminder ID (as shown in list_reminders)."
+                        }
+                    },
+                    "required": ["reminder_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "REMINDER__snooze_reminder",
+                "description": "Postpones a reminder by a specified number of minutes from the current time. Use when the user says 'snooze', 'posticipa', 'rimandalo di X minuti'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "reminder_id": {
+                            "type": "string",
+                            "description": "The full ID or first 8 characters of the reminder to snooze."
+                        },
+                        "minutes": {
+                            "type": "integer",
+                            "description": "How many minutes to postpone the reminder. Default: 15."
+                        }
+                    },
+                    "required": ["reminder_id"]
+                }
+            }
+        }
+    ]
+}

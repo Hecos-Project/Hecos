@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
   </noscript>
   <style>
+    :root { color-scheme: dark; }
     @media (max-width: 768px) {
       header {
         flex-direction: column;
@@ -102,7 +103,7 @@
   (function() {
     var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
     var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    var theme = autoTheme ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light') : savedTheme;
+    var theme = autoTheme ? 'native' : savedTheme;
     if (theme && theme !== 'default') {
       document.body.classList.add('theme-' + theme);
     }
@@ -215,12 +216,13 @@
     {% endif %}
     {% include 'modules/config_payload.html' %}
     {% include 'modules/config_plugins.html' %}
+    {% include 'modules/config_reminder.html' %}
+    {% include 'modules/config_calendar.html' %}
     {% include 'modules/config_plugin_studio.html' %}
     {% include 'modules/config_mcp.html' %}
     {% include 'modules/config_remote_triggers.html' %}
     {% include 'modules/config_drive.html' %}
     {% include 'modules/config_drive_editor.html' %}
-    {% include 'modules/config_drive_media_viewer.html' %}
     {% include 'modules/config_logs.html' %}
     {% include 'modules/config_privacy.html' %}
     {% include 'modules/config_help.html' %}
@@ -295,7 +297,7 @@
    * @param {boolean} manual - If true, disables automatic theme switching
    */
   window.setTheme = function(theme, manual = false) {
-    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate');
+    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
     if (theme !== 'default') {
       document.body.classList.add(`theme-${theme}`);
     }
@@ -340,8 +342,7 @@
 
   window.toggleAutoTheme = function(enabled) {
       if (enabled) {
-          const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          setTheme(isDark ? 'cyberpunk' : 'light');
+          setTheme('native', false);
           localStorage.setItem('hecos-ui-auto-theme', 'true');
       } else {
           localStorage.removeItem('hecos-ui-auto-theme');

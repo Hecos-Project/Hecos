@@ -1,0 +1,77 @@
+{
+    "plugin_id": "MEDIA_PLAYER",
+    "display_name": "Hecos Media Player",
+    "version": "1.1.0",
+    "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
+    "author": "Hecos Project",
+    "is_shared": true,
+    "lazy_load": false,
+    "on_load": true,
+    "is_class_based": true,
+    "config_schema": {
+        "enabled": {
+            "type": "bool",
+            "default": true,
+            "description": "Enable the Media Player plugin."
+        },
+        "default_volume": {
+            "type": "int",
+            "default": 80,
+            "min": 0,
+            "max": 100,
+            "description": "Default playback volume (0–100)."
+        },
+        "auto_advance": {
+            "type": "bool",
+            "default": true,
+            "description": "Automatically advance to the next track when a track ends."
+        },
+        "shuffle": {
+            "type": "bool",
+            "default": false,
+            "description": "Enable shuffle mode by default."
+        },
+        "repeat": {
+            "type": "bool",
+            "default": false,
+            "description": "Repeat the queue when it ends."
+        },
+        "default_playlist": {
+            "type": "str",
+            "default": "",
+            "description": "Name of a saved playlist to auto-load at startup (leave empty for none)."
+        },
+        "media_root_dir": {
+            "type": "str",
+            "default": "",
+            "description": "Default folder where media files are stored (used for quick scans via LLM)."
+        },
+        "preferred_backend": {
+            "type": "str",
+            "default": "auto",
+            "options": ["auto", "vlc", "mpv", "system"],
+            "description": "Preferred playback backend. 'auto' selects the best available."
+        },
+        "drive_thumb_size": {
+            "type": "str",
+            "default": "small",
+            "options": ["none", "small", "medium", "large"],
+            "description": "Thumbnail size in Hecos Drive file list."
+        },
+        "autoplay_video": {
+            "type": "bool",
+            "default": true,
+            "description": "Autoplay video in the browser gallery player."
+        },
+        "autoplay_audio": {
+            "type": "bool",
+            "default": false,
+            "description": "Autoplay audio in the browser gallery player."
+        },
+        "show_filmstrip": {
+            "type": "bool",
+            "default": true,
+            "description": "Show the bottom filmstrip thumbnail navigator in the gallery."
+        }
+    }
+}

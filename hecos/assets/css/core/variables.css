@@ -1,8 +1,11 @@
 :root {
   /* ── Core Backgrounds ── */
   --bg:       #0d0f18;  /* Deep space navy */
+  --bg-rgb:   13, 15, 24;
   --bg2:      #141726;
+  --bg2-rgb:  20, 23, 38;
   --bg3:      #1c2033;
+  --bg3-rgb:  28, 32, 51;
 
   /* ── Brand Colors (Cyberpunk Default) ── */
   --accent:      #6c8cff;  /* Neon periwinkle */
@@ -23,8 +26,10 @@
   --muted:     #6b7280;
 
   /* ── UI Tokens ── */
-  --border:   #252b46;
-  --surface2: #1c2033;
+  --border:     #252b46;
+  --border-rgb: 37, 43, 70;
+  --muted-rgb:  107, 114, 128;
+  --surface2:   #1c2033;
   --surface3: #252b46;
   --radius:   10px;
   --shadow:          0 4px 24px rgba(0,0,0,0.5);
@@ -59,13 +64,17 @@
 /* ── Theme: Turquoise (Cyberpunk Teal) ── */
 .theme-turquoise {
   --bg:  #0b1a1a;
+  --bg-rgb: 11, 26, 26;
   --bg2: #112222;
+  --bg2-rgb: 17, 34, 34;
   --bg3: #182e2e;
+  --bg3-rgb: 24, 46, 46;
   --accent:      #66fcf1;
   --accent-rgb:  102, 252, 241;
   --accent2:     #45a29e;
   --accent2-rgb: 69, 162, 158;
   --border:      #1a3a3a;
+  --border-rgb:  26, 58, 58;
   --text:        #cffafe;
   --muted:       #6ec6c1;
   --glass:        rgba(102, 252, 241, 0.04);
@@ -83,15 +92,20 @@
 /* ── Theme: Pirate (Rum & Gold — Warm/Aged) ── */
 .theme-pirate {
   --bg:  #140a00;  /* Dark rum */
+  --bg-rgb: 20, 10, 0;
   --bg2: #1e1000;
+  --bg2-rgb: 30, 16, 0;
   --bg3: #2d1c08;
+  --bg3-rgb: 45, 28, 8;
   --accent:      #d4af37;  /* Gold doubloon */
   --accent-rgb:  212, 175, 55;
   --accent2:     #c0622e;  /* Burnt copper */
   --accent2-rgb: 192, 98, 46;
   --text:        #f4e8c1;
   --muted:       #a08050;
+  --muted-rgb:   160, 128, 80;
   --border:      #3d2208;
+  --border-rgb:  61, 34, 8;
   --glass:        rgba(212, 175, 55, 0.05);
   --glass-b:      rgba(212, 175, 55, 0.1);
   --glass-c:      rgba(212, 175, 55, 0.15);
@@ -108,15 +122,20 @@
 /* ── Theme: Elegant (Obsidian + Champagne Gold — Luxury) ── */
 .theme-elegant {
   --bg:  #080808;
+  --bg-rgb: 8, 8, 8;
   --bg2: #111;
+  --bg2-rgb: 17, 17, 17;
   --bg3: #1a1a1a;
+  --bg3-rgb: 26, 26, 26;
   --accent:      #c9a84c;  /* Champagne gold */
   --accent-rgb:  201, 168, 76;
   --accent2:     #96744a;  /* Antique bronze */
   --accent2-rgb: 150, 116, 74;
   --text:        #f0ece4;  /* Warm ivory white */
   --muted:       #806e56;  /* Warm taupe */
+  --muted-rgb:   128, 110, 86;
   --border:      #2a2520;
+  --border-rgb:  42, 37, 32;
   --glass:        rgba(201, 168, 76, 0.04);
   --glass-b:      rgba(201, 168, 76, 0.08);
   --glass-c:      rgba(201, 168, 76, 0.12);
@@ -134,14 +153,18 @@
 /* Theme: Rose (Soft & Vibrant) */
 .theme-rose {
   --bg: #0f1117;
+  --bg-rgb: 15, 17, 23;
   --bg2: #1e1b26;
+  --bg2-rgb: 30, 27, 38;
   --bg3: #2a2235;
+  --bg3-rgb: 42, 34, 53;
   --accent: #fb7185;
   --accent-rgb: 251, 113, 133;
   --accent2: #fda4af;
   --accent2-rgb: 253, 164, 175;
   --text: #fff1f2;
   --border: #4c1d24;
+  --border-rgb: 76, 29, 36;
   --shadow-up: 0 -4px 24px rgba(251, 113, 133, 0.15);
   --shadow-glow: 0 0 20px rgba(251, 113, 133, 0.3);
   --shadow-glow-active: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(251, 113, 133, 0.25);
@@ -157,12 +180,16 @@
 .theme-light {
   /* ── Backgrounds ── */
   --bg:          #fafaf9;  /* Warm Pearl White — not stark, never cold */
+  --bg-rgb:      250, 250, 249;
   --bg2:         #f3f2ef;  /* Warm Off-White (slightly darker) */
+  --bg2-rgb:     243, 242, 239;
   --bg3:         #eae9e4;  /* Soft Stone — for cards, inputs, chips */
+  --bg3-rgb:     234, 233, 228;
 
   /* ── Text ── */
   --text:        #1c1917;  /* Near-black, warm (not cool gray) */
   --muted:       #78716c;  /* Warm gray for labels & hints */
+  --muted-rgb:   120, 113, 108;
 
   /* ── Accent ── */
   --accent:      #4f46e5;  /* Deep Indigo — confident, modern */
@@ -180,6 +207,7 @@
 
   /* ── Edge & Glass ── */
   --border:      #d6d3cd;  /* Warm gray border — no pink */
+  --border-rgb:  214, 211, 205;
   --glass:       rgba(79, 70, 229, 0.03);
   --glass-b:     rgba(79, 70, 229, 0.06);
   --glass-c:     rgba(79, 70, 229, 0.1);
@@ -201,12 +229,16 @@
 /* Theme: Corporate (Luminous Professional) */
 .theme-corporate {
   --bg:          #f8fafc;  /* Cool white — crisp, never harsh */
+  --bg-rgb:      248, 250, 252;
   --bg2:         #f1f5f9;  /* Slate-tinted off-white */
+  --bg2-rgb:     241, 245, 249;
   --bg3:         #e2e8f0;  /* Light slate for cards/inputs */
+  --bg3-rgb:     226, 232, 240;
 
   /* ── Text ── */
   --text:        #0f172a;  /* Slate 900 — strong, readable */
   --muted:       #64748b;  /* Slate 500 — balanced secondary text */
+  --muted-rgb:   100, 116, 139;
 
   /* ── Accent ── */
   --accent:      #0ea5e9;  /* Sky 500 — vivid, trustworthy blue */
@@ -224,6 +256,7 @@
 
   /* ── Edge & Glass ── */
   --border:      #cbd5e1;  /* Slate 300 — clean, visible borders */
+  --border-rgb:  203, 213, 225;
   --glass:       rgba(14, 165, 233, 0.03);
   --glass-b:     rgba(14, 165, 233, 0.07);
   --glass-c:     rgba(14, 165, 233, 0.12);
@@ -248,15 +281,20 @@
 /* Theme: Solarpunk (Nature & Sun) */
 .theme-solarpunk {
   --bg:          #fbfaf5;
+  --bg-rgb:      251, 250, 245;
   --bg2:         #e8f5e9; /* More saturated Green to avoid "pink" perception */
+  --bg2-rgb:     232, 245, 233;
   --bg3:         #c8e6c9;
+  --bg3-rgb:     200, 230, 201;
   --text:        #1b5e20;
   --muted:       #4e7c59;
+  --muted-rgb:   78, 124, 89;
   --accent:      #2e7d32;
   --accent-rgb:  46, 125, 50;
   --accent2:     #fbc02d;
   --accent2-rgb: 251, 192, 45;
   --border:      #a5d6a7;
+  --border-rgb:  165, 214, 167;
   --shadow:      0 4px 20px rgba(46, 125, 50, 0.1);
   --shadow-up:   0 -4px 20px rgba(251, 192, 45, 0.15); /* Yellowish up-shadow */
   --shadow-glow: 0 0 20px rgba(46, 125, 50, 0.25); /* Greenish glow */
@@ -269,3 +307,62 @@
   --accent-g:    linear-gradient(135deg, #2e7d32, #fbc02d);
 }
 
+/* ── Theme: System Native (Follows OS colors seamlessly) ── */
+.theme-native {
+  --accent:      #0078D7;
+  --accent-rgb:  0, 120, 215;
+  --accent2:     #00A4EF;
+  --accent2-rgb: 0, 164, 239;
+  --accent-g:    linear-gradient(135deg, #0078D7, #00A4EF);
+  --green:       #107C10;
+  --green-rgb:   16, 124, 16;
+  --red:         #D13438;
+  --red-rgb:     209, 52, 56;
+  --yellow:      #FFB900;
+  --yellow-rgb:  255, 185, 0;
+
+  /* Default to Light Mode colors */
+  --bg:          #F3F3F3;
+  --bg-rgb:      243, 243, 243;
+  --bg2:         #FFFFFF;
+  --bg2-rgb:     255, 255, 255;
+  --bg3:         #F9F9F9;
+  --bg3-rgb:     249, 249, 249;
+  --text:        #000000;
+  --muted:       #767676;
+  --muted-rgb:   118, 118, 118;
+  --border:      #E5E5E5;
+  --border-rgb:  229, 229, 229;
+  --card-title-color: var(--text);
+  
+  --glass:       rgba(0, 120, 215, 0.04);
+  --glass-b:     rgba(0, 120, 215, 0.08);
+  --glass-c:     rgba(0, 120, 215, 0.12);
+  --glass-border: rgba(0, 120, 215, 0.15);
+  
+  --shadow:      0 4px 16px rgba(0,0,0,0.1);
+  --shadow-up:   0 -4px 16px rgba(0,0,0,0.08);
+  --shadow-glow: 0 0 20px rgba(0, 120, 215, 0.15);
+  --shadow-glow-active: 0 10px 30px rgba(0, 120, 215, 0.1), 0 4px 12px rgba(0,0,0,0.06);
+  --bg-blur:     rgba(243, 243, 243, 0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-native {
+    --bg:          #202020;
+    --bg-rgb:      32, 32, 32;
+    --bg2:         #2D2D2D;
+    --bg2-rgb:     45, 45, 45;
+    --bg3:         #333333;
+    --bg3-rgb:     51, 51, 51;
+    --text:        #FFFFFF;
+    --muted:       #999999;
+    --muted-rgb:   153, 153, 153;
+    --border:      #444444;
+    --border-rgb:  68, 68, 68;
+    
+    --shadow:      0 4px 24px rgba(0,0,0,0.6);
+    --shadow-up:   0 -4px 24px rgba(0, 0, 0, 0.4);
+    --bg-blur:     rgba(32, 32, 32, 0.9);
+  }
+}

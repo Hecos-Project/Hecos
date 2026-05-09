@@ -1,0 +1,359 @@
+<!-- Media Player — Sidebar Widget -->
+<!-- Injected by chat_sidebar.html via sidebar_widgets context -->
+<div class="sidebar-card" id="mp-widget-card" style="user-select:none; padding:10px 12px;">
+  <style>
+    .mp-icon-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .mp-icon-btn:hover {
+      background: var(--glass-b);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .mp-icon-btn.active {
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.1);
+      border-color: rgba(var(--accent-rgb), 0.3);
+    }
+  </style>
+
+  <!-- ── Header (collapsible) ─────────────────────────────────── -->
+  <div class="sidebar-card-title"
+       style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;"
+       onclick="mpWidgetToggle()" title="Click to collapse/expand">
+    <span id="mp-widget-led" style="font-size:10px; color:var(--muted);">🎵</span>
+    <span>MEDIA PLAYER</span>
+    <span onclick="event.stopPropagation(); window.hecosOpenConfig('#media')" 
+          style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+          title="Configure Media Player">⚙️</span>
+    <span id="mp-widget-chevron" style="font-size:10px; color:var(--muted);">▾</span>
+  </div>
+
+  <!-- ── Body ───────────────────────────────────────────────────── -->
+  <div id="mp-widget-body" style="margin-top:10px;">
+
+    <!-- Playlist Selector -->
+    <div style="margin-bottom:8px;">
+      <select id="mp-widget-pl-selector" 
+              style="width:100%; height:24px; font-size:10px; background:var(--bg3); color:var(--text); border:1px solid var(--border); border-radius:4px; padding:0 4px; cursor:pointer; outline:none;"
+              onchange="mpWLoadPlaylist(this.value)">
+        <option value="" style="background:var(--bg3); color:var(--text);">-- {{ t('webui_mp_select_playlist') }} --</option>
+      </select>
+    </div>
+
+    <!-- Playlist name -->
+    <div id="mp-widget-pl-name"
+         style="font-size:10px; color:var(--muted); text-transform:uppercase;
+                letter-spacing:.6px; margin-bottom:4px; min-height:14px;"></div>
+
+    <!-- Track name -->
+    <div id="mp-widget-track"
+         style="font-size:12px; font-weight:600; color:var(--text);
+                overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+                margin-bottom:5px; min-height:16px;">—</div>
+
+    <!-- Progress bar -->
+    <div id="mp-widget-prog-bar"
+         style="height:3px; background:var(--border); border-radius:2px; margin-bottom:8px; overflow:hidden;">
+      <div id="mp-widget-progress"
+           style="height:100%; background:var(--accent); width:0%; transition:width 1s linear;">
+      </div>
+    </div>
+
+    <!-- Time label -->
+    <div id="mp-widget-time"
+         style="font-size:10px; color:var(--muted); text-align:right;
+                margin-top:-6px; margin-bottom:6px;"></div>
+
+    <!-- Controls row -->
+    <div style="display:flex; gap:4px; align-items:center; margin-bottom:8px;">
+      <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
+              onclick="mpWCtrl('prev')" title="Previous">⏮</button>
+      <button class="audio-toggle-btn" id="mp-widget-play-btn" style="flex:1;"
+              onclick="mpWPlayPause()" title="Play/Pause">▶</button>
+      <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
+              onclick="mpWCtrl('stop')" title="Stop">⏹</button>
+      <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
+              onclick="mpWCtrl('next')" title="Next">⏭</button>
+      <button class="mp-icon-btn" id="mp-w-shuffle"
+              onclick="mpWToggle('shuffle')" title="Shuffle">🔀</button>
+      <button class="mp-icon-btn" id="mp-w-repeat"
+              onclick="mpWToggle('repeat')" title="Repeat">🔁</button>
+    </div>
+
+    <!-- Volume -->
+    <div style="display:flex; align-items:center; gap:5px; margin-bottom:10px;">
+      <span style="font-size:11px; color:var(--muted);">🔊</span>
+      <input type="range" id="mp-widget-vol" min="0" max="100" value="80"
+             style="flex:1; height:3px; accent-color:var(--accent);"
+             oninput="mpWVolume(this.value)">
+      <span id="mp-widget-vol-val"
+            style="font-size:10px; color:var(--muted); min-width:22px; text-align:right;">80</span>
+    </div>
+
+    <!-- Queue header -->
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                margin-bottom:5px; cursor:pointer;"
+         onclick="mpWToggleQueue()">
+      <span style="font-size:10px; font-weight:700; color:var(--muted);
+                   text-transform:uppercase; letter-spacing:.8px;">
+        📋 QUEUE <span id="mp-w-queue-count" style="font-weight:400;"></span>
+      </span>
+      <span id="mp-w-queue-ch" style="font-size:10px; color:var(--muted);">▾</span>
+    </div>
+
+    <!-- Queue list -->
+    <div id="mp-w-queue-body"
+         style="max-height:220px; overflow-y:auto;
+                scrollbar-width:thin; scrollbar-color:var(--border) transparent;">
+      <div id="mp-w-queue-list" style="display:flex; flex-direction:column; gap:1px;"></div>
+    </div>
+
+  </div><!-- /body -->
+</div><!-- /card -->
+
+<script>
+/* ══ Media Player Sidebar Widget ══════════════════════════════════════════════ */
+(function() {
+  'use strict';
+
+  /* ── State ─────────────────────────────────────────────────────────────────── */
+  const COLLAPSED_KEY = 'hecos-mp-collapsed';
+  let _playing    = false;
+  let _shuffle    = false;
+  let _repeat     = false;
+  let _queueOpen  = true;
+  let _pollTick   = 0;           // counts 5s ticks; refresh queue every 4 ticks = 20s
+  let _pollTimer  = null;
+  let _collapsed  = localStorage.getItem(COLLAPSED_KEY) === '1';
+
+  /* ── Helpers ───────────────────────────────────────────────────────────────── */
+  function _fmt(sec) {
+    if (!sec || sec <= 0) return '';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function _el(id) { return document.getElementById(id); }
+
+  /* ── Toggle widget body ────────────────────────────────────────────────────── */
+  function _applyCollapsed(yes) {
+    const body = _el('mp-widget-body');
+    const ch   = _el('mp-widget-chevron');
+    if (!body) return;
+    body.style.display = yes ? 'none' : '';
+    if (ch) ch.textContent = yes ? '▸' : '▾';
+  }
+
+  window.mpWidgetToggle = function() {
+    _collapsed = !_collapsed;
+    localStorage.setItem(COLLAPSED_KEY, _collapsed ? '1' : '0');
+    _applyCollapsed(_collapsed);
+    if (!_collapsed) { _refreshStatus(); _refreshQueue(); _refreshPlaylists(); }
+  };
+
+  window.mpWToggleQueue = function() {
+    const body = _el('mp-w-queue-body');
+    const ch   = _el('mp-w-queue-ch');
+    if (!body) return;
+    _queueOpen = !_queueOpen;
+    body.style.display = _queueOpen ? '' : 'none';
+    if (ch) ch.textContent = _queueOpen ? '▾' : '▸';
+  };
+
+  /* ── API calls ─────────────────────────────────────────────────────────────── */
+  async function _send(action, extra) {
+    try {
+      const resp = await fetch('/api/media_player/control', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ action, ...(extra || {}) })
+      });
+      if (!resp.ok) console.warn('[MPWidget] control error', await resp.text());
+      setTimeout(_refreshStatus, 350);
+    } catch(e) { console.warn('[MPWidget] fetch error:', e); }
+  }
+
+  window.mpWCtrl       = (action) => _send(action);
+  window.mpWPlayPause  = ()       => _send(_playing ? 'pause' : 'play');
+  window.mpWPlayAt     = (idx)    => { _send('play_at', { index: idx }); setTimeout(_refreshQueue, 500); };
+  window.mpWVolume     = (vol)    => {
+    const vv = _el('mp-widget-vol-val');
+    if (vv) vv.textContent = vol;
+    _send('volume', { volume: parseInt(vol) });
+  };
+  window.mpWToggle = function(what) {
+    if (what === 'shuffle') _send('shuffle', { shuffle: !_shuffle });
+    if (what === 'repeat')  _send('repeat',  { repeat:  !_repeat });
+  };
+
+  window.mpWLoadPlaylist = function(name) {
+    if (!name) return;
+    _send('play_playlist', { name });
+  };
+
+  async function _refreshPlaylists() {
+    try {
+      const r = await fetch('/api/media_player/playlists');
+      if (!r.ok) return;
+      const d = await r.json();
+      const sel = _el('mp-widget-pl-selector');
+      if (!sel || !d.ok) return;
+
+      const current = sel.value;
+      let html = `<option value="">-- {{ t('webui_mp_select_playlist') }} --</option>`;
+      (d.playlists || []).forEach(pl => {
+        html += `<option value="${pl.name}" ${pl.name === current ? 'selected' : ''}>${pl.name} (${pl.count || 0})</option>`;
+      });
+      sel.innerHTML = html;
+    } catch(e) { console.warn('[MPWidget] playlist error:', e); }
+  }
+
+  /* ── Refresh status ────────────────────────────────────────────────────────── */
+  async function _refreshStatus() {
+    try {
+      const r = await fetch('/api/media_player/status');
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d.ok) return;
+
+      _playing = !!d.playing;
+      _shuffle = !!d.shuffle;
+      _repeat  = !!d.repeat;
+
+      /* Track name */
+      const trackEl = _el('mp-widget-track');
+      if (trackEl) trackEl.textContent = d.track ? d.track.split(/[\\/]/).pop() : '—';
+
+      /* Progress */
+      const prog = _el('mp-widget-progress');
+      const pct  = (d.length > 0) ? ((d.position / d.length) * 100).toFixed(1) : 0;
+      if (prog) prog.style.width = pct + '%';
+
+      /* Time label */
+      const timeEl = _el('mp-widget-time');
+      if (timeEl && d.length > 0)
+        timeEl.textContent = `${_fmt(d.position)} / ${_fmt(d.length)}`;
+      else if (timeEl)
+        timeEl.textContent = '';
+
+      /* Play button */
+      const btn = _el('mp-widget-play-btn');
+      if (btn) btn.textContent = _playing ? '⏸' : '▶';
+
+      /* LED indicator */
+      const led = _el('mp-widget-led');
+      if (led) led.style.color = _playing ? 'var(--green)' : 'var(--muted)';
+
+      /* Volume */
+      const volEl = _el('mp-widget-vol');
+      const volVl = _el('mp-widget-vol-val');
+      if (volEl && d.volume >= 0) volEl.value = d.volume;
+      if (volVl && d.volume >= 0) volVl.textContent = d.volume;
+
+      /* Shuffle / repeat buttons */
+      const sb = _el('mp-w-shuffle');
+      const rb = _el('mp-w-repeat');
+      if (sb) sb.classList.toggle('active', _shuffle);
+      if (rb) rb.classList.toggle('active', _repeat);
+
+      /* Highlight current queue item */
+      _highlightItem(d.queue_idx);
+
+    } catch(e) { console.warn('[MPWidget] status error:', e); }
+  }
+
+  /* ── Refresh queue list ────────────────────────────────────────────────────── */
+  async function _refreshQueue() {
+    try {
+      const r = await fetch('/api/media_player/queue');
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d.ok) return;
+
+      /* Playlist name */
+      const plEl = _el('mp-widget-pl-name');
+      if (plEl) plEl.textContent = d.playlist ? `▶ ${d.playlist}` : '';
+
+      /* Queue count */
+      const count = _el('mp-w-queue-count');
+      if (count) count.textContent = d.queue.length > 0 ? `(${d.queue.length})` : '';
+
+      /* Queue items */
+      const list = _el('mp-w-queue-list');
+      if (!list) return;
+
+      if (d.queue.length === 0) {
+        list.innerHTML = `<div style="font-size:11px; color:var(--muted); padding:5px 4px;">{{ t('webui_mp_no_tracks_in_queue') }}</div>`;
+        return;
+      }
+
+      list.innerHTML = d.queue.map((item, i) => {
+        const name = item.name || (item.path ? item.path.split(/[\\/]/).pop() : '?');
+        const icon = item.type === 'video' ? '🎬' : '🎵';
+        const active = (i === d.current);
+        return `<div class="mp-queue-item"
+                     onclick="mpWPlayAt(${i})"
+                     data-idx="${i}"
+                     style="display:flex; align-items:center; gap:6px; padding:5px 6px;
+                            border-radius:6px; cursor:pointer; font-size:11px;
+                            border-left:2px solid ${active ? 'var(--accent)' : 'transparent'};
+                            background:${active ? 'rgba(var(--accent-rgb),.12)' : 'transparent'};
+                            color:${active ? 'var(--accent)' : ''}; transition:background .12s;">
+                  <span style="color:var(--muted); min-width:18px; text-align:right; flex-shrink:0;">${i + 1}.</span>
+                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;" title="${name}">${name}</span>
+                  <span style="flex-shrink:0; font-size:10px;">${icon}</span>
+                </div>`;
+      }).join('');
+
+      /* Scroll active item into view */
+      const activeEl = list.querySelector(`[data-idx="${d.current}"]`);
+      if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+
+    } catch(e) { console.warn('[MPWidget] queue error:', e); }
+  }
+
+  function _highlightItem(idx) {
+    document.querySelectorAll('#mp-w-queue-list .mp-queue-item').forEach(el => {
+      const i = parseInt(el.dataset.idx);
+      const active = (i === idx);
+      el.style.background   = active ? 'rgba(var(--accent-rgb),.12)' : '';
+      el.style.color        = active ? 'var(--accent)' : '';
+      el.style.borderLeft   = `2px solid ${active ? 'var(--accent)' : 'transparent'}`;
+    });
+  }
+
+  /* ── Polling loop ──────────────────────────────────────────────────────────── */
+  function _startPolling() {
+    if (_pollTimer) return;
+    _applyCollapsed(_collapsed);
+    _refreshStatus();
+    _refreshQueue();
+    _refreshPlaylists();
+    _pollTimer = setInterval(() => {
+      _pollTick++;
+      _refreshStatus();
+      if (_pollTick % 4 === 0) { _refreshQueue(); _refreshPlaylists(); } // refresh every ~20s
+    }, 5000);
+  }
+
+  /* ── Initialize immediately or on DOMContentLoaded ─────────────────────────── */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _startPolling);
+  } else {
+    _startPolling();
+  }
+
+})();
+</script>

@@ -236,6 +236,9 @@
   <button class="toolbar-btn" title="Attach an image (PNG, JPG, WebP)" onclick="document.getElementById('file-upload-img').click()">
     <span class="tb-icon">🖼</span> {{ t('webui_chat_toolbar_img') }}
   </button>
+  <button class="toolbar-btn emoji-trigger-btn" title="Insert Emoji" onclick="toggleEmoticonPicker(event)">
+    <span class="tb-icon">😊</span> Emoji
+  </button>
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
     <span class="tb-icon">📋</span> {{ t('webui_chat_toolbar_paste') }}
   </button>

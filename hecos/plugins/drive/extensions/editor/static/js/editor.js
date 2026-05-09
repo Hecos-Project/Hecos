@@ -14,26 +14,21 @@ require(['vs/editor/editor.main'], function() {
   // 1. Define static Theme Profiles
   const autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
   const savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-  let zTheme = savedTheme;
-  if (autoTheme) {
-    zTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
-  }
+  let zTheme = autoTheme ? 'native' : savedTheme;
   
-  // Detect if current theme belongs to a LIGHT profile
-  const isLight = (zTheme === 'light') || document.documentElement.classList.contains('theme-light') || 
-                  document.documentElement.classList.contains('theme-solarpunk') || 
-                  document.documentElement.classList.contains('theme-corporate') || 
+  // Detect if current theme belongs to a profile
+  const isNative = (zTheme === 'native') || document.body.classList.contains('theme-native');
+  const isDarkOS = isNative && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  const isLight = (zTheme === 'light') || (!isDarkOS && isNative) || 
                   document.body.classList.contains('theme-light') || 
-                  document.body.classList.contains('theme-solarpunk') ||
+                  document.body.classList.contains('theme-solarpunk') || 
                   document.body.classList.contains('theme-corporate');
 
-  const isSolar = (zTheme === 'solarpunk') || document.documentElement.classList.contains('theme-solarpunk') || 
-                  document.body.classList.contains('theme-solarpunk');
+  const isSolar = (zTheme === 'solarpunk') || document.body.classList.contains('theme-solarpunk');
+  const isCorporate = (zTheme === 'corporate') || document.body.classList.contains('theme-corporate');
 
-  const isCorporate = (zTheme === 'corporate') || document.documentElement.classList.contains('theme-corporate') || 
-                      document.body.classList.contains('theme-corporate');
-
-  console.log('[Hecos Editor] Auto:', autoTheme, 'Saved:', savedTheme, 'Actual:', zTheme, 'isLight:', isLight, 'isSolar:', isSolar, 'isCorporate:', isCorporate);
+  console.log('[Hecos Editor] Auto:', autoTheme, 'Saved:', savedTheme, 'Actual:', zTheme, 'isNative:', isNative, 'isDarkOS:', isDarkOS, 'isLight:', isLight);
   
   // Hecos Light Profile (Premium Pearl + Indigo)
   monaco.editor.defineTheme('hecos-light', {
@@ -104,6 +99,49 @@ require(['vs/editor/editor.main'], function() {
     }
   });
 
+  // Hecos Native Dark Profile (System Gray)
+  monaco.editor.defineTheme('hecos-native-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '888888', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '00A4EF', fontStyle: 'bold' },
+      { token: 'string', foreground: '98c379' },
+      { token: 'number', foreground: 'd19a66' },
+    ],
+    colors: {
+      'editor.background': '#202020',
+      'editor.foreground': '#cccccc',
+      'editor.lineHighlightBackground': '#2d2d2d',
+      'editorLineNumber.foreground': '#555555',
+      'editorLineNumber.activeForeground': '#00A4EF',
+      'editor.selectionBackground': '#3e4451',
+      'editorWidget.background': '#252525',
+      'editorWidget.border': '#444444',
+      'input.background': '#333333',
+    }
+  });
+
+  // Hecos Native Light Profile (System Gray)
+  monaco.editor.defineTheme('hecos-native-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '999999', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '0078D7', fontStyle: 'bold' },
+    ],
+    colors: {
+      'editor.background': '#F3F3F3',
+      'editor.foreground': '#333333',
+      'editor.lineHighlightBackground': '#FFFFFF',
+      'editorLineNumber.foreground': '#BBBBBB',
+      'editorLineNumber.activeForeground': '#0078D7',
+      'editor.selectionBackground': '#ADD6FF',
+      'editorWidget.background': '#F9F9F9',
+      'editorWidget.border': '#E5E5E5',
+    }
+  });
+
   // Hecos Dark Profile (Default Cyberpunk — Deep Space Navy)
   monaco.editor.defineTheme('hecos-dark', {
     base: 'vs-dark',
@@ -127,7 +165,17 @@ require(['vs/editor/editor.main'], function() {
     }
   });
 
-  const activeTheme = isCorporate ? 'hecos-corporate' : (isSolar ? 'hecos-solarpunk' : (isLight ? 'hecos-light' : 'hecos-dark'));
+  let activeTheme = 'hecos-dark';
+  if (isNative) {
+    activeTheme = isDarkOS ? 'hecos-native-dark' : 'hecos-native-light';
+  } else if (isCorporate) {
+    activeTheme = 'hecos-corporate';
+  } else if (isSolar) {
+    activeTheme = 'hecos-solarpunk';
+  } else if (isLight) {
+    activeTheme = 'hecos-light';
+  }
+
   console.log('[Hecos Editor] Active theme:', activeTheme);
 
   // 2. Create editor

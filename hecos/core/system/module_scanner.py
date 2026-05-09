@@ -181,6 +181,19 @@ def update_capability_registry(config=None, debug_log=True):
                     if hasattr(tools_instance, "config_schema"):
                         _plugin_config_schemas[tag] = tools_instance.config_schema
 
+                    # ── on_load hook ─────────────────────────────────────────────────
+                    # Plugins that declare on_load: true in their manifest (e.g. REMINDER)
+                    # need to run startup code (e.g. start a scheduler daemon).
+                    # We call on_load(config) if it is defined at module level.
+                    if hasattr(module, "on_load") and callable(module.on_load):
+                        try:
+                            module.on_load(config)
+                            logger.debug("LOADER", f"on_load() called for plugin {tag}")
+                        except Exception as _ol_e:
+                            logger.error(f"LOADER: on_load() error for {tag}: {_ol_e}")
+                    # ─────────────────────────────────────────────────────────────────
+
+
                 elif hasattr(module, "info"):
                     # --- OLD LEGACY SYSTEM ---
                     plugin_info = module.info()

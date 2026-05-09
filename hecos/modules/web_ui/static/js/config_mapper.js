@@ -183,6 +183,9 @@ function populateUI() {
     // 6. Remote Triggers Dispatch
     populateRemoteTriggersUI();
     
+    // Reminder Dispatch
+    if (typeof populateReminderUI === 'function') populateReminderUI();
+    
     // 7. Privacy & WebUI Dispatch
 
     populatePrivacyUI();
@@ -307,7 +310,7 @@ function renderPlugins(plugins) {
 
   let htmlCore = `<details open style="margin-bottom:10px;">
     <summary style="cursor:pointer; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none; display:flex; align-items:center; gap:10px;">
-      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Core Modules (Level 1)</strong>
+      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Hecos Module Manager (Level 1)</strong>
       <span class="p-tag core">CORE</span>
       <span style="margin-left:auto; font-size:10px; color:var(--muted); font-weight:800; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px;">${coreCount}</span>
     </summary>`;
@@ -613,6 +616,19 @@ function buildPayload() {
         out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
     }
 
+    // Reminder Payload Part
+    const remPart = (typeof buildReminderPayload === 'function') ? buildReminderPayload() : {};
+    if (remPart && remPart.plugins && remPart.plugins.REMINDER) {
+        out.plugins['REMINDER'] = out.plugins['REMINDER'] || {};
+        const r = remPart.plugins.REMINDER;
+        out.plugins['REMINDER'].reminder_mode = r.reminder_mode;
+        out.plugins['REMINDER'].ringtone_path = r.ringtone_path;
+        out.plugins['REMINDER'].time_format = r.time_format;
+        out.plugins['REMINDER'].max_reminders = r.max_reminders;
+        out.plugins['REMINDER'].snooze_default_minutes = r.snooze_default_minutes;
+        out.plugins['REMINDER'].reminder_snooze_ui = r.reminder_snooze_ui;
+    }
+
 
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
@@ -815,6 +831,35 @@ function buildAgentPayload() {
             max_iterations: parseInt(document.getElementById('agent-max-iter').value) || 10,
             verbose_traces: document.getElementById('agent-verbose').checked,
             action_console_enabled: document.getElementById('agent-action-console').checked
+        }
+    };
+}
+
+function populateReminderUI() {
+    const c = window.cfg;
+    if (!c || !c.plugins || !c.plugins.REMINDER) return;
+    const s = c.plugins.REMINDER;
+    setVal('rem-mode', s.reminder_mode || 'voice');
+    setVal('rem-ringtone', s.ringtone_path || '');
+    setVal('rem-time-format', s.time_format || '24h');
+    setVal('rem-max', s.max_reminders ?? 50);
+    setVal('rem-snooze', s.snooze_default_minutes ?? 15);
+    setCheck('rem-snooze-ui', s.reminder_snooze_ui ?? false);
+}
+
+function buildReminderPayload() {
+    const el = document.getElementById('rem-mode');
+    if (!el) return {};
+    return {
+        plugins: {
+            REMINDER: {
+                reminder_mode: el.value || 'voice',
+                ringtone_path: document.getElementById('rem-ringtone').value || '',
+                time_format: document.getElementById('rem-time-format').value || '24h',
+                max_reminders: parseInt(document.getElementById('rem-max').value) || 50,
+                snooze_default_minutes: parseInt(document.getElementById('rem-snooze').value) || 15,
+                reminder_snooze_ui: getC('rem-snooze-ui')
+            }
         }
     };
 }

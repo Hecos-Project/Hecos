@@ -63,6 +63,9 @@ class HecosWebUIServer:
                     static_folder=stc_dir,
                     static_url_path='/static')
         
+        # Attach config manager for extensions to access
+        app.hecos_config_manager = self.config_manager
+        
         # FIX: Force CSS/JS mimetypes to prevent Windows Registry corruption issues leading to blank pages
         import mimetypes
         mimetypes.add_type('text/css', '.css')
@@ -167,6 +170,15 @@ class HecosWebUIServer:
 
             from .routes_remote_triggers import init_remote_trigger_routes
             init_remote_trigger_routes(app, self.logger, get_state_manager)
+
+            # ── Hecos Media Player — Standalone Shared Plugin ────────────────
+            try:
+                from hecos.plugins.media_player.routes import init_routes as init_media_player
+                init_media_player(app)
+                self.logger.info("[WebUI] Hecos Media Player plugin loaded.")
+            except Exception as _mp_e:
+                self.logger.warning(f"[WebUI] Media Player plugin could not load: {_mp_e}")
+            # ─────────────────────────────────────────────────────────────────
 
             # ── WEB_UI Shared Extensions (sidebar widgets etc.) ──────────────
             try:

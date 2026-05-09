@@ -1,0 +1,256 @@
+<div class="sidebar-card" id="reminder-widget" style="padding:10px 12px;">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="reminderWidget.toggleBody()">
+        <span class="ql-icon">⏰</span>
+        <span class="ql-title">{{ t('ext_reminder_title') }}</span>
+        <span onclick="event.stopPropagation(); window.hecosOpenConfig('#reminder')" 
+              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+              title="Configure Reminder">⚙️</span>
+        <span class="ql-chevron" id="reminder-widget-toggle">▾</span>
+    </div>
+    
+    <div id="reminder-widget-body" class="ql-body" style="margin-top:10px;">
+        {# ── Upcoming list ── #}
+        <div id="reminder-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
+          <span style="color:var(--muted);font-size:0.8em;padding-left:12px;">{{ t('webui_chat_loading') }}</span>
+        </div>
+
+        {# ── Dual-Mode Add Form ── #}
+        <form id="reminder-quick-add" onsubmit="reminderWidget.quickAdd(event)"
+              style="display:flex;flex-direction:column;gap:6px;">
+          <input id="reminder-title-input" class="ql-input" type="text" placeholder="What to remind you about..."
+                 autocomplete="off" required>
+          
+          <div style="display:flex;gap:4px;align-items:center;">
+              <input id="reminder-when-input" class="ql-input" type="text" placeholder="Ex: in 5 min, tomorrow 12:30..."
+                     autocomplete="off" required style="flex:1;">
+              
+              <button type="button" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;background:rgba(255,200,60,0.15);border-color:rgba(255,200,60,0.3);color:#ffc83c;" onclick="reminderWidget.pickWheelTime()" title="Pick Exact Time">
+                  🕒
+              </button>
+              
+              <button type="submit" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;">
+                  +
+              </button>
+          </div>
+          
+          <!-- Quick Chips -->
+          <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px; justify-content:center;">
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 5 min')">+ 5m</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 15 min')">+ 15m</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 30 min')">+ 30m</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 1 hour')">+ 1h</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 10 min')">Pasta 🍝</span>
+          </div>
+
+          <div id="reminder-quick-msg" style="font-size:10px;min-height:12px;text-align:center;"></div>
+        </form>
+
+        <style>
+        .rem-chip {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .rem-chip:hover { background: rgba(52,152,219,0.2); color: #3498db; border-color: rgba(52,152,219,0.4); }
+        </style>
+    </div>
+</div>
+
+<script>
+window.reminderWidget = (function() {
+  const COLLAPSED_KEY = 'hecos-rem-collapsed';
+  let _collapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+
+  function _applyCollapsed(yes) {
+    const body = document.getElementById('reminder-widget-body');
+    const tog  = document.getElementById('reminder-widget-toggle');
+    if (body) body.style.display = yes ? 'none' : '';
+    if (tog)  tog.classList.toggle('collapsed', yes);
+  }
+
+  function toggleBody() {
+    _collapsed = !_collapsed;
+    localStorage.setItem(COLLAPSED_KEY, _collapsed ? '1' : '0');
+    _applyCollapsed(_collapsed);
+  }
+
+  function _fmt(r) {
+    if (r.repeat && r.cron_expr) return '🔁 ' + t('ext_reminder_recurrent');
+    if (r.when_iso) {
+      try {
+        const d = new Date(r.when_iso);
+        const now = new Date();
+        const diff = d - now;
+        if (diff < 0)      return '⏰ ' + t('ext_reminder_expired');
+        if (diff < 60000)  return '⏰ <1 min';
+        if (diff < 3600000) return `⏰ ${Math.round(diff/60000)}m`;
+        if (diff < 86400000) return `⏰ ${Math.round(diff/3600000)}h`;
+        return `📅 ${d.toLocaleDateString(undefined, {day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString(undefined, {hour:'2-digit',minute:'2-digit'})}`;
+      } catch(e) { return r.when_iso; }
+    }
+    return '';
+  }
+
+  function refresh() {
+    fetch('/api/ext/reminder?n=5')
+      .then(r => r.json())
+      .then(data => {
+        const list = document.getElementById('reminder-list');
+        if (!list) return;
+        if (!data.ok || !data.reminders || data.reminders.length === 0) {
+          list.innerHTML = `<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">${t('ext_reminder_none')}</span>`;
+          return;
+        }
+        list.innerHTML = data.reminders.map(r => {
+          let isInt = r.interactive === 1;
+          if (r.interactive === null || r.interactive === undefined) {
+             isInt = !!(window.cfg && window.cfg.plugins && window.cfg.plugins.REMINDER && window.cfg.plugins.REMINDER.reminder_snooze_ui);
+          }
+          const modePillStyle = isInt 
+            ? 'background:rgba(var(--yellow-rgb),0.1);border:1px solid rgba(var(--yellow-rgb),0.2);color:var(--yellow);padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;'
+            : 'background:var(--glass);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;';
+          const modeLabel = isInt ? 'INTERACTIVE' : 'SIMPLE';
+          const nextMode = isInt ? false : true;
+
+          let fullDate = '';
+          if (r.when_iso) {
+            try {
+              const d = new Date(r.when_iso);
+              fullDate = d.toLocaleDateString(undefined, {day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + d.toLocaleTimeString(undefined, {hour:'2-digit',minute:'2-digit'});
+            } catch(e){}
+          } else if (r.repeat) {
+            fullDate = 'Recurring'
+          }
+
+          return `
+          <div class="ql-item" style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                <span style="flex:1; font-size:13px; color:var(--text); line-height:1.4; word-break:break-word;">
+                    <i class="far fa-clock" style="color:#ffc83c; margin-right:4px;"></i> <strong>${r.title}</strong>
+                </span>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="reminderWidget.snooze('${r.id}')" title="Snooze 15 min"
+                            style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.6);padding:0;">zzz</button>
+                    <button onclick="reminderWidget.cancel('${r.id}')" title="Cancel"
+                            style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,80,80,0.8);padding:0;">✕</button>
+                </div>
+            </div>
+            
+            <div style="font-size:10px; color:var(--muted); line-height:1.3;">
+                <i class="far fa-calendar-alt" style="margin-right:2px;"></i> ${fullDate} <span style="opacity:0.75;margin-left:4px;">(${_fmt(r)})</span>
+            </div>
+            
+            <div style="display:flex; justify-content:flex-start; margin-top:4px;">
+                <button onclick="reminderWidget.toggleMode('${r.id}', ${nextMode})" title="Change Mode"
+                        style="${modePillStyle} cursor:pointer; outline:none;" class="reminder-mode-toggle">${modeLabel}</button>
+            </div>
+
+          </div>
+          `;
+        }).join('');
+      })
+      .catch(() => {
+        const list = document.getElementById('reminder-list');
+        if (list) list.innerHTML = `<span style="color:var(--muted);font-size:0.8em;">${t('ext_reminder_err')}</span>`;
+      });
+  }
+
+  function quickAdd(e) {
+    e.preventDefault();
+    const title = document.getElementById('reminder-title-input').value.trim();
+    const when  = document.getElementById('reminder-when-input').value.trim();
+    const msg   = document.getElementById('reminder-quick-msg');
+    if (!title || !when) return;
+
+    fetch('/api/ext/reminder', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ title, when })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (msg) {
+        msg.style.color = data.ok ? 'var(--accent)' : '#e05';
+        msg.textContent = data.ok ? '✅ ' + (window.I18N.command_executed || 'Done') : (data.error || data.message || 'Error');
+        setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+      }
+      if (data.ok) {
+        document.getElementById('reminder-title-input').value = '';
+        document.getElementById('reminder-when-input').value = '';
+        refresh();
+      }
+    })
+    .catch(() => { if (msg) { msg.style.color='#e05'; msg.textContent='Network error'; } });
+  }
+
+  function cancel(id) {
+    if (!confirm('Cancel this reminder?')) return;
+    fetch('/api/ext/reminder/stop', { method: 'POST' });
+    fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
+      .then(() => refresh());
+  }
+
+  function snooze(id) {
+    fetch(`/api/ext/reminder/${id}/snooze`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ minutes: 15 })
+    }).then(() => refresh());
+  }
+
+  function toggleMode(id, nextMode) {
+    fetch(`/api/ext/reminder/${id}/interactive`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ interactive: nextMode })
+    }).then(() => refresh());
+  }
+
+  function pickWheelTime() {
+    if (typeof HecosWheelPicker === 'undefined') {
+      console.warn('HecosWheelPicker is not available.');
+      return;
+    }
+    HecosWheelPicker.open({
+      mode: 'datetime',
+      onConfirm: (isoString) => {
+        const inp = document.getElementById('reminder-when-input');
+        if (inp) {
+            inp.value = isoString;
+            // Provide a quick visual feedback
+            inp.style.backgroundColor = 'rgba(52,152,219,0.2)';
+            setTimeout(() => inp.style.backgroundColor = '', 400);
+        }
+      }
+    });
+  }
+
+  function setChip(val) {
+    const inp = document.getElementById('reminder-when-input');
+    if (inp) {
+        inp.value = val;
+        inp.style.backgroundColor = 'rgba(52,152,219,0.2)';
+        setTimeout(() => inp.style.backgroundColor = '', 400);
+    }
+  }
+
+  // Auto-refresh every 60 seconds
+  setInterval(refresh, 60000);
+  
+  // Initial load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { _applyCollapsed(_collapsed); refresh(); });
+  } else {
+    _applyCollapsed(_collapsed);
+    refresh();
+  }
+
+  return { refresh, quickAdd, cancel, snooze, toggleBody, toggleMode, pickWheelTime, setChip };
+})();
+</script>
