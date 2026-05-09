@@ -82,8 +82,8 @@ async function loadDrives() {
     }
     sel.title  = window.t ? window.t('webui_drive_drive_sel_hint') : "Change drive";
     sel.style.cssText = `
-      background: var(--glass);
-      color: var(--accent);
+      background: var(--bg2);
+      color: var(--text);
       border: 1px solid var(--border);
       border-radius: 5px;
       padding: 3px 8px;
@@ -91,6 +91,7 @@ async function loadDrives() {
       font-size: 12px;
       cursor: pointer;
       margin-right: 6px;
+      outline: none;
     `;
 
     data.drives.forEach(d => {

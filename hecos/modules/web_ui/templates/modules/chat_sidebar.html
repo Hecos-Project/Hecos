@@ -8,17 +8,29 @@
   </div>
   <div class="sidebar-card full-width">
     <div class="sidebar-card-title">STATUS</div>
+    <style>
+      /* Final Refinement: Crisp, non-glowing text for sidebar status indicators */
+      #sidebar .status-val { 
+        font-size: 13px;
+        font-weight: 500; 
+        opacity: 1; 
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-shadow: none !important;
+      }
+    </style>
     <div class="status-pill">
       <div class="dot-pulse"></div>
       <div><div class="status-text">{{ t('webui_chat_backend') }}</div><div class="status-val" id="sb-backend">—</div></div>
     </div>
     <div class="status-pill">
-      <div style="width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 6px var(--accent2);flex-shrink:0;"></div>
-      <div style="overflow:hidden;"><div class="status-text">{{ t('webui_chat_model') }}</div><div class="status-val" id="sb-model" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>
+      <div style="overflow:hidden;"><div class="status-text">{{ t('webui_chat_model') }}</div><div class="status-val" id="sb-model">—</div></div>
     </div>
     <div class="status-pill">
-      <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0;"></div>
-      <div style="overflow:hidden;"><div class="status-text">{{ t('header_soul') }}</div><div class="status-val" id="sb-soul" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
+      <div style="overflow:hidden;"><div class="status-text">{{ t('header_soul') }}</div><div class="status-val" id="sb-soul">—</div></div>
     </div>
   </div>
 

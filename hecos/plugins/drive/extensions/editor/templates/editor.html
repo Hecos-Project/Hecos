@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>✏️ {{ filename }} — Hecos Editor</title>
-<link rel="icon" type="image/png" href="/assets/Hecos_Logo_NBG.png">
+<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap">
 <link rel="stylesheet" href="/assets/css/core/variables.css?v=5">
@@ -13,14 +13,9 @@
   (function() {
     var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
     var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    var theme = 'cyberpunk';
-    if (autoTheme) {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
-    } else {
-      theme = savedTheme;
-    }
-    if (theme !== 'default') {
-      document.documentElement.classList.add('theme-' + theme);
+    var theme = autoTheme ? 'native' : savedTheme;
+    if (theme && theme !== 'default') {
+      document.body.classList.add('theme-' + theme);
     }
   })();
 </script>
@@ -31,7 +26,7 @@
   <!-- ── TOP BAR ── -->
   <div id="topbar">
     <a class="logo" href="/drive" id="back-btn">
-      <img src="/assets/Hecos_Logo_NBG.png" alt="z">
+      <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos">
       Hecos Drive
     </a>
     <div class="tab-bar">

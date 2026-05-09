@@ -102,10 +102,21 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 }
 .status-pill:last-child { margin-bottom: 0; }
 .status-pill:hover { background: var(--glass-b); }
-.dot-pulse { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:dpulse 2s infinite; flex-shrink:0; }
+.dot-pulse { width:7px; height:7px; border-radius:50%; background:var(--green); animation:dpulse 2s infinite; flex-shrink:0; }
 @keyframes dpulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
 .status-text { color:var(--muted); }
-.status-val { color:var(--text); font-weight:600; }
+.status-val { 
+  font-size: 12.5px;
+  font-weight: 500; 
+  opacity: 1; 
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow: none !important;
+}
 
 /* Audio controls in sidebar */
 .audio-controls { padding:8px 14px 0; }

@@ -103,7 +103,7 @@
   (function() {
     var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
     var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    var theme = autoTheme ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light') : savedTheme;
+    var theme = autoTheme ? 'native' : savedTheme;
     if (theme && theme !== 'default') {
       document.body.classList.add('theme-' + theme);
     }
@@ -297,7 +297,7 @@
    * @param {boolean} manual - If true, disables automatic theme switching
    */
   window.setTheme = function(theme, manual = false) {
-    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate');
+    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
     if (theme !== 'default') {
       document.body.classList.add(`theme-${theme}`);
     }
@@ -342,8 +342,7 @@
 
   window.toggleAutoTheme = function(enabled) {
       if (enabled) {
-          const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          setTheme(isDark ? 'cyberpunk' : 'light');
+          setTheme('native', false);
           localStorage.setItem('hecos-ui-auto-theme', 'true');
       } else {
           localStorage.removeItem('hecos-ui-auto-theme');

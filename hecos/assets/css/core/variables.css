@@ -307,3 +307,62 @@
   --accent-g:    linear-gradient(135deg, #2e7d32, #fbc02d);
 }
 
+/* ── Theme: System Native (Follows OS colors seamlessly) ── */
+.theme-native {
+  --accent:      #0078D7;
+  --accent-rgb:  0, 120, 215;
+  --accent2:     #00A4EF;
+  --accent2-rgb: 0, 164, 239;
+  --accent-g:    linear-gradient(135deg, #0078D7, #00A4EF);
+  --green:       #107C10;
+  --green-rgb:   16, 124, 16;
+  --red:         #D13438;
+  --red-rgb:     209, 52, 56;
+  --yellow:      #FFB900;
+  --yellow-rgb:  255, 185, 0;
+
+  /* Default to Light Mode colors */
+  --bg:          #F3F3F3;
+  --bg-rgb:      243, 243, 243;
+  --bg2:         #FFFFFF;
+  --bg2-rgb:     255, 255, 255;
+  --bg3:         #F9F9F9;
+  --bg3-rgb:     249, 249, 249;
+  --text:        #000000;
+  --muted:       #767676;
+  --muted-rgb:   118, 118, 118;
+  --border:      #E5E5E5;
+  --border-rgb:  229, 229, 229;
+  --card-title-color: var(--text);
+  
+  --glass:       rgba(0, 120, 215, 0.04);
+  --glass-b:     rgba(0, 120, 215, 0.08);
+  --glass-c:     rgba(0, 120, 215, 0.12);
+  --glass-border: rgba(0, 120, 215, 0.15);
+  
+  --shadow:      0 4px 16px rgba(0,0,0,0.1);
+  --shadow-up:   0 -4px 16px rgba(0,0,0,0.08);
+  --shadow-glow: 0 0 20px rgba(0, 120, 215, 0.15);
+  --shadow-glow-active: 0 10px 30px rgba(0, 120, 215, 0.1), 0 4px 12px rgba(0,0,0,0.06);
+  --bg-blur:     rgba(243, 243, 243, 0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-native {
+    --bg:          #202020;
+    --bg-rgb:      32, 32, 32;
+    --bg2:         #2D2D2D;
+    --bg2-rgb:     45, 45, 45;
+    --bg3:         #333333;
+    --bg3-rgb:     51, 51, 51;
+    --text:        #FFFFFF;
+    --muted:       #999999;
+    --muted-rgb:   153, 153, 153;
+    --border:      #444444;
+    --border-rgb:  68, 68, 68;
+    
+    --shadow:      0 4px 24px rgba(0,0,0,0.6);
+    --shadow-up:   0 -4px 24px rgba(0, 0, 0, 0.4);
+    --bg-blur:     rgba(32, 32, 32, 0.9);
+  }
+}

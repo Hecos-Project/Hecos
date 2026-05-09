@@ -15,13 +15,8 @@
   (function() {
     var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
     var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    var theme = 'cyberpunk';
-    if (autoTheme) {
-      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light';
-    } else {
-      theme = savedTheme;
-    }
-    if (theme !== 'default') {
+    var theme = autoTheme ? 'native' : savedTheme;
+    if (theme && theme !== 'default') {
       document.body.classList.add('theme-' + theme);
     }
   })();

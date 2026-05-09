@@ -56,7 +56,7 @@
 <script>
   (function() {
     window.setTheme = function(theme, manual) {
-      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate');
+      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
       if (theme && theme !== 'default') {
         document.body.classList.add('theme-' + theme);
       }
@@ -65,9 +65,25 @@
 
     var autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
     var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
-    var theme = autoTheme ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cyberpunk' : 'light') : savedTheme;
     
-    window.setTheme(theme);
+    function applyAutoTheme() {
+      window.setTheme('native', false);
+    }
+
+    if (autoTheme) {
+      applyAutoTheme();
+    } else {
+      window.setTheme(savedTheme, false);
+    }
+
+    // Explicit listener in case we want to support non-CSS themes for Auto in the future,
+    // though currently 'native' handles transitions purely in CSS.
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+      if (localStorage.getItem('hecos-ui-auto-theme') === 'true') {
+        applyAutoTheme();
+      }
+    });
+
   })();
 </script>
 
