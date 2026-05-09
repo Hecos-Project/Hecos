@@ -1,11 +1,14 @@
-<div class="sidebar-card" id="reminder-widget">
-    <div class="sidebar-card-title" style="cursor:pointer; display:flex; gap:6px; margin-bottom: 6px; padding:0;" onclick="reminderWidget.toggleBody()">
+<div class="sidebar-card" id="reminder-widget" style="padding:10px 12px;">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="reminderWidget.toggleBody()">
         <span class="ql-icon">⏰</span>
         <span class="ql-title">{{ t('ext_reminder_title') }}</span>
+        <span onclick="event.stopPropagation(); window.hecosOpenConfig('#reminder')" 
+              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+              title="Configure Reminder">⚙️</span>
         <span class="ql-chevron" id="reminder-widget-toggle">▾</span>
     </div>
     
-    <div id="reminder-widget-body" class="ql-body">
+    <div id="reminder-widget-body" class="ql-body" style="margin-top:10px;">
         {# ── Upcoming list ── #}
         <div id="reminder-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">
           <span style="color:var(--muted);font-size:0.8em;padding-left:12px;">{{ t('webui_chat_loading') }}</span>
@@ -44,8 +47,8 @@
 
         <style>
         .rem-chip {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: var(--glass);
+            border: 1px solid var(--border);
             color: var(--muted);
             font-size: 10px;
             padding: 3px 8px;
@@ -60,14 +63,20 @@
 
 <script>
 window.reminderWidget = (function() {
-  let _collapsed = false;
+  const COLLAPSED_KEY = 'hecos-rem-collapsed';
+  let _collapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+
+  function _applyCollapsed(yes) {
+    const body = document.getElementById('reminder-widget-body');
+    const tog  = document.getElementById('reminder-widget-toggle');
+    if (body) body.style.display = yes ? 'none' : '';
+    if (tog)  tog.classList.toggle('collapsed', yes);
+  }
 
   function toggleBody() {
     _collapsed = !_collapsed;
-    const body = document.getElementById('reminder-widget-body');
-    const tog  = document.getElementById('reminder-widget-toggle');
-    if (body) body.style.display = _collapsed ? 'none' : '';
-    if (tog)  tog.classList.toggle('collapsed', _collapsed);
+    localStorage.setItem(COLLAPSED_KEY, _collapsed ? '1' : '0');
+    _applyCollapsed(_collapsed);
   }
 
   function _fmt(r) {
@@ -103,8 +112,8 @@ window.reminderWidget = (function() {
              isInt = !!(window.cfg && window.cfg.plugins && window.cfg.plugins.REMINDER && window.cfg.plugins.REMINDER.reminder_snooze_ui);
           }
           const modePillStyle = isInt 
-            ? 'background:rgba(255,200,60,0.15);border:1px solid rgba(255,200,60,0.3);color:#ffc83c;padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;'
-            : 'background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;';
+            ? 'background:rgba(var(--yellow-rgb),0.1);border:1px solid rgba(var(--yellow-rgb),0.2);color:var(--yellow);padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;'
+            : 'background:var(--glass);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:12px;font-size:9px;font-weight:bold;';
           const modeLabel = isInt ? 'INTERACTIVE' : 'SIMPLE';
           const nextMode = isInt ? false : true;
 
@@ -119,7 +128,7 @@ window.reminderWidget = (function() {
           }
 
           return `
-          <div class="ql-item" style="background:rgba(255,200,60,0.05); border:1px solid rgba(255,200,60,0.15); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
+          <div class="ql-item" style="background:var(--glass); border:1px solid rgba(255,200,60,0.15); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
             
             <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
                 <span style="flex:1; font-size:13px; color:var(--text); line-height:1.4; word-break:break-word;">
@@ -236,8 +245,9 @@ window.reminderWidget = (function() {
   
   // Initial load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', refresh);
+    document.addEventListener('DOMContentLoaded', () => { _applyCollapsed(_collapsed); refresh(); });
   } else {
+    _applyCollapsed(_collapsed);
     refresh();
   }
 

@@ -40,7 +40,7 @@
 }
 /* Premium Event Card */
 .cal-sidebar-card {
-    background: rgba(0,0,0,0.15);
+    background: var(--glass);
     padding: 6px 8px;
     border-radius: 6px;
     border-left: 3px solid #3498db;
@@ -68,36 +68,39 @@
 }
 </style>
 
-<div class="sidebar-card" id="calendar-widget">
-    <div class="sidebar-card-title" style="cursor:pointer; display:flex; gap:6px; margin-bottom:10px; padding:0;" onclick="calendarWidget.toggleBody()">
+<div class="sidebar-card" id="calendar-widget" style="padding:10px 12px;">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="calendarWidget.toggleBody()">
         <span class="ql-icon">📅</span>
         <span class="ql-title">CALENDAR</span>
+        <span onclick="event.stopPropagation(); window.hecosOpenConfig('#calendar')" 
+              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+              title="Configure Calendar">⚙️</span>
         <span class="ql-chevron" id="calendar-widget-toggle">▾</span>
     </div>
 
-    <div id="calendar-widget-body" class="ql-body">
-        <div id="calendar-upcoming-list" style="display:flex;flex-direction:column;gap:2px;margin-bottom:10px;">
+    <div id="calendar-widget-body" class="ql-body" style="margin-top:10px;">
+        <div id="calendar-upcoming-list" style="display:flex;flex-direction:column;gap:2px;">
             <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Synchronizing...</span>
         </div>
-        <button onclick="calendarWidget.openFull()"
-                style="width:100%;background:rgba(52,152,219,0.1);border:1px solid rgba(52,152,219,0.2);color:#3498db;border-radius:6px;padding:8px;cursor:pointer;font-size:11px;font-weight:600;transition: background 0.2s;"
-                onmouseover="this.style.background='rgba(52,152,219,0.2)'"
-                onmouseout="this.style.background='rgba(52,152,219,0.1)'">
-            ⚙️ OPEN FULL CALENDAR
-        </button>
     </div>
 </div>
 
 <script>
 window.calendarWidget = (function() {
-    let _collapsed = false;
+    const COLLAPSED_KEY = 'hecos-cal-collapsed';
+    let _collapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+
+    function _applyCollapsed(yes) {
+        const body = document.getElementById('calendar-widget-body');
+        const tog  = document.getElementById('calendar-widget-toggle');
+        if (body) body.style.display = yes ? 'none' : '';
+        if (tog) tog.classList.toggle('collapsed', yes);
+    }
 
     function toggleBody() {
         _collapsed = !_collapsed;
-        const body = document.getElementById('calendar-widget-body');
-        const tog  = document.getElementById('calendar-widget-toggle');
-        if (body) body.style.display = _collapsed ? 'none' : '';
-        if (tog) tog.classList.toggle('collapsed', _collapsed);
+        localStorage.setItem(COLLAPSED_KEY, _collapsed ? '1' : '0');
+        _applyCollapsed(_collapsed);
     }
 
     function _getDayLabel(iso) {
@@ -192,8 +195,9 @@ window.calendarWidget = (function() {
     setInterval(refresh, 300000);
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', refresh);
+        document.addEventListener('DOMContentLoaded', () => { _applyCollapsed(_collapsed); refresh(); });
     } else {
+        _applyCollapsed(_collapsed);
         setTimeout(refresh, 400);
     }
 

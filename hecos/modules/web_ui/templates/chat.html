@@ -100,6 +100,19 @@
     }
     return text;
   };
+
+  /**
+   * Global helper for opening the configuration panel from widgets.
+   * Handles responsive behavior: new tab on PC (>768px), same tab on mobile.
+   */
+  window.hecosOpenConfig = function(hash) {
+    const url = '/hecos/config/ui' + (hash || '');
+    if (window.innerWidth > 768) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = url;
+    }
+  };
 </script>
 <script src="/static/js/config_manifest.js?v={{ version }}"></script>
 <script>

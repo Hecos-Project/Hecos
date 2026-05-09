@@ -1,6 +1,31 @@
 <!-- Media Player — Sidebar Widget -->
 <!-- Injected by chat_sidebar.html via sidebar_widgets context -->
 <div class="sidebar-card" id="mp-widget-card" style="user-select:none; padding:10px 12px;">
+  <style>
+    .mp-icon-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .mp-icon-btn:hover {
+      background: var(--glass-b);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .mp-icon-btn.active {
+      color: var(--accent);
+      background: rgba(var(--accent-rgb), 0.1);
+      border-color: rgba(var(--accent-rgb), 0.3);
+    }
+  </style>
 
   <!-- ── Header (collapsible) ─────────────────────────────────── -->
   <div class="sidebar-card-title"
@@ -8,7 +33,7 @@
        onclick="mpWidgetToggle()" title="Click to collapse/expand">
     <span id="mp-widget-led" style="font-size:10px; color:var(--muted);">🎵</span>
     <span>MEDIA PLAYER</span>
-    <span onclick="event.stopPropagation(); window.open('/hecos/config/ui#media', '_blank')" 
+    <span onclick="event.stopPropagation(); window.hecosOpenConfig('#media')" 
           style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
           title="Configure Media Player">⚙️</span>
     <span id="mp-widget-chevron" style="font-size:10px; color:var(--muted);">▾</span>
@@ -60,9 +85,9 @@
               onclick="mpWCtrl('stop')" title="Stop">⏹</button>
       <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
               onclick="mpWCtrl('next')" title="Next">⏭</button>
-      <button class="audio-toggle-btn" id="mp-w-shuffle" style="flex:0; padding:2px 6px;"
+      <button class="mp-icon-btn" id="mp-w-shuffle"
               onclick="mpWToggle('shuffle')" title="Shuffle">🔀</button>
-      <button class="audio-toggle-btn" id="mp-w-repeat" style="flex:0; padding:2px 6px;"
+      <button class="mp-icon-btn" id="mp-w-repeat"
               onclick="mpWToggle('repeat')" title="Repeat">🔁</button>
     </div>
 
@@ -103,12 +128,14 @@
   'use strict';
 
   /* ── State ─────────────────────────────────────────────────────────────────── */
+  const COLLAPSED_KEY = 'hecos-mp-collapsed';
   let _playing    = false;
   let _shuffle    = false;
   let _repeat     = false;
   let _queueOpen  = true;
   let _pollTick   = 0;           // counts 5s ticks; refresh queue every 4 ticks = 20s
   let _pollTimer  = null;
+  let _collapsed  = localStorage.getItem(COLLAPSED_KEY) === '1';
 
   /* ── Helpers ───────────────────────────────────────────────────────────────── */
   function _fmt(sec) {
@@ -121,14 +148,19 @@
   function _el(id) { return document.getElementById(id); }
 
   /* ── Toggle widget body ────────────────────────────────────────────────────── */
-  window.mpWidgetToggle = function() {
+  function _applyCollapsed(yes) {
     const body = _el('mp-widget-body');
     const ch   = _el('mp-widget-chevron');
     if (!body) return;
-    const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? '' : 'none';
-    if (ch) ch.textContent = isHidden ? '▾' : '▸';
-    if (isHidden) { _refreshStatus(); _refreshQueue(); _refreshPlaylists(); }
+    body.style.display = yes ? 'none' : '';
+    if (ch) ch.textContent = yes ? '▸' : '▾';
+  }
+
+  window.mpWidgetToggle = function() {
+    _collapsed = !_collapsed;
+    localStorage.setItem(COLLAPSED_KEY, _collapsed ? '1' : '0');
+    _applyCollapsed(_collapsed);
+    if (!_collapsed) { _refreshStatus(); _refreshQueue(); _refreshPlaylists(); }
   };
 
   window.mpWToggleQueue = function() {
@@ -233,8 +265,8 @@
       /* Shuffle / repeat buttons */
       const sb = _el('mp-w-shuffle');
       const rb = _el('mp-w-repeat');
-      if (sb) sb.style.color = _shuffle ? 'var(--accent)' : '';
-      if (rb) rb.style.color = _repeat  ? 'var(--accent)' : '';
+      if (sb) sb.classList.toggle('active', _shuffle);
+      if (rb) rb.classList.toggle('active', _repeat);
 
       /* Highlight current queue item */
       _highlightItem(d.queue_idx);
@@ -305,6 +337,7 @@
   /* ── Polling loop ──────────────────────────────────────────────────────────── */
   function _startPolling() {
     if (_pollTimer) return;
+    _applyCollapsed(_collapsed);
     _refreshStatus();
     _refreshQueue();
     _refreshPlaylists();
