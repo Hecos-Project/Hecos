@@ -40,10 +40,15 @@
 }
 /* Premium Event Card */
 .cal-sidebar-card {
-    background: var(--glass);
+    background: var(--bg3);
     padding: 6px 8px;
     border-radius: 6px;
     border-left: 3px solid #3498db;
+    border-right: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+    font-size: 11px;
     transition: transform 0.15s, background 0.15s;
 }
 .cal-sidebar-card:hover {
@@ -79,7 +84,7 @@
     </div>
 
     <div id="calendar-widget-body" class="ql-body" style="margin-top:10px;">
-        <div id="calendar-upcoming-list" style="display:flex;flex-direction:column;gap:2px;">
+        <div id="calendar-upcoming-list" class="ql-item" style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
             <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Synchronizing...</span>
         </div>
     </div>

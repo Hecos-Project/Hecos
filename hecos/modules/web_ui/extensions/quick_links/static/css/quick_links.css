@@ -4,9 +4,8 @@
   margin: 0 0 4px 0;
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(var(--bg2-rgb, 15,15,24), 0.6);
-  border: 1px solid rgba(var(--accent-rgb, 99,102,241), 0.15);
-  backdrop-filter: blur(6px);
+  background: var(--bg2);
+  border: 1px solid var(--border);
   transition: border-color 0.2s;
 }
 
@@ -24,7 +23,7 @@
   user-select: none;
   transition: background 0.15s;
 }
-.ql-header:hover { background: rgba(var(--accent-rgb, 99,102,241), 0.07); }
+.ql-header:hover { background: var(--glass-b); }
 
 .ql-icon  { font-size: 13px; flex-shrink: 0; }
 .ql-title {
@@ -60,10 +59,13 @@
   align-items: center;
   gap: 6px;
   border-radius: 7px;
-  padding: 0 4px 0 0;
-  transition: background 0.15s;
+  padding: 2px 4px;
+  background: var(--bg3);
+  margin-bottom: 2px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
 }
-.ql-item:hover { background: rgba(var(--accent-rgb, 99,102,241), 0.08); }
+.ql-item:hover { background: var(--glass-b); }
 
 .ql-link {
   flex: 1;
@@ -134,9 +136,9 @@
   letter-spacing: 0.03em;
 }
 .ql-add-btn:hover {
-  border-color: var(--accent, #818cf8);
-  color: var(--accent, #818cf8);
-  background: rgba(var(--accent-rgb, 99,102,241), 0.06);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--glass-b);
 }
 
 /* ── Inline Form ── */
@@ -160,17 +162,17 @@
 }
 
 .ql-input {
-  background: rgba(var(--bg-rgb, 10,10,18), 0.7);
-  border: 1px solid rgba(var(--accent-rgb, 99,102,241), 0.2);
+  background: var(--bg3);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 5px 8px;
-  color: var(--text, #ddd);
+  color: var(--text);
   font-size: 12px;
   outline: none;
   width: 100%;
   transition: border-color 0.15s;
 }
-.ql-input:focus  { border-color: var(--accent, #818cf8); }
+.ql-input:focus  { border-color: var(--accent); }
 #ql-input-icon   { width: 44px; flex-shrink: 0; text-align: center; }
 .ql-input-label  { flex: 1; }
 
