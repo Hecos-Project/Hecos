@@ -8,3 +8,9 @@ Hecos is built on a **Plugin-Native** architecture. Every capability (file manag
 
 ### WebUI Management
 In the WebUI sidebar, you can see the list of active plugins with their respective macro buttons to send quick commands to the AI.
+
+### Core Plugins & Capabilities
+Hecos includes several powerful plugins natively:
+- **Integrated Calendar**: A full calendar module with holiday tracking and event visualization right in the WebUI.
+- **Reminder & Scheduler**: An advanced task scheduler with NLP interpretation ("remind me in 10 minutes") and active OS notifications.
+- **Media Player Engine**: A robust multimedia system (VLC 64-bit + FFplay fallback) supporting resilient state management, pause/resume, and volume control.
