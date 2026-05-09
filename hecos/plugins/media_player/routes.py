@@ -87,7 +87,7 @@ def _get_drive_root() -> str:
 def _get_tools():
     """Returns the media player tools singleton."""
     try:
-        from hecos.plugins.media_player.main import tools
+        from .main import tools
         return tools
     except Exception:
         return None
@@ -201,6 +201,14 @@ def playlist_delete(name: str):
     return jsonify({"ok": ok, "error": "" if ok else f"Playlist '{name}' not found."})
 
 
+@media_player_bp.route("/api/media_player/playlists/<name>/items/<int:index>", methods=["DELETE"])
+@login_required
+def playlist_remove_item(name: str, index: int):
+    from hecos.plugins.media_player import playlist_store
+    ok = playlist_store.remove_from_playlist(name, index)
+    return jsonify({"ok": ok})
+
+
 # ─── Playback control ──────────────────────────────────────────────────────────
 
 @media_player_bp.route("/api/media_player/control", methods=["POST"])
@@ -234,13 +242,31 @@ def player_control():
         elif action == "volume":
             result = t.set_volume(int(data.get("volume", 80)))
         elif action == "play_playlist":
-            result = t.play_playlist(data.get("name", ""), data.get("shuffle", False))
+            result = t.play_playlist(data.get("name", ""), data.get("shuffle", False), int(data.get("index", 0)))
         elif action == "scan_folder":
             result = t.scan_folder(
                 data.get("path", ""),
                 save_as=data.get("save_as", ""),
-                recursive=bool(data.get("recursive", False))
+                recursive=bool(data.get("recursive", True))
             )
+        elif action == "play_at":
+            idx = int(data.get("index", 0))
+            result = t.play_by_index(idx)
+        elif action == "shuffle":
+            with t._lock:
+                t._shuffle = bool(data.get("shuffle", not t._shuffle))
+            result = f"🔀 Shuffle {'on' if t._shuffle else 'off'}"
+        elif action == "repeat":
+            with t._lock:
+                t._repeat = bool(data.get("repeat", not t._repeat))
+            result = f"🔁 Repeat {'on' if t._repeat else 'off'}"
+        elif action == "seek":
+            # Only supported on VLC backend
+            try:
+                t._get_engine().seek(float(data.get("seconds", 0)))
+                result = "Seeked"
+            except Exception:
+                result = "Seek not supported on this backend."
         else:
             return jsonify({"ok": False, "error": f"Unknown action: {action}"}), 400
     except Exception as e:
@@ -266,7 +292,7 @@ def player_status():
         return jsonify({
             "ok":        True,
             "playing":   engine.is_playing(),
-            "track":     track,
+            "track":     track["path"] if track else None,
             "position":  engine.get_position(),
             "length":    engine.get_length(),
             "volume":    engine.get_volume(),
@@ -277,6 +303,25 @@ def player_status():
         })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@media_player_bp.route("/api/media_player/queue", methods=["GET"])
+@login_required
+def player_queue():
+    """GET /api/media_player/queue — Return the full current play queue."""
+    t = _get_tools()
+    if not t:
+        return jsonify({"ok": False, "queue": [], "current": -1, "playlist": ""})
+    with t._lock:
+        queue         = list(t._queue)
+        queue_idx     = t._queue_index
+        playlist_name = getattr(t, "_playlist_name", "")
+    return jsonify({
+        "ok":      True,
+        "queue":   queue,
+        "current": queue_idx,
+        "playlist": playlist_name,
+    })
 
 
 # ─── Media Vault ───────────────────────────────────────────────────────────────

@@ -310,7 +310,7 @@ function renderPlugins(plugins) {
 
   let htmlCore = `<details open style="margin-bottom:10px;">
     <summary style="cursor:pointer; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none; display:flex; align-items:center; gap:10px;">
-      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Core Modules (Level 1)</strong>
+      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">Hecos Module Manager (Level 1)</strong>
       <span class="p-tag core">CORE</span>
       <span style="margin-left:auto; font-size:10px; color:var(--muted); font-weight:800; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px;">${coreCount}</span>
     </summary>`;

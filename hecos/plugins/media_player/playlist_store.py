@@ -156,7 +156,7 @@ def delete_playlist(name: str) -> bool:
     return True
 
 
-def build_playlist_from_folder(folder: str, recursive: bool = False) -> list[str]:
+def build_playlist_from_folder(folder: str, recursive: bool = True) -> list[str]:
     """
     Scans a folder and returns sorted list of playable file paths.
     Useful for LLM tool: 'play everything in Music/Jazz'.

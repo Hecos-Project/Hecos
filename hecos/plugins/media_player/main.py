@@ -22,6 +22,7 @@ LLM Tools:
 """
 
 import os
+import sys
 import random
 import threading
 from typing import Optional
@@ -44,15 +45,31 @@ TAG = "MEDIA_PLAYER"
 
 
 class MediaPlayerTools:
-    """Hecos Media Player — exposes all LLM tools and manages playback state."""
+    tag      = TAG
+    desc     = "Media player: play audio/video, manage playlists via AI or dashboard."
+    icon     = "🎵"
+    category = "MULTIMEDIA"
+
+    def __new__(cls, *args, **kwargs):
+        # Truly global singleton across different import paths (hecos.plugins vs plugins)
+        if not hasattr(sys, "_hecos_mp_tools"):
+            instance = super(MediaPlayerTools, cls).__new__(cls)
+            instance._is_initialized = False
+            setattr(sys, "_hecos_mp_tools", instance)
+        return getattr(sys, "_hecos_mp_tools")
 
     def __init__(self, config=None):
-        self.tag  = TAG
-        self.desc = "Media player: play audio/video, manage playlists via AI or dashboard."
+        if getattr(self, "_is_initialized", False):
+            # Only update config if provided
+            if config:
+                self._cfg.update(config)
+            return
+        self._is_initialized = True
         self._cfg = config or {}
         self._engine = None   # lazy-init on first play
         self._queue: list[dict] = []   # current play queue
         self._queue_index: int = 0
+        self._playlist_name: str = ""  # name of the currently loaded playlist
         self._shuffle: bool = False
         self._repeat: bool = False
         self._lock = threading.Lock()
@@ -290,12 +307,13 @@ class MediaPlayerTools:
             lines.append(f"  {i}. `{item['name']}` [{item['type']}]")
         return "\n".join(lines)
 
-    def play_playlist(self, name: str, shuffle: bool = False) -> str:
+    def play_playlist(self, name: str, shuffle: bool = False, index: int = 0) -> str:
         """
         Load and play a saved playlist.
 
         :param name: Playlist name.
         :param shuffle: If True, play tracks in random order.
+        :param index: 0-based index to start playback from.
         """
         pl = playlist_store.get_playlist(name)
         if not pl or not pl.get("items"):
@@ -303,24 +321,47 @@ class MediaPlayerTools:
 
         with self._lock:
             self._queue = list(pl["items"])
+            self._playlist_name = name
             self._shuffle = shuffle
             if shuffle:
                 random.shuffle(self._queue)
-            self._queue_index = 0
-            item = self._queue[0]
+                # If shuffle is on, index might not correspond to the same track anymore,
+                # but usually clicking a specific track in a UI list implies we want THAT track.
+                # For now, we'll just respect the index in the (now shuffled) queue.
+            
+            self._queue_index = max(0, min(index, len(self._queue) - 1))
+            item = self._queue[self._queue_index]
             self._get_engine().play(item["path"])
             self._start_watchdog()
 
         suffix = " 🔀 (shuffled)" if shuffle else ""
         return f"▶️ Playing playlist **{name}**{suffix} — {len(self._queue)} tracks."
 
-    def scan_folder(self, folder: str, save_as: str = "", recursive: bool = False) -> str:
+    def play_by_index(self, index: int) -> str:
+        """
+        Jump directly to a track by position in the current queue (0-based).
+        Used by the UI when the user clicks a specific track.
+        """
+        with self._lock:
+            if not self._queue:
+                return "⚠️ No active queue."
+            if index < 0 or index >= len(self._queue):
+                return f"❌ Index {index} out of range (queue has {len(self._queue)} tracks)."
+            self._queue_index = index
+            item = self._queue[index]
+            self._get_engine().play(item["path"])
+            self._start_watchdog()
+        return f"▶️ Now playing: **{item['name']}**"
+
+    def scan_folder(self, folder: str, save_as: str = "", recursive: bool = True, auto_play: bool = True) -> str:
         """
         Scan a folder for audio/video files and optionally save as a playlist.
+        Automatically plays the found tracks unless auto_play=False.
 
         :param folder: Absolute path to the folder to scan.
         :param save_as: If provided, save the result as a named playlist.
-        :param recursive: If True, scan subfolders too.
+        :param recursive: If True, scan subfolders too (default: True).
+        :param auto_play: If True, start playback immediately after scan (default: True).
         """
         folder = os.path.abspath(folder)
         if not os.path.isdir(folder):
@@ -330,17 +371,36 @@ class MediaPlayerTools:
         if not paths:
             return f"📂 No playable media found in: {folder}"
 
+        playlist_name = save_as or os.path.basename(folder)
+
         if save_as:
             pl = playlist_store.create_playlist(save_as, paths)
-            return f"📁 Found {len(paths)} files. Saved as playlist **{save_as}**."
+            saved_msg = f"📁 Found {len(paths)} files. Saved as playlist **{save_as}**."
+        else:
+            saved_msg = f"📁 Found {len(paths)} files in `{folder}`."
 
-        lines = [f"📁 Found {len(paths)} files in `{folder}`:"]
+        if auto_play:
+            # Load into queue and play immediately
+            items = playlist_store.get_playlist(playlist_name)["items"] if save_as else [
+                {"path": p, "name": os.path.basename(p),
+                 "type": playlist_store._media_type(p)} for p in paths
+            ]
+            with self._lock:
+                self._queue = items
+                self._playlist_name = playlist_name
+                self._queue_index = 0
+                item = self._queue[0]
+                self._get_engine().play(item["path"])
+            self._start_watchdog()
+            return saved_msg + f"\n▶️ Now playing: **{item['name']}** ({len(paths)} tracks)"
+
+        lines = [saved_msg]
         for p in paths[:20]:
             lines.append(f"  • `{os.path.basename(p)}`")
         if len(paths) > 20:
             lines.append(f"  ... and {len(paths) - 20} more.")
-        lines.append("\n_Use `save_as` parameter to save as a playlist._")
         return "\n".join(lines)
+
 
 
 # ─── Plugin singleton ──────────────────────────────────────────────────────────

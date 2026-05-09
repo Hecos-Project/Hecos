@@ -20,7 +20,7 @@ let uiState = {
 let viewMode = localStorage.getItem('hecos-config-view') || 'tabs';
 const navType = window.performance?.getEntriesByType("navigation")[0]?.type;
 const isRefresh = navType === 'reload';
-let activeTab = sessionStorage.getItem('hecos-config-tab') || (isRefresh ? 'backend' : 'welcome');
+let activeTab = window.location.hash.substring(1) || sessionStorage.getItem('hecos-config-tab') || (isRefresh ? 'backend' : 'welcome');
 window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
 
 
@@ -881,4 +881,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Hecos File Picker integration is now handled by hecos_file_picker.js
+// Handle dynamic deep-linking via hash changes (e.g. from widgets while window is open)
+window.addEventListener('hashchange', () => {
+    const tab = window.location.hash.substring(1);
+    if (tab && typeof showTab === 'function') {
+        showTab(tab);
+    }
+});

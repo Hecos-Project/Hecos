@@ -1,0 +1,6 @@
+[97m2026-05-08 10:23:27,919 [INFO] [MediaEngine] VLC DLL path set: C:\Program Files (x86)\VideoLAN\VLC[0m
+[97m2026-05-08 10:23:28,029 [INFO] [MediaEngine] Detected playback backend: system[0m
+Checking imports...
+t1 (hecos.plugins.media_player.main) ID: 2174304845936
+t2 (plugins.media_player.main) ID: 2174304845936
+SUCCESS: Singleton works across different import paths!

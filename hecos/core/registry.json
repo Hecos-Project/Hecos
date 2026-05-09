@@ -161,19 +161,6 @@
         "icon": "",
         "category": "PLUGINS"
     },
-    "MEDIA": {
-        "description": "Hardware volume and mute control.",
-        "commands": {
-            "set_mute": "Toggles system mute mode on or off.",
-            "set_volume": "Sets the system volume to a specific level."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
-    },
     "MEDIA_PLAYER": {
         "description": "Media player: play audio/video, manage playlists via AI or dashboard.",
         "commands": {
@@ -186,6 +173,7 @@
             "next_track": "Skip to the next track in the current queue.",
             "pause": "Pause or resume the current track.",
             "play": "Play a media file or URL.",
+            "play_by_index": "Jump directly to a track by position in the current queue (0-based).",
             "play_playlist": "Load and play a saved playlist.",
             "prev_track": "Go back to the previous track in the current queue.",
             "remove_from_playlist": "Remove a track from a playlist by its position (1-based).",
@@ -197,8 +185,8 @@
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "icon": "🎵",
+        "category": "MULTIMEDIA"
     },
     "REMINDER": {
         "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",

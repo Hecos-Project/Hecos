@@ -514,7 +514,7 @@
         "hub_mod_system": "System & Logs",
         "hub_mod_users": "Users",
         "hub_mod_security": "Security (CA)",
-        "hub_mod_plugins": "Core Modules",
+        "hub_mod_plugins": "Hecos Module Manager",
         "hub_mod_logs": "Live Logs",
         "hub_mod_privacy": "Privacy & Data",
         "hub_mod_aesthetics": "Aesthetics & Themes",
@@ -820,9 +820,28 @@
         "webui_mp_autoplay_video": "Autoplay video in browser gallery",
         "webui_mp_autoplay_audio": "Autoplay audio in browser gallery",
         "webui_mp_filmstrip": "Show filmstrip in gallery",
+        "webui_mp_tracks": "tracks",
+        "webui_mp_no_tracks_in_queue": "No tracks in queue",
+        "webui_mp_show_queue": "Show Queue",
+        "webui_mp_hide_queue": "Hide Queue",
+        "webui_mp_no_playlist": "No Playlist",
+        "webui_mp_idle": "IDLE",
+        "webui_mp_playing": "PLAYING",
+        "webui_mp_paused": "PAUSED",
+        "webui_mp_scan_done": "Done",
+        "webui_mp_scan_error": "Scan error",
+        "webui_mp_picker_media_root": "Select main media folder",
+        "webui_mp_picker_scan": "Select folder to scan",
+        "webui_mp_file_picker_missing": "File picker not available. Enter path manually.",
+        "webui_mp_clear_media_vault": "Clear Media Vault",
+        "webui_mp_clear_confirm": "Are you sure you want to clear the Media Vault?",
+        "webui_mp_delete_confirm": "Delete playlist '{name}'?",
+        "webui_mp_delete_track_confirm": "Remove this track from the playlist?",
+        "webui_mp_delete_all": "Clear ALL",
 
         "webui_media_vault_title": "Media Vault & Privacy",
         "webui_media_vault_desc": "Manage images, audio and video generated and saved by Hecos on your local disk.",
-        "webui_media_open_folder": "Open Storage Folder"
+        "webui_media_open_folder": "Open Storage Folder",
+        "webui_mp_select_playlist": "Select Playlist..."
     }
 }
