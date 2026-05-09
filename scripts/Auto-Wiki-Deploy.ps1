@@ -12,6 +12,9 @@ $ErrorActionPreference = "Stop"
 Write-Host "`n[1/2] Synchronizing local files..." -ForegroundColor Cyan
 & "$PSScriptRoot\Sync-Wiki.ps1" -WikiPath $WikiPath
 
+Write-Host "`n[1.5/2] Formatting Wiki pages (Adding languages switchers)..." -ForegroundColor Cyan
+python "$PSScriptRoot\format_wiki.py"
+
 # 2. Execute Git Deployment
 Write-Host "`n[2/2] Deploying to GitHub Wiki..." -ForegroundColor Cyan
 if (-not (Test-Path (Join-Path $WikiPath ".git"))) {
