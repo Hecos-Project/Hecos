@@ -212,6 +212,7 @@ function populateUI() {
 
     renderPlugins(c.plugins || {});
     if (window.populateExecutorUI) window.populateExecutorUI();
+    if (window.populateAutomationUI) window.populateAutomationUI();
     initRestartIndicators();
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -909,6 +910,20 @@ window.populateExecutorUI = function() {
     set('executor-shell-timeout',  p.shell_timeout ?? 15);
     set('executor-max-read-lines', p.max_read_lines ?? 200);
     set('executor-workspace-dir',  p.workspace_dir ?? 'workspace/sandbox');
+};
+
+/**
+ * Populates PC Automation configuration UI from window.cfg
+ */
+window.populateAutomationUI = function() {
+    const p = (window.cfg.plugins || {}).AUTOMATION || {};
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+    chk('automation-enabled',       p.enabled ?? true);
+    set('automation-move-duration', p.move_duration ?? 0.15);
+    set('automation-type-interval', p.type_interval ?? 0.02);
+    chk('automation-window-control',p.allow_window_control ?? true);
 };
 
 

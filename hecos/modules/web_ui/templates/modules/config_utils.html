@@ -82,6 +82,60 @@
 
 </div>
 
+<!-- PC AUTOMATION PANEL -->
+<div id="tab-automation" class="panel">
+
+  <!-- GENERAL -->
+  <div class="card">
+    <div class="card-title">🖱️ PC Automation</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable PC Automation (Mouse, Keyboard, Windows)</div>
+      <label class="switch"><input type="checkbox" id="automation-enabled" data-plugin="AUTOMATION"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:8px;">
+      Allows Hecos to control your mouse, keyboard, and application windows programmatically.
+      Combine with <strong>WEBCAM → Desktop Screenshot</strong> for a full see-and-act loop.
+    </p>
+    <p style="color:var(--yellow); font-size:11px; margin-top:6px; display:flex; align-items:center; gap:6px;">
+      <span>⚠️</span> <strong>FailSafe:</strong> Move your mouse to the top-left corner of the screen to instantly abort any automation action.
+    </p>
+  </div>
+
+  <!-- MOUSE SETTINGS -->
+  <div class="card">
+    <div class="card-title">🖱️ Mouse Settings</div>
+    <div class="field">
+      <label>Move Duration (seconds)</label>
+      <input type="number" id="automation-move-duration" min="0" max="2" step="0.05" placeholder="0.15"
+             onchange="savePluginKey('AUTOMATION','move_duration',parseFloat(this.value))">
+      <small style="color:var(--muted); font-size:11px;">Smoothing duration for mouse movement (0 = instant). Default: 0.15s.</small>
+    </div>
+  </div>
+
+  <!-- KEYBOARD SETTINGS -->
+  <div class="card">
+    <div class="card-title">⌨️ Keyboard Settings</div>
+    <div class="field">
+      <label>Keystroke Interval (seconds)</label>
+      <input type="number" id="automation-type-interval" min="0" max="0.5" step="0.005" placeholder="0.02"
+             onchange="savePluginKey('AUTOMATION','type_interval',parseFloat(this.value))">
+      <small style="color:var(--muted); font-size:11px;">Pause between each keystroke when typing text. Default: 0.02s.</small>
+    </div>
+  </div>
+
+  <!-- WINDOW CONTROL -->
+  <div class="card">
+    <div class="card-title">🪟 Window Management</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Window Control (list, focus, minimize, maximize)</div>
+      <label class="switch"><input type="checkbox" id="automation-window-control"
+        onchange="savePluginKey('AUTOMATION','allow_window_control',this.checked)"><span class="slider"></span></label>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:8px;">Requires <code>pygetwindow</code>. Allows the AI to identify and manage application windows by title.</p>
+  </div>
+
+</div>
+
 <!-- DASHBOARD PANEL -->
 <div id="tab-dashboard" class="panel">
   <div class="card">

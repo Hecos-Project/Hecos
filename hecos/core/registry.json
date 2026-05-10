@@ -1,4 +1,33 @@
 {
+    "AUTOMATION": {
+        "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
+        "commands": {
+            "click": "Clicks the mouse at the given screen coordinates.",
+            "click_text": "Locates text on the screen via OCR and clicks it.",
+            "drag": "Clicks and drags from one position to another (e.g. moving a file, selecting text).",
+            "focus_browser_tab": "Clicks on a browser tab whose title contains the given text fragment (case-insensitive).",
+            "focus_window": "Brings a window to the foreground by partial title match.",
+            "get_browser_tabs": "Returns the titles of all currently open tabs in Chrome, Edge, Opera, or Brave.",
+            "get_mouse_position": "Returns the current mouse cursor coordinates (x, y).",
+            "get_screen_size": "Returns the screen resolution (width x height in pixels).",
+            "hotkey": "Executes a keyboard shortcut by holding multiple keys simultaneously.",
+            "list_windows": "Returns a list of all currently visible window titles.",
+            "maximize_window": "Maximizes a window by partial title match.",
+            "minimize_window": "Minimizes a window by partial title match.",
+            "move_to": "Moves the mouse cursor to the specified screen coordinates.",
+            "press_key": "Presses and releases a single key.",
+            "read_window_controls": "Reads the UI control tree (buttons, inputs, links) of an application window.",
+            "scroll": "Scrolls the mouse wheel at the specified position.",
+            "type_and_enter": "Types the given text and immediately presses Enter.",
+            "type_text": "Types the given text as simulated keystrokes."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something or read the screen, FIRST call WEBCAM__desktop_screenshot. The system will return the image to your context. THEN analyze the image to find the exact (x, y) coordinates. FINALLY, call AUTOMATION__move_to or AUTOMATION__click with those coordinates.",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
+    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -216,7 +245,7 @@
         },
         "status": "ONLINE (Browsing & Search)",
         "example": "",
-        "routing_instructions": "",
+        "routing_instructions": "If the user asks you to interact with a website or application that is ALREADY OPEN on their screen (e.g., 'click the next video', 'change song', 'scroll down'), DO NOT use the WEB tools. Instead, use WEBCAM__desktop_screenshot and the AUTOMATION tools to physically interact with the existing window.",
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS"
@@ -229,7 +258,7 @@
         },
         "status": "ONLINE (Optical Vision)",
         "example": "",
-        "routing_instructions": "",
+        "routing_instructions": "MULTIMODAL CAPABILITY: You DO have 'eyes'! You are natively connected to a visual multimodal core. Whenever the user asks you to look at the screen, see what is there, or analyze GUI/windows, you MUST actually execute the `desktop_screenshot` tool. The system will take the picture and feed it directly into your visual core! NEVER say you cannot see the image. Just call the tool, and in the next thought loop you will see it perfectly.",
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS"

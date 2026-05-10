@@ -207,8 +207,8 @@ class AgentExecutor:
                             if f"[[IMG:{tag}]]" not in extracted_text:
                                 extracted_text += f"\n\n[[IMG:{tag}]]"
                                 
-                        # 2. Check for raw paths (e.g. from WEBCAM module which saves to /snapshots)
-                        potential_paths = re.findall(r'([\w\.\-\\/]+\.(?:jpg|jpeg|png))', out, re.IGNORECASE)
+                        # Check for raw paths (e.g. from WEBCAM module which saves to /snapshots)
+                        potential_paths = re.findall(r'((?:[A-Za-z]:[\\/])?[\w\.\-\\\/]+\.(?:jpg|jpeg|png))', out, re.IGNORECASE)
                         for path in potential_paths:
                             fname = os.path.basename(path)
                             if fname in img_tags:
@@ -306,7 +306,7 @@ class AgentExecutor:
                         import mimetypes
                         import base64
                         # Identify file paths ending with typical image extensions
-                        potential_paths = re.findall(r'([\w\.\-\\/]+\.(?:jpg|jpeg|png))', output_text, re.IGNORECASE)
+                        potential_paths = re.findall(r'((?:[A-Za-z]:[\\/])?[\w\.\-\\\/]+\.(?:jpg|jpeg|png))', output_text, re.IGNORECASE)
                         for path in potential_paths:
                             if os.path.exists(path):
                                 try:

@@ -1,0 +1,280 @@
+{
+    "tag": "AUTOMATION",
+    "name": "PC Automation",
+    "version": "1.0",
+    "description": "Full PC control: mouse, keyboard, and window management. Use with WEBCAM.desktop_screenshot for a see-and-act loop.",
+    "icon": "🖱️",
+    "lazy_load": true,
+    "is_class_based": true,
+    "status": "ONLINE",
+    "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. Only use AUTOMATION__click with coordinates for targets without text.",
+    "commands": {
+        "get_screen_size": "Returns the screen resolution (width x height).",
+        "get_mouse_position": "Returns current cursor coordinates.",
+        "click_text": "Find text on screen using OCR and click it.",
+        "move_to": "Move cursor to (x, y).",
+        "click": "Click at (x, y) — left/right/middle, single/double.",
+        "scroll": "Scroll wheel at (x, y) — positive=up, negative=down.",
+        "drag": "Click-and-drag from one position to another.",
+        "type_text": "Simulate keyboard typing of a text string.",
+        "press_key": "Press and release a single key (enter, esc, f5...).",
+        "hotkey": "Execute a keyboard shortcut (ctrl+c, ctrl+shift+esc...).",
+        "type_and_enter": "Type text and press Enter.",
+        "list_windows": "List all visible window titles.",
+        "focus_window": "Bring a window to foreground by title.",
+        "minimize_window": "Minimize a window by title.",
+        "maximize_window": "Maximize a window by title.",
+        "get_browser_tabs": "List all open browser tabs via Windows Accessibility API. Use before focus_browser_tab.",
+        "focus_browser_tab": "Click a browser tab by title fragment (no coordinates needed).",
+        "read_window_controls": "Read the UI control tree of any application window."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__get_screen_size",
+                "description": "Returns the current screen resolution in pixels (width x height). Use to determine valid coordinate boundaries before clicking.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__get_mouse_position",
+                "description": "Returns the current mouse cursor position as (x, y) pixel coordinates.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__move_to",
+                "description": "Smoothly moves the mouse cursor to the specified absolute screen coordinates.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "x": { "type": "integer", "description": "Horizontal pixel coordinate." },
+                        "y": { "type": "integer", "description": "Vertical pixel coordinate." },
+                        "duration": { "type": "number", "description": "Movement duration in seconds (0 = instant). Default: 0.15." }
+                    },
+                    "required": ["x", "y"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__click_text",
+                "description": "Scans the screen using local OCR to find a specific text string and clicks on its exact bounding box center. Prefer this over guessing x, y coordinates when trying to click labeled buttons, tabs, or menus.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": { "type": "string", "description": "The exact word or phrase to find on the screen, e.g. 'YouTube' or 'Send'." },
+                        "instance": { "type": "integer", "description": "If multiple matches exist, which one to click (0 = first match). Default: 0." },
+                        "button": { "type": "string", "enum": ["left", "right", "middle"], "description": "Which mouse button to click. Default: 'left'." },
+                        "clicks": { "type": "integer", "description": "Number of clicks (1 or 2). Default: 1." }
+                    },
+                    "required": ["text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__click",
+                "description": "Clicks the mouse at the specified screen coordinates. Use desktop_screenshot first to identify the target position.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "x": { "type": "integer", "description": "Horizontal pixel coordinate." },
+                        "y": { "type": "integer", "description": "Vertical pixel coordinate." },
+                        "button": { "type": "string", "enum": ["left", "right", "middle"], "description": "Which mouse button to click. Default: 'left'." },
+                        "clicks": { "type": "integer", "description": "1 = single click, 2 = double click. Default: 1." }
+                    },
+                    "required": ["x", "y"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__scroll",
+                "description": "Scrolls the mouse wheel at the specified position. Positive clicks scroll up, negative scroll down.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "x": { "type": "integer", "description": "Horizontal pixel coordinate of scroll position." },
+                        "y": { "type": "integer", "description": "Vertical pixel coordinate of scroll position." },
+                        "clicks": { "type": "integer", "description": "Number of scroll steps. Positive = up, negative = down." }
+                    },
+                    "required": ["x", "y", "clicks"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__drag",
+                "description": "Performs a click-and-drag from one screen position to another. Useful for moving files, selecting text, or adjusting sliders.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "from_x": { "type": "integer", "description": "Start X coordinate." },
+                        "from_y": { "type": "integer", "description": "Start Y coordinate." },
+                        "to_x": { "type": "integer", "description": "End X coordinate." },
+                        "to_y": { "type": "integer", "description": "End Y coordinate." },
+                        "duration": { "type": "number", "description": "Drag duration in seconds. Default: 0.4." }
+                    },
+                    "required": ["from_x", "from_y", "to_x", "to_y"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__type_text",
+                "description": "Simulates keyboard typing of the given text, character by character. Does NOT press Enter — use type_and_enter for that.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": { "type": "string", "description": "The text string to type." },
+                        "interval": { "type": "number", "description": "Delay in seconds between each keystroke. Default: 0.02." }
+                    },
+                    "required": ["text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__press_key",
+                "description": "Presses and releases a single keyboard key. Valid keys include: enter, esc, tab, space, backspace, delete, up, down, left, right, home, end, f1-f12, ctrl, alt, shift, win.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "key": { "type": "string", "description": "Key name (e.g. 'enter', 'esc', 'f5', 'tab', 'space', 'delete')." }
+                    },
+                    "required": ["key"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__hotkey",
+                "description": "Executes a keyboard shortcut by pressing multiple keys simultaneously. Common examples: ['ctrl','c'] (copy), ['ctrl','v'] (paste), ['ctrl','z'] (undo), ['alt','f4'] (close window), ['ctrl','shift','esc'] (task manager).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "keys": {
+                            "type": "array",
+                            "items": { "type": "string" },
+                            "description": "Ordered list of keys to hold together (e.g. ['ctrl', 'c'])."
+                        }
+                    },
+                    "required": ["keys"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__type_and_enter",
+                "description": "Types the given text and immediately presses Enter. Use for submitting forms, executing terminal commands, or confirming dialogs.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": { "type": "string", "description": "The text to type before pressing Enter." }
+                    },
+                    "required": ["text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__list_windows",
+                "description": "Returns a list of all currently visible window titles. Always call this before focus_window to find the exact window title.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__focus_window",
+                "description": "Brings a window to the foreground using a partial, case-insensitive title match. Use list_windows first to identify the correct title.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": { "type": "string", "description": "Partial window title to match (e.g. 'Notepad', 'Chrome', 'Excel')." }
+                    },
+                    "required": ["title"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__minimize_window",
+                "description": "Minimizes a window to the taskbar using a partial title match.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": { "type": "string", "description": "Partial window title to match." }
+                    },
+                    "required": ["title"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__maximize_window",
+                "description": "Maximizes a window to fill the screen using a partial title match.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": { "type": "string", "description": "Partial window title to match." }
+                    },
+                    "required": ["title"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__get_browser_tabs",
+                "description": "Returns titles of all currently open browser tabs (Chrome, Edge, Opera, Brave) using the Windows Accessibility API. No screenshot needed. Call this FIRST when the user asks to switch to a browser tab.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__focus_browser_tab",
+                "description": "Clicks on a browser tab whose title contains the given fragment. Uses Windows Accessibility API — no coordinate guessing. Call AUTOMATION__get_browser_tabs first to verify the correct tab title.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title_fragment": { "type": "string", "description": "Part of the tab title to match (case-insensitive), e.g. 'YouTube' or 'Wikipedia'." }
+                    },
+                    "required": ["title_fragment"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "AUTOMATION__read_window_controls",
+                "description": "Reads all interactive controls (buttons, fields, links) from an application window's accessibility tree. Use to understand a GUI's structure before clicking, no screenshot needed.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title_fragment": { "type": "string", "description": "Part of the window title to target, e.g. 'Notepad' or 'Chrome'." }
+                    },
+                    "required": ["title_fragment"]
+                }
+            }
+        }
+    ]
+}

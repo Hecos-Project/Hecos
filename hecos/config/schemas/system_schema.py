@@ -292,6 +292,13 @@ class PluginReminder(BaseModel):
     snooze_default_minutes: int = 15
     reminder_snooze_ui: bool = False
 
+class PluginAutomation(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = False
+    move_duration: float = 0.15
+    type_interval: float = 0.02
+    allow_window_control: bool = True
+
 
 # ─── EXTENSIONS ───────────────────────────────────────────────────────────────
 
@@ -345,6 +352,7 @@ class PluginsConfig(BaseModel):
     REMOTE_TRIGGERS: PluginRemoteTriggers = Field(default_factory=PluginRemoteTriggers)
     REMINDER: PluginReminder = Field(default_factory=PluginReminder)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
+    AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     extra_dirs: List[str] = []
 
 

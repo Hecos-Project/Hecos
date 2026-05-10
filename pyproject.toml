@@ -17,6 +17,11 @@ dependencies = [
     "python-vlc",
     "dateparser",
     "apscheduler",
+    "pyautogui",
+    "pygetwindow",
+    "pytesseract",
+    "opencv-python",
+    "pywinauto; sys_platform=='win32'",
 ]
 
 [project.optional-dependencies]

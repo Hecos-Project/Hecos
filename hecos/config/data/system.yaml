@@ -213,6 +213,12 @@ plugins:
     lazy_load: false
     servers: {}
   extra_dirs: []
+  AUTOMATION:
+    enabled: true
+    lazy_load: false
+    move_duration: 0.15
+    type_interval: 0.02
+    allow_window_control: true
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true

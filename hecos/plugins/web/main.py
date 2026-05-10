@@ -17,6 +17,11 @@ class WebTools:
         self.tag = "WEB"
         self.desc = translator.t("plugin_web_desc")
         self.status = translator.t("plugin_web_status_online")
+        self.routing_instructions = (
+            "If the user asks you to interact with a website or application that is ALREADY OPEN on their screen "
+            "(e.g., 'click the next video', 'change song', 'scroll down'), DO NOT use the WEB tools. "
+            "Instead, use WEBCAM__desktop_screenshot and the AUTOMATION tools to physically interact with the existing window."
+        )
 
         self.config_schema = {
             "search_engine": {
