@@ -221,6 +221,12 @@ class ConfigEditor:
                 self.config['ai']['special_instructions'] = ''
                 self.modified = True
             return True
+        if command == 'clear_safety_instructions':
+            if 'ai' in self.config:
+                self.config['ai']['safety_instructions'] = ''
+                self.config['ai']['enable_safety_instructions'] = False
+                self.modified = True
+            return True
         if command == 'clear_memory':
             import sys
             sys.stdout.write("\n\033[93m[MEMORY] Clearing conversation history...\033[0m\n")

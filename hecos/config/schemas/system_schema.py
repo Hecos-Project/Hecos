@@ -299,6 +299,17 @@ class PluginAutomation(BaseModel):
     type_interval: float = 0.02
     allow_window_control: bool = True
 
+class PluginBrowser(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = True
+    headless: bool = False
+    block_ads: bool = True
+    startup_url: str = "http://localhost:7070"
+    default_timeout: int = 10000
+    browser_type: str = "chromium"
+    browser_engine_mode: str = "app_mode"
+    cdp_port: int = 9222
+
 
 # ─── EXTENSIONS ───────────────────────────────────────────────────────────────
 
@@ -353,6 +364,7 @@ class PluginsConfig(BaseModel):
     REMINDER: PluginReminder = Field(default_factory=PluginReminder)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
+    BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     extra_dirs: List[str] = []
 
 

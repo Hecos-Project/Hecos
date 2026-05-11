@@ -7,7 +7,7 @@
     "lazy_load": true,
     "is_class_based": true,
     "status": "ONLINE",
-    "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. Only use AUTOMATION__click with coordinates for targets without text.",
+    "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. ATTENTION: For browser-specific tasks (searching, reading web content, or switching tabs in a browser), PREFER the BROWSER plugin if it's enabled in CDP Mode. Only use AUTOMATION for native desktop apps or if BROWSER tools fail.",
     "commands": {
         "get_screen_size": "Returns the screen resolution (width x height).",
         "get_mouse_position": "Returns current cursor coordinates.",

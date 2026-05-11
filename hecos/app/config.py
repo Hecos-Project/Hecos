@@ -126,6 +126,20 @@ class ConfigManager:
     def save(self):
         """Serialize the current config to YAML and persist it."""
         try:
+            # --- HARDENING: Sync model from dict before saving ---
+            # This prevents data loss if a previous set() failed to validate but
+            # left the dict updated.
+            try:
+                SystemConfig = _get_schema()
+                # Use current dict state as the source of truth
+                self._model = SystemConfig.model_validate(self.config)
+            except Exception as v_e:
+                # If the dict is truly invalid, we log a warning but still proceed 
+                # with whatever is in self._model to avoid crashing, 
+                # OR we could abort. Aborting is safer to prevent corruption.
+                logger.error(f"[CONFIG] Save aborted: current memory state fails validation: {v_e}")
+                return False
+
             old_lang = self.config.get("language")
 
             # Flag for monitor.py to avoid unnecessary restarts
@@ -173,19 +187,22 @@ class ConfigManager:
         """Set a nested value, e.g. config.set('ollama', 'backend', 'type')"""
         if len(keys) == 0:
             return False
-        # Update the plain dict
+        # Update the plain dict (Source of Truth)
         target = self.config
         for key in keys[:-1]:
             if key not in target:
                 target[key] = {}
             target = target[key]
         target[keys[-1]] = value
-        # Re-validate the model from the updated dict to keep them in sync
+        
+        # Keep model in sync if possible, but don't lose the dict change if it fails
         try:
             SystemConfig = _get_schema()
             self._model = SystemConfig.model_validate(self.config)
-        except Exception:
-            pass  # Keep dict change even if model can't fully validate
+        except Exception as e:
+            logger.debug(f"[CONFIG] Partial validation failed in set() for {keys}: {e}")
+            # We don't update self._model here, but self.config stays updated.
+            # The next save() call will attempt to re-validate everything.
         return True
 
     def reload(self):

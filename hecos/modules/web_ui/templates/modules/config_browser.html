@@ -1,0 +1,164 @@
+<!-- BROWSER PANEL -->
+<div id="tab-browser" class="panel">
+  <div class="card">
+    <div class="card-title">🤖 Control Paradigm (PC & Browser)</div>
+    <div class="toggle-row" style="margin-bottom: 20px;">
+      <div class="toggle-info">
+        <strong>Enable BROWSER Module</strong><br>
+        <small style="color:var(--muted);">Completely toggle the AI's ability to use web browsers.</small>
+      </div>
+      <label class="switch"><input type="checkbox" id="browser-enabled" data-plugin="BROWSER"><span class="slider"></span></label>
+    </div>
+
+    <p style="font-size:13px; color:var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+      Choose how deeply Hecos should interact with your system. You can use an isolated internal browser (discreet), hook into your personal Chrome (Takeover), or give Hecos "eyes" to control the entire Windows OS with your real mouse.
+    </p>
+
+    <!-- App Mode -->
+    <div class="field" style="border:1px solid var(--accent); border-radius:8px; padding:15px; margin-bottom:15px; background:var(--bg3);">
+      <div class="toggle-row" style="margin-bottom:0;">
+        <div class="toggle-info">
+          <strong style="color:var(--text-light); font-size:15px;">1. Isolated AI Browser (App Mode)</strong><br>
+          <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
+            Hecos uses its own dedicated Chromium browser. Great for quick background web searches without popping up windows that disturb you. <br>
+            <em>Does not use your saved passwords or browsing history.</em>
+          </small>
+        </div>
+        <input type="radio" name="engine_mode" value="app_mode" id="em-app" onchange="window.updateConfig('plugins.BROWSER.browser_engine_mode', 'app_mode')" style="width:20px; height:20px; accent-color:var(--accent);" {% if zconfig.get('plugins', {}).get('BROWSER', {}).get('browser_engine_mode', 'app_mode') == 'app_mode' %}checked{% endif %}>
+      </div>
+    </div>
+
+    <!-- CDP Mode -->
+    <div class="field" style="border:1px solid var(--accent); border-radius:8px; padding:15px; margin-bottom:15px; background:var(--bg3);">
+      <div class="toggle-row" style="margin-bottom:10px;">
+        <div class="toggle-info">
+          <strong style="color:var(--text-light); font-size:15px;">2. Your Real Browser (Takeover CDP)</strong><br>
+          <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
+            Hecos "undercover" uses your Google Chrome (or Edge). It sees your extensions, logins, and bookmarks. <br>
+            <span style="color:#ffcc00; display:block; margin-top:6px;">⚠️ <strong>CRITICAL REQUIREMENT:</strong> You must launch Chrome using this shortcut parameter: <code style="padding:2px 4px; border-radius:4px; font-size:12px; background:var(--bg0);">chrome.exe --remote-debugging-port=9222</code>. If Chrome is opened normally, the hook will fail for security reasons.</span>
+          </small>
+        </div>
+        <input type="radio" name="engine_mode" value="cdp_mode" id="em-cdp" onchange="window.updateConfig('plugins.BROWSER.browser_engine_mode', 'cdp_mode')" style="width:20px; height:20px; accent-color:var(--accent);" {% if zconfig.get('plugins', {}).get('BROWSER', {}).get('browser_engine_mode', '') == 'cdp_mode' %}checked{% endif %}>
+      </div>
+      <div class="field" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 10px;">
+        <label>Debug Port (Default: 9222)</label>
+        <input type="number" id="browser-cdp-port" placeholder="9222" onchange="window.updateConfig('plugins.BROWSER.cdp_port', parseInt(this.value))">
+      </div>
+      <div style="margin-top:15px; text-align: right;">
+        <button class="btn btn-primary" onclick="launchCdpBrowser()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">
+          🚀 Launch Browser with Debug now
+        </button>
+      </div>
+    </div>
+
+    <!-- PC Vision Control -->
+    <div class="field" style="border:1px solid var(--accent); border-radius:8px; padding:15px; margin-bottom:15px; background:var(--bg3);">
+      <div class="toggle-row" style="margin-bottom:0;">
+        <div class="toggle-info">
+          <strong style="color:var(--text-light); font-size:15px;">3. Physical Mouse + Vision (PC Automation)</strong><br>
+          <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
+            Hecos uses AI to see the screen (via periodic screenshots) and <strong>moves your real mouse pointer</strong> on the current page or in any desktop program. <br>
+            <em>Note: This is the ultimate human action. If enabled, you cannot use the PC while Hecos is "driving" because it will move the physical mouse.</em>
+          </small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="automation-enabled" data-plugin="AUTOMATION" onchange="window.updateConfig('plugins.AUTOMATION.enabled', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ "App Mode" Settings</div>
+    
+    <div class="toggle-row" style="margin-bottom:16px;">
+      <div class="toggle-info">
+        <strong>Headless Mode</strong><br>
+        <small style="color:var(--muted);">Completely hides the internal browser window (you won't see anything).</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="browser-headless" onchange="saveModuleKey('BROWSER','headless',this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-bottom:16px;">
+      <div class="toggle-info">
+        <strong>Ad Blocker</strong><br>
+        <small style="color:var(--muted);">Speeds up loading times by blocking known advertising networks.</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="browser-block-ads" onchange="saveModuleKey('BROWSER','block_ads',this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field">
+      <label>Startup URL</label>
+      <input type="text" id="browser-startup-url" placeholder="http://localhost:7070" onchange="saveModuleKey('BROWSER','startup_url',this.value)">
+    </div>
+
+    <div class="field">
+      <label>Engine</label>
+      <select id="browser-engine" onchange="saveModuleKey('BROWSER','browser_type',this.value)">
+        <option value="chromium">Chromium</option>
+        <option value="firefox">Firefox</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.populateBrowserUI = function() {
+      const bCfg = window.cfg?.plugins?.BROWSER || {};
+      const mode = bCfg.browser_engine_mode || 'app_mode';
+      
+      if(mode === 'app_mode') document.getElementById('em-app').checked = true;
+      if(mode === 'cdp_mode') document.getElementById('em-cdp').checked = true;
+      
+      const aCfg = window.cfg?.plugins?.AUTOMATION || {};
+      const autoEnabled = aCfg.enabled ?? false;
+      document.getElementById('automation-enabled').checked = autoEnabled;
+
+      document.getElementById('browser-cdp-port').value = bCfg.cdp_port || 9222;
+      
+      // Update the legacy toggles to reflect the loaded state
+      document.getElementById('browser-headless').checked = bCfg.headless ?? true;
+      document.getElementById('browser-block-ads').checked = bCfg.block_ads ?? true;
+      document.getElementById('browser-startup-url').value = bCfg.startup_url || '';
+      document.getElementById('browser-engine').value = bCfg.browser_type || 'chromium';
+  };
+
+  /**
+   * Helper to update in-memory config and trigger a silent save to disk.
+   */
+  window.updateConfig = function(path, val) {
+      console.log(`[Config] Updating ${path} to`, val);
+      // Update local window.cfg object so buildPayload picks it up
+      const keys = path.split('.');
+      let obj = window.cfg;
+      for (let i = 0; i < keys.length - 1; i++) {
+          obj[keys[i]] = obj[keys[i]] || {};
+          obj = obj[keys[i]];
+      }
+      obj[keys[keys.length - 1]] = val;
+      
+      // Call global saveConfig if available (silent mode)
+      if (typeof saveConfig === 'function') {
+          saveConfig(true); 
+      }
+  };
+
+  async function launchCdpBrowser() {
+      if (!confirm("A new instance of Chrome/Edge will be launched with debugging enabled. Do you want to proceed?")) return;
+      try {
+          const r = await fetch('/api/browser/launch_external', { method: 'POST' });
+          const d = await r.json();
+          if (d.ok) alert("✅ " + d.message);
+          else alert("❌ Error: " + d.error);
+      } catch(e) {
+          alert("❌ Network error: " + e.message);
+      }
+  }
+</script>

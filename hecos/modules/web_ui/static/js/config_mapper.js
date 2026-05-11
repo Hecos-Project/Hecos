@@ -213,6 +213,7 @@ function populateUI() {
     renderPlugins(c.plugins || {});
     if (window.populateExecutorUI) window.populateExecutorUI();
     if (window.populateAutomationUI) window.populateAutomationUI();
+    if (window.populateBrowserUI) window.populateBrowserUI();
     initRestartIndicators();
     console.log("UI Populated successfully.");
   } catch (err) {
@@ -527,9 +528,18 @@ function buildPayload() {
     
     out.ai.avatar_size = getV('ia-avatar-size');
     out.ai.special_instructions      = getV('ia-instructions');
-    out.ai.safety_instructions       = getV('ia-safety-instructions');
+    // Safety & Context Disclaimer
+    const safetyVal = getV('ia-safety-instructions');
+    // Only update if the element was actually found in the DOM to avoid accidental resets
+    if (document.getElementById('ia-safety-instructions')) {
+        out.ai.safety_instructions = safetyVal;
+    }
+    
+    if (document.getElementById('ia-enable-safety-instructions')) {
+        out.ai.enable_safety_instructions = getC('ia-enable-safety-instructions');
+    }
+
     out.ai.save_special_instructions = getC('ia-save-instructions');
-    out.ai.enable_safety_instructions= getC('ia-enable-safety-instructions');
     out.ai.avatar_size               = getV('ia-avatar-size');
     out.privacy.default_mode = getV('pr-default-mode') || 'normal';
     out.privacy.auto_wipe_enabled = getC('pr-auto-wipe');
@@ -586,6 +596,20 @@ function buildPayload() {
       out.plugins[tag] = out.plugins[tag] || {};
       out.plugins[tag].enabled = cb.checked;
     });
+
+    // ── BROWSER Plugin Mapping ────────────────────────────────────────────────
+    out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
+    const modeEl = document.querySelector('input[name="engine_mode"]:checked');
+    if (modeEl) out.plugins['BROWSER'].browser_engine_mode = modeEl.value;
+    out.plugins['BROWSER'].cdp_port = parseInt(getV('browser-cdp-port')) || 9222;
+    out.plugins['BROWSER'].headless = getC('browser-headless');
+    out.plugins['BROWSER'].block_ads = getC('browser-block-ads');
+    out.plugins['BROWSER'].startup_url = getV('browser-startup-url');
+    out.plugins['BROWSER'].browser_type = getV('browser-engine') || 'chromium';
+
+    // ── AUTOMATION Plugin Mapping ─────────────────────────────────────────────
+    out.plugins['AUTOMATION'] = out.plugins['AUTOMATION'] || {};
+    out.plugins['AUTOMATION'].enabled = getC('automation-enabled');
 
     // Extension toggles: save as plugins[parentTag].extensions[extId].enabled
     document.querySelectorAll('[data-extension="true"]').forEach(cb => {
@@ -978,4 +1002,23 @@ window.HecosTextFilters = {
         `;
         container.appendChild(div);
     }
+};
+
+// ==========================================
+// BROWSER Module Populator
+// ==========================================
+window.populateBrowserUI = function() {
+    const c = window.cfg;
+    if (!c) return;
+    
+    // Core Module plugin enabled state
+    const browserConfig = (c.plugins && c.plugins['BROWSER']) ? c.plugins['BROWSER'] : {};
+    setCheck('browser-enabled', browserConfig.enabled !== false);
+    
+    // Internal settings
+    setCheck('browser-headless', browserConfig.headless ?? false);
+    setCheck('browser-block-ads', browserConfig.block_ads ?? true);
+    setVal('browser-startup-url', browserConfig.startup_url || 'http://localhost:7070');
+    setVal('browser-timeout', browserConfig.default_timeout || 10000);
+    setVal('browser-engine', browserConfig.browser_type || 'chromium');
 };

@@ -54,21 +54,13 @@ class WebTools:
 
     # ── Public Tools ───────────────────────────────────────────────────────────
 
-    def open_url(self, url: str) -> str:
-        """
-        Opens a specific website in the default browser.
-        NOTE: this only opens the browser. Use fetch_page_content to read the page content.
-        :param url: The website address to open (e.g., 'youtube.com', 'wikipedia.org').
-        """
-        return open_url_tool(url, self.tag)
 
     def search_web(self, query: str) -> str:
         """
-        Opens a browser search for a query.
-        NOTE: use search_and_read instead if you need the actual text content of results.
-        :param query: The terms to search for on the internet.
+        [DEPRECATED] DO NOT USE.
+        Use BROWSER__open_url to navigate to a search engine like https://google.com or https://youtube.com
         """
-        return search_web_tool(query, self.tag)
+        return "[WEB] ERROR: search_web is deprecated. Use BROWSER__open_url('https://google.com') followed by BROWSER__type_in_field instead."
 
     def fetch_page_content(self, url: str, max_chars_override: int = None) -> str:
         """
@@ -120,8 +112,6 @@ def execute(comando: str) -> str:
     c_lower = c.lower()
     if c_lower.startswith(("search:", "cerca:", "search_web:")):
         return tools.search_web(c.split(":", 1)[1].strip())
-    elif c_lower.startswith(("url:", "apri:", "open_url:")):
-        return tools.open_url(c.split(":", 1)[1].strip())
     elif c_lower.startswith(("fetch:", "read:", "fetch_page_content:")):
         return tools.fetch_page_content(c.split(":", 1)[1].strip())
     elif c_lower.startswith(("search_and_read:", "leggi:")):

@@ -10,7 +10,7 @@ ai:
   save_special_instructions: false
   special_instructions: ''
   enable_safety_instructions: true
-  safety_instructions: ''
+  safety_instructions: "### TEST SAFETY ###"
   avatar_size: medium
 backend:
   type: cloud
@@ -212,13 +212,23 @@ plugins:
     enabled: false
     lazy_load: false
     servers: {}
-  extra_dirs: []
   AUTOMATION:
     enabled: true
     lazy_load: false
     move_duration: 0.15
     type_interval: 0.02
     allow_window_control: true
+  BROWSER:
+    enabled: true
+    lazy_load: true
+    headless: false
+    block_ads: true
+    startup_url: http://localhost:7070
+    default_timeout: 10000
+    browser_type: chromium
+    browser_engine_mode: cdp_mode
+    cdp_port: 9222
+  extra_dirs: []
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true

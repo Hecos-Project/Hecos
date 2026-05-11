@@ -577,6 +577,18 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/browser/launch_external", methods=["POST"])
+    def browser_launch_external():
+        try:
+            from hecos.modules.browser import engine
+            cfg = cfg_mgr.config.get("plugins", {}).get("BROWSER", {})
+            port = cfg.get("cdp_port", 9222)
+            msg = engine.launch_external_browser(port=port)
+            return jsonify({"ok": True, "message": msg})
+        except Exception as exc:
+            logger.error(f"[WebUI] browser_launch_external error: {exc}")
+            return jsonify({"ok": False, "error": str(exc)}), 500
+
     # ── Explorer & Bridge Roots ──────────────────────────────────────────────
     from hecos.modules.web_ui.routes_explorer import init_explorer_routes
     from hecos.modules.web_ui.routes_bridge import init_bridge_routes

@@ -1,4 +1,4 @@
-voice_status: false
+voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
 speed: 1.2

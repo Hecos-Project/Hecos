@@ -44,6 +44,7 @@ window.CONFIG_HUB = {
         { id: 'reminder',  label: 'Reminder',             icon: '⏰', cat: 'SISTEMA', pluginTag: 'REMINDER' },
         { id: 'calendar',  label: 'Calendar',             icon: '📅', cat: 'SISTEMA', pluginTag: 'CALENDAR' },
         { id: 'automation',label: 'PC Automation',        icon: '🖱️', cat: 'SISTEMA', pluginTag: 'AUTOMATION', isCore: true },
+        { id: 'browser',   label: 'AI Browser',           icon: '🌐', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '⚡', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
@@ -116,5 +117,6 @@ window.CONFIG_HUB.tagMap = {
     'REMINDER': 'reminder',
     'CALENDAR': 'calendar',
     'MEDIA_PLAYER': 'media',
-    'AUTOMATION': 'automation'
+    'AUTOMATION': 'automation',
+    'BROWSER':    'browser'
 };

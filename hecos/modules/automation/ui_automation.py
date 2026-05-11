@@ -27,18 +27,41 @@ def _check_pywinauto() -> bool:
 
 
 # Known Chromium-based window class names
-_CHROMIUM_CLASSES = {
-    "Chrome_WidgetWin_1",   # Chrome, Edge, Opera, Brave, Vivaldi (all Chromium)
-}
-# Firefox uses a different class
-_FIREFOX_CLASSES = {
-    "MozillaWindowClass",
-    "MozillaDropShadowWindowClass",
-}
+_EXCLUDED_EXECUTABLES = {"code.exe", "code - insiders.exe", "cursor.exe", "windsurf.exe"}
+_EXCLUDED_TITLE_HINTS = {"Visual Studio Code", "VS Code", "Cursor", "Windsurf"}
+
+
+def _is_real_browser_window(win) -> bool:
+    """
+    Attempt to filter out VS Code (Electron) windows that use the same Chrome_WidgetWin_1 class.
+    Priority: check process exe name → then check window title for known IDE patterns.
+    """
+    try:
+        import win32process
+        import psutil
+        _, pid = win32process.GetWindowThreadProcessId(win.handle)
+        exe = psutil.Process(pid).name().lower()
+        if exe in _EXCLUDED_EXECUTABLES:
+            return False
+    except Exception:
+        pass
+    # Fallback: title heuristic
+    try:
+        title = win.window_text()
+        for hint in _EXCLUDED_TITLE_HINTS:
+            if hint.lower() in title.lower():
+                return False
+    except Exception:
+        pass
+    return True
+
+
+_CHROMIUM_CLASSES = {"Chrome_WidgetWin_1"}
+_FIREFOX_CLASSES = {"MozillaWindowClass", "MozillaDropShadowWindowClass"}
 
 
 def _get_browser_windows(desktop) -> list:
-    """Return all top-level windows that appear to be a browser."""
+    """Return all top-level windows that appear to be a browser (Chrome, Edge, Firefox, etc.)."""
     result = []
     for win in desktop.windows():
         try:
@@ -55,33 +78,39 @@ def _get_browser_windows(desktop) -> list:
 
 def _get_chrome_tabs_via_uia() -> list[str]:
     """
-    Read tab titles from any supported browser via UI Automation.
-    Falls back to the active window title when tab-level UIA is restricted
-    (common in recent Chrome versions that throttle accessibility APIs).
+    Read tab titles from Chrome, Edge, or Firefox.
+    Filters out VS Code / Electron IDE windows that share the same window class.
     """
     from pywinauto import Desktop
     tabs = []
     desktop = Desktop(backend="uia")
 
     for win, cls in _get_browser_windows(desktop):
-        # Strategy 1: Try to enumerate TabItem controls (works on some Chrome/Edge versions)
+        # Skip VS Code and similar Electron IDEs
+        if not _is_real_browser_window(win):
+            continue
+
+        found_tabs = []
+
+        # Strategy 1: enumerate TabItem controls (works on many Chrome/Edge versions)
         try:
             tab_bar_items = win.descendants(control_type="TabItem")
             for item in tab_bar_items:
                 t = item.window_text()
-                if t and t not in tabs:
-                    tabs.append(t)
+                if t and t not in found_tabs:
+                    found_tabs.append(t)
         except Exception:
             pass
 
-        # Strategy 2: If no tab items found, use window title (= active tab on that window)
-        if not tabs:
+        # Strategy 2: use window title as active tab name (fallback)
+        if not found_tabs:
             title = win.window_text()
-            # Strip browser suffix like " - Google Chrome"
-            for suffix in [" - Google Chrome", " - Microsoft Edge", " - Opera", " - Brave"]:
+            for suffix in [" - Google Chrome", " - Microsoft Edge", " - Opera", " - Brave", " - Vivaldi"]:
                 title = title.replace(suffix, "").strip()
-            if title and title not in tabs:
-                tabs.append(title)
+            if title and title not in found_tabs:
+                found_tabs.append(title)
+
+        tabs.extend(found_tabs)
 
     return tabs
 
@@ -90,6 +119,7 @@ def get_browser_tabs_tool() -> str:
     """
     Returns a list of all open browser tab titles from Chromium-based browsers.
     Reads directly from the Windows Accessibility tree — no vision required.
+    VS Code and other Electron apps are filtered out.
     """
     if not _check_pywinauto():
         return (
@@ -125,33 +155,53 @@ def focus_browser_tab_tool(title_fragment: str) -> str:
     from pywinauto import Desktop
     desktop = Desktop(backend="uia")
     target_lower = title_fragment.lower().strip()
+    logger.debug(f"[AUTOMATION] Attempting to focus tab matching: '{target_lower}'")
 
     for win in desktop.windows():
         try:
-            if win.class_name() != "Chrome_WidgetWin_1":
+            if win.class_name() not in _CHROMIUM_CLASSES:
                 continue
 
+            if not _is_real_browser_window(win):
+                continue
+            
+            logger.debug(f"[AUTOMATION] Scanning browser window for focus: '{win.window_text()}'")
+
+            # Strategy 1: Iterate over TabItem controls if available
             parent = None
             try:
                 tab_bar = win.child_window(control_type="TabItem", found_index=0)
                 parent = tab_bar.parent()
+                
+                for child in parent.children():
+                    try:
+                        if child.element_info.control_type != "TabItem":
+                            continue
+                        tab_title = child.window_text()
+                        logger.debug(f"[AUTOMATION] Checked tab: '{tab_title}'")
+                        if target_lower in tab_title.lower():
+                            child.click_input()
+                            win.set_focus()
+                            logger.info(f"[AUTOMATION] ✅ Successfully clicked tab: '{tab_title}' (Strategy 1)")
+                            return f"[AUTOMATION] Clicked browser tab: '{tab_title}'"
+                    except Exception:
+                        pass
             except Exception:
-                continue
-
-            for child in parent.children():
-                try:
-                    if child.element_info.control_type != "TabItem":
-                        continue
-                    tab_title = child.window_text()
-                    if target_lower in tab_title.lower():
-                        child.click_input()
-                        win.set_focus()
-                        return f"[AUTOMATION] Clicked browser tab: '{tab_title}'"
-                except Exception:
-                    pass
+                pass
+                
+            # Strategy 2: If TabItems are restricted/invisible, check the main window title itself
+            try:
+                win_title = win.window_text()
+                if win_title and target_lower in win_title.lower():
+                    win.set_focus()
+                    logger.info(f"[AUTOMATION] ✅ Successfully focused window: '{win_title}' (Strategy 2)")
+                    return f"[AUTOMATION] Focused browser window: '{win_title}'"
+            except Exception:
+                pass
         except Exception:
             pass
 
+    logger.warning(f"[AUTOMATION] ❌ No tab found matching: '{target_lower}'")
     return (
         f"[AUTOMATION] No browser tab found matching '{title_fragment}'. "
         f"Use get_browser_tabs to see the current list."

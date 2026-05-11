@@ -14,29 +14,37 @@ import time
 import threading
 import webbrowser
 
-from hecos.tray.config import SETTINGS_FILE, _DEFAULTS, HECOS_PORT, _ROOT, load_settings, save_settings
-from hecos.tray.utils import is_hecos_online, play_beep, get_scheme
+from hecos.tray.config import SETTINGS_FILE, _DEFAULTS, _ROOT, load_settings, save_settings
+from hecos.tray.utils import play_beep, launch_ai_ready_browser, is_ai_ready_browser_running, set_cdp_alive
 from hecos.tray.orchestrator import start_hecos, stop_hecos, is_hecos_running
 from hecos.tray.hotkeys import tray_hotkeys
-from hecos.tray.ui import load_icon, build_menu, refresh_ui, TRAY_AVAILABLE
+from hecos.tray.ui import load_icon, build_menu, refresh_ui, TRAY_AVAILABLE, _get_cdp_port
 
 try:
     import pystray
 except ImportError:
     pass
 
+_singleton_socket = None
 STATUS_POLL_INTERVAL = 3
 
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
     was_online = False
     opened_ui = False
+    opened_ai_browser = False
+    launched_chrome_for_ai = False
 
     while True:
         try:
             settings = load_settings()
             online = is_hecos_running()
             
+            # ── Update cached CDP status so build_menu() never blocks ─────────
+            cdp_port = _get_cdp_port()
+            set_cdp_alive(is_ai_ready_browser_running(cdp_port))
+            # ─────────────────────────────────────────────────────────────────
+
             # Audible ascending ping when coming online
             if online and not was_online:
                 play_beep(400, 100)
@@ -49,6 +57,28 @@ def _monitor_status(icon: "pystray.Icon"):
                     time.sleep(1.0)
                     webbrowser.open(chat_url)
                     opened_ui = True
+                
+                if settings.get("autoopen_ai_browser", False) and not opened_ai_browser:
+                    from hecos.tray.ui import open_ai_browser
+                    # Wait slightly so backend responds to requests from the AI browser
+                    time.sleep(1.5)
+                    open_ai_browser(icon, None)
+                    opened_ai_browser = True
+
+                # Auto-launch Chrome in AI-Ready mode if setting is enabled
+                if settings.get("auto_launch_chrome_for_ai", False) and not launched_chrome_for_ai:
+                    if not is_ai_ready_browser_running(cdp_port):
+                        time.sleep(0.5)
+                        from hecos.tray.utils import get_scheme
+                        startup_url = settings.get("browser_startup_url", "")
+                        if startup_url:
+                            real_scheme = get_scheme()
+                            if startup_url.startswith("http://") and real_scheme == "https":
+                                startup_url = startup_url.replace("http://", "https://", 1)
+                            elif startup_url.startswith("https://") and real_scheme == "http":
+                                startup_url = startup_url.replace("https://", "http://", 1)
+                        launch_ai_ready_browser(cdp_port=cdp_port, startup_url=startup_url)
+                    launched_chrome_for_ai = True
                     
             was_online = online
 

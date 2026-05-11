@@ -1,0 +1,207 @@
+{
+    "tag": "BROWSER",
+    "name": "AI Browser",
+    "version": "1.0",
+    "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
+    "icon": "🌐",
+    "lazy_load": true,
+    "is_class_based": true,
+    "routing_instructions": "BROWSER CONTROL DECISION TREE — Follow these steps in order: (1) ALWAYS start with BROWSER__list_tabs. (2) If it returns a list of tabs → you are in CDP mode. Use BROWSER__switch_tab(index) to go to the right tab, then use BROWSER page tools (get_page_text, click_element, type_in_field). (3) If list_tabs returns 'CDP connection is not active' → Chrome was NOT launched in AI-Ready mode. IMMEDIATELY fall back to: AUTOMATION__get_browser_tabs to find open tabs by title (this reads from Windows accessibility, real browser windows only), then AUTOMATION__focus_browser_tab with the matching title fragment. NEVER stop and ask the user — always attempt the fallback automatically.",
+    "commands": {
+        "open_url": "Navigate the browser to a URL.",
+        "get_current_url": "Return the current page URL.",
+        "go_back": "Navigate back to the previous page.",
+        "get_page_text": "Read all visible text from the current page.",
+        "get_links": "List all hyperlinks on the page.",
+        "get_inputs": "List all interactive form elements.",
+        "get_title": "Return the page title.",
+        "click_element": "Click an element by visible text or aria-label.",
+        "type_in_field": "Fill a form field by label/placeholder and optionally press Enter.",
+        "scroll": "Scroll the page up or down.",
+        "press_key": "Press a keyboard key in the browser.",
+        "run_js": "Execute JavaScript code on the page.",
+        "screenshot": "Take a viewport screenshot for vision analysis.",
+        "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
+        "switch_tab": "Switch focus to a specific tab by its ID.",
+        "close": "Close the browser window."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__open_url",
+                "description": "Opens a URL in the Hecos AI browser. The browser window will appear automatically. Use this instead of the WEB plugin when you need to interact with a page.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": { "type": "string", "description": "Full URL or domain (e.g. 'youtube.com' or 'https://google.com')." }
+                    },
+                    "required": ["url"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__get_current_url",
+                "description": "Returns the URL currently loaded in the Hecos browser.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__go_back",
+                "description": "Navigate the browser back to the previous page.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__get_page_text",
+                "description": "Returns all visible text from the current browser page. Use after open_url to understand the page before interacting.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "max_chars": { "type": "integer", "description": "Max characters to return. Default: 4000." }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__get_links",
+                "description": "Returns all hyperlinks (label → URL) on the current page as a numbered list.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__get_inputs",
+                "description": "Lists all input fields, buttons and form elements on the current page. Use to identify fields before calling type_in_field.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__get_title",
+                "description": "Returns the title of the current browser page.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__click_element",
+                "description": "Clicks a page element by its visible text label or aria-label. Intelligent fallback to CSS selectors. Prefer this over coordinate-based clicking.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text_or_selector": { "type": "string", "description": "Visible text, aria-label, or CSS selector of the element to click." }
+                    },
+                    "required": ["text_or_selector"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__type_in_field",
+                "description": "Finds an input field by its label/placeholder and types text into it. Optionally presses Enter to submit.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "label_or_selector": { "type": "string", "description": "Label, placeholder, aria-label or CSS selector of the input field." },
+                        "text": { "type": "string", "description": "The text to type." },
+                        "press_enter": { "type": "boolean", "description": "If true, presses Enter after typing. Useful for search boxes. Default: false." }
+                    },
+                    "required": ["label_or_selector", "text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__scroll",
+                "description": "Scrolls the browser page up or down.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "direction": { "type": "string", "enum": ["down", "up"], "description": "Scroll direction. Default: 'down'." },
+                        "amount": { "type": "integer", "description": "Pixels to scroll. Default: 300." }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__press_key",
+                "description": "Presses a keyboard key in the browser context (e.g. 'Enter', 'Escape', 'Tab', 'ArrowDown').",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "key": { "type": "string", "description": "Key name following web standards, e.g. 'Enter', 'ArrowDown', 'Escape'." }
+                    },
+                    "required": ["key"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__run_js",
+                "description": "Executes JavaScript in the browser and returns the result. Powerful for extracting data or triggering actions not accessible via DOM.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "code": { "type": "string", "description": "JavaScript expression or statement, e.g. 'document.title' or 'document.querySelector(\"h1\").innerText'." }
+                    },
+                    "required": ["code"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__screenshot",
+                "description": "Takes a screenshot of the current browser viewport. Returns the file path which the vision AI can analyze. Use only when text-based tools are insufficient.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__list_tabs",
+                "description": "Returns a list of all open tabs/pages in the current browser. Use in CDP mode to find existing sites like YouTube.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__switch_tab",
+                "description": "Switches the active browser focus to a specific tab by its ID.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "index": { "type": "integer", "description": "Numeric ID of the tab to focus (from list_tabs)." }
+                    },
+                    "required": ["index"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__close",
+                "description": "Closes the Hecos AI browser window.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        }
+    ]
+}

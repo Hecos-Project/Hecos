@@ -22,6 +22,7 @@ dependencies = [
     "pytesseract",
     "opencv-python",
     "pywinauto; sys_platform=='win32'",
+    "playwright",
 ]
 
 [project.optional-dependencies]
