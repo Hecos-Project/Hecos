@@ -168,8 +168,8 @@ plugins:
     auto_open_browser: false
     https_enabled: true
     force_login: true
-    cert_file: certs/cert.pem
-    key_file: certs/key.pem
+    cert_file: C:\Hecos\hecos\certs\cert.pem
+    key_file: C:\Hecos\hecos\certs\key.pem
   EXECUTOR:
     enabled: true
     lazy_load: false
