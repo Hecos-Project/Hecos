@@ -725,12 +725,12 @@ function renderConfigHub(mode = 'tabs') {
         // Extension check: depends on parent plugin being enabled AND its own enabled state
         if (m.isExtension && m.parentPluginTag) {
             const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
-            if (!parent || parent.enabled === false) return false; // parent off → hide extension
+            if (!parent || parent.enabled === false) return false;
             const extId = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
             const extState = (parent.extensions || {})[extId];
-            if (extState && extState.enabled === false) return false; // extension explicitly off
-            // Extension tab only shown if it has a dedicated panel
-            return !!document.getElementById('tab-' + m.id);
+            if (extState && extState.enabled === false) return false;
+            // With lazy panels, check cache or the known panel list instead of DOM
+            return (_panelCache[m.id] || !!window.LAZY_PANEL_IDS?.has(m.id) || !!document.getElementById('tab-' + m.id));
         }
 
         // Standard plugin check
@@ -739,14 +739,19 @@ function renderConfigHub(mode = 'tabs') {
             if (p && p.enabled === false) return false;
         }
 
-        // Modules with panels always visible.
-        // Modules from MCP category are always visible
-        // Modules in tagMap are always visible
-        const hasPanel = document.getElementById('tab-' + m.id);
-        const isMapped = hub.tagMap && hub.tagMap[m.pluginTag];
-        const isMcp = (m.cat === 'MCP');
+        // A module is visible if:
+        // - It has already been lazy-loaded (in cache)
+        // - It is in the known lazy panel set
+        // - It is still in the DOM (fallback for non-lazy panels like welcome)
+        // - It has a tagMap entry (always reachable)
+        // - It is an MCP module (always visible)
+        const inCache    = !!_panelCache[m.id];
+        const inLazySet  = !!(window.LAZY_PANEL_IDS && window.LAZY_PANEL_IDS.has(m.id));
+        const hasPanel   = !!document.getElementById('tab-' + m.id);
+        const isMapped   = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
+        const isMcp      = (m.cat === 'MCP');
 
-        return (hasPanel || isMapped || isMcp);
+        return (inCache || inLazySet || hasPanel || isMapped || isMcp);
     });
 
     // --- APPLY CATEGORY FILTER ---

@@ -70,12 +70,13 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
 
     # ── PANEL MAP: tab_id → template fragment ──────────────────────────────────
+    # Keys MUST match the `id` fields in config_manifest.js CONFIG_HUB.modules
     _PANEL_MAP = {
         'backend':        'modules/config_backend.html',
         'keymanager':     'modules/key_manager.html',
         'routing':        'modules/config_routing.html',
         'agent':          'modules/config_agent.html',
-        'persona':        'modules/config_persona.html',
+        'ia':             'modules/config_persona.html',
         'filters':        'modules/config_filters.html',
         'bridge':         'modules/config_bridge.html',
         'memory':         'modules/config_memory.html',
@@ -83,8 +84,8 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         'system':         'modules/config_system.html',
         'media':          'modules/config_media.html',
         'aesthetics':     'modules/config_styles.html',
-        'image-gen':      'modules/config_igen.html',
-        'utils':          'modules/config_utils.html',
+        'igen':           'modules/config_igen.html',
+        'webui':          'modules/config_utils.html',
         'browser':        'modules/config_browser.html',
         'sysnet':         'modules/config_sysnet.html',
         'users':          'modules/config_users.html',
@@ -93,7 +94,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         'plugins':        'modules/config_plugins.html',
         'reminder':       'modules/config_reminder.html',
         'calendar':       'modules/config_calendar.html',
-        'plugin-studio':  'modules/config_plugin_studio.html',
+        'studio':         'modules/config_plugin_studio.html',
         'mcp':            'modules/config_mcp.html',
         'remote-triggers':'modules/config_remote_triggers.html',
         'drive':          'modules/config_drive.html',
@@ -104,7 +105,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     }
 
     # Panels that require zoptions (model lists, piper voices, personalities)
-    _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'persona', 'image-gen', 'media'}
+    _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}
 
     @app.route("/hecos/config/fragment/<panel_id>")
     def config_fragment(panel_id):

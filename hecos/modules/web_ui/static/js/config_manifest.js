@@ -120,3 +120,16 @@ window.CONFIG_HUB.tagMap = {
     'AUTOMATION': 'automation',
     'BROWSER':    'browser'
 };
+
+/**
+ * The full set of panel IDs that are served lazily via /hecos/config/fragment/<id>.
+ * This MUST match the keys in _PANEL_MAP in routes_config.py.
+ * Used by renderConfigHub() to show tabs even before a panel has been fetched.
+ */
+window.LAZY_PANEL_IDS = new Set([
+    'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
+    'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
+    'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
+    'reminder', 'calendar', 'studio', 'mcp', 'remote-triggers',
+    'drive', 'drive-editor', 'logs', 'privacy', 'help'
+]);
