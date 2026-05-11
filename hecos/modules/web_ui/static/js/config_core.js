@@ -130,12 +130,24 @@ async function showTab(name, skipScroll = false) {
   }
 
   // Call specific load functions after panel is in DOM
-  if (name === 'users') {
+  if (name === 'users' || targetId === 'users') {
       if (typeof loadMyProfile === 'function') loadMyProfile();
       if (typeof loadUsersData === 'function') loadUsersData();
   }
   if (name === 'payload' && typeof loadPayloadData === 'function') loadPayloadData();
   if (name === 'drive' && typeof loadDriveConfig === 'function') loadDriveConfig();
+  if (name === 'reminder' && typeof window.refreshReminderConfig === 'function') {
+      window.refreshReminderConfig();
+      if (typeof window.refreshPresetRingtones === 'function') window.refreshPresetRingtones();
+  }
+  if (name === 'calendar' && typeof window.hcal !== 'undefined') {
+      if (typeof window.hcal.refresh === 'function') window.hcal.refresh();
+      // Force render if not initialized
+      const el = document.getElementById('hecos-fullcalendar');
+      if (el && el.innerHTML.trim() === '') {
+          // calendar.html init script should have run via _loadPanel
+      }
+  }
   if (name === 'logs' && typeof startLogStream === 'function') {
       startLogStream();
       if (typeof refreshLogFiles === 'function') refreshLogFiles();
@@ -147,7 +159,8 @@ async function showTab(name, skipScroll = false) {
           }
       }, 50);
   }
-  if (name === 'keymanager' && typeof kmRefresh === 'function') kmRefresh();
+  if ((name === 'keymanager' || targetId === 'keymanager') && typeof kmRefresh === 'function') kmRefresh();
+  if ((name === 'ia' || name === 'persona') && typeof personaRefresh === 'function') personaRefresh();
 }
 
 /**
@@ -169,17 +182,45 @@ async function _loadPanel(panelId) {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
 
-    // Inject all child nodes into the panel container
+    // Extract scripts before injecting (they won't run if just appended)
+    const scripts = Array.from(tmp.querySelectorAll('script'));
+    scripts.forEach(s => s.parentNode.removeChild(s));
+
+    // Inject all remaining child nodes (CSS, HTML) into the panel container
+    // Inject all remaining child nodes (CSS, HTML) into the panel container
     while (tmp.firstChild) {
       container.appendChild(tmp.firstChild);
     }
 
     _panelCache[panelId] = true;
 
+    // Manually execute scripts sequentially to preserve dependency order (e.g. load lib before init)
+    for (const oldScript of scripts) {
+      await new Promise((resolve) => {
+        const newScript = document.createElement('script');
+        Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+        newScript.textContent = oldScript.textContent;
+        
+        if (newScript.src) {
+          newScript.onload = () => resolve();
+          newScript.onerror = () => {
+            console.error(`[LazyHub] Failed to load script: ${newScript.src}`);
+            resolve(); // Continue anyway
+          };
+        } else {
+          // Inline script - executes immediately upon append
+          document.head.appendChild(newScript);
+          resolve();
+          return;
+        }
+        document.head.appendChild(newScript);
+      });
+    }
+
     // Run any panel-specific JS init that was waiting for the DOM
     if (typeof populateUI === 'function') populateUI();
     if (typeof initRestartIndicators === 'function') initRestartIndicators();
-    console.log(`[LazyHub] Panel '${panelId}' loaded and injected.`);
+    console.log(`[LazyHub] Panel '${panelId}' loaded and injected (scripts executed).`);
   } catch (e) {
     console.error(`[LazyHub] Failed to load panel '${panelId}':`, e);
     container.insertAdjacentHTML('beforeend',

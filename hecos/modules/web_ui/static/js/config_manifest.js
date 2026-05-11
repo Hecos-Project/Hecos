@@ -129,6 +129,7 @@ window.CONFIG_HUB.tagMap = {
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
     'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
+    'web', 'webcam', 'executor', 'automation', 'dashboard', 'domotica',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'reminder', 'calendar', 'studio', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'help'

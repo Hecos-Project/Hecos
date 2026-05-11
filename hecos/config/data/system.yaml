@@ -43,14 +43,14 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
 bridge:
-  use_processor: true
+  use_processor: false
   chunk_delay_ms: 0
-  debug_log: true
-  remove_think_tags: true
+  debug_log: false
+  remove_think_tags: false
   local_voice_enabled: false
   webui_voice_enabled: true
   webui_voice_stt: true
-  enable_tools: true
+  enable_tools: false
 cognition:
   memory_enabled: true
   episodic_memory: true
