@@ -185,11 +185,12 @@ def generate_voice_file(text: str, voice_cfg: dict) -> str:
         _current_piper_proc = proc
         
         try:
-            stdout, stderr = proc.communicate(input=clean_text.encode("utf-8"), timeout=60)
+            timeout = voice_cfg.get("piper_timeout", 180)
+            stdout, stderr = proc.communicate(input=clean_text.encode("utf-8"), timeout=timeout)
         except subprocess.TimeoutExpired:
             proc.kill()
             stdout, stderr = proc.communicate()
-            _chat_log.error("[Audio] Piper TTS generation timed out after 60 seconds")
+            _chat_log.error(f"[Audio] Piper TTS generation timed out after {timeout} seconds")
             return None
         finally:
             _current_piper_proc = None

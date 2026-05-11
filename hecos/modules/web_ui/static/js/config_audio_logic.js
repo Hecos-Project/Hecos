@@ -12,6 +12,7 @@ function populateAudioUI() {
     setVal('v-noise', v.noise_scale ?? 0.817);
     setVal('v-noisew', v.noise_w ?? 0.9);
     setVal('v-silence', v.sentence_silence ?? 0.1);
+    setVal('v-timeout', v.piper_timeout ?? 180);
 
     const a = audioConfig || {};
     setVal('a-threshold', a.energy_threshold ?? 450);
@@ -61,6 +62,7 @@ function buildAudioPayload() {
     obj.noise_scale      = parseFloat(document.getElementById('v-noise').value) || 0.8;
     obj.noise_w          = parseFloat(document.getElementById('v-noisew').value) || 1.0;
     obj.sentence_silence = parseFloat(document.getElementById('v-silence').value) || 0.2;
+    obj.piper_timeout    = parseInt(document.getElementById('v-timeout').value) || 180;
 
     obj.energy_threshold = parseInt(document.getElementById('a-threshold').value) || 450;
     obj.silence_timeout  = parseInt(document.getElementById('a-timeout').value) || 5;

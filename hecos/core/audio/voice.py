@@ -139,7 +139,14 @@ def speak(text, state=None):
         
         proc = subprocess.Popen(command, **kwargs)
         _current_piper_proc = proc
-        stdout, stderr = proc.communicate(input=clean_text.encode('utf-8'))
+        try:
+            timeout = audio_cfg.get("piper_timeout", 180)
+            stdout, stderr = proc.communicate(input=clean_text.encode('utf-8'), timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            stdout, stderr = proc.communicate()
+            logger.error("VOICE", f"Piper TTS generation timed out after {timeout} seconds")
+            return
         _current_piper_proc = None
 
         if proc.returncode != 0:

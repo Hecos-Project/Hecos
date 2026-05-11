@@ -25,6 +25,7 @@ class AudioConfig(BaseModel):
     noise_scale: float = 0.817
     noise_w: float = 0.9
     sentence_silence: float = 0.1
+    piper_timeout: int = 180
 
     # --- STT / Listening ---
     listening_status: bool = False
