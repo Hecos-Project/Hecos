@@ -383,7 +383,7 @@ def build_menu(icon_ref: list):
 
         # ── Web UI
         pystray.MenuItem("🌐 Open Chat", open_chat),
-        pystray.MenuItem("⚙️  Open Config", open_config),
+        pystray.MenuItem("⚙️  Central Hub", open_config),
         pystray.MenuItem("📱 Mobile (QR Code)", show_qr),
         pystray.Menu.SEPARATOR,
 

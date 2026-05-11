@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Config Panel</title>
+  <title>Central Hub</title>
   <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
   
   <!-- Core Modular Design System -->
@@ -26,6 +26,7 @@
   </noscript>
   <style>
     :root { color-scheme: dark; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     @media (max-width: 768px) {
       header {
         flex-direction: column;
@@ -194,39 +195,16 @@
   </div>
 
   <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
-    {% include 'modules/config_backend.html' %}
-    {% include 'modules/key_manager.html' %}
-
-    {% include 'modules/config_routing.html' %}
-    {% include 'modules/config_agent.html' %}
-    {% include 'modules/config_persona.html' %}
-    {% include 'modules/config_filters.html' %}
-    {% include 'modules/config_bridge.html' %}
-    {% include 'modules/config_memory.html' %}
-    {% include 'modules/config_voice.html' %}
-    {% include 'modules/config_system.html' %}
-    {% include 'modules/config_media.html' %}
-    {% include 'modules/config_styles.html' %}
-    {% include 'modules/config_igen.html' %}
-    {% include 'modules/config_utils.html' %}
-    {% include 'modules/config_browser.html' %}
-    {% include 'modules/config_sysnet.html' %}
-    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-    {% include 'modules/config_users.html' %}
-    {% include 'modules/config_security.html' %}
-    {% endif %}
-    {% include 'modules/config_payload.html' %}
-    {% include 'modules/config_plugins.html' %}
-    {% include 'modules/config_reminder.html' %}
-    {% include 'modules/config_calendar.html' %}
-    {% include 'modules/config_plugin_studio.html' %}
-    {% include 'modules/config_mcp.html' %}
-    {% include 'modules/config_remote_triggers.html' %}
-    {% include 'modules/config_drive.html' %}
-    {% include 'modules/config_drive_editor.html' %}
-    {% include 'modules/config_logs.html' %}
-    {% include 'modules/config_privacy.html' %}
-    {% include 'modules/config_help.html' %}
+    <!-- Panels are loaded lazily via fetch on tab click. -->
+    <!-- The welcome panel is the only panel that is always present in the DOM. -->
+    <div id="panel-container">
+      <!-- Panels will be injected here by config_core.js -->
+      <!-- Skeleton shown while a panel is loading -->
+      <div id="panel-skeleton" style="display:none; padding:40px 20px; text-align:center; color:var(--muted);">
+        <div style="font-size:28px; margin-bottom:16px; animation: spin 1s linear infinite; display:inline-block;">⚙️</div>
+        <div style="font-size:14px;">Loading panel...</div>
+      </div>
+    </div>
   </form>
 </div>
 

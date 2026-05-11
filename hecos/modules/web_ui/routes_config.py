@@ -50,24 +50,93 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/hecos/config/ui")
     def config_ui():
+        """Shell route — serves the lightweight Central Hub skeleton.
+        Heavy options (model lists, Piper voices) are deferred until a specific
+        panel is requested via /hecos/config/fragment/<panel_id>.
+        """
         try:
             from hecos.core.i18n.translator import get_translator
             translations = get_translator().get_translations()
-            
-            # CRITICAL: Build options FIRST. This method triggers sync_available_personalities() 
-            # which performs safety checks (e.g., verifying if the active personality was deleted) 
-            # and modifies cfg_mgr by reverting to defaults if necessary.
-            zoptions_data = _build_options_dict(cfg_mgr, fast=True)
-            
-            # Now we can safely grab the config, knowing that any fallback overrides have been applied
+            # Lightweight: just reload config (no filesystem scans)
+            # sync_available_personalities() is called lazily in the fragment route.
             zconfig_data = cfg_mgr.reload()
-            
-            return render_template("index.html", 
-                                 zconfig=zconfig_data, 
-                                 zoptions=zoptions_data,
-                                 translations=translations)
+            return render_template(
+                "index.html",
+                zconfig=zconfig_data,
+                zoptions={},
+                translations=translations
+            )
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
+
+    # ── PANEL MAP: tab_id → template fragment ──────────────────────────────────
+    _PANEL_MAP = {
+        'backend':        'modules/config_backend.html',
+        'keymanager':     'modules/key_manager.html',
+        'routing':        'modules/config_routing.html',
+        'agent':          'modules/config_agent.html',
+        'persona':        'modules/config_persona.html',
+        'filters':        'modules/config_filters.html',
+        'bridge':         'modules/config_bridge.html',
+        'memory':         'modules/config_memory.html',
+        'voice':          'modules/config_voice.html',
+        'system':         'modules/config_system.html',
+        'media':          'modules/config_media.html',
+        'aesthetics':     'modules/config_styles.html',
+        'image-gen':      'modules/config_igen.html',
+        'utils':          'modules/config_utils.html',
+        'browser':        'modules/config_browser.html',
+        'sysnet':         'modules/config_sysnet.html',
+        'users':          'modules/config_users.html',
+        'security':       'modules/config_security.html',
+        'payload':        'modules/config_payload.html',
+        'plugins':        'modules/config_plugins.html',
+        'reminder':       'modules/config_reminder.html',
+        'calendar':       'modules/config_calendar.html',
+        'plugin-studio':  'modules/config_plugin_studio.html',
+        'mcp':            'modules/config_mcp.html',
+        'remote-triggers':'modules/config_remote_triggers.html',
+        'drive':          'modules/config_drive.html',
+        'drive-editor':   'modules/config_drive_editor.html',
+        'logs':           'modules/config_logs.html',
+        'privacy':        'modules/config_privacy.html',
+        'help':           'modules/config_help.html',
+    }
+
+    # Panels that require zoptions (model lists, piper voices, personalities)
+    _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'persona', 'image-gen', 'media'}
+
+    @app.route("/hecos/config/fragment/<panel_id>")
+    def config_fragment(panel_id):
+        """Lazy-load endpoint: returns a single config panel as an HTML fragment.
+        Called by the frontend fetch engine when the user first clicks a tab.
+        Options are built only for panels that actually need them.
+        """
+        template_name = _PANEL_MAP.get(panel_id)
+        if not template_name:
+            return f"<p style='color:red'>Panel '{panel_id}' not found.</p>", 404
+
+        try:
+            from hecos.core.i18n.translator import get_translator
+            translations = get_translator().get_translations()
+            zoptions_data = {}
+
+            if panel_id in _PANELS_NEEDING_OPTIONS:
+                # Run the heavy scan only for the panels that need model/personality lists
+                zoptions_data = _build_options_dict(cfg_mgr, fast=True)
+            
+            zconfig_data = cfg_mgr.reload()
+            from flask_login import current_user
+            return render_template(
+                template_name,
+                zconfig=zconfig_data,
+                zoptions=zoptions_data,
+                translations=translations,
+                current_user=current_user
+            )
+        except Exception as e:
+            logger.error(f"[WebUI] Fragment '{panel_id}' error: {e}")
+            return f"<p style='color:red'>Error loading panel: {e}</p>", 500
 
     @app.route("/hecos/config", methods=["GET"])
     def get_config():

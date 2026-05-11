@@ -1,32 +1,34 @@
 {
     "AUTOMATION": {
-        "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
+        "description": "Full PC control: mouse, keyboard, and window management. Use with WEBCAM.desktop_screenshot for a see-and-act loop.",
         "commands": {
-            "click": "Clicks the mouse at the given screen coordinates.",
-            "click_text": "Locates text on the screen via OCR and clicks it.",
-            "drag": "Clicks and drags from one position to another (e.g. moving a file, selecting text).",
-            "focus_browser_tab": "Clicks on a browser tab whose title contains the given text fragment (case-insensitive).",
-            "focus_window": "Brings a window to the foreground by partial title match.",
-            "get_browser_tabs": "Returns the titles of all currently open tabs in Chrome, Edge, Opera, or Brave.",
-            "get_mouse_position": "Returns the current mouse cursor coordinates (x, y).",
-            "get_screen_size": "Returns the screen resolution (width x height in pixels).",
-            "hotkey": "Executes a keyboard shortcut by holding multiple keys simultaneously.",
-            "list_windows": "Returns a list of all currently visible window titles.",
-            "maximize_window": "Maximizes a window by partial title match.",
-            "minimize_window": "Minimizes a window by partial title match.",
-            "move_to": "Moves the mouse cursor to the specified screen coordinates.",
-            "press_key": "Presses and releases a single key.",
-            "read_window_controls": "Reads the UI control tree (buttons, inputs, links) of an application window.",
-            "scroll": "Scrolls the mouse wheel at the specified position.",
-            "type_and_enter": "Types the given text and immediately presses Enter.",
-            "type_text": "Types the given text as simulated keystrokes."
+            "get_screen_size": "Returns the screen resolution (width x height).",
+            "get_mouse_position": "Returns current cursor coordinates.",
+            "click_text": "Find text on screen using OCR and click it.",
+            "move_to": "Move cursor to (x, y).",
+            "click": "Click at (x, y) — left/right/middle, single/double.",
+            "scroll": "Scroll wheel at (x, y) — positive=up, negative=down.",
+            "drag": "Click-and-drag from one position to another.",
+            "type_text": "Simulate keyboard typing of a text string.",
+            "press_key": "Press and release a single key (enter, esc, f5...).",
+            "hotkey": "Execute a keyboard shortcut (ctrl+c, ctrl+shift+esc...).",
+            "type_and_enter": "Type text and press Enter.",
+            "list_windows": "List all visible window titles.",
+            "focus_window": "Bring a window to foreground by title.",
+            "minimize_window": "Minimize a window by title.",
+            "maximize_window": "Maximize a window by title.",
+            "get_browser_tabs": "List all open browser tabs via Windows Accessibility API. Use before focus_browser_tab.",
+            "focus_browser_tab": "Click a browser tab by title fragment (no coordinates needed).",
+            "read_window_controls": "Read the UI control tree of any application window."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
-        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something or read the screen, FIRST call WEBCAM__desktop_screenshot. The system will return the image to your context. THEN analyze the image to find the exact (x, y) coordinates. FINALLY, call AUTOMATION__move_to or AUTOMATION__click with those coordinates.",
+        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. ATTENTION: For browser-specific tasks (searching, reading web content, or switching tabs in a browser), PREFER the BROWSER plugin if it's enabled in CDP Mode. Only use AUTOMATION for native desktop apps or if BROWSER tools fail.",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "🖱️",
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "BROWSER": {
         "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
@@ -58,57 +60,63 @@
         "module_type": "core_module"
     },
     "DASHBOARD": {
-        "description": "Monitoraggio hardware e stato backend AI.",
+        "description": "Hardware monitoring and AI backend status.",
         "commands": {
             "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
             "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (Telemetria attiva)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "EXECUTOR": {
-        "description": "Safe Python execution (AST Sandbox), system control, and file management.",
+        "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
         "commands": {
-            "create_dir": "Method",
-            "delete_file": "Method",
-            "execute_shell_command": "Method",
-            "get_battery_status": "Method",
-            "get_date": "Method",
-            "get_time": "Method",
-            "kill_process": "Method",
-            "list_dir": "Method",
-            "list_processes": "Method",
-            "patch_file": "Method",
-            "read_file": "Method",
-            "reboot_system": "Method",
-            "run_python_code": "Method",
-            "write_file": "Method"
+            "run_python_code": "Execute Python safely in AST sandbox.",
+            "execute_shell_command": "Run shell commands (cmd/bash).",
+            "get_time": "Current local time and date.",
+            "get_date": "Current local date.",
+            "get_battery_status": "Device battery level and charging state.",
+            "list_processes": "List top running processes.",
+            "kill_process": "Terminate a process by name.",
+            "reboot_system": "Restart the Hecos system.",
+            "read_file": "Read a file content by line range.",
+            "write_file": "Write or create a file (overwrite or append).",
+            "patch_file": "Surgically replace a text block inside a file.",
+            "delete_file": "Delete a file.",
+            "create_dir": "Create a directory tree.",
+            "list_dir": "List a directory contents."
         },
-        "status": "ONLINE (Core Tools Active)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "⚙️",
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "HELP": {
-        "description": "Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema.",
+        "description": "Displays the list of all active commands and modules in the system.",
         "commands": {
             "list_capabilities": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
             "refresh_registry": "Forces a re-read and update of the central capabilities registry (rescans plugins)."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History).",
@@ -146,7 +154,6 @@
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
         "commands": {
-            "check_internet_speed": "Tests the current internet download and upload speed.",
             "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
             "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
             "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
@@ -154,15 +161,18 @@
             "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
             "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
             "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
-            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP.",
-            "traceroute": "Performs a traceroute to show the network path and latency to a host."
+            "traceroute": "Performs a traceroute to show the network path and hop-by-hop latency to a host.",
+            "check_internet_speed": "Tests download/upload internet speed using speedtest-cli or a CDN fallback.",
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
         },
-        "status": "Online",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "WEB_UI": {
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
@@ -178,20 +188,21 @@
         "category": "PLUGINS"
     },
     "CALENDAR": {
-        "description": "Calendar plugin",
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
         "commands": {
-            "add_event": "Creates a new calendar event. Returns a confirmation string.",
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
             "delete_event": "Deletes a calendar event by ID.",
-            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
-            "list_events": "Returns a formatted list of upcoming calendar events.",
-            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "📅",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "DRIVE": {
         "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
@@ -208,101 +219,95 @@
         "module_type": "plugin"
     },
     "IMAGE_GEN": {
-        "description": "Generates images from text descriptions using AI image models.",
+        "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
         "commands": {
-            "generate_image": "Generates an image from a text description."
+            "generate_image": "Generates an image from a text description. Uses the configured provider."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
-        "routing_instructions": "",
+        "routing_instructions": "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image.",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "🎨",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "MEDIA_PLAYER": {
-        "description": "Media player: play audio/video, manage playlists via AI or dashboard.",
-        "commands": {
-            "add_to_playlist": "Add a file to an existing playlist (creates it if missing).",
-            "create_playlist": "Create a named playlist with a list of file paths.",
-            "delete_playlist": "Delete a named playlist permanently.",
-            "get_playlist": "Show the contents of a saved playlist.",
-            "get_status": "Return the current playback status (track name, position, volume).",
-            "list_playlists": "List all saved playlists with their track count.",
-            "next_track": "Skip to the next track in the current queue.",
-            "pause": "Pause or resume the current track.",
-            "play": "Play a media file or URL.",
-            "play_by_index": "Jump directly to a track by position in the current queue (0-based).",
-            "play_playlist": "Load and play a saved playlist.",
-            "prev_track": "Go back to the previous track in the current queue.",
-            "remove_from_playlist": "Remove a track from a playlist by its position (1-based).",
-            "scan_folder": "Scan a folder for audio/video files and optionally save as a playlist.",
-            "set_volume": "Set playback volume.",
-            "stop": "Stop playback completely."
-        },
-        "status": "ONLINE",
+        "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "🎵",
-        "category": "MULTIMEDIA"
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "REMINDER": {
-        "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
         "commands": {
-            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
             "list_reminders": "Lists all active reminders with their scheduled time and ID.",
-            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
-            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
-            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "🔔",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "USER": {
-        "description": "Gestione informazioni utente e preferenze",
+        "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
         "commands": {
-            "get_profile": "Retrieves the full profile of a user, including contact details and bio.",
-            "status": "Method",
-            "update_profile": "Updates one or more fields in the user's profile."
+            "get_profile": "Ottiene i dettagli completi del profilo (email, telefono, etc.)",
+            "update_profile": "Aggiorna i campi del profilo utente"
         },
-        "status": "ATTIVO",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "👥",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "WEB": {
-        "description": "Accesso alla rete per ricerche Google e apertura rapida di siti web.",
+        "description": "Web browsing, live search with content reading, and clipboard integration.",
         "commands": {
-            "fetch_page_content": "Fetches a web page and returns its readable text content.",
-            "get_clipboard": "Returns the current text from the system clipboard.",
-            "search_and_read": "Searches the web using DuckDuckGo and reads the text content of the top results.",
-            "search_web": "[DEPRECATED] DO NOT USE.",
-            "set_clipboard": "Copies the given text to the system clipboard."
+            "open_url": "Opens a URL in the default browser.",
+            "search_web": "Opens a browser search for a query.",
+            "fetch_page_content": "Reads the text content of any URL without opening a browser.",
+            "search_and_read": "Searches DDG and reads the top N result pages — returns live text content.",
+            "get_clipboard": "Returns the current system clipboard text.",
+            "set_clipboard": "Copies text to the system clipboard."
         },
-        "status": "ONLINE (Navigazione & Search)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
-        "routing_instructions": "If the user asks you to interact with a website or application that is ALREADY OPEN on their screen (e.g., 'click the next video', 'change song', 'scroll down'), DO NOT use the WEB tools. Instead, use WEBCAM__desktop_screenshot and the AUTOMATION tools to physically interact with the existing window.",
+        "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "🌐",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "WEBCAM": {
-        "description": "Accesso alla visione ottica del PC per scattare istantanee dell'ambiente o dell'Admin.",
+        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
         "commands": {
-            "desktop_screenshot": "Takes a screenshot of the entire desktop (or a specific monitor) and saves it to disk.",
-            "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
+            "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser.",
+            "desktop_screenshot": "Captures the entire desktop screen (or a specific monitor) and saves it as an image file for visual analysis."
         },
-        "status": "ONLINE (Visione Ottica)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
-        "routing_instructions": "MULTIMODAL CAPABILITY: You DO have 'eyes'! You are natively connected to a visual multimodal core. Whenever the user asks you to look at the screen, see what is there, or analyze GUI/windows, you MUST actually execute the `desktop_screenshot` tool. The system will take the picture and feed it directly into your visual core! NEVER say you cannot see the image. Just call the tool, and in the next thought loop you will see it perfectly.",
+        "routing_instructions": "WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device, you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "plugin"
     }
 }

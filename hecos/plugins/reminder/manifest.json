@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
     "icon": "🔔",
-    "lazy_load": false,
+    "lazy_load": true,
     "is_class_based": true,
     "on_load": true,
     "status": "ONLINE",

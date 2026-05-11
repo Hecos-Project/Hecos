@@ -1,11 +1,11 @@
 {
-    "plugin_id": "MEDIA_PLAYER",
+    "tag": "MEDIA_PLAYER",
     "display_name": "Hecos Media Player",
     "version": "1.1.0",
     "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
     "author": "Hecos Project",
     "is_shared": true,
-    "lazy_load": false,
+    "lazy_load": true,
     "on_load": true,
     "is_class_based": true,
     "config_schema": {

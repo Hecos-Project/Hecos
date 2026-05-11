@@ -24,10 +24,17 @@ let activeTab = window.location.hash.substring(1) || sessionStorage.getItem('hec
 window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '';
 
 
+// Panel HTML cache: panel_id → true (loaded)
+const _panelCache = {};
+// Track ongoing fetch promises to prevent double-loads
+const _panelFetching = {};
+
 /**
- * Tab switching logic
+ * Tab switching logic — supports lazy-loaded panels.
+ * On first click, fetches the panel HTML from the server and injects it.
+ * Subsequent clicks are served from the DOM (instant, no fetch).
  */
-function showTab(name, skipScroll = false) {
+async function showTab(name, skipScroll = false) {
   let targetId = name;
   const hub = window.CONFIG_HUB;
   const mod = (hub && hub.modules) ? hub.modules.find(m => m.id === name) : null;
@@ -55,18 +62,39 @@ function showTab(name, skipScroll = false) {
       targetId = 'mcp';
   }
 
-  // No special redirects for drive-editor anymore, it has a config panel
-  // if (targetId === 'drive-editor') ...
+  // Fallback Redirection for plugins without a dedicated panel
+  if (!_panelCache[targetId] && mod && mod.cat === 'PLUGINS') {
+      console.log(`Panel ${targetId} not found. Redirecting to plugins toggle list.`);
+      targetId = 'plugins';
+  }
+
+  activeTab = name;
+  sessionStorage.setItem('hecos-config-tab', name);
+
+  if (name !== 'welcome' && activeTab === 'welcome') {
+    sessionStorage.setItem('hecos-config-welcome-seen', 'true');
+    uiState.collapsedCategories = [];
+  }
+
+  // ── LAZY LOAD: fetch the panel if not yet in DOM ──────────────────────────
+  if (name !== 'welcome' && !_panelCache[targetId]) {
+    // Prevent duplicate requests
+    if (_panelFetching[targetId]) {
+      await _panelFetching[targetId];
+    } else {
+      _panelFetching[targetId] = _loadPanel(targetId);
+      await _panelFetching[targetId];
+      delete _panelFetching[targetId];
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   let panel = document.getElementById('tab-' + targetId);
   
-  // 2. Fallback Redirection (if panel still not found)
+  // After lazy load, do the plugins fallback scroll
   if (!panel && mod && mod.cat === 'PLUGINS') {
-      console.log(`Panel tab-${targetId} not found. Redirecting to plugins toggle list.`);
       targetId = 'plugins';
       panel = document.getElementById('tab-plugins');
-      
-      // SCROLL TO PLUGIN ROW in Global List
       setTimeout(() => {
           const row = document.querySelector(`[data-plugin="${mod.pluginTag || name.toUpperCase().replace('-','_')}"]`);
           if (row) {
@@ -80,15 +108,6 @@ function showTab(name, skipScroll = false) {
       }, 300);
   }
 
-  activeTab = name; // Consolidate the logical active tab
-  sessionStorage.setItem('hecos-config-tab', name);
-  
-  // As soon as user moves away from welcome, hide it forever in this session
-  if (name !== 'welcome' && activeTab === 'welcome') {
-    sessionStorage.setItem('hecos-config-welcome-seen', 'true');
-    uiState.collapsedCategories = []; // Ensure everything is expanded on first entry
-  }
-  
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.module-card').forEach(c => c.classList.remove('active'));
@@ -99,7 +118,6 @@ function showTab(name, skipScroll = false) {
   const tabBtn = document.querySelector(`.tab[onclick*="'${name}'"]`);
   if (tabBtn) tabBtn.classList.add('active');
   else {
-      // If we redirected, highlight the container tab
       const containerTab = document.querySelector(`.tab[onclick*="'${targetId}'"]`);
       if (containerTab) containerTab.classList.add('active');
   }
@@ -107,12 +125,11 @@ function showTab(name, skipScroll = false) {
   const card = document.querySelector(`.module-card[onclick*="'${name}'"]`);
   if (card) card.classList.add('active');
 
-  // Removed automatic setViewMode('tabs') to allow persistent Wall/Grid navigation
   if (viewMode === 'wall' && panel && !skipScroll) {
       panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Call specific load functions
+  // Call specific load functions after panel is in DOM
   if (name === 'users') {
       if (typeof loadMyProfile === 'function') loadMyProfile();
       if (typeof loadUsersData === 'function') loadUsersData();
@@ -132,6 +149,49 @@ function showTab(name, skipScroll = false) {
   }
   if (name === 'keymanager' && typeof kmRefresh === 'function') kmRefresh();
 }
+
+/**
+ * Fetches a config panel from the server and injects it into #panel-container.
+ * Marks the panel as cached upon success.
+ */
+async function _loadPanel(panelId) {
+  const container = document.getElementById('panel-container');
+  const skeleton  = document.getElementById('panel-skeleton');
+  if (!container) return;
+
+  if (skeleton) skeleton.style.display = 'block';
+  try {
+    const res = await fetchWithTimeout(`/hecos/config/fragment/${panelId}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const html = await res.text();
+
+    // Create a temporary container to parse the HTML
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+
+    // Inject all child nodes into the panel container
+    while (tmp.firstChild) {
+      container.appendChild(tmp.firstChild);
+    }
+
+    _panelCache[panelId] = true;
+
+    // Run any panel-specific JS init that was waiting for the DOM
+    if (typeof populateUI === 'function') populateUI();
+    if (typeof initRestartIndicators === 'function') initRestartIndicators();
+    console.log(`[LazyHub] Panel '${panelId}' loaded and injected.`);
+  } catch (e) {
+    console.error(`[LazyHub] Failed to load panel '${panelId}':`, e);
+    container.insertAdjacentHTML('beforeend',
+      `<div class="panel active" id="tab-${panelId}" style="padding:30px; color:var(--red);">
+        ⚠️ Failed to load panel. Please try again.
+      </div>`
+    );
+  } finally {
+    if (skeleton) skeleton.style.display = 'none';
+  }
+}
+
 
 function setViewMode(mode, silent = false) {
     viewMode = mode;

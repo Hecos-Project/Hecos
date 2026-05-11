@@ -183,32 +183,34 @@ class PluginDashboard(BaseModel):
     track_ram: bool = True
     track_vram: bool = True
 
+    track_vram: bool = True
+
 class PluginFileManager(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     enable_path_mapping: bool = True
     max_list_items: int = 5
     max_read_lines: int = 50
 
 class PluginHelp(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     show_disabled: bool = False
 
 class PluginImageGen(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     width: int = 1024
     height: int = 1024
     nologo: bool = False
 
-class PluginMedia(BaseModel):
+class PluginMediaPlayer(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
 
 class PluginSystem(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = False # System usually stays eager as it provides core tools
     enable_config_set: bool = True
     shell_command_timeout: int = 15
     shell_command_whitelist: List[str] = []
@@ -217,13 +219,13 @@ class PluginSystem(BaseModel):
 
 class PluginSysNet(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     proxy_enabled: bool = False
     proxy_url: str = "socks5://localhost:9150"
 
 class PluginWeb(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     llm_model: str = ""
     search_engine: str = "google"
     use_https: bool = True
@@ -231,7 +233,7 @@ class PluginWeb(BaseModel):
 
 class PluginWebcam(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     camera_index: int = 0
     image_format: str = "jpg"
     save_directory: str = "snapshots"
@@ -239,7 +241,7 @@ class PluginWebcam(BaseModel):
 
 class PluginWebUI(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = False # Web UI must be eager to start the server
     port: int = 7070
     api_port: int = 5000
     auto_open_browser: bool = False
@@ -250,7 +252,7 @@ class PluginWebUI(BaseModel):
 
 class PluginExecutor(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     timeout_seconds: int = 10
     enable_shell_commands: bool = True
     shell_timeout: int = 15
@@ -259,7 +261,7 @@ class PluginExecutor(BaseModel):
 
 class PluginRemoteTriggers(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     settings: Dict[str, Any] = Field(default_factory=lambda: {
         "enable_mediasession": True,
         "enable_volume_keys": True,
@@ -284,7 +286,7 @@ class PluginDrive(BaseModel):
 
 class PluginReminder(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     reminder_mode: str = "voice"
     ringtone_path: str = "Default_System_Alert.mp3"
     time_format: str = "24h"
@@ -294,7 +296,7 @@ class PluginReminder(BaseModel):
 
 class PluginAutomation(BaseModel):
     enabled: bool = True
-    lazy_load: bool = False
+    lazy_load: bool = True
     move_duration: float = 0.15
     type_interval: float = 0.02
     allow_window_control: bool = True
@@ -309,6 +311,14 @@ class PluginBrowser(BaseModel):
     browser_type: str = "chromium"
     browser_engine_mode: str = "app_mode"
     cdp_port: int = 9222
+
+class PluginCalendar(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = True
+
+class PluginUser(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = True
 
 
 # ─── EXTENSIONS ───────────────────────────────────────────────────────────────
@@ -352,7 +362,7 @@ class PluginsConfig(BaseModel):
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     IMAGE_GEN: PluginImageGen = Field(default_factory=PluginImageGen)
-    MEDIA: PluginMedia = Field(default_factory=PluginMedia)
+    MEDIA_PLAYER: PluginMediaPlayer = Field(default_factory=PluginMediaPlayer)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)
@@ -365,6 +375,8 @@ class PluginsConfig(BaseModel):
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
+    CALENDAR: PluginCalendar = Field(default_factory=PluginCalendar)
+    USER: PluginUser = Field(default_factory=PluginUser)
     extra_dirs: List[str] = []
 
 

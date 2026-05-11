@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
     "icon": "📅",
-    "lazy_load": false,
+    "lazy_load": true,
     "is_class_based": true,
     "on_load": true,
     "status": "ONLINE",
