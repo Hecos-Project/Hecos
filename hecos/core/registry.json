@@ -58,14 +58,14 @@
         "module_type": "core_module"
     },
     "DASHBOARD": {
-        "description": "Hardware monitoring and AI backend status.",
+        "description": "Monitoraggio hardware e stato backend AI.",
         "commands": {
             "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
             "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (Telemetry active)",
+        "status": "ONLINE (Telemetria attiva)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
@@ -98,7 +98,7 @@
         "category": "PLUGINS"
     },
     "HELP": {
-        "description": "Displays the list of all active commands and modules in the system.",
+        "description": "Visualizza l'elenco di tutti i comandi e moduli attivi nel sistema.",
         "commands": {
             "list_capabilities": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
             "refresh_registry": "Forces a re-read and update of the central capabilities registry (rescans plugins)."
@@ -269,7 +269,7 @@
             "status": "Method",
             "update_profile": "Updates one or more fields in the user's profile."
         },
-        "status": "ONLINE",
+        "status": "ATTIVO",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
@@ -277,7 +277,7 @@
         "category": "PLUGINS"
     },
     "WEB": {
-        "description": "Network access for Google searches and quick opening of websites.",
+        "description": "Accesso alla rete per ricerche Google e apertura rapida di siti web.",
         "commands": {
             "fetch_page_content": "Fetches a web page and returns its readable text content.",
             "get_clipboard": "Returns the current text from the system clipboard.",
@@ -285,7 +285,7 @@
             "search_web": "[DEPRECATED] DO NOT USE.",
             "set_clipboard": "Copies the given text to the system clipboard."
         },
-        "status": "ONLINE (Browsing & Search)",
+        "status": "ONLINE (Navigazione & Search)",
         "example": "",
         "routing_instructions": "If the user asks you to interact with a website or application that is ALREADY OPEN on their screen (e.g., 'click the next video', 'change song', 'scroll down'), DO NOT use the WEB tools. Instead, use WEBCAM__desktop_screenshot and the AUTOMATION tools to physically interact with the existing window.",
         "is_class_based": true,
@@ -293,12 +293,12 @@
         "category": "PLUGINS"
     },
     "WEBCAM": {
-        "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
+        "description": "Accesso alla visione ottica del PC per scattare istantanee dell'ambiente o dell'Admin.",
         "commands": {
             "desktop_screenshot": "Takes a screenshot of the entire desktop (or a specific monitor) and saves it to disk.",
             "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
         },
-        "status": "ONLINE (Optical Vision)",
+        "status": "ONLINE (Visione Ottica)",
         "example": "",
         "routing_instructions": "MULTIMODAL CAPABILITY: You DO have 'eyes'! You are natively connected to a visual multimodal core. Whenever the user asks you to look at the screen, see what is there, or analyze GUI/windows, you MUST actually execute the `desktop_screenshot` tool. The system will take the picture and feed it directly into your visual core! NEVER say you cannot see the image. Just call the tool, and in the next thought loop you will see it perfectly.",
         "is_class_based": true,

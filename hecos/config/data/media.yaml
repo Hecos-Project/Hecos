@@ -1,7 +1,7 @@
 image_gen:
   enabled: true
   provider: pollinations
-  model: sana
+  model: flux
   nologo: true
   api_key: ''
   api_key_comment: ''
