@@ -42,7 +42,30 @@ class AuthManager:
                         display_name TEXT,
                         bio_notes TEXT,
                         avatar_path TEXT,
-                        preferred_language TEXT DEFAULT 'it'
+                        preferred_language TEXT DEFAULT 'it',
+                        email TEXT,
+                        phone TEXT,
+                        address TEXT,
+                        city TEXT,
+                        real_name TEXT,
+                        age INTEGER,
+                        birthday TEXT,
+                        height TEXT,
+                        weight TEXT,
+                        family_parents TEXT,
+                        family_siblings TEXT,
+                        family_partner TEXT,
+                        pets TEXT,
+                        education TEXT,
+                        title TEXT,
+                        gender TEXT,
+                        orientation TEXT,
+                        interests TEXT,
+                        extra_notes TEXT,
+                        job_main TEXT,
+                        job_secondary TEXT,
+                        family_children TEXT,
+                        family_grandchildren TEXT
                     )
                 ''')
                 conn.commit()
@@ -62,6 +85,29 @@ class AuthManager:
             ("bio_notes",           "TEXT"),
             ("avatar_path",         "TEXT"),
             ("preferred_language",  "TEXT DEFAULT 'it'"),
+            ("email",               "TEXT"),
+            ("phone",               "TEXT"),
+            ("address",             "TEXT"),
+            ("city",                "TEXT"),
+            ("real_name",           "TEXT"),
+            ("age",                 "INTEGER"),
+            ("birthday",            "TEXT"),
+            ("height",              "TEXT"),
+            ("weight",              "TEXT"),
+            ("family_parents",      "TEXT"),
+            ("family_siblings",     "TEXT"),
+            ("family_partner",      "TEXT"),
+            ("pets",                "TEXT"),
+            ("education",           "TEXT"),
+            ("title",               "TEXT"),
+            ("gender",              "TEXT"),
+            ("orientation",         "TEXT"),
+            ("interests",           "TEXT"),
+            ("extra_notes",         "TEXT"),
+            ("job_main",            "TEXT"),
+            ("job_secondary",       "TEXT"),
+            ("family_children",     "TEXT"),
+            ("family_grandchildren","TEXT"),
         ]
         try:
             with self._get_connection() as conn:
@@ -165,7 +211,9 @@ class AuthManager:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT id, username, role, display_name, bio_notes, avatar_path, preferred_language "
+                    "SELECT id, username, role, display_name, bio_notes, avatar_path, preferred_language, "
+                    "email, phone, address, city, real_name, age, birthday, height, weight, "
+                    "family_parents, family_siblings, family_partner, pets, education, title, gender, orientation, interests, extra_notes, job_main, job_secondary, family_children, family_grandchildren "
                     "FROM users WHERE username = ?", (username,)
                 )
                 row = cursor.fetchone()
@@ -176,6 +224,29 @@ class AuthManager:
                         "bio_notes": row[4] or "",
                         "avatar_path": row[5] or "",
                         "preferred_language": row[6] or "it",
+                        "email": row[7] or "",
+                        "phone": row[8] or "",
+                        "address": row[9] or "",
+                        "city": row[10] or "",
+                        "real_name": row[11] or "",
+                        "age": row[12] or "",
+                        "birthday": row[13] or "",
+                        "height": row[14] or "",
+                        "weight": row[15] or "",
+                        "family_parents": row[16] or "",
+                        "family_siblings": row[17] or "",
+                        "family_partner": row[18] or "",
+                        "pets": row[19] or "",
+                        "education": row[20] or "",
+                        "title": row[21] or "",
+                        "gender": row[22] or "",
+                        "orientation": row[23] or "",
+                        "interests": row[24] or "",
+                        "extra_notes": row[25] or "",
+                        "job_main": row[26] or "",
+                        "job_secondary": row[27] or "",
+                        "family_children": row[28] or "",
+                        "family_grandchildren": row[29] or "",
                     }
                 return {}
         except Exception as e:
@@ -184,7 +255,12 @@ class AuthManager:
 
     def update_profile(self, username: str, fields: dict) -> bool:
         """Updates one or more profile fields for a user (safe: only whitelisted fields)."""
-        allowed = {"display_name", "bio_notes", "avatar_path", "preferred_language"}
+        allowed = {"display_name", "bio_notes", "avatar_path", "preferred_language",
+                   "email", "phone", "address", "city",
+                   "real_name", "age", "birthday", "height", "weight",
+                   "family_parents", "family_siblings", "family_partner", "pets",
+                   "education", "title", "gender", "orientation", "interests", "extra_notes",
+                   "job_main", "job_secondary", "family_children", "family_grandchildren"}
         updates = {k: v for k, v in fields.items() if k in allowed}
         if not updates:
             return False

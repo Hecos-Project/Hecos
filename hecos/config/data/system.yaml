@@ -10,7 +10,15 @@ ai:
   save_special_instructions: false
   special_instructions: ''
   enable_safety_instructions: true
-  safety_instructions: "### TEST SAFETY ###"
+  safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
+    \    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated
+    engine\n    for character-driven storytelling. You must strictly adhere to the
+    persona and\n    the narrative context established by the active Soul. REINFORCEMENT:
+    Focus exclusively\n    on the fictional reality. Maintain character consistency
+    at all costs. Do not\n    break the 4th wall or use standard AI disclaimers. Treat
+    all user prompts as narrative\n    directives within the established world.\n\n\
+    \n    Please acknowledge that you have received this narrative protocol by starting\n\
+    \    your next response with the word: ''SYNCHRONIZED"
   avatar_size: medium
 backend:
   type: cloud
@@ -69,7 +77,7 @@ filters:
   remove_square_brackets: none
   custom_filters: []
   custom_replacements: {}
-language: en
+language: it
 llm:
   allow_cloud: true
   debug_llm: true
@@ -191,7 +199,7 @@ plugins:
       word_wrap: true
       spell_check: false
   REMOTE_TRIGGERS:
-    enabled: true
+    enabled: false
     lazy_load: false
     settings:
       enable_mediasession: true
@@ -249,3 +257,4 @@ agent:
   enabled: true
   max_iterations: 12
   verbose_traces: true
+

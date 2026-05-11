@@ -262,6 +262,20 @@
         "icon": "",
         "category": "PLUGINS"
     },
+    "USER": {
+        "description": "Gestione informazioni utente e preferenze",
+        "commands": {
+            "get_profile": "Retrieves the full profile of a user, including contact details and bio.",
+            "status": "Method",
+            "update_profile": "Updates one or more fields in the user's profile."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "👥",
+        "category": "PLUGINS"
+    },
     "WEB": {
         "description": "Network access for Google searches and quick opening of websites.",
         "commands": {

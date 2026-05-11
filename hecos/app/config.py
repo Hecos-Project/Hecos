@@ -157,11 +157,13 @@ class ConfigManager:
             self._sync_dict()
 
             new_lang = self._model.language
-            if new_lang and new_lang != old_lang:
+            if new_lang:
                 try:
                     from hecos.core.i18n import translator
-                    translator.get_translator().set_language(new_lang)
-                    logger.info(f"[CONFIG] Language updated to: {new_lang}")
+                    t_inst = translator.get_translator()
+                    if t_inst.language != new_lang:
+                        t_inst.set_language(new_lang)
+                        logger.info(f"[CONFIG] Language runtime updated to: {new_lang}")
                 except Exception:
                     pass
 

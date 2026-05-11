@@ -68,13 +68,21 @@ def init_users_routes(app, logger):
         try:
             data = request.get_json(force=True)
             new_password = data.get("password")
+            current_pass = data.get("current_password")
 
             if not new_password:
-                return jsonify({"ok": False, "error": "Password richiesta"}), 400
+                return jsonify({"ok": False, "error": "Nuova password richiesta"}), 400
+
+            # Security: If a user is changing their OWN password, they MUST provide the current one.
+            # Admins changing OTHER users' passwords can skip this check.
+            is_self = (current_user.username == username)
+            if is_self:
+                if not current_pass or not auth_mgr.verify_password(username, current_pass):
+                    return jsonify({"ok": False, "error": "Password attuale errata o mancante"}), 403
 
             success = auth_mgr.update_password(username, new_password)
             if success:
-                logger.info(f"[Auth API] Password aggiornata per: {username}")
+                logger.info(f"[Auth API] Password aggiornata per: {username} (Auto-verified: {is_self})")
                 return jsonify({"ok": True})
             else:
                 return jsonify({"ok": False, "error": "Utente non trovato"}), 404
@@ -108,6 +116,22 @@ def init_users_routes(app, logger):
         data = request.get_json(force=True)
         if auth_mgr.update_profile(username, data):
             logger.info(f"[Auth API] Profilo aggiornato per: {username}")
+            # --- Language sync fix: apply the new language immediately ---
+            new_lang = data.get("preferred_language")
+            if new_lang:
+                try:
+                    # 1. Update the live translator instance
+                    from hecos.core.i18n import translator
+                    translator.get_translator().set_language(new_lang)
+                    
+                    # 2. Update and persist the global system configuration
+                    if hasattr(app, 'hecos_config_manager'):
+                        app.hecos_config_manager.set(new_lang, "language")
+                        app.hecos_config_manager.save()
+                    
+                    logger.info(f"[Auth API] Lingua applicata e salvata in system.yaml: {new_lang}")
+                except Exception as lang_e:
+                    logger.warning(f"[Auth API] Lingua salvata in DB ma errore nella persistenza globale: {lang_e}")
             return jsonify({"ok": True})
         return jsonify({"ok": False, "error": "Errore aggiornamento profilo"}), 400
 
