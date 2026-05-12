@@ -25,5 +25,6 @@
             },
             "description": "Background colors for days of the week (0=Sun, 1=Mon, ..., 6=Sat)."
         }
-    }
+    },
+    "required_plugin": "CALENDAR"
 }

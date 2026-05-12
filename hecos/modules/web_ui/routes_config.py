@@ -107,6 +107,7 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         'drive-editor':   'modules/config_drive_editor.html',
         'logs':           'modules/config_logs.html',
         'privacy':        'modules/config_privacy.html',
+        'widgets':        'modules/config_widgets.html',
         'help':           'modules/config_help.html',
     }
 

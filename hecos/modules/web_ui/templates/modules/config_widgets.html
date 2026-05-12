@@ -1,0 +1,176 @@
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">🧩 Widget Manager</div>
+        <div class="card-desc">Manage sidebar widgets: visibility, ordering, and plugin dependencies.</div>
+    </div>
+
+    <div id="widgets-list" class="form-section">
+        <div style="padding:20px; text-align:center; color:var(--muted);" id="widgets-loading">
+            <i class="fas fa-circle-notch fa-spin"></i> Loading widgets...
+        </div>
+    </div>
+</div>
+
+<style>
+    .widget-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: transform 0.2s, border-color 0.2s;
+    }
+    .widget-card:hover {
+        border-color: var(--accent);
+    }
+    .widget-card.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .widget-icon {
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+        background: var(--bg3);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .widget-info {
+        flex: 1;
+    }
+    .widget-name {
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 2px;
+    }
+    .widget-desc {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+    .widget-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .widget-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .drag-handle {
+        cursor: grab;
+        color: var(--muted);
+        padding: 8px;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+</style>
+
+<script>
+    async function loadWidgetsPanel() {
+        const container = document.getElementById('widgets-list');
+        try {
+            const resp = await fetch('/api/widgets');
+            const data = await resp.json();
+            if (!data.ok) throw new Error(data.error);
+
+            container.innerHTML = '';
+            data.widgets.forEach(w => {
+                const card = document.createElement('div');
+                card.className = `widget-card ${w.plugin_active ? '' : 'disabled'}`;
+                card.dataset.id = w.extension_id;
+
+                const icon = window.getIconForModule(w.extension_id, w.display_name);
+                
+                card.innerHTML = `
+                    <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></div>
+                    <div class="widget-icon">${icon}</div>
+                    <div class="widget-info">
+                        <div class="widget-name">${w.display_name} <span class="badge-pill" style="font-size:9px; vertical-align:middle;">v${w.version}</span></div>
+                        <div class="widget-desc">${w.description}</div>
+                        <div style="margin-top:8px;">
+                            ${w.required_plugin ? `
+                                <span class="badge-pill" style="background:${w.plugin_active ? 'var(--green-muted)' : 'var(--red-muted)'}; color:${w.plugin_active ? 'var(--green)' : 'var(--red)'}; font-size:10px;">
+                                    Required: ${w.required_plugin} ${w.plugin_active ? '✅' : '❌'}
+                                </span>
+                            ` : '<span class="badge-pill" style="font-size:10px;">No dependency</span>'}
+                        </div>
+                    </div>
+                    <div class="widget-controls">
+                        <label class="switch no-autosave">
+                            <input type="checkbox" ${w.visible ? 'checked' : ''} 
+                                   ${w.plugin_active ? '' : 'disabled'}
+                                   onchange="toggleWidgetVisibility('${w.extension_id}', this.checked, this)">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        } catch (err) {
+            container.innerHTML = `<div style="color:var(--red); padding:20px;">Error: ${err.message}</div>`;
+        }
+    }
+
+    const widgetChannel = new BroadcastChannel('hecos_widgets');
+
+    function broadcastWidgetSync() {
+        // Broadacst to same-tab listeners (iframes)
+        widgetChannel.postMessage({ type: 'refresh' });
+        // Broadcast to other tabs
+        localStorage.setItem('hecos_sidebar_sync', Date.now());
+    }
+
+    async function toggleWidgetVisibility(id, visible, inputEl) {
+        if (!id || id === 'undefined') {
+            console.error("[WIDGETS] Cannot toggle visibility: Invalid ID", id);
+            return;
+        }
+        
+        // Visual feedback
+        const card = inputEl.closest('.widget-card');
+        card.style.opacity = '0.5';
+        card.style.pointerEvents = 'none';
+
+        try {
+            const resp = await fetch(`/api/widgets/${id}/visible`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({visible})
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                // UPDATE GLOBAL STATE to prevent reversion on next global save
+                if (window.cfg) {
+                    if (!window.cfg.widgets) window.cfg.widgets = {};
+                    if (!window.cfg.widgets.per_widget) window.cfg.widgets.per_widget = {};
+                    if (!window.cfg.widgets.per_widget[id]) window.cfg.widgets.per_widget[id] = {};
+                    window.cfg.widgets.per_widget[id].visible = visible;
+                    console.log(`[WIDGETS] Updated window.cfg.widgets.per_widget.${id}.visible = ${visible}`);
+                }
+
+                showToast(`Widget ${visible ? 'attivato' : 'disattivato'}`, 'info');
+                broadcastWidgetSync();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (err) {
+            showToast(`Errore: ${err.message}`, 'error');
+            // Revert checkbox on error
+            inputEl.checked = !visible;
+        } finally {
+            card.style.opacity = '1';
+            card.style.pointerEvents = 'all';
+        }
+    }
+
+    // Initialize
+    loadWidgetsPanel();
+</script>

@@ -857,6 +857,9 @@
         "webui_media_vault_title": "Media Vault & Privacy",
         "webui_media_vault_desc": "Gestisci immagini, audio e video generati e salvati da Hecos sul disco locale predefinito.",
         "webui_media_open_folder": "Apri Cartella Media",
-        "webui_mp_select_playlist": "Seleziona Playlist..."
+        "webui_mp_select_playlist": "Seleziona Playlist...",
+        "sidebar_manage_widgets": "Gestisci Widget",
+        "sidebar_empty_title": "Qui non c'è niente",
+        "sidebar_empty_add": "Aggiungi Widgets"
     }
 }

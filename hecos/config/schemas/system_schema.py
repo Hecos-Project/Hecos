@@ -395,6 +395,17 @@ class SystemFlagsConfig(BaseModel):
     flask_debug: bool = False
 
 
+# ─── WIDGETS ──────────────────────────────────────────────────────────────────
+
+class WidgetPersistence(BaseModel):
+    visible: bool = True
+
+class WidgetsConfig(BaseModel):
+    model_config = ConfigDict(extra='allow')
+    sidebar_order: List[str] = Field(default_factory=list)
+    per_widget: Dict[str, WidgetPersistence] = Field(default_factory=dict)
+
+
 # ─── ROOT ─────────────────────────────────────────────────────────────────────
 
 class SystemConfig(BaseModel):
@@ -415,3 +426,4 @@ class SystemConfig(BaseModel):
     processor: ProcessorConfig = Field(default_factory=ProcessorConfig)
     routing_engine: RoutingEngineConfig = Field(default_factory=RoutingEngineConfig)
     system: SystemFlagsConfig = Field(default_factory=SystemFlagsConfig)
+    widgets: WidgetsConfig = Field(default_factory=WidgetsConfig)

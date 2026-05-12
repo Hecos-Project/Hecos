@@ -279,14 +279,7 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
             profile = auth_mgr.get_profile(current_user.username) if current_user.is_authenticated else None
             translations = get_translator().get_translations()
 
-            # Build the list of sidebar widget template paths for Jinja {% include %}
-            # Extension templates dirs are registered in the Jinja ChoiceLoader at boot,
-            # so we only need the bare filename here.
-            _widgets_templates = []
-            for manifest in get_sidebar_widgets():
-                ext_id = manifest.get("extension_id", "")
-                if ext_id:
-                    _widgets_templates.append(f"{ext_id}_widget.html")
+
 
 
             # Pass Hecos config as 'zconfig' to avoid conflict with Flask's 'config'
@@ -295,7 +288,7 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
                 profile=profile,
                 zconfig=cfg_mgr.config,
                 translations=translations,
-                sidebar_widgets=_widgets_templates,
+                sidebar_widgets=get_sidebar_widgets(config=cfg_mgr.config),
             ))
             resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
             resp.headers["Pragma"] = "no-cache"

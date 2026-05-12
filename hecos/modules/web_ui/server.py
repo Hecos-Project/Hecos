@@ -164,7 +164,10 @@ class HecosWebUIServer:
             
             from .routes_mcp import init_mcp_routes
             init_mcp_routes(app, self.config_manager, self.logger)
-            
+
+            from .routes_widgets import init_widget_routes
+            init_widget_routes(app, self.config_manager, self.logger)
+
             from .routes_history import history_bp
             app.register_blueprint(history_bp)
 

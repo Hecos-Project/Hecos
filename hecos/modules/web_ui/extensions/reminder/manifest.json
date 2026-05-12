@@ -6,5 +6,6 @@
     "description": "Sidebar widget and REST API for the Reminder plugin. Shows upcoming reminders and allows quick-add/cancel/snooze from the chat interface.",
     "sidebar_widget": true,
     "eager_load": true,
-    "config_schema": {}
+    "config_schema": {},
+    "required_plugin": "REMINDER"
 }

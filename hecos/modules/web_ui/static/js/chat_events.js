@@ -155,6 +155,11 @@ window.initEvents = function() {
       if (window.reminderWidget && window.reminderWidget.refresh) {
         window.reminderWidget.refresh();
       }
+    } else if (ev.type === 'widgets_refresh') {
+      console.log("[WIDGETS] SSE refresh signal received.");
+      if (typeof window.refreshSidebarWidgets === 'function') {
+        window.refreshSidebarWidgets();
+      }
     }
   };
 };

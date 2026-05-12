@@ -46,13 +46,34 @@
   {% include 'modules/chat_history_panel.html' %}
 
   <!-- ── WEB_UI Sidebar Widgets (Shared Extensions) ── -->
-  {% if sidebar_widgets %}
   <div id="sidebar-widgets-zone">
-    {% for widget in sidebar_widgets %}
-      {% include widget %}
-    {% endfor %}
+    {% set has_widgets = sidebar_widgets|length > 0 %}
+    <div id="widgets-container" style="{{ 'display:none;' if not has_widgets }}">
+        {% include 'modules/chat_sidebar_widgets.html' %}
+    </div>
+
+    <!-- Empty State -->
+    <div id="widgets-empty-state" class="sidebar-card" style="text-align:center; padding:24px 16px; {{ 'display:none;' if has_widgets }}">
+        <div style="font-size:32px; margin-bottom:12px; opacity:0.5;">🧩</div>
+        <div style="font-weight:600; color:var(--text); margin-bottom:4px;">{{ t('sidebar_empty_title') or 'Qui non c\'è niente' }}</div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:16px;">Personalizza la tua sidebar aggiungendo i widget che preferisci.</div>
+        
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="flex:1; justify-content:center;">
+                <i class="fas fa-plus"></i> {{ t('sidebar_empty_add') or 'Aggiungi Widgets' }}
+            </a>
+            <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="width:36px; padding:0; justify-content:center; color:var(--muted);" title="Configura">
+                <i class="fas fa-cog"></i>
+            </a>
+        </div>
+    </div>
   </div>
-  {% endif %}
+
+  <div id="widgets-manage-footer" class="sidebar-card" style="padding:4px 0; border:none; background:transparent; {{ 'display:none;' if not has_widgets }}">
+    <button class="sidebar-btn btn-xs" onclick="toggleSidebarOrderMode()" style="opacity:0.5; font-size:10px; margin:0 auto; display:block;">
+       ⚙️ {{ t('sidebar_manage_widgets') or 'Manage Widgets' }}
+    </button>
+  </div>
 
   <!-- ── Audio Controls ── -->
 
@@ -83,4 +104,7 @@
   <div class="sidebar-footer">
     <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos — Created by <strong>Antonio Meloni</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
   </div>
+  <script>
+    console.log("[WIDGETS] Sidebar loaded. has_widgets={{ has_widgets|tojson }}");
+  </script>
 </div>

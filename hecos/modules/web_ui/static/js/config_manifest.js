@@ -49,6 +49,7 @@ window.CONFIG_HUB = {
         { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '📊', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
         { id: 'domotica',  label: 'hub_mod_domotica',     icon: '🏠', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
 
+        { id: 'widgets',   label: 'Widget Manager',       icon: '🧩', cat: 'SISTEMA', isCore: true },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '❓', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true, pluginTag: 'USERS' },
@@ -133,5 +134,5 @@ window.LAZY_PANEL_IDS = new Set([
     'web', 'webcam', 'executor', 'automation', 'dashboard', 'domotica',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'reminder', 'calendar', 'studio', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'help'
+    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help'
 ]);
