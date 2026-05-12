@@ -481,6 +481,39 @@ def init_chat_routes(app, cfg_mgr, root_dir: str, logger):
         css_dir = os.path.join(os.path.dirname(__file__), "static", "css")
         return send_from_directory(css_dir, filename)
 
+    @app.route("/api/images", methods=["GET"])
+    def list_ai_images():
+        """Returns a list of all images available in the media/images directory."""
+        from flask import jsonify
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        images = []
+        try:
+            for f in os.listdir(IMAGES_DIR):
+                if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp', '.gif')):
+                    images.append({
+                        "name": f,
+                        "url": f"/api/images/{f}"
+                    })
+            # Sort by modification time (newest first)
+            images.sort(key=lambda x: os.path.getmtime(os.path.join(IMAGES_DIR, x['name'])), reverse=True)
+            return jsonify(images)
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/open_media_folder", methods=["POST"])
+    def api_open_media_folder():
+        from flask import jsonify
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+        try:
+            if os.name == 'nt':
+                os.startfile(IMAGES_DIR)
+            else:
+                import subprocess
+                subprocess.Popen(["xdg-open", IMAGES_DIR])
+            return jsonify({"ok": True})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/images/<filename>")
     def serve_ai_image(filename):
         """

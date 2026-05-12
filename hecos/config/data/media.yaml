@@ -9,7 +9,7 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 1928872996
+  last_seed: 11692815
   sampler: dpm++2m_karras
   scheduler: karras
   guidance_scale: 1.0
@@ -19,7 +19,7 @@ image_gen:
   auto_enrich: false
   enrich_keywords: ''
   style: none
-  optimize_for_flux: true
+  optimize_for_flux: false
   flux_refiner_instructions: ''
   show_metadata_in_chat: true
   presets: {}
