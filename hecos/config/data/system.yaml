@@ -265,6 +265,8 @@ widgets:
       visible: false
     quick_links:
       visible: false
+  sidebar_status_collapsed: true
+  sidebar_audio_collapsed: true
 agent:
   enabled: true
   max_iterations: 12

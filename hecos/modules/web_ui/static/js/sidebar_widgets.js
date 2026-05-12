@@ -43,6 +43,42 @@ function toggleSidebarOrderMode() {
     }
 }
 
+async function toggleStatusCollapse() {
+    const card = document.getElementById('status-card');
+    if (!card) return;
+    
+    const isCollapsed = card.classList.toggle('collapsed');
+    console.log(`[WIDGETS] Status collapsed: ${isCollapsed}`);
+
+    try {
+        await fetch('/api/widgets/status-collapsed', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({collapsed: isCollapsed})
+        });
+    } catch (err) {
+        console.error("[WIDGETS] Failed to save status collapse state:", err);
+    }
+}
+
+async function toggleAudioCollapse() {
+    const card = document.getElementById('audio-card');
+    if (!card) return;
+    
+    const isCollapsed = card.classList.toggle('collapsed');
+    console.log(`[WIDGETS] Audio collapsed: ${isCollapsed}`);
+
+    try {
+        await fetch('/api/widgets/audio-collapsed', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({collapsed: isCollapsed})
+        });
+    } catch (err) {
+        console.error("[WIDGETS] Failed to save audio collapse state:", err);
+    }
+}
+
 async function refreshSidebarWidgets() {
     try {
         // Cache-buster to prevent stale responses on some browsers

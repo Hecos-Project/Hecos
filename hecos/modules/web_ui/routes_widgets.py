@@ -86,6 +86,42 @@ def init_widget_routes(app, config_manager, logger_ref=None):
         _log.warning(f"WIDGETS: Failed to set visibility for [{ext_id}]")
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
+    # ── POST /api/widgets/status-collapsed ──────────────────────────────────────
+    @app.route("/api/widgets/status-collapsed", methods=["POST"])
+    @login_required
+    def api_set_status_collapsed():
+        data = request.get_json(silent=True) or {}
+        if "collapsed" not in data:
+            return jsonify({"ok": False, "error": "'collapsed' field required"}), 400
+
+        collapsed = bool(data["collapsed"])
+        _log.info(f"WIDGETS: Setting status-collapsed to {collapsed}")
+        
+        res = config_manager.set(collapsed, "widgets", "sidebar_status_collapsed")
+        if res:
+            ok = _save_config()
+            return jsonify({"ok": True, "collapsed": collapsed})
+        
+        return jsonify({"ok": False, "error": "Failed to update config"}), 500
+
+    # ── POST /api/widgets/audio-collapsed ───────────────────────────────────────
+    @app.route("/api/widgets/audio-collapsed", methods=["POST"])
+    @login_required
+    def api_set_audio_collapsed():
+        data = request.get_json(silent=True) or {}
+        if "collapsed" not in data:
+            return jsonify({"ok": False, "error": "'collapsed' field required"}), 400
+
+        collapsed = bool(data["collapsed"])
+        _log.info(f"WIDGETS: Setting audio-collapsed to {collapsed}")
+        
+        res = config_manager.set(collapsed, "widgets", "sidebar_audio_collapsed")
+        if res:
+            ok = _save_config()
+            return jsonify({"ok": True, "collapsed": collapsed})
+        
+        return jsonify({"ok": False, "error": "Failed to update config"}), 500
+
     # ── GET /api/widgets/render ────────────────────────────────────────────────
     @app.route("/api/widgets/render", methods=["GET"])
     @login_required

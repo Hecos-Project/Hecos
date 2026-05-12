@@ -404,6 +404,8 @@ class WidgetsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
     sidebar_order: List[str] = Field(default_factory=list)
     per_widget: Dict[str, WidgetPersistence] = Field(default_factory=dict)
+    sidebar_status_collapsed: bool = False
+    sidebar_audio_collapsed: bool = False
 
 
 # ─── ROOT ─────────────────────────────────────────────────────────────────────

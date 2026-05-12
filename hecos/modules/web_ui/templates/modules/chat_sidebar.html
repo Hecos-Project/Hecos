@@ -6,8 +6,29 @@
     </div>
     <div class="logo-sub">Helping Companion System</div>
   </div>
-  <div class="sidebar-card full-width">
-    <div class="sidebar-card-title">STATUS</div>
+  <style>
+    /* Collapsible sidebar sections */
+    #status-card, #audio-card { transition: all 0.3s ease; }
+    #status-card.collapsed .status-pill,
+    #audio-card.collapsed .audio-toggle-row,
+    #audio-card.collapsed #sidebar-stop-voice-btn { display: none; }
+    
+    .collapsed .status-chevron,
+    .collapsed .audio-chevron { transform: rotate(-90deg); }
+
+    .status-chevron, .audio-chevron { 
+      font-size: 10px; 
+      opacity: 0.5; 
+      transition: transform 0.3s ease;
+    }
+    .sidebar-card-title.clickable:hover { color: var(--accent); }
+  </style>
+
+  <div class="sidebar-card full-width {{ 'collapsed' if zconfig.widgets.sidebar_status_collapsed }}" id="status-card">
+    <div class="sidebar-card-title clickable" onclick="toggleStatusCollapse()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+      STATUS
+      <i class="fas fa-chevron-down status-chevron"></i>
+    </div>
     <style>
       /* Final Refinement: Crisp, non-glowing text for sidebar status indicators */
       #sidebar .status-val { 
@@ -77,8 +98,11 @@
 
   <!-- ── Audio Controls ── -->
 
-  <div class="sidebar-card">
-    <div class="sidebar-card-title">🔊 AUDIO</div>
+  <div class="sidebar-card {{ 'collapsed' if zconfig.widgets.sidebar_audio_collapsed }}" id="audio-card">
+    <div class="sidebar-card-title clickable" onclick="toggleAudioCollapse()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+      <span>🔊 AUDIO</span>
+      <i class="fas fa-chevron-down audio-chevron"></i>
+    </div>
     <div class="audio-toggle-row">
       <button class="audio-toggle-btn" id="mic-btn" onclick="toggleMic()" title="Toggle Microphone (F4)">
         🎤 <span id="mic-label">MIC</span>
