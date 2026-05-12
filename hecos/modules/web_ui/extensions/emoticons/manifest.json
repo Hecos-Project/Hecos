@@ -1,9 +1,9 @@
 {
     "extension_id": "emoticons",
     "parent_plugin": "WEB_UI",
-    "display_name": "Emoticons",
+    "display_name": "ext_emoticons_title",
     "version": "1.0.0",
-    "description": "Simple floating Emoji Picker for the chat interface.",
+    "description": "ext_emoticons_desc",
     "sidebar_widget": false,
     "eager_load": true,
     "config_schema": {}

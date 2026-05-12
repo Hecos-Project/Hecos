@@ -1,12 +1,12 @@
 <div class="card">
-    <div class="card-header">
-        <div class="card-title">🧩 Widget Manager</div>
-        <div class="card-desc">Manage sidebar widgets: visibility, ordering, and plugin dependencies.</div>
-    </div>
+    <div class="card-title">🧩 {{ t('webui_conf_widgets_title') }}</div>
+    <p class="muted" style="font-size: 11px; margin-bottom: 20px;">
+        {{ t('webui_conf_widgets_desc') }}
+    </p>
 
     <div id="widgets-list" class="form-section">
-        <div style="padding:20px; text-align:center; color:var(--muted);" id="widgets-loading">
-            <i class="fas fa-circle-notch fa-spin"></i> Loading widgets...
+        <div style="padding:40px; text-align:center; color:var(--muted); font-size: 13px;" id="widgets-loading">
+            <i class="fas fa-circle-notch fa-spin" style="margin-right: 10px;"></i> {{ t('loading') }}
         </div>
     </div>
 </div>
@@ -21,10 +21,11 @@
         display: flex;
         align-items: center;
         gap: 16px;
-        transition: transform 0.2s, border-color 0.2s;
+        transition: transform 0.2s, border-color 0.2s, background 0.2s;
     }
     .widget-card:hover {
         border-color: var(--accent);
+        background: rgba(var(--accent-rgb), 0.02);
     }
     .widget-card.disabled {
         opacity: 0.6;
@@ -35,41 +36,50 @@
         width: 40px;
         height: 40px;
         background: var(--bg3);
-        border-radius: 8px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
+        color: var(--accent);
     }
     .widget-info {
         flex: 1;
     }
     .widget-name {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text);
-        margin-bottom: 2px;
+        margin-bottom: 4px;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     .widget-desc {
         font-size: 11px;
         color: var(--muted);
         line-height: 1.4;
     }
-    .widget-status {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .widget-controls {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
     .drag-handle {
         cursor: grab;
         color: var(--muted);
         padding: 8px;
+        opacity: 0.5;
+        transition: opacity 0.2s;
     }
-    .drag-handle:active {
-        cursor: grabbing;
+    .drag-handle:hover {
+        opacity: 1;
+    }
+    .badge-v {
+        background: var(--bg3);
+        color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-family: 'JetBrains Mono', monospace;
     }
 </style>
 
@@ -88,19 +98,28 @@
                 card.dataset.id = w.extension_id;
 
                 const icon = window.getIconForModule(w.extension_id, w.display_name);
+                const depStatus = w.plugin_active ? 'OK' : 'MISSING';
+                const depClass = w.plugin_active ? 'success' : 'danger';
                 
                 card.innerHTML = `
-                    <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></div>
+                    <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
                     <div class="widget-icon">${icon}</div>
                     <div class="widget-info">
-                        <div class="widget-name">${w.display_name} <span class="badge-pill" style="font-size:9px; vertical-align:middle;">v${w.version}</span></div>
-                        <div class="widget-desc">${w.description}</div>
-                        <div style="margin-top:8px;">
+                        <div class="widget-name">
+                            ${t(w.display_name)} 
+                            <span class="badge-v">v${w.version}</span>
+                        </div>
+                        <div class="widget-desc">${t(w.description)}</div>
+                        <div style="margin-top:8px; display: flex; gap: 8px;">
                             ${w.required_plugin ? `
-                                <span class="badge-pill" style="background:${w.plugin_active ? 'var(--green-muted)' : 'var(--red-muted)'}; color:${w.plugin_active ? 'var(--green)' : 'var(--red)'}; font-size:10px;">
-                                    Required: ${w.required_plugin} ${w.plugin_active ? '✅' : '❌'}
+                                <span class="badge-pill" style="border-color: var(--${w.plugin_active ? 'green' : 'red'}); background: rgba(var(--${w.plugin_active ? 'green' : 'red'}-rgb), 0.1); color: var(--${w.plugin_active ? 'green' : 'red'});">
+                                    <i class="fas fa-puzzle-piece"></i> ${w.required_plugin}
                                 </span>
-                            ` : '<span class="badge-pill" style="font-size:10px;">No dependency</span>'}
+                            ` : `
+                                <span class="badge-pill">
+                                    <i class="fas fa-microchip"></i> ${t('System Core')}
+                                </span>
+                            `}
                         </div>
                     </div>
                     <div class="widget-controls">
@@ -108,7 +127,7 @@
                             <input type="checkbox" ${w.visible ? 'checked' : ''} 
                                    ${w.plugin_active ? '' : 'disabled'}
                                    onchange="toggleWidgetVisibility('${w.extension_id}', this.checked, this)">
-                            <span class="slider round"></span>
+                            <span class="slider"></span>
                         </label>
                     </div>
                 `;
