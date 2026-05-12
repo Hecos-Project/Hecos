@@ -1,30 +1,26 @@
 image_gen:
   enabled: true
   provider: pollinations
-  model: sana
-  nologo: true
+  model: flux
+  nologo: false
   api_key: ''
   api_key_comment: ''
   aspect_ratio: 1:1
   width: 1024
   height: 1024
   seed: -1
-  last_seed: -1
+  last_seed: 1058482670
   sampler: euler_a
   scheduler: euler
   guidance_scale: 7.5
   num_inference_steps: 30
   enable_negative_prompt: true
-  negative_prompt: distorted, extra fingers, malformed limbs, missing limbs, 
-    ugly, blurry, low quality
+  negative_prompt: ''
   auto_enrich: true
-  enrich_keywords: masterpiece, 8k wallpaper, highly detailed, realistic, sharp 
-    focus, cinematic lighting
+  enrich_keywords: ''
   style: none
   optimize_for_flux: true
-  flux_refiner_instructions: Convert keywords into a descriptive natural 
-    language paragraph for Flux. Convert keywords into a descriptive natural 
-    language paragraph for Flux. Output ONLY the optimised prompt, no preamble.
+  flux_refiner_instructions: ''
   show_metadata_in_chat: false
   presets: {}
   active_preset: ''

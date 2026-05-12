@@ -114,20 +114,30 @@
       const bCfg = window.cfg?.plugins?.BROWSER || {};
       const mode = bCfg.browser_engine_mode || 'app_mode';
       
-      if(mode === 'app_mode') document.getElementById('em-app').checked = true;
-      if(mode === 'cdp_mode') document.getElementById('em-cdp').checked = true;
+      const emApp = document.getElementById('em-app');
+      if(emApp && mode === 'app_mode') emApp.checked = true;
+      const emCdp = document.getElementById('em-cdp');
+      if(emCdp && mode === 'cdp_mode') emCdp.checked = true;
       
       const aCfg = window.cfg?.plugins?.AUTOMATION || {};
       const autoEnabled = aCfg.enabled ?? false;
-      document.getElementById('automation-enabled').checked = autoEnabled;
+      const autoEl = document.getElementById('automation-enabled');
+      if (autoEl) autoEl.checked = autoEnabled;
 
-      document.getElementById('browser-cdp-port').value = bCfg.cdp_port || 9222;
+      const cdpPort = document.getElementById('browser-cdp-port');
+      if (cdpPort) cdpPort.value = bCfg.cdp_port || 9222;
       
-      // Update the legacy toggles to reflect the loaded state
-      document.getElementById('browser-headless').checked = bCfg.headless ?? true;
-      document.getElementById('browser-block-ads').checked = bCfg.block_ads ?? true;
-      document.getElementById('browser-startup-url').value = bCfg.startup_url || '';
-      document.getElementById('browser-engine').value = bCfg.browser_type || 'chromium';
+      const headless = document.getElementById('browser-headless');
+      if (headless) headless.checked = bCfg.headless ?? true;
+      
+      const blockAds = document.getElementById('browser-block-ads');
+      if (blockAds) blockAds.checked = bCfg.block_ads ?? true;
+      
+      const startup = document.getElementById('browser-startup-url');
+      if (startup) startup.value = bCfg.startup_url || '';
+      
+      const engine = document.getElementById('browser-engine');
+      if (engine) engine.value = bCfg.browser_type || 'chromium';
   };
 
   /**

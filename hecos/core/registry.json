@@ -1,35 +1,4 @@
 {
-    "AUTOMATION": {
-        "description": "Full PC control: mouse, keyboard, and window management. Use with WEBCAM.desktop_screenshot for a see-and-act loop.",
-        "commands": {
-            "get_screen_size": "Returns the screen resolution (width x height).",
-            "get_mouse_position": "Returns current cursor coordinates.",
-            "click_text": "Find text on screen using OCR and click it.",
-            "move_to": "Move cursor to (x, y).",
-            "click": "Click at (x, y) — left/right/middle, single/double.",
-            "scroll": "Scroll wheel at (x, y) — positive=up, negative=down.",
-            "drag": "Click-and-drag from one position to another.",
-            "type_text": "Simulate keyboard typing of a text string.",
-            "press_key": "Press and release a single key (enter, esc, f5...).",
-            "hotkey": "Execute a keyboard shortcut (ctrl+c, ctrl+shift+esc...).",
-            "type_and_enter": "Type text and press Enter.",
-            "list_windows": "List all visible window titles.",
-            "focus_window": "Bring a window to foreground by title.",
-            "minimize_window": "Minimize a window by title.",
-            "maximize_window": "Maximize a window by title.",
-            "get_browser_tabs": "List all open browser tabs via Windows Accessibility API. Use before focus_browser_tab.",
-            "focus_browser_tab": "Click a browser tab by title fragment (no coordinates needed).",
-            "read_window_controls": "Read the UI control tree of any application window."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. ATTENTION: For browser-specific tasks (searching, reading web content, or switching tabs in a browser), PREFER the BROWSER plugin if it's enabled in CDP Mode. Only use AUTOMATION for native desktop apps or if BROWSER tools fail.",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "🖱️",
-        "category": "PLUGINS",
-        "module_type": "core_module"
-    },
     "BROWSER": {
         "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
         "commands": {
@@ -178,7 +147,26 @@
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
         "commands": {
             "get_panel_url": "Returns the URL of the chat interface.",
-            "open_browser": "Opens the Hecos web interface in the default browser if not already open."
+            "open_browser": "Opens the Hecos web interface in the default browser if not already open.",
+            "set_state_manager": "Injects the live StateManager from the main application."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
+    "CALENDAR": {
+        "description": "Calendar plugin",
+        "commands": {
+            "add_event": "Creates a new calendar event. Returns a confirmation string.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
+            "list_events": "Returns a formatted list of upcoming calendar events.",
+            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
         },
         "status": "ONLINE",
         "example": "",
@@ -186,23 +174,6 @@
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS"
-    },
-    "CALENDAR": {
-        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
-        "commands": {
-            "add_event": "Adds an event to the calendar.",
-            "list_events": "Lists upcoming calendar events.",
-            "delete_event": "Deletes a calendar event by ID.",
-            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "📅",
-        "category": "PLUGINS",
-        "module_type": "plugin"
     },
     "DRIVE": {
         "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
@@ -245,23 +216,22 @@
         "module_type": "plugin"
     },
     "REMINDER": {
-        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
         "commands": {
-            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
             "list_reminders": "Lists all active reminders with their scheduled time and ID.",
-            "cancel_reminder": "Cancels an active reminder by ID.",
-            "snooze_reminder": "Postpones a reminder by N minutes from now."
+            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
+            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
+            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
-        "icon": "🔔",
-        "category": "PLUGINS",
-        "module_type": "plugin"
+        "icon": "",
+        "category": "PLUGINS"
     },
-    "USER": {
+    "USERS": {
         "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
         "commands": {
             "get_profile": "Ottiene i dettagli completi del profilo (email, telefono, etc.)",

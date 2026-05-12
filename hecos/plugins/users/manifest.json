@@ -1,6 +1,6 @@
 {
-    "tag": "USER",
-    "name": "User Profile",
+    "tag": "USERS",
+    "name": "Users Profile",
     "version": "1.0.0",
     "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
     "icon": "👥",
@@ -15,7 +15,7 @@
         {
             "type": "function",
             "function": {
-                "name": "USER__get_profile",
+                "name": "USERS__get_profile",
                 "description": "Retrieves the full profile of a user, including contact details and bio. Use this tool when you need to know the user's email, phone, or address.",
                 "parameters": {
                     "type": "object",
@@ -28,7 +28,7 @@
         {
             "type": "function",
             "function": {
-                "name": "USER__update_profile",
+                "name": "USERS__update_profile",
                 "description": "Updates one or more fields in the user's profile. White-listed fields: display_name, email, phone, address, city, bio_notes, preferred_language, age, birthday, height, weight, interests, etc.",
                 "parameters": {
                     "type": "object",

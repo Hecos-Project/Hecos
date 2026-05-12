@@ -81,8 +81,14 @@ function populateSelect(id, list, currentValue, isFilenameOnly = false) {
 
 function setVal(id, val) { const el = document.getElementById(id); if (el) el.value = val; }
 function setCheck(id, val) { const el = document.getElementById(id); if (el) el.checked = val; }
-function getV(id) { const el = document.getElementById(id); return el ? el.value : ''; }
-function getC(id) { const el = document.getElementById(id); return el ? el.checked : false; }
+function getV(id, fallback = '') { 
+  const el = document.getElementById(id); 
+  return el ? el.value : fallback; 
+}
+function getC(id, fallback = false) { 
+  const el = document.getElementById(id); 
+  return el ? el.checked : fallback; 
+}
 
 function populateUI() {
   try {
@@ -350,17 +356,20 @@ function renderPlugins(plugins) {
         badges += ` <span class="p-tag plugin" style="font-size:9px;">PLUGIN</span>`;
     }
 
+    const disableLazy = ['REMINDER', 'CALENDAR', 'WEB_UI', 'MCP_BRIDGE', 'DASHBOARD'].includes(tag);
+    const disableEnabled = ['WEB_UI'].includes(tag);
+
     let rowHtml = `<div class="plugin-row">
       <div class="plugin-info-main">
         <span class="p-icon">${icon}</span>
         <div class="plugin-meta">
           <div class="plugin-name">${name} ${badges}
-            <label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>
+            ${disableLazy ? '' : `<label class="lazy-label"><input type="checkbox" data-plugin-lazy="${tag}" ${lazyOn?'checked':''}> Lazy</label>`}
           </div>
           <div class="plugin-desc">${desc}</div>
         </div>
       </div>
-      <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''}><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''} ${disableEnabled?'disabled':''}><span class="slider"></span></label>
     </div>`;
 
     // Render child extensions of this plugin
@@ -478,36 +487,37 @@ function buildPayload() {
   out.backend.kobold = out.backend.kobold || {};
 
   try {
-    out.backend.type                  = getV('backend-type') || 'cloud';
-    out.backend.cloud.model           = getV('cloud-model');
-    out.backend.cloud.temperature     = parseFloat(getV('cloud-temp')) || 0.7;
-    out.backend.ollama.model          = getV('ollama-model');
-    out.backend.ollama.temperature    = parseFloat(getV('ollama-temp')) || 0.3;
-    out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu')) || 33;
-    out.backend.ollama.num_predict    = parseInt(getV('ollama-predict')) || 1024;
-    out.backend.ollama.num_ctx        = parseInt(getV('ollama-ctx')) || 4096;
-    out.backend.ollama.top_p          = parseFloat(getV('ollama-top-p')) || 0.95;
-    out.backend.ollama.repeat_penalty = parseFloat(getV('ollama-repeat')) || 1.1;
-    out.backend.kobold.url            = getV('kobold-url');
-    out.backend.kobold.model          = getV('kobold-model');
-    out.backend.kobold.temperature    = parseFloat(getV('kobold-temp')) || 0.7;
-    out.backend.kobold.max_length     = parseInt(getV('kobold-max')) || 512;
-    out.backend.kobold.top_p          = parseFloat(getV('kobold-top-p')) || 0.95;
-    out.backend.kobold.rep_pen        = parseFloat(getV('kobold-rep')) || 1.1;
+    out.backend.type                  = getV('backend-type', out.backend.type || 'cloud');
+    out.backend.cloud.model           = getV('cloud-model', out.backend.cloud.model);
+    out.backend.cloud.temperature     = parseFloat(getV('cloud-temp', out.backend.cloud.temperature)) || 0.7;
+    out.backend.ollama.model          = getV('ollama-model', out.backend.ollama.model);
+    out.backend.ollama.temperature    = parseFloat(getV('ollama-temp', out.backend.ollama.temperature)) || 0.3;
+    out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu', out.backend.ollama.num_gpu)) || 33;
+    out.backend.ollama.num_predict    = parseInt(getV('ollama-predict', out.backend.ollama.num_predict)) || 1024;
+    out.backend.ollama.num_ctx        = parseInt(getV('ollama-ctx', out.backend.ollama.num_ctx)) || 4096;
+    out.backend.ollama.top_p          = parseFloat(getV('ollama-top-p', out.backend.ollama.top_p)) || 0.95;
+    out.backend.ollama.repeat_penalty = parseFloat(getV('ollama-repeat', out.backend.ollama.repeat_penalty)) || 1.1;
+    out.backend.kobold.url            = getV('kobold-url', out.backend.kobold.url);
+    out.backend.kobold.model          = getV('kobold-model', out.backend.kobold.model);
+    out.backend.kobold.temperature    = parseFloat(getV('kobold-temp', out.backend.kobold.temperature)) || 0.7;
+    out.backend.kobold.max_length     = parseInt(getV('kobold-max', out.backend.kobold.max_length)) || 512;
+    out.backend.kobold.top_p          = parseFloat(getV('kobold-top-p', out.backend.kobold.top_p)) || 0.95;
+    out.backend.kobold.rep_pen        = parseFloat(getV('kobold-rep', out.backend.kobold.rep_pen)) || 1.1;
 
     out.llm = out.llm || {};
-    out.llm.allow_cloud = getC('llm-allow-cloud');
-    out.llm.debug_llm = getC('llm-debug');
+    out.llm.allow_cloud = getC('llm-allow-cloud', out.llm.allow_cloud ?? true);
+    out.llm.debug_llm = getC('llm-debug', out.llm.debug_llm ?? true);
     out.llm.providers = out.llm.providers || {};
     ['openai','anthropic','groq','gemini'].forEach(p => {
       out.llm.providers[p] = out.llm.providers[p] || {};
-      const rawM = getV('models-'+p).trim();
+      const currentModels = (out.llm.providers[p].models || []).join('\n');
+      const rawM = getV('models-'+p, currentModels).trim();
       if (rawM) out.llm.providers[p].models = rawM.split('\n').map(s=>s.trim()).filter(Boolean);
     });
 
     out.routing_engine = out.routing_engine || {};
-    out.routing_engine.mode       = getV('route-mode') || 'auto';
-    out.routing_engine.legacy_models = getV('route-models');
+    out.routing_engine.mode       = getV('route-mode', out.routing_engine.mode || 'auto');
+    out.routing_engine.legacy_models = getV('route-models', out.routing_engine.legacy_models);
 
     out.ai = out.ai || {};
     const personaEl = document.getElementById('ia-personality-main');
@@ -526,38 +536,38 @@ function buildPayload() {
         }
     }
     
-    out.ai.avatar_size = getV('ia-avatar-size');
-    out.ai.special_instructions      = getV('ia-instructions');
+    out.ai.avatar_size = getV('ia-avatar-size', out.ai.avatar_size || 'medium');
+    out.ai.special_instructions      = getV('ia-instructions', out.ai.special_instructions);
     // Safety & Context Disclaimer
-    const safetyVal = getV('ia-safety-instructions');
+    const safetyVal = getV('ia-safety-instructions', out.ai.safety_instructions);
     // Only update if the element was actually found in the DOM to avoid accidental resets
     if (document.getElementById('ia-safety-instructions')) {
         out.ai.safety_instructions = safetyVal;
     }
     
     if (document.getElementById('ia-enable-safety-instructions')) {
-        out.ai.enable_safety_instructions = getC('ia-enable-safety-instructions');
+        out.ai.enable_safety_instructions = getC('ia-enable-safety-instructions', out.ai.enable_safety_instructions ?? true);
     }
 
-    out.ai.save_special_instructions = getC('ia-save-instructions');
-    out.ai.avatar_size               = getV('ia-avatar-size');
-    out.privacy.default_mode = getV('pr-default-mode') || 'normal';
-    out.privacy.auto_wipe_enabled = getC('pr-auto-wipe');
-    out.privacy.incognito_shortcut = getC('pr-incognito-shortcut');
+    out.ai.save_special_instructions = getC('ia-save-instructions', out.ai.save_special_instructions ?? false);
+    out.ai.avatar_size               = getV('ia-avatar-size', out.ai.avatar_size);
+    out.privacy.default_mode = getV('pr-default-mode', out.privacy.default_mode || 'normal');
+    out.privacy.auto_wipe_enabled = getC('pr-auto-wipe', out.privacy.auto_wipe_enabled ?? false);
+    out.privacy.incognito_shortcut = getC('pr-incognito-shortcut', out.privacy.incognito_shortcut ?? true);
 
     out.bridge = out.bridge || {};
-    out.bridge.use_processor        = getC('br-processor');
-    out.bridge.remove_think_tags    = getC('br-think-tags');
-    out.bridge.debug_log             = getC('br-debug');
-    out.bridge.enable_tools         = getC('br-tools');
-    out.bridge.webui_voice_stt        = getC('br-voice-stt');
-    out.bridge.webui_voice_enabled = getC('br-voice-enabled');
-    out.bridge.chunk_delay_ms      = parseInt(getV('br-delay')) || 0;
+    out.bridge.use_processor        = getC('br-processor', out.bridge.use_processor ?? false);
+    out.bridge.remove_think_tags    = getC('br-think-tags', out.bridge.remove_think_tags ?? true);
+    out.bridge.debug_log             = getC('br-debug', out.bridge.debug_log ?? true);
+    out.bridge.enable_tools         = getC('br-tools', out.bridge.enable_tools ?? true);
+    out.bridge.webui_voice_stt        = getC('br-voice-stt', out.bridge.webui_voice_stt ?? true);
+    out.bridge.webui_voice_enabled = getC('br-voice-enabled', out.bridge.webui_voice_enabled ?? false);
+    out.bridge.chunk_delay_ms      = parseInt(getV('br-delay', out.bridge.chunk_delay_ms)) || 0;
 
     out.filters = out.filters || {};
-    out.filters.remove_asterisks       = getV('fl-ast');
-    out.filters.remove_round_brackets  = getV('fl-tonde');
-    out.filters.remove_square_brackets = getV('fl-quadre');
+    out.filters.remove_asterisks       = getV('fl-ast', out.filters.remove_asterisks || 'both');
+    out.filters.remove_round_brackets  = getV('fl-tonde', out.filters.remove_round_brackets || 'voice');
+    out.filters.remove_square_brackets = getV('fl-quadre', out.filters.remove_square_brackets || 'none');
     
     if (window.HecosTextFilters) {
         out.filters.custom_filters = window.HecosTextFilters.extract();
@@ -600,12 +610,16 @@ function buildPayload() {
     // ── BROWSER Plugin Mapping ────────────────────────────────────────────────
     out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
     const modeEl = document.querySelector('input[name="engine_mode"]:checked');
-    if (modeEl) out.plugins['BROWSER'].browser_engine_mode = modeEl.value;
-    out.plugins['BROWSER'].cdp_port = parseInt(getV('browser-cdp-port')) || 9222;
-    out.plugins['BROWSER'].headless = getC('browser-headless');
-    out.plugins['BROWSER'].block_ads = getC('browser-block-ads');
-    out.plugins['BROWSER'].startup_url = getV('browser-startup-url');
-    out.plugins['BROWSER'].browser_type = getV('browser-engine') || 'chromium';
+    if (modeEl) {
+        out.plugins['BROWSER'].browser_engine_mode = modeEl.value;
+    } else {
+        out.plugins['BROWSER'].browser_engine_mode = out.plugins['BROWSER'].browser_engine_mode || 'playwright';
+    }
+    out.plugins['BROWSER'].cdp_port = parseInt(getV('browser-cdp-port', out.plugins['BROWSER'].cdp_port)) || 9222;
+    out.plugins['BROWSER'].headless = getC('browser-headless', out.plugins['BROWSER'].headless);
+    out.plugins['BROWSER'].block_ads = getC('browser-block-ads', out.plugins['BROWSER'].block_ads);
+    out.plugins['BROWSER'].startup_url = getV('browser-startup-url', out.plugins['BROWSER'].startup_url);
+    out.plugins['BROWSER'].browser_type = getV('browser-engine', out.plugins['BROWSER'].browser_type) || 'chromium';
 
     // ── AUTOMATION Plugin Mapping ─────────────────────────────────────────────
     out.plugins['AUTOMATION'] = out.plugins['AUTOMATION'] || {};
@@ -655,6 +669,8 @@ function buildPayload() {
     }
 
 
+    // WEB_UI Payload Part
+    const webuiPart = buildWebUIPayload();
     if (webuiPart.plugins && webuiPart.plugins.WEB_UI) {
         out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
         Object.assign(out.plugins['WEB_UI'], webuiPart.plugins.WEB_UI);
@@ -727,43 +743,43 @@ function buildDrivePayload() {
 
     if (document.getElementById('drive-editor-theme')) {
         newExts.editor = Object.assign({}, newExts.editor, {
-            autosave: document.getElementById('drive-editor-autosave').checked,
-            autosave_interval: parseInt(document.getElementById('drive-editor-autosave-interval').value) || 30,
-            confirm_close: document.getElementById('drive-editor-confirm-close').checked,
-            backup_on_save: document.getElementById('drive-editor-backup').checked,
-            theme: document.getElementById('drive-editor-theme').value || 'vs-dark',
-            tab_size: parseInt(document.getElementById('drive-editor-tab-size').value) || 4,
-            line_numbers: document.getElementById('drive-editor-line-numbers').checked,
-            word_wrap: document.getElementById('drive-editor-word-wrap').checked,
-            minimap: document.getElementById('drive-editor-minimap').checked,
-            max_file_mb: parseInt(document.getElementById('drive-editor-max-file-mb').value) || 10,
-            readonly_ext: document.getElementById('drive-editor-readonly-ext').value
+            autosave: getC('drive-editor-autosave', exts.editor?.autosave),
+            autosave_interval: parseInt(getV('drive-editor-autosave-interval', exts.editor?.autosave_interval)) || 30,
+            confirm_close: getC('drive-editor-confirm-close', exts.editor?.confirm_close),
+            backup_on_save: getC('drive-editor-backup', exts.editor?.backup_on_save),
+            theme: getV('drive-editor-theme', exts.editor?.theme) || 'vs-dark',
+            tab_size: parseInt(getV('drive-editor-tab-size', exts.editor?.tab_size)) || 4,
+            line_numbers: getC('drive-editor-line-numbers', exts.editor?.line_numbers),
+            word_wrap: getC('drive-editor-word-wrap', exts.editor?.word_wrap),
+            minimap: getC('drive-editor-minimap', exts.editor?.minimap),
+            max_file_mb: parseInt(getV('drive-editor-max-file-mb', exts.editor?.max_file_mb)) || 10,
+            readonly_ext: getV('drive-editor-readonly-ext', exts.editor?.readonly_ext)
         });
     }
 
     if (document.getElementById('drive-viewer-default-zoom')) {
         newExts.media_viewer = Object.assign({}, newExts.media_viewer, {
-            default_zoom: document.getElementById('drive-viewer-default-zoom').value || 'fit',
-            show_exif: document.getElementById('drive-viewer-show-exif').checked,
-            slideshow: document.getElementById('drive-viewer-slideshow').checked,
-            slideshow_interval: parseInt(document.getElementById('drive-viewer-slideshow-interval').value) || 5,
-            video_autoplay: document.getElementById('drive-viewer-video-autoplay').checked,
-            video_loop: document.getElementById('drive-viewer-video-loop').checked,
-            video_controls: document.getElementById('drive-viewer-video-controls').checked,
-            audio_autoplay: document.getElementById('drive-viewer-audio-autoplay').checked,
-            audio_waveform: document.getElementById('drive-viewer-audio-waveform').checked,
-            image_ext: document.getElementById('drive-viewer-image-ext').value,
-            video_ext: document.getElementById('drive-viewer-video-ext').value,
-            audio_ext: document.getElementById('drive-viewer-audio-ext').value
+            default_zoom: getV('drive-viewer-default-zoom', exts.media_viewer?.default_zoom) || 'fit',
+            show_exif: getC('drive-viewer-show-exif', exts.media_viewer?.show_exif),
+            slideshow: getC('drive-viewer-slideshow', exts.media_viewer?.slideshow),
+            slideshow_interval: parseInt(getV('drive-viewer-slideshow-interval', exts.media_viewer?.slideshow_interval)) || 5,
+            video_autoplay: getC('drive-viewer-video-autoplay', exts.media_viewer?.video_autoplay),
+            video_loop: getC('drive-viewer-video-loop', exts.media_viewer?.video_loop),
+            video_controls: getC('drive-viewer-video-controls', exts.media_viewer?.video_controls),
+            audio_autoplay: getC('drive-viewer-audio-autoplay', exts.media_viewer?.audio_autoplay),
+            audio_waveform: getC('drive-viewer-audio-waveform', exts.media_viewer?.audio_waveform),
+            image_ext: getV('drive-viewer-image-ext', exts.media_viewer?.image_ext),
+            video_ext: getV('drive-viewer-video-ext', exts.media_viewer?.video_ext),
+            audio_ext: getV('drive-viewer-audio-ext', exts.media_viewer?.audio_ext)
         });
     }
 
     return {
         plugins: {
             DRIVE: {
-                root_dir: rootEl.value.trim(),
-                max_upload_mb: parseInt(document.getElementById('drive-max-upload-mb').value) || 100,
-                allowed_extensions: document.getElementById('drive-allowed-ext').value.trim(),
+                root_dir: getV('drive-root-dir', c.root_dir || '').trim(),
+                max_upload_mb: parseInt(getV('drive-max-upload-mb', c.max_upload_mb)) || 100,
+                allowed_extensions: getV('drive-allowed-ext', c.allowed_extensions || '').trim(),
                 extensions: newExts
             }
         }
@@ -782,17 +798,17 @@ function populateRemoteTriggersUI() {
 }
 
 function buildRemoteTriggersPayload() {
-    const el = document.getElementById('rt-enable-mediasession');
-    if (!el) return {};
+    const c = window.cfg;
+    const settings = (c.plugins && c.plugins.REMOTE_TRIGGERS) ? (c.plugins.REMOTE_TRIGGERS.settings || {}) : {};
     return {
         plugins: {
             REMOTE_TRIGGERS: {
                 settings: {
-                    enable_mediasession: document.getElementById('rt-enable-mediasession').checked,
-                    enable_volume_keys: document.getElementById('rt-enable-volume-keys').checked,
-                    enable_volume_loop: document.getElementById('rt-enable-volume-loop').checked,
-                    feedback_sounds: document.getElementById('rt-feedback-sounds').checked,
-                    visual_indicator: document.getElementById('rt-visual-indicator').checked
+                    enable_mediasession: getC('rt-enable-mediasession', settings.enable_mediasession),
+                    enable_volume_keys: getC('rt-enable-volume-keys', settings.enable_volume_keys),
+                    enable_volume_loop: getC('rt-enable-volume-loop', settings.enable_volume_loop),
+                    feedback_sounds: getC('rt-feedback-sounds', settings.feedback_sounds),
+                    visual_indicator: getC('rt-visual-indicator', settings.visual_indicator)
                 }
             }
         }
@@ -811,14 +827,13 @@ function populateWebUIConfig() {
 }
 
 function buildWebUIPayload() {
-    const el = document.getElementById('webui-port');
-    if (!el) return {};
+    const w = window.cfg.plugins?.WEB_UI || {};
     return {
         plugins: {
             WEB_UI: {
-                port: parseInt(el.value) || 8080,
-                api_port: parseInt(document.getElementById('webui-api-port').value) || 5000,
-                force_login: document.getElementById('webui-force-login').checked
+                port: parseInt(getV('webui-port', w.port)) || 8080,
+                api_port: parseInt(getV('webui-api-port', w.api_port)) || 5000,
+                force_login: getC('webui-force-login', w.force_login ?? true)
             }
         }
     };
@@ -849,13 +864,13 @@ function populateAgentUI() {
 
 function buildAgentPayload() {
     const el = document.getElementById('agent-enabled');
-    if (!el) return {};
+    const a = window.cfg.agent || {};
     return {
         agent: {
-            enabled: document.getElementById('agent-enabled').checked,
-            max_iterations: parseInt(document.getElementById('agent-max-iter').value) || 10,
-            verbose_traces: document.getElementById('agent-verbose').checked,
-            action_console_enabled: document.getElementById('agent-action-console').checked
+            enabled: getC('agent-enabled', a.enabled ?? true),
+            max_iterations: parseInt(getV('agent-max-iter', a.max_iterations)) || 10,
+            verbose_traces: getC('agent-verbose', a.verbose_traces ?? true),
+            action_console_enabled: getC('agent-action-console', a.action_console_enabled ?? true)
         }
     };
 }
@@ -874,16 +889,16 @@ function populateReminderUI() {
 
 function buildReminderPayload() {
     const el = document.getElementById('rem-mode');
-    if (!el) return {};
+    const s = window.cfg.plugins?.REMINDER || {};
     return {
         plugins: {
             REMINDER: {
-                reminder_mode: el.value || 'voice',
-                ringtone_path: document.getElementById('rem-ringtone').value || '',
-                time_format: document.getElementById('rem-time-format').value || '24h',
-                max_reminders: parseInt(document.getElementById('rem-max').value) || 50,
-                snooze_default_minutes: parseInt(document.getElementById('rem-snooze').value) || 15,
-                reminder_snooze_ui: getC('rem-snooze-ui')
+                reminder_mode: getV('rem-mode', s.reminder_mode || 'voice'),
+                ringtone_path: getV('rem-ringtone', s.ringtone_path || ''),
+                time_format: getV('rem-time-format', s.time_format || '24h'),
+                max_reminders: parseInt(getV('rem-max', s.max_reminders)) || 50,
+                snooze_default_minutes: parseInt(getV('rem-snooze', s.snooze_default_minutes)) || 15,
+                reminder_snooze_ui: getC('rem-snooze-ui', s.reminder_snooze_ui ?? false)
             }
         }
     };
@@ -894,6 +909,8 @@ window.populateSelect = populateSelect;
 window.populateUI = populateUI;
 window.setVal = setVal;
 window.setCheck = setCheck;
+window.getV = getV;
+window.getC = getC;
 window.renderPlugins = renderPlugins;
 window.buildPayload = buildPayload;
 window.isRestartNeeded = isRestartNeeded;

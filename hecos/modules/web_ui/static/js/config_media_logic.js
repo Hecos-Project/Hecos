@@ -77,31 +77,31 @@ function populateMediaUI() {
 }
 
 function buildMediaPayload() {
-    const aspectRatio = (document.getElementById('igen-aspect-ratio') || {}).value || '1:1';
+    const igen = (window.cfg.plugins?.IMAGE_GEN) || (window.mediaConfig?.image_gen) || {};
     return {
         image_gen: {
-            enabled:               document.getElementById('igen-enabled').checked,
-            provider:              document.getElementById('igen-provider').value,
-            model:                 document.getElementById('igen-model').value,
-            aspect_ratio:          aspectRatio,
-            width:                 parseInt((document.getElementById('igen-width') || {}).value) || 1024,
-            height:                parseInt((document.getElementById('igen-height') || {}).value) || 1024,
-            seed:                  parseInt(document.getElementById('igen-seed').value) || -1,
-            sampler:               document.getElementById('igen-sampler').value || 'euler_a',
-            scheduler:             document.getElementById('igen-scheduler').value || 'euler',
-            nologo:                document.getElementById('igen-nologo').checked,
-            enable_negative_prompt:document.getElementById('igen-use-neg-prompt').checked,
-            negative_prompt:       document.getElementById('igen-neg-prompt').value.trim(),
-            guidance_scale:        parseFloat(document.getElementById('igen-guidance').value) || 7.5,
-            num_inference_steps:   parseInt(document.getElementById('igen-steps').value) || 30,
-            auto_enrich:           document.getElementById('igen-auto-enrich').checked,
-            enrich_keywords:       document.getElementById('igen-enrich-keywords').value.trim(),
-            style:                 document.getElementById('igen-style').value,
-            optimize_for_flux:     document.getElementById('igen-optimize-flux').checked,
-            flux_refiner_instructions: document.getElementById('igen-flux-instructions').value.trim(),
-            show_metadata_in_chat: document.getElementById('igen-show-metadata').checked,
-            active_preset:         (document.getElementById('igen-preset') || {}).value || '',
-            custom_hf_models:      window.igen_custom_hf_models || []
+            enabled:               getC('igen-enabled', igen.enabled !== false),
+            provider:              getV('igen-provider', igen.provider || 'pollinations'),
+            model:                 getV('igen-model', igen.model || 'flux'),
+            aspect_ratio:          getV('igen-aspect-ratio', igen.aspect_ratio || '1:1'),
+            width:                 parseInt(getV('igen-width', igen.width)) || 1024,
+            height:                parseInt(getV('igen-height', igen.height)) || 1024,
+            seed:                  parseInt(getV('igen-seed', igen.seed)) || -1,
+            sampler:               getV('igen-sampler', igen.sampler || 'euler_a'),
+            scheduler:             getV('igen-scheduler', igen.scheduler || 'euler'),
+            nologo:                getC('igen-nologo', igen.nologo ?? true),
+            enable_negative_prompt:getC('igen-use-neg-prompt', igen.enable_negative_prompt ?? true),
+            negative_prompt:       getV('igen-neg-prompt', igen.negative_prompt || '').trim(),
+            guidance_scale:        parseFloat(getV('igen-guidance', igen.guidance_scale)) || 7.5,
+            num_inference_steps:   parseInt(getV('igen-steps', igen.num_inference_steps)) || 30,
+            auto_enrich:           getC('igen-auto-enrich', igen.auto_enrich ?? true),
+            enrich_keywords:       getV('igen-enrich-keywords', igen.enrich_keywords || '').trim(),
+            style:                 getV('igen-style', igen.style || 'none'),
+            optimize_for_flux:     getC('igen-optimize-flux', igen.optimize_for_flux ?? true),
+            flux_refiner_instructions: getV('igen-flux-instructions', igen.flux_refiner_instructions || '').trim(),
+            show_metadata_in_chat: getC('igen-show-metadata', igen.show_metadata_in_chat ?? false),
+            active_preset:         getV('igen-preset', igen.active_preset || ''),
+            custom_hf_models:      window.igen_custom_hf_models || igen.custom_hf_models || []
         }
     };
 }

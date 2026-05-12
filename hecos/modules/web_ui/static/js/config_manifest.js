@@ -51,7 +51,7 @@ window.CONFIG_HUB = {
 
         { id: 'webui',     label: 'hub_mod_webui',        icon: '🌐', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '❓', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
-        { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true, isCore: true },
+        { id: 'users',     label: 'hub_mod_users',        icon: '👥', cat: 'SISTEMA', adminOnly: true },
         { id: 'security',  label: 'hub_mod_security',     icon: '🛡️', cat: 'SISTEMA', adminOnly: true },
         { id: 'plugins',   label: 'hub_mod_plugins',      icon: '🧩', cat: 'SISTEMA' },
         { id: 'system',    label: 'hub_mod_system',       icon: '⚙️', cat: 'SISTEMA' },
@@ -118,7 +118,8 @@ window.CONFIG_HUB.tagMap = {
     'CALENDAR': 'calendar',
     'MEDIA_PLAYER': 'media',
     'AUTOMATION': 'automation',
-    'BROWSER':    'browser'
+    'BROWSER':    'browser',
+    'USERS':      'users'
 };
 
 /**

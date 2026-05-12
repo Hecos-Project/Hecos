@@ -112,7 +112,7 @@ monitor:
 plugins:
   DASHBOARD:
     enabled: true
-    lazy_load: true
+    lazy_load: false
     backend_timeout: 0.5
     monitor_interval: 2
     webui_dashboard_enabled: true
@@ -200,7 +200,7 @@ plugins:
       spell_check: false
   REMOTE_TRIGGERS:
     enabled: false
-    lazy_load: false
+    lazy_load: true
     settings:
       enable_mediasession: true
       enable_volume_keys: true
@@ -209,7 +209,7 @@ plugins:
       visual_indicator: true
   REMINDER:
     enabled: true
-    lazy_load: true
+    lazy_load: false
     reminder_mode: voice
     ringtone_path: Default_System_Alert.mp3
     time_format: 24h
@@ -221,17 +221,11 @@ plugins:
     lazy_load: false
     servers: {}
   AUTOMATION:
-    enabled: true
+    enabled: false
     lazy_load: true
     move_duration: 0.15
     type_interval: 0.02
     allow_window_control: true
-  USER:
-    enabled: true
-    lazy_load: true
-  CALENDAR:
-    enabled: true
-    lazy_load: true
   BROWSER:
     enabled: true
     lazy_load: true
@@ -242,6 +236,12 @@ plugins:
     browser_type: chromium
     browser_engine_mode: cdp_mode
     cdp_port: 9222
+  CALENDAR:
+    enabled: true
+    lazy_load: false
+  USER:
+    enabled: true
+    lazy_load: true
   extra_dirs: []
 privacy:
   default_mode: normal
@@ -263,4 +263,3 @@ agent:
   enabled: true
   max_iterations: 12
   verbose_traces: true
-

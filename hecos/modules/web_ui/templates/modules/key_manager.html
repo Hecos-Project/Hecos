@@ -107,6 +107,7 @@ function kmStatusBadge(status) {
 
 function kmRender(data) {
   const container = document.getElementById('km-providers-container');
+  if (!container) return;
   container.innerHTML = '';
 
   const providers = Object.keys(data);

@@ -1,10 +1,10 @@
 voice_status: true
-piper_path: C:\Hecos\bin\piper\piper.exe
-onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
-speed: 1.2
-noise_scale: 0.817
-noise_w: 0.9
-sentence_silence: 0.1
+piper_path: ''
+onnx_model: C:\Hecos\bin\piper\
+speed: 1.0
+noise_scale: 0.8
+noise_w: 1.0
+sentence_silence: 0.2
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5

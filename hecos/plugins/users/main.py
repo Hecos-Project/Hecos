@@ -9,10 +9,10 @@ from hecos.core.i18n import translator
 
 class UserTools:
     def __init__(self):
-        self.tag = "USER"
+        self.tag = "USERS"
         self.icon = "👥"
         self.desc = "Gestione informazioni utente e preferenze"
-        self.esempio = "[USER: get_profile]"
+        self.esempio = "[USERS: get_profile]"
 
     def get_profile(self, username="admin"):
         """
