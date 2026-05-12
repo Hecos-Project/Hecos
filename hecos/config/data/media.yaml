@@ -9,7 +9,7 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 1058482670
+  last_seed: 567126676
   sampler: euler_a
   scheduler: euler
   guidance_scale: 7.5

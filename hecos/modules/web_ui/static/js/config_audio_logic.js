@@ -51,13 +51,13 @@ function populateAudioUI() {
 function buildAudioPayload() {
     const v = (typeof audioConfig !== 'undefined' ? audioConfig : {}) || {};
     const pdir = (window.sysOptions || {}).piper_dir || 'C:\\piper';
-    const sel = getV('v-onnx-model', (v.onnx_model || '').split(/[\\/]/).pop());
+    const modelFile = (sel && sel.trim() && sel !== 'null') ? sel : 'it_IT-paola-medium.onnx';
     
     return {
         listening_status: getC('sys-mic-status', v.listening_status ?? false),
         voice_status:     getC('sys-voice-status', v.voice_status ?? false),
         piper_path:       getV('v-piper', v.piper_path || ''),
-        onnx_model:       (sel.includes('\\') || sel.includes('/')) ? sel : pdir + '\\' + sel,
+        onnx_model:       (modelFile.includes('\\') || modelFile.includes('/')) ? modelFile : pdir + '\\' + modelFile,
         speed:            parseFloat(getV('v-speed', v.speed)) || 1.0,
         noise_scale:      parseFloat(getV('v-noise', v.noise_scale)) || 0.8,
         noise_w:          parseFloat(getV('v-noisew', v.noise_w)) || 1.0,

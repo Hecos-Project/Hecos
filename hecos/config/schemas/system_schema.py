@@ -286,7 +286,7 @@ class PluginDrive(BaseModel):
 
 class PluginReminder(BaseModel):
     enabled: bool = True
-    lazy_load: bool = True
+    lazy_load: bool = False
     reminder_mode: str = "voice"
     ringtone_path: str = "Default_System_Alert.mp3"
     time_format: str = "24h"
@@ -314,9 +314,9 @@ class PluginBrowser(BaseModel):
 
 class PluginCalendar(BaseModel):
     enabled: bool = True
-    lazy_load: bool = True
+    lazy_load: bool = False
 
-class PluginUser(BaseModel):
+class PluginUsers(BaseModel):
     enabled: bool = True
     lazy_load: bool = True
 
@@ -376,7 +376,7 @@ class PluginsConfig(BaseModel):
     AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     CALENDAR: PluginCalendar = Field(default_factory=PluginCalendar)
-    USER: PluginUser = Field(default_factory=PluginUser)
+    USERS: PluginUsers = Field(default_factory=PluginUsers)
     extra_dirs: List[str] = []
 
 

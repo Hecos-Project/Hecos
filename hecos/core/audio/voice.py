@@ -82,16 +82,16 @@ def speak(text, state=None):
 
         # 3. Validation and Fallback to defaults
         # If the configured piper_path doesn't exist, we MUST fallback to the default internal path
-        if not _os.path.exists(piper_path):
-            if _os.path.exists(default_piper):
-                logger.debug("VOICE", f"Configured Piper path '{piper_path}' not found. Falling back to default: {default_piper}")
+        if not _os.path.isfile(piper_path):
+            if _os.path.isfile(default_piper):
+                logger.debug("VOICE", f"Configured Piper path '{piper_path}' not found or invalid. Falling back to default: {default_piper}")
                 piper_path = default_piper
             else:
                 logger.error("VOICE", f"Piper executable not found at configured path OR default project path ({default_piper})")
 
-        if not _os.path.exists(model_path):
-            if _os.path.exists(default_model):
-                logger.debug("VOICE", f"Configured model path '{model_path}' not found. Falling back to default: {default_model}")
+        if not _os.path.isfile(model_path):
+            if _os.path.isfile(default_model):
+                logger.debug("VOICE", f"Configured model path '{model_path}' not found or invalid. Falling back to default: {default_model}")
                 model_path = default_model
             else:
                 logger.error("VOICE", f"ONNX model not found at configured path OR default project path ({default_model})")

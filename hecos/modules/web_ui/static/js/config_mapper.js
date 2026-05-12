@@ -369,7 +369,7 @@ function renderPlugins(plugins) {
           <div class="plugin-desc">${desc}</div>
         </div>
       </div>
-      <label class="switch"><input type="checkbox" data-plugin="${tag}" ${on?'checked':''} ${disableEnabled?'disabled':''}><span class="slider"></span></label>
+      <label class="switch" ${disableEnabled ? 'style="visibility:hidden;pointer-events:none;"' : ''}><input type="checkbox" data-plugin="${tag}" ${on?'checked':''} ${disableEnabled?'disabled':''}><span class="slider"></span></label>
     </div>`;
 
     // Render child extensions of this plugin
