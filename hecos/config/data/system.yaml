@@ -258,15 +258,15 @@ widgets:
     - quick_links
   per_widget:
     calendar:
-      visible: false
+      visible: true
     reminder:
-      visible: false
+      visible: true
     media_player_widget:
-      visible: false
+      visible: true
     quick_links:
-      visible: false
+      visible: true
   sidebar_status_collapsed: true
-  sidebar_audio_collapsed: true
+  sidebar_audio_collapsed: false
 agent:
   enabled: true
   max_iterations: 12

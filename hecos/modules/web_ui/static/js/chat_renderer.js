@@ -15,9 +15,9 @@ function addBubble(role, text, id, opts) {
   if (isUser) {
     const usrSrc = window.HecosUserAvatar;
     if (usrSrc) {
-        avatar.innerHTML = `<img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='👤'">`;
+        avatar.innerHTML = `<img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='<i class=\'fas fa-user\'></i>'">`;
     } else {
-        avatar.textContent = '👤';
+        avatar.innerHTML = '<i class="fas fa-user"></i>';
     }
   } else {
     const avatarSrc = window.HecosAvatar || "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png";
@@ -29,7 +29,7 @@ function addBubble(role, text, id, opts) {
     avatar.innerHTML = `
       <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${avatarSrc}')">
         <img src="${avatarSrc}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
-        <div class="avatar-zoom-icon">🔍</div>
+        <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
       </div>`;
 
   }
@@ -138,7 +138,7 @@ async function tryLoadAudio(bubble) {
   
   const badge = document.createElement('div');
   badge.className='audio-badge';
-  badge.innerHTML = '🔊 ';
+  badge.innerHTML = '<i class="fas fa-volume-up"></i> ';
   
   // If the global player is already in another bubble, clone it there so the user keeps a play button for history
   if (window.HecosTTSPlayer.parentNode) {
@@ -162,7 +162,7 @@ async function tryLoadAudio(bubble) {
     console.log("[Audio] Blob created successfully");
   } catch (e) {
     console.error("[Audio] Fetch failed (possibly SSL/CORS):", e);
-    badge.innerHTML = '⚠️ Audio Error (Click to retry)';
+    badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Audio Error (Click to retry)';
     badge.style.cursor = 'pointer';
     badge.onclick = () => tryLoadAudio(bubble);
     bubble.appendChild(badge);

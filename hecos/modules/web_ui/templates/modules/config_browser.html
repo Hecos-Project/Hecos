@@ -1,7 +1,7 @@
 <!-- BROWSER PANEL -->
 <div id="tab-browser" class="panel">
   <div class="card">
-    <div class="card-title">🤖 Control Paradigm (PC & Browser)</div>
+    <div class="card-title">Control Paradigm (PC & Browser)</div>
     <div class="toggle-row" style="margin-bottom: 20px;">
       <div class="toggle-info">
         <strong>Enable BROWSER Module</strong><br>
@@ -35,7 +35,7 @@
           <strong style="color:var(--text-light); font-size:15px;">2. Your Real Browser (Takeover CDP)</strong><br>
           <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
             Hecos "undercover" uses your Google Chrome (or Edge). It sees your extensions, logins, and bookmarks. <br>
-            <span style="color:#ffcc00; display:block; margin-top:6px;">⚠️ <strong>CRITICAL REQUIREMENT:</strong> You must launch Chrome using this shortcut parameter: <code style="padding:2px 4px; border-radius:4px; font-size:12px; background:var(--bg0);">chrome.exe --remote-debugging-port=9222</code>. If Chrome is opened normally, the hook will fail for security reasons.</span>
+            <span style="color:#ffcc00; display:block; margin-top:6px;"><i class="fas fa-exclamation-triangle"></i> <strong>CRITICAL REQUIREMENT:</strong> You must launch Chrome using this shortcut parameter: <code style="padding:2px 4px; border-radius:4px; font-size:12px; background:var(--bg0);">chrome.exe --remote-debugging-port=9222</code>. If Chrome is opened normally, the hook will fail for security reasons.</span>
           </small>
         </div>
         <input type="radio" name="engine_mode" value="cdp_mode" id="em-cdp" onchange="window.updateConfig('plugins.BROWSER.browser_engine_mode', 'cdp_mode')" style="width:20px; height:20px; accent-color:var(--accent);" {% if zconfig.get('plugins', {}).get('BROWSER', {}).get('browser_engine_mode', '') == 'cdp_mode' %}checked{% endif %}>
@@ -46,7 +46,7 @@
       </div>
       <div style="margin-top:15px; text-align: right;">
         <button class="btn btn-primary" onclick="launchCdpBrowser()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">
-          🚀 Launch Browser with Debug now
+          <i class="fas fa-rocket"></i> Launch Browser with Debug now
         </button>
       </div>
     </div>
@@ -70,7 +70,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">⚙️ "App Mode" Settings</div>
+    <div class="card-title">"App Mode" Settings</div>
     
     <div class="toggle-row" style="margin-bottom:16px;">
       <div class="toggle-info">
@@ -165,10 +165,10 @@
       try {
           const r = await fetch('/api/browser/launch_external', { method: 'POST' });
           const d = await r.json();
-          if (d.ok) alert("✅ " + d.message);
-          else alert("❌ Error: " + d.error);
+          if (d.ok) alert(window.t('webui_diag_done') + ": " + d.message);
+          else alert(window.t('webui_diag_error') + ": " + d.error);
       } catch(e) {
-          alert("❌ Network error: " + e.message);
+          alert(window.t('webui_diag_error') + ": " + e.message);
       }
   }
 </script>

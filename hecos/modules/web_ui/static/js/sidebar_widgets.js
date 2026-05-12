@@ -30,13 +30,13 @@ function toggleSidebarOrderMode() {
     if (sidebarOrderMode) {
         zone.classList.add('ordering-mode');
         chrome.forEach(c => c.style.display = 'flex');
-        btn.innerHTML = '✅ Done Ordering';
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Done Ordering';
         btn.style.opacity = '1';
         btn.style.color = 'var(--accent)';
     } else {
         zone.classList.remove('ordering-mode');
         chrome.forEach(c => c.style.display = 'none');
-        btn.innerHTML = '⚙️ Manage Widgets';
+        btn.innerHTML = '<i class="fas fa-cog"></i> Manage Widgets';
         btn.style.opacity = '0.5';
         btn.style.color = '';
         saveCurrentSidebarOrder();

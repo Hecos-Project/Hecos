@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/css/core/variables.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/drive_static/css/drive.css">
 </head>
 <body>
@@ -38,26 +39,26 @@
       <a href="/logout" style="color:var(--red); border:none; background:none; padding:0; font-weight:600;">{{ t('webui_logout') }}</a>
     </div>
     {% endif %}
-    <a href="/hecos/config/ui">⚙️ {{ t('webui_chat_config') }}</a>
-    <a href="/chat">💬 {{ t('webui_nav_chat') }}</a>
+    <a href="/hecos/config/ui"><i class="fas fa-cog"></i> {{ t('webui_chat_config') }}</a>
+    <a href="/chat"><i class="fas fa-comment-dots"></i> {{ t('webui_nav_chat') }}</a>
   </div>
 </header>
 
 <!-- ── Toolbar ────────────────────────────────────────────── -->
 <div id="toolbar">
-  <button class="btn" onclick="navigateTo('')" title="{{ t('webui_drive_root_hint') or 'Back to root' }}">🏠</button>
-  <button class="btn" onclick="goUp()" title="{{ t('webui_drive_up_hint') or 'Parent directory' }}">⬆️</button>
-  <div id="path-bar"><span class="crumb current">🏠 Drive</span></div>
-  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">⬆️ {{ t('webui_chat_upload') }}</button>
+  <button class="btn" onclick="navigateTo('')" title="{{ t('webui_drive_root_hint') or 'Back to root' }}"><i class="fas fa-home"></i></button>
+  <button class="btn" onclick="goUp()" title="{{ t('webui_drive_up_hint') or 'Parent directory' }}"><i class="fas fa-arrow-up"></i></button>
+  <div id="path-bar"><span class="crumb current"><i class="fas fa-home"></i> Drive</span></div>
+  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> {{ t('webui_chat_upload') }}</button>
   <input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
-  <button class="btn" onclick="showMkdirModal()">📁 {{ t('webui_drive_new_folder') or 'New Folder' }}</button>
+  <button class="btn" onclick="showMkdirModal()"><i class="fas fa-folder-plus"></i> {{ t('webui_drive_new_folder') or 'New Folder' }}</button>
 </div>
 
 <div id="main-layout">
 
   <!-- ── Sidebar (dir tree + quick links) ───────────────── -->
   <div id="sidebar">
-    <div id="sidebar-header">📂 {{ t('webui_drive_folders') or 'Folders' }}</div>
+    <div id="sidebar-header"><i class="fas fa-folder-open"></i> {{ t('webui_drive_folders') or 'Folders' }}</div>
     <div id="tree-root"></div>
     
     <div id="quick-links-section">
@@ -116,7 +117,7 @@
 <!-- ── Mkdir Modal ────────────────────────────────────────── -->
 <div class="modal-bg" id="mkdir-modal">
   <div class="modal">
-    <h3>📁 {{ t('webui_drive_new_folder') or 'New Folder' }}</h3>
+    <h3><i class="fas fa-folder-plus"></i> {{ t('webui_drive_new_folder') or 'New Folder' }}</h3>
     <p id="mkdir-hint">{{ t('webui_drive_mkdir_hint') or 'Will be created in' }}: <strong id="mkdir-path-hint" style="color:var(--accent);">/</strong></p>
     <input type="text" id="mkdir-name" placeholder="{{ t('webui_drive_folder_name_ph') or 'Folder name...' }}"
            onkeydown="if(event.key==='Enter')confirmMkdir(); if(event.key==='Escape')closeMkdirModal()">

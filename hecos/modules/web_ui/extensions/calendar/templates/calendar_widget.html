@@ -75,12 +75,12 @@
 
 <div class="sidebar-card" id="calendar-widget" style="padding:10px 12px;">
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="calendarWidget.toggleBody()">
-        <span class="ql-icon">📅</span>
+        <span class="ql-icon"><i class="fas fa-calendar-alt"></i></span>
         <span class="ql-title">CALENDAR</span>
         <span onclick="event.stopPropagation(); window.hecosOpenConfig('#calendar')" 
               style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
-              title="Configure Calendar">⚙️</span>
-        <span class="ql-chevron" id="calendar-widget-toggle">▾</span>
+              title="Configure Calendar"><i class="fas fa-cog"></i></span>
+        <span class="ql-chevron" id="calendar-widget-toggle"><i class="fas fa-chevron-down"></i></span>
     </div>
 
     <div id="calendar-widget-body" class="ql-body" style="margin-top:10px;">
@@ -161,13 +161,13 @@ window.calendarWidget = (function() {
                     <div class="sidebar-cal-group">
                         <div class="sidebar-cal-header ${isCollapsed ? 'collapsed' : ''}" onclick="calendarWidget.toggleGroup(this)">
                             <span>${label}</span>
-                            <span class="group-chevron">▼</span>
+                            <span class="group-chevron"><i class="fas fa-chevron-down"></i></span>
                         </div>
                         <div class="sidebar-cal-content ${isCollapsed ? 'collapsed' : ''}">
                             ${events.map(ev => `
                                 <div class="cal-sidebar-card" style="border-left-color: ${ev.color || '#3498db'}">
                                     <div class="cal-sidebar-title">${ev.title}</div>
-                                    <div class="cal-sidebar-time">🕒 ${_fmtTime(ev.start_iso)}</div>
+                                    <div class="cal-sidebar-time"><i class="far fa-clock"></i> ${_fmtTime(ev.start_iso)}</div>
                                 </div>
                             `).join('')}
                         </div>

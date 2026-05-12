@@ -1,14 +1,14 @@
-<div id="ptt-indicator"><div class="rec-dot"></div> [ 🎙️ RECORDING ]</div>
+<div id="ptt-indicator"><div class="rec-dot"></div> [ <i class="fas fa-microphone"></i> RECORDING ]</div>
 <div id="input-bar">
   {% include 'modules/chat_input_toolbar.html' %}
   <div class="input-wrap">
     <textarea id="user-input" rows="1" placeholder="{{ t('webui_chat_placeholder') }}" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <div class="input-actions">
-      <button class="action-btn" title="{{ t('webui_chat_btn_clear_input') }}" onclick="clearInput()">🗑</button>
-      <button class="action-btn" id="web-ptt-btn" title="MIC: Hold to talk · Tap to lock (Toggle)" aria-label="Microfono WebRTC">🎙️</button>
-      <button class="action-btn" id="send-btn" title="{{ t('webui_chat_btn_send') }}" onclick="sendMessage()">▶</button>
+      <button class="action-btn" title="{{ t('webui_chat_btn_clear_input') }}" onclick="clearInput()"><i class="fas fa-trash-alt"></i></button>
+      <button class="action-btn" id="web-ptt-btn" title="MIC: Hold to talk · Tap to lock (Toggle)" aria-label="Microfono WebRTC"><i class="fas fa-microphone"></i></button>
+      <button class="action-btn" id="send-btn" title="{{ t('webui_chat_btn_send') }}" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>
   <div class="input-hint">{{ t('webui_chat_hint') }}</div>
-  <div id="web-ptt-status-bar" class="mobile-only">🎙️ MIC: Hold to talk · Tap to lock (Toggle)</div>
+  <div id="web-ptt-status-bar" class="mobile-only"><i class="fas fa-microphone"></i> MIC: Hold to talk · Tap to lock (Toggle)</div>
 </div>

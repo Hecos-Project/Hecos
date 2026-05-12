@@ -28,7 +28,7 @@
 
   <!-- GENERAL -->
   <div class="card">
-    <div class="card-title">⚡ Command Executor</div>
+    <div class="card-title"><i class="fas fa-bolt"></i> Command Executor</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_executor_enable') or 'Enable Executor Module' }}</div>
       <label class="switch"><input type="checkbox" id="executor-enabled" data-plugin="EXECUTOR"><span class="slider"></span></label>
@@ -50,12 +50,12 @@
 
   <!-- SHELL COMMANDS -->
   <div class="card">
-    <div class="card-title">💻 Shell Command Execution</div>
+    <div class="card-title"><i class="fas fa-terminal"></i> Shell Command Execution</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_executor_shell_enable') or 'Allow Shell Commands (cmd / bash)' }}</div>
       <label class="switch"><input type="checkbox" id="executor-shell-enabled" onchange="savePluginKey('EXECUTOR','enable_shell_commands',this.checked)"><span class="slider"></span></label>
     </div>
-    <small style="color:var(--red); font-size:11px;">⚠️ {{ t('webui_executor_shell_warning') or 'USE WITH CAUTION: Grants Hecos direct access to your system shell.' }}</small>
+    <small style="color:var(--red); font-size:11px;"><i class="fas fa-exclamation-triangle"></i> {{ t('webui_executor_shell_warning') or 'USE WITH CAUTION: Grants Hecos direct access to your system shell.' }}</small>
     <div class="field" style="margin-top:14px;">
       <label>{{ t('webui_executor_shell_timeout') or 'Shell Command Timeout (seconds)' }}</label>
       <input type="number" id="executor-shell-timeout" min="5" max="300" placeholder="15"
@@ -65,7 +65,7 @@
 
   <!-- FILE MANAGER -->
   <div class="card">
-    <div class="card-title">📂 File Manager Limits</div>
+    <div class="card-title"><i class="fas fa-folder-open"></i> File Manager Limits</div>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_fm_desc') or 'Configure safety boundaries for file read/write operations.' }}</p>
     <div class="field">
       <label>{{ t('webui_executor_max_read_lines') or 'Max Lines to Read per Request' }}</label>
@@ -88,7 +88,7 @@
 
   <!-- GENERAL -->
   <div class="card">
-    <div class="card-title">🖱️ PC Automation</div>
+    <div class="card-title"><i class="fas fa-mouse"></i> PC Automation</div>
     <div class="toggle-row">
       <div class="toggle-info">Enable PC Automation (Mouse, Keyboard, Windows)</div>
       <label class="switch"><input type="checkbox" id="automation-enabled" data-plugin="AUTOMATION"><span class="slider"></span></label>
@@ -98,13 +98,13 @@
       Combine with <strong>WEBCAM → Desktop Screenshot</strong> for a full see-and-act loop.
     </p>
     <p style="color:var(--yellow); font-size:11px; margin-top:6px; display:flex; align-items:center; gap:6px;">
-      <span>⚠️</span> <strong>FailSafe:</strong> Move your mouse to the top-left corner of the screen to instantly abort any automation action.
+      <span><i class="fas fa-exclamation-triangle"></i></span> <strong>FailSafe:</strong> Move your mouse to the top-left corner of the screen to instantly abort any automation action.
     </p>
   </div>
 
   <!-- MOUSE SETTINGS -->
   <div class="card">
-    <div class="card-title">🖱️ Mouse Settings</div>
+    <div class="card-title"><i class="fas fa-mouse-pointer"></i> Mouse Settings</div>
     <div class="field">
       <label>Move Duration (seconds)</label>
       <input type="number" id="automation-move-duration" min="0" max="2" step="0.05" placeholder="0.15"
@@ -115,7 +115,7 @@
 
   <!-- KEYBOARD SETTINGS -->
   <div class="card">
-    <div class="card-title">⌨️ Keyboard Settings</div>
+    <div class="card-title"><i class="fas fa-keyboard"></i> Keyboard Settings</div>
     <div class="field">
       <label>Keystroke Interval (seconds)</label>
       <input type="number" id="automation-type-interval" min="0" max="0.5" step="0.005" placeholder="0.02"
@@ -166,7 +166,7 @@
              <label class="switch is-small"><input type="checkbox" id="track-vram-enabled" onchange="window.saveDsb('track_vram', this.checked)"><span class="slider"></span></label>
            </div>
            <p style="color:var(--yellow); font-size:11px; margin-top:8px; display:flex; align-items:center; gap:6px;">
-             <span>⚠️</span> Enabling these hardware tracking parameters may cause system instability.
+             <span><i class="fas fa-exclamation-triangle"></i></span> Enabling these hardware tracking parameters may cause system instability.
            </p>
         </div>
         <p style="font-size:12px; color:var(--muted); margin-top:10px;">Controls the visibility and active reporting of hardware metrics within the Web interface.</p>

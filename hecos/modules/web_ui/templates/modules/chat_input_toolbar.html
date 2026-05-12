@@ -231,16 +231,16 @@
 <div id="upload-preview"></div>
 <div id="input-toolbar">
   <button class="toolbar-btn" title="Attach a document (PDF, TXT, DOCX, CSV)" onclick="document.getElementById('file-upload-doc').click()">
-    <span class="tb-icon">📎</span> {{ t('webui_chat_toolbar_doc') }}
+    <span class="tb-icon"><i class="fas fa-paperclip"></i></span> {{ t('webui_chat_toolbar_doc') }}
   </button>
   <button class="toolbar-btn" title="Attach an image (PNG, JPG, WebP)" onclick="document.getElementById('file-upload-img').click()">
-    <span class="tb-icon">🖼</span> {{ t('webui_chat_toolbar_img') }}
+    <span class="tb-icon"><i class="fas fa-image"></i></span> {{ t('webui_chat_toolbar_img') }}
   </button>
   <button class="toolbar-btn emoji-trigger-btn" title="Insert Emoji" onclick="toggleEmoticonPicker(event)">
-    <span class="tb-icon">😊</span> Emoji
+    <span class="tb-icon"><i class="fas fa-smile"></i></span> Emoji
   </button>
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
-    <span class="tb-icon">📋</span> {{ t('webui_chat_toolbar_paste') }}
+    <span class="tb-icon"><i class="fas fa-paste"></i></span> {{ t('webui_chat_toolbar_paste') }}
   </button>
 </div>
 <input type="file" id="file-upload-doc" accept=".pdf,.txt,.docx,.csv,.md" multiple>
@@ -254,8 +254,8 @@
   <div id="paste-modal-container" style="position:fixed; inset:0; z-index:9002; pointer-events:none; display:flex; align-items:center; justify-content:center;">
     <div class="paste-modal-box" id="paste-modal-box">
       <div class="paste-modal-header" id="paste-modal-drag-handle">
-        <div class="paste-modal-title">📋 {{ t('webui_chat_toolbar_paste_title') }}</div>
-        <button class="paste-modal-close" onclick="closePasteModal()" title="{{ t('webui_chat_toolbar_close') }}">✕</button>
+        <div class="paste-modal-title"><i class="fas fa-paste"></i> {{ t('webui_chat_toolbar_paste_title') }}</div>
+        <button class="paste-modal-close" onclick="closePasteModal()" title="{{ t('webui_chat_toolbar_close') }}"><i class="fas fa-times"></i></button>
       </div>
       <div class="paste-modal-body">
         <textarea class="paste-modal-textarea" id="paste-modal-textarea" placeholder="{{ t('webui_chat_toolbar_paste_ph') }}"></textarea>
@@ -270,7 +270,7 @@
 
 <!-- ── Drag & Drop Overlay ── -->
 <div id="drop-overlay">
-  <div class="drop-icon">📂</div>
+  <div class="drop-icon"><i class="fas fa-folder-open"></i></div>
   <div class="drop-label">{{ t('webui_chat_toolbar_drop') }}</div>
   <div class="drop-sub">{{ t('webui_chat_toolbar_drop_sub') }}</div>
 </div>

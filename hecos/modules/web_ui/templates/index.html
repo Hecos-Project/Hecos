@@ -122,6 +122,7 @@
   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
 
     <!-- ONLINE STATUS -->
+    <!-- ONLINE STATUS -->
     <div id="status-dot" class="badge-pill">
       <div class="dot" id="hdr-dot"></div>
       <span id="hdr-model">{{ t("webui_chat_offline") }}</span>
@@ -129,20 +130,20 @@
 
     <!-- VIEW SWITCHER -->
     <div class="view-switcher">
-      <button class="switcher-btn active" id="view-tabs" onclick="setViewMode('tabs')" title="Tabs View">📂</button>
-      <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View">🧱</button>
+      <button class="switcher-btn active" id="view-tabs" onclick="setViewMode('tabs')" title="Tabs View"><i class="fas fa-folder-open"></i></button>
+      <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View"><i class="fas fa-th"></i></button>
     </div>
 
     <!-- GLOBAL COLLAPSE -->
     <div class="global-controls">
-      <button class="switcher-btn" onclick="toggleAllCategories(true)" title="Expand All">⊕</button>
-      <button class="switcher-btn" onclick="toggleAllCategories(false)" title="Collapse All">⊖</button>
+      <button class="switcher-btn" onclick="toggleAllCategories(true)" title="Expand All"><i class="fas fa-plus-circle"></i></button>
+      <button class="switcher-btn" onclick="toggleAllCategories(false)" title="Collapse All"><i class="fas fa-minus-circle"></i></button>
     </div>
 
     <!-- NAV LINKS -->
-    <a href="/chat" class="btn btn-sm btn-secondary" style="text-decoration:none;">💬 {{ t("webui_nav_chat") }}</a>
+    <a href="/chat" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-comment-dots"></i> {{ t("webui_nav_chat") }}</a>
     {% if current_user.is_authenticated %}
-    <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;">🗂️ Drive</a>
+    <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-hdd"></i> Drive</a>
     {% endif %}
 
     <!-- AUTHENTICATION WIDGET -->
@@ -163,17 +164,17 @@
   </div>
 
   <div id="live-status">
-    <div class="stat"><span class="stat-label">System:</span> <span id="s-backend" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" style="display:none;"><span class="stat-label">CPU:</span> <span id="s-cpu" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" style="display:none;"><span class="stat-label">RAM:</span> <span id="s-ram" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" style="display:none;"><span class="stat-label">VRAM:</span> <span id="s-vram" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">Mic:</span> <span id="s-mic" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">TTS:</span> <span id="s-tts" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">PTT:</span> <span id="s-ptt" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">Config:</span> <span id="s-config" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">Model:</span> <span id="s-model" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" title="Last executed tool" style="display:none;"><span class="stat-label">Tool:</span> <span id="s-tool" class="stat-val val-ok">—</span></div>
-    <div class="stat dashboard-only" title="Token Context Usage" style="display:none;"><span class="stat-label">Tokens:</span> <span id="s-tokens" class="stat-val">—</span></div>
+    <div class="stat"><i class="fas fa-server"></i> <span class="stat-label">System:</span> <span id="s-backend" class="stat-val">—</span></div>
+    <div class="stat dashboard-only" style="display:none;"><i class="fas fa-microchip"></i> <span class="stat-label">CPU:</span> <span id="s-cpu" class="stat-val">—</span></div>
+    <div class="stat dashboard-only" style="display:none;"><i class="fas fa-memory"></i> <span class="stat-label">RAM:</span> <span id="s-ram" class="stat-val">—</span></div>
+    <div class="stat dashboard-only" style="display:none;"><i class="fas fa-video"></i> <span class="stat-label">VRAM:</span> <span id="s-vram" class="stat-val">—</span></div>
+    <div class="stat"><i class="fas fa-microphone"></i> <span class="stat-label">Mic:</span> <span id="s-mic" class="stat-val">—</span></div>
+    <div class="stat"><i class="fas fa-volume-up"></i> <span class="stat-label">TTS:</span> <span id="s-tts" class="stat-val">—</span></div>
+    <div class="stat"><i class="fas fa-hand-pointer"></i> <span class="stat-label">PTT:</span> <span id="s-ptt" class="stat-val">—</span></div>
+    <div class="stat"><i class="fas fa-cog"></i> <span class="stat-label">Config:</span> <span id="s-config" class="stat-val">—</span></div>
+    <div class="stat"><i class="fas fa-brain"></i> <span class="stat-label">Model:</span> <span id="s-model" class="stat-val">—</span></div>
+    <div class="stat dashboard-only" title="Last executed tool" style="display:none;"><i class="fas fa-tools"></i> <span class="stat-label">Tool:</span> <span id="s-tool" class="stat-val val-ok">—</span></div>
+    <div class="stat dashboard-only" title="Token Context Usage" style="display:none;"><i class="fas fa-layer-group"></i> <span class="stat-label">Tokens:</span> <span id="s-tokens" class="stat-val">—</span></div>
   </div>
 
   <!-- CATEGORY FILTER TABS -->
@@ -203,7 +204,7 @@
       <!-- Panels will be injected here by config_core.js -->
       <!-- Skeleton shown while a panel is loading -->
       <div id="panel-skeleton" style="display:none; padding:40px 20px; text-align:center; color:var(--muted);">
-        <div style="font-size:28px; margin-bottom:16px; animation: spin 1s linear infinite; display:inline-block;">⚙️</div>
+        <div style="font-size:28px; margin-bottom:16px; display:inline-block;"><i class="fas fa-cog fa-spin"></i></div>
         <div style="font-size:14px;">Loading panel...</div>
       </div>
     </div>

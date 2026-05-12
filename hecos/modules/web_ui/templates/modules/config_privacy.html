@@ -14,9 +14,9 @@
         <div style="font-size:12px; color:var(--muted); margin-top:4px;">Mode applied to every new chat session.</div>
       </div>
       <select id="pr-default-mode" class="config-input" style="width:250px;">
-        <option value="normal">👁 Normal — Full history saved</option>
-        <option value="auto_wipe">🔒 Auto-Wipe</option>
-        <option value="incognito">🕵️ Incognito</option>
+        <option value="normal"><i class="fas fa-eye"></i> Normal — Full history saved</option>
+        <option value="auto_wipe"><i class="fas fa-lock"></i> Auto-Wipe</option>
+        <option value="incognito"><i class="fas fa-user-secret"></i> Incognito</option>
       </select>
     </div>
 
@@ -38,7 +38,7 @@
     <!-- Wipe targets -->
     <div class="toggle-row" style="align-items:flex-start;">
       <div>
-        <div class="toggle-info">💬 Messages</div>
+        <div class="toggle-info"><i class="fas fa-comments"></i> Messages</div>
         <div style="font-size:12px; color:var(--muted); margin-top:4px;">Chat messages from the session.</div>
       </div>
       <label class="switch">
@@ -48,7 +48,7 @@
     </div>
     <div class="toggle-row" style="align-items:flex-start;">
       <div>
-        <div class="toggle-info">🧠 Memory Context</div>
+        <div class="toggle-info"><i class="fas fa-brain"></i> Memory Context</div>
         <div style="font-size:12px; color:var(--muted); margin-top:4px;">Clear AI identity and context memory.</div>
       </div>
       <label class="switch">
@@ -58,7 +58,7 @@
     </div>
     <div class="toggle-row" style="align-items:flex-start;">
       <div>
-        <div class="toggle-info">👤 User Profile Notes</div>
+        <div class="toggle-info"><i class="fas fa-user"></i> User Profile Notes</div>
         <div style="font-size:12px; color:var(--muted); margin-top:4px;">Clear admin notes from the user profile.</div>
       </div>
       <label class="switch">
@@ -87,13 +87,12 @@
     <div class="card-title" style="font-size:13px;">MANUAL ACTIONS</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button type="button" class="btn btn-danger btn-sm" onclick="privacyWipeAll()">
-        🗑️ Wipe All Chat History
+        <i class="fas fa-trash-alt"></i> Wipe All Chat History
       </button>
       <button type="button" class="btn btn-secondary" onclick="privacyWipeOld()">
-        🧹 Wipe History Older Than 30 Days
+        <i class="fas fa-broom"></i> Wipe History Older Than 30 Days
       </button>
     </div>
     <div id="priv-msg" style="margin-top:12px; font-size:12px; color:var(--muted);"></div>
   </div>
 </div>
-

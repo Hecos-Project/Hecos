@@ -31,12 +31,12 @@
   <div class="sidebar-card-title"
        style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;"
        onclick="mpWidgetToggle()" title="Click to collapse/expand">
-    <span id="mp-widget-led" style="font-size:10px; color:var(--muted);">🎵</span>
+    <span id="mp-widget-led" style="font-size:10px; color:var(--muted);"><i class="fas fa-music"></i></span>
     <span>MEDIA PLAYER</span>
     <span onclick="event.stopPropagation(); window.hecosOpenConfig('#media')" 
           style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
-          title="Configure Media Player">⚙️</span>
-    <span id="mp-widget-chevron" style="font-size:10px; color:var(--muted);">▾</span>
+          title="Configure Media Player"><i class="fas fa-cog"></i></span>
+    <span id="mp-widget-chevron" style="font-size:10px; color:var(--muted); transition: transform 0.3s;"><i class="fas fa-chevron-down"></i></span>
   </div>
 
   <!-- ── Body ───────────────────────────────────────────────────── -->
@@ -78,22 +78,22 @@
     <!-- Controls row -->
     <div style="display:flex; gap:4px; align-items:center; margin-bottom:8px;">
       <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
-              onclick="mpWCtrl('prev')" title="Previous">⏮</button>
+              onclick="mpWCtrl('prev')" title="Previous"><i class="fas fa-step-backward"></i></button>
       <button class="audio-toggle-btn" id="mp-widget-play-btn" style="flex:1;"
-              onclick="mpWPlayPause()" title="Play/Pause">▶</button>
+              onclick="mpWPlayPause()" title="Play/Pause"><i class="fas fa-play"></i></button>
       <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
-              onclick="mpWCtrl('stop')" title="Stop">⏹</button>
+              onclick="mpWCtrl('stop')" title="Stop"><i class="fas fa-stop"></i></button>
       <button class="audio-toggle-btn" style="flex:0; padding:2px 7px;"
-              onclick="mpWCtrl('next')" title="Next">⏭</button>
+              onclick="mpWCtrl('next')" title="Next"><i class="fas fa-step-forward"></i></button>
       <button class="mp-icon-btn" id="mp-w-shuffle"
-              onclick="mpWToggle('shuffle')" title="Shuffle">🔀</button>
+              onclick="mpWToggle('shuffle')" title="Shuffle"><i class="fas fa-random"></i></button>
       <button class="mp-icon-btn" id="mp-w-repeat"
-              onclick="mpWToggle('repeat')" title="Repeat">🔁</button>
+              onclick="mpWToggle('repeat')" title="Repeat"><i class="fas fa-redo"></i></button>
     </div>
 
     <!-- Volume -->
     <div style="display:flex; align-items:center; gap:5px; margin-bottom:10px;">
-      <span style="font-size:11px; color:var(--muted);">🔊</span>
+      <span style="font-size:11px; color:var(--muted);"><i class="fas fa-volume-up"></i></span>
       <input type="range" id="mp-widget-vol" min="0" max="100" value="80"
              style="flex:1; height:3px; accent-color:var(--accent);"
              oninput="mpWVolume(this.value)">
@@ -107,9 +107,9 @@
          onclick="mpWToggleQueue()">
       <span style="font-size:10px; font-weight:700; color:var(--muted);
                    text-transform:uppercase; letter-spacing:.8px;">
-        📋 QUEUE <span id="mp-w-queue-count" style="font-weight:400;"></span>
+        <i class="fas fa-list"></i> QUEUE <span id="mp-w-queue-count" style="font-weight:400;"></span>
       </span>
-      <span id="mp-w-queue-ch" style="font-size:10px; color:var(--muted);">▾</span>
+      <span id="mp-w-queue-ch" style="font-size:10px; color:var(--muted); transition: transform 0.3s;"><i class="fas fa-chevron-down"></i></span>
     </div>
 
     <!-- Queue list -->
@@ -153,7 +153,7 @@
     const ch   = _el('mp-widget-chevron');
     if (!body) return;
     body.style.display = yes ? 'none' : '';
-    if (ch) ch.textContent = yes ? '▸' : '▾';
+    if (ch) ch.style.transform = yes ? 'rotate(-90deg)' : 'rotate(0deg)';
   }
 
   window.mpWidgetToggle = function() {
@@ -169,7 +169,7 @@
     if (!body) return;
     _queueOpen = !_queueOpen;
     body.style.display = _queueOpen ? '' : 'none';
-    if (ch) ch.textContent = _queueOpen ? '▾' : '▸';
+    if (ch) ch.style.transform = _queueOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
   };
 
   /* ── API calls ─────────────────────────────────────────────────────────────── */
@@ -250,7 +250,7 @@
 
       /* Play button */
       const btn = _el('mp-widget-play-btn');
-      if (btn) btn.textContent = _playing ? '⏸' : '▶';
+      if (btn) btn.innerHTML = _playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
 
       /* LED indicator */
       const led = _el('mp-widget-led');
@@ -284,7 +284,7 @@
 
       /* Playlist name */
       const plEl = _el('mp-widget-pl-name');
-      if (plEl) plEl.textContent = d.playlist ? `▶ ${d.playlist}` : '';
+      if (plEl) plEl.innerHTML = d.playlist ? `<i class="fas fa-play" style="font-size:8px; margin-right:4px;"></i> ${d.playlist}` : '';
 
       /* Queue count */
       const count = _el('mp-w-queue-count');
@@ -301,7 +301,7 @@
 
       list.innerHTML = d.queue.map((item, i) => {
         const name = item.name || (item.path ? item.path.split(/[\\/]/).pop() : '?');
-        const icon = item.type === 'video' ? '🎬' : '🎵';
+        const icon = item.type === 'video' ? '<i class="fas fa-film"></i>' : '<i class="fas fa-music"></i>';
         const active = (i === d.current);
         return `<div class="mp-queue-item"
                      onclick="mpWPlayAt(${i})"

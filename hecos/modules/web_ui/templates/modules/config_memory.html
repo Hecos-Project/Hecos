@@ -1,7 +1,7 @@
 <!-- MEMORY PANEL -->
 <div id="tab-memory" class="panel">
   <div class="card">
-    <div class="card-title">🧠 Cognition System</div>
+    <div class="card-title"><i class="fas fa-brain"></i> Cognition System</div>
     <div class="toggle-row">
       <div class="toggle-info">Memory System (Global ON/OFF)</div>
       <label class="switch"><input type="checkbox" id="cog-memory-enabled"><span class="slider"></span></label>
@@ -28,7 +28,7 @@
     </div>
   </div>
   <div class="card">
-    <div class="card-title">📋 Memory Status</div>
+    <div class="card-title"><i class="fas fa-clipboard-list"></i> Memory Status</div>
     <p id="mem-status-text" style="color:var(--muted); font-size:0.9em;">Loading...</p>
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
       <select id="clear-range" class="mode-selector config-input" style="width:140px; margin:0;">
@@ -37,8 +37,8 @@
         <option value="7">Older than 7 days</option>
         <option value="30">Older than 30 days</option>
       </select>
-      <button class="btn btn-danger" style="flex:1;" onclick="clearMemoryHistory()">🗑 {{ t('webui_chat_btn_clear') or 'Clear Selected' }}</button>
-      <button class="btn btn-secondary" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh">🔄</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="clearMemoryHistory()"><i class="fas fa-trash-alt"></i> {{ t('webui_chat_btn_clear') or 'Clear Selected' }}</button>
+      <button class="btn btn-secondary" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh"><i class="fas fa-sync"></i></button>
     </div>
     <small style="color:var(--muted); font-size:11px; margin-top:8px; display:block;">
       Note: Identity and User Profile are NOT affected by this.

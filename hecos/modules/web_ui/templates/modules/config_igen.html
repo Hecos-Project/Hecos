@@ -1,17 +1,17 @@
 <!-- IMAGE GEN PANEL -->
 <div id="tab-igen" class="panel">
   <div class="card" id="card-image-gen">
-    <div class="card-title">🎨 Image Generation</div>
+    <div class="card-title">Image Generation</div>
 
     <!-- ══ PRESET TOOLBAR ══════════════════════════════════════════════════════ -->
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; flex-wrap:wrap;">
-      <span style="font-size:12px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:1px; white-space:nowrap;">⚡ Preset</span>
+      <span style="font-size:12px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:1px; white-space:nowrap;"><i class="fas fa-bolt"></i> Preset</span>
       <select id="igen-preset" onchange="loadIgenPreset()" class="config-input" style="flex:1; min-width:180px; padding:6px 12px; font-size:13px;">
         <option value="">— Select a preset —</option>
       </select>
-      <button id="igen-preset-update-btn" onclick="updateIgenPreset()" title="Update selected user preset with current values" style="display:none; padding:7px 14px; border-radius:8px; border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.1); color:var(--accent); cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap;">🔄 Update</button>
-      <button onclick="saveIgenPreset()" title="Save current config as a new preset" class="btn btn-sm" style="white-space:nowrap;">💾 Save As</button>
-      <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;">🗑️ Delete</button>
+      <button id="igen-preset-update-btn" onclick="updateIgenPreset()" title="Update selected user preset with current values" style="display:none; padding:7px 14px; border-radius:8px; border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.1); color:var(--accent); cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap;"><i class="fas fa-sync"></i> Update</button>
+      <button onclick="saveIgenPreset()" title="Save current config as a new preset" class="btn btn-sm" style="white-space:nowrap;"><i class="fas fa-save"></i> Save As</button>
+      <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;"><i class="fas fa-trash"></i> Delete</button>
     </div>
 
     <!-- ══ ENABLE TOGGLE ════════════════════════════════════════════════════════ -->
@@ -30,8 +30,8 @@
       </div>
       <div class="field">
         <label>Model 
-          <button onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;">&#8635; Refresh</button>
-          <button id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,76,60,0.1); cursor:pointer;" title="Remove this custom model">❌ Delete</button>
+          <button onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh</button>
+          <button id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,231,231,0.1); cursor:pointer;" title="Remove this custom model"><i class="fas fa-times"></i> Delete</button>
         </label>
         <select id="igen-model" onchange="checkCustomModelSelect()" data-cfg-plugin="MEDIA"><option>flux</option></select>
         <span id="igen-model-status" style="font-size:11px;color:var(--muted);"></span>
@@ -40,11 +40,11 @@
 
     <details id="igen-hf-explorer-wrapper" style="margin-top:10px; display:none; background:var(--glass-b); padding:10px; border-radius:12px; border:1px solid var(--border);">
       <summary style="cursor:pointer; font-weight:600; color:var(--text); list-style:none; display:flex; align-items:center; gap:6px;">
-        <span style="font-size:13px;">🔍 Search Hugging Face Hub <small style="font-weight:400; color:var(--muted);">— find custom models</small></span>
+        <span style="font-size:13px;">Search Hugging Face Hub <small style="font-weight:400; color:var(--muted);">— find custom models</small></span>
       </summary>
       
       <div style="margin-top:10px; background:rgba(231,76,60,0.06); border-left:3px solid #e74c3c; padding:8px; font-size:11px; color:var(--text); line-height:1.4;">
-        <strong>⚠️ Hugging Face API Limitation:</strong> Millions of models exist on the Hub, but the free public Inference API only supports a small fraction (mostly official or optimized models). If a model generates a <em>"Model not supported"</em> error, it is too large or disabled for free tier by HF. Use the default models or switch to <b>Pollinations</b> for unlimited access.
+        <strong><i class="fas fa-exclamation-triangle"></i> Hugging Face API Limitation:</strong> Millions of models exist on the Hub, but the free public Inference API only supports a small fraction (mostly official or optimized models). If a model generates a <em>"Model not supported"</em> error, it is too large or disabled for free tier by HF. Use the default models or switch to <b>Pollinations</b> for unlimited access.
       </div>
       
       <div style="margin-top:10px;">
@@ -74,7 +74,7 @@
           <option value="2:3">2:3 — Photo (Portrait)</option>
           <option value="5:4">5:4 — Medium Format</option>
           <option value="4:5">4:5 — Instagram Portrait</option>
-          <option value="custom">📐 Custom (manual W × H)</option>
+          <option value="custom"><i class="fas fa-ruler-combined"></i> Custom (manual W × H)</option>
         </select>
       </div>
       <div class="field" id="igen-custom-dims" style="display:none;">
@@ -105,7 +105,7 @@
       <div class="field">
         <label>
           CFG Scale (Guidance)
-          <span title="CFG Scale and Guidance Scale are the same parameter — it controls how strictly the model follows your prompt. Higher = more literal. Typical range: 3–12 for Flux, 5–15 for SD." style="cursor:help; color:var(--muted); font-size:12px; margin-left:4px;">ℹ️</span>
+          <span title="CFG Scale and Guidance Scale are the same parameter — it controls how strictly the model follows your prompt. Higher = more literal. Typical range: 3–12 for Flux, 5–15 for SD." style="cursor:help; color:var(--muted); font-size:12px; margin-left:4px;"><i class="fas fa-info-circle"></i></span>
         </label>
         <div style="display:flex; align-items:center;">
           <input type="range" id="igen-guidance" min="1" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=this.value" data-cfg-plugin="MEDIA">
@@ -126,11 +126,11 @@
       <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
       <div style="display:flex; gap:8px; align-items:center;">
         <input type="number" id="igen-seed" min="-1" max="2147483647" value="-1" style="flex:1;" data-cfg-plugin="MEDIA">
-        <button onclick="document.getElementById('igen-seed').value=-1;" title="Randomize seed" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:14px;">🎲</button>
+        <button onclick="document.getElementById('igen-seed').value=-1;" title="Randomize seed" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:14px;"><i class="fas fa-dice"></i></button>
         <button type="button" onclick="const ls = (window.cfg && window.cfg.image_gen) ? window.cfg.image_gen.last_seed : -1; if(ls && ls > 0) document.getElementById('igen-seed').value = ls; else alert('No seed recorded yet. Generate an image first.');" 
                 title="Reuse Last Seed" 
                 style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold;">
-          🔄 Last
+          <i class="fas fa-sync"></i> Last
         </button>
       </div>
       <small style="color:var(--muted);font-size:11px;">Fix a seed to reproduce the same image. Click <b>Last</b> to reuse the seed from your last successful generation.</small>
@@ -139,7 +139,7 @@
     <!-- ══ ADVANCED SAMPLING (collapsible) ═════════════════════════════════════ -->
     <details style="margin-top:14px;">
       <summary style="cursor:pointer; font-weight:600; color:var(--text); user-select:none; list-style:none; display:flex; align-items:center; gap:6px;">
-        <span style="font-size:13px;">⚙️ Advanced Sampling</span>
+        <span style="font-size:13px;">Advanced Sampling</span>
         <small style="color:var(--muted); font-weight:400;">(HuggingFace &amp; Stability only)</small>
       </summary>
       <div class="grid-2" style="margin-top:10px;">
@@ -155,7 +155,7 @@
             <option value="lms">LMS</option>
             <option value="heun">Heun</option>
           </select>
-          <small style="color:var(--muted);font-size:11px;">ℹ️ Ignored by Pollinations &amp; Gemini.</small>
+          <small style="color:var(--muted);font-size:11px;"><i class="fas fa-info-circle"></i> Ignored by Pollinations &amp; Gemini.</small>
         </div>
         <div class="field">
           <label>Scheduler</label>
@@ -167,7 +167,7 @@
             <option value="lms">LMS</option>
             <option value="karras">Karras</option>
           </select>
-          <small style="color:var(--muted);font-size:11px;">ℹ️ Best supported by HuggingFace.</small>
+          <small style="color:var(--muted);font-size:11px;"><i class="fas fa-info-circle"></i> Best supported by HuggingFace.</small>
         </div>
       </div>
     </details>
@@ -190,19 +190,19 @@
       <label>Artistic Style</label>
       <select id="igen-style" data-cfg-plugin="MEDIA">
         <option value="none">None (Raw Prompt)</option>
-        <option value="cinematic">🎬 Cinematic</option>
-        <option value="photography">📷 Photography</option>
-        <option value="anime">✨ Anime</option>
-        <option value="manga">🏴‍☠️ Manga (B&amp;W)</option>
-        <option value="cartoon">🎨 Cartoon</option>
-        <option value="digital_art">💻 Digital Art</option>
-        <option value="oil_painting">🖼️ Oil Painting</option>
-        <option value="watercolor">🎨 Watercolor</option>
-        <option value="sketch">✏️ Sketch</option>
-        <option value="3d_render">🧊 3D Render</option>
-        <option value="cyberpunk">🌃 Cyberpunk</option>
-        <option value="fantasy">🧙‍♂️ Fantasy</option>
-        <option value="pixel_art">👾 Pixel Art</option>
+        <option value="cinematic"><i class="fas fa-film"></i> Cinematic</option>
+        <option value="photography"><i class="fas fa-camera"></i> Photography</option>
+        <option value="anime"><i class="fas fa-wand-magic-sparkles"></i> Anime</option>
+        <option value="manga"><i class="fas fa-skull-crossbones"></i> Manga (B&amp;W)</option>
+        <option value="cartoon"><i class="fas fa-paint-brush"></i> Cartoon</option>
+        <option value="digital_art"><i class="fas fa-laptop-code"></i> Digital Art</option>
+        <option value="oil_painting"><i class="fas fa-palette"></i> Oil Painting</option>
+        <option value="watercolor"><i class="fas fa-brush"></i> Watercolor</option>
+        <option value="sketch"><i class="fas fa-pencil-alt"></i> Sketch</option>
+        <option value="3d_render"><i class="fas fa-cube"></i> 3D Render</option>
+        <option value="cyberpunk"><i class="fas fa-city"></i> Cyberpunk</option>
+        <option value="fantasy"><i class="fas fa-hat-wizard"></i> Fantasy</option>
+        <option value="pixel_art"><i class="fas fa-gamepad"></i> Pixel Art</option>
       </select>
       <small style="color:var(--muted);font-size:11px;">Applies a predefined artistic mood to the generation.</small>
     </div>

@@ -21,13 +21,13 @@
         <div class="card-title">{{ t('webui_help_resources') }}</div>
         <div class="grid-2" style="gap: 15px; margin-top: 15px;">
             <a href="/hecos/docs?group=user" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; height: 45px;">
-                <span style="font-size: 18px;">📖</span> {{ t('webui_help_manual') }}
+                <i class="fas fa-book" style="font-size: 18px;"></i> {{ t('webui_help_manual') }}
             </a>
             <a href="/hecos/docs?group=tech" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; height: 45px;">
-                <span style="font-size: 18px;">🛠️</span> {{ t('webui_help_tech') }}
+                <i class="fas fa-tools" style="font-size: 18px;"></i> {{ t('webui_help_tech') }}
             </a>
             <a href="https://github.com/Hecos-Core/hecos-core" target="_blank" class="btn btn-secondary" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; height: 45px; grid-column: span 2;">
-                <span style="font-size: 18px;">🐙</span> {{ t('webui_help_community') }}
+                <i class="fab fa-github" style="font-size: 18px;"></i> {{ t('webui_help_community') }}
             </a>
         </div>
     </div>
@@ -55,8 +55,8 @@
         <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
             <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 12px; font-weight: bold;">🔧 MAINTENANCE & REPAIR</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('full-check')" style="font-size: 11px;">🔍 {{ t('webui_help_full_check') }}</button>
-                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('fix-paths')" style="font-size: 11px;">📂 {{ t('webui_help_fix_paths') }}</button>
+                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('full-check')" style="font-size: 11px;"><i class="fas fa-search"></i> {{ t('webui_help_full_check') }}</button>
+                <button type="button" class="btn btn-secondary" onclick="runDiagnostic('fix-paths')" style="font-size: 11px;"><i class="fas fa-folder-open"></i> {{ t('webui_help_fix_paths') }}</button>
             </div>
             
             <div id="diag-log-container" style="display: none; margin-top: 15px;">

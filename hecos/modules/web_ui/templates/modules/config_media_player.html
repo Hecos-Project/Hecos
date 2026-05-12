@@ -7,7 +7,7 @@
 
   <!-- ── Page Header ──────────────────────────────────────────────────────── -->
   <div class="config-header">
-    <h1 class="config-title">🎬 {{ translations.get('webui_mp_title', 'Hecos Media Player') }}</h1>
+    <h1 class="config-title"><i class="fas fa-film"></i> {{ translations.get('webui_mp_title', 'Hecos Media Player') }}</h1>
     <p class="config-subtitle">{{ translations.get('webui_mp_subtitle', 'OS-level playback, gallery viewer, and AI playlist management.') }}</p>
   </div>
 
@@ -15,21 +15,21 @@
        LIVE PLAYER WIDGET
   ─────────────────────────────────────────────────────────────────────────── -->
   <section class="config-section" id="mp-nowplaying-section">
-    <h2 class="section-title">▶ {{ translations.get('webui_mp_nowplaying', 'Now Playing') }}</h2>
+    <h2 class="section-title"><i class="fas fa-play"></i> {{ translations.get('webui_mp_nowplaying', 'Now Playing') }}</h2>
     <div id="mp-player-card">
       <div id="mp-track-info">
-        <span id="mp-track-icon">🎵</span>
+        <span id="mp-track-icon"><i class="fas fa-music"></i></span>
         <div>
           <div id="mp-track-name">—</div>
           <div id="mp-track-pos" class="mp-muted">00:00 / 00:00</div>
         </div>
       </div>
       <div id="mp-controls">
-        <button class="mp-btn" onclick="mpControl('prev')">⏮</button>
-        <button class="mp-btn mp-btn-accent" id="mp-play-btn" onclick="mpControl('pause')">⏸</button>
-        <button class="mp-btn" onclick="mpControl('stop')">⏹</button>
-        <button class="mp-btn" onclick="mpControl('next')">⏭</button>
-        <label class="mp-muted" style="margin-left:12px;">🔊</label>
+        <button class="mp-btn" onclick="mpControl('prev')"><i class="fas fa-step-backward"></i></button>
+        <button class="mp-btn mp-btn-accent" id="mp-play-btn" onclick="mpControl('pause')"><i class="fas fa-pause"></i></button>
+        <button class="mp-btn" onclick="mpControl('stop')"><i class="fas fa-stop"></i></button>
+        <button class="mp-btn" onclick="mpControl('next')"><i class="fas fa-step-forward"></i></button>
+        <label class="mp-muted" style="margin-left:12px;"><i class="fas fa-volume-up"></i></label>
         <input type="range" id="mp-vol-slider" min="0" max="100" value="80"
                oninput="mpControl('volume', {volume: this.value})" style="width:90px;">
         <span id="mp-vol-label" class="mp-muted">80%</span>
@@ -43,7 +43,7 @@
        PLAYLISTS DASHBOARD
   ─────────────────────────────────────────────────────────────────────────── -->
   <section class="config-section">
-    <h2 class="section-title">📋 {{ translations.get('webui_mp_playlists', 'Playlists') }}</h2>
+    <h2 class="section-title"><i class="fas fa-list-ul"></i> {{ translations.get('webui_mp_playlists', 'Playlists') }}</h2>
 
     <!-- Create new playlist -->
     <div class="config-group" style="margin-bottom:16px;">
@@ -53,7 +53,7 @@
                placeholder="{{ translations.get('webui_mp_playlist_name_ph', 'e.g. Jazz Evening') }}"
                style="max-width:240px;">
         <button class="btn btn-primary" onclick="mpCreatePlaylist()">
-          ➕ {{ translations.get('webui_mp_create', 'Create') }}
+          <i class="fas fa-plus"></i> {{ translations.get('webui_mp_create', 'Create') }}
         </button>
       </div>
     </div>
@@ -86,7 +86,7 @@
        SETTINGS
   ─────────────────────────────────────────────────────────────────────────── -->
   <section class="config-section">
-    <h2 class="section-title">⚙️ {{ translations.get('webui_mp_settings', 'Settings') }}</h2>
+    <h2 class="section-title"><i class="fas fa-cog"></i> {{ translations.get('webui_mp_settings', 'Settings') }}</h2>
     <form id="mp-settings-form" onsubmit="mpSaveSettings(event)">
 
       <div class="config-group">
@@ -158,7 +158,7 @@
 
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">
-          💾 {{ translations.get('webui_conf_save', 'Save') }}
+          <i class="fas fa-save"></i> {{ translations.get('webui_conf_save', 'Save') }}
         </button>
         <span id="mp-save-msg" class="form-feedback"></span>
       </div>
@@ -184,20 +184,20 @@ async function mpPollStatus() {
     const d = await r.json();
     if (!d.ok) return;
     const name = d.track ? d.track.name : '—';
-    const icon = d.track ? (d.track.type === 'video' ? '🎬' : d.track.type === 'audio' ? '🎵' : '🖼') : '🎵';
+    const icon = d.track ? (d.track.type === 'video' ? '<i class="fas fa-film"></i>' : d.track.type === 'audio' ? '<i class="fas fa-music"></i>' : '<i class="fas fa-image"></i>') : '<i class="fas fa-music"></i>';
     document.getElementById('mp-track-name').textContent = name;
-    document.getElementById('mp-track-icon').textContent  = icon;
+    document.getElementById('mp-track-icon').innerHTML  = icon;
 
     const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
     document.getElementById('mp-track-pos').textContent =
       d.length > 0 ? `${fmt(d.position)} / ${fmt(d.length)}` : '';
 
     const playBtn = document.getElementById('mp-play-btn');
-    if (playBtn) playBtn.textContent = d.playing ? '⏸' : '▶';
+    if (playBtn) playBtn.innerHTML = d.playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
 
     const idx = d.queue_idx + 1, total = d.queue_len;
     document.getElementById('mp-queue-info').textContent =
-      total > 0 ? `Track ${idx}/${total}${d.shuffle ? '  🔀' : ''}${d.repeat ? '  🔁' : ''}` : '';
+      total > 0 ? `Track ${idx}/${total}${d.shuffle ? '  (RANDOM)' : ''}${d.repeat ? '  (LOOP)' : ''}` : '';
 
     if (d.volume >= 0) {
       document.getElementById('mp-vol-slider').value = d.volume;
@@ -216,10 +216,10 @@ async function mpControl(action, extra = {}) {
       body: JSON.stringify(body)
     });
     const d = await r.json();
-    mpShowMsg(d.message || (d.ok ? '✅ OK' : '❌ ' + d.error));
+    mpShowMsg(d.message || (d.ok ? '<i class="fas fa-check-circle"></i> OK' : '<i class="fas fa-exclamation-circle"></i> ' + d.error));
     mpPollStatus();
   } catch (e) {
-    mpShowMsg('❌ ' + e);
+    mpShowMsg('<i class="fas fa-exclamation-circle"></i> ' + e);
   }
 }
 
@@ -233,7 +233,7 @@ async function mpCreatePlaylist() {
     body: JSON.stringify({ name, items: [] })
   });
   const d = await r.json();
-  mpShowMsg(d.ok ? `✅ Playlist "${name}" created.` : '❌ ' + d.error);
+  mpShowMsg(d.ok ? `<i class="fas fa-check-circle"></i> Playlist "${name}" created.` : '<i class="fas fa-exclamation-circle"></i> ' + d.error);
   document.getElementById('mp-new-name').value = '';
   mpLoadPlaylists();
 }
@@ -242,7 +242,7 @@ async function mpDeletePlaylist(name) {
   if (!confirm(`Delete playlist "${name}"?`)) return;
   const r = await fetch(`/api/media_player/playlists/${encodeURIComponent(name)}`, { method: 'DELETE' });
   const d = await r.json();
-  mpShowMsg(d.ok ? `🗑 Playlist "${name}" deleted.` : '❌ ' + d.error);
+  mpShowMsg(d.ok ? `<i class="fas fa-trash-alt"></i> Playlist "${name}" deleted.` : '<i class="fas fa-exclamation-circle"></i> ' + d.error);
   mpLoadPlaylists();
 }
 
@@ -264,10 +264,10 @@ async function mpScanFolder() {
       body: JSON.stringify({ action: 'scan_folder', path: folder, save_as: saveAs })
     });
     const d = await res.json();
-    r.textContent = d.message || (d.ok ? '✅ Done' : '❌ ' + d.error);
+    r.innerHTML = d.message || (d.ok ? '<i class="fas fa-check-circle"></i> Done' : '<i class="fas fa-exclamation-circle"></i> ' + d.error);
     if (saveAs && d.ok) mpLoadPlaylists();
   } catch (e) {
-    r.textContent = '❌ ' + e;
+    r.textContent = '<i class="fas fa-exclamation-circle"></i> ' + e;
   }
 }
 
@@ -282,12 +282,12 @@ async function mpLoadPlaylists() {
     }
     wrap.innerHTML = d.playlists.map(pl => `
       <div class="mp-playlist-row">
-        <span class="mp-pl-name">📋 <strong>${esc(pl.name)}</strong></span>
+        <span class="mp-pl-name"><i class="fas fa-list-ul"></i> <strong>${esc(pl.name)}</strong></span>
         <span class="mp-muted">${pl.count} tracks</span>
         <div class="mp-pl-actions">
-          <button class="btn btn-primary" onclick="mpPlayPlaylist('${esc(pl.name)}')">▶ Play</button>
-          <button class="btn" onclick="mpPlayPlaylist('${esc(pl.name)}', true)">🔀 Shuffle</button>
-          <button class="btn btn-danger" onclick="mpDeletePlaylist('${esc(pl.name)}')">🗑</button>
+          <button class="btn btn-primary" onclick="mpPlayPlaylist('${esc(pl.name)}')"><i class="fas fa-play"></i> Play</button>
+          <button class="btn" onclick="mpPlayPlaylist('${esc(pl.name)}', true)"><i class="fas fa-random"></i> Shuffle</button>
+          <button class="btn btn-danger" onclick="mpDeletePlaylist('${esc(pl.name)}')"><i class="fas fa-trash-alt"></i></button>
         </div>
       </div>
     `).join('');
@@ -314,17 +314,17 @@ async function mpSaveSettings(e) {
       body: JSON.stringify({ section: 'plugins.MEDIA_PLAYER', values: data })
     });
     const d = await r.json();
-    document.getElementById('mp-save-msg').textContent = d.ok ? '✅ Saved!' : '❌ ' + (d.error || 'Error');
+    document.getElementById('mp-save-msg').textContent = d.ok ? '<i class="fas fa-check-circle"></i> Saved!' : '<i class="fas fa-exclamation-circle"></i> ' + (d.error || 'Error');
     setTimeout(() => { document.getElementById('mp-save-msg').textContent = ''; }, 3000);
   } catch (err) {
-    document.getElementById('mp-save-msg').textContent = '❌ ' + err;
+    document.getElementById('mp-save-msg').textContent = '<i class="fas fa-exclamation-circle"></i> ' + err;
   }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
 function mpShowMsg(msg) {
   const el = document.getElementById('mp-status-msg');
-  if (el) { el.textContent = msg; setTimeout(() => { el.textContent = ''; }, 4000); }
+  if (el) { el.innerHTML = msg; setTimeout(() => { el.innerHTML = ''; }, 4000); }
 }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 

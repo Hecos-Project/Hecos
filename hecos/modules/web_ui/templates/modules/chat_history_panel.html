@@ -3,8 +3,8 @@
   <div class="sidebar-label" style="display:flex; justify-content:space-between; align-items:center; padding-right:10px;">
     <span>{{ t('webui_chat_history_label') }}</span>
     <div style="display:flex; gap:8px; align-items:center;">
-       <span id="toggle-archive-btn" title="{{ t('webui_chat_archive_open') }}" style="cursor:pointer; font-size: 11px; opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.toggleShowArchived()">📂</span>
-       <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size: var(--font-size-sm); opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)">🗑️</span>
+       <span id="toggle-archive-btn" title="{{ t('webui_chat_archive_open') }}" style="cursor:pointer; font-size: 11px; opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.toggleShowArchived()"><i class="fas fa-folder-open"></i></span>
+       <span title="{{ t('webui_chat_delete_all_title') }}" style="cursor:pointer; font-size: var(--font-size-sm); opacity:0.5; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.5" onclick="window.deleteAllChatSessions(event)"><i class="fas fa-trash-alt"></i></span>
     </div>
   </div>
 
@@ -13,31 +13,31 @@
     <button class="mode-btn" id="mode-btn-normal"
             onclick="window.selectChatMode('normal')"
             title="{{ t('webui_chat_mode_normal_tip') }}">
-      <span class="mode-icon">☁️</span>
+      <span class="mode-icon"><i class="fas fa-cloud"></i></span>
       <span class="mode-label">Normal</span>
     </button>
     <button class="mode-btn" id="mode-btn-auto_wipe"
             onclick="window.selectChatMode('auto_wipe')"
             title="{{ t('webui_chat_mode_autowipe_tip') }}">
-      <span class="mode-icon">🧹</span>
+      <span class="mode-icon"><i class="fas fa-broom"></i></span>
       <span class="mode-label">Auto-Wipe</span>
     </button>
     <button class="mode-btn" id="mode-btn-incognito"
             onclick="window.selectChatMode('incognito')"
             title="{{ t('webui_chat_mode_incognito_tip') }}">
-      <span class="mode-icon">🕵️</span>
+      <span class="mode-icon"><i class="fas fa-user-secret"></i></span>
       <span class="mode-label">Incognito</span>
     </button>
   </div>
-  <div id="mode-lock-notice" class="mode-lock-notice" style="display:none;">
-    🔒 {{ t('webui_chat_mode_locked') }}
+  <div class="mode-lock-notice" style="display:none;" id="mode-lock-notice">
+    <i class="fas fa-lock"></i> {{ t('webui_chat_mode_locked') }}
   </div>
-  <!-- ──────────────────────────────────────────────────────────── -->
+  <!-- ── Session list ────────────────────────────────────────────── -->
 
   <!-- New Chat button -->
   <div style="margin-bottom:8px;">
     <button class="sidebar-btn" onclick="window.newChatSession()" style="width:100%; justify-content:center; font-size: var(--font-size-sm); padding:8px 6px;">
-      <span class="icon">💬</span> {{ t('webui_chat_new') }}
+      <span class="icon"><i class="fas fa-comment-dots"></i></span> {{ t('webui_chat_new') }}
     </button>
   </div>
 

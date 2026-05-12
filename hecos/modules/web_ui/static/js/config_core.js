@@ -217,6 +217,9 @@ async function _loadPanel(panelId) {
       });
     }
 
+    // Run icon injection for the newly loaded panel
+    window.injectIconsInPanel(panelId);
+
     // Run any panel-specific JS init that was waiting for the DOM
     if (typeof populateUI === 'function') populateUI();
     if (typeof initRestartIndicators === 'function') initRestartIndicators();
@@ -386,7 +389,7 @@ function mergeRegistry(registry) {
             hub.modules.push({
                 id: resolvedId,
                 label: tag,
-                icon: plug.icon || '🧩',
+                icon: plug.icon || '<i class="fas fa-puzzle-piece"></i>',
                 cat: plug.category || 'CONNETTIVITÀ',
                 pluginTag: tag
             });
@@ -507,7 +510,7 @@ function renderFilterTabs() {
 
     let html = `
         <button class="filter-btn ${window.activeCategoryFilter === 'ALL' ? 'active' : ''}" onclick="setCategoryFilter('ALL')">
-            <span>✨</span> ${window.t ? window.t('hub_filter_all') : 'Tutto'}
+            <span><i class="fas fa-star"></i></span> ${window.t ? window.t('hub_filter_all') : 'Tutto'}
             <span class="btn-badge">${counts['ALL']}</span>
         </button>
     `;
@@ -817,24 +820,50 @@ function renderConfigHub(mode = 'tabs') {
     });
 
     // --- ICON INJECTION LOGIC ---
-    // Automatically add icons to the titles of the configuration panels
-    setTimeout(() => {
-        filteredModules.forEach(m => {
-            const panel = document.getElementById('tab-' + m.id);
-            if (!panel) return;
-            const title = panel.querySelector('.card-title');
-            if (title && !title.getAttribute('data-icon-injected')) {
-                const icon = window.getIconForModule(m.id, m.label, m.icon);
-                // Prevent duplicates: strip logic if it already starts with an emoji or similar
-                let cleanText = title.innerHTML.trim();
-                // Simple regex to remove leading emoji if present (basic range)
-                cleanText = cleanText.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/u, '');
+    // Automatically add icons to the titles of all configuration cards
+    window.injectIconsInPanel = function(specificId = null) {
+        const hub = window.CONFIG_HUB;
+        if (!hub) return;
+
+        // If specificId is null, we process all active/available modules
+        const modulesToProcess = specificId 
+            ? hub.modules.filter(m => m.id === specificId)
+            : hub.modules;
+
+        // Use a slightly longer timeout to ensure lazy panels are fully DOM-inserted
+        setTimeout(() => {
+            modulesToProcess.forEach(m => {
+                const panel = document.getElementById('tab-' + (specificId || m.id));
+                if (!panel) return;
                 
-                title.innerHTML = `${icon} ${cleanText}`;
-                title.setAttribute('data-icon-injected', 'true');
-            }
-        });
-    }, 100);
+                // Process both card titles and specific header titles
+                const titles = panel.querySelectorAll('.card-title, .panel-title, .section-title');
+                titles.forEach(title => {
+                    // Avoid double injection
+                    if (title.getAttribute('data-icon-injected')) return;
+
+                    const icon = window.getIconForModule(m.id, m.label, m.icon);
+                    let cleanText = title.innerHTML.trim();
+                    
+                    // Comprehensive emoji and legacy decoration stripping
+                    // Covers common emoji ranges, arrows, and legacy symbols often used in titles
+                    cleanText = cleanText.replace(/^[ \u00a9\u00ae\u2000-\u3300\ud83c\ud83d\ud83e\ud83f][\ufe00-\ufe0f]?\s*/u, '');
+                    cleanText = cleanText.replace(/^(✅|❌|⚠️|🧠|☁️|🛣️|🤖|🌉|🔊|⚙️|🧩|🛡️|🔒|⏳|💾|↺|📊|🎨|🔍|🛠️|📁|📝|🖼️|🌐|📷|🏠|❓|ℹ️|🧠|⚡|📁|📝|🖼️|🔍|🛠️|🛡️|🌐|📷|⚙️|📊|🏠|🎨|❓|ℹ️)\s*/u, '');
+                    
+                    // If the text is now empty (e.g. title was JUST an emoji), fallback to module label
+                    if (!cleanText || cleanText.length < 2) {
+                         cleanText = window.t ? window.t(m.label) : m.label;
+                    }
+
+                    title.innerHTML = `${icon} ${cleanText}`;
+                    title.setAttribute('data-icon-injected', 'true');
+                });
+            });
+        }, 200);
+    };
+
+    // Run initially for all visible modules
+    window.injectIconsInPanel();
 
     // 0. Pre-calculate counts
     const catCounts = {};

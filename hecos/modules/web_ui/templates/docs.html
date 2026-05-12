@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -345,7 +346,7 @@
     </div>
 
     <div class="search-container">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><i class="fas fa-search"></i></span>
         <input type="text" id="docs-search" class="search-input" placeholder="Search docs..." onkeyup="handleSearch(event)">
     </div>
 
@@ -366,16 +367,16 @@
             GitHub Wiki ↗
         </a>
         <a href="javascript:void(0)" onclick="window.open('/api/docs/unified/generate?group=' + currentGroup + '&lang=' + currentLang)" class="chapter-item" style="color:var(--accent); border-color:var(--accent); background:rgba(102, 252, 241, 0.05); margin-top:10px;">
-            📥 Generate Dynamic Guide
+            <i class="fas fa-download"></i> Generate Dynamic Guide
         </a>
     </div>
 
-    <a href="/chat" class="back-link">↩ Back to Chat</a>
+    <a href="/chat" class="back-link"><i class="fas fa-reply"></i> Back to Chat</a>
 </div>
 
 <main class="docs-main">
     <div id="search-results" class="search-results-overlay">
-        <button class="close-search" onclick="closeSearch()">✕</button>
+        <button class="close-search" onclick="closeSearch()"><i class="fas fa-times"></i></button>
         <h2 id="search-query-display" style="margin-bottom: 30px;">Search Results for "..."</h2>
         <div id="results-list"></div>
     </div>

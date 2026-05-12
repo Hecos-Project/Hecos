@@ -26,7 +26,7 @@
 
   <div class="sidebar-card full-width {{ 'collapsed' if zconfig.widgets.sidebar_status_collapsed }}" id="status-card">
     <div class="sidebar-card-title clickable" onclick="toggleStatusCollapse()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-      STATUS
+      <span><i class="fas fa-chart-bar"></i> STATUS</span>
       <i class="fas fa-chevron-down status-chevron"></i>
     </div>
     <style>
@@ -43,23 +43,23 @@
     </style>
     <div class="status-pill">
       <div class="dot-pulse"></div>
-      <div><div class="status-text">{{ t('webui_chat_backend') }}</div><div class="status-val" id="sb-backend">—</div></div>
+      <div><div class="status-text"><i class="fas fa-server"></i> {{ t('webui_chat_backend') }}</div><div class="status-val" id="sb-backend">—</div></div>
     </div>
     <div class="status-pill">
       <div style="width:7px;height:7px;border-radius:50%;background:var(--accent2);flex-shrink:0;"></div>
-      <div style="overflow:hidden;"><div class="status-text">{{ t('webui_chat_model') }}</div><div class="status-val" id="sb-model">—</div></div>
+      <div style="overflow:hidden;"><div class="status-text"><i class="fas fa-microchip"></i> {{ t('webui_chat_model') }}</div><div class="status-val" id="sb-model">—</div></div>
     </div>
     <div class="status-pill">
       <div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;"></div>
-      <div style="overflow:hidden;"><div class="status-text">{{ t('header_soul') }}</div><div class="status-val" id="sb-soul">—</div></div>
+      <div style="overflow:hidden;"><div class="status-text"><i class="fas fa-ghost"></i> {{ t('header_soul') }}</div><div class="status-val" id="sb-soul">—</div></div>
     </div>
   </div>
 
   <div class="sidebar-card mobile-only" style="padding-bottom:12px;">
     <div class="sidebar-card-title">NAVIGATION</div>
     <div style="display:flex; flex-direction:column; gap:6px;">
-      <a class="sidebar-btn" href="/hecos/config/ui" target="_blank"><span class="icon">⚙️</span> Central Hub</a>
-      <a class="sidebar-btn" href="/drive" target="_blank"><span class="icon">🗂️</span> Drive</a>
+      <a class="sidebar-btn" href="/hecos/config/ui" target="_blank"><span class="icon"><i class="fas fa-cog"></i></span> Central Hub</a>
+      <a class="sidebar-btn" href="/drive" target="_blank"><span class="icon"><i class="fas fa-hdd"></i></span> Drive</a>
     </div>
   </div>
 
@@ -75,7 +75,7 @@
 
     <!-- Empty State -->
     <div id="widgets-empty-state" class="sidebar-card" style="text-align:center; padding:24px 16px; {{ 'display:none;' if has_widgets }}">
-        <div style="font-size:32px; margin-bottom:12px; opacity:0.5;">🧩</div>
+        <div style="font-size:32px; margin-bottom:12px; opacity:0.5;"><i class="fas fa-puzzle-piece"></i></div>
         <div style="font-weight:600; color:var(--text); margin-bottom:4px;">{{ t('sidebar_empty_title') or 'Qui non c\'è niente' }}</div>
         <div style="font-size:11px; color:var(--muted); margin-bottom:16px;">Personalizza la tua sidebar aggiungendo i widget che preferisci.</div>
         
@@ -92,7 +92,7 @@
 
   <div id="widgets-manage-footer" class="sidebar-card" style="padding:4px 0; border:none; background:transparent; {{ 'display:none;' if not has_widgets }}">
     <button class="sidebar-btn btn-xs" onclick="toggleSidebarOrderMode()" style="opacity:0.5; font-size:10px; margin:0 auto; display:block;">
-       ⚙️ {{ t('sidebar_manage_widgets') or 'Manage Widgets' }}
+       <i class="fas fa-cog"></i> {{ t('sidebar_manage_widgets') or 'Manage Widgets' }}
     </button>
   </div>
 
@@ -100,18 +100,18 @@
 
   <div class="sidebar-card {{ 'collapsed' if zconfig.widgets.sidebar_audio_collapsed }}" id="audio-card">
     <div class="sidebar-card-title clickable" onclick="toggleAudioCollapse()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
-      <span>🔊 AUDIO</span>
+      <span><i class="fas fa-volume-up"></i> AUDIO</span>
       <i class="fas fa-chevron-down audio-chevron"></i>
     </div>
     <div class="audio-toggle-row">
       <button class="audio-toggle-btn" id="mic-btn" onclick="toggleMic()" title="Toggle Microphone (F4)">
-        🎤 <span id="mic-label">MIC</span>
+        <i class="fas fa-microphone"></i> <span id="mic-label">MIC</span>
       </button>
       <button class="audio-toggle-btn" id="tts-btn" onclick="toggleTTS()" title="Toggle Voice Output (F6)">
-        🔊 <span id="tts-label">TTS</span>
+        <i class="fas fa-volume-up"></i> <span id="tts-label">TTS</span>
       </button>
       <button class="audio-toggle-btn" id="ptt-btn" onclick="togglePTT()" title="Toggle Push-To-Talk (F8)">
-        ⌨️ <span id="ptt-label">PTT</span>
+        <i class="fas fa-keyboard"></i> <span id="ptt-label">PTT</span>
       </button>
     </div>
       <button id="sidebar-stop-voice-btn" onclick="stopVoice()" title="Stop Voice (ESC)" style="
@@ -119,7 +119,7 @@
         background:rgba(var(--red-rgb),.15); border:1px solid rgba(var(--red-rgb),.4);
         border-radius:8px; color:var(--red); font-size:12px; cursor:pointer;
         transition:opacity .2s;">
-      ⏹ Stop Voice
+      <i class="fas fa-stop"></i> Stop Voice
     </button>
   </div>
 

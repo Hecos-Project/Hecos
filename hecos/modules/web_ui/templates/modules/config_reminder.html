@@ -1,7 +1,7 @@
 <!-- REMINDER MODULE CONFIG -->
 <div id="tab-reminder" class="panel">
     <div class="card">
-        <div class="card-title">Reminder Settings</div>
+        <div class="card-title">{{ t('ext_reminder_title') }}</div>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
             Configure the local scheduler for time-based reminders and natural language recurrence.
         </p>
@@ -132,7 +132,7 @@ window.refreshReminderConfig = function() {
                         </small>
                     </div>
                     <div>
-                        ${r.status === 'active' ? `<button type="button" class="btn btn-sm btn-outline-danger" style="padding:4px 8px; border:none; background:rgba(255,0,0,0.2);" onclick="window.cancelReminderFromConfig('${r.id}')">✕</button>` : ''}
+                        ${r.status === 'active' ? `<button type="button" class="btn btn-sm btn-outline-danger" style="padding:4px 8px; border:none; background:rgba(255,0,0,0.2);" onclick="window.cancelReminderFromConfig('${r.id}')"><i class="fas fa-times"></i></button>` : ''}
                     </div>
                 </div>`;
             });

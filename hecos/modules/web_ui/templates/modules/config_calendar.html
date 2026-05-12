@@ -15,7 +15,7 @@
 <div id="tab-calendar" class="panel">
 <div class="card" style="padding:20px; margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">📅 {{ translations['ext_calendar_title'] }}</div>
+        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">{{ translations['ext_calendar_title'] }}</div>
         <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_locale'] }}: 
                 <select id="cal-set-locale" onchange="hcal.saveSettings()" class="hcal-select">
@@ -29,16 +29,16 @@
             </label>
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_holidays'] }}: 
                 <select id="cal-set-country" onchange="hcal.saveSettings()" class="hcal-select">
-                    <option value="US">🇺🇸 USA</option>
-                    <option value="GB">🇬🇧 UK</option>
-                    <option value="IT">🇮🇹 Italy</option>
-                    <option value="ES">🇪🇸 Spain</option>
-                    <option value="FR">🇫🇷 France</option>
-                    <option value="DE">🇩🇪 Germany</option>
+                    <option value="US">USA</option>
+                    <option value="GB">UK</option>
+                    <option value="IT">Italy</option>
+                    <option value="ES">Spain</option>
+                    <option value="FR">France</option>
+                    <option value="DE">Germany</option>
                 </select>
             </label>
-            <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" class="hcal-btn-sec">🎨 Colors</button>
-            <button onclick="hcal.toggleSyncSettings()" id="cal-btn-sync" class="hcal-btn-sec">🔄 iSync</button>
+            <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" class="hcal-btn-sec"><i class="fas fa-palette"></i> Colors</button>
+            <button onclick="hcal.toggleSyncSettings()" id="cal-btn-sync" class="hcal-btn-sec"><i class="fas fa-sync"></i> iSync</button>
         </div>
     </div>
 
@@ -104,7 +104,7 @@
             <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">{{ translations['ext_calendar_list'] }}</button>
         </div>
         <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
-            ➕ {{ translations['ext_calendar_add_event'] }}
+            <i class="fas fa-plus"></i> {{ translations['ext_calendar_add_event'] }}
         </button>
     </div>
 
@@ -117,7 +117,7 @@
 
 <!-- Add Event Form Card (visible when user clicks + Add Event) -->
 <div class="card" id="cal-add-form" style="padding:20px; display:none;">
-    <div id="cal-form-title" class="card-title" style="margin-bottom:14px;">➕ {{ translations['ext_calendar_new_event'] }}</div>
+    <div id="cal-form-title" class="card-title" style="margin-bottom:14px;"><i class="fas fa-calendar-plus"></i> {{ translations['ext_calendar_new_event'] }}</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_title_label'] }} *</label>
@@ -128,7 +128,7 @@
             <div style="display:flex;gap:8px;align-items:center;">
                 <input id="cal-f-start-display" type="text" class="form-control hcal-input" placeholder="Click to pick..." readonly
                        style="cursor:pointer;flex:1;" onclick="hcal.pickStart()">
-                <button onclick="hcal.pickStart()" class="hcal-btn-sec">⏰</button>
+                <button onclick="hcal.pickStart()" class="hcal-btn-sec"><i class="fas fa-clock"></i></button>
             </div>
             <input id="cal-f-start" type="hidden">
         </div>
@@ -137,7 +137,7 @@
             <div style="display:flex;gap:8px;align-items:center;">
                 <input id="cal-f-end-display" type="text" class="form-control hcal-input" placeholder="Click to pick..." readonly
                        style="cursor:pointer;flex:1;" onclick="hcal.pickEnd()">
-                <button onclick="hcal.pickEnd()" class="hcal-btn-sec">⏰</button>
+                <button onclick="hcal.pickEnd()" class="hcal-btn-sec"><i class="fas fa-clock"></i></button>
             </div>
             <input id="cal-f-end" type="hidden">
         </div>
@@ -154,9 +154,8 @@
                 </label>
             </div>
             <div style="flex:1;min-width:140px;display:flex;align-items:flex-end;padding-bottom:4px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--yellow);">
                     <input id="cal-f-remind" type="checkbox" style="accent-color:var(--yellow);">
-                    🔔 Remind me at this time
+                    <i class="fas fa-bell"></i> Remind me at this time
                 </label>
             </div>
         </div>
@@ -312,13 +311,13 @@
         popup.innerHTML = `
             <div class="pop-title" style="display:flex; align-items:center; justify-content:space-between;">
                 ${ev.title}
-                ${hasReminder ? '<span title="Reminder Active" style="color:#f1c40f; font-size:14px;">🔔</span>' : ''}
+                ${hasReminder ? '<span title="Reminder Active" style="color:#f1c40f; font-size:14px;"><i class="fas fa-bell"></i></span>' : ''}
             </div>
             <div class="pop-time">📅 ${_fmt(ev.startStr)}${ev.endStr ? ' → ' + _fmt(ev.endStr) : ''}</div>
             ${notes ? `<div class="pop-notes">${notes}</div>` : ''}
             <div class="pop-actions" style="margin-top:12px; display:flex; gap:8px;">
-                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;">✎ {{ translations['chat_btn_edit'] }}</button>
-                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')">🗑 {{ translations['chat_btn_delete'] }}</button>
+                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;"><i class="fas fa-edit"></i> {{ translations['chat_btn_edit'] }}</button>
+                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')"><i class="fas fa-trash-alt"></i> {{ translations['chat_btn_delete'] }}</button>
                 <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">{{ translations['ext_calendar_btn_cancel'] }}</button>
             </div>
         `;
@@ -440,7 +439,7 @@
     function openNewEventForm(prefilledStart) {
         hcal.cancelForm();
         document.getElementById('cal-add-form').style.display = 'block';
-        document.getElementById('cal-form-title').textContent = '➕ ' + "{{ translations['ext_calendar_add_event'] }}";
+        document.getElementById('cal-form-title').innerHTML = '<i class="fas fa-plus"></i> ' + "{{ translations['ext_calendar_add_event'] }}";
         document.getElementById('cal-submit-btn').textContent = "{{ translations['ext_calendar_add_event'] }}";
         document.getElementById('cal-f-title').focus();
         
@@ -469,7 +468,7 @@
         
         _currentEditId = id;
         document.getElementById('cal-add-form').style.display = 'block';
-        document.getElementById('cal-form-title').textContent = '✎ ' + "{{ translations['chat_btn_edit'] }}";
+        document.getElementById('cal-form-title').innerHTML = '<i class="fas fa-edit"></i> ' + "{{ translations['chat_btn_edit'] }}";
         document.getElementById('cal-submit-btn').textContent = "{{ translations['webui_conf_btn_save'] }}";
         
         document.getElementById('cal-f-title').value = ev.title;
@@ -501,7 +500,7 @@
     function cancelForm() {
         _currentEditId = null;
         document.getElementById('cal-add-form').style.display = 'none';
-        document.getElementById('cal-form-title').textContent = '➕ ' + "{{ translations['ext_calendar_new_event'] }}";
+        document.getElementById('cal-form-title').innerHTML = '<i class="fas fa-plus"></i> ' + "{{ translations['ext_calendar_new_event'] }}";
         document.getElementById('cal-submit-btn').textContent = "{{ translations['ext_calendar_add_event'] }}";
         ['cal-f-title','cal-f-start','cal-f-start-display','cal-f-end','cal-f-end-display','cal-f-notes'].forEach(id => {
             const el = document.getElementById(id);
@@ -564,7 +563,7 @@
         .then(r => r.json())
         .then(data => {
             msg.style.color = data.ok ? 'var(--accent)' : '#e05';
-            msg.textContent = data.ok ? '✅ ' + "{{ translations['ext_calendar_msg_saved'] }}" : (data.error || "{{ translations['ext_calendar_msg_error'] }}");
+            msg.innerHTML = data.ok ? '<i class="fas fa-check-circle"></i> ' + "{{ translations['ext_calendar_msg_saved'] }}" : (data.error || "{{ translations['ext_calendar_msg_error'] }}");
             if (data.ok) {
                 if (_calendar) _calendar.refetchEvents();
                 if (window.calendarWidget) calendarWidget.refresh();
@@ -716,7 +715,7 @@
         fetch('/api/ext/calendar/sync', { method: 'POST' })
         .then(r => r.json())
         .then(d => {
-            btn.textContent = d.ok ? '✅ Done' : '❌ Error';
+            btn.innerHTML = d.ok ? '<i class="fas fa-check-circle"></i> Done' : '<i class="fas fa-exclamation-circle"></i> Error';
             if (d.ok && _calendar) _calendar.refetchEvents();
             if (d.ok && window.calendarWidget) calendarWidget.refresh();
             setTimeout(() => {
@@ -725,7 +724,7 @@
             }, 2000);
         })
         .catch(() => {
-            btn.textContent = '❌ Fail';
+            btn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Fail';
             btn.disabled = false;
             setTimeout(() => { btn.textContent = originalText; }, 2000);
         });

@@ -1,11 +1,11 @@
 <div class="sidebar-card" id="reminder-widget" style="padding:10px 12px;">
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="reminderWidget.toggleBody()">
-        <span class="ql-icon">⏰</span>
+        <span class="ql-icon"><i class="fas fa-bell"></i></span>
         <span class="ql-title">{{ t('ext_reminder_title') }}</span>
         <span onclick="event.stopPropagation(); window.hecosOpenConfig('#reminder')" 
               style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
-              title="Configure Reminder">⚙️</span>
-        <span class="ql-chevron" id="reminder-widget-toggle">▾</span>
+              title="Configure Reminder"><i class="fas fa-cog"></i></span>
+        <span class="ql-chevron" id="reminder-widget-toggle"><i class="fas fa-chevron-down"></i></span>
     </div>
     
     <div id="reminder-widget-body" class="ql-body" style="margin-top:10px;">
@@ -25,11 +25,11 @@
                      autocomplete="off" required style="flex:1;">
               
               <button type="button" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;background:rgba(255,200,60,0.15);border-color:rgba(255,200,60,0.3);color:#ffc83c;" onclick="reminderWidget.pickWheelTime()" title="Pick Exact Time">
-                  🕒
+                  <i class="far fa-clock"></i>
               </button>
               
               <button type="submit" class="ql-add-btn" style="width:36px;padding:4px;flex-shrink:0;">
-                  +
+                  <i class="fas fa-plus"></i>
               </button>
           </div>
           
@@ -39,7 +39,7 @@
               <span class="rem-chip" onclick="reminderWidget.setChip('in 15 min')">+ 15m</span>
               <span class="rem-chip" onclick="reminderWidget.setChip('in 30 min')">+ 30m</span>
               <span class="rem-chip" onclick="reminderWidget.setChip('in 1 hour')">+ 1h</span>
-              <span class="rem-chip" onclick="reminderWidget.setChip('in 10 min')">Pasta 🍝</span>
+              <span class="rem-chip" onclick="reminderWidget.setChip('in 10 min')">Pasta <i class="fas fa-utensils"></i></span>
           </div>
 
           <div id="reminder-quick-msg" style="font-size:10px;min-height:12px;text-align:center;"></div>
@@ -80,17 +80,17 @@ window.reminderWidget = (function() {
   }
 
   function _fmt(r) {
-    if (r.repeat && r.cron_expr) return '🔁 ' + t('ext_reminder_recurrent');
+    if (r.repeat && r.cron_expr) return '<i class="fas fa-redo"></i> ' + t('ext_reminder_recurrent');
     if (r.when_iso) {
       try {
         const d = new Date(r.when_iso);
         const now = new Date();
         const diff = d - now;
-        if (diff < 0)      return '⏰ ' + t('ext_reminder_expired');
-        if (diff < 60000)  return '⏰ <1 min';
-        if (diff < 3600000) return `⏰ ${Math.round(diff/60000)}m`;
-        if (diff < 86400000) return `⏰ ${Math.round(diff/3600000)}h`;
-        return `📅 ${d.toLocaleDateString(undefined, {day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString(undefined, {hour:'2-digit',minute:'2-digit'})}`;
+        if (diff < 0)      return '<i class="fas fa-bell"></i> ' + t('ext_reminder_expired');
+        if (diff < 60000)  return '<i class="fas fa-bell"></i> <1 min';
+        if (diff < 3600000) return `<i class="fas fa-bell"></i> ${Math.round(diff/60000)}m`;
+        if (diff < 86400000) return `<i class="fas fa-bell"></i> ${Math.round(diff/3600000)}h`;
+        return `<i class="fas fa-calendar-alt"></i> ${d.toLocaleDateString(undefined, {day:'2-digit',month:'2-digit'})} ${d.toLocaleTimeString(undefined, {hour:'2-digit',minute:'2-digit'})}`;
       } catch(e) { return r.when_iso; }
     }
     return '';
@@ -138,7 +138,7 @@ window.reminderWidget = (function() {
                     <button onclick="reminderWidget.snooze('${r.id}')" title="Snooze 15 min"
                             style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,255,255,0.6);padding:0;">zzz</button>
                     <button onclick="reminderWidget.cancel('${r.id}')" title="Cancel"
-                            style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,80,80,0.8);padding:0;">✕</button>
+                            style="background:none;border:none;cursor:pointer;font-size:13px;color:rgba(255,80,80,0.8);padding:0;"><i class="fas fa-times"></i></button>
                 </div>
             </div>
             
@@ -177,7 +177,7 @@ window.reminderWidget = (function() {
     .then(data => {
       if (msg) {
         msg.style.color = data.ok ? 'var(--accent)' : '#e05';
-        msg.textContent = data.ok ? '✅ ' + (window.I18N.command_executed || 'Done') : (data.error || data.message || 'Error');
+        msg.innerHTML = data.ok ? '<i class="fas fa-check-circle"></i> ' + (window.I18N.command_executed || 'Done') : (data.error || data.message || 'Error');
         setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
       }
       if (data.ok) {

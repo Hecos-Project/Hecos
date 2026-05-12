@@ -31,21 +31,21 @@
 
     <!-- Add New Server -->
     <div style="background: var(--bg3); padding: 16px; border-radius: 10px; border: 1px dashed var(--accent);">
-      <div class="card-title" style="font-size:13px; margin-bottom: 12px;">➕ Add New Server</div>
+      <div class="card-title" style="font-size:13px; margin-bottom: 12px;"><i class="fas fa-plus"></i> Add New Server</div>
 
       <div class="field">
         <label>Load a Preset</label>
         <select id="mcp-presets" onchange="applyMCPPreset(this.value)">
           <option value="">— Choose from Popular Presets —</option>
-          <option value="everything">🧰 Educational: Everything (Mock tools)</option>
-          <option value="sequentialthinking">🧠 Reasoning: Sequential Thinking</option>
-          <option value="bravesearch">🔍 Web Search: Brave Search (API Key required)</option>
-          <option value="wikipedia">📖 Knowledge: Wikipedia</option>
-          <option value="google-maps">🗺️ Maps: Google Maps (API Key required)</option>
-          <option value="github">💻 Developer: GitHub (PAT required)</option>
-          <option value="filesystem">📂 Utility: Local File System</option>
-          <option value="postgres">🗄️ Database: PostgreSQL</option>
-          <option value="weather">⛅ Science: OpenWeather (API Key required)</option>
+          <option value="everything">Educational: Everything (Mock tools)</option>
+          <option value="sequentialthinking">Reasoning: Sequential Thinking</option>
+          <option value="bravesearch">Web Search: Brave Search (API Key required)</option>
+          <option value="wikipedia">Knowledge: Wikipedia</option>
+          <option value="google-maps">Maps: Google Maps (API Key required)</option>
+          <option value="github">Developer: GitHub (PAT required)</option>
+          <option value="filesystem">Utility: Local File System</option>
+          <option value="postgres">Database: PostgreSQL</option>
+          <option value="weather">Science: OpenWeather (API Key required)</option>
         </select>
       </div>
 
@@ -67,13 +67,13 @@
         </div>
       </div>
       <div style="text-align: right; margin-top: 8px;">
-        <button type="button" class="btn btn-primary" onclick="addMCPServer()">➕ Add Server</button>
+        <button type="button" class="btn btn-primary" onclick="addMCPServer()"><i class="fas fa-plus"></i> Add Server</button>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">🔭 MCP Explorer</div>
+    <div class="card-title"><i class="fas fa-binoculars"></i> MCP Explorer</div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Search and discover external tools across multiple registries (Smithery, MCPSkills) without leaving Hecos.</p>
 
     <div class="grid-2" style="margin-bottom: 15px;">
@@ -103,8 +103,8 @@
 
   <div class="card">
     <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-      🧰 Discovered Tools Inventory
-      <button type="button" class="btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="reloadMCPBridge(this)">🔄 Refresh</button>
+      <i class="fas fa-toolbox"></i> Discovered Tools Inventory
+      <button type="button" class="btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="reloadMCPBridge(this)"><i class="fas fa-sync-alt"></i> Refresh</button>
     </div>
     <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Real-time list of capabilities available through active MCP servers.</p>
     <div id="mcp-inventory-list" style="max-height: 300px; overflow-y: auto; background: var(--bg3); padding: 15px; border-radius: 8px;">
@@ -266,7 +266,7 @@
                    onchange="toggleMCPServer('${name}', this.checked)"><span class="slider"></span></label>
           </td>
           <td>
-            <button type="button" class="btn btn-danger" style="padding:3px 10px; font-size:11px;" onclick="removeMCPServer('${name}')">✕ Remove</button>
+            <button type="button" class="btn btn-danger" style="padding:3px 10px; font-size:11px;" onclick="removeMCPServer('${name}')"><i class="fas fa-trash"></i> Remove</button>
           </td>
         </tr>
       `;
@@ -364,7 +364,7 @@
     btn.disabled = true;
     btn.innerText = '...';
     clearBtn.style.display = 'block';
-    container.innerHTML = `<p style="color:var(--muted); font-size:12px; grid-column:1/-1; text-align:center;">🔍 Searching ${registry}...</p>`;
+    container.innerHTML = `<p style="color:var(--muted); font-size:12px; grid-column:1/-1; text-align:center;"><i class="fas fa-search"></i> Searching ${registry}...</p>`;
 
     try {
       const response = await fetch(`/api/mcp/explore?q=${encodeURIComponent(query)}&reg=${registry}`);
@@ -398,7 +398,7 @@
         const url = res.homepage || res.repository || res.url || '';
         const author = res.author || res.owner || (res.name.includes('/') ? res.name.split('/')[0] : '');
         const titleHtml = url 
-          ? `<a href="${url}" target="_blank" style="color:var(--accent); font-weight:bold; font-size:12px; font-family:'JetBrains Mono',monospace; text-decoration:none;" title="Open Repository in New Tab">🔗 ${res.name}</a>` 
+          ? `<a href="${url}" target="_blank" style="color:var(--accent); font-weight:bold; font-size:12px; font-family:'JetBrains Mono',monospace; text-decoration:none;" title="Open Repository in New Tab"><i class="fas fa-link"></i> ${res.name}</a>` 
           : `<span style="color:var(--accent); font-weight:bold; font-size:12px; font-family:'JetBrains Mono',monospace;">${res.name}</span>`;
 
         const authorHtml = author ? `<div style="font-size:10px; color:var(--muted); margin-top:2px;">by <b>${author}</b></div>` : '';
@@ -423,7 +423,7 @@
               </div>
               ${descHtml}
             </div>
-            <button type="button" class="btn btn-secondary" style="width:100%; font-size:11px;" onclick="addFromExplore('${dataStr}')">➕ Add to Hecos</button>
+            <button type="button" class="btn btn-secondary" style="width:100%; font-size:11px;" onclick="addFromExplore('${dataStr}')"><i class="fas fa-plus"></i> Add to Hecos</button>
           </div>
         `;
       });

@@ -3,23 +3,23 @@
 
   <!-- ── Media Vault ─────────────────────────────────────────────── -->
   <div class="card" id="card-media-vault">
-    <div class="card-title">🔐 {{ t('webui_media_vault_title') }}</div>
+    <div class="card-title"><i class="fas fa-lock"></i> {{ t('webui_media_vault_title') }}</div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
       {{ t('webui_media_vault_desc') }}
     </p>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="btn btn-secondary" onclick="openMediaVault()">
-        📂 {{ t('webui_media_open_folder') }}
+        <i class="fas fa-folder-open"></i> {{ t('webui_media_open_folder') }}
       </button>
       <button class="btn btn-danger" onclick="clearMediaVault()">
-        🗑️ {{ t('webui_media_clear_all') }}
+        <i class="fas fa-trash-alt"></i> {{ t('webui_media_clear_all') }}
       </button>
     </div>
   </div>
 
   <!-- ── Now Playing ────────────────────────────────────────────── -->
   <div class="card" id="card-now-playing" style="position:relative; overflow:hidden;">
-    <div class="card-title">🎵 {{ t('webui_mp_nowplaying') }}</div>
+    <div class="card-title"><i class="fas fa-music"></i> {{ t('webui_mp_nowplaying') }}</div>
     
     <div class="mp-dashboard-player" style="background:rgba(0,0,0,0.15); border:1px solid var(--border); border-radius:var(--radius); padding:16px; position:relative;">
       
@@ -45,22 +45,22 @@
 
       <!-- Main Controls -->
       <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin-bottom:16px;">
-        <button class="btn btn-secondary btn-circle" onclick="mpControl('prev')" title="Previous" style="width:36px; height:36px; padding:0;">⏮</button>
-        <button id="mp-btn-play" class="btn btn-primary btn-circle" onclick="mpTogglePlay()" style="width:44px; height:44px; padding:0; font-size:18px;">▶</button>
-        <button class="btn btn-secondary btn-circle" onclick="mpControl('stop')" title="Stop" style="width:36px; height:36px; padding:0;">⏹</button>
-        <button class="btn btn-secondary btn-circle" onclick="mpControl('next')" title="Next" style="width:36px; height:36px; padding:0;">⏭</button>
+        <button class="btn btn-secondary btn-circle" onclick="mpControl('prev')" title="Previous" style="width:36px; height:36px; padding:0;"><i class="fas fa-step-backward"></i></button>
+        <button id="mp-btn-play" class="btn btn-primary btn-circle" onclick="mpTogglePlay()" style="width:44px; height:44px; padding:0; font-size:18px;"><i class="fas fa-play"></i></button>
+        <button class="btn btn-secondary btn-circle" onclick="mpControl('stop')" title="Stop" style="width:36px; height:36px; padding:0;"><i class="fas fa-stop"></i></button>
+        <button class="btn btn-secondary btn-circle" onclick="mpControl('next')" title="Next" style="width:36px; height:36px; padding:0;"><i class="fas fa-step-forward"></i></button>
       </div>
 
       <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; background:rgba(0,0,0,0.2); border-radius:8px;">
-        <span style="font-size:14px; opacity:0.7;">🔊</span>
+        <span style="font-size:14px; opacity:0.7;"><i class="fas fa-volume-up"></i></span>
         <input type="range" id="mp-volume" min="0" max="100" value="80" style="flex:1; height:4px;" oninput="mpSetVolume(this.value)">
         <span id="mp-volume-val" style="font-size:11px; color:var(--muted); min-width:24px; text-align:right;">80</span>
       </div>
 
       <!-- Bottom Bar: Shuffle/Repeat -->
       <div style="display:flex; gap:10px; margin-top:12px; font-size:12px;">
-        <button id="mp-btn-shuffle" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('shuffle')">🔀 Shuffle</button>
-        <button id="mp-btn-repeat" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('repeat')">🔁 Repeat</button>
+        <button id="mp-btn-shuffle" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('shuffle')"><i class="fas fa-random"></i> Shuffle</button>
+        <button id="mp-btn-repeat" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('repeat')"><i class="fas fa-redo"></i> Repeat</button>
       </div>
 
       <!-- QUEUE DRAWER -->
@@ -82,7 +82,7 @@
 
   <!-- ── Playlists ──────────────────────────────────────────────── -->
   <div class="card">
-    <div class="card-title">📋 {{ t('webui_mp_playlists') }}</div>
+    <div class="card-title"><i class="fas fa-list-ul"></i> {{ t('webui_mp_playlists') }}</div>
     <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
       <input type="text" id="mp-new-playlist" placeholder="{{ t('webui_mp_playlist_name_ph') }}" style="flex:1; min-width:150px;">
       <button class="btn btn-secondary btn-sm" onclick="mpCreatePlaylist()">+ {{ t('webui_mp_create') }}</button>
@@ -100,7 +100,7 @@
           <button type="button" class="btn btn-secondary" onclick="mpBrowseScanFolder()" title="Browse folder"><i class="fas fa-folder-open"></i></button>
         </div>
         <input type="text" id="mp-scan-save-as" placeholder="{{ t('webui_mp_save_as_ph') }}" style="flex:1; min-width:130px;">
-        <button class="btn btn-secondary btn-sm" onclick="mpScanFolder()">🔍 {{ t('webui_mp_scan') }}</button>
+        <button class="btn btn-secondary btn-sm" onclick="mpScanFolder()"><i class="fas fa-search"></i> {{ t('webui_mp_scan') }}</button>
       </div>
     </div>
   </div>
@@ -181,7 +181,7 @@
 
   <!-- ── Media Player Settings ──────────────────────────────────── -->
   <div class="card">
-    <div class="card-title">⚙️ {{ t('webui_mp_settings') }}</div>
+    <div class="card-title"><i class="fas fa-cog"></i> {{ t('webui_mp_settings') }}</div>
 
     <div class="grid-2">
       <div class="field">
@@ -335,7 +335,7 @@ async function mpRefreshStatus() {
     badge.style.color = d.playing ? 'black' : 'var(--muted)';
 
     // Play/Pause Button
-    document.getElementById('mp-btn-play').textContent = d.playing ? '⏸' : '▶';
+    document.getElementById('mp-btn-play').innerHTML = d.playing ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
 
     // Progress bar and times
     const fill = document.getElementById('mp-progress-fill');
@@ -426,8 +426,8 @@ async function mpLoadPlaylists() {
           <span style="font-size:16px;">📂</span>
           <span class="playlist-title">${pl.name}</span>
           <span class="playlist-meta">${pl.items ? pl.items.length : 0} {{ t('webui_mp_tracks') }}</span>
-          <button class="btn btn-secondary btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpControl('play_playlist',{name:'${pl.name}'})" title="Play All">▶</button>
-          <button class="btn btn-danger btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpDeletePlaylist('${pl.name}')">🗑</button>
+          <button class="btn btn-secondary btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpControl('play_playlist',{name:'${pl.name}'})" title="Play All"><i class="fas fa-play"></i></button>
+          <button class="btn btn-danger btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpDeletePlaylist('${pl.name}')"><i class="fas fa-trash-alt"></i></button>
         </div>
         <div class="playlist-items" id="pl-items-${pl.name}">
            <!-- Loaded on demand -->
@@ -468,7 +468,7 @@ async function mpTogglePlaylistItems(name) {
           <div class="track-row">
             <span style="opacity:0.3; font-size:10px; width:16px;">${i+1}</span>
             <span class="track-name" onclick="mpControl('play_playlist', {name:'${name}', index:${i}})">${item.name}</span>
-            <button class="btn btn-ghost btn-xs" onclick="mpRemoveTrackFromPlaylist('${name}', ${i})" style="color:var(--red); opacity:0.6; padding:2px 4px;">🗑</button>
+            <button class="btn btn-ghost btn-xs" onclick="mpRemoveTrackFromPlaylist('${name}', ${i})" style="color:var(--red); opacity:0.6; padding:2px 4px;"><i class="fas fa-trash-alt"></i></button>
           </div>
         `).join('')}
       </div>
