@@ -51,6 +51,8 @@ function populateAudioUI() {
 function buildAudioPayload() {
     const v = (typeof audioConfig !== 'undefined' ? audioConfig : {}) || {};
     const pdir = (window.sysOptions || {}).piper_dir || 'C:\\piper';
+    const el = document.getElementById('v-onnx-model');
+    const sel = el ? el.value : (v.onnx_model || 'it_IT-paola-medium.onnx');
     const modelFile = (sel && sel.trim() && sel !== 'null') ? sel : 'it_IT-paola-medium.onnx';
     
     return {

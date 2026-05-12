@@ -97,7 +97,7 @@
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <div style="display:flex; gap:4px; flex:2; min-width:160px;">
           <input type="text" id="mp-scan-folder" placeholder="{{ t('webui_mp_folder_ph') }}" style="flex:1;">
-          <button type="button" class="btn btn-secondary" onclick="mpBrowseScanFolder()" title="Browse folder">📁</button>
+          <button type="button" class="btn btn-secondary" onclick="mpBrowseScanFolder()" title="Browse folder"><i class="fas fa-folder-open"></i></button>
         </div>
         <input type="text" id="mp-scan-save-as" placeholder="{{ t('webui_mp_save_as_ph') }}" style="flex:1; min-width:130px;">
         <button class="btn btn-secondary btn-sm" onclick="mpScanFolder()">🔍 {{ t('webui_mp_scan') }}</button>
@@ -202,7 +202,7 @@
         <label>{{ t('webui_mp_media_root') }}</label>
         <div style="display:flex; gap:6px;">
           <input type="text" id="mp-cfg-root" placeholder="{{ t('webui_mp_media_root_ph') }}" style="flex:1;">
-          <button type="button" class="btn btn-secondary" onclick="mpBrowseRoot()" title="{{ t('webui_mp_media_root') }}">📁</button>
+          <button type="button" class="btn btn-secondary" onclick="mpBrowseRoot()" title="{{ t('webui_mp_media_root') }}"><i class="fas fa-folder-open"></i></button>
         </div>
         <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_media_root_hint') }}</p>
       </div>

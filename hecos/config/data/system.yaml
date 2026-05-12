@@ -210,7 +210,7 @@ plugins:
   REMINDER:
     enabled: true
     lazy_load: false
-    reminder_mode: voice
+    reminder_mode: both
     ringtone_path: Default_System_Alert.mp3
     time_format: 24h
     max_reminders: 50
@@ -239,7 +239,7 @@ plugins:
   CALENDAR:
     enabled: true
     lazy_load: false
-  USER:
+  USERS:
     enabled: true
     lazy_load: true
   extra_dirs: []

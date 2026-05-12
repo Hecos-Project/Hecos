@@ -77,7 +77,7 @@ function populateMediaUI() {
 }
 
 function buildMediaPayload() {
-    const igen = (window.cfg.plugins?.IMAGE_GEN) || (window.mediaConfig?.image_gen) || {};
+    const igen = (window.mediaConfig && window.mediaConfig.image_gen) ? window.mediaConfig.image_gen : {};
     return {
         image_gen: {
             enabled:               getC('igen-enabled', igen.enabled !== false),

@@ -43,7 +43,7 @@
           <option value="wikipedia">📖 Knowledge: Wikipedia</option>
           <option value="google-maps">🗺️ Maps: Google Maps (API Key required)</option>
           <option value="github">💻 Developer: GitHub (PAT required)</option>
-          <option value="filesystem">📁 Utility: Local File System</option>
+          <option value="filesystem">📂 Utility: Local File System</option>
           <option value="postgres">🗄️ Database: PostgreSQL</option>
           <option value="weather">⛅ Science: OpenWeather (API Key required)</option>
         </select>
@@ -63,7 +63,7 @@
         <label>Arguments</label>
         <div style="display:flex; gap:8px;">
           <input type="text" id="mcp-new-args" placeholder="e.g. -y @modelcontextprotocol/server-google-maps" style="flex:1;">
-          <button type="button" class="btn btn-secondary" onclick="HecosFilePicker.open({title: 'Select Folder/Path', initialPath: 'C:\\Hecos-Core', onSelect: p => document.getElementById('mcp-new-args').value += ' ' + p})" title="Browse Path">📁</button>
+          <button type="button" class="btn btn-secondary" onclick="HecosFilePicker.open({title: 'Select Folder/Path', initialPath: 'C:\\Hecos-Core', onSelect: p => document.getElementById('mcp-new-args').value += ' ' + p})" title="Browse Path"><i class="fas fa-folder-open"></i></button>
         </div>
       </div>
       <div style="text-align: right; margin-top: 8px;">

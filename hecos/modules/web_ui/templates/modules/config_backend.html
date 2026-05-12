@@ -60,7 +60,7 @@
       <label>{{ t('webui_conf_model_active') }}</label>
       <div style="display:flex; gap:8px;">
         <input type="text" id="kobold-model" style="flex:1;">
-        <button class="btn btn-secondary" onclick="HecosFilePicker.open({title: 'Select Model File/Path', initialPath: document.getElementById('kobold-model').value, onSelect: p => document.getElementById('kobold-model').value = p})" title="Browse Path">📁</button>
+        <button class="btn btn-secondary" onclick="HecosFilePicker.open({title: 'Select Model File/Path', initialPath: document.getElementById('kobold-model').value, onSelect: p => document.getElementById('kobold-model').value = p})" title="Browse Path"><i class="fas fa-folder-open"></i></button>
       </div>
     </div>
     <div class="grid-2">

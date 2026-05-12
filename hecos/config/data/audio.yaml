@@ -5,6 +5,7 @@ speed: 1.0
 noise_scale: 0.8
 noise_w: 1.0
 sentence_silence: 0.2
+piper_timeout: 180
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5
@@ -18,4 +19,3 @@ ptt_sources:
   webhook: false
   custom_key: false
 custom_ptt_key: ''
-piper_timeout: 180

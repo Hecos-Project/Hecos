@@ -17,14 +17,14 @@
     <!-- ══ ENABLE TOGGLE ════════════════════════════════════════════════════════ -->
     <div class="toggle-row">
       <div class="toggle-info" style="font-weight:600; color:var(--text);">Enable Image Generation</div>
-      <label class="switch"><input type="checkbox" id="igen-enabled"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="igen-enabled" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
     </div>
 
     <!-- ══ PROVIDER & MODEL ═════════════════════════════════════════════════════ -->
     <div class="grid-2" style="margin-top:12px;">
       <div class="field">
         <label>Provider</label>
-        <select id="igen-provider" onchange="onProviderChanged()">
+        <select id="igen-provider" onchange="onProviderChanged()" data-cfg-plugin="MEDIA">
           <!-- Populated dynamically -->
         </select>
       </div>
@@ -33,7 +33,7 @@
           <button onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;">&#8635; Refresh</button>
           <button id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,76,60,0.1); cursor:pointer;" title="Remove this custom model">❌ Delete</button>
         </label>
-        <select id="igen-model" onchange="checkCustomModelSelect()"><option>flux</option></select>
+        <select id="igen-model" onchange="checkCustomModelSelect()" data-cfg-plugin="MEDIA"><option>flux</option></select>
         <span id="igen-model-status" style="font-size:11px;color:var(--muted);"></span>
       </div>
     </div>
@@ -63,7 +63,7 @@
     <div class="grid-2" style="margin-top:10px;">
       <div class="field">
         <label>Aspect Ratio</label>
-        <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()">
+        <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" data-cfg-plugin="MEDIA">
           <option value="1:1">1:1 — Square</option>
           <option value="16:9">16:9 — Landscape (HD)</option>
           <option value="9:16">9:16 — Portrait (Mobile)</option>
@@ -80,9 +80,9 @@
       <div class="field" id="igen-custom-dims" style="display:none;">
         <label>Custom Size (px)</label>
         <div style="display:flex; gap:6px; align-items:center;">
-          <input type="number" id="igen-width"  min="256" max="2048" step="64" placeholder="W" style="width:50%;">
+          <input type="number" id="igen-width"  min="256" max="2048" step="64" placeholder="W" style="width:50%;" data-cfg-plugin="MEDIA">
           <span style="color:var(--muted);">×</span>
-          <input type="number" id="igen-height" min="256" max="2048" step="64" placeholder="H" style="width:50%;">
+          <input type="number" id="igen-height" min="256" max="2048" step="64" placeholder="H" style="width:50%;" data-cfg-plugin="MEDIA">
         </div>
       </div>
     </div>
@@ -93,10 +93,10 @@
         <label style="margin:0;">Negative Prompt</label>
         <div style="display:flex; align-items:center; gap:8px;">
           <small style="color:var(--muted);font-size:11px;">Enable</small>
-          <label class="switch"><input type="checkbox" id="igen-use-neg-prompt"><span class="slider"></span></label>
+          <label class="switch"><input type="checkbox" id="igen-use-neg-prompt" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
         </div>
       </div>
-      <textarea id="igen-neg-prompt" rows="2" placeholder="distorted, extra fingers, malformed limbs..."></textarea>
+      <textarea id="igen-neg-prompt" rows="2" placeholder="distorted, extra fingers, malformed limbs..." data-cfg-plugin="MEDIA"></textarea>
       <small style="color:var(--muted);font-size:11px;">Elements to avoid in the generation.</small>
     </div>
 
@@ -108,14 +108,14 @@
           <span title="CFG Scale and Guidance Scale are the same parameter — it controls how strictly the model follows your prompt. Higher = more literal. Typical range: 3–12 for Flux, 5–15 for SD." style="cursor:help; color:var(--muted); font-size:12px; margin-left:4px;">ℹ️</span>
         </label>
         <div style="display:flex; align-items:center;">
-          <input type="range" id="igen-guidance" min="1" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=this.value">
+          <input type="range" id="igen-guidance" min="1" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=this.value" data-cfg-plugin="MEDIA">
           <span id="igen-guidance-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">7.5</span>
         </div>
       </div>
       <div class="field">
         <label>Inference Steps</label>
         <div style="display:flex; align-items:center;">
-          <input type="range" id="igen-steps" min="1" max="100" step="1" style="flex:1;" oninput="document.getElementById('igen-steps-val').textContent=this.value">
+          <input type="range" id="igen-steps" min="1" max="100" step="1" style="flex:1;" oninput="document.getElementById('igen-steps-val').textContent=this.value" data-cfg-plugin="MEDIA">
           <span id="igen-steps-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">30</span>
         </div>
       </div>
@@ -125,7 +125,7 @@
     <div class="field" style="margin-top:10px;">
       <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
       <div style="display:flex; gap:8px; align-items:center;">
-        <input type="number" id="igen-seed" min="-1" max="2147483647" value="-1" style="flex:1;">
+        <input type="number" id="igen-seed" min="-1" max="2147483647" value="-1" style="flex:1;" data-cfg-plugin="MEDIA">
         <button onclick="document.getElementById('igen-seed').value=-1;" title="Randomize seed" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:14px;">🎲</button>
         <button type="button" onclick="const ls = (window.cfg && window.cfg.image_gen) ? window.cfg.image_gen.last_seed : -1; if(ls && ls > 0) document.getElementById('igen-seed').value = ls; else alert('No seed recorded yet. Generate an image first.');" 
                 title="Reuse Last Seed" 
@@ -145,7 +145,7 @@
       <div class="grid-2" style="margin-top:10px;">
         <div class="field">
           <label>Sampler</label>
-          <select id="igen-sampler">
+          <select id="igen-sampler" data-cfg-plugin="MEDIA">
             <option value="euler_a">Euler Ancestral (euler_a)</option>
             <option value="euler">Euler</option>
             <option value="ddim">DDIM</option>
@@ -159,7 +159,7 @@
         </div>
         <div class="field">
           <label>Scheduler</label>
-          <select id="igen-scheduler">
+          <select id="igen-scheduler" data-cfg-plugin="MEDIA">
             <option value="euler">Euler</option>
             <option value="dpm++">DPM++</option>
             <option value="pndm">PNDM</option>
@@ -178,17 +178,17 @@
         <strong>Auto-Enrich Prompt</strong><br>
         <small style="color:var(--muted);">Automatically adds quality keywords</small>
       </div>
-      <label class="switch"><input type="checkbox" id="igen-auto-enrich"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="igen-auto-enrich" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
     </div>
     <div class="field" style="margin-top:5px;">
       <label>Enrichment Keywords</label>
-      <input type="text" id="igen-enrich-keywords" placeholder="masterpiece, 8k, highly detailed...">
+      <input type="text" id="igen-enrich-keywords" placeholder="masterpiece, 8k, highly detailed..." data-cfg-plugin="MEDIA">
       <small style="color:var(--muted);font-size:11px;">Keywords appended when Auto-Enrich is enabled.</small>
     </div>
 
     <div class="field" style="margin-top:10px;">
       <label>Artistic Style</label>
-      <select id="igen-style">
+      <select id="igen-style" data-cfg-plugin="MEDIA">
         <option value="none">None (Raw Prompt)</option>
         <option value="cinematic">🎬 Cinematic</option>
         <option value="photography">📷 Photography</option>
@@ -209,7 +209,7 @@
 
     <div class="toggle-row" style="margin-top:10px;">
       <div class="toggle-info">Remove Logo/Watermark (Pollinations only)</div>
-      <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="igen-nologo" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
     </div>
 
     <div class="toggle-row" style="margin-top:10px; background:var(--bg3); padding:8px; border-radius:8px; border:1px solid var(--border);">
@@ -217,7 +217,7 @@
         <strong>Show Config in Chat (Debug)</strong><br>
         <small style="color:var(--muted); font-size:10px;">Appends the exact generation parameters to your chat message.</small>
       </div>
-      <label class="switch"><input type="checkbox" id="igen-show-metadata"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="igen-show-metadata" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
     </div>
 
     <!-- ══ FLUX PROMPT STUDIO ═══════════════════════════════════════════════════ -->
@@ -229,13 +229,13 @@
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <small style="font-size:11px; font-weight:600; color:var(--text);">Auto-Optimize (Backend)</small>
-          <label class="switch"><input type="checkbox" id="igen-optimize-flux"><span class="slider"></span></label>
+          <label class="switch"><input type="checkbox" id="igen-optimize-flux" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
         </div>
       </div>
 
       <div class="field" style="margin-top:10px;">
         <label>Refiner Instructions (AI Rules)</label>
-        <textarea id="igen-flux-instructions" rows="3" placeholder="Rewrite as a detailed photograph description..."></textarea>
+        <textarea id="igen-flux-instructions" rows="3" placeholder="Rewrite as a detailed photograph description..." data-cfg-plugin="MEDIA"></textarea>
       </div>
 
       <hr style="border-color:var(--border); margin:12px 0; opacity:0.5;">
@@ -432,6 +432,9 @@ function applyIgenConfig(cfg) {
   chk('igen-enabled',          cfg.enabled ?? true);
   onAspectRatioChanged();
   if (cfg.provider) onProviderChanged();
+  
+  // Critical: manually trigger save because programmatic changes don't fire 'change' event
+  if (typeof window.saveConfig === 'function') window.saveConfig(true);
 }
 
 // Load presets on panel open

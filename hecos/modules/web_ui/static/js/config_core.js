@@ -572,6 +572,13 @@ async function saveConfig(silent = false) {
     const agentData = await resAgent.json();
     
     if (data.ok && audData.ok && medData.ok && agentData.ok) {
+      // CRITICAL: Update in-memory state so subsequent saves from other tabs 
+      // don't use stale fallbacks for lazy-loaded/unvisited panels.
+      window.cfg = payload;
+      window.audioConfig = audioPayload;
+      window.mediaConfig = mediaPayload;
+      if (window.cfg.agent) window.cfg.agent = agentPayload.agent;
+
       if (!silent) {
           setSaveMsg(I18N.msg_saved || 'Saved', 'ok');
           
