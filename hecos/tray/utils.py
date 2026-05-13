@@ -2,7 +2,7 @@ import sys
 import os
 import time
 import subprocess
-from hecos.tray.config import SYSTEM_YAML, HECOS_PORT, VERSION_FILE, _ROOT
+from hecos.tray.config import SYSTEM_YAML, PLUGINS_YAML, HECOS_PORT, VERSION_FILE, _ROOT
 
 # Global list of Popen objects for tracked console windows
 _managed_consoles = []
@@ -20,24 +20,29 @@ def get_cdp_alive() -> bool:
     return _CDP_ALIVE
 # ──────────────────────────────────────────────────────────────────────────────
 
-
 def get_scheme() -> str:
-    """Reads system.yaml to detect if HTTPS is enabled."""
-    try:
-        with open(SYSTEM_YAML, "r", encoding="utf-8") as f:
-            content = f.read()
-        in_webui = False
-        for line in content.splitlines():
-            stripped = line.strip()
-            if "WEB_UI:" in stripped:
-                in_webui = True
-            if in_webui and "https_enabled:" in stripped:
-                value = stripped.split(":", 1)[1].strip().lower()
-                if value in ("true", "yes", "1"):
-                    return "https"
-                break
-    except Exception:
-        pass
+    """Reads plugins.yaml or system.yaml to detect if HTTPS is enabled."""
+    # Priority: plugins.yaml (modular), then system.yaml (monolithic/legacy)
+    for yaml_path in [PLUGINS_YAML, SYSTEM_YAML]:
+        if not os.path.exists(yaml_path):
+            continue
+        try:
+            with open(yaml_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            in_webui = False
+            for line in content.splitlines():
+                stripped = line.strip()
+                if "WEB_UI:" in stripped:
+                    in_webui = True
+                if in_webui and "https_enabled:" in stripped:
+                    value = stripped.split(":", 1)[1].strip().lower()
+                    if value.startswith("true") or value.startswith("yes") or value.startswith("1"):
+                        return "https"
+                    # If we found WEB_UI in this file but https_enabled was false, 
+                    # we don't need to check other files for WEB_UI
+                    return "http"
+        except Exception:
+            continue
     return "http"
 
 

@@ -824,6 +824,11 @@ function populateWebUIConfig() {
     setVal('webui-port', w.port || 8080);
     setVal('webui-api-port', w.api_port || 5000);
     setCheck('webui-force-login', w.force_login ?? true);
+    
+    // SSL / HTTPS
+    setCheck('webui-https-enabled', w.https_enabled ?? false);
+    setVal('webui-cert-file', w.cert_file || 'certs/cert.pem');
+    setVal('webui-key-file', w.key_file || 'certs/key.pem');
 }
 
 function buildWebUIPayload() {
@@ -833,7 +838,10 @@ function buildWebUIPayload() {
             WEB_UI: {
                 port: parseInt(getV('webui-port', w.port)) || 8080,
                 api_port: parseInt(getV('webui-api-port', w.api_port)) || 5000,
-                force_login: getC('webui-force-login', w.force_login ?? true)
+                force_login: getC('webui-force-login', w.force_login ?? true),
+                https_enabled: getC('webui-https-enabled', w.https_enabled ?? false),
+                cert_file: getV('webui-cert-file', w.cert_file),
+                key_file: getV('webui-key-file', w.key_file)
             }
         }
     };

@@ -9,6 +9,7 @@ STATUS_POLL_INTERVAL = 3  # seconds (reduced for better responsiveness)
 LOGO_PATH = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png")
 VERSION_FILE = os.path.join(_ROOT, "hecos", "core", "version")
 SYSTEM_YAML = os.path.join(_ROOT, "hecos", "config", "data", "system.yaml")
+PLUGINS_YAML = os.path.join(_ROOT, "hecos", "config", "data", "plugins.yaml")
 SETTINGS_FILE = os.path.join(_ROOT, "hecos_tray_settings.json")
 
 

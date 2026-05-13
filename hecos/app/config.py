@@ -87,8 +87,32 @@ class ConfigManager:
         """Load and validate the YAML config (auto-migrating from JSON if needed)."""
         try:
             load_yaml, _ = _get_yaml_utils()
+            from hecos.config.yaml_utils import load_dict_from_yaml, _deep_merge
             SystemConfig = _get_schema()
+            
+            # 1. Load the core system.yaml
             model = load_yaml(self._yaml_path, SystemConfig)
+            model_dict = model.model_dump()
+            
+            # 2. Merge plugins.yaml if present
+            plugins_path = self._yaml_path.replace("system.yaml", "plugins.yaml")
+            plugins_dict = load_dict_from_yaml(plugins_path)
+            if "plugins" in plugins_dict:
+                if "plugins" not in model_dict:
+                    model_dict["plugins"] = {}
+                _deep_merge(model_dict["plugins"], plugins_dict["plugins"])
+                
+            # 3. Merge widgets.yaml if present
+            widgets_path = self._yaml_path.replace("system.yaml", "widgets.yaml")
+            widgets_dict = load_dict_from_yaml(widgets_path)
+            if "widgets" in widgets_dict:
+                if "widgets" not in model_dict:
+                    model_dict["widgets"] = {}
+                _deep_merge(model_dict["widgets"], widgets_dict["widgets"])
+                
+            # 4. Validate complete config
+            model = SystemConfig.model_validate(model_dict)
+            
             self._apply_volatility(model)
             self._run_italian_migration(model)
             return model
@@ -134,9 +158,8 @@ class ConfigManager:
                 # Use current dict state as the source of truth
                 self._model = SystemConfig.model_validate(self.config)
             except Exception as v_e:
-                # If the dict is truly invalid, we log a warning but still proceed 
-                # with whatever is in self._model to avoid crashing, 
-                # OR we could abort. Aborting is safer to prevent corruption.
+                import sys
+                print(f"[CRITICAL-CONFIG] Save aborted: {v_e}", file=sys.stderr)
                 logger.error(f"[CONFIG] Save aborted: current memory state fails validation: {v_e}")
                 return False
 
@@ -152,8 +175,25 @@ class ConfigManager:
             except Exception:
                 pass
 
-            _, save_yaml = _get_yaml_utils()
-            save_yaml(self._yaml_path, self._model)
+            from hecos.config.yaml_utils import save_dict_to_yaml
+            
+            # 1. Start with the full validated dump
+            full_dict = self._model.model_dump()
+            
+            # 2. Extract modules into separate files
+            plugins_dict = {"plugins": full_dict.pop("plugins", {})}
+            widgets_dict = {"widgets": full_dict.pop("widgets", {})}
+            
+            plugins_path = self._yaml_path.replace("system.yaml", "plugins.yaml")
+            widgets_path = self._yaml_path.replace("system.yaml", "widgets.yaml")
+            
+            save_dict_to_yaml(plugins_path, plugins_dict)
+            save_dict_to_yaml(widgets_path, widgets_dict)
+            
+            # 3. Save the reduced core dict back to system.yaml
+            save_dict_to_yaml(self._yaml_path, full_dict)
+            
+            # Ensure the active dict in memory remains complete
             self._sync_dict()
 
             new_lang = self._model.language
@@ -217,8 +257,8 @@ class ConfigManager:
         """Deep merge new_data into current config and save."""
         import copy
         try:
-            # 1. Reload to get freshest state from disk
-            self.reload()
+            # 1. Use current memory state (don't reload from disk here to avoid race conditions)
+            # self.reload()  <-- REMOVED
             
             # 2. Work on a deep copy to ensure atomicity
             temp_config = copy.deepcopy(self.config)

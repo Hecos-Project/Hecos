@@ -99,20 +99,23 @@ def close_ai_browser(icon, item):
 
 
 def _get_cdp_port() -> int:
-    """Read the CDP port from system.yaml (fallback 9222)."""
-    try:
-        from hecos.tray.config import SYSTEM_YAML
-        with open(SYSTEM_YAML, "r", encoding="utf-8") as f:
-            content = f.read()
-        in_browser = False
-        for line in content.splitlines():
-            stripped = line.strip()
-            if "BROWSER:" in stripped:
-                in_browser = True
-            if in_browser and "cdp_port:" in stripped:
-                return int(stripped.split(":", 1)[1].strip())
-    except Exception:
-        pass
+    """Read the CDP port from plugins.yaml or system.yaml (fallback 9222)."""
+    from hecos.tray.config import SYSTEM_YAML, PLUGINS_YAML
+    for yaml_path in [PLUGINS_YAML, SYSTEM_YAML]:
+        if not os.path.exists(yaml_path):
+            continue
+        try:
+            with open(yaml_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            in_browser = False
+            for line in content.splitlines():
+                stripped = line.strip()
+                if "BROWSER:" in stripped:
+                    in_browser = True
+                if in_browser and "cdp_port:" in stripped:
+                    return int(stripped.split(":", 1)[1].strip())
+        except Exception:
+            continue
     return 9222
 
 
@@ -250,14 +253,16 @@ def build_menu(icon_ref: list):
             script = os.path.join(_ROOT, "scripts", "linux", "run", "HECOS_CONSOLE_RUN.sh")
         launch_console(script)
 
-    def copy_lan_ip(icon, item):
+    def copy_connection_info(icon, item):
         def _do():
             try:
                 import tkinter as tk
                 root = tk.Tk(); root.withdraw()
                 root.clipboard_clear()
-                root.clipboard_append(f"{scheme}://{lan_ip}:{HECOS_PORT}")
+                url = f"{scheme}://{lan_ip}:{HECOS_PORT}/chat"
+                root.clipboard_append(url)
                 root.update(); root.destroy()
+                icon.notify(f"URL: {url}", "Link Copied!")
             except Exception:
                 pass
         threading.Thread(target=_do, daemon=True).start()
@@ -285,14 +290,13 @@ def build_menu(icon_ref: list):
                     f"Hecos — v{version}\n"
                     f"Helping Companion System\n\n"
                     f"Created by: Antonio Meloni\n\n"
-                    f"Status: {status_label}\n"
-                    f"LAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat"
+                    f"Status: {status_label}"
                 )
                 messagebox.showinfo("About Hecos", msg, parent=root)
                 root.destroy()
             except Exception:
                 icon.notify(
-                    f"Hecos — v{version}\nCreated by: Antonio Meloni\nStatus: {status_label}\nLAN: {scheme}://{lan_ip}:{HECOS_PORT}/chat",
+                    f"Hecos — v{version}\nCreated by: Antonio Meloni\nStatus: {status_label}",
                     "About Hecos"
                 )
         threading.Thread(target=_do, daemon=True).start()
@@ -362,8 +366,9 @@ def build_menu(icon_ref: list):
     technical_submenu = pystray.Menu(
         pystray.MenuItem("🖥️  Launch Console", open_console),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem(f"🖧  Copy LAN IP  ({lan_ip}:{HECOS_PORT})", copy_lan_ip),
-        pystray.MenuItem(f"🔌 Copy WebUI URL", copy_local_url),
+        pystray.MenuItem(f"🔗 {scheme}://{lan_ip}:{HECOS_PORT}", copy_connection_info),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("🔌 Copy Local URL", copy_local_url),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("ℹ️  About Hecos", show_about),
         pystray.Menu.SEPARATOR,

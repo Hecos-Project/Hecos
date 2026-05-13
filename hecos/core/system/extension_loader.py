@@ -84,18 +84,24 @@ def _is_plugin_active(required_plugin: str, config: dict) -> bool:
 def _get_widget_prefs(ext_id: str, config: dict) -> dict:
     """
     Returns the per-widget user preferences from config["widgets"]["per_widget"][ext_id].
-    Defaults: visible=True, room_visible=False, room_span=1.
+    Defaults: visible=True, room_visible=False, room_span=1, theme=default.
     """
     if not config:
-        return {"visible": True, "room_visible": False, "room_span": 1}
+        return {"visible": True, "room_visible": False, "room_span": 1, "theme": "default"}
+    
     prefs = config.get("widgets", {}).get("per_widget", {}).get(ext_id, {})
+    
     # Support both dict (from raw yaml) and Pydantic model
-    if hasattr(prefs, '__dict__'):
+    if hasattr(prefs, 'model_dump'):
+        prefs = prefs.model_dump()
+    elif hasattr(prefs, '__dict__'):
         prefs = prefs.__dict__
+
     return {
-        "visible":      prefs.get("visible", True),
-        "room_visible": prefs.get("room_visible", False),
-        "room_span":    prefs.get("room_span", 1),
+        "visible":      prefs.get("visible", True) if isinstance(prefs, dict) else getattr(prefs, 'visible', True),
+        "room_visible": prefs.get("room_visible", False) if isinstance(prefs, dict) else getattr(prefs, 'room_visible', False),
+        "room_span":    prefs.get("room_span", 1) if isinstance(prefs, dict) else getattr(prefs, 'room_span', 1),
+        "theme":        prefs.get("theme", "default") if isinstance(prefs, dict) else getattr(prefs, 'theme', 'default'),
     }
 
 
@@ -171,6 +177,7 @@ def get_all_widgets(config: dict = None) -> list:
         enriched["visible"]       = prefs.get("visible", True)
         enriched["room_visible"]  = prefs.get("room_visible", False)
         enriched["room_span"]     = prefs.get("room_span", 1)
+        enriched["theme"]         = prefs.get("theme", "default")
         enriched["order_index"]   = order_index
         result.append(enriched)
 

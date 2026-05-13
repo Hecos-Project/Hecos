@@ -358,6 +358,7 @@ class PluginMCPBridge(BaseModel):
     servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
 
 class PluginsConfig(BaseModel):
+    model_config = ConfigDict(extra='allow')
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
@@ -402,6 +403,7 @@ class WidgetPersistence(BaseModel):
     room_visible: bool = False     # control room visibility (opt-in)
     room_span: int = 1             # 1 = normal column, 2 = wide (spans 2 cols)
     room_order: Optional[int] = None  # explicit drag-and-drop position
+    theme: str = "default"         # "default", "theme-cyber", "theme-alert", "theme-glass", etc.
 
 class WidgetsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')

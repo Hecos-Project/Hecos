@@ -141,7 +141,8 @@
 
     function _makeCard(w) {
         const card = document.createElement('div');
-        card.className = `room-widget-card${w.room_span === 2 ? ' span-2' : ''}`;
+        const themeVal = (w.theme || 'default').replace('theme-', '');
+        card.className = `room-widget-card border-glow${w.room_span === 2 ? ' span-2' : ''} theme-${themeVal}`;
         card.dataset.id  = w.extension_id;
         card.dataset.span = w.room_span || 1;
 

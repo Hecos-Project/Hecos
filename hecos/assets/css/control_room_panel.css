@@ -266,3 +266,46 @@
   opacity: 1;
   background: rgba(var(--accent-rgb), 0.04);
 }
+
+/* ── Widget Themes ─────────────────────────────────────────────────────────── */
+.room-widget-card.theme-default {
+  /* Uses defaults defined above */
+}
+
+.room-widget-card.theme-cyber {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  background: linear-gradient(135deg, rgba(var(--bg3-rgb), 0.9), rgba(var(--accent-rgb), 0.1));
+  box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15);
+}
+.room-widget-card.theme-cyber:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.3);
+}
+
+.room-widget-card.theme-alert {
+  border-color: rgba(var(--red-rgb), 0.5);
+  background: linear-gradient(135deg, rgba(var(--bg3-rgb), 0.9), rgba(var(--red-rgb), 0.08));
+}
+.room-widget-card.theme-alert:hover {
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(var(--red-rgb), 0.25);
+}
+
+.room-widget-card.theme-glass {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+}
+.room-widget-card.theme-glass:hover {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.room-widget-card.theme-ghost {
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  background: transparent;
+  box-shadow: none;
+}
+.room-widget-card.theme-ghost:hover {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}

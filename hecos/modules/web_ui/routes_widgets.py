@@ -21,6 +21,8 @@ def init_widget_routes(app, config_manager, logger_ref=None):
     def _save_config():
         """Saves current config and broadcasts a refresh signal."""
         res = config_manager.save()
+        import sys
+        print(f"[DEBUG-WIDGETS] save() result: {res}", file=sys.stderr)
         if res:
             try:
                 from .server import get_state_manager
@@ -172,12 +174,14 @@ def init_widget_routes(app, config_manager, logger_ref=None):
             ext_id = w.get("extension_id", "?")
             room_visible = w.get("room_visible", False)
             room_span = w.get("room_span", 1)
-            _log.debug(f"[ROOM]   widget={ext_id} room_visible={room_visible} room_span={room_span}")
+            room_theme = w.get("theme", "default")
+            _log.debug(f"[ROOM]   widget={ext_id} room_visible={room_visible} room_span={room_span} theme={room_theme}")
             if room_visible:
                 room_widgets.append({
                     **w,
                     "room_visible": True,
                     "room_span": room_span,
+                    "theme": room_theme
                 })
 
         # Sort by explicit layout order if defined
@@ -255,6 +259,19 @@ def init_widget_routes(app, config_manager, logger_ref=None):
             _save_config()
             return jsonify({"ok": True, "ext_id": ext_id, "room_span": span})
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
+
+    # -- POST /api/widgets/<ext_id>/theme -----------------------------------------
+    @app.route("/api/widgets/<ext_id>/theme", methods=["POST"])
+    @login_required
+    def api_set_widget_theme(ext_id):
+        data = request.get_json(silent=True) or {}
+        theme = data.get("theme", "default")
+        _log.info(f"WIDGETS: Room theme [{ext_id}] -> {theme}")
+        res = config_manager.set(theme, "widgets", "per_widget", ext_id, "theme")
+        if res:
+            _save_config()
+            return jsonify({"ok": True, "ext_id": ext_id, "theme": theme})
+        return jsonify({"ok": False, "error": "Failed to update theme"}), 500
 
     # -- PATCH /api/widgets/room/layout -------------------------------------------
     @app.route("/api/widgets/room/layout", methods=["PATCH"])
