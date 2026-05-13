@@ -47,20 +47,37 @@
             </div>`;
     }
 
-    // ── BroadcastChannel sync ───────────────────────────────────────
+    // ── Synchronization (Shared with Sidebar via SSE \u0026 Broadcast) ────────
     try {
         const channel = new BroadcastChannel('hecos_widgets');
         channel.onmessage = () => {
-            console.log('[Home] Widget sync signal — refreshing.');
+            console.log('[Home-Sync] BroadcastChannel signal — refreshing.');
             loadWidgets();
         };
     } catch (e) {
-        console.warn('[Home] BroadcastChannel unavailable:', e);
+        console.warn('[Home-Sync] BroadcastChannel unavailable:', e);
     }
 
-    // localStorage cross-tab sync
+    // SSE listener (proven method for sidebar)
+    const _initSSE = () => {
+        const evtSrc = new EventSource('/api/events');
+        evtSrc.onmessage = (e) => {
+            const ev = JSON.parse(e.data);
+            if (ev.type === 'widgets_refresh') {
+                console.log('[Home-Sync] SSE refresh signal received.');
+                loadWidgets();
+            }
+        };
+        evtSrc.onerror = () => {
+            evtSrc.close();
+            setTimeout(_initSSE, 5000); // Reconnect
+        };
+    };
+    _initSSE();
+
+    // localStorage cross-tab sync (fallback)
     window.addEventListener('storage', (e) => {
-        if (e.key === 'hecos_sidebar_sync') loadWidgets();
+        if (e.key === 'hecos_sidebar_sync' || e.key === 'hecos_room_sync') loadWidgets();
     });
 
     // ── Theme init (matches chat.html FOUC prevention pattern) ─────

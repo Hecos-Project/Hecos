@@ -23,15 +23,34 @@
     let _saveTimer = null;      // debounce for layout save
     let _editBtn = null;        // edit mode toggle button
     let _widgetChannel = null;  // Keep reference so it doesn't get garbage collected
+    let _refreshDelayTimer = null; // follow-up refresh timer
+
+    // ─── Initialization of Global Sync (Active on script load) ────────────────
+    const _initGlobalSync = () => {
+        if (!_widgetChannel) {
+            _widgetChannel = new BroadcastChannel('hecos_widgets');
+            _widgetChannel.onmessage = (event) => {
+                const data = event.data;
+                console.log('[RoomGrid] BroadcastChannel signal:', data);
+                if (data && data.type === 'widget_update') {
+                    _syncLocalConfig(data.id, data.field, data.value);
+                }
+                // Call global instance method
+                if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
+            };
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'hecos_room_sync') {
+                    console.log('[RoomGrid] localStorage sync signal');
+                    if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
+                }
+            });
+        }
+    };
+    _initGlobalSync();
 
     // ─── Public API ───────────────────────────────────────────────────────────
     const controlRoomGrid = {
 
-        /**
-         * Call once on page load.
-         * @param {HTMLElement} gridEl  - The grid container (#room-grid or #home-grid)
-         * @param {HTMLElement} [editBtn] - Optional edit toggle button
-         */
         async init(gridEl, editBtn) {
             _grid = gridEl;
             _editBtn = editBtn || null;
@@ -40,19 +59,25 @@
             if (_editBtn) {
                 _editBtn.addEventListener('click', () => this.toggleEditMode());
             }
+        },
 
-            // Sync across tabs via BroadcastChannel (must retain reference to prevent GC)
-            if (!_widgetChannel) {
-                _widgetChannel = new BroadcastChannel('hecos_widgets');
-                _widgetChannel.onmessage = () => {
-                    console.log('[RoomGrid] BroadcastChannel sync received.');
-                    this.refresh();
-                };
-            }
-            // Sync via localStorage (cross-tab without BroadcastChannel)
-            window.addEventListener('storage', (e) => {
-                if (e.key === 'hecos_room_sync') this.refresh();
-            });
+        /**
+         * Refreshes immediately and then follows up after a delay
+         * to ensure backend persistence is captured.
+         */
+        debouncedRefresh() {
+            console.log('[RoomGrid] debouncedRefresh triggered.');
+            // 1. Immediate refresh for snappy responsiveness
+            this.refresh();
+
+            // 2. Clear existing follower to prevent spam
+            if (_refreshDelayTimer) clearTimeout(_refreshDelayTimer);
+
+            // 3. Delayed follow-up (2s) for deep reliability (disk/system latency)
+            _refreshDelayTimer = setTimeout(() => {
+                console.log('[RoomGrid] Running 2s follow-up refresh...');
+                this.refresh();
+            }, 2000);
         },
 
         // ─── Fetch & Render ──────────────────────────────────────────────────
@@ -108,6 +133,20 @@
 
         isEditing() { return _editing; },
     };
+    
+    // ─── Private: Local Config Sync ───────────────────────────────────────────
+    function _syncLocalConfig(widgetId, field, value) {
+        // window.cfg exists on home.html, window.parent.cfg exists in the sliding panel.
+        const cfg = window.cfg || (window.parent && window.parent.cfg);
+        if (!cfg) return;
+        
+        if (!cfg.widgets) cfg.widgets = { per_widget: {} };
+        if (!cfg.widgets.per_widget) cfg.widgets.per_widget = {};
+        if (!cfg.widgets.per_widget[widgetId]) cfg.widgets.per_widget[widgetId] = {};
+        
+        cfg.widgets.per_widget[widgetId][field] = value;
+        console.log(`[RoomGrid] Synced ${widgetId}.${field}=${value} to global cfg object.`);
+    }
 
     // ─── Private: Render ─────────────────────────────────────────────────────
     function _render(widgets) {
@@ -163,11 +202,12 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <iframe src="${API.FRAME(w.extension_id)}"
+            <iframe src="${API.FRAME(w.extension_id)}?t=${Date.now()}"
                     class="room-widget-iframe"
                     loading="lazy"
                     scrolling="no"
                     frameborder="0"
+                    allowtransparency="true"
                     title="${w.display_name}">
             </iframe>
         `;
@@ -346,6 +386,7 @@
             if (data.ok) {
                 card.dataset.span = newSpan;
                 card.classList.toggle('span-2', newSpan === 2);
+                _syncLocalConfig(id, 'room_span', newSpan);
                 btn.innerHTML = newSpan === 2
                     ? '<i class="fas fa-compress-alt"></i> 2×'
                     : '<i class="fas fa-expand-alt"></i> 1×';
@@ -363,6 +404,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ visible: false })
             });
+            _syncLocalConfig(id, 'room_visible', false);
             const card = _grid.querySelector(`.room-widget-card[data-id="${id}"]`);
             if (card) {
                 card.style.transition = 'opacity 0.25s, transform 0.25s';

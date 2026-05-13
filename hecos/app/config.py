@@ -184,9 +184,11 @@ class ConfigManager:
             plugins_dict = {"plugins": full_dict.pop("plugins", {})}
             widgets_dict = {"widgets": full_dict.pop("widgets", {})}
             
+            # Define paths
             plugins_path = self._yaml_path.replace("system.yaml", "plugins.yaml")
             widgets_path = self._yaml_path.replace("system.yaml", "widgets.yaml")
             
+            # Atomic writes for modules
             save_dict_to_yaml(plugins_path, plugins_dict)
             save_dict_to_yaml(widgets_path, widgets_dict)
             
@@ -236,10 +238,10 @@ class ConfigManager:
                 target[key] = {}
             target = target[key]
         target[keys[-1]] = value
-        
-        # Keep model in sync if possible, but don't lose the dict change if it fails
+
         try:
             SystemConfig = _get_schema()
+            # Use current dict state as the source of truth
             self._model = SystemConfig.model_validate(self.config)
         except Exception as e:
             logger.debug(f"[CONFIG] Partial validation failed in set() for {keys}: {e}")

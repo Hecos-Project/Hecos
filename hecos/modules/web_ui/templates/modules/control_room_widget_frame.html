@@ -56,6 +56,25 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
 }
+
+/* ── Widget Themes applied directly to the iframe body ── */
+body.wt-cyber {
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.12), rgba(var(--bg3-rgb), 0.85)) !important;
+}
+body.wt-alert {
+    background: linear-gradient(135deg, rgba(var(--red-rgb), 0.12), rgba(var(--bg3-rgb), 0.88)) !important;
+}
+body.wt-glass {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(16px);
+}
+body.wt-ghost {
+    background: transparent !important;
+}
+body.wt-default {
+    background: var(--bg3) !important;
+}
+
 #main-wrapper {
     width: 100%;
     /* No padding here, padding comes from .sidebar-card inside or the widget itself */
@@ -143,7 +162,7 @@ button:hover {
 {% endif %}
 
 </head>
-<body>
+<body class="wt-{{ widget_theme or 'default' }}">
 
 <div id="main-wrapper">
   {% include ext_id ~ '_widget.html' %}

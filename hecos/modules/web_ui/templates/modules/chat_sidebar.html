@@ -67,8 +67,8 @@
   {% include 'modules/chat_history_panel.html' %}
 
   <!-- ── WEB_UI Sidebar Widgets (Shared Extensions) ── -->
-  <div id="sidebar-widgets-zone">
-    {% set has_widgets = sidebar_widgets|length > 0 %}
+  <div id="sidebar-widgets-zone" style="{{ 'display:none;' if zconfig.widgets.sidebar_widgets_enabled == false }}">
+    {% set has_widgets = (sidebar_widgets|length > 0) %}
     <div id="widgets-container" style="{{ 'display:none;' if not has_widgets }}">
         {% include 'modules/chat_sidebar_widgets.html' %}
     </div>
@@ -90,7 +90,7 @@
     </div>
   </div>
 
-  <div id="widgets-manage-footer" class="sidebar-card" style="padding:4px 0; border:none; background:transparent; {{ 'display:none;' if not has_widgets }}">
+  <div id="widgets-manage-footer" class="sidebar-card" style="padding:4px 0; border:none; background:transparent; {{ 'display:none;' if (not has_widgets) or (zconfig.widgets.sidebar_widgets_enabled == false) }}">
     <button class="sidebar-btn btn-xs" onclick="toggleSidebarOrderMode()" style="opacity:0.5; font-size:10px; margin:0 auto; display:block;">
        <i class="fas fa-cog"></i> {{ t('sidebar_manage_widgets') or 'Manage Widgets' }}
     </button>
@@ -142,7 +142,8 @@
   {% endif %}
 
   <script>
-    console.log("[WIDGETS] Sidebar loaded. has_widgets={{ has_widgets|tojson }}");
+    window.sidebarWidgetsEnabled = {{ (zconfig.widgets.sidebar_widgets_enabled if zconfig.widgets.sidebar_widgets_enabled is defined else True) | tojson }};
+    console.log("[WIDGETS] Sidebar loaded. has_widgets={{ has_widgets|tojson }}, enabled=" + window.sidebarWidgetsEnabled);
   </script>
 </div>
 

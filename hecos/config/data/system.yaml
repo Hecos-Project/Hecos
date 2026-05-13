@@ -1,5 +1,5 @@
 ai:
-  active_personality: Motoko Kusanagi.yaml
+  active_personality: Urania_9800.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -129,6 +129,3 @@ agent:
   max_iterations: 12
   verbose_traces: true
   action_console_enabled: true
-
-
-

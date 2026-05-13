@@ -82,6 +82,10 @@ def init_widget_routes(app, config_manager, logger_ref=None):
         
         res = config_manager.set(visible, "widgets", "per_widget", ext_id, "visible")
         if res:
+            # XOR: If enabling sidebar, disable room
+            if visible:
+                config_manager.set(False, "widgets", "per_widget", ext_id, "room_visible")
+            
             ok = _save_config()
             _log.info(f"WIDGETS: Save result for [{ext_id}]: {ok}")
             return jsonify({"ok": True, "ext_id": ext_id, "visible": visible})
@@ -122,6 +126,24 @@ def init_widget_routes(app, config_manager, logger_ref=None):
         if res:
             ok = _save_config()
             return jsonify({"ok": True, "collapsed": collapsed})
+        
+        return jsonify({"ok": False, "error": "Failed to update config"}), 500
+
+    # ── POST /api/widgets/sidebar-enabled ──────────────────────────────────────
+    @app.route("/api/widgets/sidebar-enabled", methods=["POST"])
+    @login_required
+    def api_set_sidebar_widgets_enabled():
+        data = request.get_json(silent=True) or {}
+        if "enabled" not in data:
+            return jsonify({"ok": False, "error": "'enabled' field required"}), 400
+
+        enabled = bool(data["enabled"])
+        _log.info(f"WIDGETS: Setting sidebar_widgets_enabled to {enabled}")
+        
+        res = config_manager.set(enabled, "widgets", "sidebar_widgets_enabled")
+        if res:
+            ok = _save_config()
+            return jsonify({"ok": True, "enabled": enabled})
         
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
@@ -214,12 +236,18 @@ def init_widget_routes(app, config_manager, logger_ref=None):
         if not manifest:
             return "Widget not found", 404
 
+        # Read theme from per_widget config
+        widget_theme = cfg.get("widgets", {}).get("per_widget", {}).get(ext_id, {}).get("theme", "default")
+        if hasattr(widget_theme, 'value'):
+            widget_theme = widget_theme.value
+
         trans = get_translator().get_translations()
 
         html = render_template(
             "modules/control_room_widget_frame.html",
             ext_id=ext_id,
             ext_manifest=manifest,
+            widget_theme=widget_theme,
             zconfig=cfg,
             translations=trans,
             t=t
@@ -241,6 +269,10 @@ def init_widget_routes(app, config_manager, logger_ref=None):
         _log.info(f"WIDGETS: Room visibility [{ext_id}] -> {visible}")
         res = config_manager.set(visible, "widgets", "per_widget", ext_id, "room_visible")
         if res:
+            # XOR: If enabling room, disable sidebar
+            if visible:
+                config_manager.set(False, "widgets", "per_widget", ext_id, "visible")
+                
             _save_config()
             return jsonify({"ok": True, "ext_id": ext_id, "room_visible": visible})
         return jsonify({"ok": False, "error": "Failed to update config"}), 500

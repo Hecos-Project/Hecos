@@ -5,12 +5,14 @@
  */
 
 let sidebarOrderMode = false;
-const widgetChannel = new BroadcastChannel('hecos_widgets');
-
-// 1. Listen via BroadcastChannel (for same-tab, e.g. iframe in Central Hub)
 widgetChannel.onmessage = (event) => {
-    console.log("[WIDGETS] Sync signal received via BroadcastChannel.");
-    refreshSidebarWidgets();
+    console.log("[WIDGETS] Sync signal received via BroadcastChannel:", event.data);
+    if (event.data && event.data.type === 'sidebar_enabled') {
+        window.sidebarWidgetsEnabled = event.data.value;
+        updateSidebarVisibility();
+    } else {
+        refreshSidebarWidgets();
+    }
 };
 
 // 2. Listen via localStorage (for cross-tab sync)
@@ -20,6 +22,19 @@ window.addEventListener('storage', (event) => {
         refreshSidebarWidgets();
     }
 });
+
+function updateSidebarVisibility() {
+    const zone = document.getElementById('sidebar-widgets-zone');
+    const footer = document.getElementById('widgets-manage-footer');
+    const enabled = window.sidebarWidgetsEnabled !== false;
+    
+    if (zone) zone.style.display = enabled ? '' : 'none';
+    if (footer) {
+        const container = document.getElementById('widgets-container');
+        const hasWidgets = container && container.querySelectorAll('.sidebar-widget-wrapper').length > 0;
+        footer.style.display = (enabled && hasWidgets) ? '' : 'none';
+    }
+}
 
 function toggleSidebarOrderMode() {
     sidebarOrderMode = !sidebarOrderMode;
@@ -99,9 +114,9 @@ async function refreshSidebarWidgets() {
             
             // Re-check widget presence
             const hasWidgets = container.querySelectorAll('.sidebar-widget-wrapper').length > 0;
-            container.style.display = hasWidgets ? 'block' : 'none';
-            if (emptyState) emptyState.style.display = hasWidgets ? 'none' : 'block';
-            if (footer) footer.style.display = hasWidgets ? 'block' : 'none';
+            
+            // Centralized visibility update
+            updateSidebarVisibility();
             
             console.log(`[WIDGETS] Sidebar refreshed. Active widgets: ${hasWidgets}`);
         }

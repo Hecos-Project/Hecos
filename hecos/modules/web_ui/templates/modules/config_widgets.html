@@ -1,16 +1,33 @@
 <div id="tab-widgets" class="panel">
-<div class="card">
-    <div class="card-title"><i class="fas fa-puzzle-piece"></i> {{ t('webui_conf_widgets_title') }}</div>
-    <p class="muted" style="font-size: 11px; margin-bottom: 20px;">
-        {{ t('webui_conf_widgets_desc') }}
-    </p>
+    <div class="card">
+        <div class="card-title"><i class="fas fa-puzzle-piece"></i> {{ t('webui_conf_widgets_title') }}</div>
+        <p class="muted" style="font-size: 11px; margin-bottom: 20px;">
+            {{ t('webui_conf_widgets_desc') }}
+        </p>
 
-    <div id="widgets-list" class="form-section">
-        <div style="padding:40px; text-align:center; color:var(--muted); font-size: 13px;" id="widgets-loading">
-            <i class="fas fa-circle-notch fa-spin" style="margin-right: 10px;"></i> {{ t('loading') }}
+        <!-- Global Toggle -->
+        <div class="sidebar-card" style="margin-bottom:20px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; border: 1px solid var(--border); border-radius:12px; background:var(--bg2);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="font-size:20px; color:var(--accent);"><i class="fas fa-eye"></i></div>
+                <div>
+                    <div style="font-size:13px; font-weight:600;">{{ t('sidebar_widgets_global_title') or 'Mostra Widgets nella Sidebar' }}</div>
+                    <div style="font-size:11px; color:var(--muted);">{{ t('sidebar_widgets_global_desc') or 'Se disattivato, la sezione widgets sparirà completamente dalla sidebar.' }}</div>
+                </div>
+            </div>
+            <label class="switch no-autosave">
+                <input type="checkbox" id="global-sidebar-widgets-toggle"
+                       ${window.parent?.cfg?.widgets?.sidebar_widgets_enabled !== false ? 'checked' : ''}
+                       onchange="toggleSidebarWidgetsEnabled(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div id="widgets-list" class="form-section">
+            <div style="padding:40px; text-align:center; color:var(--muted); font-size: 13px;" id="widgets-loading">
+                <i class="fas fa-circle-notch fa-spin" style="margin-right: 10px;"></i> {{ t('loading') }}
+            </div>
         </div>
     </div>
-</div>
 
 <style>
     /* ── Widget Manager Card ─────────────────────────────────────────────── */
@@ -151,6 +168,7 @@
                             <span class="widget-toggle-lbl"><i class="fas fa-comments" style="font-size:9px;"></i> Sidebar</span>
                             <label class="switch no-autosave" title="Toggle sidebar visibility">
                                 <input type="checkbox"
+                                       id="check-side-${w.extension_id}"
                                        ${sidebarVisible ? 'checked' : ''}
                                        ${pluginOk ? '' : 'disabled'}
                                        onchange="toggleWidgetVisibility('${w.extension_id}', this.checked, this)">
@@ -162,6 +180,7 @@
                             <span class="widget-toggle-lbl"><i class="fas fa-th-large" style="font-size:9px;"></i> Room</span>
                             <label class="switch no-autosave" title="Toggle Control Room visibility">
                                 <input type="checkbox"
+                                       id="check-room-${w.extension_id}"
                                        ${roomVisible ? 'checked' : ''}
                                        ${pluginOk ? '' : 'disabled'}
                                        onchange="toggleRoomVisibility('${w.extension_id}', this.checked, this)">
@@ -198,15 +217,59 @@
 
     // ── Channels ────────────────────────────────────────────────────────────────
     const widgetChannel = new BroadcastChannel('hecos_widgets');
-    function broadcastWidgetSync() {
-        widgetChannel.postMessage({ type: 'refresh' });
+    function broadcastWidgetSync(id, field, value) {
+        widgetChannel.postMessage({ 
+            type: 'widget_update', 
+            id: id, 
+            field: field, 
+            value: value 
+        });
         localStorage.setItem('hecos_sidebar_sync', Date.now());
         localStorage.setItem('hecos_room_sync', Date.now());
+    }
+
+    // ── Global Toggle ────────────────────────────────────────────────────────────
+    async function toggleSidebarWidgetsEnabled(enabled) {
+        try {
+            const resp = await fetch('/api/widgets/sidebar-enabled', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({enabled})
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                if (window.parent && window.parent.cfg) {
+                    if (!window.parent.cfg.widgets) window.parent.cfg.widgets = {};
+                    window.parent.cfg.widgets.sidebar_widgets_enabled = enabled;
+                }
+                showToast(`Sezione Widgets: ${enabled ? 'attivata' : 'disattivata'}`, 'info');
+                widgetChannel.postMessage({ type: 'sidebar_enabled', value: enabled });
+            } else throw new Error(data.error);
+        } catch (err) {
+            showToast(`Errore: ${err.message}`, 'error');
+            document.getElementById('global-sidebar-widgets-toggle').checked = !enabled;
+        }
     }
 
     // ── Sidebar visibility ───────────────────────────────────────────────────────
     async function toggleWidgetVisibility(id, visible, inputEl) {
         if (!id || id === 'undefined') return;
+
+        // OPTIMISTIC XOR: If sidebar enabled, disable room immediately
+        if (visible) {
+            const roomToggle = document.getElementById(`check-room-${id}`);
+            if (roomToggle && roomToggle.checked) {
+                console.log(`[XOR] Auto-disabling room for ${id}`);
+                roomToggle.checked = false;
+                syncLocalConfig(id, 'room_visible', false);
+                broadcastWidgetSync(id, 'room_visible', false);
+                const spanRow = document.getElementById(`span-row-${id}`);
+                if (spanRow) { spanRow.style.opacity = '0.3'; spanRow.style.pointerEvents = 'none'; }
+                const themeRow = document.getElementById(`theme-row-${id}`);
+                if (themeRow) { themeRow.style.opacity = '0.3'; themeRow.style.pointerEvents = 'none'; }
+            }
+        }
+
         const card = inputEl.closest('.widget-card');
         card.style.opacity = '0.5'; card.style.pointerEvents = 'none';
         try {
@@ -224,7 +287,7 @@
                     window.cfg.widgets.per_widget[id].visible = visible;
                 }
                 showToast(`Sidebar: widget ${visible ? 'attivato' : 'disattivato'}`, 'info');
-                broadcastWidgetSync();
+                broadcastWidgetSync(id, 'visible', visible);
             } else throw new Error(data.error);
         } catch (err) {
             showToast(`Errore: ${err.message}`, 'error');
@@ -234,9 +297,32 @@
         }
     }
 
-    // ── Room visibility ──────────────────────────────────────────────────────────
+    // ── Local Config Sync (CRITICAL: prevent revert-on-save race condition) ──────
+    function syncLocalConfig(widgetId, field, value) {
+        if (!window.parent || !window.parent.cfg) return;
+        const cfg = window.parent.cfg;
+        if (!cfg.widgets) cfg.widgets = { per_widget: {} };
+        if (!cfg.widgets.per_widget) cfg.widgets.per_widget = {};
+        if (!cfg.widgets.per_widget[widgetId]) cfg.widgets.per_widget[widgetId] = {};
+        cfg.widgets.per_widget[widgetId][field] = value;
+        console.log(`[WIDGET-SYNC] Synced ${widgetId}.${field}=${value} to global window.parent.cfg`);
+    }
+
+    // ── Room toggle ──────────────────────────────────────────────────────────────
     async function toggleRoomVisibility(id, visible, inputEl) {
         if (!id || id === 'undefined') return;
+
+        // OPTIMISTIC XOR: If room enabled, disable sidebar immediately
+        if (visible) {
+            const sideToggle = document.getElementById(`check-side-${id}`);
+            if (sideToggle && sideToggle.checked) {
+                console.log(`[XOR] Auto-disabling sidebar for ${id}`);
+                sideToggle.checked = false;
+                syncLocalConfig(id, 'visible', false);
+                broadcastWidgetSync(id, 'visible', false);
+            }
+        }
+
         const card = inputEl.closest('.widget-card');
         card.style.opacity = '0.5'; card.style.pointerEvents = 'none';
         try {
@@ -247,6 +333,7 @@
             });
             const data = await resp.json();
             if (data.ok) {
+                syncLocalConfig(id, 'room_visible', visible);
                 // Dim/undim the span selector
                 const spanRow = document.getElementById(`span-row-${id}`);
                 if (spanRow) {
@@ -259,7 +346,7 @@
                     themeRow.style.pointerEvents = visible ? '' : 'none';
                 }
                 showToast(`Room: widget ${visible ? 'aggiunto' : 'rimosso'}`, 'info');
-                broadcastWidgetSync();
+                broadcastWidgetSync(id, 'room_visible', visible);
             } else throw new Error(data.error);
         } catch (err) {
             showToast(`Errore: ${err.message}`, 'error');
@@ -279,12 +366,13 @@
             });
             const data = await resp.json();
             if (data.ok) {
+                syncLocalConfig(id, 'room_span', span);
                 // Update sibling buttons
                 const parent = btnEl.closest('.span-selector');
                 parent.querySelectorAll('.span-btn').forEach(b => b.classList.remove('active'));
                 btnEl.classList.add('active');
                 showToast(`Larghezza: ${span === 2 ? 'doppio' : 'normale'}`, 'info');
-                broadcastWidgetSync();
+                broadcastWidgetSync(id, 'room_span', span);
             } else throw new Error(data.error);
         } catch (err) {
             showToast(`Errore: ${err.message}`, 'error');
@@ -301,8 +389,9 @@
             });
             const data = await resp.json();
             if (data.ok) {
+                syncLocalConfig(id, 'theme', theme);
                 showToast('Tema aggiornato', 'info');
-                broadcastWidgetSync();
+                broadcastWidgetSync(id, 'theme', theme);
             } else throw new Error(data.error);
         } catch (err) {
             showToast(`Errore: ${err.message}`, 'error');

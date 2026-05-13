@@ -243,6 +243,39 @@
   window.currentUser = {
       role: "{{ current_user.role if current_user.is_authenticated else 'user' }}"
   };
+
+  // Cross-tab Configuration Synchronization
+  (function() {
+      const widgetChannel = new BroadcastChannel('hecos_widgets');
+      widgetChannel.onmessage = (event) => {
+          const data = event.data;
+          if (data && data.type === 'widget_update' && window.cfg) {
+              const { id, field, value } = data;
+              if (!window.cfg.widgets) window.cfg.widgets = { per_widget: {} };
+              if (!window.cfg.widgets.per_widget) window.cfg.widgets.per_widget = {};
+              if (!window.cfg.widgets.per_widget[id]) window.cfg.widgets.per_widget[id] = {};
+              
+              window.cfg.widgets.per_widget[id][field] = value;
+              console.log(`[HUB-SYNC] Successfully synced ${id}.${field}=${value} to global cfg.`);
+          }
+      };
+
+      // 2. SSE Signal (Deep Sync / proven method)
+      const _initSSE = () => {
+          const evtSrc = new EventSource('/api/events');
+          evtSrc.onmessage = (e) => {
+              const ev = JSON.parse(e.data);
+              if (ev.type === 'widgets_refresh') {
+                  console.log('[HUB-SYNC] SSE refresh signal received.');
+              }
+          };
+          evtSrc.onerror = () => {
+              evtSrc.close();
+              setTimeout(_initSSE, 5000);
+          };
+      };
+      _initSSE();
+  })();
 </script>
 <script src="/static/js/config_manifest.js?v={{ version }}-persistence-v3"></script>
 <script src="/static/js/config_mapper.js?v={{ version }}-persistence-v3"></script>

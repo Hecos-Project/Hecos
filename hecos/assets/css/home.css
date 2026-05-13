@@ -98,7 +98,7 @@ body {
 
 /* ── Widget Card (shared class name with Module A for styling consistency) ── */
 .room-widget-card {
-  background: var(--bg3);
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius, 14px);
   padding: 0;
@@ -168,6 +168,7 @@ body {
   border: none;
   display: block;
   border-radius: inherit;
+  background: transparent !important;
 }
 .room-grid-editing .room-widget-iframe {
   pointer-events: none; /* Prevent iframe from stealing drag-and-drop events */

@@ -157,8 +157,13 @@ window.initEvents = function() {
       }
     } else if (ev.type === 'widgets_refresh') {
       console.log("[WIDGETS] SSE refresh signal received.");
+      // 1. Sidebar refresh
       if (typeof window.refreshSidebarWidgets === 'function') {
         window.refreshSidebarWidgets();
+      }
+      // 2. Control Room refresh (Panel Mode)
+      if (window.controlRoom && window.controlRoom.refresh) {
+        window.controlRoom.refresh();
       }
     }
   };

@@ -411,6 +411,7 @@ class WidgetsConfig(BaseModel):
     per_widget: Dict[str, WidgetPersistence] = Field(default_factory=dict)
     sidebar_status_collapsed: bool = False
     sidebar_audio_collapsed: bool = False
+    sidebar_widgets_enabled: bool = True
     room_layout: List[str] = Field(default_factory=list)  # ordered list of ext_ids for the room grid
 
 
