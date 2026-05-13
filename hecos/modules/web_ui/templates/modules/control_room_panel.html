@@ -1,0 +1,69 @@
+{#
+  control_room_panel.html — Module A
+  Included in chat.html between #sidebar and #main.
+  Logic lives in control_room_grid.js (grid engine) and control_room.js (panel toggle).
+#}
+<div id="control-room-panel" aria-label="Control Room" role="complementary">
+
+  <!-- Header ──────────────────────────────────────────── -->
+  <div id="room-header">
+    <span><i class="fas fa-th-large" style="margin-right:6px;"></i>CONTROL ROOM</span>
+    <div id="room-header-actions">
+      <!-- Edit layout toggle -->
+      <button class="room-header-btn" id="room-edit-btn"
+              title="{{ t('room_edit_layout') or 'Edit layout' }}" aria-label="{{ t('room_edit_layout') or 'Edit layout' }}">
+        <i class="fas fa-pen-to-square"></i>
+      </button>
+      <!-- Open standalone -->
+      <a href="/home" target="_blank" rel="noopener noreferrer"
+         class="room-header-btn"
+         title="{{ t('room_open_standalone') or 'Open standalone' }}">
+        <i class="fas fa-external-link-alt"></i>
+      </a>
+      <!-- Close -->
+      <button class="room-header-btn" onclick="window.controlRoom.toggle()"
+              title="{{ t('room_close') or 'Close' }}" aria-label="Close Control Room">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Widget Grid ─────────────────────────────────────── -->
+  <div id="room-grid" role="main">
+    <div class="room-loading">
+      <i class="fas fa-spinner fa-spin" style="opacity:0.5;"></i>
+      <span style="opacity:0.5;">{{ t('room_loading') or 'Loading widgets…' }}</span>
+    </div>
+  </div>
+
+  <!-- Footer ──────────────────────────────────────────── -->
+  <div id="room-footer">
+    <button class="sidebar-btn"
+            onclick="window.hecosOpenConfig('#widgets')"
+            style="justify-content:center; width:100%; font-size:12px; opacity:0.7;"
+            title="{{ t('room_add_widget') or 'Manage widgets in Central Hub' }}">
+      <i class="fas fa-plus-circle"></i>
+      {{ t('room_add_widget') or 'Add / Manage Widgets' }}
+    </button>
+  </div>
+
+</div>
+
+<script>
+  // Init the grid engine once the panel is in the DOM
+  (function initRoomGrid() {
+    function tryInit() {
+      const grid = document.getElementById('room-grid');
+      const editBtn = document.getElementById('room-edit-btn');
+      if (grid && window.controlRoomGrid) {
+        // Remove static loading indicator
+        const loading = grid.querySelector('.room-loading');
+        if (loading) loading.remove();
+        controlRoomGrid.init(grid, editBtn);
+      } else {
+        setTimeout(tryInit, 100);
+      }
+    }
+    tryInit();
+  })();
+</script>

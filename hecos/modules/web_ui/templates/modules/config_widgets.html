@@ -13,75 +13,102 @@
 </div>
 
 <style>
+    /* ── Widget Manager Card ─────────────────────────────────────────────── */
     .widget-card {
         background: var(--bg2);
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 12px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
         display: flex;
         align-items: center;
-        gap: 16px;
-        transition: transform 0.2s, border-color 0.2s, background 0.2s;
+        gap: 14px;
+        transition: border-color 0.2s, background 0.2s;
     }
     .widget-card:hover {
-        border-color: var(--accent);
+        border-color: rgba(var(--accent-rgb), 0.3);
         background: rgba(var(--accent-rgb), 0.02);
     }
-    .widget-card.disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
+    .widget-card.plugin-disabled { opacity: 0.55; pointer-events: none; }
+
     .widget-icon {
-        font-size: 24px;
-        width: 40px;
-        height: 40px;
+        font-size: 22px;
+        width: 38px; height: 38px; flex-shrink: 0;
         background: var(--bg3);
         border: 1px solid var(--border);
         border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         color: var(--accent);
     }
-    .widget-info {
-        flex: 1;
-    }
+    .widget-info { flex: 1; min-width: 0; }
     .widget-name {
         font-weight: 700;
         color: var(--text);
-        margin-bottom: 4px;
-        font-size: 14px;
+        font-size: 13px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 3px;
     }
-    .widget-desc {
-        font-size: 11px;
-        color: var(--muted);
-        line-height: 1.4;
-    }
-    .drag-handle {
-        cursor: grab;
-        color: var(--muted);
-        padding: 8px;
-        opacity: 0.5;
-        transition: opacity 0.2s;
-    }
-    .drag-handle:hover {
-        opacity: 1;
-    }
+    .widget-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
     .badge-v {
+        background: var(--bg3); color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 1px 6px; border-radius: 4px;
+        font-size: 9px; font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Controls Column ─────────────────────────────────────────────────── */
+    .widget-controls-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+    .widget-toggle-row {
+        display: flex; align-items: center; gap: 8px;
+    }
+    .widget-toggle-lbl {
+        font-size: 10px; color: var(--muted); font-weight: 600;
+        letter-spacing: 0.5px; text-transform: uppercase;
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Span Selector ───────────────────────────────────────────────────── */
+    .span-selector {
+        display: flex; gap: 3px; align-items: center;
+    }
+    .span-selector .span-lbl {
+        font-size: 10px; color: var(--muted); margin-right: 4px;
+        font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .span-btn {
+        padding: 3px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
         background: var(--bg3);
         color: var(--muted);
-        border: 1px solid var(--border);
-        padding: 1px 6px;
-        border-radius: 4px;
-        font-size: 9px;
-        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px; font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
     }
+    .span-btn.active {
+        background: rgba(var(--accent-rgb), 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .span-btn:hover:not(.active) {
+        border-color: rgba(var(--accent-rgb), 0.4);
+        color: var(--text);
+    }
+
+    /* ── Drag handle ─────────────────────────────────────────────────────── */
+    .drag-handle {
+        cursor: grab; color: var(--muted); padding: 6px;
+        opacity: 0.4; transition: opacity 0.2s; flex-shrink: 0;
+    }
+    .drag-handle:hover { opacity: 1; }
 </style>
 
 <script>
@@ -95,41 +122,59 @@
             container.innerHTML = '';
             data.widgets.forEach(w => {
                 const card = document.createElement('div');
-                card.className = `widget-card ${w.plugin_active ? '' : 'disabled'}`;
+                const pluginOk = w.plugin_active !== false;
+                card.className = `widget-card ${pluginOk ? '' : 'plugin-disabled'}`;
                 card.dataset.id = w.extension_id;
 
-                const icon = window.getIconForModule(w.extension_id, w.display_name);
-                const depStatus = w.plugin_active ? 'OK' : 'MISSING';
-                const depClass = w.plugin_active ? 'success' : 'danger';
-                
+                const icon = window.getIconForModule ? window.getIconForModule(w.extension_id, w.display_name) : `<i class="fas fa-cube"></i>`;
+
+                // Per-widget prefs
+                const prefs = w.prefs || {};
+                const sidebarVisible = w.visible !== false;
+                const roomVisible   = prefs.room_visible === true || w.room_visible === true;
+                const roomSpan      = prefs.room_span || w.room_span || 1;
+
                 card.innerHTML = `
                     <div class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></div>
                     <div class="widget-icon">${icon}</div>
                     <div class="widget-info">
                         <div class="widget-name">
-                            ${t(w.display_name)} 
-                            <span class="badge-v">v${w.version}</span>
+                            ${t(w.display_name)}
+                            <span class="badge-v">v${w.version || '1.0'}</span>
                         </div>
-                        <div class="widget-desc">${t(w.description)}</div>
-                        <div style="margin-top:8px; display: flex; gap: 8px;">
-                            ${w.required_plugin ? `
-                                <span class="badge-pill" style="border-color: var(--${w.plugin_active ? 'green' : 'red'}); background: rgba(var(--${w.plugin_active ? 'green' : 'red'}-rgb), 0.1); color: var(--${w.plugin_active ? 'green' : 'red'}); font-size: 9px; padding: 2px 8px;">
-                                    <i class="fas fa-puzzle-piece" style="font-size: 8px;"></i> ${w.required_plugin}
-                                </span>
-                            ` : `
-                                <span class="badge-pill" style="font-size: 9px; padding: 2px 8px; opacity: 0.8;">
-                                    <i class="fas fa-microchip" style="font-size: 8px;"></i> ${t('System Core')}
-                                </span>
-                            `}
-                        </div>
+                        <div class="widget-desc">${t(w.description || '')}</div>
                     </div>
-                    <div class="widget-controls">
-                        <label class="switch no-autosave">
-                            <input type="checkbox" ${w.visible ? 'checked' : ''} 
-                                   ${w.plugin_active ? '' : 'disabled'}
-                                   onchange="toggleWidgetVisibility('${w.extension_id}', this.checked, this)">
-                            <span class="slider"></span>
-                        </label>
+                    <div class="widget-controls-col">
+                        <!-- Sidebar toggle -->
+                        <div class="widget-toggle-row">
+                            <span class="widget-toggle-lbl"><i class="fas fa-comments" style="font-size:9px;"></i> Sidebar</span>
+                            <label class="switch no-autosave" title="Toggle sidebar visibility">
+                                <input type="checkbox"
+                                       ${sidebarVisible ? 'checked' : ''}
+                                       ${pluginOk ? '' : 'disabled'}
+                                       onchange="toggleWidgetVisibility('${w.extension_id}', this.checked, this)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <!-- Room toggle -->
+                        <div class="widget-toggle-row">
+                            <span class="widget-toggle-lbl"><i class="fas fa-th-large" style="font-size:9px;"></i> Room</span>
+                            <label class="switch no-autosave" title="Toggle Control Room visibility">
+                                <input type="checkbox"
+                                       ${roomVisible ? 'checked' : ''}
+                                       ${pluginOk ? '' : 'disabled'}
+                                       onchange="toggleRoomVisibility('${w.extension_id}', this.checked, this)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <!-- Span selector (only meaningful if room visible) -->
+                        <div class="span-selector" id="span-row-${w.extension_id}" style="${roomVisible ? '' : 'opacity:0.3; pointer-events:none;'}">
+                            <span class="span-lbl"><i class="fas fa-arrows-alt-h" style="font-size:9px;"></i></span>
+                            <button class="span-btn ${roomSpan === 1 ? 'active' : ''}"
+                                    onclick="setRoomSpan('${w.extension_id}', 1, this)" title="Normal width (1 column)">1</button>
+                            <button class="span-btn ${roomSpan === 2 ? 'active' : ''}"
+                                    onclick="setRoomSpan('${w.extension_id}', 2, this)" title="Wide (2 columns)">2×</button>
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -139,26 +184,19 @@
         }
     }
 
+    // ── Channels ────────────────────────────────────────────────────────────────
     const widgetChannel = new BroadcastChannel('hecos_widgets');
-
     function broadcastWidgetSync() {
-        // Broadacst to same-tab listeners (iframes)
         widgetChannel.postMessage({ type: 'refresh' });
-        // Broadcast to other tabs
         localStorage.setItem('hecos_sidebar_sync', Date.now());
+        localStorage.setItem('hecos_room_sync', Date.now());
     }
 
+    // ── Sidebar visibility ───────────────────────────────────────────────────────
     async function toggleWidgetVisibility(id, visible, inputEl) {
-        if (!id || id === 'undefined') {
-            console.error("[WIDGETS] Cannot toggle visibility: Invalid ID", id);
-            return;
-        }
-        
-        // Visual feedback
+        if (!id || id === 'undefined') return;
         const card = inputEl.closest('.widget-card');
-        card.style.opacity = '0.5';
-        card.style.pointerEvents = 'none';
-
+        card.style.opacity = '0.5'; card.style.pointerEvents = 'none';
         try {
             const resp = await fetch(`/api/widgets/${id}/visible`, {
                 method: 'POST',
@@ -167,30 +205,75 @@
             });
             const data = await resp.json();
             if (data.ok) {
-                // UPDATE GLOBAL STATE to prevent reversion on next global save
                 if (window.cfg) {
                     if (!window.cfg.widgets) window.cfg.widgets = {};
                     if (!window.cfg.widgets.per_widget) window.cfg.widgets.per_widget = {};
                     if (!window.cfg.widgets.per_widget[id]) window.cfg.widgets.per_widget[id] = {};
                     window.cfg.widgets.per_widget[id].visible = visible;
-                    console.log(`[WIDGETS] Updated window.cfg.widgets.per_widget.${id}.visible = ${visible}`);
                 }
-
-                showToast(`Widget ${visible ? 'attivato' : 'disattivato'}`, 'info');
+                showToast(`Sidebar: widget ${visible ? 'attivato' : 'disattivato'}`, 'info');
                 broadcastWidgetSync();
-            } else {
-                throw new Error(data.error);
-            }
+            } else throw new Error(data.error);
         } catch (err) {
             showToast(`Errore: ${err.message}`, 'error');
-            // Revert checkbox on error
             inputEl.checked = !visible;
         } finally {
-            card.style.opacity = '1';
-            card.style.pointerEvents = 'all';
+            card.style.opacity = '1'; card.style.pointerEvents = 'all';
         }
     }
 
-    // Initialize
+    // ── Room visibility ──────────────────────────────────────────────────────────
+    async function toggleRoomVisibility(id, visible, inputEl) {
+        if (!id || id === 'undefined') return;
+        const card = inputEl.closest('.widget-card');
+        card.style.opacity = '0.5'; card.style.pointerEvents = 'none';
+        try {
+            const resp = await fetch(`/api/widgets/${id}/room_visible`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({visible})
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                // Dim/undim the span selector
+                const spanRow = document.getElementById(`span-row-${id}`);
+                if (spanRow) {
+                    spanRow.style.opacity = visible ? '' : '0.3';
+                    spanRow.style.pointerEvents = visible ? '' : 'none';
+                }
+                showToast(`Room: widget ${visible ? 'aggiunto' : 'rimosso'}`, 'info');
+                broadcastWidgetSync();
+            } else throw new Error(data.error);
+        } catch (err) {
+            showToast(`Errore: ${err.message}`, 'error');
+            inputEl.checked = !visible;
+        } finally {
+            card.style.opacity = '1'; card.style.pointerEvents = 'all';
+        }
+    }
+
+    // ── Room span ────────────────────────────────────────────────────────────────
+    async function setRoomSpan(id, span, btnEl) {
+        try {
+            const resp = await fetch(`/api/widgets/${id}/room_span`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({span})
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                // Update sibling buttons
+                const parent = btnEl.closest('.span-selector');
+                parent.querySelectorAll('.span-btn').forEach(b => b.classList.remove('active'));
+                btnEl.classList.add('active');
+                showToast(`Larghezza: ${span === 2 ? 'doppio' : 'normale'}`, 'info');
+                broadcastWidgetSync();
+            } else throw new Error(data.error);
+        } catch (err) {
+            showToast(`Errore: ${err.message}`, 'error');
+        }
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────────
     loadWidgetsPanel();
 </script>

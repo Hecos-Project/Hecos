@@ -160,6 +160,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   align-items: center;
   gap: 4px;
   transition: all .25s;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .topbar-chip.on  { background:rgba(var(--green-rgb),.1);  border-color:rgba(var(--green-rgb),.3);  color:var(--green); }
 .topbar-chip.off { background:rgba(var(--red-rgb),.07); border-color:rgba(var(--red-rgb),.25); color:var(--red); }
@@ -177,6 +179,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .topbar-link:hover {
   background: var(--glass-b);

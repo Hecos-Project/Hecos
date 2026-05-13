@@ -84,13 +84,18 @@ def _is_plugin_active(required_plugin: str, config: dict) -> bool:
 def _get_widget_prefs(ext_id: str, config: dict) -> dict:
     """
     Returns the per-widget user preferences from config["widgets"]["per_widget"][ext_id].
-    Defaults: visible=True.
+    Defaults: visible=True, room_visible=False, room_span=1.
     """
     if not config:
-        return {"visible": True}
+        return {"visible": True, "room_visible": False, "room_span": 1}
     prefs = config.get("widgets", {}).get("per_widget", {}).get(ext_id, {})
+    # Support both dict (from raw yaml) and Pydantic model
+    if hasattr(prefs, '__dict__'):
+        prefs = prefs.__dict__
     return {
-        "visible": prefs.get("visible", True),
+        "visible":      prefs.get("visible", True),
+        "room_visible": prefs.get("room_visible", False),
+        "room_span":    prefs.get("room_span", 1),
     }
 
 
@@ -161,14 +166,22 @@ def get_all_widgets(config: dict = None) -> list:
             order_index = None
 
         enriched = dict(manifest)
-        enriched["extension_id"] = ext_id # Ensure it's there even if manifest.json missed it
+        enriched["extension_id"]  = ext_id
         enriched["plugin_active"] = plugin_active
-        enriched["visible"] = prefs.get("visible", True)
-        enriched["order_index"] = order_index
+        enriched["visible"]       = prefs.get("visible", True)
+        enriched["room_visible"]  = prefs.get("room_visible", False)
+        enriched["room_span"]     = prefs.get("room_span", 1)
+        enriched["order_index"]   = order_index
         result.append(enriched)
+
+        logger.debug("EXT_LOADER",
+            f"Widget [{ext_id}] plugin_active={plugin_active} "
+            f"visible={enriched['visible']} room_visible={enriched['room_visible']} "
+            f"room_span={enriched['room_span']}")
 
     # Sort: widgets with an explicit order index first, then by discovery order
     result.sort(key=lambda m: (m["order_index"] is None, m["order_index"] or 0))
+    logger.debug("EXT_LOADER", f"get_all_widgets -> {len(result)} widgets found")
     return result
 
 

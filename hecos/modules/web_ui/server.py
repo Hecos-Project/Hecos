@@ -168,6 +168,12 @@ class HecosWebUIServer:
             from .routes_widgets import init_widget_routes
             init_widget_routes(app, self.config_manager, self.logger)
 
+            # ── Control Room Module B — Standalone /home page ────────────────
+            from .routes_home import init_home_routes
+            init_home_routes(app, self.config_manager, self.logger)
+            # ─────────────────────────────────────────────────────────────────
+
+
             from .routes_history import history_bp
             app.register_blueprint(history_bp)
 

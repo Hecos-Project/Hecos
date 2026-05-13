@@ -16,9 +16,11 @@ function populateSystemUI() {
     setCheck('sys-flask-debug', sys.flask_debug ?? false);
     setVal('sys-language', c.language || 'en');
     
-    // HTTPS config
+    // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
     setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
+    setCheck('wui-control-room-panel', webUiPlug.control_room_panel ?? true);
+    setCheck('wui-control-room-home', webUiPlug.control_room_home ?? true);
 
     const sysNet = (c.plugins || {}).SYS_NET || {};
     setCheck('sys-proxy-enabled', sysNet.proxy_enabled ?? false);
@@ -83,7 +85,9 @@ function buildSystemPayload() {
                 proxy_url: getV('sys-proxy-url', snet.proxy_url || "")
             },
             WEB_UI: {
-                https_enabled: getC('sys-https-enabled', wui.https_enabled ?? false)
+                https_enabled: getC('sys-https-enabled', wui.https_enabled ?? false),
+                control_room_panel: getC('wui-control-room-panel', wui.control_room_panel ?? true),
+                control_room_home: getC('wui-control-room-home', wui.control_room_home ?? true)
             }
         }
     };

@@ -7,6 +7,8 @@
 <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}">
+<!-- Control Room Module A -->
+<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -89,6 +91,8 @@
 </script>
 
 {% include 'modules/chat_sidebar.html' %}
+<!-- Control Room Panel — Module A -->
+{% include 'modules/control_room_panel.html' %}
 {% include 'modules/neural_link.html' %}
 
 <div id="main">
@@ -164,6 +168,9 @@
 {% endif %}
 <!-- WEB_UI Sidebar Widget Extensions -->
 <script src="/static/js/sidebar_widgets.js?v={{ version }}"></script>
+<!-- Control Room Module A -->
+<script src="/static/js/control_room_grid.js?v={{ version }}&t=202605130718"></script>
+<script src="/static/js/control_room.js?v={{ version }}&t=202605130718"></script>
 <script src="/ext/quick_links/static/js/quick_links.js?v={{ version }}"></script>
 <!-- WEB_UI Emoticons Extension -->
 <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>

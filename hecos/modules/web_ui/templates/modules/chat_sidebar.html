@@ -128,7 +128,21 @@
   <div class="sidebar-footer">
     <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos — Created by <strong>Antonio Meloni</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
   </div>
+
+  <!-- Control Room Expand Button (Module A) -->
+  {% if zconfig.get('plugins', {}).get('WEB_UI', {}).get('control_room_panel', True) %}
+  <button id="sidebar-expand-btn"
+          onclick="window.controlRoom && window.controlRoom.toggle()"
+          title="{{ t('room_open') or 'Open Control Room' }}"
+          aria-label="Toggle Control Room">
+    <i class="fas fa-th-large"></i>
+    <span>CONTROL ROOM</span>
+    <i class="fas fa-chevron-right" id="sidebar-expand-chevron"></i>
+  </button>
+  {% endif %}
+
   <script>
     console.log("[WIDGETS] Sidebar loaded. has_widgets={{ has_widgets|tojson }}");
   </script>
 </div>
+

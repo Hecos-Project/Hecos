@@ -398,7 +398,10 @@ class SystemFlagsConfig(BaseModel):
 # ─── WIDGETS ──────────────────────────────────────────────────────────────────
 
 class WidgetPersistence(BaseModel):
-    visible: bool = True
+    visible: bool = True           # sidebar visibility
+    room_visible: bool = False     # control room visibility (opt-in)
+    room_span: int = 1             # 1 = normal column, 2 = wide (spans 2 cols)
+    room_order: Optional[int] = None  # explicit drag-and-drop position
 
 class WidgetsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
@@ -406,6 +409,7 @@ class WidgetsConfig(BaseModel):
     per_widget: Dict[str, WidgetPersistence] = Field(default_factory=dict)
     sidebar_status_collapsed: bool = False
     sidebar_audio_collapsed: bool = False
+    room_layout: List[str] = Field(default_factory=list)  # ordered list of ext_ids for the room grid
 
 
 # ─── ROOT ─────────────────────────────────────────────────────────────────────
