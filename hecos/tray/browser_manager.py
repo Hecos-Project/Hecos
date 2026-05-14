@@ -6,8 +6,10 @@ import webbrowser
 from hecos.tray.config import SYSTEM_YAML, PLUGINS_YAML, load_settings, HECOS_PORT
 from hecos.tray.network_utils import get_scheme, get_urls
 
-# ── Cached CDP status ─────────────────────────────────────────────────────────
+# ── Global Throttle ───────────────────────────────────────────────────────────
 _CDP_ALIVE: bool = False
+_LAST_OPEN_TIME: float = 0
+# ──────────────────────────────────────────────────────────────────────────────
 
 def set_cdp_alive(value: bool) -> None:
     global _CDP_ALIVE
@@ -152,44 +154,52 @@ def launch_ai_ready_browser(cdp_port: int = 9222, startup_url: str = "") -> bool
         return False
 
 def intelligent_open_webui(icon, item):
-    """Intelligently opens or refreshes the Hecos WebUI via CDP."""
+    """Intelligently opens or refreshes the Hecos WebUI via direct CDP JSON API."""
+    global _LAST_OPEN_TIME
+    import time
+    import urllib.request
+    import json
+    
+    now = time.time()
+    if now - _LAST_OPEN_TIME < 6:
+        return
+    _LAST_OPEN_TIME = now
+
     chat_url, _ = get_urls()
     cdp_port = _get_cdp_port()
     
+    # ── Try direct CDP API detection (Reliable & Lightweight) ─────────────────
     if is_ai_ready_browser_running(cdp_port):
         try:
-            from hecos.modules.browser import engine
-            if not engine.is_running():
-                engine.launch(mode="cdp_mode", cdp_port=cdp_port)
-            
-            tabs = engine.list_tabs()
-            found_any = False
-            for tab in tabs:
-                if f":{HECOS_PORT}" in tab.get("url", ""):
-                    try:
-                        page_obj = None
-                        for ctx in engine._BROWSER.contexts:
-                            for p in ctx.pages:
-                                if p.url() == tab["url"]:
-                                    page_obj = p
-                                    break
-                        if page_obj:
-                            page_obj.reload(wait_until="domcontentloaded")
-                            page_obj.bring_to_front()
-                            found_any = True
-                    except Exception:
-                        continue
-            
-            if not found_any:
-                engine.new_tab(chat_url)
-            return
+            # CDP has a simple JSON endpoint to list tabs
+            with urllib.request.urlopen(f"http://localhost:{cdp_port}/json/list", timeout=2) as response:
+                tabs = json.loads(response.read().decode())
+                for tab in tabs:
+                    url = tab.get("url", "").lower()
+                    # Broad match for Hecos backend
+                    if f":{HECOS_PORT}" in url:
+                        # Tab found! Request browser to 'activate' it (bring to front)
+                        tab_id = tab.get("id")
+                        if tab_id:
+                            urllib.request.urlopen(f"http://localhost:{cdp_port}/json/activate/{tab_id}", timeout=2).read()
+                        return # Exit, tab was found and activated
         except Exception as e:
-            print(f"[TRAY] Intelligent refresh error: {e}")
+            print(f"[TRAY] CDP JSON scan failed: {e}")
+    # ──────────────────────────────────────────────────────────────────────────
 
+    # Fallback: open via OS default
     webbrowser.open(chat_url)
 
 def intelligent_open_ai_browser(icon, item):
     """Specific helper for the AI Playwright browser."""
+    global _LAST_OPEN_TIME
+    import time
+    now = time.time()
+    if now - _LAST_OPEN_TIME < 10:
+        print("[TRAY] Throttling redundant AI browser open request.")
+        return
+    _LAST_OPEN_TIME = now
+    
     try:
         from hecos.modules.browser import engine
         s = load_settings()

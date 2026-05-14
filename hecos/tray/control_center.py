@@ -169,6 +169,31 @@ if __name__ == "__main__":
             border_radius=6,
         )
 
+        browser_val = ft.Text("Detecting...", size=11, weight="bold", color=MUTED) if cdp_ok else ft.Text("Not Detected", size=11, weight="bold", color=MUTED)
+        browser_row = ft.Container(
+            content=ft.Row([
+                ft.Text("Active Engine", size=11, color=MUTED, expand=1),
+                browser_val,
+            ]), padding=ft.Padding(16, 9, 16, 9)
+        )
+        
+        def fetch_browser_version():
+            import urllib.request, json
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{cdp_p}/json/version", timeout=1) as response:
+                    data = json.loads(response.read().decode())
+                    b = data.get("Browser", "Unknown")
+                    browser_val.value = b
+                    browser_val.color = TEXT
+            except Exception:
+                browser_val.value = "Active (Engine Unknown)"
+                browser_val.color = ACCENT
+            try: page.update()
+            except: pass
+            
+        if cdp_ok:
+            threading.Thread(target=fetch_browser_version, daemon=True).start()
+
         return ft.Column([
             _title("System Status"),
             ft.Container(height=10),
@@ -180,10 +205,10 @@ if __name__ == "__main__":
             ),
             toggle_btn,
             network_section,
-            _section_label("BROWSER"),
+            _section_label("BROWSER (CDP)"),
             _card(
-                _info_row("CDP Port",         str(cdp_p)),
-                _info_row("AI-Ready Browser", "🟢 Active" if cdp_ok else "⚫ Not Detected", ACCENT if cdp_ok else MUTED),
+                _info_row("Connection", f"🟢 Port {cdp_p} Open" if cdp_ok else f"🔴 Port {cdp_p} Closed", ACCENT if cdp_ok else RED),
+                browser_row,
             ),
             ft.Container(height=8),
             _safe_btn("↻ Refresh", SURFACE, TEXT, refresh),
