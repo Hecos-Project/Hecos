@@ -1,6 +1,6 @@
 <div id="tab-widgets" class="panel">
     <div class="card">
-        <div class="card-title"><i class="fas fa-puzzle-piece"></i> {{ t('webui_conf_widgets_title') }}</div>
+        <div class="card-title">{{ t('webui_conf_widgets_title') }}</div>
         <p class="muted" style="font-size: 11px; margin-bottom: 20px;">
             {{ t('webui_conf_widgets_desc') }}
         </p>
@@ -10,8 +10,8 @@
             <div style="display:flex; align-items:center; gap:12px;">
                 <div style="font-size:20px; color:var(--accent);"><i class="fas fa-eye"></i></div>
                 <div>
-                    <div style="font-size:13px; font-weight:600;">{{ t('sidebar_widgets_global_title') or 'Mostra Widgets nella Sidebar' }}</div>
-                    <div style="font-size:11px; color:var(--muted);">{{ t('sidebar_widgets_global_desc') or 'Se disattivato, la sezione widgets sparirà completamente dalla sidebar.' }}</div>
+                    <div style="font-size:13px; font-weight:600;">{{ t('sidebar_widgets_global_title') }}</div>
+                    <div style="font-size:11px; color:var(--muted);">{{ t('sidebar_widgets_global_desc') }}</div>
                 </div>
             </div>
             <label class="switch no-autosave">

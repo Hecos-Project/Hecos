@@ -30,6 +30,10 @@ overrides:
     When the user mentions smartphone, mobile, or browser, always use target='client'. 
     If they mention 'my cam' or 'pc webcam', use target='server'.
 
+  # 🎵 MEDIA PLAYER: Overcome physical limitation roleplay
+  MEDIA_PLAYER: >
+    You are connected to the system's local media player. Even if you don't have physical ears or eyes, ALWAYS use MEDIA_PLAYER tools to fulfill any request concerning music, audio, playing, pausing, or stopping tracks. Do not tell the user you lack the ability to hear.
+
   # ─────────────────────────────────────────────────────────────────────────────
   # 💡 [IDEAS & EXAMPLES] - Copy and uncomment (remove #) to activate
   # ─────────────────────────────────────────────────────────────────────────────

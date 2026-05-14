@@ -8,6 +8,324 @@
     "lazy_load": true,
     "on_load": true,
     "is_class_based": true,
+    "commands": {
+        "add_to_playlist": "Add a file to an existing playlist (creates it if missing).",
+        "create_playlist": "Create a named playlist with a list of file paths.",
+        "delete_playlist": "Delete a named playlist permanently.",
+        "get_playlist": "Show the contents of a saved playlist.",
+        "get_status": "Return the current playback status (track name, position, volume).",
+        "list_playlists": "List all saved playlists with their track count.",
+        "next_track": "Skip to the next track in the current queue.",
+        "pause": "Pause or resume the current track.",
+        "play": "Play a media file or URL.",
+        "play_by_index": "Jump directly to a track by position in the current queue (0-based).",
+        "play_playlist": "Load and play a saved playlist.",
+        "prev_track": "Go back to the previous track in the current queue.",
+        "remove_from_playlist": "Remove a track from a playlist by its position (1-based).",
+        "scan_folder": "Scan a folder for audio/video files and optionally save as a playlist.",
+        "set_volume": "Set playback volume.",
+        "stop": "Stop playback completely."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__add_to_playlist",
+                "description": "Add a file to an existing playlist (creates it if missing).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Playlist name."
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Absolute file path to add."
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "path"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__create_playlist",
+                "description": "Create a named playlist with a list of file paths.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Playlist name (e.g. 'Jazz Evening')."
+                        },
+                        "items": {
+                            "type": "string",
+                            "description": "Comma-separated list of absolute file paths."
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__delete_playlist",
+                "description": "Delete a named playlist permanently.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Playlist name to delete."
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__get_playlist",
+                "description": "Show the contents of a saved playlist.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Playlist name."
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__get_status",
+                "description": "Return the current playback status (track name, position, volume).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__list_playlists",
+                "description": "List all saved playlists with their track count.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__next_track",
+                "description": "Skip to the next track in the current queue.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__pause",
+                "description": "Pause or resume the current track.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__play",
+                "description": "Play a media file or URL.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path_or_url": {
+                            "type": "string",
+                            "description": "Absolute file path or HTTP/HTTPS URL to play."
+                        },
+                        "playlist_name": {
+                            "type": "string",
+                            "description": "(Optional) The name of a saved playlist to queue up."
+                        }
+                    },
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__play_by_index",
+                "description": "Jump directly to a track by position in the current queue (0-based).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "index": {
+                            "type": "integer",
+                            "description": "Parameter index"
+                        }
+                    },
+                    "required": [
+                        "index"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__play_playlist",
+                "description": "Load and play a saved playlist.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Playlist name."
+                        },
+                        "shuffle": {
+                            "type": "boolean",
+                            "description": "If True, play tracks in random order."
+                        },
+                        "index": {
+                            "type": "integer",
+                            "description": "0-based index to start playback from."
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__prev_track",
+                "description": "Go back to the previous track in the current queue.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__remove_from_playlist",
+                "description": "Remove a track from a playlist by its position (1-based).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Playlist name."
+                        },
+                        "index": {
+                            "type": "integer",
+                            "description": "1-based position of the track to remove."
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "index"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__scan_folder",
+                "description": "Scan a folder for audio/video files and optionally save as a playlist.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "folder": {
+                            "type": "string",
+                            "description": "Absolute path to the folder to scan."
+                        },
+                        "save_as": {
+                            "type": "string",
+                            "description": "If provided, save the result as a named playlist."
+                        },
+                        "recursive": {
+                            "type": "boolean",
+                            "description": "If True, scan subfolders too (default: True)."
+                        },
+                        "auto_play": {
+                            "type": "boolean",
+                            "description": "If True, start playback immediately after scan (default: True)."
+                        }
+                    },
+                    "required": [
+                        "folder"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__set_volume",
+                "description": "Set playback volume.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "level": {
+                            "type": "integer",
+                            "description": "Volume from 0 (mute) to 100 (max)."
+                        }
+                    },
+                    "required": [
+                        "level"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEDIA_PLAYER__stop",
+                "description": "Stop playback completely.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": []
+                }
+            }
+        }
+    ],
     "config_schema": {
         "enabled": {
             "type": "bool",

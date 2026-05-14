@@ -668,8 +668,8 @@
         "webui_desc_igen": "Generazione Immagini AI (Pollinations/Flux)",
         "webui_desc_drive": "Gestore File HTTP (Hecos Drive)",
         "webui_desc_triggers": "Trigger PTT via Media Keys (iPhone), Bluetooth & Webhooks",
-        "hub_mod_widgets": "Gestore Widget",
-        "webui_conf_widgets_title": "Widget Sidebar",
+        "hub_mod_widgets": "Widget Manager",
+        "webui_conf_widgets_title": "Widget Manager",
         "webui_conf_widgets_desc": "Personalizza l'aspetto e il comportamento dei moduli nella barra laterale. Le modifiche alla visibilità sono applicate in tempo reale.",
         "ext_quick_links_title": "Collegamenti Rapidi",
         "ext_quick_links_desc": "Scorciatoie rapide alle funzioni e cartelle di sistema più utilizzate.",
@@ -879,6 +879,8 @@
         "webui_mp_select_playlist": "Seleziona Playlist...",
         "sidebar_manage_widgets": "Gestisci Widget",
         "sidebar_empty_title": "Qui non c'è niente",
-        "sidebar_empty_add": "Aggiungi Widgets"
+        "sidebar_empty_add": "Aggiungi Widgets",
+        "sidebar_widgets_global_title": "Mostra Widgets nella Sidebar",
+        "sidebar_widgets_global_desc": "Se disattivato, la sezione widgets sparirà completamente dalla barra laterale."
     }
 }

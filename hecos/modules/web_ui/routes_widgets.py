@@ -197,12 +197,14 @@ def init_widget_routes(app, config_manager, logger_ref=None):
             room_visible = w.get("room_visible", False)
             room_span = w.get("room_span", 1)
             room_theme = w.get("theme", "default")
+            room_height = w.get("room_height", None)
             _log.debug(f"[ROOM]   widget={ext_id} room_visible={room_visible} room_span={room_span} theme={room_theme}")
             if room_visible:
                 room_widgets.append({
                     **w,
                     "room_visible": True,
                     "room_span": room_span,
+                    "room_height": room_height,
                     "theme": room_theme
                 })
 
@@ -304,6 +306,19 @@ def init_widget_routes(app, config_manager, logger_ref=None):
             _save_config()
             return jsonify({"ok": True, "ext_id": ext_id, "theme": theme})
         return jsonify({"ok": False, "error": "Failed to update theme"}), 500
+
+    # -- POST /api/widgets/<ext_id>/room_height -----------------------------------
+    @app.route("/api/widgets/<ext_id>/room_height", methods=["POST"])
+    @login_required
+    def api_set_widget_room_height(ext_id):
+        data = request.get_json(silent=True) or {}
+        height = data.get("height")  # None is valid (resets to default)
+        _log.info(f"WIDGETS: Room height [{ext_id}] -> {height}")
+        res = config_manager.set(height, "widgets", "per_widget", ext_id, "room_height")
+        if res:
+            _save_config()
+            return jsonify({"ok": True, "ext_id": ext_id, "room_height": height})
+        return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
     # -- PATCH /api/widgets/room/layout -------------------------------------------
     @app.route("/api/widgets/room/layout", methods=["PATCH"])

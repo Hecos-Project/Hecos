@@ -651,7 +651,7 @@
         "webui_desc_drive": "HTTP File Manager (Hecos Drive)",
         "webui_desc_triggers": "PTT via Media Keys (iPhone), Bluetooth & Webhooks",
         "hub_mod_widgets": "Widget Manager",
-        "webui_conf_widgets_title": "Sidebar Widgets",
+        "webui_conf_widgets_title": "Widget Manager",
         "webui_conf_widgets_desc": "Personalize the layout and behavior of your sidebar modules. Visibility changes are applied in real-time.",
         "ext_quick_links_title": "Quick Links",
         "ext_quick_links_desc": "Quick shortcuts to most used system functions and folders.",
@@ -859,6 +859,8 @@
         "webui_media_vault_title": "Media Vault & Privacy",
         "webui_media_vault_desc": "Manage images, audio and video generated and saved by Hecos on your default local disk.",
         "webui_media_open_folder": "Open Storage Folder",
-        "webui_mp_select_playlist": "Select Playlist..."
+        "webui_mp_select_playlist": "Select Playlist...",
+        "sidebar_widgets_global_title": "Show Widgets in Sidebar",
+        "sidebar_widgets_global_desc": "If disabled, the widgets section will completely disappear from the sidebar."
     }
 }
