@@ -6,7 +6,7 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 # === Configuration ===
 HECOS_PORT = 7070
 STATUS_POLL_INTERVAL = 3  # seconds (reduced for better responsiveness)
-LOGO_PATH = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png")
+LOGO_PATH = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly_Mask_001.ico")
 VERSION_FILE = os.path.join(_ROOT, "hecos", "core", "version")
 SYSTEM_YAML = os.path.join(_ROOT, "hecos", "config", "data", "system.yaml")
 PLUGINS_YAML = os.path.join(_ROOT, "hecos", "config", "data", "plugins.yaml")
