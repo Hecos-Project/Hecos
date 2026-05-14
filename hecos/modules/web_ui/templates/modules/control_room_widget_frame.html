@@ -179,7 +179,14 @@ button:hover {
 {% endif %}
 
 </head>
-<body class="wt-{{ widget_theme or 'default' }}">
+{% set aes_style = "" %}
+{% if ext_manifest.bg_image %}
+    {% set aes_style = "background-image: url('/media/file?path=" ~ (ext_manifest.bg_image | urlencode) ~ "') !important; background-size: cover !important; background-position: center !important;" %}
+{% elif ext_manifest.bg_color %}
+    {% set aes_style = "background-color: " ~ ext_manifest.bg_color ~ " !important; background-image: none !important;" %}
+{% endif %}
+
+<body class="wt-{{ widget_theme or 'default' }}" style="{{ aes_style }}">
 
 <div id="main-wrapper">
   {% include ext_id ~ '_widget.html' %}

@@ -103,6 +103,8 @@ def _get_widget_prefs(ext_id: str, config: dict) -> dict:
         "room_span":    prefs.get("room_span", 1) if isinstance(prefs, dict) else getattr(prefs, 'room_span', 1),
         "room_height":  prefs.get("room_height", None) if isinstance(prefs, dict) else getattr(prefs, 'room_height', None),
         "theme":        prefs.get("theme", "default") if isinstance(prefs, dict) else getattr(prefs, 'theme', 'default'),
+        "bg_color":     prefs.get("bg_color", "") if isinstance(prefs, dict) else getattr(prefs, 'bg_color', ""),
+        "bg_image":     prefs.get("bg_image", "") if isinstance(prefs, dict) else getattr(prefs, 'bg_image', ""),
     }
 
 
@@ -180,6 +182,8 @@ def get_all_widgets(config: dict = None) -> list:
         enriched["room_span"]     = prefs.get("room_span", 1)
         enriched["room_height"]   = prefs.get("room_height", None)
         enriched["theme"]         = prefs.get("theme", "default")
+        enriched["bg_color"]      = prefs.get("bg_color", "")
+        enriched["bg_image"]      = prefs.get("bg_image", "")
         enriched["order_index"]   = order_index
         result.append(enriched)
 

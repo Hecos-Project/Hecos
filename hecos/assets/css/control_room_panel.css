@@ -103,6 +103,11 @@
   border-color: rgba(var(--accent-rgb), 0.35);
   transform: translateY(-1px);
 }
+/* Allow popover to overflow when active */
+.room-widget-card.aes-active {
+  overflow: visible !important;
+  z-index: 100;
+}
 /* Empty state inside room grid */
 .room-empty-state {
   grid-column: 1 / -1;
@@ -219,7 +224,7 @@
   font-size: 11px;
   opacity: 0.7;
 }
-.room-card-span-btn, .room-card-remove-btn {
+.room-card-span-btn, .room-card-remove-btn, .room-card-aes-btn {
   height: 24px;
   border-radius: 5px;
   border: 1px solid var(--border);
@@ -340,4 +345,77 @@
   z-index: 99999;
   pointer-events: none;
   box-shadow: 0 0 8px var(--accent);
+}
+/* ── Aesthetic Popover ────────────────────────────────────────────────────────── */
+.room-card-aes-popover {
+  position: absolute;
+  top: 36px;
+  right: 6px;
+  width: 200px;
+  z-index: 100;
+  background: var(--bg-blur);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  padding: 4px;
+  animation: popIn 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.room-card-aes-btn:hover { border-color: var(--accent); color: var(--accent); }
+.room-card-aes-btn.active { background: rgba(var(--accent-rgb),.12); color: var(--accent); border-color: var(--accent); }
+
+/* ── Popover Internals ────────────────────────────────────────────────────────── */
+.room-card-aes-popover select {
+  width: 100%;
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  margin-top: 4px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.room-card-aes-popover select:hover {
+  border-color: var(--accent);
+}
+.room-card-aes-popover label {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+.room-card-aes-popover .aes-row {
+  margin-bottom: 12px;
+  padding: 4px;
+}
+.room-card-aes-popover .aes-row:last-child {
+  margin-bottom: 4px;
+}
+.room-card-aes-popover input[type="text"].form-control {
+  background: var(--bg3) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+  font-family: inherit;
+  font-size: 11px;
+}
+.room-card-aes-popover input[type="text"]:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.room-card-aes-popover .btn {
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
 }

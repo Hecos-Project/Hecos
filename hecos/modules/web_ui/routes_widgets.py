@@ -320,6 +320,45 @@ def init_widget_routes(app, config_manager, logger_ref=None):
             return jsonify({"ok": True, "ext_id": ext_id, "room_height": height})
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
+    # -- POST /api/widgets/<ext_id>/aesthetics ------------------------------------
+    @app.route("/api/widgets/<ext_id>/aesthetics", methods=["POST"])
+    @login_required
+    def api_set_widget_aesthetics(ext_id):
+        """Sets bg_color and bg_image for a specific widget."""
+        data = request.get_json(silent=True) or {}
+        bg_color = data.get("bg_color")
+        bg_image = data.get("bg_image")
+        
+        _log.info(f"WIDGETS: Aesthetics [{ext_id}] -> color={bg_color}, image={bg_image}")
+        
+        # We set them individually but save once
+        res_c = config_manager.set(bg_color, "widgets", "per_widget", ext_id, "bg_color")
+        res_i = config_manager.set(bg_image, "widgets", "per_widget", ext_id, "bg_image")
+        
+        if res_c and res_i:
+            _save_config()
+            return jsonify({"ok": True, "ext_id": ext_id, "bg_color": bg_color, "bg_image": bg_image})
+            
+        return jsonify({"ok": False, "error": "Failed to update aesthetics"}), 500
+
+    # -- POST /api/widgets/<ext_id>/aesthetics/reset ------------------------------
+    @app.route("/api/widgets/<ext_id>/aesthetics/reset", methods=["POST"])
+    @login_required
+    def api_reset_widget_aesthetics(ext_id):
+        """Clears all aesthetic overrides (theme, color, image) for a widget."""
+        _log.info(f"WIDGETS: Resetting aesthetics for [{ext_id}]")
+        
+        # We clear the specific keys by setting them to None or defaults
+        res1 = config_manager.set("default", "widgets", "per_widget", ext_id, "theme")
+        res2 = config_manager.set(None, "widgets", "per_widget", ext_id, "bg_color")
+        res3 = config_manager.set(None, "widgets", "per_widget", ext_id, "bg_image")
+        
+        if res1 and res2 and res3:
+            _save_config()
+            return jsonify({"ok": True, "ext_id": ext_id})
+            
+        return jsonify({"ok": False, "error": "Failed to reset aesthetics"}), 500
+
     # -- PATCH /api/widgets/room/layout -------------------------------------------
     @app.route("/api/widgets/room/layout", methods=["PATCH"])
     @login_required

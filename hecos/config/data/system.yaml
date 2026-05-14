@@ -71,6 +71,8 @@ extensions:
       - rgba(33,186,13,0.2)
       - rgba(127,122,122,0.2)
     calendar_sync_urls: []
+    bg_color: ''
+    bg_image: ''
 filters:
   remove_asterisks: both
   remove_round_brackets: voice

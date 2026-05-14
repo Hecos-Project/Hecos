@@ -47,37 +47,15 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div style="font-size:12px; color:var(--muted); font-weight:bold;">{{ translations['ext_calendar_color_label'] }}</div>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_0'] }}</label>
-                <input type="color" id="color-day-0" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_1'] }}</label>
-                <input type="color" id="color-day-1" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_2'] }}</label>
-                <input type="color" id="color-day-2" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_3'] }}</label>
-                <input type="color" id="color-day-3" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_4'] }}</label>
-                <input type="color" id="color-day-4" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_5'] }}</label>
-                <input type="color" id="color-day-5" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <label style="font-size:11px;">{{ translations['day_6'] }}</label>
-                <input type="color" id="color-day-6" oninput="hcal.handleColorInput()" style="width:24px; height:24px; border:none; background:none; cursor:pointer;">
-            </div>
+        
+        <!-- Standard Hecos Aesthetic Picker for Calendar Background -->
+        <div id="cal-bg-picker-container" style="margin-bottom: 20px;"></div>
+
+        <div style="font-size:11px; color:var(--muted); font-weight:bold; margin-bottom:10px;">{{ translations['ext_calendar_day_colors'] or 'Daily Row Colors' }}</div>
+        <div id="cal-days-aesthetic-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px;">
+            <!-- Populated via JS with HecosAestheticPicker instances -->
         </div>
-        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Selections are saved automatically after a short delay.</div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:12px;">* Selections are saved automatically after a short delay.</div>
     </div>
 
     <!-- External Sync Settings (Expansion) -->
@@ -244,12 +222,13 @@
 <script>
 (function() {
     let _calendar = null;
-    let _localeStr = 'en-US';  // updated by init()
+    let _localeStr = 'en-US'; 
     let _dayColors = {};
+    let _dayPickers = {};
+    let _bgPicker = null;
 
     function _applyDayColors(colors) {
         _dayColors = colors || {};
-        console.log("CALENDAR: applying day colors", _dayColors);
         let styleEl = document.getElementById('cal-dynamic-styles');
         if (!styleEl) {
             styleEl = document.createElement('style');
@@ -261,71 +240,12 @@
         for (let i=0; i<7; i++) {
             const col = _dayColors[i];
             if (col && col !== 'transparent' && col !== '#00000000') {
-                // Targeting both the cell and its children to ensure visibility
                 css += `#hecos-fullcalendar .fc-day-${dayMap[i]} { background-color: ${col} !important; }\n`;
                 css += `#hecos-fullcalendar .fc-day-${dayMap[i]} .fc-daygrid-day-bg { background-color: ${col} !important; }\n`;
                 css += `#hecos-fullcalendar .fc-day-${dayMap[i]} .fc-daygrid-day-frame { background-color: transparent !important; }\n`;
             }
         }
         styleEl.textContent = css;
-    }
-
-    function _hexToRgba(hex, alpha) {
-        if (!hex || hex === 'transparent' || hex === '#000000') return 'transparent';
-        if (hex.startsWith('rgba')) return hex;
-        let r=0, g=0, b=0;
-        try {
-            if (hex.length === 4) {
-                r = parseInt(hex[1] + hex[1], 16);
-                g = parseInt(hex[2] + hex[2], 16);
-                b = parseInt(hex[3] + hex[3], 16);
-            } else if (hex.length === 7) {
-                r = parseInt(hex.substring(1,3), 16);
-                g = parseInt(hex.substring(3,5), 16);
-                b = parseInt(hex.substring(5,7), 16);
-            }
-            const res = `rgba(${r},${g},${b},${alpha})`;
-            console.log(`CALENDAR: converted ${hex} to ${res}`);
-            return res;
-        } catch(e) {
-            console.error("CALENDAR: hex conversion error", e);
-            return hex;
-        }
-    }
-
-    function _fmt(iso) {
-        if (!iso) return '';
-        try {
-            const d = new Date(iso);
-            return d.toLocaleDateString(_localeStr, {weekday:'short', day:'2-digit', month:'short', year:'numeric'})
-                + ' ' + d.toLocaleTimeString(_localeStr, {hour:'2-digit', minute:'2-digit'});
-        } catch(e) { return iso; }
-    }
-
-    function _showPopup(info) {
-        const popup = document.getElementById('cal-event-popup');
-        const ev = info.event;
-        const notes = ev.extendedProps?.notes || '';
-        const hasReminder = ev.extendedProps?.has_reminder;
-        
-        popup.innerHTML = `
-            <div class="pop-title" style="display:flex; align-items:center; justify-content:space-between;">
-                ${ev.title}
-                ${hasReminder ? '<span title="Reminder Active" style="color:#f1c40f; font-size:14px;"><i class="fas fa-bell"></i></span>' : ''}
-            </div>
-            <div class="pop-time">📅 ${_fmt(ev.startStr)}${ev.endStr ? ' → ' + _fmt(ev.endStr) : ''}</div>
-            ${notes ? `<div class="pop-notes">${notes}</div>` : ''}
-            <div class="pop-actions" style="margin-top:12px; display:flex; gap:8px;">
-                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;"><i class="fas fa-edit"></i> {{ translations['chat_btn_edit'] }}</button>
-                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')"><i class="fas fa-trash-alt"></i> {{ translations['chat_btn_delete'] }}</button>
-                <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">{{ translations['ext_calendar_btn_cancel'] }}</button>
-            </div>
-        `;
-        popup.style.display = 'block';
-        // Position near click (fixed positioning)
-        const r = info.el.getBoundingClientRect();
-        popup.style.top  = (r.bottom + 6) + 'px';
-        popup.style.left = Math.min(r.left, window.innerWidth - 340) + 'px';
     }
 
     async function init() {
@@ -352,27 +272,45 @@
                 cntEl.value = calCfg.calendar_country;
             }
 
-            // Populate day colors
-            if (calCfg.day_colors) {
-                for (let i=0; i<7; i++) {
-                    const picker = document.getElementById(`color-day-${i}`);
-                    if (picker && calCfg.day_colors[i]) {
-                        // Extract hex from rgba for the picker
-                        let col = calCfg.day_colors[i];
-                        if (col.startsWith('rgba')) {
-                            const match = col.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                            if (match) {
-                                const r = parseInt(match[1]).toString(16).padStart(2,'0');
-                                const g = parseInt(match[2]).toString(16).padStart(2,'0');
-                                const b = parseInt(match[3]).toString(16).padStart(2,'0');
-                                col = `#${r}${g}${b}`;
-                            }
-                        }
-                        picker.value = col;
+            // --- ESTETICA: BACKGROUND GENERICO ---
+            _bgPicker = new HecosAestheticPicker('cal-bg-picker-container', {
+                initialColor: calCfg.bg_color || '',
+                initialImage: calCfg.bg_image || '',
+                colorLabel: 'Colore Sfondo Calendario',
+                onColorChange: () => saveSettings(),
+                onImageChange: () => saveSettings(),
+                onClearImage: () => saveSettings()
+            });
+
+            // --- ESTETICA: DAY COLORS GRID ---
+            const grid = document.getElementById('cal-days-aesthetic-grid');
+            grid.innerHTML = '';
+            for (let i=0; i<7; i++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.id = `cal-day-picker-${i}`;
+                grid.appendChild(dayDiv);
+
+                let col = calCfg.day_colors ? calCfg.day_colors[i] : '';
+                // Convert rgba to hex if needed for the picker UI
+                if (col && col.startsWith('rgba')) {
+                    const match = col.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                    if (match) {
+                        const r = parseInt(match[1]).toString(16).padStart(2,'0');
+                        const g = parseInt(match[2]).toString(16).padStart(2,'0');
+                        const b = parseInt(match[3]).toString(16).padStart(2,'0');
+                        col = `#${r}${g}${b}`;
                     }
                 }
+
+                _dayPickers[i] = new HecosAestheticPicker(dayDiv, {
+                    initialColor: col || '#00000000',
+                    showImage: false,
+                    colorLabel: t(`day_${i}`) || `Giorno ${i}`,
+                    onColorChange: () => saveSettings(),
+                    onColorLive: () => previewColors()
+                });
             }
-            // Populate sync URLs
+
             _syncUrls = calCfg.calendar_sync_urls || [];
             _renderSyncList();
 
@@ -587,13 +525,65 @@
             });
     }
 
+    function _hexToRgba(hex, alpha) {
+        if (!hex || hex === 'transparent' || hex === '#00000000') return 'transparent';
+        if (hex.startsWith('rgba')) return hex;
+        let r=0, g=0, b=0;
+        try {
+            if (hex.length === 4) {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            } else if (hex.length === 7) {
+                r = parseInt(hex.substring(1,3), 16);
+                g = parseInt(hex.substring(3,5), 16);
+                b = parseInt(hex.substring(5,7), 16);
+            }
+            return `rgba(${r},${g},${b},${alpha})`;
+        } catch(e) { return hex; }
+    }
+
+    function _fmt(iso) {
+        if (!iso) return '';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString(_localeStr, {weekday:'short', day:'2-digit', month:'short', year:'numeric'})
+                + ' ' + d.toLocaleTimeString(_localeStr, {hour:'2-digit', minute:'2-digit'});
+        } catch(e) { return iso; }
+    }
+
+    function _showPopup(info) {
+        const popup = document.getElementById('cal-event-popup');
+        const ev = info.event;
+        const notes = ev.extendedProps?.notes || '';
+        const hasReminder = ev.extendedProps?.has_reminder;
+        
+        popup.innerHTML = `
+            <div class="pop-title" style="display:flex; align-items:center; justify-content:space-between;">
+                ${ev.title}
+                ${hasReminder ? '<span title="Reminder Active" style="color:#f1c40f; font-size:14px;"><i class="fas fa-bell"></i></span>' : ''}
+            </div>
+            <div class="pop-time">📅 ${_fmt(ev.startStr)}${ev.endStr ? ' → ' + _fmt(ev.endStr) : ''}</div>
+            ${notes ? `<div class="pop-notes">${notes}</div>` : ''}
+            <div class="pop-actions" style="margin-top:12px; display:flex; gap:8px;">
+                <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;"><i class="fas fa-edit"></i> {{ translations['chat_btn_edit'] }}</button>
+                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')"><i class="fas fa-trash-alt"></i> {{ translations['chat_btn_delete'] }}</button>
+                <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">{{ translations['ext_calendar_btn_cancel'] }}</button>
+            </div>
+        `;
+        popup.style.display = 'block';
+        const r = info.el.getBoundingClientRect();
+        popup.style.top  = (r.bottom + 6) + 'px';
+        popup.style.left = Math.min(r.left, window.innerWidth - 340) + 'px';
+    }
+
+    // Existing FullCalendar logic remains the same...
     function previewColors() {
         let dayColors = [];
         for (let i=0; i<7; i++) {
-            const picker = document.getElementById(`color-day-${i}`);
-            if (picker && picker.value) {
-                dayColors[i] = _hexToRgba(picker.value, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
-                if (picker.value === '#000000') dayColors[i] = 'transparent';
+            if (_dayPickers[i]) {
+                const hex = _dayPickers[i].currentColor;
+                dayColors[i] = _hexToRgba(hex, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
             }
         }
         _applyDayColors(dayColors);
@@ -610,15 +600,16 @@
         const locale = document.getElementById('cal-set-locale').value;
         const country = document.getElementById('cal-set-country').value;
         
-        // Ensure dayColors is a full array of 7 strings to avoid Pydantic validation errors
         let dayColors = ["", "", "", "", "", "", ""];
         for (let i = 0; i < 7; i++) {
-            const picker = document.getElementById(`color-day-${i}`);
-            if (picker && picker.value) {
-                dayColors[i] = _hexToRgba(picker.value, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
-                if (picker.value === '#000000') dayColors[i] = 'transparent';
+            if (_dayPickers[i]) {
+                const hex = _dayPickers[i].currentColor;
+                dayColors[i] = _hexToRgba(hex, (i === 0 ? 0.35 : 1 === i ? 0.25 : 0.2));
             }
         }
+
+        const bg_color = _bgPicker ? _bgPicker.currentColor : '';
+        const bg_image = _bgPicker ? _bgPicker.currentImage : '';
 
         fetch('/hecos/config', {
             method: 'POST',
@@ -629,6 +620,8 @@
                         calendar_locale: locale, 
                         calendar_country: country,
                         day_colors: dayColors,
+                        bg_color: bg_color,
+                        bg_image: bg_image,
                         calendar_sync_urls: _syncUrls
                     } 
                 } 
@@ -638,6 +631,19 @@
         .then(d => {
             if (d.ok) {
                 _applyDayColors(dayColors);
+                // Apply background to the card locally for instant feedback
+                const card = document.getElementById('tab-calendar')?.querySelector('.card');
+                if (card) {
+                    if (bg_image) {
+                        card.style.backgroundImage = `url('/media/file?path=${encodeURIComponent(bg_image)}')`;
+                        card.style.backgroundSize = 'cover';
+                        card.style.backgroundPosition = 'center';
+                    } else {
+                        card.style.backgroundImage = 'none';
+                        card.style.backgroundColor = bg_color || '';
+                    }
+                }
+
                 if (_calendar) {
                     _calendar.setOption('locale', locale);
                     _calendar.refetchEvents();

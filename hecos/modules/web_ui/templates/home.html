@@ -13,7 +13,9 @@
 <!-- Module B standalone stylesheet -->
 <link rel="stylesheet" href="/assets/css/home.css?v={{ version }}">
 <!-- Control Room widget theme rules (.room-widget-card.theme-* etc.) -->
-<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=202605141445">
+<link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
+<script>console.log("HECOS_ROOM_HOME_V2_ACTIVE");</script>
 <!-- Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <!-- Typography (async, cache-friendly) -->
@@ -103,8 +105,12 @@
   };
 </script>
 
+<!-- Core Components -->
+<script src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
+<script src="/static/js/hecos_aesthetic_picker.js?v={{ version }}&t=202605141445"></script>
+
 <!-- Grid Engine -->
-<script src="/static/js/control_room_grid.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid.js?v={{ version }}&t=202605141445"></script>
 
 <!-- Initialize -->
 <script>

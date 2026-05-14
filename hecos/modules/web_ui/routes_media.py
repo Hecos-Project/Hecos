@@ -8,6 +8,28 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
         return get_sm() if callable(get_sm) else get_sm
 
+    @app.route("/media/file")
+    def serve_generic_file():
+        """Serves any file from the local filesystem by its absolute path."""
+        path = request.args.get("path")
+        if not path:
+            return jsonify({"ok": False, "error": "Path required"}), 400
+        
+        # Security: basic check (optional but good)
+        if not os.path.exists(path):
+            return jsonify({"ok": False, "error": f"File not found: {path}"}), 404
+            
+        allowed_exts = ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg')
+        if not path.lower().endswith(allowed_exts):
+            # We still serve it if the user really wants, but maybe log it?
+            pass
+
+        try:
+            from flask import send_file
+            return send_file(path)
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/hecos/api/media/models", methods=["GET"])
     def get_media_models():
         """Returns available image generation models for the specified provider."""

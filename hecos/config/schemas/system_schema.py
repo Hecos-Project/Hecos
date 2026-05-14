@@ -329,6 +329,8 @@ class CalendarExtensionConfig(BaseModel):
     calendar_country: str = "US"
     day_colors: List[str] = Field(default_factory=lambda: [""] * 7)
     calendar_sync_urls: List[str] = Field(default_factory=list)
+    bg_color: str = ""
+    bg_image: str = ""
 
     @field_validator('day_colors', mode='before')
     @classmethod
@@ -405,6 +407,8 @@ class WidgetPersistence(BaseModel):
     room_height: Optional[int] = None # Custom vertical height (pixels)
     room_order: Optional[int] = None  # explicit drag-and-drop position
     theme: str = "default"         # "default", "theme-cyber", "theme-alert", "theme-glass", etc.
+    bg_color: str = ""
+    bg_image: str = ""
 
 class WidgetsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')

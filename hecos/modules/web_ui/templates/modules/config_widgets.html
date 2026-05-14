@@ -195,25 +195,20 @@
                             <button class="span-btn ${roomSpan === 2 ? 'active' : ''}"
                                     onclick="setRoomSpan('${w.extension_id}', 2, this)" title="Wide (2 columns)">2×</button>
                         </div>
-                        <!-- Theme selector -->
-                        <div class="span-selector" id="theme-row-${w.extension_id}" style="${roomVisible ? '' : 'opacity:0.3; pointer-events:none;'}">
-                            <span class="span-lbl"><i class="fas fa-paint-brush" style="font-size:9px;"></i></span>
-                            <select onchange="setRoomTheme('${w.extension_id}', this.value)" style="background: var(--bg3); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; font-size: 10px; padding: 2px; cursor: pointer; outline: none;">
-                                <option value="default" ${roomTheme === 'default' ? 'selected' : ''}>Standard</option>
-                                <option value="cyber" ${roomTheme === 'cyber' ? 'selected' : ''}>Cyber</option>
-                                <option value="alert" ${roomTheme === 'alert' ? 'selected' : ''}>Alert</option>
-                                <option value="glass" ${roomTheme === 'glass' ? 'selected' : ''}>Glass</option>
-                                <option value="ghost" ${roomTheme === 'ghost' ? 'selected' : ''}>Ghost</option>
-                            </select>
-                        </div>
                     </div>
                 `;
                 container.appendChild(card);
+
+                // Prepare for sync
+                card.dataset.bg_color = w.bg_color || '';
+                card.dataset.bg_image = w.bg_image || '';
             });
         } catch (err) {
             container.innerHTML = `<div style="color:var(--red); padding:20px;">Error: ${err.message}</div>`;
         }
     }
+
+
 
     // ── Channels ────────────────────────────────────────────────────────────────
     const widgetChannel = new BroadcastChannel('hecos_widgets');
@@ -379,24 +374,7 @@
         }
     }
 
-    // ── Room theme ───────────────────────────────────────────────────────────────
-    async function setRoomTheme(id, theme) {
-        try {
-            const resp = await fetch(`/api/widgets/${id}/theme`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({theme})
-            });
-            const data = await resp.json();
-            if (data.ok) {
-                syncLocalConfig(id, 'theme', theme);
-                showToast('Tema aggiornato', 'info');
-                broadcastWidgetSync(id, 'theme', theme);
-            } else throw new Error(data.error);
-        } catch (err) {
-            showToast(`Errore: ${err.message}`, 'error');
-        }
-    }
+
 
     // ── Init ─────────────────────────────────────────────────────────────────────
     loadWidgetsPanel();

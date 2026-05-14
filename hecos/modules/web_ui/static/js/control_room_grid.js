@@ -31,12 +31,30 @@
             _widgetChannel = new BroadcastChannel('hecos_widgets');
             _widgetChannel.onmessage = (event) => {
                 const data = event.data;
-                console.log('[RoomGrid] BroadcastChannel signal:', data);
-                if (data && data.type === 'widget_update') {
-                    _syncLocalConfig(data.id, data.field, data.value);
+                if (!data) return;
+                
+                // Update local window.cfg immediately
+                _syncLocalConfigNoBroadcast(data.id, data.field, data.value);
+
+                // Snappy DOM update for aesthetics
+                const card = _grid?.querySelector(`.room-widget-card[data-id="${data.id}"]`);
+                if (card) {
+                    if (data.field === 'theme') {
+                        const themeVal = (data.value || 'default').replace('theme-', '');
+                        card.className = card.className.replace(/theme-\S+/g, '') + ' theme-' + themeVal;
+                    } else if (data.field === 'bg_color') {
+                        card.style.backgroundColor = data.value;
+                    } else if (data.field === 'bg_image') {
+                        card.style.backgroundImage = data.value ? `url('/media/file?path=${encodeURIComponent(data.value)}')` : 'none';
+                        card.style.backgroundSize = 'cover';
+                        card.style.backgroundPosition = 'center';
+                    }
                 }
-                // Call global instance method
-                if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
+
+                // If it's a structural change (visibility/order), we need a full refresh
+                if (data.field === 'visible' || data.field === 'order' || !['theme','bg_color','bg_image'].includes(data.field)) {
+                    if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
+                }
             };
             window.addEventListener('storage', (e) => {
                 if (e.key === 'hecos_room_sync') {
@@ -136,7 +154,15 @@
     
     // ─── Private: Local Config Sync ───────────────────────────────────────────
     function _syncLocalConfig(widgetId, field, value) {
-        // window.cfg exists on home.html, window.parent.cfg exists in the sliding panel.
+        _syncLocalConfigNoBroadcast(widgetId, field, value);
+        
+        // Broadcast to other tabs
+        if (_widgetChannel) {
+            _widgetChannel.postMessage({ type: 'widget_update', id: widgetId, field, value });
+        }
+    }
+
+    function _syncLocalConfigNoBroadcast(widgetId, field, value) {
         const cfg = window.cfg || (window.parent && window.parent.cfg);
         if (!cfg) return;
         
@@ -145,7 +171,6 @@
         if (!cfg.widgets.per_widget[widgetId]) cfg.widgets.per_widget[widgetId] = {};
         
         cfg.widgets.per_widget[widgetId][field] = value;
-        console.log(`[RoomGrid] Synced ${widgetId}.${field}=${value} to global cfg object.`);
     }
 
     // ─── Private: Render ─────────────────────────────────────────────────────
@@ -198,6 +223,11 @@
                         onclick="event.stopPropagation(); _roomGridToggleSpan('${w.extension_id}', this)"
                         title="${w.room_span === 2 ? 'Switch to normal width' : 'Switch to wide (2 columns)'}">
                     ${w.room_span === 2 ? '<i class="fas fa-compress-alt"></i> 2×' : '<i class="fas fa-expand-alt"></i> 1×'}
+                </button>
+                <button class="room-card-aes-btn"
+                        onclick="event.stopPropagation(); _roomGridOpenAes(event, '${w.extension_id}', this)"
+                        title="Personalizza estetica">
+                    <i class="fas fa-magic"></i>
                 </button>
                 <button class="room-card-remove-btn"
                         onclick="event.stopPropagation(); _roomGridRemoveWidget('${w.extension_id}')"
@@ -513,6 +543,120 @@
             _syncLocalConfig(id, 'room_height', null);
         } catch (err) { console.warn('[RoomGrid] reset height err:', err); }
     };
+
+    // ─── Global helpers: Aesthetic Popover ──────────────────────────────────────
+    global._roomGridOpenAes = function(e, id, btn) {
+        if (!_editing) return;
+        const card = _grid.querySelector(`.room-widget-card[data-id="${id}"]`);
+        if (!card) return;
+
+        // Toggle existing
+        if (btn._popover) {
+            btn._popover.remove();
+            btn._popover = null;
+            btn.classList.remove('active');
+            card.classList.remove('aes-active');
+            return;
+        }
+
+        // Close any other open popovers
+        document.querySelectorAll('.room-card-aes-popover').forEach(p => p.remove());
+        document.querySelectorAll('.room-card-aes-btn.active').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.room-widget-card.aes-active').forEach(c => c.classList.remove('aes-active'));
+
+        const popover = document.createElement('div');
+        popover.className = 'room-card-aes-popover';
+        card.appendChild(popover);
+        card.classList.add('aes-active');
+        btn._popover = popover;
+        btn.classList.add('active');
+
+        // Close on click outside
+        const closeHandler = (ev) => {
+            if (!popover.contains(ev.target) && ev.target !== btn && !btn.contains(ev.target)) {
+                popover.remove();
+                btn._popover = null;
+                btn.classList.remove('active');
+                card.classList.remove('aes-active');
+                document.removeEventListener('mousedown', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('mousedown', closeHandler), 10);
+
+        // Find widget data
+        const cfg = window.cfg || (window.parent && window.parent.cfg);
+        const prefs = cfg?.widgets?.per_widget?.[id] || {};
+
+        new HecosAestheticPicker(popover, {
+            showStyle: true,
+            initialStyle: prefs.theme || 'default',
+            initialColor: prefs.bg_color || '',
+            initialImage: prefs.bg_image || '',
+            onStyleChange: async (style) => {
+                card.className = card.className.replace(/theme-\S+/g, '') + ' theme-' + style;
+                _syncLocalConfig(id, 'theme', style);
+                try {
+                    await fetch(`/api/widgets/${id}/theme`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ theme: style })
+                    });
+                } catch (err) { console.warn('[RoomGrid] style save err:', err); }
+            },
+            onColorLive: (hex) => {
+                card.style.backgroundColor = hex;
+            },
+            onColorChange: async (hex) => {
+                card.style.backgroundColor = hex;
+                _syncLocalConfig(id, 'bg_color', hex);
+                _saveAesthetics(id, hex, prefs.bg_image);
+            },
+            onImageChange: async (path) => {
+                card.style.backgroundImage = `url('/media/file?path=${encodeURIComponent(path)}')`;
+                card.style.backgroundSize = 'cover';
+                card.style.backgroundPosition = 'center';
+                _syncLocalConfig(id, 'bg_image', path);
+                _saveAesthetics(id, prefs.bg_color, path);
+            },
+            onClearImage: async () => {
+                card.style.backgroundImage = 'none';
+                _syncLocalConfig(id, 'bg_image', '');
+                _saveAesthetics(id, prefs.bg_color, '');
+            },
+            onReset: async () => {
+                try {
+                    const resp = await fetch(`/api/widgets/${id}/aesthetics/reset`, { method: 'POST' });
+                    if (resp.ok) {
+                        // Reset DOM immediately
+                        card.style.backgroundColor = '';
+                        card.style.backgroundImage = '';
+                        card.className = card.className.replace(/theme-\S+/g, '') + ' theme-default';
+                        
+                        // Sync local & broadcast
+                        _syncLocalConfig(id, 'theme', 'default');
+                        _syncLocalConfig(id, 'bg_color', null);
+                        _syncLocalConfig(id, 'bg_image', null);
+                        
+                        // Close popover to show result
+                        popover.remove();
+                        btn._popover = null;
+                        btn.classList.remove('active');
+                        card.classList.remove('aes-active');
+                    }
+                } catch (err) { console.warn('[RoomGrid] reset err:', err); }
+            }
+        });
+    };
+
+    async function _saveAesthetics(id, color, image) {
+        try {
+            await fetch(`/api/widgets/${id}/aesthetics`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bg_color: color, bg_image: image })
+            });
+        } catch (err) { console.warn('[RoomGrid] aes save err:', err); }
+    }
 
     // ─── Export ───────────────────────────────────────────────────────────────
     global.controlRoomGrid = controlRoomGrid;
