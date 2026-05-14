@@ -182,6 +182,9 @@
         const card = document.createElement('div');
         const themeVal = (w.theme || 'default').replace('theme-', '');
         card.className = `room-widget-card border-glow${w.room_span === 2 ? ' span-2' : ''} theme-${themeVal}`;
+        if (w.room_height) {
+            card.style.minHeight = w.room_height + 'px';
+        }
         card.dataset.id  = w.extension_id;
         card.dataset.span = w.room_span || 1;
 
@@ -210,6 +213,12 @@
                     allowtransparency="true"
                     title="${w.display_name}">
             </iframe>
+            <div class="room-card-resize-handle" title="Trascina per ridimensionare (Doppio clic per resettare)"
+                 onmousedown="event.stopPropagation(); _roomGridStartResize(event, '${w.extension_id}')"
+                 ontouchstart="event.stopPropagation(); _roomGridStartResize(event, '${w.extension_id}')"
+                 ondblclick="event.stopPropagation(); _roomGridResetHeight('${w.extension_id}')">
+                 <div class="drag-line"></div>
+            </div>
         `;
 
         // ── Drag (mouse) ──
@@ -429,6 +438,80 @@
         _grid.querySelectorAll('.room-widget-card').forEach(c => {
             c.draggable = _editing;
         });
+    };
+
+    // ─── Global helpers: Resize ──────────────────────────────────────────────────
+    global._roomGridStartResize = function(e, id) {
+        if (!_editing) return;
+        e.preventDefault();
+        const card = _grid.querySelector(`.room-widget-card[data-id="${id}"]`);
+        if (!card) return;
+
+        const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const startHeight = card.offsetHeight;
+        
+        const line = document.createElement('div');
+        line.className = 'room-resize-indicator-line';
+        document.body.appendChild(line);
+
+        // Position initial line correctly
+        const rect = card.getBoundingClientRect();
+        line.style.top = rect.bottom + 'px';
+        line.style.left = rect.left + 'px';
+        line.style.width = rect.width + 'px';
+
+        const onMove = (moveEvent) => {
+            const currentY = moveEvent.type.includes('touch') ? moveEvent.touches[0].clientY : moveEvent.clientY;
+            let newHeight = Math.max(200, startHeight + (currentY - startY)); // min height 200px
+            card.style.minHeight = newHeight + 'px';
+            
+            // visual line
+            const currentRect = card.getBoundingClientRect();
+            line.style.top = currentRect.bottom + 'px';
+            line.style.left = currentRect.left + 'px';
+            line.style.width = currentRect.width + 'px';
+        };
+
+        const onEnd = async (upEvent) => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+            line.remove();
+            
+            const finalHeight = parseInt(card.style.minHeight);
+            
+            try {
+                await fetch(`/api/widgets/${id}/room_height`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ height: finalHeight })
+                });
+                _syncLocalConfig(id, 'room_height', finalHeight);
+            } catch (err) { console.warn('[RoomGrid] height save err:', err); }
+        };
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchmove', onMove, {passive: false});
+        document.addEventListener('touchend', onEnd);
+    };
+
+    global._roomGridResetHeight = async function(id) {
+        if (!_editing) return;
+        const card = _grid.querySelector(`.room-widget-card[data-id="${id}"]`);
+        if (!card) return;
+        
+        card.style.minHeight = ''; // Remove inline style
+        
+        try {
+            await fetch(`/api/widgets/${id}/room_height`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ height: null })
+            });
+            _syncLocalConfig(id, 'room_height', null);
+        } catch (err) { console.warn('[RoomGrid] reset height err:', err); }
     };
 
     // ─── Export ───────────────────────────────────────────────────────────────
