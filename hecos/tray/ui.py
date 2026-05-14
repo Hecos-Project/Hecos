@@ -144,7 +144,7 @@ def build_menu(icon_ref: list):
         icon.menu = build_menu([icon])
 
     technical_submenu = pystray.Menu(
-        pystray.MenuItem("🖥️  Launch Console", open_console),
+        pystray.MenuItem("📟  Launch Console", open_console),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Show Technical Menu", toggle_technical_menu,
                          checked=lambda it: load_settings().get("show_technical_menu", True)),
@@ -155,7 +155,7 @@ def build_menu(icon_ref: list):
         pystray.MenuItem(status_label, None, enabled=False),
         pystray.Menu.SEPARATOR,
         # ── Main entry points
-        pystray.MenuItem("🖥️  Control Center", open_cc),
+        pystray.MenuItem("🎛️  Control Center", open_cc),
         pystray.MenuItem("🌐 Open Chat", open_chat),
         pystray.MenuItem("⚙️  Central Hub", open_config),
         pystray.Menu.SEPARATOR,
