@@ -402,6 +402,7 @@ class WidgetPersistence(BaseModel):
     visible: bool = True           # sidebar visibility
     room_visible: bool = False     # control room visibility (opt-in)
     room_span: int = 1             # 1 = normal column, 2 = wide (spans 2 cols)
+    room_height: Optional[int] = None # Custom vertical height (pixels)
     room_order: Optional[int] = None  # explicit drag-and-drop position
     theme: str = "default"         # "default", "theme-cyber", "theme-alert", "theme-glass", etc.
 

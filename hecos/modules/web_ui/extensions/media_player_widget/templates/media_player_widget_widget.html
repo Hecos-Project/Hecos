@@ -317,9 +317,14 @@
                 </div>`;
       }).join('');
 
-      /* Scroll active item into view */
+      /* Scroll active item into view cleanly without shifting parent layout */
       const activeEl = list.querySelector(`[data-idx="${d.current}"]`);
-      if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+      if (activeEl) {
+        const queueBody = _el('mp-w-queue-body');
+        if (queueBody) {
+          queueBody.scrollTop = activeEl.offsetTop - queueBody.offsetTop;
+        }
+      }
 
     } catch(e) { console.warn('[MPWidget] queue error:', e); }
   }
