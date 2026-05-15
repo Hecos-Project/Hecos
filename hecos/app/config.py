@@ -1,36 +1,61 @@
 """
 MODULE: Config Manager
-DESCRIPTION: Loads, validates and saves the main system configuration.
-             Uses YAML + Pydantic v2. Auto-migrates from legacy JSON on first run.
+DESCRIPTION: Loads, validates and saves Hecos configuration from multiple YAML files.
+
+Layer architecture:
+  L0  config/data/system.yaml      → SystemConfig
+  L0b config/data/agent.yaml       → AgentConfig       (via AgentConfig routes, not here)
+  L0c config/data/audio.yaml       → AudioConfig       (via audio_config module)
+  L0d config/data/media.yaml       → MediaConfig       (via media_config module)
+  L0e config/data/keys.yaml        → KeysConfig        (via key_manager module)
+  L0f config/data/routing_overrides.yaml → RoutingOverrides  (via routes_config)
+  L1  config/data/plugins.yaml     → PluginsFileConfig (plugins + extensions)
+  L2  config/data/widgets.yaml     → WidgetsFileConfig (widgets)
+
+The `self.config` dict is a UNIFIED flat view of L0 + L1 + L2 for backward compatibility.
+All saves correctly split data back to the appropriate files.
 """
 
 import os as _os
 import json
 import time
+import threading
 from hecos.core.logging import logger
 
-# Lazy imports (avoid circular imports at module level)
-def _get_yaml_utils():
-    from hecos.config.yaml_utils import load_yaml, save_yaml
-    return load_yaml, save_yaml
 
-def _get_schema():
+def _get_yaml_utils():
+    from hecos.config.yaml_utils import load_yaml, save_yaml, save_dict_to_yaml, load_dict_from_yaml, _deep_merge
+    return load_yaml, save_yaml, save_dict_to_yaml, load_dict_from_yaml, _deep_merge
+
+
+def _get_system_schema():
     from hecos.config.schemas.system_schema import SystemConfig
     return SystemConfig
 
-# Project root and Hecos package root
+
+def _get_plugins_schema():
+    from hecos.config.schemas.plugins_schema import PluginsFileConfig
+    return PluginsFileConfig
+
+
+def _get_widgets_schema():
+    from hecos.config.schemas.widgets_schema import WidgetsFileConfig
+    return WidgetsFileConfig
+
+
 _PROJECT_ROOT = _os.path.abspath(_os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", "..")))
 _HECOS_DIR = _os.path.abspath(_os.path.normpath(_os.path.join(_PROJECT_ROOT, "hecos")))
 
-_CONFIG_YAML_PATH = _os.path.join(_HECOS_DIR, "config", "data", "system.yaml")
-_CONFIG_JSON_PATH = _os.path.join(_HECOS_DIR, "config", "data", "system.json")
+_CONFIG_YAML_PATH    = _os.path.join(_HECOS_DIR, "config", "data", "system.yaml")
+_CONFIG_JSON_PATH    = _os.path.join(_HECOS_DIR, "config", "data", "system.json")
+_PLUGINS_YAML_PATH   = _os.path.join(_HECOS_DIR, "config", "data", "plugins.yaml")
+_WIDGETS_YAML_PATH   = _os.path.join(_HECOS_DIR, "config", "data", "widgets.yaml")
 
 
 class ConfigManager:
     def __init__(self, config_path=None):
-        # config_path kept for backward compat — overrides YAML path if given
+        # config_path kept for backward compat
         if config_path is not None:
-            # Legacy call with explicit path: try to honour it by deriving YAML path
             base = _os.path.splitext(config_path)[0]
             self._yaml_path = base + ".yaml"
             self._json_path = config_path
@@ -38,29 +63,33 @@ class ConfigManager:
             self._yaml_path = _CONFIG_YAML_PATH
             self._json_path = _CONFIG_JSON_PATH
 
+        data_dir = _os.path.dirname(self._yaml_path)
+        self._plugins_path = _os.path.join(data_dir, "plugins.yaml")
+        self._widgets_path = _os.path.join(data_dir, "widgets.yaml")
+
+        self._lock = threading.RLock()  # Reentrant: update_config holds lock, then calls save() which also acquires it
         self._ensure_files_exist()
-        self._model = self._load_model()
-        self.config = self._model.model_dump()  # plain dict kept for full backward compat
+        self._load_all()
 
     def _ensure_files_exist(self):
-        """Automatically setup initial config files from templates if missing."""
+        """Auto-generate config files from templates if missing."""
         import shutil
         data_dir = _os.path.dirname(self._yaml_path)
-        
-        # Files to check and auto-generate if missing
+
         files_to_check = [
             "system.yaml",
+            "plugins.yaml",
+            "widgets.yaml",
             "routing_overrides.yaml",
             "audio.yaml",
             "agent.yaml",
             "media.yaml",
             "keys.yaml"
         ]
-        
+
         for filename in files_to_check:
             yaml_file = _os.path.join(data_dir, filename)
             example_file = yaml_file + ".example"
-            
             if not _os.path.exists(yaml_file) and _os.path.exists(example_file):
                 try:
                     shutil.copy2(example_file, yaml_file)
@@ -68,11 +97,11 @@ class ConfigManager:
                 except Exception as e:
                     logger.error(f"[CONFIG] Failed to auto-generate {filename}: {e}")
 
-        # Check for .env in hecos/ folder
         env_file = _os.path.join(_HECOS_DIR, ".env")
         env_example = env_file + ".example"
         if not _os.path.exists(env_file) and _os.path.exists(env_example):
             try:
+                import shutil
                 shutil.copy2(env_example, env_file)
                 logger.info("[CONFIG] Auto-generated .env from template.")
             except Exception as e:
@@ -80,64 +109,69 @@ class ConfigManager:
 
 
     # ──────────────────────────────────────────────────────────────────────────
-    # INTERNAL
+    # INTERNAL LOAD / SAVE
     # ──────────────────────────────────────────────────────────────────────────
 
-    def _load_model(self):
-        """Load and validate the YAML config (auto-migrating from JSON if needed)."""
+    def _load_all(self):
+        """Load all config layers and build the unified self.config dict."""
+        load_yaml, _, _, _, _ = _get_yaml_utils()
+        SystemConfig     = _get_system_schema()
+        PluginsFileConfig = _get_plugins_schema()
+        WidgetsFileConfig = _get_widgets_schema()
+
+        # --- L0: system.yaml ---
         try:
-            load_yaml, _ = _get_yaml_utils()
-            from hecos.config.yaml_utils import load_dict_from_yaml, _deep_merge
-            SystemConfig = _get_schema()
-            
-            # 1. Load the core system.yaml
-            model = load_yaml(self._yaml_path, SystemConfig)
-            model_dict = model.model_dump()
-            
-            # 2. Merge plugins.yaml if present
-            plugins_path = self._yaml_path.replace("system.yaml", "plugins.yaml")
-            plugins_dict = load_dict_from_yaml(plugins_path)
-            if "plugins" in plugins_dict:
-                if "plugins" not in model_dict:
-                    model_dict["plugins"] = {}
-                _deep_merge(model_dict["plugins"], plugins_dict["plugins"])
-                
-            # 3. Merge widgets.yaml if present
-            widgets_path = self._yaml_path.replace("system.yaml", "widgets.yaml")
-            widgets_dict = load_dict_from_yaml(widgets_path)
-            if "widgets" in widgets_dict:
-                if "widgets" not in model_dict:
-                    model_dict["widgets"] = {}
-                _deep_merge(model_dict["widgets"], widgets_dict["widgets"])
-                
-            # 4. Validate complete config
-            model = SystemConfig.model_validate(model_dict)
-            
-            self._apply_volatility(model)
-            self._run_italian_migration(model)
-            return model
+            self._system_model = load_yaml(self._yaml_path, SystemConfig)
         except Exception as e:
-            logger.error(f"[CONFIG] Critical error loading config: {e}")
-            SystemConfig = _get_schema()
-            return SystemConfig()
+            logger.error(f"[CONFIG] Failed to load system.yaml: {e}. Using defaults.")
+            self._system_model = SystemConfig()
 
-    def _apply_volatility(self, model):
-        """If save_special_instructions is False, clear special_instructions on load."""
-        if not model.ai.save_special_instructions:
-            model.ai.special_instructions = ""
+        # --- L1: plugins.yaml ---
+        try:
+            self._plugins_model = load_yaml(self._plugins_path, PluginsFileConfig)
+        except Exception as e:
+            logger.error(f"[CONFIG] Failed to load plugins.yaml: {e}. Using defaults.")
+            self._plugins_model = PluginsFileConfig()
 
-    def _run_italian_migration(self, model):
+        # --- L2: widgets.yaml ---
+        try:
+            self._widgets_model = load_yaml(self._widgets_path, WidgetsFileConfig)
+        except Exception as e:
+            logger.error(f"[CONFIG] Failed to load widgets.yaml: {e}. Using defaults.")
+            self._widgets_model = WidgetsFileConfig()
+
+        self._apply_volatility()
+        self._sync_dict()
+
+    def _apply_volatility(self):
+        """Clear volatile fields that should NOT persist across restarts.
+
+        Rules:
+          - `special_instructions` (custom prompt append): volatile. Cleared on
+            restart unless `save_special_instructions` is True.
+          - `safety_instructions` (persistent safety/context disclaimer): NEVER
+            cleared automatically — always persisted from YAML.
         """
-        No-op: Italian key migration was handled by the old JSON loader.
-        The YAML auto-migration in yaml_utils already validated data through Pydantic,
-        so any remaining Italian keys in the JSON would have been ignored (defaulted).
-        This stub is kept for documentation purposes.
-        """
-        pass
+        if not self._system_model.ai.save_special_instructions:
+            self._system_model.ai.special_instructions = ""
+        # safety_instructions is intentionally NOT cleared here — it is a
+        # persistent configuration value, not a session-scoped field.
 
     def _sync_dict(self):
-        """Keep self.config dict in sync with the underlying Pydantic model."""
-        self.config = self._model.model_dump()
+        """Rebuild the unified self.config dict from the three typed models."""
+        system_dict  = self._system_model.model_dump()
+        plugins_dict = self._plugins_model.model_dump()
+        widgets_dict = self._widgets_model.model_dump()
+
+        # Remove the legacy `agent:` absorption key — it's NOT part of the saved system config
+        system_dict.pop("agent", None)
+
+        self.config = {
+            **system_dict,
+            "plugins":    plugins_dict.get("plugins", {}),
+            "extensions": plugins_dict.get("extensions", {}),
+            "widgets":    widgets_dict.get("widgets", {}),
+        }
 
     @property
     def yaml_path(self):
@@ -148,57 +182,81 @@ class ConfigManager:
     # ──────────────────────────────────────────────────────────────────────────
 
     def save(self):
-        """Serialize the current config to YAML and persist it."""
-        try:
-            # --- HARDENING: Sync model from dict before saving ---
-            # This prevents data loss if a previous set() failed to validate but
-            # left the dict updated.
-            try:
-                SystemConfig = _get_schema()
-                # Use current dict state as the source of truth
-                self._model = SystemConfig.model_validate(self.config)
-            except Exception as v_e:
-                import sys
-                print(f"[CRITICAL-CONFIG] Save aborted: {v_e}", file=sys.stderr)
-                logger.error(f"[CONFIG] Save aborted: current memory state fails validation: {v_e}")
-                return False
-
-            old_lang = self.config.get("language")
-
-            # Flag for monitor.py to avoid unnecessary restarts
+        """Persist the current in-memory config to all three YAML files.
+        Thread-safe: uses self._lock to prevent concurrent writes.
+        """
+        with self._lock:
+          try:
+            # Write app-flag so monitor.py doesn't trigger a restart
             try:
                 flag_path = _os.path.join(_PROJECT_ROOT, ".config_saved_by_app")
                 with open(flag_path, "w") as f:
                     f.write("1")
-                # Small safety pause to ensure metadata is flushed on Windows
                 time.sleep(0.05)
             except Exception:
                 pass
 
+            SystemConfig      = _get_system_schema()
+            PluginsFileConfig = _get_plugins_schema()
+            WidgetsFileConfig = _get_widgets_schema()
+
+            # --- Rebuild models from unified self.config (source of truth) ---
+            # Extract the three domains from the flat dict
+            system_dict  = {k: v for k, v in self.config.items()
+                            if k not in ("plugins", "extensions", "widgets")}
+            plugins_dict = {
+                "plugins":    self.config.get("plugins", {}),
+                "extensions": self.config.get("extensions", {}),
+            }
+            widgets_dict = {
+                "widgets": self.config.get("widgets", {}),
+            }
+
+            # Validate each domain
+            try:
+                self._system_model  = SystemConfig.model_validate(system_dict)
+            except Exception as e:
+                logger.error(f"[CONFIG] system.yaml validation failed: {e}")
+                return False
+
+            try:
+                self._plugins_model = PluginsFileConfig.model_validate(plugins_dict)
+            except Exception as e:
+                logger.error(f"[CONFIG] plugins.yaml validation failed: {e}")
+                return False
+
+            try:
+                self._widgets_model = WidgetsFileConfig.model_validate(widgets_dict)
+            except Exception as e:
+                logger.error(f"[CONFIG] widgets.yaml validation failed: {e}")
+                return False
+
+            from hecos.config.yaml_utils import save_yaml
+
+            # --- Save L0 (system only — no agent/plugins/widgets) ---
+            system_save_dict = self._system_model.model_dump()
+            system_save_dict.pop("agent", None)  # never write agent block to system.yaml
             from hecos.config.yaml_utils import save_dict_to_yaml
-            
-            # 1. Start with the full validated dump
-            full_dict = self._model.model_dump()
-            
-            # 2. Extract modules into separate files
-            plugins_dict = {"plugins": full_dict.pop("plugins", {})}
-            widgets_dict = {"widgets": full_dict.pop("widgets", {})}
-            
-            # Define paths
-            plugins_path = self._yaml_path.replace("system.yaml", "plugins.yaml")
-            widgets_path = self._yaml_path.replace("system.yaml", "widgets.yaml")
-            
-            # Atomic writes for modules
-            save_dict_to_yaml(plugins_path, plugins_dict)
-            save_dict_to_yaml(widgets_path, widgets_dict)
-            
-            # 3. Save the reduced core dict back to system.yaml
-            save_dict_to_yaml(self._yaml_path, full_dict)
-            
-            # Ensure the active dict in memory remains complete
+            save_dict_to_yaml(self._yaml_path, system_save_dict)
+
+            # --- Save L1 ---
+            # TRACE: log calendar state just before writing to disk
+            try:
+                _cal_locale = self._plugins_model.extensions.calendar.calendar_locale
+                _cal_country = self._plugins_model.extensions.calendar.calendar_country
+                logger.debug(f"[CAL-TRACE] About to write plugins.yaml — calendar_locale={_cal_locale!r} calendar_country={_cal_country!r}")
+            except Exception:
+                pass
+            save_yaml(self._plugins_path, self._plugins_model)
+
+            # --- Save L2 ---
+            save_yaml(self._widgets_path, self._widgets_model)
+
+            # Keep unified dict in sync
             self._sync_dict()
 
-            new_lang = self._model.language
+            # Runtime language update
+            new_lang = self._system_model.language
             if new_lang:
                 try:
                     from hecos.core.i18n import translator
@@ -211,8 +269,11 @@ class ConfigManager:
 
             logger.info("[CONFIG] Configuration saved successfully.")
             return True
-        except Exception as e:
+
+          except Exception as e:
+            import traceback
             logger.error(f"[CONFIG] Save error: {e}")
+            logger.error(traceback.format_exc())
             return False
 
     def get(self, *keys, default=None):
@@ -228,60 +289,69 @@ class ConfigManager:
         return value
 
     def set(self, value, *keys):
-        """Set a nested value, e.g. config.set('ollama', 'backend', 'type')"""
+        """Set a nested value in the unified config dict.
+        e.g. config.set('ollama', 'backend', 'type')
+        """
         if len(keys) == 0:
             return False
-        # Update the plain dict (Source of Truth)
         target = self.config
         for key in keys[:-1]:
             if key not in target:
                 target[key] = {}
             target = target[key]
         target[keys[-1]] = value
-
-        try:
-            SystemConfig = _get_schema()
-            # Use current dict state as the source of truth
-            self._model = SystemConfig.model_validate(self.config)
-        except Exception as e:
-            logger.debug(f"[CONFIG] Partial validation failed in set() for {keys}: {e}")
-            # We don't update self._model here, but self.config stays updated.
-            # The next save() call will attempt to re-validate everything.
         return True
 
     def reload(self):
-        """Reload the configuration from the YAML file."""
-        self._model = self._load_model()
-        self._sync_dict()
+        """Reload ALL config files from disk.
+        Thread-safe: waits for any in-progress save to complete before reloading.
+        """
+        with self._lock:
+            self._load_all()
         return self.config
 
     def update_config(self, new_data: dict):
-        """Deep merge new_data into current config and save."""
+        """Deep merge new_data into the in-memory config, validate, then save.
+
+        Thread-safe: holds RLock for the full operation (copy → merge → validate
+        → commit → save) to prevent concurrent writes from corrupting self.config.
+        RLock is reentrant so save() can acquire it again without deadlocking.
+        """
         import copy
-        try:
-            # 1. Use current memory state (don't reload from disk here to avoid race conditions)
-            # self.reload()  <-- REMOVED
-            
-            # 2. Work on a deep copy to ensure atomicity
+        with self._lock:
+          try:
             temp_config = copy.deepcopy(self.config)
             self._deep_update(temp_config, new_data)
-            
-            # 3. Validate the complete new state
-            SystemConfig = _get_schema()
-            new_model = SystemConfig.model_validate(temp_config)
-            
-            # 4. Manual sync check (legacy fix for active_personality)
-            if hasattr(new_model, 'ai') and 'ai' in new_data and 'active_personality' in new_data['ai']:
-                new_model.ai.active_personality = new_data['ai']['active_personality']
-            
-            # 5. Only if validation passed COMPLETELY, update memory and save
-            self._model = new_model
-            self._sync_dict() 
-            res = self.save()
-            return res
-        except Exception as e:
+
+            SystemConfig      = _get_system_schema()
+            PluginsFileConfig = _get_plugins_schema()
+            WidgetsFileConfig = _get_widgets_schema()
+
+            system_dict = {k: v for k, v in temp_config.items()
+                           if k not in ("plugins", "extensions", "widgets")}
+            plugins_dict = {
+                "plugins":    temp_config.get("plugins", {}),
+                "extensions": temp_config.get("extensions", {}),
+            }
+            widgets_dict = {"widgets": temp_config.get("widgets", {})}
+
+            new_system  = SystemConfig.model_validate(system_dict)
+            new_plugins = PluginsFileConfig.model_validate(plugins_dict)
+            new_widgets = WidgetsFileConfig.model_validate(widgets_dict)
+
+            if hasattr(new_system, 'ai') and 'ai' in new_data and 'active_personality' in new_data['ai']:
+                new_system.ai.active_personality = new_data['ai']['active_personality']
+
+            self._system_model  = new_system
+            self._plugins_model = new_plugins
+            self._widgets_model = new_widgets
+            self._sync_dict()
+
+            return self.save()
+
+          except Exception as e:
             import traceback
-            logger.error(f"[CONFIG-CORE] CRITICAL ERROR during update_config (aborted): {e}")
+            logger.error(f"[CONFIG] CRITICAL ERROR during update_config (aborted): {e}")
             logger.error(traceback.format_exc())
             return False
 
@@ -291,6 +361,10 @@ class ConfigManager:
                 self._deep_update(base[k], v)
             else:
                 base[k] = v
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # PLUGIN HELPERS
+    # ──────────────────────────────────────────────────────────────────────────
 
     def get_plugin_config(self, plugin_tag: str, key=None, default=None):
         """Returns the config dict (or a key) for a given plugin."""
@@ -307,12 +381,19 @@ class ConfigManager:
         if plugin_tag not in self.config["plugins"]:
             self.config["plugins"][plugin_tag] = {}
         self.config["plugins"][plugin_tag][key] = value
-        try:
-            SystemConfig = _get_schema()
-            self._model = SystemConfig.model_validate(self.config)
-        except Exception:
-            pass
         self.save()
+
+    def get_extension_config(self, ext_name: str, key=None, default=None):
+        """Returns the extensions config dict (or a key) for a given extension."""
+        extensions = self.config.get("extensions", {})
+        ext_cfg = extensions.get(ext_name, {})
+        if key is None:
+            return ext_cfg
+        return ext_cfg.get(key, default)
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # PERSONALITY SYNC
+    # ──────────────────────────────────────────────────────────────────────────
 
     def sync_available_personalities(self):
         """
@@ -320,7 +401,6 @@ class ConfigManager:
         'ai.available_personalities' if the list has changed.
         Returns the current list of personality files.
         """
-        import os
         import glob
         folder = _os.path.join(_PROJECT_ROOT, "hecos", "personality")
         if not _os.path.exists(folder):
@@ -329,34 +409,26 @@ class ConfigManager:
             except Exception:
                 pass
 
-        # 1. Get all YAML files and sort them alphabetically
         files = sorted([_os.path.basename(f) for f in glob.glob(_os.path.join(folder, "*.yaml"))])
 
         if files:
-            # 2. Force Hecos_System_Soul to position #1 if present
             primary = "Hecos_System_Soul.yaml"
             if primary in files:
                 files.remove(primary)
                 files.insert(0, primary)
 
-            # 3. Create the mapping dictionary
             personality_dict = {str(i + 1): name for i, name in enumerate(files)}
             current_dict = self.config.get("ai", {}).get("available_personalities", {})
-            
-            # Robust comparison: ensure all keys are strings for a reliable check
             current_dict_str = {str(k): v for k, v in current_dict.items()} if isinstance(current_dict, dict) else {}
-            
-            # --- ROBUST FALLBACK CHECK ---
+
             active = self.config.get("ai", {}).get("active_personality")
-            # Case-insensitive comparison
             files_lower = [f.lower() for f in files]
             needs_revert = active and active.lower() not in files_lower
 
             if needs_revert:
-                logger.warning(f"[CONFIG] Active personality '{active}' not found in filesystem. Reverting to {primary}.")
+                logger.warning(f"[CONFIG] Active personality '{active}' not found. Reverting to {primary}.")
                 self.set(primary, "ai", "active_personality")
 
-            # 4. Save if the list changed or if we reverted the active one
             if personality_dict != current_dict_str or needs_revert:
                 self.set(personality_dict, "ai", "available_personalities")
                 self.save()

@@ -1,5 +1,5 @@
 ai:
-  active_personality: Urania_9800.yaml
+  active_personality: Motoko Kusanagi.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -33,7 +33,7 @@ backend:
     top_p: 0.92
     rep_pen: 1.1
   ollama:
-    model: ''
+    model: qwen2.5:1.5b
     available_models: {}
     num_ctx: 4096
     num_gpu: 25
@@ -43,14 +43,14 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
 bridge:
-  use_processor: false
+  use_processor: true
   chunk_delay_ms: 0
-  debug_log: false
-  remove_think_tags: false
+  debug_log: true
+  remove_think_tags: true
   local_voice_enabled: false
   webui_voice_enabled: true
   webui_voice_stt: true
-  enable_tools: false
+  enable_tools: true
 cognition:
   memory_enabled: true
   episodic_memory: true
@@ -58,21 +58,6 @@ cognition:
   include_identity_context: true
   include_self_awareness: true
   max_history_messages: 20
-extensions:
-  calendar:
-    calendar_locale: it
-    calendar_country: IT
-    day_colors:
-      - rgba(172,47,47,0.35)
-      - transparent
-      - transparent
-      - transparent
-      - transparent
-      - rgba(33,186,13,0.2)
-      - rgba(127,122,122,0.2)
-    calendar_sync_urls: []
-    bg_color: ''
-    bg_image: ''
 filters:
   remove_asterisks: both
   remove_round_brackets: voice
@@ -126,8 +111,3 @@ routing_engine:
 system:
   fast_boot: true
   flask_debug: false
-agent:
-  enabled: true
-  max_iterations: 12
-  verbose_traces: true
-  action_console_enabled: true

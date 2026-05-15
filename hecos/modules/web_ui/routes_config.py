@@ -160,23 +160,51 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 return jsonify({"ok": False, "error": "Invalid payload"}), 400
             # Estrai il flag custom Frontend per forzare il riavvio (o auto-save silenzioso)
             force_restart = incoming.pop("_force_restart", False)
+
+            # ── AGENT block: proxy to agent.yaml via dedicated save path ──────
+            # The JS buildPayload() always includes `agent:` in the main payload.
+            # Since agent.yaml is managed independently from system.yaml, we
+            # extract and save it here rather than letting update_config ignore it.
+            agent_block = incoming.pop("agent", None)
+            if agent_block and isinstance(agent_block, dict):
+                try:
+                    from hecos.config import save_yaml
+                    from hecos.config.schemas.agent_schema import AgentConfig
+                    agent_path = os.path.join(root_dir, "hecos", "config", "data", "agent.yaml")
+                    agent_model = AgentConfig(**agent_block)
+                    save_yaml(agent_path, agent_model)
+                    logger.debug("[CONFIG] agent.yaml updated from main payload.")
+                except Exception as e:
+                    logger.warning(f"[CONFIG] Could not save agent block: {e}")
             
             # DEBUG: Log the full AI block we receive
             ai_block = incoming.get("ai", {})
             logger.info(f"[CONFIG-DEBUG] Incoming payload - ai.active_personality: {ai_block.get('active_personality', '<<NOT PRESENT>>')}")
             
+            cal_block = incoming.get("extensions", {}).get("calendar", {})
+            if cal_block:
+                logger.info(f"[CONFIG-DEBUG] Incoming calendar payload: {cal_block.get('calendar_locale')} / {cal_block.get('calendar_country')}")
+            else:
+                logger.info(f"[CONFIG-DEBUG] Incoming payload HAS NO CALENDAR EXTENSION BLOCK.")
+
             save_result = cfg_mgr.update_config(incoming)
             logger.info(f"[CONFIG-DEBUG] update_config returned: {save_result}")
             
             if save_result:
-                # Dynamically update the global translator language without reboot
-                from hecos.core.i18n.translator import get_translator
-                get_translator().set_language(incoming.get("language", "en"))
+                # ── Language runtime update: read from SAVED config, not payload ──
+                # CRITICAL: do NOT use `incoming.get('language', 'en')` as default.
+                # Partial saves (e.g., calendar auto-save with only `extensions:`)
+                # don't include `language`, so 'en' fallback silently resets it.
+                try:
+                    from hecos.core.i18n.translator import get_translator
+                    saved_lang = cfg_mgr.get("language") or "en"
+                    get_translator().set_language(saved_lang)
+                except Exception:
+                    pass
                 
                 # Keep state_manager in sync with toggles
                 sm = _sm()
                 if sm is not None:
-                    # Update local state based on config toggles
                     sm.listening_status = incoming.get("listening", {}).get("enabled", sm.listening_status)
                 # Update the processor and registry at runtime
                 try:

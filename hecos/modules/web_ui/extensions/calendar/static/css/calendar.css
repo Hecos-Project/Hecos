@@ -68,10 +68,19 @@
   box-shadow: var(--shadow-glow) !important;
 }
 #hecos-fullcalendar .fc-col-header-cell {
-  background: var(--bg2) !important;
+  background: var(--bg3) !important;
   border-bottom: 1px solid var(--border) !important;
 }
-#hecos-fullcalendar .fc-col-header-cell-cushion,
+#hecos-fullcalendar .fc-col-header-cell-cushion {
+  color: var(--text) !important;
+  font-size: 11px;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-decoration: none !important;
+  opacity: 1;
+  padding: 6px 8px !important;
+}
 #hecos-fullcalendar .fc-daygrid-day-number {
   color: var(--text) !important;
   font-size: 11px;

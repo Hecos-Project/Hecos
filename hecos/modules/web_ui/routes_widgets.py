@@ -348,10 +348,10 @@ def init_widget_routes(app, config_manager, logger_ref=None):
         """Clears all aesthetic overrides (theme, color, image) for a widget."""
         _log.info(f"WIDGETS: Resetting aesthetics for [{ext_id}]")
         
-        # We clear the specific keys by setting them to None or defaults
+        # We clear the specific keys by setting them to "" (empty string) to satisfy Pydantic schema
         res1 = config_manager.set("default", "widgets", "per_widget", ext_id, "theme")
-        res2 = config_manager.set(None, "widgets", "per_widget", ext_id, "bg_color")
-        res3 = config_manager.set(None, "widgets", "per_widget", ext_id, "bg_image")
+        res2 = config_manager.set("", "widgets", "per_widget", ext_id, "bg_color")
+        res3 = config_manager.set("", "widgets", "per_widget", ext_id, "bg_image")
         
         if res1 and res2 and res3:
             _save_config()
