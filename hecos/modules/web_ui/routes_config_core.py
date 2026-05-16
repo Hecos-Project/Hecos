@@ -208,15 +208,21 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                 if sm is not None:
                     sm.listening_status = incoming.get("listening", {}).get("enabled", sm.listening_status)
 
-                # Update processor and module registry at runtime
-                try:
-                    from hecos.core.processing import processore, filtri
-                    from hecos.core.system import module_loader
-                    processore.configure(cfg_mgr.config)
-                    module_loader.update_capability_registry(cfg_mgr.config, debug_log=False)
-                    filtri.reset_cache()
-                except Exception as e:
-                    logger.debug(f"[WebUI] Processor runtime sync error: {e}")
+                # Update processor and module registry at runtime (background thread to prevent locking UI)
+                def _bg_sync(cfg_snapshot):
+                    try:
+                        from hecos.core.processing import processore, filtri
+                        from hecos.core.system import module_loader
+                        processore.configure(cfg_snapshot)
+                        module_loader.update_capability_registry(cfg_snapshot, debug_log=False)
+                        filtri.reset_cache()
+                        logger.debug("[WebUI] Background processor sync completed.")
+                    except Exception as e:
+                        logger.debug(f"[WebUI] Processor background sync error: {e}")
+
+                import threading
+                import copy
+                threading.Thread(target=_bg_sync, args=(copy.deepcopy(cfg_mgr.config),), daemon=True).start()
 
                 return jsonify({"ok": True})
             return jsonify({"ok": False, "error": "Save failed"}), 500

@@ -112,6 +112,11 @@ function onProviderChanged() {
   if (hfWrapper) {
     hfWrapper.style.display = (prov === 'huggingface') ? 'block' : 'none';
   }
+  // Refresh models matching the new provider. Uses setTimeout to not block UI thread during the "change" event save fired by config_core
+  setTimeout(async () => {
+      await refreshImageModels();
+      if (typeof window.saveConfig === 'function') window.saveConfig(true);
+  }, 100);
 }
 
 async function refreshImageModels(restoreValue) {

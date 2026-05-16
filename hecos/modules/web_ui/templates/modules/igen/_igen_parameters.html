@@ -69,8 +69,8 @@
   <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
   <div style="display:flex; gap:8px; align-items:center;">
     <input type="number" id="igen-seed" min="-1" max="2147483647" value="-1" style="flex:1;" data-cfg-plugin="MEDIA">
-    <button onclick="document.getElementById('igen-seed').value=-1;" title="Randomize seed" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:14px;"><i class="fas fa-dice"></i></button>
-    <button type="button" onclick="const ls=(window.cfg&&window.cfg.image_gen)?window.cfg.image_gen.last_seed:-1; if(ls&&ls>0) document.getElementById('igen-seed').value=ls; else alert('No seed recorded yet. Generate an image first.');"
+    <button onclick="document.getElementById('igen-seed').value=-1; if(typeof saveConfig==='function') saveConfig(true);" title="Randomize seed" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:14px;"><i class="fas fa-dice"></i></button>
+    <button type="button" onclick="const ls=(window.cfg&&window.cfg.image_gen)?window.cfg.image_gen.last_seed:-1; if(ls&&ls>0) { document.getElementById('igen-seed').value=ls; if(typeof saveConfig==='function') saveConfig(true); } else alert('No seed recorded yet. Generate an image first.');"
             title="Reuse Last Seed"
             style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold;">
       <i class="fas fa-sync"></i> Last
