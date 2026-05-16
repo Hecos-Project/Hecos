@@ -1,0 +1,52 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Calendar: Scoped CSS Styles
+     ══════════════════════════════════════════════════════════════════════════ -->
+<style>
+.cal-view-btn {
+    background: var(--glass-b);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+}
+.cal-view-btn:hover { background: var(--glass-c); color: var(--text); }
+.active-view {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: white !important;
+    box-shadow: var(--shadow-glow);
+}
+.fc-event {
+    cursor: pointer !important;
+}
+/* Today Highlight: Premium Glow and Border */
+#hecos-fullcalendar .fc-day-today {
+    background: rgba(52, 152, 219, 0.1) !important;
+    outline: 2px solid var(--accent) !important;
+    outline-offset: -2px;
+    z-index: 2;
+    box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.2);
+}
+#hecos-fullcalendar .fc-day-today .fc-daygrid-day-number {
+    font-weight: 800;
+    color: var(--accent) !important;
+}
+
+/* Interactive Card Effect on Hover */
+#hecos-fullcalendar .fc-daygrid-day {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+    cursor: pointer;
+}
+#hecos-fullcalendar .fc-daygrid-day:hover {
+    transform: scale(1.02);
+    z-index: 5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.03);
+}
+#hecos-fullcalendar .fc-daygrid-day:active {
+    transform: scale(0.98);
+}
+</style>
