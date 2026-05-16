@@ -106,17 +106,19 @@ function buildMediaPayload() {
     };
 }
 
-function onProviderChanged() {
+function onProviderChanged(isManual = false) {
   const prov = (document.getElementById('igen-provider') || {}).value;
   const hfWrapper = document.getElementById('igen-hf-explorer-wrapper');
   if (hfWrapper) {
     hfWrapper.style.display = (prov === 'huggingface') ? 'block' : 'none';
   }
-  // Refresh models matching the new provider. Uses setTimeout to not block UI thread during the "change" event save fired by config_core
-  setTimeout(async () => {
-      await refreshImageModels();
-      if (typeof window.saveConfig === 'function') window.saveConfig(true);
-  }, 100);
+  if (isManual) {
+      // Refresh models matching the new provider. Uses setTimeout to not block UI thread during the "change" event save fired by config_core
+      setTimeout(async () => {
+          await refreshImageModels();
+          if (typeof window.saveConfig === 'function') window.saveConfig(true);
+      }, 100);
+  }
 }
 
 async function refreshImageModels(restoreValue) {

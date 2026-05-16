@@ -163,10 +163,24 @@ window.reminderWidget = (function() {
 
   function quickAdd(e) {
     e.preventDefault();
-    const title = document.getElementById('reminder-title-input').value.trim();
-    const when  = document.getElementById('reminder-when-input').value.trim();
+    const titleInp = document.getElementById('reminder-title-input');
+    const whenInp  = document.getElementById('reminder-when-input');
+    const title = titleInp.value.trim();
+    const when  = whenInp.value.trim();
     const msg   = document.getElementById('reminder-quick-msg');
     if (!title || !when) return;
+    
+    const btn = e.target.querySelector('.ql-add-btn') || e.target;
+    const oldBtnHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    titleInp.disabled = true;
+    whenInp.disabled = true;
+
+    if (msg) {
+        msg.style.color = 'var(--muted)';
+        msg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scheduling...';
+    }
 
     fetch('/api/ext/reminder', {
       method: 'POST',
@@ -175,18 +189,29 @@ window.reminderWidget = (function() {
     })
     .then(r => r.json())
     .then(data => {
+      btn.innerHTML = oldBtnHtml;
+      btn.disabled = false;
+      titleInp.disabled = false;
+      whenInp.disabled = false;
+
       if (msg) {
         msg.style.color = data.ok ? 'var(--accent)' : '#e05';
-        msg.innerHTML = data.ok ? '<i class="fas fa-check-circle"></i> ' + (window.I18N.command_executed || 'Done') : (data.error || data.message || 'Error');
+        msg.innerHTML = data.ok ? '<i class="fas fa-check-circle"></i> ' + (window.I18N && window.I18N.command_executed ? window.I18N.command_executed : 'Done') : (data.error || data.message || 'Error');
         setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
       }
       if (data.ok) {
-        document.getElementById('reminder-title-input').value = '';
-        document.getElementById('reminder-when-input').value = '';
+        titleInp.value = '';
+        whenInp.value = '';
         refresh();
       }
     })
-    .catch(() => { if (msg) { msg.style.color='#e05'; msg.textContent='Network error'; } });
+    .catch(() => {
+        btn.innerHTML = oldBtnHtml;
+        btn.disabled = false;
+        titleInp.disabled = false;
+        whenInp.disabled = false;
+        if (msg) { msg.style.color='#e05'; msg.textContent='Network error'; }
+    });
   }
 
   function cancel(id) {

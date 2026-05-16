@@ -23,20 +23,33 @@ class StateManager:
         self._last_tokens_prompt = 0
         self._last_tokens_completion = 0
         
-        self._event_queue = []
+        self._event_queues = []
         self._lock = threading.Lock()
 
-    def add_event(self, event_type, data=None):
-        """Adds an event to the queue for the WebUI to consume."""
+    def check_in(self):
+        """Registers a new SSE client and returns its specific event queue."""
+        import queue
+        q = queue.Queue(maxsize=100)
         with self._lock:
-            self._event_queue.append({"type": event_type, "data": data})
+            self._event_queues.append(q)
+        return q
 
-    def pop_events(self):
-        """Returns and clears all pending events."""
+    def check_out(self, q):
+        """Unregisters an SSE client queue."""
         with self._lock:
-            events = list(self._event_queue)
-            self._event_queue.clear()
-            return events
+            if q in self._event_queues:
+                self._event_queues.remove(q)
+
+    def add_event(self, event_type, data=None):
+        """Broadcasts an event to all connected WebUI SSE clients."""
+        import queue
+        event = {"type": event_type, "data": data}
+        with self._lock:
+            for q in self._event_queues:
+                try:
+                    q.put_nowait(event)
+                except queue.Full:
+                    pass
 
     # Thread-safe properties
     @property

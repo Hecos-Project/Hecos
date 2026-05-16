@@ -43,11 +43,18 @@ def init_system_control_routes(app, logger, get_sm):
     def stream_events():
         """SSE endpoint: pushes state-manager events to the browser."""
         def generate():
-            while True:
-                sm_live = _sm()
-                if sm_live:
-                    events = sm_live.pop_events()
-                    for ev in events:
+            sm_live = _sm()
+            if not sm_live:
+                return
+
+            # Check in a dedicated queue for this SSE connection
+            q = sm_live.check_in()
+            try:
+                while True:
+                    import queue
+                    try:
+                        # Blocking wait for the next event, max 1 second to allow graceful shutdown checks
+                        ev = q.get(timeout=1.0)
                         out_ev = {"type": ev.get("type")}
                         data   = ev.get("data")
                         if isinstance(data, dict):
@@ -55,6 +62,13 @@ def init_system_control_routes(app, logger, get_sm):
                         elif data is not None:
                             out_ev["data"] = data
                         yield f"data: {json.dumps(out_ev)}\n\n"
-                time.sleep(0.1)
+                    except queue.Empty:
+                        # Yield a keep-alive comment to prevent browser from terminating idle connection
+                        yield ": keep-alive\n\n"
+            except GeneratorExit:
+                # Browser disconnected
+                pass
+            finally:
+                sm_live.check_out(q)
 
         return Response(stream_with_context(generate()), mimetype="text/event-stream")
