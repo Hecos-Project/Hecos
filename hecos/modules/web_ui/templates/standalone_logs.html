@@ -43,7 +43,11 @@
 </div>
 
 {# Logs engine (shared) then standalone overrides (no Jinja2) #}
-<script src="/static/js/config_logs_engine.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_core.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_fetch.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_render.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_windows.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_modals.js?v={{ version }}"></script>
 <script src="/static/js/standalone_logs_engine.js?v={{ version }}"></script>
 
 </body>
