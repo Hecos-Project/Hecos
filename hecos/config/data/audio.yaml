@@ -6,11 +6,11 @@ noise_scale: 0.8
 noise_w: 1.0
 sentence_silence: 0.2
 piper_timeout: 180
-listening_status: false
+listening_status: true
 energy_threshold: 450
 silence_timeout: 5
 phrase_limit: 15
-push_to_talk: false
+push_to_talk: true
 ptt_hotkey: ctrl+shift
 ptt_sources:
   keyboard_hotkey: true
