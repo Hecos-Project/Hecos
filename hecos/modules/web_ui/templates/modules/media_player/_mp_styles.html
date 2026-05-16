@@ -1,0 +1,78 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media Player: Scoped CSS Styles
+     ══════════════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── Player card ─────────────────────────────────────────────── */
+#mp-player-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 680px;
+}
+#mp-track-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 15px;
+}
+#mp-track-icon { font-size: 28px; }
+#mp-track-name { font-weight: 600; color: var(--accent); font-size: 15px; }
+#mp-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mp-btn {
+  background: rgba(var(--accent-rgb,102,252,241),0.08);
+  border: 1px solid rgba(var(--accent-rgb,102,252,241),0.2);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mp-btn:hover { background: rgba(var(--accent-rgb,102,252,241),0.2); }
+.mp-btn-accent { background: var(--accent); color: var(--bg); font-weight: 700; }
+.mp-btn-accent:hover { opacity: 0.85; }
+#mp-vol-slider { accent-color: var(--accent); }
+.mp-muted { color: var(--muted); font-size: 12px; }
+
+/* ── Playlist rows ───────────────────────────────────────────── */
+.mp-playlist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: var(--glass);
+  flex-wrap: wrap;
+}
+.mp-pl-name { flex: 1; min-width: 120px; }
+.mp-pl-actions { display: flex; gap: 6px; }
+.btn-danger {
+  background: rgba(255,75,75,0.1);
+  border: 1px solid rgba(255,75,75,0.3);
+  color: #ff6b6b;
+}
+.btn-danger:hover { background: rgba(255,75,75,0.25); }
+
+/* ── Toggle list ─────────────────────────────────────────────── */
+.toggle-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.toggle-row input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
+.toggle-label { font-size: 13px; color: var(--text); }
+.form-hint { color: var(--muted); font-size: 11px; margin-top: 4px; display: block; }
+</style>

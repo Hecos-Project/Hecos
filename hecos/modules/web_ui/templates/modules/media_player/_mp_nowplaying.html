@@ -1,0 +1,27 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media Player: Now Playing Widget Section
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="config-section" id="mp-nowplaying-section">
+  <h2 class="section-title"><i class="fas fa-play"></i> {{ translations.get('webui_mp_nowplaying', 'Now Playing') }}</h2>
+  <div id="mp-player-card">
+    <div id="mp-track-info">
+      <span id="mp-track-icon"><i class="fas fa-music"></i></span>
+      <div>
+        <div id="mp-track-name">—</div>
+        <div id="mp-track-pos" class="mp-muted">00:00 / 00:00</div>
+      </div>
+    </div>
+    <div id="mp-controls">
+      <button class="mp-btn" onclick="mpControl('prev')"><i class="fas fa-step-backward"></i></button>
+      <button class="mp-btn mp-btn-accent" id="mp-play-btn" onclick="mpControl('pause')"><i class="fas fa-pause"></i></button>
+      <button class="mp-btn" onclick="mpControl('stop')"><i class="fas fa-stop"></i></button>
+      <button class="mp-btn" onclick="mpControl('next')"><i class="fas fa-step-forward"></i></button>
+      <label class="mp-muted" style="margin-left:12px;"><i class="fas fa-volume-up"></i></label>
+      <input type="range" id="mp-vol-slider" min="0" max="100" value="80"
+             oninput="mpControl('volume', {volume: this.value})" style="width:90px;">
+      <span id="mp-vol-label" class="mp-muted">80%</span>
+    </div>
+    <div id="mp-queue-info" class="mp-muted">—</div>
+  </div>
+  <div id="mp-status-msg" class="form-feedback" style="min-height:24px;"></div>
+</section>
