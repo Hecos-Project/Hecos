@@ -1,4 +1,4 @@
-voice_status: false
+voice_status: true
 piper_path: ''
 onnx_model: C:\piper\it_IT-paola-medium.onnx
 speed: 1.0
