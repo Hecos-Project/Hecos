@@ -1,0 +1,98 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central Hub</title>
+<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+
+<!-- Core Modular Design System -->
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/layout.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/dashboard.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/logs.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/modules.css?v={{ version }}">
+<link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
+<!-- Icons Support -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Non-blocking font load -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'" onerror="this.onerror=null;this.removeAttribute('media');">
+<noscript>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+</noscript>
+<style>
+:root { color-scheme: dark; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@media (max-width: 768px) {
+    header {
+    flex-direction: column;
+    height: auto;
+    padding: 8px 12px;
+    gap: 6px;
+    }
+    header .logo {
+    justify-content: center;
+    margin-bottom: 2px;
+    }
+    header .logo-text { font-size: 16px; }
+    header .logo img { height: 24px; }
+    
+    header > div:last-child {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    }
+    header .btn, header .view-switcher, header .global-controls {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    }
+    header .view-switcher button, header .global-controls button {
+    padding: 0 6px !important;
+    font-size: 11px !important;
+    }
+
+    /* Fix Save Bar (Footer) */
+    .save-bar {
+    padding: 8px 12px !important;
+    gap: 6px !important;
+    height: auto !important;
+    }
+    .save-bar .btn {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    flex: 1;
+    white-space: nowrap;
+    }
+    #save-msg { font-size: 10px; margin-bottom: 4px; width: 100%; text-align: center; }
+
+    .tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding-bottom: 4px;
+    }
+    .tab {
+    flex-shrink: 0;
+    font-size: 11px;
+    padding: 6px 10px;
+    white-space: nowrap;
+    }
+    .container {
+    padding: 8px;
+    margin-bottom: 80px; /* Space for save-bar */
+    }
+    .card { padding: 12px !important; margin-bottom: 12px !important; }
+    .grid-2 { grid-template-columns: 1fr !important; }
+}
+</style>

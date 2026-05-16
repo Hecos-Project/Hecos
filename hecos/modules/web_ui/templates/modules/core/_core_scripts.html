@@ -1,0 +1,143 @@
+<script>
+    // Dynamic I18N Catalog from Server
+    window.I18N = {{ translations | tojson | safe }};
+    
+    /**
+     * Global translation function for Frontend JS
+     * @param {string} key - The translation key
+     * @param {object} params - Optional interpolation parameters
+     */
+    window.t = function(key, params = {}) {
+      let text = window.I18N[key] || key;
+      if (params) {
+        for (const [pKey, pVal] of Object.entries(params)) {
+          text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+        }
+      }
+      return text;
+    };
+</script>
+<script>
+    window.cfg = {{ zconfig | tojson | safe }};
+    window.sysOptions = {% if zoptions %}{{ zoptions | tojson | safe }}{% else %}{}{% endif %};
+    window.currentUser = {
+        role: "{{ current_user.role if current_user.is_authenticated else 'user' }}"
+    };
+  
+    // Cross-tab Configuration Synchronization
+    (function() {
+        const widgetChannel = new BroadcastChannel('hecos_widgets');
+        widgetChannel.onmessage = (event) => {
+            const data = event.data;
+            if (data && data.type === 'widget_update' && window.cfg) {
+                const { id, field, value } = data;
+                if (!window.cfg.widgets) window.cfg.widgets = { per_widget: {} };
+                if (!window.cfg.widgets.per_widget) window.cfg.widgets.per_widget = {};
+                if (!window.cfg.widgets.per_widget[id]) window.cfg.widgets.per_widget[id] = {};
+                
+                window.cfg.widgets.per_widget[id][field] = value;
+                console.log(`[HUB-SYNC] Successfully synced ${id}.${field}=${value} to global cfg.`);
+            }
+        };
+  
+        // 2. SSE Signal (Deep Sync / proven method)
+        const _initSSE = () => {
+            const evtSrc = new EventSource('/api/events');
+            evtSrc.onmessage = (e) => {
+                const ev = JSON.parse(e.data);
+                if (ev.type === 'widgets_refresh') {
+                    console.log('[HUB-SYNC] SSE refresh signal received.');
+                }
+            };
+            evtSrc.onerror = () => {
+                evtSrc.close();
+                setTimeout(_initSSE, 5000);
+            };
+        };
+        _initSSE();
+    })();
+</script>
+
+<script>
+    // Global Initialization Bootstrapper
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof initAll === 'function') initAll();
+      if (typeof refreshStatus === 'function') {
+          refreshStatus();
+          setInterval(refreshStatus, 3000);
+      }
+      // Heartbeat
+      setInterval(() => {
+        fetch('/hecos/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'config' })
+        }).catch(() => {});
+      }, 5000);
+    });
+  
+    /**
+     * Global Theme Switcher
+     * @param {string} theme - 'cyberpunk', 'turquoise', 'pirate', 'elegant', 'light', 'rose'
+     * @param {boolean} manual - If true, disables automatic theme switching
+     */
+    window.setTheme = function(theme, manual = false) {
+      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
+      if (theme !== 'default') {
+        document.body.classList.add(`theme-${theme}`);
+      }
+  
+      if (manual) {
+          // Disable auto-mode if user manually picks a theme
+          localStorage.removeItem('hecos-ui-auto-theme');
+          const autoToggle = document.getElementById('style_auto_mode');
+          if (autoToggle) autoToggle.checked = false;
+  
+          // Show "Saved" message
+          const status = document.getElementById('theme-save-status');
+          if (status) {
+              status.style.opacity = '1';
+              setTimeout(() => { status.style.opacity = '0'; }, 2000);
+          }
+      }
+      
+      // Highlight active card in Styles panel
+      document.querySelectorAll('#tab-aesthetics .cat-card').forEach(card => {
+          const onClick = card.getAttribute('onclick');
+          if (onClick && onClick.includes(`'${theme}'`)) {
+              card.classList.add('active');
+              card.style.borderColor = 'var(--accent)';
+          } else {
+              card.classList.remove('active');
+              card.style.borderColor = '';
+          }
+      });
+  
+      // Update switcher buttons (if any remain)
+      document.querySelectorAll('.view-switcher .switcher-btn').forEach(btn => {
+        if (btn.onclick && btn.onclick.toString().includes(`setTheme('${theme}')`)) {
+          btn.classList.add('active');
+        } else if (btn.onclick && btn.onclick.toString().includes('setTheme')) {
+          btn.classList.remove('active');
+        }
+      });
+      // Persist to localStorage
+      localStorage.setItem('hecos-ui-theme', theme);
+    };
+  
+    window.toggleAutoTheme = function(enabled) {
+        if (enabled) {
+            setTheme('native', false);
+            localStorage.setItem('hecos-ui-auto-theme', 'true');
+        } else {
+            localStorage.removeItem('hecos-ui-auto-theme');
+        }
+    };
+  
+    // Load saved theme on boot (UI bindings only, DOM was themed at body start)
+    const autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+    if (autoTheme) {
+        let el = document.getElementById('style_auto_mode');
+        if (el) el.checked = true;
+    }
+</script>
