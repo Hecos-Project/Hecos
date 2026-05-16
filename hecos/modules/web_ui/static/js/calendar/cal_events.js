@@ -62,7 +62,10 @@
         const opts = document.getElementById('cal-reminder-options');
         if (cb) {
             cb.checked = hasRemind;
-            if (opts) opts.style.display = hasRemind ? 'block' : 'none';
+            if (opts) {
+                opts.style.display = hasRemind ? 'block' : 'none';
+                cb.onchange = () => { opts.style.display = cb.checked ? 'block' : 'none'; };
+            }
         }
         if (hasRemind) {
             const isInt  = ev.extendedProps.interactive;
@@ -114,6 +117,9 @@
     }
 
     function submitForm() {
+        const btn      = document.getElementById('cal-submit-btn');
+        if (btn && btn.disabled) return; // Prevent multiple clicks
+
         const title    = (document.getElementById('cal-f-title').value  || '').trim();
         const start    = (document.getElementById('cal-f-start').value  || '').trim();
         const end      = (document.getElementById('cal-f-end').value    || '').trim() || null;
@@ -126,6 +132,13 @@
         const msg      = document.getElementById('cal-form-msg');
 
         if (!title || !start) { msg.style.color = '#e05'; msg.textContent = hcalT.msgError || 'Error'; return; }
+
+        let originalBtnHtml = '';
+        if (btn) {
+            originalBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
 
         const url    = s.currentEditId ? `/api/ext/calendar/events/${s.currentEditId}` : '/api/ext/calendar/events';
         const method = s.currentEditId ? 'PUT' : 'POST';
@@ -148,7 +161,13 @@
                 setTimeout(cancelForm, 1200);
             }
         })
-        .catch(() => { msg.style.color = '#e05'; msg.textContent = hcalT.msgError || 'Error'; });
+        .catch(() => { msg.style.color = '#e05'; msg.textContent = hcalT.msgError || 'Error'; })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        });
     }
 
     function deleteEvent(id) {

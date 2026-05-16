@@ -28,8 +28,9 @@
     function saveSettings() {
         const localeEl = document.getElementById('cal-set-locale');
         const countryEl = document.getElementById('cal-set-country');
-        const locale = localeEl ? localeEl.value : 'en-US';
-        const country = countryEl ? countryEl.value : 'US';
+        const calC = (window.cfg && window.cfg.extensions) ? window.cfg.extensions.calendar : {};
+        const locale = localeEl ? localeEl.value : (calC.calendar_locale || s.localeStr || 'en-US');
+        const country = countryEl ? countryEl.value : (calC.calendar_country || 'US');
 
         const dayColors = ['', '', '', '', '', '', ''];
         for (let i = 0; i < 7; i++) {
@@ -49,20 +50,29 @@
             statusEl.innerHTML     = '<i class="fas fa-sync-alt fa-spin"></i> Salvataggio...';
         }
 
-        // Post settings deeply inside extension structure to avoid purging other settings
+        const calendarDataToSave = {
+            calendar_locale   : locale,
+            calendar_country  : country,
+            day_colors        : dayColors,
+            bg_color          : bg_color,
+            bg_image          : bg_image,
+            calendar_sync_urls: s.syncUrls
+        };
+
+        // CRITICAL: Keep window.cfg in sync synchronously BEFORE the fetch to prevent stale calendar data
+        // overwriting this POST via config_mapper.js buildPayload() during a global dashboard save.
+        if (window.cfg) {
+            window.cfg.extensions = window.cfg.extensions || {};
+            window.cfg.extensions.calendar = calendarDataToSave;
+        }
+
+        // Post settings deeply inside extension structure
         fetch('/hecos/config', {
             method  : 'POST',
             headers : { 'Content-Type': 'application/json' },
             body    : JSON.stringify({
                 extensions: {
-                    calendar: {
-                        calendar_locale   : locale,
-                        calendar_country  : country,
-                        day_colors        : dayColors,
-                        bg_color          : bg_color,
-                        bg_image          : bg_image,
-                        calendar_sync_urls: s.syncUrls
-                    }
+                    calendar: calendarDataToSave
                 }
             })
         })
@@ -79,20 +89,6 @@
                 }
             }
             if (d.ok) {
-                // CRITICAL: Keep window.cfg in sync to prevent stale calendar data
-                // overwriting this POST via config_mapper.js buildPayload().
-                if (window.cfg) {
-                    window.cfg.extensions = window.cfg.extensions || {};
-                    window.cfg.extensions.calendar = {
-                        calendar_locale   : locale,
-                        calendar_country  : country,
-                        day_colors        : dayColors,
-                        bg_color          : bg_color,
-                        bg_image          : bg_image,
-                        calendar_sync_urls: s.syncUrls
-                    };
-                }
-
                 window.hcal._applyDayColors(dayColors);
 
                 // Apply background to card for instant visual feedback
