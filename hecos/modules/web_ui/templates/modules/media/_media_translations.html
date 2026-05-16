@@ -1,0 +1,22 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media: Translation Bridge for media_panel.js
+     Exposes window.mpT so the static JS file can access Jinja2 strings.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+window.mpT = {
+    noPlaylist      : "{{ t('webui_mp_no_playlist') }}",
+    playing         : "{{ t('webui_mp_playing') }}",
+    paused          : "{{ t('webui_mp_paused') }}",
+    idle            : "{{ t('webui_mp_idle') }}",
+    tracks          : "{{ t('webui_mp_tracks') }}",
+    noPlaylists     : "{{ t('webui_mp_no_playlists') }}",
+    showQueue       : "{{ t('webui_mp_show_queue') }}",
+    hideQueue       : "{{ t('webui_mp_hide_queue') }}",
+    scanError       : "{{ t('webui_mp_scan_error') }}",
+    deleteConfirm   : "{{ t('webui_mp_delete_confirm') }}",
+    deleteTrack     : "{{ t('webui_mp_delete_track_confirm') }}",
+    pickerMediaRoot : "{{ t('webui_mp_picker_media_root') }}",
+    pickerScan      : "{{ t('webui_mp_picker_scan') }}",
+    filePickerMissing: "{{ t('webui_mp_file_picker_missing') }}"
+};
+</script>

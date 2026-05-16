@@ -1,0 +1,65 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media: Now Playing Card — player controls, progress bar, volume, queue
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card" id="card-now-playing" style="position:relative; overflow:hidden;">
+  <div class="card-title"><i class="fas fa-music"></i> {{ t('webui_mp_nowplaying') }}</div>
+
+  <div class="mp-dashboard-player" style="background:rgba(0,0,0,0.15); border:1px solid var(--border); border-radius:var(--radius); padding:16px; position:relative;">
+
+    <!-- Track Header -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+      <div style="flex:1; overflow:hidden;">
+        <div id="mp-playlist-name" style="font-size:10px; color:var(--accent); text-transform:uppercase; font-weight:800; letter-spacing:1px; margin-bottom:2px; opacity:0.8;"></div>
+        <div id="mp-track-name" style="font-weight:600; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">—</div>
+      </div>
+      <div id="mp-status-badge" style="font-size:10px; padding:2px 6px; border-radius:4px; background:var(--bg2); color:var(--muted); font-weight:700;">OFF</div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-bottom:4px;">
+        <span id="mp-time-current">0:00</span>
+        <span id="mp-time-total">0:00</span>
+      </div>
+      <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; cursor:pointer;" onclick="mpSeek(event)">
+        <div id="mp-progress-fill" style="height:100%; background:var(--accent); width:0%; transition:width 0.3s ease;"></div>
+      </div>
+    </div>
+
+    <!-- Main Controls -->
+    <div style="display:flex; gap:12px; align-items:center; justify-content:center; margin-bottom:16px;">
+      <button class="btn btn-secondary btn-circle" onclick="mpControl('prev')" title="Previous" style="width:36px; height:36px; padding:0;"><i class="fas fa-step-backward"></i></button>
+      <button id="mp-btn-play" class="btn btn-primary btn-circle" onclick="mpTogglePlay()" style="width:44px; height:44px; padding:0; font-size:18px;"><i class="fas fa-play"></i></button>
+      <button class="btn btn-secondary btn-circle" onclick="mpControl('stop')" title="Stop" style="width:36px; height:36px; padding:0;"><i class="fas fa-stop"></i></button>
+      <button class="btn btn-secondary btn-circle" onclick="mpControl('next')" title="Next" style="width:36px; height:36px; padding:0;"><i class="fas fa-step-forward"></i></button>
+    </div>
+
+    <!-- Volume -->
+    <div style="display:flex; align-items:center; gap:12px; padding:8px 12px; background:rgba(0,0,0,0.2); border-radius:8px;">
+      <span style="font-size:14px; opacity:0.7;"><i class="fas fa-volume-up"></i></span>
+      <input type="range" id="mp-volume" min="0" max="100" value="80" style="flex:1; height:4px;" oninput="mpSetVolume(this.value)">
+      <span id="mp-volume-val" style="font-size:11px; color:var(--muted); min-width:24px; text-align:right;">80</span>
+    </div>
+
+    <!-- Shuffle / Repeat -->
+    <div style="display:flex; gap:10px; margin-top:12px; font-size:12px;">
+      <button id="mp-btn-shuffle" class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('shuffle')"><i class="fas fa-random"></i> Shuffle</button>
+      <button id="mp-btn-repeat"  class="btn btn-secondary btn-sm" style="flex:1; opacity:0.5;" onclick="mpControl('repeat')"><i class="fas fa-redo"></i> Repeat</button>
+    </div>
+
+    <!-- Queue Drawer -->
+    <div id="mp-queue-container" style="margin-top:16px; border-top:1px solid var(--border); padding-top:12px; display:none;">
+      <div style="font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between;">
+        <span>Queue / Playlist</span>
+        <span id="mp-queue-count">0 tracks</span>
+      </div>
+      <div id="mp-queue-list" style="max-height:180px; overflow-y:auto; font-size:12px;">
+        <!-- Queue items rendered by JS -->
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-top:8px;">
+      <button class="btn btn-ghost btn-xs" id="mp-toggle-queue" style="font-size:10px; color:var(--muted);" onclick="mpToggleQueueView()">{{ t('webui_mp_show_queue') }} ▼</button>
+    </div>
+  </div>
+</div>

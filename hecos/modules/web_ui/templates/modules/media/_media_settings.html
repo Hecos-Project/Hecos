@@ -1,0 +1,69 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media: Settings Card — volume, backend, root dir, toggles
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title"><i class="fas fa-cog"></i> {{ t('webui_mp_settings') }}</div>
+
+  <div class="grid-2">
+    <div class="field">
+      <label>{{ t('webui_mp_volume') }}</label>
+      <input type="number" id="mp-cfg-volume" min="0" max="100" step="1" value="80">
+    </div>
+    <div class="field">
+      <label>{{ t('webui_mp_backend') }}</label>
+      <select id="mp-cfg-backend">
+        <option value="auto">auto (VLC → mpv → system)</option>
+        <option value="vlc">VLC</option>
+        <option value="mpv">mpv</option>
+        <option value="system">System default</option>
+      </select>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_backend_hint') }}</p>
+    </div>
+    <div class="field" style="grid-column: 1 / -1;">
+      <label>{{ t('webui_mp_media_root') }}</label>
+      <div style="display:flex; gap:6px;">
+        <input type="text" id="mp-cfg-root" placeholder="{{ t('webui_mp_media_root_ph') }}" style="flex:1;">
+        <button type="button" class="btn btn-secondary" onclick="mpBrowseRoot()" title="{{ t('webui_mp_media_root') }}"><i class="fas fa-folder-open"></i></button>
+      </div>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px;">{{ t('webui_mp_media_root_hint') }}</p>
+    </div>
+    <div class="field">
+      <label>{{ t('webui_mp_default_playlist') }}</label>
+      <input type="text" id="mp-cfg-autoload" placeholder="{{ t('webui_mp_default_playlist_ph') }}">
+    </div>
+    <div class="field">
+      <label>{{ t('webui_mp_thumb') }}</label>
+      <select id="mp-cfg-thumb">
+        <option value="small">Small</option>
+        <option value="medium">Medium</option>
+        <option value="large">Large</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="font-size:13px; font-weight:600; margin:12px 0 8px;">{{ t('webui_mp_options') }}</div>
+  <div class="toggle-row">
+    <div class="toggle-info">{{ t('webui_mp_auto_advance') }}</div>
+    <label class="switch"><input type="checkbox" id="mp-cfg-autoadvance" checked><span class="slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-info">{{ t('webui_mp_shuffle') }}</div>
+    <label class="switch"><input type="checkbox" id="mp-cfg-shuffle"><span class="slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-info">{{ t('webui_mp_repeat') }}</div>
+    <label class="switch"><input type="checkbox" id="mp-cfg-repeat"><span class="slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-info">{{ t('webui_mp_autoplay_video') }}</div>
+    <label class="switch"><input type="checkbox" id="mp-cfg-autoplay-video"><span class="slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-info">{{ t('webui_mp_autoplay_audio') }}</div>
+    <label class="switch"><input type="checkbox" id="mp-cfg-autoplay-audio"><span class="slider"></span></label>
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-info">{{ t('webui_mp_filmstrip') }}</div>
+    <label class="switch"><input type="checkbox" id="mp-cfg-filmstrip" checked><span class="slider"></span></label>
+  </div>
+</div>
