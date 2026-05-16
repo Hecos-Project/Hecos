@@ -33,7 +33,6 @@ def get_state_manager():
 class HecosWebUIServer:
     def __init__(self, config_manager, root_dir: str, port: int, logger=None):
         self.config_manager = config_manager
-        # Fallback if somehow initialized before config manager is injected
         if self.config_manager is None:
             class DummyConfig:
                 config = {"plugins": {"WEB_UI": {"https_enabled": True, "port": 7070}}}
@@ -46,169 +45,20 @@ class HecosWebUIServer:
 
     def start(self) -> None:
         try:
-            from flask import Flask
-        except ImportError as e:
-            self.logger.warning(f"[WebUI] Flask not available ({e})")
-            return
-
-        from hecos.core.i18n.translator import t
-
-        # Static files and templates are inside this plugin's package
-        base_dir = os.path.dirname(__file__)
-        tpl_dir = os.path.join(base_dir, "templates")
-        stc_dir = os.path.join(base_dir, "static")
-        
-        app = Flask(__name__, 
-                    template_folder=tpl_dir, 
-                    static_folder=stc_dir,
-                    static_url_path='/static')
-        
-        # Attach config manager for extensions to access
-        app.hecos_config_manager = self.config_manager
-        
-        # FIX: Force CSS/JS mimetypes to prevent Windows Registry corruption issues leading to blank pages
-        import mimetypes
-        mimetypes.add_type('text/css', '.css')
-        mimetypes.add_type('application/javascript', '.js')
-        
-        from hecos.core.system.version import VERSION
-        
-        # Inject translation system and version into Jinja2 templates
-        app.jinja_env.globals.update(t=t, version=VERSION)
-
-        # ── Extend Jinja loader to include WEB_UI extension template dirs ──
-        # This allows {% include 'quick_links_widget.html' %} to resolve
-        # templates stored in modules/web_ui/extensions/<ext>/templates/
-        try:
-            from jinja2 import FileSystemLoader, ChoiceLoader
-            _ext_root = os.path.join(base_dir, "extensions")
-            _extra_loaders = []
-            if os.path.isdir(_ext_root):
-                for _ext_name in os.listdir(_ext_root):
-                    _ext_tpl = os.path.join(_ext_root, _ext_name, "templates")
-                    if os.path.isdir(_ext_tpl):
-                        _extra_loaders.append(FileSystemLoader(_ext_tpl))
-            if _extra_loaders:
-                app.jinja_loader = ChoiceLoader([app.jinja_loader] + _extra_loaders)
-        except Exception as _jinja_e:
-            self.logger.warning(f"[WebUI] Could not extend Jinja loader: {_jinja_e}")
-        # ───────────────────────────────────────────────────────────────────
-
-
-        # --- HECOS AUTH SYSTEM ---
-        app.secret_key = self.config_manager.config.get("system", {}).get("flask_secret_key", "hecos_default_secret_key_84nd")
-        
-        from flask_login import LoginManager, current_user
-        from hecos.core.auth.auth_manager import auth_mgr
-        
-        login_manager = LoginManager()
-        login_manager.init_app(app)
-        login_manager.login_view = "login_page"
-
-        @login_manager.user_loader
-        def load_user(user_id):
-            return auth_mgr.get_user_by_id(user_id)
-
-        from flask import request, redirect, url_for, jsonify
-        @app.before_request
-        def require_login():
-            # Exempt routes for the login process and static files
-            exempt_paths = ['/login', '/logout', '/static', '/assets', '/favicon.ico']
-            if any(request.path.startswith(p) for p in exempt_paths):
-                return
-            
-            if not current_user.is_authenticated:
-                if request.path.startswith('/api/') or request.path.startswith('/hecos/api/'):
-                    return jsonify({"ok": False, "error": "Authentication required. Please login."}), 401
-                return redirect(url_for('login_page'))
-        # --------------------------
-
-        # Get debug state from system config
-        debug_on = self.config_manager.config.get("system", {}).get("flask_debug", False)
-
-        import logging as _lg
-
-        class _ProtocolMismatchFilter(_lg.Filter):
-            """Silences the 400 errors caused by browsers sending HTTPS to an HTTP socket."""
-            def filter(self, record):
-                msg = record.getMessage()
-                return not ("Bad request version" in msg or
-                            "Bad request syntax" in msg or
-                            "Bad HTTP/0.9 request" in msg)
-
-        wz_log = _lg.getLogger("werkzeug")
-        wz_log.addFilter(_ProtocolMismatchFilter())
-        if not debug_on:
-            try:
-                wz_log.setLevel(_lg.ERROR)
-                app.logger.disabled = True
-            except Exception:
-                pass
-        else:
-            # When debug is ON, ensure logs propagate to Hecos's root logger
-            wz_log.setLevel(_lg.INFO)
-            wz_log.propagate = True
-
-        # Register all routes — pass getter so routes always read the current SM
-        try:
-            init_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
-            
-            from .routes_logs import init_log_routes
-            init_log_routes(app, self.config_manager, self.root_dir, self.logger, get_state_manager)
-
-            from .routes_chat import init_chat_routes
-            init_chat_routes(app, self.config_manager, self.root_dir, self.logger)
-            
-            from .routes_auth import init_auth_routes
-            init_auth_routes(app, self.config_manager, self.logger)
-            
-            from .routes_mcp import init_mcp_routes
-            init_mcp_routes(app, self.config_manager, self.logger)
-
-            from .routes_widgets import init_widget_routes
-            init_widget_routes(app, self.config_manager, self.logger)
-
-            # ── Control Room Module B — Standalone /home page ────────────────
-            from .routes_home import init_home_routes
-            init_home_routes(app, self.config_manager, self.logger)
-            # ─────────────────────────────────────────────────────────────────
-
-
-            from .routes_history import history_bp
-            app.register_blueprint(history_bp)
-
-            from .routes_remote_triggers import init_remote_trigger_routes
-            init_remote_trigger_routes(app, self.logger, get_state_manager)
-
-            # ── Hecos Media Player — Standalone Shared Plugin ────────────────
-            try:
-                from hecos.plugins.media_player.routes import init_routes as init_media_player
-                init_media_player(app)
-                self.logger.info("[WebUI] Hecos Media Player plugin loaded.")
-            except Exception as _mp_e:
-                self.logger.warning(f"[WebUI] Media Player plugin could not load: {_mp_e}")
-            # ─────────────────────────────────────────────────────────────────
-
-            # ── WEB_UI Shared Extensions (sidebar widgets etc.) ──────────────
-            try:
-                from hecos.core.system.extension_loader import (
-                    discover_webui_extensions, load_eager_extensions
-                )
-                _webui_dir = os.path.dirname(__file__)
-                discover_webui_extensions(_webui_dir)
-                load_eager_extensions(app, "WEB_UI")
-                self.logger.info("[WebUI] WEB_UI extensions loaded.")
-            except Exception as _ext_e:
-                self.logger.warning(f"[WebUI] WEB_UI extension discovery error: {_ext_e}")
-            # ─────────────────────────────────────────────────────────────────
-
+            from .server_flask import create_flask_app
+            app, debug_on = create_flask_app(
+                self.config_manager, 
+                self.root_dir, 
+                self.logger, 
+                get_state_manager
+            )
         except Exception as e:
             import traceback
-            print(f"[DEBUG BOOT] CRITICAL ERROR during route registration: {e}", flush=True)
+            print(f"[DEBUG BOOT] CRITICAL ERROR during flask creation: {e}", flush=True)
             print(traceback.format_exc(), flush=True)
             return
 
-        # Start PTT Bus (background listeners for keyboard/media-keys/custom-key sources)
+        # Start PTT Bus
         try:
             from hecos.core.audio import ptt_bus
             ptt_bus.start(state=get_state_manager())
@@ -216,7 +66,7 @@ class HecosWebUIServer:
         except Exception as e:
             self.logger.warning(f"[WebUI] PTT Bus could not start: {e}")
 
-        # Start Experimental Smartwatch Bus (strictly isolated toggle mode)
+        # Start Experimental Smartwatch Bus
         try:
             from hecos.core.audio import smartwatch_bus
             smartwatch_bus.start(state=get_state_manager())
@@ -225,12 +75,8 @@ class HecosWebUIServer:
 
         def _run():
             try:
-                # SSL Setup
-                ssl_context = None
                 webui_cfg = self.config_manager.config.get("plugins", {}).get("WEB_UI", {})
-                use_https = webui_cfg.get("https_enabled", False)
-                scheme = "https" if use_https else "http"
-
+                
                 # Calculate internal LAN IP
                 try:
                     import socket
@@ -241,101 +87,25 @@ class HecosWebUIServer:
                 except Exception:
                     lan_ip = "127.0.0.1"
 
-                if use_https:
-                    cert_file = webui_cfg.get("cert_file")
-                    key_file = webui_cfg.get("key_file")
-
-                    # ── Resolve relative paths to absolute (relative to project root) ──────
-                    # system.yaml may store relative paths like "certs/cert.pem".
-                    # os.path.exists() on a relative path depends on CWD, which is unreliable.
-                    # We anchor relative paths to the project root (two levels up from this plugin).
-                    _plugin_dir = os.path.dirname(os.path.abspath(__file__))
-                    _project_root = os.path.normpath(os.path.join(_plugin_dir, "..", "..", ".."))
-
-                    def _resolve(p):
-                        if p and not os.path.isabs(p):
-                            return os.path.join(_project_root, p)
-                        return p
-
-                    cert_file_abs = _resolve(cert_file)
-                    key_file_abs  = _resolve(key_file)
-                    # ─────────────────────────────────────────────────────────────────────────
-
-                    # ── Check if the existing cert covers the current LAN IP ──────────────
-                    # When the LAN IP changes (e.g. DHCP reassignment), or the cert was
-                    # generated for a different IP, we need to regenerate it.
-                    def _cert_covers_ip(cert_path, ip):
-                        """Returns True if the cert has `ip` in its SANs."""
-                        try:
-                            from cryptography import x509
-                            with open(cert_path, "rb") as f:
-                                cert = x509.load_pem_x509_certificate(f.read())
-                            san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
-                            import ipaddress as _ip
-                            for entry in san.value:
-                                if isinstance(entry, x509.IPAddress) and str(entry.value) == ip:
-                                    return True
-                                if isinstance(entry, x509.DNSName) and entry.value == ip:
-                                    return True
-                        except Exception:
-                            pass
-                        return False
-
-                    certs_ok = (
-                        cert_file_abs and key_file_abs
-                        and os.path.exists(cert_file_abs)
-                        and os.path.exists(key_file_abs)
-                        and _cert_covers_ip(cert_file_abs, lan_ip)
-                    )
-
-                    # Auto-generate only when truly missing or IP has changed
-                    if not certs_ok:
-                        try:
-                            from hecos.core.security.pki.ca_manager import CAManager
-                            from hecos.core.security.pki.cert_generator import CertGenerator
-
-                            self.logger.info("[PKI] Certificates missing or stale. Regenerating for %s...", lan_ip)
-                            ca_mgr  = CAManager()
-                            cert_gen = CertGenerator(ca_mgr)
-
-                            c_path, k_path = cert_gen.generate_host_cert(lan_ip)
-
-                            # Persist the absolute paths so the next restart resolves correctly
-                            webui_cfg = self.config_manager.config.get("plugins", {}).get("WEB_UI", {})
-                            webui_cfg["cert_file"] = c_path
-                            webui_cfg["key_file"]  = k_path
-                            self.config_manager.save()
-
-                            cert_file_abs = c_path
-                            key_file_abs  = k_path
-                            self.logger.info("[PKI] New certificates saved for %s.", lan_ip)
-                        except Exception as pki_e:
-                            self.logger.error("[PKI] Automation failed: %s", pki_e)
-
-
-                    if cert_file_abs and key_file_abs and os.path.exists(cert_file_abs) and os.path.exists(key_file_abs):
-                        ssl_context = (cert_file_abs, key_file_abs)
-                    else:
-                        self.logger.warning("[WebUI] HTTPS enabled but cert/key not found. Fallback to HTTP.")
-                        scheme = "http"
-                        use_https = False
+                # Check and Automate SSL mapping via extracted module
+                from .server_ssl import ensure_ssl_context
+                ssl_context = ensure_ssl_context(webui_cfg, lan_ip, self.config_manager, self.logger)
+                
+                use_https = webui_cfg.get("https_enabled", False)
+                scheme = "https" if use_https and ssl_context else "http"
 
                 self.logger.info(
                     f"[WebUI] 🚀 Server live (debug={debug_on}) → "
                     f"{scheme}://{lan_ip}:{self.port}/chat  |  "
                     f"{scheme}://{lan_ip}:{self.port}/hecos/config/ui"
                 )
-                # Suppress Flask's "* Serving Flask app / * Debug mode" banner.
-                # Those lines print directly to stdout and would corrupt the
-                # Hecos console prompt. Hecos already shows its own link banner.
+                
                 try:
                     import flask.cli as _flask_cli
                     _flask_cli.show_server_banner = lambda *a, **kw: None
                 except Exception:
                     pass
 
-                # We disable reloader to avoid starting Hecos threads twice
-                # Bind to 0.0.0.0 to handle localhost/127.0.0.1/::1 issues on Windows
                 if ssl_context:
                     app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False, ssl_context=ssl_context)
                 else:
