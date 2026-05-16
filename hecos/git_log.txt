@@ -1,0 +1,5 @@
+185a064 suddivisione moduli js
+57abe72 feat: theme color and background module
+cbe4244 Fix CDP detecting
+573adf9 fix tray icon
+62c9d39 Icontray refactoring (flet control center)
