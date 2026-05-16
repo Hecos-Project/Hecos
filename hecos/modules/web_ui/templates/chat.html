@@ -163,7 +163,11 @@
 <script src="/static/js/audio_ui.js?v={{ version }}"></script>
 <script src="/static/js/mobile/mobile_logic.js?v={{ version }}"></script>
 <script src="/static/js/pull_to_refresh.js?v={{ version }}"></script>
-<script src="/static/js/chat_history.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_modes.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_render.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_restore.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_actions.js?v={{ version }}"></script>
 <!-- Remote Triggers (Media keys, Arduino Hooks) -->
 {% if zconfig.plugins.REMOTE_TRIGGERS and zconfig.plugins.REMOTE_TRIGGERS.enabled != False %}
 <script src="/remote_triggers_static/js/remote_triggers.js"></script>
