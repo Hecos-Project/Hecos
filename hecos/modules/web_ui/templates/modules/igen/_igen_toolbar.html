@@ -1,0 +1,12 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     IGen: Preset Toolbar — select, save-as, update, delete
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; flex-wrap:wrap;">
+  <span style="font-size:12px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:1px; white-space:nowrap;"><i class="fas fa-bolt"></i> Preset</span>
+  <select id="igen-preset" onchange="loadIgenPreset()" class="config-input" style="flex:1; min-width:180px; padding:6px 12px; font-size:13px;">
+    <option value="">— Select a preset —</option>
+  </select>
+  <button id="igen-preset-update-btn" onclick="updateIgenPreset()" title="Update selected user preset with current values" style="display:none; padding:7px 14px; border-radius:8px; border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.1); color:var(--accent); cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap;"><i class="fas fa-sync"></i> Update</button>
+  <button onclick="saveIgenPreset()" title="Save current config as a new preset" class="btn btn-sm" style="white-space:nowrap;"><i class="fas fa-save"></i> Save As</button>
+  <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;"><i class="fas fa-trash"></i> Delete</button>
+</div>

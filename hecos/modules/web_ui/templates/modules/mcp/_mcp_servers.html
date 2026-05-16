@@ -1,0 +1,65 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MCP: Active Servers Card + Add New Server Form
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">Active Servers</div>
+  <table class="config-table" id="mcp-servers-table" style="margin-bottom: 20px; width: 100%;">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Command &amp; Arguments</th>
+        <th>Active</th>
+        <th>Remove</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dynamic rows rendered by mcp_panel.js -->
+    </tbody>
+  </table>
+
+  <!-- Add New Server -->
+  <div style="background: var(--bg3); padding: 16px; border-radius: 10px; border: 1px dashed var(--accent);">
+    <div class="card-title" style="font-size:13px; margin-bottom: 12px;"><i class="fas fa-plus"></i> Add New Server</div>
+
+    <div class="field">
+      <label>Load a Preset</label>
+      <select id="mcp-presets" onchange="applyMCPPreset(this.value)">
+        <option value="">— Choose from Popular Presets —</option>
+        <option value="everything">Educational: Everything (Mock tools)</option>
+        <option value="sequentialthinking">Reasoning: Sequential Thinking</option>
+        <option value="bravesearch">Web Search: Brave Search (API Key required)</option>
+        <option value="wikipedia">Knowledge: Wikipedia</option>
+        <option value="google-maps">Maps: Google Maps (API Key required)</option>
+        <option value="github">Developer: GitHub (PAT required)</option>
+        <option value="filesystem">Utility: Local File System</option>
+        <option value="postgres">Database: PostgreSQL</option>
+        <option value="weather">Science: OpenWeather (API Key required)</option>
+      </select>
+    </div>
+
+    <div class="grid-2" style="margin-top: 8px;">
+      <div class="field">
+        <label>Name (namespace)</label>
+        <input type="text" id="mcp-new-name" placeholder="e.g. google_maps">
+      </div>
+      <div class="field">
+        <label>Command</label>
+        <input type="text" id="mcp-new-cmd" placeholder="e.g. npx">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Arguments</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="mcp-new-args" placeholder="e.g. -y @modelcontextprotocol/server-google-maps" style="flex:1;">
+        <button type="button" class="btn btn-secondary"
+                onclick="HecosFilePicker.open({title: 'Select Folder/Path', initialPath: 'C:\\Hecos-Core', onSelect: p => document.getElementById('mcp-new-args').value += ' ' + p})"
+                title="Browse Path"><i class="fas fa-folder-open"></i></button>
+      </div>
+    </div>
+
+    <div style="text-align: right; margin-top: 8px;">
+      <button type="button" class="btn btn-primary" onclick="addMCPServer()"><i class="fas fa-plus"></i> Add Server</button>
+    </div>
+  </div>
+</div>

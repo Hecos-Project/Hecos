@@ -1,0 +1,73 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Users: Sidebar Column — Avatar, Contact Info, Security, Registry
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- COLUMN 2: Avatar, Security & Admin -->
+  <div style="display:flex; flex-direction:column; gap:24px;">
+
+    <!-- Avatar Section -->
+    <div class="avatar-container">
+      <div class="profile-label">User Avatar</div>
+      <div style="position:relative; width:120px; height:120px;">
+        <img id="my_avatar_preview" src="" alt="Avatar"
+             style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid var(--accent); display:none; box-shadow:0 0 15px rgba(var(--accent-rgb), 0.2);">
+        <div id="my_avatar_placeholder"
+             style="width:100%; height:100%; border-radius:50%; background:var(--bg3); border:2px dashed var(--border); color:var(--muted); display:flex; align-items:center; justify-content:center; font-size:12px;">
+          No Avatar
+        </div>
+      </div>
+      <input type="file" id="my_avatar_file" accept="image/jpeg, image/png" style="display:none;" onchange="uploadMyAvatar()">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('my_avatar_file').click()"
+              style="width:100%; font-size:12px; height:36px;">Change Image</button>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Contact Info</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <input type="email" id="my_email"   class="config-input" placeholder="Email"   style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        <input type="tel"   id="my_phone"   class="config-input" placeholder="Phone"   style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        <input type="text"  id="my_address" class="config-input" placeholder="Address" style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        <input type="text"  id="my_city"    class="config-input" placeholder="City"    style="width:100%; font-size:12px;" oninput="debouncedSave()">
+      </div>
+    </div>
+
+    <!-- Security -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Security</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="pass-wrapper">
+          <input type="password" id="sec_current_pass" class="config-input" placeholder="Current Key" style="width:100%; font-size:12px;">
+          <span class="eye-toggle" onclick="togglePass('sec_current_pass')"><i class="fas fa-eye"></i></span>
+        </div>
+        <div class="pass-wrapper">
+          <input type="password" id="sec_new_pass" class="config-input" placeholder="New Key" style="width:100%; font-size:12px;">
+          <span class="eye-toggle" onclick="togglePass('sec_new_pass')"><i class="fas fa-eye"></i></span>
+        </div>
+        <button type="button" class="btn btn-secondary" onclick="changeMyPassword()" style="width:100%; height:36px; font-weight:600; font-size:11px;">
+          Update Security
+        </button>
+        <div id="sec-status" style="font-size:10px; margin-top:4px; display:none; padding:6px; border-radius:4px; text-transform:uppercase;"></div>
+      </div>
+    </div>
+
+    <!-- System Registry -->
+    <div class="card" style="flex-grow:1;">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Registry</div>
+      <div id="users-table-container" style="background:rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">
+        <p style="color:var(--muted); font-size:11px; padding:20px; text-align:center;">Loading Registry...</p>
+      </div>
+      <div style="margin-top:16px; padding:10px; border:1px dashed var(--border); border-radius:8px;">
+        <input type="text"     id="new_user_name" class="config-input" placeholder="Username" style="font-size:11px; margin-bottom:6px; width:100%;">
+        <input type="password" id="new_user_pass" class="config-input" placeholder="Password" style="font-size:11px; margin-bottom:6px; width:100%;">
+        <select id="new_user_role" class="config-input" style="font-size:11px; margin-bottom:8px; width:100%;">
+          <option value="guest">Guest</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button type="button" class="btn btn-primary" onclick="createUser()" style="font-size:11px; font-weight:700; height:32px; width:100%;">+ Create</button>
+      </div>
+    </div>
+
+  </div>
+<!-- END GRID -->
+</div>

@@ -1,0 +1,48 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     IGen: Enable Toggle + Provider & Model + HuggingFace Explorer
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Enable Toggle -->
+<div class="toggle-row">
+  <div class="toggle-info" style="font-weight:600; color:var(--text);">Enable Image Generation</div>
+  <label class="switch"><input type="checkbox" id="igen-enabled" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+</div>
+
+<!-- Provider & Model -->
+<div class="grid-2" style="margin-top:12px;">
+  <div class="field">
+    <label>Provider</label>
+    <select id="igen-provider" onchange="onProviderChanged()" data-cfg-plugin="MEDIA">
+      <!-- Populated dynamically -->
+    </select>
+  </div>
+  <div class="field">
+    <label>Model
+      <button onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh</button>
+      <button id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,231,231,0.1); cursor:pointer;" title="Remove this custom model"><i class="fas fa-times"></i> Delete</button>
+    </label>
+    <select id="igen-model" onchange="checkCustomModelSelect()" data-cfg-plugin="MEDIA"><option>flux</option></select>
+    <span id="igen-model-status" style="font-size:11px;color:var(--muted);"></span>
+  </div>
+</div>
+
+<!-- Hugging Face Hub Explorer -->
+<details id="igen-hf-explorer-wrapper" style="margin-top:10px; display:none; background:var(--glass-b); padding:10px; border-radius:12px; border:1px solid var(--border);">
+  <summary style="cursor:pointer; font-weight:600; color:var(--text); list-style:none; display:flex; align-items:center; gap:6px;">
+    <span style="font-size:13px;">Search Hugging Face Hub <small style="font-weight:400; color:var(--muted);">— find custom models</small></span>
+  </summary>
+
+  <div style="margin-top:10px; background:rgba(231,76,60,0.06); border-left:3px solid #e74c3c; padding:8px; font-size:11px; color:var(--text); line-height:1.4;">
+    <strong><i class="fas fa-exclamation-triangle"></i> Hugging Face API Limitation:</strong> Millions of models exist on the Hub, but the free public Inference API only supports a small fraction (mostly official or optimized models). If a model generates a <em>"Model not supported"</em> error, it is too large or disabled for free tier by HF. Use the default models or switch to <b>Pollinations</b> for unlimited access.
+  </div>
+
+  <div style="margin-top:10px;">
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="igen-hf-search-q" placeholder="Model name, style, or tag (e.g. pixel art, sd-turbo)..." style="flex:1;" onkeydown="if(event.key==='Enter') searchHFHub()">
+      <button onclick="searchHFHub()" style="padding:6px 15px; border-radius:7px; border:1px solid var(--border); background:var(--accent); color:#fff; cursor:pointer; font-weight:600;">Search</button>
+    </div>
+    <div id="igen-hf-results" style="margin-top:10px; max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; background:var(--bg2);">
+       <div style="padding:10px; text-align:center; color:var(--muted); font-size:12px;">Enter a query to find text-to-image models.</div>
+    </div>
+  </div>
+</details>

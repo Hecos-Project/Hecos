@@ -1,0 +1,34 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Standalone Logs: Jinja2 Bootstrap Script
+     Injects theme, i18n translations and config into window globals so that
+     the static standalone_logs_engine.js can read them without Jinja2.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+  (function() {
+    window.setTheme = function(theme, manual) {
+      document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
+      if (theme && theme !== 'default') {
+        document.body.classList.add('theme-' + theme);
+      }
+      if (manual) localStorage.setItem('hecos-ui-theme', theme);
+    };
+
+    var autoTheme  = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+    var savedTheme = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+    var theme      = autoTheme ? 'native' : savedTheme;
+    window.setTheme(theme);
+  })();
+
+  window.I18N = {{ translations | tojson | safe }};
+  window.t = function(key, params = {}) {
+    let text = window.I18N[key] || key;
+    if (params) {
+      for (const [pKey, pVal] of Object.entries(params)) {
+        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
+      }
+    }
+    return text;
+  };
+
+  window.cfg = {{ zconfig | tojson | safe }};
+</script>
