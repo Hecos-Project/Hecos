@@ -53,6 +53,16 @@ async function showTab(name, skipScroll = false) {
     uiState.collapsedCategories = [];
   }
 
+  // If the panel was silently pre-fetched (no scripts), remove it so _loadPanel
+  // can re-inject it properly with all interactive scripts
+  if (window._searchCache && window._searchCache[targetId]) {
+      const stalePanel = document.getElementById('tab-' + targetId);
+      if (stalePanel && stalePanel.dataset.prefetchOnly === 'true') {
+          stalePanel.remove();
+      }
+      delete window._searchCache[targetId];
+  }
+
   // Lazy load: fetch panel HTML if not yet in DOM
   if (name !== 'welcome' && !_panelCache[targetId]) {
     if (_panelFetching[targetId]) {
@@ -178,6 +188,12 @@ async function _loadPanel(panelId) {
     window.injectIconsInPanel(panelId);
     if (typeof populateUI            === 'function') populateUI();
     if (typeof initRestartIndicators === 'function') initRestartIndicators();
+    if (window.HecosSearch && typeof window.HecosSearch.run === 'function') {
+        const inp = document.getElementById('zs-input');
+        if (inp && inp.value.trim()) {
+            window.HecosSearch.run(inp.value.trim());
+        }
+    }
     console.log(`[LazyHub] Panel '${panelId}' loaded and injected.`);
   } catch (e) {
     console.error(`[LazyHub] Failed to load panel '${panelId}':`, e);
@@ -261,3 +277,88 @@ window.setViewMode          = setViewMode;
 window.toggleCategory       = toggleCategory;
 window.toggleAllCategories  = toggleAllCategories;
 window.setCategoryFilter    = setCategoryFilter;
+
+/**
+ * Silent background fetch for a panel.
+ * Unlike _loadPanel, this does NOT touch the skeleton spinner,
+ * does NOT run populateUI() globally, and does NOT execute panel scripts.
+ * Its sole purpose is to inject the HTML so the search engine can index it.
+ */
+async function _prefetchPanel(panelId) {
+    if (_panelCache[panelId]) return;  // Already fully loaded by a user click
+    if (window._searchCache && window._searchCache[panelId]) return; // Already prefetched
+    const container = document.getElementById('panel-container');
+    if (!container) return;
+    try {
+        const res = await fetch(`/hecos/config/fragment/${panelId}`);
+        if (!res.ok) return;
+        const html = await res.text();
+        // Only inject if user hasn't loaded it in the meantime via a click
+        if (_panelCache[panelId]) return;
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        // Strip scripts so they don't auto-execute and mess up state
+        tmp.querySelectorAll('script').forEach(s => s.remove());
+        // Mark the root element with a data attribute so showTab knows to re-load with scripts
+        const firstEl = tmp.firstElementChild;
+        if (firstEl) firstEl.dataset.prefetchOnly = 'true';
+        // Inject silently — panel will be hidden (no 'active' class)
+        while (tmp.firstChild) container.appendChild(tmp.firstChild);
+        // Mark as search-only prefetched (NOT _panelCache — so showTab still triggers real load)
+        if (!window._searchCache) window._searchCache = {};
+        window._searchCache[panelId] = true;
+        // Re-run search if user is searching
+        if (window.HecosSearch && typeof window.HecosSearch.run === 'function') {
+            const inp = document.getElementById('zs-input');
+            if (inp && inp.value.trim()) {
+                window.HecosSearch.run(inp.value.trim());
+            }
+        }
+    } catch (e) {
+        // Silent fail — hydration is best-effort
+    }
+}
+
+const _prefetchQueue = {};  // panelId → Promise
+
+/**
+ * Background Progressive Hydration
+ * Silently fetches all panels in the background so the search engine can
+ * index ALL configuration content without the user having to open each tab.
+ */
+window._startProgressiveHydration = function(delayMs = 1500) {
+    if (window._hydrationStarted) return;
+    window._hydrationStarted = true;
+    
+    setTimeout(async () => {
+        const hub = window.CONFIG_HUB;
+        if (!hub || !hub.modules) return;
+        
+        console.log("[LazyHub] Starting silent background hydration for search indexing...");
+        const seen = new Set();
+        for (const mod of hub.modules) {
+            let pid = mod.id;
+            if (hub.tagMap && hub.tagMap[mod.pluginTag]) {
+                pid = hub.tagMap[mod.pluginTag];
+            } else if (mod.cat === 'MCP') {
+                pid = 'mcp';
+            } else if (mod.cat === 'PLUGINS') {
+                pid = 'plugins';
+            }
+            if (!pid || seen.has(pid)) continue;
+            seen.add(pid);
+            // Skip already loaded panels and external links
+            if (_panelCache[pid]) continue;
+            if (mod.external) continue;
+            // Prefetch silently
+            if (!_prefetchQueue[pid]) {
+                _prefetchQueue[pid] = _prefetchPanel(pid);
+            }
+            await _prefetchQueue[pid];
+            // Small yield between panels so the browser stays responsive
+            await new Promise(r => setTimeout(r, 150));
+        }
+        console.log("[LazyHub] Silent hydration done — all panels indexed.");
+    }, delayMs);
+};
+

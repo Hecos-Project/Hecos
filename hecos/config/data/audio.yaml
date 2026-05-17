@@ -1,12 +1,12 @@
-voice_status: true
+voice_status: false
 piper_path: ''
-onnx_model: C:\piper\it_IT-paola-medium.onnx
+onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
 speed: 1.0
 noise_scale: 0.8
 noise_w: 1.0
 sentence_silence: 0.2
 piper_timeout: 180
-listening_status: true
+listening_status: false
 energy_threshold: 450
 silence_timeout: 5
 phrase_limit: 15

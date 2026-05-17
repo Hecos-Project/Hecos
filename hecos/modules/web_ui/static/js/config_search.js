@@ -63,6 +63,9 @@
         // Events
         const inp = document.getElementById('zs-input');
         inp.addEventListener('input', () => {
+            if (typeof window._startProgressiveHydration === 'function') {
+                window._startProgressiveHydration(0);
+            }
             clearTimeout(_debounce);
             _debounce = setTimeout(() => runSearch(inp.value.trim()), S.debounce_ms);
             document.getElementById('zs-clear').style.display = inp.value ? 'block' : 'none';

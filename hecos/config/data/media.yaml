@@ -1,27 +1,27 @@
 image_gen:
-  enabled: true
-  provider: huggingface
-  model: black-forest-labs/FLUX.1-schnell
-  nologo: true
+  enabled: false
+  provider: ''
+  model: flux
+  nologo: false
   api_key: ''
   api_key_comment: ''
   aspect_ratio: 1:1
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 132714698
-  sampler: dpm++2m_karras
-  scheduler: karras
-  guidance_scale: 1.0
-  num_inference_steps: 4
+  last_seed: 521081930
+  sampler: euler_a
+  scheduler: euler
+  guidance_scale: 10.5
+  num_inference_steps: 51
   enable_negative_prompt: false
   negative_prompt: ''
   auto_enrich: false
   enrich_keywords: ''
   style: none
-  optimize_for_flux: true
+  optimize_for_flux: false
   flux_refiner_instructions: ''
-  show_metadata_in_chat: true
+  show_metadata_in_chat: false
   presets: {}
   active_preset: ''
   custom_hf_models: []

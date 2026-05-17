@@ -41,6 +41,10 @@ window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '
 // Lazy panel cache — shared with _loadPanel (config_core_navigation.js)
 const _panelCache    = {};  // panelId → true
 const _panelFetching = {};  // panelId → Promise (prevents duplicate fetches)
+// Expose on window so progressive hydration in config_core_navigation.js can access them
+window._panelCache    = _panelCache;
+window._panelFetching = _panelFetching;
+window._loadPanel     = function(pid) { return _loadPanel(pid); };
 
 // ── Global Exports ─────────────────────────────────────────────────────────────
 // (sub-modules export their own functions; list remaining core ones here)
@@ -119,3 +123,11 @@ window.addEventListener('hashchange', () => {
     const tab = window.location.hash.substring(1);
     if (tab && typeof showTab === 'function') showTab(tab);
 });
+
+// Start background panel hydration so the search engine can index all panels.
+// Runs after all sub-modules are loaded (this is the last script in index.html).
+if (document.readyState === 'complete') {
+    window._startProgressiveHydration(1500);
+} else {
+    window.addEventListener('load', () => window._startProgressiveHydration(1500));
+}

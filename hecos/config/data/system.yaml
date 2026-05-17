@@ -43,20 +43,20 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
 bridge:
-  use_processor: true
+  use_processor: false
   chunk_delay_ms: 0
-  debug_log: true
-  remove_think_tags: true
+  debug_log: false
+  remove_think_tags: false
   local_voice_enabled: false
-  webui_voice_enabled: true
-  webui_voice_stt: true
-  enable_tools: true
+  webui_voice_enabled: false
+  webui_voice_stt: false
+  enable_tools: false
 cognition:
-  memory_enabled: true
-  episodic_memory: true
+  memory_enabled: false
+  episodic_memory: false
   clear_on_restart: false
-  include_identity_context: true
-  include_self_awareness: true
+  include_identity_context: false
+  include_self_awareness: false
   max_history_messages: 20
 filters:
   remove_asterisks: both
