@@ -42,9 +42,11 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             tokens_c = 0
             last_model_live = None
 
+            ptt_on = False
             if sm is not None:
                 mic_on          = sm.listening_status
                 tts_on          = sm.voice_status
+                ptt_on          = sm.push_to_talk
                 last_tool       = sm.last_tool
                 tokens_p        = sm.last_tokens_prompt
                 tokens_c        = sm.last_tokens_completion
@@ -54,14 +56,16 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
                 acfg   = get_audio_config()
                 mic_on = acfg.get("listening_status", False)
                 tts_on = acfg.get("voice_status", False)
+                ptt_on = acfg.get("push_to_talk", False)
+
+            # Enforce PTT dependency: PTT cannot be ON if MIC is OFF
+            if not mic_on:
+                ptt_on = False
 
             active_model = last_model_live if last_model_live else model
             mic_status   = "ON" if mic_on else "OFF"
             tts_status   = "ON" if tts_on else "OFF"
-
-            from hecos.core.audio.device_manager import get_audio_config
-            acfg       = get_audio_config()
-            ptt_status = "ON" if acfg.get("push_to_talk", False) else "OFF"
+            ptt_status   = "ON" if ptt_on else "OFF"
 
             config_path = cfg_mgr.yaml_path
             mtime = os.path.getmtime(config_path) if os.path.exists(config_path) else 0

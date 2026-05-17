@@ -216,7 +216,9 @@ async function mpTogglePlaylistItems(name) {
 }
 
 async function mpRemoveTrackFromPlaylist(playlistName, index) {
-    if (!confirm(mpT.deleteTrack)) return;
+    const trackLabel = `Track ${index + 1}`;
+    const msg = mpT.deleteTrack.replace ? mpT.deleteTrack.replace('{name}', trackLabel) : mpT.deleteTrack;
+    if (!confirm(msg)) return;
     try {
         const r = await fetch(`/api/media_player/playlists/${encodeURIComponent(playlistName)}/items/${index}`, { method: 'DELETE' });
         const d = await r.json();

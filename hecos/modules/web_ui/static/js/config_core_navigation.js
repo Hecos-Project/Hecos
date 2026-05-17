@@ -313,6 +313,11 @@ async function _prefetchPanel(panelId) {
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
         tmp.querySelectorAll('script, style').forEach(el => el.remove());
+        // CRITICAL BUGFIX: Strip all IDs (except the top tab) so config_mapper doesn't 
+        // accidentally read these uninitialized raw inputs and overwrite backend state!
+        tmp.querySelectorAll('[id]').forEach(el => {
+            if (!el.id.startsWith('tab-')) el.removeAttribute('id');
+        });
 
         // Wrap it in a hidden container INSIDE panel-container so #config-form .panel works
         const container = document.getElementById('panel-container');

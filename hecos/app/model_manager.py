@@ -241,4 +241,19 @@ class ModelManager:
             backend_type = 'ollama'
             
         model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
+        
+        # Robust dynamic fallback if the model is empty (synchronizes with frontend UI dropdown auto-selection)
+        if not model or model == 'N/D':
+            if backend_type == 'cloud':
+                providers = config_dict.get('llm', {}).get('providers', {})
+                for prov_name, p_data in providers.items():
+                    models = p_data.get('models', [])
+                    if models:
+                        model = f"{prov_name}/{models[0]}" if not models[0].startswith(f"{prov_name}/") else models[0]
+                        break
+            elif backend_type in ('ollama', 'kobold'):
+                avail = config_dict.get('backend', {}).get(backend_type, {}).get('available_models', {})
+                if avail and isinstance(avail, dict):
+                    model = list(avail.values())[0]
+                    
         return backend_type, model

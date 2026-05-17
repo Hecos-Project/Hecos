@@ -4,19 +4,19 @@
      ══════════════════════════════════════════════════════════════════════════ -->
 <script>
 window.mpT = {
-    noPlaylist      : "{{ t('webui_mp_no_playlist') }}",
-    playing         : "{{ t('webui_mp_playing') }}",
-    paused          : "{{ t('webui_mp_paused') }}",
-    idle            : "{{ t('webui_mp_idle') }}",
-    tracks          : "{{ t('webui_mp_tracks') }}",
-    noPlaylists     : "{{ t('webui_mp_no_playlists') }}",
-    showQueue       : "{{ t('webui_mp_show_queue') }}",
-    hideQueue       : "{{ t('webui_mp_hide_queue') }}",
-    scanError       : "{{ t('webui_mp_scan_error') }}",
-    deleteConfirm   : "{{ t('webui_mp_delete_confirm') }}",
-    deleteTrack     : "{{ t('webui_mp_delete_track_confirm') }}",
-    pickerMediaRoot : "{{ t('webui_mp_picker_media_root') }}",
-    pickerScan      : "{{ t('webui_mp_picker_scan') }}",
-    filePickerMissing: "{{ t('webui_mp_file_picker_missing') }}"
+    noPlaylist      : {{ translations.get('webui_mp_no_playlist', 'No Playlist found') | tojson | safe }},
+    playing         : {{ translations.get('webui_mp_playing', 'Playing') | tojson | safe }},
+    paused          : {{ translations.get('webui_mp_paused', 'Paused') | tojson | safe }},
+    idle            : {{ translations.get('webui_mp_idle', 'Idle') | tojson | safe }},
+    tracks          : {{ translations.get('webui_mp_tracks', 'Tracks') | tojson | safe }},
+    noPlaylists     : {{ translations.get('webui_mp_no_playlists', 'No playlists available') | tojson | safe }},
+    showQueue       : {{ translations.get('webui_mp_show_queue', 'Show Queue') | tojson | safe }},
+    hideQueue       : {{ translations.get('webui_mp_hide_queue', 'Hide Queue') | tojson | safe }},
+    scanError       : {{ translations.get('webui_mp_scan_error', 'Scan Error') | tojson | safe }},
+    deleteConfirm   : {{ translations.get('webui_mp_delete_confirm', 'Are you sure you want to delete {name}?') | tojson | safe }},
+    deleteTrack     : {{ translations.get('webui_mp_delete_track_confirm', 'Remove {name} from playlist?') | tojson | safe }},
+    pickerMediaRoot : {{ translations.get('webui_mp_picker_media_root', 'Media Root Dir') | tojson | safe }},
+    pickerScan      : {{ translations.get('webui_mp_picker_scan', 'Scan for Playlists') | tojson | safe }},
+    filePickerMissing: {{ translations.get('webui_mp_file_picker_missing', 'File picker component not loaded.') | tojson | safe }}
 };
 </script>

@@ -15,7 +15,7 @@ ai:
 backend:
   type: cloud
   cloud:
-    model: ''
+    model: 'gemini/gemini-2.5-flash'
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -58,7 +58,7 @@ filters:
   custom_replacements: {}
 language: en
 llm:
-  allow_cloud: false
+  allow_cloud: true
   debug_llm: false
   providers:
     gemini:
