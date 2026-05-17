@@ -1,18 +1,20 @@
 {
     "DASHBOARD": {
-        "description": "Monitoraggio hardware e stato backend AI.",
+        "description": "Hardware monitoring and AI backend status.",
         "commands": {
             "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
             "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (Telemetria attiva)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "HELP": {
         "description": "Displays the list of all active commands and modules in the system.",

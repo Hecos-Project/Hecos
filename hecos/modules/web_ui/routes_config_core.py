@@ -72,8 +72,7 @@ _PANEL_MAP = {
     'webcam':          'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
     'automation':      'modules/config_utils.html',
-    'dashboard':       'modules/config_utils.html',
-    'domotica':        'modules/config_utils.html',
+
     'browser':         'modules/config_browser.html',
     'sysnet':          'modules/config_sysnet.html',
     'users':           'modules/config_users.html',
@@ -82,7 +81,6 @@ _PANEL_MAP = {
     'plugins':         'modules/config_plugins.html',
     'reminder':        'modules/config_reminder.html',
     'calendar':        'modules/config_calendar.html',
-    'studio':          'modules/config_plugin_studio.html',
     'mcp':             'modules/config_mcp.html',
     'remote-triggers': 'modules/config_remote_triggers.html',
     'drive':           'modules/config_drive.html',

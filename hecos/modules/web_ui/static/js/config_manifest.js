@@ -36,7 +36,6 @@ window.CONFIG_HUB = {
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
         { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE' },
-        { id: 'studio',           label: 'hub_mod_studio',       icon: '<i class="fas fa-drafting-pencil"></i>', cat: 'RISORSE' },
         
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'web',       label: 'hub_mod_web',          icon: '<i class="fas fa-globe"></i>', cat: 'SISTEMA', pluginTag: 'WEB' },
@@ -46,8 +45,6 @@ window.CONFIG_HUB = {
         { id: 'automation',label: 'hub_mod_automation',  icon: '<i class="fas fa-magic"></i>', cat: 'SISTEMA', pluginTag: 'AUTOMATION', isCore: true },
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
-        { id: 'dashboard', label: 'hub_mod_dashboard',    icon: '<i class="fas fa-chart-line"></i>', cat: 'SISTEMA', pluginTag: 'DASHBOARD', isCore: true },
-        { id: 'domotica',  label: 'hub_mod_domotica',     icon: '<i class="fas fa-home"></i>', cat: 'SISTEMA', pluginTag: 'DOMOTICA' },
 
         { id: 'widgets',   label: 'hub_mod_widgets',      icon: '<i class="fas fa-cubes"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
@@ -115,10 +112,6 @@ window.CONFIG_HUB.tagMap = {
     'MCP_BRIDGE': 'mcp',
     'DRIVE': 'drive',
     'REMOTE_TRIGGERS': 'remote-triggers',
-    'AUTOCODER': 'studio',
-    'PLUGIN_STUDIO': 'studio',
-    'DASHBOARD': 'dashboard',
-    'DOMOTICA': 'domotica',
     'EXECUTOR': 'executor',
     'WEB': 'web',
     'WEBCAM': 'webcam',
@@ -142,8 +135,8 @@ window.CONFIG_HUB.tagMap = {
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
     'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
-    'web', 'webcam', 'executor', 'automation', 'dashboard', 'domotica',
+    'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'reminder', 'calendar', 'studio', 'mcp', 'remote-triggers',
+    'reminder', 'calendar', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help'
 ]);

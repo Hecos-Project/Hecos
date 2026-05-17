@@ -1,7 +1,10 @@
 <!-- WELCOME PANEL -->
 <div id="tab-welcome" class="panel active" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 40px 20px; animation: fadeIn 0.8s ease;">
-    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos Hub" style="width:100px; margin-bottom:15px; filter:drop-shadow(0 0 10px rgba(108,140,255,0.4)); pointer-events:none;">
-    <h1 style="font-size:1.8em; margin-bottom:8px; color:var(--text);"><i class="fas fa-columns"></i> Hecos Central Hub</h1>
+
+    <div style="margin-bottom: 20px;">
+        <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Logo" style="height: 80px; width: auto; filter: drop-shadow(0 0 10px rgba(0,0,0,0.2));">
+    </div>
+    <h1 style="font-size:1.8em; margin-bottom:8px; color:var(--text);">Hecos Central Hub</h1>
     <p style="color:var(--muted); max-width:450px; line-height:1.5; margin-bottom:25px; font-size:0.95em;">
         {{ t('webui_welcome_desc') or 'Benvenuto nel cuore della configurazione di Hecos. Qui puoi regolare i moduli, il comportamento del sistema e gestire i plugin AI.' }}
     </p>

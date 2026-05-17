@@ -12,18 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ─── PLUGIN CLASSES ───────────────────────────────────────────────────────────
 
-class PluginDashboard(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = False
-    backend_timeout: float = 0.5
-    monitor_interval: int = 2
-    webui_dashboard_enabled: bool = True
-    webui_telemetry_enabled: bool = False
-    console_dashboard_enabled: bool = True
-    console_telemetry_enabled: bool = False
-    track_cpu: bool = False
-    track_ram: bool = False
-    track_vram: bool = False
+# --- Dashboard removed ---
 
 
 class PluginFileManager(BaseModel):
@@ -191,16 +180,10 @@ class PluginUsers(BaseModel):
     lazy_load: bool = True
 
 
-class PluginDomotica(BaseModel):
-    enabled: bool = False
-    lazy_load: bool = True
-
-
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
-    DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     IMAGE_GEN: PluginImageGen = Field(default_factory=PluginImageGen)
@@ -219,7 +202,6 @@ class PluginsConfig(BaseModel):
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     CALENDAR: PluginCalendar = Field(default_factory=PluginCalendar)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
-    DOMOTICA: PluginDomotica = Field(default_factory=PluginDomotica)
     extra_dirs: List[str] = []
 
 
