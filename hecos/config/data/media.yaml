@@ -1,25 +1,25 @@
 image_gen:
-  enabled: false
-  provider: 'anthropic'
-  model: sana
-  nologo: false
+  enabled: true
+  provider: 'pollinations'
+  model: flux
+  nologo: true
   api_key: ''
   api_key_comment: ''
   aspect_ratio: 1:1
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 521081930
+  last_seed: -1
   sampler: euler_a
   scheduler: euler
-  guidance_scale: 10.5
-  num_inference_steps: 51
-  enable_negative_prompt: false
+  guidance_scale: 7.5
+  num_inference_steps: 30
+  enable_negative_prompt: true
   negative_prompt: ''
-  auto_enrich: false
+  auto_enrich: true
   enrich_keywords: ''
   style: none
-  optimize_for_flux: false
+  optimize_for_flux: true
   flux_refiner_instructions: ''
   show_metadata_in_chat: false
   presets: {}

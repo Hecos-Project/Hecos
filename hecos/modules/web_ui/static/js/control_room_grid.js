@@ -46,12 +46,14 @@
         },
 
         /**
-         * Refreshes immediately, then again after 2s to catch backend latency.
+         * Debounced refresh to catch concurrent Broadcast and SSE events
+         * without executing redundant and visually jarring re-renders.
          */
         debouncedRefresh() {
-            this.refresh();
             if (_refreshDelayTimer) clearTimeout(_refreshDelayTimer);
-            _refreshDelayTimer = setTimeout(() => this.refresh(), 2000);
+            _refreshDelayTimer = setTimeout(() => {
+                this.refresh();
+            }, 300);
         },
 
         async refresh() {

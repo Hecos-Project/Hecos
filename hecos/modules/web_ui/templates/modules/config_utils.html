@@ -137,55 +137,7 @@
 
 </div>
 
-<!-- DASHBOARD PANEL -->
-<div id="tab-dashboard" class="panel">
-  <div class="card">
-    <div class="card-title" style="margin-bottom:20px;">📊 OS Dashboard &amp; Telemetry</div>
-    
-    <div style="margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:15px;">
-        <h4 style="margin: 0 0 10px 0; color:var(--accent); font-size:14px; font-weight:600;">WebUI Environment</h4>
-        <div class="toggle-row">
-          <div class="toggle-info">Enable WebUI Dashboard Features</div>
-          <label class="switch"><input type="checkbox" id="dashboard-webui-enabled" onchange="window.saveDsb('webui_dashboard_enabled', this.checked)"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">Enable WebUI Telemetry Reporting</div>
-          <label class="switch"><input type="checkbox" id="telemetry-webui-enabled" onchange="window.saveDsb('webui_telemetry_enabled', this.checked)"><span class="slider"></span></label>
-        </div>
-        <div style="margin-left:20px; border-left:2px solid var(--border); padding-left:10px; margin-top:5px; margin-bottom:10px;">
-           <div class="toggle-row">
-             <div class="toggle-info" style="font-size:12px;">Track CPU Usage</div>
-             <label class="switch is-small"><input type="checkbox" id="track-cpu-enabled" onchange="window.saveDsb('track_cpu', this.checked)"><span class="slider"></span></label>
-           </div>
-           <div class="toggle-row">
-             <div class="toggle-info" style="font-size:12px;">Track RAM Usage</div>
-             <label class="switch is-small"><input type="checkbox" id="track-ram-enabled" onchange="window.saveDsb('track_ram', this.checked)"><span class="slider"></span></label>
-           </div>
-           <div class="toggle-row">
-             <div class="toggle-info" style="font-size:12px;">Track GPU/VRAM Usage</div>
-             <label class="switch is-small"><input type="checkbox" id="track-vram-enabled" onchange="window.saveDsb('track_vram', this.checked)"><span class="slider"></span></label>
-           </div>
-           <p style="color:var(--yellow); font-size:11px; margin-top:8px; display:flex; align-items:center; gap:6px;">
-             <span><i class="fas fa-exclamation-triangle"></i></span> Enabling these hardware tracking parameters may cause system instability.
-           </p>
-        </div>
-        <p style="font-size:12px; color:var(--muted); margin-top:10px;">Controls the visibility and active reporting of hardware metrics within the Web interface.</p>
-    </div>
-    
-    <div>
-        <h4 style="margin: 0 0 10px 0; color:var(--accent); font-size:14px; font-weight:600;">Console Environment (TUI)</h4>
-        <div class="toggle-row">
-          <div class="toggle-info">Enable Console Status Row</div>
-          <label class="switch"><input type="checkbox" id="dashboard-console-enabled" onchange="window.saveDsb('console_dashboard_enabled', this.checked)"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">Enable Console Hardware Telemetry</div>
-          <label class="switch"><input type="checkbox" id="telemetry-console-enabled" onchange="window.saveDsb('console_telemetry_enabled', this.checked)"><span class="slider"></span></label>
-        </div>
-        <p style="font-size:12px; color:var(--muted); margin-top:10px;">Controls the bottom dashboard row in the local terminal. If telemetry is disabled, only the AI Status is shown.</p>
-    </div>
-  </div>
-</div>
+
 
 <!-- DOMOTICA PANEL -->
 <div id="tab-domotica" class="panel">
