@@ -1,13 +1,13 @@
 {
     "DASHBOARD": {
-        "description": "Hardware monitoring and AI backend status.",
+        "description": "Monitoraggio hardware e stato backend AI.",
         "commands": {
             "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
             "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (Telemetry active)",
+        "status": "ONLINE (Telemetria attiva)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
@@ -201,5 +201,20 @@
         "icon": "👥",
         "category": "PLUGINS",
         "module_type": "plugin"
+    },
+    "WEATHER": {
+        "description": "Real-time weather and forecasting using the open-source Open-Meteo API.",
+        "commands": {
+            "get_current_weather": "Get the current weather conditions for a specific city.",
+            "get_weather_data": "Fetches unified weather block for the Frontend Widget and Backend Tools.",
+            "get_weather_forecast": "Get the daily weather forecast for the next 7 days for a specific city.",
+            "on_load": "Called automatically by Hecos ModuleLoader"
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
     }
 }

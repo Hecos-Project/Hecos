@@ -1,0 +1,16 @@
+{
+    "extension_id": "weather_widget",
+    "parent_plugin": "WEB_UI",
+    "display_name": "Weather Dashboard",
+    "version": "1.0.0",
+    "description": "Real-time weather and forecasting utilizing Open-Meteo.",
+    "sidebar_widget": true,
+    "eager_load": true,
+    "config_schema": {
+        "weather_widget_enabled": {
+            "type": "bool",
+            "default": true,
+            "description": "Enable Weather Widget in the UI"
+        }
+    }
+}

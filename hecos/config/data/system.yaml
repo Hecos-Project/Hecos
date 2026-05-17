@@ -56,7 +56,7 @@ filters:
   remove_square_brackets: none
   custom_filters: []
   custom_replacements: {}
-language: en
+language: it
 llm:
   allow_cloud: true
   debug_llm: false
