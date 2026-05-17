@@ -26,6 +26,7 @@
     let _editBtn = null;
     let _saveTimer = null;
     let _refreshDelayTimer = null;
+    let _context = 'sidebar';
 
     // ─── Initialize cross-tab sync (runs immediately on load) ─────────────────
     if (global._roomGridSync) {
@@ -38,12 +39,19 @@
         async init(gridEl, editBtn) {
             _grid = gridEl;
             _editBtn = editBtn || null;
+            if (_grid && _grid.id === 'home-grid') {
+                 _context = 'standalone';
+            } else {
+                 _context = 'sidebar';
+            }
             await this.refresh();
 
             if (_editBtn) {
                 _editBtn.addEventListener('click', () => this.toggleEditMode());
             }
         },
+
+        getContext() { return _context; },
 
         /**
          * Debounced refresh to catch concurrent Broadcast and SSE events
@@ -59,12 +67,12 @@
         async refresh() {
             if (!_grid) return;
             try {
-                const resp = await fetch(`${API.ROOM}?t=${Date.now()}`);
+                const resp = await fetch(`${API.ROOM}?t=${Date.now()}&context=${_context}`);
                 const data = await resp.json();
                 if (!data.ok) throw new Error(data.error || 'API error');
 
                 const widgets = Array.isArray(data.widgets) ? data.widgets : [];
-                console.log('[RoomGrid] Widgets to render:', widgets.length);
+                console.log(`[RoomGrid] [${_context}] Widgets to render:`, widgets.length);
 
                 if (global._roomGridRender) {
                     global._roomGridRender.render(_grid, widgets);
@@ -110,12 +118,12 @@
             _saveTimer = setTimeout(async () => {
                 const layout = [..._grid.querySelectorAll('.room-widget-card')].map(c => c.dataset.id);
                 try {
-                    await fetch(API.LAYOUT, {
+                    await fetch(`${API.LAYOUT}?context=${_context}`, {
                         method: 'PATCH',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({layout})
                     });
-                    console.log('[RoomGrid] Layout saved:', layout);
+                    console.log(`[RoomGrid] [${_context}] Layout saved:`, layout);
                 } catch (err) {
                     console.warn('[RoomGrid] Layout save failed:', err);
                 }

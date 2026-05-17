@@ -23,6 +23,12 @@
                 const data = event.data;
                 if (!data) return;
                 
+                const isStructural = data.field === 'visible' || data.field === 'order' || !['theme','bg_color','bg_image'].includes(data.field);
+                const myCtx = global.controlRoomGrid ? global.controlRoomGrid.getContext() : 'sidebar';
+                if (isStructural && data.ctx && data.ctx !== myCtx) {
+                     return; // Skip structural updates from other contexts
+                }
+                
                 // Update local window.cfg immediately
                 _syncLocalConfigNoBroadcast(data.id, data.field, data.value);
 
@@ -43,7 +49,7 @@
                 }
 
                 // If it's a structural change, refresh
-                if (data.field === 'visible' || data.field === 'order' || !['theme','bg_color','bg_image'].includes(data.field)) {
+                if (isStructural) {
                     if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
                 }
             };
@@ -57,10 +63,10 @@
 
     global._roomGridSync = {
         init: _initGlobalSync,
-        notify: (id, field, value) => {
+        notify: (id, field, value, ctx) => {
             _syncLocalConfigNoBroadcast(id, field, value);
             if (_widgetChannel) {
-                _widgetChannel.postMessage({ type: 'widget_update', id, field, value });
+                _widgetChannel.postMessage({ type: 'widget_update', id, field, value, ctx });
             }
         },
         syncLocal: _syncLocalConfigNoBroadcast

@@ -254,6 +254,7 @@
 
 /* ── Add button ─────────────────────────────────────────────────────────────── */
 .room-add-btn {
+  grid-column: 1 / -1;
   display: flex; align-items: center; justify-content: center;
   border: 2px dashed var(--border);
   border-radius: var(--radius);

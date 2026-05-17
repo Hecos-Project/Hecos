@@ -17,24 +17,33 @@ def init_widget_room_routes(app, config_manager, _log, _get_config, _save_config
     def api_render_room_widgets():
         """
         Returns the ordered room widget metadata list (ext_id, span, etc.).
-        Shared by Module A & B to render the grid via JS.
+        Shared by Module A & B to render the grid via JS. Uses context query param.
         """
         from hecos.core.system.extension_loader import get_all_widgets
+        ctx = request.args.get("context", "sidebar")
 
         cfg = _get_config()
         all_widgets = get_all_widgets(config=cfg)
-        room_layout = cfg.get("widgets", {}).get("room_layout", [])
+        
+        # Load independent layouts
+        if ctx == "standalone":
+             room_layout = cfg.get("widgets", {}).get("home_layout", [])
+        else:
+             room_layout = cfg.get("widgets", {}).get("room_layout", [])
 
-        _log.debug(f"[ROOM] /api/widgets/room called — total widgets discovered: {len(all_widgets)}")
+        _log.debug(f"[ROOM] /api/widgets/room?context={ctx} called — total widgets: {len(all_widgets)}")
 
         room_widgets = []
         for w in all_widgets:
             ext_id = w.get("extension_id", "?")
-            room_visible = w.get("room_visible", False)
-            room_span = w.get("room_span", 1)
-            room_theme = w.get("theme", "default")
-            room_height = w.get("room_height", None)
-            _log.debug(f"[ROOM]   widget={ext_id} room_visible={room_visible} room_span={room_span} theme={room_theme}")
+            prefs = cfg.get("widgets", {}).get("per_widget", {}).get(ext_id, {})
+            # Read context-specific overrides from prefs, fallback to global
+            room_visible = prefs.get(f"{ctx}_visible", w.get("room_visible", False))
+            room_span = prefs.get(f"{ctx}_span", w.get("room_span", 1))
+            room_theme = prefs.get("theme", w.get("theme", "default"))
+            room_height = prefs.get(f"{ctx}_height", w.get("room_height", None))
+            
+            _log.debug(f"[ROOM] [{ctx}] widget={ext_id} visible={room_visible} span={room_span} theme={room_theme}")
             if room_visible:
                 room_widgets.append({
                     **w,
@@ -49,7 +58,7 @@ def init_widget_room_routes(app, config_manager, _log, _get_config, _save_config
             order_map = {eid: i for i, eid in enumerate(room_layout)}
             room_widgets.sort(key=lambda ww: order_map.get(ww.get("extension_id", ""), 9999))
 
-        _log.info(f"[ROOM] Returning {len(room_widgets)} room widgets")
+        _log.info(f"[ROOM] [{ctx}] Returning {len(room_widgets)} widgets")
 
         resp = jsonify({"ok": True, "widgets": room_widgets})
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -96,59 +105,74 @@ def init_widget_room_routes(app, config_manager, _log, _get_config, _save_config
     @app.route("/api/widgets/<ext_id>/room_visible", methods=["POST"])
     @login_required
     def api_set_widget_room_visible(ext_id):
+        ctx = request.args.get("context", "sidebar")
         data = request.get_json(silent=True) or {}
         if "visible" not in data:
             return jsonify({"ok": False, "error": "'visible' field required"}), 400
         visible = bool(data["visible"])
-        _log.info(f"WIDGETS: Room visibility [{ext_id}] -> {visible}")
-        res = config_manager.set(visible, "widgets", "per_widget", ext_id, "room_visible")
+        _log.info(f"WIDGETS [{ctx}]: Room visibility [{ext_id}] -> {visible}")
+        # Always save specifically to the context
+        res = config_manager.set(visible, "widgets", "per_widget", ext_id, f"{ctx}_visible")
+        # For backward compatibility / safety, if it's sidebar, we can also set room_visible
+        if res and ctx == "sidebar":
+             config_manager.set(visible, "widgets", "per_widget", ext_id, "room_visible")
+             if visible:
+                 config_manager.set(False, "widgets", "per_widget", ext_id, "visible")
         if res:
-            # XOR: If enabling room, disable sidebar
-            if visible:
-                config_manager.set(False, "widgets", "per_widget", ext_id, "visible")
-                
             _save_config()
-            return jsonify({"ok": True, "ext_id": ext_id, "room_visible": visible})
+            return jsonify({"ok": True, "ext_id": ext_id, f"{ctx}_visible": visible})
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
 
     @app.route("/api/widgets/<ext_id>/room_span", methods=["POST"])
     @login_required
     def api_set_widget_room_span(ext_id):
+        ctx = request.args.get("context", "sidebar")
         data = request.get_json(silent=True) or {}
         span = data.get("span", 1)
         if span not in (1, 2):
             return jsonify({"ok": False, "error": "span must be 1 or 2"}), 400
-        _log.info(f"WIDGETS: Room span [{ext_id}] -> {span}")
-        res = config_manager.set(span, "widgets", "per_widget", ext_id, "room_span")
+        _log.info(f"WIDGETS [{ctx}]: Room span [{ext_id}] -> {span}")
+        res = config_manager.set(span, "widgets", "per_widget", ext_id, f"{ctx}_span")
+        if res and ctx == "sidebar":
+             config_manager.set(span, "widgets", "per_widget", ext_id, "room_span")
         if res:
             _save_config()
-            return jsonify({"ok": True, "ext_id": ext_id, "room_span": span})
+            return jsonify({"ok": True, "ext_id": ext_id, f"{ctx}_span": span})
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
 
     @app.route("/api/widgets/<ext_id>/room_height", methods=["POST"])
     @login_required
     def api_set_widget_room_height(ext_id):
+        ctx = request.args.get("context", "sidebar")
         data = request.get_json(silent=True) or {}
         height = data.get("height")  # None is valid (resets to default)
-        _log.info(f"WIDGETS: Room height [{ext_id}] -> {height}")
-        res = config_manager.set(height, "widgets", "per_widget", ext_id, "room_height")
+        _log.info(f"WIDGETS [{ctx}]: Room height [{ext_id}] -> {height}")
+        res = config_manager.set(height, "widgets", "per_widget", ext_id, f"{ctx}_height")
+        if res and ctx == "sidebar":
+             config_manager.set(height, "widgets", "per_widget", ext_id, "room_height")
         if res:
             _save_config()
-            return jsonify({"ok": True, "ext_id": ext_id, "room_height": height})
+            return jsonify({"ok": True, "ext_id": ext_id, f"{ctx}_height": height})
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
 
     @app.route("/api/widgets/room/layout", methods=["PATCH"])
     @login_required
     def api_set_room_layout():
+        ctx = request.args.get("context", "sidebar")
         data = request.get_json(silent=True) or {}
         layout = data.get("layout")
         if not isinstance(layout, list):
             return jsonify({"ok": False, "error": "'layout' must be an array of ext_ids"}), 400
-        _log.info(f"WIDGETS: Saving room layout -> {layout}")
-        res = config_manager.set(layout, "widgets", "room_layout")
+        _log.info(f"WIDGETS [{ctx}]: Saving room layout -> {layout}")
+        
+        if ctx == "standalone":
+            res = config_manager.set(layout, "widgets", "home_layout")
+        else:
+            res = config_manager.set(layout, "widgets", "room_layout")
+            
         if res:
             _save_config()
             return jsonify({"ok": True})
