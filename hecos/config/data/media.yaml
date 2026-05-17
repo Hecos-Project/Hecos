@@ -1,7 +1,7 @@
 image_gen:
   enabled: false
-  provider: ''
-  model: flux
+  provider: 'anthropic'
+  model: sana
   nologo: false
   api_key: ''
   api_key_comment: ''

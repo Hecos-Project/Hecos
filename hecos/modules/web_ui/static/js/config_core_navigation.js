@@ -53,15 +53,7 @@ async function showTab(name, skipScroll = false) {
     uiState.collapsedCategories = [];
   }
 
-  // If the panel was silently pre-fetched (no scripts), remove it so _loadPanel
-  // can re-inject it properly with all interactive scripts
-  if (window._searchCache && window._searchCache[targetId]) {
-      const stalePanel = document.getElementById('tab-' + targetId);
-      if (stalePanel && stalePanel.dataset.prefetchOnly === 'true') {
-          stalePanel.remove();
-      }
-      delete window._searchCache[targetId];
-  }
+
 
   // Lazy load: fetch panel HTML if not yet in DOM
   if (name !== 'welcome' && !_panelCache[targetId]) {
@@ -151,9 +143,16 @@ async function _loadPanel(panelId) {
 
   if (skeleton) skeleton.style.display = 'block';
   try {
-    const res = await fetchWithTimeout(`/hecos/config/fragment/${panelId}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const html = await res.text();
+    let html;
+    if (window._panelHTMLCache && window._panelHTMLCache[panelId]) {
+        // Served from in-memory prefetch cache — no network request needed
+        html = window._panelHTMLCache[panelId];
+        delete window._panelHTMLCache[panelId];
+    } else {
+        const res = await fetchWithTimeout(`/hecos/config/fragment/${panelId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        html = await res.text();
+    }
 
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
@@ -166,6 +165,13 @@ async function _loadPanel(panelId) {
       container.appendChild(tmp.firstChild);
     }
     _panelCache[panelId] = true;
+
+    // Remove the search-only prefetch copy (script-stripped) now that the real panel is loaded
+    const prefetchWrap = document.getElementById('_prefetch-hidden-wrap');
+    if (prefetchWrap) {
+        const stale = prefetchWrap.querySelector(`[id="tab-${panelId}"]`);
+        if (stale) stale.remove();
+    }
 
     // Execute scripts sequentially to preserve dependency order
     for (const oldScript of scripts) {
@@ -280,44 +286,59 @@ window.setCategoryFilter    = setCategoryFilter;
 
 /**
  * Silent background fetch for a panel.
- * Unlike _loadPanel, this does NOT touch the skeleton spinner,
- * does NOT run populateUI() globally, and does NOT execute panel scripts.
- * Its sole purpose is to inject the HTML so the search engine can index it.
+ *
+ * Strategy:
+ *  1. Fetch raw HTML and store in window._panelHTMLCache (used by _loadPanel on click).
+ *  2. Inject a script-stripped, style-hidden copy inside a hidden wrapper that lives
+ *     inside #panel-container (and therefore #config-form), so config_search.js can
+ *     find it via  document.querySelectorAll('#config-form .panel').
+ *  3. When the user clicks the tab, showTab sees _panelCache[pid] is falsy, calls
+ *     _loadPanel which reads from cache, injects with scripts, then REMOVES the
+ *     search-only copy.
  */
 async function _prefetchPanel(panelId) {
-    if (_panelCache[panelId]) return;  // Already fully loaded by a user click
-    if (window._searchCache && window._searchCache[panelId]) return; // Already prefetched
-    const container = document.getElementById('panel-container');
-    if (!container) return;
+    if (_panelCache[panelId]) return;
+    if (window._panelHTMLCache && window._panelHTMLCache[panelId]) return;
     try {
         const res = await fetch(`/hecos/config/fragment/${panelId}`);
         if (!res.ok) return;
         const html = await res.text();
-        // Only inject if user hasn't loaded it in the meantime via a click
-        if (_panelCache[panelId]) return;
+        if (_panelCache[panelId]) return;  // User clicked while fetching
+
+        // Store raw HTML for _loadPanel to use — avoids a second network request
+        if (!window._panelHTMLCache) window._panelHTMLCache = {};
+        window._panelHTMLCache[panelId] = html;
+
+        // Build a script-stripped copy for search indexing
         const tmp = document.createElement('div');
         tmp.innerHTML = html;
-        // Strip scripts so they don't auto-execute and mess up state
-        tmp.querySelectorAll('script').forEach(s => s.remove());
-        // Mark the root element with a data attribute so showTab knows to re-load with scripts
-        const firstEl = tmp.firstElementChild;
-        if (firstEl) firstEl.dataset.prefetchOnly = 'true';
-        // Inject silently — panel will be hidden (no 'active' class)
-        while (tmp.firstChild) container.appendChild(tmp.firstChild);
-        // Mark as search-only prefetched (NOT _panelCache — so showTab still triggers real load)
-        if (!window._searchCache) window._searchCache = {};
-        window._searchCache[panelId] = true;
-        // Re-run search if user is searching
+        tmp.querySelectorAll('script, style').forEach(el => el.remove());
+
+        // Wrap it in a hidden container INSIDE panel-container so #config-form .panel works
+        const container = document.getElementById('panel-container');
+        if (!container) return;
+        let wrapper = document.getElementById('_prefetch-hidden-wrap');
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.id = '_prefetch-hidden-wrap';
+            wrapper.setAttribute('aria-hidden', 'true');
+            wrapper.style.display = 'none';
+            container.appendChild(wrapper);
+        }
+        // Only add if not already there
+        if (!wrapper.querySelector(`[id="tab-${panelId}"]`)) {
+            while (tmp.firstChild) wrapper.appendChild(tmp.firstChild);
+        }
+
+        // Re-run search if user is actively searching
         if (window.HecosSearch && typeof window.HecosSearch.run === 'function') {
             const inp = document.getElementById('zs-input');
-            if (inp && inp.value.trim()) {
-                window.HecosSearch.run(inp.value.trim());
-            }
+            if (inp && inp.value.trim()) window.HecosSearch.run(inp.value.trim());
         }
-    } catch (e) {
-        // Silent fail — hydration is best-effort
-    }
+    } catch (e) { /* silent fail */ }
 }
+
+
 
 const _prefetchQueue = {};  // panelId → Promise
 

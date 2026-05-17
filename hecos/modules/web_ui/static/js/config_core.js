@@ -41,10 +41,12 @@ window.activeCategoryFilter = sessionStorage.getItem('hecos-config-filter') || '
 // Lazy panel cache — shared with _loadPanel (config_core_navigation.js)
 const _panelCache    = {};  // panelId → true
 const _panelFetching = {};  // panelId → Promise (prevents duplicate fetches)
-// Expose on window so progressive hydration in config_core_navigation.js can access them
+// Expose on window so progressive hydration can check cache state from navigation.js
 window._panelCache    = _panelCache;
 window._panelFetching = _panelFetching;
-window._loadPanel     = function(pid) { return _loadPanel(pid); };
+// NOTE: Do NOT add window._loadPanel here — _loadPanel is a top-level function
+// declaration in config_core_navigation.js and is already on window. Creating
+// a wrapper here would cause infinite recursion (wrapper calls itself).
 
 // ── Global Exports ─────────────────────────────────────────────────────────────
 // (sub-modules export their own functions; list remaining core ones here)
