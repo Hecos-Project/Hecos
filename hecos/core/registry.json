@@ -1,4 +1,33 @@
 {
+    "BROWSER": {
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
+        "commands": {
+            "open_url": "Navigate the browser to a URL.",
+            "get_current_url": "Return the current page URL.",
+            "go_back": "Navigate back to the previous page.",
+            "get_page_text": "Read all visible text from the current page.",
+            "get_links": "List all hyperlinks on the page.",
+            "get_inputs": "List all interactive form elements.",
+            "get_title": "Return the page title.",
+            "click_element": "Click an element by visible text or aria-label.",
+            "type_in_field": "Fill a form field by label/placeholder and optionally press Enter.",
+            "scroll": "Scroll the page up or down.",
+            "press_key": "Press a keyboard key in the browser.",
+            "run_js": "Execute JavaScript code on the page.",
+            "screenshot": "Take a viewport screenshot for vision analysis.",
+            "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
+            "switch_tab": "Switch focus to a specific tab by its ID.",
+            "close": "Close the browser window."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "BROWSER CONTROL DECISION TREE — Follow these steps in order: (1) ALWAYS start with BROWSER__list_tabs. (2) If it returns a list of tabs → you are in CDP mode. Use BROWSER__switch_tab(index) to go to the right tab, then use BROWSER page tools (get_page_text, click_element, type_in_field). (3) If list_tabs returns 'CDP connection is not active' → Chrome was NOT launched in AI-Ready mode. IMMEDIATELY fall back to: AUTOMATION__get_browser_tabs to find open tabs by title (this reads from Windows accessibility, real browser windows only), then AUTOMATION__focus_browser_tab with the matching title fragment. NEVER stop and ask the user — always attempt the fallback automatically.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "🌐",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -39,30 +68,26 @@
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
             "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Vault Access Granted)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS",
-        "module_type": "core_module"
+        "category": "PLUGINS"
     },
     "MODELS": {
-        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
+        "description": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
         "commands": {
             "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
             "list_models": "Lists all available models for the currently selected backend.",
             "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Gestione modelli)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS",
-        "module_type": "core_module"
+        "category": "PLUGINS"
     },
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",

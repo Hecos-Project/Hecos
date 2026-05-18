@@ -14,3 +14,5 @@ Hecos include nativamente diversi plugin potenti:
 - **Calendario Integrato**: Un modulo calendario completo con tracciamento delle festività e visualizzazione degli eventi direttamente nella WebUI.
 - **Promemoria (Reminder)**: Un pianificatore di attività avanzato con interpretazione NLP ("ricordami tra 10 minuti") e notifiche OS attive.
 - **Motore Media Player**: Un robusto sistema multimediale (VLC 64-bit + fallback FFplay) che supporta la gestione dello stato, pausa/ripresa e controllo volume.
+- **Browser Automation**: Un plugin per interrogare, interagire e navigare le pagine web.
+- **OS Automation**: Un plugin per automatizzare i task del sistema operativo tramite il controllo di mouse e tastiera.
