@@ -1,0 +1,28 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MCP: Scoped CSS Styles
+     ══════════════════════════════════════════════════════════════════════════ -->
+<style>
+  .tag-mcp-tool {
+    background: rgba(var(--accent-rgb), 0.1);
+    color: var(--accent);
+    border: 1px solid rgba(var(--accent-rgb), 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: help;
+    transition: all 0.2s;
+  }
+  .tag-mcp-tool:hover {
+    background: rgba(var(--accent-rgb), 0.2);
+    border-color: var(--accent);
+  }
+  .pulse-anim {
+    animation: mcp-pulse 1.5s infinite;
+  }
+  @keyframes mcp-pulse {
+    0%   { opacity: 1; transform: scale(1);   }
+    50%  { opacity: 0.4; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1);   }
+  }
+</style>

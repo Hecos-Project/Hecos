@@ -1,0 +1,88 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Calendar: Main Card — Header (locale/country selectors + settings toggles),
+     Color Settings Panel, Sync Settings Panel, View Toolbar, FullCalendar mount.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card" style="padding:20px; margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">{{ translations['ext_calendar_title'] }}</div>
+        <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
+            <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_locale'] }}: 
+                <select id="cal-set-locale" onchange="hcal.saveSettings()" class="hcal-select">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="it">Italiano</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                </select>
+            </label>
+            <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_holidays'] }}: 
+                <select id="cal-set-country" onchange="hcal.saveSettings()" class="hcal-select">
+                    <option value="US">USA</option>
+                    <option value="GB">UK</option>
+                    <option value="IT">Italy</option>
+                    <option value="ES">Spain</option>
+                    <option value="FR">France</option>
+                    <option value="DE">Germany</option>
+                </select>
+            </label>
+            <button onclick="hcal.toggleColorSettings()" id="cal-btn-colors" class="hcal-btn-sec"><i class="fas fa-palette"></i> Colors</button>
+            <button onclick="hcal.toggleSyncSettings()" id="cal-btn-sync" class="hcal-btn-sec"><i class="fas fa-sync"></i> iSync</button>
+        </div>
+    </div>
+
+    <!-- Day Colors Settings (Expansion) -->
+    <div id="cal-color-settings" class="hcal-panel" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:12px; color:var(--muted); font-weight:bold;">{{ translations['ext_calendar_color_label'] }}</div>
+        </div>
+        <!-- Standard Hecos Aesthetic Picker for Calendar Background -->
+        <div id="cal-bg-picker-container" style="margin-bottom: 20px;"></div>
+        <div id="cal-days-aesthetic-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap:12px;">
+            <!-- Populated via JS with HecosAestheticPicker instances -->
+        </div>
+        <div style="display:flex; justify-content:center; margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px;">
+            <button type="button" onclick="hcal.resetAllAesthetics()" class="hcal-btn-sec" style="color:var(--red); border-color:rgba(220,53,69,0.3); background:rgba(220,53,69,0.05);">
+                <i class="fas fa-trash-alt"></i> Reset All Calendar Styles
+            </button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; font-size:10px;">
+            <div style="color:rgba(255,255,255,0.3);">* Selections are saved automatically after a short delay.</div>
+            <div id="cal-settings-status" style="font-weight:bold; transition: opacity 0.5s;"></div>
+        </div>
+    </div>
+
+    <!-- External Sync Settings (Expansion) -->
+    <div id="cal-sync-settings" class="hcal-panel" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-size:12px; color:var(--muted); font-weight:bold;">{{ translations['ext_calendar_sync'] }}</div>
+            <button onclick="hcal.runManualSync()" id="btn-sync-now" style="background:var(--accent); color:white; border:none; border-radius:4px; padding:4px 10px; font-size:11px; cursor:pointer;">Sync Now</button>
+        </div>
+        <div id="cal-sync-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+            <!-- URLs populated here -->
+        </div>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="cal-sync-new-url" placeholder="iCal URL (Google/Apple...)" class="hcal-input" style="flex:1;">
+            <button onclick="hcal.addSyncUrl()" class="hcal-btn-sec">{{ translations['webui_chat_chip_plugins'] }}</button>
+        </div>
+        <div style="font-size:10px; color:rgba(255,255,255,0.3); margin-top:8px;">* Usa l'indirizzo privato (iCal) dalle impostazioni del tuo calendario Google o Apple. Gli eventi verranno scaricati automaticamente.</div>
+    </div>
+
+    <!-- Toolbar: view switcher + Add Event button -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px;">
+            <button onclick="hcal.setView('dayGridMonth')"  id="cal-btn-month"  class="cal-view-btn active-view">{{ translations['ext_calendar_month'] }}</button>
+            <button onclick="hcal.setView('timeGridWeek')"  id="cal-btn-week"   class="cal-view-btn">{{ translations['ext_calendar_week'] }}</button>
+            <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">{{ translations['ext_calendar_list'] }}</button>
+        </div>
+        <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
+            <i class="fas fa-plus"></i> {{ translations['ext_calendar_add_event'] }}
+        </button>
+    </div>
+
+    <!-- FullCalendar mount point -->
+    <div id="hecos-fullcalendar" style="min-height:600px;"></div>
+    <div id="cal-sync-status" style="margin-top:12px; font-size:11px; color:var(--green); opacity:0; transition:opacity 0.3s; text-align:right;">
+        <span style="display:inline-flex; align-items:center; gap:4px;">✔ {{ translations['webui_logs_btn_clear'] }}</span>
+    </div>
+</div>

@@ -160,6 +160,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   align-items: center;
   gap: 4px;
   transition: all .25s;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .topbar-chip.on  { background:rgba(var(--green-rgb),.1);  border-color:rgba(var(--green-rgb),.3);  color:var(--green); }
 .topbar-chip.off { background:rgba(var(--red-rgb),.07); border-color:rgba(var(--red-rgb),.25); color:var(--red); }
@@ -177,6 +179,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .topbar-link:hover {
   background: var(--glass-b);
@@ -420,3 +424,57 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   border: 1px solid var(--bg); opacity: 0; transition: opacity 0.2s;
 }
 .avatar-zoom-wrapper:hover .avatar-zoom-icon { opacity: 1; }
+
+/* SIDEBAR WIDGET REORDERING */
+.sidebar-widget-wrapper {
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+#sidebar-widgets-zone.ordering-mode .sidebar-widget-wrapper {
+  cursor: default;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  background: var(--bg3);
+}
+.widget-reorder-chrome {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: none;
+  gap: 4px;
+  z-index: 5;
+  background: var(--bg2);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+.widget-reorder-chrome button {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 10px;
+  cursor: pointer;
+}
+.widget-reorder-chrome button:hover { background: var(--accent); color: white; border-color: var(--accent); }
+.widget-drag-handle {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 10px;
+  cursor: grab;
+}
+.widget-drag-handle:active { cursor: grabbing; }
+
+/* In ordering mode, reduce opacity of actual content for clarity */
+#sidebar-widgets-zone.ordering-mode .widget-content {
+  opacity: 0.6;
+  pointer-events: none; /* Block interactions with the widget's own inputs */
+}

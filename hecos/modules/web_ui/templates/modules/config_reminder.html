@@ -1,7 +1,7 @@
 <!-- REMINDER MODULE CONFIG -->
 <div id="tab-reminder" class="panel">
     <div class="card">
-        <div class="card-title">Reminder Settings</div>
+        <div class="card-title">{{ t('ext_reminder_title') }}</div>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
             Configure the local scheduler for time-based reminders and natural language recurrence.
         </p>
@@ -9,7 +9,7 @@
         <!-- Dynamic config toggles mapped for window.cfg.plugins.REMINDER -->
         <div class="field mt-3">
             <label>Reminder Alert Mode</label>
-            <select id="rem-mode" data-cfg-plugin="REMINDER" data-cfg-key="reminder_mode">
+            <select id="rem-mode" data-cfg-plugin="REMINDER" data-cfg-key="reminder_mode" onchange="if(window.saveConfig) window.saveConfig(true);">
                 <option value="voice">Voice Only (TTS)</option>
                 <option value="ringtone">Ringtone Only</option>
                 <option value="both">Both (Voice + Ringtone)</option>
@@ -32,15 +32,15 @@
         <div class="field mt-3">
             <label>Custom Ringtone Path (Absolute Path)</label>
             <div style="display:flex; gap:6px;">
-                <input style="flex:1;" type="text" id="rem-ringtone" data-cfg-plugin="REMINDER" data-cfg-key="ringtone_path" placeholder="Filename or absolute path">
-                <button type="button" class="btn btn-secondary" onclick="HecosFilePicker.open({title:'Select Ringtone', mode:'file', onSelect: p => { document.getElementById('rem-ringtone').value = p; saveConfig(); window.refreshPresetRingtones(); }})">
-                    <i class="fas fa-folder-open"></i> Browse...
+                <input style="flex:1;" type="text" id="rem-ringtone" data-cfg-plugin="REMINDER" data-cfg-key="ringtone_path" placeholder="Filename or absolute path" onchange="if(window.saveConfig) window.saveConfig(true);">
+                <button type="button" class="btn btn-secondary" onclick="HecosFilePicker.open({title:'Select Ringtone', mode:'file', onSelect: p => { document.getElementById('rem-ringtone').value = p; saveConfig(); window.refreshPresetRingtones(); }})" title="Browse Files">
+                    <i class="fas fa-folder-open"></i>
                 </button>
             </div>
         </div>
         <div class="field mt-3">
             <label>Time Format</label>
-            <select id="rem-time-format">
+            <select id="rem-time-format" data-cfg-plugin="REMINDER" data-cfg-key="time_format" onchange="if(window.saveConfig) window.saveConfig(true);">
                 <option value="24h">24h (15:00)</option>
                 <option value="12h">12h (03:00 PM)</option>
             </select>
@@ -48,19 +48,19 @@
 
         <div class="field mt-3">
             <label>Max Active Reminders</label>
-            <input type="number" id="rem-max" value="50" min="1" max="500" onchange="if(window.saveConfig) window.saveConfig(true);">
+            <input type="number" id="rem-max" data-cfg-plugin="REMINDER" data-cfg-key="max_reminders" value="50" min="1" max="500" onchange="if(window.saveConfig) window.saveConfig(true);">
         </div>
 
         <div class="field mt-3">
             <label>Default Snooze Time (minutes)</label>
-            <input type="number" id="rem-snooze" value="15" min="1" max="60" onchange="if(window.saveConfig) window.saveConfig(true);">
+            <input type="number" id="rem-snooze" data-cfg-plugin="REMINDER" data-cfg-key="snooze_default_minutes" value="15" min="1" max="60" onchange="if(window.saveConfig) window.saveConfig(true);">
         </div>
 
         <div class="field mt-3">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <label style="margin:0;">Enable Interactive Snooze UI</label>
                 <label class="switch is-small">
-                    <input type="checkbox" id="rem-snooze-ui" onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <input type="checkbox" id="rem-snooze-ui" data-cfg-plugin="REMINDER" data-cfg-key="reminder_snooze_ui" onchange="if(window.saveConfig) window.saveConfig(true);">
                     <span class="slider"></span>
                 </label>
             </div>
@@ -72,7 +72,7 @@
     <!-- Reminder History List -->
     <div class="card" id="card-active-reminders">
         <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>📋 Reminder History</span>
+            <span><i class="fas fa-history"></i> Reminder History</span>
             <div style="display:flex; gap:6px;">
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="window.clearReminderHistory()">
                     <i class="fas fa-trash"></i> Clear History
@@ -132,7 +132,7 @@ window.refreshReminderConfig = function() {
                         </small>
                     </div>
                     <div>
-                        ${r.status === 'active' ? `<button type="button" class="btn btn-sm btn-outline-danger" style="padding:4px 8px; border:none; background:rgba(255,0,0,0.2);" onclick="window.cancelReminderFromConfig('${r.id}')">✕</button>` : ''}
+                        ${r.status === 'active' ? `<button type="button" class="btn btn-sm btn-outline-danger" style="padding:4px 8px; border:none; background:rgba(255,0,0,0.2);" onclick="window.cancelReminderFromConfig('${r.id}')"><i class="fas fa-times"></i></button>` : ''}
                     </div>
                 </div>`;
             });

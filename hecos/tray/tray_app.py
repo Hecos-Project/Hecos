@@ -14,41 +14,68 @@ import time
 import threading
 import webbrowser
 
-from hecos.tray.config import SETTINGS_FILE, _DEFAULTS, HECOS_PORT, _ROOT, load_settings, save_settings
-from hecos.tray.utils import is_hecos_online, play_beep, get_scheme
+from hecos.tray.config import SETTINGS_FILE, _DEFAULTS, _ROOT, load_settings, save_settings
+from hecos.tray.browser_manager import launch_ai_ready_browser, is_ai_ready_browser_running, set_cdp_alive, _get_cdp_port
+from hecos.tray.network_utils import get_scheme
+from hecos.tray.system_utils import play_beep
 from hecos.tray.orchestrator import start_hecos, stop_hecos, is_hecos_running
 from hecos.tray.hotkeys import tray_hotkeys
 from hecos.tray.ui import load_icon, build_menu, refresh_ui, TRAY_AVAILABLE
+from hecos.tray.control_center import show_control_center
 
 try:
     import pystray
 except ImportError:
     pass
 
+_singleton_socket = None
 STATUS_POLL_INTERVAL = 3
 
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
     was_online = False
-    opened_ui = False
 
     while True:
         try:
             settings = load_settings()
             online = is_hecos_running()
             
-            # Audible ascending ping when coming online
+            # ── Update cached CDP status so build_menu() never blocks ─────────
+            cdp_port = _get_cdp_port()
+            set_cdp_alive(is_ai_ready_browser_running(cdp_port))
+            # ─────────────────────────────────────────────────────────────────
+
+            # TRANSITION: Offline → Online
             if online and not was_online:
                 play_beep(400, 100)
                 play_beep(600, 150)
                 
-                if settings.get("autoopen_webui", True) and not opened_ui:
-                    from hecos.tray.utils import get_urls
-                    chat_url, _ = get_urls()
-                    # Sleep slightly to allow python server to fully bind routes
+                # Auto-open/refresh WebUI
+                if settings.get("autoopen_webui", True):
+                    from hecos.tray.browser_manager import intelligent_open_webui
+                    # Wait for server to be fully ready
                     time.sleep(1.0)
-                    webbrowser.open(chat_url)
-                    opened_ui = True
+                    intelligent_open_webui(icon, None)
+                
+                # Auto-open/refresh AI Browser (Headless/Integrated)
+                if settings.get("autoopen_ai_browser", False):
+                    from hecos.tray.browser_manager import intelligent_open_ai_browser
+                    time.sleep(1.5)
+                    intelligent_open_ai_browser(icon, None)
+
+                # Auto-launch Chrome in AI-Ready mode if setting is enabled
+                if settings.get("auto_launch_chrome_for_ai", False):
+                    if not is_ai_ready_browser_running(cdp_port):
+                        time.sleep(0.5)
+                        from hecos.tray.network_utils import get_scheme
+                        startup_url = settings.get("browser_startup_url", "")
+                        if startup_url:
+                            real_scheme = get_scheme()
+                            if startup_url.startswith("http://") and real_scheme == "https":
+                                startup_url = startup_url.replace("http://", "https://", 1)
+                            elif startup_url.startswith("https://") and real_scheme == "http":
+                                startup_url = startup_url.replace("https://", "http://", 1)
+                        launch_ai_ready_browser(cdp_port=cdp_port, startup_url=startup_url)
                     
             was_online = online
 
@@ -111,6 +138,11 @@ def run_tray():
         title="HECOS — Helping Companion System",
         menu=build_menu([None])
     )
+
+    # Left-click opens the Control Center
+    def _on_activate(ic):
+        show_control_center(ic, None)
+    icon.default_action = _on_activate
 
     monitor_thread = threading.Thread(target=_monitor_status, args=(icon,), daemon=True)
     monitor_thread.start()

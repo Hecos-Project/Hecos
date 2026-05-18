@@ -1,0 +1,83 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media Player: Settings Section — volume, paths, backend, toggles
+     Contains Jinja2 template loops for config values.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="config-section">
+  <h2 class="section-title"><i class="fas fa-cog"></i> {{ translations.get('webui_mp_settings', 'Settings') }}</h2>
+  <form id="mp-settings-form" onsubmit="mpSaveSettings(event)">
+
+    <div class="config-group">
+      <label class="form-label">{{ translations.get('webui_mp_volume', 'Default volume') }}</label>
+      <input type="number" name="default_volume" class="form-input" min="0" max="100"
+             value="{{ config.get('plugins', {}).get('MEDIA_PLAYER', {}).get('default_volume', 80) }}"
+             style="max-width:100px;">
+    </div>
+
+    <div class="config-group">
+      <label class="form-label">{{ translations.get('webui_mp_media_root', 'Media root directory') }}</label>
+      <input type="text" name="media_root_dir" class="form-input"
+             placeholder="{{ translations.get('webui_mp_media_root_ph', 'e.g. C:/Music') }}"
+             value="{{ config.get('plugins', {}).get('MEDIA_PLAYER', {}).get('media_root_dir', '') }}">
+      <small class="form-hint">{{ translations.get('webui_mp_media_root_hint', 'Default folder for quick scans and autoload playlists.') }}</small>
+    </div>
+
+    <div class="config-group">
+      <label class="form-label">{{ translations.get('webui_mp_default_playlist', 'Auto-load playlist at startup') }}</label>
+      <input type="text" name="default_playlist" class="form-input"
+             placeholder="{{ translations.get('webui_mp_default_playlist_ph', 'Leave empty for none') }}"
+             value="{{ config.get('plugins', {}).get('MEDIA_PLAYER', {}).get('default_playlist', '') }}">
+    </div>
+
+    <div class="config-group">
+      <label class="form-label">{{ translations.get('webui_mp_backend', 'Preferred backend') }}</label>
+      <select name="preferred_backend" class="form-select">
+        {% for opt in ['auto', 'vlc', 'mpv', 'system'] %}
+        <option value="{{ opt }}"
+          {% if config.get('plugins', {}).get('MEDIA_PLAYER', {}).get('preferred_backend', 'auto') == opt %}selected{% endif %}>
+          {{ opt }}
+        </option>
+        {% endfor %}
+      </select>
+      <small class="form-hint">{{ translations.get('webui_mp_backend_hint', "'auto' selects VLC → mpv → system default.") }}</small>
+    </div>
+
+    <div class="config-group">
+      <label class="form-label">{{ translations.get('webui_mp_thumb', 'Drive thumbnail size') }}</label>
+      <select name="drive_thumb_size" class="form-select">
+        {% for opt in ['none', 'small', 'medium', 'large'] %}
+        <option value="{{ opt }}"
+          {% if config.get('plugins', {}).get('MEDIA_PLAYER', {}).get('drive_thumb_size', 'small') == opt %}selected{% endif %}>
+          {{ opt }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="config-group">
+      <label class="form-label">{{ translations.get('webui_mp_options', 'Playback options') }}</label>
+      <div class="toggle-list">
+        {% set mp_cfg = config.get('plugins', {}).get('MEDIA_PLAYER', {}) %}
+        {% for key, label in [
+          ('auto_advance',   translations.get('webui_mp_auto_advance',   'Auto-advance queue')),
+          ('shuffle',        translations.get('webui_mp_shuffle',        'Shuffle by default')),
+          ('repeat',         translations.get('webui_mp_repeat',         'Repeat queue')),
+          ('autoplay_video', translations.get('webui_mp_autoplay_video', 'Autoplay video in browser gallery')),
+          ('autoplay_audio', translations.get('webui_mp_autoplay_audio', 'Autoplay audio in browser gallery')),
+          ('show_filmstrip', translations.get('webui_mp_filmstrip',      'Show filmstrip in gallery')),
+        ] %}
+        <label class="toggle-row">
+          <input type="checkbox" name="{{ key }}" {% if mp_cfg.get(key, True) %}checked{% endif %}>
+          <span class="toggle-label">{{ label }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> {{ translations.get('webui_conf_save', 'Save') }}
+      </button>
+      <span id="mp-save-msg" class="form-feedback"></span>
+    </div>
+  </form>
+</section>

@@ -1,6 +1,6 @@
 image_gen:
   enabled: true
-  provider: huggingface
+  provider: 'pollinations'
   model: flux
   nologo: true
   api_key: ''
@@ -9,31 +9,21 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 2105440198
-  sampler: dpm++2m_karras
-  scheduler: dpm++
-  guidance_scale: 1.0
-  num_inference_steps: 4
-  enable_negative_prompt: false
-  negative_prompt: distorted, extra fingers, malformed limbs, missing limbs, 
-    ugly, blurry, low quality
-  auto_enrich: false
-  enrich_keywords: masterpiece, 8k wallpaper, highly detailed, realistic, sharp 
-    focus, cinematic lighting
+  last_seed: -1
+  sampler: euler_a
+  scheduler: euler
+  guidance_scale: 7.5
+  num_inference_steps: 30
+  enable_negative_prompt: true
+  negative_prompt: ''
+  auto_enrich: true
+  enrich_keywords: ''
   style: none
   optimize_for_flux: true
-  flux_refiner_instructions: Convert keywords into a descriptive natural 
-    language paragraph for Flux. Output ONLY the optimized prompt, no preamble. 
-    If the input from the user is not in english, you translate it for better 
-    results.
-  show_metadata_in_chat: true
+  flux_refiner_instructions: ''
+  show_metadata_in_chat: false
   presets: {}
   active_preset: ''
-  custom_hf_models:
-    - John6666/bond-nsfw-v50-sdxl
-    - HyperX-Sentience/Juggernaut-Reborn
-    - digiplay/Juggernaut_final
-    - xey/sldr_flux_nsfw_v2-studio
-    - John6666/amanatsu-illustrious-v11-sdxl
+  custom_hf_models: []
 video_gen:
   enabled: false

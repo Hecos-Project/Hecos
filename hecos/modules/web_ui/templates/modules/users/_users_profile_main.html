@@ -1,0 +1,155 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Users: Main Profile Column — Identity, Life Metrics, Social, Career, Bio
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- TOP BAR: Title & Sync Badge -->
+<div style="display:flex; align-items:center; justify-content:space-between;">
+  <div class="card-title" style="margin:0; font-size:20px;">
+    {{ t('webui_conf_user_profile_title') or 'Profile Hub' }}
+    <span id="sync-badge" class="sync-badge">Synced</span>
+  </div>
+</div>
+
+<!-- GRID: 2 columns -->
+<div style="display:grid; grid-template-columns: 1fr 340px; gap:24px;">
+
+  <!-- COLUMN 1: Settings -->
+  <div style="display:flex; flex-direction:column; gap:24px;">
+
+    <!-- SECTION 1: Identity & Preferences -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Core Identity & Interface</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div>
+          <label class="profile-label">Display Name</label>
+          <input type="text" id="my_display_name" class="config-input" placeholder="{{ t('webui_conf_user_display_name_ph') or 'Your Name' }}" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">{{ t('webui_conf_sys_lang') or 'System Language' }}</label>
+          <select id="my_language" class="config-input" style="width:100%;" onchange="saveMyProfile(true)">
+            <option value="en">🇺🇸 EN — English</option>
+            <option value="it">🇮🇹 IT — Italiano</option>
+            <option value="es">🇪🇸 ES — Español</option>
+            <option value="de">🇩🇪 DE — Deutsch</option>
+            <option value="fr">🇫🇷 FR — Français</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Life Metrics -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Life Metrics & Markers</div>
+      <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div>
+          <label class="profile-label">Real Name</label>
+          <input type="text" id="my_real_name" class="config-input" placeholder="Full Name" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Age</label>
+          <input type="number" id="my_age" class="config-input" placeholder="--" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Birthday</label>
+          <input type="text" id="my_birthday" class="config-input" placeholder="DD/MM/YYYY" style="width:100%;" oninput="debouncedSave()">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:16px;">
+        <div>
+          <label class="profile-label">Height</label>
+          <input type="text" id="my_height" class="config-input" placeholder="e.g. 180cm" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Weight</label>
+          <input type="text" id="my_weight" class="config-input" placeholder="e.g. 75kg" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Gender</label>
+          <input type="text" id="my_gender" class="config-input" placeholder="..." style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Orientation</label>
+          <input type="text" id="my_orientation" class="config-input" placeholder="..." style="width:100%;" oninput="debouncedSave()">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: Social & Family -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Social Hub & Family</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div>
+          <label class="profile-label">Parents</label>
+          <input type="text" id="my_family_parents" class="config-input" placeholder="Names / Notes" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Partner</label>
+          <input type="text" id="my_family_partner" class="config-input" placeholder="Name" style="width:100%;" oninput="debouncedSave()">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div>
+          <label class="profile-label">Siblings (Number & Names)</label>
+          <input type="text" id="my_family_siblings" class="config-input" placeholder="e.g. 2: Marco, Anna" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Pets (Animali Domestici)</label>
+          <input type="text" id="my_pets" class="config-input" placeholder="e.g. Luna (Cat), Max (Dog)" style="width:100%;" oninput="debouncedSave()">
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px;">
+        <div>
+          <label class="profile-label">Children (Figli)</label>
+          <textarea id="my_family_children" class="config-input" placeholder="Names, ages, details..." style="height:60px; width:100%; resize:none; font-family:inherit;" oninput="debouncedSave()"></textarea>
+        </div>
+        <div>
+          <label class="profile-label">Grandchildren (Nipoti)</label>
+          <textarea id="my_family_grandchildren" class="config-input" placeholder="Names, ages, details..." style="height:60px; width:100%; resize:none; font-family:inherit;" oninput="debouncedSave()"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: Career & Education -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Career & Education</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div>
+          <label class="profile-label">Main Occupation / Job</label>
+          <input type="text" id="my_job_main" class="config-input" placeholder="e.g. Senior Architect" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Secondary / Volunteer</label>
+          <input type="text" id="my_job_secondary" class="config-input" placeholder="e.g. Wildlife Volunteer" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Official Title</label>
+          <input type="text" id="my_title" class="config-input" placeholder="e.g. Doctor, Engineer" style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Studies / Background</label>
+          <input type="text" id="my_education" class="config-input" placeholder="Academic path..." style="width:100%;" oninput="debouncedSave()">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: Interests & Bio -->
+    <div class="card">
+      <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Personal Interests & Bio</div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label class="profile-label">Main Interests & Hobbies</label>
+          <input type="text" id="my_interests" class="config-input" placeholder="Photography, AI, Chess..." style="width:100%;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label class="profile-label">Public Bio (AI Insight)</label>
+          <textarea id="my_bio_notes" class="config-input" placeholder="{{ t('webui_conf_user_bio_ph') or 'Personalize your Hecos...' }}" style="height:60px; width:100%; resize:none; font-family:inherit;" oninput="debouncedSave()"></textarea>
+        </div>
+        <div>
+          <label class="profile-label">Extra Notes (Cose Aggiuntive)</label>
+          <textarea id="my_extra_notes" class="config-input" placeholder="Any other details for the AI..." style="height:60px; width:100%; resize:none; font-family:inherit;" oninput="debouncedSave()"></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- END COLUMN 1 — sidebar injected by _users_sidebar.html via orchestrator -->

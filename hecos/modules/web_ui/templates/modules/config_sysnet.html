@@ -112,7 +112,7 @@
         <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
           onclick="applyProxyPreset('http','127.0.0.1','8080')">🌐 HTTP :8080</button>
         <button type="button" class="btn btn-danger btn-sm"
-          onclick="clearProxy()">✕ {{ t('webui_sysnet_proxy_remove') }}</button>
+          onclick="clearProxy()"><i class="fas fa-times"></i> {{ t('webui_sysnet_proxy_remove') }}</button>
       </div>
     </div>
 
@@ -256,7 +256,7 @@ function runProxyTest() {
 
   _proxyTestEvt.onerror = () => {
     const line = document.createElement('div');
-    line.innerHTML = `<span style="color:var(--red)">❌ Connessione SSE interrotta.</span>`;
+    line.innerHTML = `<span style="color:var(--red)"><i class="fas fa-exclamation-circle"></i> Connessione SSE interrotta.</span>`;
     logOut.appendChild(line);
     spinner.style.display = 'none';
     btn.disabled = false;

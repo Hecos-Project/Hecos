@@ -1,0 +1,44 @@
+<header>
+    <div class="logo">
+      <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Logo" style="height: 32px;">
+      <div class="logo-text">Hecos</div>
+      <span class="badge-pill" style="opacity:0.8;">v{{ version }}</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+  
+      <!-- ONLINE STATUS -->
+      <!-- ONLINE STATUS -->
+      <div id="status-dot" class="badge-pill">
+        <div class="dot" id="hdr-dot"></div>
+        <span id="hdr-model">{{ t("webui_chat_offline") }}</span>
+      </div>
+  
+      <!-- VIEW SWITCHER -->
+      <div class="view-switcher">
+        <button class="switcher-btn active" id="view-tabs" onclick="setViewMode('tabs')" title="Tabs View"><i class="fas fa-folder-open"></i></button>
+        <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View"><i class="fas fa-th"></i></button>
+      </div>
+  
+      <!-- GLOBAL COLLAPSE -->
+      <div class="global-controls">
+        <button class="switcher-btn" onclick="toggleAllCategories(true)" title="Expand All"><i class="fas fa-plus-circle"></i></button>
+        <button class="switcher-btn" onclick="toggleAllCategories(false)" title="Collapse All"><i class="fas fa-minus-circle"></i></button>
+      </div>
+  
+      <!-- NAV LINKS -->
+      <a href="/chat" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-comment-dots"></i> {{ t("webui_nav_chat") }}</a>
+      {% if current_user.is_authenticated %}
+      <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-hdd"></i> Drive</a>
+      {% endif %}
+  
+      <!-- AUTHENTICATION WIDGET -->
+      {% if current_user.is_authenticated %}
+      <div class="badge-pill" style="height:32px; padding:0 12px; gap:10px; background:var(--bg2);">
+        <span style="color:var(--muted); font-size:11px;">{{ t('webui_user_label') or 'User' }}:</span>
+        <strong style="color:var(--accent); font-size:11px;">{{ current_user.username }}</strong>
+        <span class="badge-pill" style="background:var(--accent); color:var(--bg); border:none; height:18px; padding:0 6px; font-size:9px;">{{ current_user.role }}</span>
+        <a href="/logout" style="color:var(--red); text-decoration:none; font-size:11px; font-weight:bold; opacity:0.8; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">{{ t('webui_logout') or 'Logout' }}</a>
+      </div>
+      {% endif %}
+    </div>
+</header>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="{{ zconfig.language or 'en' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hecos — Control Room</title>
+<meta name="description" content="Hecos Control Room — your personal dashboard.">
+<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+<!-- Theme tokens (must load first to prevent FOUC) -->
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+<!-- Module B standalone stylesheet -->
+<link rel="stylesheet" href="/assets/css/home.css?v={{ version }}">
+<!-- Control Room widget theme rules (.room-widget-card.theme-* etc.) -->
+<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=202605141445">
+<link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
+<link rel="stylesheet" href="/ext/calendar/static/css/hecos_wheel_picker.css?v={{ version }}">
+<script>console.log("HECOS_ROOM_HOME_V2_ACTIVE");</script>
+<!-- Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Typography (async, cache-friendly) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      media="print" onload="this.media='all'"
+      onerror="this.onerror=null;this.removeAttribute('media');">
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+</noscript>
+<!-- FOUC prevention — apply saved theme before paint -->
+<script>
+(function () {
+  var auto = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+  var saved = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+  var theme = auto ? 'native' : saved;
+  if (theme && theme !== 'default') document.documentElement.classList.add('theme-' + theme);
+})();
+</script>
+</head>
+
+<body>
+
+<!-- Header ───────────────────────────────────────────────────── -->
+<header id="home-header">
+  <div class="home-logo">
+    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Hecos Logo">
+    <span class="home-logo-text">HECOS</span>
+  </div>
+
+  <div class="home-title-bar">
+    <i class="fas fa-th-large"></i>
+    <span>CONTROL ROOM</span>
+  </div>
+
+  <nav class="home-nav" aria-label="Navigation">
+    <a href="/chat" class="home-nav-link" title="{{ t('webui_nav_chat') or 'Chat' }}">
+      <i class="fas fa-comment-dots"></i>
+      <span>{{ t('webui_nav_chat') or 'Chat' }}</span>
+    </a>
+    <a href="/hecos/config/ui" target="_blank" rel="noopener" class="home-nav-link" title="Central Hub">
+      <i class="fas fa-sliders-h"></i>
+      <span>Hub</span>
+    </a>
+    {% if current_user.is_authenticated %}
+    <a href="/drive" target="_blank" rel="noopener" class="home-nav-link" title="Drive">
+      <i class="fas fa-hdd"></i>
+      <span>Drive</span>
+    </a>
+    <span class="home-nav-link" style="cursor:default; opacity:0.6;">
+      <i class="fas fa-user"></i>
+      <span>{{ current_user.username }}</span>
+    </span>
+    {% endif %}
+    <!-- Edit layout toggle -->
+    <button class="home-nav-link" id="home-edit-btn"
+            style="cursor:pointer; border:none;"
+            title="Edit layout">
+      <i class="fas fa-pen-to-square"></i>
+      <span>Edit</span>
+    </button>
+  </nav>
+</header>
+
+<!-- Widget Grid ──────────────────────────────────────────────── -->
+<main id="home-grid" role="main" aria-label="Widget Dashboard">
+  <div class="room-loading">
+    <i class="fas fa-spinner fa-spin" style="opacity:0.5;"></i>
+    <span style="opacity:0.5;">{{ t('room_loading') or 'Loading widgets…' }}</span>
+  </div>
+</main>
+
+<!-- Footer ───────────────────────────────────────────────────── -->
+<footer id="home-footer">
+  <span>Hecos Control Room &mdash; <a href="/hecos/config/ui#widgets" target="_blank" style="color:var(--accent); text-decoration:none;"><i class="fas fa-plus-circle"></i> {{ t('room_add_widget') or 'Manage Widgets' }}</a></span>
+</footer>
+
+<!-- I18N + config ───────────────────────────────────────────── -->
+<script>
+  window.I18N   = {{ translations | tojson | safe }};
+  window.cfg    = {{ zconfig | tojson | safe }};
+  window.t      = function(key) { return window.I18N[key] || key; };
+  window.hecosOpenConfig = function(hash) {
+    window.open('/hecos/config/ui' + (hash || ''), '_blank', 'noopener');
+  };
+</script>
+
+<!-- Core Components -->
+<script src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/color_ui.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/image_ui.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/style_ui.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
+
+<!-- Grid Engine -->
+<script src="/static/js/control_room_grid_sync.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid_render.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid_drag.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid_actions.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid_aes.js?v={{ version }}"></script>
+<script src="/static/js/control_room_grid.js?v={{ version }}&t=20260515"></script>
+
+<!-- Global Events (Reminders & Backend Sync) -->
+<script src="/static/js/chat_events.js?v={{ version }}"></script>
+<script src="/ext/calendar/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
+
+<!-- Initialize -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const grid = document.getElementById('home-grid');
+    const editBtn = document.getElementById('home-edit-btn');
+    // Remove loading spinner
+    const loading = grid.querySelector('.room-loading');
+    if (loading) loading.remove();
+    controlRoomGrid.init(grid, editBtn);
+  });
+</script>
+
+</body>
+</html>

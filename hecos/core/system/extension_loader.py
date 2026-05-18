@@ -44,7 +44,7 @@ def discover_extensions(plugin_tag: str, plugin_dir: str):
                 manifest = json.load(f)
 
             ext_id = manifest.get("extension_id", ext_name)
-            
+
             if plugin_tag not in _extension_registry:
                 _extension_registry[plugin_tag] = {}
 
@@ -68,19 +68,134 @@ def get_extension_config(plugin_tag: str, ext_id: str) -> dict:
 
 def get_registered_extensions(plugin_tag: str) -> dict:
     """Returns all registered extension manifests for a given plugin."""
-    return _extension_registry.get(plugin_tag, {})
+    return _extension_registry.get(plugin_tag, {})\
 
 
-def get_sidebar_widgets() -> list:
+def _is_plugin_active(required_plugin: str, config: dict) -> bool:
     """
-    Returns all WEB_UI extensions that declare 'sidebar_widget': true.
-    Each entry is a manifest dict enriched with a 'template_name' key.
+    Checks whether the plugin identified by `required_plugin` tag is enabled
+    in the given config dict. Returns True if no config is given (permissive default).
     """
-    return [
-        manifest
-        for manifest in _extension_registry.get("WEB_UI", {}).values()
-        if manifest.get("sidebar_widget", False)
-    ]
+    if not config or not required_plugin:
+        return True
+    return config.get("plugins", {}).get(required_plugin, {}).get("enabled", True)
+
+
+def _get_widget_prefs(ext_id: str, config: dict) -> dict:
+    """
+    Returns the per-widget user preferences from config["widgets"]["per_widget"][ext_id].
+    Defaults: visible=True, room_visible=False, room_span=1, theme=default.
+    """
+    if not config:
+        return {"visible": True, "room_visible": False, "room_span": 1, "theme": "default"}
+    
+    prefs = config.get("widgets", {}).get("per_widget", {}).get(ext_id, {})
+    
+    # Support both dict (from raw yaml) and Pydantic model
+    if hasattr(prefs, 'model_dump'):
+        prefs = prefs.model_dump()
+    elif hasattr(prefs, '__dict__'):
+        prefs = prefs.__dict__
+
+    return {
+        "visible":      prefs.get("visible", True) if isinstance(prefs, dict) else getattr(prefs, 'visible', True),
+        "room_visible": prefs.get("room_visible", False) if isinstance(prefs, dict) else getattr(prefs, 'room_visible', False),
+        "room_span":    prefs.get("room_span", 1) if isinstance(prefs, dict) else getattr(prefs, 'room_span', 1),
+        "room_height":  prefs.get("room_height", None) if isinstance(prefs, dict) else getattr(prefs, 'room_height', None),
+        "theme":        prefs.get("theme", "default") if isinstance(prefs, dict) else getattr(prefs, 'theme', 'default'),
+        "bg_color":     prefs.get("bg_color", "") if isinstance(prefs, dict) else getattr(prefs, 'bg_color', ""),
+        "bg_image":     prefs.get("bg_image", "") if isinstance(prefs, dict) else getattr(prefs, 'bg_image', ""),
+    }
+
+
+def _sidebar_order(config: dict) -> list:
+    """Returns the user-defined sidebar order list from config, or empty list."""
+    if not config:
+        return []
+    return config.get("widgets", {}).get("sidebar_order", [])
+
+
+def get_sidebar_widgets(config: dict = None) -> list:
+    """
+    Returns a list of manifests for widgets that should be in the sidebar.
+    Considers parent plugin status, user visibility preference, and custom order.
+    """
+    # 1. Get all candidates
+    all_widgets = get_all_widgets(config)
+    
+    # 2. Filter by active and visible
+    visible_widgets = {w["extension_id"]: w for w in all_widgets if w.get("plugin_active") and w.get("visible")}
+    
+    # 3. Apply order
+    if not config:
+        return list(visible_widgets.values())
+        
+    order = config.get("widgets", {}).get("sidebar_order", [])
+    result = []
+    
+    # First, add widgets that are in the ordered list (if they are visible)
+    for ext_id in order:
+        if ext_id in visible_widgets:
+            result.append(visible_widgets.pop(ext_id))
+            
+    # Then, append any remaining visible widgets that weren't in the explicit order list
+    # (this ensures new widgets or unordered ones don't disappear)
+    for ext_id, manifest in visible_widgets.items():
+        result.append(manifest)
+        
+    return result
+
+
+def get_all_widgets(config: dict = None) -> list:
+    """
+    Returns ALL WEB_UI sidebar widgets as enriched dicts for the Widget Manager panel.
+    Includes disabled/hidden widgets with their status.
+
+    Each item contains:
+      - All manifest fields
+      - plugin_active (bool): whether the required_plugin is currently enabled
+      - visible (bool): user visibility preference
+      - order_index (int): current position in sidebar_order (None if not set)
+    """
+    all_webui = _extension_registry.get("WEB_UI", {})
+    order = _sidebar_order(config)
+
+    result = []
+    for ext_id, manifest in all_webui.items():
+        if not manifest.get("sidebar_widget", False):
+            continue
+
+        req_plugin = manifest.get("required_plugin")
+        plugin_active = _is_plugin_active(req_plugin, config)
+        prefs = _get_widget_prefs(ext_id, config)
+
+        try:
+            order_index = order.index(ext_id)
+        except ValueError:
+            order_index = None
+
+        enriched = dict(manifest)
+        enriched["extension_id"]  = ext_id
+        enriched["plugin_active"] = plugin_active
+        enriched["visible"]       = prefs.get("visible", True)
+        enriched["room_visible"]  = prefs.get("room_visible", False)
+        enriched["room_span"]     = prefs.get("room_span", 1)
+        enriched["room_height"]   = prefs.get("room_height", None)
+        enriched["theme"]         = prefs.get("theme", "default")
+        enriched["bg_color"]      = prefs.get("bg_color", "")
+        enriched["bg_image"]      = prefs.get("bg_image", "")
+        enriched["order_index"]   = order_index
+        result.append(enriched)
+
+        logger.debug("EXT_LOADER",
+            f"Widget [{ext_id}] plugin_active={plugin_active} "
+            f"visible={enriched['visible']} room_visible={enriched['room_visible']} "
+            f"room_span={enriched['room_span']}")
+
+    # Sort: widgets with an explicit order index first, then by discovery order
+    result.sort(key=lambda m: (m["order_index"] is None, m["order_index"] or 0))
+    logger.debug("EXT_LOADER", f"get_all_widgets -> {len(result)} widgets found")
+    return result
 
 
 def discover_webui_extensions(webui_module_dir: str):
@@ -117,7 +232,7 @@ def load_extension_routes(app, plugin_tag: str, ext_id: str):
     try:
         plugin_dir = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(main_path))))
         module_name = f"plugins.{plugin_dir}.extensions.{ext_id}.main"
-        
+
 
         spec = importlib.util.spec_from_file_location(module_name, main_path)
         if not spec:
@@ -126,7 +241,7 @@ def load_extension_routes(app, plugin_tag: str, ext_id: str):
         module = importlib.util.module_from_spec(spec)
         import sys
         sys.modules[module_name] = module
-            
+
         spec.loader.exec_module(module)
 
 

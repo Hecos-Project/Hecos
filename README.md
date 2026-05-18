@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.20.0 (Runtime Alpha)
+# Hecos - Version 0.21.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.20.0`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
+> **Runtime Alpha Status**: Hecos is currently in `v0.21.0`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem that bridges AI reasoning with root-level system execution and advanced networking. It transforms local hardware into a sovereign digital entity through an integrated dashboard and professional-grade security infrastructure.
@@ -21,11 +21,11 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced AI orchestration intuitive.
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.20.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.21.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 
-## ✨ Key Features (v0.20.0)
+## ✨ Key Features (v0.21.0)
 * **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding.
 * **⏰ Reminder Module** — NLP-powered task scheduler with snooze capabilities and active OS notifications.
 * **💻 Action Window** — Clean, terminal-style console directly inside the chat UI for monitoring native system execution and background processes.
@@ -39,6 +39,9 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.20.0 offe
 * 🔭 **Deep MCP Discovery** — Advanced explorer with multi-registry search (Smithery, MCPSkills, GitHub) and one-click installation.
 * 🔒 **Professional Hecos PKI (HTTPS)** — Self-signing Root CA for a full "Green Lock" experience on all devices.
 * 🏗️ **Native WebUI Plugin** — High-performance, low-latency interface for desktop and mobile.
+* 🎛️ **Control Room & Widgets** — A customizable, masonry-style dashboard for real-time widgets and OS telemetry.
+* 🌐 **Browser Automation** — Native plugin for semantic web interaction and scraping.
+* ⌨️ **OS Automation** — Native plugin for programmatic mouse and keyboard control.
 * 💾 **Hecos Drive (File Manager)** — Integrated dual-panel file management and editor.
 
 ---
@@ -203,7 +206,7 @@ Hecos uses a modular documentation system localized in EN, IT, and ES.
 
 ### Local Access (Modular)
 Detailed guides are located in the `docs/` folder:
-- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.20.0.
+- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.21.0.
 - 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details.
 
 

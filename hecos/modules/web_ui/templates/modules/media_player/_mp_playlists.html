@@ -1,0 +1,41 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media Player: Playlists Section — create, scan folder, list
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="config-section">
+  <h2 class="section-title"><i class="fas fa-list-ul"></i> {{ translations.get('webui_mp_playlists', 'Playlists') }}</h2>
+
+  <!-- Create new playlist -->
+  <div class="config-group" style="margin-bottom:16px;">
+    <label class="form-label">{{ translations.get('webui_mp_new_playlist', 'New playlist name') }}</label>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="text" id="mp-new-name" class="form-input"
+             placeholder="{{ translations.get('webui_mp_playlist_name_ph', 'e.g. Jazz Evening') }}"
+             style="max-width:240px;">
+      <button class="btn btn-primary" onclick="mpCreatePlaylist()">
+        <i class="fas fa-plus"></i> {{ translations.get('webui_mp_create', 'Create') }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Scan folder to add tracks -->
+  <div class="config-group" style="margin-bottom:24px;">
+    <label class="form-label">{{ translations.get('webui_mp_scan_folder', 'Scan folder') }}</label>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="mp-scan-folder" class="form-input"
+             placeholder="{{ translations.get('webui_mp_folder_ph', 'e.g. C:/Music') }}"
+             style="max-width:320px;">
+      <input type="text" id="mp-scan-save-as" class="form-input"
+             placeholder="{{ translations.get('webui_mp_save_as_ph', 'Save as playlist name (optional)') }}"
+             style="max-width:200px;">
+      <button class="btn" onclick="mpScanFolder()">
+        <i class="fas fa-folder-open"></i> {{ translations.get('webui_mp_scan', 'Scan') }}
+      </button>
+    </div>
+    <div id="mp-scan-result" class="form-feedback" style="margin-top:8px;min-height:20px;"></div>
+  </div>
+
+  <!-- Playlist list (populated dynamically by media_player_panel.js) -->
+  <div id="mp-playlists-wrap">
+    <div class="mp-muted" style="padding:12px 0;">{{ translations.get('webui_conf_msg_loading', 'Loading...') }}</div>
+  </div>
+</section>

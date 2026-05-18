@@ -6,9 +6,10 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 # === Configuration ===
 HECOS_PORT = 7070
 STATUS_POLL_INTERVAL = 3  # seconds (reduced for better responsiveness)
-LOGO_PATH = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png")
+LOGO_PATH = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly_Mask_001.ico")
 VERSION_FILE = os.path.join(_ROOT, "hecos", "core", "version")
 SYSTEM_YAML = os.path.join(_ROOT, "hecos", "config", "data", "system.yaml")
+PLUGINS_YAML = os.path.join(_ROOT, "hecos", "config", "data", "plugins.yaml")
 SETTINGS_FILE = os.path.join(_ROOT, "hecos_tray_settings.json")
 
 
@@ -17,8 +18,13 @@ SETTINGS_FILE = os.path.join(_ROOT, "hecos_tray_settings.json")
 # ─────────────────────────────────────────────────────────────
 
 _DEFAULTS = {
-    "start_hecos_on_launch": True,   # launch Hecos python subprocess at tray startup
-    "autoopen_webui": True,    # open the browser automatically when service comes online
+    "start_hecos_on_launch": True,    # launch Hecos python subprocess at tray startup
+    "autoopen_webui": True,           # open the browser automatically when service comes online
+    "autoopen_ai_browser": False,     # open Playwright Chromium browser when service comes online
+    "auto_launch_chrome_for_ai": False,  # auto-launch Chrome in AI-Ready (CDP) mode on startup
+    "browser_startup_url": "http://localhost:7070",  # URL to open automatically when AI browser launches
+    "browser_headless": False,        # True = AI browser runs invisibly in background
+    "show_technical_menu": True,      # show Advanced/Debug submenu in tray
 }
 
 def load_settings() -> dict:

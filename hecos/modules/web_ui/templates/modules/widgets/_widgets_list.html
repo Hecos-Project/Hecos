@@ -1,0 +1,32 @@
+<div id="tab-widgets" class="panel">
+    <div class="card">
+        <div class="card-title">{{ translations.get('webui_conf_widgets_title', 'Widgets') }}</div>
+        <p class="muted" style="font-size: 11px; margin-bottom: 20px;">
+            {{ translations.get('webui_conf_widgets_desc', 'Gestisci i widget della sidebar e della Control Room') }}
+        </p>
+
+        <!-- Global Toggle -->
+        <div class="sidebar-card" style="margin-bottom:20px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; border: 1px solid var(--border); border-radius:12px; background:var(--bg2);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="font-size:20px; color:var(--accent);"><i class="fas fa-eye"></i></div>
+                <div>
+                    <div style="font-size:13px; font-weight:600;">{{ translations.get('sidebar_widgets_global_title', 'Widgets Globali') }}</div>
+                    <div style="font-size:11px; color:var(--muted);">{{ translations.get('sidebar_widgets_global_desc', 'Abilita/Disabilita la barra dei widget') }}</div>
+                </div>
+            </div>
+            <label class="switch no-autosave">
+                <input type="checkbox" id="global-sidebar-widgets-toggle"
+                       onchange="toggleSidebarWidgetsEnabled(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+
+
+        <div id="widgets-list" class="form-section">
+            <div style="padding:40px; text-align:center; color:var(--muted); font-size: 13px;" id="widgets-loading">
+                <i class="fas fa-circle-notch fa-spin" style="margin-right: 10px;"></i> {{ translations.get('loading', 'Caricamento...') }}
+            </div>
+        </div>
+    </div>
+</div>

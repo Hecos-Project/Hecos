@@ -1,7 +1,7 @@
 <style>
 .sidebar-cal-group {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px solid rgba(255, 255, 255, 0.03);
     border-radius: 8px;
     margin-bottom: 6px;
     overflow: hidden;
@@ -40,7 +40,7 @@
 }
 /* Premium Event Card */
 .cal-sidebar-card {
-    background: var(--bg3);
+    background: rgba(255, 255, 255, 0.02);
     padding: 6px 8px;
     border-radius: 6px;
     border-left: 3px solid #3498db;
@@ -75,16 +75,16 @@
 
 <div class="sidebar-card" id="calendar-widget" style="padding:10px 12px;">
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="calendarWidget.toggleBody()">
-        <span class="ql-icon">📅</span>
+        <span class="ql-icon"><i class="fas fa-calendar-alt"></i></span>
         <span class="ql-title">CALENDAR</span>
         <span onclick="event.stopPropagation(); window.hecosOpenConfig('#calendar')" 
               style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
-              title="Configure Calendar">⚙️</span>
-        <span class="ql-chevron" id="calendar-widget-toggle">▾</span>
+              title="Configure Calendar"><i class="fas fa-cog"></i></span>
+        <span class="ql-chevron" id="calendar-widget-toggle"><i class="fas fa-chevron-down"></i></span>
     </div>
 
     <div id="calendar-widget-body" class="ql-body" style="margin-top:10px;">
-        <div id="calendar-upcoming-list" class="ql-item" style="background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
+        <div id="calendar-upcoming-list" class="ql-item" style="border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
             <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Synchronizing...</span>
         </div>
     </div>
@@ -161,13 +161,13 @@ window.calendarWidget = (function() {
                     <div class="sidebar-cal-group">
                         <div class="sidebar-cal-header ${isCollapsed ? 'collapsed' : ''}" onclick="calendarWidget.toggleGroup(this)">
                             <span>${label}</span>
-                            <span class="group-chevron">▼</span>
+                            <span class="group-chevron"><i class="fas fa-chevron-down"></i></span>
                         </div>
                         <div class="sidebar-cal-content ${isCollapsed ? 'collapsed' : ''}">
                             ${events.map(ev => `
                                 <div class="cal-sidebar-card" style="border-left-color: ${ev.color || '#3498db'}">
                                     <div class="cal-sidebar-title">${ev.title}</div>
-                                    <div class="cal-sidebar-time">🕒 ${_fmtTime(ev.start_iso)}</div>
+                                    <div class="cal-sidebar-time"><i class="far fa-clock"></i> ${_fmtTime(ev.start_iso)}</div>
                                 </div>
                             `).join('')}
                         </div>

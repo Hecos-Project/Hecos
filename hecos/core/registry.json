@@ -1,4 +1,33 @@
 {
+    "BROWSER": {
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
+        "commands": {
+            "open_url": "Navigate the browser to a URL.",
+            "get_current_url": "Return the current page URL.",
+            "go_back": "Navigate back to the previous page.",
+            "get_page_text": "Read all visible text from the current page.",
+            "get_links": "List all hyperlinks on the page.",
+            "get_inputs": "List all interactive form elements.",
+            "get_title": "Return the page title.",
+            "click_element": "Click an element by visible text or aria-label.",
+            "type_in_field": "Fill a form field by label/placeholder and optionally press Enter.",
+            "scroll": "Scroll the page up or down.",
+            "press_key": "Press a keyboard key in the browser.",
+            "run_js": "Execute JavaScript code on the page.",
+            "screenshot": "Take a viewport screenshot for vision analysis.",
+            "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
+            "switch_tab": "Switch focus to a specific tab by its ID.",
+            "close": "Close the browser window."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "BROWSER CONTROL DECISION TREE — Follow these steps in order: (1) ALWAYS start with BROWSER__list_tabs. (2) If it returns a list of tabs → you are in CDP mode. Use BROWSER__switch_tab(index) to go to the right tab, then use BROWSER page tools (get_page_text, click_element, type_in_field). (3) If list_tabs returns 'CDP connection is not active' → Chrome was NOT launched in AI-Ready mode. IMMEDIATELY fall back to: AUTOMATION__get_browser_tabs to find open tabs by title (this reads from Windows accessibility, real browser windows only), then AUTOMATION__focus_browser_tab with the matching title fragment. NEVER stop and ask the user — always attempt the fallback automatically.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "🌐",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -7,37 +36,14 @@
             "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
             "get_system_resources": "Returns a summary of system CPU and RAM usage."
         },
-        "status": "ONLINE (Telemetry active)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
-    },
-    "EXECUTOR": {
-        "description": "Safe Python execution (AST Sandbox), system control, and file management.",
-        "commands": {
-            "create_dir": "Method",
-            "delete_file": "Method",
-            "execute_shell_command": "Method",
-            "get_battery_status": "Method",
-            "get_date": "Method",
-            "get_time": "Method",
-            "kill_process": "Method",
-            "list_dir": "Method",
-            "list_processes": "Method",
-            "patch_file": "Method",
-            "read_file": "Method",
-            "reboot_system": "Method",
-            "run_python_code": "Method",
-            "write_file": "Method"
-        },
-        "status": "ONLINE (Core Tools Active)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "HELP": {
         "description": "Displays the list of all active commands and modules in the system.",
@@ -45,12 +51,14 @@
             "list_capabilities": "Displays the complete list of all tools, modules, and capabilities currently loaded in the system.",
             "refresh_registry": "Forces a re-read and update of the central capabilities registry (rescans plugins)."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History).",
@@ -60,35 +68,30 @@
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
             "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Vault Access Granted)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS",
-        "module_type": "core_module"
+        "category": "PLUGINS"
     },
     "MODELS": {
-        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
+        "description": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
         "commands": {
             "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
             "list_models": "Lists all available models for the currently selected backend.",
             "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Gestione modelli)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS",
-        "module_type": "core_module"
+        "category": "PLUGINS"
     },
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
         "commands": {
-            "check_internet_speed": "Tests the current internet download and upload speed.",
             "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
             "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
             "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
@@ -96,15 +99,18 @@
             "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
             "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
             "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
-            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP.",
-            "traceroute": "Performs a traceroute to show the network path and latency to a host."
+            "traceroute": "Performs a traceroute to show the network path and hop-by-hop latency to a host.",
+            "check_internet_speed": "Tests download/upload internet speed using speedtest-cli or a CDN fallback.",
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
         },
-        "status": "Online",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "WEB_UI": {
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
@@ -150,19 +156,21 @@
         "module_type": "plugin"
     },
     "IMAGE_GEN": {
-        "description": "Generates images from text descriptions using AI image models.",
+        "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
         "commands": {
-            "generate_image": "Generates an image from a text description."
+            "generate_image": "Generates an image from a text description. Uses the configured provider."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
-        "routing_instructions": "",
+        "routing_instructions": "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image.",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "🎨",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "MEDIA_PLAYER": {
-        "description": "Media player: play audio/video, manage playlists via AI or dashboard.",
+        "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
         "commands": {
             "add_to_playlist": "Add a file to an existing playlist (creates it if missing).",
             "create_playlist": "Create a named playlist with a list of file paths.",
@@ -181,12 +189,14 @@
             "set_volume": "Set playback volume.",
             "stop": "Stop playback completely."
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "🎵",
-        "category": "MULTIMEDIA"
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
     "REMINDER": {
         "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
@@ -204,30 +214,30 @@
         "icon": "",
         "category": "PLUGINS"
     },
-    "WEB": {
-        "description": "Network access for Google searches and quick opening of websites.",
+    "USERS": {
+        "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
         "commands": {
-            "fetch_page_content": "Fetches a web page and returns its readable text content.",
-            "get_clipboard": "Returns the current text from the system clipboard.",
-            "open_url": "Opens a specific website in the default browser.",
-            "search_and_read": "Searches the web using DuckDuckGo and reads the text content of the top results.",
-            "search_web": "Opens a browser search for a query.",
-            "set_clipboard": "Copies the given text to the system clipboard."
+            "get_profile": "Ottiene i dettagli completi del profilo (email, telefono, etc.)",
+            "update_profile": "Aggiorna i campi del profilo utente"
         },
-        "status": "ONLINE (Browsing & Search)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS"
+        "is_lazy": true,
+        "icon": "👥",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     },
-    "WEBCAM": {
-        "description": "Access to PC optical vision to take snapshots of the environment or Admin.",
+    "WEATHER": {
+        "description": "Real-time weather and forecasting using the open-source Open-Meteo API.",
         "commands": {
-            "desktop_screenshot": "Takes a screenshot of the entire desktop (or a specific monitor) and saves it to disk.",
-            "take_snapshot": "Takes a photo using the computer's webcam and saves it to disk."
+            "get_current_weather": "Get the current weather conditions for a specific city.",
+            "get_weather_data": "Fetches unified weather block for the Frontend Widget and Backend Tools.",
+            "get_weather_forecast": "Get the daily weather forecast for the next 7 days for a specific city.",
+            "on_load": "Called automatically by Hecos ModuleLoader"
         },
-        "status": "ONLINE (Optical Vision)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,

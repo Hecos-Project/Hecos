@@ -1,0 +1,17 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media: Vault Card — open folder and clear all media actions
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card" id="card-media-vault">
+  <div class="card-title"><i class="fas fa-lock"></i> {{ t('webui_media_vault_title') }}</div>
+  <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+    {{ t('webui_media_vault_desc') }}
+  </p>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="btn btn-secondary" onclick="openMediaVault()">
+      <i class="fas fa-folder-open"></i> {{ t('webui_media_open_folder') }}
+    </button>
+    <button class="btn btn-danger" onclick="clearMediaVault()">
+      <i class="fas fa-trash-alt"></i> {{ t('webui_media_clear_all') }}
+    </button>
+  </div>
+</div>

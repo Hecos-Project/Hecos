@@ -1,0 +1,14 @@
+{% for widget in sidebar_widgets %}
+<div class="sidebar-widget-wrapper" data-id="{{ widget.extension_id }}">
+    <!-- Reorder Chrome (Hidden by default, shown in reorder mode) -->
+    <div class="widget-reorder-chrome">
+        <div class="widget-drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></div>
+        <button class="widget-move-up" onclick="moveWidgetUp(this)" title="Move Up"><i class="fas fa-chevron-up"></i></button>
+        <button class="widget-move-down" onclick="moveWidgetDown(this)" title="Move Down"><i class="fas fa-chevron-down"></i></button>
+    </div>
+    
+    <div class="widget-content">
+        {% include widget.extension_id ~ '_widget.html' %}
+    </div>
+</div>
+{% endfor %}

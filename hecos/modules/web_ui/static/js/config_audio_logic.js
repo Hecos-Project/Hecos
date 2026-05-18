@@ -12,6 +12,7 @@ function populateAudioUI() {
     setVal('v-noise', v.noise_scale ?? 0.817);
     setVal('v-noisew', v.noise_w ?? 0.9);
     setVal('v-silence', v.sentence_silence ?? 0.1);
+    setVal('v-timeout', v.piper_timeout ?? 180);
 
     const a = audioConfig || {};
     setVal('a-threshold', a.energy_threshold ?? 450);
@@ -48,25 +49,26 @@ function populateAudioUI() {
 }
 
 function buildAudioPayload() {
-    const obj = {};
-    obj.listening_status = document.getElementById('sys-mic-status').checked;
-    obj.voice_status     = document.getElementById('sys-voice-status').checked;
-
-    obj.piper_path       = document.getElementById('v-piper').value;
-    const pdir = sysOptions.piper_dir || 'C:\\piper';
-    const sel  = document.getElementById('v-onnx-model').value;
-    obj.onnx_model       = (sel.includes('\\') || sel.includes('/')) ? sel : pdir + '\\' + sel;
-
-    obj.speed            = parseFloat(document.getElementById('v-speed').value) || 1.0;
-    obj.noise_scale      = parseFloat(document.getElementById('v-noise').value) || 0.8;
-    obj.noise_w          = parseFloat(document.getElementById('v-noisew').value) || 1.0;
-    obj.sentence_silence = parseFloat(document.getElementById('v-silence').value) || 0.2;
-
-    obj.energy_threshold = parseInt(document.getElementById('a-threshold').value) || 450;
-    obj.silence_timeout  = parseInt(document.getElementById('a-timeout').value) || 5;
-    obj.phrase_limit     = parseInt(document.getElementById('a-limit').value) || 15;
-
-    return obj;
+    const v = (typeof audioConfig !== 'undefined' ? audioConfig : {}) || {};
+    const pdir = (window.sysOptions || {}).piper_dir || 'C:\\piper';
+    const el = document.getElementById('v-onnx-model');
+    const sel = el ? el.value : (v.onnx_model || 'it_IT-paola-medium.onnx');
+    const modelFile = (sel && sel.trim() && sel !== 'null') ? sel : 'it_IT-paola-medium.onnx';
+    
+    return {
+        listening_status: getC('sys-mic-status', v.listening_status ?? false),
+        voice_status:     getC('sys-voice-status', v.voice_status ?? false),
+        piper_path:       getV('v-piper', v.piper_path || ''),
+        onnx_model:       (modelFile.includes('\\') || modelFile.includes('/')) ? modelFile : pdir + '\\' + modelFile,
+        speed:            parseFloat(getV('v-speed', v.speed)) || 1.0,
+        noise_scale:      parseFloat(getV('v-noise', v.noise_scale)) || 0.8,
+        noise_w:          parseFloat(getV('v-noisew', v.noise_w)) || 1.0,
+        sentence_silence: parseFloat(getV('v-silence', v.sentence_silence)) || 0.2,
+        piper_timeout:    parseInt(getV('v-timeout', v.piper_timeout)) || 180,
+        energy_threshold: parseInt(getV('a-threshold', v.energy_threshold)) || 450,
+        silence_timeout:  parseInt(getV('a-timeout', v.silence_timeout)) || 5,
+        phrase_limit:     parseInt(getV('a-limit', v.phrase_limit)) || 15
+    };
 }
 
 let currentTestAudio = null;

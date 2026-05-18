@@ -1,101 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ zconfig.language or 'en' }}">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Config Panel</title>
-  <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
-  
-  <!-- Core Modular Design System -->
-  <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
-  <link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
-  <link rel="stylesheet" href="/assets/css/core/layout.css?v={{ version }}">
-  <link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
-  <link rel="stylesheet" href="/assets/css/core/dashboard.css?v={{ version }}">
-  <link rel="stylesheet" href="/assets/css/core/logs.css?v={{ version }}">
-  <link rel="stylesheet" href="/assets/css/core/modules.css?v={{ version }}">
-  <link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Non-blocking font load -->
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'" onerror="this.onerror=null;this.removeAttribute('media');">
-  <noscript>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-  </noscript>
-  <style>
-    :root { color-scheme: dark; }
-    @media (max-width: 768px) {
-      header {
-        flex-direction: column;
-        height: auto;
-        padding: 8px 12px;
-        gap: 6px;
-      }
-      header .logo {
-        justify-content: center;
-        margin-bottom: 2px;
-      }
-      header .logo-text { font-size: 16px; }
-      header .logo img { height: 24px; }
-      
-      header > div:last-child {
-        flex-wrap: nowrap;
-        justify-content: center;
-        gap: 4px;
-        width: 100%;
-        overflow-x: auto;
-        padding-bottom: 4px;
-      }
-      header .btn, header .view-switcher, header .global-controls {
-        padding: 4px 8px !important;
-        font-size: 11px !important;
-        height: 28px;
-        display: flex;
-        align-items: center;
-      }
-      header .view-switcher button, header .global-controls button {
-        padding: 0 6px !important;
-        font-size: 11px !important;
-      }
-
-      /* Fix Save Bar (Footer) */
-      .save-bar {
-        padding: 8px 12px !important;
-        gap: 6px !important;
-        height: auto !important;
-      }
-      .save-bar .btn {
-        padding: 6px 10px !important;
-        font-size: 11px !important;
-        flex: 1;
-        white-space: nowrap;
-      }
-      #save-msg { font-size: 10px; margin-bottom: 4px; width: 100%; text-align: center; }
-
-      .tabs {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        gap: 4px;
-        padding-bottom: 4px;
-      }
-      .tab {
-        flex-shrink: 0;
-        font-size: 11px;
-        padding: 6px 10px;
-        white-space: nowrap;
-      }
-      .container {
-        padding: 8px;
-        margin-bottom: 80px; /* Space for save-bar */
-      }
-      .card { padding: 12px !important; margin-bottom: 12px !important; }
-      .grid-2 { grid-template-columns: 1fr !important; }
-    }
-  </style>
+{% include 'modules/core/_core_head.html' %}
 </head>
 <body class="config-page">
 <!-- Synchronous Theme Setup to Prevent Flash of Unstyled Content -->
@@ -110,67 +16,11 @@
   })();
 </script>
 
-<header>
-  <div class="logo">
-    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos Logo">
-    <div class="logo-text">Hecos</div>
-    <span class="badge-pill" style="opacity:0.8;">v{{ version }}</span>
-  </div>
-  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-
-    <!-- ONLINE STATUS -->
-    <div id="status-dot" class="badge-pill">
-      <div class="dot" id="hdr-dot"></div>
-      <span id="hdr-model">{{ t("webui_chat_offline") }}</span>
-    </div>
-
-    <!-- VIEW SWITCHER -->
-    <div class="view-switcher">
-      <button class="switcher-btn active" id="view-tabs" onclick="setViewMode('tabs')" title="Tabs View">📂</button>
-      <button class="switcher-btn" id="view-wall" onclick="setViewMode('wall')" title="Wall View">🧱</button>
-    </div>
-
-    <!-- GLOBAL COLLAPSE -->
-    <div class="global-controls">
-      <button class="switcher-btn" onclick="toggleAllCategories(true)" title="Expand All">⊕</button>
-      <button class="switcher-btn" onclick="toggleAllCategories(false)" title="Collapse All">⊖</button>
-    </div>
-
-    <!-- NAV LINKS -->
-    <a href="/chat" class="btn btn-sm btn-secondary" style="text-decoration:none;">💬 {{ t("webui_nav_chat") }}</a>
-    {% if current_user.is_authenticated %}
-    <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;">🗂️ Drive</a>
-    {% endif %}
-
-    <!-- AUTHENTICATION WIDGET -->
-    {% if current_user.is_authenticated %}
-    <div class="badge-pill" style="height:32px; padding:0 12px; gap:10px; background:var(--bg2);">
-      <span style="color:var(--muted); font-size:11px;">{{ t('webui_user_label') or 'User' }}:</span>
-      <strong style="color:var(--accent); font-size:11px;">{{ current_user.username }}</strong>
-      <span class="badge-pill" style="background:var(--accent); color:var(--bg); border:none; height:18px; padding:0 6px; font-size:9px;">{{ current_user.role }}</span>
-      <a href="/logout" style="color:var(--red); text-decoration:none; font-size:11px; font-weight:bold; opacity:0.8; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">{{ t('webui_logout') or 'Logout' }}</a>
-    </div>
-    {% endif %}
-  </div>
-</header>
+{% include 'modules/core/_core_header.html' %}
 
 <div class="container">
   <div id="config-welcome-container">
     {% include 'modules/config_welcome.html' %}
-  </div>
-
-  <div id="live-status">
-    <div class="stat"><span class="stat-label">System:</span> <span id="s-backend" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" style="display:none;"><span class="stat-label">CPU:</span> <span id="s-cpu" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" style="display:none;"><span class="stat-label">RAM:</span> <span id="s-ram" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" style="display:none;"><span class="stat-label">VRAM:</span> <span id="s-vram" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">Mic:</span> <span id="s-mic" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">TTS:</span> <span id="s-tts" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">PTT:</span> <span id="s-ptt" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">Config:</span> <span id="s-config" class="stat-val">—</span></div>
-    <div class="stat"><span class="stat-label">Model:</span> <span id="s-model" class="stat-val">—</span></div>
-    <div class="stat dashboard-only" title="Last executed tool" style="display:none;"><span class="stat-label">Tool:</span> <span id="s-tool" class="stat-val val-ok">—</span></div>
-    <div class="stat dashboard-only" title="Token Context Usage" style="display:none;"><span class="stat-label">Tokens:</span> <span id="s-tokens" class="stat-val">—</span></div>
   </div>
 
   <!-- CATEGORY FILTER TABS -->
@@ -194,166 +44,64 @@
   </div>
 
   <form id="config-form" onsubmit="event.preventDefault(); saveConfig();">
-    {% include 'modules/config_backend.html' %}
-    {% include 'modules/key_manager.html' %}
-
-    {% include 'modules/config_routing.html' %}
-    {% include 'modules/config_agent.html' %}
-    {% include 'modules/config_persona.html' %}
-    {% include 'modules/config_filters.html' %}
-    {% include 'modules/config_bridge.html' %}
-    {% include 'modules/config_memory.html' %}
-    {% include 'modules/config_voice.html' %}
-    {% include 'modules/config_system.html' %}
-    {% include 'modules/config_media.html' %}
-    {% include 'modules/config_styles.html' %}
-    {% include 'modules/config_igen.html' %}
-    {% include 'modules/config_utils.html' %}
-    {% include 'modules/config_sysnet.html' %}
-    {% if current_user.is_authenticated and current_user.role == 'admin' %}
-    {% include 'modules/config_users.html' %}
-    {% include 'modules/config_security.html' %}
-    {% endif %}
-    {% include 'modules/config_payload.html' %}
-    {% include 'modules/config_plugins.html' %}
-    {% include 'modules/config_reminder.html' %}
-    {% include 'modules/config_calendar.html' %}
-    {% include 'modules/config_plugin_studio.html' %}
-    {% include 'modules/config_mcp.html' %}
-    {% include 'modules/config_remote_triggers.html' %}
-    {% include 'modules/config_drive.html' %}
-    {% include 'modules/config_drive_editor.html' %}
-    {% include 'modules/config_logs.html' %}
-    {% include 'modules/config_privacy.html' %}
-    {% include 'modules/config_help.html' %}
+    <!-- Panels are loaded lazily via fetch on tab click. -->
+    <!-- The welcome panel is the only panel that is always present in the DOM. -->
+    <div id="panel-container">
+      <!-- Panels will be injected here by config_core.js -->
+      <!-- Skeleton shown while a panel is loading -->
+      <div id="panel-skeleton" style="display:none; padding:40px 20px; text-align:center; color:var(--muted);">
+        <div style="font-size:28px; margin-bottom:16px; display:inline-block;"><i class="fas fa-cog fa-spin"></i></div>
+        <div style="font-size:14px;">Loading panel...</div>
+      </div>
+    </div>
   </form>
 </div>
 
-<div class="save-bar">
-  <div id="save-msg"></div>
-  <button type="button" class="btn btn-danger" onclick="rebootSystem()">{{ t("label_reboot_system") }}</button>
-  <button type="button" class="btn btn-secondary" onclick="window.location.reload()">{{ t("webui_conf_btn_reload") }}</button>
-  <button type="button" class="btn btn-primary" onclick="saveConfig()">{{ t("webui_conf_btn_save") }}</button>
-</div>
+{% include 'modules/core/_core_save_bar.html' %}
 
-<script>
-  // Dynamic I18N Catalog from Server
-  window.I18N = {{ translations | tojson | safe }};
-  
-  /**
-   * Global translation function for Frontend JS
-   * @param {string} key - The translation key
-   * @param {object} params - Optional interpolation parameters
-   */
-  window.t = function(key, params = {}) {
-    let text = window.I18N[key] || key;
-    if (params) {
-      for (const [pKey, pVal] of Object.entries(params)) {
-        text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
-      }
-    }
-    return text;
-  };
-</script>
-<script>
-  window.cfg = {{ zconfig | tojson | safe }};
-  window.sysOptions = {% if zoptions %}{{ zoptions | tojson | safe }}{% else %}{}{% endif %};
-  window.currentUser = {
-      role: "{{ current_user.role if current_user.is_authenticated else 'user' }}"
-  };
-</script>
+{% include 'modules/core/_core_scripts.html' %}
+
 <script src="/static/js/config_manifest.js?v={{ version }}-persistence-v3"></script>
-<script src="/static/js/config_mapper.js?v={{ version }}-persistence-v3"></script>
+<script src="/static/js/config_mapper_utils.js?v={{ version }}"></script>
+<script src="/static/js/config_mapper_llm.js?v={{ version }}"></script>
+<script src="/static/js/config_mapper_plugins.js?v={{ version }}"></script>
+<script src="/static/js/config_mapper_drive.js?v={{ version }}"></script>
+<script src="/static/js/config_mapper_components.js?v={{ version }}"></script>
+<script src="/static/js/config_mapper_extras.js?v={{ version }}"></script>
+<script src="/static/js/config_mapper.js?v={{ version }}"></script>
 <script src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
-<script src="/static/js/config_core.js?v={{ version }}-persistence-v3"></script>
+<script src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/color_ui.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/image_ui.js?v={{ version }}"></script>
+<script src="/static/js/aesthetic_picker/style_ui.js?v={{ version }}"></script>
+<script src="/static/js/config_core_utils.js?v={{ version }}"></script>
+<script src="/static/js/config_core_init.js?v={{ version }}"></script>
+<script src="/static/js/config_core_navigation.js?v={{ version }}"></script>
+<script src="/static/js/config_core_hub.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_modes.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_render.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_restore.js?v={{ version }}"></script>
+<script src="/static/js/chat_history/ch_actions.js?v={{ version }}"></script>
+<script src="/static/js/config_core_persistence.js?v={{ version }}"></script>
+<script src="/static/js/config_core_status.js?v={{ version }}"></script>
+<script src="/static/js/config_core.js?v={{ version }}"></script>
 <script src="/static/js/config_audio_logic.js?v={{ version }}"></script>
 <script src="/static/js/config_media_logic.js?v={{ version }}"></script>
-<script src="/static/js/config_logs_engine.js?v={{ version }}"></script>
+<!-- Multi-Window Logs Engine Modularized -->
+<script src="/static/js/logs_engine/le_core.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_fetch.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_render.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_windows.js?v={{ version }}"></script>
+<script src="/static/js/logs_engine/le_modals.js?v={{ version }}"></script>
 <script src="/static/js/config_system_logic.js?v={{ version }}"></script>
 <script src="/static/js/config_routing_logic.js?v={{ version }}"></script>
 <script src="/static/js/config_persona_logic.js?v={{ version }}"></script>
 <script src="/static/js/config_search.js?v={{ version }}"></script>
-<script>
-  // Global Initialization Bootstrapper
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof initAll === 'function') initAll();
-    if (typeof refreshStatus === 'function') {
-        refreshStatus();
-        setInterval(refreshStatus, 3000);
-    }
-    // Heartbeat
-    setInterval(() => {
-      fetch('/hecos/heartbeat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'config' })
-      }).catch(() => {});
-    }, 5000);
-  });
 
-  /**
-   * Global Theme Switcher
-   * @param {string} theme - 'cyberpunk', 'turquoise', 'pirate', 'elegant', 'light', 'rose'
-   * @param {boolean} manual - If true, disables automatic theme switching
-   */
-  window.setTheme = function(theme, manual = false) {
-    document.body.classList.remove('theme-cyberpunk', 'theme-turquoise', 'theme-pirate', 'theme-elegant', 'theme-light', 'theme-rose', 'theme-solarpunk', 'theme-corporate', 'theme-native');
-    if (theme !== 'default') {
-      document.body.classList.add(`theme-${theme}`);
-    }
-
-    if (manual) {
-        // Disable auto-mode if user manually picks a theme
-        localStorage.removeItem('hecos-ui-auto-theme');
-        const autoToggle = document.getElementById('style_auto_mode');
-        if (autoToggle) autoToggle.checked = false;
-
-        // Show "Saved" message
-        const status = document.getElementById('theme-save-status');
-        if (status) {
-            status.style.opacity = '1';
-            setTimeout(() => { status.style.opacity = '0'; }, 2000);
-        }
-    }
-    
-    // Highlight active card in Styles panel
-    document.querySelectorAll('#tab-aesthetics .cat-card').forEach(card => {
-        const onClick = card.getAttribute('onclick');
-        if (onClick && onClick.includes(`'${theme}'`)) {
-            card.classList.add('active');
-            card.style.borderColor = 'var(--accent)';
-        } else {
-            card.classList.remove('active');
-            card.style.borderColor = '';
-        }
-    });
-
-    // Update switcher buttons (if any remain)
-    document.querySelectorAll('.view-switcher .switcher-btn').forEach(btn => {
-      if (btn.onclick && btn.onclick.toString().includes(`setTheme('${theme}')`)) {
-        btn.classList.add('active');
-      } else if (btn.onclick && btn.onclick.toString().includes('setTheme')) {
-        btn.classList.remove('active');
-      }
-    });
-    // Persist to localStorage
-    localStorage.setItem('hecos-ui-theme', theme);
-  };
-
-  window.toggleAutoTheme = function(enabled) {
-      if (enabled) {
-          setTheme('native', false);
-          localStorage.setItem('hecos-ui-auto-theme', 'true');
-      } else {
-          localStorage.removeItem('hecos-ui-auto-theme');
-      }
-  };
-
-  // Load saved theme on boot (UI bindings only, DOM was themed at body start)
-  const autoTheme = localStorage.getItem('hecos-ui-auto-theme') === 'true';
-  if (autoTheme) {
-      document.getElementById('style_auto_mode').checked = true;
-  }
-</script>
+<!-- Global Events (Reminders & Backend Sync) -->
+<script src="/static/js/chat_events.js?v={{ version }}"></script>
+<script src="/ext/calendar/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 </body>
 </html>

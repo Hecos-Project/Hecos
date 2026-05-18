@@ -1,0 +1,15 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MCP: Discovered Tools Inventory Card
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+    <i class="fas fa-toolbox"></i> Discovered Tools Inventory
+    <button type="button" class="btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="reloadMCPBridge(this)">
+      <i class="fas fa-sync-alt"></i> Refresh
+    </button>
+  </div>
+  <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Real-time list of capabilities available through active MCP servers.</p>
+  <div id="mcp-inventory-list" style="max-height: 300px; overflow-y: auto; background: var(--bg3); padding: 15px; border-radius: 8px;">
+    <p style="color: var(--muted); font-size: 12px;">Waiting for server response...</p>
+  </div>
+</div>

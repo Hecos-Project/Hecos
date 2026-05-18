@@ -107,6 +107,7 @@ function kmStatusBadge(status) {
 
 function kmRender(data) {
   const container = document.getElementById('km-providers-container');
+  if (!container) return;
   container.innerHTML = '';
 
   const providers = Object.keys(data);
@@ -136,9 +137,9 @@ function kmRender(data) {
             <div class="km-key-source" id="km-msg-${provider}-${idx}">${window.t ? window.t('webui_km_source') : 'source'}: ${k.source} ${cooldownHtml}</div>
           </div>
           <div class="km-actions">
-            <button class="btn btn-secondary btn-km-sm" onclick="kmValidateKey('${provider}','${k.value}', ${idx})" title="${window.t ? window.t('webui_km_btn_validate') : 'Test Key'}">🔍 ${window.t ? window.t('webui_km_btn_validate') : 'Test'}</button>
+            <button class="btn btn-secondary btn-km-sm" onclick="kmValidateKey('${provider}','${k.value}', ${idx})" title="${window.t ? window.t('webui_km_btn_validate') : 'Test Key'}"><i class="fas fa-vial"></i> ${window.t ? window.t('webui_km_btn_validate') : 'Test'}</button>
             ${canReset ? `<button class="btn btn-secondary btn-km-sm" onclick="kmResetKey('${provider}','${k.value}')">↺ Reset</button>` : ''}
-            ${canRemove ? `<button class="btn btn-danger btn-km-sm" onclick="kmRemoveKey('${provider}','${k.value}')">✕</button>` : ''}
+            ${canRemove ? `<button class="btn btn-danger btn-km-sm" onclick="kmRemoveKey('${provider}','${k.value}')"><i class="fas fa-times"></i></button>` : ''}
           </div>
         </div>`;
     }).join('');
@@ -161,7 +162,7 @@ function kmRender(data) {
       </div>
       ${rows}
       <div style="margin-top:8px; display:flex; gap:8px;">
-        <button class="btn btn-secondary btn-km-sm" onclick="kmValidateProvider('${provider}')">🔍 ${window.t ? window.t('webui_km_btn_validate_prov') : 'Validate All'}</button>
+        <button class="btn btn-secondary btn-km-sm" onclick="kmValidateProvider('${provider}')"><i class="fas fa-vial"></i> ${window.t ? window.t('webui_km_btn_validate_prov') : 'Validate All'}</button>
         <button class="btn btn-secondary btn-km-sm" onclick="kmResetProvider('${provider}')">↺ ${window.t ? window.t('webui_km_btn_reset_prov') : 'Reset provider'}</button>
       </div>
     `;

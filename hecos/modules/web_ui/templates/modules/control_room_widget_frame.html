@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="{{ zconfig.language or 'en' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hecos Widget Frame</title>
+
+<!-- Theme tokens -->
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+<!-- Base UI standardizations (buttons, inputs) -->
+<link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+<!-- Chat styles (for shared widget classes like .sidebar-card) -->
+<link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- FOUC prevention & Global Setup -->
+<script>
+window.I18N = {{ translations | tojson | safe }};
+window.cfg = {{ zconfig | tojson | safe }};
+window.t = function(key) { return window.I18N[key] || key; };
+
+// Apply theme class to HTML element
+(function() {
+    const auto = localStorage.getItem('hecos-ui-auto-theme') === 'true';
+    const saved = localStorage.getItem('hecos-ui-theme') || 'cyberpunk';
+    const theme = auto ? 'native' : saved;
+    if (theme && theme !== 'default') {
+        document.documentElement.classList.add('theme-' + theme);
+        if (theme !== 'light' && theme !== 'corporate' && theme !== 'solarpunk') {
+            document.documentElement.style.colorScheme = 'dark';
+        } else {
+            document.documentElement.style.colorScheme = 'light';
+        }
+    }
+})();
+
+// Helper so widgets inside iframe can open the outer config
+window.hecosOpenConfig = function(hash) {
+  if (window.parent && window.parent.hecosOpenConfig) {
+      window.parent.hecosOpenConfig(hash);
+  } else {
+      window.open('/hecos/config/ui' + (hash || ''), '_blank', 'noopener');
+  }
+}
+</script>
+
+<style>
+/* Reset body for isolated iframe environment */
+html {
+    overflow: hidden !important;
+    height: 100% !important;
+}
+
+body {
+    background: transparent !important;
+    min-height: 100%;
+    height: 100% !important;
+    display: block !important;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+}
+
+#main-wrapper {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+#main-wrapper::-webkit-scrollbar { width: 6px; }
+#main-wrapper::-webkit-scrollbar-track { background: transparent; }
+#main-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Widget Themes applied directly to the iframe body ── */
+body.wt-cyber {
+    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.12), rgba(var(--bg3-rgb), 0.85)) !important;
+}
+body.wt-alert {
+    background: linear-gradient(135deg, rgba(var(--red-rgb), 0.12), rgba(var(--bg3-rgb), 0.88)) !important;
+}
+body.wt-glass {
+    background: rgba(255, 255, 255, 0.04) !important;
+    backdrop-filter: blur(16px);
+}
+body.wt-ghost {
+    background: transparent !important;
+}
+body.wt-default {
+    background: var(--bg3) !important;
+}
+
+#main-wrapper {
+    width: 100%;
+    /* No padding here, padding comes from .sidebar-card inside or the widget itself */
+}
+
+/* ── UNIVERSAL HECOS RESET FOR IFRAME CONTENTS ── */
+/* Force all elements to respect Hecos variables, preventing "white browser defaults" */
+*, *::before, *::after { box-sizing: border-box; }
+
+body, html {
+    color: var(--text);
+    background: transparent !important;
+}
+
+input[type="text"], input[type="number"], input[type="password"], textarea, .ql-input {
+    background: var(--bg3) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    outline: none !important;
+}
+
+select {
+    background: var(--bg3) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 8px !important;
+    padding: 2px 8px !important; /* COMPACT PADDING FOR SELECTS */
+    font-family: inherit !important;
+    font-size: 11px !important; /* SLIGHTLY SMALLER TO FIT WIDGETS */
+    outline: none !important;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1) !important;
+}
+
+button, .ql-btn-save, .ql-btn-cancel, .ql-add-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text) !important;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+button:hover {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+    background: rgba(var(--accent-rgb), 0.05);
+}
+
+.ql-list { gap: 6px !important; }
+
+/* Strip sidebar card exterior styling since the iframe is already inside a card */
+.sidebar-card {
+    border: none !important;
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    min-height: 100% !important;
+    border-radius: 0 !important;
+    padding: 14px !important; /* MATCH SIDEBAR LOOK */
+}
+</style>
+
+<!-- Load widget-specific CSS -->
+{% if ext_manifest and ext_manifest.styles %}
+  {% for style in ext_manifest.styles %}
+  <link rel="stylesheet" href="/ext/{{ ext_id }}/{{ style }}?v={{ version }}">
+  {% endfor %}
+{% endif %}
+
+</head>
+{% set aes_style = "" %}
+{% if ext_manifest.bg_image %}
+    {% set aes_style = "background-image: url('/media/file?path=" ~ (ext_manifest.bg_image | urlencode) ~ "') !important; background-size: cover !important; background-position: center !important;" %}
+{% elif ext_manifest.bg_color %}
+    {% set aes_style = "background-color: " ~ ext_manifest.bg_color ~ " !important; background-image: none !important;" %}
+{% endif %}
+
+<body class="wt-{{ widget_theme or 'default' }}" style="{{ aes_style }}">
+
+<div id="main-wrapper">
+  {% include ext_id ~ '_widget.html' %}
+</div>
+
+<!-- Load widget-specific JS -->
+{% if ext_manifest and ext_manifest.scripts %}
+  {% for script in ext_manifest.scripts %}
+  <script src="/ext/{{ ext_id }}/{{ script }}?v={{ version }}"></script>
+  {% endfor %}
+{% endif %}
+
+</body>
+</html>

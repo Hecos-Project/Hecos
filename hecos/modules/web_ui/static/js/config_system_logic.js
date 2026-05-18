@@ -16,9 +16,11 @@ function populateSystemUI() {
     setCheck('sys-flask-debug', sys.flask_debug ?? false);
     setVal('sys-language', c.language || 'en');
     
-    // HTTPS config
+    // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
     setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
+    setCheck('wui-control-room-panel', webUiPlug.control_room_panel ?? true);
+    setCheck('wui-control-room-home', webUiPlug.control_room_home ?? true);
 
     const sysNet = (c.plugins || {}).SYS_NET || {};
     setCheck('sys-proxy-enabled', sysNet.proxy_enabled ?? false);
@@ -50,34 +52,42 @@ async function initLogsTab() {
 }
 
 function buildSystemPayload() {
-    const proxyEl = document.getElementById('sys-proxy-url');
+    const slg = window.cfg.logging || {};
+    const sys = window.cfg.system || {};
+    const sln = window.cfg.language || 'en';
+    const cog = window.cfg.cognition || {};
+    const snet = window.cfg.plugins?.SYS_NET || {};
+    const wui = window.cfg.plugins?.WEB_UI || {};
+
     return {
         logging: {
-            level: document.getElementById('log-level').value,
-            destination: document.getElementById('log-dest').value,
-            message_types: document.getElementById('log-type').value,
-            ui_error_beeps: document.getElementById('log-error-beeps')?.checked ?? true
+            level: getV('log-level', slg.level || 'INFO'),
+            destination: getV('log-dest', slg.destination || 'console'),
+            message_types: getV('log-type', slg.message_types || 'both'),
+            ui_error_beeps: getC('log-error-beeps', slg.ui_error_beeps ?? true)
         },
         system: {
-            fast_boot: document.getElementById('sys-fastboot').checked,
-            flask_debug: document.getElementById('sys-flask-debug').checked
+            fast_boot: getC('sys-fastboot', sys.fast_boot ?? false),
+            flask_debug: getC('sys-flask-debug', sys.flask_debug ?? false)
         },
-        language: document.getElementById('sys-language').value,
+        language: getV('sys-language', sln),
         cognition: {
-            memory_enabled:          document.getElementById('cog-memory-enabled').checked,
-            episodic_memory:         document.getElementById('cog-episodic').checked,
-            clear_on_restart:        document.getElementById('cog-clear-restart').checked,
-            include_identity_context:document.getElementById('cog-identity').checked,
-            include_self_awareness:  document.getElementById('cog-awareness').checked,
-            max_history_messages:    parseInt(document.getElementById('cog-max-history').value) || 20
+            memory_enabled:          getC('cog-memory-enabled', cog.memory_enabled ?? true),
+            episodic_memory:         getC('cog-episodic', cog.episodic_memory ?? true),
+            clear_on_restart:        getC('cog-clear-restart', cog.clear_on_restart ?? false),
+            include_identity_context:getC('cog-identity', cog.include_identity_context ?? true),
+            include_self_awareness:  getC('cog-awareness', cog.include_self_awareness ?? true),
+            max_history_messages:    parseInt(getV('cog-max-history', cog.max_history_messages)) || 20
         },
         plugins: {
             SYS_NET: {
-                proxy_enabled: document.getElementById('sys-proxy-enabled')?.checked || false,
-                proxy_url: proxyEl ? proxyEl.value.trim() : ""
+                proxy_enabled: getC('sys-proxy-enabled', snet.proxy_enabled ?? false),
+                proxy_url: getV('sys-proxy-url', snet.proxy_url || "")
             },
             WEB_UI: {
-                https_enabled: document.getElementById('sys-https-enabled')?.checked || false
+                https_enabled: getC('sys-https-enabled', wui.https_enabled ?? false),
+                control_room_panel: getC('wui-control-room-panel', wui.control_room_panel ?? true),
+                control_room_home: getC('wui-control-room-home', wui.control_room_home ?? true)
             }
         }
     };

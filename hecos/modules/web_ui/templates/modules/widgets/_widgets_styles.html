@@ -1,0 +1,98 @@
+<style>
+    /* ── Widget Manager Card ─────────────────────────────────────────────── */
+    .widget-card {
+        background: var(--bg2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .widget-card:hover {
+        border-color: rgba(var(--accent-rgb), 0.3);
+        background: rgba(var(--accent-rgb), 0.02);
+    }
+    .widget-card.plugin-disabled { opacity: 0.55; pointer-events: none; }
+
+    .widget-icon {
+        font-size: 22px;
+        width: 38px; height: 38px; flex-shrink: 0;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--accent);
+    }
+    .widget-info { flex: 1; min-width: 0; }
+    .widget-name {
+        font-weight: 700;
+        color: var(--text);
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 3px;
+    }
+    .widget-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .badge-v {
+        background: var(--bg3); color: var(--muted);
+        border: 1px solid var(--border);
+        padding: 1px 6px; border-radius: 4px;
+        font-size: 9px; font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Controls Column ─────────────────────────────────────────────────── */
+    .widget-controls-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+    .widget-toggle-row {
+        display: flex; align-items: center; gap: 8px;
+    }
+    .widget-toggle-lbl {
+        font-size: 10px; color: var(--muted); font-weight: 600;
+        letter-spacing: 0.5px; text-transform: uppercase;
+        display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Span Selector ───────────────────────────────────────────────────── */
+    .span-selector {
+        display: flex; gap: 3px; align-items: center;
+    }
+    .span-selector .span-lbl {
+        font-size: 10px; color: var(--muted); margin-right: 4px;
+        font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .span-btn {
+        padding: 3px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg3);
+        color: var(--muted);
+        font-size: 11px; font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .span-btn.active {
+        background: rgba(var(--accent-rgb), 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+    .span-btn:hover:not(.active) {
+        border-color: rgba(var(--accent-rgb), 0.4);
+        color: var(--text);
+    }
+
+    /* ── Drag handle ─────────────────────────────────────────────────────── */
+    .drag-handle {
+        cursor: grab; color: var(--muted); padding: 6px;
+        opacity: 0.4; transition: opacity 0.2s; flex-shrink: 0;
+    }
+    .drag-handle:hover { opacity: 1; }
+</style>

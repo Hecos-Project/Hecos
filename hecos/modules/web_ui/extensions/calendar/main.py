@@ -72,7 +72,9 @@ def init_routes(app, root_dir: str = None):
                     fc_ev["color"] = ev["color"]
                 fc_events.append(fc_ev)
 
-            return jsonify({"ok": True, "events": fc_events})
+            response = jsonify({"ok": True, "events": fc_events})
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            return response
         except Exception as e:
             logger.debug("CALENDAR", f"GET /events error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -199,35 +201,52 @@ def init_routes(app, root_dir: str = None):
             if field in data:
                 kwargs[field] = data[field]
 
+        remind = data.get("remindMe")
+        all_day = kwargs.get("all_day", False)
+        interactive = kwargs.get("interactive", False)
+
         try:
-            # Sync changes to linked reminder
             event = store.get_by_id(eid)
-            if event and event.get("linked_reminder_id"):
-                rid = event["linked_reminder_id"]
-                try:
-                    from hecos.plugins.reminder import store as r_store, scheduler as r_sched
-                    
-                    # 1. Update Title
-                    if "title" in kwargs and kwargs["title"] != event["title"]:
-                        r_store.update_title(rid, f"📅 {kwargs['title']}")
-                        logger.info("CALENDAR", f"Updated linked reminder [{rid}] title")
-
-                    # 2. Update Time
-                    if "start_iso" in kwargs and kwargs["start_iso"] != event["start_iso"]:
-                        r_store.update_when(rid, kwargs["start_iso"])
-                        r_sched.reschedule_job(rid, kwargs["start_iso"])
-                        logger.info("CALENDAR", f"Rescheduled linked reminder [{rid}]")
-
-                    # 3. Update Interactive Status
-                    if "interactive" in kwargs and bool(kwargs["interactive"]) != bool(event.get("interactive")):
-                        r_store.update_interactive(rid, bool(kwargs["interactive"]))
-                        # Re-schedule job to ensure interactive flag is picked up by the worker
-                        rem = r_store.get_by_id(rid)
-                        if rem: r_sched.add_job(rem)
-                        logger.info("CALENDAR", f"Updated linked reminder [{rid}] interactive flag")
-
-                except Exception as re:
-                    logger.error(f"CALENDAR: Failed to sync reminder update: {re}")
+            if not event:
+                return jsonify({"ok": False, "error": "Event not found"}), 404
+            
+            # Handle reminder sync
+            linked_rid = event.get("linked_reminder_id")
+            
+            try:
+                from hecos.plugins.reminder import store as r_store, scheduler as r_sched
+                
+                if remind is True and not all_day:
+                    if linked_rid:
+                        # Update existing reminder
+                        new_title = kwargs.get("title", event["title"])
+                        new_when = kwargs.get("start_iso", event["start_iso"])
+                        
+                        r_store.update_title(linked_rid, f"📅 {new_title}")
+                        r_store.update_when(linked_rid, new_when)
+                        r_sched.reschedule_job(linked_rid, new_when)
+                        
+                        if "interactive" in kwargs:
+                            r_store.update_interactive(linked_rid, bool(interactive))
+                            rem = r_store.get_by_id(linked_rid)
+                            if rem: r_sched.add_job(rem)
+                    else:
+                        # Create new reminder
+                        new_title = kwargs.get("title", event["title"])
+                        new_when = kwargs.get("start_iso", event["start_iso"])
+                        rem = r_store.add(title=f"📅 {new_title}", when_iso=new_when, interactive=interactive, mode=None)
+                        r_sched.add_job(rem)
+                        kwargs["linked_reminder_id"] = rem["id"]
+                        
+                elif remind is False or all_day is True:
+                    if linked_rid:
+                        # Cancel existing reminder
+                        r_sched.cancel_job(linked_rid)
+                        r_store.cancel(linked_rid)
+                        kwargs["linked_reminder_id"] = None
+                        
+            except Exception as re:
+                logger.error(f"CALENDAR: Failed to sync reminder update: {re}")
 
             updated = store.update(eid, **kwargs)
             return jsonify({"ok": updated})

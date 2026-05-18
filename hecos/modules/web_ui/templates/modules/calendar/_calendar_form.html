@@ -1,0 +1,79 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Calendar: Add / Edit Event Form Card
+     Visible when user clicks "+ Add Event" or edits an existing event.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card" id="cal-add-form" style="padding:20px; display:none;">
+    <div id="cal-form-title" class="card-title" style="margin-bottom:14px;"><i class="fas fa-calendar-plus"></i> {{ translations['ext_calendar_new_event'] }}</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_title_label'] }} *</label>
+            <input id="cal-f-title" type="text" class="form-control hcal-input" placeholder="{{ translations['ext_calendar_placeholder_title'] }}" autocomplete="off">
+        </div>
+        <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_start_label'] }} *</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input id="cal-f-start-display" type="text" class="form-control hcal-input" placeholder="Click to pick..." readonly
+                       style="cursor:pointer;flex:1;" onclick="hcal.pickStart()">
+                <button onclick="hcal.pickStart()" class="hcal-btn-sec"><i class="fas fa-clock"></i></button>
+            </div>
+            <input id="cal-f-start" type="hidden">
+        </div>
+        <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_end_label'] }}</label>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input id="cal-f-end-display" type="text" class="form-control hcal-input" placeholder="Click to pick..." readonly
+                       style="cursor:pointer;flex:1;" onclick="hcal.pickEnd()">
+                <button onclick="hcal.pickEnd()" class="hcal-btn-sec"><i class="fas fa-clock"></i></button>
+            </div>
+            <input id="cal-f-end" type="hidden">
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:140px;">
+                <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_color_label'] }}</label>
+                <input id="cal-f-color" type="color" value="#3498db" class="hcal-input"
+                       style="height:32px;border:none;background:none;cursor:pointer;padding:0;">
+            </div>
+            <div style="flex:1;min-width:140px;display:flex;align-items:flex-end;padding-bottom:4px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
+                    <input id="cal-f-allday" type="checkbox" style="accent-color:var(--accent);">
+                    All-day event
+                </label>
+            </div>
+            <div style="flex:1;min-width:140px;display:flex;align-items:flex-end;padding-bottom:4px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
+                    <input id="cal-f-remind" type="checkbox" style="accent-color:var(--yellow);">
+                    <i class="fas fa-bell"></i> Remind me at this time
+                </label>
+            </div>
+        </div>
+
+        <!-- Alarm Type selection (only visible if remindme is checked) -->
+        <div id="cal-reminder-options" class="hcal-panel" style="display:none; padding:10px; margin-top:-4px;">
+            <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">Alarm Type:</div>
+            <div style="display:flex; gap:16px;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px;">
+                    <input type="radio" name="cal-remind-type" value="simple" checked style="accent-color:var(--accent);">
+                    Standard
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:12px; color:var(--yellow);">
+                    <input type="radio" name="cal-remind-type" value="interactive" style="accent-color:var(--yellow);">
+                    Interactive (Snooze)
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">{{ translations['ext_calendar_notes_label'] }}</label>
+            <textarea id="cal-f-notes" class="form-control hcal-input" rows="2" placeholder="{{ translations['ext_calendar_placeholder_notes'] }}"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="hcal.cancelForm()" class="hcal-btn-sec">
+                {{ translations['ext_calendar_btn_cancel'] }}
+            </button>
+            <button id="cal-submit-btn" onclick="hcal.submitForm()" class="btn btn-accent" style="padding:8px 22px; font-weight:700;">
+                {{ translations['ext_calendar_btn_save'] }}
+            </button>
+        </div>
+        <div id="cal-form-msg" style="font-size:11px;min-height:14px;text-align:center;"></div>
+    </div>
+</div>

@@ -1,0 +1,26 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Media: Playlists Card — list, create, scan folder
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title"><i class="fas fa-list-ul"></i> {{ t('webui_mp_playlists') }}</div>
+  <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+    <input type="text" id="mp-new-playlist" placeholder="{{ t('webui_mp_playlist_name_ph') }}" style="flex:1; min-width:150px;">
+    <button class="btn btn-secondary btn-sm" onclick="mpCreatePlaylist()">+ {{ t('webui_mp_create') }}</button>
+  </div>
+
+  <div id="mp-playlists-list" class="mp-playlists-container" style="min-height:30px;">
+    <span style="color:var(--muted); font-size:13px;">{{ t('webui_mp_no_playlists') }}</span>
+  </div>
+
+  <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">{{ t('webui_mp_scan_folder') }}</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; gap:4px; flex:2; min-width:160px;">
+        <input type="text" id="mp-scan-folder" placeholder="{{ t('webui_mp_folder_ph') }}" style="flex:1;">
+        <button type="button" class="btn btn-secondary" onclick="mpBrowseScanFolder()" title="Browse folder"><i class="fas fa-folder-open"></i></button>
+      </div>
+      <input type="text" id="mp-scan-save-as" placeholder="{{ t('webui_mp_save_as_ph') }}" style="flex:1; min-width:130px;">
+      <button class="btn btn-secondary btn-sm" onclick="mpScanFolder()"><i class="fas fa-search"></i> {{ t('webui_mp_scan') }}</button>
+    </div>
+  </div>
+</div>

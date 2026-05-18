@@ -1,0 +1,243 @@
+/**
+ * Hecos Control Room — Module B Stylesheet
+ * Scope: /home standalone page only.
+ * Shares .room-widget-card class name with control_room_panel.css
+ * for consistency, but this file is completely independent.
+ * Loaded ONLY in home.html.
+ */
+
+/* ── Page Layout ───────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans, 'Inter', -apple-system, sans-serif);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+#home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-blur);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.home-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.home-logo img {
+  height: 28px;
+  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.4));
+}
+.home-logo-text {
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--accent-g);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.home-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.home-nav-link {
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  color: var(--muted);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.home-nav-link:hover {
+  background: var(--glass-b);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.home-title-bar {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ── Widget Grid ───────────────────────────────────────────────────────────── */
+#home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  padding: 24px;
+  flex: 1;
+  align-content: start;
+}
+
+/* ── Widget Card (shared class name with Module A for styling consistency) ── */
+.room-widget-card {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 14px);
+  padding: 0;
+  position: relative;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  overflow: hidden;
+}
+.room-widget-card:hover {
+  border-color: rgba(var(--accent-rgb), 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Empty state */
+.room-empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 20px;
+  color: var(--muted);
+  text-align: center;
+  opacity: 0.7;
+}
+.room-empty-state i { font-size: 36px; }
+.room-empty-state p { font-size: 14px; line-height: 1.6; }
+
+/* Loading */
+.room-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 80px 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+#home-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  #home-grid { grid-template-columns: 1fr; padding: 14px; gap: 12px; }
+  #home-header { padding: 10px 14px; }
+  .home-nav-link span { display: none; }
+}
+
+/* ── Grid Engine Runtime API (Shared classes dynamically injected) ─────────── */
+
+.room-widget-card.span-2 { grid-column: span 2; }
+
+.room-widget-iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  border: none;
+  display: block;
+  border-radius: inherit;
+  background: transparent !important;
+}
+.room-grid-editing .room-widget-iframe {
+  pointer-events: none; /* Prevent iframe from stealing drag-and-drop events */
+}
+
+.room-card-chrome {
+  display: none;
+  position: absolute;
+  top: 6px; right: 6px;
+  z-index: 10;
+  gap: 4px;
+  align-items: center;
+}
+.room-grid-editing .room-card-chrome { display: flex; }
+
+.room-card-drag-handle {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  cursor: grab;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.room-card-span-btn, .room-card-remove-btn {
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 7px;
+  display: flex; align-items: center; gap: 4px;
+  transition: all 0.15s;
+}
+.room-card-span-btn:hover { border-color: var(--accent); color: var(--accent); }
+.room-card-span-btn.active { background: rgba(var(--accent-rgb),.12); color: var(--accent); border-color: var(--accent); }
+.room-card-remove-btn:hover { border-color: var(--red); color: var(--red); }
+
+.room-grid-editing .room-widget-card { cursor: grab; }
+.room-widget-card.dragging { opacity: 0.3; }
+
+.room-drop-indicator {
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  background: rgba(var(--accent-rgb), 0.04);
+  min-height: 80px;
+  pointer-events: none; /* Prevents drag ficker */
+}
+
+.room-add-btn {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  min-height: 80px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 20px;
+  opacity: 0.5;
+  transition: all 0.2s;
+  background: transparent;
+}
+.room-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+  background: rgba(var(--accent-rgb), 0.04);
+}
+

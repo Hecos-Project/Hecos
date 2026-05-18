@@ -1,7 +1,7 @@
 <!-- VOICE PANEL -->
 <div id="tab-voice" class="panel">
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_voice_system_title') }}</div>
+    <div class="card-title"><i class="fas fa-microphone-alt"></i> {{ t('webui_conf_voice_system_title') }}</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_conf_voice_system_listening') }}</div>
       <label class="switch"><input type="checkbox" id="sys-mic-status"><span class="slider"></span></label>
@@ -15,7 +15,7 @@
 
 
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_bridge_title') }}</div>
+    <div class="card-title"><i class="fas fa-project-diagram"></i> {{ t('webui_conf_bridge_title') }}</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_conf_bridge_stt') }}</div>
       <label class="switch"><input type="checkbox" id="br-voice-stt"><span class="slider"></span></label>
@@ -27,13 +27,13 @@
   </div>
 
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_voice_tts_title') }}</div>
+    <div class="card-title"><i class="fas fa-volume-up"></i> {{ t('webui_conf_voice_tts_title') }}</div>
     <div class="field">
       <label>{{ t('webui_conf_voice_path') }}</label>
       <div style="display:flex; gap:6px; width:100%;">
         <input type="text" id="v-piper" placeholder="C:\Hecos\bin\piper\piper.exe" style="flex:1;">
-        <button type="button" class="btn btn-secondary" onclick="browsePiperPath()" title="{{ t('webui_conf_voice_browse_title') }}">📁</button>
-        <button type="button" class="btn btn-secondary" onclick="autoFixPiperPath()" title="{{ t('webui_conf_voice_detect_title') }}">🔍 Auto</button>
+        <button type="button" class="btn btn-secondary" onclick="browsePiperPath()" title="{{ t('webui_conf_voice_browse_title') }}"><i class="fas fa-folder-open"></i></button>
+        <button type="button" class="btn btn-secondary" onclick="autoFixPiperPath()" title="{{ t('webui_conf_voice_detect_title') }}"><i class="fas fa-search"></i> Auto</button>
       </div>
     </div>
     <div class="field">
@@ -46,6 +46,7 @@
       <div class="field"><label>{{ t('webui_conf_voice_noise') }}</label><input type="number" id="v-noise" min="0" max="1" step="0.01"></div>
       <div class="field"><label>{{ t('webui_conf_voice_noisew') }}</label><input type="number" id="v-noisew" min="0" max="1" step="0.01"></div>
       <div class="field"><label>{{ t('webui_conf_voice_silence') }}</label><input type="number" id="v-silence" min="0" max="2" step="0.05"></div>
+      <div class="field"><label>Piper Timeout (sec)</label><input type="number" id="v-timeout" min="10" max="600" step="10"></div>
     </div>
     
     <!-- Test Voice Section -->
@@ -56,20 +57,20 @@
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
         <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web')">
-          ▶️ {{ t('webui_voice_test_web') }}
+          <i class="fas fa-play"></i> {{ t('webui_voice_test_web') }}
         </button>
         <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console')">
-          🖥️ {{ t('webui_voice_test_pc') }}
+          <i class="fas fa-desktop"></i> {{ t('webui_voice_test_pc') }}
         </button>
         <button type="button" class="btn btn-danger btn-sm" id="v-test-stop" style="display:none;" onclick="stopVoice()">
-          🛑 {{ t('webui_voice_test_stop') }}
+          <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
         </button>
         <span id="v-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
       </div>
     </div>
   </div>
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_voice_mic_title') }}</div>
+    <div class="card-title"><i class="fas fa-keyboard"></i> {{ t('webui_conf_voice_mic_title') }}</div>
     <div class="grid-2">
       <div class="field"><label>{{ t('webui_conf_voice_energy') }}</label><input type="number" id="a-threshold" min="50" max="5000" step="50"></div>
       <div class="field"><label>{{ t('webui_conf_voice_timeout') }}</label><input type="number" id="a-timeout" min="1" max="30" step="1"></div>
@@ -78,7 +79,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">{{ t('webui_voice_mic_btn_title') }}</div>
+    <div class="card-title"><i class="fas fa-fingerprint"></i> {{ t('webui_voice_mic_btn_title') }}</div>
     <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
       {{ t('webui_voice_mic_btn_desc') }}
     </p>

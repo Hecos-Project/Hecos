@@ -14,4 +14,5 @@ La WebUI di Hecos è l'interfaccia grafica moderna accessibile tramite il tuo br
   - `🔒 Auto-Wipe`: Messaggi conservati in RAM finché il sistema è attivo; cancellati al riavvio.
   - `🕵️ Incognito`: Traccia zero. I messaggi non vengono mai scritti e il contesto viene rimosso al cambio della chat.
 - **Finestra Azioni (Action Window)**: Console pulita in stile terminale direttamente all'interno della UI della chat, per monitorare l'esecuzione nativa del sistema e i processi in background.
-- **Versione Attuale**: `0.20.0` (Runtime Alpha)
+- **Control Room e Widget**: Un'interfaccia dedicata e in stile masonry all'interno della WebUI dove possono essere eseguiti contemporaneamente più widget, come la telemetria dell'OS o il Controllo Hardware.
+- **Versione Attuale**: `0.21.0` (Runtime Alpha)

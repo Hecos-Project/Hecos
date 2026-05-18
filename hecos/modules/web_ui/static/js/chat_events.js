@@ -129,8 +129,8 @@ window.initEvents = function() {
       if (window.sendBtn) window.sendBtn.disabled = false;
       if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
       
-      if (ev.user) window.chatHistory.push({role: 'user', content: ev.user});
-      if (aiText)  window.chatHistory.push({role: 'assistant', content: aiText});
+      if (ev.user && window.chatHistory) window.chatHistory.push({role: 'user', content: ev.user});
+      if (aiText && window.chatHistory)  window.chatHistory.push({role: 'assistant', content: aiText});
       if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
 
     } else if (ev.type === 'audio_ready') {
@@ -154,6 +154,16 @@ window.initEvents = function() {
       // Refresh sidebar widget if present
       if (window.reminderWidget && window.reminderWidget.refresh) {
         window.reminderWidget.refresh();
+      }
+    } else if (ev.type === 'widgets_refresh') {
+      console.log("[WIDGETS] SSE refresh signal received.");
+      // 1. Sidebar refresh
+      if (typeof window.refreshSidebarWidgets === 'function') {
+        window.refreshSidebarWidgets();
+      }
+      // 2. Control Room refresh (Panel Mode)
+      if (window.controlRoom && window.controlRoom.refresh) {
+        window.controlRoom.refresh();
       }
     }
   };
@@ -264,9 +274,11 @@ function _escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { window.initEvents(); });
+} else {
     window.initEvents();
-});
+}
 
 // Expose globally for testing from browser console: window.showReminderBanner('Test', '')
 window.showReminderBanner = _showReminderBanner;

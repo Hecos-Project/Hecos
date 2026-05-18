@@ -1,0 +1,126 @@
+.weather-widget-card {
+    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ww-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ww-body.collapsed {
+    display: none;
+}
+
+.ww-current {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 4px;
+}
+
+.ww-icon-container {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    color: var(--accent);
+    filter: drop-shadow(0 4px 12px rgba(var(--accent-rgb), 0.4));
+}
+
+.ww-temp-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.ww-temp {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
+    letter-spacing: -2px;
+}
+
+.ww-desc {
+    font-size: 12px;
+    color: var(--text);
+    opacity: 0.8;
+    margin-top: 4px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.ww-details {
+    display: flex;
+    justify-content: space-between;
+    background: var(--bg3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+
+.ww-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.ww-divider {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-top: 4px;
+}
+
+.ww-forecast {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ww-forecast-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--glass-b);
+    border: 1px solid transparent;
+    transition: all 0.2sease;
+}
+
+.ww-forecast-item:hover {
+    border-color: rgba(var(--accent-rgb), 0.3);
+    background: rgba(var(--accent-rgb), 0.05);
+}
+
+.ww-f-day {
+    flex: 1;
+    color: var(--text);
+}
+
+.ww-f-icon {
+    width: 24px;
+    text-align: center;
+    color: var(--accent);
+}
+
+.ww-f-temp {
+    flex: 1;
+    text-align: right;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+.ww-f-temp .max { color: var(--text); font-weight: 700; }

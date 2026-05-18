@@ -305,6 +305,25 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     enable_safety = config.get('ai', {}).get('enable_safety_instructions', True)
     safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{safety_instructions}\n" if safety_instructions and enable_safety else ""
 
+    # --- USER IDENTITY CONTEXT (OPTIMIZED) ---
+    # Identity details to ensure personalization. Detailed contact info
+    # is moved to the USER:get_profile tool to save tokens (Lazy Load).
+    user_profile_block = ""
+    try:
+        profile = auth_mgr.get_profile(user_id)
+        if profile:
+            user_profile_block = (
+                "\n### USER IDENTITY ###\n"
+                f"  - Username: {profile.get('username', user_id)}\n"
+                f"  - Display Name: {profile.get('display_name') or '[not provided]'}\n"
+                f"  - Preferred Language: {profile.get('preferred_language', 'it')}\n"
+                f"  - Role: {profile.get('role', 'admin')}\n"
+                "\n### USER DATA ACCESS ###\n"
+                "- To access full contact info (email, phone, address, bio), use [USER: get_profile].\n"
+                "- To help the user update their data, use [USER: update_profile:field=value].\n"
+            )
+    except Exception as _pe:
+        logger.debug(f"BRAIN: Could not load user identity for context: {_pe}")
 
     # --- ROUTING ENGINE (DUAL ENGINE) ---
     routing_cfg = config.get('routing_engine', {})
@@ -367,6 +386,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"{plugin_guidelines}"
         f"{RoutingManager.get_dynamic_instructions(config)}"
         f"{safety_instructions_block}"
+        f"{user_profile_block}"
         f"{special_instructions_block}"
         f"{vision_note}"
     )

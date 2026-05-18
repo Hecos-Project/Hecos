@@ -30,6 +30,13 @@ function _applyMicState(on) {
   } else {
     if (pttBtn) pttBtn.title = 'Toggle Push-To-Talk (F8)';
   }
+  
+  // Sync with Configuration Hub state to avoid auto-save regressions
+  if (typeof audioConfig !== 'undefined' && audioConfig) {
+      audioConfig.listening_status = on;
+  }
+  const domChk = document.getElementById('sys-mic-status');
+  if (domChk) domChk.checked = on;
 }
 
 function _applyTTSState(on) {
@@ -44,6 +51,13 @@ function _applyTTSState(on) {
       chip.textContent = '🔊 TTS: ' + label;
       chip.className   = 'topbar-chip ' + (on ? 'on' : 'off');
   }
+  
+  // Sync with Configuration Hub state
+  if (typeof audioConfig !== 'undefined' && audioConfig) {
+      audioConfig.voice_status = on;
+  }
+  const domChk = document.getElementById('sys-voice-status');
+  if (domChk) domChk.checked = on;
 }
 
 function _applyPTTState(on) {
@@ -57,6 +71,11 @@ function _applyPTTState(on) {
   if (chip) {
       chip.textContent = '⌨️ PTT: ' + label;
       chip.className   = 'topbar-chip ' + (on ? 'on' : 'off');
+  }
+  
+  // Sync with Configuration Hub state
+  if (typeof audioConfig !== 'undefined' && audioConfig) {
+      audioConfig.push_to_talk = on;
   }
   
   const hintEle = document.querySelector('.input-hint');

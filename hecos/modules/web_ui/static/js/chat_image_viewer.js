@@ -30,7 +30,36 @@ function _getChatGalleryIndex(url) {
 }
 
 // ── Open gallery (double-click) ───────────────────────────────────────────────
-window.openChatGallery = function(url) {
+window.openChatGallery = async function(url) {
+  let items = [];
+  try {
+    const res = await fetch('/api/images');
+    if (res.ok) {
+      const images = await res.json();
+      items = images.map(img => ({
+        name: img.name,
+        type: 'image',
+        url: img.url
+      }));
+    } else {
+      items = _getChatGalleryItems();
+    }
+  } catch (err) {
+    console.error("[Gallery] Failed to fetch full image list, falling back to chat images.", err);
+    items = _getChatGalleryItems();
+  }
+
+  let idx = 0;
+  if (url && items.length > 0) {
+    let rawPath = url.split("?")[0];
+    let decodedName = rawPath.split("/").pop();
+    idx = items.findIndex(item => item.url.endsWith(decodedName) || item.name === decodedName || item.url === url);
+    if (idx < 0) idx = 0;
+  } else if (items.length === 0) {
+    console.warn("[Gallery] No images to show.");
+    return;
+  }
+
   if (typeof window.HecosMediaPlayer === 'undefined') {
     // Lazy load the media player script and CSS if not already present
     if (!document.getElementById('hmp-css')) {
@@ -59,13 +88,24 @@ window.openChatGallery = function(url) {
       document.head.appendChild(s);
     })), Promise.resolve()).then(() => {
       if (typeof window.HecosMediaPlayer !== 'undefined') {
-        window.HecosMediaPlayer.open(_getChatGalleryItems(), _getChatGalleryIndex(url));
+        window.HecosMediaPlayer.open(items, idx);
       }
     });
     return;
   }
 
-  window.HecosMediaPlayer.open(_getChatGalleryItems(), _getChatGalleryIndex(url));
+  window.HecosMediaPlayer.open(items, idx);
+};
+
+// ── Open media folder directly ───────────────────────────────────────────────
+window.openMediaFolder = async function() {
+  try {
+    const res = await fetch('/api/open_media_folder', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) console.error("Error opening folder:", data.error);
+  } catch (err) {
+    console.error("Failed to call API:", err);
+  }
 };
 
 // ── Convert [[IMG:name]] tags in AI text to rendered image HTML ──────────────
@@ -86,6 +126,7 @@ window.processAiImages = function(html) {
     <button class="img-action-btn" onclick="downloadChatImage('${url}','${displayTitle}')">⬇ Scarica</button>
     <button class="img-action-btn" onclick="openLightbox('${url}')">🔍 Zoom</button>
     <button class="img-action-btn" onclick="openChatGallery('${url}')">🖼 Gallery</button>
+    <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>
   </div>
 </div>`;
   });

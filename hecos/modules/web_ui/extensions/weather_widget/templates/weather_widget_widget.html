@@ -1,0 +1,33 @@
+<link rel="stylesheet" href="/ext/weather_widget/static/css/weather.css?v={{ version }}">
+
+<div class="sidebar-card weather-widget-card" id="weather-widget" style="padding:10px 12px; position:relative; overflow:hidden;">
+    <div class="sidebar-card-title m-0 p-0" style="cursor:pointer; display:flex; align-items:center; gap:6px; z-index:2; position:relative;" onclick="weatherWidget.toggleBody()" title="Click to collapse/expand">
+       <i class="fas fa-cloud-sun"></i> METEO
+       <span id="ww-location" style="font-size:10px; color:var(--muted); text-transform:none; margin-left:auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;">Caricamento...</span>
+    </div>
+    
+    <div class="ww-body" id="ww-body" style="z-index:2; position:relative; margin-top:10px;">
+        <div class="ww-current">
+            <div class="ww-icon-container">
+                <i class="fas fa-spinner fa-spin" id="ww-icon-main"></i>
+            </div>
+            <div class="ww-temp-box">
+                <div class="ww-temp" id="ww-temp">--°</div>
+                <div class="ww-desc" id="ww-desc">In attesa...</div>
+            </div>
+        </div>
+        
+        <div class="ww-details">
+            <div class="ww-detail-item"><i class="fas fa-tint"></i> <span id="ww-hum">--%</span></div>
+            <div class="ww-detail-item"><i class="fas fa-wind"></i> <span id="ww-wind">-- km/h</span></div>
+        </div>
+        
+        <div class="ww-divider">Previsioni</div>
+        
+        <div class="ww-forecast" id="ww-forecast">
+            <!-- Forecast items populated via JS -->
+        </div>
+    </div>
+</div>
+
+<script src="/ext/weather_widget/static/js/weather.js?v={{ version }}&bust={{ range(1, 1000000) | random }}"></script>

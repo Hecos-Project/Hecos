@@ -142,6 +142,50 @@ def save_yaml(path: str, model: BaseModel) -> bool:
         return False
 
 
+def save_dict_to_yaml(path: str, data: dict) -> bool:
+    """
+    Serialize a standard dictionary to YAML and write it to *path*.
+    Uses ruamel.yaml to preserve comments if available.
+    """
+    if not os.path.isabs(path):
+        path = os.path.abspath(path)
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if hasattr(data, "model_dump"): # Safety check
+            data = data.model_dump()
+
+        if HAS_RUAMEL:
+            ryaml = YAML()
+            ryaml.preserve_quotes = True
+            ryaml.indent(mapping=2, sequence=4, offset=2)
+            
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        existing_data = ryaml.load(f) or {}
+                    if not isinstance(existing_data, dict):
+                        existing_data = {}
+                    _deep_merge(existing_data, data, delete_extra=True)
+                    with open(path, "w", encoding="utf-8") as f:
+                        ryaml.dump(existing_data, f)
+                except Exception as parse_e:
+                    with open(path, "w", encoding="utf-8") as f:
+                        ryaml.dump(data, f)
+            else:
+                with open(path, "w", encoding="utf-8") as f:
+                    ryaml.dump(data, f)
+            return True
+        else:
+            with open(path, "w", encoding="utf-8") as f:
+                yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            return True
+    except Exception as e:
+        import traceback
+        print(f"[YAML-UTILS] Error saving raw dict to {path}: {e}")
+        traceback.print_exc()
+        return False
+
+
 def migrate_json_to_yaml(json_path: str, yaml_path: str, schema_cls: Type[T]) -> Optional[T]:
     if not os.path.exists(json_path):
         return None

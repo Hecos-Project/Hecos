@@ -1,0 +1,31 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MCP: Explorer Card — registry search and results grid
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title"><i class="fas fa-binoculars"></i> MCP Explorer</div>
+  <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">Search and discover external tools across multiple registries (Smithery, MCPSkills) without leaving Hecos.</p>
+
+  <div class="grid-2" style="margin-bottom: 15px;">
+    <div class="field">
+      <label>Registry</label>
+      <select id="mcp-explore-registry">
+        <option value="smithery" selected>Smithery.ai</option>
+        <option value="mcp-get">MCPSkills (mcp-get)</option>
+        <option value="github">GitHub (Topic: mcp-server)</option>
+        <option value="huggingface">Hugging Face (Spaces)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Search Query</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="mcp-explore-query" placeholder="e.g. google, notion, search, spotify..." style="flex:1;">
+        <button type="button" class="btn btn-primary" onclick="searchRegistry()" id="mcp-explore-btn">Search</button>
+        <button type="button" class="btn btn-secondary" onclick="clearMCPExplore()" id="mcp-explore-clear-btn" style="display:none;">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mcp-explore-results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; min-height: 50px;">
+    <p style="color: var(--muted); font-size: 12px; grid-column: 1/-1; text-align: center;">Enter a search term to discover new capabilities.</p>
+  </div>
+</div>

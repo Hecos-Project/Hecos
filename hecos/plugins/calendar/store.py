@@ -161,7 +161,7 @@ def delete(event_id: str) -> bool:
 
 def update(event_id: str, **kwargs) -> bool:
     """Update specific fields of an event. Returns True if updated."""
-    allowed = {"title", "start_iso", "end_iso", "all_day", "color", "notes", "interactive"}
+    allowed = {"title", "start_iso", "end_iso", "all_day", "color", "notes", "interactive", "linked_reminder_id"}
     fields = {k: v for k, v in kwargs.items() if k in allowed}
     # Convert bool to int for SQLite
     if "all_day" in fields: fields["all_day"] = int(fields["all_day"])

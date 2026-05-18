@@ -1,10 +1,11 @@
 {
     "extension_id": "reminder",
     "parent_plugin": "WEB_UI",
-    "display_name": "Reminder",
+    "display_name": "ext_reminder_title",
     "version": "1.0.0",
-    "description": "Sidebar widget and REST API for the Reminder plugin. Shows upcoming reminders and allows quick-add/cancel/snooze from the chat interface.",
+    "description": "ext_reminder_desc",
     "sidebar_widget": true,
     "eager_load": true,
-    "config_schema": {}
+    "config_schema": {},
+    "required_plugin": "REMINDER"
 }

@@ -1,0 +1,116 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     IGen: Generation Parameters — Aspect Ratio, Neg Prompt, CFG, Steps, Seed, Advanced
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Aspect Ratio & Custom Dimensions -->
+<div class="grid-2" style="margin-top:10px;">
+  <div class="field">
+    <label>Aspect Ratio</label>
+    <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" data-cfg-plugin="MEDIA">
+      <option value="1:1">1:1 — Square</option>
+      <option value="16:9">16:9 — Landscape (HD)</option>
+      <option value="9:16">9:16 — Portrait (Mobile)</option>
+      <option value="4:3">4:3 — Classic Landscape</option>
+      <option value="3:4">3:4 — Classic Portrait</option>
+      <option value="21:9">21:9 — Ultra-Wide</option>
+      <option value="3:2">3:2 — Photo (Landscape)</option>
+      <option value="2:3">2:3 — Photo (Portrait)</option>
+      <option value="5:4">5:4 — Medium Format</option>
+      <option value="4:5">4:5 — Instagram Portrait</option>
+      <option value="custom"><i class="fas fa-ruler-combined"></i> Custom (manual W × H)</option>
+    </select>
+  </div>
+  <div class="field" id="igen-custom-dims" style="display:none;">
+    <label>Custom Size (px)</label>
+    <div style="display:flex; gap:6px; align-items:center;">
+      <input type="number" id="igen-width"  min="256" max="2048" step="64" placeholder="W" style="width:50%;" data-cfg-plugin="MEDIA">
+      <span style="color:var(--muted);">×</span>
+      <input type="number" id="igen-height" min="256" max="2048" step="64" placeholder="H" style="width:50%;" data-cfg-plugin="MEDIA">
+    </div>
+  </div>
+</div>
+
+<!-- Negative Prompt -->
+<div class="field" style="margin-top:10px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+    <label style="margin:0;">Negative Prompt</label>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <small style="color:var(--muted);font-size:11px;">Enable</small>
+      <label class="switch"><input type="checkbox" id="igen-use-neg-prompt" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+    </div>
+  </div>
+  <textarea id="igen-neg-prompt" rows="2" placeholder="distorted, extra fingers, malformed limbs..." data-cfg-plugin="MEDIA"></textarea>
+  <small style="color:var(--muted);font-size:11px;">Elements to avoid in the generation.</small>
+</div>
+
+<!-- CFG Scale & Steps -->
+<div class="grid-2" style="margin-top:10px;">
+  <div class="field">
+    <label>
+      CFG Scale (Guidance)
+      <span title="CFG Scale and Guidance Scale are the same parameter — it controls how strictly the model follows your prompt. Higher = more literal. Typical range: 3–12 for Flux, 5–15 for SD." style="cursor:help; color:var(--muted); font-size:12px; margin-left:4px;"><i class="fas fa-info-circle"></i></span>
+    </label>
+    <div style="display:flex; align-items:center;">
+      <input type="range" id="igen-guidance" min="1" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=this.value" data-cfg-plugin="MEDIA">
+      <span id="igen-guidance-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">7.5</span>
+    </div>
+  </div>
+  <div class="field">
+    <label>Inference Steps</label>
+    <div style="display:flex; align-items:center;">
+      <input type="range" id="igen-steps" min="1" max="100" step="1" style="flex:1;" oninput="document.getElementById('igen-steps-val').textContent=this.value" data-cfg-plugin="MEDIA">
+      <span id="igen-steps-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">30</span>
+    </div>
+  </div>
+</div>
+
+<!-- Seed -->
+<div class="field" style="margin-top:10px;">
+  <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
+  <div style="display:flex; gap:8px; align-items:center;">
+    <input type="number" id="igen-seed" min="-1" max="2147483647" value="-1" style="flex:1;" data-cfg-plugin="MEDIA">
+    <button onclick="document.getElementById('igen-seed').value=-1; if(typeof saveConfig==='function') saveConfig(true);" title="Randomize seed" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer; font-size:14px;"><i class="fas fa-dice"></i></button>
+    <button type="button" onclick="const ls=(window.cfg&&window.cfg.image_gen)?window.cfg.image_gen.last_seed:-1; if(ls&&ls>0) { document.getElementById('igen-seed').value=ls; if(typeof saveConfig==='function') saveConfig(true); } else alert('No seed recorded yet. Generate an image first.');"
+            title="Reuse Last Seed"
+            style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--accent); cursor:pointer; font-size:12px; font-weight:bold;">
+      <i class="fas fa-sync"></i> Last
+    </button>
+  </div>
+  <small style="color:var(--muted);font-size:11px;">Fix a seed to reproduce the same image. Click <b>Last</b> to reuse the seed from your last successful generation.</small>
+</div>
+
+<!-- Advanced Sampling (collapsible) -->
+<details style="margin-top:14px;">
+  <summary style="cursor:pointer; font-weight:600; color:var(--text); user-select:none; list-style:none; display:flex; align-items:center; gap:6px;">
+    <span style="font-size:13px;">Advanced Sampling</span>
+    <small style="color:var(--muted); font-weight:400;">(HuggingFace &amp; Stability only)</small>
+  </summary>
+  <div class="grid-2" style="margin-top:10px;">
+    <div class="field">
+      <label>Sampler</label>
+      <select id="igen-sampler" data-cfg-plugin="MEDIA">
+        <option value="euler_a">Euler Ancestral (euler_a)</option>
+        <option value="euler">Euler</option>
+        <option value="ddim">DDIM</option>
+        <option value="dpm++2m">DPM++ 2M</option>
+        <option value="dpm++2m_karras">DPM++ 2M Karras</option>
+        <option value="pndm">PNDM</option>
+        <option value="lms">LMS</option>
+        <option value="heun">Heun</option>
+      </select>
+      <small style="color:var(--muted);font-size:11px;"><i class="fas fa-info-circle"></i> Ignored by Pollinations &amp; Gemini.</small>
+    </div>
+    <div class="field">
+      <label>Scheduler</label>
+      <select id="igen-scheduler" data-cfg-plugin="MEDIA">
+        <option value="euler">Euler</option>
+        <option value="dpm++">DPM++</option>
+        <option value="pndm">PNDM</option>
+        <option value="ddim">DDIM</option>
+        <option value="lms">LMS</option>
+        <option value="karras">Karras</option>
+      </select>
+      <small style="color:var(--muted);font-size:11px;"><i class="fas fa-info-circle"></i> Best supported by HuggingFace.</small>
+    </div>
+  </div>
+</details>

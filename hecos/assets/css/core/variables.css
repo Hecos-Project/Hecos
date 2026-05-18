@@ -366,3 +366,26 @@
     --bg-blur:     rgba(32, 32, 32, 0.9);
   }
 }
+/* ── Theme: Native (Automatic / High-Def Default) ────────────────────────── */
+.theme-native {
+  --bg:       #0d0f18;
+  --bg-rgb:   13, 15, 24;
+  --bg2:      #141726;
+  --bg2-rgb:  20, 23, 38;
+  --bg3:      #1c2033;
+  --bg3-rgb:  28, 32, 51;
+  --accent:      #6c8cff;
+  --accent-rgb:  108, 140, 255;
+  --accent2:     #a78bfa;
+  --accent2-rgb: 167, 139, 250;
+  --border:      #252b46;
+  --border-rgb:  37, 43, 70;
+  --text:        #e2e8f0;
+  --muted:       #6b7280;
+  --glass:        rgba(108, 140, 255, 0.04);
+  --glass-b:      rgba(108, 140, 255, 0.08);
+  --glass-c:      rgba(108, 140, 255, 0.15);
+  --glass-border: rgba(108, 140, 255, 0.1);
+  --bg-blur:     rgba(13, 15, 24, 0.88);
+  --accent-g:    linear-gradient(135deg, var(--accent), var(--accent2));
+}

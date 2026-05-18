@@ -45,11 +45,25 @@ def get_plugin_module(tag, legacy=False):
         
         try:
             plugin_dir = os.path.basename(os.path.dirname(main_file))
-            module_name = f"plugins.{plugin_dir}.main"
+            parent_dir_name = os.path.basename(os.path.dirname(os.path.dirname(main_file)))
+            
+            if parent_dir_name == "modules":
+                module_name = f"hecos.modules.{plugin_dir}.main"
+            elif parent_dir_name == "plugins":
+                module_name = f"hecos.plugins.{plugin_dir}.main"
+            else:
+                module_name = f"plugins.{plugin_dir}.main"
             
             spec = importlib.util.spec_from_file_location(module_name, main_file)
             if spec:
                 new_module = importlib.util.module_from_spec(spec)
+                # Need to inject the parent module into sys.modules to fix relative imports
+                import sys
+                parent_module_name = module_name.rsplit('.', 1)[0]
+                if parent_module_name not in sys.modules:
+                    sys.modules[parent_module_name] = type(sys)(parent_module_name)
+                    sys.modules[parent_module_name].__path__ = [os.path.dirname(main_file)]
+                
                 spec.loader.exec_module(new_module)
                 
                 # Check if it was a legacy tool or class-based

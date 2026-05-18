@@ -1,6 +1,6 @@
 import os
 
-docs_dir = r"c:\Hecos-Core\docs"
+docs_dir = r"c:\Hecos\docs"
 user_dir = os.path.join(docs_dir, "user")
 tech_dir = os.path.join(docs_dir, "tech")
 

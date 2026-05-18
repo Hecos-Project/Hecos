@@ -178,11 +178,18 @@ def clean_for_voice(text):
     else:
         text = text.replace("[", "").replace("]", "")
 
-    # 5. Removes markdown (bold, italic)
+    # 5. Removes markdown (bold, italic, list items, headers)
     if conf.get("remove_markdown", True):
         text = re.sub(r'\*\*.*?\*\*', '', text)
         text = re.sub(r'__.*?__', '', text)
         text = re.sub(r'\*.*?\*', '', text)
+        # Strip markdown list items (lines starting with - or *)
+        text = re.sub(r'(?m)^[\s]*[\-\*][\s]+', '', text)
+        # Strip markdown headers (lines starting with #)
+        text = re.sub(r'(?m)^[\s]*#+[\s]+', '', text)
+        # Strip lines that look like key-value pairs (e.g. "id: 1") if they are in a block
+        # This is a bit aggressive but helps with the raw profile dump
+        text = re.sub(r'(?m)^[\s]*[\w\-_]+:[\s]+.*$', '', text)
 
     # 6. Double space cleanup
     text = re.sub(r'\s+', ' ', text).strip()

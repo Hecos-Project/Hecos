@@ -1,0 +1,16 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MCP: Header Card — description + enable toggle
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-title">{{ t('webui_conf_mcp_title') }}</div>
+  <p style="font-size: 11px; color: var(--muted); margin-bottom: 16px;">
+    Connect Hecos to external AI tools and resources using the Model Context Protocol.
+    Discover servers on <a href="https://smithery.ai" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:bold;">Smithery.ai</a>.
+  </p>
+  <div class="toggle-row">
+    <div class="toggle-info">Enable MCP Bridge
+      <div class="toggle-sub">Allows Hecos to launch and connect to external MCP servers.</div>
+    </div>
+    <label class="switch"><input type="checkbox" id="mcp-enabled" data-plugin="MCP_BRIDGE"><span class="slider"></span></label>
+  </div>
+</div>

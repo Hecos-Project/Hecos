@@ -1,10 +1,11 @@
 {
     "extension_id": "media_player_widget",
     "parent_plugin": "WEB_UI",
-    "display_name": "Media Player Widget",
+    "display_name": "ext_media_player_title",
     "version": "1.0.0",
-    "description": "Compact 'Now Playing' sidebar widget for the Hecos Media Player. Shows the current track name, playback controls, and volume slider.",
+    "description": "ext_media_player_desc",
     "sidebar_widget": true,
     "eager_load": true,
-    "config_schema": {}
+    "config_schema": {},
+    "required_plugin": "MEDIA_PLAYER"
 }

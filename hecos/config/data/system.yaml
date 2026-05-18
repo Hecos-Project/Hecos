@@ -1,5 +1,5 @@
 ai:
-  active_personality: Urania_9800.yaml
+  active_personality: 'Hecos_System_Soul.yaml'
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -9,13 +9,13 @@ ai:
     '6': Urania_9800.yaml
   save_special_instructions: false
   special_instructions: ''
-  enable_safety_instructions: true
-  safety_instructions: ''
+  enable_safety_instructions: false
+  safety_instructions: ""
   avatar_size: medium
 backend:
   type: cloud
   cloud:
-    model: gemini/gemini-2.5-flash
+    model: 'gemini/gemini-2.5-flash'
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -35,44 +35,31 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
 bridge:
-  use_processor: true
+  use_processor: false
   chunk_delay_ms: 0
-  debug_log: true
-  remove_think_tags: true
+  debug_log: false
+  remove_think_tags: false
   local_voice_enabled: false
-  webui_voice_enabled: true
-  webui_voice_stt: true
-  enable_tools: true
+  webui_voice_enabled: false
+  webui_voice_stt: false
+  enable_tools: false
 cognition:
-  memory_enabled: true
-  episodic_memory: true
+  memory_enabled: false
+  episodic_memory: false
   clear_on_restart: false
-  include_identity_context: true
-  include_self_awareness: true
+  include_identity_context: false
+  include_self_awareness: false
   max_history_messages: 20
-extensions:
-  calendar:
-    calendar_locale: it
-    calendar_country: IT
-    day_colors:
-      - rgba(172,47,47,0.35)
-      - transparent
-      - transparent
-      - transparent
-      - transparent
-      - rgba(33,186,13,0.2)
-      - rgba(127,122,122,0.2)
-    calendar_sync_urls: []
 filters:
   remove_asterisks: both
   remove_round_brackets: voice
   remove_square_brackets: none
   custom_filters: []
   custom_replacements: {}
-language: en
+language: it
 llm:
   allow_cloud: true
-  debug_llm: true
+  debug_llm: false
   providers:
     gemini:
       api_key: ''
@@ -91,9 +78,9 @@ llm:
       models:
         - groq/llama-3.3-70b-versatile
 logging:
-  level: DEBUG
-  destination: console
-  message_types: both
+  level: INFO
+  destination: chat
+  message_types: info
   web_level: BOTH
   web_max_history: 100
   web_autoscroll: true
@@ -101,118 +88,6 @@ logging:
 monitor:
   check_interval: 1
   restart_delay: 2
-plugins:
-  DASHBOARD:
-    enabled: true
-    lazy_load: false
-    backend_timeout: 0.5
-    monitor_interval: 2
-    webui_dashboard_enabled: true
-    webui_telemetry_enabled: true
-    console_dashboard_enabled: true
-    console_telemetry_enabled: true
-    track_cpu: false
-    track_ram: false
-    track_vram: false
-  FILE_MANAGER:
-    enabled: true
-    lazy_load: false
-    enable_path_mapping: true
-    max_list_items: 5
-    max_read_lines: 50
-  HELP:
-    enabled: true
-    lazy_load: false
-    show_disabled: false
-  IMAGE_GEN:
-    enabled: true
-    lazy_load: false
-    width: 1024
-    height: 1024
-    nologo: false
-  MEDIA:
-    enabled: true
-    lazy_load: false
-  SYSTEM:
-    enabled: true
-    lazy_load: false
-    enable_config_set: true
-    shell_command_timeout: 15
-    shell_command_whitelist: []
-    explorer_mappings: {}
-    programs: {}
-  SYS_NET:
-    enabled: true
-    lazy_load: false
-    proxy_enabled: false
-    proxy_url: socks5://localhost:9150
-  WEB:
-    enabled: true
-    lazy_load: false
-    llm_model: ''
-    search_engine: google
-    use_https: true
-    open_in_new_tab: false
-  WEBCAM:
-    enabled: true
-    lazy_load: false
-    camera_index: 0
-    image_format: jpg
-    save_directory: snapshots
-    stabilization_delay: 0.5
-  WEB_UI:
-    enabled: true
-    lazy_load: false
-    port: 7070
-    api_port: 5000
-    auto_open_browser: false
-    https_enabled: true
-    force_login: true
-    cert_file: certs/cert.pem
-    key_file: certs/key.pem
-  EXECUTOR:
-    enabled: true
-    lazy_load: false
-    timeout_seconds: 10
-    enable_shell_commands: true
-    shell_timeout: 15
-    max_read_lines: 200
-    workspace_dir: workspace/sandbox
-  DRIVE:
-    enabled: true
-    lazy_load: true
-    root_dir: ''
-    max_upload_mb: 100
-    allowed_extensions: ''
-    editor:
-      enabled: true
-      theme: vs-dark
-      max_file_size_kb: 1024
-      word_wrap: true
-      spell_check: false
-  REMOTE_TRIGGERS:
-    enabled: true
-    lazy_load: false
-    settings:
-      enable_mediasession: true
-      enable_volume_keys: true
-      enable_volume_loop: false
-      feedback_sounds: true
-      visual_indicator: true
-  REMINDER:
-    enabled: true
-    lazy_load: false
-    reminder_mode: voice
-    ringtone_path: Default_System_Alert.mp3
-    time_format: 24h
-    max_reminders: 50
-    snooze_default_minutes: 15
-    reminder_snooze_ui: false
-  MCP_BRIDGE:
-    enabled: false
-    lazy_load: false
-    servers: {}
-  extra_dirs: []
 privacy:
   default_mode: normal
   auto_wipe_on_clear: true
@@ -226,10 +101,5 @@ routing_engine:
   mode: auto
   legacy_models: ''
 system:
-  fast_boot: true
+  fast_boot: false
   flask_debug: false
-agent:
-  action_console_enabled: true
-  enabled: true
-  max_iterations: 12
-  verbose_traces: true

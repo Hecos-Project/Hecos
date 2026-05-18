@@ -1,0 +1,29 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Hecos Docs - Main Content Area
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main class="docs-main">
+    <div id="search-results" class="search-results-overlay">
+        <button class="close-search" onclick="closeSearch()"><i class="fas fa-times"></i></button>
+        <h2 id="search-query-display" style="margin-bottom: 30px;">Search Results for "..."</h2>
+        <div id="results-list"></div>
+    </div>
+
+    <div id="loading-overlay">
+        <div style="color: var(--accent); font-weight: 600; letter-spacing: 2px; animation: pulse 1.5s infinite;">LOADING...</div>
+    </div>
+    
+    <article id="content-target">
+        <!-- Content injected here via JS -->
+    </article>
+
+    <div class="pagination" id="pagination">
+        <a href="#" class="pag-btn prev" id="pag-prev" style="visibility: hidden;">
+            <span class="label">Previous</span>
+            <span class="title" id="pag-prev-title">---</span>
+        </a>
+        <a href="#" class="pag-btn next" id="pag-next" style="visibility: hidden;">
+            <span class="label">Next</span>
+            <span class="title" id="pag-next-title">---</span>
+        </a>
+    </div>
+</main>

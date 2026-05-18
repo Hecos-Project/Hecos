@@ -1,0 +1,43 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Hecos Docs - Sidebar
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="docs-sidebar">
+    <div class="sidebar-header">
+        <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" alt="Hecos Logo">
+        <div class="title">HECOS DOCS</div>
+    </div>
+
+    <div class="lang-switcher">
+        <a href="javascript:void(0)" onclick="switchLang('en')" id="lang-en" class="lang-link">EN</a>
+        <a href="javascript:void(0)" onclick="switchLang('it')" id="lang-it" class="lang-link">IT</a>
+        <a href="javascript:void(0)" onclick="switchLang('es')" id="lang-es" class="lang-link">ES</a>
+    </div>
+
+    <div class="search-container">
+        <span class="search-icon"><i class="fas fa-search"></i></span>
+        <input type="text" id="docs-search" class="search-input" placeholder="Search docs..." onkeyup="handleSearch(event)">
+    </div>
+
+    <div class="nav-group-selector">
+        <button id="btn-group-user" class="group-btn" onclick="switchGroup('user')">OPERATING</button>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label" id="chapters-label">Chapters</div>
+        <div id="chapters-container" class="chapter-list">
+            <!-- Dynamic Chapters -->
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-label">Resources</div>
+        <a href="https://github.com/Hecos-Project/Hecos/wiki/" target="_blank" class="chapter-item">
+            GitHub Wiki ↗
+        </a>
+        <a href="javascript:void(0)" onclick="window.open('/api/docs/unified/generate?group=' + currentGroup + '&lang=' + currentLang)" class="chapter-item" style="color:var(--accent); border-color:var(--accent); background:rgba(102, 252, 241, 0.05); margin-top:10px;">
+            <i class="fas fa-download"></i> Generate Dynamic Guide
+        </a>
+    </div>
+
+    <a href="/chat" class="back-link"><i class="fas fa-reply"></i> Back to Chat</a>
+</div>
