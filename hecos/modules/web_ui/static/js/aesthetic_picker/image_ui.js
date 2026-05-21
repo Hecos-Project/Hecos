@@ -18,7 +18,7 @@ class HecosAestheticImagePicker {
         const resetBtn = document.createElement('button');
         resetBtn.type = 'button';
         resetBtn.className = 'btn-reset-mini';
-        resetBtn.title = 'Reset Immagine';
+        resetBtn.title = window.t ? window.t('Reset Image') : 'Reset Image';
         resetBtn.innerHTML = '<i class="fas fa-undo"></i>';
         resetBtn.addEventListener('click', () => instance.options.onReset(instance));
 
@@ -33,24 +33,24 @@ class HecosAestheticImagePicker {
         const nativePickerBtn = document.createElement('button');
         nativePickerBtn.type = 'button';
         nativePickerBtn.className = 'btn btn-sm btn-secondary';
-        nativePickerBtn.innerHTML = '<i class="fas fa-folder-open"></i> Scegli file';
+        nativePickerBtn.innerHTML = '<i class="fas fa-folder-open"></i> ' + (window.t ? window.t('Choose File') : 'Choose File');
         
         const clearBtn = document.createElement('button');
         clearBtn.type = 'button';
         clearBtn.className = 'btn btn-sm btn-danger';
-        clearBtn.innerHTML = '<i class="fas fa-trash"></i> Rimuovi';
+        clearBtn.innerHTML = '<i class="fas fa-trash"></i> ' + (window.t ? window.t('Remove') : 'Remove');
         clearBtn.style.display = instance.currentImage ? 'inline-block' : 'none';
 
         const pathPreview = document.createElement('div');
         pathPreview.style.fontSize = '11px';
         pathPreview.style.color = 'var(--muted)';
         pathPreview.style.wordBreak = 'break-all';
-        pathPreview.innerText = instance.currentImage ? instance.currentImage.split(/[\\/]/).pop() : 'Nessuna immagine';
+        pathPreview.innerText = instance.currentImage ? instance.currentImage.split(/[\\/]/).pop() : (window.t ? window.t('No image') : 'No image');
 
         nativePickerBtn.addEventListener('click', async () => {
             nativePickerBtn.disabled = true;
             const originalHtml = nativePickerBtn.innerHTML;
-            nativePickerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Attendere...';
+            nativePickerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (window.t ? window.t('Wait...') : 'Wait...');
             try {
                 const resp = await fetch('/api/system/explorer/pick-native', { method: 'POST' });
                 const data = await resp.json();
@@ -70,7 +70,7 @@ class HecosAestheticImagePicker {
 
         clearBtn.addEventListener('click', () => {
             instance.currentImage = '';
-            pathPreview.innerText = 'Nessuna immagine';
+            pathPreview.innerText = window.t ? window.t('No image') : 'No image';
             clearBtn.style.display = 'none';
             instance.options.onClearImage();
         });

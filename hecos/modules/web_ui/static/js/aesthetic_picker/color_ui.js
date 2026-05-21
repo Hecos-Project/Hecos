@@ -20,7 +20,7 @@ class HecosAestheticColorPicker {
         const resetBtn = document.createElement('button');
         resetBtn.type = 'button';
         resetBtn.className = 'btn-reset-mini';
-        resetBtn.title = 'Reset Colore';
+        resetBtn.title = window.t ? window.t('Reset Color') : 'Reset Color';
         resetBtn.innerHTML = '<i class="fas fa-undo"></i>';
         resetBtn.addEventListener('click', () => instance.options.onReset(instance));
         
@@ -40,10 +40,10 @@ class HecosAestheticColorPicker {
         paletteSelect.style.flex = '1';
         
         const opts = [
-            { val: 'none', label: 'Custom...' },
-            { val: 'dark', label: 'Dark Palette' },
-            { val: 'light', label: 'Light Palette' },
-            { val: 'vibrant', label: 'Vibrant Palette' }
+            { val: 'none', label: window.t ? window.t('Custom...') : 'Custom...' },
+            { val: 'dark', label: window.t ? window.t('Dark Palette') : 'Dark Palette' },
+            { val: 'light', label: window.t ? window.t('Light Palette') : 'Light Palette' },
+            { val: 'vibrant', label: window.t ? window.t('Vibrant Palette') : 'Vibrant Palette' }
         ];
         opts.forEach(o => {
             const opt = document.createElement('option');

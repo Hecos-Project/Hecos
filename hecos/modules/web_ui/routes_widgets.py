@@ -24,8 +24,6 @@ def init_widget_routes(app, config_manager, logger_ref=None):
     def _save_config():
         """Saves current config and broadcasts a refresh signal."""
         res = config_manager.save()
-        import sys
-        print(f"[DEBUG-WIDGETS] save() result: {res}", file=sys.stderr)
         if res:
             try:
                 from .server import get_state_manager
