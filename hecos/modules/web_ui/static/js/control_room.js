@@ -75,19 +75,7 @@ window.controlRoom = (function () {
         }
     }
 
-    // ── BroadcastChannel sync (shared channel, module is independent listener) ─
-    try {
-        const _channel = new BroadcastChannel('hecos_widgets');
-        _channel.onmessage = () => {
-            console.log('[ControlRoom] Widget sync signal received.');
-            refresh();
-        };
-    } catch (e) {
-        // BroadcastChannel not available (unlikely in modern browsers)
-        console.warn('[ControlRoom] BroadcastChannel unavailable:', e);
-    }
-
-    // localStorage cross-tab sync
+    // localStorage cross-tab sync (structural changes only)
     window.addEventListener('storage', (e) => {
         if (e.key === 'hecos_sidebar_sync' || e.key === 'hecos_room_sync') refresh();
     });

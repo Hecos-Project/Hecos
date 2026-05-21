@@ -33,11 +33,12 @@
                             const themeVal = (data.value || 'default').replace('theme-', '');
                             card.className = card.className.replace(/theme-\S+/g, '') + ' theme-' + themeVal;
                         } else if (data.field === 'bg_color') {
-                            card.style.backgroundColor = data.value;
+                            card.style.setProperty('background-color', data.value, 'important');
                         } else if (data.field === 'bg_image') {
-                            card.style.backgroundImage = data.value ? `url('/media/file?path=${encodeURIComponent(data.value)}')` : 'none';
-                            card.style.backgroundSize = 'cover';
-                            card.style.backgroundPosition = 'center';
+                            const url = data.value ? `url('/media/file?path=${encodeURIComponent(data.value)}')` : 'none';
+                            card.style.setProperty('background-image', url, 'important');
+                            card.style.setProperty('background-size', 'cover', 'important');
+                            card.style.setProperty('background-position', 'center', 'important');
                         }
                     }
                 }

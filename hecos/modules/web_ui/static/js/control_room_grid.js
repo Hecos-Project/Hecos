@@ -139,6 +139,16 @@
 
         isEditing() { return _editing; },
 
+        /**
+         * Block automatic refreshes for `ms` milliseconds.
+         * Call before any aesthetic save to prevent SSE-triggered re-renders
+         * from overwriting live UI changes.
+         */
+        lockRefresh(ms = 5000) {
+            _ignoringRefreshesUntil = Date.now() + ms;
+            console.log(`[RoomGrid] Refresh locked for ${ms}ms`);
+        },
+
         persistLayout() {
             if (!_gsGrid) return;
             clearTimeout(_saveTimer);

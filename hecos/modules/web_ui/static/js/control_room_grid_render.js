@@ -42,9 +42,6 @@
             console.log(`[RoomGrid] Widget ${id}: room_height=${w.room_height} -> gsH=${gsH}`);
             const theme = (w.theme || 'default').replace('theme-', '');
             
-            const bgStyle = w.bg_color ? `background-color:${w.bg_color};` : '';
-            const imgStyle = w.bg_image ? `background-image:url('/media/file?path=${encodeURIComponent(w.bg_image)}'); background-size:cover; background-position:center;` : '';
-
             let el = gsGrid.getGridItems().find(item => (item.getAttribute('gs-id') === id || item.dataset.id === id));
 
             const contentHtml = `
@@ -66,17 +63,36 @@
                         frameborder="0" allowtransparency="true"></iframe>
             `;
 
+            const applyStyles = (node) => {
+                if (!node) return;
+                // Preserve basic classes but update theme
+                const baseClasses = 'grid-stack-item-content room-widget-card border-glow';
+                const isAesActive = node.classList.contains('aes-active') ? ' aes-active' : '';
+                node.className = `${baseClasses} theme-${theme}${isAesActive}`;
+
+                if (w.bg_color) {
+                    node.style.setProperty('background-color', w.bg_color, 'important');
+                } else {
+                    node.style.removeProperty('background-color');
+                }
+                
+                if (w.bg_image) {
+                    const url = `url('/media/file?path=${encodeURIComponent(w.bg_image)}')`;
+                    node.style.setProperty('background-image', url, 'important');
+                    node.style.setProperty('background-size', 'cover', 'important');
+                    node.style.setProperty('background-position', 'center', 'important');
+                } else {
+                    node.style.removeProperty('background-image');
+                }
+            };
+
             if (el) {
                 // Update
                 const node = el.gridstackNode;
                 if (node && (node.w !== gsW || node.h !== gsH)) {
                     gsGrid.update(el, { w: gsW, h: gsH });
                 }
-                const contentNode = el.querySelector('.grid-stack-item-content');
-                if (contentNode) {
-                    contentNode.className = `grid-stack-item-content room-widget-card border-glow theme-${theme}`;
-                    contentNode.style.cssText = `${bgStyle} ${imgStyle}`;
-                }
+                applyStyles(el.querySelector('.grid-stack-item-content'));
             } else {
                 // Add
                 console.log(`[RoomGrid] addWidget: ${id} (${gsW}x${gsH})`);
@@ -90,11 +106,7 @@
                 
                 if (newEl) {
                     newEl.setAttribute('data-id', id);
-                    const contentNode = newEl.querySelector('.grid-stack-item-content');
-                    if (contentNode) {
-                        contentNode.className += ` room-widget-card border-glow theme-${theme}`;
-                        if (bgStyle || imgStyle) contentNode.style.cssText += ` ${bgStyle} ${imgStyle}`;
-                    }
+                    applyStyles(newEl.querySelector('.grid-stack-item-content'));
                 }
             }
         });
