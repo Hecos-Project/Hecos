@@ -453,6 +453,8 @@
         "webui_conf_plugin_desc_web": "Ricerche Internet",
         "webui_conf_plugin_desc_webcam": "Snapshot Webcam",
         "webui_conf_plugin_desc_webui": "Interfaccia Web Nativa (questo pannello)",
+        "webui_desc_automation": "Pieno controllo del PC: mouse, tastiera e gestione finestre. Usa in sinergia con screenshot per loop di azione-visione.",
+        "webui_desc_browser": "Browser Playwright controllato dall'IA. Navigazione, lettura DOM, interazione con elementi e form senza bisogno di visione.",
 
         "webui_chat_prompt_help": "Quali sono i comandi e le funzionalità di Hecos?",
         "webui_chat_prompt_media": "Riproduci un brano",
@@ -493,8 +495,8 @@
         "hub_mod_persona": "Anima",
         "hub_mod_filters": "Filtri Testo",
         "hub_mod_memory": "Memoria IA",
-        "hub_mod_automation": "Controllo PC & Automazione",
-        "hub_mod_browser": "Paradigma di Controllo (PC & Browser)",
+        "hub_mod_automation": "Automazione PC",
+        "hub_mod_browser": "Automazione Browser",
         "hub_mod_agent": "Motore Agente",
         "hub_mod_neural_link": "Neural Link",
         "hub_mod_voice": "Audio & Voce",
@@ -525,7 +527,8 @@
         "hub_mod_system": "Sistema & Log",
         "hub_mod_users": "Utenti",
         "hub_mod_security": "Sicurezza (CA)",
-        "hub_mod_plugins": "Gestione Plugin",
+        "hub_mod_plugins": "Gestore Moduli Hecos",
+        "hub_mod_plugins_native": "Plugin Nativi & Estensioni",
         "hub_mod_logs": "Log Live",
         "hub_mod_privacy": "Privacy & Dati",
         "hub_mod_aesthetics": "Estetica & Temi",
@@ -869,6 +872,10 @@
         "sidebar_empty_title": "Qui non c'è niente",
         "sidebar_empty_add": "Aggiungi Widgets",
         "sidebar_widgets_global_title": "Mostra Widgets nella Sidebar",
-        "sidebar_widgets_global_desc": "Se disattivato, la sezione widgets sparirà completamente dalla barra laterale."
+        "sidebar_widgets_global_desc": "Se disattivato, la sezione widgets sparirà completamente dalla barra laterale.",
+        "webui_telemetry_cpu": "Monitoraggio CPU",
+        "webui_telemetry_ram": "Monitoraggio RAM",
+        "webui_telemetry_vram": "Monitoraggio VRAM",
+        "webui_telemetry_warning": "ATTENZIONE: L'attivazione del monitoraggio hardware in tempo reale potrebbe causare instabilità o rallentamenti su sistemi con risorse limitate."
     }
 }

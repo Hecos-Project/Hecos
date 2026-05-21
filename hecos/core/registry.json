@@ -45,6 +45,33 @@
         "category": "PLUGINS",
         "module_type": "core_module"
     },
+    "EXECUTOR": {
+        "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
+        "commands": {
+            "run_python_code": "Execute Python safely in AST sandbox.",
+            "execute_shell_command": "Run shell commands (cmd/bash).",
+            "get_time": "Current local time and date.",
+            "get_date": "Current local date.",
+            "get_battery_status": "Device battery level and charging state.",
+            "list_processes": "List top running processes.",
+            "kill_process": "Terminate a process by name.",
+            "reboot_system": "Restart the Hecos system.",
+            "read_file": "Read a file content by line range.",
+            "write_file": "Write or create a file (overwrite or append).",
+            "patch_file": "Surgically replace a text block inside a file.",
+            "delete_file": "Delete a file.",
+            "create_dir": "Create a directory tree.",
+            "list_dir": "List a directory contents."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "⚙️",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
     "HELP": {
         "description": "Displays the list of all active commands and modules in the system.",
         "commands": {
@@ -59,6 +86,23 @@
         "icon": "",
         "category": "PLUGINS",
         "module_type": "core_module"
+    },
+    "MCP_BRIDGE": {
+        "description": "Bridge to Model Context Protocol (MCP) servers",
+        "commands": {
+            "call_tool": "Executes an MCP tool.",
+            "get_mcp_schemas": "Hook used by Hecos's module_docs.py to merge tools.",
+            "list": "Method",
+            "reload": "Method",
+            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
+            "status": "Method"
+        },
+        "status": "No MCP servers connected.",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS"
     },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History).",
@@ -76,13 +120,13 @@
         "category": "PLUGINS"
     },
     "MODELS": {
-        "description": "Cambia il modello IA in base al backend attivo (Ollama/Kobold).",
+        "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
         "commands": {
             "get_current_backend": "Returns the AI backend currently in use (e.g., cloud, ollama, kobold).",
             "list_models": "Lists all available models for the currently selected backend.",
             "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "status": "ONLINE (Gestione modelli)",
+        "status": "ONLINE (Model management)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
