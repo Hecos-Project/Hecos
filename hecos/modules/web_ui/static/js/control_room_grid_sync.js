@@ -21,41 +21,40 @@
             _widgetChannel = new BroadcastChannel('hecos_widgets');
             _widgetChannel.onmessage = (event) => {
                 const data = event.data;
-                if (!data) return;
+                if (!data || data.type !== 'widget_update') return;
                 
-                const isStructural = data.field === 'visible' || data.field === 'order' || !['theme','bg_color','bg_image'].includes(data.field);
-                const myCtx = global.controlRoomGrid ? global.controlRoomGrid.getContext() : 'sidebar';
-                if (isStructural && data.ctx && data.ctx !== myCtx) {
-                     return; // Skip structural updates from other contexts
-                }
-                
-                // Update local window.cfg immediately
-                _syncLocalConfigNoBroadcast(data.id, data.field, data.value);
-
                 // Snappy DOM update for aesthetics if grid exists
                 const grid = document.querySelector('#room-grid, #home-grid');
-                const card = grid?.querySelector(`.room-widget-card[data-id="${data.id}"]`);
-                if (card) {
-                    if (data.field === 'theme') {
-                        const themeVal = (data.value || 'default').replace('theme-', '');
-                        card.className = card.className.replace(/theme-\S+/g, '') + ' theme-' + themeVal;
-                    } else if (data.field === 'bg_color') {
-                        card.style.backgroundColor = data.value;
-                    } else if (data.field === 'bg_image') {
-                        card.style.backgroundImage = data.value ? `url('/media/file?path=${encodeURIComponent(data.value)}')` : 'none';
-                        card.style.backgroundSize = 'cover';
-                        card.style.backgroundPosition = 'center';
+                if (grid) {
+                    const item = grid.querySelector(`.grid-stack-item[gs-id="${data.id}"], .grid-stack-item[data-id="${data.id}"]`);
+                    const card = item ? item.querySelector('.grid-stack-item-content') : null;
+                    if (card) {
+                        if (data.field === 'theme') {
+                            const themeVal = (data.value || 'default').replace('theme-', '');
+                            card.className = card.className.replace(/theme-\S+/g, '') + ' theme-' + themeVal;
+                        } else if (data.field === 'bg_color') {
+                            card.style.backgroundColor = data.value;
+                        } else if (data.field === 'bg_image') {
+                            card.style.backgroundImage = data.value ? `url('/media/file?path=${encodeURIComponent(data.value)}')` : 'none';
+                            card.style.backgroundSize = 'cover';
+                            card.style.backgroundPosition = 'center';
+                        }
                     }
                 }
 
-                // If it's a structural change, refresh
-                if (isStructural) {
-                    if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
+                // Important: Always update local cfg before potential refresh
+                _syncLocalConfigNoBroadcast(data.id, data.field, data.value);
+
+                // If structural, trigger refresh
+                const isStructural = data.field === 'room_visible' || data.field === 'room_span' || data.field === 'room_order' || data.field === 'room_height';
+                if (isStructural && global.controlRoomGrid) {
+                    global.controlRoomGrid.debouncedRefresh();
                 }
             };
+
             window.addEventListener('storage', (e) => {
-                if (e.key === 'hecos_room_sync') {
-                    if (global.controlRoomGrid) global.controlRoomGrid.debouncedRefresh();
+                if (e.key === 'hecos_room_sync' && global.controlRoomGrid) {
+                    global.controlRoomGrid.debouncedRefresh();
                 }
             });
         }

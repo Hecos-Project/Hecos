@@ -1,6 +1,6 @@
 image_gen:
   enabled: true
-  provider: 'pollinations'
+  provider: pollinations
   model: flux
   nologo: true
   api_key: ''
@@ -27,3 +27,4 @@ image_gen:
   custom_hf_models: []
 video_gen:
   enabled: false
+

@@ -40,6 +40,19 @@ window.controlRoom = (function () {
             window.controlRoomGrid.refresh();
             _loaded = true;
         }
+        // Recalculate layout immediately and then after transition finishes
+        const fixGrid = () => {
+            if (window._gsGrid) {
+                console.log('[ControlRoom] GridStack layout recalculation triggered.');
+                if (typeof window._gsGrid.onParentResize === 'function') window._gsGrid.onParentResize();
+                if (typeof window._gsGrid.column === 'function') window._gsGrid.column(2, 'none');
+            }
+        };
+
+        fixGrid(); // Immediate (might be 0 width but helps pre-load)
+        setTimeout(fixGrid, 150); // Mid-transition
+        setTimeout(fixGrid, 450); // Post-transition
+        setTimeout(fixGrid, 800); // Sanity check
         
         localStorage.setItem(STORAGE_KEY, '1');
     }
