@@ -329,8 +329,9 @@ class AgentExecutor:
                 self._emit("Analyzing tool results...", level="info")
                 
                 if iteration == self.max_iterations:
-                    self._emit("Maximum thought limit reached.", level="error")
-                    video_response, clean_voice = processore.clean_final_output("I have reached the processing limit. " + extracted_text, tool_results, raw_response, voice_status)
+                    logger.warning(f"[AGENT] Maximum thought iterations ({self.max_iterations}) reached — returning best available response.")
+                    self._emit("Thought limit reached — returning response.", level="info")
+                    video_response, clean_voice = processore.clean_final_output(extracted_text, tool_results, raw_response, voice_status)
                     return video_response, clean_voice
 
     def _get_persona_visual_description(self):

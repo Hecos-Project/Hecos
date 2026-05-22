@@ -34,6 +34,9 @@
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History).",
         "commands": {
+            "rag_ingest_file": "Ingest a local file into the vector knowledge base.",
+            "rag_search": "Perform a semantic search in the long-term vector memory (RAG).",
+            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
             "read_history": "Extract the last N saved messages from the database history.",
             "remember_info": "Save important information about the user in the biographical profile.",
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",

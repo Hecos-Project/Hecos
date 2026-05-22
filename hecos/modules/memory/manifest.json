@@ -1,6 +1,6 @@
 {
     "tag": "MEMORY",
-    "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+    "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
     "lazy_load": true,
     "is_class_based": true,
     "status": "ONLINE (Vault Access Granted)",
@@ -8,7 +8,10 @@
         "read_history": "Extract the last N saved messages from the database history.",
         "remember_info": "Save important information about the user in the biographical profile.",
         "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
-        "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
+        "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile).",
+        "rag_search": "Perform a semantic search in the long-term vector memory (RAG knowledge base).",
+        "rag_store": "Store a piece of information permanently in the vector knowledge base.",
+        "rag_ingest_file": "Ingest a local file (.txt, .md, .pdf) into the vector knowledge base."
     },
     "tool_schema": [
         {
@@ -24,9 +27,7 @@
                             "description": "The number of previous messages to extract (e.g. '10')."
                         }
                     },
-                    "required": [
-                        "n"
-                    ]
+                    "required": ["n"]
                 }
             }
         },
@@ -43,9 +44,7 @@
                             "description": "The detailed information to remember (e.g. 'The user likes coffee')."
                         }
                     },
-                    "required": [
-                        "text"
-                    ]
+                    "required": ["text"]
                 }
             }
         },
@@ -70,6 +69,61 @@
                     "type": "object",
                     "properties": {},
                     "required": []
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__rag_search",
+                "description": "Perform a semantic search in the long-term vector memory (RAG). Use when the user asks about past conversations, stored documents, or facts not in the immediate chat context.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The question or topic to search for in the knowledge base."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__rag_store",
+                "description": "Store a piece of information permanently in the vector knowledge base. Use when the user shares important facts to remember long-term.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The information to store (e.g. 'My favourite colour is violet')."
+                        },
+                        "label": {
+                            "type": "string",
+                            "description": "A short descriptive label for this memory (e.g. 'colour_preference')."
+                        }
+                    },
+                    "required": ["text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MEMORY__rag_ingest_file",
+                "description": "Ingest a local file (.txt, .md, .pdf) into the vector knowledge base. Use when the user asks to remember or index a document.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Absolute or relative path to the file to ingest."
+                        }
+                    },
+                    "required": ["path"]
                 }
             }
         }

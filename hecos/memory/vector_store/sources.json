@@ -1,0 +1,14 @@
+{
+  "passioni 2": {
+    "ingested_at": "2026-05-22 07:04:55",
+    "chunks": 1,
+    "user_id": "admin",
+    "namespace": "knowledge"
+  },
+  "frasi da zoccola": {
+    "ingested_at": "2026-05-22 07:48:24",
+    "chunks": 1,
+    "user_id": "admin",
+    "namespace": "knowledge"
+  }
+}

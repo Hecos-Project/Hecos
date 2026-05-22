@@ -1,6 +1,7 @@
 """
 PLUGIN: Memory Management
 DESCRIPTION: Class-based interface for accessing the Vault (Semantic and Episodic Memory).
+             Includes RAG vector memory tools: rag_search, rag_store, rag_ingest_file.
 """
 
 import os
@@ -23,6 +24,7 @@ class MemoryTools:
     """
     Plugin: Memory
     Access to the Vault of memories and Admin profile (Identity and History).
+    Includes RAG vector memory tools for long-term semantic recall.
     """
 
     def __init__(self):
@@ -90,6 +92,80 @@ class MemoryTools:
             return "OBLIVION protocol executed. Episodic history cleared. Tabula Rasa."
         else:
             return "Memory reset failure: check system logs."
+
+    # ── RAG Vector Memory tools ────────────────────────────────────────────────
+
+    def rag_search(self, query: str) -> str:
+        """
+        Perform a semantic search in the long-term vector memory (RAG).
+        Use this tool when the user asks about past conversations, stored documents,
+        or facts they previously shared, and the answer is not in the immediate context.
+
+        :param query: The question or topic to search for in the knowledge base.
+        """
+        try:
+            from hecos.core.rag import get_rag_engine
+            engine = get_rag_engine()
+            if not engine.is_enabled():
+                return "RAG Vector Memory is currently disabled in configuration."
+            chunks = engine.search(query, top_k=5)
+            if not chunks:
+                return "No relevant information found in the knowledge base for that query."
+            lines = [f"[RAG RECALL — top {len(chunks)} results for: '{query}']"]
+            for i, c in enumerate(chunks, 1):
+                src = f" (source: {c.source})" if c.source else ""
+                lines.append(f"{i}.{src} {c.text[:400]}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"RAG search error: {e}"
+
+    def rag_store(self, text: str, label: str = "user_note") -> str:
+        """
+        Store a piece of information permanently in the vector knowledge base.
+        Use this when the user tells you something important to remember long-term,
+        beyond the normal episodic chat history.
+
+        :param text: The information to store (e.g. 'My favourite colour is violet').
+        :param label: A short descriptive label for this memory (e.g. 'colour_preference').
+        """
+        try:
+            from hecos.core.rag import get_rag_engine
+            engine = get_rag_engine()
+            if not engine.is_enabled():
+                # Fallback: save to profile notes as before
+                success = brain_interface.update_profile("notes", text.strip())
+                return "RAG disabled — saved to biographical profile instead." if success else "Save failed."
+            result = engine.ingest_text(text.strip(), source=label, namespace="knowledge")
+            if result and result.ok:
+                return f"Knowledge stored: '{label}' — {result.chunk_count} chunk(s) indexed in vector memory."
+            return "Vector storage failed. Check system logs."
+        except Exception as e:
+            return f"rag_store error: {e}"
+
+    def rag_ingest_file(self, path: str) -> str:
+        """
+        Ingest a local file into the vector knowledge base.
+        Supported formats: .txt, .md, .pdf.
+        Use this when the user says 'remember this document' or 'read this file'.
+
+        :param path: Absolute or relative path to the file to ingest.
+        """
+        try:
+            from hecos.core.rag import get_rag_engine
+            import os
+            engine = get_rag_engine()
+            if not engine.is_enabled():
+                return "RAG Vector Memory is disabled. Enable it in the Cognition System settings."
+            if not os.path.exists(path):
+                return f"File not found: {path}"
+            result = engine.ingest_file(path, namespace="documents")
+            if result and result.ok:
+                fname = os.path.basename(path)
+                return f"File '{fname}' successfully ingested: {result.chunk_count} chunks indexed in vector memory."
+            err = result.error if result else "Unknown error"
+            return f"File ingestion failed: {err}"
+        except Exception as e:
+            return f"rag_ingest_file error: {e}"
 
 # Publicly instantiate the tool for exporting to Core
 tools = MemoryTools()

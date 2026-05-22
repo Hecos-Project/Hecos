@@ -222,10 +222,10 @@ def save_message(role, message, config: dict = None, user_id: str = "admin", ses
 
     try:
         from hecos.memory import session_manager
-
         initialize_user_vault(user_id)
+        db_path = _db_path(user_id)
 
-        with sqlite3.connect(session_manager.PATH_DB, timeout=20) as conn:
+        with sqlite3.connect(db_path, timeout=20) as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO history (timestamp, role, message, session_id) VALUES (?, ?, ?, ?)",
@@ -266,10 +266,11 @@ def get_history(limit: int = None, config: dict = None, user_id: str = "admin", 
             return pairs[-limit:] if limit else pairs
 
         # ── Normal DB session ─────────────────────────────────────────────────
-        if not os.path.exists(session_manager.PATH_DB):
+        db_path = _db_path(user_id)
+        if not os.path.exists(db_path):
             return []
 
-        with sqlite3.connect(session_manager.PATH_DB, timeout=20) as conn:
+        with sqlite3.connect(db_path, timeout=20) as conn:
             cursor = conn.cursor()
             if session_id:
                 cursor.execute(

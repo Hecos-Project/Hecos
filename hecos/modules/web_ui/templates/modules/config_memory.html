@@ -1,7 +1,8 @@
 <!-- MEMORY PANEL -->
 <div id="tab-memory" class="panel">
+  <!-- ── Cognition System ─────────────────────────────────── -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-brain"></i> Cognition System</div>
+    <div class="card-title">Cognition System</div>
     <div class="toggle-row">
       <div class="toggle-info">Memory System (Global ON/OFF)</div>
       <label class="switch"><input type="checkbox" id="cog-memory-enabled"><span class="slider"></span></label>
@@ -11,10 +12,6 @@
       <label class="switch"><input type="checkbox" id="cog-episodic"><span class="slider"></span></label>
     </div>
     <div class="toggle-row">
-      <div class="toggle-info">Clear History on Restart</div>
-      <label class="switch"><input type="checkbox" id="cog-clear-restart"><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
       <div class="toggle-info">Inject Identity Context</div>
       <label class="switch"><input type="checkbox" id="cog-identity"><span class="slider"></span></label>
     </div>
@@ -22,13 +19,19 @@
       <div class="toggle-info">Inject Self-Awareness</div>
       <label class="switch"><input type="checkbox" id="cog-awareness"><span class="slider"></span></label>
     </div>
+    <div class="toggle-row">
+      <div class="toggle-info">Clear History on Restart</div>
+      <label class="switch"><input type="checkbox" id="cog-clear-restart"><span class="slider"></span></label>
+    </div>
     <div class="field" style="margin-top:15px;">
       <label>Max History Messages in Context</label>
       <input type="number" id="cog-max-history" min="1" max="200" style="width:80px;">
     </div>
   </div>
+
+  <!-- ── Episodic Memory Status ──────────────────────────── -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-clipboard-list"></i> Memory Status</div>
+    <div class="card-title">Memory Status</div>
     <p id="mem-status-text" style="color:var(--muted); font-size:0.9em;">Loading...</p>
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
       <select id="clear-range" class="mode-selector config-input" style="width:140px; margin:0;">
@@ -44,4 +47,342 @@
       Note: Identity and User Profile are NOT affected by this.
     </small>
   </div>
+
+  <!-- ── RAG Vector Memory ────────────────────────────────── -->
+  <div class="card" id="rag-card">
+    <div class="card-title">RAG Vector Memory
+      <span id="rag-status-badge" style="
+        font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px;
+        margin-left:10px; background:var(--muted); color:#fff; vertical-align:middle;">
+        CHECKING...
+      </span>
+    </div>
+
+    <div class="toggle-row">
+      <div class="toggle-info" style="flex-direction:column;align-items:flex-start;">
+        <span>Enable RAG Vector Memory</span>
+        <small style="color:var(--muted);font-size:11px;">Requires: <code>lancedb</code>, <code>sentence-transformers</code></small>
+      </div>
+      <label class="switch"><input type="checkbox" id="cog-rag-enabled"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-info">Auto-ingest Chat History</div>
+      <label class="switch"><input type="checkbox" id="cog-rag-auto-ingest"><span class="slider"></span></label>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">
+      <div class="field">
+        <label>Embedder Model</label>
+        <select id="cog-rag-embedder-model" class="mode-selector config-input" style="margin:0;font-size:12px;">
+          <option value="all-MiniLM-L6-v2">all-MiniLM-L6-v2 (fast, 384d)</option>
+          <option value="all-mpnet-base-v2">all-mpnet-base-v2 (accurate, 768d)</option>
+          <option value="paraphrase-multilingual-MiniLM-L12-v2">multilingual-MiniLM (multi-lang)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Top-K Results</label>
+        <input type="number" id="cog-rag-top-k" min="1" max="20" style="width:70px;">
+      </div>
+      <div class="field">
+        <label>Chunk Size (tokens)</label>
+        <input type="number" id="cog-rag-chunk-size" min="128" max="2048" step="64" style="width:80px;">
+      </div>
+      <div class="field">
+        <label>Similarity Threshold</label>
+        <input type="number" id="cog-rag-threshold" min="0.0" max="1.0" step="0.05" style="width:70px;">
+      </div>
+    </div>
+
+    <!-- Knowledge Base Manager -->
+    <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-weight:600; font-size:13px; color:var(--accent);">
+          <i class="fas fa-database"></i> Knowledge Base
+        </div>
+        <button class="btn btn-secondary" id="btn-toggle-all-rag" onclick="toggleAllRagSources()" 
+                style="font-size:10px; padding:2px 8px; height:22px;" title="Expand/Collapse All">
+          <i class="fas fa-expand-alt"></i>
+        </button>
+      </div>
+      <p id="rag-stats-text" style="color:var(--muted);font-size:0.88em;margin-bottom:10px;">Loading...</p>
+
+      <!-- Ingest area -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="text" id="rag-ingest-text" class="config-input"
+               placeholder="Type text to add to knowledge base..." style="flex:1;min-width:180px;">
+        <input type="text" id="rag-ingest-label" class="config-input"
+               placeholder="Label (e.g. 'preference')" style="width:130px;">
+        <button class="btn btn-primary" onclick="ragIngestText()" title="Add to knowledge base">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="text" id="rag-ingest-filepath" class="config-input"
+               placeholder="File path (.txt .md .pdf)..." style="flex:1;min-width:180px;">
+        <button class="btn btn-secondary" onclick="ragIngestFile()" title="Ingest file">
+          <i class="fas fa-file-import"></i> Ingest File
+        </button>
+      </div>
+
+      <!-- Sources list -->
+      <div id="rag-sources-list" style="max-height:160px;overflow-y:auto;font-size:11px;
+           background:var(--bg-secondary);border-radius:6px;padding:8px;margin-bottom:10px;">
+        <span style="color:var(--muted)">No sources indexed yet.</span>
+      </div>
+
+      <!-- Semantic search test -->
+        <div style="display:flex;gap:10px;">
+          <input type="text" id="rag-search-query" class="config-input" style="flex:1;" placeholder="Type query (e.g. 'project goals')">
+          <button class="btn btn-primary" onclick="ragTestSearch()" id="rag-btn-search"><i class="fas fa-search"></i> Search</button>
+          <button class="btn btn-danger" onclick="ragStopSearch()" id="rag-btn-stop" style="display:none;"><i class="fas fa-stop"></i> Stop</button>
+        </div>
+      <div id="rag-search-results" style="display:none;max-height:180px;overflow-y:auto;font-size:11px;
+           background:var(--bg-secondary);border-radius:6px;padding:8px;margin-bottom:10px;"></div>
+
+      <!-- Wipe button -->
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap; margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:12px;">
+        <button class="btn btn-secondary" onclick="loadRagStatus()" style="width:40px;" title="Refresh">
+          <i class="fas fa-sync"></i>
+        </button>
+        <button class="btn btn-danger" onclick="ragWipe()">
+          <i class="fas fa-radiation"></i> Wipe Vector Store
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
+
+<script>
+// ── RAG UI helpers ────────────────────────────────────────────────────────────
+
+let allExpanded = false;
+function toggleAllRagSources() {
+  allExpanded = !allExpanded;
+  const details = document.querySelectorAll('#rag-sources-list details');
+  details.forEach(d => d.open = allExpanded);
+  const btn = document.getElementById('btn-toggle-all-rag');
+  if(btn) btn.innerHTML = allExpanded ? '<i class="fas fa-compress-alt"></i>' : '<i class="fas fa-expand-alt"></i>';
+}
+
+function loadRagStatus() {
+  fetch('/api/rag/status?_=' + Date.now()).then(r => r.json()).then(data => {
+    const badge = document.getElementById('rag-status-badge');
+    const stats = document.getElementById('rag-stats-text');
+    if (!badge) return;
+
+    if (!data.ok) {
+      badge.textContent = 'ERROR';
+      badge.style.background = '#c0392b';
+      if(stats) stats.textContent = 'Error: ' + (data.error || 'unknown');
+      return;
+    }
+
+    const statusColors = {
+      'ONLINE':   '#27ae60',
+      'STANDBY':  '#7f8c8d',
+      'DEGRADED': '#e67e22',
+      'INDEXING': '#2980b9'
+    };
+    badge.textContent = data.status || 'STANDBY';
+    badge.style.background = statusColors[data.status] || '#7f8c8d';
+
+    if (stats) {
+      const topK = data.top_k !== undefined ? data.top_k : '5';
+      const thr = data.threshold !== undefined ? data.threshold : '0.3';
+      const chunks = data.total_chunks !== undefined ? data.total_chunks : '0';
+      stats.innerHTML = `<strong>${chunks}</strong> chunks indexed | Model: <strong>${data.embedder || 'N/A'}</strong> | Top-K: <strong>${topK}</strong> | Threshold: <strong>${thr}</strong>`;
+    }
+
+    // Populate sources list
+    loadRagSources();
+  }).catch(e => {
+    const badge = document.getElementById('rag-status-badge');
+    if(badge) { badge.textContent = 'OFFLINE'; badge.style.background = '#c0392b'; }
+  });
+}
+
+function loadRagSources() {
+  fetch('/api/rag/sources?_=' + Date.now()).then(r => r.json()).then(data => {
+    const el = document.getElementById('rag-sources-list');
+    if (!el) return;
+    if (!data.ok || !data.sources || Object.keys(data.sources).length === 0) {
+      el.innerHTML = '<span style="color:var(--muted)">No sources indexed yet.</span>';
+      return;
+    }
+    let html = '';
+    const grouped = {};
+    for (const [src, meta] of Object.entries(data.sources)) {
+      const ts = meta.ingested_at || '';
+      let mKey = 'Unknown Date';
+      if (ts.length >= 7) mKey = ts.substring(0, 7); // yyyy-mm
+      if (!grouped[mKey]) grouped[mKey] = [];
+      grouped[mKey].push({src, meta});
+    }
+
+    const sortedMonths = Object.keys(grouped).sort((a,b) => b.localeCompare(a));
+    for (const month of sortedMonths) {
+      let mLabel = month;
+      if (month !== 'Unknown Date') {
+         const d = new Date(month + "-01");
+         if (!isNaN(d)) mLabel = d.toLocaleString('en-US', {month:'long', year:'numeric'}).toUpperCase();
+      }
+      
+      const count = grouped[month].length;
+      html += `<details style="margin-top:8px;">
+                 <summary style="font-weight:700; color:var(--accent); font-size:10px; letter-spacing:0.5px; border-bottom:1px solid var(--border); padding:6px 0 4px 0; cursor:pointer; outline:none; user-select:none;">
+                   ${mLabel} <span style="float:right; opacity:0.6; font-weight:normal;">[ ${count} ]</span>
+                 </summary>
+                 <div style="padding-left: 2px;">`;
+      
+      for (const item of grouped[month]) {
+        const src = item.src;
+        const chunks = item.meta.chunks || '?';
+        const raw_ts = item.meta.ingested_at || '';
+        let dayTime = raw_ts;
+        if (raw_ts.includes(' ')) {
+           const parts = raw_ts.split(' ');
+           const dateParts = parts[0].split('-');
+           const day = dateParts.length === 3 ? dateParts[2] : '';
+           const timePart = parts[1].substring(0,5); 
+           dayTime = `${day} ${mLabel.substring(0,3)} - ${timePart}`; 
+        }
+
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="display:flex;flex-direction:column;flex:1;min-width:0;padding-right:8px;">
+            <span style="color:var(--text);overflow:hidden;text-overflow:ellipsis; white-space:nowrap; font-size:11px;"
+                  title="${src}">${src}</span>
+            <span style="color:var(--muted); font-size:9px;">${dayTime}</span>
+          </div>
+          <span style="color:var(--muted);white-space:nowrap;font-size:10px;">${chunks} chk</span>
+          <button onclick="ragDeleteSource('${src.replace(/'/g,"\\'")}', 'knowledge')"
+                  style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:12px;padding:0 4px 0 10px;"
+                  title="Remove source">✕</button>
+        </div>`;
+      }
+      html += `</div></details>`;
+    }
+    el.innerHTML = html;
+  });
+}
+
+function ragIngestText() {
+  const text  = document.getElementById('rag-ingest-text')?.value?.trim();
+  const label = document.getElementById('rag-ingest-label')?.value?.trim() || 'user_note';
+  if (!text) return;
+  fetch('/api/rag/ingest', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({type:'text', content:text, source:label, namespace:'knowledge'})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      showToast(`Indexed ${d.chunks} chunk(s) as "${label}".`, 'success');
+      document.getElementById('rag-ingest-text').value = '';
+      setTimeout(() => { loadRagStatus(); }, 300);
+    } else {
+      showToast('Ingest error: ' + d.error, 'error');
+    }
+  });
+}
+
+function ragIngestFile() {
+  const path = document.getElementById('rag-ingest-filepath')?.value?.trim();
+  if (!path) return;
+  fetch('/api/rag/ingest', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({type:'file', content:path, namespace:'documents'})
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      showToast(`File indexed: ${d.chunks} chunk(s).`, 'success');
+      document.getElementById('rag-ingest-filepath').value = '';
+      setTimeout(() => { loadRagStatus(); }, 300);
+    } else {
+      showToast('File ingest error: ' + d.error, 'error');
+    }
+  });
+}
+
+let searchController = null;
+
+function ragTestSearch() {
+  const q = document.getElementById('rag-search-query')?.value?.trim();
+  if (!q) return;
+  const resEl = document.getElementById('rag-search-results');
+  
+  // Update UI state
+  document.getElementById('rag-btn-search').style.display = 'none';
+  document.getElementById('rag-btn-stop').style.display = 'block';
+  
+  resEl.style.display = 'block';
+  resEl.innerHTML = '<span style="color:var(--muted)"><i class="fas fa-spinner fa-spin"></i> Searching...</span>';
+  
+  if (searchController) searchController.abort();
+  searchController = new AbortController();
+  
+  fetch('/api/rag/search', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({query:q, top_k:5}),
+    signal: searchController.signal
+  }).then(r => r.json()).then(d => {
+    resetSearchButtons();
+    if (!d.ok || !d.results?.length) {
+      resEl.innerHTML = '<span style="color:var(--muted)">No results found.</span>';
+      return;
+    }
+    resEl.innerHTML = d.results.map((r,i) =>
+      `<div style="padding:4px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--accent);font-weight:600;">[${i+1}]</span>
+        <span style="color:var(--muted);font-size:10px;"> score:${r.score} src:${r.source||'—'}</span><br>
+        <span>${r.text}</span>
+       </div>`
+    ).join('');
+  }).catch(err => {
+    resetSearchButtons();
+    if (err.name === 'AbortError') {
+      resEl.innerHTML = '<span style="color:var(--muted)">Search stopped by user.</span>';
+    } else {
+      resEl.innerHTML = `<span style="color:#e74c3c">Error: ${err.message}</span>`;
+    }
+  });
+}
+
+function ragStopSearch() {
+  if (searchController) {
+    searchController.abort();
+    searchController = null;
+  }
+}
+
+function resetSearchButtons() {
+  document.getElementById('rag-btn-search').style.display = 'block';
+  document.getElementById('rag-btn-stop').style.display = 'none';
+}
+
+function ragWipe() {
+  if (!confirm('Wipe the entire RAG vector store? This cannot be undone.')) return;
+  fetch('/api/rag/wipe', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({scope:'user'})})
+    .then(r => r.json()).then(d => {
+      if (d.ok) { showToast('Vector store wiped.', 'success'); loadRagStatus(); }
+      else showToast('Wipe failed: ' + d.error, 'error');
+    });
+}
+
+function ragDeleteSource(source, namespace) {
+  if (!confirm(`Remove source "${source}" from vector store?`)) return;
+  fetch('/api/rag/delete_source', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({source, namespace})})
+    .then(r => r.json()).then(d => {
+      if (d.ok) { showToast('Source removed.', 'success'); loadRagStatus(); }
+      else showToast('Error: ' + d.error, 'error');
+    });
+}
+
+// Auto-load RAG status when memory panel is activated
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(loadRagStatus, 800);
+});
+</script>
