@@ -1,4 +1,4 @@
-enabled: false
+enabled: true
 max_iterations: 10
-verbose_traces: false
-action_console_enabled: false
+verbose_traces: true
+action_console_enabled: true

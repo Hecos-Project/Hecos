@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.21.0 (Runtime Alpha)
+# Hecos - Versión 0.22.0 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ES
 
 ---
 
-> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.21.0`. Es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
+> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.22.0`. Es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local que une el razonamiento de IA con la ejecución del sistema a nivel root y redes avanzadas. Transforma el hardware local en una entidad digital soberana a través de un tablero profesional y una infraestructura de seguridad avanzada.
@@ -21,11 +21,11 @@ Basado en tres pilares fundamentales:
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada.
 
-Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Hecos 0.21.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
+Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Hecos 0.22.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
 
-## ✨ Características Principales (v0.21.0)
+## ✨ Características Principales (v0.22.0)
 * **📅 Calendario Integrado** — Módulo de calendario completo con seguimiento de días festivos y codificación de colores localizada de los eventos.
 * **⏰ Módulo Recordatorio** — Planificador de tareas impulsado por NLP con capacidades de repetición (snooze) y notificaciones activas del SO.
 * **💻 Ventana de Acciones (Action Window)** — Consola limpia de estilo terminal directamente dentro de la interfaz de usuario de chat para monitorizar la ejecución nativa del sistema y los procesos en segundo plano.
@@ -34,7 +34,10 @@ Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Hec
 * 🖼️ **Image Metadata Injection** — Los resultados de IA generativa ahora incluyen archivos sidecar JSON (.txt) con prompt, semilla e info del sampler para flujos profesionales.
 * 🎭 **Chat UI Mejorada** — Nuevos encabezados de chat con nombres de Usuario/Persona, marcas de tiempo y mejor posición de botones (Copiar/Editar/Regenerate).
 * 🔄 **Regeneración Corregida** — Se resolvieron problemas de duplicación de historial y errores de sesión durante la regeneración.
-* 🛡️ **Arquitectura de Privacidad de 3 Niveles** — Gestión unificada con modos **Normal**, **Auto-Wipe** (solo RAM) e **Incognito** (sin rastro).
+* 🗃️ **Archivo de Chat de Modo Dual** — Sistema de archivo contextual con recuperación individual de chats y borrado masivo.
+* 🧠 **RAG de Alto Rendimiento (FastEmbed)** — Memoria vectorial multiusuario nativa de CPU que utiliza ONNX y LanceDB para una ingesta de documentos ultra rápida.
+* 🔐 **Aislamiento de Vault por Usuario** — Arquitectura de memoria consolidada que garantiza una separación absoluta de la privacidad de los datos semánticos y el historial por perfil.
+* 🛡️ **Arquitectura de Privacidad de 3 Niveles** — Gestión unificada de sesiones con modos **Normal**, **Auto-Wipe** (limpieza automática), e **Incógnito** (cero rastro).
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Soporte nativo para el **Model Context Protocol**. Conéctate a miles de herramientas AI con un solo clic.
 * 🔭 **Deep MCP Discovery** — Explorador avanzado con búsqueda multi-registro (Smithery, MCPSkills, GitHub) e instalación inmediata.
 * 🔒 **Hecos PKI Profesional (HTTPS)** — Certificación Root CA integrada para habilitar Mic/Cámara en toda la LAN de forma segura.
@@ -47,7 +50,7 @@ Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Hec
 ---
 
 ## 🧠 Cómo Funciona
-**Hecos está actualmente en `v0.21.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
+**Hecos está actualmente en `v0.22.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
 * **Plugins** → Acciones y capacidades (sistema, web, multimedia, etc.).
 * **Memory** → Identidad y almacenamiento persistente.
 * **UI** → Capa de interacción con el usuario.

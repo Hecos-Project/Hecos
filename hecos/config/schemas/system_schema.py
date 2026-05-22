@@ -85,6 +85,18 @@ class BridgeConfig(BaseModel):
 
 # ─── COGNITION ────────────────────────────────────────────────────────────────
 
+class RAGConfig(BaseModel):
+    enabled: bool = False
+    embedder: str = "sentence_transformers"
+    embedder_model: str = "all-MiniLM-L6-v2"
+    chunk_size: int = 512
+    chunk_overlap: int = 64
+    top_k: int = 5
+    similarity_threshold: float = 0.3
+    auto_ingest_history: bool = False
+    persist_path: str = "memory/vector_store"
+
+
 class CognitionConfig(BaseModel):
     memory_enabled: bool = True
     episodic_memory: bool = True
@@ -92,6 +104,7 @@ class CognitionConfig(BaseModel):
     include_identity_context: bool = True
     include_self_awareness: bool = True
     max_history_messages: int = 20
+    rag: RAGConfig = Field(default_factory=RAGConfig)
 
 
 # ─── FILTERS ──────────────────────────────────────────────────────────────────

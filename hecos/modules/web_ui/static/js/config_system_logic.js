@@ -37,8 +37,18 @@ function populateSystemUI() {
     setCheck('cog-identity', cog.include_identity_context ?? true);
     setCheck('cog-awareness', cog.include_self_awareness ?? true);
     setVal('cog-max-history', cog.max_history_messages ?? 20);
-    
+
+    // RAG Vector Memory fields
+    const rag = cog.rag || {};
+    setCheck('cog-rag-enabled',      rag.enabled ?? false);
+    setCheck('cog-rag-auto-ingest',  rag.auto_ingest_history ?? false);
+    setVal('cog-rag-embedder-model', rag.embedder_model || 'all-MiniLM-L6-v2');
+    setVal('cog-rag-top-k',          rag.top_k ?? 5);
+    setVal('cog-rag-chunk-size',     rag.chunk_size ?? 512);
+    setVal('cog-rag-threshold',      rag.similarity_threshold ?? 0.3);
+
     loadMemoryStatus();
+    if (typeof loadRagStatus === 'function') loadRagStatus();
     
     // Auto-init one log window if it doesn't exist - SEQ AFTER REFRSH
     initLogsTab();
@@ -77,7 +87,18 @@ function buildSystemPayload() {
             clear_on_restart:        getC('cog-clear-restart', cog.clear_on_restart ?? false),
             include_identity_context:getC('cog-identity', cog.include_identity_context ?? true),
             include_self_awareness:  getC('cog-awareness', cog.include_self_awareness ?? true),
-            max_history_messages:    parseInt(getV('cog-max-history', cog.max_history_messages)) || 20
+            max_history_messages:    parseInt(getV('cog-max-history', cog.max_history_messages)) || 20,
+            rag: {
+                enabled:              getC('cog-rag-enabled', (cog.rag||{}).enabled ?? false),
+                auto_ingest_history:  getC('cog-rag-auto-ingest', (cog.rag||{}).auto_ingest_history ?? false),
+                embedder:             'sentence_transformers',
+                embedder_model:       getV('cog-rag-embedder-model', (cog.rag||{}).embedder_model || 'all-MiniLM-L6-v2'),
+                top_k:                parseInt(getV('cog-rag-top-k', (cog.rag||{}).top_k)) || 5,
+                chunk_size:           parseInt(getV('cog-rag-chunk-size', (cog.rag||{}).chunk_size)) || 512,
+                chunk_overlap:        (cog.rag||{}).chunk_overlap ?? 64,
+                similarity_threshold: parseFloat(getV('cog-rag-threshold', (cog.rag||{}).similarity_threshold)) || 0.3,
+                persist_path:         (cog.rag||{}).persist_path || 'memory/vector_store'
+            }
         },
         plugins: {
             SYS_NET: {
@@ -166,6 +187,13 @@ window.buildSystemPayload = buildSystemPayload;
 window.loadMemoryStatus = loadMemoryStatus;
 window.clearMemoryHistory = clearMemoryHistory;
 window.refreshModels = refreshModels;
+// RAG functions (defined in config_memory.html script block)
+if (typeof loadRagStatus    !== 'undefined') window.loadRagStatus    = loadRagStatus;
+if (typeof ragIngestText    !== 'undefined') window.ragIngestText    = ragIngestText;
+if (typeof ragIngestFile    !== 'undefined') window.ragIngestFile    = ragIngestFile;
+if (typeof ragTestSearch    !== 'undefined') window.ragTestSearch    = ragTestSearch;
+if (typeof ragWipe          !== 'undefined') window.ragWipe          = ragWipe;
+if (typeof ragDeleteSource  !== 'undefined') window.ragDeleteSource  = ragDeleteSource;
 
 // Safely bridge Log Engine functions if they exist
 if (typeof startLogStream !== 'undefined') window.startLogStream = startLogStream;

@@ -17,4 +17,4 @@ Hecos's WebUI is the modern graphical interface accessible through your browser.
 - **Flux Prompt Studio (v0.18.2)**: Dedicated imaging interface for Flux.1 with real-time prompt optimization and automatic generation of `.txt` sidecars containing metadata.
 - **Action Window (Console)**: A clean, terminal-style block directly inside the chat UI for monitoring native system execution and background processes.
 - **Control Room & Widgets**: A dedicated masonry-style interface within the WebUI where multiple interactive widgets can run simultaneously, such as OS Telemetry and Hardware Configuration.
-- **Current Version**: `0.21.0` (Runtime Alpha)
+- **Current Version**: `0.22.0` (Runtime Alpha)

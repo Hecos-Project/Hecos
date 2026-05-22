@@ -150,6 +150,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     from hecos.modules.web_ui.routes_system_persona    import init_system_persona_routes
     from hecos.modules.web_ui.routes_system_sysnet     import init_system_sysnet_routes
     from hecos.modules.web_ui.routes_system_diagnostic import init_system_diagnostic_routes
+    from hecos.modules.web_ui.routes_rag               import init_rag_routes
 
     init_system_status_routes    (app, cfg_mgr, root_dir, logger, _sm, _cpu_cache, get_vram_usage)
     init_system_control_routes   (app, logger, _sm)
@@ -157,6 +158,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_system_persona_routes   (app, root_dir, logger)
     init_system_sysnet_routes    (app, logger)
     init_system_diagnostic_routes(app, cfg_mgr, logger)
+    init_rag_routes              (app, cfg_mgr, logger)
 
     # ── Sub-application roots ──────────────────────────────────────────────
     from hecos.modules.web_ui.routes_explorer import init_explorer_routes

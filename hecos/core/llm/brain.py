@@ -262,6 +262,24 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
                 label = "User" if role == "user" else clean_name
                 history_block += f"{label}: {msg}\n"
         logger.debug("BRAIN", f"History injected: {len(history_rows)} messages")
+
+    # ── RAG Vector Memory context injection ────────────────────────────────────
+    rag_context_block = ""
+    try:
+        rag_cfg = cog.get("rag", {})
+        if rag_cfg.get("enabled", False):
+            from hecos.core.rag import get_rag_engine
+            rag_engine = get_rag_engine(config)
+            rag_context_block = rag_engine.context_for_query(
+                query=user_text,
+                user_id=user_id,
+                top_k=rag_cfg.get("top_k", 5),
+            )
+            if rag_context_block:
+                logger.debug("BRAIN", f"RAG: {len(rag_context_block)} chars injected into system prompt")
+    except Exception as _rag_err:
+        logger.warning(f"[BRAIN] RAG context retrieval failed: {_rag_err}")
+    # ──────────────────────────────────────────────────────────────────────────
     
     logger.debug("BRAIN", "Capabilities loading...")
     capabilities = load_capabilities()
@@ -375,6 +393,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"{visual_identity_block}"
         f"{memory_context}\n"
         f"{history_block}\n"
+        f"{rag_context_block}"
         f"{self_awareness}\n"
         f"{capabilities}\n"
         "### OPERATIVE RULES ###\n"
