@@ -40,6 +40,19 @@ window.controlRoom = (function () {
             window.controlRoomGrid.refresh();
             _loaded = true;
         }
+        // Recalculate layout immediately and then after transition finishes
+        const fixGrid = () => {
+            if (window._gsGrid) {
+                console.log('[ControlRoom] GridStack layout recalculation triggered.');
+                if (typeof window._gsGrid.onParentResize === 'function') window._gsGrid.onParentResize();
+                if (typeof window._gsGrid.column === 'function') window._gsGrid.column(2, 'none');
+            }
+        };
+
+        fixGrid(); // Immediate (might be 0 width but helps pre-load)
+        setTimeout(fixGrid, 150); // Mid-transition
+        setTimeout(fixGrid, 450); // Post-transition
+        setTimeout(fixGrid, 800); // Sanity check
         
         localStorage.setItem(STORAGE_KEY, '1');
     }
@@ -62,19 +75,7 @@ window.controlRoom = (function () {
         }
     }
 
-    // ── BroadcastChannel sync (shared channel, module is independent listener) ─
-    try {
-        const _channel = new BroadcastChannel('hecos_widgets');
-        _channel.onmessage = () => {
-            console.log('[ControlRoom] Widget sync signal received.');
-            refresh();
-        };
-    } catch (e) {
-        // BroadcastChannel not available (unlikely in modern browsers)
-        console.warn('[ControlRoom] BroadcastChannel unavailable:', e);
-    }
-
-    // localStorage cross-tab sync
+    // localStorage cross-tab sync (structural changes only)
     window.addEventListener('storage', (e) => {
         if (e.key === 'hecos_sidebar_sync' || e.key === 'hecos_room_sync') refresh();
     });

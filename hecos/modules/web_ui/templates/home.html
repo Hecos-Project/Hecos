@@ -13,7 +13,8 @@
 <!-- Module B standalone stylesheet -->
 <link rel="stylesheet" href="/assets/css/home.css?v={{ version }}">
 <!-- Control Room widget theme rules (.room-widget-card.theme-* etc.) -->
-<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=202605141445">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
+<link rel="stylesheet" href="/assets/css/control_room_panel.css?v={{ version }}&t=20260521">
 <link rel="stylesheet" href="/static/css/hecos_file_picker.css?v={{ version }}">
 <link rel="stylesheet" href="/ext/calendar/static/css/hecos_wheel_picker.css?v={{ version }}">
 <script>console.log("HECOS_ROOM_HOME_V2_ACTIVE");</script>
@@ -84,7 +85,7 @@
 </header>
 
 <!-- Widget Grid ──────────────────────────────────────────────── -->
-<main id="home-grid" role="main" aria-label="Widget Dashboard">
+<main id="home-grid" class="grid-stack" gs-column="6" role="main" aria-label="Widget Dashboard">
   <div class="room-loading">
     <i class="fas fa-spinner fa-spin" style="opacity:0.5;"></i>
     <span style="opacity:0.5;">{{ t('room_loading') or 'Loading widgets…' }}</span>
@@ -115,12 +116,13 @@
 <script src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
 
 <!-- Grid Engine -->
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
 <script src="/static/js/control_room_grid_sync.js?v={{ version }}"></script>
 <script src="/static/js/control_room_grid_render.js?v={{ version }}"></script>
 <script src="/static/js/control_room_grid_drag.js?v={{ version }}"></script>
 <script src="/static/js/control_room_grid_actions.js?v={{ version }}"></script>
 <script src="/static/js/control_room_grid_aes.js?v={{ version }}"></script>
-<script src="/static/js/control_room_grid.js?v={{ version }}&t=20260515"></script>
+<script src="/static/js/control_room_grid.js?v={{ version }}&t=20260521"></script>
 
 <!-- Global Events (Reminders & Backend Sync) -->
 <script src="/static/js/chat_events.js?v={{ version }}"></script>

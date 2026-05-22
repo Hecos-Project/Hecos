@@ -85,7 +85,31 @@ async function loadWidgetsPanel() {
                                 onclick="setRoomSpan('${w.extension_id}', 2, this)" title="Wide (2 columns)">2×</button>
                     </div>
                 </div>
+                ${w.extension_id === 'telemetry_widget' ? `
+                <!-- Telemetry Hardware Metrics -->
+                <div class="telemetry-extras" style="flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 14px; margin-top:0px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.05);">
+                    <div style="flex-basis:100%; font-size:10px; color:var(--text); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; opacity:0.9; margin-bottom:-5px;"><i class="fas fa-microchip"></i> Hardware Monitoring</div>
+                    <div class="widget-toggle-row">
+                        <span class="widget-toggle-lbl">CPU</span>
+                        <label class="switch no-autosave"><input type="checkbox" id="track-cpu-enabled" ${ (window.parent?.cfg?.plugins?.DASHBOARD?.track_cpu !== false) ? 'checked' : '' } onchange="toggleTelemetryMetric('track_cpu', this.checked)"><span class="slider"></span></label>
+                    </div>
+                    <div class="widget-toggle-row">
+                        <span class="widget-toggle-lbl">RAM</span>
+                        <label class="switch no-autosave"><input type="checkbox" id="track-ram-enabled" ${ (window.parent?.cfg?.plugins?.DASHBOARD?.track_ram !== false) ? 'checked' : '' } onchange="toggleTelemetryMetric('track_ram', this.checked)"><span class="slider"></span></label>
+                    </div>
+                    <div class="widget-toggle-row">
+                        <span class="widget-toggle-lbl">VRAM</span>
+                        <label class="switch no-autosave"><input type="checkbox" id="track-vram-enabled" ${ (window.parent?.cfg?.plugins?.DASHBOARD?.track_vram !== false) ? 'checked' : '' } onchange="toggleTelemetryMetric('track_vram', this.checked)"><span class="slider"></span></label>
+                    </div>
+                    <div style="flex-basis: 100%; font-size:10.5px; color:var(--yellow); line-height:1.4; opacity:0.9; margin-top: 2px;">
+                        <i class="fas fa-exclamation-triangle"></i> ${safeTranslate('webui_telemetry_warning')}
+                    </div>
+                </div>
+                ` : ''}
             `;
+            if (w.extension_id === 'telemetry_widget') {
+                card.style.flexWrap = 'wrap';
+            }
             container.appendChild(card);
 
             // Prepare for sync
@@ -258,6 +282,20 @@ async function setRoomSpan(id, span, btnEl) {
         } else throw new Error(data.error);
     } catch (err) {
         if (window.showToast) window.showToast(`Errore: ${err.message}`, 'error');
+    }
+}
+
+// ── Telemetry Extras ─────────────────────────────────────────────────────────
+function toggleTelemetryMetric(field, enabled) {
+    if (!window.parent || !window.parent.cfg) return;
+    const cfg = window.parent.cfg;
+    if (!cfg.plugins) cfg.plugins = {};
+    if (!cfg.plugins.DASHBOARD) cfg.plugins.DASHBOARD = {};
+    cfg.plugins.DASHBOARD[field] = enabled;
+    
+    console.log(`[TELEMETRY-SYNC] ${field}=${enabled}`);
+    if (window.parent.saveConfig) {
+        window.parent.saveConfig(true);
     }
 }
 

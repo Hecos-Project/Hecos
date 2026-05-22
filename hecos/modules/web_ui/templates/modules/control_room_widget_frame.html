@@ -27,11 +27,6 @@ window.t = function(key) { return window.I18N[key] || key; };
     const theme = auto ? 'native' : saved;
     if (theme && theme !== 'default') {
         document.documentElement.classList.add('theme-' + theme);
-        if (theme !== 'light' && theme !== 'corporate' && theme !== 'solarpunk') {
-            document.documentElement.style.colorScheme = 'dark';
-        } else {
-            document.documentElement.style.colorScheme = 'light';
-        }
     }
 })();
 
@@ -75,21 +70,10 @@ body {
 #main-wrapper::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 /* ── Widget Themes applied directly to the iframe body ── */
-body.wt-cyber {
-    background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.12), rgba(var(--bg3-rgb), 0.85)) !important;
-}
-body.wt-alert {
-    background: linear-gradient(135deg, rgba(var(--red-rgb), 0.12), rgba(var(--bg3-rgb), 0.88)) !important;
-}
-body.wt-glass {
-    background: rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(16px);
-}
-body.wt-ghost {
+/* Forced to transparent to show parent (Room Grid) backgrounds */
+body.wt-cyber, body.wt-alert, body.wt-glass, body.wt-ghost, body.wt-default {
     background: transparent !important;
-}
-body.wt-default {
-    background: var(--bg3) !important;
+    backdrop-filter: none !important;
 }
 
 #main-wrapper {
@@ -101,9 +85,11 @@ body.wt-default {
 /* Force all elements to respect Hecos variables, preventing "white browser defaults" */
 *, *::before, *::after { box-sizing: border-box; }
 
-body, html {
-    color: var(--text);
+body, html, html[class*="theme-"], body[class*="wt-"], #main-wrapper, .sidebar-card, .ql-body {
     background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
 }
 
 input[type="text"], input[type="number"], input[type="password"], textarea, .ql-input {
@@ -186,7 +172,7 @@ button:hover {
     {% set aes_style = "background-color: " ~ ext_manifest.bg_color ~ " !important; background-image: none !important;" %}
 {% endif %}
 
-<body class="wt-{{ widget_theme or 'default' }}" style="{{ aes_style }}">
+<body class="wt-{{ widget_theme or 'default' }}">
 
 <div id="main-wrapper">
   {% include ext_id ~ '_widget.html' %}

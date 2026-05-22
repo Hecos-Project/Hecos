@@ -7,7 +7,8 @@
 
     global._roomGridOpenAes = function(e, id, btn) {
         if (!global.controlRoomGrid?.isEditing()) return;
-        const card = document.querySelector(`.room-widget-card[data-id="${id}"]`);
+        const item = document.querySelector(`.grid-stack-item[gs-id="${id}"], .grid-stack-item[data-id="${id}"]`);
+        const card = item ? item.querySelector('.grid-stack-item-content') : null;
         if (!card) return;
 
         if (btn._popover) {
@@ -22,7 +23,14 @@
 
         const popover = document.createElement('div');
         popover.className = 'room-card-aes-popover';
-        card.appendChild(popover);
+        document.body.appendChild(popover); // Append to body to avoid overflow clipping
+        
+        // Dynamic positioning from button
+        const rect = btn.getBoundingClientRect();
+        popover.style.position = 'fixed'; // Use fixed for absolute top/left relative to viewport
+        popover.style.top = (rect.bottom + 8) + 'px';
+        popover.style.left = Math.min(window.innerWidth - 220, rect.left - 180) + 'px';
+
         card.classList.add('aes-active');
         btn._popover = popover;
         btn.classList.add('active');
@@ -37,46 +45,62 @@
         setTimeout(() => document.addEventListener('mousedown', closeHandler), 10);
 
         const cfg = window.cfg || (window.parent && window.parent.cfg);
-        const prefs = cfg?.widgets?.per_widget?.[id] || {};
+        const initialPrefs = cfg?.widgets?.per_widget?.[id] || {};
+        const currentAes = {
+            color: initialPrefs.bg_color || '',
+            image: initialPrefs.bg_image || ''
+        };
 
         if (typeof HecosAestheticPicker !== 'undefined') {
             new HecosAestheticPicker(popover, {
                 showStyle: true,
-                initialStyle: prefs.theme || 'default',
-                initialColor: prefs.bg_color || '',
-                initialImage: prefs.bg_image || '',
+                initialStyle: initialPrefs.theme || 'default',
+                initialColor: initialPrefs.bg_color || '',
+                initialImage: initialPrefs.bg_image || '',
                 onStyleChange: async (style) => {
                     card.className = card.className.replace(/theme-\S+/g, '') + ' theme-' + style.replace('theme-', '');
+                    if (global.controlRoomGrid) global.controlRoomGrid.lockRefresh(5000);
                     if (global._roomGridSync) global._roomGridSync.notify(id, 'theme', style);
                     _saveSingleAes(id, 'theme', style);
                 },
-                onColorLive: (hex) => card.style.backgroundColor = hex,
+                onColorLive: (hex) => card.style.setProperty('background-color', hex, 'important'),
                 onColorChange: async (hex) => {
-                    card.style.backgroundColor = hex;
+                    currentAes.color = hex;
+                    card.style.setProperty('background-color', hex, 'important');
+                    if (global.controlRoomGrid) global.controlRoomGrid.lockRefresh(5000);
                     if (global._roomGridSync) global._roomGridSync.notify(id, 'bg_color', hex);
-                    _saveBulkAes(id, hex, prefs.bg_image);
+                    _saveBulkAes(id, currentAes.color, currentAes.image);
                 },
                 onImageChange: async (path) => {
-                    card.style.backgroundImage = `url('/media/file?path=${encodeURIComponent(path)}')`;
-                    card.style.backgroundSize = 'cover'; card.style.backgroundPosition = 'center';
+                    currentAes.image = path;
+                    const url = `url('/media/file?path=${encodeURIComponent(path)}')`;
+                    card.style.setProperty('background-image', url, 'important');
+                    card.style.setProperty('background-size', 'cover', 'important'); 
+                    card.style.setProperty('background-position', 'center', 'important');
+                    if (global.controlRoomGrid) global.controlRoomGrid.lockRefresh(5000);
                     if (global._roomGridSync) global._roomGridSync.notify(id, 'bg_image', path);
-                    _saveBulkAes(id, prefs.bg_color, path);
+                    _saveBulkAes(id, currentAes.color, currentAes.image);
                 },
                 onClearImage: async () => {
-                    card.style.backgroundImage = 'none';
+                    currentAes.image = '';
+                    card.style.removeProperty('background-image');
+                    if (global.controlRoomGrid) global.controlRoomGrid.lockRefresh(5000);
                     if (global._roomGridSync) global._roomGridSync.notify(id, 'bg_image', '');
-                    _saveBulkAes(id, prefs.bg_color, '');
+                    _saveBulkAes(id, currentAes.color, '');
                 },
                 onReset: async () => {
                     try {
                         const resp = await fetch(`/api/widgets/${id}/aesthetics/reset`, { method: 'POST' });
                         if (resp.ok) {
-                            card.style.backgroundColor = ''; card.style.backgroundImage = '';
+                            card.style.removeProperty('background-color');
+                            card.style.removeProperty('background-image');
+                            card.style.removeProperty('background-size');
+                            card.style.removeProperty('background-position');
                             card.className = card.className.replace(/theme-\S+/g, '') + ' theme-default';
                             if (global._roomGridSync) {
                                 global._roomGridSync.notify(id, 'theme', 'default');
-                                global._roomGridSync.notify(id, 'bg_color', null);
-                                global._roomGridSync.notify(id, 'bg_image', null);
+                                global._roomGridSync.notify(id, 'bg_color', '');
+                                global._roomGridSync.notify(id, 'bg_image', '');
                             }
                             popover.remove(); btn._popover = null;
                             btn.classList.remove('active'); card.classList.remove('aes-active');

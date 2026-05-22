@@ -4,6 +4,11 @@
  * real-time updates via localStorage events, and persistence.
  */
 
+// BroadcastChannel for cross-tab sync
+if (typeof window.widgetChannel === 'undefined') {
+    window.widgetChannel = new BroadcastChannel('hecos_widgets');
+}
+
 let sidebarOrderMode = false;
 widgetChannel.onmessage = (event) => {
     console.log("[WIDGETS] Sync signal received via BroadcastChannel:", event.data);

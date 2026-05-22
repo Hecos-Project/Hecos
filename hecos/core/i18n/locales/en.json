@@ -438,6 +438,8 @@
         "webui_conf_plugin_desc_web": "Internet searches",
         "webui_conf_plugin_desc_webcam": "Webcam snapshot",
         "webui_conf_plugin_desc_webui": "Native Web Interface (this panel)",
+        "webui_desc_automation": "Full PC control: mouse, keyboard, and window management. Use with screenshot for a see-and-act loop.",
+        "webui_desc_browser": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms.",
         "webui_chat_prompt_help": "What are the commands and features of Hecos?",
         "webui_chat_prompt_media": "Play a track",
 
@@ -476,6 +478,8 @@
         "hub_mod_persona": "Soul",
         "hub_mod_filters": "Output Filters",
         "hub_mod_memory": "AI Memory",
+        "hub_mod_automation": "PC Automation",
+        "hub_mod_browser": "Browser Automation",
         "hub_mod_agent": "Agent Engine",
         "hub_mod_neural_link": "Neural Link",
         "hub_mod_voice": "Audio & Voice",
@@ -507,6 +511,7 @@
         "hub_mod_users": "Users",
         "hub_mod_security": "Security (CA)",
         "hub_mod_plugins": "Hecos Module Manager",
+        "hub_mod_plugins_native": "Native Plugins & Extensions",
         "hub_mod_logs": "Live Logs",
         "hub_mod_privacy": "Privacy & Data",
         "hub_mod_aesthetics": "Aesthetics & Themes",
@@ -847,6 +852,10 @@
         "webui_media_open_folder": "Open Storage Folder",
         "webui_mp_select_playlist": "Select Playlist...",
         "sidebar_widgets_global_title": "Show Widgets in Sidebar",
-        "sidebar_widgets_global_desc": "If disabled, the widgets section will completely disappear from the sidebar."
+        "sidebar_widgets_global_desc": "If disabled, the widgets section will completely disappear from the sidebar.",
+        "webui_telemetry_cpu": "CPU Monitoring",
+        "webui_telemetry_ram": "RAM Monitoring",
+        "webui_telemetry_vram": "VRAM Monitoring",
+        "webui_telemetry_warning": "WARNING: Enabling real-time hardware monitoring may cause instability or performance drops on low-resource systems."
     }
 }

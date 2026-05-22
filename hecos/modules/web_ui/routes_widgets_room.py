@@ -142,6 +142,7 @@ def init_widget_room_routes(app, config_manager, _log, _get_config, _save_config
         return jsonify({"ok": False, "error": "Failed to update config"}), 500
 
 
+
     @app.route("/api/widgets/<ext_id>/room_height", methods=["POST"])
     @login_required
     def api_set_widget_room_height(ext_id):

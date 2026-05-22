@@ -12,19 +12,9 @@
         <div id="live-status" style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
             <div class="stat"><div class="stat-prefix"><i class="fas fa-server"></i> <span class="stat-label">System:</span></div> <span id="tel-backend" class="stat-val">—</span></div>
             
-            {% set track_cpu = zconfig.plugins.DASHBOARD.track_cpu if (zconfig and zconfig.plugins and zconfig.plugins.DASHBOARD and 'track_cpu' in zconfig.plugins.DASHBOARD) else True %}
-            {% set track_ram = zconfig.plugins.DASHBOARD.track_ram if (zconfig and zconfig.plugins and zconfig.plugins.DASHBOARD and 'track_ram' in zconfig.plugins.DASHBOARD) else True %}
-            {% set track_vram = zconfig.plugins.DASHBOARD.track_vram if (zconfig and zconfig.plugins and zconfig.plugins.DASHBOARD and 'track_vram' in zconfig.plugins.DASHBOARD) else True %}
-            
-            {% if track_cpu %}
-            <div class="stat"><div class="stat-prefix"><i class="fas fa-microchip"></i> <span class="stat-label">CPU:</span></div> <span id="tel-cpu" class="stat-val">—</span></div>
-            {% endif %}
-            {% if track_ram %}
-            <div class="stat"><div class="stat-prefix"><i class="fas fa-memory"></i> <span class="stat-label">RAM:</span></div> <span id="tel-ram" class="stat-val">—</span></div>
-            {% endif %}
-            {% if track_vram %}
-            <div class="stat"><div class="stat-prefix"><i class="fas fa-video"></i> <span class="stat-label">VRAM:</span></div> <span id="tel-vram" class="stat-val">—</span></div>
-            {% endif %}
+            <div class="stat" id="row-tel-cpu" style="display:none;"><div class="stat-prefix"><i class="fas fa-microchip"></i> <span class="stat-label">CPU:</span></div> <span id="tel-cpu" class="stat-val">—</span></div>
+            <div class="stat" id="row-tel-ram" style="display:none;"><div class="stat-prefix"><i class="fas fa-memory"></i> <span class="stat-label">RAM:</span></div> <span id="tel-ram" class="stat-val">—</span></div>
+            <div class="stat" id="row-tel-vram" style="display:none;"><div class="stat-prefix"><i class="fas fa-video"></i> <span class="stat-label">VRAM:</span></div> <span id="tel-vram" class="stat-val">—</span></div>
             
             <hr style="border:none; border-top:1px solid rgba(255,255,255,0.05); margin:4px 0;">
             
@@ -50,11 +40,18 @@
 
         <script>
         (function() {
-            function updateMetric(id, val) {
+            function updateMetric(id, val, rowId) {
                 const el = document.getElementById(id);
+                const row = rowId ? document.getElementById(rowId) : null;
                 if (!el) return;
-                el.textContent = (val !== undefined && val !== null) ? val + '%' : '—';
-                el.className = 'stat-val ' + (val >= 90 ? 'val-err' : '');
+                if (val !== undefined && val !== null) {
+                    el.textContent = val + '%';
+                    el.className = 'stat-val ' + (val >= 90 ? 'val-err' : '');
+                    if (row) row.style.display = 'flex';
+                } else {
+                    el.textContent = '—';
+                    if (row) row.style.display = 'none';
+                }
             }
 
             function updateStatus(id, val) {
@@ -76,9 +73,9 @@
                     const d = await r.json();
                     
                     setSpan('tel-backend', d.backend || '—');
-                    updateMetric('tel-cpu', d.cpu);
-                    updateMetric('tel-ram', d.ram);
-                    updateMetric('tel-vram', d.vram);
+                    updateMetric('tel-cpu', d.cpu, 'row-tel-cpu');
+                    updateMetric('tel-ram', d.ram, 'row-tel-ram');
+                    updateMetric('tel-vram', d.vram, 'row-tel-vram');
                     
                     updateStatus('tel-mic', d.mic);
                     updateStatus('tel-tts', d.tts);
