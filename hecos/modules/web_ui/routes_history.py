@@ -119,12 +119,34 @@ def rename_session(session_id):
 
 @history_bp.route("/api/chat/sessions/all", methods=["DELETE"])
 def delete_all_sessions():
-    """Deletes all sessions completely."""
+    """Deletes all ACTIVE sessions completely."""
     try:
         ok = _sm().delete_all_sessions()
         return jsonify({"ok": ok})
     except Exception as e:
         logger.error(f"[HISTORY] delete_all_sessions error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@history_bp.route("/api/chat/sessions/archive-all", methods=["POST"])
+def archive_all_sessions():
+    """Archives all active sessions."""
+    try:
+        ok = _sm().archive_all_sessions()
+        return jsonify({"ok": ok})
+    except Exception as e:
+        logger.error(f"[HISTORY] archive_all_sessions error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@history_bp.route("/api/chat/sessions/delete-archived", methods=["DELETE"])
+def delete_all_archived_sessions():
+    """Deletes completely all ARCHIVED sessions."""
+    try:
+        ok = _sm().delete_all_archived_sessions()
+        return jsonify({"ok": ok})
+    except Exception as e:
+        logger.error(f"[HISTORY] delete_all_archived_sessions error: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 

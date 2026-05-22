@@ -192,6 +192,8 @@ hecos/memory/users/
 hecos/memory/vaults/
 hecos/memory/core_identity.json
 hecos/memory/user_profile.json
+hecos/memory/user_profile.yaml
+hecos/memory/vector_store/
 
 # Media: Ignore generated content
 hecos/media/audio/*

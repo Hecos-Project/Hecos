@@ -99,6 +99,35 @@ window.toggleShowArchived = async function() {
             : (window.I18N?.webui_chat_archive_open || 'Open Archive');
         btn.style.opacity = window.chatHistoryState.showArchived ? '1' : '0.5';
     }
+    
+    // Update the Delete All button and New Chat button based on context
+    const delBtn = document.getElementById('ch-delete-all-btn');
+    const newChatBtn = document.getElementById('ch-new-chat-btn');
+    
+    if (delBtn) {
+        if (window.chatHistoryState.showArchived) {
+            delBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            delBtn.title = window.I18N?.webui_chat_delete_all_title || 'Delete all archived forever';
+            
+            if(newChatBtn) {
+                newChatBtn.innerHTML = '<span class="icon"><i class="fas fa-folder-open"></i></span> ' + (window.I18N?.webui_chat_archive_label || 'ARCHIVE MODE');
+                newChatBtn.style.pointerEvents = 'none';
+                newChatBtn.style.opacity = '0.7';
+                newChatBtn.style.background = 'rgba(255,255,255,0.05)';
+            }
+        } else {
+            delBtn.innerHTML = '<i class="fas fa-archive"></i>';
+            delBtn.title = window.I18N?.webui_chat_archive_all_title || 'Archive all active';
+            
+            if(newChatBtn) {
+                newChatBtn.innerHTML = '<span class="icon"><i class="fas fa-comment-dots"></i></span> ' + (window.I18N?.webui_chat_new || 'Nuova Chat');
+                newChatBtn.style.pointerEvents = 'auto';
+                newChatBtn.style.opacity = '1';
+                newChatBtn.style.background = '';
+            }
+        }
+    }
+    
     await window.loadChatSessions();
 };
 
@@ -124,18 +153,35 @@ window.deleteChatSession = async function (e, sessionId) {
 
 window.deleteAllChatSessions = async function (e) {
     if (e) e.stopPropagation();
-    const msg = window.I18N?.webui_chat_delete_confirm_all || 'Delete ALL conversations?';
-    if (!confirm(msg)) return;
     
-    const res = await window._historyPost(`/api/chat/sessions/all`, {}, 'DELETE');
-    if (res.ok) {
-        if (window._clearChatDOM) window._clearChatDOM();
-        else if (window.chatArea) window.chatArea.innerHTML = '';
-        window.chatHistoryState.activeSessionId = null;
-        await window.loadChatSessions();
-        await window.newChatSession();
+    const isArchiveView = window.chatHistoryState.showArchived;
+    
+    if (isArchiveView) {
+        const msg = window.I18N?.webui_chat_delete_confirm_all || 'Delete ALL archived conversations forever?';
+        if (!confirm(msg)) return;
+        const res = await window._historyPost(`/api/chat/sessions/delete-archived`, {}, 'DELETE');
+        if (res.ok) {
+            if (window._clearChatDOM) window._clearChatDOM();
+            else if (window.chatArea) window.chatArea.innerHTML = '';
+            window.chatHistoryState.activeSessionId = null;
+            await window.loadChatSessions();
+            await window.newChatSession();
+        } else {
+            alert('Errore durante l\'eliminazione: ' + res.error);
+        }
     } else {
-        alert('Errore durante l\'eliminazione: ' + res.error);
+        const msg = window.I18N?.webui_chat_archive_confirm_all || 'Archive ALL active conversations?';
+        if (!confirm(msg)) return;
+        const res = await window._historyPost(`/api/chat/sessions/archive-all`, {}, 'POST');
+        if (res.ok) {
+            if (window._clearChatDOM) window._clearChatDOM();
+            else if (window.chatArea) window.chatArea.innerHTML = '';
+            window.chatHistoryState.activeSessionId = null;
+            await window.loadChatSessions();
+            await window.newChatSession();
+        } else {
+            alert('Errore durante l\'archiviazione: ' + res.error);
+        }
     }
 };
 

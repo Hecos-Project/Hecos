@@ -96,11 +96,28 @@ function renderSessionList() {
             const timeStr    = s.updated_at ? s.updated_at.slice(11, 16) : '';
             const title      = escapeHistoryHtml(s.title || 'Chat senza titolo');
             const isNormal   = s.privacy_mode === 'normal';
-            const actionIcon  = isNormal ? (window.chatHistoryState.showArchived ? '♻️' : '✖️') : '🗑️';
-            const actionTitle = isNormal ? (window.chatHistoryState.showArchived ? (window.I18N?.webui_chat_archive_restore || 'Restore') : (window.I18N?.webui_chat_archive_close || 'Archive')) : (window.I18N?.webui_chat_delete || 'Delete');
-            const actionFn    = isNormal
-                ? `window.archiveChatSession(event, '${s.id}', ${!window.chatHistoryState.showArchived})`
-                : `window.deleteChatSession(event, '${s.id}')`;
+            
+            let actionsHtml = '';
+            
+            if (isNormal) {
+                if (window.chatHistoryState.showArchived) {
+                    const restoreTitle = window.I18N?.webui_chat_archive_restore || 'Restore';
+                    const restoreFn    = `window.archiveChatSession(event, '${s.id}', false)`;
+                    actionsHtml += `<button class="history-action-btn" title="${restoreTitle}" onclick="${restoreFn}">♻️</button>`;
+                    
+                    const delTitle = window.I18N?.webui_chat_delete || 'Delete forever';
+                    const delFn    = `window.deleteChatSession(event, '${s.id}')`;
+                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${delTitle}" onclick="${delFn}">🗑️</button>`;
+                } else {
+                    const arcTitle = window.I18N?.webui_chat_archive_close || 'Archive';
+                    const arcFn    = `window.archiveChatSession(event, '${s.id}', true)`;
+                    actionsHtml += `<button class="history-action-btn" title="${arcTitle}" onclick="${arcFn}">✖️</button>`;
+                }
+            } else {
+                const descTitle = window.I18N?.webui_chat_delete || 'Delete';
+                const descFn    = `window.deleteChatSession(event, '${s.id}')`;
+                actionsHtml += `<button class="history-action-btn" title="${descTitle}" onclick="${descFn}">🗑️</button>`;
+            }
 
             html += `
         <div class="history-item${isActive ? ' active' : ''}" data-id="${s.id}" onclick="window.activateChatSession('${s.id}')">
@@ -112,7 +129,7 @@ function renderSessionList() {
             </div>
           </div>
           <div class="history-item-actions">
-            <button class="history-action-btn" title="${actionTitle}" onclick="${actionFn}">${actionIcon}</button>
+            ${actionsHtml}
           </div>
         </div>`;
         });

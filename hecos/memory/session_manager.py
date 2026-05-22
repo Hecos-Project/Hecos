@@ -431,23 +431,70 @@ def delete_session(session_id: str) -> bool:
 
 
 def delete_all_sessions() -> bool:
-    """Deletes all sessions across RAM and DB. Returns True if successful."""
+    """Deletes all ACTIVE sessions (archived are protected unless explicitly selected)."""
+    # clear only active ram sessions
     _ram_sessions.clear()
     try:
         conn = sqlite3.connect(PATH_DB)
         cur  = conn.cursor()
-        cur.execute("DELETE FROM history")
-        cur.execute("DELETE FROM sessions")
+        
+        # We need to know which ones to delete
+        cur.execute("SELECT id FROM sessions WHERE is_archived = 0")
+        active_ids = [r[0] for r in cur.fetchall()]
+        if active_ids:
+            holders = ",".join("?" for _ in active_ids)
+            cur.execute(f"DELETE FROM history WHERE session_id IN ({holders})", active_ids)
+            cur.execute(f"DELETE FROM sessions WHERE id IN ({holders})", active_ids)
+        
         conn.commit()
         conn.close()
         
         conn2 = sqlite3.connect(PATH_DB)
         conn2.execute("VACUUM")
         conn2.close()
-        logger.info("[SESSION] Deleted all sessions (RAM & DB)")
+        logger.info("[SESSION] Deleted all active sessions (RAM & DB)")
         return True
     except Exception as e:
         logger.error(f"[SESSION] delete_all_sessions error: {e}")
+        return False
+
+def archive_all_sessions() -> bool:
+    """Marks all non-RAM normal sessions as archived."""
+    try:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = sqlite3.connect(PATH_DB)
+        cur  = conn.cursor()
+        cur.execute("UPDATE sessions SET is_archived = 1, updated_at = ? WHERE is_archived = 0 AND privacy_mode = 'normal'", (now,))
+        conn.commit()
+        conn.close()
+        logger.info("[SESSION] Archived all active DB sessions")
+        return True
+    except Exception as e:
+        logger.error(f"[SESSION] archive_all_sessions error: {e}")
+        return False
+
+def delete_all_archived_sessions() -> bool:
+    """Deletes only sessions that are currently marked as archived."""
+    try:
+        conn = sqlite3.connect(PATH_DB)
+        cur  = conn.cursor()
+        cur.execute("SELECT id FROM sessions WHERE is_archived = 1")
+        archived_ids = [r[0] for r in cur.fetchall()]
+        if not archived_ids:
+            return True
+        placeholders = ",".join("?" for _ in archived_ids)
+        cur.execute(f"DELETE FROM history WHERE session_id IN ({placeholders})", archived_ids)
+        cur.execute(f"DELETE FROM sessions WHERE id IN ({placeholders})", archived_ids)
+        conn.commit()
+        conn.close()
+        
+        conn2 = sqlite3.connect(PATH_DB)
+        conn2.execute("VACUUM")
+        conn2.close()
+        logger.info(f"[SESSION] Deleted {len(archived_ids)} archived DB sessions")
+        return True
+    except Exception as e:
+        logger.error(f"[SESSION] delete_all_archived_sessions error: {e}")
         return False
 
 
