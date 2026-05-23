@@ -29,6 +29,40 @@ def send(cfg, recipient: str, text: str, is_app_open: bool = False) -> str:
 
     phone = phone.replace(" ", "").replace("-", "")
 
+    # Auto-detect if WhatsApp is already running on Windows
+    if not is_app_open and platform.system() == "Windows":
+        import subprocess
+        try:
+            # Check for the Desktop app process
+            output = subprocess.check_output('tasklist /FI "IMAGENAME eq WhatsApp.exe"', shell=True).decode('utf-8', errors='ignore')
+            if 'WhatsApp.exe' in output:
+                is_app_open = True
+            else:
+                # Alternatively check if any window title contains "WhatsApp" (e.g., a browser tab)
+                import ctypes
+                EnumWindows = ctypes.windll.user32.EnumWindows
+                EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+                GetWindowText = ctypes.windll.user32.GetWindowTextW
+                GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
+                IsWindowVisible = ctypes.windll.user32.IsWindowVisible
+
+                def foreach_window(hwnd, lParam):
+                    if IsWindowVisible(hwnd):
+                        length = GetWindowTextLength(hwnd)
+                        if length > 0:
+                            buff = ctypes.create_unicode_buffer(length + 1)
+                            GetWindowText(hwnd, buff, length + 1)
+                            if "WhatsApp" in buff.value:
+                                return False # Stop enumeration, we found it
+                    return True
+                
+                # If EnumWindows returns False, it means our callback returned False (found WhatsApp)
+                if not EnumWindows(EnumWindowsProc(foreach_window), 0):
+                    is_app_open = True
+
+        except Exception as e:
+            logger.debug("MESSENGER/WhatsApp", f"Auto-detect failed: {e}")
+
     try:
         import pyautogui  # type: ignore
         url_app = f"whatsapp://send?phone={phone}&text={quote(text)}"
