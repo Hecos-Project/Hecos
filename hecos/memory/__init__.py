@@ -66,6 +66,15 @@ def initialize_vault():
             message TEXT
         )
     ''')
+    
+    # ── Schema Migration ────────────────────────────────────────────────────────
+    # Add session_id column for backward compatibility with older DBs
+    try:
+        cursor.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
+    # ────────────────────────────────────────────────────────────────────────────
+    
     conn.commit()
     conn.close()
     logger.info(f"[MEMORY] Vault initialized at: {os.path.abspath(PATH_DB)}")

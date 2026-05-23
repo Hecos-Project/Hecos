@@ -1,6 +1,6 @@
 """
 RAG Module — Public Facade
-Hecos v0.22.0
+Hecos v0.23.0
 
 Usage:
     from hecos.core.rag import get_rag_engine

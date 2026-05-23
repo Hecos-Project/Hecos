@@ -71,9 +71,6 @@ def get_plugin_module(tag, legacy=False):
                 is_legacy = hasattr(new_module, "info") and not hasattr(new_module, "tools")
                 
                 if is_legacy:
-                    # For legacy, we might need to wrap it if the system expects an instance,
-                    # but usually _loaded_legacy_plugins holds the module or instance.
-                    # Hecos usually expects a class instance for class-based, or module for functional.
                     _loaded_legacy_plugins[tag] = new_module
                 else:
                     _loaded_plugins[tag] = new_module
@@ -83,7 +80,22 @@ def get_plugin_module(tag, legacy=False):
                     _plugin_config_schemas[tag] = new_module.tools.config_schema
                 elif hasattr(new_module, "config_schema"):
                     _plugin_config_schemas[tag] = new_module.config_schema()
-                    
+
+                # ── on_load hook (matches eager loader in module_scanner.py) ────
+                if hasattr(new_module, "on_load") and callable(new_module.on_load):
+                    try:
+                        # Fetch full config so on_load can navigate to its own section
+                        try:
+                            from hecos.app.config import ConfigManager
+                        except ImportError:
+                            from app.config import ConfigManager
+                        full_cfg = ConfigManager().config
+                        new_module.on_load(full_cfg)
+                        logger.warning(f"[LAZY LOAD] on_load() called for awakened plugin '{tag}'")
+                    except Exception as _ol_e:
+                        logger.error(f"[LAZY LOAD] on_load() error for {tag}: {_ol_e}")
+                # ─────────────────────────────────────────────────────────────────
+
                 # Clean up lazy path reference
                 del _lazy_plugins_paths[tag]
                 

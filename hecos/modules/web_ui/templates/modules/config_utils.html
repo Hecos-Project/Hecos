@@ -31,14 +31,14 @@
     <div class="card-title"><i class="fas fa-bolt"></i> Command Executor</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_executor_enable') or 'Enable Executor Module' }}</div>
-      <label class="switch"><input type="checkbox" id="executor-enabled" data-plugin="EXECUTOR"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="executor-enabled" onchange="window.updateConfig('plugins.EXECUTOR.enabled', this.checked)"><span class="slider"></span></label>
     </div>
     <p style="font-size:12px; color:var(--muted);">{{ t('webui_executor_enable_desc') or 'Master switch for all Executor capabilities: file management, shell commands, and Python sandbox.' }}</p>
   </div>
 
   <!-- PYTHON SANDBOX -->
   <div class="card">
-    <div class="card-title">🐍 Python Sandbox</div>
+    <div class="card-title"><i class="fas fa-bolt"></i> Python Sandbox</div>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_sandbox_desc') or 'The Sandbox executes Python code in a strict AST security jail. Network and filesystem access are blocked inside the sandbox.' }}</p>
     <div class="field">
       <label>{{ t('webui_executor_timeout') or 'Execution Timeout (seconds)' }}</label>
@@ -50,7 +50,7 @@
 
   <!-- SHELL COMMANDS -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-terminal"></i> Shell Command Execution</div>
+    <div class="card-title"><i class="fas fa-bolt"></i> Shell Command Execution</div>
     <div class="toggle-row">
       <div class="toggle-info">{{ t('webui_executor_shell_enable') or 'Allow Shell Commands (cmd / bash)' }}</div>
       <label class="switch"><input type="checkbox" id="executor-shell-enabled" onchange="savePluginKey('EXECUTOR','enable_shell_commands',this.checked)"><span class="slider"></span></label>
@@ -65,7 +65,7 @@
 
   <!-- FILE MANAGER -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-folder-open"></i> File Manager Limits</div>
+    <div class="card-title"><i class="fas fa-bolt"></i> File Manager Limits</div>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_fm_desc') or 'Configure safety boundaries for file read/write operations.' }}</p>
     <div class="field">
       <label>{{ t('webui_executor_max_read_lines') or 'Max Lines to Read per Request' }}</label>
@@ -104,7 +104,7 @@
 
   <!-- MOUSE SETTINGS -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-mouse-pointer"></i> Mouse Settings</div>
+    <div class="card-title"><i class="fas fa-mouse"></i> Mouse Settings</div>
     <div class="field">
       <label>Move Duration (seconds)</label>
       <input type="number" id="automation-move-duration" min="0" max="2" step="0.05" placeholder="0.15"
@@ -115,7 +115,7 @@
 
   <!-- KEYBOARD SETTINGS -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-keyboard"></i> Keyboard Settings</div>
+    <div class="card-title"><i class="fas fa-mouse"></i> Keyboard Settings</div>
     <div class="field">
       <label>Keystroke Interval (seconds)</label>
       <input type="number" id="automation-type-interval" min="0" max="0.5" step="0.005" placeholder="0.02"
@@ -126,7 +126,7 @@
 
   <!-- WINDOW CONTROL -->
   <div class="card">
-    <div class="card-title">🪟 Window Management</div>
+    <div class="card-title"><i class="fas fa-mouse"></i> Window Management</div>
     <div class="toggle-row">
       <div class="toggle-info">Enable Window Control (list, focus, minimize, maximize)</div>
       <label class="switch"><input type="checkbox" id="automation-window-control"

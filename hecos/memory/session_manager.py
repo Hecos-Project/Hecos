@@ -162,10 +162,8 @@ def get_sessions(include_archived: bool = False) -> list:
         cur  = conn.cursor()
         
         query = """
-            SELECT s.id, s.title, s.created_at, s.updated_at, s.privacy_mode, s.is_incognito, s.is_archived,
-                   COUNT(h.id) as message_count
+            SELECT s.id, s.title, s.created_at, s.updated_at, s.privacy_mode, s.is_incognito, s.is_archived
             FROM sessions s
-            LEFT JOIN history h ON h.session_id = s.id
             WHERE s.privacy_mode = 'normal'
         """
         if not include_archived:
@@ -174,12 +172,36 @@ def get_sessions(include_archived: bool = False) -> list:
             query += " AND s.is_archived = 1 "
             
         query += """
-            GROUP BY s.id
             ORDER BY s.updated_at DESC
         """
         cur.execute(query)
         results = [dict(r) for r in cur.fetchall()]
         conn.close()
+        
+        # Hydrate message_count from the dynamic user vault
+        try:
+            try:
+                from flask_login import current_user
+                uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+            except Exception:
+                uid = "admin"
+            from hecos.memory.brain_interface import _db_path
+            import os
+            db = _db_path(uid)
+            if os.path.exists(db):
+                with sqlite3.connect(db) as user_conn:
+                    user_cur = user_conn.cursor()
+                    for r in results:
+                        cnt = user_cur.execute(
+                            "SELECT COUNT(*) FROM history WHERE session_id = ?", 
+                            (r["id"],)
+                        ).fetchone()[0]
+                        r["message_count"] = cnt
+            else:
+                for r in results: r["message_count"] = 0
+        except Exception as dyn_e:
+            logger.error(f"[SESSION] get_sessions count hydration error: {dyn_e}")
+            for r in results: r.setdefault("message_count", 0)
     except Exception as e:
         logger.error(f"[SESSION] get_sessions DB error: {e}")
 
@@ -237,7 +259,19 @@ def get_session_messages(session_id: str) -> list:
         return list(_ram_sessions[session_id]["messages"])
     # Fall back to DB
     try:
-        conn = sqlite3.connect(PATH_DB)
+        try:
+            from flask_login import current_user
+            uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+        except Exception:
+            uid = "admin"
+            
+        from hecos.memory.brain_interface import _db_path
+        db = _db_path(uid)
+        import os
+        if not os.path.exists(db):
+            return []
+            
+        conn = sqlite3.connect(db)
         cur  = conn.cursor()
         cur.execute(
             "SELECT id, timestamp, role, message FROM history WHERE session_id = ? ORDER BY id ASC",

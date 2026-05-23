@@ -293,6 +293,7 @@
         "webui_chat_hint": "Enter to send · Shift+Enter for new line",
         "webui_chat_btn_clear": "Clear chat",
         "webui_chat_btn_clear_input": "Clear input field",
+        "webui_conf_btn_sync": "Sync Models",
         "webui_chat_btn_send": "Send",
         "webui_chat_err_connected": "Connection lost.",
         "webui_chat_err_general": "Error:",
@@ -860,6 +861,10 @@
         "webui_telemetry_cpu": "CPU Monitoring",
         "webui_telemetry_ram": "RAM Monitoring",
         "webui_telemetry_vram": "VRAM Monitoring",
-        "webui_telemetry_warning": "WARNING: Enabling real-time hardware monitoring may cause instability or performance drops on low-resource systems."
+        "webui_telemetry_warning": "WARNING: Enabling real-time hardware monitoring may cause instability or performance drops on low-resource systems.",
+        "ext_messenger_accounts_title": "Configured messaging accounts:",
+        "ext_messenger_check_title": "Connection status for messaging services:",
+        "ext_messenger_title": "Messaging",
+        "webui_desc_messenger": "Send and receive messages via Telegram, WhatsApp, and Discord."
     }
 }

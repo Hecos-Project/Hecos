@@ -31,6 +31,7 @@ window.CONFIG_HUB = {
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
         { id: 'bridge',    label: 'hub_mod_bridge',       icon: '<i class="fas fa-project-diagram"></i>', cat: 'CONNETTIVITÀ', isCore: true },
+        { id: 'messenger', label: 'ext_messenger_title',  icon: '<i class="fab fa-telegram-plane"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MESSENGER' },
         { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '<i class="fas fa-mobile-alt"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
@@ -84,15 +85,19 @@ window.CONFIG_HUB = {
 };
 
 window.getIconForModule = function(id, name, metaIcon) {
-    if (metaIcon && metaIcon.includes('<i ')) return metaIcon;
+    if (metaIcon && metaIcon.includes('<i ') && !metaIcon.includes('fa-puzzle-piece')) return metaIcon;
     
     // Explicit mapping for widgets/extensions
     const extIcons = {
         'media_player_widget': '<i class="fas fa-music"></i>',
-        'quick_links': '<i class="fas fa-bolt"></i>',
-        'calendar': '<i class="fas fa-calendar-alt"></i>',
-        'reminder': '<i class="fas fa-clock"></i>',
-        'emoticons': '<i class="fas fa-smile"></i>'
+        'quick_links':         '<i class="fas fa-bolt"></i>',
+        'calendar':            '<i class="fas fa-calendar-alt"></i>',
+        'reminder':            '<i class="fas fa-clock"></i>',
+        'emoticons':           '<i class="fas fa-smile"></i>',
+        'weather_widget':      '<i class="fas fa-cloud-sun"></i>',
+        'telemetry_widget':    '<i class="fas fa-tachometer-alt"></i>',
+        'weather':             '<i class="fas fa-cloud-sun"></i>',
+        'dashboard':           '<i class="fas fa-tachometer-alt"></i>'
     };
     if (extIcons[id]) return extIcons[id];
 
@@ -119,6 +124,7 @@ window.CONFIG_HUB.tagMap = {
     'SYS_NET': 'sysnet',
     'MODELS': 'backend',
     'DRIVE_EDITOR': 'drive-editor',
+    'MESSENGER': 'messenger',
     'REMINDER': 'reminder',
     'CALENDAR': 'calendar',
     'MEDIA_PLAYER': 'media',
@@ -137,6 +143,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'reminder', 'calendar', 'mcp', 'remote-triggers',
+    'messenger', 'reminder', 'calendar', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help'
 ]);

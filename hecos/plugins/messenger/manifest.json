@@ -1,0 +1,88 @@
+{
+    "tag": "MESSENGER",
+    "name": "Messenger",
+    "version": "1.0.0",
+    "description": "Send and receive messages via Telegram, WhatsApp, and Discord. Route messages to the right platform using natural language commands.",
+    "icon": "💬",
+    "lazy_load": true,
+    "is_class_based": true,
+    "on_load": true,
+    "status": "ONLINE",
+    "commands": {
+        "send_message": "Sends a text message to a contact or channel on the specified platform.",
+        "list_accounts": "Lists all connected and configured messaging accounts and their status.",
+        "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
+        "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "MESSENGER__send_message",
+                "description": "Sends a text message to a contact or group on a specified messaging platform. Supported platforms: 'telegram', 'whatsapp', 'discord'. Use this when the user says 'manda un messaggio', 'send a message', 'scrivi a', 'write to', 'message on telegram/whatsapp/discord'. The 'to' field must include the platform prefix, e.g.: 'telegram:@username', 'telegram:123456789', 'discord:#channel-name', 'whatsapp:+393331234567'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "to": {
+                            "type": "string",
+                            "description": "The recipient, including platform prefix. Examples: 'telegram:@myuser', 'telegram:123456789', 'whatsapp:+393331234567', 'discord:#general'. If the user does not specify a platform and only one is configured, default to that one."
+                        },
+                        "text": {
+                            "type": "string",
+                            "description": "The message body to send. Can be a single line or multi-line text. Preserve formatting if the user specifies it."
+                        },
+                        "platform": {
+                            "type": "string",
+                            "description": "Optional: explicit platform override ('telegram', 'whatsapp', 'discord'). Use this if the 'to' field does not contain a prefix.",
+                            "enum": ["telegram", "whatsapp", "discord"]
+                        },
+                        "is_app_open": {
+                            "type": "boolean",
+                            "description": "Set to true if the user tells you WhatsApp or the target app is already open on their desktop. Significantly speeds up the sending procedure."
+                        }
+                    },
+                    "required": ["to", "text"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MESSENGER__list_accounts",
+                "description": "Returns the list of all configured messaging accounts with their status (connected, disabled, error). Use this when the user asks 'which messaging accounts do I have?', 'quali account ho configurato?', 'show messenger status'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MESSENGER__check_connection",
+                "description": "Tests the connection to one or all configured messaging providers and returns the live status. Use this when the user says 'check messenger', 'testa la connessione', 'is telegram connected?'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "platform": {
+                            "type": "string",
+                            "description": "Optional: which platform to test ('telegram', 'whatsapp', 'discord'). If omitted, all configured providers are tested.",
+                            "enum": ["telegram", "whatsapp", "discord"]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MESSENGER__force_send",
+                "description": "Presses 'Enter' on the host machine to force sending a message if it got stuck in the text input box (especially useful for WhatsApp). Use this when the user says 'invialo', 'premi invio', 'send it again', or asks to manually trigger the send command.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        }
+    ]
+}

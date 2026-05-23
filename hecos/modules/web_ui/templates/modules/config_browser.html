@@ -7,7 +7,7 @@
         <strong>Enable BROWSER Module</strong><br>
         <small style="color:var(--muted);">Completely toggle the AI's ability to use web browsers.</small>
       </div>
-      <label class="switch"><input type="checkbox" id="browser-enabled" data-plugin="BROWSER"><span class="slider"></span></label>
+      <label class="switch"><input type="checkbox" id="browser-enabled" onchange="window.updateConfig('plugins.BROWSER.enabled', this.checked)"><span class="slider"></span></label>
     </div>
 
     <p style="font-size:13px; color:var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">

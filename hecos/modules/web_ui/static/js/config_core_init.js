@@ -65,7 +65,11 @@ async function initAll(attempt = 1) {
             }
             if (resAudio.status === 'fulfilled'  && resAudio.value.ok)  try { audioDevices = await resAudio.value.json();               } catch (e) { }
             if (resAudCfg.status === 'fulfilled' && resAudCfg.value.ok) try { audioConfig  = (await resAudCfg.value.json()).config;       } catch (e) { }
-            if (resMed.status === 'fulfilled'    && resMed.value.ok)    try { mediaConfig   = await resMed.value.json();                  } catch (e) { }
+            if (resMed.status === 'fulfilled'    && resMed.value.ok)    try {
+                mediaConfig   = await resMed.value.json();
+                // Re-populate ImageGen panel if it was already injected into the DOM before mediaConfig arrived
+                if (_panelCache['igen'] && typeof populateMediaUI === 'function') populateMediaUI();
+            } catch (e) { }
 
             console.log("Background metadata loaded.");
             renderConfigHub();

@@ -128,6 +128,14 @@ class HecosApplication:
                 except Exception as _ws_e:
                     logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
 
+        # Pre-load Piper TTS model in the background to eliminate latency on first speak()
+        try:
+            from hecos.core.audio.piper_daemon import get_daemon
+            get_daemon().preload(delay=3.0)  # starts loading 3s after this line, non-blocking
+            logger.info("[APP] Piper TTS model pre-loading scheduled (3s delay).")
+        except Exception as _piper_e:
+            logger.debug(f"[APP] Piper preload skipped: {_piper_e}")
+
         interface.move_to_body()
         self.bootstrapper.show_welcome()
 

@@ -1,0 +1,74 @@
+<!-- MESSENGER CONFIG PANEL -->
+<div id="tab-messenger" class="panel">
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-telegram-plane"></i> Telegram (Raccomandato)</div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            Usa l'API ufficiale di Telegram per inviare messaggi in modo rapido e affidabile. Crea un bot tramite <a href="https://t.me/BotFather" target="_blank" style="color:var(--cyan);">@BotFather</a>.
+        </p>
+
+        <div class="field">
+            <label>Abilita Provider Telegram</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="telegram-enabled" onchange="markDirty()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>Telegram Bot Token</label>
+            <input type="password" id="telegram-bot-token" placeholder="123456789:ABCDE..." autocomplete="off">
+            <small style="color:#666; font-size:11px;">Il token segreto rilasciato da @BotFather.</small>
+        </div>
+
+        <div class="field">
+            <label>Default Chat ID</label>
+            <input type="text" id="telegram-default-chat-id" placeholder="@mio_canale o 12345678" autocomplete="off">
+            <small style="color:#666; font-size:11px;">Usato come fallback se il comando non specifica il destinatario.</small>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-whatsapp"></i> WhatsApp <span class="p-tag" style="background: rgba(255,200,0,0.2); color: #ffcc00; font-size:9px; vertical-align:middle; margin-left:10px;">BETA</span></div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            Utilizza un'automazione del browser via PyWhatKit. Instabile rispetto alle API ufficiali, apre una tab del browser per inviare.
+        </p>
+
+        <div class="field">
+            <label>Abilita Provider WhatsApp</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-enabled" onchange="markDirty()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>Prefisso Internazionale Default</label>
+            <input type="text" id="whatsapp-phone-country-code" placeholder="+39" autocomplete="off">
+            <small style="color:#666; font-size:11px;">Aggiunto in automatico ai numeri digitati senza prefisso (es. +39 per l'Italia).</small>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-discord"></i> Discord</div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            Invia messaggi su un server Discord configurando un Incoming Webhook. Non richiede la creazione di un Web Bot.
+        </p>
+
+        <div class="field">
+            <label>Abilita Provider Discord</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="discord-enabled" onchange="markDirty()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>Discord Webhook URL</label>
+            <input type="password" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+            <small style="color:#666; font-size:11px;">Copia l'URL dalle Impostazioni Server → Integrazioni → Webhooks.</small>
+        </div>
+    </div>
+
+</div>
+

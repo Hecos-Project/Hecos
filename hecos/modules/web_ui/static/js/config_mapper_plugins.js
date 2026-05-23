@@ -43,10 +43,16 @@ function renderPlugins(plugins) {
     const pCfg = plugins[tag] || { enabled: true };
     const on   = pCfg.enabled !== false;
     const lazyOn = pCfg.lazy_load === true;
-    const name = window.t ? window.t(m.label) : m.label;
+    let name = window.t ? window.t(m.label) : m.label;
+    if (name === m.label && name === name.toUpperCase()) {
+        name = name.charAt(0) + name.slice(1).toLowerCase();
+    }
+
     const descKey = 'webui_desc_' + tag.toLowerCase();
     const desc = (window.t && window.t(descKey) !== descKey) ? window.t(descKey) : (I18N['plugin_desc_' + tag.toLowerCase()] || name);
-    const icon = m.icon || '🧩';
+    
+    // Leverage the global icon resolver to ensure we don't fall back to the raw puzzle piece
+    const icon = window.getIconForModule ? window.getIconForModule(m.id, name, m.icon) : (m.icon || '🧩');
     const mType = m.isCore ? 'core_module' : (pCfg.module_type || 'plugin');
 
     const disableLazy    = ['REMINDER','CALENDAR','WEB_UI','MCP_BRIDGE','DASHBOARD'].includes(tag);
@@ -159,12 +165,8 @@ function syncPluginStateToMemory(tag, enabled, extId = null) {
  * into the `out` payload object.
  */
 function buildPluginsPayload(out) {
-    // Standalone plugin enabled toggles
-    document.querySelectorAll('[data-plugin]').forEach(cb => {
-        const tag = cb.dataset.plugin;
-        out.plugins[tag] = out.plugins[tag] || {};
-        out.plugins[tag].enabled = cb.checked;
-    });
+    // Note: 'enabled' toggles for plugins are already handled by syncPluginStateToMemory
+    // which directly mutates window.cfg, so out.plugins[tag] already has the correct boolean.
 
     // Browser engine mode (inline radio)
     out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
@@ -179,10 +181,9 @@ function buildPluginsPayload(out) {
     out.plugins['BROWSER'].block_ads   = getC('browser-block-ads',   out.plugins['BROWSER'].block_ads);
     out.plugins['BROWSER'].startup_url = getV('browser-startup-url', out.plugins['BROWSER'].startup_url);
     out.plugins['BROWSER'].browser_type = getV('browser-engine',     out.plugins['BROWSER'].browser_type) || 'chromium';
-
-    // Automation
-    out.plugins['AUTOMATION'] = out.plugins['AUTOMATION'] || {};
-    out.plugins['AUTOMATION'].enabled = getC('automation-enabled');
+    
+    // Automation, Browser and Executor toggles are natively linked via data-plugin in plugin-list 
+    // and syncPluginStateToMemory. No need to parse their standalone DOM elements here.
 
     // Extension toggles
     document.querySelectorAll('[data-extension="true"]').forEach(cb => {

@@ -86,7 +86,7 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/api/models/refresh", methods=["POST"])
     def refresh_models():
-        from app.model_manager import ModelManager
+        from hecos.app.model_manager import ModelManager
         mm = ModelManager(cfg_mgr)
         mm.get_available_models() # This updates the cache in config
         return jsonify({"ok": True})
@@ -102,7 +102,7 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 return jsonify({"ok": False, "error": "Prompt is empty"})
                 
             from hecos.core.llm import client
-            from app.model_manager import ModelManager
+            from hecos.app.model_manager import ModelManager
             
             system_prompt = (
                 "You are an expert prompt engineer specializing in the Flux image generation model. "
