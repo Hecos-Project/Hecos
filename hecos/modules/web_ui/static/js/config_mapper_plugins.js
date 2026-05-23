@@ -43,10 +43,16 @@ function renderPlugins(plugins) {
     const pCfg = plugins[tag] || { enabled: true };
     const on   = pCfg.enabled !== false;
     const lazyOn = pCfg.lazy_load === true;
-    const name = window.t ? window.t(m.label) : m.label;
+    let name = window.t ? window.t(m.label) : m.label;
+    if (name === m.label && name === name.toUpperCase()) {
+        name = name.charAt(0) + name.slice(1).toLowerCase();
+    }
+
     const descKey = 'webui_desc_' + tag.toLowerCase();
     const desc = (window.t && window.t(descKey) !== descKey) ? window.t(descKey) : (I18N['plugin_desc_' + tag.toLowerCase()] || name);
-    const icon = m.icon || '🧩';
+    
+    // Leverage the global icon resolver to ensure we don't fall back to the raw puzzle piece
+    const icon = window.getIconForModule ? window.getIconForModule(m.id, name, m.icon) : (m.icon || '🧩');
     const mType = m.isCore ? 'core_module' : (pCfg.module_type || 'plugin');
 
     const disableLazy    = ['REMINDER','CALENDAR','WEB_UI','MCP_BRIDGE','DASHBOARD'].includes(tag);

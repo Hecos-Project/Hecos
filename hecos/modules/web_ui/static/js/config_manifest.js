@@ -85,15 +85,19 @@ window.CONFIG_HUB = {
 };
 
 window.getIconForModule = function(id, name, metaIcon) {
-    if (metaIcon && metaIcon.includes('<i ')) return metaIcon;
+    if (metaIcon && metaIcon.includes('<i ') && !metaIcon.includes('fa-puzzle-piece')) return metaIcon;
     
     // Explicit mapping for widgets/extensions
     const extIcons = {
         'media_player_widget': '<i class="fas fa-music"></i>',
-        'quick_links': '<i class="fas fa-bolt"></i>',
-        'calendar': '<i class="fas fa-calendar-alt"></i>',
-        'reminder': '<i class="fas fa-clock"></i>',
-        'emoticons': '<i class="fas fa-smile"></i>'
+        'quick_links':         '<i class="fas fa-bolt"></i>',
+        'calendar':            '<i class="fas fa-calendar-alt"></i>',
+        'reminder':            '<i class="fas fa-clock"></i>',
+        'emoticons':           '<i class="fas fa-smile"></i>',
+        'weather_widget':      '<i class="fas fa-cloud-sun"></i>',
+        'telemetry_widget':    '<i class="fas fa-tachometer-alt"></i>',
+        'weather':             '<i class="fas fa-cloud-sun"></i>',
+        'dashboard':           '<i class="fas fa-tachometer-alt"></i>'
     };
     if (extIcons[id]) return extIcons[id];
 
