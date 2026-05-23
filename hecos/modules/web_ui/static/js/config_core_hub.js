@@ -133,6 +133,10 @@ function renderConfigHub(mode = 'tabs') {
                     if (title.getAttribute('data-icon-injected')) return;
                     const icon = window.getIconForModule(m.id, m.label, m.icon);
                     let cleanText = title.innerHTML.trim();
+                    
+                    // Strip existing HTML <i> tags at the start so we don't render two
+                    cleanText = cleanText.replace(/^<i[^>]*><\/i>\s*/i, '');
+                    // Strip emojis
                     cleanText = cleanText.replace(/^[ \u00a9\u00ae\u2000-\u3300\ud83c\ud83d\ud83e\ud83f][\ufe00-\ufe0f]?\s*/u, '');
                     cleanText = cleanText.replace(/^(✅|❌|⚠️|🧠|☁️|🛣️|🤖|🌉|🔊|⚙️|🧩|🛡️|🔒|⏳|💾|↺|📊|🎨|🔍|🛠️|📁|📝|🖼️|🌐|📷|🏠|❓|ℹ️|⚡)\s*/u, '');
                     if (!cleanText || cleanText.length < 2) {

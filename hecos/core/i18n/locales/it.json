@@ -307,6 +307,7 @@
         "webui_chat_hint": "Enter per inviare · Shift+Enter per andare a capo",
         "webui_chat_btn_clear": "Cancella chat",
         "webui_chat_btn_clear_input": "Svuota campo testo",
+        "webui_conf_btn_sync": "Sincronizza Modelli",
         "webui_chat_btn_send": "Invia",
         "webui_chat_err_connected": "Connessione interrotta.",
         "webui_chat_err_general": "Errore:",
