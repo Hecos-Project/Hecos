@@ -24,7 +24,7 @@ def _build_options_dict(cfg_mgr, fast=False):
     except Exception:
         onnx_files = ["it_IT-aurora-medium.onnx"]
 
-    from app.model_manager import ModelManager
+    from hecos.app.model_manager import ModelManager
     mm         = ModelManager(cfg_mgr)
     categorized = mm.get_available_models(fast_mode=fast)
     ollama_models = categorized.get("Ollama (Local)", [])
@@ -231,4 +231,4 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
 
     @app.route("/hecos/options", methods=["GET"])
     def get_options():
-        return jsonify(_build_options_dict(cfg_mgr))
+        return jsonify(_build_options_dict(cfg_mgr, fast=True))

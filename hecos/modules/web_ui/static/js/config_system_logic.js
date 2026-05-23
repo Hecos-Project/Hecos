@@ -168,6 +168,10 @@ async function refreshModels() {
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
   try {
     await fetch('/api/models/refresh', {method:'POST'});
+    
+    // Clear front-end cache to force a real re-fetch from the updated backend
+    window.sysOptions = {};
+    
     if (typeof initAll === 'function') await initAll();
   } catch(e) {
     alert("Refresh failed: " + e);

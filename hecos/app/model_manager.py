@@ -108,6 +108,9 @@ class ModelManager:
                     if not cloud_models:
                         cloud_models = ["default-model-missing"]
                     
+                    # Persist the merged list back to the config so fast_mode=True can use it next boot
+                    self.config_manager.set(cloud_models, 'llm', 'providers', provider_name, 'models')
+                    
                     prov_key = f"Cloud ({provider_name.capitalize()})"
                     if prov_key not in categorized_models:
                         categorized_models[prov_key] = []
@@ -115,6 +118,9 @@ class ModelManager:
                     for m_name in cloud_models:
                         full_name = f"{provider_name}/{m_name}" if not m_name.startswith(f"{provider_name}/") else m_name
                         categorized_models[prov_key].append(full_name)
+
+                # Save the new models cache permanently
+                self.config_manager.save()
 
         
         # Clean empty categories
