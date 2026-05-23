@@ -4,7 +4,7 @@
  */
 
 function populateMediaUI() {
-    const igen = (mediaConfig && mediaConfig.image_gen) ? mediaConfig.image_gen : {};
+    const igen = (mediaConfig && mediaConfig.image_gen) ? mediaConfig.image_gen : (window.cfg?.plugins?.IMAGE_GEN || {});
     window.igen_custom_hf_models = igen.custom_hf_models || [];
 
     // --- Dynamic Image Providers Population ---

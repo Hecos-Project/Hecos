@@ -216,6 +216,14 @@ if __name__ == "__main__":
     sm.ptt_hotkey      = acfg.get('ptt_hotkey', 'ctrl+shift')
     set_state_manager(sm)
 
+    # Pre-load Piper TTS daemon in background to eliminate cold-start latency
+    try:
+        from hecos.core.audio.piper_daemon import get_daemon
+        get_daemon().preload(delay=3.0)  # Loads model 3s after start, non-blocking
+        logger.info("[WEB] Piper TTS daemon pre-loading scheduled (3s delay).")
+    except Exception as _pe:
+        logger.debug(f"[WEB] Piper preload skipped: {_pe}")
+
     # Start the listening thread (Whisper + PTT)
     logger.info("[WEB] Starting standalone audio engine...")
     audio_th = AscoltoThread(sm)
