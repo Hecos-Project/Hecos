@@ -880,6 +880,10 @@
         "webui_telemetry_cpu": "Monitoraggio CPU",
         "webui_telemetry_ram": "Monitoraggio RAM",
         "webui_telemetry_vram": "Monitoraggio VRAM",
-        "webui_telemetry_warning": "ATTENZIONE: L'attivazione del monitoraggio hardware in tempo reale potrebbe causare instabilità o rallentamenti su sistemi con risorse limitate."
+        "webui_telemetry_warning": "ATTENZIONE: L'attivazione del monitoraggio hardware in tempo reale potrebbe causare instabilità o rallentamenti su sistemi con risorse limitate.",
+        "ext_messenger_accounts_title": "Account di messaggistica configurati:",
+        "ext_messenger_check_title": "Stato della connessione per i servizi di messaggistica:",
+        "ext_messenger_title": "Messaggistica",
+        "webui_desc_messenger": "Invia e ricevi messaggi tramite Telegram, WhatsApp e Discord."
     }
 }

@@ -98,6 +98,15 @@ def initialize_user_vault(user_id: str = "admin"):
             message TEXT
         )
     ''')
+    
+    # ── Schema Migration ────────────────────────────────────────────────────────
+    # Add session_id column for backward compatibility with older DBs
+    try:
+        cursor.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
+    # ────────────────────────────────────────────────────────────────────────────
+    
     conn.commit()
     conn.close()
     
@@ -269,6 +278,9 @@ def get_history(limit: int = None, config: dict = None, user_id: str = "admin", 
         db_path = _db_path(user_id)
         if not os.path.exists(db_path):
             return []
+
+        # Ensure schema is up to date (runs ALTER TABLE if needed)
+        initialize_user_vault(user_id)
 
         with sqlite3.connect(db_path, timeout=20) as conn:
             cursor = conn.cursor()

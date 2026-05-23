@@ -172,6 +172,22 @@
         "category": "PLUGINS",
         "module_type": "plugin"
     },
+    "MESSENGER": {
+        "description": "Send and receive messages via Telegram, WhatsApp, and Discord. Route messages to the right platform using natural language commands.",
+        "commands": {
+            "send_message": "Sends a text message to a contact or channel on the specified platform.",
+            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
+            "check_connection": "Checks the connectivity status of one or all configured messaging providers."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "💬",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
     "REMINDER": {
         "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
         "commands": {

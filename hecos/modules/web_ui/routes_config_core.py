@@ -82,6 +82,7 @@ _PANEL_MAP = {
     'reminder':        'modules/config_reminder.html',
     'calendar':        'modules/config_calendar.html',
     'mcp':             'modules/config_mcp.html',
+    'messenger':       'modules/config_messenger.html',
     'remote-triggers': 'modules/config_remote_triggers.html',
     'drive':           'modules/config_drive.html',
     'drive-editor':    'modules/config_drive_editor.html',

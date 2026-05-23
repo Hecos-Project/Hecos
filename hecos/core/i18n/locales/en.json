@@ -860,6 +860,10 @@
         "webui_telemetry_cpu": "CPU Monitoring",
         "webui_telemetry_ram": "RAM Monitoring",
         "webui_telemetry_vram": "VRAM Monitoring",
-        "webui_telemetry_warning": "WARNING: Enabling real-time hardware monitoring may cause instability or performance drops on low-resource systems."
+        "webui_telemetry_warning": "WARNING: Enabling real-time hardware monitoring may cause instability or performance drops on low-resource systems.",
+        "ext_messenger_accounts_title": "Configured messaging accounts:",
+        "ext_messenger_check_title": "Connection status for messaging services:",
+        "ext_messenger_title": "Messaging",
+        "webui_desc_messenger": "Send and receive messages via Telegram, WhatsApp, and Discord."
     }
 }

@@ -182,7 +182,10 @@ function buildPluginsPayload(out) {
 
     // Automation
     out.plugins['AUTOMATION'] = out.plugins['AUTOMATION'] || {};
-    out.plugins['AUTOMATION'].enabled = getC('automation-enabled');
+    const autoToggle = document.getElementById('automation-enabled');
+    if (autoToggle !== null) {
+        out.plugins['AUTOMATION'].enabled = autoToggle.checked;
+    }
 
     // Extension toggles
     document.querySelectorAll('[data-extension="true"]').forEach(cb => {
