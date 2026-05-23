@@ -37,7 +37,7 @@ def parse_target(to: str, platform: str = None) -> tuple[str, str]:
     )
 
 
-def dispatch_send(platform: str, recipient: str, text: str, config) -> str:
+def dispatch_send(platform: str, recipient: str, text: str, config, is_app_open: bool = False) -> str:
     """Send a message via the appropriate adapter. Returns a result string."""
     logger.info("MESSENGER", f"Dispatching send → [{platform}] {recipient}")
 
@@ -47,7 +47,7 @@ def dispatch_send(platform: str, recipient: str, text: str, config) -> str:
 
     if platform == "whatsapp":
         from hecos.plugins.messenger.adapters import whatsapp as wa
-        return wa.send(config.whatsapp, recipient, text)
+        return wa.send(config.whatsapp, recipient, text, is_app_open)
 
     if platform == "discord":
         from hecos.plugins.messenger.adapters import discord as dc

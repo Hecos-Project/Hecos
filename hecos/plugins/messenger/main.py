@@ -88,7 +88,7 @@ class MessengerTools:
 
     # ── Public Tools ───────────────────────────────────────────────────────
 
-    def send_message(self, to: str, text: str, platform: str = None) -> str:
+    def send_message(self, to: str, text: str, platform: str = None, is_app_open: bool = False) -> str:
         """
         Send a message to a contact or channel.
         :param to: Recipient with optional platform prefix.
@@ -103,7 +103,7 @@ class MessengerTools:
         except ValueError as e:
             return f"❌ {e}"
 
-        return dispatcher.dispatch_send(plat, recipient, text, cfg)
+        return dispatcher.dispatch_send(plat, recipient, text, cfg, is_app_open)
 
     def list_accounts(self) -> str:
         """
@@ -150,6 +150,19 @@ class MessengerTools:
             lines.append(f"{icon} **{pname.capitalize()}**: {st}")
 
         return "\n".join(lines)
+
+    def force_send(self) -> str:
+        """
+        Force-send by simulating an 'Enter' keystroke. Useful if WhatsApp Web gets stuck.
+        """
+        try:
+            import pyautogui  # type: ignore
+            pyautogui.press('enter')
+            return "✅ Ho simulato la pressione del tasto Invio (Forzatura invio)."
+        except ImportError:
+            return "❌ Impossibile forzare l'invio: pyautogui non è installato."
+        except Exception as e:
+            return f"❌ Errore durante force_send: {e}"
 
 
 # ── Singleton ──────────────────────────────────────────────────────────────────

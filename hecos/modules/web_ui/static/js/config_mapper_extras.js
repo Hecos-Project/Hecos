@@ -7,6 +7,7 @@
 
 window.populateExecutorUI = function() {
     const p = (window.cfg?.plugins || {}).EXECUTOR || {};
+    setCheck('executor-enabled',      p.enabled              !== false);
     setVal('executor-timeout',        p.timeout_seconds      ?? 10);
     setCheck('executor-shell-enabled',p.enable_shell_commands ?? true);
     setVal('executor-shell-timeout',  p.shell_timeout         ?? 15);

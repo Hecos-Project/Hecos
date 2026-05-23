@@ -12,10 +12,11 @@ from __future__ import annotations
 import time
 import platform
 import webbrowser
+import threading
 from urllib.parse import quote
 from hecos.core.logging import logger
 
-def send(cfg, recipient: str, text: str) -> str:
+def send(cfg, recipient: str, text: str, is_app_open: bool = False) -> str:
     """Send a WhatsApp message natively. Prioritizes the Desktop App (no new tabs) over the Web version."""
     if not cfg.enabled:
         return "⚠️ WhatsApp adapter is disabled. Enable it in Messenger settings."
@@ -33,34 +34,44 @@ def send(cfg, recipient: str, text: str) -> str:
         url_app = f"whatsapp://send?phone={phone}&text={quote(text)}"
         url_web = f"https://web.whatsapp.com/send?phone={phone}&text={quote(text)}"
 
-        is_web = False
-        if platform.system() == "Windows":
-            import os
+        def _bg_worker():
             try:
-                # Try opening the native WhatsApp Desktop App (reuses existing window!)
-                os.startfile(url_app)
-                time.sleep(5) # App opens much faster than web
-            except Exception:
-                webbrowser.open(url_web)
-                time.sleep(15)
-                is_web = True
-        else:
-            webbrowser.open(url_web)
-            time.sleep(15)
-            is_web = True
+                is_web = False
+                if platform.system() == "Windows":
+                    import os
+                    try:
+                        os.startfile(url_app)
+                        time.sleep(2 if is_app_open else 10) # Fast mode bypasses long wait
+                    except Exception:
+                        webbrowser.open(url_web)
+                        time.sleep(3 if is_app_open else 20)
+                        is_web = True
+                else:
+                    webbrowser.open(url_web)
+                    time.sleep(3 if is_app_open else 20)
+                    is_web = True
 
-        # Failsafe multiple enters to ensure focus and sending
-        pyautogui.press('enter')
-        time.sleep(0.5)
-        pyautogui.press('enter')
-        time.sleep(2)
+                # Failsafe multiple enters to ensure focus and sending
+                time.sleep(1)
+                pyautogui.press('enter')
+                time.sleep(1)
+                pyautogui.press('enter')
+                time.sleep(2)
 
-        if is_web:
-            # Clean up the browser tab we forced open
-            pyautogui.hotkey('ctrl', 'w')
+                if is_web:
+                    # Clean up the browser tab we forced open
+                    pyautogui.hotkey('ctrl', 'w')
+                
+                logger.info("MESSENGER/WhatsApp", f"Message executed in background to {phone}")
+            except Exception as e:
+                logger.warning("MESSENGER/WhatsApp", f"Background thread failed: {e}")
+
+        threading.Thread(target=_bg_worker, daemon=True).start()
         
-        logger.info("MESSENGER/WhatsApp", f"Message executed to {phone}")
-        return f"✅ Messaggio WhatsApp inviato a `{phone}`."
+        logger.info("MESSENGER/WhatsApp", f"Background thread spawned for {phone}")
+        if is_app_open:
+            return f"⚡ Procedura Rapida: WhatsApp già aperto, invio in background in corsia preferenziale per `{phone}`."
+        return f"✅ Procedura WhatsApp per `{phone}` scatenata in background, l'app si aprirà a breve."
 
     except ImportError:
         return "❌ WhatsApp: The 'pyautogui' library is required. Run: pip install pyautogui"

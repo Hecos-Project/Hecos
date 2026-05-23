@@ -159,12 +159,8 @@ function syncPluginStateToMemory(tag, enabled, extId = null) {
  * into the `out` payload object.
  */
 function buildPluginsPayload(out) {
-    // Standalone plugin enabled toggles
-    document.querySelectorAll('[data-plugin]').forEach(cb => {
-        const tag = cb.dataset.plugin;
-        out.plugins[tag] = out.plugins[tag] || {};
-        out.plugins[tag].enabled = cb.checked;
-    });
+    // Note: 'enabled' toggles for plugins are already handled by syncPluginStateToMemory
+    // which directly mutates window.cfg, so out.plugins[tag] already has the correct boolean.
 
     // Browser engine mode (inline radio)
     out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
@@ -179,13 +175,9 @@ function buildPluginsPayload(out) {
     out.plugins['BROWSER'].block_ads   = getC('browser-block-ads',   out.plugins['BROWSER'].block_ads);
     out.plugins['BROWSER'].startup_url = getV('browser-startup-url', out.plugins['BROWSER'].startup_url);
     out.plugins['BROWSER'].browser_type = getV('browser-engine',     out.plugins['BROWSER'].browser_type) || 'chromium';
-
-    // Automation
-    out.plugins['AUTOMATION'] = out.plugins['AUTOMATION'] || {};
-    const autoToggle = document.getElementById('automation-enabled');
-    if (autoToggle !== null) {
-        out.plugins['AUTOMATION'].enabled = autoToggle.checked;
-    }
+    
+    // Automation, Browser and Executor toggles are natively linked via data-plugin in plugin-list 
+    // and syncPluginStateToMemory. No need to parse their standalone DOM elements here.
 
     // Extension toggles
     document.querySelectorAll('[data-extension="true"]').forEach(cb => {
