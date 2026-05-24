@@ -41,11 +41,19 @@ def start_hecos():
     python_exe = get_platform_python()
     
     try:
+        boot_log_path = os.path.join(_ROOT, "hecos", "logs", "hecos_boot_trace.log")
+        boot_log = open(boot_log_path, "a", encoding="utf-8")
+        # Add a visual separator for new boot attempts
+        boot_log.write(f"\n{'='*50}\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] ORCHESTRATOR: Spawning Hecos backend...\n{'='*50}\n")
+        boot_log.flush()
+
         if sys.platform == "win32":
             # creationflags=0x08000000 means CREATE_NO_WINDOW (runs silently in background)
             _hecos_process = subprocess.Popen(
                 [python_exe, "-m", "hecos.modules.web_ui.server", "--no-gui"],
                 cwd=_ROOT,
+                stdout=boot_log,
+                stderr=subprocess.STDOUT,
                 creationflags=0x08000000
             )
         else:
@@ -53,8 +61,8 @@ def start_hecos():
             _hecos_process = subprocess.Popen(
                 [python_exe, "-m", "hecos.modules.web_ui.server", "--no-gui"],
                 cwd=_ROOT,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stdout=boot_log,
+                stderr=subprocess.STDOUT
             )
         
         # Start a monitor thread to handle automatic reboots (exit code 42)
@@ -69,22 +77,42 @@ def stop_hecos():
     global _hecos_process
     if _hecos_process is not None:
         try:
-            # Send SIGTERM
             _hecos_process.terminate()
-            # Wait up to 3 seconds for graceful shutdown
             _hecos_process.wait(timeout=3)
         except subprocess.TimeoutExpired:
-            # Force kill if it didn't terminate
             _hecos_process.kill()
         except Exception:
             pass
         _hecos_process = None
         print("[ORCHESTRATOR] Hecos process stopped.")
     else:
-        # If the Tray was restarted but Hecos was kept alive (detached),
-        # we can't kill it by object reference. In extreme cases, one might want
-        # to kill by port (7070) here, but for now we rely on proper lifecycle pairing.
-        pass
+        # Tray was restarted while Hecos was already running — kill by port
+        _kill_by_port()
+
+
+def _kill_by_port():
+    """Find and kill whichever process is holding HECOS_PORT."""
+    from hecos.tray.config import HECOS_PORT
+    try:
+        import psutil
+        killed = False
+        for conn in psutil.net_connections(kind="tcp"):
+            if conn.laddr.port == HECOS_PORT and conn.status == "LISTEN":
+                try:
+                    proc = psutil.Process(conn.pid)
+                    proc.terminate()
+                    proc.wait(timeout=3)
+                    killed = True
+                    print(f"[ORCHESTRATOR] Killed process {conn.pid} on port {HECOS_PORT}.")
+                except Exception as e:
+                    print(f"[ORCHESTRATOR] Could not terminate PID {conn.pid}: {e}")
+        if not killed:
+            print(f"[ORCHESTRATOR] No process found on port {HECOS_PORT}.")
+    except ImportError:
+        print("[ORCHESTRATOR] psutil not available — cannot kill by port.")
+    except Exception as e:
+        print(f"[ORCHESTRATOR] _kill_by_port error: {e}")
+
 
 def is_hecos_running() -> bool:
     """

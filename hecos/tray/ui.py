@@ -64,7 +64,7 @@ def refresh_ui(icon: "pystray.Icon"):
 def build_menu(icon_ref: list):
     """
     Lean native tray right-click menu.
-    All detailed controls live in the Control Center (left-click or top button).
+    All detailed controls live in the Tray Dashboard (left-click or top button).
     """
     settings  = load_settings()
     online    = is_hecos_online()
@@ -155,7 +155,7 @@ def build_menu(icon_ref: list):
         pystray.MenuItem(status_label, None, enabled=False),
         pystray.Menu.SEPARATOR,
         # ── Main entry points
-        pystray.MenuItem("🎛️  Control Center", open_cc),
+        pystray.MenuItem("🎛️  Tray Dashboard", open_cc),
         pystray.MenuItem("🌐 Open Chat", open_chat),
         pystray.MenuItem("⚙️  Central Hub", open_config),
         pystray.Menu.SEPARATOR,
