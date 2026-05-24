@@ -1,0 +1,104 @@
+<!-- CONTACTS: New / Edit Modal -->
+<div id="contact-modal" class="modal-overlay" aria-modal="true" role="dialog">
+    <div class="card contact-modal-card">
+        <div class="card-title" id="contact-modal-title">{{ t('ext_contacts_modal_title') }}</div>
+        <button class="contact-modal-close" onclick="contactsUI.closeForm()" aria-label="Close">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <input type="hidden" id="c-id">
+
+        <!-- Photo upload -->
+        <div class="field contact-photo-section">
+            <div id="c-photo-preview" class="contact-avatar-preview">
+                <i class="fas fa-user contact-avatar-icon"></i>
+            </div>
+            <div>
+                <label style="font-size:12px; color:var(--muted);">{{ t('ext_contacts_color') }}</label>
+                <input type="file" id="c-photo-input" accept="image/*" style="display:none;" onchange="contactsUI.previewPhoto(this)">
+                <div style="display:flex; gap:8px; margin-top:6px;">
+                    <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px;"
+                            onclick="document.getElementById('c-photo-input').click()">
+                        <i class="fas fa-camera"></i> {{ t('label_change_avatar') }}
+                    </button>
+                    <button class="btn btn-secondary" style="font-size:11px; padding:4px 10px; color:var(--muted);"
+                            onclick="contactsUI.clearPhoto()" id="c-photo-clear" style="display:none;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Name Row -->
+        <div style="display:flex; gap:10px;">
+            <div class="field" style="flex:1;">
+                <label>{{ t('ext_contacts_name') }} *</label>
+                <input type="text" id="c-name" class="form-control" autocomplete="given-name">
+            </div>
+            <div class="field" style="flex:1;">
+                <label>{{ t('ext_contacts_lastname') }}</label>
+                <input type="text" id="c-lastname" class="form-control" autocomplete="family-name">
+            </div>
+        </div>
+
+        <!-- Display Name -->
+        <div class="field">
+            <label>{{ t('ext_contacts_display') }} <small style="color:var(--muted);">({{ t('option_auto') or 'auto' }})</small></label>
+            <input type="text" id="c-display" class="form-control" placeholder="Es. Mario Rossi">
+        </div>
+
+        <!-- Phone / Email -->
+        <div style="display:flex; gap:10px;">
+            <div class="field" style="flex:1;">
+                <label><i class="fas fa-phone" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_phone') }}</label>
+                <input type="tel" id="c-phone" class="form-control">
+            </div>
+            <div class="field" style="flex:1;">
+                <label><i class="fas fa-envelope" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_email') }}</label>
+                <input type="email" id="c-email" class="form-control">
+            </div>
+        </div>
+
+        <!-- Company / Role -->
+        <div style="display:flex; gap:10px;">
+            <div class="field" style="flex:1;">
+                <label><i class="fas fa-building" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_company') }}</label>
+                <input type="text" id="c-company" class="form-control">
+            </div>
+            <div class="field" style="flex:1;">
+                <label><i class="fas fa-user-tag" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_role') }}</label>
+                <input type="text" id="c-role" class="form-control">
+            </div>
+        </div>
+
+        <!-- Birthday / Tags -->
+        <div style="display:flex; gap:10px;">
+            <div class="field" style="flex:1;">
+                <label><i class="fas fa-gift" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_birthday') }}</label>
+                <input type="date" id="c-birthday" class="form-control">
+            </div>
+            <div class="field" style="flex:1;">
+                <label><i class="fas fa-tags" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_tags') }}</label>
+                <input type="text" id="c-tags" class="form-control" placeholder="vip, lavoro, admin">
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="field">
+            <label><i class="fas fa-sticky-note" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_notes') }}</label>
+            <textarea id="c-notes" class="form-control" rows="2" style="resize:vertical;"></textarea>
+        </div>
+
+        <!-- Label Color (Aesthetic Picker) -->
+        <div class="field">
+            <label><i class="fas fa-palette" style="color:var(--muted); width:14px;"></i> {{ t('ext_contacts_color') }}</label>
+            <div id="c-color-picker-container" class="contact-color-picker-wrap"></div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="contactsUI.closeForm()">{{ t('ext_contacts_btn_cancel') }}</button>
+            <button class="btn btn-primary" onclick="contactsUI.save()"><i class="fas fa-save"></i> {{ t('ext_contacts_btn_save') }}</button>
+        </div>
+    </div>
+</div>

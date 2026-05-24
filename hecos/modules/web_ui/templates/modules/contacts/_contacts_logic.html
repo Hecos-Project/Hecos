@@ -1,0 +1,334 @@
+<script>
+/* ──────────────────────────────────────────────
+   Contacts Module Logic — contactsUI namespace
+   Splits: loading, rendering, form, photo upload
+   ────────────────────────────────────────────── */
+(function () {
+    'use strict';
+
+    /* ── State ── */
+    let _searchTimeout = null;
+    let _picker        = null;
+    let _photoFile     = null;    // pending File object for upload
+    let _photoCleared  = false;   // user explicitly removed photo
+
+    /* ── i18n helper ── */
+    const t = k => (window.t ? window.t(k) : k);
+
+    /* ── Init ── */
+    function init() {
+        // Bind search
+        const sb = document.getElementById('contacts-searchbar');
+        if (sb) {
+            sb.addEventListener('input', e => {
+                clearTimeout(_searchTimeout);
+                _searchTimeout = setTimeout(() => load(e.target.value.trim()), 300);
+            });
+        }
+        // Build color picker once
+        if (window.HecosAestheticPicker && !_picker) {
+            _picker = new HecosAestheticPicker('c-color-picker-container', {
+                showImage: false,
+                colorLabel: t('ext_contacts_color'),
+                onColorChange: () => {}
+            });
+        }
+        load();
+    }
+
+    /* ══════════════════════════════════════════
+       LOAD & RENDER
+       ══════════════════════════════════════════ */
+    async function load(query = '') {
+        const grid = document.getElementById('contacts-grid');
+        if (!grid) return;
+        grid.innerHTML = _spinnerHtml();
+
+        try {
+            const res  = await fetch(`/api/contacts?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error);
+
+            if (!data.contacts.length) {
+                grid.innerHTML = query ? _searchEmptyHtml() : _emptyStateHtml();
+                return;
+            }
+            grid.innerHTML = '';
+            data.contacts.forEach(c => grid.appendChild(_buildCard(c)));
+        } catch (e) {
+            grid.innerHTML = `<div style="color:var(--red);padding:20px;">${t('ext_calendar_msg_error')}: ${e.message}</div>`;
+        }
+    }
+
+    function _buildCard(c) {
+        const dname    = c.display_name || `${c.first_name} ${c.last_name || ''}`.trim();
+        const ribbon   = c.label_color  || 'var(--accent)';
+        const phone    = _primaryField(c.fields, 'phone');
+        const email    = _primaryField(c.fields, 'email');
+        const initials = dname.split(' ').slice(0, 2).map(s => s[0] || '').join('');
+
+        // Avatar
+        let avatarHtml;
+        if (c.photo_url) {
+            avatarHtml = `<div class="contact-card-avatar" onclick="event.stopPropagation(); contactsUI.zoomPhoto('${c.photo_url}')" title="Zoom">
+                <img src="${c.photo_url}" alt="${_esc(dname)}" loading="lazy">
+                <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+            </div>`;
+        } else {
+            avatarHtml = `<div class="contact-card-avatar-placeholder">${_esc(initials)}</div>`;
+        }
+
+        // Tags
+        const tagHtml = c.tags
+            ? c.tags.split(',').map(t => `<span class="contact-badge">${_esc(t.trim())}</span>`).join('')
+            : '';
+
+        const el = document.createElement('div');
+        el.className = 'contact-card';
+        el.innerHTML = `
+            <div class="contact-card-ribbon" style="background:${ribbon};"></div>
+            ${avatarHtml}
+            <h4 class="contact-card-name">${_esc(dname)}</h4>
+            ${c.company ? `<div class="contact-card-company" style="color:${ribbon};">${_esc(c.company)}</div>` : ''}
+            <div class="contact-card-info">
+                ${phone ? `<div class="contact-card-info-row"><i class="fas fa-phone"></i><span>${_esc(phone)}</span></div>` : ''}
+                ${email ? `<div class="contact-card-info-row"><i class="fas fa-envelope"></i><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(email)}</span></div>` : ''}
+            </div>
+            ${tagHtml ? `<div class="contact-card-tags">${tagHtml}</div>` : ''}
+            <button class="contact-delete-btn" title="${t('chat_btn_delete')}"
+                    onclick="event.stopPropagation(); contactsUI.del('${c.id}', '${_esc(dname).replace(/'/g,"\\'")}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        el.onclick = () => contactsUI.openEdit(c);
+        return el;
+    }
+
+    /* ══════════════════════════════════════════
+       FORM — OPEN / CLOSE / SAVE
+       ══════════════════════════════════════════ */
+    function openNew() {
+        document.getElementById('contact-modal-title').innerText = t('ext_contacts_modal_title');
+        _resetForm();
+        _showModal();
+    }
+
+    function openEdit(c) {
+        document.getElementById('contact-modal-title').innerText = t('ext_contacts_modal_edit');
+        _populateForm(c);
+        _showModal();
+    }
+
+    function closeForm() {
+        document.getElementById('contact-modal').classList.remove('open');
+        _photoFile    = null;
+        _photoCleared = false;
+    }
+
+    async function save() {
+        const id    = document.getElementById('c-id').value;
+        const color = _picker ? _picker.currentColor : '';
+
+        const payload = {
+            first_name:   document.getElementById('c-name').value.trim(),
+            last_name:    document.getElementById('c-lastname').value.trim(),
+            display_name: document.getElementById('c-display').value.trim(),
+            company:      document.getElementById('c-company').value.trim(),
+            role:         document.getElementById('c-role').value.trim(),
+            birthday:     document.getElementById('c-birthday').value,
+            tags:         document.getElementById('c-tags').value.trim(),
+            notes:        document.getElementById('c-notes').value.trim(),
+            label_color:  color
+        };
+        if (!payload.first_name) { alert(t('ext_contacts_name') + ' *'); return; }
+
+        const ph = document.getElementById('c-phone').value.trim();
+        const em = document.getElementById('c-email').value.trim();
+        if (ph) payload.phones = [{ value: ph, is_primary: true }];
+        if (em) payload.emails = [{ value: em, is_primary: true }];
+        if (_photoCleared) payload.photo_path = null;
+
+        try {
+            const url    = id ? `/api/contacts/${id}` : '/api/contacts';
+            const method = id ? 'PUT' : 'POST';
+            const res    = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data   = await res.json();
+            if (!data.ok) throw new Error(data.error);
+
+            const contactId = data.contact?.id || id;
+
+            // Upload photo if pending
+            if (_photoFile && contactId) {
+                const fd = new FormData();
+                fd.append('photo', _photoFile);
+                await fetch(`/api/contacts/${contactId}/photo`, { method: 'POST', body: fd });
+            }
+
+            closeForm();
+            load();
+        } catch (e) {
+            alert(`${t('ext_calendar_msg_error')}: ${e.message}`);
+        }
+    }
+
+    /* ══════════════════════════════════════════
+       PHOTO HANDLING
+       ══════════════════════════════════════════ */
+    function previewPhoto(input) {
+        const file = input.files[0];
+        if (!file) return;
+        _photoFile    = file;
+        _photoCleared = false;
+        const reader  = new FileReader();
+        reader.onload = e => _setAvatarPreview(e.target.result);
+        reader.readAsDataURL(file);
+        document.getElementById('c-photo-clear').style.display = 'inline-flex';
+    }
+
+    function clearPhoto() {
+        _photoFile    = null;
+        _photoCleared = true;
+        _resetAvatarPreview();
+        document.getElementById('c-photo-input').value  = '';
+        document.getElementById('c-photo-clear').style.display = 'none';
+    }
+
+    function _setAvatarPreview(src) {
+        const wrap = document.getElementById('c-photo-preview');
+        wrap.innerHTML = `
+            <img src="${src}" alt="photo">
+            <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+        `;
+        wrap.style.cursor = 'pointer';
+        wrap.onclick = () => contactsUI.zoomPhoto(src);
+    }
+
+    function zoomPhoto(src) {
+        if (!src) return;
+        let lb = document.getElementById('contact-photo-lightbox');
+        if (!lb) {
+            lb = document.createElement('div');
+            lb.id = 'contact-photo-lightbox';
+            lb.onclick = () => lb.classList.remove('active');
+            document.body.appendChild(lb);
+        }
+        lb.innerHTML = `<img src="${src}">`;
+        // Force reflow and show
+        void lb.offsetWidth;
+        lb.classList.add('active');
+    }
+
+    function _resetAvatarPreview() {
+        const wrap = document.getElementById('c-photo-preview');
+        wrap.innerHTML = '<i class="fas fa-user contact-avatar-icon"></i>';
+        wrap.style.cursor = 'default';
+        wrap.onclick = null;
+    }
+
+    /* ══════════════════════════════════════════
+       DELETE
+       ══════════════════════════════════════════ */
+    async function del(id, name) {
+        if (!confirm(`${t('ext_contacts_del_confirm')} "${name}"?`)) return;
+        try {
+            const r = await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
+            const d = await r.json();
+            if (!d.ok) throw new Error(d.error);
+            load();
+        } catch (e) {
+            alert(`${t('ext_calendar_msg_error')}: ${e.message}`);
+        }
+    }
+
+    /* ══════════════════════════════════════════
+       HELPERS
+       ══════════════════════════════════════════ */
+    function _primaryField(fields, type) {
+        if (!fields) return '';
+        return (fields.find(f => f.field_type === type && f.is_primary) || fields.find(f => f.field_type === type) || {}).value || '';
+    }
+
+    function _esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function _spinnerHtml() {
+        return `<div class="contacts-empty-state"><i class="fas fa-spinner fa-spin"></i><p>${t('ext_contacts_loading')}</p></div>`;
+    }
+
+    function _emptyStateHtml() {
+        return `<div class="contacts-empty-state">
+            <i class="fas fa-address-book"></i>
+            <h3>${t('ext_contacts_empty_title')}</h3>
+            <p>${t('ext_contacts_empty_sub')}</p>
+        </div>`;
+    }
+
+    function _searchEmptyHtml() {
+        return `<div class="contacts-empty-state">
+            <i class="fas fa-search" style="font-size:36px; opacity:0.4;"></i>
+            <p style="margin-top:12px;">${t('ext_contacts_search_empty')}</p>
+        </div>`;
+    }
+
+    function _resetForm() {
+        ['c-id','c-name','c-lastname','c-display','c-phone','c-email',
+         'c-company','c-role','c-birthday','c-tags','c-notes'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        if (_picker) { _picker.currentColor = ''; _picker.render(); }
+        _resetAvatarPreview();
+        document.getElementById('c-photo-input').value = '';
+        document.getElementById('c-photo-clear').style.display = 'none';
+        _photoFile    = null;
+        _photoCleared = false;
+    }
+
+    function _populateForm(c) {
+        document.getElementById('c-id').value       = c.id;
+        document.getElementById('c-name').value     = c.first_name  || '';
+        document.getElementById('c-lastname').value = c.last_name   || '';
+        document.getElementById('c-display').value  = c.display_name|| '';
+        document.getElementById('c-phone').value    = _primaryField(c.fields, 'phone');
+        document.getElementById('c-email').value    = _primaryField(c.fields, 'email');
+        document.getElementById('c-company').value  = c.company     || '';
+        document.getElementById('c-role').value     = c.role        || '';
+        document.getElementById('c-birthday').value = (c.birthday   || '').substring(0, 10);
+        document.getElementById('c-tags').value     = c.tags        || '';
+        document.getElementById('c-notes').value    = c.notes       || '';
+        if (_picker) { _picker.currentColor = c.label_color || ''; _picker.render(); }
+        // Photo
+        if (c.photo_url) {
+            _setAvatarPreview(c.photo_url);
+            document.getElementById('c-photo-clear').style.display = 'inline-flex';
+        } else {
+            _resetAvatarPreview();
+            document.getElementById('c-photo-clear').style.display = 'none';
+        }
+        _photoFile    = null;
+        _photoCleared = false;
+    }
+
+    function _showModal() { document.getElementById('contact-modal').classList.add('open'); }
+
+    /* ══════════════════════════════════════════
+       AUTO-INIT (MutationObserver on .active class)
+       ══════════════════════════════════════════ */
+    const tabEl = document.getElementById('tab-contacts');
+    if (tabEl) {
+        const obs = new MutationObserver(muts => {
+            muts.forEach(m => {
+                if (m.attributeName === 'class' && tabEl.classList.contains('active') && !_picker) {
+                    init();
+                }
+            });
+        });
+        obs.observe(tabEl, { attributes: true });
+        setTimeout(() => { if (tabEl.classList.contains('active') && !_picker) init(); }, 500);
+    }
+
+    /* ── Public API ── */
+    window.contactsUI = { openNew, openEdit, closeForm, save, del, previewPhoto, clearPhoto, reload: load, zoomPhoto };
+})();
+</script>

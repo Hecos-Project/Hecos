@@ -418,6 +418,11 @@
         "webui_conf_sys_lang": "Language",
         "webui_conf_plugin_active_title": "Hecos Module Manager",
 
+        "hub_mod_contacts": "Address Book",
+        "webui_desc_contacts": "System address book. Provides the AI with native access to contacts, emails, and dates for messaging and automations.",
+
+
+
         "webui_conf_plugin_desc_file": "Local File management",
         "webui_conf_plugin_desc_help": "Dynamic Guide",
         "webui_conf_plugin_desc_media": "Audio/Video playback",
@@ -803,6 +808,31 @@
         "ext_calendar_placeholder_notes": "Optional notes",
         "ext_calendar_msg_saved": "Event saved!",
         "ext_calendar_msg_error": "Error",
+        
+        "ext_contacts_title": "Address Book",
+        "ext_contacts_desc": "Manage your contacts, addresses, and social profiles in a unified center.",
+        "ext_contacts_search": "Search name, tag, company, number...",
+        "ext_contacts_add": "New Contact",
+        "ext_contacts_empty_title": "No Contacts",
+        "ext_contacts_empty_sub": "Your address book is empty. Add your first contact to get started.",
+        "ext_contacts_loading": "Loading contacts...",
+        "ext_contacts_search_empty": "No contacts found.",
+        "ext_contacts_modal_title": "New Contact",
+        "ext_contacts_modal_edit": "Edit Contact",
+        "ext_contacts_name": "First Name",
+        "ext_contacts_lastname": "Last Name",
+        "ext_contacts_display": "Display Name",
+        "ext_contacts_phone": "Main Phone",
+        "ext_contacts_email": "Email",
+        "ext_contacts_company": "Company",
+        "ext_contacts_role": "Role",
+        "ext_contacts_birthday": "Birthday",
+        "ext_contacts_tags": "Tags (comma separated)",
+        "ext_contacts_notes": "Notes",
+        "ext_contacts_color": "Label Color",
+        "ext_contacts_btn_cancel": "Cancel",
+        "ext_contacts_btn_save": "Save Contact",
+        "ext_contacts_del_confirm": "Are you sure you want to delete contact",
 
         "webui_mp_title": "Hecos Media Player",
         "webui_mp_subtitle": "OS-level playback, gallery viewer, and AI playlist management.",

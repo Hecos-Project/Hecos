@@ -432,6 +432,11 @@
         "webui_conf_sys_lang": "Lingua",
         "webui_conf_plugin_active_title": "Gestore Moduli Hecos",
 
+        "hub_mod_contacts": "Rubrica & Contatti",
+        "webui_desc_contacts": "Rubrica intelligente di sistema. Fornisce all'IA l'accesso nativo a contatti, email e date per chat e automazioni.",
+
+
+
         "webui_conf_plugin_desc_file": "Gestione File locale",
         "webui_conf_plugin_desc_drive": "Archiviazione e Gestione File HTTP (Drive)",
         "webui_conf_plugin_desc_help": "Guida Dinamica",
@@ -820,6 +825,31 @@
         "ext_calendar_placeholder_notes": "Note opzionali",
         "ext_calendar_msg_saved": "Evento salvato!",
         "ext_calendar_msg_error": "Errore",
+
+        "ext_contacts_title": "Rubrica & Contatti",
+        "ext_contacts_desc": "Gestisci i tuoi contatti, indirizzi e profili social in un unico punto centralizzato.",
+        "ext_contacts_search": "Cerca nome, tag, azienda, numero...",
+        "ext_contacts_add": "Nuovo Contatto",
+        "ext_contacts_empty_title": "Nessun Contatto",
+        "ext_contacts_empty_sub": "La tua rubrica è vuota. Aggiungi il primo contatto per iniziare.",
+        "ext_contacts_loading": "Caricamento rubrica...",
+        "ext_contacts_search_empty": "Nessun contatto trovato.",
+        "ext_contacts_modal_title": "Nuovo Contatto",
+        "ext_contacts_modal_edit": "Modifica Contatto",
+        "ext_contacts_name": "Nome",
+        "ext_contacts_lastname": "Cognome",
+        "ext_contacts_display": "Nome Visualizzato",
+        "ext_contacts_phone": "Telefono Princ.",
+        "ext_contacts_email": "Email Princ.",
+        "ext_contacts_company": "Azienda",
+        "ext_contacts_role": "Ruolo",
+        "ext_contacts_birthday": "Compleanno",
+        "ext_contacts_tags": "Tags (separati da virgola)",
+        "ext_contacts_notes": "Note",
+        "ext_contacts_color": "Colore Etichetta",
+        "ext_contacts_btn_cancel": "Annulla",
+        "ext_contacts_btn_save": "Salva Contatto",
+        "ext_contacts_del_confirm": "Sei sicuro di voler eliminare il contatto",
 
         "webui_mp_title": "Hecos Media Player",
         "webui_mp_subtitle": "Riproduzione OS-level, galleria multimediale e gestione playlist via AI.",

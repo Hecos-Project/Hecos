@@ -180,6 +180,11 @@ class PluginUsers(BaseModel):
     lazy_load: bool = True
 
 
+class PluginContacts(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = True
+
+
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
@@ -202,6 +207,7 @@ class PluginsConfig(BaseModel):
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     CALENDAR: PluginCalendar = Field(default_factory=PluginCalendar)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
+    CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
     extra_dirs: List[str] = []
 
 

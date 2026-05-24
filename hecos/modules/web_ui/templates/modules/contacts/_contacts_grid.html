@@ -1,0 +1,26 @@
+<!-- CONTACTS: Grid View — header card with search and contact cards -->
+<div class="card">
+    <div class="card-title"><i class="fas fa-address-book"></i> {{ t('ext_contacts_title') }}</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">
+        {{ t('ext_contacts_desc') }}
+    </p>
+
+    <!-- Controls Header -->
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div style="position: relative; flex-grow: 1;">
+            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events:none;"></i>
+            <input type="text" id="contacts-searchbar" placeholder="{{ t('ext_contacts_search') }}"
+                   class="form-control" style="padding-left: 36px;">
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="contactsUI.openNew()">
+                <i class="fas fa-user-plus"></i> {{ t('ext_contacts_add') }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Contact Cards Grid -->
+    <div id="contacts-grid" class="contacts-grid-layout">
+        <!-- Populated by JS -->
+    </div>
+</div>
