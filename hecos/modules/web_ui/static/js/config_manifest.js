@@ -32,6 +32,7 @@ window.CONFIG_HUB = {
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
         { id: 'bridge',    label: 'hub_mod_bridge',       icon: '<i class="fas fa-project-diagram"></i>', cat: 'CONNETTIVITÀ', isCore: true },
         { id: 'messenger', label: 'ext_messenger_title',  icon: '<i class="fab fa-telegram-plane"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MESSENGER' },
+        { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
         { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '<i class="fas fa-mobile-alt"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
@@ -127,6 +128,7 @@ window.CONFIG_HUB.tagMap = {
     'MESSENGER': 'messenger',
     'REMINDER': 'reminder',
     'CALENDAR': 'calendar',
+    'CONTACTS': 'contacts',
     'MEDIA_PLAYER': 'media',
     'AUTOMATION': 'automation',
     'BROWSER':    'browser',
@@ -143,6 +145,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'messenger', 'reminder', 'calendar', 'mcp', 'remote-triggers',
+    'messenger', 'reminder', 'calendar', 'contacts', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help'
 ]);

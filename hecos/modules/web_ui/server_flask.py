@@ -128,6 +128,14 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     except Exception as _mp_e:
         logger.warning(f"[WebUI] Media Player plugin could not load: {_mp_e}")
 
+    # Contacts Plugin Route Integration
+    try:
+        from hecos.plugins.contacts.api import register_routes as init_contacts_api
+        init_contacts_api(app)
+        logger.info("[WebUI] Hecos Contacts plugin loaded.")
+    except Exception as _ct_e:
+        logger.warning(f"[WebUI] Contacts plugin could not load: {_ct_e}")
+
     # WEB_UI Shared Extensions
     try:
         from hecos.core.system.extension_loader import discover_webui_extensions, load_eager_extensions

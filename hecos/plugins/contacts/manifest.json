@@ -1,0 +1,130 @@
+{
+    "tag": "CONTACTS",
+    "name": "Contacts",
+    "version": "1.0.0",
+    "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
+    "icon": "📇",
+    "lazy_load": true,
+    "is_class_based": true,
+    "on_load": true,
+    "status": "ONLINE",
+    "commands": {
+        "find_contact": "Finds a contact by name, phone, email or tag.",
+        "add_contact": "Creates a new contact.",
+        "update_contact": "Updates fields of an existing contact.",
+        "delete_contact": "Deletes a contact by name or ID.",
+        "list_contacts": "Lists contacts, optionally filtered by tag or query.",
+        "send_whatsapp_to_contact": "Sends a WhatsApp message to a contact via the Messenger plugin."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "CONTACTS__find_contact",
+                "description": "Searches the address book and returns matching contacts. Use when the user asks 'chi è X?', 'find the number of Y', 'qual è il telefono di Z', 'cerca il contatto', 'who is...'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Name, phone number, email, company or tag to search for."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CONTACTS__add_contact",
+                "description": "Creates a new contact in the address book. Use when the user says 'aggiungi contatto', 'salva questo numero', 'add a contact', 'registra il numero di X'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "first_name": {"type": "string", "description": "First name."},
+                        "last_name": {"type": "string", "description": "Last name."},
+                        "display_name": {"type": "string", "description": "Optional custom display name. Defaults to 'First Last'."},
+                        "company": {"type": "string", "description": "Company or organization name."},
+                        "role": {"type": "string", "description": "Job title or role."},
+                        "phone": {"type": "string", "description": "Primary phone number."},
+                        "email": {"type": "string", "description": "Primary email address."},
+                        "birthday": {"type": "string", "description": "Birthday in natural language or ISO format (e.g. '15 marzo 1990', '1990-03-15')."},
+                        "address": {"type": "string", "description": "Full address as free text."},
+                        "notes": {"type": "string", "description": "Free-form notes about this contact."},
+                        "tags": {"type": "string", "description": "Comma-separated tags (e.g. 'famiglia,vip,lavoro')."},
+                        "label_color": {"type": "string", "description": "Hex color for the contact label (e.g. '#3498db')."}
+                    },
+                    "required": ["first_name"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CONTACTS__update_contact",
+                "description": "Updates one or more fields of an existing contact. Use when the user says 'aggiorna il contatto X', 'cambia il numero di Y', 'update contact'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "id_or_name": {"type": "string", "description": "Contact ID (UUID or prefix) or display name to identify the contact."},
+                        "first_name": {"type": "string"},
+                        "last_name": {"type": "string"},
+                        "display_name": {"type": "string"},
+                        "company": {"type": "string"},
+                        "role": {"type": "string"},
+                        "birthday": {"type": "string"},
+                        "address": {"type": "string"},
+                        "notes": {"type": "string"},
+                        "tags": {"type": "string"},
+                        "label_color": {"type": "string"}
+                    },
+                    "required": ["id_or_name"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CONTACTS__delete_contact",
+                "description": "Permanently deletes a contact from the address book. Use when the user says 'elimina il contatto X', 'rimuovi X dalla rubrica', 'delete contact'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "id_or_name": {"type": "string", "description": "Contact ID or display name to delete."}
+                    },
+                    "required": ["id_or_name"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CONTACTS__list_contacts",
+                "description": "Returns a formatted list of all contacts, optionally filtered. Use when the user says 'mostrami la rubrica', 'lista contatti', 'show all contacts', 'chi ho in rubrica'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "tag": {"type": "string", "description": "Optional: filter by tag (e.g. 'famiglia', 'vip')."},
+                        "limit": {"type": "integer", "description": "Max number of contacts to return. Default: 20."}
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "CONTACTS__send_whatsapp_to_contact",
+                "description": "Sends a WhatsApp message to a contact using the Messenger plugin. Use when the user says 'manda un messaggio WhatsApp a X', 'scrivi a X su WhatsApp', 'send WhatsApp to contact'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string", "description": "Contact name or display name to look up the WhatsApp number."},
+                        "message": {"type": "string", "description": "The message text to send."}
+                    },
+                    "required": ["name", "message"]
+                }
+            }
+        }
+    ]
+}

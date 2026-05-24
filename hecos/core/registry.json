@@ -202,6 +202,25 @@
         "icon": "",
         "category": "PLUGINS"
     },
+    "CONTACTS": {
+        "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
+        "commands": {
+            "find_contact": "Finds a contact by name, phone, email or tag.",
+            "add_contact": "Creates a new contact.",
+            "update_contact": "Updates fields of an existing contact.",
+            "delete_contact": "Deletes a contact by name or ID.",
+            "list_contacts": "Lists contacts, optionally filtered by tag or query.",
+            "send_whatsapp_to_contact": "Sends a WhatsApp message to a contact via the Messenger plugin."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "📇",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
     "DRIVE": {
         "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
         "commands": {

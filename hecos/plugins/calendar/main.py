@@ -173,10 +173,10 @@ class CalendarTools:
             import dateparser
             dt = dateparser.parse(
                 when,
+                languages=["en", "it"],
                 settings={
                     "PREFER_DATES_FROM": "future",
                     "RETURN_AS_TIMEZONE_AWARE": False,
-                    "LANGUAGES": ["en", "it"],
                 }
             )
             if dt:

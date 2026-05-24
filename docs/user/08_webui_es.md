@@ -8,4 +8,4 @@ La WebUI de Hecos es la interfaz gráfica moderna accesible a través de tu nave
 - **Micrófono y Cámara**: Gracias al cifrado Hecos PKI, puedes usar el micrófono y la cámara de tu navegador para interactuar con la IA incluso de forma remota en tu red local.
 - **Ventana de Acciones (Action Window)**: Consola limpia de estilo terminal directamente dentro de la interfaz de usuario de chat para monitorizar la ejecución nativa del sistema y los procesos en segundo plano.
 - **Control Room y Widgets**: Una interfaz dedicada estilo masonry dentro de la WebUI donde múltiples widgets interactivos pueden ejecutarse simultáneamente, como el OS Dashboard (Telemetría y Configuración de Hardware).
-- **Versión Actual**: `0.24.0` (Runtime Alpha)
+- **Versión Actual**: `0.25.0` (Runtime Alpha)
