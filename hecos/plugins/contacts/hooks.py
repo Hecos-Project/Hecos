@@ -27,8 +27,14 @@ def send_whatsapp(contact_id: str, message: str) -> str:
         return (f"⚠️ No WhatsApp number found for **{name}**. "
                 f"Add one via the address book or use the `add_field` API.")
     try:
-        from hecos.plugins.messenger.dispatcher import send_message
-        result = send_message(platform="whatsapp", recipient=number, text=message)
+        from hecos.core.system.module_state import get_plugin_module
+        messenger_module = get_plugin_module("MESSENGER")
+        if not messenger_module or not hasattr(messenger_module, "tools"):
+            return "⚠️ Messenger plugin is not available or not enabled."
+        
+        result = messenger_module.tools.send_message(to=number, text=message, platform="whatsapp")
+        if result and result.startswith("❌"):
+            return result
         c = store.get_by_id(contact_id)
         name = c.get("display_name", contact_id) if c else contact_id
         return f"💬 WhatsApp message sent to **{name}** ({number})."
@@ -48,8 +54,14 @@ def send_telegram(contact_id: str, message: str) -> str:
         name = c.get("display_name", contact_id) if c else contact_id
         return f"⚠️ No Telegram handle found for **{name}**."
     try:
-        from hecos.plugins.messenger.dispatcher import send_message
-        result = send_message(platform="telegram", recipient=handle, text=message)
+        from hecos.core.system.module_state import get_plugin_module
+        messenger_module = get_plugin_module("MESSENGER")
+        if not messenger_module or not hasattr(messenger_module, "tools"):
+            return "⚠️ Messenger plugin is not available or not enabled."
+        
+        result = messenger_module.tools.send_message(to=handle, text=message, platform="telegram")
+        if result and result.startswith("❌"):
+            return result
         c = store.get_by_id(contact_id)
         name = c.get("display_name", contact_id) if c else contact_id
         return f"✈️ Telegram message sent to **{name}** (@{handle})."
