@@ -49,7 +49,7 @@ Ogni entry nei file `capabilities/*.json` deve seguire questo schema rigoroso (a
 2. **User Confirmation**: Comandi distruttivi (Tabula Rasa) o pericolosi (Executor) dovrebbero richiedere una conferma utente, specialmente se invocati via AI.
 3. **Visibility**: Lo stato di ogni capacità (Online/Offline) deve essere visibile nel registro centrale.
 
-## Integrità dei Percorsi & Privacy (v0.18.0)
+## Integrità dei Percorsi & Privacy (v0.24.0)
 
 1. **Hermetic Storage**: È vietata la creazione di cartelle o file al di fuori della directory `hecos/` (eccetto file di configurazione temporanei approvati).
 2. **3-Tier Privacy Enforcement**: Tutte le operazioni di scrittura su disco devono rispettare la modalità di privacy attiva (`Normal`, `Auto-Wipe`, `Incognito`). Le sessioni `Auto-Wipe` e `Incognito` non devono mai persistere nel database `history.db` su disco.

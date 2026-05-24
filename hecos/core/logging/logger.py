@@ -31,9 +31,9 @@ logger.setLevel(logging.DEBUG)
 # File formatters
 file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 
-# Handler for INFO/WARN/ERROR file
+# Handler for INFO/WARN/ERROR/DEBUG file
 info_file_handler = logging.FileHandler(info_filename, encoding='utf-8')
-info_file_handler.setLevel(logging.INFO)
+info_file_handler.setLevel(logging.DEBUG)
 info_file_handler.setFormatter(file_formatter)
 
 # Handler for DEBUG-ONLY file

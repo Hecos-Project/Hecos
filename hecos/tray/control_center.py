@@ -1,6 +1,6 @@
 """
 hecos/tray/control_center.py
-Hecos Control Center — Enterprise Dashboard (Ultra-Stable / No Font Icons)
+Hecos Tray Dashboard — Enterprise Panel (Ultra-Stable / No Font Icons)
 """
 
 import sys
@@ -315,6 +315,169 @@ if __name__ == "__main__":
             ),
         ], spacing=6, horizontal_alignment="center", expand=1)
 
+    def _build_logs(page, body_col):
+        """Standalone log viewer — reads files directly from disk, no WebUI needed."""
+        logs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
+
+        # Severity colors
+        SEV = {
+            "ERROR":    RED,
+            "CRITICAL": RED,
+            "WARNING":  "#f59e0b",
+            "INFO":     "#ffffff",
+            "DEBUG":    "#94a3b8", # Brightened from #64748b to Slate 400 for selection contrast
+        }
+
+        def _sev_color(line: str) -> str:
+            upper = line.upper()
+            for kw, col in SEV.items():
+                if kw in upper:
+                    return col
+            return MUTED
+
+        log_output = ft.Column(scroll="auto", spacing=1, expand=1, auto_scroll=True)
+        file_dd    = ft.Dropdown(width=280, text_size=11, bgcolor=CARD, border_color=BORDER, color=TEXT)
+        lines_note = ft.Text("", size=10, color=MUTED)
+
+        _last_sz = 0
+        _font_size = 10
+
+        def _zoom_in(e):
+            nonlocal _font_size
+            if _font_size < 30:
+                _font_size += 2
+                _last_sz = 0  # Force redraw
+                _load_log(auto=False)
+
+        def _zoom_out(e):
+            nonlocal _font_size
+            if _font_size > 6:
+                _font_size -= 2
+                _last_sz = 0  # Force redraw
+                _load_log(auto=False)
+
+        def _load_log(e=None, auto=False):
+            nonlocal _last_sz
+            selected = file_dd.value
+            if not selected:
+                if not auto:
+                    log_output.controls.clear()
+                    log_output.controls.append(ft.Text("No log file selected.", color=MUTED, size=11))
+                    page.update()
+                return
+            path = os.path.join(logs_dir, selected)
+            try:
+                sz = os.path.getsize(path)
+                if auto and sz == _last_sz:
+                    return
+                _last_sz = sz
+                
+                with open(path, "r", encoding="utf-8", errors="replace") as f:
+                    all_lines = f.readlines()
+                tail = all_lines[-300:] if len(all_lines) > 300 else all_lines
+                lines_note.value = f"{len(all_lines)} total lines — showing last {len(tail)}"
+                
+                log_output.controls.clear()
+                for i, raw in enumerate(tail):
+                    line = raw.rstrip()
+                    row_bg = CARD if i % 2 == 0 else "#151e2f"  # Alternate striping
+                    log_output.controls.append(
+                        ft.Container(
+                            content=ft.Text(line, size=_font_size, font_family="monospace", color=_sev_color(line),
+                                            selectable=True, no_wrap=False),
+                            bgcolor=row_bg,
+                            width=1000,
+                            padding=ft.Padding(2, 2, 2, 2)
+                        )
+                    )
+            except Exception as ex:
+                log_output.controls.clear()
+                log_output.controls.append(ft.Text(f"Error: {ex}", color=RED, size=11))
+            page.update()
+
+        # Populate file dropdown
+        def _refresh_list(e=None):
+            file_dd.options.clear()
+            try:
+                files = sorted(
+                    [f for f in os.listdir(logs_dir) if f.endswith(".log")],
+                    key=lambda x: os.path.getmtime(os.path.join(logs_dir, x)),
+                    reverse=True
+                )
+                for f in files:
+                    file_dd.options.append(ft.dropdown.Option(f))
+                if files:
+                    if "hecos_main.log" in files:
+                        file_dd.value = "hecos_main.log"
+                    else:
+                        file_dd.value = files[0]
+            except Exception:
+                file_dd.options.append(ft.dropdown.Option("(no logs found)"))
+            _load_log()
+
+        def _on_dd_change(e):
+            _load_log(e=e, auto=False)
+            
+        file_dd.on_change = _on_dd_change
+
+        zoom_in_btn = ft.Container(
+            content=ft.Text("A+", size=11, color=TEXT, weight="bold"),
+            on_click=_zoom_in,
+            padding=ft.Padding(10, 6, 10, 6),
+            bgcolor=BG, border_radius=6
+        )
+        zoom_out_btn = ft.Container(
+            content=ft.Text("A-", size=11, color=TEXT, weight="bold"),
+            on_click=_zoom_out,
+            padding=ft.Padding(10, 6, 10, 6),
+            bgcolor=BG, border_radius=6
+        )
+
+        controls_row = ft.Row([
+            file_dd,
+            ft.Container(
+                content=ft.Text("↻ Refresh", size=11, color=ACCENT, weight="bold"),
+                on_click=lambda e: (_refresh_list(), _load_log()),
+                padding=ft.Padding(10, 6, 10, 6),
+                border_radius=6,
+            ),
+            ft.Row([zoom_out_btn, zoom_in_btn], spacing=4),
+        ], spacing=8)
+
+        log_container = ft.Container(
+            content=log_output,
+            bgcolor=CARD,
+            border_radius=8,
+            padding=10,
+            expand=True,
+        )
+
+        result = ft.Column([
+            _title("Live Logs"),
+            _subtitle("Read directly from disk — works even when the WebUI is offline."),
+            ft.Container(height=8),
+            controls_row,
+            lines_note,
+            ft.Container(height=6),
+            log_container,
+        ], spacing=4, expand=True)
+
+        _refresh_list()
+
+        def _auto_refresh():
+            import time
+            while True:
+                time.sleep(2)
+                # Break out of loop if the user switches to a different tab
+                if not body_col.controls or body_col.controls[0] != result:
+                    break
+                _load_log(auto=True)
+                
+        import threading
+        threading.Thread(target=_auto_refresh, daemon=True).start()
+
+        return result
+
     def _build_about(page, body_col):
         return ft.Column([
             _title("About Hecos"),
@@ -336,9 +499,10 @@ if __name__ == "__main__":
 
     # ── Master Layout ──────────────────────────────────────────────
     def _build_ui_master(page: ft.Page):
-        page.title = "Hecos Control Center"
+        page.title = "Hecos Tray Dashboard"
         page.bgcolor = BG
         page.theme_mode = "dark"
+        page.theme = ft.Theme(color_scheme_seed="#00d9b2")  # Teal accent for text selection
         page.padding = 0
         try:
             page.window.icon = "Hecos_Logo_SQR_NBG_LogoOnly.ico"
@@ -364,6 +528,7 @@ if __name__ == "__main__":
             ("settings", "⚙", "Settings"),
             ("browser",  "🌐", "Browser"),
             ("mobile",   "📱", "Mobile QR"),
+            ("logs",     "📋", "Live Logs"),
             ("about",    "ℹ", "About"),
         ]
 
@@ -382,6 +547,7 @@ if __name__ == "__main__":
                 "settings": _build_settings,
                 "browser":  _build_browser,
                 "mobile":   _build_mobile,
+                "logs":     _build_logs,
                 "about":    _build_about,
             }
             if key in builders:
@@ -461,7 +627,7 @@ if __name__ == "__main__":
         __lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         __lock_socket.bind(("127.0.0.1", 54321))
     except socket.error:
-        print("[Control Center] Process is already active. Ignoring launch request.")
+        print("[Tray Dashboard] Process is already active. Ignoring launch request.")
         sys.exit(0)
     
     ft.app(target=_build_ui_master, assets_dir=assets_path)
