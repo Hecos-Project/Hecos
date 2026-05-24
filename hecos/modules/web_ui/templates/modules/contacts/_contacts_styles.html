@@ -256,4 +256,56 @@
     box-shadow: 0 10px 40px rgba(0,0,0,0.6);
     object-fit: contain;
 }
+
+/* ── Contacts: Search Bar (Central Hub Style) ── */
+.contacts-search-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px; /* Slightly more rounded than default */
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    height: 46px; /* Larger than standard form-control */
+}
+
+.contacts-search-wrapper:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.15);
+}
+
+.contacts-search-icon {
+    padding: 0 14px;
+    font-size: 16px; /* Larger icon */
+    color: var(--muted);
+    user-select: none;
+    opacity: 0.8;
+}
+
+.contacts-search-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none !important;
+    outline: none !important;
+    color: var(--text);
+    font-size: 15px; /* Larger font */
+    padding: 10px 4px;
+    font-family: inherit;
+}
+
+#contacts-search-clear {
+    display: none; /* Shown via logic */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 14px;
+    color: var(--muted);
+    font-size: 16px;
+    transition: color 0.2s;
+}
+
+#contacts-search-clear:hover {
+    color: var(--red);
+}
 </style>

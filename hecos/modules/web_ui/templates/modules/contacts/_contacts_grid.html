@@ -6,11 +6,12 @@
     </p>
 
     <!-- Controls Header -->
-    <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-        <div style="position: relative; flex-grow: 1;">
-            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events:none;"></i>
-            <input type="text" id="contacts-searchbar" placeholder="{{ t('ext_contacts_search') }}"
-                   class="form-control" style="padding-left: 36px;">
+    <div
+        style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <div class="contacts-search-wrapper" id="contacts-search-wrapper">
+            <span class="contacts-search-icon">🔍</span>
+            <input type="text" id="contacts-searchbar" placeholder="{{ t('ext_contacts_search') }}" autocomplete="off">
+            <button id="contacts-search-clear" title="Clear (Esc)">✕</button>
         </div>
         <div>
             <button class="btn btn-primary" onclick="contactsUI.openNew()">

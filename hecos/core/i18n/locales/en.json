@@ -143,7 +143,6 @@
         "plugin_file_manager_max_read_lines_desc": "Maximum number of lines to display when reading a file",
         "plugin_file_manager_max_list_items_desc": "Maximum number of items to list (0 = no list)",
         "plugin_file_manager_enable_path_mapping_desc": "Enables symbolic path mapping (desktop, core, etc.)",
-
         "plugin_system_desc": "Root Access: terminal management, reboot, log diagnostics, system utilities.",
         "plugin_system_help_desc": "Displays system protocols.",
         "plugin_system_riavvia_desc": "Immediate Cold Reboot of the core.",
@@ -417,16 +416,11 @@
         "webui_conf_sys_fastboot": "Fast Boot (skip integrity checks)",
         "webui_conf_sys_lang": "Language",
         "webui_conf_plugin_active_title": "Hecos Module Manager",
-
         "hub_mod_contacts": "Address Book",
         "webui_desc_contacts": "System address book. Provides the AI with native access to contacts, emails, and dates for messaging and automations.",
-
-
-
         "webui_conf_plugin_desc_file": "Local File management",
         "webui_conf_plugin_desc_help": "Dynamic Guide",
         "webui_conf_plugin_desc_media": "Audio/Video playback",
-
         "webui_conf_plugin_desc_system": "Shell/subprocess bridge",
         "webui_conf_logs_title": "Log Command Center",
         "webui_conf_logs_help": "In this section, you can orchestrate multiple real-time logs flows and filter historical traces. Highly useful for advanced debugging and monitoring.",
@@ -448,7 +442,6 @@
         "webui_desc_browser": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms.",
         "webui_chat_prompt_help": "What are the commands and features of Hecos?",
         "webui_chat_prompt_media": "Play a track",
-
         "webui_chat_prompt_system": "Execute the system command: ",
         "webui_chat_prompt_web": "Search the internet for: ",
         "webui_chat_prompt_webcam": "Take a picture from the webcam",
@@ -470,7 +463,6 @@
         "lang_en": "English",
         "lang_it": "Italiano",
         "lang_es": "Español",
-
         "hub_cat_intelligenza": "Intelligence",
         "hub_cat_multimedia": "Multimedia",
         "hub_cat_connettivita": "Connectivity",
@@ -682,13 +674,11 @@
         "webui_drive_drive_sel_hint": "Change drive",
         "webui_drive_edit": "Edit",
         "webui_chat_history_label": "CONVERSATIONS",
-    
         "webui_chat_mode_normal_tip": "Normal mode: history is preserved",
         "webui_chat_mode_autowipe_tip": "Auto-Wipe: messages are cleared on close",
         "webui_chat_mode_incognito_tip": "Incognito: no disk writes, zero traces",
         "webui_chat_mode_locked": "Mode Locked",
         "webui_chat_history_empty": "No conversations saved",
-    
         "webui_chat_interrupted": "Stopped",
         "webui_user_label": "User",
         "webui_logout": "Logout",
@@ -808,7 +798,6 @@
         "ext_calendar_placeholder_notes": "Optional notes",
         "ext_calendar_msg_saved": "Event saved!",
         "ext_calendar_msg_error": "Error",
-        
         "ext_contacts_title": "Address Book",
         "ext_contacts_desc": "Manage your contacts, addresses, and social profiles in a unified center.",
         "ext_contacts_search": "Search name, tag, company, number...",
@@ -829,11 +818,11 @@
         "ext_contacts_birthday": "Birthday",
         "ext_contacts_tags": "Tags (comma separated)",
         "ext_contacts_notes": "Notes",
+        "ext_contacts_photo": "Contact Picture",
         "ext_contacts_color": "Label Color",
         "ext_contacts_btn_cancel": "Cancel",
         "ext_contacts_btn_save": "Save Contact",
         "ext_contacts_del_confirm": "Are you sure you want to delete contact",
-
         "webui_mp_title": "Hecos Media Player",
         "webui_mp_subtitle": "OS-level playback, gallery viewer, and AI playlist management.",
         "webui_mp_nowplaying": "Now Playing",
@@ -881,7 +870,6 @@
         "webui_mp_delete_confirm": "Delete playlist '{name}'?",
         "webui_mp_delete_track_confirm": "Remove this track from the playlist?",
         "webui_mp_delete_all": "Clear ALL",
-
         "webui_media_vault_title": "Media Vault & Privacy",
         "webui_media_vault_desc": "Manage images, audio and video generated and saved by Hecos on your default local disk.",
         "webui_media_open_folder": "Open Storage Folder",
