@@ -167,8 +167,7 @@ class ContactsTools:
             return None
         try:
             import dateparser
-            dt = dateparser.parse(when, settings={"PREFER_DAY_OF_MONTH": "first",
-                                                  "LANGUAGES": ["it", "en"]})
+            dt = dateparser.parse(when, languages=["it", "en"], settings={"PREFER_DAY_OF_MONTH": "first"})
             if dt:
                 return dt.strftime("%Y-%m-%d")
         except ImportError:

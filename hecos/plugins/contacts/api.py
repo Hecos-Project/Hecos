@@ -101,6 +101,35 @@ def update_contact(contact_id):
     fields = {k: v for k, v in data.items() if k in allowed}
     try:
         updated = store.update(contact_id, **fields)
+
+        # Sync multi-value fields if present in payload
+        if any(k in data for k in ["phones", "emails", "socials"]):
+            c = store.get_by_id(contact_id)
+            if c:
+                # remove existing fields of these types
+                for f in c.get("fields", []):
+                    ft = f["field_type"]
+                    if ("phones" in data and ft == "phone") or \
+                       ("emails" in data and ft == "email") or \
+                       ("socials" in data and ft not in ["phone", "email"]):
+                        store.remove_field(f["id"])
+                
+                # add new fields
+                if "phones" in data:
+                    for ph in data["phones"]:
+                        if ph.get("value"):
+                            store.add_field(contact_id, "phone", ph["value"], label=ph.get("label", "mobile"), is_primary=ph.get("is_primary", False))
+                if "emails" in data:
+                    for em in data["emails"]:
+                        if em.get("value"):
+                            store.add_field(contact_id, "email", em["value"], label=em.get("label", "personal"), is_primary=em.get("is_primary", False))
+                if "socials" in data:
+                    for soc in data["socials"]:
+                        if soc.get("type") and soc.get("value"):
+                            store.add_field(contact_id, soc["type"], soc["value"], label=soc.get("label"))
+                            
+            updated = True # Ensure we return success if only fields changed
+
         if updated:
             return jsonify({"ok": True, "contact": store.get_by_id(contact_id)})
         return jsonify({"ok": False, "error": "Contact not found or no changes"}), 404

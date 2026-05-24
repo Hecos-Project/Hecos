@@ -17,13 +17,36 @@
 
     /* ── Init ── */
     function init() {
-        // Bind search
-        const sb = document.getElementById('contacts-searchbar');
+        const sb    = document.getElementById('contacts-searchbar');
+        const clear = document.getElementById('contacts-search-clear');
+
         if (sb) {
             sb.addEventListener('input', e => {
+                const val = e.target.value.trim();
                 clearTimeout(_searchTimeout);
-                _searchTimeout = setTimeout(() => load(e.target.value.trim()), 300);
+                _searchTimeout = setTimeout(() => load(val), 300);
+                
+                if (clear) clear.style.display = val ? 'block' : 'none';
             });
+
+            sb.addEventListener('keydown', e => {
+                if (e.key === 'Escape') {
+                    sb.value = '';
+                    if (clear) clear.style.display = 'none';
+                    load();
+                }
+            });
+        }
+
+        if (clear) {
+            clear.onclick = () => {
+                if (sb) {
+                    sb.value = '';
+                    sb.focus();
+                }
+                clear.style.display = 'none';
+                load();
+            };
         }
         // Build color picker once
         if (window.HecosAestheticPicker && !_picker) {
@@ -136,16 +159,29 @@
             company:      document.getElementById('c-company').value.trim(),
             role:         document.getElementById('c-role').value.trim(),
             birthday:     document.getElementById('c-birthday').value,
+            address:      document.getElementById('c-address').value.trim(),
             tags:         document.getElementById('c-tags').value.trim(),
             notes:        document.getElementById('c-notes').value.trim(),
             label_color:  color
         };
         if (!payload.first_name) { alert(t('ext_contacts_name') + ' *'); return; }
 
-        const ph = document.getElementById('c-phone').value.trim();
-        const em = document.getElementById('c-email').value.trim();
-        if (ph) payload.phones = [{ value: ph, is_primary: true }];
-        if (em) payload.emails = [{ value: em, is_primary: true }];
+        const phones = [];
+        document.querySelectorAll('#c-phones-container .multi-field-item').forEach((el, index) => {
+            const lbl = el.querySelector('.ph-lbl').value.trim() || 'Mobile';
+            const val = el.querySelector('.ph-val').value.trim();
+            if (val) phones.push({ value: val, label: lbl, is_primary: index === 0 });
+        });
+        if (phones.length) payload.phones = phones;
+
+        const emails = [];
+        document.querySelectorAll('#c-emails-container .multi-field-item').forEach((el, index) => {
+            const lbl = el.querySelector('.em-lbl').value.trim() || 'Email';
+            const val = el.querySelector('.em-val').value.trim();
+            if (val) emails.push({ value: val, label: lbl, is_primary: index === 0 });
+        });
+        if (emails.length) payload.emails = emails;
+
         if (_photoCleared) payload.photo_path = null;
 
         try {
@@ -272,7 +308,7 @@
     }
 
     function _resetForm() {
-        ['c-id','c-name','c-lastname','c-display','c-phone','c-email',
+        ['c-id','c-name','c-lastname','c-display','c-address',
          'c-company','c-role','c-birthday','c-tags','c-notes'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = '';
@@ -283,6 +319,13 @@
         document.getElementById('c-photo-clear').style.display = 'none';
         _photoFile    = null;
         _photoCleared = false;
+        
+        const phC = document.getElementById('c-phones-container');
+        if (phC) phC.innerHTML = '';
+        const emC = document.getElementById('c-emails-container');
+        if (emC) emC.innerHTML = '';
+        addPhoneField('', 'Mobile');
+        addEmailField('', 'Email');
     }
 
     function _populateForm(c) {
@@ -290,11 +333,10 @@
         document.getElementById('c-name').value     = c.first_name  || '';
         document.getElementById('c-lastname').value = c.last_name   || '';
         document.getElementById('c-display').value  = c.display_name|| '';
-        document.getElementById('c-phone').value    = _primaryField(c.fields, 'phone');
-        document.getElementById('c-email').value    = _primaryField(c.fields, 'email');
         document.getElementById('c-company').value  = c.company     || '';
         document.getElementById('c-role').value     = c.role        || '';
         document.getElementById('c-birthday').value = (c.birthday   || '').substring(0, 10);
+        document.getElementById('c-address').value  = c.address     || '';
         document.getElementById('c-tags').value     = c.tags        || '';
         document.getElementById('c-notes').value    = c.notes       || '';
         if (_picker) { _picker.currentColor = c.label_color || ''; _picker.render(); }
@@ -308,6 +350,50 @@
         }
         _photoFile    = null;
         _photoCleared = false;
+
+        const phC = document.getElementById('c-phones-container');
+        if (phC) phC.innerHTML = '';
+        const phFields = (c.fields || []).filter(f => f.field_type === 'phone');
+        phFields.forEach(f => addPhoneField(f.value, f.label));
+        if (phFields.length === 0) addPhoneField('', 'Mobile');
+
+        const emC = document.getElementById('c-emails-container');
+        if (emC) emC.innerHTML = '';
+        const emFields = (c.fields || []).filter(f => f.field_type === 'email');
+        emFields.forEach(f => addEmailField(f.value, f.label));
+        if (emFields.length === 0) addEmailField('', 'Email');
+    }
+
+    function addPhoneField(value = '', label = 'Mobile') {
+        const wrap = document.createElement('div');
+        wrap.className = 'multi-field-item';
+        wrap.style.display = 'flex';
+        wrap.style.gap = '6px';
+        wrap.innerHTML = `
+            <input type="text" class="form-control ph-lbl" style="width:35%; font-size:12px;" placeholder="${t('ext_contacts_label')||'Label'}..." value="${_esc(label)}">
+            <input type="tel" class="form-control ph-val" style="flex:1;" placeholder="+39 333..." value="${_esc(value)}">
+            <button class="btn btn-secondary contact-delete-multi" style="padding:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--muted); flex-shrink:0;" onclick="this.parentElement.remove()" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        const c = document.getElementById('c-phones-container');
+        if (c) c.appendChild(wrap);
+    }
+
+    function addEmailField(value = '', label = 'Email') {
+        const wrap = document.createElement('div');
+        wrap.className = 'multi-field-item';
+        wrap.style.display = 'flex';
+        wrap.style.gap = '6px';
+        wrap.innerHTML = `
+            <input type="text" class="form-control em-lbl" style="width:35%; font-size:12px;" placeholder="${t('ext_contacts_label')||'Label'}..." value="${_esc(label)}">
+            <input type="email" class="form-control em-val" style="flex:1;" placeholder="nome@email.com" value="${_esc(value)}">
+            <button class="btn btn-secondary contact-delete-multi" style="padding:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:var(--muted); flex-shrink:0;" onclick="this.parentElement.remove()" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        const c = document.getElementById('c-emails-container');
+        if (c) c.appendChild(wrap);
     }
 
     function _showModal() { document.getElementById('contact-modal').classList.add('open'); }
@@ -329,6 +415,6 @@
     }
 
     /* ── Public API ── */
-    window.contactsUI = { openNew, openEdit, closeForm, save, del, previewPhoto, clearPhoto, reload: load, zoomPhoto };
+    window.contactsUI = { openNew, openEdit, closeForm, save, del, previewPhoto, clearPhoto, reload: load, zoomPhoto, addPhoneField, addEmailField };
 })();
 </script>
