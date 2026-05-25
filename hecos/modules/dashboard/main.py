@@ -133,17 +133,17 @@ class DashboardTools:
             },
             "track_cpu": {
                 "type": "bool",
-                "default": True,
+                "default": False,
                 "description": "Enable CPU telemetry polling"
             },
             "track_ram": {
                 "type": "bool",
-                "default": True,
+                "default": False,
                 "description": "Enable RAM telemetry polling"
             },
             "track_vram": {
                 "type": "bool",
-                "default": True,
+                "default": False,
                 "description": "Enable GPU/VRAM telemetry polling"
             }
         }
@@ -312,9 +312,9 @@ def get_stats(config=None):
     dsb_cfg = config.get("plugins", {}).get("DASHBOARD", {}) if config else {}
     col_tel = dsb_cfg.get("console_telemetry_enabled", True)
     
-    track_cpu = dsb_cfg.get("track_cpu", True)
-    track_ram = dsb_cfg.get("track_ram", True)
-    track_vram = dsb_cfg.get("track_vram", True)
+    track_cpu = dsb_cfg.get("track_cpu", False)
+    track_ram = dsb_cfg.get("track_ram", False)
+    track_vram = dsb_cfg.get("track_vram", False)
     
     cpu = 0.0
     ram = 0.0

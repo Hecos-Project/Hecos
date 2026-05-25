@@ -1,0 +1,215 @@
+{
+    "tag": "MAIL",
+    "name": "Mail",
+    "version": "1.0.0",
+    "description": "Full-featured Email plugin for Hecos. Send, receive, search and manage emails via SMTP/IMAP. Integrates with the Contacts plugin for address lookup. Reads credentials from the user profile.",
+    "icon": "📧",
+    "lazy_load": true,
+    "is_class_based": true,
+    "on_load": true,
+    "status": "ONLINE",
+    "commands": {
+        "send_email": "Sends an email to one or more recipients.",
+        "read_inbox": "Reads messages from a mail folder (inbox, sent, drafts, trash).",
+        "search_emails": "Searches emails by keyword, sender or subject.",
+        "reply_email": "Replies to an email message.",
+        "forward_email": "Forwards an email to other recipients.",
+        "delete_email": "Deletes or trashes an email.",
+        "move_email": "Moves an email to another folder.",
+        "save_draft": "Saves a message as draft.",
+        "sync_inbox": "Forces a sync/refresh of the inbox.",
+        "get_email_addresses_for_contact": "Returns email addresses of a contact from the address book."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__send_email",
+                "description": "Sends an email. Use when the user says 'manda una mail a X', 'invia una email a Y', 'scrivi una email', 'send an email to Z'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "to": {
+                            "type": "string",
+                            "description": "Recipient email address(es), comma-separated. Can also be a contact name (will be resolved via address book)."
+                        },
+                        "subject": {
+                            "type": "string",
+                            "description": "Email subject line."
+                        },
+                        "body": {
+                            "type": "string",
+                            "description": "Email body text."
+                        },
+                        "cc": {
+                            "type": "string",
+                            "description": "Optional CC addresses, comma-separated."
+                        },
+                        "bcc": {
+                            "type": "string",
+                            "description": "Optional BCC addresses, comma-separated."
+                        },
+                        "is_html": {
+                            "type": "boolean",
+                            "description": "Whether the body is HTML. Default: false."
+                        }
+                    },
+                    "required": ["to", "subject", "body"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__read_inbox",
+                "description": "Reads email messages from a folder. Use when the user asks 'fammi vedere le mail', 'controlla la posta', 'quante mail ho', 'show my inbox', 'check my email'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "folder": {
+                            "type": "string",
+                            "description": "Folder to read: INBOX, SENT, DRAFTS, TRASH, STARRED. Default: INBOX."
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Max number of messages to return. Default: 10."
+                        },
+                        "unread_only": {
+                            "type": "boolean",
+                            "description": "If true, returns only unread messages. Default: false."
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__search_emails",
+                "description": "Searches emails by keyword, sender or subject. Use when the user says 'cerca la mail di X', 'trova email con oggetto Y', 'search for emails about Z'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query (keyword, sender name/email, or subject fragment)."
+                        },
+                        "folder": {
+                            "type": "string",
+                            "description": "Folder to search in. Default: INBOX."
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Max results. Default: 10."
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__reply_email",
+                "description": "Replies to an email. Use when the user says 'rispondi a questa mail', 'reply to the email from X'.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message_id": {
+                            "type": "string",
+                            "description": "ID of the message to reply to."
+                        },
+                        "body": {
+                            "type": "string",
+                            "description": "Reply body text."
+                        },
+                        "reply_all": {
+                            "type": "boolean",
+                            "description": "If true, replies to all recipients. Default: false."
+                        }
+                    },
+                    "required": ["message_id", "body"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__forward_email",
+                "description": "Forwards an email to one or more recipients.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message_id": {
+                            "type": "string",
+                            "description": "ID of the message to forward."
+                        },
+                        "to": {
+                            "type": "string",
+                            "description": "Recipient(s) to forward to."
+                        },
+                        "body": {
+                            "type": "string",
+                            "description": "Optional additional text to prepend before the forwarded message."
+                        }
+                    },
+                    "required": ["message_id", "to"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__delete_email",
+                "description": "Deletes or moves an email to trash.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "message_id": {
+                            "type": "string",
+                            "description": "ID of the message to delete."
+                        },
+                        "permanent": {
+                            "type": "boolean",
+                            "description": "If true, permanently deletes. If false (default), moves to trash."
+                        }
+                    },
+                    "required": ["message_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__get_email_addresses_for_contact",
+                "description": "Looks up email addresses for a contact in the address book. Use when the user wants to email someone by name.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Contact name or display name to look up."
+                        }
+                    },
+                    "required": ["name"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAIL__sync_inbox",
+                "description": "Forces a sync of the inbox from the mail server.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "folder": {
+                            "type": "string",
+                            "description": "Folder to sync. Default: INBOX."
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}

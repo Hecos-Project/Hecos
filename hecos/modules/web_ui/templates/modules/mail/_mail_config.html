@@ -1,0 +1,147 @@
+<!-- MAIL CONFIG PANEL -->
+<div class="config-section no-autosave" style="max-width: 800px; margin: 0 auto; padding-bottom: 120px;">
+    <div class="card glass-card" style="padding: 20px;">
+        <h3 class="section-title" style="margin-bottom:8px; font-size: 18px; color:var(--accent);"><i class="fas fa-envelope-open-text"></i> {{ translations.get('mail_cfg_title', 'Configurazione Account Mail') }}</h3>
+        <p style="font-size: 12px; color:var(--muted); line-height: 1.5; margin-bottom: 24px;">
+            {{ translations.get('mail_cfg_desc', "Inserisci l'indirizzo email e la password da usare per inviare e ricevere posta. Per provider come Gmail o Outlook usa una <strong>Password per le App</strong> (2FA).") | safe }}
+        </p>
+
+        <!-- Credentials -->
+        <div class="grid-2">
+            <div class="field">
+                <label>
+                    <i class="fas fa-at" style="color:var(--accent);"></i> {{ translations.get('mail_cfg_email', 'Indirizzo Email') }}
+                </label>
+                <input type="email" id="mail_account_email" class="config-input" placeholder="{{ translations.get('mail_cfg_email_placeholder', 'Es. tuonome@gmail.com') }}" autocomplete="username">
+                <div id="mail-account-status" style="font-size: 11px; margin-top:6px;"></div>
+            </div>
+
+            <div class="field">
+                <label>
+                    <i class="fas fa-key" style="color:var(--yellow, #fbbf24);"></i> {{ translations.get('mail_cfg_pwd', 'App Password') }}
+                    <small style="color:var(--muted); font-weight:400; font-size:10px;">{{ translations.get('mail_cfg_pwd_hint', "NON la tua password normale, ma una creata apposta per l'app.") }}</small>
+                </label>
+                <div style="display:flex; gap:8px;">
+                    <input type="password" id="mail_app_password" placeholder="••••••••••••" autocomplete="new-password" style="flex:1;">
+                    <button type="button" onclick="mailTogglePasswordVisibility()" id="mail-pwd-eye-btn" title="{{ translations.get('mail_cfg_pwd_toggle', 'Mostra/Nascondi password') }}" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer;">
+                        <i class="fas fa-eye" id="mail-pwd-eye-icon"></i>
+                    </button>
+                    <button type="button" onclick="mailSaveCredentials()" style="padding:6px 16px; border-radius:7px; background:var(--accent); color:#fff; border:none; cursor:pointer; font-weight:600;">
+                        <i class="fas fa-save"></i> {{ translations.get('mail_cfg_save', 'Salva') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="height: 1px; background:var(--border); margin: 24px 0;"></div>
+
+        <!-- Global Settings -->
+        <div class="field" style="margin-top:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">{{ translations.get('mail_cfg_enable', 'Abilita Modulo') }}</label>
+                <label class="switch"><input type="checkbox" class="" id="plugins.MAIL.enabled"><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="field" style="margin-top:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <label style="margin:0;">{{ translations.get('mail_cfg_sync_open', "Sync all'apertura") }}</label>
+                    <small style="display:block; color:var(--muted); font-weight:400; font-size:11px;">{{ translations.get('mail_cfg_sync_open_hint', 'Scarica i nuovi messaggi appena apri la scheda') }}</small>
+                </div>
+                <label class="switch"><input type="checkbox" class="" id="plugins.MAIL.sync_on_open"><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <div class="field" style="margin-top:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <label style="margin:0;">{{ translations.get('mail_cfg_auto_detect', 'Auto-Detect Server') }}</label>
+                    <small style="display:block; color:var(--muted); font-weight:400; font-size:11px;">{{ translations.get('mail_cfg_auto_detect_hint', 'Configura in automatico i parametri per Gmail, Outlook, Yahoo, ecc.') }}</small>
+                </div>
+                <label class="switch"><input type="checkbox" class="" id="plugins.MAIL.auto_detect_provider"><span class="slider"></span></label>
+            </div>
+        </div>
+
+        <!-- Advanced Override Settings -->
+        <details style="margin-top:24px; padding: 12px; background:var(--bg2); border:1px solid var(--border); border-radius:10px;">
+            <summary style="cursor:pointer; font-weight:600; color:var(--text); user-select:none; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-sliders-h" style="color:var(--accent);"></i> <span style="font-size:14px;">{{ translations.get('mail_cfg_advanced', 'Parametri Avanzati (Override)') }}</span>
+            </summary>
+            
+            <div style="padding-top: 16px;">
+                <p style="font-size: 11px; color:var(--muted); margin-bottom: 20px;">
+                    {{ translations.get('mail_cfg_advanced_hint', "Se l'auto-detect fallisce o è disabilitato, compila questi campi per configurare manualmente il custom server.") }}
+                </p>
+
+                <!-- SMTP -->
+                <h6 style="color:var(--text); font-size:13px; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:4px;">
+                    {{ translations.get('mail_cfg_smtp', 'SMTP (Posta in uscita)') }}
+                </h6>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Host</label>
+                        <input type="text" id="plugins.MAIL.smtp_host" placeholder="{{ translations.get('mail_cfg_host', 'es. smtp.mail.com') }}" class="">
+                    </div>
+                    <div class="field">
+                        <label>Porta & Sicurezza</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" id="plugins.MAIL.smtp_port" placeholder="{{ translations.get('mail_cfg_port', 'es. 587') }}" class="" style="width:40%;">
+                            <select id="plugins.MAIL.smtp_security" class="" style="flex:1;">
+                                <option value="STARTTLS">STARTTLS</option>
+                                <option value="TLS">TLS</option>
+                                <option value="PLAIN">{{ translations.get('mail_cfg_none', 'Nessuna') }}</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IMAP -->
+                <h6 style="color:var(--text); font-size:13px; margin-bottom:10px; margin-top:20px; border-bottom:1px solid var(--border); padding-bottom:4px;">
+                    {{ translations.get('mail_cfg_imap', 'IMAP (Posta in arrivo)') }}
+                </h6>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Host</label>
+                        <input type="text" id="plugins.MAIL.imap_host" placeholder="{{ translations.get('mail_cfg_host', 'es. imap.mail.com') }}" class="">
+                    </div>
+                    <div class="field">
+                        <label>Porta & Sicurezza</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="number" id="plugins.MAIL.imap_port" placeholder="{{ translations.get('mail_cfg_port', 'es. 993') }}" class="" style="width:40%;">
+                            <select id="plugins.MAIL.imap_security" class="" style="flex:1;">
+                                <option value="SSL">SSL</option>
+                                <option value="STARTTLS">STARTTLS</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other specific configurations -->
+                <div class="field" style="margin-top:20px;">
+                    <label>{{ translations.get('mail_cfg_max_msg', 'Max Messaggi da sincronizzare (limite storico)') }}</label>
+                    <input type="number" id="plugins.MAIL.max_messages" placeholder="100" class="" style="width:150px;">
+                </div>
+            </div>
+        </details>
+
+        <!-- Test Connection -->
+        <div style="margin-top:30px; display:flex; align-items:center; justify-content:space-between; padding:16px; border-radius:10px; background:var(--bg3); border:1px solid var(--border);">
+            <div>
+                <div style="font-weight:600; font-size:14px;">{{ translations.get('mail_cfg_test', 'Test Connessione') }}</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:4px;">{{ translations.get('mail_cfg_test_desc', 'Verifica le credenziali effettuando un login al server SMTP ed IMAP inserito.') }}</div>
+            </div>
+            <button onclick="mailTestConnection()" id="mail-test-btn" style="padding:10px 20px; border-radius:8px; background:var(--accent); color:#fff; border:none; cursor:pointer; font-weight:600; white-space:nowrap; transition:all 0.2s;">
+                <i class="fas fa-plug"></i> {{ translations.get('mail_cfg_test_btn', 'Esegui Test') }}
+            </button>
+        </div>
+        
+        <!-- Back Button -->
+        <div style="margin-top:24px; text-align:right;">
+            <button onclick="mailToggleConfig()" style="padding:8px 16px; border-radius:7px; background:var(--bg3); color:var(--text); border:1px solid var(--border); cursor:pointer; transition:all 0.2s;">
+                <i class="fas fa-arrow-left"></i> {{ translations.get('mail_cfg_back', 'Torna alla Mail') }}
+            </button>
+        </div>
+
+    </div>
+</div>

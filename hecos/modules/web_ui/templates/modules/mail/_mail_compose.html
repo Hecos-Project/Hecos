@@ -1,0 +1,124 @@
+<!-- MAIL COMPOSE MODAL -->
+<style>
+.mail-modal-overlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.mail-modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.mail-modal {
+    width: 90%; max-width: 680px; height: 85vh; max-height: 750px;
+    background: var(--bg-glass-dark, rgba(20,20,35,0.95));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 16px;
+    box-shadow: 0 16px 60px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+    transform: scale(0.95) translateY(20px);
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.mail-modal-overlay.active .mail-modal { transform: scale(1) translateY(0); }
+
+.mail-modal-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(255,255,255,0.03);
+    border-radius: 16px 16px 0 0;
+}
+.mail-modal-title { font-weight: 700; color: var(--text-primary, #e0e0f0); font-size: 1.1rem; }
+.mail-modal-close {
+    background: none; border: none; font-size: 1.2rem; cursor: pointer;
+    color: var(--text-muted, rgba(200,200,220,0.5)); transition: color 0.15s;
+}
+.mail-modal-close:hover { color: #ff6b6b; }
+
+.mail-modal-body {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 16px; gap: 12px; overflow-y: auto;
+}
+
+.mail-compose-row {
+    display: flex; gap: 12px; align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;
+}
+.mail-compose-label {
+    width: 60px; font-size: 0.8rem; font-weight: 600;
+    color: var(--text-muted, rgba(200,200,220,0.6)); text-align: right;
+}
+.mail-compose-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text-primary, #fff); font-size: 0.9rem; font-family: inherit;
+}
+/* Contacts autocomplete styles */
+.mail-awesomplete { position: absolute; z-index: 10001; background: #fff; }
+
+.mail-compose-editor-wrapper {
+    flex: 1; display: flex; flex-direction: column;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    overflow: hidden; background: rgba(0,0,0,0.2);
+}
+.mail-compose-toolbar {
+    padding: 6px 10px; background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex; gap: 8px;
+}
+.mail-compose-tool {
+    background: none; border: none; color: var(--text-muted, rgba(200,200,220,0.7));
+    cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: 0.2s;
+}
+.mail-compose-tool:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+.mail-compose-textarea {
+    flex: 1; width: 100%; border: none; outline: none; background: transparent;
+    color: var(--text-primary, #fff); padding: 12px; font-family: inherit; font-size: 0.95rem; line-height: 1.5; resize: none;
+}
+
+.mail-modal-footer {
+    padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex; justify-content: space-between; background: rgba(255,255,255,0.02);
+    border-radius: 0 0 16px 16px;
+}
+</style>
+
+<div class="mail-modal-overlay" id="mail-compose-modal">
+    <div class="mail-modal">
+        <div class="mail-modal-header">
+            <div class="mail-modal-title" id="mail-compose-title">{{ translations.get('mail_compose_new', 'Nuovo messaggio') }}</div>
+            <button class="mail-modal-close" onclick="mailCloseComposeModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="mail-modal-body">
+            <input type="hidden" id="mail-compose-in-reply-to">
+            
+            <div class="mail-compose-row">
+                <div class="mail-compose-label">A:</div>
+                <input type="text" class="mail-compose-input" id="mail-compose-to" 
+                       placeholder="{{ translations.get('mail_to_placeholder', 'Email o nome contatto') }}">
+            </div>
+            
+            <div class="mail-compose-row">
+                <div class="mail-compose-label">Cc:</div>
+                <input type="text" class="mail-compose-input" id="mail-compose-cc" placeholder="">
+            </div>
+            
+            <div class="mail-compose-row">
+                <div class="mail-compose-label">Oggetto:</div>
+                <input type="text" class="mail-compose-input" id="mail-compose-subject" placeholder="" style="font-weight:600">
+            </div>
+
+            <div class="mail-compose-editor-wrapper">
+                <textarea class="mail-compose-textarea" id="mail-compose-body" placeholder="{{ translations.get('mail_body_placeholder', 'Scrivi il messaggio qui...') }}"></textarea>
+            </div>
+        </div>
+        <div class="mail-modal-footer">
+            <button class="mail-btn" onclick="mailSaveDraft()">
+                <i class="fas fa-save"></i> {{ translations.get('mail_save_draft', 'Bozza') }}
+            </button>
+            <button class="mail-btn primary" onclick="mailSend()" id="mail-send-btn">
+                <i class="fas fa-paper-plane"></i> {{ translations.get('mail_send', 'Invia') }}
+            </button>
+        </div>
+    </div>
+</div>
