@@ -19,11 +19,11 @@ from hecos.core.logging import logger
 # Maps our canonical names to IMAP folder names (provider-specific)
 _FOLDER_ALIASES = {
     "INBOX":   ["INBOX"],
-    "SENT":    ["Sent", "[Gmail]/Sent Mail", "Sent Items", "Sent Messages"],
-    "DRAFTS":  ["Drafts", "[Gmail]/Drafts"],
-    "TRASH":   ["Trash", "[Gmail]/Trash", "Deleted Items", "Deleted Messages"],
-    "SPAM":    ["Spam", "[Gmail]/Spam", "Junk", "Junk Email"],
-    "STARRED": ["[Gmail]/Starred", "Flagged"],
+    "SENT":    ["Sent", "[Gmail]/Sent Mail", "Sent Items", "Sent Messages", "Posta inviata", "[Gmail]/Posta inviata", "Inviati"],
+    "DRAFTS":  ["Drafts", "[Gmail]/Drafts", "Bozze", "[Gmail]/Bozze"],
+    "TRASH":   ["Trash", "[Gmail]/Trash", "Deleted Items", "Deleted Messages", "Cestino", "[Gmail]/Cestino", "Posta eliminata"],
+    "SPAM":    ["Spam", "[Gmail]/Spam", "Junk", "Junk Email", "Posta indesiderata"],
+    "STARRED": ["[Gmail]/Starred", "Flagged", "Speciali", "[Gmail]/Speciali"],
 }
 
 
@@ -169,15 +169,40 @@ class ImapClient:
     def resolve_folder(self, canonical: str) -> str:
         """Tries to map a canonical folder name to the actual IMAP folder name."""
         aliases = _FOLDER_ALIASES.get(canonical.upper(), [canonical])
+        flag_map = {
+            "SENT": "\\Sent",
+            "DRAFTS": "\\Drafts",
+            "TRASH": "\\Trash",
+            "SPAM": "\\Junk",
+            "STARRED": "\\Flagged",
+        }
+        target_flag = flag_map.get(canonical.upper())
+        import re
         try:
             _, folders = self._conn.list()
             available = []
+            
+            # 1. Standard approach: match by IMAP Special-Use flag (works globally, any language)
+            if target_flag:
+                for f in folders:
+                    decoded = f.decode() if isinstance(f, bytes) else f
+                    if target_flag.lower() in decoded.lower():
+                        match = re.search(r'\)\s+(?:"[^"]+"|NIL)\s+(.*)', decoded)
+                        if match:
+                            name = match.group(1).strip()
+                            if name.startswith('"') and name.endswith('"'):
+                                name = name[1:-1]
+                            return name
+            
+            # 2. Fallback approach: match by name from aliases
             for f in folders:
                 decoded = f.decode() if isinstance(f, bytes) else f
-                # Extract the folder name (last quoted or unquoted token)
-                parts = decoded.split('"')
-                name  = parts[-1].strip() if len(parts) > 1 else decoded.split()[-1]
-                available.append(name)
+                match = re.search(r'\)\s+(?:"[^"]+"|NIL)\s+(.*)', decoded)
+                if match:
+                    name = match.group(1).strip()
+                    if name.startswith('"') and name.endswith('"'):
+                        name = name[1:-1]
+                    available.append(name)
             for alias in aliases:
                 for avail in available:
                     if alias.lower() == avail.lower():

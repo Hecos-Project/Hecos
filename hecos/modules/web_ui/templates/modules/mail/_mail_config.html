@@ -19,7 +19,6 @@
             <div class="field">
                 <label>
                     <i class="fas fa-key" style="color:var(--yellow, #fbbf24);"></i> {{ translations.get('mail_cfg_pwd', 'App Password') }}
-                    <small style="color:var(--muted); font-weight:400; font-size:10px;">{{ translations.get('mail_cfg_pwd_hint', "NON la tua password normale, ma una creata apposta per l'app.") }}</small>
                 </label>
                 <div style="display:flex; gap:8px;">
                     <input type="password" id="mail_app_password" placeholder="••••••••••••" autocomplete="new-password" style="flex:1;">
@@ -30,6 +29,7 @@
                         <i class="fas fa-save"></i> {{ translations.get('mail_cfg_save', 'Salva') }}
                     </button>
                 </div>
+                <small style="display:block; color:var(--muted); font-weight:400; font-size:10px; margin-top:6px;">{{ translations.get('mail_cfg_pwd_hint', "NON la tua password normale, ma una creata apposta per l'app.") }}</small>
             </div>
         </div>
 

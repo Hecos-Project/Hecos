@@ -177,7 +177,12 @@ async function mailLoadFolder(folder) {
     };
     
     // Set title
-    const titles = {'INBOX': 'In Arrivo', 'SENT': 'Inviati', 'DRAFTS': 'Bozze', 'TRASH': 'Cestino'};
+    const titles = {
+        'INBOX': "{{ translations.get('mail_folder_inbox', 'In arrivo') }}",
+        'SENT': "{{ translations.get('mail_folder_sent', 'Inviati') }}",
+        'DRAFTS': "{{ translations.get('mail_folder_drafts', 'Bozze') }}",
+        'TRASH': "{{ translations.get('mail_folder_trash', 'Cestino') }}"
+    };
     titleEl.innerText = titles[folder] || folder;
 
     try {
@@ -201,7 +206,7 @@ async function mailLoadFolder(folder) {
         }
         
     } catch(err) {
-        listEl.innerHTML = `<div class="mail-empty text-danger"><i class="fas fa-exclamation-triangle"></i><div>Errore caricamento: ${err.message}</div></div>`;
+        listEl.innerHTML = `<div class="mail-empty text-danger"><i class="fas fa-exclamation-triangle"></i><div>{{ translations.get('mail_err_load', 'Errore caricamento:') }} ${err.message}</div></div>`;
     }
 }
 
@@ -210,9 +215,9 @@ function mailRenderList(msgs) {
     document.getElementById('mail-count-label').innerText = `(${msgs.length})`;
     
     if(!msgs || msgs.length === 0) {
-        let msg = "Nessuna email trovata";
-        if(MailApp.currentFilter === 'unread') msg = "Non ci sono messaggi da leggere";
-        if(MailApp.searchQuery) msg = "Nessun risultato per: " + MailApp.searchQuery;
+        let msg = "{{ translations.get('mail_empty_title', 'Nessuna email trovata') }}";
+        if(MailApp.currentFilter === 'unread') msg = "{{ translations.get('mail_empty_unread', 'Non ci sono messaggi da leggere') }}";
+        if(MailApp.searchQuery) msg = "{{ translations.get('mail_empty_search', 'Nessun risultato per: ') }}" + MailApp.searchQuery;
         
         listEl.innerHTML = `<div class="mail-empty"><i class="fas fa-envelope-open"></i><div class="mail-empty-title">${msg}</div></div>`;
         return;
@@ -243,7 +248,7 @@ function mailRenderList(msgs) {
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="mail-msg-from">${hecosEscapeHtml(m.from_addr)}</div>
                 </div>
-                <div class="mail-msg-subject">${hecosEscapeHtml(m.subject || '(Nessun oggetto)')} ${m.has_attachments?'<i class="fas fa-paperclip text-muted ms-1"></i>':''}</div>
+                <div class="mail-msg-subject">${hecosEscapeHtml(m.subject || "{{ translations.get('mail_no_subject', '(Nessun oggetto)') }}")} ${m.has_attachments?'<i class="fas fa-paperclip text-muted ms-1"></i>':''}</div>
                 <div class="mail-msg-preview">${hecosEscapeHtml(m.preview)}</div>
             </div>
             <div class="mail-msg-meta">
@@ -287,7 +292,7 @@ async function mailOpenMessage(id) {
         if(!res.ok) throw new Error(res.error);
         const m = res.message;
         
-        document.getElementById('mail-preview-subject').innerText = m.subject || '(Nessun oggetto)';
+        document.getElementById('mail-preview-subject').innerText = m.subject || "{{ translations.get('mail_no_subject', '(Nessun oggetto)') }}";
         
         const df = new Date(m.date).toLocaleString([], {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
         document.getElementById('mail-preview-meta').innerHTML = `
@@ -369,7 +374,7 @@ async function mailToggleStar(id) {
 
 async function mailDeleteMessage(id) {
     if(MailApp.currentFolder === 'TRASH') {
-        if(!confirm("Eliminare definitivamente il messaggio?")) return;
+        if(!confirm("{{ translations.get('mail_delete_confirm', 'Eliminare definitivamente il messaggio?') }}")) return;
         await fetch(`/api/mail/messages/${id}?permanent=true`, {method:'DELETE'});
     } else {
         await fetch(`/api/mail/messages/${id}`, {method:'DELETE'});
@@ -434,7 +439,7 @@ async function mailSyncCurrent() {
 // ── Compose / Reply / Forward ─────────────────────────────────────────────────
 
 function mailCompose() {
-    document.getElementById('mail-compose-title').innerText = "Nuovo messaggio";
+    document.getElementById('mail-compose-title').innerText = "{{ translations.get('mail_new_msg', 'Nuovo messaggio') }}";
     document.getElementById('mail-compose-to').value = "";
     document.getElementById('mail-compose-cc').value = "";
     document.getElementById('mail-compose-subject').value = "";

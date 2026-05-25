@@ -217,10 +217,8 @@ def forward_message(message_id):
 
 # ── Sync ───────────────────────────────────────────────────────────────────────
 
-@mail_bp.route("/sync", methods=["POST"])
-def sync_folder():
-    data   = request.get_json(force=True) or {}
-    folder = data.get("folder", "INBOX")
+@mail_bp.route("/sync-all", methods=["POST"])
+def sync_all():
     try:
         from hecos.plugins.mail.imap_client import build_imap_client
         from hecos.plugins.mail import store
@@ -230,18 +228,31 @@ def sync_folder():
         ok, err = client.connect()
         if not ok:
             return jsonify({"ok": False, "error": err}), 500
+            
         max_msgs = int(cfg.get("max_messages", 100))
-        known    = store.get_uid_set(folder.upper())
-        messages = client.sync_folder(folder=folder, max_msgs=max_msgs, known_uids=known)
+        folders = ["INBOX", "SENT", "DRAFTS", "TRASH", "SPAM"]
+        results = {}
+        total = 0
+        
+        for folder in folders:
+            try:
+                known = store.get_uid_set(folder)
+                messages = client.sync_folder(folder=folder, max_msgs=max_msgs, known_uids=known)
+                count = 0
+                for m in messages:
+                    store.upsert_message(m)
+                    count += 1
+                results[folder] = count
+                total += count
+            except Exception as e:
+                results[folder] = 0
+                logger.warning(f"[MAIL] sync-all {folder} skipped: {e}")
+                
         client.disconnect()
-        count = 0
-        for m in messages:
-            store.upsert_message(m)
-            count += 1
         stats = store.get_stats()
-        return jsonify({"ok": True, "synced": count, "stats": stats})
+        return jsonify({"ok": True, "synced": total, "per_folder": results, "stats": stats})
     except Exception as e:
-        logger.error(f"[MAIL API] /sync error: {e}")
+        logger.error(f"[MAIL API] /sync-all error: {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
