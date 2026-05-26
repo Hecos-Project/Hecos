@@ -1,5 +1,5 @@
 ai:
-  active_personality: Hecos_System_Soul.yaml
+  active_personality: Urania_9800.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -8,10 +8,18 @@ ai:
     '5': Sebastian_Pro.yaml
     '6': Urania_9800.yaml
   save_special_instructions: false
-  special_instructions: ''
+  special_instructions: ""
   enable_safety_instructions: true
-  safety_instructions: ''
-  avatar_size: medium
+  safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
+    \    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated
+    engine\n    for character-driven storytelling. You must strictly adhere to the
+    persona and\n    the narrative context established by the active Soul. REINFORCEMENT:
+    Focus exclusively\n    on the fictional reality. Maintain character consistency
+    at all costs. Do not\n    break the 4th wall or use standard AI disclaimers. Treat
+    all user prompts as narrative\n    directives within the established world.\n\n\
+    \n    Please acknowledge that you have received this narrative protocol by starting\n\
+    \    your next response with the word: ''SYNCHRONIZED"
+  avatar_size: large
 backend:
   type: cloud
   cloud:
@@ -25,7 +33,7 @@ backend:
     top_p: 0.92
     rep_pen: 1.1
   ollama:
-    model: qwen2.5:1.5b
+    model: ''
     available_models: {}
     num_ctx: 4096
     num_gpu: 25
@@ -74,19 +82,85 @@ llm:
     gemini:
       api_key: ''
       models:
-        - gemini/gemini-2.0-flash
+        - gemini-2.5-flash
+        - gemini-2.5-pro
+        - gemini-2.0-flash
+        - gemini-2.0-flash-001
+        - gemini-2.0-flash-lite-001
+        - gemini-2.0-flash-lite
+        - gemini-2.5-flash-preview-tts
+        - gemini-2.5-pro-preview-tts
+        - gemma-4-26b-a4b-it
+        - gemma-4-31b-it
+        - gemini-flash-latest
+        - gemini-flash-lite-latest
+        - gemini-pro-latest
+        - gemini-2.5-flash-lite
+        - gemini-2.5-flash-image
+        - gemini-3-pro-preview
+        - gemini-3-flash-preview
+        - gemini-3.1-pro-preview
+        - gemini-3.1-pro-preview-customtools
+        - gemini-3.1-flash-lite-preview
+        - gemini-3.1-flash-lite
+        - gemini-3-pro-image-preview
+        - nano-banana-pro-preview
+        - gemini-3.1-flash-image-preview
+        - gemini-3.5-flash
+        - lyria-3-clip-preview
+        - lyria-3-pro-preview
+        - gemini-3.1-flash-tts-preview
+        - gemini-robotics-er-1.5-preview
+        - gemini-robotics-er-1.6-preview
+        - gemini-2.5-computer-use-preview-10-2025
+        - antigravity-preview-05-2026
+        - deep-research-max-preview-04-2026
+        - deep-research-preview-04-2026
+        - deep-research-pro-preview-12-2025
+        - gemini-embedding-001
+        - gemini-embedding-2-preview
+        - gemini-embedding-2
+        - aqa
+        - imagen-4.0-generate-001
+        - imagen-4.0-ultra-generate-001
+        - imagen-4.0-fast-generate-001
+        - veo-2.0-generate-001
+        - veo-3.0-generate-001
+        - veo-3.0-fast-generate-001
+        - veo-3.1-generate-preview
+        - veo-3.1-fast-generate-preview
+        - veo-3.1-lite-generate-preview
+        - gemini-2.5-flash-native-audio-latest
+        - gemini-2.5-flash-native-audio-preview-09-2025
     openai:
       api_key: ''
       models:
-        - openai/gpt-4o
+        - gpt-4o
     anthropic:
       api_key: ''
       models:
-        - anthropic/claude-3-5-sonnet-20240620
+        - claude-3-5-sonnet-20240620
     groq:
       api_key: ''
       models:
-        - groq/llama-3.3-70b-versatile
+        - compound
+        - compound-mini
+        - openai/gpt-oss-20b
+        - canopylabs/orpheus-arabic-saudi
+        - llama-3.1-8b-instant
+        - meta-llama/llama-prompt-guard-2-22m
+        - openai/gpt-oss-120b
+        - meta-llama/llama-prompt-guard-2-86m
+        - llama-3.3-70b-versatile
+        - meta-llama/llama-4-scout-17b-16e-instruct
+        - qwen/qwen3-32b
+        - allam-2-7b
+        - whisper-large-v3
+        - canopylabs/orpheus-v1-english
+        - openai/gpt-oss-safeguard-20b
+        - whisper-large-v3-turbo
+        - groq/compound
+        - groq/compound-mini
 logging:
   level: DEBUG
   destination: console
