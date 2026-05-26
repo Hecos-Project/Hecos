@@ -20,18 +20,31 @@ function addBubble(role, text, id, opts) {
         avatar.innerHTML = '<i class="fas fa-user"></i>';
     }
   } else {
-    const avatarSrc = window.HecosAvatar || "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png";
-    const imgStyle = window.HecosAvatar ? 
-      "object-fit:cover; border-radius:50%;" : 
-      "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
-    
-    // Wrap in a zoomable container
-    avatar.innerHTML = `
-      <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${avatarSrc}')">
-        <img src="${avatarSrc}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
-        <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-      </div>`;
+    const defaultAvatarSrc = window.HecosAvatar || "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png";
+    // Use the persona_name snapshot frozen at message-write time (if available), else current avatar
+    const personaForAvatar = (opts && opts.persona_name) ? opts.persona_name : null;
 
+    const renderAvatar = (avatarSrc) => {
+      const imgStyle = avatarSrc !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
+        ? "object-fit:cover; border-radius:50%;"
+        : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+      avatar.innerHTML = `
+        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${avatarSrc}')">
+          <img src="${avatarSrc}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
+          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+        </div>`;
+    };
+
+    if (personaForAvatar) {
+      // Start with current avatar, then async-update to the frozen persona avatar
+      renderAvatar(defaultAvatarSrc);
+      fetch(`/api/persona/avatar?persona=${encodeURIComponent(personaForAvatar)}`)
+        .then(r => r.json())
+        .then(d => { if (d.ok && d.avatar_path) renderAvatar(d.avatar_path); })
+        .catch(() => {});
+    } else {
+      renderAvatar(defaultAvatarSrc);
+    }
   }
   
   const wrapper = document.createElement('div');
