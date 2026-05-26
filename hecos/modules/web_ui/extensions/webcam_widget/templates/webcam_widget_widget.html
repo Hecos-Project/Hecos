@@ -1,0 +1,202 @@
+<!-- WEBCAM WIDGET -->
+<style>
+.webcam-container {
+    width: 100%;
+    height: 100%;
+    background: var(--bg2, #101015);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+.webcam-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* fill the area without distortion */
+    transform: scaleX(-1); /* mirror effect */
+}
+.webcam-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 20px 10px 10px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.webcam-container:hover .webcam-controls {
+    opacity: 1;
+}
+.webcam-select {
+    background: var(--glass, rgba(255,255,255,0.1));
+    color: #fff;
+    border: 1px solid var(--border, rgba(255,255,255,0.2));
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    outline: none;
+    backdrop-filter: blur(4px);
+    width: 150px;
+    text-overflow: ellipsis;
+}
+.webcam-select option {
+    background: #111;
+    color: #fff;
+}
+.webcam-btn {
+    background: var(--glass, rgba(255,255,255,0.1));
+    border: 1px solid var(--border, rgba(255,255,255,0.2));
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.webcam-btn:hover {
+    background: var(--accent, #6c63ff);
+    border-color: transparent;
+}
+.webcam-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.8);
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 10px;
+    display: none;
+}
+</style>
+
+<div class="webcam-container">
+    <video id="webcam-feed-video" class="webcam-video" autoplay playsinline muted></video>
+    
+    <div class="webcam-error" id="webcam-error-overlay">
+        <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 8px;"></i>
+        <div id="webcam-error-text">No camera access</div>
+    </div>
+    
+    <div class="webcam-controls">
+        <select id="webcam-device-select" class="webcam-select" onchange="window.startWebcam(this.value)">
+            <option value="">Loading cameras...</option>
+        </select>
+        <div>
+            <button class="webcam-btn" onclick="window.startWebcam()" title="Refresh / Start"><i class="fas fa-sync-alt"></i></button>
+            <button class="webcam-btn" onclick="window.stopWebcam()" title="Stop Feed" style="color: #ff6b6b;"><i class="fas fa-stop"></i></button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    let currentStream = null;
+    const videoEl = document.getElementById('webcam-feed-video');
+    const selectEl = document.getElementById('webcam-device-select');
+    const errorEl = document.getElementById('webcam-error-overlay');
+    const errorText = document.getElementById('webcam-error-text');
+
+    window.stopWebcam = function() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        videoEl.srcObject = null;
+    };
+
+    window.startWebcam = async function(deviceId = null) {
+        window.stopWebcam();
+        errorEl.style.display = 'none';
+        
+        const constraints = {
+            video: deviceId ? { deviceId: { exact: deviceId } } : true,
+            audio: false
+        };
+
+        try {
+            // First time getting stream, this asks for permissions
+            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            videoEl.srcObject = currentStream;
+            
+            // Populate select box now that we have permissions
+            populateDevices(deviceId);
+        } catch (err) {
+            console.error('[Webcam Widget] Error starting webcam:', err);
+            errorEl.style.display = 'flex';
+            errorText.innerText = "Camera error: " + err.message;
+        }
+    };
+
+    async function populateDevices(selectedId) {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(d => d.kind === 'videoinput');
+            
+            selectEl.innerHTML = '';
+            
+            if (videoDevices.length === 0) {
+                selectEl.innerHTML = '<option value="">No cameras found</option>';
+                return;
+            }
+
+            let foundSelected = false;
+            videoDevices.forEach((device, index) => {
+                const opt = document.createElement('option');
+                opt.value = device.deviceId;
+                opt.text = device.label || `Camera ${index + 1}`;
+                if (selectedId === device.deviceId) {
+                    opt.selected = true;
+                    foundSelected = true;
+                }
+                selectEl.appendChild(opt);
+            });
+            
+            // Fallback selection text sync
+            if (!foundSelected && currentStream) {
+                const activeTrack = currentStream.getVideoTracks()[0];
+                if (activeTrack) {
+                    for(let i = 0; i < selectEl.options.length; i++) {
+                        if (selectEl.options[i].text === activeTrack.label) {
+                            selectEl.options[i].selected = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch(e) {
+            console.error("Error listing devices", e);
+        }
+    }
+
+    // Attempt start after short delay to let layout settle
+    setTimeout(() => {
+        // Only auto-start if the widget is actually rendered and visible, to save resources
+        if (videoEl.offsetParent !== null) {
+            window.startWebcam();
+        }
+    }, 1000);
+
+    // Stop webcam if widget is removed from DOM (GridStack removal)
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.removedNodes.forEach((node) => {
+                if (node.contains && node.contains(videoEl)) {
+                    window.stopWebcam();
+                }
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+})();
+</script>

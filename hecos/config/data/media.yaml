@@ -1,7 +1,7 @@
 image_gen:
   enabled: true
   provider: pollinations
-  model: 'flux'
+  model: 'sana'
   nologo: true
   api_key: ''
   api_key_comment: ''
@@ -9,7 +9,7 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: -1
+  last_seed: 348422642
   sampler: euler_a
   scheduler: euler
   guidance_scale: 7.5
@@ -23,8 +23,9 @@ image_gen:
   flux_refiner_instructions: ''
   show_metadata_in_chat: false
   presets: {}
-  active_preset: ''
+  active_preset: '⚡ Flux Schnell (HuggingFace)'
   custom_hf_models: []
 video_gen:
   enabled: false
+
 
