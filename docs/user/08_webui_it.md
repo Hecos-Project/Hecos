@@ -9,10 +9,10 @@ La WebUI di Hecos è l'interfaccia grafica moderna accessibile tramite il tuo br
 - **Gestione Utenti (Multi-User)**: Il tab "Users" permette di gestire profili multipli, cambiare avatar e bio note personali. Ogni utente ha un "Vault" isolato.
 - **Cronologia Sessioni**: Un nuovo pannello laterale permette di gestire conversazioni multiple. Ogni sessione è salvata in modo persistente nell'Episodic Memory Vault, può essere rinominata o eliminata. È presente un pulsante 🗑️ per la cancellazione rapida di tutte le chat.
 - **Sidebar Dinamica**: La barra laterale si adatta istantaneamente caricando solo i plugin configurati e attivi.
-- **Modalità Privacy a 3 Livelli (v0.25.0)**: Selettore avanzato che blocca la modalità dopo l'invio del primo messaggio:
+- **Modalità Privacy a 3 Livelli (v0.26.0)**: Selettore avanzato che blocca la modalità dopo l'invio del primo messaggio:
   - `☁️ Normale`: Messaggi salvati permanentemente nel database locale.
   - `🔒 Auto-Wipe`: Messaggi conservati in RAM finché il sistema è attivo; cancellati al riavvio.
   - `🕵️ Incognito`: Traccia zero. I messaggi non vengono mai scritti e il contesto viene rimosso al cambio della chat.
 - **Finestra Azioni (Action Window)**: Console pulita in stile terminale direttamente all'interno della UI della chat, per monitorare l'esecuzione nativa del sistema e i processi in background.
 - **Control Room e Widget**: Un'interfaccia dedicata e in stile masonry all'interno della WebUI dove possono essere eseguiti contemporaneamente più widget, come la telemetria dell'OS o il Controllo Hardware.
-- **Versione Attuale**: `0.25.0` (Runtime Alpha)
+- **Versione Attuale**: `0.26.0` (Runtime Alpha)

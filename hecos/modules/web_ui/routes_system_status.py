@@ -94,16 +94,16 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             # Telemetry
             dsb_cfg          = cfg.get("plugins", {}).get("DASHBOARD", {})
             global_enabled   = dsb_cfg.get("enabled", True)
-            webui_telemetry  = dsb_cfg.get("webui_telemetry_enabled", True)
+            webui_telemetry  = dsb_cfg.get("webui_telemetry_enabled", False)
             telemetry_active = global_enabled and webui_telemetry
 
-            cpu_cache["enabled"] = telemetry_active and dsb_cfg.get("track_cpu", True)
+            cpu_cache["enabled"] = telemetry_active and dsb_cfg.get("track_cpu", False)
 
             cpu_val = ram_val = vram_val = None
             if telemetry_active:
-                if dsb_cfg.get("track_cpu",  True): cpu_val  = cpu_cache.get("value", 0)
-                if dsb_cfg.get("track_ram",  True): ram_val  = psutil.virtual_memory().percent
-                if dsb_cfg.get("track_vram", True): vram_val = get_vram_usage()
+                if dsb_cfg.get("track_cpu",  False): cpu_val  = cpu_cache.get("value", 0)
+                if dsb_cfg.get("track_ram",  False): ram_val  = psutil.virtual_memory().percent
+                if dsb_cfg.get("track_vram", False): vram_val = get_vram_usage()
 
             return jsonify({
                 "backend":    backend.upper(),

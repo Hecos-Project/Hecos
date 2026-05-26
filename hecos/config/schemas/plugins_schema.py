@@ -185,6 +185,24 @@ class PluginContacts(BaseModel):
     lazy_load: bool = True
 
 
+class PluginMail(BaseModel):
+    """Mail plugin config. Credentials are stored here to avoid github exposure.
+    Can also be read from .env: HECOS_MAIL_ADDRESS and HECOS_MAIL_APP_PASSWORD."""
+    enabled: bool = True
+    lazy_load: bool = True
+    mail_address: str = ""
+    mail_app_password: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_security: str = "STARTTLS"
+    imap_host: str = ""
+    imap_port: int = 993
+    imap_security: str = "SSL"
+    max_messages: int = 100
+    sync_on_open: bool = True
+    auto_detect_provider: bool = True
+
+
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
@@ -208,6 +226,7 @@ class PluginsConfig(BaseModel):
     CALENDAR: PluginCalendar = Field(default_factory=PluginCalendar)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
+    MAIL: PluginMail = Field(default_factory=PluginMail)
     extra_dirs: List[str] = []
 
 

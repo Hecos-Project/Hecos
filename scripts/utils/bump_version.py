@@ -4,7 +4,7 @@ import re
 # Centralized configuration
 TARGET_DIR = r"c:\Hecos"
 VERSION_FILE = os.path.join(TARGET_DIR, "hecos", "core", "version")
-OLD_VERSION = "0.25.0"  # The version to replace
+OLD_VERSION = "0.26.0"  # The version to replace
 
 def get_current_version():
     if os.path.exists(VERSION_FILE):

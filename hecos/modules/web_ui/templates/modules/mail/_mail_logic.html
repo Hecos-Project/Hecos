@@ -1,0 +1,686 @@
+<!-- MAIL JAVASCRIPT LOGIC -->
+<script>
+window.MailApp = {
+    currentFolder: 'INBOX',
+    currentFilter: 'all',  // all, unread, starred
+    searchQuery: '',
+    messages: [],
+    selectedId: null,
+    isComposeOpen: false
+};
+
+// ── Initialization ────────────────────────────────────────────────────────────
+
+function initMailPanel() {
+    console.log("[MailApp] Initializing panel...");
+    mailLoadFolder('INBOX');
+    
+    // Check if sync on open is enabled
+    const syncOnOpen = document.getElementById('plugins.MAIL.sync_on_open');
+    if(syncOnOpen && syncOnOpen.checked) {
+        setTimeout(mailSyncCurrent, 500);
+    }
+    
+    // Bind configuration panel values
+    mailSetupConfigSync();
+}
+
+// ── Configuration Auto-Sync ──────────────────────────────────────────────────
+
+async function mailSetupConfigSync() {
+    // Load from dedicated endpoint
+    try {
+        const res = await mailApiGet('/config');
+        if (res.ok && res.config) {
+            const cfg = res.config;
+            const fields = [
+                'enabled', 'sync_on_open', 'auto_detect_provider',
+                'smtp_host', 'smtp_port', 'smtp_security',
+                'imap_host', 'imap_port', 'imap_security',
+                'max_messages'
+            ];
+            fields.forEach(key => {
+                const el = document.getElementById('plugins.MAIL.' + key);
+                if (!el) return;
+                const val = cfg[key];
+                if (val !== undefined && val !== null && val !== '') {
+                    if (el.type === 'checkbox') el.checked = Boolean(val);
+                    else el.value = val;
+                }
+            });
+        }
+    } catch(e) {
+        console.warn('[MailApp] Could not load mail config:', e);
+    }
+
+    // Wire ALL fields to trigger a unified save
+    const allFields = [
+        'enabled', 'sync_on_open', 'auto_detect_provider',
+        'smtp_host', 'smtp_port', 'smtp_security',
+        'imap_host', 'imap_port', 'imap_security',
+        'max_messages'
+    ];
+    let saveTimeout = null;
+    const scheduleSave = () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(mailSaveAllConfig, 600);
+    };
+    allFields.forEach(key => {
+        const el = document.getElementById('plugins.MAIL.' + key);
+        if (!el) return;
+        el.addEventListener('change', scheduleSave);
+        el.addEventListener('input', scheduleSave);
+    });
+}
+
+async function mailSaveAllConfig() {
+    const fieldDefs = [
+        {key: 'enabled',              type: 'bool'},
+        {key: 'sync_on_open',         type: 'bool'},
+        {key: 'auto_detect_provider', type: 'bool'},
+        {key: 'smtp_host',            type: 'str'},
+        {key: 'smtp_port',            type: 'int'},
+        {key: 'smtp_security',        type: 'str'},
+        {key: 'imap_host',            type: 'str'},
+        {key: 'imap_port',            type: 'int'},
+        {key: 'imap_security',        type: 'str'},
+        {key: 'max_messages',         type: 'int'},
+    ];
+    const payload = {};
+    fieldDefs.forEach(({key, type}) => {
+        const el = document.getElementById('plugins.MAIL.' + key);
+        if (!el) return;
+        if (type === 'bool')      payload[key] = el.checked;
+        else if (type === 'int')  payload[key] = parseInt(el.value) || 0;
+        else                      payload[key] = el.value;
+    });
+    try {
+        const res = await fetch('/api/mail/config', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        }).then(r => r.json());
+        if (res.ok) {
+            // Mirror into window.cfg so global saveConfig never sends stale MAIL data
+            if (window.cfg) {
+                if (!window.cfg.plugins) window.cfg.plugins = {};
+                window.cfg.plugins.MAIL = Object.assign(window.cfg.plugins.MAIL || {}, payload);
+            }
+            if (typeof window.setSaveMsg === 'function') {
+                window.setSaveMsg('\u2713 Changes auto-saved', 'ok');
+                setTimeout(() => { if (typeof window.setSaveMsg === 'function') window.setSaveMsg('', 'muted'); }, 3500);
+            }
+        }
+    } catch(e) {
+        console.error('[MailApp] mailSaveAllConfig error:', e);
+    }
+}
+
+
+// ── API Helpers ───────────────────────────────────────────────────────────────
+
+function mailApiGet(endpoint) {
+    return fetch('/api/mail' + endpoint).then(r => r.json());
+}
+function mailApiPost(endpoint, data = {}) {
+    return fetch('/api/mail' + endpoint, {
+        method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'}
+    }).then(r => r.json());
+}
+function mailApiPut(endpoint, data = {}) {
+    return fetch('/api/mail' + endpoint, {
+        method: 'PUT', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'}
+    }).then(r => r.json());
+}
+
+// ── UI Actions (List & Folders) ───────────────────────────────────────────────
+
+function mailSelectFolder(folder) {
+    MailApp.currentFolder = folder;
+    document.querySelectorAll('.mail-folder-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('mail-folder-' + folder)?.classList.add('active');
+    
+    // Reset filter if folder changes, unless the user clicked the Starred view
+    if (folder === 'INBOX' && document.getElementById('mail-folder-STARRED').classList.contains('active')) {
+        // Special case: keeping starred filter
+    } else {
+        mailSetFilter('all', false); // dont reload yet
+    }
+    
+    mailLoadFolder(folder);
+    window.dispatchEvent(new CustomEvent("hecos.tooltip", {detail:"Cartella " + folder}));
+}
+
+function mailSetFilter(filterType, reload = true) {
+    MailApp.currentFilter = filterType;
+    document.querySelectorAll('.mail-filter-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('mail-filter-' + filterType)?.classList.add('active');
+    if(reload) mailLoadFolder(MailApp.currentFolder);
+}
+
+function mailSearchDebounce(val) {
+    clearTimeout(window.mailSearchTimer);
+    window.mailSearchTimer = setTimeout(() => {
+        MailApp.searchQuery = val.trim();
+        mailLoadFolder(MailApp.currentFolder);
+    }, 400);
+}
+
+async function mailLoadFolder(folder) {
+    const listEl = document.getElementById('mail-list');
+    const titleEl = document.getElementById('mail-folder-title');
+    const badgeMap = {
+        'INBOX':  document.getElementById('mail-badge-inbox'),
+        'SENT':   document.getElementById('mail-badge-sent'),
+        'DRAFTS': document.getElementById('mail-badge-drafts'),
+        'TRASH':  document.getElementById('mail-badge-trash'),
+    };
+    
+    // Set title
+    const titles = {
+        'INBOX': "{{ translations.get('mail_folder_inbox', 'In arrivo') }}",
+        'SENT': "{{ translations.get('mail_folder_sent', 'Inviati') }}",
+        'DRAFTS': "{{ translations.get('mail_folder_drafts', 'Bozze') }}",
+        'TRASH': "{{ translations.get('mail_folder_trash', 'Cestino') }}"
+    };
+    titleEl.innerText = titles[folder] || folder;
+
+    try {
+        let endpoint = `/messages?folder=${folder}&limit=100`;
+        if(MailApp.currentFilter === 'unread') endpoint += '&unread=true';
+        if(MailApp.currentFilter === 'starred') endpoint += '&starred=true';
+        if(MailApp.searchQuery) endpoint += `&q=${encodeURIComponent(MailApp.searchQuery)}`;
+        
+        const res = await mailApiGet(endpoint);
+        if(!res.ok) throw new Error(res.error);
+        
+        MailApp.messages = res.messages || [];
+        mailRenderList(MailApp.messages);
+        
+        // Update stats
+        const stats = await mailApiGet('/stats');
+        if(stats.ok) {
+            if(badgeMap['INBOX']) badgeMap['INBOX'].innerText  = stats.stats.inbox_unread || '';
+            if(badgeMap['DRAFTS']) badgeMap['DRAFTS'].innerText = stats.stats.drafts || '';
+            document.getElementById('mail-badge-starred').innerText = stats.stats.starred || '';
+        }
+        
+    } catch(err) {
+        listEl.innerHTML = `<div class="mail-empty text-danger"><i class="fas fa-exclamation-triangle"></i><div>{{ translations.get('mail_err_load', 'Errore caricamento:') }} ${err.message}</div></div>`;
+    }
+}
+
+function mailRenderList(msgs) {
+    const listEl = document.getElementById('mail-list');
+    document.getElementById('mail-count-label').innerText = `(${msgs.length})`;
+    
+    if(!msgs || msgs.length === 0) {
+        let msg = "{{ translations.get('mail_empty_title', 'Nessuna email trovata') }}";
+        if(MailApp.currentFilter === 'unread') msg = "{{ translations.get('mail_empty_unread', 'Non ci sono messaggi da leggere') }}";
+        if(MailApp.searchQuery) msg = "{{ translations.get('mail_empty_search', 'Nessun risultato per: ') }}" + MailApp.searchQuery;
+        
+        listEl.innerHTML = `<div class="mail-empty"><i class="fas fa-envelope-open"></i><div class="mail-empty-title">${msg}</div></div>`;
+        return;
+    }
+    
+    let html = '';
+    msgs.forEach(m => {
+        const isUnread = !m.read ? 'unread' : '';
+        const starCls  = m.starred ? 'starred' : '';
+        const starIcon = m.starred ? 'fas fa-star' : 'far fa-star';
+        
+        // avatar bg
+        const colors = ['#6c63ff', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
+        const colorIdx = m.from_addr.length % colors.length;
+        const color = colors[colorIdx];
+        const letter = (m.from_addr || '?').substring(0,1).toUpperCase();
+        
+        // format date
+        const d = new Date(m.date);
+        const df = (Date.now() - d.getTime() < 86400000) ? 
+                    d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
+                    d.toLocaleDateString([], {day:'2-digit', month:'short'});
+
+        html += `
+        <div class="mail-msg-row ${isUnread}" id="mail-row-${m.id}" onclick="mailOpenMessage('${m.id}')">
+            <div class="mail-msg-avatar" style="background:${color}">${letter}</div>
+            <div class="mail-msg-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="mail-msg-from">${hecosEscapeHtml(m.from_addr)}</div>
+                </div>
+                <div class="mail-msg-subject">${hecosEscapeHtml(m.subject || "{{ translations.get('mail_no_subject', '(Nessun oggetto)') }}")} ${m.has_attachments?'<i class="fas fa-paperclip text-muted ms-1"></i>':''}</div>
+                <div class="mail-msg-preview">${hecosEscapeHtml(m.preview)}</div>
+            </div>
+            <div class="mail-msg-meta">
+                <div class="mail-msg-date">${df}</div>
+                <div class="mail-msg-actions" onclick="event.stopPropagation()">
+                    <button class="mail-msg-action-btn mail-star-btn ${starCls}" onclick="mailToggleStar('${m.id}')">
+                        <i class="${starIcon}"></i>
+                    </button>
+                    ${MailApp.currentFolder==='TRASH' ? '' : `
+                    <button class="mail-msg-action-btn" onclick="mailDeleteMessage('${m.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    `}
+                </div>
+            </div>
+        </div>`;
+    });
+    listEl.innerHTML = html;
+}
+
+// ── Preview Panel Actions ─────────────────────────────────────────────────────
+
+async function mailOpenMessage(id) {
+    MailApp.selectedId = id;
+    
+    // update highlight
+    document.querySelectorAll('.mail-msg-row').forEach(el => el.classList.remove('active'));
+    const row = document.getElementById('mail-row-' + id);
+    if(row) {
+        row.classList.add('active');
+        row.classList.remove('unread'); // optimistically mark read visually
+    }
+    
+    document.getElementById('mail-content').classList.add('with-preview');
+    const previewEl = document.getElementById('mail-preview');
+    previewEl.style.display = 'flex';
+    document.getElementById('mail-preview-body').innerHTML = '<div class="mail-preview-empty"><div class="mail-spinner active" style="width:24px;height:24px"></div></div>';
+    
+    try {
+        const res = await mailApiGet(`/messages/${id}`);
+        if(!res.ok) throw new Error(res.error);
+        const m = res.message;
+        
+        document.getElementById('mail-preview-subject').innerText = m.subject || "{{ translations.get('mail_no_subject', '(Nessun oggetto)') }}";
+        
+        const df = new Date(m.date).toLocaleString([], {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+        document.getElementById('mail-preview-meta').innerHTML = `
+            <div><strong>Da:</strong> ${hecosEscapeHtml(m.from_addr)}</div>
+            <div><strong>A:</strong> ${hecosEscapeHtml(m.to_addrs)}</div>
+            ${m.cc ? `<div><strong>Cc:</strong> ${hecosEscapeHtml(m.cc)}</div>` : ''}
+            <div><strong>Data:</strong> ${df}</div>
+        `;
+        
+        let bodyHtml = '';
+        if(m.body_html) {
+            // Use iframe for safely rendering HTML emails. Add white background and full width.
+            // Allow same origin for remote images, allow popups so links open in new tabs.
+            const styleInject = `<style>body{margin:0;font-family:sans-serif;background:#fff;} img{max-width:100%;height:auto;}</style>`;
+            let safeHtml = hecosEscapeHtml(styleInject + m.body_html).replace(/"/g, '&quot;');
+            bodyHtml = `<iframe srcdoc="${safeHtml}" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" style="width:100%; height:65vh; border:none; background:#ffffff; border-radius:8px;"></iframe>`;
+        } else {
+            bodyHtml = `<div class="mail-preview-body-text">${hecosEscapeHtml(m.body_text)}</div>`;
+        }
+        
+        // Attachments
+        if(m.attachments && m.attachments.length > 0) {
+            bodyHtml += `<div class="mt-4 pt-3 border-top border-secondary"><h6 class="text-muted"><i class="fas fa-paperclip"></i> Allegati (${m.attachments.length})</h6><div class="d-flex flex-wrap gap-2">`;
+            m.attachments.forEach(att => {
+                const kb = Math.round(att.size / 1024);
+                bodyHtml += `<div class="badge bg-dark border border-secondary p-2"><i class="far fa-file"></i> ${hecosEscapeHtml(att.filename)} (${kb} KB)</div>`;
+            });
+            bodyHtml += `</div></div>`;
+        }
+        
+        document.getElementById('mail-preview-body').innerHTML = bodyHtml;
+        
+        // update unread counter in background
+        if(!m.read) {
+            const resStats = await mailApiGet('/stats');
+            if(resStats.ok && document.getElementById('mail-badge-inbox')) {
+                document.getElementById('mail-badge-inbox').innerText = resStats.stats.inbox_unread || '';
+            }
+        }
+        
+    } catch(err) {
+        document.getElementById('mail-preview-body').innerHTML = `<div class="mail-preview-empty text-danger"><i class="fas fa-exclamation-triangle"></i><div>Impossibile caricare il messaggio: ${err.message}</div></div>`;
+    }
+}
+
+function mailClosePreview() {
+    document.getElementById('mail-content').classList.remove('with-preview');
+    document.getElementById('mail-preview').style.display = 'none';
+    MailApp.selectedId = null;
+    document.querySelectorAll('.mail-msg-row').forEach(el => el.classList.remove('active'));
+}
+
+// ── Message Mutations ─────────────────────────────────────────────────────────
+
+async function mailToggleStar(id) {
+    const rawData = MailApp.messages.find(x => x.id === id);
+    let current = false;
+    if(rawData) current = rawData.starred;
+    
+    // optimistic UI
+    const row = document.getElementById('mail-row-' + id);
+    if(row) {
+        const btn = row.querySelector('.mail-star-btn');
+        const icon = btn.querySelector('i');
+        if(current) {
+            btn.classList.remove('starred');
+            icon.className = 'far fa-star';
+        } else {
+            btn.classList.add('starred');
+            icon.className = 'fas fa-star';
+        }
+    }
+    if(rawData) rawData.starred = !current;
+    
+    await mailApiPut(`/messages/${id}`, {starred: !current});
+    
+    // Optional refresh Stats
+}
+
+async function mailDeleteMessage(id) {
+    if(MailApp.currentFolder === 'TRASH') {
+        if(!confirm("{{ translations.get('mail_delete_confirm', 'Eliminare definitivamente il messaggio?') }}")) return;
+        await fetch(`/api/mail/messages/${id}?permanent=true`, {method:'DELETE'});
+    } else {
+        await fetch(`/api/mail/messages/${id}`, {method:'DELETE'});
+    }
+    
+    // Remove from UI immediately
+    const row = document.getElementById('mail-row-' + id);
+    if(row) row.remove();
+    MailApp.messages = MailApp.messages.filter(x => x.id !== id);
+    
+    if(MailApp.selectedId === id) mailClosePreview();
+}
+
+function mailDeleteActive() {
+    if(MailApp.selectedId) mailDeleteMessage(MailApp.selectedId);
+}
+
+// ── Sync ──────────────────────────────────────────────────────────────────────
+
+async function mailSyncCurrent() {
+    const spinner = document.getElementById('mail-sync-spinner');
+    const btn = document.getElementById('mail-sync-btn');
+    
+    if(spinner.classList.contains('active')) return;
+    
+    spinner.classList.add('active');
+    btn.disabled = true;
+    window.dispatchEvent(new CustomEvent("hecos.tooltip", {detail:"Sincronizzazione in corso..."}));
+    
+    try {
+        // Sync all folders in one shot (INBOX, SENT, DRAFTS, TRASH, SPAM)
+        const res = await mailApiPost('/sync-all', {});
+        if(res.ok) {
+            const details = Object.entries(res.per_folder || {})
+                .filter(([,v]) => v > 0)
+                .map(([k,v]) => `${k}: +${v}`).join(', ');
+            const msg = res.synced > 0
+                ? `Sync completata: ${res.synced} nuovi messaggi${details ? ' (' + details + ')' : ''}.`
+                : 'Sync completata. Nessun messaggio nuovo.';
+            window.dispatchEvent(new CustomEvent("hecos.tooltip", {detail: msg}));
+            // Update folder badges from stats
+            if(res.stats) {
+                const badgeMap = {
+                    'INBOX':  document.getElementById('mail-badge-inbox'),
+                    'DRAFTS': document.getElementById('mail-badge-drafts'),
+                };
+                if(badgeMap['INBOX'])  badgeMap['INBOX'].innerText  = res.stats.inbox_unread || '';
+                if(badgeMap['DRAFTS']) badgeMap['DRAFTS'].innerText = res.stats.drafts       || '';
+            }
+            mailLoadFolder(MailApp.currentFolder); // refresh current view
+        } else {
+            throw new Error(res.error);
+        }
+    } catch(err) {
+        alert("Errore sincronizzazione: " + err.message);
+    } finally {
+        spinner.classList.remove('active');
+        btn.disabled = false;
+    }
+}
+
+// ── Compose / Reply / Forward ─────────────────────────────────────────────────
+
+function mailCompose() {
+    document.getElementById('mail-compose-title').innerText = "{{ translations.get('mail_new_msg', 'Nuovo messaggio') }}";
+    document.getElementById('mail-compose-to').value = "";
+    document.getElementById('mail-compose-cc').value = "";
+    document.getElementById('mail-compose-subject').value = "";
+    document.getElementById('mail-compose-body').value = "";
+    document.getElementById('mail-compose-in-reply-to').value = "";
+    
+    document.getElementById('mail-compose-modal').classList.add('active');
+    setTimeout(() => document.getElementById('mail-compose-to').focus(), 100);
+}
+
+function mailCloseComposeModal() {
+    document.getElementById('mail-compose-modal').classList.remove('active');
+}
+
+async function mailReplyActive() {
+    if(!MailApp.selectedId) return;
+    try {
+        const res = await mailApiGet(`/messages/${MailApp.selectedId}`);
+        if(res.ok) _openReplyModal(res.message, false);
+    } catch(e) {}
+}
+
+async function mailReplyAllActive() {
+    if(!MailApp.selectedId) return;
+    try {
+        const res = await mailApiGet(`/messages/${MailApp.selectedId}`);
+        if(res.ok) _openReplyModal(res.message, true);
+    } catch(e) {}
+}
+
+function _openReplyModal(m, replyAll) {
+    document.getElementById('mail-compose-title').innerText = replyAll ? "Rispondi a tutti" : "Rispondi";
+    document.getElementById('mail-compose-to').value = hecosEscapeHtml(m.from_addr);
+    document.getElementById('mail-compose-cc').value = replyAll ? hecosEscapeHtml(m.to_addrs) : "";
+    document.getElementById('mail-compose-in-reply-to').value = m.id;
+    
+    let subj = m.subject || '';
+    if(!subj.toLowerCase().startsWith('re:')) subj = "Re: " + subj;
+    document.getElementById('mail-compose-subject').value = subj;
+    
+    // Pre-fill body with quote
+    let  quote = `\n\n\n--- In data ${new Date(m.date).toLocaleString()} ${m.from_addr} ha scritto ---\n`;
+    quote += "> " + (m.body_text || '').replace(/\n/g, "\n> ");
+    document.getElementById('mail-compose-body').value = quote;
+    
+    document.getElementById('mail-compose-modal').classList.add('active');
+    setTimeout(() => document.getElementById('mail-compose-body').focus(), 100);
+}
+
+async function mailForwardActive() {
+    if(!MailApp.selectedId) return;
+    try {
+        const res = await mailApiGet(`/messages/${MailApp.selectedId}`);
+        if(res.ok) {
+            const m = res.message;
+            document.getElementById('mail-compose-title').innerText = "Inoltra (Fwd)";
+            document.getElementById('mail-compose-to').value = "";
+            document.getElementById('mail-compose-cc').value = "";
+            document.getElementById('mail-compose-in-reply-to').value = m.id; // abused for forward id here 
+            
+            let subj = m.subject || '';
+            if(!subj.toLowerCase().startsWith('fwd:')) subj = "Fwd: " + subj;
+            document.getElementById('mail-compose-subject').value = subj;
+            
+            let  quote = `\n\n\n--- Messaggio Inoltrato ---\nDa: ${m.from_addr}\nData: ${m.date}\nOggetto: ${m.subject}\n\n`;
+            quote += m.body_text || '';
+            document.getElementById('mail-compose-body').value = quote;
+            
+            document.getElementById('mail-compose-modal').classList.add('active');
+            setTimeout(() => document.getElementById('mail-compose-to').focus(), 100);
+        }
+    } catch(e) {}
+}
+
+async function mailSend() {
+    const to = document.getElementById('mail-compose-to').value.trim();
+    const cc = document.getElementById('mail-compose-cc').value.trim();
+    const subj = document.getElementById('mail-compose-subject').value.trim();
+    const body = document.getElementById('mail-compose-body').value.trim();
+    const replyId = document.getElementById('mail-compose-in-reply-to').value;
+    
+    if(!to) return alert("Inserisci un destinatario (A:)");
+    
+    const btn = document.getElementById('mail-send-btn');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Invio...`;
+    btn.disabled = true;
+    
+    try {
+        let res;
+        if(replyId && document.getElementById('mail-compose-title').innerText.includes("Rispondi")) {
+            // Reply route
+            res = await mailApiPost(`/reply/${replyId}`, {body: body, reply_all: !!cc});
+        }
+        else if(replyId && document.getElementById('mail-compose-title').innerText.includes("Inoltra")) {
+            // Forward route
+            res = await mailApiPost(`/forward/${replyId}`, {to: to, body: document.getElementById('mail-compose-body').value.split("--- Messaggio Inoltrato ---")[0]});
+        }
+        else {
+            // Send new
+            res = await mailApiPost(`/send`, {to:to, cc:cc, subject:subj, body:body, is_html:false});
+        }
+        
+        if(res.ok) {
+            window.dispatchEvent(new CustomEvent("hecos.tooltip", {detail:"Messaggio inviato con successo!"}));
+            mailCloseComposeModal();
+            if(MailApp.currentFolder === 'SENT') mailLoadFolder('SENT');
+        } else {
+            throw new Error(res.error);
+        }
+    } catch(e) {
+        alert("Errore invio email: " + e.message);
+    } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
+}
+
+async function mailSaveDraft() {
+    const data = {
+        to: document.getElementById('mail-compose-to').value,
+        cc: document.getElementById('mail-compose-cc').value,
+        subject: document.getElementById('mail-compose-subject').value,
+        body: document.getElementById('mail-compose-body').value
+    };
+    try {
+        const res = await mailApiPost('/drafts', data);
+        if(res.ok) {
+            window.dispatchEvent(new CustomEvent("hecos.tooltip", {detail:"Bozza salvata."}));
+            mailCloseComposeModal();
+            if(MailApp.currentFolder === 'DRAFTS') mailLoadFolder('DRAFTS');
+        }
+    } catch(e) {
+        console.error("Draft error", e);
+    }
+}
+
+// ── Config Logic ──────────────────────────────────────────────────────────────
+
+async function mailToggleConfig() {
+    const shell = document.querySelector('.mail-shell');
+    const config = document.getElementById('mail-config-panel');
+    if(shell.style.display === 'none') {
+        shell.style.display = '';
+        config.style.display = 'none';
+        mailLoadFolder(MailApp.currentFolder); // refresh returning
+    } else {
+        shell.style.display = 'none';
+        config.style.display = 'block';
+        await mailLoadAccountInfo(); // pre-fill email field
+    }
+}
+
+async function mailLoadAccountInfo() {
+    try {
+        const res = await mailApiGet('/account-info');
+        if (res.ok) {
+            const emailEl = document.getElementById('mail_account_email');
+            if (emailEl && res.email) emailEl.value = res.email;
+            const statusEl = document.getElementById('mail-account-status');
+            if (statusEl) {
+                statusEl.innerHTML = res.has_password
+                    ? '<span class="text-success"><i class="fas fa-check-circle"></i> Password configurata</span>'
+                    : '<span class="text-warning"><i class="fas fa-exclamation-circle"></i> Nessuna password salvata</span>';
+            }
+        }
+    } catch(e) {
+        console.warn('[MailApp] Could not load account info:', e);
+    }
+}
+
+function mailTogglePasswordVisibility() {
+    const pwdEl  = document.getElementById('mail_app_password');
+    const icon   = document.getElementById('mail-pwd-eye-icon');
+    if (!pwdEl) return;
+    if (pwdEl.type === 'password') {
+        pwdEl.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        pwdEl.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+async function mailSaveCredentials() {
+    const email = (document.getElementById('mail_account_email')?.value || '').trim();
+    const pwd   = (document.getElementById('mail_app_password')?.value || '').trim();
+    if (!email && !pwd) return alert('Inserisci almeno un indirizzo email o una password prima di salvare.');
+    try {
+        const res = await mailApiPut('/account-password', {email: email, password: pwd});
+        if (res.ok) {
+            // Keep frontend memory in sync so global saves don't wipe it out!
+            if (window.cfg) {
+                if (!window.cfg.plugins) window.cfg.plugins = {};
+                if (!window.cfg.plugins.MAIL) window.cfg.plugins.MAIL = {};
+                if (email) window.cfg.plugins.MAIL.mail_address = email;
+                if (pwd) window.cfg.plugins.MAIL.mail_app_password = pwd;
+            }
+            window.dispatchEvent(new CustomEvent('hecos.tooltip', {detail: 'Credenziali mail salvate!'}));
+            await mailLoadAccountInfo(); // refresh status badge
+        } else {
+            alert('Errore salvataggio credenziali: ' + res.error);
+        }
+    } catch(e) {
+        alert('Errore di rete: ' + e);
+    }
+}
+
+async function mailTestConnection() {
+    const btn = document.getElementById('mail-test-btn');
+    const oldHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Test in corso...`;
+    btn.disabled = true;
+    
+    // We no longer trigger a manual saveConfig before testing because 
+    // the inputs are aggressively debounced and auto-saved directly via /api/mail/config.
+    
+    try {
+        const res = await mailApiPost('/test-account');
+        if(res.ok) {
+            alert("✅ Test superato!\nHecos è connesso al server Mail.");
+        } else {
+            let info = res.error || "";
+            if (res.smtp && !res.smtp.ok) info += "\nSMTP Auth/Err: " + res.smtp.message;
+            if (res.imap && !res.imap.ok) info += "\nIMAP Auth/Err: " + res.imap.message;
+            alert("❌ Test fallito:\n" + info);
+        }
+    } catch(e) {
+        alert("Errore fatale test connessione: " + e.message);
+    } finally {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+    }
+}
+
+// Utility
+function hecosEscapeHtml(text) {
+    if (!text) return "";
+    return text
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;");
+}
+</script>

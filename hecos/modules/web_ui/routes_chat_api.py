@@ -134,7 +134,12 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         uid  = current_user.username if current_user.is_authenticated else "admin"
         sid  = privacy_manager.get_session_id()
         hist = get_history(user_id=uid, session_id=sid)
-        return jsonify([{"role": role, "content": msg} for role, msg in hist])
+        out = []
+        for row in hist:
+            role, msg = row[0], row[1]
+            persona = row[2] if len(row) > 2 else None
+            out.append({"role": role, "content": msg, "persona_name": persona})
+        return jsonify(out)
 
     @app.route("/api/audio")
     def api_audio():

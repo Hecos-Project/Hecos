@@ -22,8 +22,8 @@ window.renderHistoryMessages = function (messages) {
         if (typeof window.appendMessage === 'function') {
             window.appendMessage(
                 msg.role, 
-                msg.message, 
-                { timestamp: msg.timestamp, noSave: true, historyIndex: idx }
+                msg.message || msg.content, 
+                { timestamp: msg.timestamp, noSave: true, historyIndex: idx, persona_name: msg.persona_name || null }
             );
         }
     });

@@ -258,7 +258,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         history_rows = brain_interface.get_history(limit=max_h, config=config, user_id=user_id)
         if history_rows:
             history_block = "\n[RECENT CONVERSATION HISTORY]\n"
-            for role, msg in history_rows:
+            for row in history_rows:
+                role, msg = row[0], row[1]
                 label = "User" if role == "user" else clean_name
                 history_block += f"{label}: {msg}\n"
         logger.debug("BRAIN", f"History injected: {len(history_rows)} messages")
@@ -456,17 +457,19 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         is_error = True
     
     if not is_error and save_history:
+        # Snapshot the clean persona name so avatar stays correct even if user changes personality later
+        clean_persona = personality_name.replace(".yaml", "") if personality_name else "Hecos_System_Soul"
         brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id)
         
         # Structured response management (String or Message with tool_calls)
         if isinstance(response, str):
             logger.debug("BRAIN", f"Response received from backend: {len(response)} characters")
-            brain_interface.save_message("assistant", response, config=config, user_id=user_id, session_id=session_id)
+            brain_interface.save_message("assistant", response, config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona)
         else:
             # It's a Message object (used a tool)
             logger.debug("BRAIN", "Response is a tool call object.")
             tool_names = [call.function.name for call in getattr(response, 'tool_calls', [])]
-            brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*", config=config, user_id=user_id, session_id=session_id)
+            brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*", config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona)
     elif not save_history:
         logger.debug("BRAIN", "save_history is False; skipping history persistence for this Agentic Loop turn.")
     else:

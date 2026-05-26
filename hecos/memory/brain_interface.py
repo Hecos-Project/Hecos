@@ -105,6 +105,11 @@ def initialize_user_vault(user_id: str = "admin"):
         cursor.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
     except sqlite3.OperationalError:
         pass  # column already exists
+    # Add persona_name column to track which personality wrote each message
+    try:
+        cursor.execute("ALTER TABLE history ADD COLUMN persona_name TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ────────────────────────────────────────────────────────────────────────────
     
     conn.commit()
@@ -201,7 +206,8 @@ def update_profile(key, value, user_id: str = "admin"):
 
 # ── Episodic memory (chat history) ────────────────────────────────────────────
 
-def save_message(role, message, config: dict = None, user_id: str = "admin", session_id: str = None):
+def save_message(role, message, config: dict = None, user_id: str = "admin",
+                 session_id: str = None, persona_name: str = None):
     """Stores an exchange in episodic memory, respecting config flags and privacy mode.
     - incognito → discard entirely (no storage anywhere)
     - auto_wipe → store in RAM only (vanishes on restart)
@@ -237,8 +243,8 @@ def save_message(role, message, config: dict = None, user_id: str = "admin", ses
         with sqlite3.connect(db_path, timeout=20) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO history (timestamp, role, message, session_id) VALUES (?, ?, ?, ?)",
-                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message, session_id)
+                "INSERT INTO history (timestamp, role, message, session_id, persona_name) VALUES (?, ?, ?, ?, ?)",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message, session_id, persona_name)
             )
             conn.commit()
 
@@ -286,12 +292,12 @@ def get_history(limit: int = None, config: dict = None, user_id: str = "admin", 
             cursor = conn.cursor()
             if session_id:
                 cursor.execute(
-                    "SELECT role, message FROM history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
+                    "SELECT role, message, persona_name FROM history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
                     (session_id, limit)
                 )
             else:
                 cursor.execute(
-                    "SELECT role, message FROM history ORDER BY id DESC LIMIT ?",
+                    "SELECT role, message, persona_name FROM history ORDER BY id DESC LIMIT ?",
                     (limit,)
                 )
             rows = cursor.fetchall()

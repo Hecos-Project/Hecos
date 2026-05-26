@@ -119,22 +119,24 @@
         "module_type": "core_module"
     },
     "MEMORY": {
-        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+        "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
         "commands": {
-            "rag_ingest_file": "Ingest a local file into the vector knowledge base.",
-            "rag_search": "Perform a semantic search in the long-term vector memory (RAG).",
-            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
             "read_history": "Extract the last N saved messages from the database history.",
             "remember_info": "Save important information about the user in the biographical profile.",
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
-            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
+            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile).",
+            "rag_search": "Perform a semantic search in the long-term vector memory (RAG knowledge base).",
+            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
+            "rag_ingest_file": "Ingest a local file (.txt, .md, .pdf) into the vector knowledge base."
         },
-        "status": "ONLINE (Vault Access Granted)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "MODELS": {
         "description": "Changes the AI model based on the active backend (Ollama/Kobold).",
@@ -143,12 +145,14 @@
             "list_models": "Lists all available models for the currently selected backend.",
             "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "status": "ONLINE (Model management)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS"
+        "category": "PLUGINS",
+        "module_type": "core_module"
     },
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
@@ -249,6 +253,29 @@
         "category": "PLUGINS",
         "module_type": "plugin"
     },
+    "MAIL": {
+        "description": "Full-featured Email plugin for Hecos. Send, receive, search and manage emails via SMTP/IMAP. Integrates with the Contacts plugin for address lookup. Reads credentials from the user profile.",
+        "commands": {
+            "send_email": "Sends an email to one or more recipients.",
+            "read_inbox": "Reads messages from a mail folder (inbox, sent, drafts, trash).",
+            "search_emails": "Searches emails by keyword, sender or subject.",
+            "reply_email": "Replies to an email message.",
+            "forward_email": "Forwards an email to other recipients.",
+            "delete_email": "Deletes or trashes an email.",
+            "move_email": "Moves an email to another folder.",
+            "save_draft": "Saves a message as draft.",
+            "sync_inbox": "Forces a sync/refresh of the inbox.",
+            "get_email_addresses_for_contact": "Returns email addresses of a contact from the address book."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "📧",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
     "MEDIA_PLAYER": {
         "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
         "commands": {
@@ -340,5 +367,39 @@
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS"
+    },
+    "WEB": {
+        "description": "Web browsing, live search with content reading, and clipboard integration.",
+        "commands": {
+            "open_url": "Opens a URL in the default browser.",
+            "search_web": "Opens a browser search for a query.",
+            "fetch_page_content": "Reads the text content of any URL without opening a browser.",
+            "search_and_read": "Searches DDG and reads the top N result pages — returns live text content.",
+            "get_clipboard": "Returns the current system clipboard text.",
+            "set_clipboard": "Copies text to the system clipboard."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "🌐",
+        "category": "PLUGINS",
+        "module_type": "plugin"
+    },
+    "WEBCAM": {
+        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
+        "commands": {
+            "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser.",
+            "desktop_screenshot": "Captures the entire desktop screen (or a specific monitor) and saves it as an image file for visual analysis."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device, you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin"
     }
 }
