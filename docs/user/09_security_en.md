@@ -6,7 +6,7 @@ Hecos puts security at the center, especially when accessing the interface from 
 - **Protected Connection**: This enables the "green lock" in the browser, allowing the use of protected features like the microphone (WebRTC) across your entire local network (LAN).
 - **Mandatory Authentication**: Access to the WebUI always requires a login. You can manage users and passwords from the control panel.
 - **Data Isolation (User Vaults)**: Memories, personal files, and avatars are isolated in protected folders (`memory/vaults/username`).
-- **3-Tier Privacy (v0.25.0)**: The WebUI provides granular controls over data persistence:
+- **3-Tier Privacy (v0.26.0)**: The WebUI provides granular controls over data persistence:
   - `Normal`: Full persistence on disk.
   - `Auto-Wipe`: Messages in RAM only, cleared on system restart.
   - `Incognito`: Zero-trace. Hecos operates exclusively in RAM and context is removed when switching chats, ensuring no trace of the conversation remains on the physical server.
