@@ -23,8 +23,9 @@ pipeline:
 - id: ai__prompt_1
   action: AI__prompt
   params:
-    prompt: fai una ricerca su internet e cerca foto di donne con il seno enorme.
-    save_to_chat: <true>
+    prompt: 'fai una ricerca su google: donne con il seno enorme. Poi fammi vedere
+      i risultati.'
+    save_to_chat: true
   depends_on:
   - system__chat_message_1
 - id: system__chat_message_2
@@ -35,5 +36,6 @@ pipeline:
   - ai__prompt_1
 _meta:
   created_at: '2026-06-01T14:43:35.730003'
-  updated_at: '2026-06-01T17:21:58.431402'
-  last_run: '2026-06-01T17:21:58.295063'
+  updated_at: '2026-06-01T17:51:00.895962'
+  last_run: '2026-06-01T17:51:00.809658'
+enabled: true
