@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="{{ zconfig.language or 'en' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hecos Flows — Orchestration Engine</title>
+<meta name="description" content="Hecos Flows — build and run automated pipelines visually.">
+<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<!-- CodeMirror 6 (YAML editor) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/material-darker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/yaml/yaml.min.js"></script>
+<!-- js-yaml -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<!-- LiteGraph.js -->
+<script src="https://cdn.jsdelivr.net/npm/litegraph.js@0.7.8/build/litegraph.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litegraph.js@0.7.8/css/litegraph.css">
+<script>
+(function(){
+  var saved = localStorage.getItem('hecos-ui-theme')||'cyberpunk';
+  if(saved && saved!=='default') document.documentElement.classList.add('theme-'+saved);
+})();
+</script>
+<link rel="stylesheet" href="/assets/css/flows.css?v={{ version }}">
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────────────────── -->
+<header id="flows-header">
+  <div class="logo-group">
+    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Hecos">
+    <span class="brand">HECOS</span>
+  </div>
+  <span class="page-title"><i class="fas fa-project-diagram" style="margin-right:.4rem;color:var(--flows-accent);"></i>FLOWS</span>
+
+  <nav>
+    <a href="/chat"><i class="fas fa-comment-dots"></i> Chat</a>
+    <a href="/" ><i class="fas fa-th-large"></i> Room</a>
+    <a href="/hecos/config/ui" target="_blank"><i class="fas fa-cog"></i> Hub</a>
+    <button class="btn-primary" onclick="newEmptyCanvas()" title="Create an empty canvas manually">
+      <i class="fas fa-plus"></i> New Canvas
+    </button>
+  </nav>
+</header>
+
+<!-- ── Body ─────────────────────────────────────────────────────── -->
+<div id="flows-body">
+
+  <!-- Sidebar -->
+  <aside id="flows-sidebar">
+    <div id="flows-sidebar-header">
+      <span>My Flows</span>
+      <button id="btn-new-flow" onclick="openNlpModal()"><i class="fas fa-plus"></i> New</button>
+    </div>
+    <div id="flows-list">
+      <div id="flows-sidebar-empty" style="display:none">
+        <i class="fas fa-project-diagram"></i>
+        <p>No flows yet.<br>Click <strong>New Flow</strong> to create your first automation.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div id="flows-main">
+    
+    <!-- Toolbar -->
+    <div id="flows-toolbar">
+      <input type="text" id="flow-title" class="flow-title-input" placeholder="Select or create a flow…" disabled>
+      <div class="sep"></div>
+      <button class="tb-btn run"    id="btn-run"    onclick="runCurrentFlow()" disabled><i class="fas fa-play"></i> Run</button>
+      <button class="tb-btn"       id="btn-save"   onclick="saveCurrentFlow()" disabled><i class="fas fa-save"></i> Save</button>
+      <button class="tb-btn danger" id="btn-delete" onclick="deleteCurrentFlow()" disabled><i class="fas fa-trash"></i></button>
+      <div class="sep"></div>
+      <button class="tb-btn" id="btn-palette" onclick="togglePalette()" title="Node Palette" disabled><i class="fas fa-toolbox"></i> Palette</button>
+      <button class="tb-btn" id="btn-delete-node" onclick="deleteSelectedNodes()" title="Delete Selected Nodes" style="display:none;"><i class="fas fa-eraser"></i> Delete Node</button>
+    </div>
+
+    <!-- Tabs -->
+    <div id="flows-tabs">
+      <button class="tab-btn active" data-tab="canvas"><i class="fas fa-project-diagram"></i> Canvas</button>
+      <button class="tab-btn" data-tab="yaml"><i class="fas fa-code"></i> YAML</button>
+      <button class="tab-btn" data-tab="timeline"><i class="fas fa-stream"></i> Timeline</button>
+      <button class="tab-btn" data-tab="log"><i class="fas fa-terminal"></i> Log <span id="log-badge" style="display:none;background:var(--flows-success);color:#000;border-radius:999px;padding:0 5px;font-size:.65rem;margin-left:.2rem;"></span></button>
+    </div>
+
+    <!-- Canvas Tab -->
+    <div class="tab-pane active" id="tab-canvas">
+      <div id="canvas-wrap">
+        <canvas id="flows-canvas"></canvas>
+        <div id="canvas-hint">
+          <i class="fas fa-project-diagram"></i>
+          <p>Select a flow from the sidebar<br>or click <strong>New Flow</strong> to create one with AI.</p>
+        </div>
+
+        <!-- Floating Node Palette -->
+        <div id="palette-panel">
+          <div id="palette-header">
+            <span><i class="fas fa-toolbox"></i> Node Palette</span>
+            <button class="pal-close" onclick="togglePalette()" title="Close"><i class="fas fa-times"></i></button>
+          </div>
+          <input id="palette-search" type="text" placeholder="Search actions…" oninput="_filterPalette(this.value)">
+          <div id="palette-body"><div class="pal-loading"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- YAML Tab -->
+    <div class="tab-pane" id="tab-yaml">
+      <div id="yaml-wrap">
+        <div id="yaml-toolbar">
+          <button class="tb-btn" onclick="applyYamlToCanvas()"><i class="fas fa-sync"></i> Sync to Canvas</button>
+          <button class="tb-btn" onclick="formatYaml()"><i class="fas fa-align-left"></i> Format</button>
+          <span id="yaml-validation"></span>
+        </div>
+        <textarea id="yaml-editor"></textarea>
+      </div>
+    </div>
+
+    <!-- Timeline Tab -->
+    <div class="tab-pane" id="tab-timeline">
+      <div id="timeline-wrap">
+        <div class="timeline-empty" id="timeline-empty">Select a flow to see its timeline.</div>
+        <div class="timeline-steps" id="timeline-steps" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Log Tab -->
+    <div class="tab-pane" id="tab-log">
+      <div id="log-wrap">
+        <div id="log-toolbar">
+          <button class="tb-btn" onclick="clearLog()"><i class="fas fa-eraser"></i> Clear</button>
+          <span id="log-status" style="font-size:.72rem;color:var(--flows-muted);margin-left:.5rem;"></span>
+        </div>
+        <div id="log-output">
+          <div class="log-empty">Run a flow to see execution logs here.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /flows-main -->
+</div><!-- /flows-body -->
+
+<!-- ── Node Editor Modal ── -->
+<div id="node-editor-modal-bg" class="modal-bg">
+  <div id="node-editor-modal" class="modal-content">
+    <h2><i class="fas fa-edit"></i> Edit Node</h2>
+    <input type="hidden" id="ne-orig-id">
+    
+    <label>Step ID (Unique)</label>
+    <input type="text" id="ne-id" placeholder="e.g. step_name" title="Unique identifier for this step. No spaces or special chars.">
+    
+    <label>Action</label>
+    <select id="ne-action" title="The execution module or action to run." onchange="buildDynamicForm()"></select>
+    
+    <div id="ne-dynamic-form" style="margin-top: 15px; margin-bottom: 5px; display: flex; flex-direction: column; gap: 12px;"></div>
+
+    <div style="margin-top:10px; margin-bottom:5px;">
+        <button id="btn-toggle-yaml" style="background:none; border:none; color:var(--flows-accent); cursor:pointer; font-size:0.85rem;" onclick="toggleRawYaml()">
+            <i class="fas fa-code"></i> Show Raw YAML Fallback
+        </button>
+    </div>
+    <div id="ne-params-wrap" style="display:none; flex-direction: column;">
+        <label>Parameters (raw YAML fallback)</label>
+        <textarea id="ne-params" rows="5" placeholder="# YAML format (no braces needed):&#10;text: Hello world&#10;seconds: 10&#10;sound: gentle_wake" title="Raw parameters required by the action, writable as YAML." oninput="syncDynamicFormFromYaml()"></textarea>
+    </div>
+    
+    <div style="display:flex; gap:1rem;">
+      <div style="flex:1;">
+        <label>Output As (Variable)</label>
+        <input type="text" id="ne-output" placeholder="e.g. result_var" title="Stores the return value of this action into this context variable.">
+      </div>
+      <div style="flex:1;">
+        <label>Depends On (Comma-separated IDs)</label>
+        <input type="text" id="ne-depends" placeholder="step1, step2" title="List of other Step IDs that must execute completely before this one can start.">
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNodeEditor()">Cancel</button>
+      <button class="btn-save" onclick="saveNodeEditor()">Save Node</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── NLP Modal ─────────────────────────────────────────────────── -->
+<div id="nlp-modal-bg" onclick="if(event.target===this)closeNlpModal()">
+  <div id="nlp-modal" role="dialog" aria-modal="true" aria-label="Create new flow">
+    <h2><i class="fas fa-magic"></i> Create Flow with AI</h2>
+    <p>Describe your automation in natural language. Hecos will compile it into a visual flow automatically.</p>
+    <input type="text" id="nlp-name-input" placeholder="Flow name (optional, e.g. 🌅 Morning Routine)">
+    <textarea id="nlp-textarea" placeholder="Describe the flow… e.g. Every morning at 7 wake me up, read news, check weather and if it's cold tell me to wear a coat, then send a WhatsApp to my partner…"></textarea>
+    <button id="nlp-voice-btn" onclick="toggleVoiceInput()"><i class="fas fa-microphone"></i> Speak your flow</button>
+    <div id="nlp-compile-progress">
+      <i class="fas fa-cog spinner"></i> <span>Hecos AI is compiling your flow…</span>
+    </div>
+    <div id="nlp-summary-card"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNlpModal()">Cancel</button>
+      <button class="tb-btn" id="btn-compile" onclick="compileFlow()"><i class="fas fa-cog"></i> Compile</button>
+      <button class="btn-save" id="btn-save-compiled" style="display:none" onclick="saveCompiledFlow()"><i class="fas fa-save"></i> Save & Open</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast container ───────────────────────────────────────────── -->
+<div id="flows-toast"></div>
+
+<script>
+window.I18N = {{ translations | tojson | safe }};
+window.t = k => window.I18N[k] || k;
+</script>
+
+<script src="/assets/js/flows_core.js?v={{ version }}"></script>
+<script src="/assets/js/flows_api.js?v={{ version }}"></script>
+<script src="/assets/js/flows_canvas.js?v={{ version }}"></script>
+<script src="/assets/js/flows_editor.js?v={{ version }}"></script>
+<script src="/assets/js/flows_logs.js?v={{ version }}"></script>
+<script src="/assets/js/flows_nlp.js?v={{ version }}"></script>
+<script src="/assets/js/flows_palette.js?v={{ version }}"></script>
+<script src="/assets/js/flows_node_editor.js?v={{ version }}"></script>
+</body>
+</html>

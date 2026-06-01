@@ -64,10 +64,11 @@ function populateUI() {
     // 11. Plugin Manager list
     renderPlugins(c.plugins || {});
 
-    // 12. Executor / Automation / Browser extras
+    // 12. Executor / Automation / Browser / Flows extras
     if (window.populateExecutorUI)   window.populateExecutorUI();
     if (window.populateAutomationUI) window.populateAutomationUI();
     if (window.populateBrowserUI)    window.populateBrowserUI();
+    if (window.populateFlowsUI)      window.populateFlowsUI();
 
     // 13. Restart indicator badges
     initRestartIndicators();
@@ -112,6 +113,7 @@ function buildPayload() {
 
     // 4. Plugin toggles, extensions, lazy, dashboard, browser, automation
     buildPluginsPayload(out);
+    if (window.buildFlowsPayload) window.buildFlowsPayload(out);
 
     // 5. Remote Triggers
     const rtPart = buildRemoteTriggersPayload();

@@ -1,0 +1,289 @@
+<!-- FLOWS MODULE CONFIG PANEL -->
+<div id="tab-flows" class="panel">
+
+    <!-- ── Enable / Open ───────────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title">
+            <i class="fas fa-project-diagram" style="color:var(--accent);"></i>
+            Hecos Flows — Orchestration Engine
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px; line-height:1.6;">
+            Build automated multi-step pipelines via <strong>NLP voice/text</strong>,
+            <strong>visual node-graph canvas</strong>, or <strong>direct YAML editing</strong>.
+            Supports cron/interval scheduling, conditional logic, loops, HTTP requests and
+            data-passing between all Hecos modules.
+        </p>
+
+        <div class="field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">Enable Hecos Flows</label>
+                <label class="switch is-small">
+                    <input type="checkbox" id="flows-enabled"
+                           data-cfg-plugin="FLOWS" data-cfg-key="enabled"
+                           onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="field mt-3">
+            <a href="/flows" target="_blank" class="btn btn-sm btn-secondary"
+               style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                <i class="fas fa-external-link-alt"></i> Open Flows Page
+            </a>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Opens the visual flow editor in a new tab.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Storage ────────────────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-folder-open"></i> Storage</div>
+
+        <div class="field mt-2">
+            <label>Flows Directory</label>
+            <div style="display:flex; gap:6px;">
+                <input type="text" id="flows-dir" style="flex:1;"
+                       data-cfg-plugin="FLOWS" data-cfg-key="flows_dir"
+                       placeholder="workspace/flows"
+                       onchange="if(window.saveConfig) window.saveConfig(true);">
+                <button type="button" class="btn btn-secondary"
+                        onclick="HecosFilePicker.open({title:'Select Flows Folder', mode:'directory', onSelect: p => { document.getElementById('flows-dir').value = p; saveConfig(); }})"
+                        title="Browse">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Path where <code>.yaml</code> flow files are saved (relative to Hecos root).
+            </p>
+        </div>
+
+        <!-- Live flow list summary -->
+        <div class="field mt-3">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <label style="margin:0;"><i class="fas fa-list"></i> Saved Flows</label>
+                <button type="button" class="btn btn-outline-accent btn-sm"
+                        onclick="window.refreshFlowsList()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div id="flows-config-list" style="max-height:280px; overflow-y:auto;">
+                <p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading flows...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Scheduler ──────────────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-clock"></i> Scheduler (APScheduler)</div>
+
+        <div class="field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">Enable Automatic Triggers (cron / interval)</label>
+                <label class="switch is-small">
+                    <input type="checkbox" id="flows-scheduler-enabled"
+                           data-cfg-plugin="FLOWS" data-cfg-key="scheduler_enabled"
+                           onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Requires <code>pip install apscheduler</code>. Without it, flows run manually only.
+            </p>
+        </div>
+
+        <div class="field mt-3">
+            <label>Scheduler Timezone</label>
+            <select id="flows-timezone"
+                    data-cfg-plugin="FLOWS" data-cfg-key="scheduler_timezone"
+                    onchange="if(window.saveConfig) window.saveConfig(true);">
+                <option value="local">Local (system default)</option>
+                <option value="UTC">UTC</option>
+                <option value="Europe/Rome">Europe/Rome</option>
+                <option value="Europe/London">Europe/London</option>
+                <option value="America/New_York">America/New_York</option>
+                <option value="America/Los_Angeles">America/Los_Angeles</option>
+                <option value="Asia/Tokyo">Asia/Tokyo</option>
+            </select>
+        </div>
+
+        <div class="field mt-3">
+            <label>Max Concurrent Runs</label>
+            <input type="number" id="flows-max-runs"
+                   data-cfg-plugin="FLOWS" data-cfg-key="max_concurrent_runs"
+                   value="5" min="1" max="20"
+                   onchange="if(window.saveConfig) window.saveConfig(true);">
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Maximum number of flows that can execute simultaneously.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── NLP Compiler ───────────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-magic"></i> NLP Compiler (AI → YAML)</div>
+
+        <div class="field">
+            <label>Compiler Temperature</label>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="range" id="flows-temp-range" min="0" max="1" step="0.05" value="0.1"
+                       style="flex:1;"
+                       oninput="document.getElementById('flows-temp-val').textContent=this.value;
+                                document.getElementById('flows-temp').value=this.value;
+                                if(window.saveConfig) window.saveConfig(true);">
+                <span id="flows-temp-val" style="font-size:12px; min-width:30px; text-align:right;">0.1</span>
+            </div>
+            <input type="hidden" id="flows-temp"
+                   data-cfg-plugin="FLOWS" data-cfg-key="compiler_temperature">
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Lower = more deterministic YAML output. Recommended: 0.05–0.15.
+            </p>
+        </div>
+
+        <div class="field mt-3">
+            <label>Max Compiler Tokens</label>
+            <input type="number" id="flows-max-tokens"
+                   data-cfg-plugin="FLOWS" data-cfg-key="compiler_max_tokens"
+                   value="2048" min="512" max="8192"
+                   onchange="if(window.saveConfig) window.saveConfig(true);">
+        </div>
+
+        <div class="field mt-3">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">Auto-save compiled flows (skip preview)</label>
+                <label class="switch is-small">
+                    <input type="checkbox" id="flows-auto-save"
+                           data-cfg-plugin="FLOWS" data-cfg-key="auto_save_compiled"
+                           onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                If enabled, compiled flows are saved immediately without showing a preview card.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Advanced ───────────────────────────────────────────────── -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-cogs"></i> Advanced</div>
+
+        <div class="field">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">Enable Jinja2 Rendering in Params</label>
+                <label class="switch is-small">
+                    <input type="checkbox" id="flows-jinja2"
+                           data-cfg-plugin="FLOWS" data-cfg-key="jinja2_rendering"
+                           onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Allows <code>{{ variable }}</code> templates in step params. Disable only in untrusted environments.
+            </p>
+        </div>
+
+        <div class="field mt-3">
+            <label>Max SSE Log Entries per Run</label>
+            <input type="number" id="flows-log-entries"
+                   data-cfg-plugin="FLOWS" data-cfg-key="max_log_entries"
+                   value="500" min="50" max="5000"
+                   onchange="if(window.saveConfig) window.saveConfig(true);">
+        </div>
+    </div>
+
+</div><!-- /tab-flows -->
+
+<script>
+/* ── Flows config panel logic ─────────────────────────────────── */
+
+window.refreshFlowsList = function() {
+    const list = document.getElementById('flows-config-list');
+    if (!list) return;
+
+    fetch('/api/flows/list')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok || !data.flows || !data.flows.length) {
+                list.innerHTML = '<p class="text-muted" style="font-size:13px; margin:8px 0;">No flows saved yet. <a href="/flows" target="_blank">Create your first flow →</a></p>';
+                return;
+            }
+
+            let html = '<div style="display:flex; flex-direction:column; gap:6px;">';
+            data.flows.forEach(f => {
+                const dot = f.enabled
+                    ? '<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:6px;box-shadow:0 0 5px #22c55e;"></span>'
+                    : '<span style="width:8px;height:8px;border-radius:50%;background:#666;display:inline-block;margin-right:6px;"></span>';
+                const trigger = f.trigger_type + (f.trigger_expr ? ` (${f.trigger_expr})` : '');
+                html += `
+                <div style="background:rgba(0,0,0,0.12);border:1px solid rgba(255,255,255,0.06);
+                            border-radius:7px;padding:9px 12px;
+                            display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <strong style="font-size:13px;">${dot}${f.name}</strong>
+                        <br>
+                        <small style="color:var(--muted);font-size:11px;">
+                            <code>${f.id}</code> &mdash; ⏱ ${trigger} &mdash; ${f.step_count} steps
+                            ${f.last_run ? '&mdash; last run: ' + f.last_run.slice(0,19) : ''}
+                        </small>
+                    </div>
+                    <div style="display:flex;gap:5px;">
+                        <a href="/flows#${f.id}" target="_blank"
+                           class="btn btn-sm btn-outline-accent"
+                           style="padding:3px 8px;font-size:11px;"
+                           title="Open in Flows page">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        <button type="button"
+                                class="btn btn-sm ${f.enabled ? 'btn-outline-danger' : 'btn-outline-accent'}"
+                                style="padding:3px 8px;font-size:11px;"
+                                onclick="window.toggleFlow('${f.id}', ${!f.enabled})"
+                                title="${f.enabled ? 'Disable' : 'Enable'}">
+                            <i class="fas fa-${f.enabled ? 'pause' : 'play'}"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            list.innerHTML = html;
+        })
+        .catch(() => {
+            list.innerHTML = '<p style="color:var(--red);font-size:13px;">Error loading flows.</p>';
+        });
+};
+
+window.toggleFlow = function(flowId, enable) {
+    const action = enable ? 'enable' : 'disable';
+    fetch(`/api/flows/${flowId}/${action}`, { method: 'POST' })
+        .then(r => r.json())
+        .then(() => window.refreshFlowsList())
+        .catch(e => console.error('Toggle flow error:', e));
+};
+
+/* Sync temperature slider ↔ config value on panel activation */
+function _syncFlowsSlider() {
+    const input = document.getElementById('flows-temp');
+    const range = document.getElementById('flows-temp-range');
+    const val   = document.getElementById('flows-temp-val');
+    if (input && range && val) {
+        const v = parseFloat(input.value) || 0.1;
+        range.value = v;
+        val.textContent = v;
+    }
+}
+
+/* Auto-refresh when panel becomes active */
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(m => {
+            if (m.target.id === 'tab-flows' && m.target.classList.contains('active')) {
+                window.refreshFlowsList();
+                _syncFlowsSlider();
+            }
+        });
+    });
+    const panel = document.getElementById('tab-flows');
+    if (panel) observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+});
+</script>

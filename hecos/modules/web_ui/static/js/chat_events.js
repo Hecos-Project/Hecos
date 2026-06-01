@@ -142,6 +142,23 @@ window.initEvents = function() {
         window.tryLoadAudio(targetBubble);
       }
 
+    } else if (ev.type === 'chat_background_append') {
+      // ── Handler for messages injected out-of-band (e.g. by Flows engine) ──
+      if (window.hideWelcome) window.hideWelcome();
+      
+      const role = ev.role || 'assistant';
+      const rawText = ev.message || '';
+      
+      if (window.addBubble) {
+          window.addBubble(role === 'user' ? 'user' : 'ai', rawText);
+      }
+      if (window.chatHistory) {
+          window.chatHistory.push({role: role, content: rawText});
+      }
+      if (window.chatArea) {
+          window.chatArea.scrollTop = window.chatArea.scrollHeight;
+      }
+
     } else if (ev.type === 'reminder_fire') {
       // ── Reminder Alert Banner ────────────────────────────────────────────
       // Shows a dismissable banner at the top of the chat when a reminder fires.

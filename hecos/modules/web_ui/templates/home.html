@@ -60,14 +60,18 @@
       <i class="fas fa-comment-dots"></i>
       <span>{{ t('webui_nav_chat') or 'Chat' }}</span>
     </a>
-    <a href="/hecos/config/ui" target="_blank" rel="noopener" class="home-nav-link" title="Central Hub">
-      <i class="fas fa-sliders-h"></i>
+    <a href="/hecos/config/ui" target="_blank" rel="noopener" class="home-nav-link" title="Hub">
+      <i class="fas fa-cog"></i>
       <span>Hub</span>
     </a>
     {% if current_user.is_authenticated %}
     <a href="/drive" target="_blank" rel="noopener" class="home-nav-link" title="Drive">
       <i class="fas fa-hdd"></i>
       <span>Drive</span>
+    </a>
+    <a href="/flows" target="_blank" rel="noopener" class="home-nav-link" title="Flows">
+      <i class="fas fa-project-diagram"></i>
+      <span>Flows</span>
     </a>
     <span class="home-nav-link" style="cursor:default; opacity:0.6;">
       <i class="fas fa-user"></i>

@@ -44,6 +44,10 @@ class HecosApplication:
     def __init__(self):
         self.config_manager = ConfigManager()
         
+        # Expose config globally for background threads (e.g. Flows AI__prompt)
+        import sys
+        sys.hecos_config_manager = self.config_manager
+        
         from hecos.core.audio.device_manager import get_audio_config
         acfg = get_audio_config()
         

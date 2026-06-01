@@ -234,7 +234,8 @@ class PiperDaemon:
                             # Blocking play
                             sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
                     except Exception as e:
-                        logger.debug("PIPER_DAEMON", f"Playback chunk error: {e}")
+                        import traceback
+                        logger.error("PIPER_DAEMON", f"Playback chunk error: {repr(e)}\n{traceback.format_exc()}")
 
                 # Cleanup temp wav
                 try:

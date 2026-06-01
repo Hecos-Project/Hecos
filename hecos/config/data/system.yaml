@@ -1,12 +1,13 @@
 ai:
-  active_personality: Urania_9800.yaml
+  active_personality: Motoko Kusanagi.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
-    '3': Motoko Kusanagi.yaml
-    '4': Nova_X-01.yaml
-    '5': Sebastian_Pro.yaml
-    '6': Urania_9800.yaml
+    '3': Claudia.yaml
+    '4': Motoko Kusanagi.yaml
+    '5': Nova_X-01.yaml
+    '6': Sebastian_Pro.yaml
+    '7': Urania_9800.yaml
   save_special_instructions: false
   special_instructions: ""
   enable_safety_instructions: true
@@ -59,14 +60,14 @@ cognition:
   include_self_awareness: true
   max_history_messages: 20
   rag:
-    enabled: false
+    enabled: true
     embedder: sentence_transformers
     embedder_model: all-MiniLM-L6-v2
     chunk_size: 512
     chunk_overlap: 64
     top_k: 5
     similarity_threshold: 0.3
-    auto_ingest_history: false
+    auto_ingest_history: true
     persist_path: memory/vector_store
 filters:
   remove_asterisks: both
@@ -82,6 +83,8 @@ llm:
     gemini:
       api_key: ''
       models:
+        - gemini-2.5-flash-native-audio-preview-09-2025
+        - gemini-2.5-flash-native-audio-latest
         - gemini-2.5-flash
         - gemini-2.5-pro
         - gemini-2.0-flash
@@ -104,8 +107,10 @@ llm:
         - gemini-3.1-flash-lite-preview
         - gemini-3.1-flash-lite
         - gemini-3-pro-image-preview
+        - gemini-3-pro-image
         - nano-banana-pro-preview
         - gemini-3.1-flash-image-preview
+        - gemini-3.1-flash-image
         - gemini-3.5-flash
         - lyria-3-clip-preview
         - lyria-3-pro-preview
@@ -130,8 +135,6 @@ llm:
         - veo-3.1-generate-preview
         - veo-3.1-fast-generate-preview
         - veo-3.1-lite-generate-preview
-        - gemini-2.5-flash-native-audio-latest
-        - gemini-2.5-flash-native-audio-preview-09-2025
     openai:
       api_key: ''
       models:
@@ -143,24 +146,24 @@ llm:
     groq:
       api_key: ''
       models:
-        - compound
         - compound-mini
-        - openai/gpt-oss-20b
-        - canopylabs/orpheus-arabic-saudi
-        - llama-3.1-8b-instant
-        - meta-llama/llama-prompt-guard-2-22m
-        - openai/gpt-oss-120b
-        - meta-llama/llama-prompt-guard-2-86m
+        - compound
+        - openai/gpt-oss-safeguard-20b
         - llama-3.3-70b-versatile
-        - meta-llama/llama-4-scout-17b-16e-instruct
-        - qwen/qwen3-32b
-        - allam-2-7b
+        - groq/compound
+        - openai/gpt-oss-120b
+        - llama-3.1-8b-instant
         - whisper-large-v3
         - canopylabs/orpheus-v1-english
-        - openai/gpt-oss-safeguard-20b
+        - meta-llama/llama-prompt-guard-2-22m
+        - openai/gpt-oss-20b
+        - meta-llama/llama-prompt-guard-2-86m
+        - qwen/qwen3-32b
+        - allam-2-7b
         - whisper-large-v3-turbo
-        - groq/compound
         - groq/compound-mini
+        - canopylabs/orpheus-arabic-saudi
+        - meta-llama/llama-4-scout-17b-16e-instruct
 logging:
   level: DEBUG
   destination: console

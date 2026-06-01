@@ -1,0 +1,248 @@
+// ── Flows API Calls ───────────────────────────────────────────────
+
+async function loadFlowsList() {
+  try {
+    const res = await fetch('/api/flows/list');
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error);
+    renderSidebar(d.flows);
+  } catch(e) { toast('error','Could not load flows: '+e.message); }
+}
+
+function renderSidebar(flows) {
+  const list = document.getElementById('flows-list');
+  const empty = document.getElementById('flows-sidebar-empty');
+  if(!list) return;
+  list.innerHTML = '';
+  if (!flows.length) { 
+      if(empty) empty.style.display='flex'; 
+      list.appendChild(empty);
+      return; 
+  }
+  if(empty) empty.style.display = 'none';
+  flows.forEach(f => {
+    const el = document.createElement('div');
+    el.className = 'flow-item' + (f.id === currentFlowId ? ' active' : '');
+    el.dataset.id = f.id;
+    el.innerHTML = `
+      <div class="flow-item-name">
+        <span class="flow-status-dot ${f.enabled?'enabled':'disabled'}"></span>
+        ${f.name}
+      </div>
+      <div class="flow-item-meta">
+        <span><i class="fas fa-bolt" style="font-size:.6rem"></i> ${f.trigger_type}${f.trigger_expr?' ('+f.trigger_expr+')':''}</span>
+        <span>${f.step_count} steps</span>
+      </div>`;
+    el.addEventListener('click', () => selectFlow(f.id));
+    list.appendChild(el);
+  });
+}
+
+async function selectFlow(flowId) {
+  try {
+    const res = await fetch(`/api/flows/${flowId}`);
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error);
+    currentFlowId = flowId;
+    currentFlowData = d.flow;
+
+    // Update sidebar selection
+    document.querySelectorAll('.flow-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.id === flowId);
+    });
+
+    // Populate toolbar
+    const tlInput = document.getElementById('flow-title');
+    if (tlInput) tlInput.value = d.flow.name || flowId;
+    
+    ['btn-run','btn-save','btn-delete','btn-palette'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = false;
+    });
+
+    // Set YAML editor
+    if (cmEditor) cmEditor.setValue(d.yaml || '');
+
+    // Render canvas nodes (from flows_canvas.js)
+    if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(d.flow);
+
+    // Render timeline (from flows_canvas.js)
+    if (typeof renderTimeline === 'function') renderTimeline(d.flow);
+
+    // Hide canvas hint
+    const hint = document.getElementById('canvas-hint');
+    if (hint) hint.style.display='none';
+
+    // Sync run button state from backend
+    try {
+      const sres = await fetch(`/api/flows/${flowId}/status`);
+      const sd = await sres.json();
+      if (sd.ok && sd.running) setRunningState(true, sd.run_id);
+      else setRunningState(false);
+    } catch { setRunningState(false); }
+
+  } catch(e) { toast('error','Could not load flow: '+e.message); }
+}
+
+async function saveCurrentFlow() {
+  if (!currentFlowId && (!cmEditor || !cmEditor.getValue().trim())) return;
+  if (typeof syncCanvasToYaml === 'function' && document.getElementById('tab-canvas').classList.contains('active')) {
+    syncCanvasToYaml(); // Sync canvas to YAML before reading the value if we're on the canvas tab
+  }
+  const yaml = cmEditor.getValue();
+  try {
+    const res = await fetch('/api/flows/save', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({yaml})
+    });
+    const d = await res.json();
+    if (!d.ok) throw new Error((d.errors||[d.error]).join('; '));
+    toast('ok','Flow saved ✓');
+    currentFlowId = d.flow_id;
+    loadFlowsList();
+  } catch(e) { toast('error','Save failed: '+e.message); }
+}
+
+// ── Run state helpers ────────────────────────────────────────────
+let _currentRunId = null;
+
+function setRunningState(running, runId) {
+  _currentRunId = running ? runId : null;
+  const btn = document.getElementById('btn-run');
+  if (!btn) return;
+  if (running) {
+    btn.classList.add('running');
+    btn.innerHTML = '<i class="fas fa-stop-circle"></i> Stop';
+    btn.title = 'Click to stop the running flow';
+  } else {
+    btn.classList.remove('running');
+    btn.innerHTML = '<i class="fas fa-play"></i> Run';
+    btn.title = 'Execute this flow';
+  }
+}
+
+async function runCurrentFlow() {
+  if (!currentFlowId) return;
+
+  // If already running — act as STOP
+  if (_currentRunId) {
+    try {
+      const res = await fetch(`/api/flows/${currentFlowId}/stop`, { method: 'POST' });
+      const d = await res.json();
+      if (d.ok) {
+        toast('info', '⏹ Stop signal sent — flow will halt after current step.');
+      } else {
+        toast('error', 'Could not stop: ' + (d.error || 'unknown'));
+      }
+    } catch(e) { toast('error', 'Stop failed: ' + e.message); }
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/flows/${currentFlowId}/run`, { method: 'POST' });
+    const d = await res.json();
+
+    // 409 = already running
+    if (res.status === 409) {
+      toast('info', '⚠️ Flow is already running (run: ' + d.run_id + ')');
+      // Reconnect to existing stream
+      setRunningState(true, d.run_id);
+      const logTabBtn = document.querySelector('.tab-btn[data-tab="log"]');
+      if (logTabBtn) logTabBtn.click();
+      if (typeof startLogStream === 'function') startLogStream(d.run_id);
+      return;
+    }
+
+    if (!d.ok) throw new Error(d.error);
+
+    setRunningState(true, d.run_id);
+    toast('info', `▶ Flow started (run: ${d.run_id})`);
+
+    // Switch to log tab
+    const logTabBtn = document.querySelector('.tab-btn[data-tab="log"]');
+    if (logTabBtn) logTabBtn.click();
+
+    if (typeof startLogStream === 'function') startLogStream(d.run_id, () => setRunningState(false));
+  } catch(e) { toast('error', 'Run failed: ' + e.message); }
+}
+
+async function deleteCurrentFlow() {
+  if (!currentFlowId) return;
+  if (!confirm(`Delete flow "${currentFlowData?.name||currentFlowId}"?`)) return;
+  try {
+    const res = await fetch(`/api/flows/${currentFlowId}`, {method:'DELETE'});
+    const d = await res.json();
+    if (!d.ok) throw new Error(d.error);
+    
+    currentFlowId = null; 
+    currentFlowData = null;
+    
+    if (cmEditor) cmEditor.setValue('');
+    if (lgraph) lgraph.clear();
+    
+    const tlInput = document.getElementById('flow-title');
+    if (tlInput) tlInput.value='';
+    
+    ['btn-run','btn-save','btn-delete'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled=true;
+    });
+    const hint = document.getElementById('canvas-hint');
+    if (hint) hint.style.display='flex';
+    if (typeof renderTimeline === 'function') renderTimeline(null);
+    
+    toast('ok','Flow deleted.');
+    loadFlowsList();
+  } catch(e) { toast('error','Delete failed: '+e.message); }
+}
+
+// ── Manual Flow Creation ──────────────────────────────────────────
+
+function newEmptyCanvas() {
+  currentFlowId = 'new_flow_' + Date.now().toString(36);
+  currentFlowData = { name: 'New Flow', trigger: { type: 'manual' }, pipeline: [] };
+  
+  const tlInput = document.getElementById('flow-title');
+  if (tlInput) {
+    tlInput.value = 'New Flow';
+    tlInput.disabled = false;
+  }
+  
+  if (lgraph) lgraph.clear();
+  if (cmEditor) cmEditor.setValue(`id: ${currentFlowId}\nname: New Flow\ntrigger:\n  type: manual\npipeline: []`);
+  
+  // Add a temporary unsaved entry to the sidebar so the new flow is visible
+  document.querySelectorAll('.flow-item').forEach(el => el.classList.remove('active'));
+  const _list = document.getElementById('flows-list');
+  const _emptyHint = document.getElementById('flows-sidebar-empty');
+  if (_emptyHint) _emptyHint.style.display = 'none';
+  if (_list) {
+    const prev = _list.querySelector('.flow-item-unsaved');
+    if (prev) prev.remove();
+    const newEl = document.createElement('div');
+    newEl.className = 'flow-item active flow-item-unsaved';
+    newEl.innerHTML = `
+      <div class="flow-item-name">
+        <span class="flow-status-dot disabled"></span>
+        ✦ New Flow <em style="font-size:.7rem;opacity:.6">(unsaved)</em>
+      </div>
+      <div class="flow-item-meta"><span><i class="fas fa-bolt" style="font-size:.6rem"></i> manual</span><span>0 steps</span></div>`;
+    _list.prepend(newEl);
+  }
+  
+  // Enable save and palette, disable run/delete for now
+  ['btn-save', 'btn-palette'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = false;
+  });
+  ['btn-run', 'btn-delete'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = true;
+  });
+  
+  const hint = document.getElementById('canvas-hint');
+  if (hint) hint.style.display = 'none';
+
+  if (typeof renderTimeline === 'function') renderTimeline(currentFlowData);
+}
+

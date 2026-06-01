@@ -103,6 +103,27 @@
         "category": "PLUGINS",
         "module_type": "core_module"
     },
+    "FLOWS": {
+        "description": "Visual flow orchestration engine. Build multi-step automated pipelines with logic, scheduling, and data-passing between modules. Create via voice/text (NLP compiler), node-graph canvas, or YAML editor.",
+        "commands": {
+            "list_flows": "List all saved flows with their status and trigger.",
+            "get_flow": "Get the YAML definition of a specific flow by ID.",
+            "create_flow_from_nlp": "Compile a natural-language description into a YAML flow and save it.",
+            "run_flow": "Immediately execute a flow by ID.",
+            "enable_flow": "Enable a flow (will be triggered by its scheduler).",
+            "disable_flow": "Disable a flow without deleting it.",
+            "delete_flow": "Delete a flow permanently.",
+            "get_action_catalog": "List all registered actions available for use in flows."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "FLOWS ORCHESTRATION: When the user wants to create a recurring automation, schedule tasks, or chain multiple actions together (e.g. 'every morning do X then Y then Z'), use the Flows engine. Call FLOWS__create_flow_from_nlp with the user's description to compile it into an executable pipeline.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "⚡",
+        "category": "PLUGINS",
+        "module_type": "core_module"
+    },
     "HELP": {
         "description": "Displays the list of all active commands and modules in the system.",
         "commands": {
@@ -306,21 +327,19 @@
         "module_type": "plugin"
     },
     "MESSENGER": {
-        "description": "Send and receive messages via Telegram, WhatsApp, and Discord. Route messages to the right platform using natural language commands.",
+        "description": "Send messages via Telegram, WhatsApp, and Discord.",
         "commands": {
-            "send_message": "Sends a text message to a contact or channel on the specified platform.",
-            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
-            "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
-            "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+            "check_connection": "Test the connection to one or all messaging providers.",
+            "force_send": "Force-send by simulating an 'Enter' keystroke. Useful if WhatsApp Web gets stuck.",
+            "list_accounts": "List all configured messaging providers and their status.",
+            "send_message": "Send a message to a contact or channel."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
-        "icon": "💬",
-        "category": "PLUGINS",
-        "module_type": "plugin"
+        "icon": "",
+        "category": "PLUGINS"
     },
     "REMINDER": {
         "description": "Scheduler for time-based reminders with TTS alerts and WebUI notifications.",
