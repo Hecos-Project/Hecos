@@ -50,9 +50,6 @@ function initCanvas() {
   //   2. Context-menu → "Remove" (LiteGraph also calls this)
   //   3. Toolbar "Delete Node" button (calls our global wrapper below)
   // ── Override LiteGraph's internal deleteSelectedNodes ──────────────
-  // Called by LiteGraph's own keyboard handler AND directly by the toolbar button.
-  // We replace confirm() with direct deletion + toast, because confirm() 
-  // causes a re-entrant loop when Delete is held down (multiple keydowns).
   let _deleteInProgress = false;
   lgcanvas.deleteSelectedNodes = function() {
     if (_deleteInProgress) return;
@@ -65,7 +62,11 @@ function initCanvas() {
         this.graph.remove(node);
         delete _nodeMap[node.title];
       });
-      this.deselectAll();
+      if (typeof this.deselectAllNodes === 'function') {
+        this.deselectAllNodes();
+      } else {
+        this.selected_nodes = {};
+      }
       this.draw(true, true);
       if (typeof syncCanvasToYaml === 'function') syncCanvasToYaml();
       if (typeof toast === 'function') toast('ok', `🗑️ ${nodesToDelete.length} node(s) deleted`);
@@ -74,7 +75,18 @@ function initCanvas() {
     }
   };
 
-  // ── Global diagnostic keydown removed — root cause confirmed ────────
+  // Canvas global keyboard shortcut (enables deletion even when canvas loses focus)
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Delete' && e.key !== 'Backspace' && e.keyCode !== 46 && e.keyCode !== 8) return;
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+    
+    const canvasTab = document.getElementById('tab-canvas');
+    if (canvasTab && canvasTab.classList.contains('active')) {
+      if (typeof deleteSelectedNodes === 'function') deleteSelectedNodes();
+      e.preventDefault();
+    }
+  }, true);
 }
 
 
