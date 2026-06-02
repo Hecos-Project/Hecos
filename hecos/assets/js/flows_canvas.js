@@ -241,21 +241,30 @@ function renderTimeline(flow) {
     empty.style.display='flex'; steps.style.display='none'; return;
   }
   empty.style.display='none'; steps.style.display='flex';
-  steps.innerHTML = flow.pipeline.map(step => {
+  steps.innerHTML = flow.pipeline.map((step, index) => {
     const action = step.action||'';
     let cls = 'action', icon = 'fa-bolt';
     if (action.startsWith('TRIGGER__')) { cls='trigger'; icon='fa-clock'; }
     else if (action.startsWith('LOGIC__')) { cls='logic'; icon='fa-code-branch'; }
     const paramsStr = Object.entries(step.params||{}).slice(0,3)
       .map(([k,v])=>`${k}: ${typeof v==='string'?v:JSON.stringify(v)}`).join(' · ');
+    
+    // Add a vertical downward arrow if it's not the last step
+    const isLast = index === flow.pipeline.length - 1;
+    const arrow = isLast ? '' : `<div class="tl-arrow"><i class="fas fa-arrow-down"></i></div>`;
+    
     return `
-      <div class="tl-step">
-        <div class="tl-dot ${cls}"><i class="fas ${icon}"></i></div>
-        <div class="tl-info">
-          <span class="tl-action">${action}</span>
-          <span class="tl-id">id: ${step.id}${step.output_as?' → '+step.output_as:''}</span>
-          ${paramsStr ? `<span class="tl-params">${paramsStr}</span>` : ''}
+      <div class="tl-step-wrapper">
+        <div class="tl-step">
+          <div class="tl-num">${index + 1}</div>
+          <div class="tl-dot ${cls}"><i class="fas ${icon}"></i></div>
+          <div class="tl-info">
+            <span class="tl-action">${action}</span>
+            <span class="tl-id">id: ${step.id}${step.output_as?' → '+step.output_as:''}</span>
+            ${paramsStr ? `<span class="tl-params">${paramsStr}</span>` : ''}
+          </div>
         </div>
+        ${arrow}
       </div>`;
   }).join('');
 }
