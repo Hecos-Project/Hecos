@@ -72,7 +72,8 @@ function _renderPalette(catalog) {
             data-icon="${a.icon || '⚡'}"
             data-desc="${(a.description || '').slice(0, 80)}"
             title="${a.description || a.name}"
-            ondragstart="_onPaletteDragStart(event, '${a.name}')">
+            ondragstart="_onPaletteDragStart(event, '${a.name}')"
+            onclick="_createNodeFromAction('${a.name}')">
             <span class="pal-item-icon">${a.icon || '⚡'}</span>
             <span class="pal-item-name">${a.name.replace(/^[^_]+__/, '')}</span>
           </div>
@@ -116,6 +117,11 @@ function _createNodeFromAction(actionName, x, y) {
   const nodeType = CATEGORY_NODE_TYPE[prefix] || 'hecos/action';
   const node = LiteGraph.createNode(nodeType);
   if (!node) return;
+
+  // Calculate coordinates. If x,y not provided (click), place it near top left of CURRENT view
+  const nx = x ?? (100 - (lgcanvas ? lgcanvas.ds.offset[0] : 0)) / (lgcanvas ? lgcanvas.ds.scale : 1);
+  const ny = y ?? (100 - (lgcanvas ? lgcanvas.ds.offset[1] : 0)) / (lgcanvas ? lgcanvas.ds.scale : 1);
+  node.pos = [nx, ny];
 
   // Give it a clean, incrementing ID as title
   const baseName = actionName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
