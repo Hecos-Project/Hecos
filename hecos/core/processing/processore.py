@@ -264,6 +264,23 @@ def extract_and_execute_tools(raw_response, config=None):
                 except Exception as e:
                     logger.error(f"[PROCESSOR] Old Plugin error: {e}")
                     tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": module_to_call.upper()})
+            
+            elif method_name:
+                # ── Direct method call dispatch (e.g. FlowsEngine via get_plugin()) ──
+                # Handles native function calls like FLOWS__enable_flow where the legacy plugin
+                # exposes methods directly on its singleton instance or on the module itself.
+                engine_target = getattr(plugin_obj, "get_plugin", lambda: plugin_obj)()
+                if hasattr(engine_target, method_name):
+                    logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())} → {method_name}")
+                    try:
+                        method = getattr(engine_target, method_name)
+                        result = method(**action_or_args) if isinstance(action_or_args, dict) else method(action_or_args)
+                        if result:
+                            logger.info(f"[OUTPUT {module_to_call.upper()}]:\n{result}")
+                            tool_results.append({"id": call_id, "output": str(result), "tag": module_to_call.upper()})
+                    except Exception as e:
+                        logger.error(f"[PROCESSOR] Direct method error ({module_to_call}.{method_name}): {e}")
+                        tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": module_to_call.upper()})
     
     return bool(tool_results), tool_results, base_text
 

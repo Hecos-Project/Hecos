@@ -26,7 +26,7 @@ class ImageGenConfig(BaseModel):
     seed: int = -1                    # -1 = random every generation
     last_seed: int = -1               # stores the actual concrete seed used in the last run
     sampler: str = "euler_a"          # euler_a | ddim | dpm++2m | pndm | lms
-    scheduler: str = "euler"          # euler | dpm++ | pndm | ddim
+    scheduler: str = "euler"          # euler | dpm++ | pndm | ddim | normal | beta
     guidance_scale: float = 7.5       # CFG scale — same concept, two names
     num_inference_steps: int = 30
 

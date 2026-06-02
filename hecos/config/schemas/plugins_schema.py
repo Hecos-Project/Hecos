@@ -203,6 +203,30 @@ class PluginMail(BaseModel):
     auto_detect_provider: bool = True
 
 
+class PluginFlows(BaseModel):
+    """Hecos Flows — visual orchestration engine."""
+    enabled: bool = True
+    lazy_load: bool = True
+    # Path (relative to Hecos root) where flow YAML files are stored
+    flows_dir: str = "workspace/flows"
+    # Enable/disable APScheduler-based cron and interval triggers
+    scheduler_enabled: bool = True
+    # Timezone for APScheduler (e.g. 'Europe/Rome', 'local', 'UTC')
+    scheduler_timezone: str = "local"
+    # Log retention: max SSE log entries kept per run
+    max_log_entries: int = 500
+    # LLM temperature used by the NLP compiler (0–1)
+    compiler_temperature: float = 0.1
+    # Max tokens the NLP compiler may generate
+    compiler_max_tokens: int = 2048
+    # If true, auto-save compiled flows immediately without preview
+    auto_save_compiled: bool = False
+    # Enable Jinja2 rendering in YAML params (set False to disable for security)
+    jinja2_rendering: bool = True
+    # Max parallel flows that can run concurrently
+    max_concurrent_runs: int = 5
+
+
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
@@ -227,6 +251,7 @@ class PluginsConfig(BaseModel):
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
     MAIL: PluginMail = Field(default_factory=PluginMail)
+    FLOWS: PluginFlows = Field(default_factory=PluginFlows)
     extra_dirs: List[str] = []
 
 

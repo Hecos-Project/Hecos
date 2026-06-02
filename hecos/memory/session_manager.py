@@ -553,3 +553,31 @@ def wipe_session_messages(session_id: str) -> bool:
     except Exception as e:
         logger.error(f"[SESSION] wipe_session_messages error: {e}")
         return False
+
+
+def auto_limit_history(user_id: str = "admin", max_messages: int = 2000):
+    """Trims the user's chat history to the most recent `max_messages` rows.
+    
+    Called by brain_interface.save_message after every write to prevent unbounded growth.
+    Uses the per-user vault DB.
+    """
+    try:
+        from hecos.memory.brain_interface import _db_path
+        import sqlite3 as _sql
+        db = _db_path(user_id)
+        with _sql.connect(db, timeout=10) as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*) FROM history")
+            total = cur.fetchone()[0]
+            if total > max_messages:
+                excess = total - max_messages
+                cur.execute(
+                    "DELETE FROM history WHERE id IN "
+                    "(SELECT id FROM history ORDER BY id ASC LIMIT ?)",
+                    (excess,)
+                )
+                conn.commit()
+                logger.debug(f"[SESSION] auto_limit_history: trimmed {excess} old rows for '{user_id}'")
+    except Exception as e:
+        logger.debug(f"[SESSION] auto_limit_history error (non-critical): {e}")
+

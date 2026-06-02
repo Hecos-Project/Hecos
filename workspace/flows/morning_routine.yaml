@@ -1,0 +1,71 @@
+id: morning_routine
+name: 🌅 Routine Mattutina
+description: 'Sveglia giornaliera: saluto vocale, meteo, notizie, WhatsApp partner'
+version: 1
+enabled: false
+trigger:
+  type: cron
+  expression: 0 7 * * *
+variables:
+  user_name: Admin
+  partner_phone: '+39'
+  city: Roma
+pipeline:
+- id: step_greet
+  action: AUDIO__speak
+  params:
+    text: Svegliati, {{ user_name }}! Sono le 7. Buongiorno!
+- id: step_weather
+  action: WEATHER__get_current_weather
+  params:
+    city: '{{ city }}'
+  output_as: weather_data
+  depends_on:
+  - step_greet
+- id: step_coat_check
+  action: LOGIC__if_else
+  params:
+    condition: '{{ weather_data.temperature | default(20) | int }} < 15'
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: Fa freddo! Indossa il cappotto prima di uscire.
+    false_branch:
+      action: AUDIO__speak
+      params:
+        text: Bel tempo! Puoi uscire con una maglietta.
+  depends_on:
+  - step_weather
+- id: step_news
+  action: WEB__search_and_read
+  params:
+    query: notizie principali oggi
+    num_results: 3
+  output_as: top_news
+  depends_on:
+  - step_greet
+- id: step_news_summary
+  action: AUDIO__speak
+  params:
+    text: 'Ecco le notizie di oggi: {{ top_news | default(''Nessuna notizia disponibile.'')
+      | truncate(300) }}'
+  depends_on:
+  - step_news
+- id: step_whatsapp
+  action: MESSENGER__send_message
+  params:
+    platform: whatsapp
+    to: '{{ partner_phone }}'
+    text: Buongiorno! 😘
+  depends_on:
+  - step_greet
+- id: step_lunch_reminder
+  action: REMINDER__set_reminder
+  params:
+    text: Vai a fare la spesa!
+    at: '12:00'
+  depends_on:
+  - step_greet
+_meta:
+  created_at: '2026-06-01T06:00:00'
+  updated_at: '2026-06-01T07:56:35.560538'

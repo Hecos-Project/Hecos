@@ -310,4 +310,10 @@ hecos/memory/chat_exports/
 # Portable standalone environments and binaries
 /bin/
 /python_env/
+
+# ── Hecos User Workspaces ──
+# Block user generated automations and flows
+workspace/flows/*
+!workspace/flows/morning_routine.yaml
+!workspace/flows/.gitkeep
 

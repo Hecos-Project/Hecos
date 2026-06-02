@@ -1,0 +1,118 @@
+{
+    "tag": "FLOWS",
+    "name": "Hecos Flows",
+    "version": "1.0",
+    "description": "Visual flow orchestration engine. Build multi-step automated pipelines with logic, scheduling, and data-passing between modules. Create via voice/text (NLP compiler), node-graph canvas, or YAML editor.",
+    "icon": "⚡",
+    "lazy_load": true,
+    "is_class_based": true,
+    "status": "ONLINE",
+    "category": "PLUGINS",
+    "module_type": "plugin",
+    "routing_instructions": "FLOWS ORCHESTRATION: When the user wants to create a recurring automation, schedule tasks, or chain multiple actions together (e.g. 'every morning do X then Y then Z'), use the Flows engine. Call FLOWS__create_flow_from_nlp with the user's description to compile it into an executable pipeline.",
+    "commands": {
+        "list_flows": "List all saved flows with their status and trigger.",
+        "get_flow": "Get the YAML definition of a specific flow by ID.",
+        "create_flow_from_nlp": "Compile a natural-language description into a YAML flow and save it.",
+        "run_flow": "Immediately execute a flow by ID.",
+        "enable_flow": "Enable a flow (will be triggered by its scheduler).",
+        "disable_flow": "Disable a flow without deleting it.",
+        "delete_flow": "Delete a flow permanently.",
+        "get_action_catalog": "List all registered actions available for use in flows."
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__list_flows",
+                "description": "Returns a list of all saved flows with their ID, name, trigger, enabled state, and last run time.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__create_flow_from_nlp",
+                "description": "Accepts a natural-language description of what the user wants to automate and compiles it into a structured YAML flow using the LLM. Returns the flow YAML and a summary card.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "description": {
+                            "type": "string",
+                            "description": "A plain-language description of the desired automation (e.g. 'every morning at 7 wake me up, read news summaries, and send a WhatsApp to my partner')."
+                        },
+                        "flow_name": {
+                            "type": "string",
+                            "description": "Optional short name for the flow. If omitted, the LLM will suggest one."
+                        }
+                    },
+                    "required": ["description"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__run_flow",
+                "description": "Immediately executes a saved flow by its ID, regardless of its scheduled trigger.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "flow_id": { "type": "string", "description": "The flow ID (slug) to execute." }
+                    },
+                    "required": ["flow_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__enable_flow",
+                "description": "Enables a flow so its scheduler trigger becomes active.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "flow_id": { "type": "string", "description": "The flow ID to enable." }
+                    },
+                    "required": ["flow_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__disable_flow",
+                "description": "Disables a flow so it won't run on its scheduled trigger.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "flow_id": { "type": "string", "description": "The flow ID to disable." }
+                    },
+                    "required": ["flow_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__delete_flow",
+                "description": "Permanently deletes a flow and removes it from the scheduler.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "flow_id": { "type": "string", "description": "The flow ID to delete." }
+                    },
+                    "required": ["flow_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "FLOWS__get_action_catalog",
+                "description": "Returns the full catalog of all available flow actions (from all registered Hecos modules), categorized by type.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        }
+    ]
+}

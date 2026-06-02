@@ -39,6 +39,7 @@ window.CONFIG_HUB = {
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
         { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE' },
+        { id: 'flows',            label: 'hub_mod_flows',        icon: '<i class="fas fa-project-diagram"></i>', cat: 'RISORSE', pluginTag: 'FLOWS', isCore: true },
         
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'web',       label: 'hub_mod_web',          icon: '<i class="fas fa-globe"></i>', cat: 'SISTEMA', pluginTag: 'WEB' },
@@ -134,7 +135,8 @@ window.CONFIG_HUB.tagMap = {
     'MEDIA_PLAYER': 'media',
     'AUTOMATION': 'automation',
     'BROWSER':    'browser',
-    'USERS':      'users'
+    'USERS':      'users',
+    'FLOWS':      'flows'
 };
 
 /**
@@ -148,5 +150,5 @@ window.LAZY_PANEL_IDS = new Set([
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help'
+    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help', 'flows'
 ]);

@@ -92,6 +92,7 @@ _PANEL_MAP = {
     'privacy':         'modules/config_privacy.html',
     'widgets':         'modules/config_widgets.html',
     'help':            'modules/config_help.html',
+    'flows':           'modules/config_flows.html',
 }
 
 # Panels that require zoptions (model lists, piper voices, personalities)

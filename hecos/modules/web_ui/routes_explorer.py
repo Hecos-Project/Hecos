@@ -93,6 +93,17 @@ def init_explorer_routes(app, logger):
             import threading
             from queue import Queue
 
+            data = request.get_json(force=True, silent=True) or {}
+            d_title = data.get("title", "Hecos — Select Background Image")
+            d_initdir = data.get("initialdir", None)
+            d_filetypes = data.get("filetypes", [
+                ("Image Files", "*.jpg *.jpeg *.png *.gif *.webp"),
+                ("All Files", "*.*")
+            ])
+            # Ensure filetypes is a list of tuples as expected by tkinter
+            if isinstance(d_filetypes, list):
+                d_filetypes = [tuple(ft) if isinstance(ft, list) else ft for ft in d_filetypes]
+
             res_q = Queue()
 
             def _dialog_task(q):
@@ -101,20 +112,18 @@ def init_explorer_routes(app, logger):
                     root.withdraw()
                     root.attributes("-topmost", True)
                     
-                    # Remove the 'feather' icon (Windows hack)
                     try:
-                        # Use an empty photo to replace the icon
                         root.tk.call('wm', 'iconphoto', root._w, tk.PhotoImage(data=''))
                     except Exception: pass
                     
-                    # Open dialog
-                    path = filedialog.askopenfilename(
-                        title="Hecos — Select Background Image",
-                        filetypes=[
-                            ("Image Files", "*.jpg *.jpeg *.png *.gif *.webp"),
-                            ("All Files", "*.*")
-                        ]
-                    )
+                    kwargs = {
+                        "title": d_title,
+                        "filetypes": d_filetypes
+                    }
+                    if d_initdir and os.path.exists(d_initdir):
+                        kwargs["initialdir"] = d_initdir
+
+                    path = filedialog.askopenfilename(**kwargs)
                     root.destroy()
                     q.put(path)
                 except Exception as e:

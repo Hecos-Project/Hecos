@@ -56,3 +56,12 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             except Exception:
                 pass
 
+    # Hecos Flows — Visual orchestration engine
+    flows_enabled = cfg_mgr.config.get('plugins', {}).get('FLOWS', {}).get('enabled', True)
+    if flows_enabled:
+        try:
+            from .routes_flows import init_flows_routes
+            init_flows_routes(app, cfg_mgr, logger)
+        except Exception as e:
+            logger.warning(f"[WebUI] Hecos Flows routes unavailable: {e}")
+
