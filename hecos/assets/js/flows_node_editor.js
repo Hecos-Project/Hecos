@@ -207,34 +207,100 @@ function buildDynamicForm() {
       const flex = document.createElement('div');
       flex.style = "display:flex; gap: 8px; margin-top: 5px;";
       
-      const inp = document.createElement('input');
-      inp.type = 'text';
+      const inp = document.createElement('select');
       inp.id = elId;
-      inp.value = val !== undefined ? val : '';
       inp.style.flex = "1";
-      inp.placeholder = "e.g. alarm1.wav";
-      inp.oninput = syncYamlFromDynamicForm;
+      inp.onchange = syncYamlFromDynamicForm;
+      
+      const loadingOpt = document.createElement('option');
+      loadingOpt.text = "Loading sounds...";
+      inp.appendChild(loadingOpt);
+      
+      fetch('/api/system/explorer/ls', {
+         method: 'POST',
+         body: JSON.stringify({ path: 'C:\\Hecos\\hecos\\assets\\sounds' })
+      }).then(r => r.json()).then(data => {
+         inp.innerHTML = '';
+         const emptyOpt = document.createElement('option');
+         emptyOpt.value = '';
+         emptyOpt.text = '-- Select a sound --';
+         inp.appendChild(emptyOpt);
+         
+         if(data.ok && data.entries) {
+            data.entries.forEach(e => {
+               if(e.type === 'file' && e.name.match(/\.(wav|mp3|ogg)$/i)) {
+                  const opt = document.createElement('option');
+                  opt.value = e.name;
+                  opt.text = e.name;
+                  inp.appendChild(opt);
+               }
+            });
+         }
+         
+         if(val !== undefined) {
+             inp.value = val;
+             if(inp.value !== val) {
+                 const customOpt = document.createElement('option');
+                 customOpt.value = val;
+                 customOpt.text = val;
+                 inp.appendChild(customOpt);
+                 inp.value = val;
+             }
+         }
+      }).catch(e => {
+         console.error('Failed to load sounds:', e);
+         loadingOpt.text = "Failed to load sounds";
+      });
       
       const btn = document.createElement('button');
       btn.className = 'tb-btn';
       btn.type = 'button';
       btn.innerHTML = '<i class="fas fa-folder-open"></i> Browse';
-      btn.onclick = () => {
-        if (typeof window.HecosFilePicker !== 'undefined') {
-          window.HecosFilePicker.open({
-             startPath: 'c:\\\\Hecos\\\\hecos\\\\assets\\\\sounds',
-             selectDir: false,
-             onSelect: (filepath) => {
-                // If it's in the default folder, we can just use the basename
-                let base = filepath.split('\\\\').pop();
-                inp.value = base.split('/').pop();
-                syncYamlFromDynamicForm();
-             }
-          });
-        }
+      btn.onclick = async () => {
+         try {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            const res = await fetch("/api/system/explorer/pick-native", {
+               method: "POST",
+               body: JSON.stringify({
+                  title: "Hecos — Select Sound File",
+                  initialdir: "C:\\Hecos\\hecos\\assets\\sounds",
+                  filetypes: [["Audio Files", "*.wav *.mp3 *.ogg"], ["All Files", "*.*"]]
+               })
+            });
+            const data = await res.json();
+            if (data.ok && data.path) {
+               let base = data.path.split('\\\\').pop().split('/').pop();
+               let exists = Array.from(inp.options).some(o => o.value === base);
+               if(!exists) {
+                   const customOpt = document.createElement('option');
+                   customOpt.value = base;
+                   customOpt.text = base;
+                   inp.appendChild(customOpt);
+               }
+               inp.value = base;
+               syncYamlFromDynamicForm();
+            }
+         } catch(e) {
+            console.error("Native pick error:", e);
+         } finally {
+            btn.innerHTML = '<i class="fas fa-folder-open"></i> Browse';
+         }
+      };
+      
+      const playBtn = document.createElement('button');
+      playBtn.className = 'tb-btn';
+      playBtn.type = 'button';
+      playBtn.style.padding = '0 10px';
+      playBtn.title = 'Preview Audio';
+      playBtn.innerHTML = '<i class="fas fa-play"></i>';
+      playBtn.onclick = () => {
+         if(!inp.value) return;
+         const audio = new Audio('/assets/sounds/' + inp.value);
+         audio.play().catch(e => console.warn("Failed to play preview:", e));
       };
       
       flex.appendChild(inp);
+      flex.appendChild(playBtn);
       flex.appendChild(btn);
       fieldWrap.appendChild(flex);
 

@@ -96,6 +96,7 @@ function syncCanvasToYaml() {
       } catch(e){}
     }
     if (props.output_as) step.output_as = props.output_as;
+    if (props.note) step.note = props.note;
     
     // Read actual canvas link connections to derive depends_on
     const deps = [];

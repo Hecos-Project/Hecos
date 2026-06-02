@@ -37,23 +37,46 @@ function initCanvas() {
     const hasSelection = nodes && Object.keys(nodes).length > 0;
     btn.style.display = hasSelection ? 'inline-block' : 'none';
   };
-
   // Node Editor hook
   lgcanvas.onNodeDblClicked = (node) => {
     if (typeof openNodeEditor === 'function') openNodeEditor(node);
   };
 
-  // Canvas keyboard shortcuts (Delete/Backspace)
-  document.addEventListener('keydown', (e) => {
-    if ((e.key === 'Delete' || e.key === 'Backspace')) {
-      const active = document.activeElement;
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
-      if (document.getElementById('tab-canvas').classList.contains('active')) {
-        deleteSelectedNodes();
-      }
+  // ── Override LiteGraph's internal deleteSelectedNodes ──────────────
+  // This is called by LiteGraph's OWN keyboard handler (bound at canvas
+  // creation time, so processKey overrides don't reach it).
+  // By replacing this method on the instance we intercept ALL three paths:
+  //   1. Delete / Backspace key  (LiteGraph calls this internally)
+  //   2. Context-menu → "Remove" (LiteGraph also calls this)
+  //   3. Toolbar "Delete Node" button (calls our global wrapper below)
+  // ── Override LiteGraph's internal deleteSelectedNodes ──────────────
+  // Called by LiteGraph's own keyboard handler AND directly by the toolbar button.
+  // We replace confirm() with direct deletion + toast, because confirm() 
+  // causes a re-entrant loop when Delete is held down (multiple keydowns).
+  let _deleteInProgress = false;
+  lgcanvas.deleteSelectedNodes = function() {
+    if (_deleteInProgress) return;
+    const nodesToDelete = Object.values(this.selected_nodes || {});
+    if (!nodesToDelete.length) return;
+
+    _deleteInProgress = true;
+    try {
+      nodesToDelete.forEach(node => {
+        this.graph.remove(node);
+        delete _nodeMap[node.title];
+      });
+      this.deselectAll();
+      this.draw(true, true);
+      if (typeof syncCanvasToYaml === 'function') syncCanvasToYaml();
+      if (typeof toast === 'function') toast('ok', `🗑️ ${nodesToDelete.length} node(s) deleted`);
+    } finally {
+      _deleteInProgress = false;
     }
-  });
+  };
+
+  // ── Global diagnostic keydown removed — root cause confirmed ────────
 }
+
 
 function resizeCanvas() {
   const wrap = document.getElementById('canvas-wrap');
@@ -82,8 +105,10 @@ function _registerNodeTypes() {
       this.addOutput('out', 'flow');
       this.addInput('in', 'flow');
       this.title = t.title;
-      this.size = [200, 60];
+      this.size = [200, 80];
       this.bgcolor = t.color;
+      this.properties = { note: "" };
+      this.addWidget("text", "Note", "", (v) => { this.properties.note = v; });
     }
     Node.title = t.title;
     Node.title_color = t.labelColor || '#fff';
@@ -114,7 +139,8 @@ function renderCanvasFromFlow(flow) {
     if(node) {
       node.title = step.id;
       node.pos = [x + (i % 3) * 250, y + Math.floor(i/3) * 120];
-      node.properties = { action, params: JSON.stringify(step.params||{}), output_as: step.output_as||'' };
+      node.properties = { action, params: JSON.stringify(step.params||{}), output_as: step.output_as||'', note: step.note||'' };
+      if(step.note) node.widgets[0].value = step.note;
       posMap[step.id] = node;
       lgraph.add(node);
     }
@@ -185,21 +211,10 @@ function resetNodeStates() {
 
 // ── Node Actions ──────────────────────────────────────────────────────────────
 
+// Global wrapper for toolbar button — delegates to the overridden canvas method
 function deleteSelectedNodes() {
-  if (!lgcanvas || !lgraph) return;
-  const selection = lgcanvas.selected_nodes || {};
-  const nodeCount = Object.keys(selection).length;
-  if (!nodeCount) return;
-
-  if (confirm(`Delete ${nodeCount} selected node(s)?`)) {
-    for (const id in selection) {
-      lgraph.remove(selection[id]);
-      delete _nodeMap[selection[id].title];
-    }
-    lgcanvas.deselectAll();
-    lgcanvas.draw(true, true);
-    if (typeof syncCanvasToYaml === 'function') syncCanvasToYaml();
-    if (typeof toast === 'function') toast('ok', `Deleted ${nodeCount} node(s)`);
+  if (lgcanvas && typeof lgcanvas.deleteSelectedNodes === 'function') {
+    lgcanvas.deleteSelectedNodes();
   }
 }
 

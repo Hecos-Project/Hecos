@@ -218,9 +218,33 @@ def _setup_audio_wrappers():
 
     def _audio_play_alarm(sound: str = "default"):
         try:
-            from hecos.core.audio import beep_generator
-            # device_index=None usually picks default
-            beep_generator._play_beep_on_device(None)
+            if not sound or sound == "default":
+                from hecos.core.audio import beep_generator
+                beep_generator._play_beep_on_device(None)
+            else:
+                import os
+                import time
+                import contextlib
+                with contextlib.redirect_stdout(None):
+                    import pygame
+
+                base_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                path = os.path.join(base_dir, "assets", "sounds", sound)
+                
+                if not os.path.exists(path):
+                    log.error(f"Cannot play alarm, file not found: {path}")
+                    from hecos.core.audio import beep_generator
+                    beep_generator._play_beep_on_device(None)
+                    return False
+
+                if not pygame.mixer.get_init():
+                    pygame.mixer.init()
+                    
+                pygame.mixer.music.load(path)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    time.sleep(0.1)
+                    
         except Exception as e:
             log.error(f"Cannot play alarm: {e}")
         return True

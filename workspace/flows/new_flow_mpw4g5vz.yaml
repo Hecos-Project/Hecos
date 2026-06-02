@@ -1,0 +1,25 @@
+id: new_flow_mpw4g5vz
+name: procedura 2
+trigger:
+  type: manual
+pipeline:
+- id: ai__prompt_1
+  action: AI__prompt
+  params:
+    prompt: <string>
+    save_to_chat: <bool>
+- id: audio__play_alarm_1
+  action: AUDIO__play_alarm
+  params:
+    sound: <string>
+  depends_on:
+  - ai__prompt_1
+- id: audio__speak_1
+  action: AUDIO__speak
+  params:
+    text: <string>
+  depends_on:
+  - audio__play_alarm_1
+_meta:
+  created_at: '2026-06-02T06:13:17.899462'
+  updated_at: '2026-06-02T06:14:01.781409'
