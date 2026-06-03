@@ -22,6 +22,9 @@ const CATEGORY_ICONS = {
 export default function NodePalette({ catalog, onClose }) {
   const [query, setQuery] = useState('');
   const [collapsed, setCollapsed] = useState({});
+  const [pos, setPos] = useState({ top: 50, right: 12 });
+  const dragInfo = React.useRef(null);
+  const paletteRef = React.useRef(null);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -45,10 +48,53 @@ export default function NodePalette({ catalog, onClose }) {
 
   const sorted = Object.entries(filtered).sort(([a], [b]) => a.localeCompare(b));
 
+  const onPointerDown = (e) => {
+    if (e.target.closest('.close-btn')) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    
+    let startLeft = pos.left;
+    if (startLeft === undefined && paletteRef.current) {
+      const rect = paletteRef.current.getBoundingClientRect();
+      const parentRect = paletteRef.current.parentElement.getBoundingClientRect();
+      startLeft = rect.left - parentRect.left;
+    }
+
+    dragInfo.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startTop: pos.top,
+      startLeft: startLeft !== undefined ? startLeft : 0
+    };
+  };
+
+  const onPointerMove = (e) => {
+    if (!dragInfo.current) return;
+    const dx = e.clientX - dragInfo.current.startX;
+    const dy = e.clientY - dragInfo.current.startY;
+    setPos({
+      top: dragInfo.current.startTop + dy,
+      left: dragInfo.current.startLeft + dx,
+      right: 'auto' // Switch to left-based positioning
+    });
+  };
+
+  const onPointerUp = (e) => {
+    if (dragInfo.current) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+      dragInfo.current = null;
+    }
+  };
+
   return (
-    <div className="hc-palette" style={{ position: 'absolute', top: 50, right: 12 }}>
-      <div className="hc-palette-header">
-        <span><i className="fas fa-toolbox" style={{ marginRight: 6 }} />Node Palette</span>
+    <div key="palette" ref={paletteRef} className="hc-palette" style={{ position: 'absolute', top: pos.top, right: pos.right, left: pos.left }}>
+      <div 
+        className="hc-palette-header" 
+        onPointerDown={onPointerDown} 
+        onPointerMove={onPointerMove} 
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <span style={{ pointerEvents: 'none' }}><i className="fas fa-toolbox" style={{ marginRight: 6 }} />Node Palette</span>
         <button className="close-btn" onClick={onClose} title="Close">
           <i className="fas fa-times" />
         </button>

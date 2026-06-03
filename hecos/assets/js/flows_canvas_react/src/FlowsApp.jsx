@@ -238,6 +238,8 @@ export default function FlowsApp() {
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1a1a2e" />
         <Controls showInteractive={false} />
         <MiniMap
+          pannable
+          zoomable
           nodeColor={(n) => {
             const t = n.type || '';
             if (t === 'triggerNode') return '#7c3aed';
@@ -254,10 +256,10 @@ export default function FlowsApp() {
 
         {/* Empty hint */}
         {nodes.length === 0 && (
-          <Panel position="center" style={{ pointerEvents: 'none' }}>
+          <Panel position="center" style={{ pointerEvents: 'none', minWidth: '300px' }}>
             <div className="rf-empty-hint">
               <i className="fas fa-project-diagram" />
-              <p>Select a flow from the sidebar<br />or drag a node from the Palette</p>
+              <p>Select a flow from the sidebar<br />or drag a node from the Palette to start</p>
             </div>
           </Panel>
         )}

@@ -97,7 +97,6 @@
   font-size: 0.65rem;
   color: rgba(255,255,255,0.35);
   margin-bottom: 4px;
-  truncate: true;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -179,8 +178,6 @@
 
 /* ── Empty canvas hint ───────────────────────────────────────────────────── */
 .rf-empty-hint {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -189,6 +186,8 @@
   color: rgba(255,255,255,0.2);
   font-family: 'Inter', sans-serif;
   gap: 10px;
+  width: 100%;
+  text-align: center;
 }
 .rf-empty-hint i { font-size: 2.5rem; }
 .rf-empty-hint p { font-size: 0.85rem; text-align: center; line-height: 1.6; }
