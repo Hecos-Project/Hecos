@@ -429,3 +429,15 @@
   pointer-events: none;
   font-size: 0.75rem;
 }
+
+/* ── Context Menu ── */
+.hc-cm-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.4rem 1rem; cursor: pointer;
+  font-size: 0.75rem; color: var(--flows-text, rgba(255,255,255,0.88));
+  transition: background 0.15s, color 0.15s;
+}
+.hc-cm-item:hover {
+  background: rgba(0,212,255,0.1);
+  color: #fff;
+}

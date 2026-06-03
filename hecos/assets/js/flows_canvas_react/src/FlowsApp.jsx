@@ -18,6 +18,7 @@ import bridge from './bridge.js';
 import { nodeTypes } from './nodes/index.jsx';
 import NodePalette from './components/NodePalette.jsx';
 import NodeEditPanel from './components/NodeEditPanel.jsx';
+import ContextMenu from './components/ContextMenu.jsx';
 import { catalogToNodes, flowToRFNodes, rfNodesToFlow } from './utils/conversion.js';
 import { ACTION_TYPE_MAP } from './nodes/nodeTypeMap.js';
 
@@ -36,6 +37,7 @@ export default function FlowsApp() {
   const [catalog, setCatalog] = useState({});
   const reactFlowWrapper = useRef(null);
   const [rfInstance, setRfInstance] = useState(null);
+  const [menu, setMenu] = useState(null);
   // Execution states: stepId -> 'running'|'done'|'error'
   const execStateRef = useRef({});
 
@@ -145,6 +147,64 @@ export default function FlowsApp() {
     setEditNode(node);
   }, []);
 
+  // ── Context Menu handlers ─────────────────────────────────────────────────
+  const onNodeContextMenu = useCallback(
+    (event, node) => {
+      event.preventDefault();
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setMenu({
+        node,
+        type: 'node',
+        top: event.clientY - rect.top,
+        left: event.clientX - rect.left,
+      });
+    },
+    [reactFlowWrapper]
+  );
+
+  const onPaneContextMenu = useCallback(
+    (event) => {
+      event.preventDefault();
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setMenu({
+        type: 'pane',
+        top: event.clientY - rect.top,
+        left: event.clientX - rect.left,
+      });
+    },
+    [reactFlowWrapper]
+  );
+
+  const handleContextMenuAction = useCallback((action, payload) => {
+    if (action === 'EDIT') {
+      setEditNode(payload);
+    } else if (action === 'DELETE') {
+      setNodes(nds => {
+        const up = nds.filter(n => n.id !== payload.id);
+        notifyChange(up, undefined);
+        return up;
+      });
+      setEdges(eds => eds.filter(e => e.source !== payload.id && e.target !== payload.id));
+    } else if (action === 'DUPLICATE') {
+      const dupId = payload.id + '_copy' + Math.floor(Math.random()*1000);
+      const dupNode = {
+        ...payload,
+        id: dupId,
+        position: { x: payload.position.x + 50, y: payload.position.y + 50 },
+        data: { ...payload.data, stepId: dupId },
+        selected: false
+      };
+      setNodes(nds => {
+        const up = [...nds, dupNode];
+        notifyChange(up, undefined);
+        return up;
+      });
+    } else if (action === 'SHOW_PALETTE' || action === 'NEW_NODE') {
+      setPaletteOpen(true);
+    }
+    setMenu(null);
+  }, [setNodes, setEdges, notifyChange]);
+
   // ── Save from edit panel ──────────────────────────────────────────────────
   const onSaveNode = useCallback((nodeId, updatedData) => {
     setNodes(nds => {
@@ -229,6 +289,8 @@ export default function FlowsApp() {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
         fitView
@@ -283,6 +345,13 @@ export default function FlowsApp() {
           onClose={() => setEditNode(null)}
         />
       )}
+
+      {/* Context Menu */}
+      <ContextMenu 
+        menu={menu} 
+        onClose={() => setMenu(null)} 
+        onAction={handleContextMenuAction} 
+      />
     </div>
   );
 }
