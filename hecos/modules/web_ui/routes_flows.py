@@ -191,6 +191,7 @@ def init_flows_routes(app, cfg_mgr, logger=None):
             yaml_text, summary, flow_dict = compile_from_nlp(
                 description=description,
                 flow_name=flow_name,
+                config=cfg_mgr.reload(),
             )
             return jsonify({
                 "ok":      True,

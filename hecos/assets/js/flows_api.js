@@ -32,7 +32,12 @@ function renderSidebar(flows) {
       <div class="flow-item-meta">
         <span><i class="fas fa-bolt" style="font-size:.6rem"></i> ${f.trigger_type}${f.trigger_expr?' ('+f.trigger_expr+')':''}</span>
         <span>${f.step_count} steps</span>
+        <button class="flow-item-del" title="Elimina flusso" data-flow-id="${f.id}"><i class="fas fa-trash"></i></button>
       </div>`;
+    el.querySelector('.flow-item-del').addEventListener('click', e => {
+      e.stopPropagation();
+      deleteFlowById(f.id, f.name);
+    });
     el.addEventListener('click', () => selectFlow(f.id));
     list.appendChild(el);
   });
@@ -63,15 +68,11 @@ async function selectFlow(flowId) {
     // Set YAML editor
     if (cmEditor) cmEditor.setValue(d.yaml || '');
 
-    // Render canvas nodes (from flows_canvas.js)
+    // Render canvas nodes via ReactFlow bridge (flows_canvas_shim.js)
     if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(d.flow);
 
-    // Render timeline (from flows_canvas.js)
+    // Render timeline (from flows_canvas_shim.js)
     if (typeof renderTimeline === 'function') renderTimeline(d.flow);
-
-    // Hide canvas hint
-    const hint = document.getElementById('canvas-hint');
-    if (hint) hint.style.display='none';
 
     // Sync run button state from backend
     try {
@@ -167,33 +168,35 @@ async function runCurrentFlow() {
 }
 
 async function deleteCurrentFlow() {
-  if (!currentFlowId) return;
-  if (!confirm(`Delete flow "${currentFlowData?.name||currentFlowId}"?`)) return;
+  if (!currentFlowId) { toast('info','Seleziona prima un flusso.'); return; }
+  await deleteFlowById(currentFlowId, currentFlowData?.name || currentFlowId);
+}
+
+async function deleteFlowById(flowId, flowName) {
+  if (!confirm(`Eliminare il flusso "${flowName}"?`)) return;
   try {
-    const res = await fetch(`/api/flows/${currentFlowId}`, {method:'DELETE'});
+    const res = await fetch(`/api/flows/${flowId}`, {method:'DELETE'});
     const d = await res.json();
     if (!d.ok) throw new Error(d.error);
-    
-    currentFlowId = null; 
-    currentFlowData = null;
-    
-    if (cmEditor) cmEditor.setValue('');
-    if (lgraph) lgraph.clear();
-    
-    const tlInput = document.getElementById('flow-title');
-    if (tlInput) tlInput.value='';
-    
-    ['btn-run','btn-save','btn-delete'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (btn) btn.disabled=true;
-    });
-    const hint = document.getElementById('canvas-hint');
-    if (hint) hint.style.display='flex';
-    if (typeof renderTimeline === 'function') renderTimeline(null);
-    
-    toast('ok','Flow deleted.');
+
+    if (currentFlowId === flowId) {
+      currentFlowId = null;
+      currentFlowData = null;
+      if (cmEditor) cmEditor.setValue('');
+      // Clear ReactFlow canvas via bridge
+      if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow({ pipeline: [] });
+      const tlInput = document.getElementById('flow-title');
+      if (tlInput) tlInput.value='';
+      ['btn-run','btn-save','btn-delete'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled=true;
+      });
+      if (typeof renderTimeline === 'function') renderTimeline(null);
+    }
+
+    toast('ok','Flusso eliminato.');
     loadFlowsList();
-  } catch(e) { toast('error','Delete failed: '+e.message); }
+  } catch(e) { toast('error','Eliminazione fallita: '+e.message); }
 }
 
 // ── Manual Flow Creation ──────────────────────────────────────────
@@ -208,7 +211,7 @@ function newEmptyCanvas() {
     tlInput.disabled = false;
   }
   
-  if (lgraph) lgraph.clear();
+  if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(currentFlowData);
   if (cmEditor) cmEditor.setValue(`id: ${currentFlowId}\nname: New Flow\ntrigger:\n  type: manual\npipeline: []`);
   
   // Add a temporary unsaved entry to the sidebar so the new flow is visible
@@ -240,9 +243,6 @@ function newEmptyCanvas() {
     if (btn) btn.disabled = true;
   });
   
-  const hint = document.getElementById('canvas-hint');
-  if (hint) hint.style.display = 'none';
-
   if (typeof renderTimeline === 'function') renderTimeline(currentFlowData);
 }
 

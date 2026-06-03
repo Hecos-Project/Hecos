@@ -107,7 +107,7 @@ function saveNodeEditor() {
     depends_on: dependsStr ? dependsStr.split(',').map(s=>s.trim()).filter(s=>s) : []
   };
   
-  // Update _nodeMap key if ID changed
+  // Update _nodeMap key if ID changed (LiteGraph legacy — no-op with ReactFlow bridge)
   const origId = document.getElementById('ne-orig-id').value;
   if (origId && origId !== stepId && typeof _nodeMap !== 'undefined') {
     _nodeMap[stepId] = _nodeMap[origId];
@@ -118,7 +118,7 @@ function saveNodeEditor() {
     }
   }
   
-  if (lgcanvas) lgcanvas.draw(true, true);
+  // Sync canvas via ReactFlow bridge (replaces lgcanvas.draw)
   if (typeof syncCanvasToYaml === 'function') syncCanvasToYaml();
   
   closeNodeEditor();

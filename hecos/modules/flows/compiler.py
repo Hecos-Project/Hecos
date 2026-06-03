@@ -171,17 +171,21 @@ def _call_llm(system_prompt: str, user_message: str, config: Optional[Dict]) -> 
     """Call the configured Hecos LLM provider."""
     try:
         from hecos.app.config import ConfigManager
-        cfg = config or ConfigManager().config
+        cfg = config if config is not None else ConfigManager().config
         from hecos.core.llm import manager
-        
-        mgr = getattr(manager, 'manager', manager.LLMManager())
+
+        # Use the singleton LLM manager directly (it is already loaded)
+        mgr = manager.manager if hasattr(manager, 'manager') else manager.LLMManager()
         model_name = mgr.resolve_model(tag="FLOWS", config_override=cfg)
         if not model_name:
-            raise RuntimeError("No LLM model configured for flows.")
-            
+            raise RuntimeError("No LLM model configured for flows. Set a model in Settings → LLM.")
+
+        log.debug(f"[Flows.Compiler] Resolved model: {model_name}")
+        log.debug(f"[Flows.Compiler] User prompt ({len(user_message)} chars): {user_message[:200]}...")
+
         is_cloud = any(model_name.startswith(p + "/") for p in ["groq", "openai", "anthropic", "gemini", "cohere"])
         is_kobold = model_name.startswith("kobold/")
-        
+
         if is_cloud:
             backend_type = "cloud"
         elif is_kobold:
@@ -193,16 +197,20 @@ def _call_llm(system_prompt: str, user_message: str, config: Optional[Dict]) -> 
         subconfig["backend_type"] = backend_type
         subconfig["model"] = model_name
         subconfig["temperature"] = 0.1
-        
+
         from hecos.core.llm.client import generate
         response = generate(
             system_prompt=system_prompt,
             user_message=user_message,
             config_or_subconfig=subconfig,
         )
+
         if isinstance(response, str) and (response.startswith("⚠️") or response.startswith("[SYSTEM]")):
             raise RuntimeError(response)
-        return response.strip() if isinstance(response, str) else ""
+
+        result = response.strip() if isinstance(response, str) else ""
+        log.debug(f"[Flows.Compiler] Raw LLM response ({len(result)} chars): {result[:300]}...")
+        return result
     except Exception as e:
         raise RuntimeError(f"[Flows.Compiler] LLM call failed: {e}")
 
