@@ -123,14 +123,7 @@
       <i class="fas fa-stop"></i> Stop Voice
     </button>
   </div>
-
-
-
-  <div class="sidebar-footer">
-    <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos — Created by <strong>Antonio Meloni</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
-  </div>
-
-  <!-- Control Room Expand Button (Module A) -->
+  <!-- Control Room Expand Button -->
   {% if zconfig.get('plugins', {}).get('WEB_UI', {}).get('control_room_panel', True) %}
   <button id="sidebar-expand-btn"
           onclick="window.controlRoom && window.controlRoom.toggle()"
@@ -141,6 +134,10 @@
     <i class="fas fa-chevron-right" id="sidebar-expand-chevron"></i>
   </button>
   {% endif %}
+
+  <div class="sidebar-footer">
+    <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos &mdash; Created by <strong>Antonio Meloni</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
+  </div>
 
   <script>
     window.sidebarWidgetsEnabled = {{ (zconfig.widgets.sidebar_widgets_enabled if zconfig.widgets.sidebar_widgets_enabled is defined else True) | tojson }};
