@@ -280,6 +280,10 @@ export default function FlowsApp() {
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
+      if (e.key === 'Escape') {
+        setMenu(null);
+        return;
+      }
       if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
       
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -346,6 +350,7 @@ export default function FlowsApp() {
         onNodeContextMenu={onNodeContextMenu}
         onEdgeContextMenu={onEdgeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
+        onPaneClick={() => setMenu(null)}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
         fitView
