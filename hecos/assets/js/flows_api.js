@@ -97,7 +97,14 @@ async function saveCurrentFlow() {
       body: JSON.stringify({yaml})
     });
     const d = await res.json();
-    if (!d.ok) throw new Error((d.errors||[d.error]).join('; '));
+    if (!d.ok) {
+      // Show each validation error on its own line for clarity
+      const errs = d.errors || [d.error || 'Unknown error'];
+      toast('error', '❌ Save failed:\n' + errs.map((e,i) => `${i+1}. ${e}`).join('\n'));
+      // Also log details to console for debugging
+      console.warn('[Flows] Save validation errors:', errs);
+      return;
+    }
     toast('ok','Flow saved ✓');
     currentFlowId = d.flow_id;
     loadFlowsList();

@@ -214,7 +214,7 @@ def _setup_audio_wrappers():
             voice.speak(text)
         except Exception as e:
             log.error(f"Cannot speak: {e}")
-        return True
+        return text
 
     def _audio_play_alarm(sound: str = "default"):
         try:
@@ -294,7 +294,7 @@ def _setup_system_wrappers():
             log.info(f"[Flows.Chat] Message written: {text}")
         except Exception as e:
             log.error(f"[Flows.Chat] Cannot write chat message: {e}")
-        return True
+        return text
 
     _REGISTRY["SYSTEM__chat_message"] = {
         "name": "SYSTEM__chat_message",

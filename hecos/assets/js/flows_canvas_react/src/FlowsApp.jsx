@@ -142,7 +142,14 @@ export default function FlowsApp() {
     e.dataTransfer.dropEffect = 'copy';
   }, []);
 
-  // ── Node double-click → open edit panel ───────────────────────────────────
+  // ── Node single-click / double-click ──────────────────────────────────────
+  const onNodeClick = useCallback((_, node) => {
+    // If the edit panel is already open, gracefully switch to the newly clicked node
+    if (editNode && editNode.id !== node.id) {
+      setEditNode(node);
+    }
+  }, [editNode]);
+
   const onNodeDoubleClick = useCallback((_, node) => {
     setEditNode(node);
   }, []);
@@ -260,6 +267,13 @@ export default function FlowsApp() {
       return updatedNodes;
     });
     setEditNode(null);
+    // Auto-save to disk: after notifyChange syncs YAML editor, trigger the global save.
+    // Small delay ensures the bridge has flushed the cmEditor value.
+    setTimeout(() => {
+      if (typeof window.saveCurrentFlow === 'function') {
+        window.saveCurrentFlow();
+      }
+    }, 80);
   }, [setNodes, setEdges, notifyChange]);
 
   // ── Delete selected nodes/edges ───────────────────────────────────────────
@@ -351,6 +365,7 @@ export default function FlowsApp() {
         onInit={setRfInstance}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
         onEdgeContextMenu={onEdgeContextMenu}
@@ -405,6 +420,7 @@ export default function FlowsApp() {
         const allVariables = Array.from(new Set(nodes.map(n => n.data?.outputAs).filter(Boolean)));
         return (
           <NodeEditPanel
+            key={editNode.id}
             node={editNode}
             catalog={catalog}
             allNodeIds={nodes.map(n => n.id).filter(id => id !== editNode.id)}

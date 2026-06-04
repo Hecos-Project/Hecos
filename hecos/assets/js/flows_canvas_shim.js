@@ -59,9 +59,11 @@ function syncCanvasToYaml() {
     try { existing = jsyaml.load(cmEditor.getValue()) || {}; } catch(e) {}
 
     const merged = { ...existing, ...flowObj };
-    if (!merged.id && typeof currentFlowId !== 'undefined' && currentFlowId) {
-      merged.id = currentFlowId;
-    }
+
+    // Ensure required top-level fields are never missing
+    if (!merged.id && typeof currentFlowId !== 'undefined' && currentFlowId) merged.id = currentFlowId;
+    if (!merged.name) merged.name = (typeof currentFlowId !== 'undefined' && currentFlowId) ? currentFlowId.replace(/_/g, ' ') : 'New Flow';
+    if (!merged.trigger) merged.trigger = { type: 'manual' };
 
     const newYaml = jsyaml.dump(merged, { indent: 2, lineWidth: -1 });
     const scrollInfo = cmEditor.getScrollInfo();
@@ -92,9 +94,12 @@ function _initBridgeSync() {
     let existing = {};
     try { existing = jsyaml.load(cmEditor.getValue()) || {}; } catch(e) {}
     const merged = { ...existing, ...flowObj };
-    if (!merged.id && typeof currentFlowId !== 'undefined' && currentFlowId) {
-      merged.id = currentFlowId;
-    }
+
+    // Guarantee required fields are never stripped
+    if (!merged.id && typeof currentFlowId !== 'undefined' && currentFlowId) merged.id = currentFlowId;
+    if (!merged.name) merged.name = (typeof currentFlowId !== 'undefined' && currentFlowId) ? currentFlowId.replace(/_/g, ' ') : 'New Flow';
+    if (!merged.trigger) merged.trigger = { type: 'manual' };
+
     const newYaml = jsyaml.dump(merged, { indent: 2, lineWidth: -1 });
     const scrollInfo = cmEditor.getScrollInfo();
     cmEditor.setValue(newYaml);
