@@ -60,6 +60,24 @@
   border-color: rgba(255,255,255,0.35) !important;
   box-shadow: 0 0 0 2px rgba(255,255,255,0.2), var(--node-shadow) !important;
 }
+.hc-node.disabled {
+  opacity: 0.55;
+  filter: grayscale(85%);
+}
+.hc-node-bypass-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  z-index: 10;
+  pointer-events: none;
+}
+.hc-node-bypass-overlay i {
+  font-size: 5rem;
+  color: rgba(239,68,68,0.7);
+}
 
 /* ── Node header ─────────────────────────────────────────────────────────── */
 .hc-node-header {

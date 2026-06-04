@@ -35,6 +35,7 @@ export function flowToRFNodes(flowObj) {
         outputAs: step.output_as || '',
         dependsOn: step.depends_on || [],
         note: step.note || '',
+        disabled: step.disabled === true,
         execState: null,
       },
     };
@@ -85,6 +86,7 @@ export function rfNodesToFlow(rfNodes, rfEdges) {
     if (d.params && Object.keys(d.params).length) step.params = d.params;
     if (d.outputAs) step.output_as = d.outputAs;
     if (d.note) step.note = d.note;
+    if (d.disabled) step.disabled = true;
 
     const deps = incomingMap[node.id] || [];
     if (deps.length) step.depends_on = deps;

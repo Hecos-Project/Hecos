@@ -31,10 +31,17 @@ export function BaseNode({
   }).join('  ·  ');
 
   const stateClass = data.execState ? `state-${data.execState}` : '';
+  const disableClass = data.disabled ? 'disabled' : '';
 
   return (
-    <div className={`hc-node ${stateClass} ${selected ? 'selected' : ''}`}
+    <div className={`hc-node ${stateClass} ${disableClass} ${selected ? 'selected' : ''}`}
          style={{ '--hc-header-color': headerColor }}>
+
+      {data.disabled && (
+        <div className="hc-node-bypass-overlay" title="Node Disabled / Bypassed">
+          <i className="fas fa-times" />
+        </div>
+      )}
 
       {showInputHandle && (
         <Handle type="target" position={Position.Left} id="in"

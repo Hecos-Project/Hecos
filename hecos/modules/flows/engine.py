@@ -322,6 +322,17 @@ def _execute_step(
         "ts":     datetime.datetime.now().isoformat(),
     })
 
+    if step.get("disabled", False):
+        log.info(f"[Flows.Engine] ⏭️ Step '{step['id']}' bypassed (disabled).")
+        emit(run_id, {
+            "type":   "step_skip",
+            "run_id": run_id,
+            "step_id": step["id"],
+            "action": action,
+            "ts":     datetime.datetime.now().isoformat(),
+        })
+        return None
+
     try:
         # Native logic handlers
         if action in _LOGIC_HANDLERS:

@@ -42,6 +42,13 @@ export default function ContextMenu({ menu, onClose, onAction }) {
           <div className="hc-cm-item" onClick={() => onAction('EDIT', menu.node)}>
             <i className="fas fa-edit" style={{ width: '20px', color: '#00d4ff' }} /> Edit Node
           </div>
+          <div className="hc-cm-item" onClick={() => onAction('TOGGLE_DISABLE', menu.node)}>
+            {menu.node?.data?.disabled ? (
+              <><i className="fas fa-play" style={{ width: '20px', color: '#22c55e' }} /> Enable Node</>
+            ) : (
+              <><i className="fas fa-ban" style={{ width: '20px', color: '#ef4444' }} /> Disable Node</>
+            )}
+          </div>
           <div className="hc-cm-item" onClick={() => onAction('DUPLICATE', menu.node)}>
             <i className="fas fa-copy" style={{ width: '20px', color: '#b45309' }} /> Duplicate
           </div>

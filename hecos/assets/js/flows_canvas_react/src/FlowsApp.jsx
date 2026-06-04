@@ -185,6 +185,15 @@ export default function FlowsApp() {
         return up;
       });
       setEdges(eds => eds.filter(e => e.source !== payload.id && e.target !== payload.id));
+    } else if (action === 'TOGGLE_DISABLE') {
+      setNodes(nds => {
+        const up = nds.map(n => n.id === payload.id 
+          ? { ...n, data: { ...n.data, disabled: !n.data.disabled } } 
+          : n
+        );
+        notifyChange(up, undefined);
+        return up;
+      });
     } else if (action === 'DUPLICATE') {
       const dupId = payload.id + '_copy' + Math.floor(Math.random()*1000);
       const dupNode = {
@@ -238,13 +247,25 @@ export default function FlowsApp() {
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && !['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) {
+      if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         deleteSelected();
+      } else if (e.key.toLowerCase() === 'x' || e.key.toLowerCase() === 'd') {
+        setNodes(nds => {
+          const selectedNodes = nds.filter(n => n.selected);
+          if (!selectedNodes.length) return nds;
+          // Toggle all selected logic: if any is enabled, disable all. Otherwise enable all.
+          const anyEnabled = selectedNodes.some(n => !n.data.disabled);
+          const up = nds.map(n => n.selected ? { ...n, data: { ...n.data, disabled: anyEnabled } } : n);
+          notifyChange(up, undefined);
+          return up;
+        });
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [deleteSelected]);
+  }, [deleteSelected, setNodes, notifyChange]);
 
   // ── Wire HecosFlowsBridge ─────────────────────────────────────────────────
   useEffect(() => {
