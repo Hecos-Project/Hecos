@@ -69,6 +69,14 @@ export default function ContextMenu({ menu, onClose, onAction }) {
           </div>
         </React.Fragment>
       )}
+
+      {menu.type === 'edge' && (
+        <React.Fragment>
+          <div className="hc-cm-item" onClick={() => onAction('DELETE_EDGE', menu.edge)}>
+            <i className="fas fa-unlink" style={{ width: '20px', color: '#ef4444' }} /> Delete Connection
+          </div>
+        </React.Fragment>
+      )}
     </div>
   );
 }

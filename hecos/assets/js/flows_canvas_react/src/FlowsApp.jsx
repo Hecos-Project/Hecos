@@ -162,6 +162,20 @@ export default function FlowsApp() {
     [reactFlowWrapper]
   );
 
+  const onEdgeContextMenu = useCallback(
+    (event, edge) => {
+      event.preventDefault();
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setMenu({
+        edge,
+        type: 'edge',
+        top: event.clientY - rect.top,
+        left: event.clientX - rect.left,
+      });
+    },
+    [reactFlowWrapper]
+  );
+
   const onPaneContextMenu = useCallback(
     (event) => {
       event.preventDefault();
@@ -181,10 +195,20 @@ export default function FlowsApp() {
     } else if (action === 'DELETE') {
       setNodes(nds => {
         const up = nds.filter(n => n.id !== payload.id);
-        notifyChange(up, undefined);
+        // Ensure edges are also updated for notifyChange without triggering two conflicting renders
+        setEdges(eds => {
+          const upEdges = eds.filter(e => e.source !== payload.id && e.target !== payload.id);
+          notifyChange(up, upEdges);
+          return upEdges;
+        });
         return up;
       });
-      setEdges(eds => eds.filter(e => e.source !== payload.id && e.target !== payload.id));
+    } else if (action === 'DELETE_EDGE') {
+      setEdges(eds => {
+        const up = eds.filter(e => e.id !== payload.id);
+        notifyChange(undefined, up);
+        return up;
+      });
     } else if (action === 'TOGGLE_DISABLE') {
       setNodes(nds => {
         const up = nds.map(n => n.id === payload.id 
@@ -233,14 +257,23 @@ export default function FlowsApp() {
     setEditNode(null);
   }, [setNodes, setEdges, notifyChange]);
 
-  // ── Delete selected nodes ─────────────────────────────────────────────────
+  // ── Delete selected nodes/edges ───────────────────────────────────────────
   const deleteSelected = useCallback(() => {
     setNodes(nds => {
       const selectedIds = new Set(nds.filter(n => n.selected).map(n => n.id));
-      const updated = nds.filter(n => !selectedIds.has(n.id));
-      setEdges(eds => eds.filter(e => !selectedIds.has(e.source) && !selectedIds.has(e.target)));
-      notifyChange(updated, undefined);
-      return updated;
+      const updatedNodes = nds.filter(n => !selectedIds.has(n.id));
+      
+      setEdges(eds => {
+        const remainingEdges = eds.filter(e => 
+          !e.selected && 
+          !selectedIds.has(e.source) && 
+          !selectedIds.has(e.target)
+        );
+        notifyChange(updatedNodes, remainingEdges);
+        return remainingEdges;
+      });
+
+      return updatedNodes;
     });
   }, [setNodes, setEdges, notifyChange]);
 
@@ -311,6 +344,7 @@ export default function FlowsApp() {
         onDragOver={onDragOver}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
+        onEdgeContextMenu={onEdgeContextMenu}
         onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
