@@ -96,7 +96,7 @@ function SoundField({ label, value, onChange }) {
  * Node Edit Panel — slides in from right when a node is double-clicked.
  * Shows a dynamic form generated from the action's params definition in the catalog.
  */
-export default function NodeEditPanel({ node, catalog, allNodeIds, onSave, onClose }) {
+export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables, onSave, onClose }) {
   const data = node.data || {};
   const [stepId, setStepId]     = useState(data.stepId || node.id || '');
   const [action, setAction]     = useState(data.action || '');
@@ -150,6 +150,32 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, onSave, onClo
     });
   };
 
+  const renderVarPicker = (key) => {
+    const hasVars = allVariables && allVariables.length > 0;
+    return (
+      <select 
+         style={{ 
+           width: 'auto', padding: '2px 4px', fontSize: '0.6rem', 
+           background: 'rgba(255,255,255,0.08)', color: 'rgba(0,212,255,0.8)', 
+           border: 'none', borderRadius: '4px', outline: 'none', 
+           cursor: hasVars ? 'pointer' : 'not-allowed', 
+           opacity: hasVars ? 1 : 0.4 
+         }}
+         value="" 
+         onChange={e => { if (e.target.value) { setParam(key, (params[key] || '') + `{{ ${e.target.value} }}`); } }}
+         title="Insert Variable"
+         disabled={!hasVars}
+      >
+        <option value="" disabled>+ {'{}'}</option>
+        {hasVars ? (
+          allVariables.map(v => <option key={v} value={v}>{v}</option>)
+        ) : (
+          <option value="" disabled>(No output_as nodes)</option>
+        )}
+      </select>
+    );
+  };
+
   const renderParamField = (key, typeDesc) => {
     const t = String(typeDesc).toLowerCase();
     const val = params[key];
@@ -181,7 +207,10 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, onSave, onClo
     if (t.includes('dict') || t.includes('object') || t.includes('list')) {
       return (
         <div className="hc-field" key={key}>
-          <label>{label} <span style={{ opacity: 0.4, fontSize: '0.6rem' }}>JSON</span></label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <label style={{ marginBottom: 0 }}>{label} <span style={{ opacity: 0.4, fontSize: '0.6rem' }}>JSON</span></label>
+            {renderVarPicker(key)}
+          </div>
           <textarea
             rows={3}
             value={typeof val === 'object' ? JSON.stringify(val, null, 2) : val}
@@ -197,7 +226,10 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, onSave, onClo
     const isLong = ['template', 'prompt', 'body', 'text', 'message', 'description'].includes(key);
     return (
       <div className="hc-field" key={key}>
-        <label>{label} <span style={{ opacity: 0.4, fontSize: '0.6rem' }}>{typeDesc.split(' ')[0]}</span></label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+          <label style={{ marginBottom: 0 }}>{label} <span style={{ opacity: 0.4, fontSize: '0.6rem' }}>{typeDesc.split(' ')[0]}</span></label>
+          {renderVarPicker(key)}
+        </div>
         {isLong
           ? <textarea rows={3} value={val ?? ''} onChange={e => setParam(key, e.target.value)} />
           : <input type="text" value={val ?? ''} onChange={e => setParam(key, e.target.value)} placeholder={typeDesc} />

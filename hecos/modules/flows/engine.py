@@ -12,6 +12,7 @@ import time
 import threading
 import uuid
 import datetime
+import ctypes
 from typing import Any, Callable, Dict, Generator, List, Optional
 
 from hecos.core.logging import logger
@@ -62,14 +63,41 @@ def get_event_bus() -> FlowEventBus:
 
 # ── Abort / active-run tracking ────────────────────────────────────────────────
 
+class FlowAbortException(Exception):
+    """Raised inside a flow thread to immediately kill execution."""
+    pass
+
 _aborted_runs: set = set()  # run_ids that should be cancelled
 _active_runs: Dict[str, str] = {}  # flow_id → run_id
 _active_runs_lock = threading.Lock()
+_run_threads: Dict[str, int] = {}  # run_id → thread native_id
+_run_threads_lock = threading.Lock()
 
 
 def abort_run(run_id: str):
-    """Signal a running flow to stop after the current step."""
+    """Immediately kill a running flow by injecting a FlowAbortException into its thread."""
     _aborted_runs.add(run_id)
+    with _run_threads_lock:
+        thread_id = _run_threads.get(run_id)
+    if thread_id is not None:
+        _inject_exception(thread_id, FlowAbortException)
+        log.info(f"[Flows.Engine] ☠️ Injected FlowAbortException into thread {thread_id} (run={run_id})")
+
+def _inject_exception(thread_id: int, exc_type: type) -> bool:
+    """Use ctypes to raise an exception in the target thread."""
+    ret = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        ctypes.c_ulong(thread_id),
+        ctypes.py_object(exc_type)
+    )
+    if ret == 0:
+        log.warning(f"[Flows.Engine] _inject_exception: thread {thread_id} not found.")
+        return False
+    elif ret > 1:
+        # If > 1 threads were affected, undo
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_ulong(thread_id), None)
+        log.error(f"[Flows.Engine] _inject_exception: unexpected result {ret}, reverted.")
+        return False
+    return True
 
 def is_run_aborted(run_id: str) -> bool:
     return run_id in _aborted_runs
@@ -82,11 +110,15 @@ def get_active_run(flow_id: str) -> Optional[str]:
 def _register_active_run(flow_id: str, run_id: str):
     with _active_runs_lock:
         _active_runs[flow_id] = run_id
+    with _run_threads_lock:
+        _run_threads[run_id] = threading.current_thread().ident
 
 def _unregister_active_run(flow_id: str, run_id: str):
     with _active_runs_lock:
         if _active_runs.get(flow_id) == run_id:
             del _active_runs[flow_id]
+    with _run_threads_lock:
+        _run_threads.pop(run_id, None)
     _aborted_runs.discard(run_id)
 
 
@@ -410,9 +442,10 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
     try:
         sorted_steps = _topological_sort(pipeline)
         for step in sorted_steps:
-            # ── Cooperative abort check ──────────────────────────────────
+            # Cooperative abort check is now the FALLBACK;
+            # primary kill path is ctypes exception injection in abort_run()
             if is_run_aborted(run_id):
-                log.info(f"[Flows.Engine] ⛔ Flow '{flow_id}' aborted by user (run={run_id})")
+                log.info(f"[Flows.Engine] ⛔ Flow '{flow_id}' aborted (run={run_id})")
                 emit(run_id, {
                     "type":    "flow_aborted",
                     "run_id":  run_id,
@@ -437,6 +470,15 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
             update_flow_field(flow_id, "_meta.last_run", datetime.datetime.now().isoformat())
         except Exception:
             pass
+
+    except FlowAbortException:
+        log.info(f"[Flows.Engine] ☠️ Flow '{flow_id}' killed immediately (run={run_id})")
+        emit(run_id, {
+            "type":    "flow_aborted",
+            "run_id":  run_id,
+            "flow_id": flow_id,
+            "ts":      datetime.datetime.now().isoformat(),
+        })
 
     except Exception as e:
         emit(run_id, {

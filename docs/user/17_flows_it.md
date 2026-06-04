@@ -52,6 +52,29 @@ Quando fai doppio clic su un nodo nel Canvas, si apre il **Node Editor**. Ecco a
   > Da adesso, quando trascini un nodo nella tela, **i suoi parametri obbligatori ti appariranno già pre-compilati in automatico** (con valori come `<string>` o `0`). Dovrai solo sovrascrivere il valore di esempio con i tuoi dati reali!
 
 - **Output As (Variable)**: Molti nodi generano un risultato (es. la lettura dell'orario, l'esito di un calcolo, la risposta di una API). Se inserisci un nome in questo campo (es. `valore_meteo`), il risultato prodotto da questo nodo diventerà una **Variabile**. I nodi successivi potranno usare questa variabile nei propri Parametri scrivendo `{{ valore_meteo }}` (grazie alla sintassi Jinja2).
+
+  Ecco 3 esempi pratici completi per farti capire esattamente come "far viaggiare" i dati tra i blocchi:
+
+  **Esempio 1: Passaggio di Testo (Notifica Meteo)**
+  Immagina di avere un nodo API che scarica il meteo e di volerlo far leggere ad alta voce. 
+  1. Nel nodo API (`LOGIC__http_request`), imposta il campo *Output As* su `risultato_meteo`. Questo salva la risposta di internet in una variabile.
+  2. Collega questo nodo in avanti a un nuovo nodo di Sintesi Vocale (`AUDIO__speak`).
+  3. Fai doppio clic sul nodo vocale per aprirne i Parametri. Alla voce *text*, scrivi esattamente: `Attenzione, le previsioni dicono: {{ risultato_meteo }}`.
+  Quando il flusso verrà eseguito dal vivo, Hecos non leggerà le graffe ma le sostituirà al volo col vero bollettino! Questo significa comunicare tra blocchi.
+
+  **Esempio 2: Operazioni Matematiche e Scelte (Logica Condizionale)**
+  Le Variabili possono trasportare numeri, ideali per stabilire percorsi alternativi.
+  1. Aggiungi un nodo configurato per estrarre l'orario di sistema e chiama l'*Output As* `orario_attuale`.
+  2. Collega questo nodo ad un vero e proprio "Bivio" decisionale usando un blocco `LOGIC__if_else`.
+  3. Nel parametro *condition* (Condizione) scrivi: `{{ orario_attuale.ora }} > 12`. 
+  L'espressione viene letta matematicamente. Ora il sistema sa che deve prendere la strada *True* (Vero) quando sono passate le ore 12, portando le automazioni a diramarsi intelligentemente su basi create pochi millisecondi prima dai blocchi superiori.
+
+  **Esempio 3: Fondere Varie Cose (AI e Catene Lunghe)**
+  Niente ti vieta di combinare e mescolare tantissime parentesi graffe nello stesso campo!
+  1. Ipotizza di aver già fatto fluire un output che rappresenta lo stato della casa `luci_spente` e un altro che rappresenta il `nome_utente`.
+  2. Metti in lavagna un potentissimo nodo "Cervello", l'`AI__prompt`.
+  3. Nel campo del *prompt* libero, scrivi: `"Caro agente, fai un riepilogo ironico sullo stato di {{ luci_spente }} e saluta il mio capo che si chiama {{ nome_utente }}."`
+  4. Imposta l'*Output As* di questo grande nodo testuale appena inserito su `traduzione_finita`. Potrai a tua volta passare il risultato a una `MAIL__send` infilando semplicemente `{{ traduzione_finita }}` dentro al contenuto (Body) della e-mail!
 - **Depends On (Comma-separated IDs)**: Un elenco separato da virgola con gli **Step ID** di tutti i nodi che devono concludersi _con successo_ prima che questo nodo possa anche solo iniziare (es. `step1, step_download`). Permette di forzare l'esecuzione sequenziale.
 
 ---

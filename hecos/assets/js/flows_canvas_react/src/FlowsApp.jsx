@@ -241,19 +241,24 @@ export default function FlowsApp() {
   // ── Save from edit panel ──────────────────────────────────────────────────
   const onSaveNode = useCallback((nodeId, updatedData) => {
     setNodes(nds => {
-      const updated = nds.map(n => n.id === nodeId ? { ...n, id: updatedData.stepId, data: updatedData } : n);
-      // Also remap edges if stepId changed
-      notifyChange(updated, undefined);
-      return updated;
+      const updatedNodes = nds.map(n =>
+        n.id === nodeId ? { ...n, id: updatedData.stepId, data: updatedData } : n
+      );
+      // Atomically remap edges too if stepId changed, then notify once
+      setEdges(eds => {
+        const updatedEdges = nodeId !== updatedData.stepId
+          ? eds.map(e => ({
+              ...e,
+              source: e.source === nodeId ? updatedData.stepId : e.source,
+              target: e.target === nodeId ? updatedData.stepId : e.target,
+            }))
+          : eds;
+        // Single authoritative notifyChange with both updated sets
+        notifyChange(updatedNodes, updatedEdges);
+        return updatedEdges;
+      });
+      return updatedNodes;
     });
-    // If stepId changed, update edges
-    if (nodeId !== updatedData.stepId) {
-      setEdges(eds => eds.map(e => ({
-        ...e,
-        source: e.source === nodeId ? updatedData.stepId : e.source,
-        target: e.target === nodeId ? updatedData.stepId : e.target,
-      })));
-    }
     setEditNode(null);
   }, [setNodes, setEdges, notifyChange]);
 
@@ -396,15 +401,19 @@ export default function FlowsApp() {
       )}
 
       {/* Edit panel (slides in from right) */}
-      {editNode && (
-        <NodeEditPanel
-          node={editNode}
-          catalog={catalog}
-          allNodeIds={nodes.map(n => n.id).filter(id => id !== editNode.id)}
-          onSave={onSaveNode}
-          onClose={() => setEditNode(null)}
-        />
-      )}
+      {editNode && (() => {
+        const allVariables = Array.from(new Set(nodes.map(n => n.data?.outputAs).filter(Boolean)));
+        return (
+          <NodeEditPanel
+            node={editNode}
+            catalog={catalog}
+            allNodeIds={nodes.map(n => n.id).filter(id => id !== editNode.id)}
+            allVariables={allVariables}
+            onSave={onSaveNode}
+            onClose={() => setEditNode(null)}
+          />
+        );
+      })()}
 
       {/* Context Menu */}
       <ContextMenu 
