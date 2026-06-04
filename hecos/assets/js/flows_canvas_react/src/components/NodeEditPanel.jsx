@@ -1,6 +1,98 @@
 import React, { useState, useEffect, useMemo } from 'react';
 
 /**
+ * Custom sound selection field taking advantage of the system explorer APIs.
+ */
+function SoundField({ label, value, onChange }) {
+  const [sounds, setSounds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isPicking, setIsPicking] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = React.useRef(null);
+
+  useEffect(() => {
+    fetch('/api/system/explorer/ls', {
+      method: 'POST',
+      body: JSON.stringify({ path: 'C:\\Hecos\\hecos\\assets\\sounds' })
+    }).then(r => r.json()).then(data => {
+      if (data.ok && data.entries) {
+        setSounds(data.entries.filter(e => e.type === 'file' && e.name.match(/\.(wav|mp3|ogg)$/i)).map(e => e.name));
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleBrowse = async () => {
+    setIsPicking(true);
+    try {
+      const res = await fetch("/api/system/explorer/pick-native", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "Hecos — Select Sound File",
+          initialdir: "C:\\Hecos\\hecos\\assets\\sounds",
+          filetypes: [["Audio Files", "*.wav *.mp3 *.ogg"], ["All Files", "*.*"]]
+        })
+      });
+      const data = await res.json();
+      if (data.ok && data.path) {
+        const base = data.path.split('\\\\').pop().split('/').pop();
+        if (!sounds.includes(base)) setSounds(s => [...s, base]);
+        onChange(base);
+      }
+    } catch(e) { console.error(e); }
+    setIsPicking(false);
+  };
+
+  const togglePlay = () => {
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setIsPlaying(false);
+      return;
+    }
+    if (!value) return;
+    
+    if (audioRef.current) audioRef.current.pause();
+    
+    const audio = new Audio('/assets/sounds/' + value);
+    audio.onended = () => setIsPlaying(false);
+    audio.onerror = () => setIsPlaying(false);
+    audioRef.current = audio;
+    setIsPlaying(true);
+    audio.play().catch(() => setIsPlaying(false));
+  };
+
+  return (
+    <div className="hc-field">
+      <label>{label}</label>
+      <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+        <select style={{ flex: 1, minWidth: 0 }} value={value || ''} onChange={e => onChange(e.target.value)}>
+          <option value="">-- Select a sound --</option>
+          {loading && <option disabled>Loading...</option>}
+          {sounds.map(s => <option key={s} value={s}>{s}</option>)}
+          {value && !sounds.includes(value) && <option value={value}>{value}</option>}
+        </select>
+        <button type="button" className="hc-btn secondary" style={{ flex: 'none', padding: '0 8px', color: isPlaying ? '#ef4444' : undefined }} title={isPlaying ? "Stop Audio" : "Preview Audio"} onClick={togglePlay}>
+          <i className={isPlaying ? "fas fa-stop" : "fas fa-play"} />
+        </button>
+        <button type="button" className="hc-btn secondary" style={{ flex: 'none', padding: '0 8px' }} onClick={handleBrowse} disabled={isPicking}>
+          {isPicking ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-folder-open" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Node Edit Panel — slides in from right when a node is double-clicked.
  * Shows a dynamic form generated from the action's params definition in the catalog.
  */
@@ -62,6 +154,10 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, onSave, onClo
     const t = String(typeDesc).toLowerCase();
     const val = params[key];
     const label = key.replace(/_/g, ' ');
+
+    if (key === 'sound' || t.includes('sound file')) {
+      return <SoundField key={key} label={label} value={val} onChange={(v) => setParam(key, v)} />;
+    }
 
     if (t.includes('bool')) {
       return (
