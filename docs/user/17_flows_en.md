@@ -52,6 +52,30 @@ When you double-click a node on the Canvas, the **Node Editor** opens. Here is w
   > To help you with this, whenever you drag a node to the canvas, **its required parameters will now appear automatically pre-filled** (with placeholder values like `<string>` or `0`). You just need to overwrite the placeholder with your actual data!
 
 - **Output As (Variable)**: Many nodes generate a result (e.g. reading the time, a calculation result, an API response). If you provide a name here (e.g. `weather_value`), the result produced by this node becomes a **Variable**. Subsequent nodes can use this variable in their Parameters by writing `{{ weather_value }}` (using Jinja2 syntax).
+
+  Here are 3 complete practical examples to help you master how to pass data between nodes:
+
+  **Example 1: Passing Text (Weather Tracking)**
+  Imagine having an API node that fetches the weather and you want it spoken aloud. 
+  1. On the `LOGIC__http_request` node, set *Output As* to `weather_result`.
+  2. Chain a Speech Synthesizer node (`AUDIO__speak`) right after it.
+  3. Double click on the speech node to open its Parameters. In the *text* field, write exactly: `Attention, the forecast says: {{ weather_result }}`.
+  When the flow runs, Hecos won't read the curly braces: it will instantly replace them with the live weather data! This is how you pass data.
+
+  **Example 2: Logical and Mathematical Operations**
+  Variables can carry numbers, perfect for establishing alternative branches.
+  1. Add an action that extracts the current time and name the *Output As* `current_time`.
+  2. Connect this node to a `LOGIC__if_else` crossroads block.
+  3. Inside the *condition* parameter, write: `{{ current_time.hour }} > 12`. 
+  The expression is evaluated mathematically. Now the system knows to take the *True* path only during the afternoon, seamlessly branching the automation using data generated just milliseconds before.
+
+  **Example 3: Multiple Chaining (AI Prompting)**
+  Nothing stops you from combining and mixing loads of curly braces in the same parameter box!
+  1. Assume you already piped out a result called `user_name` and another called `house_status`.
+  2. Drop a powerful `AI__prompt` "Brain" node onto the canvas.
+  3. In the free *prompt* parameter, write: `"Dear agent, make a sarcastic report about the house status: {{ house_status }} and greet my boss, {{ user_name }}."`
+  4. Now set the AI node's *Output As* to `finished_translation`. You can chain this even further into an email by just typing `{{ finished_translation }}` as the `MAIL__send` body!
+
 - **Depends On (Comma-separated IDs)**: A comma-separated list of the **Step IDs** of all nodes that must finish _successfully_ before this node can even start (e.g. `step1, step_download`). It forces sequential execution.
 
 ---

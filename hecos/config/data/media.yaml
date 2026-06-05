@@ -1,7 +1,7 @@
 image_gen:
   enabled: true
-  provider: 'pollinations'
-  model: 'flux'
+  provider: 'huggingface'
+  model: 'black-forest-labs/FLUX.1-schnell'
   nologo: true
   api_key: ''
   api_key_comment: ''
@@ -9,21 +9,21 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 2127865568
-  sampler: euler_a
-  scheduler: euler
-  guidance_scale: 7.5
-  num_inference_steps: 30
-  enable_negative_prompt: true
+  last_seed: 1707842838
+  sampler: euler
+  scheduler: normal
+  guidance_scale: 1.0
+  num_inference_steps: 4
+  enable_negative_prompt: false
   negative_prompt: ''
-  auto_enrich: true
+  auto_enrich: false
   enrich_keywords: ''
   style: none
-  optimize_for_flux: true
+  optimize_for_flux: false
   flux_refiner_instructions: ''
-  show_metadata_in_chat: false
+  show_metadata_in_chat: true
   presets: {}
-  active_preset: ''
+  active_preset: '⚡ Flux Schnell (HuggingFace)'
   custom_hf_models: []
 video_gen:
   enabled: false

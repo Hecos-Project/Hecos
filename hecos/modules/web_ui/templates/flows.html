@@ -19,9 +19,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/yaml/yaml.min.js"></script>
 <!-- js-yaml -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
-<!-- LiteGraph.js -->
-<script src="https://cdn.jsdelivr.net/npm/litegraph.js@0.7.8/build/litegraph.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litegraph.js@0.7.8/css/litegraph.css">
+<!-- ReactFlow canvas bundle (built from hecos/assets/js/flows_canvas_react/) -->
+<link rel="stylesheet" href="/assets/js/dist/flows_canvas.css?v={{ version }}">
+<script src="/assets/js/dist/flows_canvas.bundle.js?v={{ version }}"></script>
 <script>
 (function(){
   var saved = localStorage.getItem('hecos-ui-theme')||'cyberpunk';
@@ -76,7 +76,7 @@
       <div class="sep"></div>
       <button class="tb-btn run"    id="btn-run"    onclick="runCurrentFlow()" disabled><i class="fas fa-play"></i> Run</button>
       <button class="tb-btn"       id="btn-save"   onclick="saveCurrentFlow()" disabled><i class="fas fa-save"></i> Save</button>
-      <button class="tb-btn danger" id="btn-delete" onclick="deleteCurrentFlow()" disabled><i class="fas fa-trash"></i></button>
+      <button class="tb-btn danger" id="btn-delete" onclick="deleteCurrentFlow()" disabled title="Elimina il flusso selezionato"><i class="fas fa-trash"></i></button>
       <div class="sep"></div>
       <button class="tb-btn" id="btn-palette" onclick="togglePalette()" title="Node Palette" disabled><i class="fas fa-toolbox"></i> Palette</button>
       <button class="tb-btn" id="btn-delete-node" onclick="deleteSelectedNodes()" title="Delete Selected Nodes (Del)"><i class="fas fa-eraser"></i> Delete Node</button>
@@ -92,22 +92,9 @@
 
     <!-- Canvas Tab -->
     <div class="tab-pane active" id="tab-canvas">
-      <div id="canvas-wrap">
-        <canvas id="flows-canvas"></canvas>
-        <div id="canvas-hint">
-          <i class="fas fa-project-diagram"></i>
-          <p>Select a flow from the sidebar<br>or click <strong>New Flow</strong> to create one with AI.</p>
-        </div>
-
-        <!-- Floating Node Palette -->
-        <div id="palette-panel">
-          <div id="palette-header">
-            <span><i class="fas fa-toolbox"></i> Node Palette</span>
-            <button class="pal-close" onclick="togglePalette()" title="Close"><i class="fas fa-times"></i></button>
-          </div>
-          <input id="palette-search" type="text" placeholder="Search actions…" oninput="_filterPalette(this.value)">
-          <div id="palette-body"><div class="pal-loading"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
-        </div>
+      <div id="canvas-wrap" style="width:100%;height:100%;position:relative;">
+        <!-- ReactFlow mounts here -->
+        <div id="rf-canvas-root" style="width:100%;height:100%;"></div>
       </div>
     </div>
 
@@ -190,7 +177,7 @@
 </div>
 
 <!-- ── NLP Modal ─────────────────────────────────────────────────── -->
-<div id="nlp-modal-bg" onclick="if(event.target===this)closeNlpModal()">
+<div id="nlp-modal-bg" class="modal-bg" onclick="if(event.target===this)closeNlpModal()">
   <div id="nlp-modal" role="dialog" aria-modal="true" aria-label="Create new flow">
     <h2><i class="fas fa-magic"></i> Create Flow with AI</h2>
     <p>Describe your automation in natural language. Hecos will compile it into a visual flow automatically.</p>
@@ -219,11 +206,10 @@ window.t = k => window.I18N[k] || k;
 
 <script src="/assets/js/flows_core.js?v={{ version }}"></script>
 <script src="/assets/js/flows_api.js?v={{ version }}"></script>
-<script src="/assets/js/flows_canvas.js?v={{ version }}"></script>
+<script src="/assets/js/flows_canvas_shim.js?v={{ version }}"></script>
 <script src="/assets/js/flows_editor.js?v={{ version }}"></script>
 <script src="/assets/js/flows_logs.js?v={{ version }}"></script>
 <script src="/assets/js/flows_nlp.js?v={{ version }}"></script>
-<script src="/assets/js/flows_palette.js?v={{ version }}"></script>
 <script src="/assets/js/flows_node_editor.js?v={{ version }}"></script>
 </body>
 </html>
