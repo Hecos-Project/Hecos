@@ -46,18 +46,34 @@ def install_dependencies():
     except Exception as e:
         print(f"[-] Warning: Failed to upgrade pip/setuptools: {e}")
 
-    # Install all deps directly (avoids editable build-backend issues)
-    packages = [
-        "pydantic>=2.0", "pyyaml", "litellm", "tenacity", "babel", "holidays",
-        "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
-        "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
-        "pywinauto", "playwright",
-        # service extras
-        "pywin32", "pystray", "pillow",
-        # additional deps found in codebase
-        "psutil", "flask", "flask-login", "cryptography",
-        "pynput", "SpeechRecognition", "PyAudio",
-    ]
+    # Parse pyproject.toml dynamically to avoid hardcoded lists
+    import re
+    packages = []
+    toml_path = os.path.join(CWD, "pyproject.toml")
+    if os.path.exists(toml_path):
+        try:
+            with open(toml_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            deps_match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
+            if deps_match:
+                packages.extend(re.findall(r'"([^"]+)"', deps_match.group(1)))
+            
+            service_match = re.search(r'service\s*=\s*\[(.*?)\]', content, re.DOTALL)
+            if service_match:
+                packages.extend(re.findall(r'"([^"]+)"', service_match.group(1)))
+        except Exception as e:
+            print(f"[-] Warning: Failed to parse pyproject.toml: {e}")
+            
+    if not packages:
+        print("[-] Warning: Could not parse dependencies from pyproject.toml! Using fallback list...")
+        packages = [
+            "pydantic>=2.0", "pyyaml", "litellm", "tenacity", "babel", "holidays",
+            "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
+            "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
+            "pywinauto", "playwright", "pywin32", "pystray", "pillow", "flet", "qrcode",
+            "psutil", "flask", "flask-login", "cryptography", "pynput", "SpeechRecognition", "PyAudio",
+        ]
+
     cmd = [sys.executable, "-m", "pip", "install"] + packages
     try:
         subprocess.check_call(cmd)
