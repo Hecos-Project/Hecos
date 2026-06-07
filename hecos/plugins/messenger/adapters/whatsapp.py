@@ -40,8 +40,9 @@ def send(cfg, recipient: str, text: str, is_app_open: bool = False) -> str:
             else:
                 # Alternatively check if any window title contains "WhatsApp" (e.g., a browser tab)
                 import ctypes
+                import ctypes.wintypes as wintypes
                 EnumWindows = ctypes.windll.user32.EnumWindows
-                EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+                EnumWindowsProc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
                 GetWindowText = ctypes.windll.user32.GetWindowTextW
                 GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
                 IsWindowVisible = ctypes.windll.user32.IsWindowVisible
