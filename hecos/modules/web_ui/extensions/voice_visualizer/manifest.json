@@ -1,0 +1,19 @@
+{
+    "extension_id": "voice_visualizer",
+    "parent_plugin": "WEB_UI",
+    "display_name": "Voice Visualizer",
+    "version": "1.0.0",
+    "description": "Retro-80s voice animation. Shows KITT-style scanner or a pixelated talking mouth when Hecos speaks.",
+    "sidebar_widget": true,
+    "eager_load": true,
+    "room_visible": false,
+    "room_span": 1,
+    "room_height": 190,
+    "config_schema": {
+        "voice_visualizer_enabled": {
+            "type": "bool",
+            "default": true,
+            "description": "Enable Voice Visualizer widget"
+        }
+    }
+}

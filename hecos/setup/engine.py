@@ -48,7 +48,7 @@ def install_dependencies():
 
     # Install all deps directly (avoids editable build-backend issues)
     packages = [
-        "pydantic>=2.0", "pyyaml", "litellm", "babel", "holidays",
+        "pydantic>=2.0", "pyyaml", "litellm", "tenacity", "babel", "holidays",
         "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
         "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
         "pywinauto", "playwright",
