@@ -31,11 +31,21 @@ class WeatherPlugin:
         
     def _get_active_city(self):
         c_p = ""
-        # 1. Config Manager - User Contact Info
-        if self.config_manager and hasattr(self.config_manager, 'config'):
+        # 1. Try to get the city from the modern User DB (AuthManager)
+        try:
+            from hecos.core.auth.auth_manager import auth_mgr
+            # The system relies on the 'admin' profile for global widgets
+            admin_profile = auth_mgr.get_profile("admin")
+            if admin_profile and admin_profile.get("city"):
+                c_p = admin_profile.get("city")
+        except Exception as e:
+            logger.debug("WEATHER", f"AuthManager check failed: {e}")
+
+        # 2. Fallback to Config Manager legacy structures
+        if not c_p and self.config_manager and hasattr(self.config_manager, 'config'):
             c_p = self.config_manager.config.get("users", {}).get("contact_info", {}).get("city", "")
             if not c_p:
-               # 2. Plugin config
+               # 3. Plugin config fallback
                c_p = self.config_manager.config.get("plugins", {}).get("WEATHER", {}).get("default_city", "")
         return c_p.strip()
         

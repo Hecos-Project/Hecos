@@ -36,13 +36,13 @@ const weatherWidget = {
     getDescription: function(wmoCode) {
         const descMap = {
             0: "Sereno",
-            1: "Prevalentemente sereno", 2: "Parzialmente nuvoloso", 3: "Coperto",
-            45: "Nebbia", 48: "Nebbia di brina",
-            51: "Pioggerellina", 53: "Pioggerellina moderata", 55: "Pioggerellina densa",
-            61: "Pioggia leggera", 63: "Pioggia moderata", 65: "Pioggia forte",
+            1: "Poco nuvoloso", 2: "Parzialmente nuvoloso", 3: "Coperto",
+            45: "Nebbia", 48: "Nebbia brinosa",
+            51: "Pioviggine", 53: "Pioggerellina moderata", 55: "Pioggerellina densa",
+            61: "Pioggia debole", 63: "Pioggia moderata", 65: "Pioggia forte",
             71: "Neve leggera", 73: "Neve moderata", 75: "Neve forte",
             80: "Rovesci leggeri", 81: "Rovesci moderati", 82: "Rovesci violenti",
-            95: "Temporale", 96: "Tempesta con grandine", 99: "Tempesta violenta"
+            95: "Temporale", 96: "Tempesta di grandine", 99: "Tempesta violenta"
         };
         return descMap[wmoCode] || "Sconosciuto";
     },
@@ -56,7 +56,7 @@ const weatherWidget = {
         if (d.toDateString() === today.toDateString()) return "Oggi";
         if (d.toDateString() === tomorrow.toDateString()) return "Domani";
         
-        return d.toLocaleDateString('it-IT', { weekday: 'short' }).replace(/^\w/, c => c.toUpperCase());
+        return d.toLocaleDateString('it-IT', { weekday: 'long' }).replace(/^\w/, c => c.toUpperCase());
     },
 
     render: function(data) {
@@ -75,10 +75,18 @@ const weatherWidget = {
         document.getElementById('ww-hum').textContent = current.relative_humidity_2m + "%";
         document.getElementById('ww-wind').textContent = current.wind_speed_10m + " km/h";
         
+        // Nuovi dati
+        if(document.getElementById('ww-app-temp') && current.apparent_temperature !== undefined) {
+            document.getElementById('ww-app-temp').textContent = Math.round(current.apparent_temperature) + "°";
+        }
+        if(document.getElementById('ww-precip') && current.precipitation !== undefined) {
+            document.getElementById('ww-precip').textContent = current.precipitation + " mm";
+        }
+
         let desc = this.getDescription(current.weather_code);
         // Additional info for rain or night
         if (!current.is_day && [0,1,2].includes(current.weather_code)) {
-             desc = desc.replace("sereno", "sereno (Notte)").replace("Sereno", "Notte stellata");
+             desc = desc.replace("Sereno", "Notte serena").replace("Poco nuvoloso", "Poco nuvoloso (notte)");
         }
         document.getElementById('ww-desc').textContent = desc;
         
@@ -90,23 +98,38 @@ const weatherWidget = {
         }
         document.getElementById('ww-icon-main').className = `fas ${mainIconClass}`;
         
-        // Render 3-day forecast
+        // Render 7-day forecast
         const forecastList = document.getElementById('ww-forecast');
         forecastList.innerHTML = '';
         
-        // Show next 3 days
-        const maxDays = Math.min(3, daily.time.length);
+        // Show all available days (typically 7)
+        const maxDays = daily.time.length;
         for (let i = 0; i < maxDays; i++) {
             const dayName = this.getDayName(daily.time[i]);
             const iconCls = this.getIconClass(daily.weather_code[i]);
             const tMin = Math.round(daily.temperature_2m_min[i]);
             const tMax = Math.round(daily.temperature_2m_max[i]);
+            const descDay = this.getDescription(daily.weather_code[i]);
+            const rainProb = daily.precipitation_probability_max ? daily.precipitation_probability_max[i] : 0;
             
+            let probHtml = "";
+            if (rainProb > 0) {
+                probHtml = `<span class="ww-f-prob" title="Probabilità precipitazioni"><i class="fas fa-tint"></i> ${rainProb}%</span>`;
+            }
+
             forecastList.innerHTML += `
-                <div class="ww-forecast-item">
-                    <span class="ww-f-day">${dayName}</span>
-                    <span class="ww-f-icon"><i class="fas ${iconCls}"></i></span>
-                    <span class="ww-f-temp">${tMin} / <span class="max">${tMax}</span></span>
+                <div class="ww-forecast-item" title="${dayName}: ${descDay}. Min: ${tMin}°, Max: ${tMax}°">
+                    <div class="ww-f-left">
+                        <span class="ww-f-day">${dayName}</span>
+                    </div>
+                    <div class="ww-f-center">
+                        <span class="ww-f-icon"><i class="fas ${iconCls}"></i></span>
+                        <span class="ww-f-desc">${descDay}</span>
+                    </div>
+                    <div class="ww-f-right">
+                        ${probHtml}
+                        <span class="ww-f-temp">${tMin}° / <span class="max">${tMax}°</span></span>
+                    </div>
                 </div>
             `;
         }
