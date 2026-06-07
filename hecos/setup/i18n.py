@@ -17,7 +17,7 @@ T_DATA = {
         "python_check": "[*] Checking Python compatibility...",
         "python_ok": "[+] Python {v} is compatible (installed at: {path}).",
         "python_err": "[-] Error: Python 3.10+ is required. Found: {v}",
-        "deps_check": "[*] Checking essential dependencies (pydantic, ruamel)...",
+        "deps_check": "[*] Checking essential dependencies (pydantic, yaml)...",
         "deps_ok": "[+] Essential dependencies found.",
         "deps_err": "[-] Missing modules: {deps}. Please run: pip install -r requirements.txt",
         "install_deps": "[*] Installing dependencies from requirements.txt...",
@@ -65,10 +65,13 @@ T_DATA = {
     },
     "it": {
         "header": "HECOS - SETUP WIZARD & ONBOARDING",
+        "welcome": "Benvenuto in Hecos",
+        "select_setup_lang": "Scegli la Lingua di Configurazione:",
+        "button_continue": "Continua con il Setup",
         "python_check": "[*] Controllo compatibilità Python...",
         "python_ok": "[+] Python {v} è compatibile (installato in: {path}).",
         "python_err": "[-] Errore: È richiesto Python 3.10+. Trovato: {v}",
-        "deps_check": "[*] Controllo dipendenze essenziali (pydantic, ruamel)...",
+        "deps_check": "[*] Controllo dipendenze essenziali (pydantic, yaml)...",
         "deps_ok": "[+] Dipendenze essenziali trovate.",
         "deps_err": "[-] Moduli mancanti: {deps}. Esegui: pip install -r requirements.txt",
         "install_deps": "[*] Installazione dipendenze da requirements.txt...",
@@ -123,7 +126,7 @@ T_DATA = {
         "python_check": "[*] Comprobando compatibilidad de Python...",
         "python_ok": "[+] Python {v} es compatible (instalado en: {path}).",
         "python_err": "[-] Error: Se requiere Python 3.10+. Encontrado: {v}",
-        "deps_check": "[*] Comprobando dependencias esenciales (pydantic, ruamel)...",
+        "deps_check": "[*] Comprobando dependencias esenciales (pydantic, yaml)...",
         "deps_ok": "[+] Dependencias esenciales encontradas.",
         "deps_err": "[-] Faltan módulos: {deps}. Ejecuta: pip install -r requirements.txt",
         "install_deps": "[*] Instalando dependencias de requirements.txt...",
@@ -209,7 +212,8 @@ T_DATA = {
 }
 
 def T(key, **kwargs):
-    text = T_DATA.get(UI_LANG, T_DATA["en"]).get(key, key)
+    lang_dict = T_DATA.get(UI_LANG, T_DATA["en"])
+    text = lang_dict.get(key, T_DATA["en"].get(key, key))
     return text.format(**kwargs)
 
 def set_ui_lang(lang):

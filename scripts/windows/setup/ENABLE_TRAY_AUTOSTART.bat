@@ -14,7 +14,7 @@ set TRAY_RUNNER=%HECOS_ROOT%\scripts\windows\run\HECOS_TRAY_WIN.bat
 if not exist "%TRAY_RUNNER%" (
     echo [!] ERROR: Could not find HECOS_TRAY_WIN.bat at:
     echo     %TRAY_RUNNER%
-    pause
+    if "%~1" neq "--silent" pause
     exit /b 1
 )
 
@@ -25,4 +25,4 @@ echo.
 echo [+] Done! The Hecos Tray Icon will now launch automatically
 echo     every time you log into Windows.
 echo.
-pause
+if "%~1" neq "--silent" pause

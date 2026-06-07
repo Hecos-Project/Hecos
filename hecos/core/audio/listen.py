@@ -21,7 +21,7 @@ _recognizer = sr.Recognizer()
 _recognizer.dynamic_energy_threshold = True
 _recognizer.energy_threshold = 450
 _is_calibrated = False
-
+_persistent_source = None
 
 
 def listen(state=None):
@@ -41,7 +41,14 @@ def listen(state=None):
     _recognizer.energy_threshold = conf.get("energy_threshold", 450)
 
     try:
-        with sr.Microphone() as source:
+        if _persistent_source is None:
+            _persistent_source = sr.Microphone()
+            _persistent_source.__enter__()
+        
+        source = _persistent_source
+        
+        # We use a try-finally equivalent by catching exceptions if the source dies
+        try:
             # Calibrate once per session or on first run
             if not _is_calibrated:
                 logger.debug("LISTEN", "First run: calibrating for ambient noise (0.5s)...")
@@ -136,9 +143,16 @@ def listen(state=None):
             except sr.UnknownValueError:
                 logger.info("VOICE", "[PTT] Google STT: speech not understood.")
                 return ""
+                
+        except Exception as inner_e:
+            # If the stream died (e.g. device disconnected), reset the source
+            _persistent_source.__exit__(None, None, None)
+            _persistent_source = None
+            raise inner_e
 
     except Exception as e:
         if "device" not in str(e).lower() and "UnknownValueError" not in str(e):
             logger.error(f"[LISTEN] Recognition error: {e}")
+            _persistent_source = None
         return ""
 

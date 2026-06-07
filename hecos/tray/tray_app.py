@@ -34,6 +34,7 @@ STATUS_POLL_INTERVAL = 3
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
     was_online = False
+    first_run = True
 
     while True:
         try:
@@ -77,15 +78,17 @@ def _monitor_status(icon: "pystray.Icon"):
                                 startup_url = startup_url.replace("https://", "http://", 1)
                         launch_ai_ready_browser(cdp_port=cdp_port, startup_url=startup_url)
                     
-            was_online = online
-
             # Auto-start service if the toggle says it should be running
             if settings["start_hecos_on_launch"] and not online and not attempted_start:
                 attempted_start = True
                 print("[TRAY] start_hecos_on_launch=True but offline — starting Hecos subprocess…")
                 threading.Thread(target=start_hecos, daemon=True).start()
 
-            refresh_ui(icon)
+            if first_run or online != was_online:
+                refresh_ui(icon)
+                first_run = False
+
+            was_online = online
 
         except Exception as e:
             pass
