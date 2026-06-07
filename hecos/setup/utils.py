@@ -7,7 +7,7 @@ PIPER_DIR = os.path.join(CWD, "bin", "piper")
 PIPER_REPO_URL = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0"
 SYSTEM_CONFIG_PATH = os.path.join(CWD, "hecos", "config", "data", "system.yaml")
 AUDIO_CONFIG_PATH = os.path.join(CWD, "hecos", "config", "data", "audio.yaml")
-LOGO_PATH = os.path.join(CWD, "hecos", "assets", "Hecos_Logo_NBG.png")
+LOGO_PATH = os.path.join(CWD, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png")
 
 VOICE_MAP = {
     "en": {"female": "en_US-lessac-low", "male": "en_US-bryce-medium"},

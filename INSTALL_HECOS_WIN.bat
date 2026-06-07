@@ -15,47 +15,75 @@ echo.
 echo  [*] Detecting Python...
 set PY_FOUND=0
 
-where python >nul 2>&1
-if %errorlevel% equ 0 (
-    set PY_CMD=python
+:: Check local environments first
+if exist "%CD%\python_env\python.exe" (
+    set PY_CMD="%CD%\python_env\python.exe"
     set PY_FOUND=1
+    goto :python_check_done
 )
 
-if !PY_FOUND! equ 0 (
-    if exist "%CD%\python_env\python.exe" (
-        set PY_CMD="%CD%\python_env\python.exe"
+if exist "%CD%\venv\Scripts\python.exe" (
+    set PY_CMD="%CD%\venv\Scripts\python.exe"
+    set PY_FOUND=1
+    goto :python_check_done
+)
+
+:: Check system python, ignoring WindowsApps alias
+for /f "tokens=*" %%i in ('where python 2^>nul') do (
+    set "PY_PATH=%%~i"
+    if "!PY_PATH:WindowsApps=!"=="!PY_PATH!" (
+        set PY_CMD="%%~i"
         set PY_FOUND=1
+        goto :python_check_done
     )
 )
 
-if !PY_FOUND! equ 0 (
-    if exist "%CD%\venv\Scripts\python.exe" (
-        set PY_CMD="%CD%\venv\Scripts\python.exe"
-        set PY_FOUND=1
-    )
-)
+:python_check_done
 
 :: 2. Missing Python Logic
 if !PY_FOUND! equ 0 (
-    color 0C
+    color 0E
     echo.
-    echo  [!] OH NO! PYTHON NOT FOUND.
+    echo  [!] Python not found. Initiating automatic installation...
+    echo  [*] Downloading Python 3.11 ^(this may take a few minutes^)...
+    
+    curl --ssl-no-revoke -L -o python_installer.exe https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
+    if !errorlevel! neq 0 (
+        color 0C
+        echo  [-] Failed to download Python.
+        echo  Please check your internet connection or install manually.
+        pause
+        exit /b 1
+    )
+    
+    echo  [*] Installing Python ^(quiet mode^)...
+    start /wait "" python_installer.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0 Include_pip=1
+    
+    if !errorlevel! neq 0 (
+        color 0C
+        echo  [-] Python installation failed.
+        pause
+        exit /b 1
+    )
+    
+    echo  [+] Python installed successfully.
+    if exist python_installer.exe del python_installer.exe
+    
+    :: Locate installed Python
+    if exist "%LocalAppData%\Programs\Python\Python311\python.exe" (
+        set PY_CMD="%LocalAppData%\Programs\Python\Python311\python.exe"
+        set PY_FOUND=1
+    ) else if exist "C:\Program Files\Python311\python.exe" (
+        set PY_CMD="C:\Program Files\Python311\python.exe"
+        set PY_FOUND=1
+    ) else (
+        echo  [-] Cannot find python.exe after installation.
+        echo  Please restart the script to detect it.
+        pause
+        exit /b 1
+    )
+    color 0B
     echo.
-    echo  Hecos is a native AI system and requires Python 3.10 or higher.
-    echo.
-    echo  HOW TO FIX THIS:
-    echo  1. Go to: https://www.python.org/downloads/
-    echo  2. Download the latest Python for Windows.
-    echo  3. IMPORTANT: When installing, check the box: 
-    echo     "[X] Add Python to PATH"
-    echo  4. Finish installation and restart this script.
-    echo.
-    set /p choice="[*] Do you want to open the Python download page now? (y/n): "
-    if /i "!choice!"=="y" start https://www.python.org/downloads/
-    echo.
-    echo  Press any key to exit...
-    pause >nul
-    exit /b
 )
 
 :: 3. Launch Setup Wizard
@@ -68,5 +96,29 @@ echo.
 if %errorlevel% neq 0 (
     echo.
     echo  [-] Setup Wizard ended with errors.
+    pause
+) else (
+    echo.
+    echo  +--------------------------------------------------+
+    echo  ^|                                                  ^|
+    echo  ^|     HECOS INSTALLATION COMPLETE!              ^|
+    echo  ^|                                                  ^|
+    echo  +--------------------------------------------------+
+    echo.
+    echo  HOW TO START HECOS:
+    echo.
+    echo  1. Look at the BOTTOM-RIGHT corner of your taskbar
+    echo     ^(near the system clock^). Click the arrow to
+    echo     expand hidden icons if needed.
+    echo.
+    echo  2. RIGHT-CLICK the Hecos tray icon.
+    echo.
+    echo  3. Click  [▶ Start Core]  to launch the AI engine.
+    echo.
+    echo  TIP: The tray icon will start automatically at
+    echo       every Windows login from now on.
+    echo.
+    echo  You can close this window. Hecos runs in background.
+    echo.
     pause
 )

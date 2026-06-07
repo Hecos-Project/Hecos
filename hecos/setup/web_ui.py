@@ -19,6 +19,7 @@ from .engine import (
 )
 
 LAST_RESULTS = []
+ONBOARDING_DONE = False
 
 # Available Setup Languages
 SETUP_LANGS = {
@@ -50,6 +51,9 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             if not i18n.SPLASH_DONE:
                 self.render_splash()
                 return
+            if ONBOARDING_DONE:
+                self.render_done()
+                return
             self.render_wizard()
             return
             
@@ -79,9 +83,11 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             elif self.path == '/set_lang':
                 set_system_language(params.get('lang', 'en'))
             elif self.path == '/onboarding':
+                global ONBOARDING_DONE
                 v_list = params.get('voices', [])
                 if isinstance(v_list, str): v_list = [v_list]
                 unattended_onboarding(target_voices=v_list)
+                ONBOARDING_DONE = True
             elif self.path == '/fix':
                 auto_fix_piper_path()
             elif self.path == '/full_check':
@@ -220,7 +226,53 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                         <div class="hero">
                             <h2>3️⃣ STEP: {T('step_install').upper()}</h2>
                             <p class="tip">{T('tip_onboarding')}</p>
-                            <button class="btn" style="width:100%; padding:20px; font-size:1.1rem; margin:0;">🚀 LAUNCH TURNKEY SETUP</button>
+                            <button id="launch-btn" class="btn" style="width:100%; padding:20px; font-size:1.1rem; margin:0;"
+                                onclick="
+                                    this.innerHTML='⏳ INSTALLATION STARTED, PLEASE WAIT... (Check console for details)';
+                                    this.style.pointerEvents='none';
+                                    this.style.opacity='0.7';
+                                    document.getElementById('next-steps').style.display='block';
+                                ">🚀 LAUNCH TURNKEY SETUP</button>
+
+                            <div id="next-steps" style="display:none; margin-top:28px; background:#0a1a15; border:1px solid var(--accent); border-radius:14px; padding:24px;">
+                                <div style="color:var(--accent); font-size:0.9rem; font-weight:800; letter-spacing:1px; margin-bottom:16px;">✅ WHAT TO DO NEXT</div>
+                                <p style="color:#ccc; font-size:0.85rem; margin:0 0 16px 0;">
+                                    The installer is now running in the background. While you wait, read these instructions to start using Hecos once the setup is complete.
+                                </p>
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <div style="background:#111; border-radius:10px; padding:14px 16px; display:flex; gap:14px; align-items:flex-start;">
+                                        <span style="font-size:1.4rem; line-height:1;">1️⃣</span>
+                                        <div>
+                                            <div style="color:#fff; font-size:0.82rem; font-weight:700; margin-bottom:4px;">Find the Hecos Tray Icon</div>
+                                            <div style="color:#888; font-size:0.78rem; line-height:1.5;">
+                                                Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong> (the system clock area). You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons. The Hecos icon will appear there after setup completes.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="background:#111; border-radius:10px; padding:14px 16px; display:flex; gap:14px; align-items:flex-start;">
+                                        <span style="font-size:1.4rem; line-height:1;">2️⃣</span>
+                                        <div>
+                                            <div style="color:#fff; font-size:0.82rem; font-weight:700; margin-bottom:4px;">Right-click the icon</div>
+                                            <div style="color:#888; font-size:0.78rem; line-height:1.5;">
+                                                Right-click on the Hecos icon to open the control menu, then click <strong style="color:var(--accent);">▶ Start Core</strong> to launch the Hecos AI engine.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style="background:#111; border-radius:10px; padding:14px 16px; display:flex; gap:14px; align-items:flex-start;">
+                                        <span style="font-size:1.4rem; line-height:1;">3️⃣</span>
+                                        <div>
+                                            <div style="color:#fff; font-size:0.82rem; font-weight:700; margin-bottom:4px;">Hecos will start automatically on next login</div>
+                                            <div style="color:#888; font-size:0.78rem; line-height:1.5;">
+                                                The tray icon is configured to launch automatically every time you log into Windows, so you only need to do this manually the first time.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="margin-top:18px; padding:12px 16px; background:rgba(0,255,204,0.06); border-radius:8px; border-left:3px solid var(--accent);">
+                                    <span style="color:var(--accent); font-size:0.75rem; font-weight:700;">💡 TIP</span>
+                                    <span style="color:#888; font-size:0.75rem; margin-left:8px;">You can also double-click the tray icon to open the Hecos Control Center directly.</span>
+                                </div>
+                            </div>
                         </div>
                     </form>
 
@@ -252,7 +304,98 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         """
         self.send_html(html)
 
+    def render_done(self):
+        res_html = f'<div class="console" style="max-height:300px;">{"<br>".join(LAST_RESULTS)}</div>' if LAST_RESULTS else ""
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="{i18n.UI_LANG}">
+        <head>
+            <meta charset="UTF-8">
+            <title>Hecos — Installation Complete</title>
+            <style>{self.get_css_vars()}{self.get_main_styles()}</style>
+            <style>
+                .done-card {{ background: linear-gradient(135deg, #0a1a15 0%, #0d1f18 100%); border: 2px solid var(--accent); border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 30px; box-shadow: 0 0 60px rgba(0,255,204,0.15); }}
+                .done-icon {{ font-size: 4rem; margin-bottom: 16px; }}
+                .done-title {{ font-size: 1.8rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; margin: 0 0 10px 0; }}
+                .done-sub {{ color: #888; font-size: 0.9rem; margin: 0 0 30px 0; }}
+                .step-card {{ background: #111; border-radius: 12px; padding: 16px 20px; display: flex; gap: 16px; align-items: flex-start; text-align: left; margin-bottom: 12px; }}
+                .step-num {{ font-size: 1.6rem; line-height: 1; flex-shrink: 0; }}
+                .step-title {{ color: #fff; font-size: 0.85rem; font-weight: 700; margin-bottom: 5px; }}
+                .step-desc {{ color: #888; font-size: 0.78rem; line-height: 1.6; }}
+                .accent {{ color: var(--accent); font-weight: 700; }}
+                .tip-box {{ background: rgba(0,255,204,0.06); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px 16px; margin-top: 24px; text-align: left; font-size: 0.78rem; color: #888; }}
+                .close-note {{ margin-top: 30px; padding: 14px; background: #111; border-radius: 10px; color: #555; font-size: 0.75rem; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="/logo.png" class="logo-img" alt="Logo">
+                    <h1 class="title-text">HECOS SETUP</h1>
+                </div>
+                <div class="done-card">
+                    <div class="done-icon">🎉</div>
+                    <div class="done-title">INSTALLATION COMPLETE!</div>
+                    <div class="done-sub">All components have been installed successfully. Hecos is ready to start.</div>
+                </div>
+
+                {res_html}
+
+                <div class="card">
+                    <h2 style="color:var(--accent); margin-top:0;">🚀 HOW TO START HECOS</h2>
+
+                    <div class="step-card">
+                        <span class="step-num">1️⃣</span>
+                        <div>
+                            <div class="step-title">Find the Hecos Tray Icon</div>
+                            <div class="step-desc">
+                                Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong>, near the system clock.
+                                You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons.
+                                The Hecos icon should already be visible — it was launched automatically during setup.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <span class="step-num">2️⃣</span>
+                        <div>
+                            <div class="step-title">Right-click the icon → <span class="accent">▶ Start Core</span></div>
+                            <div class="step-desc">
+                                Right-click on the Hecos tray icon to open the control menu,
+                                then click <span class="accent">▶ Start Core</span> to launch the Hecos AI engine.
+                                A beep will confirm the engine is online.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-card">
+                        <span class="step-num">3️⃣</span>
+                        <div>
+                            <div class="step-title">Hecos will auto-start on every login</div>
+                            <div class="step-desc">
+                                The tray icon is registered to launch automatically every time you log into Windows.
+                                You only need to manually start it this first time.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tip-box">
+                        <span style="color:var(--accent); font-weight:700;">💡 TIP &nbsp;</span>
+                        Double-click the tray icon anytime to open the Hecos Control Center.
+                    </div>
+
+                    <div class="close-note">
+                        ✅ You can now close this window and the terminal. Hecos runs independently in the background.
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        self.send_html(html)
+
     def send_html(self, html):
+
         self.send_response(200)
         self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()

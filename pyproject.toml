@@ -23,6 +23,13 @@ dependencies = [
     "opencv-python",
     "pywinauto; sys_platform=='win32'",
     "playwright",
+    "psutil",
+    "flask",
+    "flask-login",
+    "cryptography",
+    "pynput",
+    "SpeechRecognition",
+    "PyAudio",
 ]
 
 [project.optional-dependencies]

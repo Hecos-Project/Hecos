@@ -25,7 +25,7 @@ def check_python_version():
 def check_dependencies():
     print(T("deps_check"))
     missing = []
-    for pkg in ["pydantic", "ruamel.yaml"]:
+    for pkg in ["pydantic", "yaml", "litellm", "pystray"]:
         try:
             importlib.import_module(pkg.replace("-", "_").replace(" ", "_"))
         except ImportError:
@@ -40,16 +40,25 @@ def check_dependencies():
 
 def install_dependencies():
     print(T("install_deps"))
-    # Check both root and hecos/ folder
-    req_file = os.path.join(CWD, "requirements.txt")
-    if not os.path.exists(req_file):
-        req_file = os.path.join(CWD, "hecos", "requirements.txt")
     
-    if not os.path.exists(req_file):
-        print(f"[-] requirements.txt not found at {req_file}!")
-        return False
-    
-    cmd = [sys.executable, "-m", "pip", "install", "-r", req_file]
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"])
+    except Exception as e:
+        print(f"[-] Warning: Failed to upgrade pip/setuptools: {e}")
+
+    # Install all deps directly (avoids editable build-backend issues)
+    packages = [
+        "pydantic>=2.0", "pyyaml", "litellm", "babel", "holidays",
+        "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
+        "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
+        "pywinauto", "playwright",
+        # service extras
+        "pywin32", "pystray", "pillow",
+        # additional deps found in codebase
+        "psutil", "flask", "flask-login", "cryptography",
+        "pynput", "SpeechRecognition", "PyAudio",
+    ]
+    cmd = [sys.executable, "-m", "pip", "install"] + packages
     try:
         subprocess.check_call(cmd)
         return True
@@ -73,10 +82,16 @@ def enable_autostart():
     
     try:
         if os.name == 'nt':
-            subprocess.check_call(["cmd", "/c", script_path], env=env)
+            result = subprocess.run(["cmd", "/c", script_path, "--silent"], env=env, capture_output=True, text=True)
         else:
-            subprocess.check_call(["bash", script_path], env=env)
-        return True
+            result = subprocess.run(["bash", script_path, "--silent"], env=env, capture_output=True, text=True)
+        
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr)
+            
+        return result.returncode == 0
     except Exception as e:
         print(f"[-] Error: {e}")
         return False
