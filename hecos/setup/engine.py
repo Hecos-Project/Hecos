@@ -71,7 +71,7 @@ def install_dependencies():
             "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
             "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
             "pywinauto", "playwright", "pywin32", "pystray", "pillow", "flet", "qrcode",
-            "psutil", "flask", "flask-login", "cryptography", "pynput", "SpeechRecognition", "PyAudio",
+            "psutil", "flask", "flask-login", "cryptography", "pynput", "SpeechRecognition", "PyAudio", "fastembed",
         ]
 
     cmd = [sys.executable, "-m", "pip", "install"] + packages

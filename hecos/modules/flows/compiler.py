@@ -93,12 +93,13 @@ LOGIC__set_variable: params: {name: "my_var", value: "{{ other_var }}"}
 2. Every step MUST have a unique 'id' (lowercase_underscore, e.g. step_greet).
 3. Use depends_on to define order. Steps with no depends_on run first.
 4. Use output_as when a step's result is needed by a later step.
-5. Use Jinja2 {{ variable_name }} to reference outputs from previous steps.
+5. Use Jinja2 {{ variable_name }} to reference outputs from previous steps. IMPORTANT: Tools return raw strings, NOT dictionaries. DO NOT access sub-properties (e.g. use {{ weather_data }}, NEVER {{ weather_data.temperature }}).
 6. For conditional logic (if/else), use LOGIC__if_else.
 7. For weather-based clothing advice: get weather first, then LOGIC__if_else on temperature.
 8. The 'id' field must be a slug (no spaces, no special chars, max 64).
 9. DO NOT invent action names. ONLY use the actions listed above.
 10. Respond with ONLY valid YAML. Any non-YAML text will cause a fatal error.
+11. DO NOT invent dummy URLs for WEB tools. Only fetch real URLs if explicitly requested.
 """
 
 
