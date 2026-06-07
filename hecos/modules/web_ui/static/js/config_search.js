@@ -14,7 +14,8 @@
         highlight_color:   '#66fcf1',
         auto_navigate:     false,    // navigate on single match
         search_in_values:  false,
-        debounce_ms:       280
+        debounce_ms:       280,
+        preload_panels:    false     // OFF by default — protects slow machines
     };
 
     let S = loadSettings();
@@ -153,8 +154,25 @@
         // Build results
         if (matchingCards.length === 0) {
             resultsEl.style.display = 'flex';
-            resultsEl.innerHTML = `<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">No results for "<strong style='color:var(--text)'>${escQ(q)}</strong>"</div>`;
-            countEl.innerHTML = `<span style="color:var(--red)">No results</span>`;
+            const preloadEnabled = localStorage.getItem('hecos-search-preload') === '1';
+            if (!preloadEnabled) {
+                // Search preload is off — panels haven't been indexed yet
+                resultsEl.innerHTML = `
+                <div style="padding:16px 12px; text-align:center; color:var(--muted); font-size:13px; line-height:1.6;">
+                    <div style="font-size:22px; margin-bottom:8px;">🔍</div>
+                    <div style="color:var(--text); font-weight:600; margin-bottom:6px;">Global Search is not active</div>
+                    <div style="font-size:12px;">Only panels you've already visited are being searched.<br>
+                    To search across <strong style="color:var(--accent)">all settings</strong>, enable 
+                    <strong style="color:var(--accent)">⚡ Preload all panels for search</strong> 
+                    in the <button onclick="document.getElementById('zs-settings-btn').click()" 
+                        style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;padding:0;text-decoration:underline;">⚙️ Search Settings</button> 
+                    and reload the page.</div>
+                </div>`;
+                countEl.innerHTML = `<span style="color:var(--muted)">Partial index</span>`;
+            } else {
+                resultsEl.innerHTML = `<div style="padding:12px;text-align:center;color:var(--muted);font-size:13px;">No results for "<strong style='color:var(--text)'>${escQ(q)}</strong>"</div>`;
+                countEl.innerHTML = `<span style="color:var(--red)">No results</span>`;
+            }
         } else {
             resultsEl.style.display = 'flex';
             resultsEl.innerHTML = matchingCards.map(({ card, panelLabel: pl }) => {
@@ -217,6 +235,7 @@
             ${sRow('Highlight Matches',          'zs-s-hl',      S.highlight_results)}
             ${sRow('Auto-Navigate (most hits)',  'zs-s-nav',     S.auto_navigate)}
             ${sRow('Search in Input Values',     'zs-s-vals',    S.search_in_values)}
+            ${sRow('⚡ Preload all panels for search <span style="font-size:9px;color:var(--muted);">(may slow startup)</span>', 'zs-s-preload', S.preload_panels)}
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="flex:1;font-size:12px;color:var(--muted);">Highlight Color</span>
                 <input type="color" id="zs-s-color" value="${S.highlight_color}" style="width:36px;height:24px;border:none;background:none;cursor:pointer;padding:0;">
@@ -262,8 +281,11 @@
             S.highlight_results = !!g('zs-s-hl')?.checked;
             S.auto_navigate     = !!g('zs-s-nav')?.checked;
             S.search_in_values  = !!g('zs-s-vals')?.checked;
+            S.preload_panels    = !!g('zs-s-preload')?.checked;
             S.highlight_color   = g('zs-s-color')?.value || '#66fcf1';
             S.debounce_ms       = parseInt(g('zs-s-debounce')?.value || 280);
+            // Persist the preload toggle to a dedicated localStorage key for config_core_navigation.js to read
+            localStorage.setItem('hecos-search-preload', S.preload_panels ? '1' : '0');
             saveSettings();
             const p = document.getElementById('zs-settings-panel');
             if (p) p.style.display = 'none';

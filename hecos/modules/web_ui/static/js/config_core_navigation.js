@@ -355,6 +355,13 @@ const _prefetchQueue = {};  // panelId → Promise
 window._startProgressiveHydration = function(delayMs = 1500) {
     if (window._hydrationStarted) return;
     window._hydrationStarted = true;
+
+    // Check the user-facing toggle. Default is OFF to protect slow machines.
+    const preloadEnabled = localStorage.getItem('hecos-search-preload') === '1';
+    if (!preloadEnabled) {
+        console.log("[LazyHub] Search preload is disabled. Skipping background hydration.");
+        return;
+    }
     
     setTimeout(async () => {
         const hub = window.CONFIG_HUB;
@@ -381,8 +388,8 @@ window._startProgressiveHydration = function(delayMs = 1500) {
                 _prefetchQueue[pid] = _prefetchPanel(pid);
             }
             await _prefetchQueue[pid];
-            // Small yield between panels so the browser stays responsive
-            await new Promise(r => setTimeout(r, 150));
+            // Longer yield between panels so the browser stays responsive on slow machines
+            await new Promise(r => setTimeout(r, 400));
         }
         console.log("[LazyHub] Silent hydration done — all panels indexed.");
     }, delayMs);

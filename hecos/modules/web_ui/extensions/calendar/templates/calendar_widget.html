@@ -94,7 +94,20 @@ window.calendarWidget = (function() {
             height: 'auto',
             firstDay: 1, // Start on Monday
             locale: 'en', // Using English as requested by user
-            events: '/api/ext/calendar/events',
+            // Custom event source: the Hecos API wraps events in {ok, events:[...]},
+            // so we must unwrap it manually — FullCalendar expects a plain array.
+            events: function(fetchInfo, successCallback, failureCallback) {
+                fetch('/api/ext/calendar/events')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.ok && Array.isArray(data.events)) {
+                            successCallback(data.events);
+                        } else {
+                            successCallback([]);
+                        }
+                    })
+                    .catch(err => failureCallback(err));
+            },
             noEventsContent: "No events this week",
             eventClick: function(info) {
                 info.jsEvent.preventDefault(); // don't navigate to URL
