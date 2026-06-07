@@ -89,7 +89,15 @@ window.calendarWidget = (function() {
         }
 
         calendar = new FullCalendar.Calendar(el, {
-            initialView: 'listWeek',
+            // Create a custom view that shows exactly 14 days from the current day,
+            // avoiding the "end of week" cutoff problem.
+            views: {
+                listRolling14: {
+                    type: 'list',
+                    duration: { days: 14 }
+                }
+            },
+            initialView: 'listRolling14',
             headerToolbar: false, // Hidden because we use custom arrows in the widget title
             height: 'auto',
             firstDay: 1, // Start on Monday
@@ -97,7 +105,8 @@ window.calendarWidget = (function() {
             // Custom event source: the Hecos API wraps events in {ok, events:[...]},
             // so we must unwrap it manually — FullCalendar expects a plain array.
             events: function(fetchInfo, successCallback, failureCallback) {
-                fetch('/api/ext/calendar/events')
+                const url = `/api/ext/calendar/events?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`;
+                fetch(url)
                     .then(r => r.json())
                     .then(data => {
                         if (data.ok && Array.isArray(data.events)) {
