@@ -1,105 +1,78 @@
 <style>
-.sidebar-cal-group {
-    background: rgba(255, 255, 255, 0.01);
-    border: 1px solid rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    margin-bottom: 6px;
-    overflow: hidden;
-    transition: background 0.2s;
-}
-.sidebar-cal-group:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-.sidebar-cal-header {
-    padding: 6px 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
+/* FullCalendar Sidebar Overrides */
+#sidebar-fullcalendar {
     font-size: 11px;
-    font-weight: 600;
+}
+#sidebar-fullcalendar .fc-header-toolbar {
+    display: none !important; /* We use custom header arrows */
+}
+#sidebar-fullcalendar .fc-list-day-cushion {
+    background: rgba(255, 255, 255, 0.05) !important;
+    padding: 6px 10px !important;
     color: var(--accent);
-    user-select: none;
+    font-weight: 600;
 }
-.sidebar-cal-header .group-chevron {
-    font-size: 10px;
-    transition: transform 0.3s;
-    opacity: 0.6;
+#sidebar-fullcalendar .fc-list-event:hover td {
+    background: rgba(255, 255, 255, 0.08) !important;
+    cursor: pointer;
 }
-.sidebar-cal-header.collapsed .group-chevron {
-    transform: rotate(-90deg);
+#sidebar-fullcalendar .fc-list-event-title a {
+    color: var(--text) !important;
+    text-decoration: none;
 }
-.sidebar-cal-content {
-    padding: 0 4px 6px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+#sidebar-fullcalendar .fc-list-event-time {
+    color: var(--muted) !important;
 }
-.sidebar-cal-content.collapsed {
-    display: none;
+#sidebar-fullcalendar .fc-theme-standard td, 
+#sidebar-fullcalendar .fc-theme-standard th {
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
-/* Premium Event Card */
-.cal-sidebar-card {
-    background: rgba(255, 255, 255, 0.02);
-    padding: 6px 8px;
-    border-radius: 6px;
-    border-left: 3px solid #3498db;
-    border-right: 1px solid var(--border);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 6px;
-    font-size: 11px;
-    transition: transform 0.15s, background 0.15s;
-}
-.cal-sidebar-card:hover {
-    transform: translateX(2px);
-    background: rgba(255,255,255,0.05);
-}
-.cal-sidebar-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: #eee;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.cal-sidebar-time {
-    font-size: 10px;
+#sidebar-fullcalendar .fc-list-empty {
+    background: transparent !important;
     color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    padding: 20px !important;
 }
 </style>
 
-<div class="sidebar-card" id="calendar-widget" style="padding:10px 12px;">
+<div class="sidebar-card" id="calendar-widget" style="padding:10px 12px; display:flex; flex-direction:column;">
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="calendarWidget.toggleBody()">
         <span class="ql-icon"><i class="fas fa-calendar-alt"></i></span>
         <span class="ql-title">CALENDAR</span>
+        
+        <!-- Navigation Arrows -->
+        <span style="margin-left:auto; display:flex; gap:12px; align-items:center; opacity:0.8;">
+            <span onclick="event.stopPropagation(); calendarWidget.prev()" style="cursor:pointer; padding:2px; font-size:12px;" title="Previous Week"><i class="fas fa-chevron-left"></i></span>
+            <span onclick="event.stopPropagation(); calendarWidget.next()" style="cursor:pointer; padding:2px; font-size:12px;" title="Next Week"><i class="fas fa-chevron-right"></i></span>
+        </span>
+
         <span onclick="event.stopPropagation(); window.hecosOpenConfig('#calendar')" 
-              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+              style="margin-left:12px; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
               title="Configure Calendar"><i class="fas fa-cog"></i></span>
         <span class="ql-chevron" id="calendar-widget-toggle"><i class="fas fa-chevron-down"></i></span>
     </div>
 
     <div id="calendar-widget-body" class="ql-body" style="margin-top:10px;">
-        <div id="calendar-upcoming-list" class="ql-item" style="border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; margin-bottom:8px; display:flex; flex-direction:column; gap:6px;">
-            <span style="color:var(--muted);font-size:0.8em;padding-left:4px;">Synchronizing...</span>
-        </div>
+        <div id="sidebar-fullcalendar" style="border:1px solid rgba(255,255,255,0.05); border-radius:8px; overflow:hidden;"></div>
     </div>
 </div>
 
+<script src="/ext/calendar/static/js/fullcalendar.min.js"></script>
 <script>
 window.calendarWidget = (function() {
     const COLLAPSED_KEY = 'hecos-cal-collapsed';
     let _collapsed = localStorage.getItem(COLLAPSED_KEY) === '1';
+    let calendar = null;
 
     function _applyCollapsed(yes) {
         const body = document.getElementById('calendar-widget-body');
         const tog  = document.getElementById('calendar-widget-toggle');
         if (body) body.style.display = yes ? 'none' : '';
         if (tog) tog.classList.toggle('collapsed', yes);
+        
+        // Force FullCalendar to recalculate its dimensions if it's un-collapsed
+        if (!yes && calendar) {
+            setTimeout(() => calendar.render(), 100);
+        }
     }
 
     function toggleBody() {
@@ -108,104 +81,62 @@ window.calendarWidget = (function() {
         _applyCollapsed(_collapsed);
     }
 
-    function _getDayLabel(iso) {
-        const d = new Date(iso);
-        const today = new Date();
-        const tomorrow = new Date();
-        tomorrow.setDate(today.getDate() + 1);
+    function initCalendar() {
+        const el = document.getElementById('sidebar-fullcalendar');
+        if (!el || !window.FullCalendar) {
+            console.error("[CALENDAR WIDGET] FullCalendar library missing or element not found.");
+            return;
+        }
 
-        if (d.toDateString() === today.toDateString()) return 'OGGI';
-        if (d.toDateString() === tomorrow.toDateString()) return 'DOMANI';
+        calendar = new FullCalendar.Calendar(el, {
+            initialView: 'listWeek',
+            headerToolbar: false, // Hidden because we use custom arrows in the widget title
+            height: 'auto',
+            firstDay: 1, // Start on Monday
+            locale: 'en', // Using English as requested by user
+            events: '/api/ext/calendar/events',
+            noEventsContent: "No events this week",
+            eventClick: function(info) {
+                info.jsEvent.preventDefault(); // don't navigate to URL
+                // Open the main Calendar Config module
+                if (typeof window.hecosOpenConfig === 'function') {
+                    window.hecosOpenConfig('#calendar');
+                } else {
+                    window.location.href = '/hecos/config/ui';
+                }
+            }
+        });
         
-        return d.toLocaleDateString(undefined, {weekday:'short', day:'2-digit', month:'short'}).toUpperCase();
+        if (!_collapsed) {
+            calendar.render();
+        }
     }
 
-    function _fmtTime(iso) {
-        try {
-            const d = new Date(iso);
-            return d.toLocaleTimeString(undefined, {hour:'2-digit', minute:'2-digit'});
-        } catch(e) { return ''; }
+    function prev() {
+        if (calendar) calendar.prev();
     }
 
-    function toggleGroup(el) {
-        const header = el.closest('.sidebar-cal-header');
-        const content = header.nextElementSibling;
-        const isCollapsed = content.classList.toggle('collapsed');
-        header.classList.toggle('collapsed', isCollapsed);
+    function next() {
+        if (calendar) calendar.next();
     }
 
     function refresh() {
-        // Fetch more events to support grouping
-        fetch('/api/ext/calendar/upcoming?n=12')
-            .then(r => r.json())
-            .then(data => {
-                const list = document.getElementById('calendar-upcoming-list');
-                if (!list) return;
-                if (!data.ok || !data.events || data.events.length === 0) {
-                    list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;padding-left:4px;">No events scheduled</span>';
-                    return;
-                }
-
-                // Grouping Logic
-                const groups = {};
-                data.events.forEach(ev => {
-                    const label = _getDayLabel(ev.start_iso);
-                    if (!groups[label]) groups[label] = [];
-                    groups[label].push(ev);
-                });
-
-                list.innerHTML = Object.entries(groups).map(([label, events], idx) => {
-                    // Auto-expand the first group (usually Oggi)
-                    const isCollapsed = idx > 0;
-                    return `
-                    <div class="sidebar-cal-group">
-                        <div class="sidebar-cal-header ${isCollapsed ? 'collapsed' : ''}" onclick="calendarWidget.toggleGroup(this)">
-                            <span>${label}</span>
-                            <span class="group-chevron"><i class="fas fa-chevron-down"></i></span>
-                        </div>
-                        <div class="sidebar-cal-content ${isCollapsed ? 'collapsed' : ''}">
-                            ${events.map(ev => `
-                                <div class="cal-sidebar-card" style="border-left-color: ${ev.color || '#3498db'}">
-                                    <div class="cal-sidebar-title">${ev.title}</div>
-                                    <div class="cal-sidebar-time"><i class="far fa-clock"></i> ${_fmtTime(ev.start_iso)}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>`;
-                }).join('');
-            })
-            .catch(() => {
-                const list = document.getElementById('calendar-upcoming-list');
-                if (list) list.innerHTML = '<span style="color:var(--muted);font-size:0.8em;">Sync error</span>';
-            });
-    }
-
-    function openFull() {
-        // Correctly handle deep linking and storage
-        sessionStorage.setItem('hecos-config-tab', 'calendar');
-        // If we are already on the config page but in another tab
-        if (window.location.pathname === '/hecos/config/ui') {
-            if (typeof showTab === 'function') {
-                showTab('calendar');
-            } else {
-                window.location.reload();
-            }
-        } else {
-            // Standard redirect
-            window.location.href = '/hecos/config/ui';
-        }
+        if (calendar) calendar.refetchEvents();
     }
 
     // Auto-refresh every 5 minutes
     setInterval(refresh, 300000);
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => { _applyCollapsed(_collapsed); refresh(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            _applyCollapsed(_collapsed); 
+            initCalendar(); 
+        });
     } else {
         _applyCollapsed(_collapsed);
-        setTimeout(refresh, 400);
+        initCalendar();
     }
 
-    return { refresh, toggleBody, openFull, toggleGroup };
+    return { refresh, toggleBody, prev, next };
 })();
 </script>
