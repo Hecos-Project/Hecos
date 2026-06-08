@@ -6,7 +6,7 @@ pipeline:
 - id: audio__play_alarm_2
   action: AUDIO__play_alarm
   params:
-    sound: ''
+    sound: universfield-error-011-352286 (1).mp3
 - id: audio__speak_1
   action: AUDIO__speak
   params:
@@ -65,4 +65,4 @@ pipeline:
   - system__chat_message_2
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-08T11:42:15.197036'
+  updated_at: '2026-06-08T13:10:46.712368'
