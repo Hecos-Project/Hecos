@@ -15,10 +15,13 @@ window.loadChatSessions = async function () {
         window.chatHistoryState.sessions = resSessions.sessions || [];
     }
     if (resActive.ok) {
+        const isNewSession = window.chatHistoryState.activeSessionId !== resActive.session_id;
         window.chatHistoryState.activeSessionId = resActive.session_id;
         window.chatHistoryState.activeMode      = resActive.mode || 'normal';
         // Ensure chatHistory is empty for a new session until messages are loaded
-        window.chatHistory = []; 
+        if (isNewSession) {
+            window.chatHistory = []; 
+        }
         if (resActive.session_id) {
             localStorage.setItem('hecos_active_session_id', resActive.session_id);
         }

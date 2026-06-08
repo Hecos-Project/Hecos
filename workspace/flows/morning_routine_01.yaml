@@ -10,7 +10,7 @@ pipeline:
 - id: audio__speak_1
   action: AUDIO__speak
   params:
-    text: Questa è la routine del mattino 01
+    text: Buongiorno. Questa è la routine del mattino 01
   depends_on:
   - audio__play_alarm_2
 - id: system__chat_message_1
@@ -28,8 +28,8 @@ pipeline:
 - id: Notizie della giornata
   action: AI__prompt
   params:
-    prompt: 'Cerca su internet le 3 notizie piu importanti della giornata, riassumile
-      brevemente in tre righe. '
+    prompt: 'Cerca su internet, usando il modulo BROWSER le 3 notizie piu importanti
+      della giornata, riassumile brevemente in tre righe. '
     save_to_chat: true
   output_as: notizie1
   depends_on:
@@ -65,4 +65,4 @@ pipeline:
   - system__chat_message_2
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-08T07:38:59.076053'
+  updated_at: '2026-06-08T11:29:50.027583'
