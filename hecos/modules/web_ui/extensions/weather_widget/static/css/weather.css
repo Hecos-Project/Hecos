@@ -1,33 +1,41 @@
+/* Weather Widget CSS */
+
 .weather-widget-card {
-    transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
 }
 
 .ww-body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 500px;
+    opacity: 1;
+    overflow: hidden;
 }
 
 .ww-body.collapsed {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0 !important;
 }
 
 .ww-current {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 8px 4px;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 .ww-icon-container {
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
+    background: var(--bg3);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 38px;
+    font-size: 24px;
     color: var(--accent);
-    filter: drop-shadow(0 4px 12px rgba(var(--accent-rgb), 0.4));
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .ww-temp-box {
@@ -36,91 +44,143 @@
 }
 
 .ww-temp {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 26px;
+    font-weight: 800;
     line-height: 1;
     color: var(--text);
-    letter-spacing: -2px;
 }
 
 .ww-desc {
-    font-size: 12px;
-    color: var(--text);
-    opacity: 0.8;
+    font-size: 11px;
+    color: var(--muted);
     margin-top: 4px;
-    font-weight: 500;
     text-transform: capitalize;
 }
 
 .ww-details {
     display: flex;
-    justify-content: space-between;
-    background: var(--bg3);
+    flex-wrap: wrap;
+    gap: 8px;
+    background: var(--bg2);
+    padding: 10px;
     border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 11px;
-    color: var(--muted);
-    border: 1px solid var(--border);
+    margin-bottom: 15px;
 }
 
 .ww-detail-item {
+    font-size: 11px;
+    color: var(--text);
     display: flex;
     align-items: center;
     gap: 6px;
-    font-weight: 600;
+    flex: 1 1 40%;
+}
+.ww-detail-item i {
+    color: var(--accent);
+    opacity: 0.8;
+    width: 14px;
+    text-align: center;
 }
 
 .ww-divider {
-    font-size: 9px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
     color: var(--muted);
-    font-weight: 700;
     border-bottom: 1px solid var(--border);
     padding-bottom: 4px;
-    margin-top: 4px;
+    margin-bottom: 10px;
 }
 
 .ww-forecast {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.ww-forecast::-webkit-scrollbar {
+    width: 4px;
+}
+.ww-forecast::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ww-forecast::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
 }
 
 .ww-forecast-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--bg3);
+    border-radius: 6px;
     font-size: 11px;
-    font-weight: 500;
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: var(--glass-b);
-    border: 1px solid transparent;
-    transition: all 0.2sease;
+    transition: background 0.2s;
 }
 
 .ww-forecast-item:hover {
-    border-color: rgba(var(--accent-rgb), 0.3);
-    background: rgba(var(--accent-rgb), 0.05);
+    background: var(--bg2);
+}
+
+.ww-f-left {
+    flex: 0 0 60px;
 }
 
 .ww-f-day {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.ww-f-center {
     flex: 1;
-    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 5px;
 }
 
 .ww-f-icon {
-    width: 24px;
-    text-align: center;
     color: var(--accent);
+    font-size: 12px;
+    width: 16px;
+    text-align: center;
+}
+
+.ww-f-desc {
+    color: var(--text);
+    font-size: 10px;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+.ww-f-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.ww-f-prob {
+    font-size: 9px;
+    color: #4da6ff;
+    display: flex;
+    align-items: center;
+    gap: 3px;
 }
 
 .ww-f-temp {
-    flex: 1;
-    text-align: right;
     color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    white-space: nowrap;
 }
-.ww-f-temp .max { color: var(--text); font-weight: 700; }
+.ww-f-temp .max {
+    color: var(--text);
+    font-weight: 600;
+}

@@ -127,9 +127,10 @@ window.addEventListener('hashchange', () => {
 });
 
 // Start background panel hydration so the search engine can index all panels.
-// Runs after all sub-modules are loaded (this is the last script in index.html).
+// Delayed to 8 seconds so the UI fully renders before any prefetching begins.
+// Hydration is also gated by the 'hecos-search-preload' localStorage toggle (default: OFF).
 if (document.readyState === 'complete') {
-    window._startProgressiveHydration(1500);
+    window._startProgressiveHydration(8000);
 } else {
-    window.addEventListener('load', () => window._startProgressiveHydration(1500));
+    window.addEventListener('load', () => window._startProgressiveHydration(8000));
 }

@@ -180,7 +180,24 @@ async function deleteCurrentFlow() {
 }
 
 async function deleteFlowById(flowId, flowName) {
-  if (!confirm(`Eliminare il flusso "${flowName}"?`)) return;
+  const bg = document.getElementById('confirm-modal-bg');
+  const text = document.getElementById('confirm-modal-text');
+  const yesBtn = document.getElementById('confirm-modal-yes');
+  
+  if(bg && text && yesBtn) {
+    text.innerText = `Eliminare il flusso "${flowName}"?`;
+    bg.style.display = 'flex';
+    yesBtn.onclick = async () => {
+      bg.style.display = 'none';
+      await _doDeleteFlowById(flowId);
+    };
+  } else {
+    if (!confirm(`Eliminare il flusso "${flowName}"?`)) return;
+    await _doDeleteFlowById(flowId);
+  }
+}
+
+async function _doDeleteFlowById(flowId) {
   try {
     const res = await fetch(`/api/flows/${flowId}`, {method:'DELETE'});
     const d = await res.json();

@@ -10,6 +10,7 @@ dependencies = [
     "pydantic>=2.0",
     "pyyaml",
     "litellm",
+    "tenacity",
     "babel",
     "holidays",
     "requests",
@@ -30,6 +31,11 @@ dependencies = [
     "pynput",
     "SpeechRecognition",
     "PyAudio",
+    "fastembed",
+    "sounddevice",
+    "pygame",
+    "GPUtil",
+    "numpy",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +44,8 @@ service = [
     "pywin32; sys_platform=='win32'",
     "pystray",
     "pillow",
+    "flet",
+    "qrcode",
 ]
 
 [project.scripts]

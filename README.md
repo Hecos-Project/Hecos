@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.27.2 (Runtime Alpha)
+# Hecos - Version 0.27.3 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.27.2`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
+> **Runtime Alpha Status**: Hecos is currently in `v0.27.3`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem that bridges AI reasoning with root-level system execution and advanced networking. It transforms local hardware into a sovereign digital entity through an integrated dashboard and professional-grade security infrastructure.
@@ -21,11 +21,11 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced AI orchestration intuitive.
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.2 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.3 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 
-## ✨ Key Features (v0.27.2)
+## ✨ Key Features (v0.27.3)
 * ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands.
 * **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding.
 * **⏰ Reminder Module** — NLP-powered task scheduler with snooze capabilities and active OS notifications.
@@ -116,11 +116,28 @@ We strongly recommend changing the password immediately from the **Users Tab** i
 **Password Recovery:**
 If you get locked out, run `python scripts/reset_admin.py` from the terminal to force a new password, or manually delete the `memory/users.db` file to reset the system defaults.
 
-### 🛡️ Stealth Mode (No Windows)
+### 🛡️ Stealth Mode (Windowless)
 If you want Hecos to run completely in the background without any visible terminal windows:
-1.  **Use the Tray Icon**: Launch Hecos via the tray icon. It will manage the system components invisibly in the background.
-3.  **Silent Startup**: Use `START_HECOS_SILENT_WIN.vbs` for a 100% invisible launch (no console window).
-3.  **Manual Recovery**: If you accidentally close the tray icon, use `START_HECOS_TRAY_WIN.bat`.
+1.  **Use the Tray Icon**: Start Hecos using the system tray icon. It will manage the system components invisibly in the background.
+3.  **Silent Boot**: Use `START_HECOS_SILENT_WIN.vbs` for a 100% invisible start (no console windows).
+3.  **Manual Recovery**: If you close the icon by mistake, use `START_HECOS_TRAY_WIN.bat`.
+
+---
+
+## 🛠️ Essential System Requirements (Windows)
+If you have just reinstalled Windows or are setting up Hecos for the first time, you must install these **fundamental** system packages for all modules to work correctly:
+
+1. ⚙️ **Microsoft Visual C++ Redistributable (Mandatory)**
+   - *What it's for*: Required by the RAG Memory engine (ONNX/FastEmbed). Without this package, you will get missing DLL errors and document search will not work.
+   - *Download*: 👉 [Download VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+
+2. 🎵 **VLC Media Player 64-bit (Mandatory)**
+   - *What it's for*: The Audio engine and integrated Media Player of Hecos use VLC libraries in the background to play music, alarms, and TTS voice output.
+   - *Download*: 👉 [Download VLC 64-bit](https://www.videolan.org/vlc/download-windows.html)
+
+3. 👁️ **Tesseract OCR (Recommended for Vision)**
+   - *What it's for*: Necessary for advanced visual capabilities and to read text on the screen via OCR (`pytesseract`). 
+   - *Download*: 👉 [Download Tesseract OCR for Windows](https://github.com/UB-Mannheim/tesseract/wiki)
 
 ---
 

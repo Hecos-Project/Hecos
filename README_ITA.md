@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.27.2 (Runtime Alpha)
+# Hecos - Versione 0.27.3 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato Runtime Alpha**: Hecos è attualmente in `v0.27.2`. Questo è un Helping Companion System locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
+> **Stato Runtime Alpha**: Hecos è attualmente in `v0.27.3`. Questo è un Helping Companion System locale che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 
 ## 🚀 Panoramica
 **Hecos** è un **Helping Companion System**: un ecosistema locale che unisce AI reasoning, controllo di sistema root e networking avanzato. Trasforma l'hardware locale in un'entità digitale sovrana attraverso una dashboard professionale e un'infrastruttura di sicurezza avanzata.
@@ -21,11 +21,11 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea.
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata.
 
-Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.27.2 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
+Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.27.3 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale.
 
 ---
 
-## ✨ Caratteristiche Principali (v0.27.2)
+## ✨ Caratteristiche Principali (v0.27.3)
 * ⚙️ **Motore di Sicurezza Flows** — Editor visuale a nodi (drag-and-drop) per la creazione di automazioni complesre multi-step, trigger e azioni con integrazione NLP vocale.
 * **📅 Calendario Integrato** — Modulo calendario completo con tracciamento delle festività e codifica a colori localizzata per gli eventi.
 * **⏰ Modulo Promemoria** — Pianificatore di attività basato su NLP con funzionalità di snooze e notifiche OS attive.
@@ -106,6 +106,23 @@ Se desideri che Hecos giri completamente in background senza alcuna finestra di 
 1.  **Usa l'Icona Tray**: Avvia Hecos tramite l'icona nella barra di sistema. Gestirà i componenti di sistema in modo invisibile in background.
 3.  **Avvio Silenzioso**: Usa `START_HECOS_SILENT_WIN.vbs` per un avvio al 100% invisibile (senza finestre di console).
 3.  **Recupero Manuale**: Se chiudi l'icona per errore, usa `START_HECOS_TRAY_WIN.bat`.
+
+---
+
+## 🛠️ Requisiti di Sistema Essenziali (Windows)
+Se hai appena reinstallato Windows o stai configurando Hecos per la prima volta, devi installare questi pacchetti di sistema **fondamentali** affinché tutti i moduli funzionino correttamente:
+
+1. ⚙️ **Microsoft Visual C++ Redistributable (Obbligatorio)**
+   - *A cosa serve*: Richiesto dal motore di Memoria RAG (ONNX/FastEmbed). Senza questo pacchetto riceverai errori relativi a DLL mancanti e la ricerca sui documenti non funzionerà.
+   - *Download*: 👉 [Scarica VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+
+2. 🎵 **VLC Media Player 64-bit (Obbligatorio)**
+   - *A cosa serve*: Il motore Audio e il Media Player integrato di Hecos utilizzano le librerie di VLC in background per riprodurre musica, allarmi e l'output vocale TTS.
+   - *Download*: 👉 [Scarica VLC 64-bit](https://www.videolan.org/vlc/download-windows.html)
+
+3. 👁️ **Tesseract OCR (Consigliato per la Visione)**
+   - *A cosa serve*: Necessario per le capacità visive avanzate e per leggere il testo sullo schermo tramite OCR (`pytesseract`). 
+   - *Download*: 👉 [Scarica Tesseract OCR per Windows](https://github.com/UB-Mannheim/tesseract/wiki)
 
 ---
 

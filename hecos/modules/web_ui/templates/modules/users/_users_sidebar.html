@@ -25,10 +25,22 @@
     <div class="card">
       <div class="card-title" style="font-size:12px; color:var(--muted); text-transform:uppercase; margin-bottom:16px;">Contact Info</div>
       <div style="display:flex; flex-direction:column; gap:12px;">
-        <input type="email" id="my_email"   class="config-input" placeholder="Email"   style="width:100%; font-size:12px;" oninput="debouncedSave()">
-        <input type="tel"   id="my_phone"   class="config-input" placeholder="Phone"   style="width:100%; font-size:12px;" oninput="debouncedSave()">
-        <input type="text"  id="my_address" class="config-input" placeholder="Address" style="width:100%; font-size:12px;" oninput="debouncedSave()">
-        <input type="text"  id="my_city"    class="config-input" placeholder="City"    style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        <div>
+          <label style="font-size:10px; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Email Address</label>
+          <input type="email" id="my_email" class="config-input" placeholder="Email" style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label style="font-size:10px; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Phone Number</label>
+          <input type="tel" id="my_phone" class="config-input" placeholder="Phone" style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label style="font-size:10px; color:var(--muted); text-transform:uppercase; margin-bottom:4px; display:block;">Street Address</label>
+          <input type="text" id="my_address" class="config-input" placeholder="Address" style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        </div>
+        <div>
+          <label style="font-size:10px; color:var(--accent); text-transform:uppercase; margin-bottom:4px; display:block; font-weight:bold;">City / Location (For Weather)</label>
+          <input type="text" id="my_city" class="config-input" placeholder="e.g. Rome, Milan..." style="width:100%; font-size:12px;" oninput="debouncedSave()">
+        </div>
       </div>
     </div>
 

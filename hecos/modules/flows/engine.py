@@ -193,36 +193,47 @@ def _topological_sort(steps: List[Dict]) -> List[Dict]:
 
 # ── Logic node handlers ────────────────────────────────────────────────────────
 
+def _execute_branch(branch: Any, step_id_prefix: str, context: Dict, run_id: str, emit: Callable) -> Any:
+    if not branch:
+        return None
+    if isinstance(branch, list):
+        res = None
+        for i, b in enumerate(branch):
+            if isinstance(b, dict):
+                sub_step = {
+                    "id": f"{step_id_prefix}_{i}",
+                    "action": b.get("action", ""),
+                    "params": b.get("params", {}),
+                }
+                res = _execute_step(sub_step, context, run_id, emit)
+        return res
+    elif isinstance(branch, dict):
+        sub_step = {
+            "id": step_id_prefix,
+            "action": branch.get("action", ""),
+            "params": branch.get("params", {}),
+        }
+        return _execute_step(sub_step, context, run_id, emit)
+    return None
+
+
 def _handle_if_else(step: Dict, context: Dict, run_id: str, emit: Callable) -> Any:
     condition = step["params"].get("condition", "false")
     result = _eval_condition(_render(condition, context), context)
 
     branch_key = "true_branch" if result else "false_branch"
     branch = step["params"].get(branch_key)
-
-    if branch:
-        sub_step = {
-            "id": f"{step['id']}_{branch_key}",
-            "action": branch.get("action", ""),
-            "params": branch.get("params", {}),
-        }
-        return _execute_step(sub_step, context, run_id, emit)
-    return None
+    return _execute_branch(branch, f"{step['id']}_{branch_key}", context, run_id, emit)
 
 
 def _handle_switch(step: Dict, context: Dict, run_id: str, emit: Callable) -> Any:
     expr = _render(step["params"].get("expression", ""), context)
     branches = step["params"].get("branches", {})
-    branch = branches.get(expr) or step["params"].get("default")
+    branch = branches.get(expr) if isinstance(branches, dict) else None
+    if not branch:
+        branch = step["params"].get("default")
 
-    if branch:
-        sub_step = {
-            "id": f"{step['id']}_branch_{expr}",
-            "action": branch.get("action", ""),
-            "params": branch.get("params", {}),
-        }
-        return _execute_step(sub_step, context, run_id, emit)
-    return None
+    return _execute_branch(branch, f"{step['id']}_branch_{expr}", context, run_id, emit)
 
 
 def _handle_loop(step: Dict, context: Dict, run_id: str, emit: Callable) -> List:
@@ -237,12 +248,7 @@ def _handle_loop(step: Dict, context: Dict, run_id: str, emit: Callable) -> List
     for i, item in enumerate(iterable):
         sub_ctx = dict(context)
         sub_ctx[as_var] = item
-        sub_step = {
-            "id": f"{step['id']}_iter_{i}",
-            "action": body.get("action", ""),
-            "params": body.get("params", {}),
-        }
-        res = _execute_step(sub_step, sub_ctx, run_id, emit)
+        res = _execute_branch(body, f"{step['id']}_iter_{i}", sub_ctx, run_id, emit)
         results.append(res)
 
     return results
@@ -273,8 +279,7 @@ def _handle_and_gate(step: Dict, context: Dict, run_id: str, emit: Callable) -> 
     branch_key = "on_success" if all_pass else "on_fail"
     branch = step["params"].get(branch_key)
     if branch:
-        sub_step = {"id": f"{step['id']}_{branch_key}", "action": branch.get("action", ""), "params": branch.get("params", {})}
-        return _execute_step(sub_step, context, run_id, emit)
+        return _execute_branch(branch, f"{step['id']}_{branch_key}", context, run_id, emit)
     return all_pass
 
 
@@ -284,8 +289,7 @@ def _handle_or_gate(step: Dict, context: Dict, run_id: str, emit: Callable) -> A
     branch_key = "on_success" if any_pass else "on_fail"
     branch = step["params"].get(branch_key)
     if branch:
-        sub_step = {"id": f"{step['id']}_{branch_key}", "action": branch.get("action", ""), "params": branch.get("params", {})}
-        return _execute_step(sub_step, context, run_id, emit)
+        return _execute_branch(branch, f"{step['id']}_{branch_key}", context, run_id, emit)
     return any_pass
 
 

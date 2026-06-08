@@ -25,10 +25,21 @@ _persistent_source = None
 
 
 def listen(state=None):
-    global _is_calibrated, _recognizer
+    global _is_calibrated, _recognizer, _persistent_source
 
     # Redundant check: if system is speaking, don't listen at all
     if (state and state.system_speaking) or voice.is_speaking:
+        return ""
+
+    # If the microphone is MUTED from the UI, completely close the audio stream 
+    # so the Windows 11 Privacy Icon disappears completely from the taskbar.
+    if state and not state.listening_status:
+        if _persistent_source is not None:
+            try:
+                _persistent_source.__exit__(None, None, None)
+            except Exception:
+                pass
+            _persistent_source = None
         return ""
 
     try:
@@ -42,6 +53,7 @@ def listen(state=None):
 
     try:
         if _persistent_source is None:
+            logger.warning("[LISTEN-DEBUG] Creating NEW microphone source!")
             _persistent_source = sr.Microphone()
             _persistent_source.__enter__()
         
@@ -64,15 +76,24 @@ def listen(state=None):
             if not is_ptt:
                 # ── CONTINUOUS LISTENING MODE ─────────────────────────────
                 logger.debug("LISTEN", f"Continuous listening active (Threshold: {int(_recognizer.energy_threshold)})...")
-                try:
-                    audio = _recognizer.listen(
-                        source,
-                        timeout=conf.get("silence_timeout", 5),
-                        phrase_time_limit=conf.get("phrase_limit", 15)
-                    )
-                    logger.debug("LISTEN", "Phrase captured. Processing...")
-                except sr.WaitTimeoutError:
-                    return ""
+                while True:
+                    if (state and state.system_speaking) or voice.is_speaking:
+                        return ""
+                    if state and (not state.listening_status or state.push_to_talk):
+                        return ""
+                        
+                    try:
+                        audio = _recognizer.listen(
+                            source,
+                            timeout=conf.get("silence_timeout", 5),
+                            phrase_time_limit=conf.get("phrase_limit", 15)
+                        )
+                        logger.debug("LISTEN", "Phrase captured. Processing...")
+                        break
+                    except sr.WaitTimeoutError:
+                        # Instead of returning to threads.py (which sleeps 0.2s and causes Windows to flicker the mic icon),
+                        # we immediately loop and listen again, keeping the audio stream constantly fed.
+                        continue
             else:
                 # ── PTT MODE ─────────────────────────────────────────────
                 # The ptt_bus manages all input sources (keyboard, media keys,
@@ -81,13 +102,13 @@ def listen(state=None):
 
                 # Wait for PTT to activate (from any source)
                 while not ptt_bus.ptt_active:
-                    time.sleep(0.03)
-                    
                     # DRAIN THE AUDIO STREAM to prevent PyAudio IOError (Input Overflow)
-                    # If we don't read while waiting, the OS buffer fills up and crashes on the first read.
+                    # We rely on stream.read() to block (approx 64ms per CHUNK), inherently throttling the loop.
+                    # This prevents Windows 11 from detecting the audio session as "Inactive" which causes flickering.
                     try:
-                        source.stream.read(source.CHUNK)
+                        source.stream.read(source.CHUNK, exception_on_overflow=False)
                     except Exception:
+                        time.sleep(0.01)
                         pass
                         
                     if (state and state.system_speaking) or voice.is_speaking:
@@ -146,6 +167,7 @@ def listen(state=None):
                 
         except Exception as inner_e:
             # If the stream died (e.g. device disconnected), reset the source
+            logger.warning(f"[LISTEN-DEBUG] Destroying mic due to inner exception: {inner_e}")
             _persistent_source.__exit__(None, None, None)
             _persistent_source = None
             raise inner_e
@@ -153,6 +175,7 @@ def listen(state=None):
     except Exception as e:
         if "device" not in str(e).lower() and "UnknownValueError" not in str(e):
             logger.error(f"[LISTEN] Recognition error: {e}")
+            logger.warning("[LISTEN-DEBUG] Destroying mic due to outer exception!")
             _persistent_source = None
         return ""
 

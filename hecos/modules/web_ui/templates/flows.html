@@ -196,6 +196,18 @@
   </div>
 </div>
 
+<!-- ── Confirm Modal ───────────────────────────────────────────── -->
+<div id="confirm-modal-bg" class="modal-bg" style="z-index:9999;">
+  <div class="modal-content" style="max-width:400px; text-align:center;">
+    <h2 style="margin-top:0;"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a;"></i> Conferma</h2>
+    <p id="confirm-modal-text" style="margin:20px 0;">Sei sicuro?</p>
+    <div class="modal-actions" style="justify-content:center; gap: 15px;">
+      <button class="btn-cancel" onclick="document.getElementById('confirm-modal-bg').style.display='none'">Annulla</button>
+      <button class="btn-save" style="background:#ff4a4a; color:white; border:none;" id="confirm-modal-yes">Elimina</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Toast container ───────────────────────────────────────────── -->
 <div id="flows-toast"></div>
 

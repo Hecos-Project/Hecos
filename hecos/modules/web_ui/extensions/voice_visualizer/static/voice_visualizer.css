@@ -1,0 +1,330 @@
+/* ═══════════════════════════════════════════════════════════════
+   Voice Visualizer Widget — Retro 80s Style
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+/* ── Card Shell ─────────────────────────────────────────────── */
+.vv-card {
+    padding: 12px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    user-select: none;
+    height: 100%;
+    justify-content: center;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.vv-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.vv-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.vv-controls select {
+    font-size: 10px !important;
+    padding: 4px 6px !important;
+    background: var(--bg3) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 4px !important;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+}
+.vv-controls select optgroup {
+    background: var(--bg2);
+    color: var(--muted);
+    font-style: normal;
+}
+.vv-controls select option {
+    background: var(--bg3);
+    color: var(--text);
+}
+
+/* ── Stage ──────────────────────────────────────────────────── */
+.vv-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    width: 100%;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   KITT SCANNER
+   ════════════════════════════════════════════════════════════════ */
+.kitt-chassis {
+    position: relative;
+    width: 100%;
+    background: #050505;
+    border: 2px solid #1a1a1a;
+    border-radius: 6px;
+    padding: 12px 14px 18px;
+    box-shadow: 0 0 15px rgba(255, 30, 0, 0.2), inset 0 0 25px rgba(0,0,0,0.9);
+    overflow: hidden;
+}
+
+.kitt-grill {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 4px;
+    height: 70px;
+    position: relative;
+}
+
+.kitt-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: #1a0000;
+    transition: height 0.08s ease, background 0.08s ease, box-shadow 0.08s ease;
+    min-height: 6px;
+    height: 6px;
+    --bar-active: #ff2200;
+    --bar-glow: rgba(255,34,0,0.75);
+}
+
+.kitt-bar.active {
+    background: var(--bar-active);
+    box-shadow: 0 0 8px var(--bar-glow), 0 0 3px #fff;
+}
+
+.kitt-scanner-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 24px;
+    background: linear-gradient(90deg, transparent, rgba(255,34,0,0.3), rgba(255,80,0,0.8), rgba(255,34,0,0.3), transparent);
+    border-radius: 4px;
+    left: 0;
+    animation: kitt-sweep 1.2s ease-in-out infinite;
+    animation-play-state: paused;
+    opacity: 0;
+}
+
+.kitt-scanner-line.running {
+    animation-play-state: running;
+    opacity: 1;
+}
+
+@keyframes kitt-sweep {
+    0%   { left: 0%; }
+    50%  { left: calc(100% - 24px); }
+    100% { left: 0%; }
+}
+
+.kitt-label {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #550000;
+    margin-top: 10px;
+    transition: color 0.3s;
+    font-weight: bold;
+}
+.kitt-label.active {
+    color: #ff3300;
+    text-shadow: 0 0 8px #ff3300;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   CLASSIC EQ BARS
+   ════════════════════════════════════════════════════════════════ */
+.eq-chassis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 100px;
+    width: 100%;
+    background: #000;
+    border: 2px solid #111;
+    border-radius: 6px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+    padding: 0 20px;
+}
+
+.eq-bar {
+    flex: 1;
+    max-width: 18px;
+    height: 10px; /* idle height */
+    background: linear-gradient(to top, #00ff00, #ffff00, #ff0000);
+    border-radius: 2px;
+    transition: height 0.08s ease, opacity 0.1s ease;
+    opacity: 0.3;
+    /* We use JS to set height directly */
+}
+.eq-bar.active {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(0,255,0,0.4);
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   SINE WAVE (Oscilloscope)
+   ════════════════════════════════════════════════════════════════ */
+.sine-chassis {
+    position: relative;
+    background: #001100;
+    border: 2px solid #002200;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.9), 0 0 10px rgba(0, 255, 0, 0.1);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#sine-canvas {
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    display: block;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   PULSING ORB
+   ════════════════════════════════════════════════════════════════ */
+.orb-chassis {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.orb-core {
+    width: 30px;
+    height: 30px;
+    background: #550000;
+    border-radius: 50%;
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s;
+    z-index: 10;
+}
+.orb-core.active {
+    background: #ff0000;
+    box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+}
+
+.orb-ring {
+    position: absolute;
+    border: 2px solid #ff0000;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Animations added via JS class toggling */
+@keyframes orb-ripple {
+    0% {
+        width: 30px;
+        height: 30px;
+        opacity: 0.8;
+        border-width: 3px;
+    }
+    100% {
+        width: 120px;
+        height: 120px;
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+.orb-ring.ripple-anim {
+    animation: orb-ripple 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   PIXELATED MOUTH
+   ════════════════════════════════════════════════════════════════ */
+.mouth-frame {
+    position: relative;
+    background: #000;
+    border: 2px solid #111;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.15), inset 0 0 20px rgba(0,0,0,0.8);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+#mouth-canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+}
+
+.mouth-crt-overlay {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.2) 3px,
+        rgba(0,0,0,0.2) 4px
+    );
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+
+/* ── Status ─────────────────────────────────────────────────── */
+.vv-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    margin-top: auto;
+}
+
+.vv-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.vv-status.active {
+    opacity: 1;
+    color: var(--accent);
+}
+.vv-status.active .vv-dot {
+    background: var(--accent);
+    box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.9);
+    animation: vv-pulse 0.8s ease-in-out infinite;
+}
+
+@keyframes vv-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}

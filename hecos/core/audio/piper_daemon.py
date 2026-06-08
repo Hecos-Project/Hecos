@@ -220,12 +220,18 @@ class PiperDaemon:
                         except: break
 
                 # Wait for inference (extremely fast because model is already in RAM)
-                self._synth_complete_event.wait(5.0)
+                # Note: changed from 5.0s to 30.0s because long sentences on slow GPUs/CPUs
+                # can easily take more than 5s, leading to EOFError (file empty/incomplete).
+                waited = self._synth_complete_event.wait(30.0)
 
                 if self._stop_flag: break
                 
+                if not waited:
+                    logger.error("PIPER_DAEMON", "Timeout waiting for TTS chunk synthesis.")
+                    continue
+                
                 # Play chunk synchronously
-                if SOUNDDEVICE_AVAILABLE and os.path.exists(tmp_wav):
+                if SOUNDDEVICE_AVAILABLE and os.path.exists(tmp_wav) and os.path.getsize(tmp_wav) > 44:
                     try:
                         with wave.open(tmp_wav, 'rb') as wf:
                             frames = wf.readframes(wf.getnframes())
@@ -233,9 +239,13 @@ class PiperDaemon:
                             pcm = np.frombuffer(frames, dtype="int16")
                             # Blocking play
                             sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
+                    except EOFError:
+                        logger.error("PIPER_DAEMON", "EOFError: generated wav file is empty or corrupted.")
                     except Exception as e:
                         import traceback
                         logger.error("PIPER_DAEMON", f"Playback chunk error: {repr(e)}\n{traceback.format_exc()}")
+                elif not os.path.exists(tmp_wav) or os.path.getsize(tmp_wav) <= 44:
+                    logger.error("PIPER_DAEMON", "Generated wav file is missing or too small (empty).")
 
                 # Cleanup temp wav
                 try:

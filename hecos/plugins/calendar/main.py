@@ -21,7 +21,9 @@ class CalendarTools:
 
     def add_event(self, title: str, start: str, end: str = None,
                   all_day: bool = False, notes: str = None, color: str = None) -> str:
-        """Creates a new calendar event. Returns a confirmation string."""
+        """Creates a new calendar event.
+        IMPORTANT: 'start' and 'end' MUST be in ISO 8601 format (e.g. '2026-06-07T18:00:00').
+        Do NOT use natural language like 'oggi', 'tomorrow', or 'stasera'. You are an AI, compute the correct ISO date based on the user's request and the current datetime."""
         from hecos.plugins.calendar import store
         try:
             start_iso = self._parse_date(start)

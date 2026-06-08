@@ -105,6 +105,24 @@ if %errorlevel% neq 0 (
     echo  ^|                                                  ^|
     echo  +--------------------------------------------------+
     echo.
+    echo  [*] Checking for Tesseract OCR...
+    if exist "C:\Program Files\Tesseract-OCR\tesseract.exe" (
+        echo  [+] Tesseract OCR found.
+    ) else (
+        echo  [-] Tesseract OCR not found in default path ^(C:\Program Files\Tesseract-OCR\tesseract.exe^).
+        echo      If you want to use the text-clicking features, please install it from:
+        echo      https://github.com/UB-Mannheim/tesseract/wiki
+    )
+    echo.
+    echo  [*] Checking for Microsoft Visual C++ Redistributable...
+    reg query "HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" /v Installed >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo  [+] Microsoft Visual C++ Redistributable found.
+    ) else (
+        echo  [-] Microsoft Visual C++ Redistributable might be missing.
+        echo      Please install it if you experience issues running Hecos.
+    )
+    echo.
     echo  HOW TO START HECOS:
     echo.
     echo  1. Look at the BOTTOM-RIGHT corner of your taskbar

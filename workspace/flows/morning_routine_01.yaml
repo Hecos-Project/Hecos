@@ -1,0 +1,68 @@
+id: morning_routine_01
+name: Morning routine 01
+trigger:
+  type: manual
+pipeline:
+- id: audio__play_alarm_2
+  action: AUDIO__play_alarm
+  params:
+    sound: ''
+- id: audio__speak_1
+  action: AUDIO__speak
+  params:
+    text: Questa è la routine del mattino 01
+  depends_on:
+  - audio__play_alarm_2
+- id: system__chat_message_1
+  action: SYSTEM__chat_message
+  params:
+    text: ''
+  depends_on:
+  - audio__speak_1
+- id: audio__speak_2
+  action: AUDIO__speak
+  params:
+    text: Iniziamo con le notizie di oggi
+  depends_on:
+  - system__chat_message_1
+- id: Notizie della giornata
+  action: AI__prompt
+  params:
+    prompt: 'Cerca su internet le 3 notizie piu importanti della giornata, riassumile
+      brevemente in tre righe. '
+    save_to_chat: true
+  output_as: notizie1
+  depends_on:
+  - audio__speak_2
+- id: audio__speak_3
+  action: AUDIO__speak
+  params:
+    text: '{{ notizie1 }}'
+  depends_on:
+  - Notizie della giornata
+- id: audio__speak_4
+  action: AUDIO__speak
+  params:
+    text: Ora controlliamo il meteo!
+  depends_on:
+  - audio__speak_3
+- id: weather__get_weather_forecast_1
+  action: WEATHER__get_weather_forecast
+  output_as: tempo1
+  depends_on:
+  - audio__speak_4
+- id: system__chat_message_2
+  action: SYSTEM__chat_message
+  params:
+    text: '{{ tempo1 }}'
+  depends_on:
+  - weather__get_weather_forecast_1
+- id: audio__speak_5
+  action: AUDIO__speak
+  params:
+    text: Buona giornata!
+  depends_on:
+  - system__chat_message_2
+_meta:
+  created_at: '2026-06-08T07:28:13.772859'
+  updated_at: '2026-06-08T07:38:59.076053'
