@@ -77,6 +77,14 @@ def install_dependencies():
     cmd = [sys.executable, "-m", "pip", "install"] + packages
     try:
         subprocess.check_call(cmd)
+        
+        # Install Playwright Chromium binaries automatically
+        try:
+            print("[*] Installing Playwright browser binaries...")
+            subprocess.check_call([sys.executable, "-m", "playwright", "install", "chromium"])
+        except Exception as e:
+            print(f"[-] Warning: Failed to install Playwright binaries: {e}")
+            
         return True
     except Exception as e:
         print(f"[-] Error: {e}")

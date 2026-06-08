@@ -16,7 +16,7 @@ pipeline:
 - id: system__chat_message_1
   action: SYSTEM__chat_message
   params:
-    text: ''
+    text: Buongiorno. Questa è la routine del mattino 01
   depends_on:
   - audio__speak_1
 - id: audio__speak_2
@@ -65,4 +65,4 @@ pipeline:
   - system__chat_message_2
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-08T11:29:50.027583'
+  updated_at: '2026-06-08T11:42:15.197036'
