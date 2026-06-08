@@ -407,7 +407,7 @@ def _auto_register_hecos_modules():
         from hecos.core.system import module_loader
         from hecos.core.system.module_loader import get_plugin_module
 
-        registry_path = module_loader._get_registry_path()
+        registry_path = module_loader.REGISTRY_PATH
         import json, os
         if not os.path.exists(registry_path):
             return
