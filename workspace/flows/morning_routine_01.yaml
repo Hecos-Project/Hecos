@@ -3,10 +3,16 @@ name: Morning routine 01
 trigger:
   type: manual
 pipeline:
-- id: audio__play_alarm_2
+- id: audio__play_alarm_22
   action: AUDIO__play_alarm
   params:
     sound: universfield-error-011-352286 (1).mp3
+- id: audio__play_alarm_2
+  action: AUDIO__play_alarm
+  params:
+    sound: ''
+  depends_on:
+  - audio__play_alarm_22
 - id: audio__speak_1
   action: AUDIO__speak
   params:
@@ -19,12 +25,22 @@ pipeline:
     text: Buongiorno. Questa è la routine del mattino 01
   depends_on:
   - audio__speak_1
+- id: live chat sound 111
+  action: AUDIO__play_alarm
+  params: &id001
+    sound: live-chat-353605.mp3
+  depends_on: &id002
+  - system__chat_message_1
+- id: live chat sound 1
+  action: AUDIO__play_alarm
+  params: *id001
+  depends_on: *id002
 - id: audio__speak_2
   action: AUDIO__speak
   params:
     text: Iniziamo con le notizie di oggi
   depends_on:
-  - system__chat_message_1
+  - live chat sound 1
 - id: Notizie della giornata
   action: AI__prompt
   params:
@@ -63,7 +79,13 @@ pipeline:
     text: Buona giornata!
   depends_on:
   - system__chat_message_2
+- id: system__chat_message_3
+  action: SYSTEM__chat_message
+  params:
+    text: 'E adesso, cosa vuoi fare? '
+  depends_on:
+  - audio__speak_5
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-08T13:24:47.335561'
+  updated_at: '2026-06-08T13:41:58.441234'
   last_run: '2026-06-08T13:24:47.322597'
