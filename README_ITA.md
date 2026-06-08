@@ -109,6 +109,23 @@ Se desideri che Hecos giri completamente in background senza alcuna finestra di 
 
 ---
 
+## 🛠️ Requisiti di Sistema Essenziali (Windows)
+Se hai appena reinstallato Windows o stai configurando Hecos per la prima volta, devi installare questi pacchetti di sistema **fondamentali** affinché tutti i moduli funzionino correttamente:
+
+1. ⚙️ **Microsoft Visual C++ Redistributable (Obbligatorio)**
+   - *A cosa serve*: Richiesto dal motore di Memoria RAG (ONNX/FastEmbed). Senza questo pacchetto riceverai errori relativi a DLL mancanti e la ricerca sui documenti non funzionerà.
+   - *Download*: 👉 [Scarica VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+
+2. 🎵 **VLC Media Player 64-bit (Obbligatorio)**
+   - *A cosa serve*: Il motore Audio e il Media Player integrato di Hecos utilizzano le librerie di VLC in background per riprodurre musica, allarmi e l'output vocale TTS.
+   - *Download*: 👉 [Scarica VLC 64-bit](https://www.videolan.org/vlc/download-windows.html)
+
+3. 👁️ **Tesseract OCR (Consigliato per la Visione)**
+   - *A cosa serve*: Necessario per le capacità visive avanzate e per leggere il testo sullo schermo tramite OCR (`pytesseract`). 
+   - *Download*: 👉 [Scarica Tesseract OCR per Windows](https://github.com/UB-Mannheim/tesseract/wiki)
+
+---
+
 ## 🧠 Backend AI Supportati (Motori LLM)
 
 Hecos è completamente offline di default e richiede un motore AI locale per elaborare logica e conversazione. Durante il setup iniziale, devi installare uno dei backend indipendenti qui sotto. Hecos li rileverà automaticamente.

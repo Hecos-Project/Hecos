@@ -72,7 +72,7 @@ class WebTools:
         """
         return fetch_page_content_tool(url, self.tag, max_chars_override=max_chars_override)
 
-    def search_and_read(self, query: str, max_results: int = 3) -> str:
+    def search_and_read(self, query: str, max_results: int = 3, **kwargs) -> str:
         """
         Searches the web using DuckDuckGo and reads the text content of the top results.
         Use this when you need CURRENT information, facts, news, prices, or live data.
@@ -80,6 +80,8 @@ class WebTools:
         :param query: The search terms (e.g., 'Python 3.13 new features', 'weather Rome today').
         :param max_results: How many pages to read (1–5). Default: 3.
         """
+        if 'num_results' in kwargs:
+            max_results = kwargs['num_results']
         return search_and_read_tool(query, self.tag, max_results=max_results)
 
     def get_clipboard(self) -> str:
