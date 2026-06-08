@@ -10,6 +10,7 @@
     "commands": {
         "run_python_code": "Execute Python safely in AST sandbox.",
         "execute_shell_command": "Run shell commands (cmd/bash).",
+        "execute_background_command": "Run shell commands in background for long tasks.",
         "get_time": "Current local time and date.",
         "get_date": "Current local date.",
         "get_battery_status": "Device battery level and charging state.",
@@ -47,6 +48,20 @@
                     "type": "object",
                     "properties": {
                         "command": { "type": "string", "description": "The shell command to run." }
+                    },
+                    "required": ["command"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__execute_background_command",
+                "description": "Runs a shell command in the background without blocking. Ideal for heavy operations like installations, downloads, or long tasks. Returns the PID and the path to a log file where the output is being written.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "command": { "type": "string", "description": "The shell command to run in background." }
                     },
                     "required": ["command"]
                 }

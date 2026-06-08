@@ -81,6 +81,7 @@
         "commands": {
             "run_python_code": "Execute Python safely in AST sandbox.",
             "execute_shell_command": "Run shell commands (cmd/bash).",
+            "execute_background_command": "Run shell commands in background for long tasks.",
             "get_time": "Current local time and date.",
             "get_date": "Current local date.",
             "get_battery_status": "Device battery level and charging state.",

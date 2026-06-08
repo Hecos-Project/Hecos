@@ -16,8 +16,8 @@ except ImportError:
 
 # Relative imports from our extracted modules
 from .sys_tools import (
-    get_time_tool, get_date_tool, get_battery_status_tool, 
-    list_processes_tool, kill_process_tool, reboot_system_tool, execute_shell_command_tool
+    list_processes_tool, kill_process_tool, reboot_system_tool, execute_shell_command_tool,
+    execute_background_command_tool
 )
 from .sandbox import run_python_code_tool
 from .file_manager import (
@@ -75,6 +75,9 @@ class ExecutorTools:
     def execute_shell_command(self, command: str) -> str:
         return execute_shell_command_tool(command, self.tag)
 
+    def execute_background_command(self, command: str) -> str:
+        return execute_background_command_tool(command, self.tag)
+
     # ── Code Sandbox ──────────────────────────────────────────────────────────
 
     def run_python_code(self, code: str) -> str:
@@ -111,6 +114,7 @@ def info():
         "commands": {
             "run_python_code": "Execute Python safely in AST sandbox.",
             "execute_shell_command": "Run shell commands (cmd/bash).",
+            "execute_background_command": "Run shell commands in background for long tasks.",
             "get_time": "Current local time and date.",
             "get_date": "Current local date.",
             "get_battery_status": "Device battery level and charging state.",

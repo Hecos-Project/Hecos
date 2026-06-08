@@ -139,3 +139,40 @@ def execute_shell_command_tool(command: str, tag: str) -> str:
         AgentTracer.emit_action(tag, command, err_msg)
         return err_msg
 
+def execute_background_command_tool(command: str, tag: str) -> str:
+    """
+    Executes a shell command in the background, writing output to a log file.
+    Use for long-running installations or tasks.
+    """
+    cfg = ConfigManager()
+    if not cfg.get_plugin_config(tag, "enable_shell_commands", True):
+        return "Error: Shell commands are disabled in configuration."
+    try:
+        import uuid
+        log_dir = os.path.abspath(os.path.join(os.getcwd(), "hecos", "logs", "background_tasks"))
+        os.makedirs(log_dir, exist_ok=True)
+        task_id = str(uuid.uuid4())[:8]
+        log_file = os.path.join(log_dir, f"cmd_log_{task_id}.txt")
+        
+        # Open log file
+        f = open(log_file, "w", encoding="utf-8")
+        f.write(f"--- Background Task Started ---\nCommand: {command}\n\n")
+        f.flush()
+        
+        # Start background process
+        # On Windows, we use CREATE_NO_WINDOW if possible, or just regular Popen
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+        
+        proc = subprocess.Popen(
+            command, shell=True, stdout=f, stderr=subprocess.STDOUT, text=True, **kwargs
+        )
+        
+        msg = f"Background command started successfully.\nPID: {proc.pid}\nLog file: {log_file}\n\nYou can use the read_file tool later to check the progress or outcome."
+        AgentTracer.emit_action(tag, command, msg)
+        return msg
+    except Exception as e:
+        err_msg = f"Failed to start background command: {e}"
+        AgentTracer.emit_action(tag, command, err_msg)
+        return err_msg
