@@ -29,7 +29,8 @@ except ImportError:
     pass
 
 _singleton_socket = None
-STATUS_POLL_INTERVAL = 3
+_STATUS_POLL_NORMAL  = 3    # seconds between checks when stable
+_STATUS_POLL_STARTUP = 1    # seconds between checks while waiting for server to come up
 
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
@@ -39,9 +40,15 @@ def _monitor_status(icon: "pystray.Icon"):
     while True:
         try:
             settings = load_settings()
-            online = is_hecos_running()
-            
-            # ── Update cached CDP status so build_menu() never blocks ─────────
+
+            # ── Single source of truth for the icon: TCP port reachable ─────
+            # is_hecos_online() uses a 2s socket timeout; fast, no HTTP overhead.
+            # This matches exactly what refresh_ui() checks, so there is never a
+            # mismatch between the icon colour and the actual server state.
+            from hecos.tray.network_utils import is_hecos_online as _is_online
+            online = _is_online()
+
+            # ── Update cached CDP status so build_menu() never blocks ────────
             cdp_port = _get_cdp_port()
             set_cdp_alive(is_ai_ready_browser_running(cdp_port))
             # ─────────────────────────────────────────────────────────────────
@@ -50,14 +57,13 @@ def _monitor_status(icon: "pystray.Icon"):
             if online and not was_online:
                 play_beep(400, 100)
                 play_beep(600, 150)
-                
+
                 # Auto-open/refresh WebUI
                 if settings.get("autoopen_webui", True):
                     from hecos.tray.browser_manager import intelligent_open_webui
-                    # Wait for server to be fully ready
                     time.sleep(1.0)
                     intelligent_open_webui(icon, None)
-                
+
                 # Auto-open/refresh AI Browser (Headless/Integrated)
                 if settings.get("autoopen_ai_browser", False):
                     from hecos.tray.browser_manager import intelligent_open_ai_browser
@@ -77,13 +83,15 @@ def _monitor_status(icon: "pystray.Icon"):
                             elif startup_url.startswith("https://") and real_scheme == "http":
                                 startup_url = startup_url.replace("https://", "http://", 1)
                         launch_ai_ready_browser(cdp_port=cdp_port, startup_url=startup_url)
-                    
+
             # Auto-start service if the toggle says it should be running
-            if settings["start_hecos_on_launch"] and not online and not attempted_start:
+            # (use is_hecos_running() here — process check is enough for start logic)
+            if settings["start_hecos_on_launch"] and not is_hecos_running() and not attempted_start:
                 attempted_start = True
                 print("[TRAY] start_hecos_on_launch=True but offline — starting Hecos subprocess…")
                 threading.Thread(target=start_hecos, daemon=True).start()
 
+            # Refresh icon/menu only on state change (prevents flickering)
             if first_run or online != was_online:
                 refresh_ui(icon)
                 first_run = False
@@ -93,7 +101,11 @@ def _monitor_status(icon: "pystray.Icon"):
         except Exception as e:
             pass
 
-        time.sleep(STATUS_POLL_INTERVAL)
+        # Poll fast (1s) while offline/starting so the icon turns green quickly.
+        # Once stable and online, slow down to avoid unnecessary CPU/network load.
+        poll_interval = _STATUS_POLL_STARTUP if not online else _STATUS_POLL_NORMAL
+        time.sleep(poll_interval)
+
 
 
 def run_tray():

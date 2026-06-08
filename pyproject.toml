@@ -32,6 +32,10 @@ dependencies = [
     "SpeechRecognition",
     "PyAudio",
     "fastembed",
+    "sounddevice",
+    "pygame",
+    "GPUtil",
+    "numpy",
 ]
 
 [project.optional-dependencies]

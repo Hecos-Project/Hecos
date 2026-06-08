@@ -217,34 +217,65 @@ def _setup_audio_wrappers():
         return text
 
     def _audio_play_alarm(sound: str = "default"):
+        import os
+        import time
+
+        base_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
         try:
             if not sound or sound == "default":
                 from hecos.core.audio import beep_generator
                 beep_generator._play_beep_on_device(None)
-            else:
-                import os
-                import time
-                import contextlib
-                with contextlib.redirect_stdout(None):
-                    import pygame
+                return True
 
-                base_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-                path = os.path.join(base_dir, "assets", "sounds", sound)
-                
-                if not os.path.exists(path):
-                    log.error(f"Cannot play alarm, file not found: {path}")
-                    from hecos.core.audio import beep_generator
-                    beep_generator._play_beep_on_device(None)
-                    return False
+            path = os.path.join(base_dir, "assets", "sounds", sound)
 
-                if not pygame.mixer.get_init():
-                    pygame.mixer.init()
-                    
-                pygame.mixer.music.load(path)
-                pygame.mixer.music.play()
-                while pygame.mixer.music.get_busy():
-                    time.sleep(0.1)
-                    
+            if not os.path.exists(path):
+                log.error(f"Cannot play alarm, file not found: {path}")
+                from hecos.core.audio import beep_generator
+                beep_generator._play_beep_on_device(None)
+                return False
+
+            played = False
+
+            # Strategy 1: sounddevice + wave (headless-safe, no display required)
+            if path.lower().endswith(".wav"):
+                try:
+                    import wave
+                    import numpy as np
+                    import sounddevice as sd
+                    with wave.open(path, 'rb') as wf:
+                        raw = wf.readframes(wf.getnframes())
+                        data = np.frombuffer(raw, dtype=np.int16)
+                        sd.play(data.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
+                    played = True
+                except Exception as e_sd:
+                    log.debug(f"[Flows.Alarm] sounddevice failed ({e_sd}), trying pygame...")
+
+            # Strategy 2: pygame.mixer (works for mp3/wav/ogg, no display needed)
+            if not played:
+                try:
+                    import pygame.mixer as mixer
+                    if not mixer.get_init():
+                        mixer.init()
+                    mixer.music.load(path)
+                    mixer.music.play()
+                    while mixer.music.get_busy():
+                        time.sleep(0.1)
+                    played = True
+                except Exception as e_pg:
+                    log.warning(f"[Flows.Alarm] pygame.mixer failed ({e_pg}), trying winsound...")
+
+            # Strategy 3: winsound (Windows-only, WAV only, last resort)
+            if not played:
+                try:
+                    import winsound
+                    if path.lower().endswith(".wav"):
+                        winsound.PlaySound(path, winsound.SND_FILENAME)
+                        played = True
+                except Exception as e_ws:
+                    log.error(f"[Flows.Alarm] All playback strategies failed. Last error: {e_ws}")
+
         except Exception as e:
             log.error(f"Cannot play alarm: {e}")
         return True
