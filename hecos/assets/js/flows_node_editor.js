@@ -53,7 +53,7 @@ function _applyNodeData(node) {
   
   let paramsStr = props.params || '{}';
   try {
-    const obj = JSON.parse(paramsStr);
+    let obj = typeof paramsStr === 'string' ? JSON.parse(paramsStr) : paramsStr;
     paramsStr = Object.keys(obj).length ? jsyaml.dump(obj) : '';
   } catch(e) {}
   document.getElementById('ne-params').value = paramsStr;
