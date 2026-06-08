@@ -72,7 +72,19 @@ def launch(headless: bool = False, block_ads: bool = True, timeout: int = 10000,
             logger.debug(f"[BROWSER] Already connected (Mode: {mode}).")
             return True
             
-        _PW_INSTANCE = sync_playwright().start()
+        if not _PW_INSTANCE:
+            _PW_INSTANCE = sync_playwright().start()
+        
+        import socket
+        def is_port_open(p):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.1)
+                return s.connect_ex(('127.0.0.1', p)) == 0
+
+        # Auto-detect: if CDP port is open, prioritize it over app_mode
+        if mode != "cdp_mode" and is_port_open(cdp_port):
+            logger.info(f"[BROWSER] CDP port {cdp_port} is open! Automatically upgrading to cdp_mode.")
+            mode = "cdp_mode"
         
         if mode == "cdp_mode":
             # Connect to existing Chrome instance via CDP
@@ -91,12 +103,13 @@ def launch(headless: bool = False, block_ads: bool = True, timeout: int = 10000,
                 _LAST_ERROR = (
                     f"CDP Takeover failed: Chrome must be launched with "
                     f"'--remote-debugging-port={cdp_port}'. "
-                    f"Use the '🤖 Open AI-Ready Chrome' button in the tray icon. Details: {cdp_e}"
+                    f"Details: {cdp_e}"
                 )
                 logger.error(f"[BROWSER] ❌ CDP connection failed on port {cdp_port}: {cdp_e}")
-                logger.warning(f"[BROWSER] Hint: Launch Chrome via the tray icon '🤖 Open AI-Ready Chrome' to enable CDP mode.")
-                return False
-        else:
+                logger.info(f"[BROWSER] Falling back to standard app_mode...")
+                mode = "app_mode"
+
+        if mode != "cdp_mode":
             # Standard background isolated Chromium
             try:
                 _ensure_chromium(_PW_INSTANCE)
