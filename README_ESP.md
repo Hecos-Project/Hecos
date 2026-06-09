@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.27.3 (Runtime Alpha)
+# Hecos - Versión 0.27.4 (Runtime Alpha)
 Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ES
 
 ---
 
-> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.27.3`. Es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
+> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.27.4`. Es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local que une el razonamiento de IA con la ejecución del sistema a nivel root y redes avanzadas. Transforma el hardware local en una entidad digital soberana a través un tablero profesional y una infraestructura de seguridad avanzada.
@@ -21,11 +21,11 @@ Basado en tres pilares fundamentales:
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea.
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada.
 
-Ahora completamente migrato a una **arquitectura estable de Runtime Alpha**, Hecos 0.27.3 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
+Ahora completamente migrato a una **arquitectura estable de Runtime Alpha**, Hecos 0.27.4 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local.
 
 ---
 
-## ✨ Características Principales (v0.27.3)
+## ✨ Características Principales (v0.27.4)
 * ⚙️ **Motor de Automatización Flows** — Editor visual interactivo para crear flujos automatizados complejos con integraciones directas a comandos de voz (NLP).
 * **📅 Calendario Integrado** — Módulo de calendario completo con seguimiento de días festivos y codificación de colores localizada de los eventos.
 * **⏰ Módulo Recordatorio** — Planificador de tareas impulsado por NLP con capacidades de repetición (snooze) y notificaciones activas del SO.
@@ -51,7 +51,7 @@ Ahora completamente migrato a una **arquitectura estable de Runtime Alpha**, Hec
 ---
 
 ## 🧠 Cómo Funciona
-**Hecos está actualmente en `v0.26.0`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
+**Hecos está actualmente en `v0.27.4`.** Este repositorio contiene el motor, el backend, los módulos de razonamiento de IA y la WebUI nativa principal.
 * **Plugins** → Acciones y capacidades (sistema, web, multimedia, etc.).
 * **Memory** → Identidad y almacenamiento persistente.
 * **UI** → Capa de interacción con el usuario.

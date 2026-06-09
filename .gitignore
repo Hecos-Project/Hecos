@@ -315,5 +315,6 @@ hecos/memory/chat_exports/
 # Block user generated automations and flows
 workspace/flows/*
 !workspace/flows/morning_routine_01.yaml
+!workspace/flows/onboarding.yaml
 !workspace/flows/.gitkeep
 

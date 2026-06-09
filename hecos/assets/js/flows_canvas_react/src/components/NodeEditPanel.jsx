@@ -139,8 +139,14 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
 
   const handleSave = () => {
     const depsArray = dependsOn.split(',').map(s => s.trim()).filter(Boolean);
+    const finalStepId = stepId.trim() || node.id;
+    if (finalStepId !== node.id && allNodeIds.includes(finalStepId)) {
+      if (window.toast) window.toast('error', `Step ID '${finalStepId}' is already in use.`);
+      else alert(`Step ID '${finalStepId}' is already in use.`);
+      return;
+    }
     onSave(node.id, {
-      stepId: stepId.trim() || node.id,
+      stepId: finalStepId,
       action,
       params,
       outputAs: outputAs.trim(),

@@ -90,7 +90,38 @@ async function saveCurrentFlow() {
   if (typeof syncCanvasToYaml === 'function' && document.getElementById('tab-canvas').classList.contains('active')) {
     syncCanvasToYaml(); // Sync canvas to YAML before reading the value if we're on the canvas tab
   }
-  const yaml = cmEditor.getValue();
+  let yaml = cmEditor.getValue();
+
+  // Auto-deduplicate step IDs
+  if (typeof jsyaml !== 'undefined') {
+    try {
+      const flowObj = jsyaml.load(yaml);
+      if (flowObj && Array.isArray(flowObj.pipeline)) {
+        let changed = false;
+        let seen = new Set();
+        flowObj.pipeline.forEach((step, idx) => {
+          if (!step.id) { step.id = 'step_' + idx; changed = true; }
+          if (seen.has(step.id)) {
+            let baseId = String(step.id).replace(/(_copy\d*|\s\(\d+\)|\s\d+)$/, '').trim();
+            let count = 1;
+            let newId = baseId + ' ' + count;
+            while(seen.has(newId)) { count++; newId = baseId + ' ' + count; }
+            step.id = newId;
+            changed = true;
+          }
+          seen.add(step.id);
+        });
+        if (changed) {
+          yaml = jsyaml.dump(flowObj, { indent: 2, lineWidth: -1 });
+          const scrollInfo = cmEditor.getScrollInfo();
+          cmEditor.setValue(yaml);
+          cmEditor.scrollTo(scrollInfo.left, scrollInfo.top);
+          if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(flowObj);
+          toast('info', 'Auto-corrected duplicate step IDs.');
+        }
+      }
+    } catch(e) { console.warn("Deduplication error:", e); }
+  }
   try {
     const res = await fetch('/api/flows/save', {
       method:'POST', headers:{'Content-Type':'application/json'},

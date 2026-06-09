@@ -183,6 +183,13 @@ def intelligent_open_webui(icon, item):
                         if tab_id:
                             urllib.request.urlopen(f"http://localhost:{cdp_port}/json/activate/{tab_id}", timeout=2).read()
                         return # Exit, tab was found and activated
+            # If we reach here, the CDP browser is running but the tab is not open.
+            # We should open a new tab in the CDP browser instead of using webbrowser.open
+            req_url = f"http://localhost:{cdp_port}/json/new?{urllib.parse.quote(chat_url, safe=':/?&=')}"
+            req = urllib.request.Request(req_url, method="PUT")
+            urllib.request.urlopen(req, timeout=2).read()
+            return
+
         except Exception as e:
             print(f"[TRAY] CDP JSON scan failed: {e}")
     # ──────────────────────────────────────────────────────────────────────────
