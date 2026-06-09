@@ -143,14 +143,20 @@ window.initEvents = function() {
       }
 
     } else if (ev.type === 'chat_background_append') {
-      // ── Handler for messages injected out-of-band (e.g. by Flows engine) ──
+      // ── Handler for messages injected out-of-band (e.g. by Flows engine or cross-tab sync) ──
+      if (ev.tab_id && ev.tab_id === window.hecosTabId) return;
+      if (ev.session_id && window.chatHistoryState && window.chatHistoryState.activeSessionId && ev.session_id !== window.chatHistoryState.activeSessionId) return;
+
       if (window.hideWelcome) window.hideWelcome();
       
       const role = ev.role || 'assistant';
       const rawText = ev.message || '';
+
+      // If the AI finished speaking on another device, clean up any stale trace spinner here too
+      if (role !== 'user' && window.AgentUI) window.AgentUI.finalize();
       
       if (window.addBubble) {
-          window.addBubble(role === 'user' ? 'user' : 'ai', rawText);
+          window.addBubble(role === 'user' ? 'user' : 'ai', rawText, null, { persona_name: ev.persona_name });
       }
       if (window.chatHistory) {
           window.chatHistory.push({role: role, content: rawText});

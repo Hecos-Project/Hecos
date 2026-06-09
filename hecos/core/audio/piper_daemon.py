@@ -165,8 +165,8 @@ class PiperDaemon:
             logger.error("PIPER_DAEMON", f"IPC Write Error: {e}")
             return False
 
-        # Wait max 30s for the wav to be completed (long texts can take more time)
-        waited = self._synth_complete_event.wait(30.0)
+        # Wait max 120s for the wav to be completed (long texts can take more time)
+        waited = self._synth_complete_event.wait(120.0)
         return waited and os.path.exists(filepath)
 
     def speak(self, text: str, state=None):

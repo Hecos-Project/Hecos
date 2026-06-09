@@ -21,7 +21,19 @@ def _wait_and_respawn(proc):
     # If returned 42, it means the Web UI requested a reboot
     if getattr(proc, 'returncode', None) == 42:
         print("[ORCHESTRATOR] Hecos requested reboot (Exit 42). Respawning...")
-        time.sleep(1) # Extra buffer for port release
+        
+        # Wait up to 5 seconds for the port to release
+        for _ in range(10):
+            if not is_hecos_online():
+                break
+            time.sleep(0.5)
+            
+        # If it's still online (ghost process or TIME_WAIT), forcefully kill by port
+        if is_hecos_online():
+            print("[ORCHESTRATOR] Port still held after Exit 42, forcing kill...")
+            _kill_by_port()
+            time.sleep(1)
+            
         start_hecos()
 
 
@@ -135,5 +147,17 @@ def is_hecos_running() -> bool:
 def restart_hecos():
     """Stops the existing process and spawns a new one."""
     stop_hecos()
-    time.sleep(1) # Give port time to release
+    
+    # Wait up to 5 seconds for the port to release
+    for _ in range(10):
+        if not is_hecos_online():
+            break
+        time.sleep(0.5)
+        
+    if is_hecos_online():
+        print("[ORCHESTRATOR] Port still held after stop_hecos, forcing kill...")
+        _kill_by_port()
+        time.sleep(1)
+        
     start_hecos()
+

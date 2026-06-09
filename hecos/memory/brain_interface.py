@@ -208,16 +208,11 @@ def update_profile(key, value, user_id: str = "admin"):
 
 def save_message(role, message, config: dict = None, user_id: str = "admin",
                  session_id: str = None, persona_name: str = None,
-                 broadcast_sse: bool = False):
+                 broadcast_sse: bool = False, sender_tab_id: str = None):
     """Stores an exchange in episodic memory, respecting config flags and privacy mode.
     - incognito → discard entirely (no storage anywhere)
     - auto_wipe → store in RAM only (vanishes on restart)
     - normal    → persist in SQLite DB as usual
-    
-    broadcast_sse: if True, pushes a chat_background_append SSE event to connected browsers.
-                   This should ONLY be set by background threads (Flows, daemon tasks) that
-                   inject messages which are NOT already rendered by a streaming SSE response.
-                   Normal chat calls (brain.py, loop.py) should leave this False.
     """
     if not is_memory_enabled(config):
         return
@@ -254,20 +249,20 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
             )
             conn.commit()
 
-        # ── Broadcast to WebUI SSE listeners (background-only) ──
-        # Only triggered when broadcast_sse=True so normal streaming chat
-        # messages don't get double-rendered in the frontend.
-        if broadcast_sse:
-            try:
-                import sys
-                sm = getattr(sys, "hecos_state_manager", None)
-                if sm and hasattr(sm, "add_event"):
-                    sm.add_event("chat_background_append", {
-                        "role": role,
-                        "message": message
-                    })
-            except Exception as e:
-                logger.debug(f"[MEMORY] Could not broadcast background message: {e}")
+        # ── Broadcast to WebUI SSE listeners (cross-tab sync) ──
+        try:
+            import sys
+            sm = getattr(sys, "hecos_state_manager", None)
+            if sm and hasattr(sm, "add_event"):
+                sm.add_event("chat_background_append", {
+                    "role": role,
+                    "message": message,
+                    "session_id": session_id,
+                    "tab_id": sender_tab_id,
+                    "persona_name": persona_name
+                })
+        except Exception as e:
+            logger.debug(f"[MEMORY] Could not broadcast background message: {e}")
 
         session_manager.auto_limit_history(user_id=user_id)
         if session_id:

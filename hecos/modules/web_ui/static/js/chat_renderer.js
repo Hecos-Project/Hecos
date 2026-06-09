@@ -55,7 +55,15 @@ function addBubble(role, text, id, opts) {
 
   const nameEl = document.createElement('span');
   nameEl.className = 'msg-name';
-  nameEl.textContent = isUser ? (window.HecosUserName || 'User') : (window.HecosPersonaName || 'Hecos');
+  if (isUser) {
+    nameEl.textContent = window.HecosUserName || 'User';
+  } else {
+    // Use the persona_name frozen at write time (historical restore), else fall back to current
+    const frozenName = opts && opts.persona_name
+      ? opts.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '')
+      : null;
+    nameEl.textContent = frozenName || window.HecosPersonaName || 'Hecos';
+  }
 
   const timeEl = document.createElement('span');
   timeEl.className = 'msg-time';
@@ -108,14 +116,37 @@ window.openAvatarFull = function(src) {
 
 
 function renderMarkdown(text) {
-  let html = text
-    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/\n/g, '<br>');
+  let html = "";
+  
+  if (text) {
+    // Auto-correct AI's persistent markdown syntax mistake: !(path) -> ![Image](path)
+    text = text.replace(/!\(([^)]+)\)/g, '![Image]($1)');
     
-  if (typeof window.processAiImages === 'function') {
+    // Fix Windows paths and spaces inside markdown links so marked.js parses them correctly
+    text = text.replace(/(\[[^\]]*\]\()([^)]+)(\))/g, function(match, p1, p2, p3) {
+      let cleanUrl = p2.replace(/\\/g, '/');
+      if (cleanUrl.includes(' ')) {
+         cleanUrl = encodeURI(cleanUrl);
+      }
+      return p1 + cleanUrl + p3;
+    });
+  }
+  
+  if (typeof marked !== 'undefined') {
+    // Optionally configure marked (e.g. breaks: true)
+    html = marked.parse(text, { breaks: true });
+  } else {
+    html = text
+      .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+    
+  if (typeof window.processAiMedia === 'function') {
+    html = window.processAiMedia(html);
+  } else if (typeof window.processAiImages === 'function') {
     html = window.processAiImages(html);
   }
   return html;

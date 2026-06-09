@@ -274,12 +274,12 @@ def get_session_messages(session_id: str) -> list:
         conn = sqlite3.connect(db)
         cur  = conn.cursor()
         cur.execute(
-            "SELECT id, timestamp, role, message FROM history WHERE session_id = ? ORDER BY id ASC",
+            "SELECT id, timestamp, role, message, persona_name FROM history WHERE session_id = ? ORDER BY id ASC",
             (session_id,)
         )
         rows = cur.fetchall()
         conn.close()
-        return [{"id": r[0], "timestamp": r[1], "role": r[2], "message": r[3]} for r in rows]
+        return [{"id": r[0], "timestamp": r[1], "role": r[2], "message": r[3], "persona_name": r[4]} for r in rows]
     except Exception as e:
         logger.error(f"[SESSION] get_session_messages error: {e}")
         return []

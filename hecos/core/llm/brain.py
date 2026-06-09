@@ -134,7 +134,7 @@ def generate_self_awareness(personality_name):
         logger.debug("BRAIN", f"Self-awareness error: {e}")
         return ""
 
-def generate_response(user_text, external_config=None, tag=None, images=None, agent_context=None, save_history=True, user_id="admin", session_id=None):
+def generate_response(user_text, external_config=None, tag=None, images=None, agent_context=None, save_history=True, user_id="admin", session_id=None, sender_tab_id=None):
     logger.debug("BRAIN", f"=== START generate_response ===")
     logger.debug("BRAIN", f"User text: '{user_text}'")
     logger.debug("BRAIN", f"external_config provided: {external_config is not None}")
@@ -196,7 +196,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
                             
                             # Reinforce consistency for image generation
                             if "foto" in user_text.lower() or "photo" in user_text.lower() or "immagine" in user_text.lower():
-                                user_text += "\n\n(Note: I have attached my own persona avatar to this request. I will analyze my visual features from this image to inspire any image generation prompt if the user is asking for a picture of me, ensuring visual consistency.)"
+                                user_text += f"\n\n(Note: I have attached my own persona avatar to this request. The absolute path of my avatar is: {av_path}. If the user asks to see me, I MUST display my avatar using strict Markdown: `![My Avatar]({av_path})`. I will also use it as a reference if generating a new image.)"
                             break
                 except Exception as e:
                     logger.error(f"[BRAIN] Failed to inject AI avatar: {e}")
@@ -255,7 +255,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     history_block = ""
     if cog.get('memory_enabled', True) and cog.get('episodic_memory', True):
         max_h = int(cog.get('max_history_messages', 20))
-        history_rows = brain_interface.get_history(limit=max_h, config=config, user_id=user_id)
+        history_rows = brain_interface.get_history(limit=max_h, config=config, user_id=user_id, session_id=session_id)
         if history_rows:
             history_block = "\n[RECENT CONVERSATION HISTORY]\n"
             for row in history_rows:
@@ -313,6 +313,15 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         "- [SYSTEM: explore:folder] - Open folder graphically\n"
         "- [FILE_MANAGER: list:folder] - List files for analysis\n"
         "- [DASHBOARD: resources] - Get hardware telemetry\n"
+    )
+    
+    media_formatting_rules = (
+        "\n### MEDIA FORMATTING RULES ###\n"
+        "- CRITICAL: You CAN and DO have the ability to display images, videos, and files directly in the chat UI. NEVER apologize or claim you lack a screen or visual interface.\n"
+        "- If the user asks to 'show', 'preview', or list files/images/videos, you MUST use strict Markdown.\n"
+        "- For files/videos use: `[filename.ext](absolute_path_to_file)`\n"
+        "- For images use: `![filename.ext](absolute_path_to_image)`\n"
+        "- NEVER use `!(path)` or plain text listings. The UI renders rich graphical cards ONLY if you strictly use these Markdown formats.\n"
     )
 
 
@@ -404,6 +413,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"{file_manager_rules}"
         f"{force_clause}"
         f"{plugin_guidelines}"
+        f"{media_formatting_rules}"
         f"{RoutingManager.get_dynamic_instructions(config)}"
         f"{safety_instructions_block}"
         f"{user_profile_block}"
@@ -459,12 +469,12 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     if not is_error and save_history:
         # Snapshot the clean persona name so avatar stays correct even if user changes personality later
         clean_persona = personality_name.replace(".yaml", "") if personality_name else "Hecos_System_Soul"
-        brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id)
+        brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id, sender_tab_id=sender_tab_id)
         
         # Structured response management (String or Message with tool_calls)
         if isinstance(response, str):
             logger.debug("BRAIN", f"Response received from backend: {len(response)} characters")
-            brain_interface.save_message("assistant", response, config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona)
+            brain_interface.save_message("assistant", response, config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona, sender_tab_id=sender_tab_id)
         else:
             # It's a Message object (used a tool)
             logger.debug("BRAIN", "Response is a tool call object.")

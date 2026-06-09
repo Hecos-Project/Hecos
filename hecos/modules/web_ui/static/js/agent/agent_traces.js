@@ -70,6 +70,10 @@ class AgentTraceUI {
 
     if (!msg) return;
 
+    // If this device is not streaming (passive/observer), ignore trace events
+    // to avoid creating a stuck spinner bubble we'll never finalize.
+    if (!window.isStreaming && !this.activeBubble) return;
+
     if (!this.activeBubble) {
       const wrap = document.createElement('div');
       wrap.className = `agent-trace-wrap level-${level}`;
