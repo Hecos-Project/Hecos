@@ -77,31 +77,44 @@ function populateMediaUI() {
 }
 
 function buildMediaPayload() {
-    const igen = (window.mediaConfig && window.mediaConfig.image_gen) ? window.mediaConfig.image_gen : {};
+    // ALWAYS read from DOM first. Only fall back to window.mediaConfig for fields
+    // that have no DOM representation (e.g. presets dict, custom_hf_models, api_key).
+    // This prevents stale/null mediaConfig from overwriting user changes.
+    const stored = (window.mediaConfig && window.mediaConfig.image_gen) ? window.mediaConfig.image_gen : {};
+
+    // Helper: read from DOM if element exists, else use stored value, else use hardcoded default
+    const domV  = (id, fallback) => { const el = document.getElementById(id); return (el !== null) ? el.value    : fallback; };
+    const domC  = (id, fallback) => { const el = document.getElementById(id); return (el !== null) ? el.checked : fallback; };
+
     return {
         image_gen: {
-            enabled:               getC('igen-enabled', igen.enabled !== false),
-            provider:              getV('igen-provider', igen.provider || 'pollinations'),
-            model:                 getV('igen-model', igen.model || 'flux'),
-            aspect_ratio:          getV('igen-aspect-ratio', igen.aspect_ratio || '1:1'),
-            width:                 parseInt(getV('igen-width', igen.width)) || 1024,
-            height:                parseInt(getV('igen-height', igen.height)) || 1024,
-            seed:                  parseInt(getV('igen-seed', igen.seed)) || -1,
-            sampler:               getV('igen-sampler', igen.sampler || 'euler_a'),
-            scheduler:             getV('igen-scheduler', igen.scheduler || 'euler'),
-            nologo:                getC('igen-nologo', igen.nologo ?? true),
-            enable_negative_prompt:getC('igen-use-neg-prompt', igen.enable_negative_prompt ?? true),
-            negative_prompt:       getV('igen-neg-prompt', igen.negative_prompt || '').trim(),
-            guidance_scale:        parseFloat(getV('igen-guidance', igen.guidance_scale)) || 7.5,
-            num_inference_steps:   parseInt(getV('igen-steps', igen.num_inference_steps)) || 30,
-            auto_enrich:           getC('igen-auto-enrich', igen.auto_enrich ?? true),
-            enrich_keywords:       getV('igen-enrich-keywords', igen.enrich_keywords || '').trim(),
-            style:                 getV('igen-style', igen.style || 'none'),
-            optimize_for_flux:     getC('igen-optimize-flux', igen.optimize_for_flux ?? true),
-            flux_refiner_instructions: getV('igen-flux-instructions', igen.flux_refiner_instructions || '').trim(),
-            show_metadata_in_chat: getC('igen-show-metadata', igen.show_metadata_in_chat ?? false),
-            active_preset:         getV('igen-preset', igen.active_preset || ''),
-            custom_hf_models:      window.igen_custom_hf_models || igen.custom_hf_models || []
+            enabled:                   domC('igen-enabled',          stored.enabled               !== false),
+            provider:                  domV('igen-provider',         stored.provider               || 'pollinations'),
+            model:                     domV('igen-model',            stored.model                  || 'flux'),
+            aspect_ratio:              domV('igen-aspect-ratio',     stored.aspect_ratio           || '1:1'),
+            width:                     parseInt(domV('igen-width',   stored.width                  || 1024)),
+            height:                    parseInt(domV('igen-height',  stored.height                 || 1024)),
+            seed:                      parseInt(domV('igen-seed',    stored.seed                   ?? -1)),
+            sampler:                   domV('igen-sampler',          stored.sampler                || 'euler_a'),
+            scheduler:                 domV('igen-scheduler',        stored.scheduler              || 'euler'),
+            nologo:                    domC('igen-nologo',           stored.nologo                 ?? true),
+            enable_negative_prompt:    domC('igen-use-neg-prompt',  stored.enable_negative_prompt ?? true),
+            negative_prompt:          (domV('igen-neg-prompt',       stored.negative_prompt        || '')).trim(),
+            guidance_scale:            parseFloat(domV('igen-guidance', stored.guidance_scale      || 7.5)),
+            num_inference_steps:       parseInt(domV('igen-steps',   stored.num_inference_steps    || 30)),
+            auto_enrich:               domC('igen-auto-enrich',      stored.auto_enrich            ?? true),
+            enrich_keywords:          (domV('igen-enrich-keywords',  stored.enrich_keywords        || '')).trim(),
+            style:                     domV('igen-style',            stored.style                  || 'none'),
+            optimize_for_flux:         domC('igen-optimize-flux',    stored.optimize_for_flux      ?? true),
+            flux_refiner_instructions:(domV('igen-flux-instructions',stored.flux_refiner_instructions || '')).trim(),
+            show_metadata_in_chat:     domC('igen-show-metadata',   stored.show_metadata_in_chat  ?? false),
+            active_preset:             domV('igen-preset',           stored.active_preset          || ''),
+            // Non-DOM fields: preserve from stored config
+            custom_hf_models:          window.igen_custom_hf_models || stored.custom_hf_models || [],
+            api_key:                   stored.api_key               || '',
+            api_key_comment:           stored.api_key_comment       || '',
+            last_seed:                 stored.last_seed             ?? -1,
+            presets:                   stored.presets               || {},
         }
     };
 }

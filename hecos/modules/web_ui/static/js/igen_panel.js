@@ -189,7 +189,11 @@ function applyIgenConfig(cfg) {
     chk('igen-enabled',             cfg.enabled               ?? true);
     onAspectRatioChanged();
     if (cfg.provider && typeof onProviderChanged === 'function') onProviderChanged();
-    if (typeof window.saveConfig === 'function') window.saveConfig(true);
+    // Defer saveConfig so the browser commits all DOM mutations first.
+    // A synchronous save here would read stale values from the DOM.
+    if (typeof window.saveConfig === 'function') {
+        setTimeout(() => window.saveConfig(true), 80);
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

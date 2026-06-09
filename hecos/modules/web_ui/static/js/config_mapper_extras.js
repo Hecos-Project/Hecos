@@ -96,7 +96,9 @@ window.saveDsb = function(key, val) {
     if (!window.cfg.plugins.DASHBOARD) window.cfg.plugins.DASHBOARD = {};
     window.cfg.plugins.DASHBOARD[key] = val;
     if (typeof window.refreshStatus === 'function') window.refreshStatus();
-    // Config persistence auto-saves on change events; no explicit saveConfig() call needed here.
+    // Explicitly persist: saveDsb is called from onclick handlers, not DOM change events,
+    // so the global auto-save listener never fires for these mutations.
+    if (typeof window.saveConfig === 'function') window.saveConfig(true);
 };
 
 /**

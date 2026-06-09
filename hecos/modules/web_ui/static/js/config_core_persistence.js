@@ -47,7 +47,11 @@ async function saveConfig(silent = false) {
       // Update in-memory state so subsequent saves don't use stale fallbacks
       window.cfg        = payload;
       window.audioConfig = audioPayload;
-      window.mediaConfig = mediaPayload;
+      // CRITICAL: update mediaConfig immediately so the next save cycle reads fresh data
+      // and doesn't fall back to stale defaults for Image Gen fields.
+      if (mediaPayload && typeof mediaPayload === 'object') {
+          window.mediaConfig = mediaPayload;
+      }
       if (window.cfg.agent) window.cfg.agent = agentPayload.agent;
 
       if (!silent) {
