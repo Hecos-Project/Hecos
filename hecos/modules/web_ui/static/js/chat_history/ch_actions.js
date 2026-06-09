@@ -186,12 +186,64 @@ window.deleteAllChatSessions = async function (e) {
 };
 
 window.startRenameSession = async function (e, sessionId) {
-    e.stopPropagation();
-    const item = e.currentTarget;
-    const current = item.textContent.trim();
-    const newName = prompt(window.I18N?.webui_chat_rename_prompt || 'Rename conversation:', current);
+    if (e) e.stopPropagation();
     
-    if (!newName || newName === current) return;
-    const res = await window._historyPost(`/api/chat/sessions/${sessionId}`, { title: newName }, 'PATCH');
-    if (res.ok) await window.loadChatSessions();
+    // Find the title element for this session item
+    let titleEl = null;
+    try {
+        const el = e && e.target;
+        const item = el && el.closest('.history-item');
+        if (item) titleEl = item.querySelector('.history-title');
+    } catch (_) {}
+    
+    // Fallback: find by data-id
+    if (!titleEl) {
+        const item = document.querySelector(`.history-item[data-id="${sessionId}"]`);
+        if (item) titleEl = item.querySelector('.history-title');
+    }
+    
+    if (!titleEl) return;
+    
+    // Already editing?
+    if (titleEl.querySelector('input')) return;
+    
+    const originalTitle = titleEl.textContent.trim();
+    
+    // Build inline input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = originalTitle;
+    input.className = 'history-title-input';
+    input.style.cssText = 'width:100%;background:transparent;border:none;border-bottom:1px solid var(--accent,#7c6cf8);outline:none;color:inherit;font:inherit;padding:0;';
+    
+    titleEl.textContent = '';
+    titleEl.appendChild(input);
+    input.focus();
+    input.select();
+    
+    let saved = false;
+    
+    async function saveRename() {
+        if (saved) return;
+        saved = true;
+        const newTitle = input.value.trim();
+        if (newTitle && newTitle !== originalTitle) {
+            const res = await window._historyPost(`/api/chat/sessions/${sessionId}`, { title: newTitle }, 'PATCH');
+            if (res.ok) {
+                await window.loadChatSessions();
+                return;
+            }
+        }
+        // Restore original if cancelled or unchanged
+        titleEl.textContent = originalTitle;
+    }
+    
+    input.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); saveRename(); }
+        if (ev.key === 'Escape') { saved = true; titleEl.textContent = originalTitle; }
+        ev.stopPropagation();
+    });
+    
+    input.addEventListener('blur', saveRename);
+    input.addEventListener('click', function(ev) { ev.stopPropagation(); });
 };
