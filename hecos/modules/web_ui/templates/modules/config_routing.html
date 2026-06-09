@@ -1,5 +1,7 @@
 <!-- ROUTING PANEL -->
 <div id="tab-routing" class="panel">
+
+
   <div class="card">
     <div class="card-title">{{ t('webui_conf_routing_title') }}</div>
     <div class="field">
@@ -14,26 +16,46 @@
       <label>{{ t('webui_conf_routing_locked') }}</label>
       <input type="text" id="route-models" placeholder="es. qwen2.5:0.5b, gemma2:2b">
     </div>
+  </div>
 
-    <hr style="margin: 20px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
-
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-      <div class="card-title" style="margin:0; font-size: 14px;">{{ t('webui_conf_routing_overrides_title') or 'Custom Plugin Overrides' }}</div>
-      <div style="display: flex; gap: 8px;">
-        <a href="/drive/editor?path=Hecos-Core/hecos/config/data/routing_overrides.yaml" target="_blank" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; text-decoration: none;">📝 Edit in Drive</a>
-        <button type="button" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="addOverride()">+ Add Override</button>
+  <div class="card" style="margin-top: 20px; padding: 25px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+      <div class="card-title" style="margin:0; font-size: 15px; letter-spacing: 1px;">
+        <i class="fas fa-exclamation-triangle" style="margin-right: 8px; color: var(--yellow);"></i><span style="color: var(--yellow);">{{ t('webui_conf_routing_pro_warning_title') }}</span>
       </div>
     </div>
-    <div class="muted" style="font-size: 10px; margin-bottom: 10px; opacity: 0.7;">
-      * The overrides below control the technical behavior of individual tools. For general AI tone, use the <strong>Persona</strong> tab.
+    <div style="font-size: var(--font-size-sm); color: var(--muted); line-height: 1.5; margin-bottom: 20px;">
+      {{ t('webui_conf_routing_pro_warning_desc') }}
     </div>
-    
-    <div id="routing-overrides-list" style="margin-bottom: 15px;">
-      <!-- Dynamic list -->
+    <div class="card" style="padding: 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg2);">
+      <div style="font-weight: 600; font-size: var(--font-size-base); color: var(--accent); margin-bottom: 20px; display: flex; align-items: center;">
+        <i class="fas fa-network-wired" style="margin-right: 8px;"></i>{{ t('webui_conf_routing_directives') }}
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <a href="/drive" target="_blank" class="btn btn-secondary" style="text-decoration: none;"><i class="fas fa-folder-open"></i> Open in Drive</a>
+        <button type="button" class="btn btn-secondary" onclick="window.routingActions.onShowBackup()"><i class="fas fa-clipboard-list"></i> {{ t('webui_conf_routing_btn_backup') }}</button>
+        <button type="button" class="btn btn-secondary" onclick="window.routingActions.onResetAllPlugins()" style="color: var(--yellow);"><i class="fas fa-undo"></i> {{ t('webui_conf_routing_btn_reset_all') }}</button>
+        <button type="button" class="btn btn-primary" onclick="window.routingActions.onSaveAll()"><i class="fas fa-save"></i> {{ t('webui_conf_routing_btn_save') }}</button>
+      </div>
     </div>
-    
-    <div style="text-align: right;">
-      <button type="button" class="btn btn-primary" style="padding: 6px 15px; font-size: 12px;" onclick="saveRoutingOverrides()">Save Overrides</button>
+
+    <!-- DYNAMIC CARDS CONTAINER -->
+    <div id="routing-cards-list" style="display: flex; flex-direction: column; gap: 15px;">
+      <!-- Populated by config_routing_render.js -->
+    </div>
+  </div>
+</div>
+
+<!-- BACKUP MODAL -->
+<div id="routing-backup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+  <div class="card" style="width: 80%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <div class="card-title" style="margin:0;">{{ t('webui_conf_routing_backup_title') }}</div>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('routing-backup-modal').style.display='none'"><i class="fas fa-times"></i></button>
+    </div>
+    <textarea id="routing-backup-textarea" class="terminal-view" style="flex: 1; min-height: 400px; font-family: monospace; font-size: 12px; white-space: pre; background: #1a1a1a; color: #00ff00; border: 1px solid #333; padding: 10px; resize: none;" readonly></textarea>
+    <div style="text-align: right; margin-top: 15px;">
+      <button type="button" class="btn btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('routing-backup-textarea').value); this.innerText='Copied!'; setTimeout(()=>this.innerHTML='<i class=\'fas fa-copy\'></i> Copy', 2000)"><i class="fas fa-copy"></i> Copy</button>
     </div>
   </div>
 </div>

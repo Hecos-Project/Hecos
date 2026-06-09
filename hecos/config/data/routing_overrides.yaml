@@ -47,11 +47,6 @@ overrides:
   # 💻 SYSTEM & TERMINAL: Control over command execution
   # SYSTEM: "Execute commands only if they do not modify system files. Prefer PowerShell commands."
   
-  # 🏠 DOMOTICA: Style and restrictions
-  # DOMOTICA: "Act as a perfect English butler. Ask if the desired mood is 'relax' or 'work' before changing lights."
-  
-  # 🤖 ROLEPLAY: Personality consistency during tool use
-  # ROLEPLAY: "Maintain a 1920s dialogue style even when performing technical tasks."
   
   # 🧪 EXECUTOR (Python Sandbox): Mathematical rigor
   # EXECUTOR: "Only run Python scripts for complex calculations or data analysis. Always show the code snippet used."

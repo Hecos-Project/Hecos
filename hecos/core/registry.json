@@ -48,6 +48,8 @@
             "screenshot": "Take a viewport screenshot for vision analysis.",
             "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
             "switch_tab": "Switch focus to a specific tab by its ID.",
+            "new_tab": "Open a new tab and navigate to a URL.",
+            "close_tab": "Close the currently active tab.",
             "close": "Close the browser window."
         },
         "status": "ONLINE (DORMANT)",

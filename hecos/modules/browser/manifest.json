@@ -23,6 +23,8 @@
         "screenshot": "Take a viewport screenshot for vision analysis.",
         "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
         "switch_tab": "Switch focus to a specific tab by its ID.",
+        "new_tab": "Open a new tab and navigate to a URL.",
+        "close_tab": "Close the currently active tab.",
         "close": "Close the browser window."
     },
     "tool_schema": [
@@ -198,8 +200,29 @@
         {
             "type": "function",
             "function": {
+                "name": "BROWSER__new_tab",
+                "description": "Opens a new tab in the browser and navigates to the specified URL.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "url": { "type": "string", "description": "The URL to open in the new tab." }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "BROWSER__close_tab",
+                "description": "Closes the currently active browser tab.",
+                "parameters": { "type": "object", "properties": {} }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "BROWSER__close",
-                "description": "Closes the Hecos AI browser window.",
+                "description": "Closes the ENTIRE Hecos AI browser window.",
                 "parameters": { "type": "object", "properties": {} }
             }
         }
