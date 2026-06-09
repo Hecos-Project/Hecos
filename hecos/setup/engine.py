@@ -207,6 +207,50 @@ def download_voice(voice_key):
     safe_replace_yaml(AUDIO_CONFIG_PATH, "onnx_model", onnx_path)
     return True
 
+def install_external_dependencies():
+    deps_dir = os.path.join(CWD, "dependencies")
+    if not os.path.exists(deps_dir):
+        print(T("dep_not_found"))
+        print()
+        return False
+        
+    exe_files = glob.glob(os.path.join(deps_dir, "*.exe")) + glob.glob(os.path.join(deps_dir, "*.msi"))
+    if not exe_files:
+        print(T("dep_not_found"))
+        print()
+        return False
+
+    success = True
+    for exe in exe_files:
+        filename = os.path.basename(exe)
+        print(T("installing_dep", filename=filename))
+        
+        lower_name = filename.lower()
+        if lower_name.endswith(".msi"):
+            args = ["msiexec.exe", "/i", exe, "/qn", "/norestart"]
+        else:
+            args = [exe]
+            if "vcredist" in lower_name or "vc_redist" in lower_name:
+                args.extend(["/install", "/quiet", "/norestart"])
+            elif "tesseract" in lower_name:
+                args.extend(["/SILENT"])
+            else:
+                args.extend(["/SILENT"])
+            
+        try:
+            result = subprocess.run(args, capture_output=True, text=True)
+            if result.returncode == 0 or result.returncode == 3010: # 3010 means restart required
+                print(T("dep_success", filename=filename))
+            else:
+                print(T("dep_err", filename=filename, err=f"Exit code {result.returncode}"))
+                success = False
+        except Exception as e:
+            print(T("dep_err", filename=filename, err=str(e)))
+            success = False
+            
+    print()
+    return success
+
 def unattended_onboarding(target_voices=None):
     print("=" * 60)
     print(f"  {T('onboarding_header')}")
@@ -226,6 +270,10 @@ def unattended_onboarding(target_voices=None):
         print(f"\n[*] {T('step_voice')} ({len(target_voices)} voices)")
         for v_key in target_voices:
             download_voice(v_key)
+            
+    # Step 3.5: External Dependencies
+    print(f"\n[*] {T('step_ext_deps')}")
+    install_external_dependencies()
     
     # Step 4: Fixes
     print("\n[*] " + T('step_finish'))

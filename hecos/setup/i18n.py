@@ -61,7 +61,12 @@ T_DATA = {
         "tip_full_check": "Verifies requirements, Python and dependencies.",
         "tip_fix_paths": "Restores Piper and audio paths in audio.yaml.",
         "tip_install_svc": "Registers Hecos as a system service.",
-        "tip_uninstall_svc": "Removes Hecos service from the system."
+        "tip_uninstall_svc": "Removes Hecos service from the system.",
+        "step_ext_deps": "External Dependencies",
+        "installing_dep": "[*] Installing external dependency: {filename}...",
+        "dep_success": "[+] Successfully installed {filename}",
+        "dep_err": "[-] Failed to install {filename}: {err}",
+        "dep_not_found": "[-] No external installers found in dependencies folder."
     },
     "it": {
         "header": "HECOS - SETUP WIZARD & ONBOARDING",
@@ -115,7 +120,12 @@ T_DATA = {
         "tip_full_check": "Controlla requisiti, Python e dipendenze.",
         "tip_fix_paths": "Ripristina i percorsi di Piper e audio in audio.yaml.",
         "tip_install_svc": "Registra Hecos come servizio di sistema.",
-        "tip_uninstall_svc": "Rimuove il servizio Hecos dal sistema."
+        "tip_uninstall_svc": "Rimuove il servizio Hecos dal sistema.",
+        "step_ext_deps": "Dipendenze Esterne",
+        "installing_dep": "[*] Installazione dipendenza esterna: {filename}...",
+        "dep_success": "[+] {filename} installato con successo.",
+        "dep_err": "[-] Errore durante l'installazione di {filename}: {err}",
+        "dep_not_found": "[-] Nessun installer esterno trovato nella cartella dependencies."
     },
     "es": {
         "header": "HECOS - ASISTENTE DE CONFIGURACIÓN",
