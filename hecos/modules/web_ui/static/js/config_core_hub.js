@@ -24,13 +24,18 @@ function renderFilterTabs() {
             const extId = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
             const extState = (parent.extensions || {})[extId];
             if (extState && extState.enabled === false) return false;
-            return !!document.getElementById('tab-' + m.id);
+            return (window._panelCache[m.id] || !!window.LAZY_PANEL_IDS?.has(m.id) || !!document.getElementById('tab-' + m.id));
         }
         if (m.pluginTag) {
             const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
             if (p && p.enabled === false) return false;
         }
-        return (document.getElementById('tab-' + m.id) || (hub.tagMap && hub.tagMap[m.pluginTag]) || m.cat === 'MCP');
+        const inCache   = !!window._panelCache[m.id];
+        const inLazySet = !!(window.LAZY_PANEL_IDS && window.LAZY_PANEL_IDS.has(m.id));
+        const hasPanel  = !!document.getElementById('tab-' + m.id);
+        const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
+        const isMcp     = (m.cat === 'MCP');
+        return (inCache || inLazySet || hasPanel || isMapped || isMcp);
     });
 
     const counts = { 'ALL': allVisible.length };
