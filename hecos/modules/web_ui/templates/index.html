@@ -61,47 +61,48 @@
 
 {% include 'modules/core/_core_scripts.html' %}
 
-<script src="/static/js/config_manifest.js?v={{ version }}-persistence-v3"></script>
-<script src="/static/js/config_mapper_utils.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper_llm.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper_plugins.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper_drive.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper_components.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper_extras.js?v={{ version }}"></script>
-<script src="/static/js/config_mapper.js?v={{ version }}"></script>
-<script src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/color_ui.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/image_ui.js?v={{ version }}"></script>
-<script src="/static/js/aesthetic_picker/style_ui.js?v={{ version }}"></script>
-<script src="/static/js/config_core_utils.js?v={{ version }}"></script>
-<script src="/static/js/config_core_init.js?v={{ version }}"></script>
-<script src="/static/js/config_core_navigation.js?v={{ version }}"></script>
-<script src="/static/js/config_core_hub.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_modes.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_render.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_restore.js?v={{ version }}"></script>
-<script src="/static/js/chat_history/ch_actions.js?v={{ version }}"></script>
-<script src="/static/js/config_core_persistence.js?v={{ version }}"></script>
-<script src="/static/js/config_core_status.js?v={{ version }}"></script>
-<script src="/static/js/config_core.js?v={{ version }}"></script>
-<script src="/static/js/config_audio_logic.js?v={{ version }}"></script>
-<script src="/static/js/config_media_logic.js?v={{ version }}"></script>
+<!-- Core JS bundle — defer: scripts parsed/downloaded in parallel, execute after HTML parse, before DOMContentLoaded -->
+<script defer src="/static/js/config_manifest.js?v={{ version }}-persistence-v3"></script>
+<script defer src="/static/js/config_mapper_utils.js?v={{ version }}"></script>
+<script defer src="/static/js/config_mapper_llm.js?v={{ version }}"></script>
+<script defer src="/static/js/config_mapper_plugins.js?v={{ version }}"></script>
+<script defer src="/static/js/config_mapper_drive.js?v={{ version }}"></script>
+<script defer src="/static/js/config_mapper_components.js?v={{ version }}"></script>
+<script defer src="/static/js/config_mapper_extras.js?v={{ version }}"></script>
+<script defer src="/static/js/config_mapper.js?v={{ version }}"></script>
+<script defer src="/static/js/hecos_file_picker.js?v={{ version }}"></script>
+<script defer src="/static/js/aesthetic_picker/core.js?v={{ version }}"></script>
+<script defer src="/static/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
+<script defer src="/static/js/aesthetic_picker/color_ui.js?v={{ version }}"></script>
+<script defer src="/static/js/aesthetic_picker/image_ui.js?v={{ version }}"></script>
+<script defer src="/static/js/aesthetic_picker/style_ui.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core_utils.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core_init.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core_navigation.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core_hub.js?v={{ version }}"></script>
+<script defer src="/static/js/chat_history/ch_state.js?v={{ version }}"></script>
+<script defer src="/static/js/chat_history/ch_modes.js?v={{ version }}"></script>
+<script defer src="/static/js/chat_history/ch_render.js?v={{ version }}"></script>
+<script defer src="/static/js/chat_history/ch_restore.js?v={{ version }}"></script>
+<script defer src="/static/js/chat_history/ch_actions.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core_persistence.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core_status.js?v={{ version }}"></script>
+<script defer src="/static/js/config_core.js?v={{ version }}"></script>
+<script defer src="/static/js/config_audio_logic.js?v={{ version }}"></script>
+<script defer src="/static/js/config_media_logic.js?v={{ version }}"></script>
 <!-- Multi-Window Logs Engine Modularized -->
-<script src="/static/js/logs_engine/le_core.js?v={{ version }}"></script>
-<script src="/static/js/logs_engine/le_fetch.js?v={{ version }}"></script>
-<script src="/static/js/logs_engine/le_render.js?v={{ version }}"></script>
-<script src="/static/js/logs_engine/le_windows.js?v={{ version }}"></script>
-<script src="/static/js/logs_engine/le_modals.js?v={{ version }}"></script>
-<script src="/static/js/config_system_logic.js?v={{ version }}"></script>
-<script src="/static/js/config_routing_logic.js?v={{ version }}"></script>
-<script src="/static/js/config_persona_logic.js?v={{ version }}"></script>
-<script src="/static/js/config_search.js?v={{ version }}"></script>
+<script defer src="/static/js/logs_engine/le_core.js?v={{ version }}"></script>
+<script defer src="/static/js/logs_engine/le_fetch.js?v={{ version }}"></script>
+<script defer src="/static/js/logs_engine/le_render.js?v={{ version }}"></script>
+<script defer src="/static/js/logs_engine/le_windows.js?v={{ version }}"></script>
+<script defer src="/static/js/logs_engine/le_modals.js?v={{ version }}"></script>
+<script defer src="/static/js/config_system_logic.js?v={{ version }}"></script>
+<script defer src="/static/js/config_routing_logic.js?v={{ version }}"></script>
+<script defer src="/static/js/config_persona_logic.js?v={{ version }}"></script>
+<script defer src="/static/js/config_search.js?v={{ version }}"></script>
 
 <!-- Global Events (Reminders & Backend Sync) -->
-<script src="/static/js/chat_events.js?v={{ version }}"></script>
-<script src="/ext/calendar/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
+<script defer src="/static/js/chat_events.js?v={{ version }}"></script>
+<script defer src="/ext/calendar/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 </body>
 </html>

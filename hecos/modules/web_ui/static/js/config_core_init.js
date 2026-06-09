@@ -15,38 +15,43 @@ async function initAll(attempt = 1) {
     setSaveMsg(I18N.msg_loading || 'Loading...', 'muted');
 
     try {
-        // 1. If Jinja pre-injected the data, render immediately (zero-latency boot)
-        if (Object.keys(window.cfg || {}).length > 0 && Object.keys(window.sysOptions || {}).length > 0) {
+        // ── FAST PATH: cfg is always pre-injected by Jinja into window.cfg ──────
+        // We only need to check cfg (not sysOptions) to render the hub.
+        // sysOptions (model lists, piper voices) is NOT needed to show the tab bar.
+        if (Object.keys(window.cfg || {}).length > 0) {
+            // Fetch only the tiny agent config (missed by Jinja shell route)
+            if (!window.cfg.agent) {
+                try {
+                    const rAgent = await fetchWithTimeout('/hecos/config/agent');
+                    if (rAgent.ok) window.cfg.agent = await rAgent.json();
+                } catch(e) { console.warn('[Init] Agent config fetch failed:', e); }
+            }
+            // Render immediately — hub shows in < 1 second
             setViewMode(viewMode, true);
             renderConfigHub(viewMode);
             showTab(activeTab, true);
-        }
-
-        // 2. If data is not preloaded, fetch from API
-        if (Object.keys(window.cfg || {}).length === 0 || Object.keys(window.sysOptions || {}).length === 0) {
-            console.log("No preloaded config, fetching from API...");
-            const [rOpts, rCfg, rAgent] = await Promise.all([
-                fetchWithTimeout('/hecos/options'),
+            console.log("[Init] Fast-path: hub rendered from pre-injected config.");
+        } else {
+            // ── FALLBACK: Jinja injection failed, fetch everything ────────────────
+            console.log("[Init] No pre-injected config, fetching from API...");
+            const [rCfg, rAgent] = await Promise.all([
                 fetchWithTimeout('/hecos/config'),
                 fetchWithTimeout('/hecos/config/agent')
             ]);
-            if (!rOpts.ok || !rCfg.ok || !rAgent.ok) {
-                throw new Error(`Critical fetch failed: Options=${rOpts.status}, Config=${rCfg.status}, Agent=${rAgent.status}`);
-            }
-            window.sysOptions   = await rOpts.json();
-            window.cfg          = await rCfg.json();
-            window.cfg.agent    = await rAgent.json();
+            if (!rCfg.ok) throw new Error(`Config fetch failed: ${rCfg.status}`);
+            window.cfg       = await rCfg.json();
+            window.cfg.agent = rAgent.ok ? await rAgent.json() : {};
 
             setViewMode(viewMode, true);
             renderConfigHub(viewMode);
             showTab(activeTab, true);
-        } else {
-            console.log("Using server-injected configuration data.");
         }
 
-        // 3. Lazy-load background metadata (registry, audio devices, media, UI state)
-        console.log("Loading metadata in background...");
+        // ── BACKGROUND: fetch options + registry + audio/media/state ────────────
+        // /hecos/options calls ModelManager (slow) — must NOT block the UI render.
+        console.log("[Init] Loading metadata in background...");
         const metaPromise = Promise.allSettled([
+            fetchWithTimeout('/hecos/options'),           // ← moved here, no longer blocking
             fetchWithTimeout('/api/plugins/registry'),
             fetchWithTimeout('/api/audio/devices'),
             fetchWithTimeout('/api/audio/config'),
@@ -55,8 +60,12 @@ async function initAll(attempt = 1) {
         ]);
 
         metaPromise.then(async (results) => {
-            const [resReg, resAudio, resAudCfg, resMed, resState] = results;
+            const [resOpts, resReg, resAudio, resAudCfg, resMed, resState] = results;
 
+            // Merge sysOptions — needed by populateUI for model dropdowns, voices, etc.
+            if (resOpts.status === 'fulfilled' && resOpts.value.ok) {
+                try { window.sysOptions = await resOpts.value.json(); } catch (e) { }
+            }
             if (resReg.status === 'fulfilled' && resReg.value.ok) {
                 try { mergeRegistry(await resReg.value.json()); } catch (e) { }
             }
@@ -66,19 +75,19 @@ async function initAll(attempt = 1) {
             if (resAudio.status === 'fulfilled'  && resAudio.value.ok)  try { audioDevices = await resAudio.value.json();               } catch (e) { }
             if (resAudCfg.status === 'fulfilled' && resAudCfg.value.ok) try { audioConfig  = (await resAudCfg.value.json()).config;       } catch (e) { }
             if (resMed.status === 'fulfilled'    && resMed.value.ok)    try {
-                mediaConfig   = await resMed.value.json();
+                mediaConfig = await resMed.value.json();
                 // Re-populate ImageGen panel if it was already injected into the DOM before mediaConfig arrived
                 if (_panelCache['igen'] && typeof populateMediaUI === 'function') populateMediaUI();
             } catch (e) { }
 
-            console.log("Background metadata loaded.");
+            console.log("[Init] Background metadata loaded.");
             renderConfigHub();
             populateUI();
             isInitialLoading = false;
             setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + new Date().toLocaleTimeString() + ')', 'ok');
         });
 
-        console.log("UI basic layout ready.");
+        console.log("[Init] Hub ready. Background sync in progress...");
 
     } catch (e) {
         console.warn(`Init attempt ${attempt} failed:`, e);
