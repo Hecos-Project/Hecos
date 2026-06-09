@@ -53,6 +53,7 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
             state_manager=sm,
             trace_callback=_session_trace,
             current_user_id=user_id,
+            session_id=session_id
         )
 
         # ── SSE Connection Buffer ────────────────────────────────────────────

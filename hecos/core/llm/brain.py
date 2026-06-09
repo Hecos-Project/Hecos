@@ -255,7 +255,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     history_block = ""
     if cog.get('memory_enabled', True) and cog.get('episodic_memory', True):
         max_h = int(cog.get('max_history_messages', 20))
-        history_rows = brain_interface.get_history(limit=max_h, config=config, user_id=user_id)
+        history_rows = brain_interface.get_history(limit=max_h, config=config, user_id=user_id, session_id=session_id)
         if history_rows:
             history_block = "\n[RECENT CONVERSATION HISTORY]\n"
             for row in history_rows:

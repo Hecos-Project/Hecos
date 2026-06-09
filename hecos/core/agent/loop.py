@@ -13,11 +13,12 @@ class AgentExecutor:
     Orchestrates the repeated multi-turn connection between Brain and Plugins.
     """
     
-    def __init__(self, config=None, config_manager=None, state_manager=None, max_iterations=None, trace_callback=None, current_user_id="admin"):
+    def __init__(self, config=None, config_manager=None, state_manager=None, max_iterations=None, trace_callback=None, current_user_id="admin", session_id=None):
         self.config = config
         self.config_manager = config_manager
         self.state_manager = state_manager
         self.current_user_id = current_user_id
+        self.session_id = session_id
         # Optional direct callback for WebUI session traces.
         # Signature: trace_callback(msg: str, level: str) -> None
         self.trace_callback = trace_callback
@@ -107,8 +108,8 @@ class AgentExecutor:
                 
                 # Save to memory to keep the context consistent
                 from hecos.memory import brain_interface
-                brain_interface.save_message("user", testo_pulito, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id)
-                brain_interface.save_message("assistant", result, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id)
+                brain_interface.save_message("user", testo_pulito, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id, session_id=self.session_id)
+                brain_interface.save_message("assistant", result, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id, session_id=self.session_id)
                 
                 # Format for output (video/voice)
                 return processore.clean_final_output(result, [], result, voice_status)
@@ -151,7 +152,7 @@ class AgentExecutor:
                 save_history=save_hist,
                 images=images,
                 user_id=self.current_user_id,
-                session_id=None # brain can get it from privacy_manager if None
+                session_id=self.session_id
             )
             
             # Immediately halt if stopped during long generation wait
@@ -223,7 +224,7 @@ class AgentExecutor:
                 # IMPORTANT: If it took loops, we must save the FINAL response to history manually.
                 if iteration > 1:
                     from hecos.memory import brain_interface
-                    brain_interface.save_message("assistant", extracted_text, config=self.config, user_id=self.current_user_id)
+                    brain_interface.save_message("assistant", extracted_text, config=self.config, user_id=self.current_user_id, session_id=self.session_id)
                 
                 # Proceed to voice/video cleaning
                 # DEBUG: log what we pass to clean_final_output
