@@ -11,7 +11,7 @@ Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ES
 
 ---
 
-> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.27.4`. Es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
+> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.28.0`. Es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root.
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local que une el razonamiento de IA con la ejecución del sistema a nivel root y redes avanzadas. Transforma el hardware local en una entidad digital soberana a través un tablero profesional y una infraestructura de seguridad avanzada.

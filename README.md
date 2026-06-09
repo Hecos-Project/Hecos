@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.27.4`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
+> **Runtime Alpha Status**: Hecos is currently in `v0.28.0`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem that bridges AI reasoning with root-level system execution and advanced networking. It transforms local hardware into a sovereign digital entity through an integrated dashboard and professional-grade security infrastructure.
@@ -227,7 +227,7 @@ Hecos uses a modular documentation system localized in EN, IT, and ES.
 
 ### Local Access (Modular)
 Detailed guides are located in the `docs/` folder:
-- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.27.4.
+- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.28.0.
 - 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details.
 
 
