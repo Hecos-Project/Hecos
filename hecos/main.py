@@ -17,6 +17,17 @@ if _ROOT not in sys.path:
 # Load environment variables from .env file as soon as possible
 load_dotenv()
 
+# ── ONNX Runtime / HuggingFace thread safety (MUST be before any lib imports) ──
+# On Windows, ONNX Runtime and Playwright (Chromium) can deadlock each other's
+# native thread pools if ONNX is initialized lazily inside a Flask request thread.
+# Setting these BEFORE any import ensures ONNX uses a single thread pool slot.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+# ────────────────────────────────────────────────────────────────────────────────
+
 # Force UTF-8 output encoding on Windows (prevents UnicodeEncodeError with box-drawing characters)
 if sys.platform == "win32":
     try:

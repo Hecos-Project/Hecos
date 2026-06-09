@@ -84,6 +84,24 @@ class SystemBootstrapper:
         else:
             logger.warning("APP", "DASHBOARD plugin disabled; hardware monitoring inactive.")
 
+        # ── RAG Embedder Daemon — Avvio asincrono in background ────────────────
+        # Il daemon (subprocess Python separato) viene avviato qui per iniziare
+        # a caricare il modello ONNX prima che arrivi la prima richiesta.
+        # Non è bloccante: il subprocess si avvia in background e segnala "ready"
+        # quando ha finito di caricare. Le richieste RAG attendono automaticamente.
+        try:
+            rag_cfg = config.get("cognition", {}).get("rag", {})
+            if rag_cfg.get("enabled", False):
+                model_name = rag_cfg.get("embedder_model", "BAAI/bge-small-en-v1.5")
+                self.state_manager.system_status = "Starting RAG embedder daemon..."
+                from hecos.core.rag.embedder_daemon import get_daemon
+                _daemon = get_daemon(model_name)
+                _daemon.start()  # avvia il subprocess (non-blocking)
+                logger.info("[APP] RAG embedder daemon subprocess avviato in background.")
+        except Exception as _rag_boot_e:
+            logger.warning("APP", f"RAG daemon start failed (non-fatal): {_rag_boot_e}")
+        # ──────────────────────────────────────────────────────────────────────
+
     def show_boot_animation(self):
         """Shows boot animation inside the scrolling body area."""
         interface.move_to_body()
