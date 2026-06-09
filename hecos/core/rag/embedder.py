@@ -53,9 +53,14 @@ class FastEmbedEmbedder(BaseEmbedder):
 
     def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
         try:
+            import os
+            # Prevent Rust tokenizers from deadlocking when initialized in a background thread
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            
             from fastembed import TextEmbedding
-            # On first run, fastembed downloads the ONNX model (~23 MB) and caches it.
-            self._model = TextEmbedding(model_name=model_name)
+            # Force threads=1 to prevent ONNX Runtime from spawning nested thread pools
+            # which can cause hard crashes or hangs on Windows in multi-threaded apps like Hecos.
+            self._model = TextEmbedding(model_name=model_name, threads=1)
             self._model_name = model_name
             self._dim = self._MODEL_DIMS.get(model_name, 384)
             logger.info(f"[RAG][Embedder] FastEmbed (ONNX/CPU) loaded: {model_name} (dim={self._dim})")
@@ -160,11 +165,12 @@ def get_embedder(embedder_type: str = "fastembed",
     Factory that returns the best available embedder.
 
     Priority:
-      1. fastembed  — preferred: ONNX CPU, no torch needed
+      1. fastembed  — preferred: ONNX CPU, no torch needed (tried first always)
       2. sentence_transformers — GPU-capable but needs torch ≥ 2.0
-      3. StubEmbedder — emergency no-op fallback
+      3. fastembed safety net — if embedder_type=sentence_transformers but ST fails
+      4. StubEmbedder — emergency no-op fallback
     """
-    # ── 1. FastEmbed (ONNX Runtime) ──────────────────────────────────────────
+    # ── 1. FastEmbed (ONNX Runtime) — preferred ──────────────────────────────
     if embedder_type in ("fastembed", "onnx"):
         fastembed_model = _FASTEMBED_MODELS.get(model_name, model_name)
         try:
@@ -173,13 +179,24 @@ def get_embedder(embedder_type: str = "fastembed",
             logger.warning(f"[RAG][Embedder] FastEmbed unavailable, trying sentence-transformers: {e}")
 
     # ── 2. SentenceTransformers (torch-based) ────────────────────────────────
-    if embedder_type in ("sentence_transformers", "fastembed"):  # fallback path
+    if embedder_type in ("sentence_transformers", "fastembed"):
         try:
             return SentenceTransformerEmbedder(model_name, device="cpu")
         except RuntimeError as e:
             logger.warning(f"[RAG][Embedder] SentenceTransformers unavailable: {e}")
 
-    # ── 3. Stub — search won't work but system boots ─────────────────────────
+    # ── 3. Safety net: if ST was requested but failed, try fastembed anyway ──
+    if embedder_type == "sentence_transformers":
+        logger.warning(
+            "[RAG][Embedder] sentence_transformers failed — attempting fastembed as safety fallback."
+        )
+        fastembed_model = _FASTEMBED_MODELS.get(model_name, "BAAI/bge-small-en-v1.5")
+        try:
+            return FastEmbedEmbedder(fastembed_model)
+        except RuntimeError as e:
+            logger.warning(f"[RAG][Embedder] FastEmbed safety fallback also failed: {e}")
+
+    # ── 4. Stub — search won't work but system boots ──────────────────────────
     logger.error(
         "[RAG][Embedder] All real embedders failed. Using StubEmbedder. "
         "Install fastembed: pip install fastembed"
