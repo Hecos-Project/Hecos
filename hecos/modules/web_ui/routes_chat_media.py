@@ -17,7 +17,7 @@ import os
 import base64
 import subprocess
 import logging
-from flask import jsonify, request, send_from_directory
+from flask import jsonify, request, send_from_directory, send_file
 from hecos.core.constants import SNAPSHOTS_DIR, IMAGES_DIR
 
 _chat_log = logging.getLogger("HecosChatRoutes")
@@ -145,3 +145,16 @@ def init_chat_media_routes(app, logger):
             return jsonify({"ok": True})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
+    @app.route("/api/local_file", methods=["GET"])
+    def api_local_file():
+        """Serves an arbitrary local file from the host machine to the UI."""
+        path = request.args.get("path", "")
+        if not path or not os.path.exists(path):
+            return jsonify({"error": "File not found"}), 404
+            
+        try:
+            return send_file(path)
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] Failed to serve local file {path}: {e}")
+            return jsonify({"error": "Failed to serve file"}), 500
+
