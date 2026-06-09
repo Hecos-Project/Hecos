@@ -55,6 +55,49 @@ function buildMessageActions(msgEl, role, historyIndex) {
         regenerateLastResponse(historyIndex);
     };
     bar.appendChild(regenBtn);
+
+    // Listen (TTS) button
+    const listenBtn = document.createElement('button');
+    listenBtn.className = 'msg-action-btn';
+    const listenLabel = t('chat_btn_listen') === 'chat_btn_listen' ? 'Listen' : t('chat_btn_listen');
+    listenBtn.innerHTML = `🔊 ${listenLabel}`;
+    listenBtn.title = listenLabel;
+    listenBtn.onclick = async () => {
+      if (window.isStreaming) return;
+      const bubble = msgEl.querySelector('.msg-bubble');
+      const textToSpeak = bubble.innerText || bubble.textContent;
+      if (!textToSpeak || !bubble) return;
+      
+      const generatingLabel = t('chat_toast_tts_gen') === 'chat_toast_tts_gen' ? 'Generating audio...' : t('chat_toast_tts_gen');
+      showToast(`🔊 ${generatingLabel}`);
+      listenBtn.disabled = true;
+      listenBtn.style.opacity = '0.5';
+      
+      try {
+          const res = await fetch('/api/audio/test', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text: textToSpeak, mode: 'web' })
+          });
+          const data = await res.json();
+          if (data.ok) {
+              if (typeof window.tryLoadAudio === 'function') {
+                  window._lastAiBubble = bubble;
+                  window.tryLoadAudio(bubble);
+              }
+          } else {
+              const errLabel = t('chat_toast_tts_err') === 'chat_toast_tts_err' ? 'TTS Error' : t('chat_toast_tts_err');
+              showToast(`❌ ${errLabel}: ${data.error}`);
+          }
+      } catch (e) {
+          const errNetLabel = t('chat_toast_err_net') === 'chat_toast_err_net' ? 'Network Error' : t('chat_toast_err_net');
+          showToast(`❌ ${errNetLabel}: ${e.message}`);
+      } finally {
+          listenBtn.disabled = false;
+          listenBtn.style.opacity = '1';
+      }
+    };
+    bar.appendChild(listenBtn);
   }
 
   // Delete button (all messages)

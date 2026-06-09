@@ -134,7 +134,7 @@ def generate_self_awareness(personality_name):
         logger.debug("BRAIN", f"Self-awareness error: {e}")
         return ""
 
-def generate_response(user_text, external_config=None, tag=None, images=None, agent_context=None, save_history=True, user_id="admin", session_id=None):
+def generate_response(user_text, external_config=None, tag=None, images=None, agent_context=None, save_history=True, user_id="admin", session_id=None, sender_tab_id=None):
     logger.debug("BRAIN", f"=== START generate_response ===")
     logger.debug("BRAIN", f"User text: '{user_text}'")
     logger.debug("BRAIN", f"external_config provided: {external_config is not None}")
@@ -469,12 +469,12 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     if not is_error and save_history:
         # Snapshot the clean persona name so avatar stays correct even if user changes personality later
         clean_persona = personality_name.replace(".yaml", "") if personality_name else "Hecos_System_Soul"
-        brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id)
+        brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id, sender_tab_id=sender_tab_id)
         
         # Structured response management (String or Message with tool_calls)
         if isinstance(response, str):
             logger.debug("BRAIN", f"Response received from backend: {len(response)} characters")
-            brain_interface.save_message("assistant", response, config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona)
+            brain_interface.save_message("assistant", response, config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona, sender_tab_id=sender_tab_id)
         else:
             # It's a Message object (used a tool)
             logger.debug("BRAIN", "Response is a tool call object.")

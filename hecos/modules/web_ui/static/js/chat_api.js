@@ -5,6 +5,7 @@
 
 window.chatHistory = [];
 window.isStreaming = false;
+window.hecosTabId = Math.random().toString(36).substring(2, 15);
 
 window.sendMessage = async function() {
   if (typeof window.unlockAudioContext === 'function') {
@@ -57,7 +58,8 @@ window.sendMessage = async function() {
       message: fullMessage, 
       history: window.chatHistory, 
       images: attachImgs,
-      session_id: window.chatHistoryState?.activeSessionId
+      session_id: window.chatHistoryState?.activeSessionId,
+      tab_id: window.hecosTabId
     };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -151,7 +153,8 @@ window.sendInternalMessage = async function(text) {
       message: text, 
       history: window.chatHistory, 
       images: [],
-      session_id: window.chatHistoryState?.activeSessionId
+      session_id: window.chatHistoryState?.activeSessionId,
+      tab_id: window.hecosTabId
     };
     const res = await fetch('/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},

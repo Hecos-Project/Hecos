@@ -74,13 +74,14 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             sm.webui_stop_requested = False  # Clear any stale cancellation flag
 
         sid  = data.get("session_id") or privacy_manager.get_session_id() or str(uuid.uuid4())
+        tab_id = data.get("tab_id")
         sess = {"queue": queue.Queue(), "history": list(history), "done": False, "user_id": uid}
         with _sessions_lock:
             _sessions[sid] = sess
 
         threading.Thread(
             target=_run_inference,
-            args=(sid, user_msg, history, cfg_mgr, images, uid),
+            args=(sid, user_msg, history, cfg_mgr, images, uid, tab_id),
             daemon=True,
         ).start()
         return jsonify({"ok": True, "session_id": sid})
