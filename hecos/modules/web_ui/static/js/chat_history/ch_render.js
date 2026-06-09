@@ -102,11 +102,15 @@ function renderSessionList() {
             
             let actionsHtml = '';
             
+            const editTitle = window.I18N?.webui_chat_rename_hint || 'Rename';
+            const editFn    = `window.startRenameSession(event, '${s.id}')`;
+            actionsHtml += `<button class="history-action-btn" title="${editTitle}" onclick="${editFn}">✏️</button>`;
+            
             if (isNormal) {
                 if (window.chatHistoryState.showArchived) {
                     const restoreTitle = window.I18N?.webui_chat_archive_restore || 'Restore';
                     const restoreFn    = `window.archiveChatSession(event, '${s.id}', false)`;
-                    actionsHtml += `<button class="history-action-btn" title="${restoreTitle}" onclick="${restoreFn}">♻️</button>`;
+                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${restoreTitle}" onclick="${restoreFn}">♻️</button>`;
                     
                     const delTitle = window.I18N?.webui_chat_delete || 'Delete forever';
                     const delFn    = `window.deleteChatSession(event, '${s.id}')`;
@@ -114,12 +118,12 @@ function renderSessionList() {
                 } else {
                     const arcTitle = window.I18N?.webui_chat_archive_close || 'Archive';
                     const arcFn    = `window.archiveChatSession(event, '${s.id}', true)`;
-                    actionsHtml += `<button class="history-action-btn" title="${arcTitle}" onclick="${arcFn}">✖️</button>`;
+                    actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${arcTitle}" onclick="${arcFn}">✖️</button>`;
                 }
             } else {
                 const descTitle = window.I18N?.webui_chat_delete || 'Delete';
                 const descFn    = `window.deleteChatSession(event, '${s.id}')`;
-                actionsHtml += `<button class="history-action-btn" title="${descTitle}" onclick="${descFn}">🗑️</button>`;
+                actionsHtml += `<button class="history-action-btn" style="margin-left:2px;" title="${descTitle}" onclick="${descFn}">🗑️</button>`;
             }
 
             html += `
