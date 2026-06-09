@@ -196,7 +196,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
                             
                             # Reinforce consistency for image generation
                             if "foto" in user_text.lower() or "photo" in user_text.lower() or "immagine" in user_text.lower():
-                                user_text += "\n\n(Note: I have attached my own persona avatar to this request. I will analyze my visual features from this image to inspire any image generation prompt if the user is asking for a picture of me, ensuring visual consistency.)"
+                                user_text += f"\n\n(Note: I have attached my own persona avatar to this request. The absolute path of my avatar is: {av_path}. If the user asks to see me, I MUST display my avatar using strict Markdown: `![My Avatar]({av_path})`. I will also use it as a reference if generating a new image.)"
                             break
                 except Exception as e:
                     logger.error(f"[BRAIN] Failed to inject AI avatar: {e}")
@@ -314,6 +314,15 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         "- [FILE_MANAGER: list:folder] - List files for analysis\n"
         "- [DASHBOARD: resources] - Get hardware telemetry\n"
     )
+    
+    media_formatting_rules = (
+        "\n### MEDIA FORMATTING RULES ###\n"
+        "- CRITICAL: You CAN and DO have the ability to display images, videos, and files directly in the chat UI. NEVER apologize or claim you lack a screen or visual interface.\n"
+        "- If the user asks to 'show', 'preview', or list files/images/videos, you MUST use strict Markdown.\n"
+        "- For files/videos use: `[filename.ext](absolute_path_to_file)`\n"
+        "- For images use: `![filename.ext](absolute_path_to_image)`\n"
+        "- NEVER use `!(path)` or plain text listings. The UI renders rich graphical cards ONLY if you strictly use these Markdown formats.\n"
+    )
 
 
 
@@ -404,6 +413,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"{file_manager_rules}"
         f"{force_clause}"
         f"{plugin_guidelines}"
+        f"{media_formatting_rules}"
         f"{RoutingManager.get_dynamic_instructions(config)}"
         f"{safety_instructions_block}"
         f"{user_profile_block}"
