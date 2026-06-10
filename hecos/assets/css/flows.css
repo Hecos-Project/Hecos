@@ -568,4 +568,7 @@ select optgroup { background:#080f1a; font-weight:700; color:var(--flows-accent)
   .flow-title-input {
     width: 100%;
   }
+  .desktop-only {
+    display: none !important;
+  }
 }
