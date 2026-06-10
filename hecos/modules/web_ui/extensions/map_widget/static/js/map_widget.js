@@ -115,6 +115,13 @@ const mapWidget = {
     },
 
     renderHome: function (lat, lon, displayName) {
+        // Wait for Leaflet to be ready (scripts injected via AJAX might load asynchronously)
+        if (typeof L === 'undefined') {
+            console.warn('[MAP] Leaflet non ancora pronto, riprovo renderHome...');
+            setTimeout(() => this.renderHome(lat, lon, displayName), 500);
+            return;
+        }
+
         // Shorten display name for the header label
         const shortName = this._shortenName(displayName);
         const el = document.getElementById('mw-location');
