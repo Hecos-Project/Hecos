@@ -80,6 +80,10 @@
       <div class="sep"></div>
       <button class="tb-btn" id="btn-palette" onclick="togglePalette()" title="Node Palette" disabled><i class="fas fa-toolbox"></i> Palette</button>
       <button class="tb-btn" id="btn-delete-node" onclick="deleteSelectedNodes()" title="Delete Selected Nodes (Del)"><i class="fas fa-eraser"></i> Delete Node</button>
+      <div class="sep"></div>
+      <button class="tb-btn export" id="btn-export" onclick="exportCurrentFlow()" disabled title="Esporta il flow corrente come file .yaml"><i class="fas fa-file-export"></i> Export</button>
+      <button class="tb-btn import" id="btn-import" onclick="document.getElementById('flow-import-input').click()" title="Importa un flow da file .yaml"><i class="fas fa-file-import"></i> Import</button>
+      <input type="file" id="flow-import-input" accept=".heflow,.yaml,.yml" style="display:none" onchange="importFlowFromFile(this)">
     </div>
 
     <!-- Tabs -->

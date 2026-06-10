@@ -492,3 +492,55 @@ select optgroup { background:#080f1a; font-weight:700; color:var(--flows-accent)
 .pal-item-name { font-family: 'JetBrains Mono', monospace; font-size: .7rem; }
 .pal-item.hidden { display: none; }
 
+/* ── Drag-to-reorder (sidebar) ── */
+.flow-drag-handle {
+  display: flex; align-items: center; justify-content: center;
+  width: 16px; flex-shrink: 0;
+  color: var(--flows-muted); font-size: .85rem; opacity: 0;
+  cursor: grab; transition: opacity .18s;
+  pointer-events: auto;
+  margin-right: .1rem;
+  user-select: none;
+  line-height: 1;
+}
+.flow-item:hover .flow-drag-handle { opacity: .55; }
+.flow-drag-handle:active { cursor: grabbing; }
+
+/* Item being dragged */
+.flow-item.dragging {
+  opacity: 0.35;
+  border-color: var(--flows-accent2) !important;
+  box-shadow: 0 0 0 2px rgba(168,85,247,.3);
+}
+
+/* Drop target indicator — line above */
+.flow-item.drag-over-top {
+  border-top: 2px solid var(--flows-accent) !important;
+  background: rgba(0,212,255,.06) !important;
+}
+
+/* Drop target indicator — line below */
+.flow-item.drag-over-bottom {
+  border-bottom: 2px solid var(--flows-accent) !important;
+  background: rgba(0,212,255,.06) !important;
+}
+
+/* ── Toolbar Export/Import buttons ── */
+.tb-btn.export {
+  border-color: rgba(168,85,247,.5);
+  color: var(--flows-accent2);
+}
+.tb-btn.export:hover:not(:disabled) {
+  background: rgba(168,85,247,.1);
+  border-color: var(--flows-accent2);
+}
+.tb-btn.export:disabled { opacity: .35; cursor: default; }
+
+.tb-btn.import {
+  border-color: rgba(0,212,255,.4);
+  color: var(--flows-accent);
+}
+.tb-btn.import:hover {
+  background: rgba(0,212,255,.08);
+  border-color: var(--flows-accent);
+}
