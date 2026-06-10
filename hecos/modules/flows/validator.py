@@ -91,12 +91,19 @@ def validate_flow(flow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
                 errors.append(f"{prefix}: Duplicate step ID '{step_id}'")
             seen_ids.add(step_id)
 
-            # Validate depends_on references against ALL ids in the pipeline, not just seen ones
             depends = step.get("depends_on", [])
             if isinstance(depends, list):
+                valid_depends = []
                 for dep in depends:
                     if dep not in all_ids and dep != step_id:
-                        errors.append(f"{prefix}: 'depends_on' references unknown step ID '{dep}'")
+                        log.warning(f"{prefix}: 'depends_on' references unknown step ID '{dep}'. Auto-removing dangling dependency.")
+                    else:
+                        valid_depends.append(dep)
+                if len(valid_depends) != len(depends):
+                    if valid_depends:
+                        step["depends_on"] = valid_depends
+                    else:
+                        del step["depends_on"]
 
     # ── Summary
     is_valid = len(errors) == 0

@@ -125,6 +125,9 @@ def save_flow(flow_data: Dict[str, Any], raw_yaml: Optional[str] = None) -> str:
             if isinstance(parsed, dict):
                 parsed["_meta"] = meta
                 parsed["id"] = flow_id
+                # Auto-clean any dangling dependencies before saving to disk
+                from hecos.modules.flows.validator import validate_flow
+                validate_flow(parsed)
                 with open(path, "w", encoding="utf-8") as f:
                     yaml.dump(parsed, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
             else:

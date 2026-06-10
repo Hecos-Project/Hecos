@@ -336,6 +336,26 @@ def _setup_system_wrappers():
         "fn": _system_chat_message,
     }
 
+    def _system_speak_and_chat(text: str = ""):
+        # First send to chat
+        _system_chat_message(text)
+        # Then speak aloud
+        try:
+            from hecos.core.audio import voice
+            voice.speak(text)
+        except Exception as e:
+            log.error(f"[Flows.Audio] Cannot speak: {e}")
+        return text
+
+    _REGISTRY["SYSTEM__speak_and_chat"] = {
+        "name": "SYSTEM__speak_and_chat",
+        "description": "Appends a message to the chat AND speaks it aloud.",
+        "params": {"text": "string (message to speak and write)"},
+        "category": "SYSTEM",
+        "icon": "🗣️",
+        "fn": _system_speak_and_chat,
+    }
+
 _setup_system_wrappers()
 
 
@@ -461,6 +481,21 @@ def _auto_register_hecos_modules():
             "IMAGE_GEN": "🎨", "MEDIA_PLAYER": "🎵",
         }
 
+        KNOWN_PARAMS = {
+            "EXECUTOR__execute_background_command": {"command": "string"},
+            "EXECUTOR__execute_shell_command": {"command": "string"},
+            "EXECUTOR__run_python_code": {"code": "string"},
+            "EXECUTOR__read_file": {"file_path": "string", "start_line": "integer", "end_line": "integer"},
+            "EXECUTOR__write_file": {"file_path": "string", "content": "string", "mode": "string"},
+            "EXECUTOR__patch_file": {"file_path": "string", "old_text": "string", "new_text": "string"},
+            "EXECUTOR__delete_file": {"file_path": "string"},
+            "EXECUTOR__create_dir": {"directory_path": "string"},
+            "EXECUTOR__list_dir": {"directory_path": "string"},
+            "EXECUTOR__kill_process": {"name": "string"},
+            "MAIL__send_email": {"to": "string", "subject": "string", "body": "string"},
+            "WEATHER__get_forecast": {"location": "string"},
+        }
+
         for module_tag, module_info in reg.items():
             commands = module_info.get("commands", {})
             category = CATEGORY_MAP.get(module_tag, "PLUGINS")
@@ -472,7 +507,7 @@ def _auto_register_hecos_modules():
                     _REGISTRY[action_name] = {
                         "name":        action_name,
                         "description": cmd_desc,
-                        "params":      {},
+                        "params":      KNOWN_PARAMS.get(action_name, {}),
                         "category":    category,
                         "icon":        icon,
                         "fn":          None,   # resolved at execute time via module_loader
