@@ -171,4 +171,5 @@ def update_flow_field(flow_id: str, field: str, value: Any) -> bool:
 
 def _load_yaml_file(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+        return yaml.load(f, Loader=loader) or {}

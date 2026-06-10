@@ -185,8 +185,10 @@ async function selectFlow(flowId) {
 
 async function saveCurrentFlow(silent = false) {
   if (!currentFlowId && (!cmEditor || !cmEditor.getValue().trim())) return;
-  if (typeof syncCanvasToYaml === 'function' && document.getElementById('tab-canvas').classList.contains('active')) {
-    syncCanvasToYaml(); // Sync canvas to YAML before reading the value if we're on the canvas tab
+  // Always sync canvas → YAML before reading cmEditor, regardless of active tab.
+  // This is the ONLY place where canvas positions are flushed to disk.
+  if (typeof syncCanvasToYaml === 'function') {
+    syncCanvasToYaml(); 
   }
   let yaml = cmEditor.getValue();
 
@@ -235,7 +237,7 @@ async function saveCurrentFlow(silent = false) {
       return;
     }
     if (!silent) {
-      toast('ok','Flow saved ✓');
+      toast('ok','✓ Synced');
       loadFlowsList();
     }
     currentFlowId = d.flow_id;
@@ -264,6 +266,7 @@ function setRunningState(running, runId) {
 
 async function runCurrentFlow() {
   if (!currentFlowId) return;
+  await saveCurrentFlow(true); // Ensure latest changes are saved before running
 
   // If already running — act as STOP
   if (_currentRunId) {
@@ -360,7 +363,7 @@ async function _doDeleteFlowById(flowId) {
 
 /**
  * Inject the Hecos flow type marker into a YAML string.
- * Adds `_type: hecos_flow` after the first line (or at top if missing).
+ * Adds \`_type: hecos_flow\` after the first line (or at top if missing).
  */
 function _injectFlowTypeMarker(yaml) {
   if (yaml.includes('_type: hecos_flow')) return yaml;
@@ -376,7 +379,7 @@ function _injectFlowTypeMarker(yaml) {
  * Export the current flow as a .heflow file.
  * Uses the native OS Save-As dialog (File System Access API) when available,
  * falling back to a standard browser download.
- * The exported file is a YAML with an injected `_type: hecos_flow` marker
+ * The exported file is a YAML with an injected \`_type: hecos_flow\` marker
  * so it can be reliably distinguished from generic YAML files.
  */
 async function exportCurrentFlow() {
@@ -578,18 +581,30 @@ async function initFlowsAutosave() {
     const res = await fetch('/hecos/config');
     const cfg = await res.json();
     const flowsCfg = cfg?.plugins?.FLOWS || {};
-    if (flowsCfg.autosave_enabled) {
-      const ms = (flowsCfg.autosave_interval_minutes || 10) * 60000;
+    // Default: autosave enabled every 1 minute unless config says otherwise
+    const enabled = flowsCfg.autosave_enabled !== false; // true by default
+    const intervalMinutes = flowsCfg.autosave_interval_minutes || 1;
+    if (enabled) {
+      const ms = intervalMinutes * 60000;
       autosaveTimer = setInterval(() => {
         const saveBtn = document.getElementById('btn-save');
         if (currentFlowId && saveBtn && !saveBtn.disabled) {
-           saveCurrentFlow(true); 
+          saveCurrentFlow(true);
         }
       }, ms);
-      console.log(`[Flows] Autosave enabled: every ${flowsCfg.autosave_interval_minutes || 10} min`);
+      console.log(`[Flows] Autosave enabled: every ${intervalMinutes} min`);
+    } else {
+      console.log('[Flows] Autosave disabled by config.');
     }
   } catch(e) {
-    console.warn("[Flows] Could not init autosave", e);
+    console.warn('[Flows] Could not init autosave', e);
+    // Fallback: enable autosave every 1 min even if config fetch fails
+    autosaveTimer = setInterval(() => {
+      const saveBtn = document.getElementById('btn-save');
+      if (currentFlowId && saveBtn && !saveBtn.disabled) {
+        saveCurrentFlow(true);
+      }
+    }, 60000);
   }
 }
 

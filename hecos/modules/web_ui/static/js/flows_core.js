@@ -28,12 +28,20 @@ function toast(type, msg) {
 function initTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      const currentActive = document.querySelector('.tab-pane.active');
+      if (currentActive && currentActive.id === 'tab-canvas') {
+         if (typeof syncCanvasToYaml === 'function') syncCanvasToYaml();
+      }
+
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
       if (btn.dataset.tab === 'canvas' && lgcanvas) lgcanvas.draw(true, true);
-      if (btn.dataset.tab === 'yaml' && cmEditor) cmEditor.refresh();
+      if (btn.dataset.tab === 'yaml' && cmEditor) {
+        if (typeof syncCanvasToYaml === 'function') syncCanvasToYaml();
+        cmEditor.refresh();
+      }
     });
   });
 }
