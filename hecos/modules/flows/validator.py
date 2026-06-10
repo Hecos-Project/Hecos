@@ -102,6 +102,8 @@ def validate_flow(flow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     is_valid = len(errors) == 0
     if not is_valid:
         log.warning(f"[Flows.Validator] Flow '{flow_id}' has {len(errors)} validation error(s).")
+        for err in errors:
+            log.warning(f"  - {err}")
     return is_valid, errors
 
 
