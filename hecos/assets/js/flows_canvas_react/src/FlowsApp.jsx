@@ -10,6 +10,8 @@ import {
   BackgroundVariant,
   Panel,
   MarkerType,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './styles/flow.css';
@@ -18,8 +20,9 @@ import bridge from './bridge.js';
 import { nodeTypes } from './nodes/index.jsx';
 import NodePalette from './components/NodePalette.jsx';
 import NodeEditPanel from './components/NodeEditPanel.jsx';
+import AreaEditPanel from './components/AreaEditPanel.jsx';
 import ContextMenu from './components/ContextMenu.jsx';
-import { catalogToNodes, flowToRFNodes, rfNodesToFlow } from './utils/conversion.js';
+import { flowToRFNodes, rfNodesToFlow, autoLayoutNodes } from './utils/conversion.js';
 import { ACTION_TYPE_MAP } from './nodes/nodeTypeMap.js';
 
 const DEFAULT_EDGE_OPTIONS = {
@@ -54,11 +57,18 @@ export default function FlowsApp() {
     return rfNodesToFlow(nodes, edges);
   }, [nodes, edges]);
 
-  // ── Notify YAML editor when graph changes ─────────────────────────────────
+  // ── Notify YAML editor when graph changes (DEBOUNCED) ────────────────────
+  const notifyTimeoutRef = useRef(null);
+  
   const notifyChange = useCallback((newNodes, newEdges) => {
-    const flow = rfNodesToFlow(newNodes !== undefined ? newNodes : nodes,
-                               newEdges  !== undefined ? newEdges  : edges);
-    bridge._notifyGraphChange(flow);
+    if (notifyTimeoutRef.current) {
+      clearTimeout(notifyTimeoutRef.current);
+    }
+    notifyTimeoutRef.current = setTimeout(() => {
+      const flow = rfNodesToFlow(newNodes !== undefined ? newNodes : nodes,
+                                 newEdges  !== undefined ? newEdges  : edges);
+      bridge._notifyGraphChange(flow);
+    }, 500); // 500ms debounce completely eliminates lag
   }, [nodes, edges]);
 
   // ── Edge connection ───────────────────────────────────────────────────────
@@ -70,17 +80,21 @@ export default function FlowsApp() {
     });
   }, [notifyChange]);
 
-  // ── Node change with YAML sync ────────────────────────────────────────────
   const handleNodesChange = useCallback((changes) => {
     onNodesChange(changes);
-    // Defer sync slightly to let state settle
-    setTimeout(() => notifyChange(), 50);
-  }, [onNodesChange, notifyChange]);
+    const isDragging = changes.some(c => c.type === 'position' && c.dragging);
+    if (!isDragging) {
+      // Synchronously compute next state so we serialize NEW positions instead of stale closure
+      const nextNodes = applyNodeChanges(changes, nodes);
+      notifyChange(nextNodes, edges);
+    }
+  }, [nodes, edges, onNodesChange, notifyChange]);
 
   const handleEdgesChange = useCallback((changes) => {
     onEdgesChange(changes);
-    setTimeout(() => notifyChange(), 50);
-  }, [onEdgesChange, notifyChange]);
+    const nextEdges = applyEdgeChanges(changes, edges);
+    notifyChange(nodes, nextEdges);
+  }, [nodes, edges, onEdgesChange, notifyChange]);
 
   // ── Drop from palette ─────────────────────────────────────────────────────
   const onDrop = useCallback((event) => {
@@ -241,9 +255,41 @@ export default function FlowsApp() {
       });
     } else if (action === 'SHOW_PALETTE' || action === 'NEW_NODE') {
       setPaletteOpen(true);
+    } else if (action === 'ADD_AREA') {
+      const areaId = 'area_' + Math.floor(Math.random() * 10000);
+      // Determine position from context menu if available, otherwise center
+      const pos = payload?.left !== undefined 
+        ? rfInstance.screenToFlowPosition({ x: payload.left, y: payload.top }) 
+        : { x: 0, y: 0 };
+      
+      const newArea = {
+        id: areaId,
+        type: 'areaNode',
+        position: pos,
+        data: {
+          areaId: areaId,
+          title: 'New Area',
+          description: '',
+          color: '#1a1a2e',
+          width: 400,
+          height: 400
+        },
+        style: { width: 400, height: 400, zIndex: -1 }
+      };
+      setNodes(nds => {
+        const up = [...nds, newArea];
+        notifyChange(up, undefined);
+        return up;
+      });
+    } else if (action === 'REARRANGE_NODES') {
+      setNodes(nds => {
+        const up = autoLayoutNodes(nds);
+        notifyChange(up, undefined);
+        return up;
+      });
     }
     setMenu(null);
-  }, [setNodes, setEdges, notifyChange]);
+  }, [setNodes, setEdges, notifyChange, rfInstance]);
 
   // ── Save from edit panel ──────────────────────────────────────────────────
   const onSaveNode = useCallback((nodeId, updatedData) => {
@@ -275,6 +321,22 @@ export default function FlowsApp() {
       }
     }, 80);
   }, [setNodes, setEdges, notifyChange]);
+
+  const onSaveArea = useCallback((nodeId, updatedData) => {
+    setNodes(nds => {
+      const updatedNodes = nds.map(n =>
+        n.id === nodeId ? { ...n, id: updatedData.areaId, data: updatedData } : n
+      );
+      notifyChange(updatedNodes, edges);
+      return updatedNodes;
+    });
+    setEditNode(null);
+    setTimeout(() => {
+      if (typeof window.saveCurrentFlow === 'function') {
+        window.saveCurrentFlow();
+      }
+    }, 80);
+  }, [setNodes, edges, notifyChange]);
 
   // ── Delete selected nodes/edges ───────────────────────────────────────────
   const deleteSelected = useCallback(() => {
@@ -417,6 +479,18 @@ export default function FlowsApp() {
 
       {/* Edit panel (slides in from right) */}
       {editNode && (() => {
+        if (editNode.type === 'areaNode') {
+          return (
+            <AreaEditPanel
+              key={editNode.id}
+              node={editNode}
+              allNodeIds={nodes.map(n => n.id).filter(id => id !== editNode.id)}
+              onSave={onSaveArea}
+              onClose={() => setEditNode(null)}
+            />
+          );
+        }
+        
         const allVariables = Array.from(new Set(nodes.map(n => n.data?.outputAs).filter(Boolean)));
         return (
           <NodeEditPanel

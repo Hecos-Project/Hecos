@@ -25,8 +25,10 @@ log = FlowLogger()
 def _get_flows_dir() -> str:
     """Returns the absolute path to workspace/flows/, creating it if needed."""
     try:
-        from hecos.core.constants import ROOT_DIR
-        flows_dir = os.path.join(ROOT_DIR, "workspace", "flows")
+        from hecos.core.constants import HECOS_DIR
+        # ROOT_DIR is typically one level up from HECOS_DIR
+        root_dir = os.path.normpath(os.path.join(HECOS_DIR, ".."))
+        flows_dir = os.path.join(root_dir, "workspace", "flows")
     except Exception:
         flows_dir = os.path.join(os.getcwd(), "workspace", "flows")
     os.makedirs(flows_dir, exist_ok=True)

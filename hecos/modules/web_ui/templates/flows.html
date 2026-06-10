@@ -76,13 +76,13 @@
       <div class="sep"></div>
       <button class="tb-btn run"    id="btn-run"    onclick="runCurrentFlow()" disabled><i class="fas fa-play"></i> Run</button>
       <button class="tb-btn"       id="btn-save"   onclick="saveCurrentFlow()" disabled><i class="fas fa-save"></i> Save</button>
-      <button class="tb-btn danger" id="btn-delete" onclick="deleteCurrentFlow()" disabled title="Elimina il flusso selezionato"><i class="fas fa-trash"></i></button>
+      <button class="tb-btn danger" id="btn-delete" onclick="deleteCurrentFlow()" disabled title="{{ translations.get('flows_delete_selected_tooltip', 'Delete the selected flow') }}"><i class="fas fa-trash"></i></button>
       <div class="sep"></div>
       <button class="tb-btn" id="btn-palette" onclick="togglePalette()" title="Node Palette" disabled><i class="fas fa-toolbox"></i> Palette</button>
       <button class="tb-btn" id="btn-delete-node" onclick="deleteSelectedNodes()" title="Delete Selected Nodes (Del)"><i class="fas fa-eraser"></i> Delete Node</button>
       <div class="sep"></div>
-      <button class="tb-btn export" id="btn-export" onclick="exportCurrentFlow()" disabled title="Esporta il flow corrente come file .yaml"><i class="fas fa-file-export"></i> Export</button>
-      <button class="tb-btn import" id="btn-import" onclick="document.getElementById('flow-import-input').click()" title="Importa un flow da file .yaml"><i class="fas fa-file-import"></i> Import</button>
+      <button class="tb-btn export" id="btn-export" onclick="exportCurrentFlow()" disabled title="{{ translations.get('flows_export_tooltip', 'Export the current flow as a .yaml file') }}"><i class="fas fa-file-export"></i> Export</button>
+      <button class="tb-btn import" id="btn-import" onclick="document.getElementById('flow-import-input').click()" title="{{ translations.get('flows_import_tooltip', 'Import a flow from a .yaml file') }}"><i class="fas fa-file-import"></i> Import</button>
       <input type="file" id="flow-import-input" accept=".heflow,.yaml,.yml" style="display:none" onchange="importFlowFromFile(this)">
     </div>
 
@@ -203,11 +203,11 @@
 <!-- ── Confirm Modal ───────────────────────────────────────────── -->
 <div id="confirm-modal-bg" class="modal-bg" style="z-index:9999;">
   <div class="modal-content" style="max-width:400px; text-align:center;">
-    <h2 style="margin-top:0;"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a;"></i> Conferma</h2>
-    <p id="confirm-modal-text" style="margin:20px 0;">Sei sicuro?</p>
+    <h2 style="margin-top:0;"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a;"></i> {{ translations.get('flows_confirm_delete_title', 'Conferma') }}</h2>
+    <p id="confirm-modal-text" style="margin:20px 0;">{{ translations.get('flows_confirm_delete_title', 'Conferma') }}?</p>
     <div class="modal-actions" style="justify-content:center; gap: 15px;">
-      <button class="btn-cancel" onclick="document.getElementById('confirm-modal-bg').style.display='none'">Annulla</button>
-      <button class="btn-save" style="background:#ff4a4a; color:white; border:none;" id="confirm-modal-yes">Elimina</button>
+      <button class="btn-cancel" onclick="document.getElementById('confirm-modal-bg').style.display='none'">{{ translations.get('flows_confirm_delete_cancel', 'Annulla') }}</button>
+      <button class="btn-save" style="background:#ff4a4a; color:white; border:none;" id="confirm-modal-yes">{{ translations.get('flows_confirm_delete_yes', 'Elimina') }}</button>
     </div>
   </div>
 </div>
@@ -220,6 +220,7 @@ window.I18N = {{ translations | tojson | safe }};
 window.t = k => window.I18N[k] || k;
 </script>
 
+<script src="/assets/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
 <script src="/assets/js/flows_core.js?v={{ version }}"></script>
 <script src="/assets/js/flows_api.js?v={{ version }}"></script>
 <script src="/assets/js/flows_canvas_shim.js?v={{ version }}"></script>

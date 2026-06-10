@@ -37,10 +37,12 @@ function renderSidebar(flows) {
   const list = document.getElementById('flows-list');
   const empty = document.getElementById('flows-sidebar-empty');
   if(!list) return;
-  list.innerHTML = '';
+  
+  // Rimuove solo i flow-item per non distruggere l'elemento "empty" dal DOM
+  list.querySelectorAll('.flow-item').forEach(el => el.remove());
+
   if (!flows.length) {
     if(empty) empty.style.display='flex';
-    list.appendChild(empty);
     return;
   }
   if(empty) empty.style.display = 'none';
@@ -54,7 +56,7 @@ function renderSidebar(flows) {
     el.dataset.id = f.id;
     el.draggable = true;
     el.innerHTML = `
-      <span class="flow-drag-handle" title="Trascina per riordinare">⠿</span>
+      <span class="flow-drag-handle" title="${window.t('flows_drag_to_reorder')}">⠿</span>
       <div class="flow-item-name">
         <span class="flow-status-dot ${f.enabled?'enabled':'disabled'}"></span>
         ${f.name}
@@ -62,7 +64,7 @@ function renderSidebar(flows) {
       <div class="flow-item-meta">
         <span><i class="fas fa-bolt" style="font-size:.6rem"></i> ${f.trigger_type}${f.trigger_expr?' ('+f.trigger_expr+')':''}</span>
         <span>${f.step_count} steps</span>
-        <button class="flow-item-del" title="Elimina flusso" data-flow-id="${f.id}"><i class="fas fa-trash"></i></button>
+        <button class="flow-item-del" title="${window.t('flows_delete_flow')}" data-flow-id="${f.id}"><i class="fas fa-trash"></i></button>
       </div>`;
     el.querySelector('.flow-item-del').addEventListener('click', e => {
       e.stopPropagation();
@@ -181,7 +183,7 @@ async function selectFlow(flowId) {
   } catch(e) { toast('error','Could not load flow: '+e.message); }
 }
 
-async function saveCurrentFlow() {
+async function saveCurrentFlow(silent = false) {
   if (!currentFlowId && (!cmEditor || !cmEditor.getValue().trim())) return;
   if (typeof syncCanvasToYaml === 'function' && document.getElementById('tab-canvas').classList.contains('active')) {
     syncCanvasToYaml(); // Sync canvas to YAML before reading the value if we're on the canvas tab
@@ -213,7 +215,7 @@ async function saveCurrentFlow() {
           cmEditor.setValue(yaml);
           cmEditor.scrollTo(scrollInfo.left, scrollInfo.top);
           if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(flowObj);
-          toast('info', 'Auto-corrected duplicate step IDs.');
+          if (!silent) toast('info', 'Auto-corrected duplicate step IDs.');
         }
       }
     } catch(e) { console.warn("Deduplication error:", e); }
@@ -225,17 +227,21 @@ async function saveCurrentFlow() {
     });
     const d = await res.json();
     if (!d.ok) {
-      // Show each validation error on its own line for clarity
-      const errs = d.errors || [d.error || 'Unknown error'];
-      toast('error', '❌ Save failed:\n' + errs.map((e,i) => `${i+1}. ${e}`).join('\n'));
-      // Also log details to console for debugging
-      console.warn('[Flows] Save validation errors:', errs);
+      if (!silent) {
+        const errs = d.errors || [d.error || 'Unknown error'];
+        toast('error', '❌ Save failed:\n' + errs.map((e,i) => `${i+1}. ${e}`).join('\n'));
+      }
+      console.warn('[Flows] Save validation errors:', d.errors || d.error);
       return;
     }
-    toast('ok','Flow saved ✓');
+    if (!silent) {
+      toast('ok','Flow saved ✓');
+      loadFlowsList();
+    }
     currentFlowId = d.flow_id;
-    loadFlowsList();
-  } catch(e) { toast('error','Save failed: '+e.message); }
+  } catch(e) { 
+    if (!silent) toast('error','Save failed: '+e.message); 
+  }
 }
 
 // ── Run state helpers ────────────────────────────────────────────
@@ -302,7 +308,7 @@ async function runCurrentFlow() {
 }
 
 async function deleteCurrentFlow() {
-  if (!currentFlowId) { toast('info','Seleziona prima un flusso.'); return; }
+  if (!currentFlowId) { toast('info', window.t('flows_select_first')); return; }
   await deleteFlowById(currentFlowId, currentFlowData?.name || currentFlowId);
 }
 
@@ -312,14 +318,14 @@ async function deleteFlowById(flowId, flowName) {
   const yesBtn = document.getElementById('confirm-modal-yes');
   
   if(bg && text && yesBtn) {
-    text.innerText = `Eliminare il flusso "${flowName}"?`;
+    text.innerText = window.t('flows_confirm_delete_text').replace('{name}', flowName);
     bg.style.display = 'flex';
     yesBtn.onclick = async () => {
       bg.style.display = 'none';
       await _doDeleteFlowById(flowId);
     };
   } else {
-    if (!confirm(`Eliminare il flusso "${flowName}"?`)) return;
+    if (!confirm(window.t('flows_confirm_delete_text').replace('{name}', flowName))) return;
     await _doDeleteFlowById(flowId);
   }
 }
@@ -345,9 +351,9 @@ async function _doDeleteFlowById(flowId) {
       if (typeof renderTimeline === 'function') renderTimeline(null);
     }
 
-    toast('ok','Flusso eliminato.');
+    toast('ok', window.t('flows_deleted_toast'));
     loadFlowsList();
-  } catch(e) { toast('error','Eliminazione fallita: '+e.message); }
+  } catch(e) { toast('error', window.t('flows_delete_failed_toast').replace('{error}', e.message)); }
 }
 
 // ── Export / Import ──────────────────────────────────────────────
@@ -375,11 +381,11 @@ function _injectFlowTypeMarker(yaml) {
  */
 async function exportCurrentFlow() {
   if (!currentFlowId && (!cmEditor || !cmEditor.getValue().trim())) {
-    toast('info', 'Seleziona prima un flusso da esportare.');
+    toast('info', window.t('flows_export_select_first'));
     return;
   }
   const rawYaml = cmEditor ? cmEditor.getValue() : '';
-  if (!rawYaml.trim()) { toast('error', 'Nessun contenuto YAML da esportare.'); return; }
+  if (!rawYaml.trim()) { toast('error', window.t('flows_export_empty')); return; }
 
   // Inject type marker so the file is self-identifying
   const yamlToSave = _injectFlowTypeMarker(rawYaml);
@@ -400,7 +406,7 @@ async function exportCurrentFlow() {
       const writable = await fileHandle.createWritable();
       await writable.write(yamlToSave);
       await writable.close();
-      toast('ok', `↓ Salvato: ${fileHandle.name}`);
+      toast('ok', window.t('flows_export_saved').replace('{name}', fileHandle.name));
       return;
     } catch (err) {
       // User cancelled the dialog — do nothing
@@ -420,7 +426,7 @@ async function exportCurrentFlow() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast('ok', `↓ Flow esportato: ${suggestedName}`);
+  toast('ok', window.t('flows_export_done').replace('{name}', suggestedName));
 }
 
 /**
@@ -438,7 +444,7 @@ function importFlowFromFile(inputEl) {
   reader.onload = e => {
     const yaml = e.target.result;
     if (!yaml || !yaml.trim()) {
-      toast('error', 'Il file è vuoto o non leggibile.');
+      toast('error', window.t('flows_import_empty_file'));
       return;
     }
 
@@ -448,7 +454,7 @@ function importFlowFromFile(inputEl) {
     try {
       if (typeof jsyaml !== 'undefined') parsed = jsyaml.load(yaml);
     } catch(parseErr) {
-      toast('error', `❌ YAML non valido: ${parseErr.message}`);
+      toast('error', window.t('flows_import_yaml_invalid').replace('{error}', parseErr.message));
       return;
     }
 
@@ -456,9 +462,7 @@ function importFlowFromFile(inputEl) {
     const hasTypeMarker = parsed && parsed._type === 'hecos_flow';
     const hasPipeline   = parsed && Array.isArray(parsed.pipeline);
     if (!isHeflowExt && !hasTypeMarker && !hasPipeline) {
-      toast('error',
-        '❌ File non riconosciuto come Hecos Flow.\n'
-        + 'Usa file .heflow esportati da Hecos, o YAML con campo pipeline.');
+      toast('error', window.t('flows_import_invalid_file'));
       return;
     }
 
@@ -511,11 +515,11 @@ function importFlowFromFile(inputEl) {
     }
 
     const stepCount = hasPipeline ? parsed.pipeline.length : '?';
-    toast('ok', `↑ Importato: "${flowName}" (${stepCount} step) — premi Save per salvare.`);
+    toast('ok', window.t('flows_import_done').replace('{name}', flowName).replace('{count}', stepCount));
     const yamlTabBtn = document.querySelector('.tab-btn[data-tab="yaml"]');
     if (yamlTabBtn) yamlTabBtn.click();
   };
-  reader.onerror = () => toast('error', 'Errore nella lettura del file.');
+  reader.onerror = () => toast('error', window.t('flows_import_read_error'));
   reader.readAsText(file);
 }
 
@@ -566,3 +570,29 @@ function newEmptyCanvas() {
   if (typeof renderTimeline === 'function') renderTimeline(currentFlowData);
 }
 
+// ── Autosave Interval ─────────────────────────────────────────────
+let autosaveTimer = null;
+
+async function initFlowsAutosave() {
+  try {
+    const res = await fetch('/hecos/config');
+    const cfg = await res.json();
+    const flowsCfg = cfg?.plugins?.FLOWS || {};
+    if (flowsCfg.autosave_enabled) {
+      const ms = (flowsCfg.autosave_interval_minutes || 10) * 60000;
+      autosaveTimer = setInterval(() => {
+        const saveBtn = document.getElementById('btn-save');
+        if (currentFlowId && saveBtn && !saveBtn.disabled) {
+           saveCurrentFlow(true); 
+        }
+      }, ms);
+      console.log(`[Flows] Autosave enabled: every ${flowsCfg.autosave_interval_minutes || 10} min`);
+    }
+  } catch(e) {
+    console.warn("[Flows] Could not init autosave", e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(initFlowsAutosave, 1000);
+});

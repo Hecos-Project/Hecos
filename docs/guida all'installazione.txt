@@ -3,6 +3,14 @@
           (Per PC "vergine" - da zero)
 ===================================================
 
+0. DIPENDENZE DI SISTEMA E INSTALLAZIONE OFFLINE (CONSIGLIATO)
+   Prima di avviare Hecos o il setup automatico, si consiglia vivamente di installare 
+   i componenti fondamentali. Per tua comodità, trovi i relativi pacchetti di 
+   installazione offline direttamente all'interno della cartella "dependencies":
+   - VC_redist.x64.exe -> Microsoft Visual C++ (Obbligatorio per il motore RAG/ONNX).
+   - node-v24.16.0-x64.msi -> Node.js LTS (Richiesto per lo sviluppo e build del Canvas).
+   - tesseract-ocr-w64-setup...exe -> Tesseract OCR (Consigliato per visione e OCR).
+
 1. INSTALLARE PYTHON (OBBLIGATORIO)
    - Vai su https://www.python.org/downloads/
    - Scarica Python 3.10 o superiore (consigliato 3.11/3.12)

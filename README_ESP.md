@@ -108,6 +108,37 @@ Si desea que Hecos se ejecute completamente en segundo plano sin ventanas de ter
 
 ---
 
+## 🛠️ Requisitos del Sistema Esenciales (Windows)
+Si acabas de reinstalar Windows o estás configurando Hecos por primera vez, debes instalar estos paquetes de sistema **fundamentales** para que todos los módulos funcionen correctamente:
+
+1. ⚙️ **Microsoft Visual C++ Redistributable (Obligatorio)**
+   - *Para qué sirve*: Requerido por el motor de Memoria RAG (ONNX/FastEmbed). Sin este paquete recibirás errores de DLL faltantes y la búsqueda de documentos no funcionará.
+   - *Descarga*: 👉 [Descargar VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
+
+2. 🎵 **VLC Media Player 64-bit (Obligatorio)**
+   - *Para qué sirve*: El motor de Audio y el Reproductor de Medios integrado de Hecos utilizan las librerías de VLC en segundo plano para reproducir música, alarmas y salida de voz TTS.
+   - *Descarga*: 👉 [Descargar VLC 64-bit](https://www.videolan.org/vlc/download-windows.html)
+
+3. 👁️ **Tesseract OCR (Recomendado para la Visión)**
+   - *Para qué sirve*: Necesario para las capacidades visuales avanzadas y para leer texto en la pantalla a través de OCR (`pytesseract`).
+   - *Descarga*: 👉 [Descargar Tesseract OCR para Windows](https://github.com/UB-Mannheim/tesseract/wiki)
+
+4. 🟢 **Node.js (Recomendado / Requerido para el desarrollo y compilación del Canvas)**
+   - *Para qué sirve*: Necesario para compilar y gestionar las dependencias del módulo del Editor Visual de Flujos (ReactFlow/Vite). Si necesitas recompilar el frontend del canvas (`npm run build`), se requiere Node.js.
+   - *Descarga*: 👉 [Descargar Node.js LTS](https://nodejs.org/)
+
+---
+
+### 📦 Instalación Offline (Carpeta `dependencies`)
+Para tu comodidad, todos los paquetes de instalación necesarios están incluidos offline directamente en la carpeta `dependencies/` en la raíz del proyecto:
+* `dependencies/VC_redist.x64.exe` -> Microsoft Visual C++ Redistributable (ONNX/RAG)
+* `dependencies/node-v24.16.0-x64.msi` -> Node.js LTS (Canvas / Frontend Build)
+* `dependencies/tesseract-ocr-w64-setup-5.5.0.20241111.exe` -> Tesseract OCR (Visión)
+
+*Nota: Recomendamos encarecidamente instalar estos componentes antes de iniciar la configuración automática de Hecos.*
+
+---
+
 ## 🧠 Backends de IA Soportados (Motores LLM)
 
 Hecos está completamente fuera de línea por defecto y requiere un motor de IA local para procesar lógica y conversación. Durante la configuración, debes instalar uno de los backends independientes a continuación. Hecos los detectará automáticamente.

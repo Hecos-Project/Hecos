@@ -1,4 +1,5 @@
 import { ActionNode, TriggerNode, LogicNode, AINode, HttpNode, DelayNode, VarNode } from './NodeComponents.jsx';
+import AreaNode from './AreaNode.jsx';
 
 export const nodeTypes = {
   actionNode:  ActionNode,
@@ -8,4 +9,5 @@ export const nodeTypes = {
   httpNode:    HttpNode,
   delayNode:   DelayNode,
   varNode:     VarNode,
+  areaNode:    AreaNode,
 };

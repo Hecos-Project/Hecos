@@ -124,6 +124,20 @@ Se hai appena reinstallato Windows o stai configurando Hecos per la prima volta,
    - *A cosa serve*: Necessario per le capacità visive avanzate e per leggere il testo sullo schermo tramite OCR (`pytesseract`). 
    - *Download*: 👉 [Scarica Tesseract OCR per Windows](https://github.com/UB-Mannheim/tesseract/wiki)
 
+4. 🟢 **Node.js (Consigliato / Richiesto per lo sviluppo e build del Canvas)**
+   - *A cosa serve*: Necessario per compilare, buildare e gestire le dipendenze del modulo dell'Editor Visuale dei Flussi (ReactFlow/Vite). Se hai bisogno di compilare il frontend del canvas (`npm run build`), Node.js è richiesto.
+   - *Download*: 👉 [Scarica Node.js LTS](https://nodejs.org/)
+
+---
+
+### 📦 Installazione Offline (Cartella `dependencies`)
+Per tua comodità, tutti i pacchetti di installazione necessari sono inclusi offline direttamente all'interno della cartella `dependencies/` alla radice del progetto:
+* `dependencies/VC_redist.x64.exe` -> Microsoft Visual C++ Redistributable (ONNX/RAG)
+* `dependencies/node-v24.16.0-x64.msi` -> Node.js LTS (Canvas / Frontend Build)
+* `dependencies/tesseract-ocr-w64-setup-5.5.0.20241111.exe` -> Tesseract OCR (Visione)
+
+*Nota: Consigliamo caldamente di installare questi componenti prima di avviare il setup automatico di Hecos.*
+
 ---
 
 ## 🧠 Backend AI Supportati (Motori LLM)

@@ -12,22 +12,43 @@ const EDGE_STYLE = {
 };
 
 /**
+ * Compute an auto-layout grid position for index i.
+ */
+export function autoPosition(i, cols = 3, xGap = 280, yGap = 150) {
+  return { x: 60 + (i % cols) * xGap, y: 60 + Math.floor(i / cols) * yGap };
+}
+
+/**
+ * Re-apply auto-layout to a list of (non-area) RF nodes.
+ * Returns a new array with recalculated positions.
+ */
+export function autoLayoutNodes(rfNodes) {
+  let i = 0;
+  return rfNodes.map(n => {
+    if (n.type === 'areaNode') return n; // keep areas where they are
+    return { ...n, position: autoPosition(i++) };
+  });
+}
+
+/**
  * flowObj (parsed YAML) → { nodes: RF[], edges: RF[] }
  */
 export function flowToRFNodes(flowObj) {
-  if (!flowObj || !Array.isArray(flowObj.pipeline)) return { nodes: [], edges: [] };
+  if (!flowObj) return { nodes: [], edges: [] };
 
-  const steps = flowObj.pipeline;
-  const cols = 3;
-  const xGap = 280;
-  const yGap = 150;
+  const steps = Array.isArray(flowObj.pipeline) ? flowObj.pipeline : [];
+  const flowAreas = Array.isArray(flowObj.areas) ? flowObj.areas : [];
 
   const rfNodes = steps.map((step, i) => {
     const nodeType = getNodeTypeFromAction(step.action);
+    // Use saved position from YAML if available, otherwise fall back to grid
+    const position = (step.position && typeof step.position.x === 'number')
+      ? { x: step.position.x, y: step.position.y }
+      : autoPosition(i);
     return {
       id: step.id,
       type: nodeType,
-      position: { x: 60 + (i % cols) * xGap, y: 60 + Math.floor(i / cols) * yGap },
+      position,
       data: {
         stepId: step.id,
         action: step.action || '',
@@ -54,6 +75,25 @@ export function flowToRFNodes(flowObj) {
     });
   });
 
+  // Build area nodes
+  flowAreas.forEach((area, i) => {
+    rfNodes.push({
+      id: area.id || `area_${i}`,
+      type: 'areaNode',
+      position: area.position || { x: 0, y: 0 },
+      data: {
+        areaId: area.id || `area_${i}`,
+        title: area.title || '',
+        description: area.description || '',
+        color: area.color || '#1a1a2e',
+        backgroundImage: area.backgroundImage || '',
+        width: area.width || 400,
+        height: area.height || 400
+      },
+      style: { width: area.width || 400, height: area.height || 400, zIndex: -1 }
+    });
+  });
+
   return { nodes: rfNodes, edges: rfEdges };
 }
 
@@ -61,7 +101,7 @@ export function flowToRFNodes(flowObj) {
  * ReactFlow nodes + edges → Hecos flow pipeline array
  */
 export function rfNodesToFlow(rfNodes, rfEdges) {
-  if (!rfNodes?.length) return { pipeline: [] };
+  if (!rfNodes?.length) return { pipeline: [], areas: [] };
 
   // Build adjacency: target → [source] from edges
   const incomingMap = {};
@@ -77,11 +117,31 @@ export function rfNodesToFlow(rfNodes, rfEdges) {
     return a.position.x - b.position.x;
   });
 
-  const pipeline = sorted.map(node => {
+  const pipeline = [];
+  const areas = [];
+
+  sorted.forEach(node => {
+    if (node.type === 'areaNode') {
+      const d = node.data || {};
+      areas.push({
+        id: node.id,
+        title: d.title || '',
+        description: d.description || '',
+        color: d.color || '#1a1a2e',
+        backgroundImage: d.backgroundImage || '',
+        position: { x: Math.round(node.position.x), y: Math.round(node.position.y) },
+        width: Math.round(node.width || d.width || node.style?.width || 400),
+        height: Math.round(node.height || d.height || node.style?.height || 400)
+      });
+      return;
+    }
+
     const d = node.data || {};
     const step = {
       id: node.id,
       action: d.action || 'LOGIC__delay',
+      // Always persist the current canvas position in the YAML
+      position: { x: Math.round(node.position.x), y: Math.round(node.position.y) },
     };
     if (d.params && Object.keys(d.params).length) step.params = d.params;
     if (d.outputAs) step.output_as = d.outputAs;
@@ -91,8 +151,8 @@ export function rfNodesToFlow(rfNodes, rfEdges) {
     const deps = incomingMap[node.id] || [];
     if (deps.length) step.depends_on = deps;
 
-    return step;
+    pipeline.push(step);
   });
 
-  return { pipeline };
+  return { pipeline, areas };
 }

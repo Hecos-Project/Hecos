@@ -67,6 +67,14 @@ export default function ContextMenu({ menu, onClose, onAction }) {
           <div className="hc-cm-item" onClick={() => onAction('NEW_NODE', menu)}>
             <i className="fas fa-plus-circle" style={{ width: '20px', color: '#22c55e' }} /> Quick Add
           </div>
+          <div className="hc-separator" style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+          <div className="hc-cm-item" onClick={() => onAction('ADD_AREA', menu)}>
+            <i className="fas fa-layer-group" style={{ width: '20px', color: '#c026d3' }} /> Add Area
+          </div>
+          <div className="hc-separator" style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+          <div className="hc-cm-item" onClick={() => onAction('REARRANGE_NODES')}>
+            <i className="fas fa-th" style={{ width: '20px', color: '#f59e0b' }} /> Rearrange Nodes
+          </div>
         </React.Fragment>
       )}
 
