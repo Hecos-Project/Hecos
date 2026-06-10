@@ -220,10 +220,26 @@
   transform: rotate(180deg);
 }
 
-/* ── Mobile: hide panel entirely ───────────────────────────────────────────── */
+/* ── Mobile: Fullscreen Off-Canvas Panel ──────────────────────────────────── */
 @media (max-width: 768px) {
-  #control-room-panel { display: none !important; }
-  #sidebar-expand-btn { display: none !important; }
+  #control-room-panel {
+    position: fixed !important;
+    top: 0;
+    right: -110%; /* Hidden off-screen by default */
+    height: 100%;
+    z-index: 2000;
+    transition: right 0.3s ease;
+    border-left: 1px solid var(--border);
+  }
+  #control-room-panel.open {
+    right: 0;
+    width: 100vw !important;
+    min-width: 100vw !important;
+  }
+  /* Ensure the toggle button is visible */
+  #sidebar-expand-btn {
+    display: flex !important;
+  }
 }
 
 /* ── Grid Engine: span-2 — kept for backwards compat ───────────────────────── */

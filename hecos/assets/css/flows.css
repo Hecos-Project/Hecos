@@ -544,3 +544,28 @@ select optgroup { background:#080f1a; font-weight:700; color:var(--flows-accent)
   background: rgba(0,212,255,.08);
   border-color: var(--flows-accent);
 }
+
+/* ── Mobile Layout ── */
+@media (max-width: 768px) {
+  #flows-body {
+    flex-direction: column;
+  }
+  #flows-sidebar {
+    width: 100%;
+    height: 180px; /* Take top portion for the list */
+    border-right: none;
+    border-bottom: 1px solid var(--flows-border);
+    flex-shrink: 0;
+  }
+  #flows-main {
+    width: 100%;
+    flex: 1;
+  }
+  #flows-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .flow-title-input {
+    width: 100%;
+  }
+}

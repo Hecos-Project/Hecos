@@ -203,11 +203,15 @@ const mapWidget = {
         const liveEl = document.getElementById('mw-badge-live');
         if (liveEl) liveEl.style.display = 'inline-flex';
 
-        // Update GPS note
-        const noteEl = document.getElementById('mw-gps-note');
+        let accuracyNote = '';
+        if (acc > 1000) {
+            accuracyNote = '<br><span style="font-size:9px; color:var(--orange);">⚠️ Stima approssimativa (IP)</span>';
+        }
+
+        // Update GPS note text to include warning if inaccurate
         const noteTxtEl = document.getElementById('mw-gps-note-text');
         if (noteEl && noteTxtEl) {
-            noteTxtEl.textContent = `GPS live attivo — precisione ±${acc}m`;
+            noteTxtEl.innerHTML = `GPS live attivo — precisione ±${acc}m ${acc > 1000 ? '<span style="color:var(--orange);">⚠️</span>' : ''}`;
             noteEl.style.display = 'flex';
         }
 
@@ -215,7 +219,7 @@ const mapWidget = {
         if (this.liveMarker) {
             this.liveMarker.setLatLng([lat, lon]);
             this.liveMarker.getPopup().setContent(
-                `<b>📍 Sei qui</b><br>Precisione: ±${acc}m`
+                `<b>📍 Sei qui</b><br>Precisione: ±${acc}m${accuracyNote}`
             );
         } else {
             if (!this.map) return; // map not ready yet
