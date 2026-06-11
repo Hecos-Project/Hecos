@@ -17,8 +17,20 @@
     let _hintVisible = false;
     let _spotlightVisible = false;
     let _spotlightResults = [];
-    let _spotlightSelected = 0;
     let _lastActiveElement = null;
+
+    // Helper to bypass Vue/React setter overrides so v-model updates correctly
+    function _forceSetValue(el, val) {
+        let setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+        if (el.tagName === 'TEXTAREA') setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+        if (setter) {
+            setter.call(el, val);
+        } else {
+            el.value = val;
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
 
     // ── Fetch commands from backend ───────────────────────────────────────────
     async function _fetchCommands() {
@@ -86,8 +98,7 @@
                 e.preventDefault();
                 const targetInput = _lastActiveElement && (_lastActiveElement.tagName === 'INPUT' || _lastActiveElement.tagName === 'TEXTAREA') ? _lastActiveElement : document.getElementById('user-input');
                 if (targetInput) {
-                    targetInput.value = target.dataset.alias + (target.dataset.needsArgs === 'true' ? ' ' : '');
-                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    _forceSetValue(targetInput, target.dataset.alias + (target.dataset.needsArgs === 'true' ? ' ' : ''));
                 }
                 _hideHint();
             }
@@ -168,8 +179,7 @@
                 ev.preventDefault(); // Prevent blur
                 const targetInput = _lastActiveElement && (_lastActiveElement.tagName === 'INPUT' || _lastActiveElement.tagName === 'TEXTAREA') ? _lastActiveElement : document.getElementById('user-input');
                 if (targetInput) {
-                    targetInput.value = cmd.aliases[0] + (cmd.requires_args ? ' ' : '');
-                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    _forceSetValue(targetInput, cmd.aliases[0] + (cmd.requires_args ? ' ' : ''));
                     targetInput.focus();
                 }
                 _hideHint();
@@ -340,8 +350,7 @@
             const start = _lastActiveElement.selectionStart || 0;
             const end = _lastActiveElement.selectionEnd || 0;
             const val = _lastActiveElement.value || "";
-            _lastActiveElement.value = val.substring(0, start) + finalInput + val.substring(end);
-            _lastActiveElement.dispatchEvent(new Event('input', { bubbles: true }));
+            _forceSetValue(_lastActiveElement, val.substring(0, start) + finalInput + val.substring(end));
             _lastActiveElement.focus();
             return;
         }
