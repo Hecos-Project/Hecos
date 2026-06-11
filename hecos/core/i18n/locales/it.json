@@ -998,6 +998,15 @@
         "flows_import_read_error": "Errore nella lettura del file.",
         "flows_delete_selected_tooltip": "Elimina il flusso selezionato",
         "flows_export_tooltip": "Esporta il flow corrente come file .yaml",
-        "flows_import_tooltip": "Importa un flow da file .yaml"
+        "flows_import_tooltip": "Importa un flow da file .yaml",
+        "hub_mod_lists": "Liste & To-Do",
+        "webui_desc_lists": "Gestione liste universale. Supporta liste della spesa, task, blacklists. Permette livelli di priorità, etichette e drag & drop.",
+        "lists_new_list": "Nuova Lista",
+        "lists_clear_done": "Pulisci completati",
+        "lists_new_name_prompt": "Nome della nuova lista:",
+        "lists_confirm_del_item": "Eliminare definitivamente questo elemento?",
+        "lists_confirm_clear": "Rimuovere tutti gli elementi completati?",
+        "lists_confirm_archive": "Archiviare la lista? (potrai ancora cercarla via comandi vocali)",
+        "lists_confirm_delete": "Eliminare definitivamente l'intera lista e il suo contenuto?"
     }
 }

@@ -327,6 +327,95 @@
             }
         ]
     },
+    "LISTS": {
+        "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
+        "commands": {
+            "create_list": "Crea una nuova lista vuota.",
+            "list_lists": "Mostra tutte le liste attive con il conteggio degli elementi.",
+            "show_list": "Mostra tutti gli elementi di una specifica lista.",
+            "add_to_list": "Aggiunge uno o più elementi a una lista. Crea la lista se non esiste.",
+            "check_item": "Segna un elemento come completato in una lista.",
+            "uncheck_item": "Ripristina un elemento come da fare.",
+            "remove_from_list": "Elimina definitivamente un elemento da una lista.",
+            "clear_done": "Rimuove tutti gli elementi già completati da una lista.",
+            "delete_list": "Elimina un'intera lista.",
+            "archive_list": "Archivia una lista (la nasconde dalla visuale principale)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "📋",
+        "category": "PLUGINS",
+        "module_type": "plugin",
+        "slash_commands": [
+            {
+                "id": "lists",
+                "aliases": [
+                    "/list",
+                    "/lists",
+                    "/liste"
+                ],
+                "description": "Mostra tutte le liste",
+                "usage": "/list",
+                "example": "/list",
+                "icon": "📋",
+                "method": "list_lists",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "list_show",
+                "aliases": [
+                    "/lista"
+                ],
+                "description": "Mostra una lista",
+                "usage": "/lista <nome>",
+                "example": "/lista Spesa",
+                "icon": "🔍",
+                "method": "show_list",
+                "args_schema": {
+                    "list_name": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "list_add",
+                "aliases": [
+                    "/list add",
+                    "/lista aggiungi"
+                ],
+                "description": "Aggiunge elemento",
+                "usage": "/list add <lista> <elemento>",
+                "example": "/list add Spesa Uova",
+                "icon": "➕",
+                "method": "add_to_list",
+                "args_schema": {
+                    "list_name": "str",
+                    "items": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "list_done",
+                "aliases": [
+                    "/list done",
+                    "/lista spunta"
+                ],
+                "description": "Spunta elemento",
+                "usage": "/list done <lista> <elemento>",
+                "example": "/list done Spesa Uova",
+                "icon": "✅",
+                "method": "check_item",
+                "args_schema": {
+                    "list_name": "str",
+                    "item_text": "str"
+                },
+                "requires_args": true
+            }
+        ]
+    },
     "MAIL": {
         "description": "Full-featured Email plugin for Hecos. Send, receive, search and manage emails via SMTP/IMAP. Integrates with the Contacts plugin for address lookup. Reads credentials from the user profile.",
         "commands": {

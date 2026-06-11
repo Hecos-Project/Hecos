@@ -979,6 +979,15 @@
         "flows_import_read_error": "Error reading file.",
         "flows_delete_selected_tooltip": "Delete the selected flow",
         "flows_export_tooltip": "Export the current flow as a .yaml file",
-        "flows_import_tooltip": "Import a flow from a .yaml file"
+        "flows_import_tooltip": "Import a flow from a .yaml file",
+        "hub_mod_lists": "Lists & To-Do",
+        "webui_desc_lists": "Universal list management. Supports shopping lists, tasks, blacklists. Provides priority levels, labels and drag & drop.",
+        "lists_new_list": "New List",
+        "lists_clear_done": "Clear completed",
+        "lists_new_name_prompt": "Name of the new list:",
+        "lists_confirm_del_item": "Permanently delete this item?",
+        "lists_confirm_clear": "Remove all completed items?",
+        "lists_confirm_archive": "Archive the list? (You can still search it via voice commands)",
+        "lists_confirm_delete": "Permanently delete the entire list and its contents?"
     }
 }

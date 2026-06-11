@@ -1,0 +1,15 @@
+<!-- LISTS CONFIG PANEL -->
+<div id="tab-lists" class="panel">
+    <div class="panel-header">
+        <h2 class="panel-title"><i class="fas fa-list-check"></i> <span data-i18n="hub_mod_lists">Gestore Liste</span></h2>
+        <div class="header-actions">
+            <button class="btn btn-sm" onclick="listsCreateList()"><i class="fas fa-plus"></i> <span data-i18n="lists_new_list">Nuova Lista</span></button>
+            <button class="btn btn-sm btn-outline" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;"><i class="fas fa-broom"></i> <span data-i18n="lists_clear_done">Pulisci completati</span></button>
+        </div>
+    </div>
+    
+    {% include 'modules/lists/_lists_main.html' %}
+</div>
+
+{% include 'modules/lists/_lists_styles.html' %}
+{% include 'modules/lists/_lists_logic.html' %}

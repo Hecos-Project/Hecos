@@ -1,0 +1,87 @@
+<!-- LISTS WIDGET -->
+<div class="cr-widget widget-lists" id="widget-lists">
+    <div class="cr-widget-header">
+        <h3 onclick="_listsWidgetNav()" style="cursor:pointer;"><i class="fas fa-list-check"></i> <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span></h3>
+        <button class="btn btn-icon btn-sm widget-btn" onclick="_listsWidgetNav()" title="Apri Gestore Liste"><i class="fas fa-external-link-alt"></i></button>
+    </div>
+    <div class="cr-widget-body">
+        <div class="lists-widget-items">
+            {% if lists %}
+                {% for lst in lists[:5] %}
+                <div class="lw-item" onclick="_listsWidgetNav()">
+                    <div class="lw-icon">{{ lst.icon or '📋' }}</div>
+                    <div class="lw-name">{{ lst.name }}</div>
+                    <div class="lw-count">{{ lst.pending_count or 0 }}</div>
+                </div>
+                {% endfor %}
+                {% if lists|length > 5 %}
+                <div class="lw-more">...e altre {{ lists|length - 5 }} liste</div>
+                {% endif %}
+            {% else %}
+                <div class="lw-empty">Nessuna lista attiva.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.widget-lists {
+    display: flex;
+    flex-direction: column;
+}
+.lists-widget-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.lw-item {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.2);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.lw-item:hover {
+    background: rgba(var(--primary-color-rgb), 0.3);
+}
+.lw-icon {
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+.lw-name {
+    flex: 1;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lw-count {
+    background: var(--primary-color);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+.lw-empty, .lw-more {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 10px 0;
+}
+</style>
+
+<script>
+function _listsWidgetNav() {
+    // If we are inside the Central Hub, just call showTab
+    if (typeof showTab === 'function') {
+        showTab('lists');
+    } else {
+        // From the Control Room or sidebar: open Central Hub then navigate
+        window.open('/hecos/config/ui#lists', '_blank');
+    }
+}
+</script>

@@ -1,0 +1,293 @@
+<style>
+/* LISTS CONTAINER */
+.lists-container {
+    display: flex;
+    height: calc(100vh - 200px);
+    background: var(--bg-card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+/* SIDEBAR */
+.lists-sidebar {
+    width: 280px;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-body);
+}
+.lists-search {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+.lists-search .search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.lists-search .search-box i {
+    position: absolute;
+    left: 12px;
+    color: var(--text-muted);
+}
+.lists-search input {
+    width: 100%;
+    padding: 8px 12px 8px 35px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: var(--bg-input);
+    color: var(--text-color);
+    outline: none;
+}
+.lists-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+.lists-item-nav {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+}
+.lists-item-nav:hover {
+    background: rgba(var(--primary-color-rgb), 0.1);
+}
+.lists-item-nav.active {
+    background: var(--primary-color);
+    color: white;
+}
+.lists-item-nav .nav-icon {
+    font-size: 1.2rem;
+    margin-right: 12px;
+}
+.lists-item-nav .nav-name {
+    flex: 1;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lists-item-nav .nav-count {
+    background: var(--bg-card);
+    color: var(--text-color);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+.lists-item-nav.active .nav-count {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+.lists-empty-msg {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* CONTENT AREA */
+.lists-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+.lists-content-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+}
+.lists-content-placeholder .placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+.lists-content-active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.lists-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border-color);
+}
+.lists-header-title {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.lists-header-title .list-icon {
+    font-size: 2rem;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.lists-header-title .list-icon:hover {
+    transform: scale(1.1);
+}
+.lists-header-title h3 {
+    margin: 0;
+    font-size: 1.8rem;
+    outline: none;
+    border-bottom: 1px dashed transparent;
+}
+.lists-header-title h3:focus {
+    border-bottom: 1px dashed var(--primary-color);
+}
+.lists-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ADD BAR */
+.lists-add-bar {
+    padding: 20px 30px;
+    background: rgba(0,0,0,0.02);
+    border-bottom: 1px solid var(--border-color);
+}
+.lists-add-bar input#lists-add-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-color);
+    font-size: 1.1rem;
+    outline: none;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+}
+.lists-add-bar input#lists-add-input:focus {
+    border-color: var(--primary-color);
+}
+.lists-add-options {
+    display: flex;
+    gap: 10px;
+}
+.lists-select, .lists-input-small {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-input);
+    color: var(--text-color);
+    outline: none;
+}
+
+/* FILTERS */
+.lists-items-filters {
+    padding: 10px 30px;
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+.lists-filter-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: bold;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-bottom: 2px solid transparent;
+}
+.lists-filter-btn.active {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* ITEMS LIST */
+.lists-items-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 30px;
+}
+.list-item-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+    gap: 15px;
+}
+.list-item-row.dragging {
+    opacity: 0.5;
+}
+.list-item-row:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.list-item-drag {
+    cursor: grab;
+    color: var(--text-muted);
+}
+.list-item-check {
+    cursor: pointer;
+}
+.list-item-check input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+.list-item-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.list-item-text {
+    font-size: 1.1rem;
+    color: var(--text-color);
+    outline: none;
+}
+.list-item-row.is-done .list-item-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+.list-item-meta {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 0.8rem;
+}
+.item-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.1);
+    color: var(--text-muted);
+}
+.badge-p1 { background: rgba(255, 152, 0, 0.2); color: #ff9800; }
+.badge-p2 { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+.list-item-actions {
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.list-item-row:hover .list-item-actions {
+    opacity: 1;
+}
+
+/* Animations */
+@keyframes strike-out {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.02); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.5; }
+}
+.anim-check {
+    animation: strike-out 0.3s ease forwards;
+}
+</style>

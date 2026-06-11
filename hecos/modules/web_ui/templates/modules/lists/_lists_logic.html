@@ -1,0 +1,405 @@
+<script>
+let listsCurrentFilter = 'all';
+let listsActiveListId = null;
+let listsAllData = [];
+let listsCategories = [];
+
+function listsInit() {
+    listsFetchCategories();
+    listsFetchLists();
+}
+
+async function listsFetchCategories() {
+    try {
+        const res = await fetch('/api/lists/categories');
+        const data = await res.json();
+        if (data.ok) {
+            listsCategories = data.categories;
+            const dl = document.getElementById('lists-categories-datalist');
+            dl.innerHTML = '';
+            listsCategories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                dl.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error("Error fetching categories", e);
+    }
+}
+
+async function listsFetchLists() {
+    try {
+        const res = await fetch('/api/lists');
+        const data = await res.json();
+        if (data.ok) {
+            listsAllData = data.lists;
+            listsRenderSidebar();
+        }
+    } catch (e) {
+        console.error("Error fetching lists", e);
+    }
+}
+
+function listsRenderSidebar() {
+    const container = document.getElementById('lists-sidebar-list');
+    const emptyMsg = document.getElementById('lists-sidebar-empty');
+    const q = document.getElementById('lists-search-input').value.toLowerCase();
+    
+    // Clear old items except emptyMsg
+    Array.from(container.children).forEach(c => {
+        if (c.id !== 'lists-sidebar-empty') c.remove();
+    });
+    
+    const filtered = listsAllData.filter(l => l.name.toLowerCase().includes(q));
+    
+    if (filtered.length === 0) {
+        emptyMsg.style.display = 'block';
+    } else {
+        emptyMsg.style.display = 'none';
+        filtered.forEach(lst => {
+            const div = document.createElement('div');
+            div.className = 'lists-item-nav';
+            if (lst.id === listsActiveListId) div.classList.add('active');
+            
+            div.innerHTML = `
+                <span class="nav-icon">${lst.icon || '📋'}</span>
+                <span class="nav-name">${lst.name}</span>
+                <span class="nav-count">${lst.pending_count || 0}</span>
+            `;
+            div.onclick = () => listsSelectList(lst.id);
+            container.appendChild(div);
+        });
+    }
+}
+
+function listsSearchSidebar() {
+    listsRenderSidebar();
+}
+
+async function listsSelectList(id) {
+    listsActiveListId = id;
+    listsRenderSidebar(); // update active class
+    
+    const lst = listsAllData.find(l => l.id === id);
+    if (!lst) return;
+    
+    document.getElementById('lists-content-empty').style.display = 'none';
+    document.getElementById('lists-content-active').style.display = 'flex';
+    document.getElementById('lists-btn-cleardone').style.display = 'inline-flex';
+    
+    document.getElementById('lists-active-icon').innerText = lst.icon || '📋';
+    document.getElementById('lists-active-name').innerText = lst.name;
+    
+    await listsFetchItems();
+}
+
+async function listsFetchItems() {
+    if (!listsActiveListId) return;
+    try {
+        const url = listsCurrentFilter === 'all' 
+            ? `/api/lists/${listsActiveListId}/items` 
+            : `/api/lists/${listsActiveListId}/items?status=${listsCurrentFilter}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.ok) {
+            listsRenderItems(data.items);
+        }
+    } catch (e) {
+        console.error("Error fetching items", e);
+    }
+}
+
+function listsRenderItems(items) {
+    const container = document.getElementById('lists-items-container');
+    container.innerHTML = '';
+    
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'list-item-row';
+        row.dataset.id = item.id;
+        if (item.status === 'done') row.classList.add('is-done');
+        
+        let badgesHtml = '';
+        if (item.priority > 0) {
+            const pClass = item.priority === 1 ? 'badge-p1' : 'badge-p2';
+            const pText = item.priority === 1 ? 'P1' : 'P2';
+            badgesHtml += `<span class="item-badge ${pClass}">${pText}</span>`;
+        }
+        if (item.label) {
+            badgesHtml += `<span class="item-badge"><i class="fas fa-tag"></i> ${item.label}</span>`;
+        }
+        
+        row.innerHTML = `
+            <div class="list-item-drag"><i class="fas fa-grip-vertical"></i></div>
+            <div class="list-item-check">
+                <input type="checkbox" ${item.status === 'done' ? 'checked' : ''} onchange="listsToggleItem('${item.id}', this.checked, this.parentElement.parentElement)">
+            </div>
+            <div class="list-item-content">
+                <div class="list-item-text" contenteditable="true" onblur="listsUpdateItemText('${item.id}', this.innerText)">${item.text}</div>
+                ${badgesHtml ? `<div class="list-item-meta">${badgesHtml}</div>` : ''}
+            </div>
+            <div class="list-item-actions">
+                <button class="btn btn-sm btn-icon text-danger" onclick="listsDeleteItem('${item.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        
+        // Setup drag and drop events
+        row.draggable = true;
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragenter', handleDragEnter);
+        row.addEventListener('dragleave', handleDragLeave);
+        row.addEventListener('dragend', handleDragEnd);
+        
+        container.appendChild(row);
+    });
+}
+
+// ── CRUD ──────────────────────────────────────────────────────────────────────
+
+async function listsCreateList() {
+    const name = prompt(t ? t('lists_new_name_prompt') || "Nome della nuova lista:" : "Nome della nuova lista:");
+    if (!name) return;
+    try {
+        const res = await fetch('/api/lists', {
+            method: 'POST',
+            body: JSON.stringify({ name: name, icon: '📋' })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            await listsFetchLists();
+            listsSelectList(data.list.id);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsAddItem() {
+    if (!listsActiveListId) return;
+    const input = document.getElementById('lists-add-input');
+    const prio = document.getElementById('lists-add-priority').value;
+    const label = document.getElementById('lists-add-label').value;
+    const text = input.value.trim();
+    
+    if (!text) return;
+    input.value = '';
+    
+    try {
+        const res = await fetch(`/api/lists/${listsActiveListId}/items`, {
+            method: 'POST',
+            body: JSON.stringify({ text: text, priority: prio, label: label })
+        });
+        if (res.ok) {
+            await listsFetchItems();
+            await listsFetchLists(); // update counts
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsToggleItem(itemId, isChecked, rowElement) {
+    if (isChecked) rowElement.classList.add('anim-check');
+    try {
+        await fetch(`/api/lists/items/${itemId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status: isChecked ? 'done' : 'pending' })
+        });
+        await listsFetchLists(); // update count
+        if (listsCurrentFilter !== 'all') {
+            setTimeout(() => listsFetchItems(), 300); // refresh list
+        } else {
+            setTimeout(() => {
+                rowElement.classList.remove('anim-check');
+                if (isChecked) rowElement.classList.add('is-done');
+                else rowElement.classList.remove('is-done');
+            }, 300);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsUpdateItemText(itemId, newText) {
+    if (!newText.trim()) return;
+    try {
+        await fetch(`/api/lists/items/${itemId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ text: newText.trim() })
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsDeleteItem(itemId) {
+    if (!confirm(t ? t('lists_confirm_del_item') || "Eliminare l'elemento?" : "Eliminare l'elemento?")) return;
+    try {
+        await fetch(`/api/lists/items/${itemId}`, { method: 'DELETE' });
+        await listsFetchItems();
+        await listsFetchLists();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsClearDone() {
+    if (!listsActiveListId) return;
+    if (!confirm(t ? t('lists_confirm_clear') || "Rimuovere tutti gli elementi completati?" : "Rimuovere tutti gli elementi completati?")) return;
+    try {
+        await fetch(`/api/lists/${listsActiveListId}/clear_done`, { method: 'POST' });
+        await listsFetchItems();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsRenameList(newName) {
+    if (!listsActiveListId || !newName.trim()) return;
+    try {
+        await fetch(`/api/lists/${listsActiveListId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ name: newName.trim() })
+        });
+        await listsFetchLists();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsChangeIcon() {
+    if (!listsActiveListId) return;
+    const newIcon = prompt("Inserisci una nuova emoji per l'icona:");
+    if (!newIcon) return;
+    try {
+        await fetch(`/api/lists/${listsActiveListId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ icon: newIcon.trim() })
+        });
+        document.getElementById('lists-active-icon').innerText = newIcon;
+        await listsFetchLists();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsArchiveActive() {
+    if (!listsActiveListId) return;
+    if (!confirm(t ? t('lists_confirm_archive') || "Archiviare la lista?" : "Archiviare la lista?")) return;
+    try {
+        await fetch(`/api/lists/${listsActiveListId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ archived: 1 })
+        });
+        listsActiveListId = null;
+        document.getElementById('lists-content-empty').style.display = 'flex';
+        document.getElementById('lists-content-active').style.display = 'none';
+        document.getElementById('lists-btn-cleardone').style.display = 'none';
+        await listsFetchLists();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function listsDeleteActive() {
+    if (!listsActiveListId) return;
+    if (!confirm(t ? t('lists_confirm_delete') || "Eliminare definitivamente la lista e tutti i suoi elementi?" : "Eliminare definitivamente la lista e tutti i suoi elementi?")) return;
+    try {
+        await fetch(`/api/lists/${listsActiveListId}`, { method: 'DELETE' });
+        listsActiveListId = null;
+        document.getElementById('lists-content-empty').style.display = 'flex';
+        document.getElementById('lists-content-active').style.display = 'none';
+        document.getElementById('lists-btn-cleardone').style.display = 'none';
+        await listsFetchLists();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function listsSetFilter(filter) {
+    listsCurrentFilter = filter;
+    document.querySelectorAll('.lists-filter-btn').forEach(btn => {
+        if (btn.dataset.filter === filter) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+    listsFetchItems();
+}
+
+// ── Drag & Drop ──────────────────────────────────────────────────────────────
+
+let dragSrcEl = null;
+
+function handleDragStart(e) {
+    dragSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+    setTimeout(() => this.classList.add('dragging'), 0);
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDragEnter(e) {
+    this.style.borderTop = "2px solid var(--primary-color)";
+}
+
+function handleDragLeave(e) {
+    this.style.borderTop = "";
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (dragSrcEl !== this) {
+        const container = document.getElementById('lists-items-container');
+        const items = Array.from(container.querySelectorAll('.list-item-row'));
+        const srcIndex = items.indexOf(dragSrcEl);
+        const tgtIndex = items.indexOf(this);
+        
+        if (srcIndex < tgtIndex) {
+            container.insertBefore(dragSrcEl, this.nextSibling);
+        } else {
+            container.insertBefore(dragSrcEl, this);
+        }
+        listsSaveOrder();
+    }
+    this.style.borderTop = "";
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    const container = document.getElementById('lists-items-container');
+    container.querySelectorAll('.list-item-row').forEach(r => r.style.borderTop = "");
+}
+
+async function listsSaveOrder() {
+    if (!listsActiveListId) return;
+    const container = document.getElementById('lists-items-container');
+    const orderedIds = Array.from(container.querySelectorAll('.list-item-row')).map(r => r.dataset.id);
+    try {
+        await fetch(`/api/lists/${listsActiveListId}/reorder`, {
+            method: 'POST',
+            body: JSON.stringify({ ordered_ids: orderedIds })
+        });
+    } catch (e) {
+        console.error("Error saving order", e);
+    }
+}
+
+// Setup — called by showTab('lists') in config_core_navigation.js
+// Guard to prevent double-init on subsequent tab switches
+let _listsInitialized = false;
+const _listsInitOrig = listsInit;
+listsInit = function() {
+    if (!_listsInitialized) {
+        _listsInitialized = true;
+    }
+    _listsInitOrig();
+};
+</script>
