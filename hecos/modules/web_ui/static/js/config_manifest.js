@@ -49,6 +49,7 @@ window.CONFIG_HUB = {
         { id: 'automation',label: 'hub_mod_automation',  icon: '<i class="fas fa-magic"></i>', cat: 'SISTEMA', pluginTag: 'AUTOMATION', isCore: true },
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
+        { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', isCore: true },
 
         { id: 'widgets',   label: 'hub_mod_widgets',      icon: '<i class="fas fa-cubes"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
@@ -136,7 +137,8 @@ window.CONFIG_HUB.tagMap = {
     'AUTOMATION': 'automation',
     'BROWSER':    'browser',
     'USERS':      'users',
-    'FLOWS':      'flows'
+    'FLOWS':      'flows',
+    'HDCS':       'hdcs'
 };
 
 /**
