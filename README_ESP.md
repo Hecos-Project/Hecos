@@ -26,6 +26,7 @@ Ahora completamente migrato a una **arquitectura estable de Runtime Alpha**, Hec
 ---
 
 ## ✨ Características Principales (v0.27.4)
+* ⚡ **HDCS (Comandos Directos)** — Ejecuta instantáneamente más de 150 funciones nativas omitiendo el "cerebro" de la IA escribiendo `/` en el chat o con `Ctrl+Alt+Espacio` globalmente.
 * ⚙️ **Motor de Automatización Flows** — Editor visual interactivo para crear flujos automatizados complejos con integraciones directas a comandos de voz (NLP).
 * **📅 Calendario Integrado** — Módulo de calendario completo con seguimiento de días festivos y codificación de colores localizada de los eventos.
 * **⏰ Módulo Recordatorio** — Planificador de tareas impulsado por NLP con capacidades de repetición (snooze) y notificaciones activas del SO.

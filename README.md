@@ -26,6 +26,7 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.4 offe
 ---
 
 ## ✨ Key Features (v0.27.4)
+* ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally.
 * ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands.
 * **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding.
 * **⏰ Reminder Module** — NLP-powered task scheduler with snooze capabilities and active OS notifications.

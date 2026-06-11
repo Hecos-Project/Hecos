@@ -26,7 +26,8 @@ Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 
 ---
 
 ## ✨ Caratteristiche Principali (v0.27.4)
-* ⚙️ **Motore di Sicurezza Flows** — Editor visuale a nodi (drag-and-drop) per la creazione di automazioni complesre multi-step, trigger e azioni con integrazione NLP vocale.
+* ⚡ **HDCS (Comandi Diretti)** — Esegui istantaneamente oltre 150 funzioni native saltando il "cervello" dell'IA digitando `/` nella chat o con `Ctrl+Alt+Spazio` ovunque.
+* ⚙️ **Motore di Automazione Flows** — Editor visuale a nodi (drag-and-drop) per la creazione di automazioni complesse multi-step, trigger e azioni con integrazione NLP vocale.
 * **📅 Calendario Integrato** — Modulo calendario completo con tracciamento delle festività e codifica a colori localizzata per gli eventi.
 * **⏰ Modulo Promemoria** — Pianificatore di attività basato su NLP con funzionalità di snooze e notifiche OS attive.
 * **💻 Finestra Azioni (Action Window)** — Console pulita in stile terminale direttamente all'interno della UI della chat, per monitorare l'esecuzione nativa del sistema e i processi in background.
