@@ -54,7 +54,28 @@ class ExecutorTools:
 
     # ── System Tools ──────────────────────────────────────────────────────────
 
+    def execute_slash_command(self, command: str) -> str:
+        """
+        Executes an HDCS direct slash command (e.g. /img, /automation.click).
+        Use this in Flows to run manual system commands bypassing the LLM.
+        """
+        try:
+            from hecos.core.commands.executor import get_executor
+            exc = get_executor()
+            # Ensure command starts with slash
+            cmd_str = command.strip()
+            if not cmd_str.startswith("/"):
+                cmd_str = "/" + cmd_str
+            res = exc.execute(raw_input=cmd_str, page_context="flows", current_user_id="admin")
+            if res.get("ok"):
+                return res.get("output", "Success")
+            else:
+                return f"Error: {res.get('error', 'Unknown error')}\n{res.get('output', '')}"
+        except Exception as e:
+            return f"Exception executing command: {e}"
+
     def get_time(self) -> str:
+        from hecos.modules.executor.sys_tools import get_time_tool
         return get_time_tool()
 
     def get_date(self) -> str:

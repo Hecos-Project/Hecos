@@ -18,6 +18,7 @@
     let _spotlightVisible = false;
     let _spotlightResults = [];
     let _spotlightSelected = 0;
+    let _lastActiveElement = null;
 
     // ── Fetch commands from backend ───────────────────────────────────────────
     async function _fetchCommands() {
@@ -238,6 +239,7 @@
     }
 
     function _openSpotlight() {
+        _lastActiveElement = document.activeElement;
         _spotlightSelected = 0;
         const overlay = document.getElementById('hdcs-overlay');
         overlay.style.display = 'flex';
@@ -318,6 +320,18 @@
         const finalInput = query.startsWith('/') ? query : (cmd ? cmd.aliases[0] : query);
         _hideSpotlight();
 
+        // Autocomplete into an active input field (like a Flows node parameter)
+        if (_lastActiveElement && (_lastActiveElement.tagName === 'INPUT' || _lastActiveElement.tagName === 'TEXTAREA') && 
+            _lastActiveElement.id !== 'hdcs-input' && _lastActiveElement.id !== 'user-input') {
+            const start = _lastActiveElement.selectionStart || 0;
+            const end = _lastActiveElement.selectionEnd || 0;
+            const val = _lastActiveElement.value || "";
+            _lastActiveElement.value = val.substring(0, start) + finalInput + val.substring(end);
+            _lastActiveElement.dispatchEvent(new Event('input', { bubbles: true }));
+            _lastActiveElement.focus();
+            return;
+        }
+
         try {
             const res = await fetch('/api/commands/run', {
                 method: 'POST',
@@ -326,22 +340,26 @@
             });
             const data = await res.json();
             if (data.ok) {
-                // Inject directly into chat DOM — no SSE event, no double render
                 if (window.hideWelcome) window.hideWelcome();
                 if (window.addBubble) {
                     window.addBubble('user', finalInput);
                     window.addBubble('ai', data.output || '');
+                    if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
+                } else {
+                    alert(`⚡ Command Executed: ${finalInput}\n\n${data.output || 'Success'}`);
                 }
-                if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;
             } else {
                 console.warn('[HDCS] Command error:', data.error);
                 if (window.addBubble) {
                     window.addBubble('user', finalInput);
                     window.addBubble('ai', data.output || `❌ ${data.error}`);
+                } else {
+                    alert(`❌ Error executing ${finalInput}:\n${data.error}\n${data.output || ''}`);
                 }
             }
         } catch (err) {
             console.error('[HDCS] Execution failed:', err);
+            if (!window.addBubble) alert(`❌ Execution failed: ${err}`);
         }
     }
 

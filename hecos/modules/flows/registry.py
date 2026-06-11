@@ -482,6 +482,7 @@ def _auto_register_hecos_modules():
         }
 
         KNOWN_PARAMS = {
+            "EXECUTOR__execute_slash_command": {"command": "string"},
             "EXECUTOR__execute_background_command": {"command": "string"},
             "EXECUTOR__execute_shell_command": {"command": "string"},
             "EXECUTOR__run_python_code": {"code": "string"},
