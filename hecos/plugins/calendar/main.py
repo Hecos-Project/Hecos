@@ -14,6 +14,21 @@ class CalendarTools:
 
     def __init__(self, config=None):
         self._cfg = config # This will be the config dict passed by on_load
+        self.status = "ONLINE"
+        
+        self.slash_commands = [
+            {
+                "id": "calendar",
+                "aliases": ["/calendar", "/calendario", "/appuntamenti"],
+                "description": "Elenca i prossimi eventi nel calendario",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "args_schema": {},
+                "requires_args": False,
+            }
+        ]
         self.tag = "CALENDAR"
         self.desc = "Calendar plugin"
 

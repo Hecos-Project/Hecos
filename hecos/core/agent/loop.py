@@ -65,57 +65,61 @@ class AgentExecutor:
         # Bind the global state manager so that decentralized tools (like Executor) can emit action logs to the UI
         AgentTracer.bind(self.state_manager)
         
-        # --- GLOBAL DIRECT COMMANDS INTERCEPTOR (BYPASS LLM) ---
+        # --- GLOBAL DIRECT COMMANDS INTERCEPTOR (HDCS - Bypasses LLM) ---
         testo_pulito = user_text.strip()
-        if testo_pulito.lower().startswith(("/img ", "/image ", "/photo ", "/foto ")):
+        if testo_pulito.startswith("/"):
             try:
-                raw_prompt = testo_pulito.split(" ", 1)[1].strip()
-                self._emit(f"Direct Command Intercepted: {testo_pulito[:10]}...", level="info")
+                self._emit(f"Intercetto comando diretto: {testo_pulito.split()[0]}...", level="info")
+                from hecos.core.commands.executor import get_executor
+                executor = get_executor()
                 
-                # Semantic Cleaning: Remove "a photo of", "a picture of", etc. to avoid redundancy
-                clean_target = raw_prompt.lower()
-                for unwanted in ["a photo of ", "a picture of ", "una foto di ", "un'immagine di ", "photo of ", "picture of "]:
-                    clean_target = clean_target.replace(unwanted, "")
+                # Check for persona image generation overrides (legacy support for /img)
+                # If the user targets the bot visually, we enrich the prompt
+                if testo_pulito.lower().startswith(("/img ", "/image ", "/photo ", "/foto ")):
+                    raw_prompt = testo_pulito.split(" ", 1)[1].strip() if " " in testo_pulito else ""
+                    clean_target = raw_prompt.lower()
+                    for unwanted in ["a photo of ", "a picture of ", "una foto di ", "un'immagine di ", "photo of ", "picture of "]:
+                        clean_target = clean_target.replace(unwanted, "")
+                        
+                    import re
+                    active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul.yaml')
+                    persona_name_raw = active_p.replace('.yaml', '').replace('_', ' ').lower()
+                    persona_short = persona_name_raw.split(' ')[0]
+                    
+                    enrich_keywords = ["you", "yourself", "tua", "tuo", "tuoi", "tue", "te", "te stessa", "te stesso", persona_short, persona_name_raw]
+                    enrich_keywords = [k for k in enrich_keywords if k.strip()]
+                    pattern = r'\b(?:' + '|'.join(map(re.escape, enrich_keywords)) + r')\b'
+                    
+                    if re.search(pattern, raw_prompt.lower()):
+                        visual_desc = self._get_persona_visual_description()
+                        if visual_desc:
+                            self._emit(f"Enriching prompt with persona YAML context: {persona_short}...", level="info")
+                            target_action = re.sub(pattern, '', clean_target, flags=re.IGNORECASE)
+                            target_action = re.sub(r'^\s*[,.]\s*', '', target_action).strip()
+                            prompt_bypass = f"A photo of {visual_desc}, {target_action}" if target_action else f"A photo of {visual_desc}"
+                            # Re-write the command string
+                            cmd_part = testo_pulito.split()[0]
+                            testo_pulito = f"{cmd_part} {prompt_bypass}"
+
+                res = executor.execute(
+                    raw_input=testo_pulito,
+                    config=self.config,
+                    config_manager=self.config_manager,
+                    current_user_id=self.current_user_id,
+                    session_id=self.session_id,
+                    sender_tab_id=self.sender_tab_id,
+                    page_context="chat"
+                )
                 
-                import re
-                
-                # Smart Enrichment: If user says 'you/persona_name', add persona visual context
-                active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul.yaml')
-                persona_name_raw = active_p.replace('.yaml', '').replace('_', ' ').lower()
-                persona_short = persona_name_raw.split(' ')[0] # e.g. "urania"
-                
-                # We only match second-person pronouns (referring to the AI) and the AI's names.
-                enrich_keywords = ["you", "yourself", "tua", "tuo", "tuoi", "tue", "te", "te stessa", "te stesso", persona_short, persona_name_raw]
-                # Filter out empty strings just in case
-                enrich_keywords = [k for k in enrich_keywords if k.strip()]
-                
-                # Create a regex pattern to match whole words only
-                pattern = r'\b(?:' + '|'.join(map(re.escape, enrich_keywords)) + r')\b'
-                
-                prompt_bypass = clean_target
-                
-                if re.search(pattern, raw_prompt.lower()):
-                    visual_desc = self._get_persona_visual_description()
-                    if visual_desc:
-                        self._emit(f"Enriching prompt with persona YAML context: {persona_short}...", level="info")
-                        # Remove the matched trigger words from the prompt to avoid redundancy
-                        target_action = re.sub(pattern, '', clean_target, flags=re.IGNORECASE)
-                        # Clean up punctuation after removal
-                        target_action = re.sub(r'^\s*[,.]\s*', '', target_action).strip()
-                        prompt_bypass = f"A photo of {visual_desc}, {target_action}" if target_action else f"A photo of {visual_desc}"
-                
-                from hecos.plugins.image_gen.main import tools as image_gen_tools
-                result = image_gen_tools.generate_image(prompt_bypass)
-                
-                # Save to memory to keep the context consistent
-                from hecos.memory import brain_interface
-                brain_interface.save_message("user", testo_pulito, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
-                brain_interface.save_message("assistant", result, config=self.config_manager.config if self.config_manager else self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
-                
+                if not res.get("ok"):
+                    self._emit(f"Command Error: {res.get('error')}", level="error")
+                else:
+                    self._emit(f"Direct command executed successfully.", level="success")
+                    
                 # Format for output (video/voice)
-                return processore.clean_final_output(result, [], result, voice_status)
+                return processore.clean_final_output(res["output"], [], res["output"], voice_status)
             except Exception as e:
-                logger.error(f"[AGENT] Direct Bypass Error: {e}")
+                logger.error(f"[AGENT] Direct Command Bypass Error: {e}", exc_info=True)
                 err_msg = f"❌ Error: {e}"
                 return processore.clean_final_output(err_msg, [], err_msg, voice_status)
         # -------------------------------------------------------

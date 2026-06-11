@@ -3,7 +3,7 @@
     "name": "Calendar",
     "version": "1.0.0",
     "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
-    "icon": "📅",
+    "icon": "\ud83d\udcc5",
     "lazy_load": true,
     "is_class_based": true,
     "on_load": true,
@@ -48,7 +48,10 @@
                             "description": "Optional: Color code for the event (e.g. '#3498db', 'red', 'green'). Defaults to the system accent color."
                         }
                     },
-                    "required": ["title", "start"]
+                    "required": [
+                        "title",
+                        "start"
+                    ]
                 }
             }
         },
@@ -81,7 +84,9 @@
                             "description": "The ID (full UUID or first 8 chars) of the event to delete."
                         }
                     },
-                    "required": ["event_id"]
+                    "required": [
+                        "event_id"
+                    ]
                 }
             }
         },
@@ -104,6 +109,23 @@
                     }
                 }
             }
+        }
+    ],
+    "slash_commands": [
+        {
+            "id": "calendar",
+            "aliases": [
+                "/calendar",
+                "/calendario",
+                "/appuntamenti"
+            ],
+            "description": "Elenca i prossimi eventi nel calendario",
+            "usage": "/calendar",
+            "example": "/calendar",
+            "icon": "\ud83d\udcc5",
+            "method": "list_events",
+            "args_schema": {},
+            "requires_args": false
         }
     ]
 }

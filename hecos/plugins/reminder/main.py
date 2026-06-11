@@ -26,9 +26,34 @@ class ReminderTools:
 
     def __init__(self):
         self.tag    = "REMINDER"
-        self.desc   = "Scheduler for time-based reminders with TTS alerts and WebUI notifications."
+        self.desc   = "Manage personal reminders with native push notifications, interactive alerts and text-to-speech."
         self.status = "ONLINE"
         self.stop_flag = False
+
+        self.slash_commands = [
+            {
+                "id": "reminder",
+                "aliases": ["/reminder", "/ricorda", "/promemoria"],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏰",
+                "method": "set_reminder",
+                "args_schema": {"title": "str", "when": "str"},
+                "requires_args": True,
+            },
+            {
+                "id": "reminders",
+                "aliases": ["/reminders", "/promemoria list"],
+                "description": "Elenca tutti i promemoria attivi",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "args_schema": {},
+                "requires_args": False,
+            }
+        ]
 
         self.config_schema = {
             "reminder_mode": {

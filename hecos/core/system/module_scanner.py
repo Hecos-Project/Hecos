@@ -117,7 +117,8 @@ def update_capability_registry(config=None, debug_log=True):
                                 "is_lazy": True,
                                 "icon": manifest_data.get("icon", ""),
                                 "category": manifest_data.get("category", "PLUGINS"),
-                                "module_type": module_type
+                                "module_type": module_type,
+                                "slash_commands": manifest_data.get("slash_commands", [])
                             }
                             
                             _lazy_plugins_paths[tag] = os.path.abspath(main_file)
@@ -174,7 +175,8 @@ def update_capability_registry(config=None, debug_log=True):
                         "routing_instructions": getattr(tools_instance, "routing_instructions", ""),
                         "is_class_based": True,
                         "icon": getattr(tools_instance, "icon", ""),
-                        "category": getattr(tools_instance, "category", "PLUGINS")
+                        "category": getattr(tools_instance, "category", "PLUGINS"),
+                        "slash_commands": getattr(tools_instance, "slash_commands", [])
                     }
                     logger.debug("LOADER", f"Class-based Plugin {plugin_dir} loaded with tag {tag}")
 
