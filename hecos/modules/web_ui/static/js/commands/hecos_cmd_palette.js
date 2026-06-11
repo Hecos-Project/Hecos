@@ -84,8 +84,11 @@
             const target = activeEl || items[0];
             if (target) {
                 e.preventDefault();
-                const chatInput = document.getElementById('user-input');
-                chatInput.value = target.dataset.alias + (target.dataset.needsArgs === 'true' ? ' ' : '');
+                const targetInput = _lastActiveElement && (_lastActiveElement.tagName === 'INPUT' || _lastActiveElement.tagName === 'TEXTAREA') ? _lastActiveElement : document.getElementById('user-input');
+                if (targetInput) {
+                    targetInput.value = target.dataset.alias + (target.dataset.needsArgs === 'true' ? ' ' : '');
+                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
                 _hideHint();
             }
         } else if (e.key === 'Enter') {
@@ -106,14 +109,11 @@
             document.body.appendChild(panel);
         }
 
-        const anchor = document.getElementById('input-bar') || document.getElementById('user-input');
+        const anchor = _lastActiveElement || document.getElementById('input-bar') || document.getElementById('user-input');
         if (anchor) {
             const rect = anchor.getBoundingClientRect();
             panel.style.cssText = `
                 position:fixed;
-                bottom:${window.innerHeight - rect.top + 8}px;
-                left:${rect.left + 8}px;
-                width:${Math.min(rect.width - 16, 560)}px;
                 z-index:9990;
                 background:rgba(16,16,22,0.97);
                 border:1px solid rgba(0,243,255,0.2);
@@ -126,6 +126,15 @@
                 overflow-y:auto;
                 font-family:'Inter','JetBrains Mono',monospace;
             `;
+            if (_lastActiveElement && _lastActiveElement.id !== 'user-input') {
+                panel.style.top = (rect.bottom + 4) + 'px';
+                panel.style.left = rect.left + 'px';
+                panel.style.width = Math.min(rect.width, 560) + 'px';
+            } else {
+                panel.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+                panel.style.left = (rect.left + 8) + 'px';
+                panel.style.width = Math.min(rect.width - 16, 560) + 'px';
+            }
         }
 
         panel.innerHTML = '';
@@ -156,12 +165,15 @@
                 item.classList.add('active');
             });
             item.addEventListener('mousedown', (ev) => {
-                ev.preventDefault(); // Prevent blur on chat input
-                const chatInput = document.getElementById('user-input');
-                chatInput.value = cmd.aliases[0] + (cmd.requires_args ? ' ' : '');
-                chatInput.focus();
+                ev.preventDefault(); // Prevent blur
+                const targetInput = _lastActiveElement && (_lastActiveElement.tagName === 'INPUT' || _lastActiveElement.tagName === 'TEXTAREA') ? _lastActiveElement : document.getElementById('user-input');
+                if (targetInput) {
+                    targetInput.value = cmd.aliases[0] + (cmd.requires_args ? ' ' : '');
+                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    targetInput.focus();
+                }
                 _hideHint();
-                if (!cmd.requires_args && window.sendMessage) {
+                if (!cmd.requires_args && window.sendMessage && (!targetInput || targetInput.id === 'user-input')) {
                     window.sendMessage(); // Fires via loop.py HDCS — one path, no double render
                 }
             });
@@ -312,9 +324,11 @@
 
         // Autocomplete if needs args
         if (cmd && cmd.requires_args && !query.includes(' ')) {
-            document.getElementById('hdcs-input').value = cmd.aliases[0] + ' ';
-            _updateSpotlight();
-            return;
+            if (!(_lastActiveElement && (_lastActiveElement.tagName === 'INPUT' || _lastActiveElement.tagName === 'TEXTAREA') && _lastActiveElement.id !== 'hdcs-input' && _lastActiveElement.id !== 'user-input')) {
+                document.getElementById('hdcs-input').value = cmd.aliases[0] + ' ';
+                _updateSpotlight();
+                return;
+            }
         }
 
         const finalInput = query.startsWith('/') ? query : (cmd ? cmd.aliases[0] : query);
@@ -385,22 +399,31 @@
             }
         });
 
-        // Chat input: "/" trigger → inline hint (Mode A)
-        function attachChatInput() {
-            const chatInput = document.getElementById('user-input');
-            if (chatInput) {
-                chatInput.addEventListener('input', _onChatInput);
-                chatInput.addEventListener('keydown', _onChatKeydown);
-                chatInput.addEventListener('blur', () => setTimeout(_hideHint, 200));
+        // Global input listener: "/" trigger → inline hint (Mode A)
+        document.body.addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                if (e.target.id === 'hdcs-input') return;
+                const val = e.target.value;
+                if (val.startsWith('/')) {
+                    _lastActiveElement = e.target;
+                    const filtered = _filter(_allCommands, val);
+                    if (filtered.length > 0) _showHint(filtered);
+                    else _hideHint();
+                } else {
+                    _hideHint();
+                }
             }
-        }
-
-        // Try immediately; if textarea not ready, wait for DOMContentLoaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', attachChatInput);
-        } else {
-            attachChatInput();
-        }
+        });
+        document.body.addEventListener('keydown', (e) => {
+            if (_hintVisible && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.id !== 'hdcs-input') {
+                _onChatKeydown(e);
+            }
+        });
+        document.body.addEventListener('focusout', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(_hideHint, 200);
+            }
+        });
     }
 
     // Run init
