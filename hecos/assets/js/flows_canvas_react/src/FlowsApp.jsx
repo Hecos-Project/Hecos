@@ -18,8 +18,9 @@ import bridge from './bridge.js';
 import { nodeTypes } from './nodes/index.jsx';
 import NodePalette from './components/NodePalette.jsx';
 import NodeEditPanel from './components/NodeEditPanel.jsx';
+import AreaEditPanel from './components/AreaEditPanel.jsx';
 import ContextMenu from './components/ContextMenu.jsx';
-import { catalogToNodes, flowToRFNodes, rfNodesToFlow } from './utils/conversion.js';
+import { flowToRFNodes, rfNodesToFlow, autoLayoutNodes } from './utils/conversion.js';
 import { ACTION_TYPE_MAP } from './nodes/nodeTypeMap.js';
 
 const DEFAULT_EDGE_OPTIONS = {
@@ -33,13 +34,18 @@ export default function FlowsApp() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [editNode, setEditNode] = useState(null);   // node being edited
+  const [editNode, setEditNode] = useState(null);
   const [catalog, setCatalog] = useState({});
   const reactFlowWrapper = useRef(null);
   const [rfInstance, setRfInstance] = useState(null);
   const [menu, setMenu] = useState(null);
-  // Execution states: stepId -> 'running'|'done'|'error'
   const execStateRef = useRef({});
+
+  // Keep live refs to current nodes/edges so callbacks always see fresh state
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
 
   // ── Load catalog ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -49,17 +55,38 @@ export default function FlowsApp() {
       .catch(() => {});
   }, []);
 
-  // ── Export flow from canvas ───────────────────────────────────────────────
+  // ── Export flow from canvas (always reads live state via refs) ────────────
   const exportFlow = useCallback(() => {
-    return rfNodesToFlow(nodes, edges);
-  }, [nodes, edges]);
+    return rfNodesToFlow(nodesRef.current, edgesRef.current);
+  }, []);
 
-  // ── Notify YAML editor when graph changes ─────────────────────────────────
+  // ── notifyChange: tells the bridge (→ CodeMirror) about a graph change ───
+  // Only call this AFTER a logical mutation is complete (not during drag frames).
+  const notifyTimeoutRef = useRef(null);
   const notifyChange = useCallback((newNodes, newEdges) => {
-    const flow = rfNodesToFlow(newNodes !== undefined ? newNodes : nodes,
-                               newEdges  !== undefined ? newEdges  : edges);
-    bridge._notifyGraphChange(flow);
-  }, [nodes, edges]);
+    if (notifyTimeoutRef.current) clearTimeout(notifyTimeoutRef.current);
+    notifyTimeoutRef.current = setTimeout(() => {
+      const n = newNodes !== undefined ? newNodes : nodesRef.current;
+      const e = newEdges !== undefined ? newEdges  : edgesRef.current;
+      const flow = rfNodesToFlow(n, e);
+      bridge._notifyGraphChange(flow);
+    }, 300);
+  }, []);
+
+  // ── Standard ReactFlow change handlers (no sync during drag) ─────────────
+  const handleNodesChange = useCallback((changes) => {
+    onNodesChange(changes);
+  }, [onNodesChange]);
+
+  const handleEdgesChange = useCallback((changes) => {
+    onEdgesChange(changes);
+  }, [onEdgesChange]);
+
+  // ── Sync positions ONCE when drag ends (single event, not per-frame) ──────
+  const onNodeDragStop = useCallback((_event, _node, updatedNodes) => {
+    // updatedNodes is the full node list with final positions from ReactFlow
+    notifyChange(updatedNodes, undefined);
+  }, [notifyChange]);
 
   // ── Edge connection ───────────────────────────────────────────────────────
   const onConnect = useCallback((params) => {
@@ -69,18 +96,6 @@ export default function FlowsApp() {
       return newEdges;
     });
   }, [notifyChange]);
-
-  // ── Node change with YAML sync ────────────────────────────────────────────
-  const handleNodesChange = useCallback((changes) => {
-    onNodesChange(changes);
-    // Defer sync slightly to let state settle
-    setTimeout(() => notifyChange(), 50);
-  }, [onNodesChange, notifyChange]);
-
-  const handleEdgesChange = useCallback((changes) => {
-    onEdgesChange(changes);
-    setTimeout(() => notifyChange(), 50);
-  }, [onEdgesChange, notifyChange]);
 
   // ── Drop from palette ─────────────────────────────────────────────────────
   const onDrop = useCallback((event) => {
@@ -98,10 +113,9 @@ export default function FlowsApp() {
 
     const nodeType = ACTION_TYPE_MAP[actionName.split('__')[0]] || 'actionNode';
     const baseName = actionName.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
-    const existingCount = nodes.filter(n => n.data.stepId?.startsWith(baseName)).length;
+    const existingCount = nodesRef.current.filter(n => n.data.stepId?.startsWith(baseName)).length;
     const stepId = `${baseName}_${existingCount + 1}`;
 
-    // Build default params from catalog
     let defaultParams = {};
     const catEntry = Object.values(catalog).flat().find(a => a.name === actionName);
     if (catEntry?.params) {
@@ -135,7 +149,7 @@ export default function FlowsApp() {
       notifyChange(updated, undefined);
       return updated;
     });
-  }, [rfInstance, reactFlowWrapper, nodes, catalog, notifyChange]);
+  }, [rfInstance, reactFlowWrapper, catalog, notifyChange]);
 
   const onDragOver = useCallback((e) => {
     e.preventDefault();
@@ -144,7 +158,6 @@ export default function FlowsApp() {
 
   // ── Node single-click / double-click ──────────────────────────────────────
   const onNodeClick = useCallback((_, node) => {
-    // If the edit panel is already open, gracefully switch to the newly clicked node
     if (editNode && editNode.id !== node.id) {
       setEditNode(node);
     }
@@ -202,7 +215,6 @@ export default function FlowsApp() {
     } else if (action === 'DELETE') {
       setNodes(nds => {
         const up = nds.filter(n => n.id !== payload.id);
-        // Ensure edges are also updated for notifyChange without triggering two conflicting renders
         setEdges(eds => {
           const upEdges = eds.filter(e => e.source !== payload.id && e.target !== payload.id);
           notifyChange(up, upEdges);
@@ -218,15 +230,15 @@ export default function FlowsApp() {
       });
     } else if (action === 'TOGGLE_DISABLE') {
       setNodes(nds => {
-        const up = nds.map(n => n.id === payload.id 
-          ? { ...n, data: { ...n.data, disabled: !n.data.disabled } } 
+        const up = nds.map(n => n.id === payload.id
+          ? { ...n, data: { ...n.data, disabled: !n.data.disabled } }
           : n
         );
         notifyChange(up, undefined);
         return up;
       });
     } else if (action === 'DUPLICATE') {
-      const dupId = payload.id + '_copy' + Math.floor(Math.random()*1000);
+      const dupId = payload.id + '_copy' + Math.floor(Math.random() * 1000);
       const dupNode = {
         ...payload,
         id: dupId,
@@ -241,9 +253,39 @@ export default function FlowsApp() {
       });
     } else if (action === 'SHOW_PALETTE' || action === 'NEW_NODE') {
       setPaletteOpen(true);
+    } else if (action === 'ADD_AREA') {
+      const areaId = 'area_' + Math.floor(Math.random() * 10000);
+      const pos = payload?.left !== undefined
+        ? rfInstance.screenToFlowPosition({ x: payload.left, y: payload.top })
+        : { x: 0, y: 0 };
+      const newArea = {
+        id: areaId,
+        type: 'areaNode',
+        position: pos,
+        data: {
+          areaId: areaId,
+          title: 'New Area',
+          description: '',
+          color: '#1a1a2e',
+          width: 400,
+          height: 400
+        },
+        style: { width: 400, height: 400, zIndex: -1 }
+      };
+      setNodes(nds => {
+        const up = [...nds, newArea];
+        notifyChange(up, undefined);
+        return up;
+      });
+    } else if (action === 'REARRANGE_NODES') {
+      setNodes(nds => {
+        const up = autoLayoutNodes(nds);
+        notifyChange(up, undefined);
+        return up;
+      });
     }
     setMenu(null);
-  }, [setNodes, setEdges, notifyChange]);
+  }, [setNodes, setEdges, notifyChange, rfInstance]);
 
   // ── Save from edit panel ──────────────────────────────────────────────────
   const onSaveNode = useCallback((nodeId, updatedData) => {
@@ -251,7 +293,6 @@ export default function FlowsApp() {
       const updatedNodes = nds.map(n =>
         n.id === nodeId ? { ...n, id: updatedData.stepId, data: updatedData } : n
       );
-      // Atomically remap edges too if stepId changed, then notify once
       setEdges(eds => {
         const updatedEdges = nodeId !== updatedData.stepId
           ? eds.map(e => ({
@@ -260,38 +301,39 @@ export default function FlowsApp() {
               target: e.target === nodeId ? updatedData.stepId : e.target,
             }))
           : eds;
-        // Single authoritative notifyChange with both updated sets
         notifyChange(updatedNodes, updatedEdges);
         return updatedEdges;
       });
       return updatedNodes;
     });
     setEditNode(null);
-    // Auto-save to disk: after notifyChange syncs YAML editor, trigger the global save.
-    // Small delay ensures the bridge has flushed the cmEditor value.
-    setTimeout(() => {
-      if (typeof window.saveCurrentFlow === 'function') {
-        window.saveCurrentFlow();
-      }
-    }, 80);
   }, [setNodes, setEdges, notifyChange]);
+
+  const onSaveArea = useCallback((nodeId, updatedData) => {
+    setNodes(nds => {
+      const updatedNodes = nds.map(n =>
+        n.id === nodeId ? { ...n, id: updatedData.areaId, data: updatedData } : n
+      );
+      notifyChange(updatedNodes, undefined);
+      return updatedNodes;
+    });
+    setEditNode(null);
+  }, [setNodes, notifyChange]);
 
   // ── Delete selected nodes/edges ───────────────────────────────────────────
   const deleteSelected = useCallback(() => {
     setNodes(nds => {
       const selectedIds = new Set(nds.filter(n => n.selected).map(n => n.id));
       const updatedNodes = nds.filter(n => !selectedIds.has(n.id));
-      
       setEdges(eds => {
-        const remainingEdges = eds.filter(e => 
-          !e.selected && 
-          !selectedIds.has(e.source) && 
+        const remainingEdges = eds.filter(e =>
+          !e.selected &&
+          !selectedIds.has(e.source) &&
           !selectedIds.has(e.target)
         );
         notifyChange(updatedNodes, remainingEdges);
         return remainingEdges;
       });
-
       return updatedNodes;
     });
   }, [setNodes, setEdges, notifyChange]);
@@ -303,15 +345,14 @@ export default function FlowsApp() {
         setMenu(null);
         return;
       }
-      if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
-      
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
       if (e.key === 'Delete' || e.key === 'Backspace') {
         deleteSelected();
       } else if (e.key.toLowerCase() === 'x' || e.key.toLowerCase() === 'd') {
         setNodes(nds => {
           const selectedNodes = nds.filter(n => n.selected);
           if (!selectedNodes.length) return nds;
-          // Toggle all selected logic: if any is enabled, disable all. Otherwise enable all.
           const anyEnabled = selectedNodes.some(n => !n.data.disabled);
           const up = nds.map(n => n.selected ? { ...n, data: { ...n.data, disabled: anyEnabled } } : n);
           notifyChange(up, undefined);
@@ -347,7 +388,6 @@ export default function FlowsApp() {
       deleteSelectedNodes: deleteSelected,
     };
 
-    // Expose palette toggle for old toolbar button
     window.togglePalette = () => setPaletteOpen(p => !p);
 
     return () => { bridge._api = null; };
@@ -365,6 +405,7 @@ export default function FlowsApp() {
         onInit={setRfInstance}
         onDrop={onDrop}
         onDragOver={onDragOver}
+        onNodeDragStop={onNodeDragStop}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
@@ -375,7 +416,7 @@ export default function FlowsApp() {
         defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
         fitView
         proOptions={{ hideAttribution: true }}
-        deleteKeyCode={null}  // we handle delete ourselves
+        deleteKeyCode={null}
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1a1a2e" />
         <Controls showInteractive={false} />
@@ -396,7 +437,6 @@ export default function FlowsApp() {
           style={{ bottom: 50, right: 12 }}
         />
 
-        {/* Empty hint */}
         {nodes.length === 0 && (
           <Panel position="center" style={{ pointerEvents: 'none', minWidth: '300px' }}>
             <div className="rf-empty-hint">
@@ -407,7 +447,6 @@ export default function FlowsApp() {
         )}
       </ReactFlow>
 
-      {/* Palette */}
       {paletteOpen && (
         <NodePalette
           catalog={catalog}
@@ -415,8 +454,19 @@ export default function FlowsApp() {
         />
       )}
 
-      {/* Edit panel (slides in from right) */}
       {editNode && (() => {
+        if (editNode.type === 'areaNode') {
+          return (
+            <AreaEditPanel
+              key={editNode.id}
+              node={editNode}
+              allNodeIds={nodes.map(n => n.id).filter(id => id !== editNode.id)}
+              onSave={onSaveArea}
+              onClose={() => setEditNode(null)}
+            />
+          );
+        }
+
         const allVariables = Array.from(new Set(nodes.map(n => n.data?.outputAs).filter(Boolean)));
         return (
           <NodeEditPanel
@@ -431,11 +481,10 @@ export default function FlowsApp() {
         );
       })()}
 
-      {/* Context Menu */}
-      <ContextMenu 
-        menu={menu} 
-        onClose={() => setMenu(null)} 
-        onAction={handleContextMenuAction} 
+      <ContextMenu
+        menu={menu}
+        onClose={() => setMenu(null)}
+        onAction={handleContextMenuAction}
       />
     </div>
   );

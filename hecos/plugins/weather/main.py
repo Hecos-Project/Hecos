@@ -15,6 +15,20 @@ class WeatherPlugin:
         self.desc = "Real-time weather and forecasting using the open-source Open-Meteo API."
         self.status = "ONLINE"
         
+        self.slash_commands = [
+            {
+                "id": "meteo",
+                "aliases": ["/meteo", "/weather", "/tempo"],
+                "description": "Mostra il meteo attuale o previsioni",
+                "usage": "/meteo [città]",
+                "example": "/meteo Roma",
+                "icon": "🌦️",
+                "method": "get_current_weather",
+                "args_schema": {"city": "str?"},
+                "requires_args": False,
+            }
+        ]
+        
         self.config_schema = {
             "default_city": {
                 "type": "str",

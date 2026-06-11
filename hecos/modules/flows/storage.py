@@ -25,8 +25,10 @@ log = FlowLogger()
 def _get_flows_dir() -> str:
     """Returns the absolute path to workspace/flows/, creating it if needed."""
     try:
-        from hecos.core.constants import ROOT_DIR
-        flows_dir = os.path.join(ROOT_DIR, "workspace", "flows")
+        from hecos.core.constants import HECOS_DIR
+        # ROOT_DIR is typically one level up from HECOS_DIR
+        root_dir = os.path.normpath(os.path.join(HECOS_DIR, ".."))
+        flows_dir = os.path.join(root_dir, "workspace", "flows")
     except Exception:
         flows_dir = os.path.join(os.getcwd(), "workspace", "flows")
     os.makedirs(flows_dir, exist_ok=True)
@@ -123,6 +125,9 @@ def save_flow(flow_data: Dict[str, Any], raw_yaml: Optional[str] = None) -> str:
             if isinstance(parsed, dict):
                 parsed["_meta"] = meta
                 parsed["id"] = flow_id
+                # Auto-clean any dangling dependencies before saving to disk
+                from hecos.modules.flows.validator import validate_flow
+                validate_flow(parsed)
                 with open(path, "w", encoding="utf-8") as f:
                     yaml.dump(parsed, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
             else:
@@ -169,4 +174,5 @@ def update_flow_field(flow_id: str, field: str, value: Any) -> bool:
 
 def _load_yaml_file(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
+        return yaml.load(f, Loader=loader) or {}

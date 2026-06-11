@@ -28,6 +28,7 @@
       <!-- NAV LINKS -->
       <a href="/chat" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-comment-dots"></i> {{ t("webui_nav_chat") }}</a>
       {% if current_user.is_authenticated %}
+      <a href="/home" class="btn btn-sm btn-secondary desktop-only" style="text-decoration:none;" title="Control Room"><i class="fas fa-th-large"></i> Room</a>
       <a href="/drive" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-hdd"></i> Drive</a>
       <a href="/flows" class="btn btn-sm btn-secondary" style="text-decoration:none;" title="Hecos Flows — Orchestrazione visuale"><i class="fas fa-project-diagram"></i> Flows</a>
       {% endif %}

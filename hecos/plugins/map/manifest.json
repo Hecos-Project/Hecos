@@ -1,0 +1,46 @@
+{
+    "tag": "MAP",
+    "name": "GPS Map",
+    "version": "1.0.0",
+    "description": "Geocoding e geolocalizzazione. Fornisce posizione home, coordinate e strumenti di mappa.",
+    "icon": "🗺️",
+    "lazy_load": true,
+    "is_class_based": true,
+    "status": "ONLINE",
+    "commands": {
+        "get_home_location": "Ottieni le coordinate lat/lon della posizione home dell'utente",
+        "geocode": "Geocodifica un indirizzo o città in coordinate lat/lon"
+    },
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "MAP__get_home_location",
+                "description": "Returns the geographic coordinates (lat/lon) of the user's home address. Use this when the user asks where they live, their home location, or to show their home on a map.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "username": { "type": "string", "default": "admin" }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "MAP__geocode",
+                "description": "Converts a city name or address string into geographic coordinates (lat/lon). Use when you need to locate a place mentioned by the user.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Address, city name, or place to geocode (e.g. 'Rome, Italy', 'Via Roma 1, Milano')"
+                        }
+                    },
+                    "required": ["query"]
+                }
+            }
+        }
+    ]
+}

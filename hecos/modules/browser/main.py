@@ -276,7 +276,32 @@ class BrowserTools:
         if err: return err
         return interactor.run_js(code)
 
-    def screenshot(self) -> str:
+    @bypass_playwright_async_check
+    def new_tab(self, url: str = "about:blank") -> str:
+        """
+        Opens a new tab in the browser and navigates to the specified URL.
+        Use this to avoid closing or overwriting the currently open tab.
+        :param url: The URL to open in the new tab.
+        """
+        err = self._ensure_running()
+        if err: return err
+        page = engine.new_tab(url)
+        if page:
+            return f"[BROWSER] Opened new tab: {url}"
+        return "[BROWSER] Failed to open new tab."
+
+    @bypass_playwright_async_check
+    def close_tab(self) -> str:
+        """
+        Closes the currently active browser tab.
+        """
+        err = self._ensure_running()
+        if err: return err
+        if engine.close_tab():
+            return "[BROWSER] Active tab closed successfully."
+        return "[BROWSER] Failed to close active tab."
+
+    @bypass_playwright_async_check
         """
         Takes a screenshot of the current browser viewport.
         The image is saved to hecos/media/Hecos_screenshots and the path is returned for vision analysis.
@@ -285,8 +310,9 @@ class BrowserTools:
         if err: return err
         return interactor.take_screenshot()
 
+    @bypass_playwright_async_check
     def close(self) -> str:
-        """Closes the Hecos browser window."""
+        """Closes the ENTIRE Hecos browser window."""
         engine.close()
         return "[BROWSER] Browser closed."
 

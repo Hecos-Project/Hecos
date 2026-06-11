@@ -177,6 +177,33 @@ def get_page():
     return _PAGE
 
 
+def close_tab() -> bool:
+    """Close the current active tab."""
+    global _PAGE, _BROWSER
+    if _PAGE and not _PAGE.is_closed():
+        try:
+            _PAGE.close()
+        except Exception as e:
+            logger.debug(f"[BROWSER] Error closing tab: {e}")
+            return False
+            
+    if _BROWSER and _BROWSER.is_connected():
+        pages = []
+        for ctx in _BROWSER.contexts:
+            pages.extend(ctx.pages)
+        if pages:
+            _PAGE = pages[-1]
+            try:
+                _PAGE.bring_to_front()
+            except Exception:
+                pass
+        else:
+            _PAGE = None
+    else:
+        _PAGE = None
+    return True
+
+
 def new_tab(url: str = "about:blank"):
     """Open a new tab and navigate to url. Returns the new Page object."""
     global _PAGE

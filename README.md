@@ -26,6 +26,7 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.4 offe
 ---
 
 ## ✨ Key Features (v0.27.4)
+* ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally.
 * ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands.
 * **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding.
 * **⏰ Reminder Module** — NLP-powered task scheduler with snooze capabilities and active OS notifications.
@@ -138,6 +139,20 @@ If you have just reinstalled Windows or are setting up Hecos for the first time,
 3. 👁️ **Tesseract OCR (Recommended for Vision)**
    - *What it's for*: Necessary for advanced visual capabilities and to read text on the screen via OCR (`pytesseract`). 
    - *Download*: 👉 [Download Tesseract OCR for Windows](https://github.com/UB-Mannheim/tesseract/wiki)
+
+4. 🟢 **Node.js (Recommended / Required for Canvas & UI Development)**
+   - *What it's for*: Required to compile, build, and manage dependencies for the Flows Visual Node Editor module (ReactFlow/Vite). If you need to rebuild the canvas frontend (`npm run build`), Node.js is required.
+   - *Download*: 👉 [Download Node.js LTS](https://nodejs.org/)
+
+---
+
+### 📦 Offline Installation (The `dependencies` Folder)
+For your convenience, all required installation packages are included offline directly inside the `dependencies/` folder at the root of the project:
+* `dependencies/VC_redist.x64.exe` -> Microsoft Visual C++ Redistributable (ONNX/RAG)
+* `dependencies/node-v24.16.0-x64.msi` -> Node.js LTS (Canvas / Frontend Build)
+* `dependencies/tesseract-ocr-w64-setup-5.5.0.20241111.exe` -> Tesseract OCR (Vision)
+
+*Note: We highly recommend installing these components before launching the automatic Hecos setup.*
 
 ---
 

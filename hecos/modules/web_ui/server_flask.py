@@ -114,6 +114,9 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_home import init_home_routes
     init_home_routes(app, config_manager, logger)
 
+    from .routes_commands import init_commands_routes
+    init_commands_routes(app, config_manager, logger, get_state_manager)
+
     from .routes_history import history_bp
     app.register_blueprint(history_bp)
 

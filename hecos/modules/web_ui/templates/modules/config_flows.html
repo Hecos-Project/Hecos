@@ -59,6 +59,29 @@
             </p>
         </div>
 
+        <div class="field mt-3">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">Enable Auto-Save</label>
+                <label class="switch is-small">
+                    <input type="checkbox" id="flows-autosave"
+                           data-cfg-plugin="FLOWS" data-cfg-key="autosave_enabled"
+                           onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">
+                Automatically saves the flow periodically while the editor is open.
+            </p>
+        </div>
+
+        <div class="field mt-3">
+            <label>Auto-Save Interval (Minutes)</label>
+            <input type="number" id="flows-autosave-interval"
+                   data-cfg-plugin="FLOWS" data-cfg-key="autosave_interval_minutes"
+                   value="1" min="1" max="60"
+                   onchange="if(window.saveConfig) window.saveConfig(true);">
+        </div>
+
         <!-- Live flow list summary -->
         <div class="field mt-3">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -273,17 +296,6 @@ function _syncFlowsSlider() {
     }
 }
 
-/* Auto-refresh when panel becomes active */
-document.addEventListener('DOMContentLoaded', () => {
-    const observer = new MutationObserver(mutations => {
-        mutations.forEach(m => {
-            if (m.target.id === 'tab-flows' && m.target.classList.contains('active')) {
-                window.refreshFlowsList();
-                _syncFlowsSlider();
-            }
-        });
-    });
-    const panel = document.getElementById('tab-flows');
-    if (panel) observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
-});
+/* Auto-refresh when panel is populated by config_mapper_extras.js:populateFlowsUI */
+/* (refreshFlowsList is called directly from populateFlowsUI - no MutationObserver needed) */
 </script>

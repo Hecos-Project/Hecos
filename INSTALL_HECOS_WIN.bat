@@ -110,8 +110,8 @@ if %errorlevel% neq 0 (
         echo  [+] Tesseract OCR found.
     ) else (
         echo  [-] Tesseract OCR not found in default path ^(C:\Program Files\Tesseract-OCR\tesseract.exe^).
-        echo      If you want to use the text-clicking features, please install it from:
-        echo      https://github.com/UB-Mannheim/tesseract/wiki
+        echo      Please install it from the offline folder:
+        echo      dependencies\tesseract-ocr-w64-setup-5.5.0.20241111.exe
     )
     echo.
     echo  [*] Checking for Microsoft Visual C++ Redistributable...
@@ -120,8 +120,20 @@ if %errorlevel% neq 0 (
         echo  [+] Microsoft Visual C++ Redistributable found.
     ) else (
         echo  [-] Microsoft Visual C++ Redistributable might be missing.
-        echo      Please install it if you experience issues running Hecos.
+        echo      Please install it from the offline folder:
+        echo      dependencies\VC_redist.x64.exe
     )
+    echo.
+    echo  [*] Checking for Node.js (required for Flow Canvas development)...
+    where node >nul 2>&1
+    if !errorlevel! equ 0 (
+        for /f "tokens=*" %%v in ('node -v 2^>nul') do echo  [+] Node.js found (%%v).
+    ) else (
+        echo  [-] Node.js not found in PATH.
+        echo      If you need to build or modify the Flow Canvas, please install it:
+        echo      dependencies\node-v24.16.0-x64.msi
+    )
+    echo.
     echo.
     echo  HOW TO START HECOS:
     echo.

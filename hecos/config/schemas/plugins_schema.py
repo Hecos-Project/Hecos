@@ -225,6 +225,10 @@ class PluginFlows(BaseModel):
     jinja2_rendering: bool = True
     # Max parallel flows that can run concurrently
     max_concurrent_runs: int = 5
+    # Enable automatic background saving of the flow canvas
+    autosave_enabled: bool = True
+    # Interval in minutes for the background auto-save
+    autosave_interval_minutes: int = 1
 
 
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────

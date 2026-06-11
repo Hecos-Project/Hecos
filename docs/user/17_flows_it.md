@@ -530,3 +530,87 @@ pipeline:
 ```
 
 > 💡 **Sfida bonus**: collega questo flow al modulo `WEBCAM__capture` per allegare uno scatto della camera interna al report notturno. Basta aggiungere un nodo tra `check_camera` e `compose_report`.
+
+---
+
+## 7. L'Executor e i Comandi di Sistema (Shell e Python)
+
+Tra i nodi più potenti di Hecos ci sono quelli legati al modulo **EXECUTOR**. Questi nodi ti permettono di uscire dai confini dell'automazione standard e di impartire veri e propri ordini al tuo sistema operativo (Windows o Linux).
+
+### 7.1 Esecuzione Visibile vs Invisibile (Background)
+
+Quando usi la riga di comando (Shell) tramite Hecos, devi decidere se vuoi che l'utente veda cosa succede o se deve avvenire tutto di nascosto.
+
+- **`EXECUTOR__execute_background_command`**: Questo nodo è progettato per eseguire comandi in modalità *silenziosa* (headless). Nessuna finestra nera si aprirà sul desktop. Il comando lavorerà nell'ombra e l'output verrà salvato in un file di log. È perfetto per scaricare file, avviare server o fare operazioni di manutenzione senza disturbarti. 
+  *Attenzione*: Se scrivi semplicemente `cmd` o `bash` qui dentro, il nodo creerà un terminale invisibile che aspetterà all'infinito un tuo input, bloccando il flusso!
+- **`EXECUTOR__execute_shell_command`**: Se desideri **aprire visibilmente** un programma o una finestra del prompt dei comandi sul desktop, devi "staccare" il processo usando il comando nativo del tuo sistema operativo, come `start` (su Windows) o `gnome-terminal` (su Linux).
+
+> [!TIP]
+> **Come eseguire più comandi di fila?** Non serve usare un nodo per ogni comando! Puoi usare l'operatore `&&` per concatenarli in un'unica stringa. Hecos li eseguirà rigorosamente in sequenza. Esempio: `ipconfig && mkdir nuova_cartella && echo "Finito!"`
+
+#### Esempio 1: Creare una cartella silenziosamente (Background)
+*Scenario: Un flusso crea una directory di backup senza mostrare nulla a schermo.*
+```yaml
+  - id: crea_backup_silenzioso
+    action: EXECUTOR__execute_background_command
+    params:
+      command: "mkdir C:\backup_hecos && echo Backup folder created"
+```
+
+#### Esempio 2: Aprire un Prompt dei Comandi Visibile (Solo Windows)
+*Scenario: Vuoi che Hecos apra una finestra nera del CMD, faccia un PING a Google, e mantenga la finestra aperta per farti leggere il risultato.*
+```yaml
+  - id: apri_cmd_visibile
+    action: EXECUTOR__execute_shell_command
+    params:
+      # Il parametro /k ("keep") mantiene la finestra aperta. Usa /c ("close") per chiuderla.
+      command: "start cmd /k \"ping 8.8.8.8 && echo Ping completato!\""
+```
+
+### 7.2 Il Problema della Multipiattaforma (Windows vs Linux)
+
+Se scrivi `start cmd` in un nodo shell, hai appena reso il tuo flusso **incompatibile con Linux o Mac**. Su Linux, `cmd` non esiste e il flusso genererà un errore. Come si risolve questo problema se vuoi creare automazioni universali?
+
+Hai due soluzioni:
+1. **Usa i nodi nativi di Hecos**: Invece di usare `execute_shell_command` e scrivere `mkdir` o `taskkill`, usa i nodi dedicati dell'executor! Ad esempio: `EXECUTOR__create_dir`, `EXECUTOR__read_file` o `EXECUTOR__kill_process`. Hecos capirà da solo se sei su Windows o Linux ed eseguirà il comando giusto.
+2. **Usa lo Script Maker definitivo: Python!**
+
+### 7.3 `EXECUTOR__run_python_code`: Il vero Script Maker Universale
+
+Invece di impazzire con comandi concatenati da `&&` o file `.bat`, puoi usare il nodo `EXECUTOR__run_python_code`. Questo nodo ti mette a disposizione un vero e proprio editor in cui puoi inserire uno script Python.
+
+**Perché usare Python invece della Shell?**
+- **È Multipiattaforma**: Lo stesso script Python funziona identico su Windows, Linux e Raspberry Pi.
+- **È Potente**: Puoi usare cicli logici complessi, calcoli matematici, o formattare i dati molto meglio che in un prompt dei comandi.
+- **Variabili**: Puoi restituire il risultato del tuo script (tramite `print`) per salvarlo in una variabile `output_as` e passarlo ai nodi successivi!
+
+#### Esempio 3: Uno Script Python Multipiattaforma Universale
+*Scenario: Uno script Python che capisce da solo su quale sistema operativo si trova, crea una cartella nella scrivania dell'utente in modo sicuro e restituisce l'esito a Hecos per farglielo pronunciare a voce.*
+```yaml
+  - id: script_python_universale
+    action: EXECUTOR__run_python_code
+    params:
+      code: |
+        import os
+        from pathlib import Path
+        
+        # Trova la cartella Desktop sia su Windows che su Linux
+        desktop_dir = Path.home() / "Desktop"
+        nuova_cartella = desktop_dir / "Hecos_Magic_Folder"
+        
+        if not nuova_cartella.exists():
+            nuova_cartella.mkdir()
+            print("Ho creato la cartella magica sul desktop!")
+        else:
+            print("La cartella esisteva già, nessun problema.")
+    output_as: esito_script
+
+  - id: annuncia_esito
+    action: AUDIO__speak
+    params:
+      text: "{{ esito_script }}"
+    depends_on:
+      - script_python_universale
+```
+
+In questo modo hai creato un'automazione che puoi condividere con chiunque, indipendentemente dal PC o dal sistema operativo che usano!

@@ -32,6 +32,19 @@ class ImageGenTools:
         self.tag    = "IMAGE_GEN"
         self.desc   = "Generates images from text descriptions using AI image models."
         self.status = "ONLINE"
+        self.slash_commands = [
+            {
+                "id": "img",
+                "aliases": ["/img", "/image", "/photo", "/foto"],
+                "description": "Genera un'immagine AI da una descrizione testuale",
+                "usage": "/img <descrizione>",
+                "example": "/img foto fotorealistica di un gatto su Marte",
+                "icon": "🖼️",
+                "method": "generate_image",
+                "args_schema": {"prompt": "str"},
+                "requires_args": True,
+            }
+        ]
 
     def generate_image(self, prompt: str) -> str:
         """

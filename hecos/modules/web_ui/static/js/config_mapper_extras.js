@@ -115,6 +115,10 @@ window.populateFlowsUI = function() {
     const p = (window.cfg?.plugins || {}).FLOWS || {};
     setCheck('flows-enabled',           p.enabled             !== false);
     setVal('flows-dir',                 p.flows_dir           || 'workspace/flows');
+    // ── Autosave (questi due campi mancavano!) ──────────────────────────
+    setCheck('flows-autosave',          p.autosave_enabled    !== false);
+    setVal('flows-autosave-interval',   p.autosave_interval_minutes ?? 1);
+    // ───────────────────────────────────────────────────────────────────
     setCheck('flows-scheduler-enabled', p.scheduler_enabled   !== false);
     setVal('flows-timezone',            p.scheduler_timezone  || 'local');
     setVal('flows-max-runs',            p.max_concurrent_runs ?? 5);
@@ -126,6 +130,10 @@ window.populateFlowsUI = function() {
     setCheck('flows-auto-save',         p.auto_save_compiled  ?? false);
     setCheck('flows-jinja2',            p.jinja2_rendering    !== false);
     setVal('flows-log-entries',         p.max_log_entries     ?? 500);
+    // Refresh the flows list in the Central Hub panel after populating
+    if (typeof window.refreshFlowsList === 'function') {
+        window.refreshFlowsList();
+    }
 };
 
 window.buildFlowsPayload = function(out) {
@@ -133,15 +141,19 @@ window.buildFlowsPayload = function(out) {
     if (!out.plugins['FLOWS']) out.plugins['FLOWS'] = {};
     const p = out.plugins['FLOWS'];
     if (document.getElementById('flows-enabled')) {
-        p.enabled             = getC('flows-enabled',           p.enabled);
-        p.flows_dir           = getV('flows-dir',               p.flows_dir);
-        p.scheduler_enabled   = getC('flows-scheduler-enabled', p.scheduler_enabled);
-        p.scheduler_timezone  = getV('flows-timezone',          p.scheduler_timezone);
-        p.max_concurrent_runs = parseInt(getV('flows-max-runs', p.max_concurrent_runs));
-        p.compiler_temperature= parseFloat(getV('flows-temp',   p.compiler_temperature));
-        p.compiler_max_tokens = parseInt(getV('flows-max-tokens', p.compiler_max_tokens));
-        p.auto_save_compiled  = getC('flows-auto-save',         p.auto_save_compiled);
-        p.jinja2_rendering    = getC('flows-jinja2',            p.jinja2_rendering);
-        p.max_log_entries     = parseInt(getV('flows-log-entries', p.max_log_entries));
+        p.enabled                  = getC('flows-enabled',             p.enabled);
+        p.flows_dir                = getV('flows-dir',                 p.flows_dir);
+        // ── Autosave (questi due campi mancavano!) ──────────────────────────
+        p.autosave_enabled         = getC('flows-autosave',            p.autosave_enabled);
+        p.autosave_interval_minutes= parseInt(getV('flows-autosave-interval', p.autosave_interval_minutes)) || 1;
+        // ───────────────────────────────────────────────────────────────────
+        p.scheduler_enabled        = getC('flows-scheduler-enabled',   p.scheduler_enabled);
+        p.scheduler_timezone       = getV('flows-timezone',            p.scheduler_timezone);
+        p.max_concurrent_runs      = parseInt(getV('flows-max-runs',   p.max_concurrent_runs));
+        p.compiler_temperature     = parseFloat(getV('flows-temp',     p.compiler_temperature));
+        p.compiler_max_tokens      = parseInt(getV('flows-max-tokens', p.compiler_max_tokens));
+        p.auto_save_compiled       = getC('flows-auto-save',           p.auto_save_compiled);
+        p.jinja2_rendering         = getC('flows-jinja2',              p.jinja2_rendering);
+        p.max_log_entries          = parseInt(getV('flows-log-entries',p.max_log_entries));
     }
 };

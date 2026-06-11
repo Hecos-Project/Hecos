@@ -53,9 +53,14 @@ class FastEmbedEmbedder(BaseEmbedder):
 
     def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
         try:
+            import os
+            # Prevent Rust tokenizers from deadlocking when initialized in a background thread
+            os.environ["TOKENIZERS_PARALLELISM"] = "false"
+            
             from fastembed import TextEmbedding
-            # On first run, fastembed downloads the ONNX model (~23 MB) and caches it.
-            self._model = TextEmbedding(model_name=model_name)
+            # Force threads=1 to prevent ONNX Runtime from spawning nested thread pools
+            # which can cause hard crashes or hangs on Windows in multi-threaded apps like Hecos.
+            self._model = TextEmbedding(model_name=model_name, threads=1)
             self._model_name = model_name
             self._dim = self._MODEL_DIMS.get(model_name, 384)
             logger.info(f"[RAG][Embedder] FastEmbed (ONNX/CPU) loaded: {model_name} (dim={self._dim})")
@@ -143,6 +148,51 @@ class StubEmbedder(BaseEmbedder):
         return self._DIM
 
 
+# ── Subprocess Embedder (Win32-safe) ──────────────────────────────────────────
+
+class SubprocessEmbedder(BaseEmbedder):
+    """
+    Embedder che delega l'inferenza a un subprocess isolato (embedder_daemon.py).
+
+    Motivo: fastembed/onnxruntime e Playwright (Chromium) condividono le Win32
+    API per i thread pool nativi. Se entrambi girano nello stesso processo Python
+    su Windows, ONNX Runtime crasha il processo dopo il primo uso.
+    Questo embedder isola ONNX Runtime in un subprocess dedicato tramite JSON IPC,
+    esattamente come Hecos fa già per Piper TTS.
+    """
+
+    _DIM_MAP = {
+        "BAAI/bge-small-en-v1.5": 384,
+        "sentence-transformers/all-MiniLM-L6-v2": 384,
+        "BAAI/bge-base-en-v1.5": 768,
+    }
+
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5"):
+        from hecos.core.rag.embedder_daemon import get_daemon
+        self._daemon = get_daemon(model_name)
+        self._model_name = model_name
+        self._dim = self._DIM_MAP.get(model_name, 384)
+        logger.info(f"[RAG][Embedder] SubprocessEmbedder creato per '{model_name}' (dim={self._dim}).")
+
+    def embed_texts(self, texts: List[str]) -> List[List[float]]:
+        try:
+            return self._daemon.embed(texts)
+        except Exception as e:
+            logger.error(f"[RAG][Embedder] SubprocessEmbedder embed_texts error: {e}")
+            return [[0.0] * self._dim for _ in texts]
+
+    def embed_text(self, text: str) -> List[float]:
+        result = self.embed_texts([text])
+        return result[0] if result else [0.0] * self._dim
+
+    @property
+    def dimension(self) -> int:
+        # Aggiorna con la dimensione effettiva riportata dal daemon
+        if self._daemon.dimension:
+            return self._daemon.dimension
+        return self._dim
+
+
 # ── Factory ────────────────────────────────────────────────────────────────────
 
 _FASTEMBED_MODELS = {
@@ -157,31 +207,42 @@ _FASTEMBED_MODELS = {
 def get_embedder(embedder_type: str = "fastembed",
                  model_name: str = "BAAI/bge-small-en-v1.5") -> BaseEmbedder:
     """
-    Factory that returns the best available embedder.
+    Factory che restituisce il miglior embedder disponibile.
 
     Priority:
-      1. fastembed  — preferred: ONNX CPU, no torch needed
-      2. sentence_transformers — GPU-capable but needs torch ≥ 2.0
-      3. StubEmbedder — emergency no-op fallback
+      1. fastembed/onnx  → SubprocessEmbedder (isolato, Win32-safe con Playwright)
+      2. sentence_transformers → SentenceTransformerEmbedder (torch-based)
+      3. Fallback subprocess se ST non è installato
+      4. StubEmbedder — no-op d'emergenza
     """
-    # ── 1. FastEmbed (ONNX Runtime) ──────────────────────────────────────────
+    # ── 1. FastEmbed (subprocess isolato) — SEMPRE preferito su Windows ──────
+    #    Non usa FastEmbedEmbedder direttamente per evitare il crash onnx+Playwright.
     if embedder_type in ("fastembed", "onnx"):
         fastembed_model = _FASTEMBED_MODELS.get(model_name, model_name)
         try:
-            return FastEmbedEmbedder(fastembed_model)
-        except RuntimeError as e:
-            logger.warning(f"[RAG][Embedder] FastEmbed unavailable, trying sentence-transformers: {e}")
+            return SubprocessEmbedder(fastembed_model)
+        except Exception as e:
+            logger.warning(f"[RAG][Embedder] SubprocessEmbedder non disponibile: {e}")
 
     # ── 2. SentenceTransformers (torch-based) ────────────────────────────────
-    if embedder_type in ("sentence_transformers", "fastembed"):  # fallback path
+    if embedder_type == "sentence_transformers":
         try:
             return SentenceTransformerEmbedder(model_name, device="cpu")
         except RuntimeError as e:
             logger.warning(f"[RAG][Embedder] SentenceTransformers unavailable: {e}")
+        # Safety net: se ST non è installato, usa subprocess fastembed
+        logger.warning(
+            "[RAG][Embedder] sentence_transformers failed — subprocess fastembed come fallback."
+        )
+        fastembed_model = _FASTEMBED_MODELS.get(model_name, "BAAI/bge-small-en-v1.5")
+        try:
+            return SubprocessEmbedder(fastembed_model)
+        except Exception as e:
+            logger.warning(f"[RAG][Embedder] SubprocessEmbedder fallback fallito: {e}")
 
-    # ── 3. Stub — search won't work but system boots ─────────────────────────
+    # ── 3. Stub — il search non funzionerà ma il sistema resta vivo ──────────
     logger.error(
-        "[RAG][Embedder] All real embedders failed. Using StubEmbedder. "
-        "Install fastembed: pip install fastembed"
+        "[RAG][Embedder] Tutti gli embedder reali hanno fallito. Uso StubEmbedder. "
+        "Installa fastembed: pip install fastembed"
     )
     return StubEmbedder()

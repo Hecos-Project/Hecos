@@ -11,6 +11,7 @@
         "run_python_code": "Execute Python safely in AST sandbox.",
         "execute_shell_command": "Run shell commands (cmd/bash).",
         "execute_background_command": "Run shell commands in background for long tasks.",
+        "execute_slash_command": "Executes an HDCS direct slash command.",
         "get_time": "Current local time and date.",
         "get_date": "Current local date.",
         "get_battery_status": "Device battery level and charging state.",
@@ -25,6 +26,20 @@
         "list_dir": "List a directory contents."
     },
     "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__execute_slash_command",
+                "description": "Executes an HDCS direct slash command (e.g. /img, /automation.click). Use this in Flows to run manual system commands bypassing the LLM.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "command": { "type": "string", "description": "The slash command string to execute (e.g. '/meteo Roma')." }
+                    },
+                    "required": ["command"]
+                }
+            }
+        },
         {
             "type": "function",
             "function": {
