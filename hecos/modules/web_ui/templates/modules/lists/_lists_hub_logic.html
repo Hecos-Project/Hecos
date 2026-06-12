@@ -56,6 +56,22 @@ async function listsSaveExportFolder() {
     }
 }
 
+async function listsBrowseExportFolder() {
+    const currentPath = document.getElementById('lists-export-folder-input').value || 'C:\\';
+    if (typeof HecosFilePicker !== 'undefined') {
+        HecosFilePicker.open({
+            title: window.t ? window.t('lists_export_folder_label') : "Seleziona cartella",
+            initialPath: currentPath,
+            onSelect: (path) => {
+                document.getElementById('lists-export-folder-input').value = path;
+                listsSaveExportFolder();
+            }
+        });
+    } else {
+        console.warn("HecosFilePicker non disponibile.");
+    }
+}
+
 // ── Export: download ──────────────────────────────────────────────────────────
 function listsExportDownload() {
     const listId = document.getElementById('lists-export-select')?.value;

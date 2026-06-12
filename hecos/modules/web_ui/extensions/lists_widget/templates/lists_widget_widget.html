@@ -6,7 +6,7 @@
         <span class="ql-title" data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
         <span onclick="event.stopPropagation(); _lwOpenFull()"
               style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:8px;"
-              title="{{ t('lists_fullscreen') or 'Vista completa' }}"><i class="fas fa-expand-alt"></i></span>
+              title="{{ t('lists_fullscreen') or 'Vista completa' }}"><i class="fas fa-cog"></i></span>
         <span class="ql-chevron" id="lw-toggle-icon"><i class="fas fa-chevron-down"></i></span>
     </div>
 
@@ -504,8 +504,8 @@
                     <span class="lw-row-text">${_lwEsc(item.text)}</span>
                     ${badgesHtml}
                 </div>
-                <button type="button" class="lw-row-del" onclick="_lwDelItem('${item.id}')" title="Rimuovi">
-                    <i class="fas fa-times"></i>
+                <button type="button" class="lw-row-del" onclick="event.stopPropagation(); _lwDelItem('${item.id}')" title="{{ t('lists_delete_btn') or 'Elimina' }}">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>`;
         }).join('');
@@ -542,6 +542,7 @@
 
     // ── Delete item ──────────────────────────────────────────────────────
     window._lwDelItem = async function(itemId) {
+        if (!confirm(window.t ? window.t('lists_confirm_del_item') : "Eliminare l'elemento?")) return;
         try {
             await fetch(`/api/lists/items/${itemId}`, { method: 'DELETE' });
             // optimistic removal
