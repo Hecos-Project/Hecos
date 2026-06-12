@@ -10,21 +10,8 @@
     </div>
     
     <div id="lists-widget-body" class="ql-body" style="margin-top:10px;">
-        <div class="lists-widget-items">
-            {% if lists %}
-                {% for lst in lists[:5] %}
-                <div class="lw-item" onclick="_listsWidgetNav()">
-                    <div class="lw-icon">{{ lst.icon or '📋' }}</div>
-                    <div class="lw-name">{{ lst.name }}</div>
-                    <div class="lw-count">{{ lst.pending_count or 0 }}</div>
-                </div>
-                {% endfor %}
-                {% if lists|length > 5 %}
-                <div class="lw-more">...e altre {{ lists|length - 5 }} liste</div>
-                {% endif %}
-            {% else %}
-                <div class="lw-empty">Nessuna lista attiva.</div>
-            {% endif %}
+        <div class="lists-widget-items" id="lists-widget-items-container">
+            <div class="lw-empty">Caricamento liste...</div>
         </div>
     </div>
 </div>
@@ -105,10 +92,51 @@ function _listsWidgetNav() {
     }
 }
 
+async function _listsWidgetFetch() {
+    try {
+        const res = await fetch('/api/lists');
+        const data = await res.json();
+        const container = document.getElementById('lists-widget-items-container');
+        if (!container) return;
+        
+        if (data.ok && data.lists && data.lists.length > 0) {
+            let html = '';
+            const lists = data.lists;
+            for (let i = 0; i < Math.min(lists.length, 5); i++) {
+                const lst = lists[i];
+                html += `
+                <div class="lw-item" onclick="_listsWidgetNav()">
+                    <div class="lw-icon">${lst.icon || '📋'}</div>
+                    <div class="lw-name">${lst.name}</div>
+                    <div class="lw-count">${lst.pending_count || 0}</div>
+                </div>
+                `;
+            }
+            if (lists.length > 5) {
+                html += `<div class="lw-more">...e altre ${lists.length - 5} liste</div>`;
+            }
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `<div class="lw-empty">${window.t ? window.t('lists_empty_sidebar') : 'Nessuna lista attiva.'}</div>`;
+        }
+    } catch(e) {
+        console.error("Lists Widget Error:", e);
+        const container = document.getElementById('lists-widget-items-container');
+        if (container) container.innerHTML = '<div class="lw-empty" style="color:var(--text-danger)">Errore di caricamento</div>';
+    }
+}
+
+function _listsWidgetInit() {
+    _listsWidgetApplyCollapsed(_listsWidgetCollapsed);
+    _listsWidgetFetch();
+    // Auto-refresh every 60 seconds
+    setInterval(_listsWidgetFetch, 60000);
+}
+
 // Initial state
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => _listsWidgetApplyCollapsed(_listsWidgetCollapsed));
+    document.addEventListener('DOMContentLoaded', _listsWidgetInit);
 } else {
-    _listsWidgetApplyCollapsed(_listsWidgetCollapsed);
+    _listsWidgetInit();
 }
 </script>
