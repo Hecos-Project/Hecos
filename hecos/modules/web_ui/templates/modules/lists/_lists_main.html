@@ -1,8 +1,8 @@
 <div class="lists-container">
     <div class="lists-sidebar">
         <div class="lists-search" style="padding: 15px; border-bottom: 1px solid var(--border);">
-            <div class="contacts-search-wrapper" style="margin:0; border-radius:10px; height: 38px;">
-                <span class="contacts-search-icon" style="padding:0 10px; font-size:14px;"><i class="fas fa-search"></i></span>
+            <div class="lists-search-wrapper" style="margin:0; border-radius:10px; height: 38px;">
+                <span class="lists-search-icon" style="padding:0 10px; font-size:14px;"><i class="fas fa-search"></i></span>
                 <input type="text" id="lists-search-input" placeholder="{{ t('lists_search_ph') or 'Cerca lista...' }}" onkeyup="listsSearchSidebar()" autocomplete="off" style="font-size:13px;">
             </div>
         </div>
@@ -22,7 +22,7 @@
         <div id="lists-content-active" class="lists-content-active" style="display:none;">
             <div class="lists-content-header">
                 <div class="lists-header-title">
-                    <span id="lists-active-icon" class="list-icon" onclick="listsChangeIcon()">📋</span>
+                    <span id="lists-active-icon" class="list-icon" onclick="listsChangeIcon()"><i class="fas fa-list-check"></i></span>
                     <h3 id="lists-active-name" contenteditable="true" onblur="listsRenameList(this.innerText)">Nome Lista</h3>
                 </div>
                 <div class="lists-header-actions">

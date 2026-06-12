@@ -106,7 +106,7 @@ async function _listsWidgetFetch() {
                 const lst = lists[i];
                 html += `
                 <div class="lw-item" onclick="_listsWidgetNav()">
-                    <div class="lw-icon">${lst.icon || '📋'}</div>
+                    <div class="lw-icon">${lst.icon || '<i class="fas fa-list-check"></i>'}</div>
                     <div class="lw-name">${lst.name}</div>
                     <div class="lw-count">${lst.pending_count || 0}</div>
                 </div>

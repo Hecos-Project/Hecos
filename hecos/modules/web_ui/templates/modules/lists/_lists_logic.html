@@ -63,7 +63,7 @@ function listsRenderSidebar() {
             if (lst.id === listsActiveListId) div.classList.add('active');
             
             div.innerHTML = `
-                <span class="nav-icon">${lst.icon || '📋'}</span>
+                <span class="nav-icon">${lst.icon || '<i class="fas fa-list-check"></i>'}</span>
                 <span class="nav-name">${lst.name}</span>
                 <span class="nav-count">${lst.pending_count || 0}</span>
             `;
@@ -88,7 +88,7 @@ async function listsSelectList(id) {
     document.getElementById('lists-content-active').style.display = 'flex';
     document.getElementById('lists-btn-cleardone').style.display = 'inline-flex';
     
-    document.getElementById('lists-active-icon').innerText = lst.icon || '📋';
+    document.getElementById('lists-active-icon').innerHTML = lst.icon || '<i class="fas fa-list-check"></i>';
     document.getElementById('lists-active-name').innerText = lst.name;
     
     await listsFetchItems();
@@ -279,7 +279,7 @@ async function listsChangeIcon() {
             method: 'PATCH',
             body: JSON.stringify({ icon: newIcon.trim() })
         });
-        document.getElementById('lists-active-icon').innerText = newIcon;
+        document.getElementById('lists-active-icon').innerHTML = newIcon;
         await listsFetchLists();
     } catch (e) {
         console.error(e);

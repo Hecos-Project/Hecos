@@ -1,16 +1,17 @@
 <!-- LISTS CONFIG PANEL -->
 <div id="tab-lists" class="panel">
     <div class="card" style="height: calc(100vh - 120px); display: flex; flex-direction: column;">
-        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <div><i class="fas fa-list-check"></i> <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span></div>
-            <div class="header-actions" style="display: flex; gap: 10px;">
-                <button class="btn btn-primary btn-sm" onclick="listsCreateList()"><i class="fas fa-plus"></i> <span data-i18n="lists_new_list">{{ t('lists_new_list') or 'Nuova Lista' }}</span></button>
-                <button class="btn btn-secondary btn-sm" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;"><i class="fas fa-broom"></i> <span data-i18n="lists_clear_done">{{ t('lists_clear_done') or 'Pulisci completati' }}</span></button>
-            </div>
+        <div class="card-title">
+            <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
         </div>
         <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">
             <span data-i18n="lists_desc">{{ t('lists_desc') or 'Gestisci liste della spesa, to-do, note rapide e qualsiasi altra raccolta strutturata.' }}</span>
         </p>
+
+        <div class="lists-controls" style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-sm" onclick="listsCreateList()"><i class="fas fa-plus"></i> <span data-i18n="lists_new_list">{{ t('lists_new_list') or 'Nuova Lista' }}</span></button>
+            <button class="btn btn-secondary btn-sm" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;"><i class="fas fa-broom"></i> <span data-i18n="lists_clear_done">{{ t('lists_clear_done') or 'Pulisci completati' }}</span></button>
+        </div>
         
         {% include 'modules/lists/_lists_main.html' %}
     </div>

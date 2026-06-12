@@ -21,29 +21,37 @@
     padding: 15px;
     border-bottom: 1px solid var(--border);
 }
-.lists-search .search-box {
-    position: relative;
+.lists-search-wrapper {
     display: flex;
     align-items: center;
-}
-.lists-search .search-box i {
-    position: absolute;
-    left: 12px;
-    color: var(--muted);
-}
-.lists-search input {
-    width: 100%;
-    padding: 8px 12px 8px 35px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border);
-    border-radius: var(--radius, 10px);
-    background: var(--bg3);
-    color: var(--text);
-    outline: none;
-    transition: all .2s;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    height: 46px;
 }
-.lists-search input:focus {
+.lists-search-wrapper:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
+    box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.15);
+}
+.lists-search-icon {
+    padding: 0 14px;
+    font-size: 16px;
+    color: var(--muted);
+    user-select: none;
+    opacity: 0.8;
+}
+.lists-search-wrapper input {
+    flex: 1;
+    background: transparent;
+    border: none !important;
+    outline: none !important;
+    color: var(--text);
+    font-size: 15px;
+    padding: 10px 4px;
+    font-family: inherit;
 }
 .lists-list {
     flex: 1;

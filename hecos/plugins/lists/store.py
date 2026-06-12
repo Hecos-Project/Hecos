@@ -60,7 +60,7 @@ def _get_conn() -> sqlite3.Connection:
 
 # ── Lists ──────────────────────────────────────────────────────────────────────
 
-def create_list(name: str, icon: str = "📋", color: str = None) -> dict:
+def create_list(name: str, icon: str = '<i class="fas fa-list-check"></i>', color: str = None) -> dict:
     lst = {
         "id": str(uuid.uuid4()),
         "name": name,
