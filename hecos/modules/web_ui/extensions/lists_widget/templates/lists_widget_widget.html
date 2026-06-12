@@ -48,7 +48,8 @@
                         </select>
                         <input type="text" id="lw-add-label" placeholder="#tag"
                                class="lw-label-input" title="{{ t('lists_label') or 'Etichetta' }}"
-                               onkeydown="if(event.key==='Enter') _lwAddItem()">
+                               onkeydown="if(event.key==='Enter') _lwAddItem()" list="lw-categories-datalist">
+                        <datalist id="lw-categories-datalist"></datalist>
                         <button type="button" onclick="_lwAddItem()" title="{{ t('lists_add_btn') or 'Aggiungi' }}"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
@@ -209,7 +210,7 @@
     color: var(--muted);
     cursor: pointer;
     font-size: 0.65rem;
-    opacity: 0;
+    opacity: 0.6;
     padding: 2px 4px;
     border-radius: 3px;
     transition: opacity 0.15s, color 0.15s;
@@ -608,9 +609,21 @@
     }
 
     // ── Init ─────────────────────────────────────────────────────────────
+    async function _lwFetchCategories() {
+        try {
+            const res = await fetch('/api/lists/categories');
+            const data = await res.json();
+            if (data.categories) {
+                const dl = document.getElementById('lw-categories-datalist');
+                if (dl) dl.innerHTML = data.categories.map(c => `<option value="${_lwEsc(c.name)}">`).join('');
+            }
+        } catch(e) { console.error('[LW] fetch cat error:', e); }
+    }
+
     function _lwInit() {
         _lwApplyCollapsed(_lw_collapsed);
         _lwFetchLists();
+        _lwFetchCategories();
         setInterval(_lwFetchLists, 60000);
     }
 
