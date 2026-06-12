@@ -23,6 +23,47 @@ async function listsHubLoadSettings() {
     listsHubLoadCategories();
 }
 
+// ── Inline labels bar (App tab) ───────────────────────────────────────────────
+async function listsHubRenderInlineLabels() {
+    const container = document.getElementById('lhub-labels-inline');
+    if (!container) return;
+    try {
+        const res  = await fetch('/api/lists/categories');
+        const data = await res.json();
+        const cats = data.categories || [];
+        if (cats.length === 0) {
+            container.innerHTML = '<span style="font-size:0.75rem; color:var(--muted); font-style:italic;">Nessuna etichetta salvata.</span>';
+            return;
+        }
+        container.innerHTML = cats.map(c => `
+            <span class="lhub-inline-label-pill">
+                <i class="fas fa-tag" style="font-size:0.65rem;"></i>
+                ${_lhubEsc(c.name)}
+                <button type="button" class="lhub-inline-label-del"
+                        onclick="listsHubDeleteCatInline('${c.id}', '${_lhubEsc(c.name)}')"
+                        title="Elimina etichetta">
+                    <i class="fas fa-trash" style="font-size:0.65rem;"></i>
+                </button>
+            </span>`).join('');
+    } catch(e) {
+        console.error('[LHUB] inline labels error:', e);
+    }
+}
+
+
+async function listsHubDeleteCatInline(catId, name) {
+    if (!confirm(`Eliminare l'etichetta "${name}"?`)) return;
+    try {
+        await fetch(`/api/lists/categories/${catId}`, { method: 'DELETE' });
+        listsHubRenderInlineLabels();
+        // also refresh the settings tab if open
+        if (document.getElementById('lists-categories-container')) {
+            listsHubLoadCategories();
+        }
+    } catch(e) { console.error('[LHUB] delete cat inline error:', e); }
+}
+
+
 async function listsHubLoadExportSelect() {
     try {
         const res  = await fetch('/api/lists');

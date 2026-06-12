@@ -37,20 +37,33 @@
                     <div class="lw-items-scroll" id="lw-items">
                         <!-- Items populated by JS -->
                     </div>
+                    <!-- Labels management (always visible) -->
+                    <div class="lw-labels-row" style="background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.06); padding: 5px; min-height: 0; overflow-y: auto;">
+                        <div style="font-size: 0.65rem; font-weight: 600; color: var(--muted); margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-tags"></i>
+                            <span>{{ t('lists_categories_title') or 'Gestisci Etichette di Sistema' }}</span>
+                        </div>
+                        <div class="lw-labels-pills" id="lw-labels-pills">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
                     <!-- Quick add: text + priority + label + button -->
                     <div class="lw-quick-add">
                         <input type="text" id="lw-add-input" placeholder="{{ t('lists_add_ph') or 'Aggiungi...' }}"
+                               class="lw-add-text-input"
                                onkeydown="if(event.key==='Enter') _lwAddItem()">
                         <select id="lw-add-priority" class="lw-prio-select" title="{{ t('lists_priority') or 'Priorità' }}">
-                            <option value="0">{{ t('lists_prio_none') or '—' }}</option>
+                            <option value="0">—</option>
                             <option value="1">P1</option>
                             <option value="2">P2</option>
                         </select>
-                        <input type="text" id="lw-add-label" placeholder="#tag"
+                        <input type="text" id="lw-add-label" placeholder="#etichetta"
                                class="lw-label-input" title="{{ t('lists_label') or 'Etichetta' }}"
                                onkeydown="if(event.key==='Enter') _lwAddItem()" list="lw-categories-datalist">
                         <datalist id="lw-categories-datalist"></datalist>
-                        <button type="button" onclick="_lwAddItem()" title="{{ t('lists_add_btn') or 'Aggiungi' }}"><i class="fas fa-plus"></i></button>
+                        <button type="button" class="lw-add-btn" onclick="_lwAddItem()" title="{{ t('lists_add_btn') or 'Aggiungi' }}">
+                            <i class="fas fa-plus"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -273,55 +286,30 @@
 .lw-badge-p2 { background: rgba(255,60,60,0.18); color: #ff4444; }
 .lw-badge-label { background: rgba(var(--accent-rgb),0.12); color: var(--accent); font-weight: 400; }
 
-/* Label input in quick-add */
-.lw-label-input {
-    width: 42px;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 4px;
-    color: var(--muted);
-    font-size: 0.68rem;
-    font-family: inherit;
-    padding: 2px 4px;
-    outline: none;
-    flex-shrink: 0;
-    transition: border-color 0.15s, color 0.15s;
-}
-.lw-label-input:focus { border-color: var(--accent); color: var(--text); }
-.lw-label-input::placeholder { opacity: 0.5; }
-
 /* Quick add bar */
 .lw-quick-add {
     display: flex;
     align-items: center;
     border-top: 1px solid rgba(255,255,255,0.06);
     padding: 5px 6px;
-    gap: 5px;
+    gap: 4px;
     flex-shrink: 0;
+    overflow: hidden;
 }
-.lw-quick-add input {
-    flex: 1;
+/* Main text input — fixed max width so other controls stay visible */
+.lw-add-text-input {
+    width: 0;
+    flex: 0 1 95px;
+    min-width: 55px;
     background: transparent;
     border: none;
     outline: none;
     color: var(--text);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-family: inherit;
     padding: 3px 0;
 }
-.lw-quick-add input::placeholder { color: var(--muted); opacity: 0.7; }
-.lw-quick-add button {
-    background: rgba(var(--accent-rgb), 0.2);
-    border: none;
-    border-radius: 4px;
-    color: var(--accent);
-    cursor: pointer;
-    padding: 3px 7px;
-    font-size: 0.75rem;
-    transition: background 0.15s;
-    flex-shrink: 0;
-}
-.lw-quick-add button:hover { background: rgba(var(--accent-rgb), 0.35); }
+.lw-add-text-input::placeholder { color: var(--muted); opacity: 0.65; }
 
 /* Priority select in quick-add */
 .lw-prio-select {
@@ -329,15 +317,51 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 4px;
     color: var(--muted);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-family: inherit;
-    padding: 2px 2px;
+    padding: 2px 1px;
     cursor: pointer;
     flex-shrink: 0;
-    width: 34px;
+    width: 30px;
     outline: none;
 }
 .lw-prio-select:focus { border-color: var(--accent); color: var(--text); }
+
+/* Label input in quick-add */
+.lw-label-input {
+    flex: 0 1 78px;
+    min-width: 58px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 0.7rem;
+    font-family: inherit;
+    padding: 3px 5px;
+    outline: none;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+.lw-label-input:focus { border-color: var(--accent); background: rgba(var(--accent-rgb),0.06); }
+.lw-label-input::placeholder { opacity: 0.45; }
+
+/* Add button — always visible */
+.lw-add-btn {
+    background: rgba(var(--accent-rgb), 0.22);
+    border: none;
+    border-radius: 5px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 4px 9px;
+    font-size: 0.78rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    min-width: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.lw-add-btn:hover { background: rgba(var(--accent-rgb), 0.42); }
 
 /* Footer: new list bar */
 .lw-footer {
@@ -375,6 +399,77 @@
     flex-shrink: 0;
 }
 .lw-new-list-bar button:hover { background: rgba(var(--accent-rgb), 0.38); }
+
+/* Labels management row */
+.lw-labels-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    min-height: 0;
+}
+.lw-labels-toggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.65rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    opacity: 0.7;
+    transition: opacity 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+.lw-labels-toggle:hover { opacity: 1; color: var(--accent); }
+.lw-labels-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    padding-top: 2px;
+}
+.lw-label-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-radius: 10px;
+    padding: 3px 6px 3px 8px;
+    font-size: 0.65rem;
+    color: var(--accent);
+    line-height: 1.4;
+}
+.lw-label-pill-del {
+    background: rgba(255,60,60,0.0);
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.62rem;
+    line-height: 1;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.lw-label-pill-del:hover {
+    color: #ff4444;
+    background: rgba(255,60,60,0.15);
+}
+.lw-labels-empty {
+    font-size: 0.65rem;
+    color: var(--muted);
+    font-style: italic;
+    opacity: 0.7;
+}
 </style>
 
 <script>
@@ -495,7 +590,16 @@
             let badges = '';
             if (item.priority === 1) badges += `<span class="lw-badge lw-badge-p1">P1</span>`;
             if (item.priority === 2) badges += `<span class="lw-badge lw-badge-p2">P2</span>`;
-            if (item.label)         badges += `<span class="lw-badge lw-badge-label">${_lwEsc(item.label)}</span>`;
+            if (item.label) {
+                // Label badge with a trash icon to remove the label from the item
+                badges += `<span class="lw-badge lw-badge-label" style="display:inline-flex; align-items:center; gap:3px;">
+                              ${_lwEsc(item.label)}
+                              <button type="button" onclick="event.stopPropagation(); _lwRemoveLabelFromItem('${item.id}')"
+                                      style="background:none; border:none; color:inherit; opacity:0.6; cursor:pointer; padding:0; font-size:0.55rem; display:flex;">
+                                  <i class="fas fa-times"></i>
+                              </button>
+                           </span>`;
+            }
             const badgesHtml = badges ? `<div class="lw-row-badges">${badges}</div>` : '';
             return `
             <div class="lw-row${done ? ' done' : ''}" data-id="${item.id}">
@@ -543,14 +647,24 @@
 
     // ── Delete item ──────────────────────────────────────────────────────
     window._lwDelItem = async function(itemId) {
-        if (!confirm(window.t ? window.t('lists_confirm_del_item') : "Eliminare l'elemento?")) return;
+        if (!confirm('Eliminare questo elemento?')) return;
         try {
             await fetch(`/api/lists/items/${itemId}`, { method: 'DELETE' });
-            // optimistic removal
-            _lw_items = _lw_items.filter(i => i.id !== itemId);
-            _lwRenderItems();
+            await _lwFetchItems(_lw_activeId);
             await _lwFetchLists();
-        } catch(e) { console.error('[LW] del item error:', e); }
+        } catch(e) { console.error('[LW] delete item error:', e); }
+    };
+
+    // ── Remove label from item ───────────────────────────────────────────
+    window._lwRemoveLabelFromItem = async function(itemId) {
+        try {
+            await fetch(`/api/lists/items/${itemId}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ label: '' }) // Clear label
+            });
+            await _lwFetchItems(_lw_activeId);
+        } catch(e) { console.error('[LW] remove item label error:', e); }
     };
 
     // ── Add item ─────────────────────────────────────────────────────────
@@ -608,17 +722,51 @@
         return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // ── Init ─────────────────────────────────────────────────────────────
+    // ── Labels management ────────────────────────────────────────────────
+    let _lw_labels = [];
+
     async function _lwFetchCategories() {
         try {
             const res = await fetch('/api/lists/categories');
             const data = await res.json();
             if (data.categories) {
+                _lw_labels = data.categories;
+                // Populate datalist for quick-add autocomplete
                 const dl = document.getElementById('lw-categories-datalist');
-                if (dl) dl.innerHTML = data.categories.map(c => `<option value="${_lwEsc(c.name)}">`).join('');
+                if (dl) dl.innerHTML = _lw_labels.map(c => `<option value="${_lwEsc(c.name)}">`).join('');
+                // Render pills if panel is open
+                _lwRenderLabels();
             }
         } catch(e) { console.error('[LW] fetch cat error:', e); }
     }
+
+    function _lwRenderLabels() {
+        const pills = document.getElementById('lw-labels-pills');
+        if (!pills) return;
+        if (_lw_labels.length === 0) {
+            pills.innerHTML = `<span class="lw-labels-empty">Nessuna etichetta salvata</span>`;
+            return;
+        }
+        pills.innerHTML = _lw_labels.map(c => `
+            <span class="lw-label-pill">
+                <i class="fas fa-tag" style="font-size:0.55rem;"></i>
+                ${_lwEsc(c.name)}
+                <button type="button" class="lw-label-pill-del"
+                        onclick="_lwDeleteLabel('${c.id}', '${_lwEsc(c.name)}')"
+                        title="Elimina etichetta">
+                    <i class="fas fa-trash" style="font-size:0.6rem;"></i>
+                </button>
+            </span>`).join('');
+    }
+
+
+    window._lwDeleteLabel = async function(catId, name) {
+        if (!confirm(`Eliminare l'etichetta "${name}"?`)) return;
+        try {
+            await fetch(`/api/lists/categories/${catId}`, { method: 'DELETE' });
+            await _lwFetchCategories();
+        } catch(e) { console.error('[LW] delete label error:', e); }
+    };
 
     function _lwInit() {
         _lwApplyCollapsed(_lw_collapsed);

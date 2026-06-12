@@ -32,8 +32,19 @@
                     <span data-i18n="lists_clear_done">{{ t('lists_clear_done') or 'Pulisci completati' }}</span>
                 </button>
             </div>
+            <!-- Labels bar -->
+            <div id="lhub-labels-bar" style="flex-shrink:0; border-bottom:1px solid var(--border); padding: 0 0 10px 0; margin-bottom:10px;">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; padding-left: 4px; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-tags"></i>
+                    <span>{{ t('lists_categories_title') or 'Etichette di Sistema (clicca il cestino per eliminarle definitivamente)' }}</span>
+                </div>
+                <div id="lhub-labels-inline" style="display:flex; flex-wrap:wrap; gap:5px; padding:2px;">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
             {% include 'modules/lists/_lists_main.html' %}
         </div>
+
 
         <!-- TAB: Settings -->
         <div id="lhub-pane-settings" class="lists-hub-pane" style="display:none; flex:1; overflow-y:auto; padding: 8px 0;">

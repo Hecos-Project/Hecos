@@ -7,6 +7,7 @@ let listsCategories = [];
 function listsInit() {
     listsFetchCategories();
     listsFetchLists();
+    if (typeof listsHubRenderInlineLabels === 'function') listsHubRenderInlineLabels();
 }
 
 async function listsFetchCategories() {
@@ -127,7 +128,13 @@ function listsRenderItems(items) {
             badgesHtml += `<span class="item-badge ${pClass}">${pText}</span>`;
         }
         if (item.label) {
-            badgesHtml += `<span class="item-badge"><i class="fas fa-tag"></i> ${item.label}</span>`;
+            badgesHtml += `<span class="item-badge" style="display:inline-flex; align-items:center; gap:4px;">
+                              <i class="fas fa-tag"></i> ${item.label}
+                              <button type="button" onclick="event.stopPropagation(); listsRemoveLabelFromItem('${item.id}')"
+                                      style="background:none; border:none; color:inherit; opacity:0.6; cursor:pointer; padding:0; margin-left:2px; display:flex;">
+                                  <i class="fas fa-times"></i>
+                              </button>
+                           </span>`;
         }
         
         row.innerHTML = `
@@ -249,6 +256,19 @@ async function listsDeleteItem(itemId) {
         await listsFetchLists();
     } catch (e) {
         console.error(e);
+    }
+}
+
+async function listsRemoveLabelFromItem(itemId) {
+    try {
+        await fetch(`/api/lists/items/${itemId}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ label: '' }) // Clear label
+        });
+        listsFetchItems();
+    } catch (e) {
+        console.error("Error removing item label", e);
     }
 }
 
