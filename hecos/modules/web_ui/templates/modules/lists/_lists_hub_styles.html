@@ -1,0 +1,112 @@
+<style>
+/* ── Lists Hub: Tab bar ── */
+.lists-hub-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 0 12px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+    flex-shrink: 0;
+}
+.lists-hub-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 7px 16px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+.lists-hub-tab:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+}
+.lists-hub-tab.active {
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.3);
+    color: var(--accent);
+}
+.lists-hub-pane { transition: none; }
+
+/* ── Settings Sections ── */
+.lhub-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+}
+.lhub-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.lhub-section-title i { color: var(--accent); opacity: 0.8; }
+.lhub-section-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+}
+.lhub-loading {
+    text-align: center;
+    color: var(--muted);
+    padding: 16px;
+    font-size: 0.85rem;
+}
+
+/* ── Import drop zone ── */
+.lhub-import-drop {
+    border: 2px dashed rgba(var(--accent-rgb), 0.3);
+    border-radius: 8px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.2s, background 0.2s;
+}
+.lhub-import-drop:hover, .lhub-import-drop.drag-over {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.05);
+    color: var(--text);
+}
+.lhub-import-drop i { font-size: 1.8rem; color: var(--accent); opacity: 0.6; }
+
+/* ── Archived / Categories items ── */
+.lhub-archive-item, .lhub-cat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg3);
+    border-radius: 7px;
+    margin-bottom: 6px;
+    font-size: 0.82rem;
+}
+.lhub-archive-item .lhub-item-name, .lhub-cat-item .lhub-item-name {
+    flex: 1;
+    color: var(--text);
+}
+.lhub-item-date { color: var(--muted); font-size: 0.72rem; }
+.lhub-empty-note {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    padding: 12px 0;
+}
+</style>

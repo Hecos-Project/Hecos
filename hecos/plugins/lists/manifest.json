@@ -8,6 +8,13 @@
     "is_class_based": true,
     "on_load": true,
     "status": "ONLINE",
+    "config_schema": {
+        "export_folder": {
+            "type": "str",
+            "default": "%USERPROFILE%\\Desktop",
+            "description": "Default folder for exporting lists"
+        }
+    },
     "commands": {
         "create_list": "Crea una nuova lista vuota.",
         "list_lists": "Mostra tutte le liste attive con il conteggio degli elementi.",

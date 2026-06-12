@@ -1,21 +1,118 @@
 <!-- LISTS CONFIG PANEL -->
 <div id="tab-lists" class="panel">
     <div class="card" style="height: calc(100vh - 120px); display: flex; flex-direction: column;">
-        <div class="card-title">
-            <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
-        </div>
-        <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">
-            <span data-i18n="lists_desc">{{ t('lists_desc') or 'Gestisci liste della spesa, to-do, note rapide e qualsiasi altra raccolta strutturata.' }}</span>
-        </p>
 
-        <div class="lists-controls" style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
-            <button class="btn btn-primary btn-sm" onclick="listsCreateList()"><i class="fas fa-plus"></i> <span data-i18n="lists_new_list">{{ t('lists_new_list') or 'Nuova Lista' }}</span></button>
-            <button class="btn btn-secondary btn-sm" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;"><i class="fas fa-broom"></i> <span data-i18n="lists_clear_done">{{ t('lists_clear_done') or 'Pulisci completati' }}</span></button>
+        <!-- Tab bar -->
+        <div class="lists-hub-tabs">
+            <button class="lists-hub-tab active" id="lhub-tab-app" onclick="listsHubShowTab('app')">
+                <i class="fas fa-list-check"></i>
+                <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
+            </button>
+            <button class="lists-hub-tab" id="lhub-tab-settings" onclick="listsHubShowTab('settings')">
+                <i class="fas fa-sliders-h"></i>
+                <span data-i18n="lists_tab_settings">{{ t('lists_tab_settings') or 'Configurazione' }}</span>
+            </button>
         </div>
-        
-        {% include 'modules/lists/_lists_main.html' %}
+
+        <!-- TAB: App (full-screen list manager) -->
+        <div id="lhub-pane-app" class="lists-hub-pane" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="display:flex; justify-content:flex-end; gap:8px; padding: 0 0 12px 0; flex-shrink:0;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="listsCreateList()">
+                    <i class="fas fa-plus"></i>
+                    <span data-i18n="lists_new_list">{{ t('lists_new_list') or 'Nuova Lista' }}</span>
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;">
+                    <i class="fas fa-broom"></i>
+                    <span data-i18n="lists_clear_done">{{ t('lists_clear_done') or 'Pulisci completati' }}</span>
+                </button>
+            </div>
+            {% include 'modules/lists/_lists_main.html' %}
+        </div>
+
+        <!-- TAB: Settings -->
+        <div id="lhub-pane-settings" class="lists-hub-pane" style="display:none; flex:1; overflow-y:auto; padding: 8px 0;">
+
+            <!-- Export folder -->
+            <div class="lhub-section">
+                <div class="lhub-section-title"><i class="fas fa-folder-open"></i> {{ t('lists_export_folder_label') or 'Cartella di esportazione' }}</div>
+                <p class="lhub-section-desc">{{ t('lists_export_folder_desc') or 'Cartella di default per il salvataggio delle liste esportate.' }}</p>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" id="lists-export-folder-input" class="config-input"
+                           placeholder="%USERPROFILE%\Desktop"
+                           style="flex:1;" value="">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="listsSaveExportFolder()">
+                        <i class="fas fa-save"></i> {{ t('save') or 'Salva' }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Export -->
+            <div class="lhub-section">
+                <div class="lhub-section-title"><i class="fas fa-file-export"></i> {{ t('lists_export_title') or 'Esporta Liste' }}</div>
+                <p class="lhub-section-desc">{{ t('lists_export_desc') or 'Scarica le tue liste in formato YAML o testo leggibile.' }}</p>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                    <select id="lists-export-select" class="config-input" style="flex:1; max-width:280px;">
+                        <!-- Populated by JS -->
+                    </select>
+                    <select id="lists-export-format" class="config-input" style="width:100px;">
+                        <option value="yaml">YAML</option>
+                        <option value="txt">TXT</option>
+                        <option value="md">MD</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="listsExportDownload()">
+                        <i class="fas fa-download"></i> {{ t('lists_export_download') or 'Scarica' }}
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="listsExportSave()">
+                        <i class="fas fa-save"></i> {{ t('lists_export_save') or 'Salva su disco' }}
+                    </button>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" style="width:100%;" onclick="listsExportAll()">
+                    <i class="fas fa-boxes"></i> {{ t('lists_export_all') or 'Esporta tutte le liste' }}
+                </button>
+            </div>
+
+            <!-- Import -->
+            <div class="lhub-section">
+                <div class="lhub-section-title"><i class="fas fa-file-import"></i> {{ t('lists_import_title') or 'Importa Liste' }}</div>
+                <p class="lhub-section-desc">{{ t('lists_import_desc') or 'Importa liste da file YAML, TXT o Markdown (- [ ] elemento).' }}</p>
+                <div class="lhub-import-drop" id="lists-import-drop"
+                     onclick="document.getElementById('lists-import-file').click()"
+                     ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                     ondragleave="this.classList.remove('drag-over')"
+                     ondrop="listsHandleImportDrop(event)">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span>{{ t('lists_import_drop') or 'Clicca o trascina un file YAML, TXT o MD' }}</span>
+                    <input type="file" id="lists-import-file" accept=".yaml,.yml,.txt,.md"
+                           style="display:none" onchange="listsHandleImportFile(this)">
+                </div>
+                <div id="lists-import-status" style="margin-top:8px; font-size:0.82rem; display:none;"></div>
+            </div>
+
+            <!-- Archived lists -->
+            <div class="lhub-section">
+                <div class="lhub-section-title"><i class="fas fa-box-archive"></i> {{ t('lists_archived_title') or 'Liste Archiviate' }}</div>
+                <p class="lhub-section-desc">{{ t('lists_archived_desc') or 'Liste nascoste. Puoi ripristinarle o eliminarle definitivamente.' }}</p>
+                <div id="lists-archived-container">
+                    <div class="lhub-loading"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="lhub-section">
+                <div class="lhub-section-title"><i class="fas fa-tags"></i> {{ t('lists_categories_title') or 'Etichette / Categorie' }}</div>
+                <p class="lhub-section-desc">{{ t('lists_categories_desc') or 'Etichette usate negli elementi delle liste.' }}</p>
+                <div id="lists-categories-container">
+                    <div class="lhub-loading"><i class="fas fa-spinner fa-spin"></i></div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 </div>
 
 {% include 'modules/lists/_lists_styles.html' %}
+{% include 'modules/lists/_lists_hub_styles.html' %}
 {% include 'modules/lists/_lists_logic.html' %}
+{% include 'modules/lists/_lists_hub_logic.html' %}

@@ -1,0 +1,234 @@
+<script>
+// ── Lists Hub: Tab switcher ───────────────────────────────────────────────────
+function listsHubShowTab(tab) {
+    document.querySelectorAll('.lists-hub-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.lists-hub-pane').forEach(p => p.style.display = 'none');
+
+    document.getElementById('lhub-tab-' + tab).classList.add('active');
+    const pane = document.getElementById('lhub-pane-' + tab);
+    if (pane) {
+        pane.style.display = tab === 'app' ? 'flex' : 'block';
+        pane.style.flexDirection = 'column';
+    }
+
+    if (tab === 'settings') {
+        listsHubLoadSettings();
+    }
+}
+
+// ── Settings: load data ───────────────────────────────────────────────────────
+async function listsHubLoadSettings() {
+    listsHubLoadExportSelect();
+    listsHubLoadArchived();
+    listsHubLoadCategories();
+}
+
+async function listsHubLoadExportSelect() {
+    try {
+        const res  = await fetch('/api/lists');
+        const data = await res.json();
+        const sel  = document.getElementById('lists-export-select');
+        if (!sel) return;
+        if (data.ok && data.lists && data.lists.length > 0) {
+            sel.innerHTML = data.lists.map(l =>
+                `<option value="${l.id}">${l.name}</option>`
+            ).join('');
+        } else {
+            sel.innerHTML = '<option value="">Nessuna lista</option>';
+        }
+    } catch(e) { console.error('[LHUB] export select error:', e); }
+}
+
+// ── Export folder ─────────────────────────────────────────────────────────────
+async function listsSaveExportFolder() {
+    const input = document.getElementById('lists-export-folder-input');
+    if (!input) return;
+    const folder = input.value.trim();
+    if (!folder) return;
+    try {
+        // Save via generic config API if available, else just show success
+        if (typeof window.savePluginConfig === 'function') {
+            await window.savePluginConfig('LISTS', { export_folder: folder });
+        }
+        listsHubShowStatus('✅ Cartella salvata.', 'success');
+    } catch(e) {
+        listsHubShowStatus('⚠️ Errore nel salvataggio.', 'error');
+    }
+}
+
+// ── Export: download ──────────────────────────────────────────────────────────
+function listsExportDownload() {
+    const listId = document.getElementById('lists-export-select')?.value;
+    const fmt    = document.getElementById('lists-export-format')?.value || 'yaml';
+    if (!listId) return;
+    window.location.href = `/api/lists/${listId}/export?format=${fmt}`;
+}
+
+function listsExportAll() {
+    const fmt = document.getElementById('lists-export-format')?.value || 'yaml';
+    window.location.href = `/api/lists/export/all?format=${fmt}`;
+}
+
+// ── Export: save to disk ──────────────────────────────────────────────────────
+async function listsExportSave() {
+    const listId = document.getElementById('lists-export-select')?.value;
+    const fmt    = document.getElementById('lists-export-format')?.value || 'yaml';
+    const folder = document.getElementById('lists-export-folder-input')?.value || '';
+    if (!listId) return;
+    try {
+        const res  = await fetch(`/api/lists/${listId}/export/save`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ format: fmt, folder: folder || undefined })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            listsHubShowStatus(`✅ Salvata in: <code>${data.path}</code>`, 'success');
+        } else {
+            listsHubShowStatus(`⚠️ Errore: ${data.error}`, 'error');
+        }
+    } catch(e) {
+        listsHubShowStatus('⚠️ Errore di rete.', 'error');
+    }
+}
+
+// ── Import ────────────────────────────────────────────────────────────────────
+function listsHandleImportDrop(e) {
+    e.preventDefault();
+    document.getElementById('lists-import-drop').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) _listsDoImport(file);
+}
+
+function listsHandleImportFile(input) {
+    const file = input.files[0];
+    if (file) _listsDoImport(file);
+    input.value = '';
+}
+
+async function _listsDoImport(file) {
+    const status = document.getElementById('lists-import-status');
+    if (status) { status.style.display = 'block'; status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importazione in corso...'; }
+
+    try {
+        const form = new FormData();
+        form.append('file', file);
+        const res  = await fetch('/api/lists/import', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.ok) {
+            const names = data.created.map(l => `<strong>${l.name}</strong>`).join(', ');
+            if (status) status.innerHTML = `✅ Importate ${data.count} liste: ${names}`;
+            // Refresh the export select
+            listsHubLoadExportSelect();
+            // Also refresh app tab if loaded
+            if (typeof listsFetchLists === 'function') listsFetchLists();
+        } else {
+            if (status) status.innerHTML = `⚠️ ${data.error}`;
+        }
+    } catch(e) {
+        if (status) status.innerHTML = '⚠️ Errore di rete durante l\'importazione.';
+    }
+}
+
+// ── Archived lists ────────────────────────────────────────────────────────────
+async function listsHubLoadArchived() {
+    const container = document.getElementById('lists-archived-container');
+    if (!container) return;
+    try {
+        const res  = await fetch('/api/lists?archived=true');
+        const data = await res.json();
+        const archived = (data.lists || []).filter(l => l.archived);
+        if (archived.length === 0) {
+            container.innerHTML = '<div class="lhub-empty-note">Nessuna lista archiviata.</div>';
+            return;
+        }
+        container.innerHTML = archived.map(l => `
+            <div class="lhub-archive-item">
+                <span class="lhub-nav-icon">${l.icon || '<i class="fas fa-list-check"></i>'}</span>
+                <span class="lhub-item-name">${_lhubEsc(l.name)}</span>
+                <span class="lhub-item-date">${(l.updated_at || '').slice(0,10)}</span>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="listsHubUnarchive('${l.id}')">
+                    <i class="fas fa-box-open"></i> Ripristina
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="listsHubDeleteArchived('${l.id}', '${_lhubEsc(l.name)}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`).join('');
+    } catch(e) {
+        container.innerHTML = '<div class="lhub-empty-note">Errore di caricamento.</div>';
+    }
+}
+
+async function listsHubUnarchive(listId) {
+    try {
+        await fetch(`/api/lists/${listId}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ archived: 0 })
+        });
+        listsHubLoadArchived();
+        if (typeof listsFetchLists === 'function') listsFetchLists();
+    } catch(e) { console.error('[LHUB] unarchive error:', e); }
+}
+
+async function listsHubDeleteArchived(listId, name) {
+    if (!confirm(`Eliminare definitivamente la lista "${name}"?`)) return;
+    try {
+        await fetch(`/api/lists/${listId}`, { method: 'DELETE' });
+        listsHubLoadArchived();
+    } catch(e) { console.error('[LHUB] delete archived error:', e); }
+}
+
+// ── Categories ────────────────────────────────────────────────────────────────
+async function listsHubLoadCategories() {
+    const container = document.getElementById('lists-categories-container');
+    if (!container) return;
+    try {
+        const res  = await fetch('/api/lists/categories');
+        const data = await res.json();
+        const cats = data.categories || [];
+        if (cats.length === 0) {
+            container.innerHTML = '<div class="lhub-empty-note">Nessuna etichetta trovata.</div>';
+            return;
+        }
+        container.innerHTML = cats.map(c => `
+            <div class="lhub-cat-item">
+                <i class="fas fa-tag" style="color:var(--accent); font-size:0.8rem;"></i>
+                <span class="lhub-item-name">${_lhubEsc(c.name)}</span>
+                <button type="button" class="btn btn-danger btn-sm" onclick="listsHubDeleteCat('${c.id}', '${_lhubEsc(c.name)}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`).join('');
+    } catch(e) {
+        container.innerHTML = '<div class="lhub-empty-note">Errore di caricamento.</div>';
+    }
+}
+
+async function listsHubDeleteCat(catId, name) {
+    if (!confirm(`Eliminare l'etichetta "${name}"?`)) return;
+    try {
+        await fetch(`/api/lists/categories/${catId}`, { method: 'DELETE' });
+        listsHubLoadCategories();
+    } catch(e) { console.error('[LHUB] delete cat error:', e); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function listsHubShowStatus(html, type) {
+    const status = document.getElementById('lists-import-status');
+    if (!status) {
+        // Create a floating toast
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;z-index:9999;font-size:0.85rem;box-shadow:0 4px 16px rgba(0,0,0,0.3);';
+        toast.innerHTML = html;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+        return;
+    }
+    status.style.display = 'block';
+    status.innerHTML = html;
+}
+
+function _lhubEsc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>

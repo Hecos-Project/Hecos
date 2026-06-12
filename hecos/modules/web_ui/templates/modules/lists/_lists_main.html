@@ -26,8 +26,8 @@
                     <h3 id="lists-active-name" contenteditable="true" onblur="listsRenameList(this.innerText)">Nome Lista</h3>
                 </div>
                 <div class="lists-header-actions">
-                    <button class="btn btn-secondary btn-icon" onclick="listsArchiveActive()" title="{{ t('lists_archive_btn') or 'Archivia lista' }}"><i class="fas fa-box-archive"></i></button>
-                    <button class="btn btn-danger btn-icon" onclick="listsDeleteActive()" title="{{ t('lists_delete_btn') or 'Elimina lista' }}"><i class="fas fa-trash"></i></button>
+                    <button type="button" class="btn btn-secondary btn-icon" onclick="listsArchiveActive()" title="{{ t('lists_archive_btn') or 'Archivia lista' }}"><i class="fas fa-box-archive"></i></button>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="listsDeleteActive()" title="{{ t('lists_delete_btn') or 'Elimina lista' }}"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
             
@@ -41,14 +41,14 @@
                     </select>
                     <input type="text" id="lists-add-label" placeholder="{{ t('lists_label_ph') or 'Etichetta' }}" class="lists-input-small" list="lists-categories-datalist">
                     <datalist id="lists-categories-datalist"></datalist>
-                    <button class="btn btn-primary" onclick="listsAddItem()"><i class="fas fa-plus"></i></button>
+                    <button type="button" class="btn btn-primary" onclick="listsAddItem()"><i class="fas fa-plus"></i></button>
                 </div>
             </div>
             
             <div class="lists-items-filters">
-                <button class="lists-filter-btn active" data-filter="all" onclick="listsSetFilter('all')" data-i18n="lists_filter_all">{{ t('lists_filter_all') or 'Tutti' }}</button>
-                <button class="lists-filter-btn" data-filter="pending" onclick="listsSetFilter('pending')" data-i18n="lists_filter_pending">{{ t('lists_filter_pending') or 'Da fare' }}</button>
-                <button class="lists-filter-btn" data-filter="done" onclick="listsSetFilter('done')" data-i18n="lists_filter_done">{{ t('lists_filter_done') or 'Completati' }}</button>
+                <button type="button" class="lists-filter-btn active" data-filter="all" onclick="listsSetFilter('all')" data-i18n="lists_filter_all">{{ t('lists_filter_all') or 'Tutti' }}</button>
+                <button type="button" class="lists-filter-btn" data-filter="pending" onclick="listsSetFilter('pending')" data-i18n="lists_filter_pending">{{ t('lists_filter_pending') or 'Da fare' }}</button>
+                <button type="button" class="lists-filter-btn" data-filter="done" onclick="listsSetFilter('done')" data-i18n="lists_filter_done">{{ t('lists_filter_done') or 'Completati' }}</button>
             </div>
             
             <div class="lists-items-container" id="lists-items-container">

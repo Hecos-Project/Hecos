@@ -278,6 +278,97 @@ class LISTSTools:
             logger.error(f"[LISTS] delete_list error: {e}")
             return f"⚠️ Errore di sistema: {e}"
 
+    def export_list(self, list_name: str, format: str = "yaml", folder: str = None) -> str:
+        """
+        Exports a list to a file on disk.
+        Format can be 'yaml' or 'txt'. Folder defaults to the configured export folder.
+        """
+        import os
+        try:
+            lst = store.get_list_by_name(list_name)
+            if not lst:
+                return f"⚠️ Lista '{list_name}' non trovata."
+
+            # Resolve folder
+            if not folder:
+                folder = (self._cfg or {}).get("plugins", {}).get("LISTS", {}).get("export_folder", "")
+            if not folder:
+                folder = os.path.join(os.path.expanduser("~"), "Desktop")
+            folder = os.path.expandvars(os.path.expanduser(str(folder)))
+            os.makedirs(folder, exist_ok=True)
+
+            # Build content
+            from hecos.plugins.lists.api import _list_to_dict, _dict_to_yaml, _dict_to_txt
+            data = _list_to_dict(lst["id"])
+            if not data:
+                return "⚠️ Errore durante il recupero dei dati."
+
+            safe_name = "".join(c for c in data["name"] if c.isalnum() or c in " _-").strip()
+            fmt = str(format).lower()
+            if fmt == "txt":
+                content  = _dict_to_txt(data)
+                filename = f"{safe_name}.txt"
+            else:
+                content  = _dict_to_yaml(data)
+                filename = f"{safe_name}.yaml"
+
+            filepath = os.path.join(folder, filename)
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(content)
+
+            return f"✅ Lista **{lst['name']}** esportata in:\n`{filepath}`"
+        except Exception as e:
+            logger.error(f"[LISTS] export_list error: {e}")
+            return f"⚠️ Errore durante l'esportazione: {e}"
+
+    def import_list(self, file_path: str) -> str:
+        """
+        Imports one or more lists from a file (YAML, TXT, or Markdown checklist).
+        """
+        import os
+        try:
+            if not os.path.exists(file_path):
+                return f"⚠️ File non trovato: `{file_path}`"
+
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+
+            fname = os.path.basename(file_path).lower()
+            from hecos.plugins.lists.api import _parse_yaml_import, _parse_txt_import
+
+            if fname.endswith(".yaml") or fname.endswith(".yml"):
+                parsed = _parse_yaml_import(content)
+            else:
+                parsed = _parse_txt_import(content)
+
+            if not parsed:
+                return f"⚠️ Nessuna lista trovata nel file `{file_path}`."
+
+            created = []
+            for pl in parsed:
+                lst = store.create_list(
+                    name=pl.get("name", "Lista importata"),
+                    icon=pl.get("icon", '<i class="fas fa-list-check"></i>'),
+                    color=pl.get("color") or None
+                )
+                if lst:
+                    for item in pl.get("items", []):
+                        new_item = store.add_item(
+                            lst["id"],
+                            text=item.get("text", ""),
+                            priority=int(item.get("priority", 0)),
+                            label=item.get("label") or None
+                        )
+                        if new_item and item.get("status") == "done":
+                            store.update_item(new_item["id"], status="done")
+                    created.append(lst["name"])
+
+            names = ", ".join(f"**{n}**" for n in created)
+            return f"✅ Importate {len(created)} liste: {names}"
+        except Exception as e:
+            logger.error(f"[LISTS] import_list error: {e}")
+            return f"⚠️ Errore durante l'importazione: {e}"
+
     def archive_list(self, list_name: str) -> str:
         """Archives a list so it doesn't show up in normal views."""
         try:
