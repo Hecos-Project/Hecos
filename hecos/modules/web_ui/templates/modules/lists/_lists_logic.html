@@ -160,7 +160,7 @@ function listsRenderItems(items) {
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
 async function listsCreateList() {
-    const name = prompt(t ? t('lists_new_name_prompt') || "Nome della nuova lista:" : "Nome della nuova lista:");
+    const name = prompt(window.t ? window.t('lists_new_name_prompt') : "Nome della nuova lista:");
     if (!name) return;
     try {
         const res = await fetch('/api/lists', {
@@ -236,7 +236,7 @@ async function listsUpdateItemText(itemId, newText) {
 }
 
 async function listsDeleteItem(itemId) {
-    if (!confirm(t ? t('lists_confirm_del_item') || "Eliminare l'elemento?" : "Eliminare l'elemento?")) return;
+    if (!confirm(window.t ? window.t('lists_confirm_del_item') : "Eliminare l'elemento?")) return;
     try {
         await fetch(`/api/lists/items/${itemId}`, { method: 'DELETE' });
         await listsFetchItems();
@@ -248,7 +248,7 @@ async function listsDeleteItem(itemId) {
 
 async function listsClearDone() {
     if (!listsActiveListId) return;
-    if (!confirm(t ? t('lists_confirm_clear') || "Rimuovere tutti gli elementi completati?" : "Rimuovere tutti gli elementi completati?")) return;
+    if (!confirm(window.t ? window.t('lists_confirm_clear') : "Rimuovere tutti gli elementi completati?")) return;
     try {
         await fetch(`/api/lists/${listsActiveListId}/clear_done`, { method: 'POST' });
         await listsFetchItems();
@@ -272,7 +272,7 @@ async function listsRenameList(newName) {
 
 async function listsChangeIcon() {
     if (!listsActiveListId) return;
-    const newIcon = prompt("Inserisci una nuova emoji per l'icona:");
+    const newIcon = prompt(window.t ? window.t('lists_prompt_icon') : "Inserisci una nuova emoji per l'icona:");
     if (!newIcon) return;
     try {
         await fetch(`/api/lists/${listsActiveListId}`, {
@@ -288,7 +288,7 @@ async function listsChangeIcon() {
 
 async function listsArchiveActive() {
     if (!listsActiveListId) return;
-    if (!confirm(t ? t('lists_confirm_archive') || "Archiviare la lista?" : "Archiviare la lista?")) return;
+    if (!confirm(window.t ? window.t('lists_confirm_archive') : "Archiviare la lista?")) return;
     try {
         await fetch(`/api/lists/${listsActiveListId}`, {
             method: 'PATCH',
@@ -306,7 +306,7 @@ async function listsArchiveActive() {
 
 async function listsDeleteActive() {
     if (!listsActiveListId) return;
-    if (!confirm(t ? t('lists_confirm_delete') || "Eliminare definitivamente la lista e tutti i suoi elementi?" : "Eliminare definitivamente la lista e tutti i suoi elementi?")) return;
+    if (!confirm(window.t ? window.t('lists_confirm_delete_list') : "Eliminare definitivamente la lista e tutti i suoi elementi?")) return;
     try {
         await fetch(`/api/lists/${listsActiveListId}`, { method: 'DELETE' });
         listsActiveListId = null;

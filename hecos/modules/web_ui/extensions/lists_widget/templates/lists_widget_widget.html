@@ -1,10 +1,15 @@
 <!-- LISTS WIDGET -->
-<div class="cr-widget widget-lists" id="widget-lists">
-    <div class="cr-widget-header">
-        <h3 onclick="_listsWidgetNav()" style="cursor:pointer;"><i class="fas fa-list-check"></i> <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span></h3>
-        <button class="btn btn-icon btn-sm widget-btn" onclick="_listsWidgetNav()" title="Apri Gestore Liste"><i class="fas fa-external-link-alt"></i></button>
+<div class="sidebar-card" id="lists-widget" style="padding:10px 12px;">
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="_listsWidgetToggle()">
+        <span class="ql-icon"><i class="fas fa-list-check"></i></span>
+        <span class="ql-title" data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
+        <span onclick="event.stopPropagation(); _listsWidgetNav()" 
+              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:4px;" 
+              title="Apri Gestore Liste"><i class="fas fa-cog"></i></span>
+        <span class="ql-chevron" id="lists-widget-toggle"><i class="fas fa-chevron-down"></i></span>
     </div>
-    <div class="cr-widget-body">
+    
+    <div id="lists-widget-body" class="ql-body" style="margin-top:10px;">
         <div class="lists-widget-items">
             {% if lists %}
                 {% for lst in lists[:5] %}
@@ -75,6 +80,21 @@
 </style>
 
 <script>
+let _listsWidgetCollapsed = localStorage.getItem('hecos-lists-collapsed') === '1';
+
+function _listsWidgetApplyCollapsed(yes) {
+    const body = document.getElementById('lists-widget-body');
+    const tog  = document.getElementById('lists-widget-toggle');
+    if (body) body.style.display = yes ? 'none' : '';
+    if (tog)  tog.classList.toggle('collapsed', yes);
+}
+
+function _listsWidgetToggle() {
+    _listsWidgetCollapsed = !_listsWidgetCollapsed;
+    localStorage.setItem('hecos-lists-collapsed', _listsWidgetCollapsed ? '1' : '0');
+    _listsWidgetApplyCollapsed(_listsWidgetCollapsed);
+}
+
 function _listsWidgetNav() {
     // If we are inside the Central Hub, just call showTab
     if (typeof showTab === 'function') {
@@ -83,5 +103,12 @@ function _listsWidgetNav() {
         // From the Control Room or sidebar: open Central Hub then navigate
         window.open('/hecos/config/ui#lists', '_blank');
     }
+}
+
+// Initial state
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => _listsWidgetApplyCollapsed(_listsWidgetCollapsed));
+} else {
+    _listsWidgetApplyCollapsed(_listsWidgetCollapsed);
 }
 </script>
