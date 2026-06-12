@@ -109,4 +109,38 @@
     font-style: italic;
     padding: 12px 0;
 }
+
+/* ── Inline new-list bar (hub) ── */
+.lhub-new-list-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(var(--accent-rgb), 0.07);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-radius: 8px;
+    padding: 6px 12px;
+}
+.lhub-new-list-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-family: inherit;
+    padding: 2px 0;
+}
+.lhub-new-list-bar input::placeholder { color: var(--muted); opacity: 0.65; }
+.lhub-new-list-bar button {
+    background: rgba(var(--accent-rgb), 0.2);
+    border: none;
+    border-radius: 5px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.lhub-new-list-bar button:hover { background: rgba(var(--accent-rgb), 0.38); }
 </style>

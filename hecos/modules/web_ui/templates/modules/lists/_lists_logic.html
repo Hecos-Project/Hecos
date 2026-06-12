@@ -140,7 +140,7 @@ function listsRenderItems(items) {
                 ${badgesHtml ? `<div class="list-item-meta">${badgesHtml}</div>` : ''}
             </div>
             <div class="list-item-actions">
-                <button class="btn btn-sm btn-icon text-danger" onclick="listsDeleteItem('${item.id}')"><i class="fas fa-trash"></i></button>
+                <button type="button" class="btn btn-sm btn-icon text-danger" onclick="listsDeleteItem('${item.id}')"><i class="fas fa-trash"></i></button>
             </div>
         `;
         
@@ -160,12 +160,18 @@ function listsRenderItems(items) {
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
 async function listsCreateList() {
-    const name = prompt(window.t ? window.t('lists_new_name_prompt') : "Nome della nuova lista:");
-    if (!name) return;
+    const input = document.getElementById('lists-new-name-input');
+    const name  = input ? input.value.trim() : '';
+    if (!name) {
+        if (input) input.focus();
+        return;
+    }
+    if (input) input.value = '';
     try {
         const res = await fetch('/api/lists', {
             method: 'POST',
-            body: JSON.stringify({ name: name, icon: '📋' })
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name: name, icon: '<i class="fas fa-list-check"></i>' })
         });
         const data = await res.json();
         if (data.ok) {

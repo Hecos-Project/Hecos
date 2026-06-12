@@ -16,11 +16,17 @@
 
         <!-- TAB: App (full-screen list manager) -->
         <div id="lhub-pane-app" class="lists-hub-pane" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-            <div style="display:flex; justify-content:flex-end; gap:8px; padding: 0 0 12px 0; flex-shrink:0;">
-                <button type="button" class="btn btn-primary btn-sm" onclick="listsCreateList()">
-                    <i class="fas fa-plus"></i>
-                    <span data-i18n="lists_new_list">{{ t('lists_new_list') or 'Nuova Lista' }}</span>
-                </button>
+            <!-- Toolbar: inline new list + clear done -->
+            <div style="display:flex; align-items:center; gap:8px; padding: 0 0 12px 0; flex-shrink:0;">
+                <div class="lhub-new-list-bar" style="flex:1;">
+                    <i class="fas fa-plus" style="color:var(--accent); font-size:0.8rem; flex-shrink:0;"></i>
+                    <input type="text" id="lists-new-name-input"
+                           placeholder="{{ t('lists_new_list_ph') or 'Nome nuova lista...' }}"
+                           onkeydown="if(event.key==='Enter') listsCreateList()">
+                    <button type="button" onclick="listsCreateList()" title="{{ t('lists_create_list') or 'Crea lista' }}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </div>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;">
                     <i class="fas fa-broom"></i>
                     <span data-i18n="lists_clear_done">{{ t('lists_clear_done') or 'Pulisci completati' }}</span>

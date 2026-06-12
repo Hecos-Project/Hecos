@@ -6,7 +6,7 @@
         <span class="ql-title" data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
         <span onclick="event.stopPropagation(); _lwOpenFull()"
               style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:8px;"
-              title="Apri vista completa"><i class="fas fa-expand-alt"></i></span>
+              title="{{ t('lists_fullscreen') or 'Vista completa' }}"><i class="fas fa-expand-alt"></i></span>
         <span class="ql-chevron" id="lw-toggle-icon"><i class="fas fa-chevron-down"></i></span>
     </div>
 
@@ -28,27 +28,42 @@
                     <span>{{ t('lists_select_title') or 'Seleziona una lista' }}</span>
                 </div>
                 <div id="lw-items-wrap" style="display:none; flex-direction:column; height:100%;">
+                    <!-- Filter tabs -->
+                    <div class="lw-filters" id="lw-filters">
+                        <button type="button" class="lw-filter active" data-f="all"    onclick="_lwSetFilter('all')"     >{{ t('lists_filter_all') or 'Tutti' }}</button>
+                        <button type="button" class="lw-filter"        data-f="pending" onclick="_lwSetFilter('pending')" >{{ t('lists_filter_pending') or 'Da fare' }}</button>
+                        <button type="button" class="lw-filter"        data-f="done"    onclick="_lwSetFilter('done')"    >{{ t('lists_filter_done') or 'Fatti' }}</button>
+                    </div>
                     <div class="lw-items-scroll" id="lw-items">
                         <!-- Items populated by JS -->
                     </div>
-                    <!-- Quick add -->
+                    <!-- Quick add: text + priority + label + button -->
                     <div class="lw-quick-add">
-                        <input type="text" id="lw-add-input" placeholder="{{ t('lists_add_ph') or 'Aggiungi elemento...' }}"
+                        <input type="text" id="lw-add-input" placeholder="{{ t('lists_add_ph') or 'Aggiungi...' }}"
                                onkeydown="if(event.key==='Enter') _lwAddItem()">
-                        <button type="button" onclick="_lwAddItem()" title="Aggiungi"><i class="fas fa-plus"></i></button>
+                        <select id="lw-add-priority" class="lw-prio-select" title="{{ t('lists_priority') or 'Priorità' }}">
+                            <option value="0">{{ t('lists_prio_none') or '—' }}</option>
+                            <option value="1">P1</option>
+                            <option value="2">P2</option>
+                        </select>
+                        <input type="text" id="lw-add-label" placeholder="#tag"
+                               class="lw-label-input" title="{{ t('lists_label') or 'Etichetta' }}"
+                               onkeydown="if(event.key==='Enter') _lwAddItem()">
+                        <button type="button" onclick="_lwAddItem()" title="{{ t('lists_add_btn') or 'Aggiungi' }}"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer actions -->
+        <!-- Footer: inline new list input -->
         <div class="lw-footer">
-            <button type="button" class="lw-footer-btn" onclick="_lwNewList()">
-                <i class="fas fa-plus"></i> {{ t('lists_new_list') or 'Nuova Lista' }}
-            </button>
-            <button type="button" class="lw-footer-btn lw-footer-btn-ghost" onclick="_lwOpenFull()">
-                <i class="fas fa-expand-alt"></i> {{ t('lists_fullscreen') or 'Vista completa' }}
-            </button>
+            <div class="lw-new-list-bar">
+                <i class="fas fa-plus" style="color:var(--accent); font-size:0.75rem; flex-shrink:0;"></i>
+                <input type="text" id="lw-new-list-input"
+                       placeholder="{{ t('lists_new_list_ph') or 'Nome nuova lista...' }}"
+                       onkeydown="if(event.key==='Enter') _lwCreateList()">
+                <button type="button" onclick="_lwCreateList()" title="{{ t('lists_create_list') or 'Crea lista' }}"><i class="fas fa-check"></i></button>
+            </div>
         </div>
 
     </div>
@@ -172,6 +187,11 @@
     accent-color: var(--accent);
     flex-shrink: 0;
 }
+.lw-row-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 .lw-row-text {
     flex: 1;
     font-size: 0.8rem;
@@ -204,6 +224,70 @@
     padding: 20px 8px;
     font-style: italic;
 }
+
+/* Filter tabs */
+.lw-filters {
+    display: flex;
+    gap: 2px;
+    padding: 5px 6px 3px;
+    flex-shrink: 0;
+}
+.lw-filter {
+    flex: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--muted);
+    font-size: 0.63rem;
+    font-family: inherit;
+    padding: 3px 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+}
+.lw-filter:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.lw-filter.active {
+    background: rgba(var(--accent-rgb), 0.15);
+    border-color: rgba(var(--accent-rgb), 0.3);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Item badges */
+.lw-row-badges {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+.lw-badge {
+    font-size: 0.57rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+.lw-badge-p1 { background: rgba(255,160,0,0.18); color: #ffa800; }
+.lw-badge-p2 { background: rgba(255,60,60,0.18); color: #ff4444; }
+.lw-badge-label { background: rgba(var(--accent-rgb),0.12); color: var(--accent); font-weight: 400; }
+
+/* Label input in quick-add */
+.lw-label-input {
+    width: 42px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-family: inherit;
+    padding: 2px 4px;
+    outline: none;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+}
+.lw-label-input:focus { border-color: var(--accent); color: var(--text); }
+.lw-label-input::placeholder { opacity: 0.5; }
 
 /* Quick add bar */
 .lw-quick-add {
@@ -238,38 +322,58 @@
 }
 .lw-quick-add button:hover { background: rgba(var(--accent-rgb), 0.35); }
 
-/* Footer */
+/* Priority select in quick-add */
+.lw-prio-select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-family: inherit;
+    padding: 2px 2px;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 34px;
+    outline: none;
+}
+.lw-prio-select:focus { border-color: var(--accent); color: var(--text); }
+
+/* Footer: new list bar */
 .lw-footer {
-    display: flex;
-    gap: 6px;
     margin-top: 8px;
 }
-.lw-footer-btn {
-    flex: 1;
-    background: rgba(var(--accent-rgb), 0.12);
-    border: 1px solid rgba(var(--accent-rgb), 0.2);
-    border-radius: 6px;
-    color: var(--accent);
-    font-size: 0.72rem;
-    padding: 5px 8px;
-    cursor: pointer;
-    transition: background 0.15s;
+.lw-new-list-bar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 5px;
-    font-family: inherit;
+    gap: 6px;
+    background: rgba(var(--accent-rgb), 0.07);
+    border: 1px solid rgba(var(--accent-rgb), 0.18);
+    border-radius: 7px;
+    padding: 5px 9px;
 }
-.lw-footer-btn:hover { background: rgba(var(--accent-rgb), 0.22); }
-.lw-footer-btn-ghost {
+.lw-new-list-bar input {
+    flex: 1;
     background: transparent;
-    border-color: rgba(255,255,255,0.08);
-    color: var(--muted);
-}
-.lw-footer-btn-ghost:hover {
-    background: rgba(255,255,255,0.05);
+    border: none;
+    outline: none;
     color: var(--text);
+    font-size: 0.75rem;
+    font-family: inherit;
+    padding: 2px 0;
 }
+.lw-new-list-bar input::placeholder { color: var(--muted); opacity: 0.65; }
+.lw-new-list-bar button {
+    background: rgba(var(--accent-rgb), 0.2);
+    border: none;
+    border-radius: 4px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 3px 7px;
+    font-size: 0.7rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.lw-new-list-bar button:hover { background: rgba(var(--accent-rgb), 0.38); }
 </style>
 
 <script>
@@ -279,6 +383,7 @@
     let _lw_lists      = [];
     let _lw_activeId   = localStorage.getItem('hecos-lw-active') || null;
     let _lw_items      = [];
+    let _lw_filter     = 'all';
 
     // ── Collapse ─────────────────────────────────────────────────────────
     function _lwApplyCollapsed(yes) {
@@ -352,10 +457,13 @@
         await _lwFetchItems(id);
     };
 
-    // ── Fetch items ──────────────────────────────────────────────────────
+    // ── Fetch items (with filter) ─────────────────────────────────────────
     async function _lwFetchItems(listId) {
         try {
-            const res  = await fetch(`/api/lists/${listId}/items`);
+            const url = _lw_filter === 'all'
+                ? `/api/lists/${listId}/items`
+                : `/api/lists/${listId}/items?status=${_lw_filter}`;
+            const res  = await fetch(url);
             const data = await res.json();
             _lw_items = (data.ok && data.items) ? data.items : [];
             _lwRenderItems();
@@ -364,9 +472,9 @@
         }
     }
 
-    // ── Render items ─────────────────────────────────────────────────────
+    // ── Render items (with badges) ───────────────────────────────────────
     function _lwRenderItems() {
-        const wrap = document.getElementById('lw-items-wrap');
+        const wrap        = document.getElementById('lw-items-wrap');
         const placeholder = document.getElementById('lw-placeholder');
         const container   = document.getElementById('lw-items');
         if (!wrap || !container) return;
@@ -375,23 +483,42 @@
         wrap.style.display = 'flex';
 
         if (_lw_items.length === 0) {
-            container.innerHTML = '<div class="lw-items-empty"><i class="fas fa-check-circle" style="opacity:0.3;"></i><br>Lista vuota</div>';
+            const msg = _lw_filter === 'done' ? 'Nessun completato' :
+                        _lw_filter === 'pending' ? 'Nessun da fare' : 'Lista vuota';
+            container.innerHTML = `<div class="lw-items-empty"><i class="fas fa-check-circle" style="opacity:0.3;"></i><br>${msg}</div>`;
             return;
         }
 
         container.innerHTML = _lw_items.map(item => {
             const done = item.status === 'done';
+            let badges = '';
+            if (item.priority === 1) badges += `<span class="lw-badge lw-badge-p1">P1</span>`;
+            if (item.priority === 2) badges += `<span class="lw-badge lw-badge-p2">P2</span>`;
+            if (item.label)         badges += `<span class="lw-badge lw-badge-label">${_lwEsc(item.label)}</span>`;
+            const badgesHtml = badges ? `<div class="lw-row-badges">${badges}</div>` : '';
             return `
             <div class="lw-row${done ? ' done' : ''}" data-id="${item.id}">
                 <input type="checkbox" ${done ? 'checked' : ''}
                        onchange="_lwToggleItem('${item.id}', this.checked, this.closest('.lw-row'))">
-                <span class="lw-row-text">${_lwEsc(item.text)}</span>
+                <div class="lw-row-body">
+                    <span class="lw-row-text">${_lwEsc(item.text)}</span>
+                    ${badgesHtml}
+                </div>
                 <button type="button" class="lw-row-del" onclick="_lwDelItem('${item.id}')" title="Rimuovi">
                     <i class="fas fa-times"></i>
                 </button>
             </div>`;
         }).join('');
     }
+
+    // ── Set filter ─────────────────────────────────────────────────────────
+    window._lwSetFilter = function(f) {
+        _lw_filter = f;
+        document.querySelectorAll('#lw-filters .lw-filter').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.f === f);
+        });
+        if (_lw_activeId) _lwFetchItems(_lw_activeId);
+    };
 
     function _lwShowPlaceholder() {
         const wrap = document.getElementById('lw-items-wrap');
@@ -427,44 +554,51 @@
     // ── Add item ─────────────────────────────────────────────────────────
     window._lwAddItem = async function() {
         if (!_lw_activeId) return;
-        const input = document.getElementById('lw-add-input');
-        const text  = input ? input.value.trim() : '';
+        const input   = document.getElementById('lw-add-input');
+        const prioEl  = document.getElementById('lw-add-priority');
+        const labelEl = document.getElementById('lw-add-label');
+        const text    = input   ? input.value.trim()          : '';
+        const prio    = prioEl  ? parseInt(prioEl.value, 10)  : 0;
+        const label   = labelEl ? labelEl.value.trim().replace(/^#/, '') : '';
         if (!text) return;
         input.value = '';
+        if (prioEl)  prioEl.value  = '0';
+        if (labelEl) labelEl.value = '';
         try {
             const res = await fetch(`/api/lists/${_lw_activeId}/items`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ text })
+                body: JSON.stringify({ text, priority: prio, label: label || null })
             });
             const data = await res.json();
             if (data.ok) {
-                _lw_items.push(data.item);
-                _lwRenderItems();
+                await _lwFetchItems(_lw_activeId); // re-fetch so filter applies
                 await _lwFetchLists();
-                // scroll to bottom
                 const scrollEl = document.getElementById('lw-items');
                 if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+                input.focus();
             }
         } catch(e) { console.error('[LW] add item error:', e); }
     };
 
-    // ── New list ─────────────────────────────────────────────────────────
-    window._lwNewList = async function() {
-        const name = prompt(window.t ? window.t('lists_prompt_name') : 'Nome della nuova lista:');
-        if (!name || !name.trim()) return;
+    // ── Create list (inline input, no prompt) ────────────────────────────
+    window._lwCreateList = async function() {
+        const input = document.getElementById('lw-new-list-input');
+        const name  = input ? input.value.trim() : '';
+        if (!name) { if (input) input.focus(); return; }
+        input.value = '';
         try {
             const res = await fetch('/api/lists', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name: name.trim() })
+                body: JSON.stringify({ name, icon: '<i class="fas fa-list-check"></i>' })
             });
             const data = await res.json();
             if (data.ok) {
                 await _lwFetchLists();
                 _lwSelectList(data.list.id);
             }
-        } catch(e) { console.error('[LW] new list error:', e); }
+        } catch(e) { console.error('[LW] create list error:', e); }
     };
 
     // ── Helpers ──────────────────────────────────────────────────────────
