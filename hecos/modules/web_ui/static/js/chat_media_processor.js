@@ -72,6 +72,11 @@ window.processAiMedia = function(html) {
         card.className = 'chat-video-card';
         const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
         const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
+        
+        // Ensure we pass the original raw path if possible, or the src
+        const rawPath = href.startsWith('file://') ? href.replace(/^file:\/\/\/?/, '') : href;
+        const safeRawPath = rawPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
         card.innerHTML = `
           <div class="chat-video-card-header">
             <span class="chat-video-card-icon">${extIcon}</span>
@@ -81,9 +86,9 @@ window.processAiMedia = function(html) {
             </div>
           </div>
           <div class="chat-video-card-actions">
-            <a href="${src}" target="_blank" class="chat-video-btn chat-video-btn-open">
-              <i class="fas fa-play"></i> Apri con player esterno
-            </a>
+            <button onclick="window.openInVlc('${safeRawPath}')" class="chat-video-btn chat-video-btn-open">
+              <i class="fas fa-play"></i> Apri con VLC
+            </button>
             <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
               <i class="fas fa-download"></i> Scarica
             </a>
@@ -91,7 +96,6 @@ window.processAiMedia = function(html) {
           <div class="chat-video-card-hint">
             <i class="fas fa-info-circle"></i>
             Il formato <strong>${extName}</strong> non è supportato nativamente dal browser.
-            Usa VLC o il player di sistema per riprodurlo.
           </div>
         `;
         a.replaceWith(card);
@@ -158,4 +162,38 @@ window.processAiMedia = function(html) {
   }
 
   return finalHtml;
+};
+
+window.openInVlc = function(filePath) {
+  // Mostra un feedback all'utente
+  if (window.HecosUI && window.HecosUI.showToast) {
+    window.HecosUI.showToast("Avvio VLC in corso...", "info");
+  }
+
+  fetch('/api/open_in_vlc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: decodeURIComponent(filePath) })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.ok) {
+      console.error("[VLC] Errore:", data.error);
+      if (window.HecosUI && window.HecosUI.showToast) {
+        window.HecosUI.showToast("Impossibile avviare il video con VLC.", "error");
+      } else {
+        alert("Errore avvio video: " + data.error);
+      }
+    } else if (data.message) {
+      if (window.HecosUI && window.HecosUI.showToast) {
+        window.HecosUI.showToast(data.message, "success");
+      }
+    }
+  })
+  .catch(err => {
+    console.error("[VLC] Network error:", err);
+    if (window.HecosUI && window.HecosUI.showToast) {
+      window.HecosUI.showToast("Errore di rete durante l'avvio del video.", "error");
+    }
+  });
 };

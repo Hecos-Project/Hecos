@@ -207,3 +207,41 @@ def init_chat_media_routes(app, logger):
             _chat_log.error(f"[ChatMedia] Failed to serve local file {path}: {e}")
             return jsonify({"error": "Failed to serve file"}), 500
 
+    @app.route("/api/open_in_vlc", methods=["POST"])
+    def api_open_in_vlc():
+        """
+        Launches VLC media player on the host machine with the specified local file.
+        Since Hecos is a local desktop app, this opens VLC on the user's screen directly.
+        """
+        data = request.get_json(force=True) or {}
+        path = data.get("path", "")
+        if not path or not os.path.exists(path):
+            return jsonify({"ok": False, "error": "File not found"}), 404
+
+        vlc_candidates = [
+            r"C:\Program Files\VideoLAN\VLC\vlc.exe",           # 64-bit standard
+            r"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe",     # 32-bit fallback
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\VideoLAN\VLC\vlc.exe")
+        ]
+
+        vlc_exe = None
+        for candidate in vlc_candidates:
+            if os.path.isfile(candidate):
+                vlc_exe = candidate
+                break
+        
+        if not vlc_exe:
+            # Fallback to system default if VLC not found
+            try:
+                os.startfile(path)
+                return jsonify({"ok": True, "message": "VLC non trovato. Aperto con il player di sistema."})
+            except Exception as e:
+                return jsonify({"ok": False, "error": f"VLC not found and fallback failed: {e}"}), 500
+
+        try:
+            subprocess.Popen([vlc_exe, path])
+            return jsonify({"ok": True})
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] Failed to launch VLC: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
