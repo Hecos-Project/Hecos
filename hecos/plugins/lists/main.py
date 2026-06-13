@@ -96,7 +96,7 @@ class LISTSTools:
 
     # ── LLM Tools ─────────────────────────────────────────────────────────────
 
-    def create_list(self, name: str, icon: str = "📋", color: str = None) -> str:
+    def create_list(self, name: str, icon: str = '<i class="fas fa-list-check"></i>', color: str = None) -> str:
         """Creates a new list."""
         try:
             if store.get_list_by_name(name):
