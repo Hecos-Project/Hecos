@@ -161,7 +161,7 @@ class LISTSTools:
             
             # split items by comma or newline
             import re
-            item_list = [i.strip() for i in re.split(r'[,\\n]+', items) if i.strip()]
+            item_list = [i.strip() for i in re.split(r',|\n|\\n', items) if i.strip()]
             
             added = 0
             for item_text in item_list:
