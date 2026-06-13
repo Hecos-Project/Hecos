@@ -139,6 +139,14 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     except Exception as _ct_e:
         logger.warning(f"[WebUI] Contacts plugin could not load: {_ct_e}")
 
+    # Lists Plugin Route Integration
+    try:
+        from hecos.plugins.lists.api import register_routes as init_lists_api
+        init_lists_api(app)
+        logger.info("[WebUI] Hecos Lists plugin API loaded.")
+    except Exception as _ls_e:
+        logger.warning(f"[WebUI] Lists plugin API could not load: {_ls_e}")
+
     # Mail Plugin Route Integration
     try:
         from hecos.plugins.mail.api import register_routes as init_mail_api

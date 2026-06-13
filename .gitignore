@@ -303,6 +303,7 @@ hecos/memory/chat_exports/
 /data/images/
 /hecos/core/snapshots/
 /hecos/core/logs/
+/memory/
 
 # Watchdog inhibitor temp file
 .config_saved_by_app

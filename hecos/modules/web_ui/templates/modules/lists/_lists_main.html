@@ -1,0 +1,62 @@
+<div class="lists-container">
+    <div class="lists-sidebar">
+        <div class="lists-search" style="padding: 15px; border-bottom: 1px solid var(--border);">
+            <div class="lists-search-wrapper" style="margin:0; border-radius:10px; height: 38px;">
+                <span class="lists-search-icon" style="padding:0 10px; font-size:14px;"><i class="fas fa-search"></i></span>
+                <input type="text" id="lists-search-input" placeholder="{{ t('lists_search_ph') or 'Cerca lista...' }}" onkeyup="listsSearchSidebar()" autocomplete="off" style="font-size:13px;">
+            </div>
+        </div>
+        <div class="lists-list" id="lists-sidebar-list">
+            <!-- Populated via JS -->
+            <div class="lists-empty-msg" id="lists-sidebar-empty" style="display:none;" data-i18n="lists_empty_sidebar">{{ t('lists_empty_sidebar') or 'Nessuna lista trovata.' }}</div>
+        </div>
+    </div>
+    
+    <div class="lists-content">
+        <div id="lists-content-empty" class="lists-content-placeholder">
+            <div class="placeholder-icon"><i class="fas fa-list-ul"></i></div>
+            <h3 data-i18n="lists_select_title" style="margin-bottom:10px;">{{ t('lists_select_title') or 'Seleziona una lista' }}</h3>
+            <p data-i18n="lists_select_desc">{{ t('lists_select_desc') or 'Scegli una lista dalla barra laterale o creane una nuova.' }}</p>
+        </div>
+        
+        <div id="lists-content-active" class="lists-content-active" style="display:none;">
+            <div class="lists-content-header">
+                <div class="lists-header-title">
+                    <span id="lists-active-icon" class="list-icon" onclick="listsChangeIcon()"><i class="fas fa-list-check"></i></span>
+                    <h3 id="lists-active-name" contenteditable="true" onblur="listsRenameList(this.innerText)">Nome Lista</h3>
+                </div>
+                <div class="lists-header-actions">
+                    <button type="button" class="btn btn-secondary btn-icon" onclick="listsArchiveActive()" title="{{ t('lists_archive_btn') or 'Archivia lista' }}"><i class="fas fa-box-archive"></i></button>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="listsDeleteActive()" title="{{ t('lists_delete_btn') or 'Elimina lista' }}"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            
+            <div class="lists-add-bar">
+                <input type="text" id="lists-add-input" class="config-input" placeholder="{{ t('lists_add_ph') or 'Aggiungi elemento... (Premi Invio)' }}" onkeydown="if(event.key === 'Enter') listsAddItem()">
+                <div class="lists-add-options">
+                    <select id="lists-add-priority" class="lists-select" title="{{ t('lists_priority_title') or 'Priorità' }}">
+                        <option value="0">{{ t('lists_p0') or 'P0 (Normale)' }}</option>
+                        <option value="1">{{ t('lists_p1') or 'P1 (Alta)' }}</option>
+                        <option value="2">{{ t('lists_p2') or 'P2 (Urgente)' }}</option>
+                    </select>
+                    <input type="text" id="lists-add-label" placeholder="{{ t('lists_label_ph') or 'Etichetta' }}" class="lists-input-small" list="lists-categories-datalist">
+                    <datalist id="lists-categories-datalist"></datalist>
+                    <button type="button" class="btn btn-primary" onclick="listsAddItem()" title="{{ t('lists_add_btn') or 'Aggiungi' }}"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+            
+            <div class="lists-items-filters">
+                <button type="button" class="lists-filter-btn active" data-filter="all" onclick="listsSetFilter('all')" data-i18n="lists_filter_all">{{ t('lists_filter_all') or 'Tutti' }}</button>
+                <button type="button" class="lists-filter-btn" data-filter="pending" onclick="listsSetFilter('pending')" data-i18n="lists_filter_pending">{{ t('lists_filter_pending') or 'Da fare' }}</button>
+                <button type="button" class="lists-filter-btn" data-filter="done" onclick="listsSetFilter('done')" data-i18n="lists_filter_done">{{ t('lists_filter_done') or 'Completati' }}</button>
+            </div>
+            
+            <div class="lists-items-container" id="lists-items-container">
+                <!-- Items populated via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Icon Picker or New List could be added here if needed, 
+     but we'll use prompt() for simplicity or a custom small modal. -->

@@ -131,6 +131,7 @@ async function showTab(name, skipScroll = false) {
   }
   if ((name === 'keymanager' || targetId === 'keymanager') && typeof kmRefresh    === 'function') kmRefresh();
   if ((name === 'ia'         || name === 'persona')        && typeof personaRefresh === 'function') personaRefresh();
+  if ((name === 'lists'      || targetId === 'lists')      && typeof listsInit     === 'function') listsInit();
 }
 
 /**
