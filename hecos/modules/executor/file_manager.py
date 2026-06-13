@@ -147,8 +147,16 @@ def create_dir_tool(directory_path: str) -> str:
 def list_dir_tool(directory_path: str) -> str:
     """
     Lists the files and subdirectories in a given directory.
+    Media files (images, videos) are formatted as markdown links so the UI
+    can render them directly (the chat renderer processes these links).
     :param directory_path: Absolute path to the directory to list.
     """
+    import re
+
+    IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'}
+    VIDEO_EXTS = {'.mp4', '.webm', '.ogg', '.mov', '.mkv', '.avi', '.m4v',
+                  '.ts', '.flv', '.3gp', '.wmv', '.mpeg', '.mpg'}
+
     if not os.path.exists(directory_path):
         return f"[EXECUTOR] Directory not found: {directory_path}"
     try:
@@ -156,9 +164,19 @@ def list_dir_tool(directory_path: str) -> str:
         lines = [f"--- Contents of {directory_path} ({len(items)} items) ---"]
         for item in sorted(items):
             full = os.path.join(directory_path, item)
-            tag = "[DIR] " if os.path.isdir(full) else "[FILE]"
-            lines.append(f"  {tag} {item}")
-        
+            if os.path.isdir(full):
+                lines.append(f"  [DIR]  {item}")
+            else:
+                ext = os.path.splitext(item)[1].lower()
+                if ext in IMAGE_EXTS:
+                    # Render as inline image: the chat renders ![name](path) as an image
+                    lines.append(f"  [IMG]  ![{item}]({full})")
+                elif ext in VIDEO_EXTS:
+                    # Render as markdown link: the chat renders [name](path) as a video card
+                    lines.append(f"  [VID]  [{item}]({full})")
+                else:
+                    lines.append(f"  [FILE] {item}")
+
         res = "\n".join(lines)
         AgentTracer.emit_action("list_dir", f"ls {directory_path}", f"{len(items)} items listed")
         return res

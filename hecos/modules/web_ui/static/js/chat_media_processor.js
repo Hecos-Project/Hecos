@@ -48,16 +48,54 @@ window.processAiMedia = function(html) {
       return;
     }
 
-    // Is it a local video?
-    if (/\.(mp4|webm|ogg|mov|avi)$/i.test(href)) {
+    // Is it a video file?
+    const NATIVE_VIDEO_EXTS = /\.(mp4|webm|ogg|mov)$/i;
+    const ALL_VIDEO_EXTS    = /\.(mp4|webm|ogg|mov|avi|mkv|m4v|ts|flv|3gp|wmv|mpeg|mpg)$/i;
+    if (ALL_VIDEO_EXTS.test(href)) {
       const src = isLocalLink(href) ? getSafeLocalUrl(href) : href;
-      const video = document.createElement('video');
-      video.controls = true;
-      video.src = src;
-      video.style.maxWidth = '100%';
-      video.style.borderRadius = '8px';
-      video.style.marginTop = '10px';
-      a.replaceWith(video);
+      const fileName = href.split(/[\\/]/).pop() || 'Video';
+      const isNative = NATIVE_VIDEO_EXTS.test(href);
+
+      if (isNative) {
+        // Browser can play natively
+        const video = document.createElement('video');
+        video.controls = true;
+        video.src = src;
+        video.style.maxWidth = '100%';
+        video.style.borderRadius = '8px';
+        video.style.marginTop = '10px';
+        a.replaceWith(video);
+      } else {
+        // Format not natively supported (e.g. MKV, AVI, WMV...)
+        // Show a rich card with play-in-external-player option
+        const card = document.createElement('div');
+        card.className = 'chat-video-card';
+        const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
+        const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
+        card.innerHTML = `
+          <div class="chat-video-card-header">
+            <span class="chat-video-card-icon">${extIcon}</span>
+            <div class="chat-video-card-info">
+              <div class="chat-video-card-name" title="${fileName}">${fileName}</div>
+              <div class="chat-video-card-meta">${extName} — Non riproducibile nel browser</div>
+            </div>
+          </div>
+          <div class="chat-video-card-actions">
+            <a href="${src}" target="_blank" class="chat-video-btn chat-video-btn-open">
+              <i class="fas fa-play"></i> Apri con player esterno
+            </a>
+            <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
+              <i class="fas fa-download"></i> Scarica
+            </a>
+          </div>
+          <div class="chat-video-card-hint">
+            <i class="fas fa-info-circle"></i>
+            Il formato <strong>${extName}</strong> non è supportato nativamente dal browser.
+            Usa VLC o il player di sistema per riprodurlo.
+          </div>
+        `;
+        a.replaceWith(card);
+      }
       return;
     }
 

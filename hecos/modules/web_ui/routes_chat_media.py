@@ -147,13 +147,62 @@ def init_chat_media_routes(app, logger):
             return jsonify({"ok": False, "error": str(e)}), 500
     @app.route("/api/local_file", methods=["GET"])
     def api_local_file():
-        """Serves an arbitrary local file from the host machine to the UI."""
+        """
+        Serves an arbitrary local file from the host machine to the UI.
+        Supports HTTP Range requests (required for HTML5 video seeking/streaming).
+        """
+        import mimetypes
+        from flask import Response
+
         path = request.args.get("path", "")
         if not path or not os.path.exists(path):
             return jsonify({"error": "File not found"}), 404
-            
+
         try:
-            return send_file(path)
+            file_size = os.path.getsize(path)
+            mime_type, _ = mimetypes.guess_type(path)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+
+            range_header = request.headers.get("Range")
+
+            if range_header:
+                # Parse: "bytes=start-end"
+                byte1, byte2 = 0, None
+                range_str = range_header.strip().replace("bytes=", "")
+                parts = range_str.split("-")
+                if parts[0].strip():
+                    byte1 = int(parts[0].strip())
+                if len(parts) > 1 and parts[1].strip():
+                    byte2 = int(parts[1].strip())
+
+                if byte2 is None or byte2 >= file_size:
+                    byte2 = file_size - 1
+
+                length = byte2 - byte1 + 1
+
+                with open(path, "rb") as f:
+                    f.seek(byte1)
+                    data = f.read(length)
+
+                rv = Response(
+                    data,
+                    status=206,
+                    mimetype=mime_type,
+                    direct_passthrough=True
+                )
+                rv.headers["Content-Range"] = f"bytes {byte1}-{byte2}/{file_size}"
+                rv.headers["Accept-Ranges"] = "bytes"
+                rv.headers["Content-Length"] = str(length)
+                rv.headers["Content-Type"] = mime_type
+                return rv
+            else:
+                # No Range header: serve the whole file but advertise range support
+                resp = send_file(path, mimetype=mime_type)
+                resp.headers["Accept-Ranges"] = "bytes"
+                resp.headers["Content-Length"] = str(file_size)
+                return resp
+
         except Exception as e:
             _chat_log.error(f"[ChatMedia] Failed to serve local file {path}: {e}")
             return jsonify({"error": "Failed to serve file"}), 500
