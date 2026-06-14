@@ -3,9 +3,6 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Hecos Image Generation — Config Panel Logic
  * Handles presets, config collect/apply, HuggingFace model explorer.
- * Functions onProviderChanged(), refreshImageModels(), checkCustomModelSelect(),
- * removeSelectedHFModel(), refineDraftPrompt(), sendPromptToChat() are
- * implemented in config_media_logic.js / config_manifest.js (existing files).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -13,48 +10,109 @@
 // Preset Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function loadIgenPresets() {
-    const r   = await fetch('/hecos/api/media/presets');
-    const d   = await r.json();
-    if (!d.ok) return;
-    const sel     = document.getElementById('igen-preset');
-    const current = sel.value;
-    sel.innerHTML  = '<option value="">— Select a preset —</option>';
-    (d.presets || []).forEach(p => {
-        const opt = document.createElement('option');
-        opt.value             = p.name;
-        opt.textContent       = (p.builtin ? '' : '👤 ') + p.name;
-        opt.dataset.builtin   = p.builtin;
-        opt.title             = p.description || '';
-        sel.appendChild(opt);
-    });
-    if (current) sel.value = current;
-    checkIgenPresetUI();
+/**
+ * Loads all presets from the server and rebuilds the dropdown.
+ * Returns a Promise so callers can await it before setting .value.
+ * @param {string} [restoreValue] - preset name to select after reload
+ */
+async function loadIgenPresets(restoreValue) {
+    try {
+        const r = await fetch('/hecos/api/media/presets');
+        const d = await r.json();
+        if (!d.ok) return;
+
+        const sel = document.getElementById('igen-preset');
+        if (!sel) return;
+
+        // Remember current selection if no explicit restore was requested
+        const targetValue = restoreValue !== undefined ? restoreValue : sel.value;
+
+        sel.innerHTML = '<option value="">— Select a preset —</option>';
+        (d.presets || []).forEach(p => {
+            const opt             = document.createElement('option');
+            opt.value             = p.name;
+            opt.textContent       = (p.builtin ? '' : '👤 ') + p.name;
+            opt.dataset.builtin   = String(p.builtin);   // always "true" or "false"
+            opt.dataset.name      = p.name;
+            opt.title             = p.description || '';
+            sel.appendChild(opt);
+        });
+
+        // Restore the previously selected value (if it still exists in the list)
+        if (targetValue) {
+            sel.value = targetValue;
+            // If the option doesn't exist any more, .value will be "" — that's fine
+        }
+
+        checkIgenPresetUI();
+    } catch (err) {
+        console.warn('[igen] loadIgenPresets error:', err);
+    }
 }
 
+/**
+ * Show/hide the Update and Delete buttons based on whether the
+ * currently selected preset is a user preset (not built-in, not empty).
+ */
 function checkIgenPresetUI() {
     const sel       = document.getElementById('igen-preset');
     const updateBtn = document.getElementById('igen-preset-update-btn');
     const deleteBtn = document.getElementById('igen-preset-delete-btn');
-    if (!sel || sel.selectedIndex < 0) return;
+    if (!sel) return;
 
-    const opt       = sel.options[sel.selectedIndex];
-    const isBuiltin = opt.dataset.builtin === "true";
-    const isEmpty   = opt.value === "";
+    const selectedOpt = sel.options[sel.selectedIndex];
+    const isEmpty     = !sel.value;
+    // dataset.builtin is set as the string "true" or "false"
+    const isBuiltin   = selectedOpt ? (selectedOpt.dataset.builtin === 'true') : true;
 
     const show = !isEmpty && !isBuiltin;
     if (updateBtn) updateBtn.style.display = show ? 'inline-block' : 'none';
     if (deleteBtn) deleteBtn.style.display = show ? 'inline-block' : 'none';
 }
 
+/**
+ * Called when the user picks a preset from the dropdown.
+ * Loads the preset values from the server, applies them to the DOM,
+ * then saves the full config (including active_preset) to YAML.
+ */
 async function loadIgenPreset() {
-    const name = document.getElementById('igen-preset').value;
-    if (!name) return;
-    const r = await fetch('/hecos/api/media/presets/load/' + encodeURIComponent(name));
-    const d = await r.json();
-    if (!d.ok) { alert('Error loading preset: ' + d.error); return; }
-    applyIgenConfig(d.config);
-    checkIgenPresetUI();
+    const sel  = document.getElementById('igen-preset');
+    const name = sel ? sel.value : '';
+    if (!name) {
+        // User chose "— Select a preset —" → just save active_preset as ""
+        checkIgenPresetUI();
+        if (typeof window.saveConfig === 'function') window.saveConfig(true);
+        return;
+    }
+
+    try {
+        const r = await fetch('/hecos/api/media/presets/load/' + encodeURIComponent(name));
+        const d = await r.json();
+        if (!d.ok) {
+            alert('Error loading preset: ' + d.error);
+            // Preset not found — remove it from the dropdown if it was a user preset
+            await loadIgenPresets('');
+            return;
+        }
+
+        // Apply preset values to the DOM WITHOUT triggering an auto-save from applyIgenConfig.
+        // We pass { skipSave: true } so the function knows not to call saveConfig by itself.
+        applyIgenConfig(d.config, { skipSave: true });
+
+        // Now explicitly set active_preset in the DOM (applyIgenConfig doesn't touch the preset select)
+        if (sel) sel.value = name;
+
+        checkIgenPresetUI();
+
+        // Single authoritative save — reads all DOM values including active_preset
+        if (typeof window.saveConfig === 'function') {
+            // Small delay so the browser commits all DOM mutations (selects, ranges, etc.)
+            setTimeout(() => window.saveConfig(true), 80);
+        }
+    } catch (err) {
+        console.error('[igen] loadIgenPreset error:', err);
+        alert('Network error loading preset.');
+    }
 }
 
 async function saveIgenPreset() {
@@ -68,8 +126,13 @@ async function saveIgenPreset() {
     });
     const d = await r.json();
     if (d.ok) {
-        await loadIgenPresets();
-        document.getElementById('igen-preset').value = name.trim();
+        // Reload the dropdown and select the new preset
+        await loadIgenPresets(name.trim());
+        // Update window.mediaConfig so future saves preserve the new preset
+        if (window.mediaConfig && window.mediaConfig.image_gen) {
+            if (!window.mediaConfig.image_gen.presets) window.mediaConfig.image_gen.presets = {};
+            window.mediaConfig.image_gen.presets[name.trim()] = config;
+        }
         checkIgenPresetUI();
         if (typeof window.saveConfig === 'function') window.saveConfig(true);
     } else {
@@ -79,7 +142,7 @@ async function saveIgenPreset() {
 
 async function updateIgenPreset() {
     const sel  = document.getElementById('igen-preset');
-    const name = sel.value;
+    const name = sel ? sel.value : '';
     if (!name) return;
     const config = collectIgenConfig();
     const r = await fetch('/hecos/api/media/presets/save', {
@@ -89,15 +152,20 @@ async function updateIgenPreset() {
     });
     const d = await r.json();
     if (d.ok) {
+        // Update window.mediaConfig so future saves preserve the updated preset
+        if (window.mediaConfig && window.mediaConfig.image_gen) {
+            if (!window.mediaConfig.image_gen.presets) window.mediaConfig.image_gen.presets = {};
+            window.mediaConfig.image_gen.presets[name] = config;
+        }
         const btn = document.getElementById('igen-preset-update-btn');
         if (btn) {
-            btn.innerHTML    = '✅ Saved!';
-            btn.style.color  = '#2ecc71';
+            btn.innerHTML         = '✅ Saved!';
+            btn.style.color       = '#2ecc71';
             btn.style.borderColor = '#2ecc71';
             btn.style.background  = 'rgba(46,204,113,0.1)';
             setTimeout(() => {
-                btn.innerHTML    = '🔄 Update';
-                btn.style.color  = 'var(--accent)';
+                btn.innerHTML         = '🔄 Update';
+                btn.style.color       = 'var(--accent)';
                 btn.style.borderColor = 'var(--accent)';
                 btn.style.background  = 'rgba(var(--accent-rgb,100,100,255),0.1)';
             }, 1500);
@@ -109,14 +177,17 @@ async function updateIgenPreset() {
 }
 
 async function deleteIgenPreset() {
-    const name = document.getElementById('igen-preset').value;
+    const name = document.getElementById('igen-preset') ? document.getElementById('igen-preset').value : '';
     if (!name) { alert('Select a user preset to delete.'); return; }
     if (!confirm('Delete preset "' + name + '"?')) return;
     const r = await fetch('/hecos/api/media/presets/delete/' + encodeURIComponent(name), { method: 'DELETE' });
     const d = await r.json();
     if (d.ok) {
-        await loadIgenPresets();
-        document.getElementById('igen-preset').value = '';
+        // Remove from local cache so future saves don't resurrect it
+        if (window.mediaConfig && window.mediaConfig.image_gen && window.mediaConfig.image_gen.presets) {
+            delete window.mediaConfig.image_gen.presets[name];
+        }
+        await loadIgenPresets('');
         checkIgenPresetUI();
         if (typeof window.saveConfig === 'function') window.saveConfig(true);
     } else {
@@ -147,10 +218,10 @@ function collectIgenConfig() {
         width:                     parseInt(get('igen-width',   1024)),
         height:                    parseInt(get('igen-height',  1024)),
         seed:                      parseInt(get('igen-seed',    -1)),
-        sampler:                   get('igen-sampler',          'euler_a'),
-        scheduler:                 get('igen-scheduler',        'euler'),
-        guidance_scale:            parseFloat(get('igen-guidance', 7.5)),
-        num_inference_steps:       parseInt(get('igen-steps',   30)),
+        sampler:                   get('igen-sampler',          'euler'),
+        scheduler:                 get('igen-scheduler',        'simple'),
+        guidance_scale:            parseFloat(get('igen-guidance', 0.0)),
+        num_inference_steps:       parseInt(get('igen-steps',   4)),
         enable_negative_prompt:    chk('igen-use-neg-prompt',   false),
         negative_prompt:           get('igen-neg-prompt',       ''),
         auto_enrich:               chk('igen-auto-enrich',      false),
@@ -163,21 +234,36 @@ function collectIgenConfig() {
     };
 }
 
-function applyIgenConfig(cfg) {
+/**
+ * Applies a config object to all DOM fields.
+ * @param {Object} cfg - config values to apply
+ * @param {Object} [opts] - options
+ * @param {boolean} [opts.skipSave] - if true, do NOT call saveConfig after applying
+ */
+function applyIgenConfig(cfg, opts = {}) {
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.value   = val; };
     const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
     set('igen-provider',            cfg.provider              || 'pollinations');
     set('igen-model',               cfg.model                 || 'flux');
     set('igen-aspect-ratio',        cfg.aspect_ratio          || '1:1');
     set('igen-width',               cfg.width                 || 1024);
     set('igen-height',              cfg.height                || 1024);
     set('igen-seed',                cfg.seed                  ?? -1);
-    set('igen-sampler',             cfg.sampler               || 'euler_a');
-    set('igen-scheduler',           cfg.scheduler             || 'euler');
-    set('igen-guidance',            cfg.guidance_scale        ?? 7.5);
-    document.getElementById('igen-guidance-val').textContent = cfg.guidance_scale ?? 7.5;
-    set('igen-steps',               cfg.num_inference_steps   || 30);
-    document.getElementById('igen-steps-val').textContent = cfg.num_inference_steps || 30;
+    set('igen-sampler',             cfg.sampler               || 'euler');
+    set('igen-scheduler',           cfg.scheduler             || 'simple');
+
+    // Guidance: use ?? so that 0.0 is preserved (not replaced by fallback)
+    const guidance = cfg.guidance_scale ?? 0.0;
+    set('igen-guidance', guidance);
+    const gValEl = document.getElementById('igen-guidance-val');
+    if (gValEl) gValEl.textContent = parseFloat(guidance).toFixed(1);
+
+    const steps = cfg.num_inference_steps || 4;
+    set('igen-steps', steps);
+    const sValEl = document.getElementById('igen-steps-val');
+    if (sValEl) sValEl.textContent = steps;
+
     chk('igen-use-neg-prompt',      cfg.enable_negative_prompt);
     set('igen-neg-prompt',          cfg.negative_prompt       || '');
     chk('igen-auto-enrich',         cfg.auto_enrich);
@@ -187,11 +273,13 @@ function applyIgenConfig(cfg) {
     chk('igen-optimize-flux',       cfg.optimize_for_flux     ?? true);
     set('igen-flux-instructions',   cfg.flux_refiner_instructions || '');
     chk('igen-enabled',             cfg.enabled               ?? true);
+
     onAspectRatioChanged();
     if (cfg.provider && typeof onProviderChanged === 'function') onProviderChanged();
-    // Defer saveConfig so the browser commits all DOM mutations first.
-    // A synchronous save here would read stale values from the DOM.
-    if (typeof window.saveConfig === 'function') {
+
+    // Only auto-save if the caller hasn't opted out
+    if (!opts.skipSave && typeof window.saveConfig === 'function') {
+        // Defer so the browser commits all DOM mutations first.
         setTimeout(() => window.saveConfig(true), 80);
     }
 }
@@ -269,12 +357,29 @@ function useHFModel(modelId) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bootstrap
+// Bootstrap — fires on DOMContentLoaded
 // ─────────────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', loadIgenPresets);
+document.addEventListener('DOMContentLoaded', () => {
+    // Add change listener to the preset dropdown so checkIgenPresetUI runs whenever the user picks a preset
+    const presetSel = document.getElementById('igen-preset');
+    if (presetSel) {
+        presetSel.addEventListener('change', () => checkIgenPresetUI());
+    }
+    // Initial preset list load is handled by populateMediaUI() in config_media_logic.js
+    // which is async and awaits loadIgenPresets() before setting the active preset value.
+});
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Expose public API
-window.searchHFHub  = searchHFHub;
-window.useHFModel   = useHFModel;
+// ─────────────────────────────────────────────────────────────────────────────
+window.searchHFHub       = searchHFHub;
+window.useHFModel        = useHFModel;
 window.collectIgenConfig = collectIgenConfig;
 window.applyIgenConfig   = applyIgenConfig;
+window.loadIgenPresets   = loadIgenPresets;
+window.loadIgenPreset    = loadIgenPreset;
+window.saveIgenPreset    = saveIgenPreset;
+window.updateIgenPreset  = updateIgenPreset;
+window.deleteIgenPreset  = deleteIgenPreset;
+window.checkIgenPresetUI = checkIgenPresetUI;
+window.onAspectRatioChanged = onAspectRatioChanged;

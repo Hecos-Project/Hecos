@@ -3,7 +3,7 @@
  * Handles image generation settings and Media Vault.
  */
 
-function populateMediaUI() {
+async function populateMediaUI() {
     const igen = (mediaConfig && mediaConfig.image_gen) ? mediaConfig.image_gen : (window.cfg?.plugins?.IMAGE_GEN || {});
     window.igen_custom_hf_models = igen.custom_hf_models || [];
 
@@ -42,34 +42,41 @@ function populateMediaUI() {
     setVal('igen-width',              igen.width  || 1024);
     setVal('igen-height',             igen.height || 1024);
     setVal('igen-seed',               igen.seed ?? -1);
-    setVal('igen-sampler',            igen.sampler || 'euler_a');
-    setVal('igen-scheduler',          igen.scheduler || 'euler');
+    setVal('igen-sampler',            igen.sampler || 'euler');
+    setVal('igen-scheduler',          igen.scheduler || 'simple');
     setCheck('igen-nologo',           igen.nologo ?? true);
-    setCheck('igen-use-neg-prompt',   igen.enable_negative_prompt ?? true);
+    setCheck('igen-use-neg-prompt',   igen.enable_negative_prompt ?? false);
     setVal('igen-neg-prompt',         igen.negative_prompt || '');
-    setVal('igen-guidance',           igen.guidance_scale || 7.5);
-    setVal('igen-steps',              igen.num_inference_steps || 30);
-    setCheck('igen-auto-enrich',      igen.auto_enrich ?? true);
+    // Use ?? instead of || so that 0.0 is preserved (not replaced by 7.5)
+    setVal('igen-guidance',           igen.guidance_scale ?? 0.0);
+    setVal('igen-steps',              igen.num_inference_steps || 4);
+    setCheck('igen-auto-enrich',      igen.auto_enrich ?? false);
     setVal('igen-enrich-keywords',    igen.enrich_keywords || '');
     setVal('igen-style',              igen.style || 'none');
     setCheck('igen-optimize-flux',    igen.optimize_for_flux ?? true);
     setVal('igen-flux-instructions',  igen.flux_refiner_instructions || '');
     setCheck('igen-show-metadata',    igen.show_metadata_in_chat ?? false);
 
-    // Sync slider display values
+    // Sync slider display values — use ?? so 0.0 is shown correctly
     const gVal = document.getElementById('igen-guidance-val');
-    if (gVal) gVal.textContent = igen.guidance_scale || 7.5;
+    if (gVal) gVal.textContent = parseFloat(igen.guidance_scale ?? 0.0).toFixed(1);
     const sVal = document.getElementById('igen-steps-val');
-    if (sVal) sVal.textContent = igen.num_inference_steps || 30;
+    if (sVal) sVal.textContent = igen.num_inference_steps || 4;
 
     // Show/hide custom dimension inputs
     if (typeof onAspectRatioChanged === 'function') onAspectRatioChanged();
 
-    // Load preset list
-    if (typeof loadIgenPresets === 'function') loadIgenPresets();
+    // ── Preset list: AWAIT so the dropdown is fully populated before we set the active value ──
+    if (typeof loadIgenPresets === 'function') {
+        await loadIgenPresets();   // waits for the fetch to complete and the <option>s to be inserted
+    }
+    // Now the dropdown has all options — safely set the active preset
     if (igen.active_preset) {
         const ps = document.getElementById('igen-preset');
-        if (ps) ps.value = igen.active_preset;
+        if (ps) {
+            ps.value = igen.active_preset;
+            if (typeof checkIgenPresetUI === 'function') checkIgenPresetUI();
+        }
     }
 
     refreshImageModels(igen.model || 'flux');
@@ -86,6 +93,10 @@ function buildMediaPayload() {
     const domV  = (id, fallback) => { const el = document.getElementById(id); return (el !== null) ? el.value    : fallback; };
     const domC  = (id, fallback) => { const el = document.getElementById(id); return (el !== null) ? el.checked : fallback; };
 
+    // Use ?? for numeric fields so that 0 / 0.0 is preserved (|| would replace 0 with fallback)
+    const guidanceRaw = domV('igen-guidance', stored.guidance_scale ?? 0.0);
+    const stepsRaw    = domV('igen-steps',    stored.num_inference_steps ?? 4);
+
     return {
         image_gen: {
             enabled:                   domC('igen-enabled',          stored.enabled               !== false),
@@ -95,14 +106,14 @@ function buildMediaPayload() {
             width:                     parseInt(domV('igen-width',   stored.width                  || 1024)),
             height:                    parseInt(domV('igen-height',  stored.height                 || 1024)),
             seed:                      parseInt(domV('igen-seed',    stored.seed                   ?? -1)),
-            sampler:                   domV('igen-sampler',          stored.sampler                || 'euler_a'),
-            scheduler:                 domV('igen-scheduler',        stored.scheduler              || 'euler'),
+            sampler:                   domV('igen-sampler',          stored.sampler                || 'euler'),
+            scheduler:                 domV('igen-scheduler',        stored.scheduler              || 'simple'),
             nologo:                    domC('igen-nologo',           stored.nologo                 ?? true),
-            enable_negative_prompt:    domC('igen-use-neg-prompt',  stored.enable_negative_prompt ?? true),
+            enable_negative_prompt:    domC('igen-use-neg-prompt',  stored.enable_negative_prompt ?? false),
             negative_prompt:          (domV('igen-neg-prompt',       stored.negative_prompt        || '')).trim(),
-            guidance_scale:            parseFloat(domV('igen-guidance', stored.guidance_scale      || 7.5)),
-            num_inference_steps:       parseInt(domV('igen-steps',   stored.num_inference_steps    || 30)),
-            auto_enrich:               domC('igen-auto-enrich',      stored.auto_enrich            ?? true),
+            guidance_scale:            parseFloat(guidanceRaw),
+            num_inference_steps:       parseInt(stepsRaw),
+            auto_enrich:               domC('igen-auto-enrich',      stored.auto_enrich            ?? false),
             enrich_keywords:          (domV('igen-enrich-keywords',  stored.enrich_keywords        || '')).trim(),
             style:                     domV('igen-style',            stored.style                  || 'none'),
             optimize_for_flux:         domC('igen-optimize-flux',    stored.optimize_for_flux      ?? true),
@@ -110,6 +121,7 @@ function buildMediaPayload() {
             show_metadata_in_chat:     domC('igen-show-metadata',   stored.show_metadata_in_chat  ?? false),
             active_preset:             domV('igen-preset',           stored.active_preset          || ''),
             // Non-DOM fields: preserve from stored config
+            // CRITICAL: presets must never revert to {} — always use stored.presets
             custom_hf_models:          window.igen_custom_hf_models || stored.custom_hf_models || [],
             api_key:                   stored.api_key               || '',
             api_key_comment:           stored.api_key_comment       || '',

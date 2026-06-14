@@ -48,11 +48,11 @@
   <div class="field">
     <label>
       CFG Scale (Guidance)
-      <span title="CFG Scale and Guidance Scale are the same parameter — it controls how strictly the model follows your prompt. Higher = more literal. Typical range: 3–12 for Flux, 5–15 for SD." style="cursor:help; color:var(--muted); font-size:12px; margin-left:4px;"><i class="fas fa-info-circle"></i></span>
+      <span title="CFG Scale / Guidance Scale: controlla quanto il modello segue il prompt. Per Flux usa 0 (ignorato). Per SD: 5–12 tipico." style="cursor:help; color:var(--muted); font-size:12px; margin-left:4px;"><i class="fas fa-info-circle"></i></span>
     </label>
     <div style="display:flex; align-items:center;">
-      <input type="range" id="igen-guidance" min="1" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=this.value" data-cfg-plugin="MEDIA">
-      <span id="igen-guidance-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">7.5</span>
+      <input type="range" id="igen-guidance" min="0" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=parseFloat(this.value).toFixed(1)" data-cfg-plugin="MEDIA">
+      <span id="igen-guidance-val" style="margin-left:10px; width:38px; font-weight:bold; text-align:right;">0.0</span>
     </div>
   </div>
   <div class="field">
@@ -103,6 +103,7 @@
     <div class="field">
       <label>Scheduler</label>
       <select id="igen-scheduler" data-cfg-plugin="MEDIA">
+        <option value="simple">Simple (Flux default)</option>
         <option value="euler">Euler</option>
         <option value="dpm++">DPM++</option>
         <option value="pndm">PNDM</option>

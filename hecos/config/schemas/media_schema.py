@@ -25,22 +25,21 @@ class ImageGenConfig(BaseModel):
     # ── Sampling ─────────────────────────────────────────────────────────────
     seed: int = -1                    # -1 = random every generation
     last_seed: int = -1               # stores the actual concrete seed used in the last run
-    sampler: str = "euler_a"          # euler_a | ddim | dpm++2m | pndm | lms
-    scheduler: str = "euler"          # euler | dpm++ | pndm | ddim | normal | beta
-    guidance_scale: float = 7.5       # CFG scale — same concept, two names
-    num_inference_steps: int = 30
+    sampler: str = "euler"            # euler | euler_a | ddim | dpm++2m | pndm | lms
+    scheduler: str = "simple"         # simple (Flux) | euler | dpm++ | pndm | ddim | normal | beta
+    guidance_scale: float = 0.0       # 0.0 for Flux (ignored); 5-12 for SD
+    num_inference_steps: int = 4      # 4 for Flux Schnell; 20-40 for SD
 
     # ── Negative Prompt ───────────────────────────────────────────────────────
-    enable_negative_prompt: bool = True
-    negative_prompt: str = "distorted, extra fingers, malformed limbs, missing limbs, ugly, blurry, low quality"
+    enable_negative_prompt: bool = False
+    negative_prompt: str = ""
 
     # ── Prompt Enhancement ────────────────────────────────────────────────────
-    auto_enrich: bool = True
-    enrich_keywords: str = "masterpiece, 8k wallpaper, highly detailed, realistic, sharp focus, cinematic lighting"
+    auto_enrich: bool = False
+    enrich_keywords: str = ""
     style: str = "none"
     optimize_for_flux: bool = True
     flux_refiner_instructions: str = (
-        "Convert keywords into a descriptive natural language paragraph for Flux. "
         "Convert keywords into a descriptive natural language paragraph for Flux. "
         "Output ONLY the optimised prompt, no preamble."
     )
@@ -54,6 +53,7 @@ class ImageGenConfig(BaseModel):
     
     # ── Custom Models ─────────────────────────────────────────────────────────
     custom_hf_models: list[str] = Field(default_factory=list)
+
 
 
 class VideoGenConfig(BaseModel):

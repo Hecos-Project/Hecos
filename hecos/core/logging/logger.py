@@ -294,33 +294,33 @@ def close_all_consoles():
     close_activity_log()
     close_debug_log()
 
-def info(module, message=None):
+def info(module, message=None, **kwargs):
     """Logs a standard info event."""
     if message is None:
-        logger.info(module)
+        logger.info(module, **kwargs)
     else:
-        logger.info(f"[{module}] {message}")
+        logger.info(f"[{module}] {message}", **kwargs)
 
-def error(module, message=None):
+def error(module, message=None, **kwargs):
     """Logs a critical error."""
     if message is None:
-        logger.error(module)
+        logger.error(module, **kwargs)
     else:
-        logger.error(f"[{module}] {message}")
+        logger.error(f"[{module}] {message}", **kwargs)
 
-def debug(module, message=None):
+def debug(module, message=None, **kwargs):
     """Logs a debug message."""
     if message is None:
-        logger.debug(module)
+        logger.debug(module, **kwargs)
     else:
-        logger.debug(f"[{module}] {message}")
+        logger.debug(f"[{module}] {message}", **kwargs)
     
-def warning(module, message=None):
+def warning(module, message=None, **kwargs):
     """Logs a warning."""
     if message is None:
-        logger.warning(module)
+        logger.warning(module, **kwargs)
     else:
-        logger.warning(f"[{module}] {message}")
+        logger.warning(f"[{module}] {message}", **kwargs)
 
 def debug_ai(user_text, ai_response, tag_detected=None):
     """Logs full conversation flow and plugin activation."""
