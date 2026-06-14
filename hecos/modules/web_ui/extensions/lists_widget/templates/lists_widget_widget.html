@@ -1,5 +1,5 @@
 <!-- LISTS WIDGET — Mini-App Operativa -->
-<div class="sidebar-card" id="lists-widget" style="padding:10px 12px;">
+<div class="sidebar-card" id="lists-widget" style="padding:10px 12px; display:flex; flex-direction:column; height:100%;">
     <!-- Header -->
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="_lwToggle()">
         <span class="ql-icon"><i class="fas fa-list-check"></i></span>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Body -->
-    <div id="lw-body" class="ql-body" style="margin-top:10px;">
+    <div id="lw-body" class="ql-body" style="margin-top:10px; flex:1; display:flex; flex-direction:column; min-height:0;">
 
         <!-- Two-column layout: list nav + content -->
         <div class="lw-app" id="lw-app">
@@ -36,6 +36,10 @@
                     </div>
                     <div class="lw-items-scroll" id="lw-items">
                         <!-- Items populated by JS -->
+                    </div>
+                    <!-- RESIZER -->
+                    <div class="lw-items-resizer" id="lw-items-resizer" title="Trascina per ridimensionare">
+                        <div class="lw-resizer-handle"></div>
                     </div>
                     <!-- Labels management (always visible) -->
                     <div class="lw-labels-row" style="background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.06); padding: 5px; min-height: 0; max-height: 80px; overflow-y: auto; flex-shrink: 0;">
@@ -88,7 +92,9 @@
 .lw-app {
     display: flex;
     gap: 0;
-    height: 260px;
+    flex: 0 1 auto;
+    max-height: calc(100% - 42px);
+    min-height: 120px;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 8px;
     overflow: hidden;
@@ -287,6 +293,33 @@
 .lw-badge-label { background: rgba(var(--accent-rgb),0.12); color: var(--accent); font-weight: 400; }
 
 /* Quick add bar */
+.lw-items-resizer {
+    height: 12px;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 0;
+    background: rgba(0,0,0,0.1);
+    border-top: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+}
+.lw-items-resizer:hover, .lw-items-resizer.active {
+    background: rgba(var(--accent-rgb), 0.1);
+}
+.lw-resizer-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.15s;
+}
+.lw-items-resizer:hover .lw-resizer-handle, .lw-items-resizer.active .lw-resizer-handle {
+    background: var(--accent);
+}
+
 .lw-quick-add {
     display: flex;
     align-items: center;
@@ -366,6 +399,7 @@
 /* Footer: new list bar */
 .lw-footer {
     margin-top: 8px;
+    flex-shrink: 0;
 }
 .lw-new-list-bar {
     display: flex;
@@ -773,6 +807,45 @@
         _lwFetchLists();
         _lwFetchCategories();
         setInterval(_lwFetchLists, 60000);
+
+        // -- Resizer logic --
+        const resizer = document.getElementById('lw-items-resizer');
+        const itemsScroll = document.getElementById('lw-items');
+        let isResizing = false;
+
+        if (resizer && itemsScroll) {
+            resizer.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                resizer.classList.add('active');
+                document.body.style.cursor = 'ns-resize';
+                e.preventDefault(); 
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                const rect = itemsScroll.getBoundingClientRect();
+                let newHeight = e.clientY - rect.top;
+                if (newHeight < 40) newHeight = 40;
+                
+                itemsScroll.style.flex = 'none';
+                itemsScroll.style.height = newHeight + 'px';
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('active');
+                    document.body.style.cursor = '';
+                    localStorage.setItem('hecos-lw-items-height', itemsScroll.style.height);
+                }
+            });
+            
+            const savedHeight = localStorage.getItem('hecos-lw-items-height');
+            if (savedHeight) {
+                itemsScroll.style.flex = 'none';
+                itemsScroll.style.height = savedHeight;
+            }
+        }
     }
 
     if (document.readyState === 'loading') {
