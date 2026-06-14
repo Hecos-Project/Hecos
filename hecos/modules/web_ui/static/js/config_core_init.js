@@ -8,50 +8,61 @@
 
 /**
  * Master Initialization with retry logic (max 3 attempts).
+ *
+ * PHASE 0 (< 10ms): Render the hub tab bar immediately from CONFIG_HUB manifest alone.
+ *                   No network, no cfg needed. Menu is visible instantly.
+ * PHASE 1 (background): Load window.cfg, options, registry, media config.
+ *                   Re-render hub to apply plugin enabled/disabled filters.
  */
 async function initAll(attempt = 1) {
     isInitialLoading = true;
+    console.time('[Init] Total load');
     console.log(`Initializing Configuration (Attempt ${attempt})...`);
     setSaveMsg(I18N.msg_loading || 'Loading...', 'muted');
 
-    try {
-        // ── FAST PATH: cfg is always pre-injected by Jinja into window.cfg ──────
-        // We only need to check cfg (not sysOptions) to render the hub.
-        // sysOptions (model lists, piper voices) is NOT needed to show the tab bar.
-        if (Object.keys(window.cfg || {}).length > 0) {
-            // Fetch only the tiny agent config (missed by Jinja shell route)
-            if (!window.cfg.agent) {
-                try {
-                    const rAgent = await fetchWithTimeout('/hecos/config/agent');
-                    if (rAgent.ok) window.cfg.agent = await rAgent.json();
-                } catch(e) { console.warn('[Init] Agent config fetch failed:', e); }
-            }
-            // Render immediately — hub shows in < 1 second
-            setViewMode(viewMode, true);
-            renderConfigHub(viewMode);
-            showTab(activeTab, true);
-            console.log("[Init] Fast-path: hub rendered from pre-injected config.");
-        } else {
-            // ── FALLBACK: Jinja injection failed, fetch everything ────────────────
-            console.log("[Init] No pre-injected config, fetching from API...");
-            const [rCfg, rAgent] = await Promise.all([
-                fetchWithTimeout('/hecos/config'),
-                fetchWithTimeout('/hecos/config/agent')
-            ]);
-            if (!rCfg.ok) throw new Error(`Config fetch failed: ${rCfg.status}`);
-            window.cfg       = await rCfg.json();
-            window.cfg.agent = rAgent.ok ? await rAgent.json() : {};
+    // ── PHASE 0: Render hub IMMEDIATELY ──────────────────────────────────────
+    // At this point window.cfg may already be populated (Jinja pre-injection)
+    // or may be empty {}. Either way, render NOW so the user sees the menu.
+    setViewMode(viewMode, true);
+    renderConfigHub(viewMode);
+    // Only call showTab if there's an active tab to restore (not 'welcome')
+    if (activeTab && activeTab !== 'welcome') {
+        showTab(activeTab, true);
+    }
+    console.log('[Init] Phase 0: Hub rendered immediately.');
 
-            setViewMode(viewMode, true);
-            renderConfigHub(viewMode);
-            showTab(activeTab, true);
+    try {
+        // ── PHASE 1: Load cfg if not pre-injected ────────────────────────────
+        if (!window.cfg || Object.keys(window.cfg).length === 0) {
+            console.log('[Init] No pre-injected cfg — fetching from API...');
+            try {
+                const rCfg = await fetchWithTimeout('/hecos/config');
+                if (rCfg.ok) {
+                    window.cfg = await rCfg.json();
+                    // Re-render now that we have real plugin state
+                    renderConfigHub(viewMode);
+                    console.log('[Init] Phase 1: cfg loaded, hub re-rendered.');
+                }
+            } catch(e) {
+                console.warn('[Init] cfg fetch failed:', e);
+            }
+        } else {
+            console.log('[Init] Fast-path: cfg already pre-injected by Jinja.');
         }
 
-        // ── BACKGROUND: fetch options + registry + audio/media/state ────────────
-        // /hecos/options calls ModelManager (slow) — must NOT block the UI render.
-        console.log("[Init] Loading metadata in background...");
+        // Fetch agent config if missing (small payload, fast)
+        if (!window.cfg.agent) {
+            try {
+                const rAgent = await fetchWithTimeout('/hecos/config/agent');
+                if (rAgent.ok) window.cfg.agent = await rAgent.json();
+            } catch(e) { console.warn('[Init] Agent config fetch failed:', e); }
+        }
+
+        // ── PHASE 2: Background metadata (options, registry, audio, media) ──
+        // /hecos/options calls ModelManager (slow) — must NOT block anything.
+        console.log('[Init] Loading background metadata...');
         const metaPromise = Promise.allSettled([
-            fetchWithTimeout('/hecos/options'),           // ← moved here, no longer blocking
+            fetchWithTimeout('/hecos/options'),
             fetchWithTimeout('/api/plugins/registry'),
             fetchWithTimeout('/api/audio/devices'),
             fetchWithTimeout('/api/audio/config'),
@@ -62,7 +73,6 @@ async function initAll(attempt = 1) {
         metaPromise.then(async (results) => {
             const [resOpts, resReg, resAudio, resAudCfg, resMed, resState] = results;
 
-            // Merge sysOptions — needed by populateUI for model dropdowns, voices, etc.
             if (resOpts.status === 'fulfilled' && resOpts.value.ok) {
                 try { window.sysOptions = await resOpts.value.json(); } catch (e) { }
             }
@@ -76,18 +86,19 @@ async function initAll(attempt = 1) {
             if (resAudCfg.status === 'fulfilled' && resAudCfg.value.ok) try { audioConfig  = (await resAudCfg.value.json()).config;       } catch (e) { }
             if (resMed.status === 'fulfilled'    && resMed.value.ok)    try {
                 mediaConfig = await resMed.value.json();
-                // Re-populate ImageGen panel if it was already injected into the DOM before mediaConfig arrived
                 if (_panelCache['igen'] && typeof populateMediaUI === 'function') populateMediaUI();
             } catch (e) { }
 
-            console.log("[Init] Background metadata loaded.");
-            renderConfigHub();
+            console.log('[Init] Background metadata loaded.');
+            // Final re-render: apply registry merges + plugin state filters
+            renderConfigHub(viewMode);
             populateUI();
             isInitialLoading = false;
             setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + new Date().toLocaleTimeString() + ')', 'ok');
+            console.timeEnd('[Init] Total load');
         });
 
-        console.log("[Init] Hub ready. Background sync in progress...");
+        console.log('[Init] Hub ready. Background sync in progress...');
 
     } catch (e) {
         console.warn(`Init attempt ${attempt} failed:`, e);
@@ -96,7 +107,7 @@ async function initAll(attempt = 1) {
             setSaveMsg(`Retrying in ${delay / 1000}s...`, 'muted');
             setTimeout(() => initAll(attempt + 1), delay);
         } else {
-            console.error("Master Init failed after 3 attempts.");
+            console.error('Master Init failed after 3 attempts.');
             setSaveMsg((I18N.msg_err || 'Error') + ': ' + e.message, 'err');
             isInitialLoading = false;
         }

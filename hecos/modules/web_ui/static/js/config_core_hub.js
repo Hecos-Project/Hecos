@@ -16,17 +16,21 @@ function renderFilterTabs() {
     if (!container || !hub) return;
 
     const userRole = (window.currentUser && window.currentUser.role) || 'user';
+    const cfgReady = window.cfg && Object.keys(window.cfg).length > 0;
+
     const allVisible = hub.modules.filter(m => {
         if (m.adminOnly && userRole !== 'admin') return false;
         if (m.isExtension && m.parentPluginTag) {
-            const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
-            if (!parent || parent.enabled === false) return false;
-            const extId = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
-            const extState = (parent.extensions || {})[extId];
-            if (extState && extState.enabled === false) return false;
+            if (cfgReady) {
+                const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
+                if (!parent || parent.enabled === false) return false;
+                const extId = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
+                const extState = (parent.extensions || {})[extId];
+                if (extState && extState.enabled === false) return false;
+            }
             return (window._panelCache[m.id] || !!window.LAZY_PANEL_IDS?.has(m.id) || !!document.getElementById('tab-' + m.id));
         }
-        if (m.pluginTag) {
+        if (cfgReady && m.pluginTag) {
             const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
             if (p && p.enabled === false) return false;
         }
@@ -35,7 +39,8 @@ function renderFilterTabs() {
         const hasPanel  = !!document.getElementById('tab-' + m.id);
         const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
         const isMcp     = (m.cat === 'MCP');
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp);
+        const isCore    = !!m.isCore;
+        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore);
     });
 
     const counts = { 'ALL': allVisible.length };
@@ -83,19 +88,27 @@ function renderConfigHub(mode = 'tabs') {
     }
 
     // Visibility filter
+    // When window.cfg is not yet loaded (empty {}), show ALL modules that
+    // are in LAZY_PANEL_IDS. This makes the menu visible immediately at page load
+    // before any network requests complete. A second renderConfigHub() call after
+    // cfg is loaded will correctly hide disabled plugins.
+    const cfgReady = window.cfg && Object.keys(window.cfg).length > 0;
+
     const visibleModules = hub.modules.filter(m => {
         if (m.adminOnly && userRole !== 'admin') return false;
 
         if (m.isExtension && m.parentPluginTag) {
-            const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
-            if (!parent || parent.enabled === false) return false;
-            const extId    = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
-            const extState = (parent.extensions || {})[extId];
-            if (extState && extState.enabled === false) return false;
+            if (cfgReady) {
+                const parent = window.cfg.plugins && window.cfg.plugins[m.parentPluginTag];
+                if (!parent || parent.enabled === false) return false;
+                const extId    = m.pluginTag.replace(m.parentPluginTag + '_', '').toLowerCase();
+                const extState = (parent.extensions || {})[extId];
+                if (extState && extState.enabled === false) return false;
+            }
             return (_panelCache[m.id] || !!window.LAZY_PANEL_IDS?.has(m.id) || !!document.getElementById('tab-' + m.id));
         }
 
-        if (m.pluginTag) {
+        if (cfgReady && m.pluginTag) {
             const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
             if (p && p.enabled === false) return false;
         }
@@ -105,7 +118,8 @@ function renderConfigHub(mode = 'tabs') {
         const hasPanel  = !!document.getElementById('tab-' + m.id);
         const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
         const isMcp     = (m.cat === 'MCP');
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp);
+        const isCore    = !!m.isCore;
+        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore);
     });
 
     // Category filter

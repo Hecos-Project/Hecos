@@ -26,9 +26,19 @@
 <noscript>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 </noscript>
+
+<!-- Preload critical JS: these are on the hot render path and must start downloading ASAP -->
+<link rel="preload" as="script" href="/static/js/config_manifest.js?v={{ version }}-persistence-v3">
+<link rel="preload" as="script" href="/static/js/config_core_utils.js?v={{ version }}">
+<link rel="preload" as="script" href="/static/js/config_core_hub.js?v={{ version }}">
+<link rel="preload" as="script" href="/static/js/config_core_navigation.js?v={{ version }}">
+<link rel="preload" as="script" href="/static/js/config_core_init.js?v={{ version }}">
+<link rel="preload" as="script" href="/static/js/config_core.js?v={{ version }}">
 <style>
 :root { color-scheme: dark; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes dots { 0%, 20% { content: ""; } 40% { content: "."; } 60% { content: ".."; } 80%, 100% { content: "..."; } }
+.dot-anim::after { content: ""; animation: dots 1.5s steps(1, end) infinite; display: inline-block; width: 1em; text-align: left; }
 @media (max-width: 768px) {
     header {
     flex-direction: column;

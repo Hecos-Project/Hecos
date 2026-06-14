@@ -111,11 +111,14 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         """Shell route — serves the lightweight Central Hub skeleton.
         Heavy options (model lists, Piper voices) are deferred until a specific
         panel is requested via /hecos/config/fragment/<panel_id>.
+        Uses cfg_mgr.config (in-memory, no disk I/O) for fast TTFB.
         """
         try:
             from hecos.core.i18n.translator import get_translator
             translations  = get_translator().get_translations()
-            zconfig_data  = cfg_mgr.reload()
+            # Use in-memory config — no disk reload needed for the shell page.
+            # The JS will fetch fresh config via /hecos/config if needed.
+            zconfig_data  = cfg_mgr.config
             return render_template(
                 "index.html",
                 zconfig=zconfig_data,
