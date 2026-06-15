@@ -94,7 +94,9 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             # Telemetry
             dsb_cfg          = cfg.get("plugins", {}).get("DASHBOARD", {})
             global_enabled   = dsb_cfg.get("enabled", True)
-            webui_telemetry  = dsb_cfg.get("webui_telemetry_enabled", False)
+            # webui_telemetry_enabled: default True — was previously a master switch
+            # in a now-deprecated panel. Individual track_* flags control each metric.
+            webui_telemetry  = dsb_cfg.get("webui_telemetry_enabled", True)
             telemetry_active = global_enabled and webui_telemetry
 
             cpu_cache["enabled"] = telemetry_active and dsb_cfg.get("track_cpu", False)

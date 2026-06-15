@@ -94,7 +94,12 @@ function buildPayload() {
         }
         if (sysPart.plugins?.DASHBOARD) {
             out.plugins['DASHBOARD'] = out.plugins['DASHBOARD'] || {};
-            Object.assign(out.plugins['DASHBOARD'], sysPart.plugins.DASHBOARD);
+            // Merge ONLY the console-specific keys — never touch track_cpu/ram/vram (WebUI widget)
+            const dsbSys = sysPart.plugins.DASHBOARD;
+            if ('console_telemetry_enabled' in dsbSys) out.plugins['DASHBOARD'].console_telemetry_enabled = dsbSys.console_telemetry_enabled;
+            if ('console_telemetry_cpu'     in dsbSys) out.plugins['DASHBOARD'].console_telemetry_cpu     = dsbSys.console_telemetry_cpu;
+            if ('console_telemetry_ram'     in dsbSys) out.plugins['DASHBOARD'].console_telemetry_ram     = dsbSys.console_telemetry_ram;
+            if ('console_telemetry_vram'    in dsbSys) out.plugins['DASHBOARD'].console_telemetry_vram    = dsbSys.console_telemetry_vram;
         }
     }
 
