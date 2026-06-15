@@ -98,6 +98,22 @@
     background: var(--accent);
     color: white;
 }
+.lists-item-nav:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: rgba(var(--accent-rgb), 0.12);
+}
+.lists-item-nav:focus:not(:focus-visible) { outline: none; }
+.nav-date {
+    font-size: 0.7rem;
+    color: var(--muted);
+    opacity: 0.65;
+    white-space: nowrap;
+    margin-left: auto;
+    margin-right: 10px;
+    padding-left: 6px;
+    flex-shrink: 0;
+}
 .lists-empty-msg {
     padding: 20px;
     text-align: center;
@@ -251,6 +267,25 @@
 .list-item-row:hover {
     border-color: var(--accent);
     box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.05);
+}
+.list-item-row:focus {
+    outline: 2px solid var(--accent);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.15);
+}
+.list-item-row:focus:not(:focus-visible) { outline: none; }
+.list-item-row:focus .list-item-actions { opacity: 1; }
+.list-item-dates {
+    display: flex;
+    gap: 12px;
+    margin-top: 5px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    opacity: 0.7;
+}
+.list-item-dates span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 .list-item-drag {
     cursor: grab;

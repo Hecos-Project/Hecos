@@ -101,7 +101,10 @@ def is_session_0():
     if os.name != 'nt': return False
     try:
         import ctypes
-        return ctypes.windll.kernel32.ProcessIdToSessionId(os.getpid()) == 0
+        import os
+        session_id = ctypes.c_uint32()
+        ctypes.windll.kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(session_id))
+        return session_id.value == 0
     except:
         return False
 
