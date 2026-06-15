@@ -150,7 +150,7 @@ pipeline:
   - audio__speak_5
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-15T08:38:33.629127'
+  updated_at: '2026-06-15T09:46:33.630176'
   last_run: '2026-06-08T15:30:03.922517'
 areas:
 - id: area_6510

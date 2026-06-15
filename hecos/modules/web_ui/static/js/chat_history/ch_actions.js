@@ -64,11 +64,6 @@ window.activateChatSession = async function (sessionId) {
 
 window.archiveChatSession = async function (e, sessionId, archiveState = true) {
     e.stopPropagation();
-    const msg = archiveState 
-        ? (window.I18N?.webui_chat_archive_confirm || "Archive this conversation?")
-        : (window.I18N?.webui_chat_unarchive_confirm || "Restore this conversation?");
-        
-    if (!confirm(msg)) return;
     
     await window._historyPost(`/api/chat/sessions/${sessionId}/archive`, { archived: archiveState });
     
@@ -157,8 +152,6 @@ window.deleteAllChatSessions = async function (e) {
     const isArchiveView = window.chatHistoryState.showArchived;
     
     if (isArchiveView) {
-        const msg = window.I18N?.webui_chat_delete_confirm_all || 'Delete ALL archived conversations forever?';
-        if (!confirm(msg)) return;
         const res = await window._historyPost(`/api/chat/sessions/delete-archived`, {}, 'DELETE');
         if (res.ok) {
             if (window._clearChatDOM) window._clearChatDOM();
@@ -170,8 +163,6 @@ window.deleteAllChatSessions = async function (e) {
             alert('Errore durante l\'eliminazione: ' + res.error);
         }
     } else {
-        const msg = window.I18N?.webui_chat_archive_confirm_all || 'Archive ALL active conversations?';
-        if (!confirm(msg)) return;
         const res = await window._historyPost(`/api/chat/sessions/archive-all`, {}, 'POST');
         if (res.ok) {
             if (window._clearChatDOM) window._clearChatDOM();
