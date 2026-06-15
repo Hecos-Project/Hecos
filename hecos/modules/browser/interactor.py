@@ -20,14 +20,35 @@ def navigate(url: str) -> str:
             url = "https://" + url
             
         # Protect the Native Webui from being overwritten via CDP
-        if "localhost:7070" in page.url or "Hecos" in page.title():
+        # NOTE: avoid page.title() here — it can hang on CDP with unresponsive pages
+        current_url = ""
+        try:
+            current_url = page.url or ""
+        except Exception:
+            pass
+
+        if "localhost:7070" in current_url or "hecos" in current_url.lower():
             page = engine.new_tab(url)
-            return f"[BROWSER] Opened new tab to: {page.url} — Title: {page.title()}"
+            if page:
+                try:
+                    page.bring_to_front()
+                    return f"[BROWSER] Opened new tab to: {page.url} — Title: {page.title()}"
+                except Exception:
+                    return f"[BROWSER] Opened new tab to: {url}"
+            return f"[BROWSER] Failed to open new tab to: {url}"
             
         page.goto(url, wait_until="domcontentloaded")
-        return f"[BROWSER] Navigated to: {page.url} — Title: {page.title()}"
+        try:
+            page.bring_to_front()
+        except Exception:
+            pass
+        try:
+            return f"[BROWSER] Navigated to: {page.url} — Title: {page.title()}"
+        except Exception:
+            return f"[BROWSER] Navigated to: {url}"
     except Exception as e:
         return f"[BROWSER] Navigation error: {e}"
+
 
 
 def click_element(text_or_selector: str) -> str:

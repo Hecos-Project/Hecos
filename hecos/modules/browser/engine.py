@@ -172,9 +172,36 @@ def get_page():
     """Return the current active Playwright Page object. Launches if not running."""
     global _PAGE
     if _PAGE is None or _PAGE.is_closed():
+        # Try to find a good page from existing CDP contexts before launching
+        if _BROWSER and _BROWSER.is_connected():
+            best = None
+            for ctx in _BROWSER.contexts:
+                for p in ctx.pages:
+                    try:
+                        u = p.url or ""
+                        # Skip browser-internal and Hecos UI pages
+                        if u.startswith("chrome://") or "localhost:7070" in u or not u:
+                            continue
+                        best = p
+                    except Exception:
+                        continue
+            if best:
+                _PAGE = best
+                return _PAGE
+            # fallback: any non-closed page
+            for ctx in _BROWSER.contexts:
+                for p in ctx.pages:
+                    try:
+                        if not p.is_closed():
+                            _PAGE = p
+                            return _PAGE
+                    except Exception:
+                        continue
+        # Nothing usable — launch fresh
         if not launch():
             return None
     return _PAGE
+
 
 
 def close_tab() -> bool:
