@@ -372,6 +372,10 @@ export default function FlowsApp() {
         setNodes(rNodes);
         setEdges(rEdges);
         execStateRef.current = {};
+        // fitView after React commits state — ensures all nodes are visible without refresh
+        setTimeout(() => {
+          if (rfInstance) rfInstance.fitView({ padding: 0.15, duration: 300 });
+        }, 80);
       },
       exportFlowFromCanvas: exportFlow,
       setNodeState(stepId, state) {
@@ -391,7 +395,7 @@ export default function FlowsApp() {
     window.togglePalette = () => setPaletteOpen(p => !p);
 
     return () => { bridge._api = null; };
-  }, [setNodes, setEdges, exportFlow, deleteSelected]);
+  }, [setNodes, setEdges, exportFlow, deleteSelected, rfInstance]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

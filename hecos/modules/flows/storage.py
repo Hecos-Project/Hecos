@@ -119,22 +119,21 @@ def save_flow(flow_data: Dict[str, Any], raw_yaml: Optional[str] = None) -> str:
     flow_data["_meta"] = meta
 
     if raw_yaml:
-        # Parse the YAML to inject meta, then re-serialize
+        # Parse the YAML, inject only _meta (never touch pipeline), then re-serialize.
+        # IMPORTANT: Do NOT call validate_flow here — it mutates depends_on in-place
+        # which would corrupt the pipeline and cause nodes to disappear on disk.
         try:
             parsed = yaml.safe_load(raw_yaml)
             if isinstance(parsed, dict):
                 parsed["_meta"] = meta
                 parsed["id"] = flow_id
-                # Auto-clean any dangling dependencies before saving to disk
-                from hecos.modules.flows.validator import validate_flow
-                validate_flow(parsed)
                 with open(path, "w", encoding="utf-8") as f:
                     yaml.dump(parsed, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
             else:
-                # Fallback: write as-is
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(raw_yaml)
         except Exception:
+            # If YAML parsing fails, write the raw string as-is
             with open(path, "w", encoding="utf-8") as f:
                 f.write(raw_yaml)
     else:
