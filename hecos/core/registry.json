@@ -547,6 +547,7 @@
         "commands": {
             "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
             "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "parse_and_set_reminder": "Helper for HDCS (Direct Commands). Parses a raw string like 'chiamare Marco alle 18:30'",
             "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
             "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
             "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
@@ -569,10 +570,9 @@
                 "usage": "/reminder <titolo> alle <ora>",
                 "example": "/reminder chiamata Marco alle 15:30",
                 "icon": "⏰",
-                "method": "set_reminder",
+                "method": "parse_and_set_reminder",
                 "args_schema": {
-                    "title": "str",
-                    "when": "str"
+                    "query": "str"
                 },
                 "requires_args": true
             },

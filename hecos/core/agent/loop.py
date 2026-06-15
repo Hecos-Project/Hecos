@@ -147,7 +147,6 @@ class AgentExecutor:
             
             # 1. Call the Brain
             # Ensure we use the latest config from the manager if available
-            from hecos.core.processing import processore
             current_cfg = self.config_manager.config if getattr(self, 'config_manager', None) else processore.current_config
             
             self._emit(f"Thinking (Loop {iteration})...", level="info")
