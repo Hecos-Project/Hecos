@@ -182,6 +182,7 @@ This command is built for human interaction. It uses a smart natural language pa
 1. **`/reminder pick up dry cleaning at 17:45`** (sets a reminder for 17:45 today)
 2. **`/ricorda turn off the oven in 20 minutes`** (sets a relative reminder expiring in exactly 20 minutes)
 3. **`/promemoria call doctor on 25/08 at 09:00`** (sets a reminder for a specific future date and time)
+4. **`/reminder take the cake out of the oven in 30 minutes --interactive`** (append `--interactive` or `-i` to force an interactive reminder that loops the alarm until explicitly stopped or snoozed)
 
 > [!TIP]
 > If you want to check active reminders or cancel one of them, type `/reminders`. It will show all active reminders with their 8-character IDs. You can cancel a reminder using the auto-generated `/reminder.cancel_reminder <ID>` command (e.g., `/reminder.cancel_reminder a1b2c3d4`).

@@ -182,6 +182,7 @@ Questo è il comando progettato per gli esseri umani. Utilizza un parser intelli
 1. **`/reminder ritirare i vestiti in lavanderia alle 17:45`** (imposta un promemoria per oggi alle 17:45)
 2. **`/ricorda spegnere il forno tra 20 minuti`** (imposta un promemoria relativo che scadrà esattamente tra 20 minuti)
 3. **`/promemoria compleanno della mamma il 25/08 alle 09:00`** (imposta un promemoria per una data specifica futura)
+4. **`/reminder togliere la torta dal forno tra 30 minuti --interactive`** (usa il flag `--interactive` o `-i` alla fine per forzare un promemoria interattivo che suona in loop finché non viene stoppato o posticipato)
 
 > [!TIP]
 > Se vuoi vedere i promemoria salvati o devi annullarne uno, digita `/reminders`. Ti mostrerà una lista con degli identificativi ID da 8 caratteri. A quel punto puoi eliminare un promemoria usando il comando auto-generato `/reminder.cancel_reminder <ID>` (es. `/reminder.cancel_reminder a1b2c3d4`).

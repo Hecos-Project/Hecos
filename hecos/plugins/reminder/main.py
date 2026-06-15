@@ -94,30 +94,32 @@ class ReminderTools:
 
     def parse_and_set_reminder(self, query: str) -> str:
         """
-        Helper for HDCS (Direct Commands). Parses a raw string like 'chiamare Marco alle 18:30'
-        into title and when, and then calls set_reminder.
+        Helper for HDCS (Direct Commands). Parses a raw string like 'chiamare Marco alle 18:30 --interactive'
+        into title, when, and interactive flag, and then calls set_reminder.
         """
         import re
+        
+        # Extract flags
+        interactive = None
+        if " --interactive" in query or " -i" in query:
+            interactive = True
+            query = query.replace(" --interactive", "").replace(" -i", "")
+            
         # Look for the last occurrence of a time preposition to split title and time
-        # This handles things like "comprare il pane al latte alle 18:00"
         m = re.split(r'\s+(alle?|at|in|tra|fra|il|on)\s+', query.strip(), flags=re.IGNORECASE)
         if len(m) >= 3:
-            # Reconstruct title (everything before the last matching preposition)
-            # Actually, split splits on ALL occurrences. We want the LAST one or just assume a simple split.
-            # Using rsplit is better, but re doesn't have rsplit. Let's do a greedy match instead.
             m2 = re.match(r'^(.*?)\s+(alle?|at|in|tra|fra|il|on)\s+(.*)$', query.strip(), flags=re.IGNORECASE | re.DOTALL)
             if m2:
                 title = m2.group(1).strip()
                 when = f"{m2.group(2)} {m2.group(3)}".strip()
             else:
                 title = m[0].strip()
-                when = "".join(m[-2:]).strip() # just in case
+                when = "".join(m[-2:]).strip()
         else:
-            # Fallback if no preposition is found
             title = query.strip()
-            when = "tra 15 minuti" # Default if time is totally missing
+            when = "tra 15 minuti"
             
-        return self.set_reminder(title, when)
+        return self.set_reminder(title, when, interactive=interactive)
 
     def set_reminder(self, title: str, when: str, repeat: str = None, interactive: bool = None) -> str:
         """
