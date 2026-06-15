@@ -112,6 +112,136 @@
   opacity: 0.7;
 }
 #img-lightbox-close:hover { opacity: 1; }
+
+/* ── Chat Video Card (MKV/AVI/WMV — browser-unsupported formats) ──── */
+.chat-video-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 8px 0;
+  max-width: 420px;
+}
+.chat-video-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chat-video-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.chat-video-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.chat-video-card-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+.chat-video-card-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.chat-video-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chat-video-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.1s;
+  border: 1px solid transparent;
+}
+.chat-video-btn:hover { transform: translateY(-1px); }
+.chat-video-btn-open {
+  background: rgba(var(--accent-rgb), 0.2);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  color: var(--accent);
+}
+.chat-video-btn-open:hover {
+  background: rgba(var(--accent-rgb), 0.35);
+}
+.chat-video-btn-dl {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--muted);
+}
+.chat-video-btn-dl:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text);
+}
+.chat-video-card-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  opacity: 0.75;
+  line-height: 1.4;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding-top: 8px;
+}
+.chat-video-card-hint i { margin-top: 1px; flex-shrink: 0; }
+
+/* ── Chat File Card (generic local files) ──────────────────────────── */
+.chat-file-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  max-width: 420px;
+}
+.chat-file-icon {
+  font-size: 1.6rem;
+  color: var(--accent);
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+.chat-file-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.chat-file-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-file-action a {
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.8;
+}
+.chat-file-action a:hover { opacity: 1; text-decoration: underline; }
 </style>
 
 <!-- Img Drop Banner (appears when dragging a chat image) -->

@@ -45,16 +45,6 @@ function populateUI() {
     populateWebUIConfig();
     populateAgentUI();
 
-    // 9. Dashboard specialized toggles
-    const dsb = c.plugins?.DASHBOARD || {};
-    setCheck('dashboard-webui-enabled',  dsb.webui_dashboard_enabled  ?? true);
-    setCheck('telemetry-webui-enabled',  dsb.webui_telemetry_enabled  ?? true);
-    setCheck('track-cpu-enabled',        dsb.track_cpu                ?? true);
-    setCheck('track-ram-enabled',        dsb.track_ram                ?? true);
-    setCheck('track-vram-enabled',       dsb.track_vram               ?? true);
-    setCheck('dashboard-console-enabled',dsb.console_dashboard_enabled ?? true);
-    setCheck('telemetry-console-enabled',dsb.console_telemetry_enabled ?? true);
-
     // 10. Standalone plugin enabled toggles
     document.querySelectorAll('[data-plugin]').forEach(cb => {
       const tag = cb.dataset.plugin;
@@ -101,6 +91,15 @@ function buildPayload() {
         if (sysPart.plugins?.WEB_UI) {
             out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
             out.plugins['WEB_UI'].https_enabled = sysPart.plugins.WEB_UI.https_enabled;
+        }
+        if (sysPart.plugins?.DASHBOARD) {
+            out.plugins['DASHBOARD'] = out.plugins['DASHBOARD'] || {};
+            // Merge ONLY the console-specific keys — never touch track_cpu/ram/vram (WebUI widget)
+            const dsbSys = sysPart.plugins.DASHBOARD;
+            if ('console_telemetry_enabled' in dsbSys) out.plugins['DASHBOARD'].console_telemetry_enabled = dsbSys.console_telemetry_enabled;
+            if ('console_telemetry_cpu'     in dsbSys) out.plugins['DASHBOARD'].console_telemetry_cpu     = dsbSys.console_telemetry_cpu;
+            if ('console_telemetry_ram'     in dsbSys) out.plugins['DASHBOARD'].console_telemetry_ram     = dsbSys.console_telemetry_ram;
+            if ('console_telemetry_vram'    in dsbSys) out.plugins['DASHBOARD'].console_telemetry_vram    = dsbSys.console_telemetry_vram;
         }
     }
 

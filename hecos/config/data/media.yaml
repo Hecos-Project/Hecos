@@ -10,13 +10,13 @@ image_gen:
   height: 1024
   seed: -1
   last_seed: -1
-  sampler: euler_a
-  scheduler: euler
-  guidance_scale: 7.5
-  num_inference_steps: 30
-  enable_negative_prompt: true
+  sampler: euler
+  scheduler: simple
+  guidance_scale: 0.0
+  num_inference_steps: 4
+  enable_negative_prompt: false
   negative_prompt: ''
-  auto_enrich: true
+  auto_enrich: false
   enrich_keywords: ''
   style: none
   optimize_for_flux: true

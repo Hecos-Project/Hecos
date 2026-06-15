@@ -31,8 +31,11 @@
   <!-- DYNAMIC TABS BAR -->
   <div class="tabs-container" id="tabs-bar-container">
      <div id="config-tabs-bar">
-        <!-- Will be populated by config_core.js -->
-        <div style="padding:10px; color:var(--muted); font-size: var(--font-size-sm);">Initializing Tab Engine...</div>
+        <!-- Populated immediately by config_core.js at DOMContentLoaded — no delay -->
+        <div id="tab-engine-init-msg" style="padding:10px 14px; color:var(--muted); font-size: var(--font-size-sm); display:flex; align-items:center; gap:6px;">
+          <i class="fas fa-cog" style="animation: spin 1.2s linear infinite; font-size:13px;"></i>
+          <span>Initializing Tab Engine<span class="dot-anim"></span></span>
+        </div>
      </div>
   </div>
 

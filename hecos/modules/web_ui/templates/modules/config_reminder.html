@@ -145,7 +145,6 @@ window.refreshReminderConfig = function() {
 };
 
 window.cancelReminderFromConfig = function(id) {
-    if (!confirm('Are you sure you want to cancel this reminder?')) return;
     // Stop audio loop first (in case this reminder is currently ringing)
     fetch('/api/ext/reminder/stop', { method: 'POST' });
     fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })

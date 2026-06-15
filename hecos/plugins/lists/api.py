@@ -186,7 +186,9 @@ def _list_to_dict(list_id: str) -> dict | None:
                 "text": i["text"],
                 "status": i["status"],
                 "priority": i.get("priority", 0),
-                "label": i.get("label", "") or ""
+                "label": i.get("label", "") or "",
+                "created_at": i.get("created_at", "") or "",
+                "completed_at": i.get("completed_at", "") or ""
             }
             for i in items
         ]
@@ -195,6 +197,7 @@ def _list_to_dict(list_id: str) -> dict | None:
 
 def _dict_to_yaml(data: dict) -> str:
     """Converts a list dict to YAML string without external dependencies."""
+    from hecos.core.system.version import VERSION
     def _scalar(v):
         if v is None:
             return "~"
@@ -204,6 +207,7 @@ def _dict_to_yaml(data: dict) -> str:
         return s or '""'
 
     lines = [
+        f"# List created with Hecos v-{VERSION}",
         f"nome: {_scalar(data['name'])}",
         f"icona: {_scalar(data.get('icon',''))}",
         f"colore: {_scalar(data.get('color',''))}",
@@ -217,29 +221,43 @@ def _dict_to_yaml(data: dict) -> str:
             lines.append(f"    priorita: {item['priority']}")
         if item.get("label"):
             lines.append(f"    etichetta: {_scalar(item['label'])}")
+        if item.get("created_at"):
+            lines.append(f"    creato: {_scalar(item['created_at'][:10])}")
+        if item.get("completed_at"):
+            lines.append(f"    completato: {_scalar(item['completed_at'][:10])}")
     return "\n".join(lines)
 
 
 def _dict_to_txt(data: dict) -> str:
     """Converts a list dict to readable plain-text format."""
+    from hecos.core.system.version import VERSION
     lines = [
         f"# {data['name']}",
-        f"# Esportata il: {data.get('created_at','')[:10]}",
+        f"# List created with Hecos v-{VERSION}",
+        f"# Exported on: {data.get('created_at','')[:10]}",
         ""
     ]
     for item in data.get("items", []):
         mark = "[x]" if item["status"] == "done" else "[ ]"
         suffix = f" [{item['label']}]" if item.get("label") else ""
         priority = "!" * item.get("priority", 0)
-        lines.append(f"{mark} {item['text']}{priority}{suffix}")
+        date_parts = []
+        if item.get("created_at"):
+            date_parts.append(f"created: {item['created_at'][:10]}")
+        if item.get("completed_at"):
+            date_parts.append(f"done: {item['completed_at'][:10]}")
+        date_str = f"  ({', '.join(date_parts)})" if date_parts else ""
+        lines.append(f"{mark} {item['text']}{priority}{suffix}{date_str}")
     return "\n".join(lines)
 
 
 def _dict_to_md(data: dict) -> str:
     """Converts a list dict to standard Markdown checklist format."""
+    from hecos.core.system.version import VERSION
     lines = [
         f"# {data['name']}",
-        f"*Esportata il: {data.get('created_at','')[:10]}*",
+        f"*List created with Hecos v-{VERSION}*",
+        f"*Exported on: {data.get('created_at','')[:10]}*",
         ""
     ]
     for item in data.get("items", []):
@@ -248,7 +266,13 @@ def _dict_to_md(data: dict) -> str:
         priority = "!" * item.get("priority", 0)
         # Bold priority items
         text = f"**{item['text']}**" if priority else item['text']
-        lines.append(f"{mark} {text}{suffix}")
+        date_parts = []
+        if item.get("created_at"):
+            date_parts.append(f"created: {item['created_at'][:10]}")
+        if item.get("completed_at"):
+            date_parts.append(f"done: {item['completed_at'][:10]}")
+        date_str = f" *({', '.join(date_parts)})*" if date_parts else ""
+        lines.append(f"{mark} {text}{suffix}{date_str}")
     return "\n".join(lines)
 
 
@@ -265,15 +289,15 @@ def export_list(list_id):
     if fmt == "txt":
         content = _dict_to_txt(data)
         mime = "text/plain"
-        filename = f"{safe_name}.txt"
+        filename = f"hecos_list_{safe_name}.txt"
     elif fmt == "md":
         content = _dict_to_md(data)
         mime = "text/markdown"
-        filename = f"{safe_name}.md"
+        filename = f"hecos_list_{safe_name}.md"
     else:
         content = _dict_to_yaml(data)
         mime = "text/yaml"
-        filename = f"{safe_name}.yaml"
+        filename = f"hecos_list_{safe_name}.yaml"
 
     return Response(
         content,
@@ -344,10 +368,13 @@ def save_export_to_disk(list_id):
     safe_name = "".join(c for c in list_data["name"] if c.isalnum() or c in " _-").strip()
     if fmt == "txt":
         content  = _dict_to_txt(list_data)
-        filename = f"{safe_name}.txt"
+        filename = f"hecos_list_{safe_name}.txt"
+    elif fmt == "md":
+        content  = _dict_to_md(list_data)
+        filename = f"hecos_list_{safe_name}.md"
     else:
         content  = _dict_to_yaml(list_data)
-        filename = f"{safe_name}.yaml"
+        filename = f"hecos_list_{safe_name}.yaml"
 
     filepath = os.path.join(folder, filename)
     try:
@@ -400,6 +427,10 @@ def _parse_yaml_import(text: str) -> list:
                     pass
             elif line.startswith("    etichetta:") and current_item:
                 current_item["label"] = line.split(":", 1)[1].strip().strip('"').strip("'")
+            elif line.startswith("    creato:") and current_item:
+                current_item["created_at"] = line.split(":", 1)[1].strip().strip('"').strip("'")
+            elif line.startswith("    completato:") and current_item:
+                current_item["completed_at"] = line.split(":", 1)[1].strip().strip('"').strip("'")
         if current_item:
             current["items"].append(current_item)
         if current["name"]:

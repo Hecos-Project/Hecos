@@ -86,88 +86,13 @@ if __name__ == "__main__":
         scheme = get_scheme()
         lan_ip = get_lan_ip()
         
-        url_local = f"{scheme}://127.0.0.1:{HECOS_PORT}"
-        url_lan   = f"{scheme}://{lan_ip}:{HECOS_PORT}"
+
 
         def refresh(e):
             body_col.controls.clear()
             body_col.controls.append(_build_status(page, body_col))
             page.update()
             
-        def make_copy_row(label, val):
-            def do_copy(e):
-                page.set_clipboard(val)
-                # Visual feedback placeholder if needed
-            return ft.Container(
-                content=ft.Row([
-                    ft.Text(label, size=11, color=MUTED, expand=1),
-                    ft.Text(val, size=11, weight="bold", color=TEXT),
-                    ft.Container(
-                        content=ft.Text("📋", size=13, color=MUTED),
-                        on_click=do_copy,
-                        padding=ft.Padding(10, 0, 5, 0),
-                        tooltip=f"Copy {val}"
-                    )
-                ]),
-                padding=ft.Padding(16, 9, 16, 9),
-            )
-
-        public_ip_val = ft.Text("Detecting...", size=11, weight="bold", color=MUTED)
-        public_ip_row = ft.Container(
-            content=ft.Row([
-                ft.Text("Remote Access", size=11, color=MUTED, expand=1),
-                public_ip_val,
-            ]), padding=ft.Padding(16, 9, 16, 9)
-        )
-
-        def fetch_pub_ip():
-            import urllib.request
-            try:
-                ip = urllib.request.urlopen("https://api.ipify.org", timeout=4).read().decode("utf-8")
-                remote_url = f"{scheme}://{ip}:{HECOS_PORT}"
-                public_ip_val.value = remote_url
-                public_ip_val.color = TEXT
-                # Inject copy button
-                def do_copy(e): page.set_clipboard(remote_url)
-                public_ip_row.content.controls.append(
-                    ft.Container(
-                        content=ft.Text("📋", size=13, color=MUTED),
-                        on_click=do_copy,
-                        padding=ft.Padding(10, 0, 5, 0),
-                        tooltip=f"Copy {remote_url}"
-                    )
-                )
-            except Exception:
-                public_ip_val.value = "Unreachable"
-                public_ip_val.color = RED
-            try:
-                page.update()
-            except: pass
-
-        threading.Thread(target=fetch_pub_ip, daemon=True).start()
-
-        network_section = ft.Column([
-            _section_label("NETWORK INTERFACES"),
-            _card(
-                make_copy_row("Localhost", url_local),
-                make_copy_row("LAN Host", url_lan),
-                public_ip_row,
-            ),
-        ], visible=False)
-
-        def toggle_network(e):
-            network_section.visible = not network_section.visible
-            toggle_btn.content.controls[0].value = "▽ Hide Technical Details" if network_section.visible else "▷ Show Technical Details"
-            page.update()
-
-        toggle_btn = ft.Container(
-            content=ft.Row([
-                ft.Text("▷ Show Technical Details", size=11, color=ACCENT, weight="bold"),
-            ]),
-            on_click=toggle_network,
-            padding=ft.Padding(12, 5, 12, 5),
-            border_radius=6,
-        )
 
         browser_val = ft.Text("Detecting...", size=11, weight="bold", color=MUTED) if cdp_ok else ft.Text("Not Detected", size=11, weight="bold", color=MUTED)
         browser_row = ft.Container(
@@ -203,8 +128,6 @@ if __name__ == "__main__":
                 _info_row("Protocol", scheme.upper()),
                 _info_row("Port",     str(HECOS_PORT)),
             ),
-            toggle_btn,
-            network_section,
             _section_label("BROWSER (CDP)"),
             _card(
                 _info_row("Connection", f"🟢 Port {cdp_p} Open" if cdp_ok else f"🔴 Port {cdp_p} Closed", ACCENT if cdp_ok else RED),
@@ -270,7 +193,11 @@ if __name__ == "__main__":
         ], spacing=0, expand=1)
 
     def _build_mobile(page, body_col):
-        url = f"{get_scheme()}://{get_lan_ip()}:{HECOS_PORT}/chat"
+        scheme = get_scheme()
+        lan_ip = get_lan_ip()
+        url = f"{scheme}://{lan_ip}:{HECOS_PORT}/chat"
+        url_local = f"{scheme}://127.0.0.1:{HECOS_PORT}"
+        url_lan   = f"{scheme}://{lan_ip}:{HECOS_PORT}"
         qr_ctrl = ft.Text("Generating QR…", color=MUTED)
         try:
             import qrcode
@@ -302,17 +229,105 @@ if __name__ == "__main__":
         except Exception as ex:
             qr_ctrl = ft.Text(f"QR error: {ex}", color=RED, size=11)
 
+        def do_copy(e):
+            page.clipboard.set(url)
+
+        def make_copy_row(label, val):
+            def _do_copy(e):
+                page.clipboard.set(val)
+            return ft.Container(
+                content=ft.Row([
+                    ft.Text(label, size=11, color=MUTED, expand=1),
+                    ft.Text(val, size=11, weight="bold", color=TEXT),
+                    ft.Container(
+                        content=ft.Text("📋", size=13, color=MUTED),
+                        on_click=_do_copy,
+                        padding=ft.Padding(10, 0, 5, 0),
+                        tooltip=f"Copy {val}"
+                    )
+                ]),
+                padding=ft.Padding(16, 9, 16, 9),
+            )
+
+        public_ip_val = ft.Text("Detecting...", size=11, weight="bold", color=MUTED)
+        public_ip_row = ft.Container(
+            content=ft.Row([
+                ft.Text("Remote Access", size=11, color=MUTED, expand=1),
+                public_ip_val,
+            ]), padding=ft.Padding(16, 9, 16, 9)
+        )
+
+        def fetch_pub_ip():
+            import urllib.request
+            try:
+                ip = urllib.request.urlopen("https://api.ipify.org", timeout=4).read().decode("utf-8")
+                remote_url = f"{scheme}://{ip}:{HECOS_PORT}"
+                public_ip_val.value = remote_url
+                public_ip_val.color = TEXT
+                def _do_copy_remote(e): page.clipboard.set(remote_url)
+                public_ip_row.content.controls.append(
+                    ft.Container(
+                        content=ft.Text("📋", size=13, color=MUTED),
+                        on_click=_do_copy_remote,
+                        padding=ft.Padding(10, 0, 5, 0),
+                        tooltip=f"Copy {remote_url}"
+                    )
+                )
+            except Exception:
+                public_ip_val.value = "Unreachable"
+                public_ip_val.color = RED
+            try:
+                page.update()
+            except: pass
+
+        threading.Thread(target=fetch_pub_ip, daemon=True).start()
+
+        network_section = ft.Column([
+            _section_label("NETWORK INTERFACES"),
+            _card(
+                make_copy_row("Localhost", url_local),
+                make_copy_row("LAN Host", url_lan),
+                public_ip_row,
+            ),
+        ], visible=False)
+
+        def toggle_network(e):
+            network_section.visible = not network_section.visible
+            toggle_btn.content.controls[0].value = "▽ Hide Technical Details" if network_section.visible else "▷ Show Technical Details"
+            page.update()
+
+        toggle_btn = ft.Container(
+            content=ft.Row([
+                ft.Text("▷ Show Technical Details", size=11, color=ACCENT, weight="bold"),
+            ]),
+            on_click=toggle_network,
+            padding=ft.Padding(12, 5, 12, 5),
+            border_radius=6,
+        )
+
         return ft.Column([
-            _title("Mobile Access"),
-            _subtitle("Scan to open Hecos on your phone."),
+            _title("Remote Access (Mobile & PC)"),
+            _subtitle("Scan the QR code or copy the link to access Hecos from other devices."),
             ft.Container(height=14),
             ft.Container(
                 content=ft.Column([
                     qr_ctrl,
-                    ft.Text(url, size=11, color=MUTED, text_align="center"),
+                    ft.Container(height=10),
+                    ft.Row([
+                        ft.Text(url, size=12, color=TEXT, weight="bold", selectable=True),
+                        ft.Container(
+                            content=ft.Text("📋", size=14, color=MUTED),
+                            on_click=do_copy,
+                            padding=ft.Padding(10, 5, 5, 5),
+                            tooltip="Copy Link"
+                        )
+                    ], alignment="center", spacing=0),
                 ], horizontal_alignment="center"),
                 bgcolor=CARD, border_radius=14, padding=24,
             ),
+            ft.Container(height=10),
+            toggle_btn,
+            network_section,
         ], spacing=6, horizontal_alignment="center", expand=1)
 
     def _build_logs(page, body_col):
@@ -527,7 +542,7 @@ if __name__ == "__main__":
             ("status",   "◉", "Status"),
             ("settings", "⚙", "Settings"),
             ("browser",  "🌐", "Browser"),
-            ("mobile",   "📱", "Mobile QR"),
+            ("mobile",   "📱", "Remote Access"),
             ("logs",     "📋", "Live Logs"),
             ("about",    "ℹ", "About"),
         ]

@@ -38,7 +38,7 @@ def main():
     try:
         with sync_playwright() as pw:
             try:
-                browser = pw.chromium.connect_over_cdp('http://localhost:9222', timeout=3000)
+                browser = pw.chromium.connect_over_cdp('http://localhost:9222', timeout=15000)
             except Exception as e:
                 print(f"❌ Impossibile connettersi a CDP: {e}")
                 return

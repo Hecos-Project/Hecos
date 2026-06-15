@@ -225,8 +225,8 @@ def get_hardware_row(config=None, dashboard_mod=None):
                     backend=f"{status_color}{display_status}{Style.RESET_ALL}"
                 )
             else:
-                # Se la telemetria è disattivata, mostriamo solo lo stato del backend
-                info_hw_raw = f" BACKEND AI: {status_color}{display_status}{Style.RESET_ALL} "
+                # Se la telemetria è disattivata, mostriamo l'avviso e lo stato backend
+                info_hw_raw = f" TELEMETRY: {Fore.LIGHTBLACK_EX}NOT ACTIVE{Style.RESET_ALL} | BACKEND AI: {status_color}{display_status}{Style.RESET_ALL} "
 
             # Center the row properly respecting ANSI codes
             import re

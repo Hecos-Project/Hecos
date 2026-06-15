@@ -4,6 +4,14 @@ let listsActiveListId = null;
 let listsAllData = [];
 let listsCategories = [];
 
+function listsFmtDate(iso) {
+    if (!iso) return '';
+    try {
+        const d = new Date(iso);
+        return d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
+    } catch(e) { return iso.slice(0,10); }
+}
+
 function listsInit() {
     listsFetchCategories();
     listsFetchLists();
@@ -58,17 +66,24 @@ function listsRenderSidebar() {
         emptyMsg.style.display = 'block';
     } else {
         emptyMsg.style.display = 'none';
-        filtered.forEach(lst => {
+        filtered.forEach((lst, idx) => {
             const div = document.createElement('div');
             div.className = 'lists-item-nav';
+            div.tabIndex = 0;
+            div.dataset.id = lst.id;
+            div.dataset.idx = idx;
             if (lst.id === listsActiveListId) div.classList.add('active');
-            
+
+            const dateStr = lst.created_at ? listsFmtDate(lst.created_at) : '';
+
             div.innerHTML = `
                 <span class="nav-icon">${lst.icon || '<i class="fas fa-list-check"></i>'}</span>
                 <span class="nav-name">${lst.name}</span>
+                ${dateStr ? `<span class="nav-date">${dateStr}</span>` : ''}
                 <span class="nav-count">${lst.pending_count || 0}</span>
             `;
             div.onclick = () => listsSelectList(lst.id);
+            div.onkeydown = (e) => listsNavKeydown(e, lst.id, idx);
             container.appendChild(div);
         });
     }
@@ -115,10 +130,12 @@ function listsRenderItems(items) {
     const container = document.getElementById('lists-items-container');
     container.innerHTML = '';
     
-    items.forEach(item => {
+    items.forEach((item, idx) => {
         const row = document.createElement('div');
         row.className = 'list-item-row';
         row.dataset.id = item.id;
+        row.dataset.idx = idx;
+        row.tabIndex = 0;
         if (item.status === 'done') row.classList.add('is-done');
         
         let badgesHtml = '';
@@ -136,6 +153,17 @@ function listsRenderItems(items) {
                               </button>
                            </span>`;
         }
+
+        // Build dates block
+        let datesHtml = '';
+        const createdStr = item.created_at ? listsFmtDate(item.created_at) : '';
+        const completedStr = item.completed_at ? listsFmtDate(item.completed_at) : '';
+        if (createdStr || completedStr) {
+            datesHtml = '<div class="list-item-dates">';
+            if (createdStr)   datesHtml += `<span><i class="fas fa-calendar-plus" style="font-size:0.65rem;"></i> ${createdStr}</span>`;
+            if (completedStr) datesHtml += `<span><i class="fas fa-calendar-check" style="font-size:0.65rem; color:var(--accent);"></i> ${completedStr}</span>`;
+            datesHtml += '</div>';
+        }
         
         row.innerHTML = `
             <div class="list-item-drag"><i class="fas fa-grip-vertical"></i></div>
@@ -145,11 +173,15 @@ function listsRenderItems(items) {
             <div class="list-item-content">
                 <div class="list-item-text" contenteditable="true" onblur="listsUpdateItemText('${item.id}', this.innerText)">${item.text}</div>
                 ${badgesHtml ? `<div class="list-item-meta">${badgesHtml}</div>` : ''}
+                ${datesHtml}
             </div>
             <div class="list-item-actions">
                 <button type="button" class="btn btn-sm btn-icon text-danger" onclick="listsDeleteItem('${item.id}')"><i class="fas fa-trash"></i></button>
             </div>
         `;
+        
+        // Keyboard handler
+        row.onkeydown = (e) => listsItemKeydown(e, item.id, idx);
         
         // Setup drag and drop events
         row.draggable = true;
@@ -352,6 +384,86 @@ function listsSetFilter(filter) {
         else btn.classList.remove('active');
     });
     listsFetchItems();
+}
+
+// ── Keyboard Navigation (Hub) ─────────────────────────────────────────────
+
+function listsNavKeydown(e, listId, idx) {
+    const container = document.getElementById('lists-sidebar-list');
+    const navItems = Array.from(container.querySelectorAll('.lists-item-nav'));
+    switch (e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (idx + 1 < navItems.length) navItems[idx + 1].focus();
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            if (idx > 0) navItems[idx - 1].focus();
+            break;
+        case 'Enter':
+        case ' ':
+            e.preventDefault();
+            listsSelectList(listId);
+            setTimeout(() => {
+                const firstRow = document.querySelector('#lists-items-container .list-item-row');
+                if (firstRow) firstRow.focus();
+            }, 200);
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            setTimeout(() => {
+                const firstRow = document.querySelector('#lists-items-container .list-item-row');
+                if (firstRow) firstRow.focus();
+            }, 100);
+            break;
+    }
+}
+
+function listsItemKeydown(e, itemId, idx) {
+    const container = document.getElementById('lists-items-container');
+    const rows = Array.from(container.querySelectorAll('.list-item-row'));
+    const row = rows[idx];
+    switch (e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (idx + 1 < rows.length) rows[idx + 1].focus();
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            if (idx > 0) {
+                rows[idx - 1].focus();
+            } else {
+                // Go back to sidebar
+                const activeNav = document.querySelector('#lists-sidebar-list .lists-item-nav.active');
+                if (activeNav) activeNav.focus();
+            }
+            break;
+        case ' ':
+        case 'Enter':
+            // Only if not in a text editing element
+            if (e.target.tagName === 'DIV' && e.target.contentEditable !== 'true') {
+                e.preventDefault();
+                if (row) {
+                    const cb = row.querySelector('input[type="checkbox"]');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        listsToggleItem(itemId, cb.checked, row);
+                    }
+                }
+            }
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            const activeNav = document.querySelector('#lists-sidebar-list .lists-item-nav.active');
+            if (activeNav) activeNav.focus();
+            break;
+        case 'Delete':
+            if (e.target.tagName !== 'INPUT' && e.target.contentEditable !== 'true') {
+                e.preventDefault();
+                listsDeleteItem(itemId);
+            }
+            break;
+    }
 }
 
 // ── Drag & Drop ──────────────────────────────────────────────────────────────

@@ -292,8 +292,13 @@ function toggleTelemetryMetric(field, enabled) {
     if (!cfg.plugins) cfg.plugins = {};
     if (!cfg.plugins.DASHBOARD) cfg.plugins.DASHBOARD = {};
     cfg.plugins.DASHBOARD[field] = enabled;
+
+    // Ensure the master gate is in sync: true if any track_* is on, false if all off
+    const dsb = cfg.plugins.DASHBOARD;
+    const anyActive = dsb.track_cpu || dsb.track_ram || dsb.track_vram;
+    dsb.webui_telemetry_enabled = !!anyActive;
     
-    console.log(`[TELEMETRY-SYNC] ${field}=${enabled}`);
+    console.log(`[TELEMETRY-SYNC] ${field}=${enabled} | webui_telemetry_enabled=${dsb.webui_telemetry_enabled}`);
     if (window.parent.saveConfig) {
         window.parent.saveConfig(true);
     }

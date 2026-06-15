@@ -19,6 +19,13 @@ function populateSystemUI() {
     // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
     setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
+
+    // Dashboard config
+    const dsb = (c.plugins || {}).DASHBOARD || {};
+    setCheck('sys-console-telemetry', dsb.console_telemetry_enabled ?? true);
+    setCheck('sys-track-cpu', dsb.console_telemetry_cpu ?? false);
+    setCheck('sys-track-ram', dsb.console_telemetry_ram ?? false);
+    setCheck('sys-track-vram', dsb.console_telemetry_vram ?? false);
     setCheck('wui-control-room-panel', webUiPlug.control_room_panel ?? true);
     setCheck('wui-control-room-home', webUiPlug.control_room_home ?? true);
 
@@ -101,6 +108,12 @@ function buildSystemPayload() {
             }
         },
         plugins: {
+            DASHBOARD: {
+                console_telemetry_enabled: getC('sys-console-telemetry', (window.cfg.plugins?.DASHBOARD?.console_telemetry_enabled ?? true)),
+                console_telemetry_cpu: getC('sys-track-cpu', (window.cfg.plugins?.DASHBOARD?.console_telemetry_cpu ?? false)),
+                console_telemetry_ram: getC('sys-track-ram', (window.cfg.plugins?.DASHBOARD?.console_telemetry_ram ?? false)),
+                console_telemetry_vram: getC('sys-track-vram', (window.cfg.plugins?.DASHBOARD?.console_telemetry_vram ?? false))
+            },
             SYS_NET: {
                 proxy_enabled: getC('sys-proxy-enabled', snet.proxy_enabled ?? false),
                 proxy_url: getV('sys-proxy-url', snet.proxy_url || "")

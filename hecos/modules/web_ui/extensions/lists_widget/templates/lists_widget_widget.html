@@ -1,5 +1,5 @@
 <!-- LISTS WIDGET — Mini-App Operativa -->
-<div class="sidebar-card" id="lists-widget" style="padding:10px 12px;">
+<div class="sidebar-card" id="lists-widget" style="padding:10px 12px; display:flex; flex-direction:column; height:100%;">
     <!-- Header -->
     <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="_lwToggle()">
         <span class="ql-icon"><i class="fas fa-list-check"></i></span>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Body -->
-    <div id="lw-body" class="ql-body" style="margin-top:10px;">
+    <div id="lw-body" class="ql-body" style="margin-top:10px; flex:1; display:flex; flex-direction:column; min-height:0;">
 
         <!-- Two-column layout: list nav + content -->
         <div class="lw-app" id="lw-app">
@@ -36,6 +36,10 @@
                     </div>
                     <div class="lw-items-scroll" id="lw-items">
                         <!-- Items populated by JS -->
+                    </div>
+                    <!-- RESIZER -->
+                    <div class="lw-items-resizer" id="lw-items-resizer" title="Trascina per ridimensionare">
+                        <div class="lw-resizer-handle"></div>
                     </div>
                     <!-- Labels management (always visible) -->
                     <div class="lw-labels-row" style="background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.06); padding: 5px; min-height: 0; max-height: 80px; overflow-y: auto; flex-shrink: 0;">
@@ -88,7 +92,9 @@
 .lw-app {
     display: flex;
     gap: 0;
-    height: 260px;
+    flex: 0 1 auto;
+    max-height: calc(100% - 42px);
+    min-height: 120px;
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 8px;
     overflow: hidden;
@@ -122,6 +128,12 @@
 }
 .lw-nav-item:hover { background: rgba(255,255,255,0.06); }
 .lw-nav-item.active { background: rgba(var(--accent-rgb), 0.18); }
+.lw-nav-item:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: rgba(var(--accent-rgb), 0.12);
+}
+.lw-nav-item:focus:not(:focus-visible) { outline: none; }
 .lw-nav-icon {
     font-size: 1.1rem;
     line-height: 1;
@@ -195,6 +207,12 @@
     cursor: default;
 }
 .lw-row:hover { background: rgba(255,255,255,0.04); }
+.lw-row:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: rgba(var(--accent-rgb), 0.08);
+}
+.lw-row:focus:not(:focus-visible) { outline: none; }
 .lw-row input[type="checkbox"] {
     width: 14px; height: 14px;
     cursor: pointer;
@@ -287,6 +305,33 @@
 .lw-badge-label { background: rgba(var(--accent-rgb),0.12); color: var(--accent); font-weight: 400; }
 
 /* Quick add bar */
+.lw-items-resizer {
+    height: 12px;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 0;
+    background: rgba(0,0,0,0.1);
+    border-top: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+}
+.lw-items-resizer:hover, .lw-items-resizer.active {
+    background: rgba(var(--accent-rgb), 0.1);
+}
+.lw-resizer-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.15s;
+}
+.lw-items-resizer:hover .lw-resizer-handle, .lw-items-resizer.active .lw-resizer-handle {
+    background: var(--accent);
+}
+
 .lw-quick-add {
     display: flex;
     align-items: center;
@@ -299,8 +344,8 @@
 /* Main text input — fixed max width so other controls stay visible */
 .lw-add-text-input {
     width: 0;
-    flex: 0 1 95px;
-    min-width: 55px;
+    flex: 0 1 115px;
+    min-width: 65px;
     background: transparent;
     border: none;
     outline: none;
@@ -322,15 +367,15 @@
     padding: 2px 1px;
     cursor: pointer;
     flex-shrink: 0;
-    width: 30px;
+    width: 40px;
     outline: none;
 }
 .lw-prio-select:focus { border-color: var(--accent); color: var(--text); }
 
 /* Label input in quick-add */
 .lw-label-input {
-    flex: 0 1 78px;
-    min-width: 58px;
+    flex: 0 1 85px;
+    min-width: 65px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 4px;
@@ -366,6 +411,7 @@
 /* Footer: new list bar */
 .lw-footer {
     margin-top: 8px;
+    flex-shrink: 0;
 }
 .lw-new-list-bar {
     display: flex;
@@ -532,12 +578,18 @@
             nav.innerHTML = '<div class="lw-nav-empty">Nessuna lista</div>';
             return;
         }
-        nav.innerHTML = _lw_lists.map(lst => {
+        nav.innerHTML = _lw_lists.map((lst, idx) => {
             const active = lst.id === _lw_activeId ? ' active' : '';
             const count  = lst.pending_count || 0;
             const iconHtml = lst.icon || '<i class="fas fa-list-check"></i>';
+            const dateStr = lst.created_at ? _lwFmtDate(lst.created_at) : '';
+            const tip = dateStr ? `Created: ${dateStr}` : '';
             return `
-            <div class="lw-nav-item${active}" onclick="_lwSelectList('${lst.id}')">
+            <div class="lw-nav-item${active}" onclick="_lwSelectList('${lst.id}')"
+                 tabindex="0" data-id="${lst.id}" data-idx="${idx}"
+                 title="${_lwEsc(lst.name)}${tip ? ' — ' + tip : ''}"
+                 aria-label="${_lwEsc(lst.name)}" role="option"
+                 onkeydown="_lwNavKeydown(event, '${lst.id}', ${idx})">
                 <div class="lw-nav-icon">${iconHtml}</div>
                 <div class="lw-nav-name" title="${_lwEsc(lst.name)}">${_lwEsc(lst.name)}</div>
                 ${count > 0 ? `<div class="lw-nav-count">${count}</div>` : ''}
@@ -585,7 +637,7 @@
             return;
         }
 
-        container.innerHTML = _lw_items.map(item => {
+        container.innerHTML = _lw_items.map((item, idx) => {
             const done = item.status === 'done';
             let badges = '';
             if (item.priority === 1) badges += `<span class="lw-badge lw-badge-p1">P1</span>`;
@@ -601,8 +653,17 @@
                            </span>`;
             }
             const badgesHtml = badges ? `<div class="lw-row-badges">${badges}</div>` : '';
+
+            // Date tooltip
+            const tipParts = [];
+            if (item.created_at)   tipParts.push(`Created: ${_lwFmtDate(item.created_at)}`);
+            if (item.completed_at) tipParts.push(`Done: ${_lwFmtDate(item.completed_at)}`);
+            const tip = tipParts.join(' | ');
+
             return `
-            <div class="lw-row${done ? ' done' : ''}" data-id="${item.id}">
+            <div class="lw-row${done ? ' done' : ''}" data-id="${item.id}" data-idx="${idx}"
+                 tabindex="0" role="listitem" title="${_lwEsc(tip)}"
+                 onkeydown="_lwItemKeydown(event, '${item.id}', ${idx})">
                 <input type="checkbox" ${done ? 'checked' : ''}
                        onchange="_lwToggleItem('${item.id}', this.checked, this.closest('.lw-row'))">
                 <div class="lw-row-body">
@@ -722,6 +783,92 @@
         return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function _lwFmtDate(iso) {
+        if (!iso) return '';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
+        } catch(e) { return iso.slice(0,10); }
+    }
+
+    // ── Keyboard Navigation ──────────────────────────────────────────────
+    window._lwNavKeydown = function(e, listId, idx) {
+        const nav = document.getElementById('lw-nav');
+        const items = Array.from(nav.querySelectorAll('.lw-nav-item'));
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (idx + 1 < items.length) items[idx + 1].focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (idx > 0) items[idx - 1].focus();
+                break;
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                _lwSelectList(listId);
+                // After selecting, move focus to first item
+                setTimeout(() => {
+                    const firstItem = document.querySelector('#lw-items .lw-row');
+                    if (firstItem) firstItem.focus();
+                }, 150);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                setTimeout(() => {
+                    const firstItem = document.querySelector('#lw-items .lw-row');
+                    if (firstItem) firstItem.focus();
+                }, 100);
+                break;
+        }
+    };
+
+    window._lwItemKeydown = function(e, itemId, idx) {
+        const container = document.getElementById('lw-items');
+        const rows = Array.from(container.querySelectorAll('.lw-row'));
+        const row = rows[idx];
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (idx + 1 < rows.length) rows[idx + 1].focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (idx > 0) {
+                    rows[idx - 1].focus();
+                } else {
+                    // Move back to nav column
+                    const activeNav = document.querySelector('#lw-nav .lw-nav-item.active');
+                    if (activeNav) activeNav.focus();
+                }
+                break;
+            case ' ':
+            case 'Enter':
+                e.preventDefault();
+                if (row) {
+                    const cb = row.querySelector('input[type="checkbox"]');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        _lwToggleItem(itemId, cb.checked, row);
+                    }
+                }
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                const activeNav = document.querySelector('#lw-nav .lw-nav-item.active');
+                if (activeNav) activeNav.focus();
+                break;
+            case 'Delete':
+            case 'Backspace':
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    _lwDelItem(itemId);
+                }
+                break;
+        }
+    };
+
     // ── Labels management ────────────────────────────────────────────────
     let _lw_labels = [];
 
@@ -773,6 +920,45 @@
         _lwFetchLists();
         _lwFetchCategories();
         setInterval(_lwFetchLists, 60000);
+
+        // -- Resizer logic --
+        const resizer = document.getElementById('lw-items-resizer');
+        const itemsScroll = document.getElementById('lw-items');
+        let isResizing = false;
+
+        if (resizer && itemsScroll) {
+            resizer.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                resizer.classList.add('active');
+                document.body.style.cursor = 'ns-resize';
+                e.preventDefault(); 
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                const rect = itemsScroll.getBoundingClientRect();
+                let newHeight = e.clientY - rect.top;
+                if (newHeight < 40) newHeight = 40;
+                
+                itemsScroll.style.flex = 'none';
+                itemsScroll.style.height = newHeight + 'px';
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('active');
+                    document.body.style.cursor = '';
+                    localStorage.setItem('hecos-lw-items-height', itemsScroll.style.height);
+                }
+            });
+            
+            const savedHeight = localStorage.getItem('hecos-lw-items-height');
+            if (savedHeight) {
+                itemsScroll.style.flex = 'none';
+                itemsScroll.style.height = savedHeight;
+            }
+        }
     }
 
     if (document.readyState === 'loading') {

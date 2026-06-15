@@ -215,7 +215,6 @@ window.reminderWidget = (function() {
   }
 
   function cancel(id) {
-    if (!confirm('Cancel this reminder?')) return;
     fetch('/api/ext/reminder/stop', { method: 'POST' });
     fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
       .then(() => refresh());

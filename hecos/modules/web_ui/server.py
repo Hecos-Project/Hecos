@@ -175,10 +175,11 @@ if __name__ == "__main__":
         format="%(asctime)s [%(levelname)s] %(message)s"
     )
     from hecos.app.config import ConfigManager
+    cfg = ConfigManager()
+    sys.hecos_config_manager = cfg
     from hecos.core.i18n.translator import init_translator
     from hecos.core.logging import logger
     from hecos.core.constants import LOGS_DIR
-    cfg = ConfigManager()
     
     # Initialize basic logging (disable external windows for webui standalone)
     logger.init_logger(cfg.config, allow_external_windows=False)

@@ -307,10 +307,10 @@ class LISTSTools:
             fmt = str(format).lower()
             if fmt == "txt":
                 content  = _dict_to_txt(data)
-                filename = f"{safe_name}.txt"
+                filename = f"hecos_list_{safe_name}.txt"
             else:
                 content  = _dict_to_yaml(data)
-                filename = f"{safe_name}.yaml"
+                filename = f"hecos_list_{safe_name}.yaml"
 
             filepath = os.path.join(folder, filename)
             with open(filepath, "w", encoding="utf-8") as f:

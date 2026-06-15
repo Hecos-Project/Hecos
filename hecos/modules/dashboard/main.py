@@ -43,6 +43,7 @@ def _monitor_backend():
     """Thread that periodically monitors the AI backend status."""
     global _backend_status
     cfg_mgr = ConfigManager()
+    monitor_interval = 2
     
     while True:
         try:
@@ -145,6 +146,21 @@ class DashboardTools:
                 "type": "bool",
                 "default": False,
                 "description": "Enable GPU/VRAM telemetry polling"
+            },
+            "console_telemetry_cpu": {
+                "type": "bool",
+                "default": False,
+                "description": "Enable CPU telemetry polling for Console"
+            },
+            "console_telemetry_ram": {
+                "type": "bool",
+                "default": False,
+                "description": "Enable RAM telemetry polling for Console"
+            },
+            "console_telemetry_vram": {
+                "type": "bool",
+                "default": False,
+                "description": "Enable GPU/VRAM telemetry polling for Console"
             }
         }
         
@@ -261,7 +277,17 @@ def safe_get_gpus():
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             
-        cmd = ["nvidia-smi", "--query-gpu=memory.used,memory.total,utilization.gpu", "--format=csv,noheader,nounits"]
+        import shutil
+        import os
+        smi_path = shutil.which("nvidia-smi")
+        if not smi_path:
+            alt_path = r"C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe"
+            if os.path.exists(alt_path):
+                smi_path = alt_path
+            else:
+                return []
+                
+        cmd = [smi_path, "--query-gpu=memory.used,memory.total,utilization.gpu", "--format=csv,noheader,nounits"]
         proc = subprocess.Popen(
             cmd, 
             stdout=subprocess.PIPE, 
@@ -312,9 +338,9 @@ def get_stats(config=None):
     dsb_cfg = config.get("plugins", {}).get("DASHBOARD", {}) if config else {}
     col_tel = dsb_cfg.get("console_telemetry_enabled", True)
     
-    track_cpu = dsb_cfg.get("track_cpu", False)
-    track_ram = dsb_cfg.get("track_ram", False)
-    track_vram = dsb_cfg.get("track_vram", False)
+    track_cpu = dsb_cfg.get("console_telemetry_cpu", False)
+    track_ram = dsb_cfg.get("console_telemetry_ram", False)
+    track_vram = dsb_cfg.get("console_telemetry_vram", False)
     
     cpu = 0.0
     ram = 0.0

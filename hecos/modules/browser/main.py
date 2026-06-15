@@ -302,6 +302,7 @@ class BrowserTools:
         return "[BROWSER] Failed to close active tab."
 
     @bypass_playwright_async_check
+    def screenshot(self) -> str:
         """
         Takes a screenshot of the current browser viewport.
         The image is saved to hecos/media/Hecos_screenshots and the path is returned for vision analysis.

@@ -140,7 +140,7 @@ async function listsExportSave() {
         });
         const data = await res.json();
         if (data.ok) {
-            listsHubShowStatus(`✅ Salvata in: <code>${data.path}</code>`, 'success');
+            listsHubShowStatus(`✅ {{ t('lists_hub_saved_in') or 'Saved in:' }} <code>${data.path}</code>`, 'success');
         } else {
             listsHubShowStatus(`⚠️ Errore: ${data.error}`, 'error');
         }
@@ -196,7 +196,7 @@ async function listsHubLoadArchived() {
         const data = await res.json();
         const archived = (data.lists || []).filter(l => l.archived);
         if (archived.length === 0) {
-            container.innerHTML = '<div class="lhub-empty-note">Nessuna lista archiviata.</div>';
+            container.innerHTML = '<div class="lhub-empty-note">{{ t("lists_hub_no_archived") or "No archived lists." }}</div>';
             return;
         }
         container.innerHTML = archived.map(l => `

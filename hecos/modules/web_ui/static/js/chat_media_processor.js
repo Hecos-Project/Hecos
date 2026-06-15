@@ -48,16 +48,58 @@ window.processAiMedia = function(html) {
       return;
     }
 
-    // Is it a local video?
-    if (/\.(mp4|webm|ogg|mov|avi)$/i.test(href)) {
+    // Is it a video file?
+    const NATIVE_VIDEO_EXTS = /\.(mp4|webm|ogg|mov)$/i;
+    const ALL_VIDEO_EXTS    = /\.(mp4|webm|ogg|mov|avi|mkv|m4v|ts|flv|3gp|wmv|mpeg|mpg)$/i;
+    if (ALL_VIDEO_EXTS.test(href)) {
       const src = isLocalLink(href) ? getSafeLocalUrl(href) : href;
-      const video = document.createElement('video');
-      video.controls = true;
-      video.src = src;
-      video.style.maxWidth = '100%';
-      video.style.borderRadius = '8px';
-      video.style.marginTop = '10px';
-      a.replaceWith(video);
+      const fileName = href.split(/[\\/]/).pop() || 'Video';
+      const isNative = NATIVE_VIDEO_EXTS.test(href);
+
+      if (isNative) {
+        // Browser can play natively
+        const video = document.createElement('video');
+        video.controls = true;
+        video.src = src;
+        video.style.maxWidth = '100%';
+        video.style.borderRadius = '8px';
+        video.style.marginTop = '10px';
+        a.replaceWith(video);
+      } else {
+        // Format not natively supported (e.g. MKV, AVI, WMV...)
+        // Show a rich card with play-in-external-player option
+        const card = document.createElement('div');
+        card.className = 'chat-video-card';
+        const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
+        const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
+        
+        // Ensure we pass the original raw path if possible, or the src
+        const rawPath = href.startsWith('file://') ? href.replace(/^file:\/\/\/?/, '') : href;
+        const safeRawPath = rawPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+        card.innerHTML = `
+          <div class="chat-video-card-header">
+            <span class="chat-video-card-icon">${extIcon}</span>
+            <div class="chat-video-card-info">
+              <div class="chat-video-card-name" title="${fileName}">${fileName}</div>
+              <div class="chat-video-card-meta">${extName} — Non riproducibile nel browser</div>
+            </div>
+          </div>
+          <div class="chat-video-card-actions">
+            <button onclick="window.openInVlc('${safeRawPath}')" class="chat-video-btn chat-video-btn-open">
+              <i class="fas fa-play"></i> Apri con VLC
+            </button>
+            <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
+              <i class="fas fa-download"></i> Scarica
+            </a>
+          </div>
+          <div class="chat-video-card-hint">
+            <i class="fas fa-info-circle"></i>
+            Il formato <strong>${extName}</strong> non è supportato nativamente dal browser.
+          </div>
+        `;
+        a.replaceWith(card);
+      }
       return;
     }
 
@@ -120,4 +162,38 @@ window.processAiMedia = function(html) {
   }
 
   return finalHtml;
+};
+
+window.openInVlc = function(filePath) {
+  // Mostra un feedback all'utente
+  if (window.HecosUI && window.HecosUI.showToast) {
+    window.HecosUI.showToast("Avvio VLC in corso...", "info");
+  }
+
+  fetch('/api/open_in_vlc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: decodeURIComponent(filePath) })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (!data.ok) {
+      console.error("[VLC] Errore:", data.error);
+      if (window.HecosUI && window.HecosUI.showToast) {
+        window.HecosUI.showToast("Impossibile avviare il video con VLC.", "error");
+      } else {
+        alert("Errore avvio video: " + data.error);
+      }
+    } else if (data.message) {
+      if (window.HecosUI && window.HecosUI.showToast) {
+        window.HecosUI.showToast(data.message, "success");
+      }
+    }
+  })
+  .catch(err => {
+    console.error("[VLC] Network error:", err);
+    if (window.HecosUI && window.HecosUI.showToast) {
+      window.HecosUI.showToast("Errore di rete durante l'avvio del video.", "error");
+    }
+  });
 };
