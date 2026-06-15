@@ -27,8 +27,8 @@
   --c-var-glow:      #22c55e;
 
   /* Execution states */
-  --state-running:   #06b6d4;
-  --state-done:      #22c55e;
+  --state-running:   #22c55e;
+  --state-done:      #6b7280;
   --state-error:     #ef4444;
 }
 
@@ -130,20 +130,20 @@
 /* ── Execution state overlays ────────────────────────────────────────────── */
 .hc-node.state-running {
   border-color: var(--state-running) !important;
-  box-shadow: 0 0 16px rgba(6,182,212,0.35), var(--node-shadow) !important;
+  box-shadow: 0 0 16px rgba(34,197,94,0.35), var(--node-shadow) !important;
   animation: hc-pulse 1s ease-in-out infinite alternate;
 }
 .hc-node.state-done {
   border-color: var(--state-done) !important;
-  box-shadow: 0 0 12px rgba(34,197,94,0.25), var(--node-shadow) !important;
+  box-shadow: 0 0 12px rgba(107,114,128,0.25), var(--node-shadow) !important;
 }
 .hc-node.state-error {
   border-color: var(--state-error) !important;
   box-shadow: 0 0 14px rgba(239,68,68,0.35), var(--node-shadow) !important;
 }
 @keyframes hc-pulse {
-  from { box-shadow: 0 0 10px rgba(6,182,212,0.2), var(--node-shadow); }
-  to   { box-shadow: 0 0 24px rgba(6,182,212,0.55), var(--node-shadow); }
+  from { box-shadow: 0 0 10px rgba(34,197,94,0.2), var(--node-shadow); }
+  to   { box-shadow: 0 0 24px rgba(34,197,94,0.55), var(--node-shadow); }
 }
 
 /* ── Handles ─────────────────────────────────────────────────────────────── */

@@ -168,6 +168,15 @@ def _bootstrap_builtin_actions():
             "icon": "🌐",
         },
         {
+            "name": "LOGIC__abort",
+            "description": "Immediately aborts the current flow execution.",
+            "params": {
+                "reason": "string (optional reason to log)"
+            },
+            "category": "LOGIC",
+            "icon": "🛑",
+        },
+        {
             "name": "TRIGGER__cron",
             "description": "Schedules the flow using a cron expression (e.g. '0 7 * * *' = daily at 07:00).",
             "params": {"expression": "string (cron expression)"},
@@ -409,7 +418,9 @@ def _setup_ai_wrappers():
             )
 
             log.info(f"[Flows.AI] Sending prompt to AI: {prompt[:80]}...")
+            
             full_text, _voice = agent.run_agentic_loop(prompt, voice_status=False)
+                
             log.info(f"[Flows.AI] AI response received ({len(full_text)} chars).")
 
             # Optionally persist the exchange to chat history so user can review it
@@ -423,6 +434,8 @@ def _setup_ai_wrappers():
 
             return full_text
 
+        except TimeoutError:
+            raise
         except Exception as e:
             log.error(f"[Flows.AI] Error calling AgentExecutor: {e}")
             return f"[AI__prompt error: {e}]"
@@ -435,8 +448,10 @@ def _setup_ai_wrappers():
             "a variable for subsequent nodes."
         ),
         "params": {
-            "prompt":       "string — the question or instruction to send to the AI",
-            "save_to_chat": "bool (optional, default true) — whether to write the prompt+response to the chat history",
+            "prompt":              "string — the question or instruction to send to the AI",
+            "save_to_chat":        "bool (optional, default true) — whether to write the prompt+response to the chat history",
+            "timeout_seconds":     "integer (optional) — max time to wait before aborting the flow. 0 = infinite.",
+            "on_timeout_continue": "bool (optional, default false) — if true, proceeds returning '[AI Timeout]' instead of stopping the flow",
         },
         "category": "AI",
         "icon": "🧠",
@@ -527,6 +542,16 @@ def get_catalog() -> List[Dict[str, Any]]:
     for action in _REGISTRY.values():
         cat = action["category"]
         entry = {k: v for k, v in action.items() if k != "fn"}
+        
+        # Automatically inject execution-level parameters for non-trigger actions
+        if cat != "TRIGGER":
+            params_copy = dict(entry.get("params", {}))
+            if "timeout_seconds" not in params_copy:
+                params_copy["timeout_seconds"] = "integer (0 to disable)"
+            if "on_timeout_continue" not in params_copy:
+                params_copy["on_timeout_continue"] = "boolean (skip error and continue)"
+            entry["params"] = params_copy
+            
         catalog.setdefault(cat, []).append(entry)
     return catalog
 

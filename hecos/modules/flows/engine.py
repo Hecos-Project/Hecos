@@ -323,6 +323,12 @@ def _handle_http_request(step: Dict, context: Dict, **_) -> Any:
         raise RuntimeError(f"HTTP {e.code} {e.reason} for {url}")
 
 
+def _handle_abort(step: Dict, context: Dict, **_) -> None:
+    reason = _render(step["params"].get("reason", "Aborted by LOGIC__abort node"), context)
+    log.info(f"[Flows.Engine] 🛑 LOGIC__abort executed: {reason}")
+    raise FlowAbortException(reason)
+
+
 # ── Logic dispatch table ───────────────────────────────────────────────────────
 
 _LOGIC_HANDLERS = {
@@ -335,6 +341,7 @@ _LOGIC_HANDLERS = {
     "LOGIC__and_gate":    _handle_and_gate,
     "LOGIC__or_gate":     _handle_or_gate,
     "LOGIC__http_request":_handle_http_request,
+    "LOGIC__abort":       _handle_abort,
 }
 
 
@@ -370,17 +377,44 @@ def _execute_step(
         return None
 
     try:
-        # Native logic handlers
-        if action in _LOGIC_HANDLERS:
-            handler = _LOGIC_HANDLERS[action]
-            sig_args = handler.__code__.co_varnames[:handler.__code__.co_argcount]
-            kwargs = {"step": step, "context": context}
-            if "run_id" in sig_args: kwargs["run_id"] = run_id
-            if "emit"   in sig_args: kwargs["emit"]   = emit
-            result = handler(**kwargs)
+        # Extract timeout configuration
+        raw_params = step.get("params", {})
+        timeout_val = params.get("timeout_seconds", raw_params.get("timeout_seconds", 0))
+        timeout_seconds = int(timeout_val) if str(timeout_val).isdigit() else 0
+        
+        on_timeout_cont = params.get("on_timeout_continue", raw_params.get("on_timeout_continue", False))
+        on_timeout_continue = str(on_timeout_cont).lower() in ["true", "1", "yes"]
+
+        def _run_action():
+            # Native logic handlers
+            if action in _LOGIC_HANDLERS:
+                handler = _LOGIC_HANDLERS[action]
+                sig_args = handler.__code__.co_varnames[:handler.__code__.co_argcount]
+                kwargs = {"step": step, "context": context}
+                if "run_id" in sig_args: kwargs["run_id"] = run_id
+                if "emit"   in sig_args: kwargs["emit"]   = emit
+                return handler(**kwargs)
+            else:
+                from .registry import execute_action
+                # Strip execution-level parameters before passing to the registry
+                clean_params = {k: v for k, v in params.items() if k not in ["timeout_seconds", "on_timeout_continue"]}
+                return execute_action(action, clean_params, context)
+
+        if timeout_seconds > 0:
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(_run_action)
+                try:
+                    result = future.result(timeout=timeout_seconds)
+                except concurrent.futures.TimeoutError:
+                    log.warning(f"[Flows.Engine] Step '{step['id']}' timed out after {timeout_seconds}s.")
+                    if on_timeout_continue:
+                        log.info(f"[Flows.Engine] on_timeout_continue is True. Proceeding gracefully.")
+                        result = "[Timeout]"
+                    else:
+                        raise TimeoutError(f"Step '{step['id']}' timed out after {timeout_seconds} seconds.")
         else:
-            from .registry import execute_action
-            result = execute_action(action, params, context)
+            result = _run_action()
 
         if output_as and result is not None:
             context[output_as] = result

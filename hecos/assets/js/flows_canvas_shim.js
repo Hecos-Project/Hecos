@@ -72,17 +72,17 @@ function syncCanvasToYaml() {
   });
 }
 
-function setNodeState(stepId, state) {
+window.setNodeState = function(stepId, state) {
   _withBridge(b => b.setNodeState(stepId, state));
-}
+};
 
-function resetNodeStates() {
+window.resetNodeStates = function() {
   _withBridge(b => b.resetNodeStates());
-}
+};
 
-function deleteSelectedNodes() {
+window.deleteSelectedNodes = function() {
   _withBridge(b => b.deleteSelectedNodes());
-}
+};
 
 // ── Wire YAML editor → canvas sync ───────────────────────────────────────────
 // Called once the React bundle is ready; wires up onGraphChange
