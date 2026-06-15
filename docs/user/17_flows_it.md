@@ -87,15 +87,321 @@ Di seguito l'elenco dei 15 blocchi fondamentali di Hecos Flows:
 
 ### 🛠️ Categoria LOGIC
 Registi e vigili del traffico: servono per ritardare, sdoppiare, unire e valutare le decisioni all'interno del flusso.
-1. **LOGIC__delay**: Mette in pausa l'esecuzione del flusso. _[Parametri: `seconds` (numero)]_
-2. **LOGIC__set_variable**: Assegna un valore esplicito a una nuova variabile nel flusso. _[Parametri: `name`, `value`]_
-3. **LOGIC__if_else**: Valuta un'espressione matematica/logica e biforca il flusso. _[Parametri: `condition`, `true_branch`, `false_branch`]_
-4. **LOGIC__switch**: Esegue comandi diversi in base a una specifica condizione. _[Parametri: `expression`, `branches`, `default`]_
-5. **LOGIC__loop**: Passa in rassegna ed elabora un un elenco ripetutamente. _[Parametri: `over`, `as_var`, `body`]_
-6. **LOGIC__template**: Genera o modifica un testo Jinja2 interpolando le variabili. _[Parametri: `template`, `output_as`]_
-7. **LOGIC__and_gate**: Porta a termine il flusso *SOLO SE* svariate condizioni sono tutte contemporaneamente vere. _[Parametri: `conditions`, `on_success`, `on_fail`]_
-8. **LOGIC__or_gate**: Esegue se *ALMENO UNA* condizione è vera. _[Parametri: `conditions`, `on_success`, `on_fail`]_
-9. **LOGIC__http_request**: Chiama le API o i servizi su internet e converte e salva la risposta in una variabile per te. _[Parametri: `method`, `url`, `headers`, `body`, `output_as`]_
+
+---
+
+#### 1. `LOGIC__delay` — Pausa cronometrata
+Mette in pausa l'esecuzione del flusso per un numero preciso di secondi prima di passare al nodo successivo.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `seconds` | numero | Secondi di attesa (es. `5`, `30`, `120`) |
+
+```yaml
+- id: pausa_5_secondi
+  action: LOGIC__delay
+  params:
+    seconds: 5
+```
+
+---
+
+#### 2. `LOGIC__set_variable` — Imposta una variabile
+Crea o sovrascrive una variabile nel contesto del flusso con un valore statico o dinamico (Jinja2). A differenza di `output_as`, questa variabile è disponibile per **tutti** i nodi successivi senza dipendenze esplicite.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `name` | stringa | Nome della variabile da creare (es. `nome_utente`) |
+| `value` | qualsiasi | Valore da assegnare. Può contenere `{{ variabili }}` |
+
+```yaml
+- id: imposta_soglia
+  action: LOGIC__set_variable
+  params:
+    name: soglia_temperatura
+    value: 25
+
+- id: saluto_personalizzato
+  action: LOGIC__set_variable
+  params:
+    name: messaggio
+    value: "Buongiorno {{ nome_utente }}, la soglia è {{ soglia_temperatura }}°C"
+```
+
+---
+
+#### 3. `LOGIC__if_else` — Bivio condizionale _(il più usato!)_
+Valuta un'espressione logica/matematica Jinja2 e **esegue uno solo** dei due rami: `true_branch` se la condizione è vera, `false_branch` se è falsa.
+
+> [!IMPORTANT]
+> **Perché il nodo esegue entrambi i rami?** Se lasci `condition` vuoto o non lo compili, il motore usa `false` come valore predefinito e sceglie sempre il ramo `false_branch`. Se lasci vuoto sia `true_branch` che `false_branch`, non succede nulla. Assicurati di compilare tutti e tre i campi!
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `condition` | stringa Jinja2 | L'espressione da valutare. **Deve restituire vero o falso.** Usa `{{ variabile }}` per i dati dinamici. |
+| `true_branch` | dict | Il nodo da eseguire se la condizione è **vera**. Contiene `action` e `params`. |
+| `false_branch` | dict | Il nodo da eseguire se la condizione è **falsa**. Contiene `action` e `params`. |
+
+**Esempi di condizioni valide:**
+```yaml
+# Confronto numerico
+condition: "{{ temperatura | int }} > 30"
+
+# Confronto di stringhe
+condition: "{{ stato }} == 'attivo'"
+
+# Valore booleano diretto da API
+condition: "{{ sensore.rilevato == true }}"
+
+# Confronto dell'ora (notazione a punto per dizionari)
+condition: "{{ orario.ora | int }} > 12"
+```
+
+**Esempio completo — Termostato intelligente:**
+```yaml
+- id: controlla_temperatura
+  action: LOGIC__if_else
+  params:
+    condition: "{{ temp_attuale | int }} > 28"
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: "Fa caldo! La temperatura è {{ temp_attuale }} gradi. Accendo il condizionatore."
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Temperatura nella norma: {{ temp_attuale }}°C."
+  depends_on:
+    - leggi_sensore
+```
+
+**Esempio con più azioni in un ramo (lista):**
+```yaml
+- id: check_allarme
+  action: LOGIC__if_else
+  params:
+    condition: "{{ movimento_rilevato == true }}"
+    true_branch:
+      - action: AUDIO__speak
+        params:
+          text: "Attenzione! Movimento rilevato!"
+      - action: AUDIO__play_alarm
+        params:
+          sound: alarm_urgent
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Nessun movimento. Casa al sicuro."
+```
+
+---
+
+#### 4. `LOGIC__switch` — Selettore multiplo
+Routing avanzato: valuta un'espressione e la usa come **chiave** per scegliere quale azione eseguire tra più possibilità. È come un if/else con tanti rami.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `expression` | stringa Jinja2 | L'espressione il cui risultato (stringa) viene usato come chiave di ricerca |
+| `branches` | dict | Mappa `chiave: azione` — ogni chiave corrisponde a un possibile valore dell'espressione |
+| `default` | dict | Azione di fallback se nessuna chiave corrisponde (opzionale) |
+
+```yaml
+- id: scegli_saluto
+  action: LOGIC__switch
+  params:
+    expression: "{{ momento_giornata }}"
+    branches:
+      mattina:
+        action: AUDIO__speak
+        params:
+          text: "Buongiorno! Pronti per una giornata produttiva?"
+      pomeriggio:
+        action: AUDIO__speak
+        params:
+          text: "Buon pomeriggio! Come procede il lavoro?"
+      sera:
+        action: AUDIO__speak
+        params:
+          text: "Buonasera! Ora puoi rilassarti."
+    default:
+      action: AUDIO__speak
+      params:
+        text: "Ciao! Non so che ora sia, ma sono qui per te."
+```
+
+---
+
+#### 5. `LOGIC__loop` — Ciclo su lista
+Itera su ogni elemento di una lista (salvata in una variabile) ed esegue un'azione per ciascuno.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `over` | stringa | Il nome della variabile che contiene la lista (es. `destinatari`) |
+| `as_var` | stringa | Il nome della variabile temporanea per l'elemento corrente (es. `email`) |
+| `body` | dict | L'azione da eseguire per ogni elemento. Puoi usare `{{ as_var }}` nei params. |
+
+```yaml
+# Esempio: manda un messaggio vocale a ogni membro della lista
+- id: init_lista
+  action: LOGIC__set_variable
+  params:
+    name: stanze
+    value:
+      - cucina
+      - salotto
+      - camera
+
+- id: annuncia_in_ogni_stanza
+  action: LOGIC__loop
+  params:
+    over: stanze
+    as_var: stanza
+    body:
+      action: SYSTEM__chat_message
+      params:
+        text: "Controllo completato per: {{ stanza }}"
+  depends_on:
+    - init_lista
+```
+
+---
+
+#### 6. `LOGIC__template` — Costruttore di testo Jinja2
+Rende (interpola) un template Jinja2 combinando variabili e lo salva come nuova variabile. Perfetto per comporre messaggi complessi prima di inviarli.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `template` | stringa Jinja2 | Il testo con le variabili da sostituire (usa `{{ variabile }}`) |
+| `output_as` | stringa | Nome della variabile in cui salvare il risultato finale |
+
+```yaml
+- id: componi_report
+  action: LOGIC__template
+  params:
+    template: |
+      Report del {{ data_oggi }}
+      Temperatura: {{ temp }}°C
+      Stato: {{ 'OK' if temp|int < 30 else 'CRITICO' }}
+    output_as: testo_report
+  depends_on:
+    - leggi_dati
+
+- id: invia_report
+  action: MAIL__send
+  params:
+    to: admin@casa.it
+    subject: Report giornaliero
+    body: "{{ testo_report }}"
+  depends_on:
+    - componi_report
+```
+
+---
+
+#### 7. `LOGIC__and_gate` — Porta AND (tutte le condizioni)
+Esegue `on_success` **solo se TUTTE** le condizioni nella lista sono vere. Se anche solo una è falsa, esegue `on_fail`.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `conditions` | lista di stringhe | Lista di espressioni Jinja2 da valutare. Tutte devono essere vere. |
+| `on_success` | dict | Azione da eseguire se **tutte** le condizioni passano |
+| `on_fail` | dict | Azione da eseguire se **almeno una** condizione fallisce (opzionale) |
+
+```yaml
+- id: verifica_sicurezza
+  action: LOGIC__and_gate
+  params:
+    conditions:
+      - "{{ serratura.chiusa == true }}"
+      - "{{ allarme.attivo == true }}"
+      - "{{ temperatura.celsius | int }} < 40"
+    on_success:
+      action: SYSTEM__chat_message
+      params:
+        text: "✅ Casa sicura: serratura chiusa, allarme attivo, temperatura OK."
+    on_fail:
+      action: AUDIO__speak
+      params:
+        text: "Attenzione! Almeno una condizione di sicurezza non è soddisfatta!"
+  depends_on:
+    - check_lock
+    - check_alarm
+    - check_temp
+```
+
+---
+
+#### 8. `LOGIC__or_gate` — Porta OR (almeno una condizione)
+Esegue `on_success` se **ALMENO UNA** delle condizioni è vera. Esegue `on_fail` solo se **nessuna** condizione è vera.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `conditions` | lista di stringhe | Lista di espressioni Jinja2. Basta che una sia vera. |
+| `on_success` | dict | Azione se almeno una condizione è vera |
+| `on_fail` | dict | Azione se nessuna condizione è vera (opzionale) |
+
+```yaml
+- id: notifica_se_anomalia
+  action: LOGIC__or_gate
+  params:
+    conditions:
+      - "{{ cpu_usage | int }} > 90"
+      - "{{ ram_usage | int }} > 85"
+      - "{{ disco_pieno == true }}"
+    on_success:
+      action: AUDIO__speak
+      params:
+        text: "Attenzione: il sistema sta esaurendo le risorse! Controlla subito."
+    on_fail:
+      action: SYSTEM__chat_message
+      params:
+        text: "Sistema in salute. Nessuna anomalia rilevata."
+```
+
+---
+
+#### 9. `LOGIC__http_request` — Chiamata API/Web
+Esegue una richiesta HTTP verso qualsiasi URL e salva la risposta JSON (o testo) in una variabile. È il nodo con cui colleghi Hecos al mondo esterno.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `method` | stringa | Metodo HTTP: `GET`, `POST`, `PUT`, `DELETE` |
+| `url` | stringa | URL di destinazione. Supporta Jinja2 (es. `https://api.esempio.it/{{ id }}`) |
+| `headers` | dict | Headers opzionali (es. `Authorization: Bearer TOKEN`) |
+| `body` | dict o stringa | Corpo della richiesta per POST/PUT (opzionale) |
+| `output_as` | stringa | Nome variabile in cui salvare la risposta JSON parsata |
+
+```yaml
+# GET semplice — meteo attuale
+- id: scarica_meteo
+  action: LOGIC__http_request
+  params:
+    method: GET
+    url: "https://api.open-meteo.com/v1/forecast?latitude=41.9&longitude=12.5&current_weather=true"
+    output_as: dati_meteo
+
+# Leggi il risultato nel nodo successivo
+- id: annuncia_meteo
+  action: AUDIO__speak
+  params:
+    text: "La temperatura attuale a Roma è {{ dati_meteo.current_weather.temperature }} gradi."
+  depends_on:
+    - scarica_meteo
+
+# POST con autenticazione — notifica webhook
+- id: notifica_webhook
+  action: LOGIC__http_request
+  params:
+    method: POST
+    url: "https://hooks.esempio.it/notify"
+    headers:
+      Authorization: "Bearer il-mio-token-segreto"
+      Content-Type: "application/json"
+    body:
+      evento: "flow_completato"
+      messaggio: "{{ risultato }}"
+    output_as: risposta_webhook
+```
 
 ### ⏰ Categoria TRIGGER
 Indicano il modo in cui questa automazione "prenderà vita" (anche se questi campi modificano la root del flusso e non semplici blocchi standard).
