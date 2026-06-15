@@ -83,9 +83,11 @@ export default function FlowsApp() {
   }, [onEdgesChange]);
 
   // ── Sync positions ONCE when drag ends (single event, not per-frame) ──────
-  const onNodeDragStop = useCallback((_event, _node, updatedNodes) => {
-    // updatedNodes is the full node list with final positions from ReactFlow
-    notifyChange(updatedNodes, undefined);
+  const onNodeDragStop = useCallback((_event, _node, _draggedNodes) => {
+    // _draggedNodes contains ONLY the dragged nodes, not all nodes!
+    // Since useNodesState already updates nodes on every drag frame, 
+    // nodesRef.current will have the updated positions.
+    notifyChange(undefined, undefined);
   }, [notifyChange]);
 
   // ── Edge connection ───────────────────────────────────────────────────────
