@@ -29,6 +29,26 @@
   </div>
 
   <div class="card">
+    <div class="card-title">Console Telemetry</div>
+    <div class="toggle-row">
+      <div class="toggle-info">Show Console Telemetry UI</div>
+      <label class="switch"><input type="checkbox" id="sys-console-telemetry"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row" style="margin-top:15px;">
+      <div class="toggle-info">Track CPU Usage</div>
+      <label class="switch"><input type="checkbox" id="sys-track-cpu"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row" style="margin-top:15px;">
+      <div class="toggle-info">Track RAM Usage</div>
+      <label class="switch"><input type="checkbox" id="sys-track-ram"><span class="slider"></span></label>
+    </div>
+    <div class="toggle-row" style="margin-top:15px;">
+      <div class="toggle-info">Track GPU/VRAM Usage</div>
+      <label class="switch"><input type="checkbox" id="sys-track-vram"><span class="slider"></span></label>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title">{{ t('webui_conf_sys_card_webui') }}</div>
     <div class="toggle-row">
       <div class="toggle-info">Enable Error Beeps (Audio Alerts)</div>

@@ -202,17 +202,6 @@ function buildPluginsPayload(out) {
         if (out.plugins[tag]) out.plugins[tag].lazy_load = cb.checked;
     });
 
-    // Dashboard specialized toggles
-    if (document.getElementById('dashboard-webui-enabled')) {
-        out.plugins['DASHBOARD'] = out.plugins['DASHBOARD'] || {};
-        out.plugins['DASHBOARD'].webui_dashboard_enabled    = getC('dashboard-webui-enabled');
-        out.plugins['DASHBOARD'].webui_telemetry_enabled    = getC('telemetry-webui-enabled');
-        out.plugins['DASHBOARD'].track_cpu                  = getC('track-cpu-enabled');
-        out.plugins['DASHBOARD'].track_ram                  = getC('track-ram-enabled');
-        out.plugins['DASHBOARD'].track_vram                 = getC('track-vram-enabled');
-        out.plugins['DASHBOARD'].console_dashboard_enabled  = getC('dashboard-console-enabled');
-        out.plugins['DASHBOARD'].console_telemetry_enabled  = getC('telemetry-console-enabled');
-    }
 }
 
 window.renderPlugins            = renderPlugins;
