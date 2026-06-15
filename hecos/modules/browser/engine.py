@@ -168,18 +168,37 @@ def close():
         _PW_INSTANCE = None
 
 
+def _is_page_usable(p) -> bool:
+    """Return True if p is a live, navigable Playwright page (not closed, not detached)."""
+    try:
+        if p.is_closed():
+            return False
+        # Accessing .url will throw if the frame is detached
+        _ = p.url
+        return True
+    except Exception:
+        return False
+
+
 def get_page():
     """Return the current active Playwright Page object. Launches if not running."""
     global _PAGE
-    if _PAGE is None or _PAGE.is_closed():
-        # Try to find a good page from existing CDP contexts before launching
+    # Re-validate _PAGE even if it's not None — CDP frames can detach silently
+    if _PAGE is not None and not _is_page_usable(_PAGE):
+        logger.debug("[BROWSER] get_page: cached _PAGE is detached/closed — will search for a new one.")
+        _PAGE = None
+
+    if _PAGE is None:
+        # Try to find a good page from existing CDP contexts
         if _BROWSER and _BROWSER.is_connected():
             best = None
             for ctx in _BROWSER.contexts:
                 for p in ctx.pages:
+                    if not _is_page_usable(p):
+                        continue
                     try:
                         u = p.url or ""
-                        # Skip browser-internal and Hecos UI pages
+                        # Skip browser-internal and Hecos config pages
                         if u.startswith("chrome://") or "localhost:7070" in u or not u:
                             continue
                         best = p
@@ -187,16 +206,14 @@ def get_page():
                         continue
             if best:
                 _PAGE = best
+                logger.debug(f"[BROWSER] get_page: selected page → {_PAGE.url}")
                 return _PAGE
-            # fallback: any non-closed page
+            # Fallback: any usable page (even chrome://)
             for ctx in _BROWSER.contexts:
                 for p in ctx.pages:
-                    try:
-                        if not p.is_closed():
-                            _PAGE = p
-                            return _PAGE
-                    except Exception:
-                        continue
+                    if _is_page_usable(p):
+                        _PAGE = p
+                        return _PAGE
         # Nothing usable — launch fresh
         if not launch():
             return None

@@ -36,8 +36,20 @@ def navigate(url: str) -> str:
                 except Exception:
                     return f"[BROWSER] Opened new tab to: {url}"
             return f"[BROWSER] Failed to open new tab to: {url}"
-            
-        page.goto(url, wait_until="domcontentloaded")
+
+        try:
+            page.goto(url, wait_until="domcontentloaded")
+        except Exception as goto_err:
+            err_str = str(goto_err).lower()
+            # If the frame is detached/closed, open a fresh tab and retry
+            if "detached" in err_str or "closed" in err_str or "target" in err_str:
+                logger.warning(f"[BROWSER] navigate: page stale ({goto_err}), retrying in a new tab.")
+                page = engine.new_tab(url)
+                if page is None:
+                    return f"[BROWSER] Navigation error: page was stale and could not open new tab."
+            else:
+                return f"[BROWSER] Navigation error: {goto_err}"
+
         try:
             page.bring_to_front()
         except Exception:
