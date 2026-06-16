@@ -106,6 +106,13 @@ def _bootstrap_builtin_actions():
             "icon": "🔁",
         },
         {
+            "name": "CONTROL__start",
+            "description": "Explicit entry point for the flow. Flows containing this node will only execute nodes connected to it.",
+            "params": {"priority": "integer"},
+            "category": "LOGIC",
+            "icon": "▶️",
+        },
+        {
             "name": "LOGIC__delay",
             "description": "Waits for the specified number of seconds before proceeding.",
             "params": {"seconds": "number"},
@@ -215,6 +222,51 @@ def _bootstrap_builtin_actions():
 
 _bootstrap_builtin_actions()
 
+
+def _flows_run_flow(flow_id: str, wait: bool = True, pass_context: bool = True, **kwargs):
+    try:
+        from hecos.modules.flows.storage import get_flow
+        from hecos.modules.flows.engine import run_flow, is_run_aborted
+        import time
+        import uuid
+
+        target_flow = get_flow(flow_id)
+        if not target_flow:
+            log.error(f"FLOWS__run_flow: Flow '{flow_id}' not found.")
+            return False
+
+        if pass_context:
+            target_flow["variables"] = {**(target_flow.get("variables") or {}), **kwargs}
+
+        sub_run_id = f"sub_{uuid.uuid4().hex[:8]}"
+
+        if wait:
+            # Run synchronously
+            run_flow(target_flow, run_id=sub_run_id)
+            return True
+        else:
+            # Run asynchronously in a daemon thread
+            import threading
+            t = threading.Thread(target=run_flow, args=(target_flow, sub_run_id), daemon=True)
+            t.start()
+            return True
+
+    except Exception as e:
+        log.error(f"Cannot run flow {flow_id}: {e}")
+        return False
+
+_REGISTRY["FLOWS__run_flow"] = {
+    "name": "FLOWS__run_flow",
+    "description": "Executes another flow as a sub-flow.",
+    "params": {
+        "flow_id": "string",
+        "wait": "boolean",
+        "pass_context": "boolean",
+    },
+    "category": "FLOWS",
+    "icon": "🔄",
+    "fn": _flows_run_flow,
+}
 
 def _setup_audio_wrappers():
     def _audio_speak(text: str = "", **kwargs):

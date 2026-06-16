@@ -156,7 +156,10 @@ async function selectFlow(flowId) {
 
     // Populate toolbar
     const tlInput = document.getElementById('flow-title');
-    if (tlInput) tlInput.value = d.flow.name || flowId;
+    if (tlInput) {
+      tlInput.value = d.flow.name || flowId;
+      tlInput.title = `ID: ${flowId}`;
+    }
 
     ['btn-run','btn-save','btn-delete','btn-palette','btn-export'].forEach(id => {
       const btn = document.getElementById(id);
@@ -484,7 +487,11 @@ function importFlowFromFile(inputEl) {
 
     // Update toolbar
     const tlInput = document.getElementById('flow-title');
-    if (tlInput) { tlInput.value = flowName; tlInput.disabled = false; }
+    if (tlInput) { 
+      tlInput.value = flowName; 
+      tlInput.disabled = false; 
+      tlInput.title = `ID: ${flowId}`;
+    }
     ['btn-save','btn-export'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn) btn.disabled = false;
@@ -530,7 +537,14 @@ function importFlowFromFile(inputEl) {
 
 function newEmptyCanvas() {
   currentFlowId = 'new_flow_' + Date.now().toString(36);
-  currentFlowData = { name: 'New Flow', trigger: { type: 'manual' }, pipeline: [] };
+  const startNode = {
+    id: 'start_1',
+    action: 'CONTROL__start',
+    params: { priority: 0 },
+    disable_mode: 'stop',
+    position: { x: 200, y: 150 }
+  };
+  currentFlowData = { name: 'New Flow', trigger: { type: 'manual' }, pipeline: [startNode] };
   
   const tlInput = document.getElementById('flow-title');
   if (tlInput) {
@@ -539,7 +553,7 @@ function newEmptyCanvas() {
   }
   
   if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(currentFlowData);
-  if (cmEditor) cmEditor.setValue(`id: ${currentFlowId}\nname: New Flow\ntrigger:\n  type: manual\npipeline: []`);
+  if (cmEditor) cmEditor.setValue(`id: ${currentFlowId}\nname: New Flow\ntrigger:\n  type: manual\npipeline:\n  - id: start_1\n    action: CONTROL__start\n    params:\n      priority: 0\n    disable_mode: stop\n    position:\n      x: 200\n      y: 150`);
   
   // Add a temporary unsaved entry to the sidebar so the new flow is visible
   document.querySelectorAll('.flow-item').forEach(el => el.classList.remove('active'));

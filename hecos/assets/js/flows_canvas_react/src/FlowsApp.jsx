@@ -542,7 +542,7 @@ export default function FlowsApp() {
         />
 
         {nodes.length === 0 && (
-          <Panel position="center" style={{ pointerEvents: 'none', minWidth: '300px' }}>
+          <Panel position="center" style={{ pointerEvents: 'none', minWidth: '300px', marginTop: '60px' }}>
             <div className="rf-empty-hint">
               <i className="fas fa-project-diagram" />
               <p>Select a flow from the sidebar<br />or drag a node from the Palette to start</p>

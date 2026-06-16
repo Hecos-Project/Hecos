@@ -338,17 +338,22 @@ def _handle_abort(step: Dict, context: Dict, **_) -> None:
 
 # ── Logic dispatch table ───────────────────────────────────────────────────────
 
+def _handle_start(step: Dict, context: Dict, **_) -> Any:
+    # Just a pass-through entry point
+    return True
+
 _LOGIC_HANDLERS = {
-    "LOGIC__if_else":     _handle_if_else,
-    "LOGIC__switch":      _handle_switch,
-    "LOGIC__loop":        _handle_loop,
     "LOGIC__delay":       _handle_delay,
     "LOGIC__set_variable":_handle_set_variable,
     "LOGIC__template":    _handle_template,
+    "LOGIC__if_else":     _handle_if_else,
+    "LOGIC__switch":      _handle_switch,
+    "LOGIC__loop":        _handle_loop,
     "LOGIC__and_gate":    _handle_and_gate,
     "LOGIC__or_gate":     _handle_or_gate,
     "LOGIC__http_request":_handle_http_request,
     "LOGIC__abort":       _handle_abort,
+    "CONTROL__start":     _handle_start,
 }
 
 
@@ -373,15 +378,27 @@ def _execute_step(
     })
 
     if step.get("disabled", False):
-        log.info(f"[Flows.Engine] ⏭️ Step '{step['id']}' bypassed (disabled).")
-        emit(run_id, {
-            "type":   "step_skip",
-            "run_id": run_id,
-            "step_id": step["id"],
-            "action": action,
-            "ts":     datetime.datetime.now().isoformat(),
-        })
-        return None
+        disable_mode = step.get("disable_mode", "skip")
+        log.info(f"[Flows.Engine] ⏭️ Step '{step['id']}' bypassed (disabled). Mode: {disable_mode}")
+        
+        if step.get("action") == "CONTROL__start" and disable_mode == "stop":
+            emit(run_id, {
+                "type":   "step_error",
+                "run_id": run_id,
+                "step_id": step["id"],
+                "action": action,
+                "error":  "Start node is disabled! Please enable the start node to run the flow.",
+                "ts":     datetime.datetime.now().isoformat(),
+            })
+        else:
+            emit(run_id, {
+                "type":   "step_skip",
+                "run_id": run_id,
+                "step_id": step["id"],
+                "action": action,
+                "ts":     datetime.datetime.now().isoformat(),
+            })
+        return "_BRANCH_STOPPED" if disable_mode == "stop" else None
 
     try:
         # Extract timeout configuration
@@ -490,8 +507,19 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
     context["_branch_results"] = {}
 
     try:
+        # Pre-sort to put higher priority start nodes first
+        pipeline.sort(key=lambda x: int(x.get("params", {}).get("priority", 0)) if x.get("action") == "CONTROL__start" else 999)
         sorted_steps = _topological_sort(pipeline)
         skipped_nodes = set()
+        
+        has_start_nodes = any(s.get("action") == "CONTROL__start" for s in sorted_steps)
+        
+        if not has_start_nodes and len(sorted_steps) > 0:
+            emit(run_id, {
+                "type":    "toast",
+                "level":   "warning",
+                "message": "Start node is missing. Floating nodes will be ignored."
+            })
 
         for step in sorted_steps:
             # Cooperative abort check is now the FALLBACK;
@@ -508,6 +536,11 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
 
             step_id = step["id"]
             should_skip = False
+            
+            # Isolate and skip any node that has no dependencies AND is not a start node itself.
+            # This enforces that ALL execution must originate from a CONTROL__start node.
+            if not step.get("depends_on") and step.get("action") != "CONTROL__start":
+                should_skip = True
             
             # Check dependencies to see if we should skip this step
             for dep in step.get("depends_on", []):
@@ -539,7 +572,10 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
                 })
                 continue
 
-            _execute_step(step, context, run_id, emit)
+            res = _execute_step(step, context, run_id, emit)
+            
+            if res == "_BRANCH_STOPPED":
+                skipped_nodes.add(step_id)
 
         emit(run_id, {
             "type":    "flow_done",

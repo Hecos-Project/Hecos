@@ -51,6 +51,10 @@ function appendLog(ev) {
     if (typeof setNodeState === 'function') setNodeState(ev.step_id, 'error');
   }
   else if (ev.type==='connected')    { cls='info';   icon='fa-link';          text=`Connected to run ${ev.run_id}`; }
+  else if (ev.type==='toast')        {
+    if (typeof window.toast === 'function') window.toast(ev.level || 'info', ev.message);
+    return;
+  }
   else return;
 
   const line = document.createElement('div');

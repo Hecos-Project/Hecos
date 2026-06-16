@@ -3,7 +3,9 @@
  */
 export const ACTION_TYPE_MAP = {
   TRIGGER:    'triggerNode',
+  CONTROL:    'triggerNode',
   LOGIC:      'logicNode',
+  FLOWS:      'actionNode',
   AI:         'aiNode',
   AUDIO:      'actionNode',
   MAIL:       'actionNode',
@@ -26,7 +28,9 @@ export const ACTION_TYPE_MAP = {
 // Category color map for badge colors on node header
 export const CATEGORY_COLORS = {
   TRIGGER:    { bg: '#4c1d95', text: '#c4b5fd' },
+  CONTROL:    { bg: '#3730a3', text: '#a5b4fc' },
   LOGIC:      { bg: '#78350f', text: '#fcd34d' },
+  FLOWS:      { bg: '#064e3b', text: '#6ee7b7' },
   AI:         { bg: '#581c87', text: '#e879f9' },
   AUDIO:      { bg: '#134e4a', text: '#5eead4' },
   MAIL:       { bg: '#14213d', text: '#93c5fd' },

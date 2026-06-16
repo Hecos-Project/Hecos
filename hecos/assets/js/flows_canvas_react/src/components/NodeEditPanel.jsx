@@ -147,6 +147,7 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
   const [params, setParams]     = useState(data.params || {});
   const [outputAs, setOutputAs] = useState(data.outputAs || '');
   const [dependsOn, setDependsOn] = useState((data.dependsOn || []).join(', '));
+  const [disableMode, setDisableMode] = useState(data.disableMode || (action === 'CONTROL__start' ? 'stop' : 'skip'));
 
   // Flat list of all actions
   const allActions = useMemo(() =>
@@ -195,6 +196,7 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
       params,
       outputAs: outputAs.trim(),
       dependsOn: depsArray,
+      disableMode: disableMode,
       icon: actionDef?.icon || data.icon || '⚡',
       description: actionDef?.description || data.description || '',
     });
@@ -360,7 +362,7 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
         <hr className="hc-divider" />
 
         {/* Output As */}
-        {action !== 'LOGIC__set_variable' && (
+        {action !== 'LOGIC__set_variable' && action !== 'CONTROL__start' && action !== 'FLOWS__run_flow' && (
           <div className="hc-field">
             <label>Output As (variable)</label>
             <input
@@ -371,6 +373,15 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
             />
           </div>
         )}
+
+        {/* Disable Mode */}
+        <div className="hc-field">
+          <label>Disable Mode (when node is disabled)</label>
+          <select value={disableMode} onChange={e => setDisableMode(e.target.value)}>
+            <option value="skip">Skip (Bypass node, run children)</option>
+            <option value="stop">Stop (Halt execution of this branch)</option>
+          </select>
+        </div>
 
         {/* Depends On */}
         <div className="hc-field">

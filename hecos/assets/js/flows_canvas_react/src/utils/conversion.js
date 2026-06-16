@@ -57,6 +57,7 @@ export function flowToRFNodes(flowObj) {
         dependsOn: step.depends_on || [],
         note: step.note || '',
         disabled: step.disabled === true,
+        disableMode: step.disable_mode || (step.action === 'CONTROL__start' ? 'stop' : 'skip'),
         execState: null,
       },
     };
@@ -166,6 +167,7 @@ export function rfNodesToFlow(rfNodes, rfEdges) {
     if (d.outputAs) step.output_as = d.outputAs;
     if (d.note) step.note = d.note;
     if (d.disabled) step.disabled = true;
+    if (d.disableMode && d.disableMode !== 'skip') step.disable_mode = d.disableMode;
 
     const deps = incomingMap[node.id] || [];
     if (deps.length) step.depends_on = deps;
