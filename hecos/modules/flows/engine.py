@@ -403,8 +403,12 @@ def _execute_step(
                 return handler(**kwargs)
             else:
                 from .registry import execute_action
+                import time
                 # Strip execution-level parameters before passing to the registry
                 clean_params = {k: v for k, v in params.items() if k not in ["timeout_seconds", "on_timeout_continue"]}
+                clean_params["_run_id"] = run_id
+                clean_params["_timeout_seconds"] = timeout_seconds
+                clean_params["_start_time"] = time.time()
                 return execute_action(action, clean_params, context)
 
         if timeout_seconds > 0:

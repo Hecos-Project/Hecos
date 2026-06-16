@@ -217,17 +217,27 @@ _bootstrap_builtin_actions()
 
 
 def _setup_audio_wrappers():
-    def _audio_speak(text: str = ""):
+    def _audio_speak(text: str = "", **kwargs):
         try:
             from hecos.core.audio import voice
-            voice.speak(text)
+            voice.speak(text, _run_id=kwargs.get("_run_id"), _timeout=kwargs.get("_timeout_seconds"), _start=kwargs.get("_start_time"))
         except Exception as e:
             log.error(f"Cannot speak: {e}")
         return text
 
-    def _audio_play_alarm(sound: str = "default"):
+    def _audio_play_alarm(sound: str = "default", **kwargs):
         import os
         import time
+        from hecos.modules.flows.engine import is_run_aborted
+
+        run_id = kwargs.get("_run_id")
+        timeout = kwargs.get("_timeout_seconds", 0)
+        start_time = kwargs.get("_start_time", time.time())
+
+        def _should_stop():
+            if run_id and is_run_aborted(run_id): return True
+            if timeout and timeout > 0 and (time.time() - start_time) > timeout: return True
+            return False
 
         base_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -256,7 +266,14 @@ def _setup_audio_wrappers():
                     with wave.open(path, 'rb') as wf:
                         raw = wf.readframes(wf.getnframes())
                         data = np.frombuffer(raw, dtype=np.int16)
-                        sd.play(data.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
+                        sd.play(data.astype("float32") / 32768.0, samplerate=wf.getframerate())
+                        duration = len(data) / wf.getframerate() / wf.getnchannels()
+                        end_time = time.time() + duration
+                        while time.time() < end_time:
+                            if _should_stop():
+                                sd.stop()
+                                break
+                            time.sleep(0.05)
                     played = True
                 except Exception as e_sd:
                     log.debug(f"[Flows.Alarm] sounddevice failed ({e_sd}), trying pygame...")
@@ -270,6 +287,9 @@ def _setup_audio_wrappers():
                     mixer.music.load(path)
                     mixer.music.play()
                     while mixer.music.get_busy():
+                        if _should_stop():
+                            mixer.music.stop()
+                            break
                         time.sleep(0.1)
                     played = True
                 except Exception as e_pg:
@@ -277,13 +297,14 @@ def _setup_audio_wrappers():
 
             # Strategy 3: winsound (Windows-only, WAV only, last resort)
             if not played:
-                try:
-                    import winsound
-                    if path.lower().endswith(".wav"):
-                        winsound.PlaySound(path, winsound.SND_FILENAME)
-                        played = True
-                except Exception as e_ws:
-                    log.error(f"[Flows.Alarm] All playback strategies failed. Last error: {e_ws}")
+                if not _should_stop():
+                    try:
+                        import winsound
+                        if path.lower().endswith(".wav"):
+                            winsound.PlaySound(path, winsound.SND_FILENAME)
+                            played = True
+                    except Exception as e_ws:
+                        log.error(f"[Flows.Alarm] All playback strategies failed. Last error: {e_ws}")
 
         except Exception as e:
             log.error(f"Cannot play alarm: {e}")
