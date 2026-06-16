@@ -54,14 +54,12 @@ function renderSidebar(flows) {
     const el = document.createElement('div');
     el.className = 'flow-item' + (f.id === currentFlowId ? ' active' : '');
     el.dataset.id = f.id;
+    el.dataset.enabled = f.enabled ? 'true' : 'false';
     el.draggable = true;
     el.innerHTML = `
       <span class="flow-drag-handle" title="${window.t('flows_drag_to_reorder')}">⠿</span>
       <div class="flow-item-name">
-        <span class="flow-status-dot ${f.enabled?'enabled':'disabled'}"></span>
-        <span class="flow-run-indicator" title="Running" style="display:none">
-          <span class="flow-run-spinner"></span>
-        </span>
+        <span class="flow-status-indicator ${f.enabled ? 'enabled' : 'disabled'}" title="${f.enabled ? 'Enabled' : 'Disabled'}"></span>
         ${f.name}
       </div>
       <div class="flow-item-meta">
@@ -271,17 +269,18 @@ function _applyRunningBadges(runningMap) {
     const flowId = el.dataset.id;
     const isRunning = !!runningMap[flowId];
     el.classList.toggle('is-running', isRunning);
-    // Inject indicator span if not already present (handles items added by renderSidebar)
-    let indicator = el.querySelector('.flow-run-indicator');
-    if (!indicator) {
-      indicator = document.createElement('span');
-      indicator.className = 'flow-run-indicator';
+    const indicator = el.querySelector('.flow-status-indicator');
+    if (!indicator) return;
+    if (isRunning) {
+      indicator.className = 'flow-status-indicator running';
       indicator.title = 'Running';
-      indicator.innerHTML = '<span class="flow-run-spinner"></span>';
-      const nameDiv = el.querySelector('.flow-item-name');
-      if (nameDiv) nameDiv.insertBefore(indicator, nameDiv.firstChild.nextSibling);
+    } else {
+      // Restore original enabled/disabled state from the item's data
+      // We peek at whether the dot was enabled before running started
+      const wasEnabled = el.dataset.enabled !== 'false';
+      indicator.className = 'flow-status-indicator ' + (wasEnabled ? 'enabled' : 'disabled');
+      indicator.title = wasEnabled ? 'Enabled' : 'Disabled';
     }
-    indicator.style.display = isRunning ? 'inline-flex' : 'none';
   });
 }
 

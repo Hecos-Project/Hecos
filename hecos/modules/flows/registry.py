@@ -315,7 +315,7 @@ def _user_ask_input(
             from hecos.memory.brain_interface import save_message
             save_message(
                 role="assistant",
-                message=f"❓ {prompt}",
+                message=prompt,
                 user_id="admin",
                 session_id=None,
                 persona_name="Flows",
@@ -530,7 +530,7 @@ _setup_audio_wrappers()
 
 
 def _setup_system_wrappers():
-    def _system_chat_message(text: str = ""):
+    def _system_chat_message(text: str = "", **kwargs):
         try:
             from hecos.memory.brain_interface import save_message
             # Since flows run in background threads, default to 'admin' user
@@ -565,7 +565,7 @@ def _setup_system_wrappers():
         "fn": _system_chat_message,
     }
 
-    def _system_speak_and_chat(text: str = ""):
+    def _system_speak_and_chat(text: str = "", **kwargs):
         # First send to chat
         _system_chat_message(text)
         # Then speak aloud
