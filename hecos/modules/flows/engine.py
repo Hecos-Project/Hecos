@@ -255,7 +255,9 @@ def _render_params(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str,
 
 def _eval_condition(condition: str, context: Dict[str, Any]) -> bool:
     """Evaluate a Jinja2 boolean condition against the context."""
-    rendered = _render(f"{{% if {condition} %}}true{{% else %}}false{{% endif %}}", context)
+    # Strip any accidental brackets the user might have typed
+    clean_cond = condition.replace("{{", "").replace("}}", "")
+    rendered = _render(f"{{% if {clean_cond} %}}true{{% else %}}false{{% endif %}}", context)
     return rendered.strip() == "true"
 
 
@@ -317,7 +319,7 @@ def _execute_branch(branch: Any, step_id_prefix: str, context: Dict, run_id: str
 
 def _handle_if_else(step: Dict, context: Dict, run_id: str, emit: Callable) -> Any:
     condition = step["params"].get("condition", "false")
-    result = _eval_condition(_render(condition, context), context)
+    result = _eval_condition(condition, context)
 
     branch_key = "true_branch" if result else "false_branch"
     
