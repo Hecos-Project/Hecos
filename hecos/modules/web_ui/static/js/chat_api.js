@@ -68,6 +68,14 @@ window.sendMessage = async function() {
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
 
+    if (data.intercepted) {
+      cursor.remove();
+      aiBubble.innerHTML = window.renderMarkdown("✅ *Risposta inviata al flusso.*");
+      window.isStreaming = false; 
+      if (window.sendBtn) window.sendBtn.disabled = false;
+      return;
+    }
+
     // Lock privacy mode on first sent message
     if (window.chatHistoryState) {
       window.chatHistoryState.chatModeHasMessages = true;
@@ -162,6 +170,14 @@ window.sendInternalMessage = async function(text) {
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
+
+    if (data.intercepted) {
+      cursor.remove();
+      aiBubble.innerHTML = window.renderMarkdown("✅ *Risposta inviata al flusso.*");
+      window.isStreaming = false; 
+      if (window.sendBtn) window.sendBtn.disabled = false;
+      return;
+    }
 
     // Lock privacy mode on first sent message
     if (window.chatHistoryState) {

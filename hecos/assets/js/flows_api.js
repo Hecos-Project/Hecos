@@ -59,6 +59,9 @@ function renderSidebar(flows) {
       <span class="flow-drag-handle" title="${window.t('flows_drag_to_reorder')}">⠿</span>
       <div class="flow-item-name">
         <span class="flow-status-dot ${f.enabled?'enabled':'disabled'}"></span>
+        <span class="flow-run-indicator" title="Running" style="display:none">
+          <span class="flow-run-spinner"></span>
+        </span>
         ${f.name}
       </div>
       <div class="flow-item-meta">
@@ -76,6 +79,9 @@ function renderSidebar(flows) {
     });
     list.appendChild(el);
   });
+
+  // Re-apply current running state on the new DOM
+  _applyRunningBadges(_lastKnownRunning);
 
   initSidebarDragSort();
 }
@@ -249,6 +255,73 @@ async function saveCurrentFlow(silent = false) {
   }
 }
 
+// ── Sidebar running-state badges ──────────────────────────────────
+
+/** Last known running map: { flow_id: run_id } – shared across polling & setRunningState */
+let _lastKnownRunning = {};
+
+/**
+ * Update the sidebar spinner badges based on a running-map snapshot.
+ * Does NOT modify _lastKnownRunning — call this purely for DOM sync.
+ */
+function _applyRunningBadges(runningMap) {
+  const list = document.getElementById('flows-list');
+  if (!list) return;
+  list.querySelectorAll('.flow-item[data-id]').forEach(el => {
+    const flowId = el.dataset.id;
+    const isRunning = !!runningMap[flowId];
+    el.classList.toggle('is-running', isRunning);
+    // Inject indicator span if not already present (handles items added by renderSidebar)
+    let indicator = el.querySelector('.flow-run-indicator');
+    if (!indicator) {
+      indicator = document.createElement('span');
+      indicator.className = 'flow-run-indicator';
+      indicator.title = 'Running';
+      indicator.innerHTML = '<span class="flow-run-spinner"></span>';
+      const nameDiv = el.querySelector('.flow-item-name');
+      if (nameDiv) nameDiv.insertBefore(indicator, nameDiv.firstChild.nextSibling);
+    }
+    indicator.style.display = isRunning ? 'inline-flex' : 'none';
+  });
+}
+
+// ── Status polling ────────────────────────────────────────────────
+let _statusPollTimer = null;
+
+async function _pollRunningFlows() {
+  try {
+    const res = await fetch('/api/flows/running');
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d.ok) return;
+    _lastKnownRunning = d.running || {};
+    _applyRunningBadges(_lastKnownRunning);
+
+    // If we are viewing a flow that is no longer running, sync the Run/Stop button
+    if (currentFlowId && !_lastKnownRunning[currentFlowId] && _currentRunId) {
+      setRunningState(false);
+    }
+
+    // Stop polling automatically when nothing is running
+    if (Object.keys(_lastKnownRunning).length === 0) {
+      stopStatusPolling();
+    }
+  } catch { /* network hiccup – stay silent */ }
+}
+
+function startStatusPolling() {
+  if (_statusPollTimer) return; // Already polling
+  _statusPollTimer = setInterval(_pollRunningFlows, 2000);
+  _pollRunningFlows(); // Immediate first tick
+}
+
+function stopStatusPolling() {
+  if (_statusPollTimer) {
+    clearInterval(_statusPollTimer);
+    _statusPollTimer = null;
+  }
+}
+
 // ── Run state helpers ────────────────────────────────────────────
 let _currentRunId = null;
 
@@ -260,10 +333,14 @@ function setRunningState(running, runId) {
     btn.classList.add('running');
     btn.innerHTML = '<i class="fas fa-stop-circle"></i> Stop';
     btn.title = 'Click to stop the running flow';
+    // Start global polling so all sidebar items light up correctly
+    startStatusPolling();
   } else {
     btn.classList.remove('running');
     btn.innerHTML = '<i class="fas fa-play"></i> Run';
     btn.title = 'Execute this flow';
+    // Trigger one last poll to clear badges, then polling auto-stops when idle
+    _pollRunningFlows();
   }
 }
 

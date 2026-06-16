@@ -192,6 +192,16 @@ def init_flows_routes(app, cfg_mgr, logger=None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/flows/running", methods=["GET"])
+    @login_required
+    def api_flows_all_running():
+        """Return a snapshot of all currently running flows: {flow_id: run_id}."""
+        try:
+            from hecos.modules.flows.engine import get_all_active_runs
+            return jsonify({"ok": True, "running": get_all_active_runs()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/flows/<flow_id>/enable", methods=["POST"])
     @login_required
     def api_flows_enable(flow_id):

@@ -223,10 +223,10 @@ def _bootstrap_builtin_actions():
 _bootstrap_builtin_actions()
 
 
-def _flows_run_flow(flow_id: str, wait: bool = True, pass_context: bool = True, **kwargs):
+def _flows_run_flow(flow_id: str, wait: bool = True, pass_context: bool = True, cascade_stop: bool = True, **kwargs):
     try:
         from hecos.modules.flows.storage import get_flow
-        from hecos.modules.flows.engine import run_flow, is_run_aborted
+        from hecos.modules.flows.engine import run_flow, is_run_aborted, register_child_run
         import time
         import uuid
 
@@ -239,6 +239,11 @@ def _flows_run_flow(flow_id: str, wait: bool = True, pass_context: bool = True, 
             target_flow["variables"] = {**(target_flow.get("variables") or {}), **kwargs}
 
         sub_run_id = f"sub_{uuid.uuid4().hex[:8]}"
+        parent_run_id = kwargs.get("_run_id")
+
+        # Register the child so abort_run() on the parent cascades to it
+        if cascade_stop and parent_run_id:
+            register_child_run(parent_run_id, sub_run_id)
 
         if wait:
             # Run synchronously
@@ -257,11 +262,12 @@ def _flows_run_flow(flow_id: str, wait: bool = True, pass_context: bool = True, 
 
 _REGISTRY["FLOWS__run_flow"] = {
     "name": "FLOWS__run_flow",
-    "description": "Executes another flow as a sub-flow.",
+    "description": "Executes another flow as a sub-flow. cascade_stop ensures stopping the parent also stops this sub-flow.",
     "params": {
-        "flow_id": "string",
-        "wait": "boolean",
-        "pass_context": "boolean",
+        "flow_id":      "string (ID of the target flow to run)",
+        "wait":         "boolean (true=wait for sub-flow to finish before proceeding)",
+        "pass_context": "boolean (true=pass current variables to the sub-flow)",
+        "cascade_stop": "boolean (true=stopping the parent also stops this sub-flow — default: true)",
     },
     "category": "FLOWS",
     "icon": "🔄",

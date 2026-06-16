@@ -72,17 +72,28 @@ _active_runs: Dict[str, str] = {}  # flow_id → run_id
 _active_runs_lock = threading.Lock()
 _run_threads: Dict[str, int] = {}  # run_id → thread native_id
 _run_threads_lock = threading.Lock()
+_run_children: Dict[str, set] = {}  # parent_run_id → {child_run_ids}
+_run_children_lock = threading.Lock()
 
 
 def abort_run(run_id: str):
-    """Immediately kill a running flow by injecting a FlowAbortException into its thread."""
+    """Immediately kill a running flow and all registered children (cascade stop)."""
     _aborted_runs.add(run_id)
+
+    # ── Cascade: abort all child sub-runs first ──────────────────────────────
+    with _run_children_lock:
+        children = set(_run_children.get(run_id, set()))  # snapshot
+    for child_run_id in children:
+        log.info(f"[Flows.Engine] ☠️ Cascade aborting child run '{child_run_id}' (parent={run_id})")
+        abort_run(child_run_id)  # recursive for grandchildren
+
+    # ── Kill the parent thread ───────────────────────────────────────────────
     with _run_threads_lock:
         thread_id = _run_threads.get(run_id)
     if thread_id is not None:
         _inject_exception(thread_id, FlowAbortException)
         log.info(f"[Flows.Engine] ☠️ Injected FlowAbortException into thread {thread_id} (run={run_id})")
-    
+
     # Crucial: Unblock the thread if it's currently waiting for user input
     _cancel_pending_input(run_id)
 
@@ -123,8 +134,29 @@ def _unregister_active_run(flow_id: str, run_id: str):
     with _run_threads_lock:
         _run_threads.pop(run_id, None)
     _aborted_runs.discard(run_id)
+    # Clean up child-run registry
+    with _run_children_lock:
+        _run_children.pop(run_id, None)
+        # Also remove this run from any parent's child set
+        for parent_children in _run_children.values():
+            parent_children.discard(run_id)
     # Clean up any pending input gate if the run finished/aborted
     _cancel_pending_input(run_id)
+
+
+def register_child_run(parent_run_id: str, child_run_id: str):
+    """Link a child sub-run to its parent so abort_run() can cascade."""
+    with _run_children_lock:
+        if parent_run_id not in _run_children:
+            _run_children[parent_run_id] = set()
+        _run_children[parent_run_id].add(child_run_id)
+    log.info(f"[Flows.Engine] 🔗 Registered child run '{child_run_id}' under parent '{parent_run_id}'")
+
+
+def get_all_active_runs() -> Dict[str, str]:
+    """Return a snapshot of all currently active {flow_id: run_id} pairs."""
+    with _active_runs_lock:
+        return dict(_active_runs)
 
 
 # ── User Input Gate ────────────────────────────────────────────────────────────
