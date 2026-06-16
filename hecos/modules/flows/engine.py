@@ -257,7 +257,23 @@ def _eval_condition(condition: str, context: Dict[str, Any]) -> bool:
     """Evaluate a Jinja2 boolean condition against the context."""
     # Strip any accidental brackets the user might have typed
     clean_cond = condition.replace("{{", "").replace("}}", "")
-    rendered = _render(f"{{% if {clean_cond} %}}true{{% else %}}false{{% endif %}}", context)
+    
+    # Auto-coerce types in context to allow loose comparisons (e.g., string "10" > 5)
+    eval_ctx = {}
+    for k, v in context.items():
+        if isinstance(v, str):
+            v_lower = v.lower()
+            if v_lower in ["true", "false"]:
+                eval_ctx[k] = (v_lower == "true")
+            else:
+                try:
+                    eval_ctx[k] = float(v) if "." in v else int(v)
+                except ValueError:
+                    eval_ctx[k] = v
+        else:
+            eval_ctx[k] = v
+            
+    rendered = _render(f"{{% if {clean_cond} %}}true{{% else %}}false{{% endif %}}", eval_ctx)
     return rendered.strip() == "true"
 
 
@@ -366,8 +382,10 @@ def _handle_delay(step: Dict, context: Dict, **_) -> None:
 
 def _handle_set_variable(step: Dict, context: Dict, **_) -> None:
     name  = step["params"].get("name", "")
+    # Strip brackets in case the user used the variable picker for the variable name
+    clean_name = name.replace("{{", "").replace("}}", "").strip()
     value = step["params"].get("value", "")
-    context[name] = _render(str(value), context)
+    context[clean_name] = _render(str(value), context)
 
 
 def _handle_template(step: Dict, context: Dict, **_) -> str:
