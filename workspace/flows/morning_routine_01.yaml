@@ -1,50 +1,32 @@
 id: morning_routine_01
+_type: hecos_flow
 name: Morning routine 01
 trigger:
   type: manual
 pipeline:
-- id: audio__play_alarm_22
-  action: AUDIO__play_alarm
-  params:
-    sound: universfield-error-011-352286 (1).mp3
-- id: audio__play_alarm_2
-  action: AUDIO__play_alarm
-  params:
-    sound: ''
-  depends_on:
-  - audio__play_alarm_22
 - id: audio__speak_1
   action: AUDIO__speak
+  position:
+    x: 183
+    y: -103
   params:
     text: Buongiorno. Questa è la routine del mattino 01
   depends_on:
   - audio__play_alarm_2
-- id: system__chat_message_1
-  action: SYSTEM__chat_message
-  params:
-    text: Buongiorno. Questa è la routine del mattino 01
-  depends_on:
-  - audio__speak_1
-- id: live chat sound 111
+- id: audio__play_alarm_2
   action: AUDIO__play_alarm
+  position:
+    x: -93
+    y: 2
   params:
-    sound: live-chat-353605.mp3
+    sound: ''
   depends_on:
-  - system__chat_message_1
-- id: live chat sound 1
-  action: AUDIO__play_alarm
-  params:
-    sound: live-chat-353605.mp3
-  depends_on:
-  - system__chat_message_1
-- id: audio__speak_2
-  action: AUDIO__speak
-  params:
-    text: Iniziamo con le notizie di oggi
-  depends_on:
-  - live chat sound 1
+  - audio__play_alarm_22
 - id: Notizie della giornata
   action: AI__prompt
+  position:
+    x: 1077
+    y: -60
   params:
     prompt: 'Cerca su internet, usando il modulo BROWSER le 3 notizie piu importanti
       della giornata, riassumile brevemente in tre righe. '
@@ -52,54 +34,132 @@ pipeline:
   output_as: notizie1
   depends_on:
   - audio__speak_2
+- id: audio__play_alarm_22
+  action: AUDIO__play_alarm
+  position:
+    x: -470
+    y: 98
+  params:
+    sound: universfield-error-011-352286 (1).mp3
+- id: live chat sound 1
+  action: AUDIO__play_alarm
+  position:
+    x: 347
+    y: 39
+  params:
+    sound: live-chat-353605.mp3
+  depends_on:
+  - system__chat_message_1
+- id: system__chat_message_1
+  action: SYSTEM__chat_message
+  position:
+    x: -148
+    y: 152
+  params:
+    text: Buongiorno. Questa è la routine del mattino 01
+  depends_on:
+  - audio__speak_1
+- id: live chat sound 111
+  action: AUDIO__play_alarm
+  position:
+    x: 141
+    y: 139
+  params:
+    sound: live-chat-353605.mp3
+  depends_on:
+  - system__chat_message_1
 - id: audio__speak_3
   action: AUDIO__speak
+  position:
+    x: 1125
+    y: 142
   params:
     text: '{{ notizie1 }}'
   depends_on:
   - Notizie della giornata
+- id: audio__speak_2
+  action: AUDIO__speak
+  position:
+    x: 13
+    y: 287
+  params:
+    text: Iniziamo con le notizie di oggi
+  depends_on:
+  - live chat sound 1
 - id: audio__speak_4
   action: AUDIO__speak
+  position:
+    x: 60
+    y: 510
   params:
     text: Ora controlliamo il meteo!
   depends_on:
   - audio__speak_3
 - id: weather__get_weather_forecast_1
   action: WEATHER__get_weather_forecast
+  position:
+    x: 340
+    y: 510
   output_as: tempo1
   depends_on:
   - audio__speak_4
 - id: system__chat_message_2
   action: SYSTEM__chat_message
+  position:
+    x: 620
+    y: 510
   params:
     text: '{{ tempo1 }}'
   depends_on:
   - weather__get_weather_forecast_1
 - id: audio__speak_5
   action: AUDIO__speak
+  position:
+    x: 159
+    y: 746
   params:
     text: Buona giornata!
   depends_on:
   - system__chat_message_2
 - id: system__chat_message_3
   action: SYSTEM__chat_message
+  position:
+    x: 522
+    y: 734
   params:
     text: 'E adesso, cosa vuoi fare? '
   depends_on:
   - audio__play_alarm_4
 - id: audio__play_alarm_3
   action: AUDIO__play_alarm
+  position:
+    x: 876
+    y: 745
   params:
     sound: podcast-talk-intro-1149.wav
   depends_on:
   - system__chat_message_3
 - id: audio__play_alarm_4
   action: AUDIO__play_alarm
+  position:
+    x: 159
+    y: 913
   params:
     sound: live-chat-353605.mp3
   depends_on:
   - audio__speak_5
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-10T12:31:32.479705'
+  updated_at: '2026-06-15T09:46:33.630176'
   last_run: '2026-06-08T15:30:03.922517'
+areas:
+- id: area_6510
+  title: Read News Section
+  description: ''
+  color: '#f2c007'
+  backgroundImage: ''
+  position:
+    x: 1022
+    y: -128
+  width: 400
+  height: 400

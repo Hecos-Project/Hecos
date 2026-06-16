@@ -178,6 +178,25 @@ class FlowsEngine:
         except Exception as e:
             return f"[Flows] Could not run flow '{flow_id}': {e}"
 
+    def abort_flow(self, flow_id: str) -> str:
+        """
+        Aborts a currently running flow by its ID or display name.
+        :param flow_id: The flow ID (slug) or display name to abort.
+        """
+        try:
+            from .engine import get_active_run, abort_run
+            
+            resolved_id = self._resolve_flow_id(flow_id)
+            run_id = get_active_run(resolved_id)
+            
+            if not run_id:
+                return f"[Flows] Flow '{resolved_id}' is not currently running."
+                
+            abort_run(run_id)
+            return f"⛔ Flow `{resolved_id}` has been aborted."
+        except Exception as e:
+            return f"[Flows] Could not abort flow '{flow_id}': {e}"
+
     def enable_flow(self, flow_id: str) -> str:
         """
         Enables a flow so its scheduler trigger becomes active.

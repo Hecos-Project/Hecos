@@ -51,6 +51,74 @@ function appendLog(ev) {
     if (typeof setNodeState === 'function') setNodeState(ev.step_id, 'error');
   }
   else if (ev.type==='connected')    { cls='info';   icon='fa-link';          text=`Connected to run ${ev.run_id}`; }
+  else if (ev.type==='toast')        {
+    if (typeof window.toast === 'function') window.toast(ev.level || 'info', ev.message);
+    return;
+  }
+  else if (ev.type==='step_waiting_input') {
+    if (typeof window.toast === 'function') window.toast('info', '⏳ Flow is waiting for your input...');
+    
+    const line = document.createElement('div');
+    line.className = `log-line info`;
+    line.innerHTML = `<span class="ts">${ts}</span><span class="evt"><i class="fas fa-microphone"></i> <strong>Waiting for input:</strong> ${ev.prompt}</span>`;
+    
+    const inputDiv = document.createElement('div');
+    inputDiv.style.padding = '8px';
+    inputDiv.style.marginTop = '4px';
+    inputDiv.style.background = 'rgba(0,0,0,0.2)';
+    inputDiv.style.borderRadius = '4px';
+    inputDiv.style.display = 'flex';
+    inputDiv.style.gap = '8px';
+    
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.placeholder = ev.intercept_mode === 'explicit' ? 'Type @flow [your answer]' : 'Type your answer...';
+    inputField.style.flex = '1';
+    inputField.style.background = 'rgba(255,255,255,0.05)';
+    inputField.style.border = '1px solid rgba(255,255,255,0.1)';
+    inputField.style.color = '#fff';
+    inputField.style.padding = '6px 10px';
+    inputField.style.borderRadius = '4px';
+    
+    const btn = document.createElement('button');
+    btn.textContent = 'Send';
+    btn.className = 'hc-btn primary';
+    btn.style.padding = '4px 12px';
+    
+    const submit = () => {
+      let text = inputField.value.trim();
+      if (!text) return;
+      if (ev.intercept_mode === 'explicit' && !text.toLowerCase().startsWith('@flow ')) {
+        text = '@flow ' + text;
+      }
+      btn.disabled = true;
+      inputField.disabled = true;
+      fetch(`/api/flows/run/${ev.run_id}/input`, {
+        method: 'POST',
+        body: JSON.stringify({ text })
+      }).then(r => r.json()).then(d => {
+        if (!d.ok && typeof window.toast === 'function') window.toast('error', d.error);
+        else {
+          btn.textContent = 'Sent';
+          btn.style.background = 'var(--flows-ok)';
+        }
+      });
+    };
+    
+    btn.onclick = submit;
+    inputField.onkeydown = e => { if (e.key === 'Enter') submit(); };
+    
+    inputDiv.appendChild(inputField);
+    inputDiv.appendChild(btn);
+    line.appendChild(inputDiv);
+    
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+    
+    // Auto focus the input field
+    setTimeout(() => inputField.focus(), 100);
+    return;
+  }
   else return;
 
   const line = document.createElement('div');

@@ -34,6 +34,11 @@ def validate_flow(flow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate a flow data dict.
 
+    NOTE: This function does NOT modify the input dict. It works on a shallow
+    copy of the pipeline list so that dangling-dependency removals do not
+    mutate the caller's data (which previously caused nodes to disappear
+    when save_flow called validate_flow before writing to disk).
+
     Returns:
         (is_valid: bool, errors: List[str])
     """
@@ -91,19 +96,13 @@ def validate_flow(flow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
                 errors.append(f"{prefix}: Duplicate step ID '{step_id}'")
             seen_ids.add(step_id)
 
+            # Only report dangling dependencies — do NOT mutate step["depends_on"]
             depends = step.get("depends_on", [])
             if isinstance(depends, list):
-                valid_depends = []
                 for dep in depends:
-                    if dep not in all_ids and dep != step_id:
-                        log.warning(f"{prefix}: 'depends_on' references unknown step ID '{dep}'. Auto-removing dangling dependency.")
-                    else:
-                        valid_depends.append(dep)
-                if len(valid_depends) != len(depends):
-                    if valid_depends:
-                        step["depends_on"] = valid_depends
-                    else:
-                        del step["depends_on"]
+                    dep_id = dep if isinstance(dep, str) else dep.get("node")
+                    if dep_id and dep_id not in all_ids and dep_id != step_id:
+                        log.warning(f"{prefix}: 'depends_on' references unknown step ID '{dep_id}'.")
 
     # ── Summary
     is_valid = len(errors) == 0

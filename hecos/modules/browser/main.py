@@ -52,7 +52,13 @@ class PlaywrightWorker:
     def execute(self, func, *args, **kwargs):
         res_q = queue.Queue()
         self.q.put((func, args, kwargs, res_q))
-        success, res = res_q.get()
+        try:
+            success, res = res_q.get(timeout=60)
+        except queue.Empty:
+            raise TimeoutError(
+                f"[BROWSER] Operation '{func.__name__}' timed out after 60s. "
+                "The browser may be unresponsive. Try reconnecting."
+            )
         if not success:
             raise res
         return res

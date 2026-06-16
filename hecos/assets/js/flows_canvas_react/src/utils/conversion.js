@@ -57,6 +57,7 @@ export function flowToRFNodes(flowObj) {
         dependsOn: step.depends_on || [],
         note: step.note || '',
         disabled: step.disabled === true,
+        disableMode: step.disable_mode || (step.action === 'CONTROL__start' ? 'stop' : 'skip'),
         execState: null,
       },
     };
@@ -66,12 +67,24 @@ export function flowToRFNodes(flowObj) {
   const rfEdges = [];
   steps.forEach(step => {
     (step.depends_on || []).forEach((dep, idx) => {
-      rfEdges.push({
-        id: `${dep}→${step.id}`,
-        source: dep,
-        target: step.id,
-        ...EDGE_STYLE,
-      });
+      if (typeof dep === 'object' && dep.node) {
+        const handleId = dep.branch ? dep.branch.replace('_branch', '') : 'out';
+        rfEdges.push({
+          id: `${dep.node}→${step.id}`,
+          source: dep.node,
+          sourceHandle: handleId,
+          target: step.id,
+          targetHandle: 'in',
+          ...EDGE_STYLE,
+        });
+      } else {
+        rfEdges.push({
+          id: `${dep}→${step.id}`,
+          source: dep,
+          target: step.id,
+          ...EDGE_STYLE,
+        });
+      }
     });
   });
 
@@ -107,7 +120,14 @@ export function rfNodesToFlow(rfNodes, rfEdges) {
   const incomingMap = {};
   (rfEdges || []).forEach(e => {
     if (!incomingMap[e.target]) incomingMap[e.target] = [];
-    incomingMap[e.target].push(e.source);
+    
+    if (e.sourceHandle && e.sourceHandle !== 'out') {
+      let branchName = e.sourceHandle;
+      if (branchName === 'true' || branchName === 'false') branchName += '_branch';
+      incomingMap[e.target].push({ node: e.source, branch: branchName });
+    } else {
+      incomingMap[e.target].push(e.source);
+    }
   });
 
   // Sort nodes by Y then X for a readable YAML order
@@ -147,6 +167,7 @@ export function rfNodesToFlow(rfNodes, rfEdges) {
     if (d.outputAs) step.output_as = d.outputAs;
     if (d.note) step.note = d.note;
     if (d.disabled) step.disabled = true;
+    if (d.disableMode && d.disableMode !== 'skip') step.disable_mode = d.disableMode;
 
     const deps = incomingMap[node.id] || [];
     if (deps.length) step.depends_on = deps;

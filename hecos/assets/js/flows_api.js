@@ -54,11 +54,12 @@ function renderSidebar(flows) {
     const el = document.createElement('div');
     el.className = 'flow-item' + (f.id === currentFlowId ? ' active' : '');
     el.dataset.id = f.id;
+    el.dataset.enabled = f.enabled ? 'true' : 'false';
     el.draggable = true;
     el.innerHTML = `
       <span class="flow-drag-handle" title="${window.t('flows_drag_to_reorder')}">⠿</span>
       <div class="flow-item-name">
-        <span class="flow-status-dot ${f.enabled?'enabled':'disabled'}"></span>
+        <span class="flow-status-indicator ${f.enabled ? 'enabled' : 'disabled'}" title="${f.enabled ? 'Enabled' : 'Disabled'}"></span>
         ${f.name}
       </div>
       <div class="flow-item-meta">
@@ -76,6 +77,9 @@ function renderSidebar(flows) {
     });
     list.appendChild(el);
   });
+
+  // Re-apply current running state on the new DOM
+  _applyRunningBadges(_lastKnownRunning);
 
   initSidebarDragSort();
 }
@@ -156,7 +160,10 @@ async function selectFlow(flowId) {
 
     // Populate toolbar
     const tlInput = document.getElementById('flow-title');
-    if (tlInput) tlInput.value = d.flow.name || flowId;
+    if (tlInput) {
+      tlInput.value = d.flow.name || flowId;
+      tlInput.title = `ID: ${flowId}`;
+    }
 
     ['btn-run','btn-save','btn-delete','btn-palette','btn-export'].forEach(id => {
       const btn = document.getElementById(id);
@@ -246,6 +253,74 @@ async function saveCurrentFlow(silent = false) {
   }
 }
 
+// ── Sidebar running-state badges ──────────────────────────────────
+
+/** Last known running map: { flow_id: run_id } – shared across polling & setRunningState */
+let _lastKnownRunning = {};
+
+/**
+ * Update the sidebar spinner badges based on a running-map snapshot.
+ * Does NOT modify _lastKnownRunning — call this purely for DOM sync.
+ */
+function _applyRunningBadges(runningMap) {
+  const list = document.getElementById('flows-list');
+  if (!list) return;
+  list.querySelectorAll('.flow-item[data-id]').forEach(el => {
+    const flowId = el.dataset.id;
+    const isRunning = !!runningMap[flowId];
+    el.classList.toggle('is-running', isRunning);
+    const indicator = el.querySelector('.flow-status-indicator');
+    if (!indicator) return;
+    if (isRunning) {
+      indicator.className = 'flow-status-indicator running';
+      indicator.title = 'Running';
+    } else {
+      // Restore original enabled/disabled state from the item's data
+      // We peek at whether the dot was enabled before running started
+      const wasEnabled = el.dataset.enabled !== 'false';
+      indicator.className = 'flow-status-indicator ' + (wasEnabled ? 'enabled' : 'disabled');
+      indicator.title = wasEnabled ? 'Enabled' : 'Disabled';
+    }
+  });
+}
+
+// ── Status polling ────────────────────────────────────────────────
+let _statusPollTimer = null;
+
+async function _pollRunningFlows() {
+  try {
+    const res = await fetch('/api/flows/running');
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d.ok) return;
+    _lastKnownRunning = d.running || {};
+    _applyRunningBadges(_lastKnownRunning);
+
+    // If we are viewing a flow that is no longer running, sync the Run/Stop button
+    if (currentFlowId && !_lastKnownRunning[currentFlowId] && _currentRunId) {
+      setRunningState(false);
+    }
+
+    // Stop polling automatically when nothing is running
+    if (Object.keys(_lastKnownRunning).length === 0) {
+      stopStatusPolling();
+    }
+  } catch { /* network hiccup – stay silent */ }
+}
+
+function startStatusPolling() {
+  if (_statusPollTimer) return; // Already polling
+  _statusPollTimer = setInterval(_pollRunningFlows, 2000);
+  _pollRunningFlows(); // Immediate first tick
+}
+
+function stopStatusPolling() {
+  if (_statusPollTimer) {
+    clearInterval(_statusPollTimer);
+    _statusPollTimer = null;
+  }
+}
+
 // ── Run state helpers ────────────────────────────────────────────
 let _currentRunId = null;
 
@@ -257,10 +332,14 @@ function setRunningState(running, runId) {
     btn.classList.add('running');
     btn.innerHTML = '<i class="fas fa-stop-circle"></i> Stop';
     btn.title = 'Click to stop the running flow';
+    // Start global polling so all sidebar items light up correctly
+    startStatusPolling();
   } else {
     btn.classList.remove('running');
     btn.innerHTML = '<i class="fas fa-play"></i> Run';
     btn.title = 'Execute this flow';
+    // Trigger one last poll to clear badges, then polling auto-stops when idle
+    _pollRunningFlows();
   }
 }
 
@@ -484,7 +563,11 @@ function importFlowFromFile(inputEl) {
 
     // Update toolbar
     const tlInput = document.getElementById('flow-title');
-    if (tlInput) { tlInput.value = flowName; tlInput.disabled = false; }
+    if (tlInput) { 
+      tlInput.value = flowName; 
+      tlInput.disabled = false; 
+      tlInput.title = `ID: ${flowId}`;
+    }
     ['btn-save','btn-export'].forEach(id => {
       const btn = document.getElementById(id);
       if (btn) btn.disabled = false;
@@ -530,7 +613,14 @@ function importFlowFromFile(inputEl) {
 
 function newEmptyCanvas() {
   currentFlowId = 'new_flow_' + Date.now().toString(36);
-  currentFlowData = { name: 'New Flow', trigger: { type: 'manual' }, pipeline: [] };
+  const startNode = {
+    id: 'start_1',
+    action: 'CONTROL__start',
+    params: { priority: 0 },
+    disable_mode: 'stop',
+    position: { x: 200, y: 150 }
+  };
+  currentFlowData = { name: 'New Flow', trigger: { type: 'manual' }, pipeline: [startNode] };
   
   const tlInput = document.getElementById('flow-title');
   if (tlInput) {
@@ -539,7 +629,7 @@ function newEmptyCanvas() {
   }
   
   if (typeof renderCanvasFromFlow === 'function') renderCanvasFromFlow(currentFlowData);
-  if (cmEditor) cmEditor.setValue(`id: ${currentFlowId}\nname: New Flow\ntrigger:\n  type: manual\npipeline: []`);
+  if (cmEditor) cmEditor.setValue(`id: ${currentFlowId}\nname: New Flow\ntrigger:\n  type: manual\npipeline:\n  - id: start_1\n    action: CONTROL__start\n    params:\n      priority: 0\n    disable_mode: stop\n    position:\n      x: 200\n      y: 150`);
   
   // Add a temporary unsaved entry to the sidebar so the new flow is visible
   document.querySelectorAll('.flow-item').forEach(el => el.classList.remove('active'));

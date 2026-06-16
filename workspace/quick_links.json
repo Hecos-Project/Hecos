@@ -5,5 +5,12 @@
     "url": "https://127.0.0.1:7070/hecos/logs",
     "icon": "🔗",
     "target": "_blank"
+  },
+  {
+    "id": "43f40140-1a64-4fa1-8eec-e2c71a503770",
+    "label": "docs",
+    "url": "https://localhost:7070/hecos/docs?group=user",
+    "icon": "🔗",
+    "target": "_blank"
   }
 ]

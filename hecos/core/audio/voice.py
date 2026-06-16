@@ -10,12 +10,12 @@ from hecos.core.audio.piper_daemon import get_daemon
 is_speaking = False
 
 
-def speak(text, state=None):
+def speak(text, state=None, _run_id=None, _timeout=0, _start=0):
     global is_speaking
     daemon = get_daemon()
     is_speaking = True
     try:
-        daemon.speak(text, state=state)
+        daemon.speak(text, state=state, _run_id=_run_id, _timeout=_timeout, _start=_start)
     except Exception as e:
         logger.error("VOICE", f"speak() error: {e}")
     finally:

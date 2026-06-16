@@ -69,6 +69,53 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         uid = current_user.username if current_user.is_authenticated else "admin"
 
+        # ── Flow input intercept ───────────────────────────────────────────────
+        # If any flow is paused waiting for user input, route this message there
+        # before running normal AI inference.
+        try:
+            from hecos.modules.flows.engine import (
+                get_all_pending_input_runs, deliver_user_input, _PENDING_INPUTS, _PENDING_INPUTS_LOCK
+            )
+            with _PENDING_INPUTS_LOCK:
+                pending = list(_PENDING_INPUTS.items())  # [(run_id, entry), ...]
+
+            if pending:
+                # Determine intercept_mode from the node params baked into the entry
+                # We store it when registering — check each entry
+                reply_text = user_msg
+
+                # Parse @flow prefix for explicit mode check
+                explicit_text = None
+                if user_msg.lower().startswith("@flow "):
+                    explicit_text = user_msg[6:].strip()
+
+                delivered = False
+                # Respect multi_run_priority stored in entry (default: "first")
+                for run_id, entry in pending:
+                    mode = entry.get("intercept_mode", "auto")
+                    priority = entry.get("multi_run_priority", "first")
+
+                    if mode == "api_only":
+                        continue  # Don't intercept from chat
+
+                    if mode == "explicit":
+                        if explicit_text is None:
+                            continue  # Message doesn't have @flow prefix
+                        deliver_user_input(run_id, explicit_text)
+                        delivered = True
+                    else:  # "auto"
+                        deliver_user_input(run_id, reply_text)
+                        delivered = True
+
+                    if priority == "first":
+                        break  # Only answer the first waiting run
+
+                if delivered:
+                    return jsonify({"ok": True, "intercepted": True, "session_id": None})
+        except Exception as _ie:
+            _chat_log.warning(f"[Chat] Flow intercept check failed: {_ie}")
+        # ── End flow intercept ────────────────────────────────────────────────
+
         sm = get_state_manager()
         if sm:
             sm.webui_stop_requested = False  # Clear any stale cancellation flag

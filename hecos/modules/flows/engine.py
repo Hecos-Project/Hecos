@@ -72,16 +72,30 @@ _active_runs: Dict[str, str] = {}  # flow_id → run_id
 _active_runs_lock = threading.Lock()
 _run_threads: Dict[str, int] = {}  # run_id → thread native_id
 _run_threads_lock = threading.Lock()
+_run_children: Dict[str, set] = {}  # parent_run_id → {child_run_ids}
+_run_children_lock = threading.Lock()
 
 
 def abort_run(run_id: str):
-    """Immediately kill a running flow by injecting a FlowAbortException into its thread."""
+    """Immediately kill a running flow and all registered children (cascade stop)."""
     _aborted_runs.add(run_id)
+
+    # ── Cascade: abort all child sub-runs first ──────────────────────────────
+    with _run_children_lock:
+        children = set(_run_children.get(run_id, set()))  # snapshot
+    for child_run_id in children:
+        log.info(f"[Flows.Engine] ☠️ Cascade aborting child run '{child_run_id}' (parent={run_id})")
+        abort_run(child_run_id)  # recursive for grandchildren
+
+    # ── Kill the parent thread ───────────────────────────────────────────────
     with _run_threads_lock:
         thread_id = _run_threads.get(run_id)
     if thread_id is not None:
         _inject_exception(thread_id, FlowAbortException)
         log.info(f"[Flows.Engine] ☠️ Injected FlowAbortException into thread {thread_id} (run={run_id})")
+
+    # Crucial: Unblock the thread if it's currently waiting for user input
+    _cancel_pending_input(run_id)
 
 def _inject_exception(thread_id: int, exc_type: type) -> bool:
     """Use ctypes to raise an exception in the target thread."""
@@ -120,6 +134,88 @@ def _unregister_active_run(flow_id: str, run_id: str):
     with _run_threads_lock:
         _run_threads.pop(run_id, None)
     _aborted_runs.discard(run_id)
+    # Clean up child-run registry
+    with _run_children_lock:
+        _run_children.pop(run_id, None)
+        # Also remove this run from any parent's child set
+        for parent_children in _run_children.values():
+            parent_children.discard(run_id)
+    # Clean up any pending input gate if the run finished/aborted
+    _cancel_pending_input(run_id)
+
+
+def register_child_run(parent_run_id: str, child_run_id: str):
+    """Link a child sub-run to its parent so abort_run() can cascade."""
+    with _run_children_lock:
+        if parent_run_id not in _run_children:
+            _run_children[parent_run_id] = set()
+        _run_children[parent_run_id].add(child_run_id)
+    log.info(f"[Flows.Engine] 🔗 Registered child run '{child_run_id}' under parent '{parent_run_id}'")
+
+
+def get_all_active_runs() -> Dict[str, str]:
+    """Return a snapshot of all currently active {flow_id: run_id} pairs."""
+    with _active_runs_lock:
+        return dict(_active_runs)
+
+
+# ── User Input Gate ────────────────────────────────────────────────────────────
+# Maps run_id → {"event": threading.Event, "value": str|None, "flow_id": str}
+_PENDING_INPUTS: Dict[str, Dict] = {}
+_PENDING_INPUTS_LOCK = threading.Lock()
+
+
+def register_pending_input(
+    run_id: str,
+    flow_id: str,
+    intercept_mode: str = "auto",
+    multi_run_priority: str = "first",
+) -> threading.Event:
+    """Register a run as waiting for user input. Returns the Event to wait on."""
+    event = threading.Event()
+    with _PENDING_INPUTS_LOCK:
+        _PENDING_INPUTS[run_id] = {
+            "event": event,
+            "value": None,
+            "flow_id": flow_id,
+            "intercept_mode": intercept_mode,
+            "multi_run_priority": multi_run_priority,
+        }
+    log.info(f"[Flows.Engine] ⏸️ Run '{run_id}' waiting for user input (mode={intercept_mode}).")
+    return event
+
+
+def deliver_user_input(run_id: str, text: str) -> bool:
+    """Called by the API when the user submits a response. Unblocks the waiting thread."""
+    with _PENDING_INPUTS_LOCK:
+        entry = _PENDING_INPUTS.get(run_id)
+    if entry is None:
+        return False
+    entry["value"] = text
+    entry["event"].set()
+    log.info(f"[Flows.Engine] ✅ User input delivered to run '{run_id}': {text[:60]}")
+    return True
+
+
+def get_pending_input_value(run_id: str) -> Optional[str]:
+    """Retrieve the user's answer after the event has been set."""
+    with _PENDING_INPUTS_LOCK:
+        entry = _PENDING_INPUTS.get(run_id)
+    return entry["value"] if entry else None
+
+
+def _cancel_pending_input(run_id: str):
+    """Unblock any waiting thread for this run (called on abort/finish)."""
+    with _PENDING_INPUTS_LOCK:
+        entry = _PENDING_INPUTS.pop(run_id, None)
+    if entry:
+        entry["event"].set()  # Unblock the waiting thread so it can exit cleanly
+
+
+def get_all_pending_input_runs() -> list:
+    """Returns list of {run_id, flow_id} for all runs currently waiting for input."""
+    with _PENDING_INPUTS_LOCK:
+        return [{"run_id": rid, "flow_id": v["flow_id"]} for rid, v in _PENDING_INPUTS.items()]
 
 
 # ── Jinja2 template engine ─────────────────────────────────────────────────────
@@ -159,7 +255,25 @@ def _render_params(params: Dict[str, Any], context: Dict[str, Any]) -> Dict[str,
 
 def _eval_condition(condition: str, context: Dict[str, Any]) -> bool:
     """Evaluate a Jinja2 boolean condition against the context."""
-    rendered = _render(f"{{% if {condition} %}}true{{% else %}}false{{% endif %}}", context)
+    # Strip any accidental brackets the user might have typed
+    clean_cond = condition.replace("{{", "").replace("}}", "")
+    
+    # Auto-coerce types in context to allow loose comparisons (e.g., string "10" > 5)
+    eval_ctx = {}
+    for k, v in context.items():
+        if isinstance(v, str):
+            v_lower = v.lower()
+            if v_lower in ["true", "false"]:
+                eval_ctx[k] = (v_lower == "true")
+            else:
+                try:
+                    eval_ctx[k] = float(v) if "." in v else int(v)
+                except ValueError:
+                    eval_ctx[k] = v
+        else:
+            eval_ctx[k] = v
+            
+    rendered = _render(f"{{% if {clean_cond} %}}true{{% else %}}false{{% endif %}}", eval_ctx)
     return rendered.strip() == "true"
 
 
@@ -181,7 +295,9 @@ def _topological_sort(steps: List[Dict]) -> List[Dict]:
         if step is None:
             return
         for dep in step.get("depends_on", []):
-            visit(dep)
+            dep_id = dep if isinstance(dep, str) else dep.get("node")
+            if dep_id:
+                visit(dep_id)
         visited.add(step_id)
         order.append(step)
 
@@ -219,9 +335,14 @@ def _execute_branch(branch: Any, step_id_prefix: str, context: Dict, run_id: str
 
 def _handle_if_else(step: Dict, context: Dict, run_id: str, emit: Callable) -> Any:
     condition = step["params"].get("condition", "false")
-    result = _eval_condition(_render(condition, context), context)
+    result = _eval_condition(condition, context)
 
     branch_key = "true_branch" if result else "false_branch"
+    
+    if "_branch_results" not in context:
+        context["_branch_results"] = {}
+    context["_branch_results"][step["id"]] = branch_key
+
     branch = step["params"].get(branch_key)
     return _execute_branch(branch, f"{step['id']}_{branch_key}", context, run_id, emit)
 
@@ -261,8 +382,10 @@ def _handle_delay(step: Dict, context: Dict, **_) -> None:
 
 def _handle_set_variable(step: Dict, context: Dict, **_) -> None:
     name  = step["params"].get("name", "")
+    # Strip brackets in case the user used the variable picker for the variable name
+    clean_name = name.replace("{{", "").replace("}}", "").strip()
     value = step["params"].get("value", "")
-    context[name] = _render(str(value), context)
+    context[clean_name] = _render(str(value), context)
 
 
 def _handle_template(step: Dict, context: Dict, **_) -> str:
@@ -323,18 +446,30 @@ def _handle_http_request(step: Dict, context: Dict, **_) -> Any:
         raise RuntimeError(f"HTTP {e.code} {e.reason} for {url}")
 
 
+def _handle_abort(step: Dict, context: Dict, **_) -> None:
+    reason = _render(step["params"].get("reason", "Aborted by LOGIC__abort node"), context)
+    log.info(f"[Flows.Engine] 🛑 LOGIC__abort executed: {reason}")
+    raise FlowAbortException(reason)
+
+
 # ── Logic dispatch table ───────────────────────────────────────────────────────
 
+def _handle_start(step: Dict, context: Dict, **_) -> Any:
+    # Just a pass-through entry point
+    return True
+
 _LOGIC_HANDLERS = {
-    "LOGIC__if_else":     _handle_if_else,
-    "LOGIC__switch":      _handle_switch,
-    "LOGIC__loop":        _handle_loop,
     "LOGIC__delay":       _handle_delay,
     "LOGIC__set_variable":_handle_set_variable,
     "LOGIC__template":    _handle_template,
+    "LOGIC__if_else":     _handle_if_else,
+    "LOGIC__switch":      _handle_switch,
+    "LOGIC__loop":        _handle_loop,
     "LOGIC__and_gate":    _handle_and_gate,
     "LOGIC__or_gate":     _handle_or_gate,
     "LOGIC__http_request":_handle_http_request,
+    "LOGIC__abort":       _handle_abort,
+    "CONTROL__start":     _handle_start,
 }
 
 
@@ -359,28 +494,71 @@ def _execute_step(
     })
 
     if step.get("disabled", False):
-        log.info(f"[Flows.Engine] ⏭️ Step '{step['id']}' bypassed (disabled).")
-        emit(run_id, {
-            "type":   "step_skip",
-            "run_id": run_id,
-            "step_id": step["id"],
-            "action": action,
-            "ts":     datetime.datetime.now().isoformat(),
-        })
-        return None
+        disable_mode = step.get("disable_mode", "skip")
+        log.info(f"[Flows.Engine] ⏭️ Step '{step['id']}' bypassed (disabled). Mode: {disable_mode}")
+        
+        if step.get("action") == "CONTROL__start" and disable_mode == "stop":
+            emit(run_id, {
+                "type":   "step_error",
+                "run_id": run_id,
+                "step_id": step["id"],
+                "action": action,
+                "error":  "Start node is disabled! Please enable the start node to run the flow.",
+                "ts":     datetime.datetime.now().isoformat(),
+            })
+        else:
+            emit(run_id, {
+                "type":   "step_skip",
+                "run_id": run_id,
+                "step_id": step["id"],
+                "action": action,
+                "ts":     datetime.datetime.now().isoformat(),
+            })
+        return "_BRANCH_STOPPED" if disable_mode == "stop" else None
 
     try:
-        # Native logic handlers
-        if action in _LOGIC_HANDLERS:
-            handler = _LOGIC_HANDLERS[action]
-            sig_args = handler.__code__.co_varnames[:handler.__code__.co_argcount]
-            kwargs = {"step": step, "context": context}
-            if "run_id" in sig_args: kwargs["run_id"] = run_id
-            if "emit"   in sig_args: kwargs["emit"]   = emit
-            result = handler(**kwargs)
+        # Extract timeout configuration
+        raw_params = step.get("params", {})
+        timeout_val = params.get("timeout_seconds", raw_params.get("timeout_seconds", 0))
+        timeout_seconds = int(timeout_val) if str(timeout_val).isdigit() else 0
+        
+        on_timeout_cont = params.get("on_timeout_continue", raw_params.get("on_timeout_continue", False))
+        on_timeout_continue = str(on_timeout_cont).lower() in ["true", "1", "yes"]
+
+        def _run_action():
+            # Native logic handlers
+            if action in _LOGIC_HANDLERS:
+                handler = _LOGIC_HANDLERS[action]
+                sig_args = handler.__code__.co_varnames[:handler.__code__.co_argcount]
+                kwargs = {"step": step, "context": context}
+                if "run_id" in sig_args: kwargs["run_id"] = run_id
+                if "emit"   in sig_args: kwargs["emit"]   = emit
+                return handler(**kwargs)
+            else:
+                from .registry import execute_action
+                import time
+                # Strip execution-level parameters before passing to the registry
+                clean_params = {k: v for k, v in params.items() if k not in ["timeout_seconds", "on_timeout_continue"]}
+                clean_params["_run_id"] = run_id
+                clean_params["_timeout_seconds"] = timeout_seconds
+                clean_params["_start_time"] = time.time()
+                return execute_action(action, clean_params, context)
+
+        if timeout_seconds > 0:
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(_run_action)
+                try:
+                    result = future.result(timeout=timeout_seconds)
+                except concurrent.futures.TimeoutError:
+                    log.warning(f"[Flows.Engine] Step '{step['id']}' timed out after {timeout_seconds}s.")
+                    if on_timeout_continue:
+                        log.info(f"[Flows.Engine] on_timeout_continue is True. Proceeding gracefully.")
+                        result = "[Timeout]"
+                    else:
+                        raise TimeoutError(f"Step '{step['id']}' timed out after {timeout_seconds} seconds.")
         else:
-            from .registry import execute_action
-            result = execute_action(action, params, context)
+            result = _run_action()
 
         if output_as and result is not None:
             context[output_as] = result
@@ -442,9 +620,23 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
     context = dict(variables)
     context["_run_id"]  = run_id
     context["_flow_id"] = flow_id
+    context["_branch_results"] = {}
 
     try:
+        # Pre-sort to put higher priority start nodes first
+        pipeline.sort(key=lambda x: int(x.get("params", {}).get("priority", 0)) if x.get("action") == "CONTROL__start" else 999)
         sorted_steps = _topological_sort(pipeline)
+        skipped_nodes = set()
+        
+        has_start_nodes = any(s.get("action") == "CONTROL__start" for s in sorted_steps)
+        
+        if not has_start_nodes and len(sorted_steps) > 0:
+            emit(run_id, {
+                "type":    "toast",
+                "level":   "warning",
+                "message": "Start node is missing. Floating nodes will be ignored."
+            })
+
         for step in sorted_steps:
             # Cooperative abort check is now the FALLBACK;
             # primary kill path is ctypes exception injection in abort_run()
@@ -458,7 +650,48 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
                 })
                 return run_id
 
-            _execute_step(step, context, run_id, emit)
+            step_id = step["id"]
+            should_skip = False
+            
+            # Isolate and skip any node that has no dependencies AND is not a start node itself.
+            # This enforces that ALL execution must originate from a CONTROL__start node.
+            if not step.get("depends_on") and step.get("action") != "CONTROL__start":
+                should_skip = True
+            
+            # Check dependencies to see if we should skip this step
+            for dep in step.get("depends_on", []):
+                if isinstance(dep, str):
+                    if dep in skipped_nodes:
+                        should_skip = True
+                        break
+                elif isinstance(dep, dict):
+                    parent_id = dep.get("node")
+                    req_branch = dep.get("branch")
+                    if parent_id in skipped_nodes:
+                        should_skip = True
+                        break
+                    
+                    # Skip if parent took a different branch
+                    actual_branch = context["_branch_results"].get(parent_id)
+                    if actual_branch and req_branch and actual_branch != req_branch:
+                        should_skip = True
+                        break
+
+            if should_skip:
+                skipped_nodes.add(step_id)
+                emit(run_id, {
+                    "type":    "step_skipped",
+                    "run_id":  run_id,
+                    "step_id": step_id,
+                    "action":  step.get("action", ""),
+                    "ts":      datetime.datetime.now().isoformat(),
+                })
+                continue
+
+            res = _execute_step(step, context, run_id, emit)
+            
+            if res == "_BRANCH_STOPPED":
+                skipped_nodes.add(step_id)
 
         emit(run_id, {
             "type":    "flow_done",

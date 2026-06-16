@@ -74,9 +74,9 @@ def _bootstrap_builtin_actions():
     builtin = [
         {
             "name": "LOGIC__if_else",
-            "description": "Evaluates a Jinja2 boolean expression and branches to true_branch or false_branch.",
+            "description": "Evaluates a Jinja2 logical expression and branches to true_branch or false_branch.",
             "params": {
-                "condition":    "string (Jinja2 boolean expression, e.g. '{{ temp }} < 15')",
+                "condition":    "string (Jinja2 logical expression — use the Logic Builder above)",
                 "true_branch":  "dict (action + params to run if condition is True)",
                 "false_branch": "dict (action + params to run if condition is False)",
             },
@@ -106,6 +106,13 @@ def _bootstrap_builtin_actions():
             "icon": "🔁",
         },
         {
+            "name": "CONTROL__start",
+            "description": "Explicit entry point for the flow. Flows containing this node will only execute nodes connected to it.",
+            "params": {"priority": "integer"},
+            "category": "LOGIC",
+            "icon": "▶️",
+        },
+        {
             "name": "LOGIC__delay",
             "description": "Waits for the specified number of seconds before proceeding.",
             "params": {"seconds": "number"},
@@ -114,10 +121,10 @@ def _bootstrap_builtin_actions():
         },
         {
             "name": "LOGIC__set_variable",
-            "description": "Sets or updates a flow-scoped variable.",
+            "description": "Sets or updates a flow-scoped variable. ⚠️ The 'name' field acts as the variable output name.",
             "params": {
-                "name":  "string (variable name)",
-                "value": "any (static value or Jinja2 expression)",
+                "name":  "string (Variable Name - REQUIRED, e.g. score)",
+                "value": "any (Static value or Jinja2 expression, e.g. '{{ input_data }}')",
             },
             "category": "LOGIC",
             "icon": "📌",
@@ -168,6 +175,15 @@ def _bootstrap_builtin_actions():
             "icon": "🌐",
         },
         {
+            "name": "LOGIC__abort",
+            "description": "Immediately aborts the current flow execution.",
+            "params": {
+                "reason": "string (optional reason to log)"
+            },
+            "category": "LOGIC",
+            "icon": "🛑",
+        },
+        {
             "name": "TRIGGER__cron",
             "description": "Schedules the flow using a cron expression (e.g. '0 7 * * *' = daily at 07:00).",
             "params": {"expression": "string (cron expression)"},
@@ -207,18 +223,220 @@ def _bootstrap_builtin_actions():
 _bootstrap_builtin_actions()
 
 
+def _flows_run_flow(flow_id: str, wait: bool = True, pass_context: bool = True, cascade_stop: bool = True, **kwargs):
+    try:
+        from hecos.modules.flows.storage import get_flow
+        from hecos.modules.flows.engine import run_flow, is_run_aborted, register_child_run
+        import time
+        import uuid
+
+        target_flow = get_flow(flow_id)
+        if not target_flow:
+            log.error(f"FLOWS__run_flow: Flow '{flow_id}' not found.")
+            return False
+
+        if pass_context:
+            target_flow["variables"] = {**(target_flow.get("variables") or {}), **kwargs}
+
+        sub_run_id = f"sub_{uuid.uuid4().hex[:8]}"
+        parent_run_id = kwargs.get("_run_id")
+
+        # Register the child so abort_run() on the parent cascades to it
+        if cascade_stop and parent_run_id:
+            register_child_run(parent_run_id, sub_run_id)
+
+        if wait:
+            # Run synchronously
+            run_flow(target_flow, run_id=sub_run_id)
+            return True
+        else:
+            # Run asynchronously in a daemon thread
+            import threading
+            t = threading.Thread(target=run_flow, args=(target_flow, sub_run_id), daemon=True)
+            t.start()
+            return True
+
+    except Exception as e:
+        log.error(f"Cannot run flow {flow_id}: {e}")
+        return False
+
+_REGISTRY["FLOWS__run_flow"] = {
+    "name": "FLOWS__run_flow",
+    "description": "Executes another flow as a sub-flow. cascade_stop ensures stopping the parent also stops this sub-flow.",
+    "params": {
+        "flow_id":      "string (ID of the target flow to run)",
+        "wait":         "boolean (true=wait for sub-flow to finish before proceeding)",
+        "pass_context": "boolean (true=pass current variables to the sub-flow)",
+        "cascade_stop": "boolean (true=stopping the parent also stops this sub-flow — default: true)",
+    },
+    "category": "FLOWS",
+    "icon": "🔄",
+    "fn": _flows_run_flow,
+}
+
+
+# ── USER__ask_input ────────────────────────────────────────────────────────────
+
+def _user_ask_input(
+    prompt: str = "Please respond:",
+    speak: bool = True,
+    intercept_mode: str = "auto",   # "auto" | "explicit" | "api_only"
+    multi_run_priority: str = "first",  # "first" | "all"
+    **kwargs
+):
+    """
+    Pauses the flow and waits for a user response via chat or voice.
+
+    intercept_mode:
+      - "auto"      → any chat message while this run is waiting is treated as the answer
+      - "explicit"  → user must prefix with @flow (e.g. "@flow yes")
+      - "api_only"  → only /api/flows/<run_id>/input endpoint counts (manual or programmatic)
+
+    multi_run_priority:
+      - "first"  → if multiple flows are waiting, the oldest (first) one gets the reply
+      - "all"    → broadcast the same reply to all waiting flows simultaneously
+    """
+    import time
+
+    run_id = kwargs.get("_run_id", "unknown")
+    timeout_seconds = int(kwargs.get("_timeout_seconds", 0))
+    start_time = kwargs.get("_start_time", time.time())
+
+    try:
+        from hecos.modules.flows.engine import (
+            register_pending_input,
+            get_pending_input_value,
+            is_run_aborted,
+            get_event_bus,
+        )
+
+        # 1. Post the prompt to chat
+        try:
+            from hecos.memory.brain_interface import save_message
+            save_message(
+                role="assistant",
+                message=prompt,
+                user_id="admin",
+                session_id=None,
+                persona_name="Flows",
+                broadcast_sse=True,
+            )
+        except Exception as e:
+            log.warning(f"[USER__ask_input] Could not write to chat: {e}")
+
+        # 2. Speak aloud if requested
+        if speak:
+            try:
+                from hecos.core.audio import voice
+                voice.speak(prompt)
+            except Exception as e:
+                log.warning(f"[USER__ask_input] TTS failed: {e}")
+
+        # 3. Register this run as waiting for input + emit SSE event
+        event = register_pending_input(
+            run_id,
+            kwargs.get("_flow_id", "unknown"),
+            intercept_mode=intercept_mode,
+            multi_run_priority=multi_run_priority
+        )
+        bus = get_event_bus()
+        bus.emit(run_id, {
+            "type":           "step_waiting_input",
+            "run_id":         run_id,
+            "prompt":         prompt,
+            "intercept_mode": intercept_mode,
+            "ts":             __import__("datetime").datetime.now().isoformat(),
+        })
+
+        # 4. Block the thread until answer arrives or timeout
+        effective_timeout = None
+        if timeout_seconds and timeout_seconds > 0:
+            elapsed = time.time() - start_time
+            remaining = timeout_seconds - elapsed
+            if remaining > 0:
+                effective_timeout = remaining
+            else:
+                effective_timeout = 0.1  # already expired
+
+        answered = event.wait(timeout=effective_timeout)
+
+        # 5. If aborted during wait, raise
+        if is_run_aborted(run_id):
+            from hecos.modules.flows.engine import FlowAbortException
+            raise FlowAbortException("Flow aborted while waiting for user input.")
+
+        # 6. Retrieve the value
+        value = get_pending_input_value(run_id)
+
+        if not answered or value is None:
+            log.warning(f"[USER__ask_input] Timed out waiting for input on run '{run_id}'.")
+            return ""
+
+        # 7. Echo reply into chat as a user message
+        try:
+            from hecos.memory.brain_interface import save_message
+            save_message(
+                role="user",
+                message=value,
+                user_id="admin",
+                session_id=None,
+                persona_name=None,
+                broadcast_sse=True,
+            )
+        except Exception:
+            pass
+
+        log.info(f"[USER__ask_input] Got answer for run '{run_id}': {value[:80]}")
+        return value
+
+    except Exception as e:
+        log.error(f"[USER__ask_input] Error: {e}")
+        raise
+
+
+_REGISTRY["USER__ask_input"] = {
+    "name": "USER__ask_input",
+    "description": (
+        "Pauses the flow and waits for a user response (typed or spoken). "
+        "The answer is stored in the output variable and can be used by LOGIC__if_else. "
+        "intercept_mode controls how the answer is captured from chat."
+    ),
+    "params": {
+        "prompt":             "string (Question to ask the user — shown in chat and spoken aloud)",
+        "speak":              "boolean (Speak the prompt via TTS — default: true)",
+        "intercept_mode":     "select:auto|explicit|api_only (How to capture the user reply from chat)",
+        "multi_run_priority": "select:first|all (If multiple flows wait at once: answer only the first, or all)",
+        "timeout_seconds":    "integer (Seconds to wait before giving up — 0 = wait forever)",
+        "on_timeout_continue":"boolean (Continue with empty string on timeout instead of failing)",
+    },
+    "category": "USER",
+    "icon": "🎤",
+    "fn": _user_ask_input,
+}
+
+
 def _setup_audio_wrappers():
-    def _audio_speak(text: str = ""):
+    def _audio_speak(text: str = "", **kwargs):
         try:
             from hecos.core.audio import voice
-            voice.speak(text)
+            voice.speak(text, _run_id=kwargs.get("_run_id"), _timeout=kwargs.get("_timeout_seconds"), _start=kwargs.get("_start_time"))
         except Exception as e:
             log.error(f"Cannot speak: {e}")
         return text
 
-    def _audio_play_alarm(sound: str = "default"):
+    def _audio_play_alarm(sound: str = "default", **kwargs):
         import os
         import time
+        from hecos.modules.flows.engine import is_run_aborted
+
+        run_id = kwargs.get("_run_id")
+        timeout = kwargs.get("_timeout_seconds", 0)
+        start_time = kwargs.get("_start_time", time.time())
+
+        def _should_stop():
+            if run_id and is_run_aborted(run_id): return True
+            if timeout and timeout > 0 and (time.time() - start_time) > timeout: return True
+            return False
 
         base_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -247,7 +465,14 @@ def _setup_audio_wrappers():
                     with wave.open(path, 'rb') as wf:
                         raw = wf.readframes(wf.getnframes())
                         data = np.frombuffer(raw, dtype=np.int16)
-                        sd.play(data.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
+                        sd.play(data.astype("float32") / 32768.0, samplerate=wf.getframerate())
+                        duration = len(data) / wf.getframerate() / wf.getnchannels()
+                        end_time = time.time() + duration
+                        while time.time() < end_time:
+                            if _should_stop():
+                                sd.stop()
+                                break
+                            time.sleep(0.05)
                     played = True
                 except Exception as e_sd:
                     log.debug(f"[Flows.Alarm] sounddevice failed ({e_sd}), trying pygame...")
@@ -261,6 +486,9 @@ def _setup_audio_wrappers():
                     mixer.music.load(path)
                     mixer.music.play()
                     while mixer.music.get_busy():
+                        if _should_stop():
+                            mixer.music.stop()
+                            break
                         time.sleep(0.1)
                     played = True
                 except Exception as e_pg:
@@ -268,13 +496,14 @@ def _setup_audio_wrappers():
 
             # Strategy 3: winsound (Windows-only, WAV only, last resort)
             if not played:
-                try:
-                    import winsound
-                    if path.lower().endswith(".wav"):
-                        winsound.PlaySound(path, winsound.SND_FILENAME)
-                        played = True
-                except Exception as e_ws:
-                    log.error(f"[Flows.Alarm] All playback strategies failed. Last error: {e_ws}")
+                if not _should_stop():
+                    try:
+                        import winsound
+                        if path.lower().endswith(".wav"):
+                            winsound.PlaySound(path, winsound.SND_FILENAME)
+                            played = True
+                    except Exception as e_ws:
+                        log.error(f"[Flows.Alarm] All playback strategies failed. Last error: {e_ws}")
 
         except Exception as e:
             log.error(f"Cannot play alarm: {e}")
@@ -301,7 +530,7 @@ _setup_audio_wrappers()
 
 
 def _setup_system_wrappers():
-    def _system_chat_message(text: str = ""):
+    def _system_chat_message(text: str = "", **kwargs):
         try:
             from hecos.memory.brain_interface import save_message
             # Since flows run in background threads, default to 'admin' user
@@ -336,7 +565,7 @@ def _setup_system_wrappers():
         "fn": _system_chat_message,
     }
 
-    def _system_speak_and_chat(text: str = ""):
+    def _system_speak_and_chat(text: str = "", **kwargs):
         # First send to chat
         _system_chat_message(text)
         # Then speak aloud
@@ -409,7 +638,9 @@ def _setup_ai_wrappers():
             )
 
             log.info(f"[Flows.AI] Sending prompt to AI: {prompt[:80]}...")
+            
             full_text, _voice = agent.run_agentic_loop(prompt, voice_status=False)
+                
             log.info(f"[Flows.AI] AI response received ({len(full_text)} chars).")
 
             # Optionally persist the exchange to chat history so user can review it
@@ -423,6 +654,8 @@ def _setup_ai_wrappers():
 
             return full_text
 
+        except TimeoutError:
+            raise
         except Exception as e:
             log.error(f"[Flows.AI] Error calling AgentExecutor: {e}")
             return f"[AI__prompt error: {e}]"
@@ -435,8 +668,10 @@ def _setup_ai_wrappers():
             "a variable for subsequent nodes."
         ),
         "params": {
-            "prompt":       "string — the question or instruction to send to the AI",
-            "save_to_chat": "bool (optional, default true) — whether to write the prompt+response to the chat history",
+            "prompt":              "string — the question or instruction to send to the AI",
+            "save_to_chat":        "bool (optional, default true) — whether to write the prompt+response to the chat history",
+            "timeout_seconds":     "integer (optional) — max time to wait before aborting the flow. 0 = infinite.",
+            "on_timeout_continue": "bool (optional, default false) — if true, proceeds returning '[AI Timeout]' instead of stopping the flow",
         },
         "category": "AI",
         "icon": "🧠",
@@ -527,6 +762,16 @@ def get_catalog() -> List[Dict[str, Any]]:
     for action in _REGISTRY.values():
         cat = action["category"]
         entry = {k: v for k, v in action.items() if k != "fn"}
+        
+        # Automatically inject execution-level parameters for non-trigger actions
+        if cat != "TRIGGER":
+            params_copy = dict(entry.get("params", {}))
+            if "timeout_seconds" not in params_copy:
+                params_copy["timeout_seconds"] = "integer (0 to disable)"
+            if "on_timeout_continue" not in params_copy:
+                params_copy["on_timeout_continue"] = "boolean (skip error and continue)"
+            entry["params"] = params_copy
+            
         catalog.setdefault(cat, []).append(entry)
     return catalog
 

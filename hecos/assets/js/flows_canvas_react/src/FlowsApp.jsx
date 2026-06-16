@@ -22,6 +22,7 @@ import AreaEditPanel from './components/AreaEditPanel.jsx';
 import ContextMenu from './components/ContextMenu.jsx';
 import { flowToRFNodes, rfNodesToFlow, autoLayoutNodes } from './utils/conversion.js';
 import { ACTION_TYPE_MAP } from './nodes/nodeTypeMap.js';
+import { useUndoHistory } from './utils/useUndoHistory.js';
 
 const DEFAULT_EDGE_OPTIONS = {
   type: 'smoothstep',
@@ -40,6 +41,9 @@ export default function FlowsApp() {
   const [rfInstance, setRfInstance] = useState(null);
   const [menu, setMenu] = useState(null);
   const execStateRef = useRef({});
+
+  // ── Undo/Redo history ────────────────────────────────────────────────────
+  const { pushHistory, undo, redo, canUndo, canRedo } = useUndoHistory();
 
   // Keep live refs to current nodes/edges so callbacks always see fresh state
   const nodesRef = useRef(nodes);
@@ -83,19 +87,23 @@ export default function FlowsApp() {
   }, [onEdgesChange]);
 
   // ── Sync positions ONCE when drag ends (single event, not per-frame) ──────
-  const onNodeDragStop = useCallback((_event, _node, updatedNodes) => {
-    // updatedNodes is the full node list with final positions from ReactFlow
-    notifyChange(updatedNodes, undefined);
-  }, [notifyChange]);
+  const onNodeDragStop = useCallback((_event, _node, _draggedNodes) => {
+    // _draggedNodes contains ONLY the dragged nodes, not all nodes!
+    // Since useNodesState already updates nodes on every drag frame,
+    // nodesRef.current will have the updated positions.
+    notifyChange(undefined, undefined);
+    pushHistory(nodesRef.current, edgesRef.current);
+  }, [notifyChange, pushHistory]);
 
   // ── Edge connection ───────────────────────────────────────────────────────
   const onConnect = useCallback((params) => {
     setEdges(eds => {
       const newEdges = addEdge({ ...params, ...DEFAULT_EDGE_OPTIONS }, eds);
       notifyChange(undefined, newEdges);
+      pushHistory(nodesRef.current, newEdges);
       return newEdges;
     });
-  }, [notifyChange]);
+  }, [notifyChange, pushHistory]);
 
   // ── Drop from palette ─────────────────────────────────────────────────────
   const onDrop = useCallback((event) => {
@@ -147,6 +155,7 @@ export default function FlowsApp() {
     setNodes(nds => {
       const updated = [...nds, newNode];
       notifyChange(updated, undefined);
+      pushHistory(updated, edgesRef.current);
       return updated;
     });
   }, [rfInstance, reactFlowWrapper, catalog, notifyChange]);
@@ -218,6 +227,7 @@ export default function FlowsApp() {
         setEdges(eds => {
           const upEdges = eds.filter(e => e.source !== payload.id && e.target !== payload.id);
           notifyChange(up, upEdges);
+          pushHistory(up, upEdges);
           return upEdges;
         });
         return up;
@@ -226,6 +236,7 @@ export default function FlowsApp() {
       setEdges(eds => {
         const up = eds.filter(e => e.id !== payload.id);
         notifyChange(undefined, up);
+        pushHistory(nodesRef.current, up);
         return up;
       });
     } else if (action === 'TOGGLE_DISABLE') {
@@ -235,6 +246,7 @@ export default function FlowsApp() {
           : n
         );
         notifyChange(up, undefined);
+        pushHistory(up, edgesRef.current);
         return up;
       });
     } else if (action === 'DUPLICATE') {
@@ -249,6 +261,7 @@ export default function FlowsApp() {
       setNodes(nds => {
         const up = [...nds, dupNode];
         notifyChange(up, undefined);
+        pushHistory(up, edgesRef.current);
         return up;
       });
     } else if (action === 'SHOW_PALETTE' || action === 'NEW_NODE') {
@@ -275,17 +288,19 @@ export default function FlowsApp() {
       setNodes(nds => {
         const up = [...nds, newArea];
         notifyChange(up, undefined);
+        pushHistory(up, edgesRef.current);
         return up;
       });
     } else if (action === 'REARRANGE_NODES') {
       setNodes(nds => {
         const up = autoLayoutNodes(nds);
         notifyChange(up, undefined);
+        pushHistory(up, edgesRef.current);
         return up;
       });
     }
     setMenu(null);
-  }, [setNodes, setEdges, notifyChange, rfInstance]);
+  }, [setNodes, setEdges, notifyChange, rfInstance, pushHistory]);
 
   // ── Save from edit panel ──────────────────────────────────────────────────
   const onSaveNode = useCallback((nodeId, updatedData) => {
@@ -302,12 +317,13 @@ export default function FlowsApp() {
             }))
           : eds;
         notifyChange(updatedNodes, updatedEdges);
+        pushHistory(updatedNodes, updatedEdges);
         return updatedEdges;
       });
       return updatedNodes;
     });
     setEditNode(null);
-  }, [setNodes, setEdges, notifyChange]);
+  }, [setNodes, setEdges, notifyChange, pushHistory]);
 
   const onSaveArea = useCallback((nodeId, updatedData) => {
     setNodes(nds => {
@@ -315,15 +331,17 @@ export default function FlowsApp() {
         n.id === nodeId ? { ...n, id: updatedData.areaId, data: updatedData } : n
       );
       notifyChange(updatedNodes, undefined);
+      pushHistory(updatedNodes, edgesRef.current);
       return updatedNodes;
     });
     setEditNode(null);
-  }, [setNodes, notifyChange]);
+  }, [setNodes, notifyChange, pushHistory]);
 
   // ── Delete selected nodes/edges ───────────────────────────────────────────
   const deleteSelected = useCallback(() => {
     setNodes(nds => {
       const selectedIds = new Set(nds.filter(n => n.selected).map(n => n.id));
+      if (selectedIds.size === 0) return nds;
       const updatedNodes = nds.filter(n => !selectedIds.has(n.id));
       setEdges(eds => {
         const remainingEdges = eds.filter(e =>
@@ -332,11 +350,29 @@ export default function FlowsApp() {
           !selectedIds.has(e.target)
         );
         notifyChange(updatedNodes, remainingEdges);
+        pushHistory(updatedNodes, remainingEdges);
         return remainingEdges;
       });
       return updatedNodes;
     });
-  }, [setNodes, setEdges, notifyChange]);
+  }, [setNodes, setEdges, notifyChange, pushHistory]);
+
+  // ── Undo/Redo actions ────────────────────────────────────────────────────
+  const performUndo = useCallback(() => {
+    const snapshot = undo();
+    if (!snapshot) return;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    notifyChange(snapshot.nodes, snapshot.edges);
+  }, [undo, setNodes, setEdges, notifyChange]);
+
+  const performRedo = useCallback(() => {
+    const snapshot = redo();
+    if (!snapshot) return;
+    setNodes(snapshot.nodes);
+    setEdges(snapshot.edges);
+    notifyChange(snapshot.nodes, snapshot.edges);
+  }, [redo, setNodes, setEdges, notifyChange]);
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
   useEffect(() => {
@@ -345,6 +381,20 @@ export default function FlowsApp() {
         setMenu(null);
         return;
       }
+
+      // Undo: Ctrl+Z
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        performUndo();
+        return;
+      }
+      // Redo: Ctrl+Y or Ctrl+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        performRedo();
+        return;
+      }
+
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -356,13 +406,14 @@ export default function FlowsApp() {
           const anyEnabled = selectedNodes.some(n => !n.data.disabled);
           const up = nds.map(n => n.selected ? { ...n, data: { ...n.data, disabled: anyEnabled } } : n);
           notifyChange(up, undefined);
+          pushHistory(up, edgesRef.current);
           return up;
         });
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [deleteSelected, setNodes, notifyChange]);
+  }, [deleteSelected, setNodes, notifyChange, performUndo, performRedo, pushHistory]);
 
   // ── Wire HecosFlowsBridge ─────────────────────────────────────────────────
   useEffect(() => {
@@ -372,6 +423,10 @@ export default function FlowsApp() {
         setNodes(rNodes);
         setEdges(rEdges);
         execStateRef.current = {};
+        // fitView after React commits state — ensures all nodes are visible without refresh
+        setTimeout(() => {
+          if (rfInstance) rfInstance.fitView({ padding: 0.15, duration: 300 });
+        }, 80);
       },
       exportFlowFromCanvas: exportFlow,
       setNodeState(stepId, state) {
@@ -386,12 +441,14 @@ export default function FlowsApp() {
         setNodes(nds => nds.map(n => ({ ...n, data: { ...n.data, execState: null } })));
       },
       deleteSelectedNodes: deleteSelected,
+      undo: performUndo,
+      redo: performRedo,
     };
 
     window.togglePalette = () => setPaletteOpen(p => !p);
 
     return () => { bridge._api = null; };
-  }, [setNodes, setEdges, exportFlow, deleteSelected]);
+  }, [setNodes, setEdges, exportFlow, deleteSelected, rfInstance, performUndo, performRedo]);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -420,6 +477,53 @@ export default function FlowsApp() {
       >
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#1a1a2e" />
         <Controls showInteractive={false} />
+
+        {/* ── Undo/Redo Toolbar ─────────────────────────────────────── */}
+        <Panel position="top-left" style={{ display: 'flex', gap: '4px', marginTop: '6px', marginLeft: '6px' }}>
+          <button
+            id="flows-undo-btn"
+            onClick={performUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            style={{
+              background: canUndo ? 'rgba(0,212,255,0.12)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${canUndo ? 'rgba(0,212,255,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              color: canUndo ? 'rgba(0,212,255,0.9)' : 'rgba(255,255,255,0.2)',
+              borderRadius: '6px',
+              padding: '5px 10px',
+              cursor: canUndo ? 'pointer' : 'not-allowed',
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              transition: 'all 0.15s',
+            }}
+          >
+            <i className="fas fa-undo" style={{ fontSize: '0.7rem' }} /> Undo
+          </button>
+          <button
+            id="flows-redo-btn"
+            onClick={performRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Y)"
+            style={{
+              background: canRedo ? 'rgba(0,212,255,0.12)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${canRedo ? 'rgba(0,212,255,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              color: canRedo ? 'rgba(0,212,255,0.9)' : 'rgba(255,255,255,0.2)',
+              borderRadius: '6px',
+              padding: '5px 10px',
+              cursor: canRedo ? 'pointer' : 'not-allowed',
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              transition: 'all 0.15s',
+            }}
+          >
+            <i className="fas fa-redo" style={{ fontSize: '0.7rem' }} /> Redo
+          </button>
+        </Panel>
+
         <MiniMap
           pannable
           zoomable
@@ -438,7 +542,7 @@ export default function FlowsApp() {
         />
 
         {nodes.length === 0 && (
-          <Panel position="center" style={{ pointerEvents: 'none', minWidth: '300px' }}>
+          <Panel position="center" style={{ pointerEvents: 'none', minWidth: '300px', marginTop: '60px' }}>
             <div className="rf-empty-hint">
               <i className="fas fa-project-diagram" />
               <p>Select a flow from the sidebar<br />or drag a node from the Palette to start</p>
@@ -467,7 +571,10 @@ export default function FlowsApp() {
           );
         }
 
-        const allVariables = Array.from(new Set(nodes.map(n => n.data?.outputAs).filter(Boolean)));
+        const allVariables = Array.from(new Set([
+          ...nodes.map(n => n.data?.outputAs).filter(Boolean),
+          ...nodes.filter(n => n.data?.action === 'LOGIC__set_variable').map(n => n.data?.params?.name).filter(Boolean)
+        ])).sort();
         return (
           <NodeEditPanel
             key={editNode.id}

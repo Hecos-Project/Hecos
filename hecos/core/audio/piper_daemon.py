@@ -169,7 +169,7 @@ class PiperDaemon:
         waited = self._synth_complete_event.wait(120.0)
         return waited and os.path.exists(filepath)
 
-    def speak(self, text: str, state=None):
+    def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0):
         """
         Main PC TTS. Splits text into phrases, generates temp wav files
         virtually instantly via the IPC daemon, and streams playback natively.
@@ -190,6 +190,17 @@ class PiperDaemon:
         self._stop_flag = False
         if state: state.system_speaking = True
 
+        def _should_stop():
+            if self._stop_flag: return True
+            if _run_id:
+                try:
+                    from hecos.modules.flows.engine import is_run_aborted
+                    if is_run_aborted(_run_id): return True
+                except: pass
+            if _timeout and _timeout > 0 and (time.time() - _start) > _timeout:
+                return True
+            return False
+
         # Block until model is ready (up to 30s for slow hardware)
         if not self._ready_event.wait(timeout=30.0):
             logger.error("PIPER_DAEMON", "Piper not ready within 30s — aborting speak()")
@@ -203,7 +214,7 @@ class PiperDaemon:
 
         try:
             for s in sentences:
-                if self._stop_flag: break
+                if _should_stop(): break
                 
                 # Generate unique temp file
                 uid = uuid.uuid4().hex[:8]
@@ -224,7 +235,7 @@ class PiperDaemon:
                 # can easily take more than 5s, leading to EOFError (file empty/incomplete).
                 waited = self._synth_complete_event.wait(30.0)
 
-                if self._stop_flag: break
+                if _should_stop(): break
                 
                 if not waited:
                     logger.error("PIPER_DAEMON", "Timeout waiting for TTS chunk synthesis.")
@@ -237,8 +248,15 @@ class PiperDaemon:
                             frames = wf.readframes(wf.getnframes())
                             import numpy as np
                             pcm = np.frombuffer(frames, dtype="int16")
-                            # Blocking play
-                            sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
+                            # Non-blocking play with cooperative checks
+                            sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate())
+                            duration = len(pcm) / wf.getframerate()
+                            end_time = time.time() + duration
+                            while time.time() < end_time:
+                                if _should_stop():
+                                    sd.stop()
+                                    break
+                                time.sleep(0.05)
                     except EOFError:
                         logger.error("PIPER_DAEMON", "EOFError: generated wav file is empty or corrupted.")
                     except Exception as e:

@@ -82,21 +82,327 @@ When you double-click a node on the Canvas, the **Node Editor** opens. Here is w
 
 ## 4. Complete Node Catalog (Core Actions)
 
-The Flows module natively integrates **15 actions**. In addition to these, Hecos automatically imports all actions from active system Plugins (such as the camera `WEBCAM__capture`, or mail `MAIL__send`). 
+The Flows module natively integrates **19 actions**. In addition to these, Hecos automatically imports all actions from active system Plugins (such as the camera `WEBCAM__capture`, or mail `MAIL__send`). 
 
-Here is the list of the 15 fundamental building blocks of Hecos Flows:
+Here is the list of the fundamental building blocks of Hecos Flows:
 
 ### 🛠️ LOGIC Category
 The directors and traffic controllers: they delay, split, join, and evaluate decisions within the flow.
-1. **LOGIC__delay**: Pauses the flow execution. _[Parameters: `seconds` (number)]_
-2. **LOGIC__set_variable**: Explicitly assigns a value to a new variable in the flow. _[Parameters: `name`, `value`]_
-3. **LOGIC__if_else**: Evaluates a Jinja2 mathematical/logical expression and branches the flow. _[Parameters: `condition`, `true_branch`, `false_branch`]_
-4. **LOGIC__switch**: Executes different commands based on a specific condition. _[Parameters: `expression`, `branches`, `default`]_
-5. **LOGIC__loop**: Iterates and processes a list repeatedly. _[Parameters: `over`, `as_var`, `body`]_
-6. **LOGIC__template**: Generates or modifies a Jinja2 text by interpolating variables. _[Parameters: `template`, `output_as`]_
-7. **LOGIC__and_gate**: Completes the flow *ONLY IF* several conditions are all simultaneously true. _[Parameters: `conditions`, `on_success`, `on_fail`]_
-8. **LOGIC__or_gate**: Executes if *AT LEAST ONE* condition is true. _[Parameters: `conditions`, `on_success`, `on_fail`]_
-9. **LOGIC__http_request**: Calls external APIs or internet services and saves the returned JSON response in a variable. _[Parameters: `method`, `url`, `headers`, `body`, `output_as`]_
+
+---
+
+#### 1. `LOGIC__delay` — Timed Pause
+Pauses flow execution for a precise number of seconds before moving on to the next node.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `seconds` | number | Seconds to wait (e.g. `5`, `30`, `120`) |
+
+```yaml
+- id: pause_5_seconds
+  action: LOGIC__delay
+  params:
+    seconds: 5
+```
+
+---
+
+#### 2. `LOGIC__set_variable` — Set a Variable
+Creates or overwrites a variable in the flow context with a static or dynamic (Jinja2) value. Unlike `output_as`, this variable is available to **all** subsequent nodes without explicit dependencies.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | Name of the variable to create (e.g. `user_name`) |
+| `value` | any | Value to assign. Can contain `{{ variables }}` |
+
+```yaml
+- id: set_threshold
+  action: LOGIC__set_variable
+  params:
+    name: temperature_threshold
+    value: 25
+
+- id: personalized_greeting
+  action: LOGIC__set_variable
+  params:
+    name: message
+    value: "Good morning {{ user_name }}, the threshold is {{ temperature_threshold }}°C"
+```
+
+---
+
+#### 3. `LOGIC__if_else` — Conditional Fork _(most used!)_
+Evaluates a Jinja2 logical/mathematical expression and **executes only one** of two branches: `true_branch` if the condition is true, `false_branch` if it is false.
+
+> [!IMPORTANT]
+> **Why does the node seem to run both branches?** If you leave `condition` empty or unfilled, the engine defaults to `false` and always picks `false_branch`. If both `true_branch` and `false_branch` are empty, nothing happens. Make sure you fill in all three fields!
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `condition` | Jinja2 string | The expression to evaluate. **Must return true or false.** Use `{{ variable }}` for dynamic data. |
+| `true_branch` | dict | The node to execute if the condition is **true**. Contains `action` and `params`. |
+| `false_branch` | dict | The node to execute if the condition is **false**. Contains `action` and `params`. |
+
+**Valid condition examples:**
+```yaml
+# Numeric comparison
+condition: "{{ temperature | int }} > 30"
+
+# String comparison
+condition: "{{ status }} == 'active'"
+
+# Boolean value directly from an API
+condition: "{{ sensor.detected == true }}"
+
+# Time comparison (dot notation for dict fields)
+condition: "{{ current_time.hour | int }} > 12"
+```
+
+**Full example — Smart Thermostat:**
+```yaml
+- id: check_temperature
+  action: LOGIC__if_else
+  params:
+    condition: "{{ current_temp | int }} > 28"
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: "It's hot! Temperature is {{ current_temp }} degrees. Turning on the AC."
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Temperature is normal: {{ current_temp }}°C."
+  depends_on:
+    - read_sensor
+```
+
+**Example with multiple actions in one branch (list):**
+```yaml
+- id: check_alarm
+  action: LOGIC__if_else
+  params:
+    condition: "{{ motion_detected == true }}"
+    true_branch:
+      - action: AUDIO__speak
+        params:
+          text: "Warning! Motion detected!"
+      - action: AUDIO__play_alarm
+        params:
+          sound: alarm_urgent
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "No motion. House is safe."
+```
+
+---
+
+#### 4. `LOGIC__switch` — Multi-Way Selector
+Advanced routing: evaluates an expression and uses its result as a **key** to choose which action to run out of many possibilities. Like an if/else with many branches.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `expression` | Jinja2 string | The expression whose result (string) is used as a lookup key |
+| `branches` | dict | Map of `key: action` — each key corresponds to a possible expression value |
+| `default` | dict | Fallback action if no key matches (optional) |
+
+```yaml
+- id: choose_greeting
+  action: LOGIC__switch
+  params:
+    expression: "{{ time_of_day }}"
+    branches:
+      morning:
+        action: AUDIO__speak
+        params:
+          text: "Good morning! Ready for a productive day?"
+      afternoon:
+        action: AUDIO__speak
+        params:
+          text: "Good afternoon! How is work going?"
+      evening:
+        action: AUDIO__speak
+        params:
+          text: "Good evening! Time to relax."
+    default:
+      action: AUDIO__speak
+      params:
+        text: "Hello! I'm not sure what time it is, but I'm here for you."
+```
+
+---
+
+#### 5. `LOGIC__loop` — Loop Over a List
+Iterates over each element in a list (stored in a variable) and runs an action for each one.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `over` | string | The name of the variable holding the list (e.g. `recipients`) |
+| `as_var` | string | The temporary variable name for the current element (e.g. `email`) |
+| `body` | dict | The action to run for each element. Use `{{ as_var }}` in params. |
+
+```yaml
+# Example: log a message for each room in the list
+- id: init_list
+  action: LOGIC__set_variable
+  params:
+    name: rooms
+    value:
+      - kitchen
+      - living_room
+      - bedroom
+
+- id: check_each_room
+  action: LOGIC__loop
+  params:
+    over: rooms
+    as_var: room
+    body:
+      action: SYSTEM__chat_message
+      params:
+        text: "Check complete for: {{ room }}"
+  depends_on:
+    - init_list
+```
+
+---
+
+#### 6. `LOGIC__template` — Jinja2 Text Builder
+Renders a Jinja2 template by interpolating variables and saves the result as a new variable. Perfect for composing complex messages before sending them.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `template` | Jinja2 string | The text with variables to substitute (use `{{ variable }}`) |
+| `output_as` | string | Name of the variable in which to store the final result |
+
+```yaml
+- id: compose_report
+  action: LOGIC__template
+  params:
+    template: |
+      Report for {{ today }}
+      Temperature: {{ temp }}°C
+      Status: {{ 'OK' if temp|int < 30 else 'CRITICAL' }}
+    output_as: report_text
+  depends_on:
+    - read_data
+
+- id: send_report
+  action: MAIL__send
+  params:
+    to: admin@myhouse.com
+    subject: Daily Report
+    body: "{{ report_text }}"
+  depends_on:
+    - compose_report
+```
+
+---
+
+#### 7. `LOGIC__and_gate` — AND Gate (all conditions)
+Runs `on_success` **only if ALL** conditions in the list are true. If even one is false, runs `on_fail`.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `conditions` | list of strings | List of Jinja2 expressions to evaluate. All must be true. |
+| `on_success` | dict | Action to run if **all** conditions pass |
+| `on_fail` | dict | Action to run if **at least one** condition fails (optional) |
+
+```yaml
+- id: check_security
+  action: LOGIC__and_gate
+  params:
+    conditions:
+      - "{{ lock.locked == true }}"
+      - "{{ alarm.active == true }}"
+      - "{{ temperature.celsius | int }} < 40"
+    on_success:
+      action: SYSTEM__chat_message
+      params:
+        text: "✅ House secure: lock closed, alarm active, temperature OK."
+    on_fail:
+      action: AUDIO__speak
+      params:
+        text: "Warning! At least one security condition is not met!"
+  depends_on:
+    - check_lock
+    - check_alarm
+    - check_temp
+```
+
+---
+
+#### 8. `LOGIC__or_gate` — OR Gate (at least one condition)
+Runs `on_success` if **AT LEAST ONE** of the conditions is true. Runs `on_fail` only if **none** of the conditions are true.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `conditions` | list of strings | List of Jinja2 expressions. Just one needs to be true. |
+| `on_success` | dict | Action if at least one condition is true |
+| `on_fail` | dict | Action if no condition is true (optional) |
+
+```yaml
+- id: notify_if_anomaly
+  action: LOGIC__or_gate
+  params:
+    conditions:
+      - "{{ cpu_usage | int }} > 90"
+      - "{{ ram_usage | int }} > 85"
+      - "{{ disk_full == true }}"
+    on_success:
+      action: AUDIO__speak
+      params:
+        text: "Warning: the system is running out of resources! Check immediately."
+    on_fail:
+      action: SYSTEM__chat_message
+      params:
+        text: "System healthy. No anomalies detected."
+```
+
+---
+
+#### 9. `LOGIC__http_request` — API/Web Call
+Makes an HTTP request to any URL and saves the JSON (or text) response as a variable. This is the node that connects Hecos to the outside world.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `method` | string | HTTP method: `GET`, `POST`, `PUT`, `DELETE` |
+| `url` | string | Target URL. Supports Jinja2 (e.g. `https://api.example.com/{{ id }}`) |
+| `headers` | dict | Optional headers (e.g. `Authorization: Bearer TOKEN`) |
+| `body` | dict or string | Request body for POST/PUT (optional) |
+| `output_as` | string | Variable name to store the parsed JSON response |
+
+```yaml
+# Simple GET — current weather
+- id: fetch_weather
+  action: LOGIC__http_request
+  params:
+    method: GET
+    url: "https://api.open-meteo.com/v1/forecast?latitude=51.5&longitude=-0.1&current_weather=true"
+    output_as: weather_data
+
+# Read the result in the next node
+- id: announce_weather
+  action: AUDIO__speak
+  params:
+    text: "Current temperature in London is {{ weather_data.current_weather.temperature }} degrees."
+  depends_on:
+    - fetch_weather
+
+# POST with authentication — webhook notification
+- id: notify_webhook
+  action: LOGIC__http_request
+  params:
+    method: POST
+    url: "https://hooks.example.com/notify"
+    headers:
+      Authorization: "Bearer my-secret-token"
+      Content-Type: "application/json"
+    body:
+      event: "flow_completed"
+      message: "{{ result }}"
+    output_as: webhook_response
+```
 
 ### ⏰ TRIGGER Category
 Indicates how this automation will "come to life" automatically over time (these fields modify the flow root, not standard blocks).
@@ -117,6 +423,294 @@ Interacts directly with the core AI memory and interfaces.
 Allows Flows to interact **bidirectionally** with the AI brain — not just to write static messages, but to send real prompts to the AI and capture its response as a variable.
 16. **AI__prompt**: Sends a text prompt to the full Hecos AgentExecutor (the complete brain, including routing, plugins, and tool calls). The flow **blocks** until the AI has finished responding; the response text is then returned and can be stored using `output_as`. _[Parameters: `prompt` (string), `save_to_chat` (bool, default: true)]_
    > Note: with `save_to_chat: true`, the prompt+response pair is written to the chat history as `[Flow] prompt text` (user role) and the AI reply (assistant role), so you can always review what the flow "thought".
+
+---
+
+### 🧭 CONTROL Category
+Nodes for controlling the execution flow.
+
+#### 17. `CONTROL__start` — Flow Entry Point
+Acts as the mandatory entry point for flow execution. Any node not connected (directly or indirectly via `depends_on` dependencies) to a `CONTROL__start` node will not execute. This prevents accidental execution of floating or isolated branches.
+
+If a flow contains one or more `CONTROL__start` nodes, execution will begin exclusively from them. If the `CONTROL__start` node is disabled (using `disable_mode: stop`), execution of the entire flow will fail immediately.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `priority` | integer | Startup priority order (default: `0`). Start nodes with lower values run first (e.g., `0` before `1`). |
+
+**Example 1: Simple Linear Startup**
+A basic flow that starts explicitly from the Start node and speaks a greeting.
+```yaml
+- id: start_1
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: notify_hello
+  action: AUDIO__speak
+  params:
+    text: "System ready and started."
+  depends_on:
+    - start_1
+```
+
+**Example 2: Ordered Execution of Multiple Branches**
+Two start nodes executed in temporal sequence using priority. `initialize` runs first, followed by `start_operation`.
+```yaml
+- id: initialize
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: set_var
+  action: LOGIC__set_variable
+  params:
+    name: system_state
+    value: "ready"
+  depends_on:
+    - initialize
+
+- id: start_operation
+  action: CONTROL__start
+  params:
+    priority: 1
+
+- id: run_task
+  action: SYSTEM__chat_message
+  params:
+    text: "Execution started. System state: {{ system_state }}"
+  depends_on:
+    - start_operation
+```
+
+**Example 3: Startup Security Verification**
+At startup, the flow verifies a condition before proceeding, stopping if necessary.
+```yaml
+- id: start_security
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: check_connection
+  action: LOGIC__http_request
+  params:
+    method: GET
+    url: "https://api.ipify.org?format=json"
+    output_as: ip_data
+  depends_on:
+    - start_security
+
+- id: verify_ip
+  action: LOGIC__if_else
+  params:
+    condition: "{{ ip_data is defined and ip_data.ip != '' }}"
+    true_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Verification complete. IP: {{ ip_data.ip }}"
+    false_branch:
+      action: LOGIC__abort
+      params:
+        reason: "No internet connection on startup."
+  depends_on:
+    - check_connection
+```
+
+---
+
+### 🔄 FLOWS Category
+Nodes dedicated to managing and orchestrating other flows.
+
+#### 18. `FLOWS__run_flow` — Run External Flow
+Allows you to call and execute another saved flow within Hecos, making it possible to structure automations modularly (as sub-routines or libraries).
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `flow_id` | string | The ID of the external flow to execute (e.g., the slug/filename, `morning_routine`) |
+| `wait` | boolean | If `true` (default), waits for the sub-flow to complete before proceeding. If `false`, starts it in the background in parallel. |
+| `pass_context` | boolean | If `true` (default), passes all current variables of the caller flow to the sub-flow. |
+
+**Example 1: Synchronous Modular Execution (Wait)**
+The main flow runs the total lights off sub-flow, waits for it to complete, and then announces goodnight.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: turn_off_house
+  action: FLOWS__run_flow
+  params:
+    flow_id: "total_lights_off"
+    wait: true
+    pass_context: false
+  depends_on:
+    - start_1
+
+- id: final_greeting
+  action: AUDIO__speak
+  params:
+    text: "All lights have been turned off. Goodnight!"
+  depends_on:
+    - turn_off_house
+```
+
+**Example 2: Asynchronous Execution (Background - Fire and Forget)**
+The flow triggers a heavy data synchronization in the background without blocking user interaction or the rest of the current flow.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: trigger_backup
+  action: FLOWS__run_flow
+  params:
+    flow_id: "daily_nas_backup"
+    wait: false
+    pass_context: true
+  depends_on:
+    - start_1
+
+- id: immediate_notification
+  action: SYSTEM__chat_message
+  params:
+    text: "Backup has been started in the background. You can continue using Hecos freely."
+  depends_on:
+    - start_1
+```
+
+**Example 3: Dynamic Parameter Passing**
+Sets variables in the calling flow and passes them to the child flow to customize its output.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: set_data
+  action: LOGIC__set_variable
+  params:
+    name: notification_recipient
+    value: "Tony"
+  depends_on:
+    - start_1
+
+- id: send_custom_notification
+  action: FLOWS__run_flow
+  params:
+    flow_id: "send_telegram_notification"
+    wait: true
+    pass_context: true
+  depends_on:
+    - set_data
+```
+
+---
+
+### 👤 USER Category
+Nodes dedicated to direct interactive user interactions.
+
+#### 19. `USER__ask_input` — Ask User Input
+Pauses flow execution and waits for the user to provide input via chat (text) or voice. The received response is stored in the variable defined in the node's *Output As* field (e.g., `user_input`) to be used by subsequent blocks.
+
+If the flow is interrupted or cancelled (via the "Stop" button), the node detects the cancellation, unblocks the wait, and terminates cleanly.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `prompt` | string | The question/prompt to send to the chat and optionally read aloud. |
+| `speak` | boolean | If `true` (default), reads the prompt aloud via Text-to-Speech (TTS). |
+| `intercept_mode` | choice (`auto`\|`explicit`\|`api_only`) | **auto**: any message in chat is captured as the response.<br>**explicit**: responds only if the message starts with `@flow` (e.g., `@flow 22`). Recommended if using multiple chat clients.<br>**api_only**: only responds via a POST API call to `/api/flows/<run_id>/input`. |
+| `multi_run_priority`| choice (`first`\|`all`) | If multiple flows are waiting for input:<br>**first**: assigns the response only to the oldest flow.<br>**all**: sends the same response to all waiting flows. |
+| `timeout_seconds` | integer | Maximum wait time in seconds before timing out (default: `0` = wait forever). |
+| `on_timeout_continue`| boolean | If `true` (default: `false`), continues execution with an empty string (`""`) on timeout instead of failing the flow. |
+
+**Example 1: Interactive Choice (Yes/No)**
+Asks the user if they want to hear a joke, intercepts any response in chat, and branches execution.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: ask_choice
+  action: USER__ask_input
+  params:
+    prompt: "Would you like to hear a joke?"
+    speak: true
+    intercept_mode: "auto"
+    timeout_seconds: 60
+  output_as: joke_response
+  depends_on:
+    - start_1
+
+- id: evaluate_response
+  action: LOGIC__if_else
+  params:
+    condition: "'yes' in {{ joke_response | lower }} or 'ok' in {{ joke_response | lower }}"
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: "Why don't scientists trust atoms? Because they make up everything!"
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "No problem, maybe next time."
+  depends_on:
+    - ask_choice
+```
+
+**Example 2: Safe Numeric Setpoint with Timeout**
+Asks to enter a target temperature explicitly (using `@flow <temperature>`). If the user does not respond within 15 seconds, it continues using the default value.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: ask_temperature
+  action: USER__ask_input
+  params:
+    prompt: "At what temperature would you like to set the thermostat? Answer writing '@flow <degrees>'"
+    speak: false
+    intercept_mode: "explicit"
+    timeout_seconds: 15
+    on_timeout_continue: true
+  output_as: chosen_degrees
+  depends_on:
+    - start_1
+
+- id: verify_and_set
+  action: LOGIC__if_else
+  params:
+    condition: "{{ chosen_degrees != '' }}"
+    true_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Setting the temperature to {{ chosen_degrees }} degrees."
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "No response. Keeping default temperature at 20 degrees."
+  depends_on:
+    - ask_temperature
+```
+
+**Example 3: Sentiment Analysis of Input**
+Asks the user how they feel, passes the input to the AI to analyze their mood, and responds accordingly.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: ask_mood
+  action: USER__ask_input
+  params:
+    prompt: "Hi! How is your day going today?"
+    speak: true
+    intercept_mode: "auto"
+    timeout_seconds: 0
+  output_as: user_mood
+  depends_on:
+    - ask_mood
+
+- id: analyze_sentiment
+  action: AI__prompt
+  params:
+    prompt: "The user replied: '{{ user_mood }}'. Analyze their mood (positive/negative/neutral) and reply with a single sentence of support or happiness suitable for their mood."
+    save_to_chat: true
+  depends_on:
+    - ask_mood
+```
 
 ---
 

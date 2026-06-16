@@ -7,51 +7,144 @@ enabled: true
 trigger:
   type: manual
 pipeline:
-- id: system__speak_and_chat_1
-  action: SYSTEM__speak_and_chat
-  position:
-    x: -359
-    y: -112
-  params:
-    text: Benvenuto!
 - id: audio__play_alarm_1
   action: AUDIO__play_alarm
   position:
-    x: -59
-    y: -73
+    x: -1605
+    y: -247
   params:
-    sound: live-chat-353605.mp3
-  depends_on:
-  - system__speak_and_chat_1
-- id: executor__execute_background_command_1
-  action: EXECUTOR__execute_background_command
+    on_timeout_continue: true
+    sound: universfield-new-notification-037-485898.mp3
+    timeout_seconds: 4
+- id: system__chat_message_1
+  action: SYSTEM__chat_message
   position:
-    x: -264
-    y: 131
+    x: -920
+    y: -324
   params:
-    command: cmd
+    on_timeout_continue: true
+    text: 'Onboarding: Ciao, io sono hecos: l''anima del sistema. Tieni sott''occhio
+      anche la chat, facciamo un paio di test. '
+    timeout_seconds: 0
   depends_on:
   - audio__play_alarm_1
-- id: executor__execute_shell_command_1
-  action: EXECUTOR__execute_shell_command
+- id: executor__execute_slash_command_1
+  action: EXECUTOR__execute_slash_command
   position:
-    x: 317
-    y: 84
+    x: -654
+    y: -196
   params:
-    command: ipconfig
+    command: '/personality.list_souls '
+    on_timeout_continue: true
+    timeout_seconds: 0
   depends_on:
-  - executor__execute_background_command_1
-- id: executor__execute_shell_command_1_copy746
-  action: EXECUTOR__execute_shell_command
+  - system__chat_message_1
+  - audio__speak_1
+- id: audio__speak_1
+  action: AUDIO__speak
   position:
-    x: 304
-    y: 293
+    x: -927
+    y: -64
   params:
-    command: start cmd
+    on_timeout_continue: true
+    text: 'Onboarding: Ciao, io sono hecos: l''anima del sistema. Tieni sott''occhio
+      anche la chat, facciamo un paio di test. '
+    timeout_seconds: 0
   depends_on:
-  - executor__execute_shell_command_1
+  - audio__play_alarm_1
+- id: executor__execute_slash_command_2
+  action: EXECUTOR__execute_slash_command
+  position:
+    x: -554
+    y: -40
+  params:
+    command: /souls Hecos
+    on_timeout_continue: true
+    timeout_seconds: 0
+  depends_on:
+  - executor__execute_slash_command_1
+- id: ai__prompt_1
+  action: AI__prompt
+  position:
+    x: -1622
+    y: 113
+  params:
+    on_timeout_continue: true
+    prompt: 'Riassumi a parole tue il concetto che il tuo creatore ti ha fatto un
+      pò schizzofrenico, e adesso passi la palla ad urania. Quindi cambia la personalità
+      in Urania. Poi devi dire: ok, eccomi, sono Urania, ora ci penso io. '
+    save_to_chat: true
+    timeout_seconds: 1
+  output_as: testo1
+  depends_on:
+  - executor__execute_slash_command_2
+- id: audio__play_alarm_2
+  action: AUDIO__play_alarm
+  position:
+    x: -841
+    y: 120
+  params:
+    on_timeout_continue: true
+    sound: live-chat-353605.mp3
+    timeout_seconds: 0
+  depends_on:
+  - logic__if_else_1
+- id: audio__play_alarm_3
+  action: AUDIO__play_alarm
+  position:
+    x: -418
+    y: 157
+  params:
+    on_timeout_continue: true
+    sound: incoming-chat-xylophone-86243.mp3
+    timeout_seconds: 0
+  depends_on:
+  - audio__play_alarm_2
+- id: executor__execute_slash_command_4
+  action: EXECUTOR__execute_slash_command
+  position:
+    x: -82
+    y: 167
+  params:
+    command: '/help.list_capabilities '
+    on_timeout_continue: true
+    timeout_seconds: 0
+  depends_on:
+  - audio__play_alarm_3
+- id: executor__execute_slash_command_3
+  action: EXECUTOR__execute_slash_command
+  position:
+    x: -424
+    y: 336
+  params:
+    command: /status
+    on_timeout_continue: true
+    timeout_seconds: 0
+  depends_on:
+  - audio__play_alarm_2
+- id: logic__if_else_1
+  action: LOGIC__if_else
+  position:
+    x: -1345
+    y: 450
+  params:
+    condition: '{{ testo1 is defined and testo1 != '''' and testo1 != ''[Timeout]''
+      }}'
+    false_branch:
+      action: AUDIO__speak
+      params:
+        text: 'Modello cloud non configurato: non ti preoccupare, funziono lo stesso
+          con le automazioni native.'
+    on_timeout_continue: true
+    timeout_seconds: 0
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: '{{ testo1 }}'
+  depends_on:
+  - ai__prompt_1
 _meta:
   created_at: '2026-06-08T15:35:01.279057'
-  updated_at: '2026-06-10T19:46:26.812978'
-  last_run: '2026-06-10T19:25:33.811439'
+  updated_at: '2026-06-16T13:37:55.200272'
+  last_run: '2026-06-15T07:53:34.273554'
 areas: []

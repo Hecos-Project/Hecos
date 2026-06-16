@@ -111,10 +111,59 @@ html, body {
 }
 .flow-item:hover { border-color:var(--flows-border); background:rgba(255,255,255,.07); }
 .flow-item.active { border-color:var(--flows-accent); background:rgba(0,212,255,.08); }
+.flow-item.is-running {
+  animation: hc-flow-running-pulse 3s ease-in-out infinite;
+}
+@keyframes hc-flow-running-pulse {
+  0%, 100% { border-color: transparent;                   background: rgba(255,255,255,.04); }
+  50%       { border-color: rgba(0,212,255,.5); background: rgba(0,212,255,.06); }
+}
 .flow-item-name { font-size:.82rem; font-weight:600; display:flex; align-items:center; gap:.4rem; }
-.flow-status-dot { width:7px;height:7px;border-radius:50%; flex-shrink:0; }
-.flow-status-dot.enabled { background:var(--flows-success); box-shadow:0 0 6px var(--flows-success); }
-.flow-status-dot.disabled { background:var(--flows-muted); }
+/* ── Unified flow status indicator (single slot replaces old dot+spinner) ── */
+.flow-status-indicator {
+  flex-shrink: 0;
+  width: 14px; height: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .7rem;
+}
+/* Enabled: solid green dot */
+.flow-status-indicator.enabled::before {
+  content: '';
+  display: block;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--flows-success);
+  box-shadow: 0 0 6px var(--flows-success);
+}
+/* Disabled: grey dot */
+.flow-status-indicator.disabled::before {
+  content: '';
+  display: block;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--flows-muted);
+}
+/* Error: red dot */
+.flow-status-indicator.error::before {
+  content: '';
+  display: block;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--flows-danger);
+  box-shadow: 0 0 6px var(--flows-danger);
+}
+/* Running: spinning gear icon */
+.flow-status-indicator.running::before {
+  content: '\f013'; /* fa-cog */
+  font-family: 'Font Awesome 6 Free', 'Font Awesome 6 Free Solid', 'FontAwesome';
+  font-weight: 900;
+  font-size: .72rem;
+  color: var(--flows-accent);
+  display: block;
+  animation: hc-spin-gear .9s linear infinite;
+}
+@keyframes hc-spin-gear {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 .flow-item-meta { font-size:.68rem; color:var(--flows-muted); display:flex; gap:.5rem; align-items:center; }
 .flow-item-del {
   margin-left: auto; flex-shrink: 0;
