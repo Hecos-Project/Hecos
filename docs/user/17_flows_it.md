@@ -81,9 +81,9 @@ Quando fai doppio clic su un nodo nel Canvas, si apre il **Node Editor**. Ecco a
 
 ## 4. Catalogo Completo dei Nodi (Core Actions)
 
-Il modulo Flows integra in maniera nativa **15 azioni**. Oltre a queste, Hecos importa automaticamente tutte le azioni relative ai Plugin di sistema attivi (ad esempio la fotocamera `WEBCAM__capture`, o la mail `MAIL__send`). 
+Il modulo Flows integra in maniera nativa **19 azioni**. Oltre a queste, Hecos importa automaticamente tutte le azioni relative ai Plugin di sistema attivi (ad esempio la fotocamera `WEBCAM__capture`, o la mail `MAIL__send`). 
 
-Di seguito l'elenco dei 15 blocchi fondamentali di Hecos Flows:
+Di seguito l'elenco dei blocchi fondamentali di Hecos Flows:
 
 ### 🛠️ Categoria LOGIC
 Registi e vigili del traffico: servono per ritardare, sdoppiare, unire e valutare le decisioni all'interno del flusso.
@@ -422,6 +422,294 @@ Interagiscono direttamente con il nucleo e l'interfaccia dell'AI primaria.
 Permette ai Flows di interagire **bidirezionalmente** con il cervello dell'AI: non solo di scrivere messaggi, ma di inviare veri e propri prompt all'AI e catturarne la risposta come variabile.
 16. **AI__prompt**: Invia un prompt testuale all'AgentExecutor di Hecos (il cervello completo, inclusi routing, plugin e tool calls). Il flusso si **blocca** fino a quando l'AI non ha terminato di rispondere, poi il testo della risposta viene restituito e salvabile tramite `output_as`. _[Parametri: `prompt` (string), `save_to_chat` (bool, default: true)]_
    > Nota: con `save_to_chat: true`, la coppia prompt+risposta viene scritta nella cronologia chat come `[Flow] testo del prompt` (ruolo utente) e la risposta dell'AI (ruolo assistente), così puoi sempre rivedere cosa ha pensato il flusso.
+
+---
+
+### 🧭 Categoria CONTROL
+Nodi di controllo dell'esecuzione dei flussi.
+
+#### 17. `CONTROL__start` — Punto d'Ingresso del Flusso
+Funge da punto d'ingresso obbligatorio per l'esecuzione del flusso. Qualsiasi nodo non collegato (direttamente o indirettamente tramite dipendenze `depends_on`) a `CONTROL__start` non verrà eseguito. Questo previene l'esecuzione accidentale di rami fluttuanti o isolati.
+
+Se un flusso contiene uno o più nodi `CONTROL__start`, l'esecuzione inizierà esclusivamente da essi. Se il nodo `CONTROL__start` è disabilitato (con `disable_mode: stop`), l'esecuzione dell'intero flusso fallirà immediatamente.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `priority` | numero intero | Ordine di priorità di avvio (default: `0`). I nodi start con valore inferiore partono prima (es. `0` prima di `1`). |
+
+**Esempio 1: Avvio lineare semplice**
+Un flusso base che parte esplicitamente da Start e dice ciao.
+```yaml
+- id: start_1
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: notifica_ciao
+  action: AUDIO__speak
+  params:
+    text: "Sistema pronto e avviato."
+  depends_on:
+    - start_1
+```
+
+**Esempio 2: Esecuzione ordinata di rami multipli**
+Due nodi di avvio eseguiti in sequenza temporale grazie alla priorità. `inizializza` parte per primo, poi parte `avvio_operazione`.
+```yaml
+- id: inizializza
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: set_var
+  action: LOGIC__set_variable
+  params:
+    name: stato_sistema
+    value: "pronto"
+  depends_on:
+    - inizializza
+
+- id: avvio_operazione
+  action: CONTROL__start
+  params:
+    priority: 1
+
+- id: esegui_task
+  action: SYSTEM__chat_message
+  params:
+    text: "Esecuzione avviata. Stato del sistema: {{ stato_sistema }}"
+  depends_on:
+    - avvio_operazione
+```
+
+**Esempio 3: Flusso di sicurezza all'avvio**
+All'avvio, il flusso verifica una condizione prima di proseguire, fermandosi se necessario.
+```yaml
+- id: start_sicurezza
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: controlla_connessione
+  action: LOGIC__http_request
+  params:
+    method: GET
+    url: "https://api.ipify.org?format=json"
+    output_as: ip_data
+  depends_on:
+    - start_sicurezza
+
+- id: verifica_ip
+  action: LOGIC__if_else
+  params:
+    condition: "{{ ip_data is defined and ip_data.ip != '' }}"
+    true_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Verifica completata. IP: {{ ip_data.ip }}"
+    false_branch:
+      action: LOGIC__abort
+      params:
+        reason: "Nessuna connessione internet all'avvio."
+  depends_on:
+    - controlla_connessione
+```
+
+---
+
+### 🔄 Categoria FLOWS
+Nodi dedicati alla gestione e all'orchestrazione di altri flussi.
+
+#### 18. `FLOWS__run_flow` — Esegui Flusso Esterno
+Consente di chiamare ed eseguire un altro flusso salvato all'interno di Hecos, permettendo di strutturare le automazioni in modo modulare (come sub-routine o librerie).
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `flow_id` | stringa | L'ID del flusso esterno da eseguire (es. lo slug/nome file, `morning_routine`) |
+| `wait` | booleano | Se `true` (default), attende che il sotto-flusso finisca prima di procedere. Se `false`, lo avvia in background in parallelo. |
+| `pass_context` | booleano | Se `true` (default), passa tutte le variabili correnti del flusso chiamante al sotto-flusso. |
+
+**Esempio 1: Esecuzione modulare sincrona (Attesa)**
+Il flusso principale esegue il sotto-flusso di spegnimento luci, aspetta che finisca, e poi annuncia la buonanotte.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: spegni_casa
+  action: FLOWS__run_flow
+  params:
+    flow_id: "spegnimento_luci_totale"
+    wait: true
+    pass_context: false
+  depends_on:
+    - start_1
+
+- id: saluto_finale
+  action: AUDIO__speak
+  params:
+    text: "Tutte le luci sono state spente. Buonanotte!"
+  depends_on:
+    - spegni_casa
+```
+
+**Esempio 2: Esecuzione asincrona (Background - Fire and Forget)**
+Il flusso avvia in background una sincronizzazione dati pesante senza bloccare l'interazione con l'utente o il resto del flusso corrente.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: avvia_backup
+  action: FLOWS__run_flow
+  params:
+    flow_id: "backup_giornaliero_nas"
+    wait: false
+    pass_context: true
+  depends_on:
+    - start_1
+
+- id: notifica_immediata
+  action: SYSTEM__chat_message
+  params:
+    text: "Il backup è stato avviato in background. Puoi continuare a usare Hecos liberamente."
+  depends_on:
+    - start_1
+```
+
+**Esempio 3: Passaggio di parametri dinamici**
+Imposta delle variabili nel flusso chiamante e le passa al flusso figlio per personalizzarne l'output.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: imposta_dati
+  action: LOGIC__set_variable
+  params:
+    name: destinatario_notifica
+    value: "Tony"
+  depends_on:
+    - start_1
+
+- id: invia_notifica_personalizzata
+  action: FLOWS__run_flow
+  params:
+    flow_id: "invia_notifica_telegram"
+    wait: true
+    pass_context: true
+  depends_on:
+    - imposta_dati
+```
+
+---
+
+### 👤 Categoria USER
+Nodi dedicati alle interazioni interattive dirette con l'utente.
+
+#### 19. `USER__ask_input` — Richiesta Input Utente
+Mette in pausa l'esecuzione del flusso e attende che l'utente fornisca un input tramite chat (scritto) o voce. La risposta ricevuta viene salvata nella variabile definita nel campo *Output As* del nodo (es. `input_utente`) per essere usata dai blocchi successivi.
+
+In caso di interruzione o annullamento del flusso (tramite il pulsante "Stop"), il nodo rileva l'annullamento, interrompe l'attesa e termina in modo pulito.
+
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `prompt` | stringa | La domanda da inviare in chat e facoltativamente leggere a voce. |
+| `speak` | booleano | Se `true` (default), legge il prompt ad alta voce tramite sintesi vocale (TTS). |
+| `intercept_mode` | scelta (`auto`\|`explicit`\|`api_only`) | **auto**: qualsiasi messaggio in chat viene preso come risposta.<br>**explicit**: risponde solo se il messaggio inizia con `@flow` (es. `@flow 22`). Consigliato se si usano più chat contemporaneamente.<br>**api_only**: risponde solo tramite chiamata API POST a `/api/flows/<run_id>/input`. |
+| `multi_run_priority`| scelta (`first`\|`all`) | Se ci sono più flussi in attesa di input:<br>**first**: assegna la risposta solo al flusso più vecchio.<br>**all**: invia la stessa risposta a tutti i flussi in attesa. |
+| `timeout_seconds` | numero intero | Tempo massimo di attesa in secondi prima di scadere (default: `0` = attesa infinita). |
+| `on_timeout_continue`| booleano | Se `true` (default: `false`), in caso di timeout continua l'esecuzione passando una stringa vuota (`""`) invece di mandare in errore il flusso. |
+
+**Esempio 1: Decisione interattiva (Sì/No)**
+Chiede all'utente se vuole sentire una barzelletta, intercetta qualsiasi risposta in chat e biforca l'esecuzione.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: chiedi_scelta
+  action: USER__ask_input
+  params:
+    prompt: "Ti va di ascoltare una barzelletta?"
+    speak: true
+    intercept_mode: "auto"
+    timeout_seconds: 60
+  output_as: risposta_barzelletta
+  depends_on:
+    - start_1
+
+- id: valuta_risposta
+  action: LOGIC__if_else
+  params:
+    condition: "'si' in {{ risposta_barzelletta | lower }} or 'ok' in {{ risposta_barzelletta | lower }}"
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: "Perché i computer non vanno mai in vacanza? Perché hanno troppe finestre da chiudere!"
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Nessun problema, sarà per la prossima volta."
+  depends_on:
+    - chiedi_scelta
+```
+
+**Esempio 2: Setpoint numerico sicuro con timeout**
+Chiede di inserire una temperatura target in modo esplicito (usando `@flow <temperatura>`). Se l'utente non risponde entro 15 secondi, prosegue usando il valore di default.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: chiedi_temperatura
+  action: USER__ask_input
+  params:
+    prompt: "A quanti gradi vuoi impostare il termostato? Rispondi scrivendo '@flow <gradi>'"
+    speak: false
+    intercept_mode: "explicit"
+    timeout_seconds: 15
+    on_timeout_continue: true
+  output_as: gradi_scelti
+  depends_on:
+    - start_1
+
+- id: verifica_e_imposta
+  action: LOGIC__if_else
+  params:
+    condition: "{{ gradi_scelti != '' }}"
+    true_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Imposto la temperatura a {{ gradi_scelti }} gradi."
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Nessuna risposta. Mantengo la temperatura di default a 20 gradi."
+  depends_on:
+    - chiedi_temperatura
+```
+
+**Esempio 3: Sentiment Analysis dell'input**
+Chiede all'utente come si sente, passa l'input all'AI per analizzarne l'umore e risponde di conseguenza.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: chiedi_umore
+  action: USER__ask_input
+  params:
+    prompt: "Ciao! Come sta andando la tua giornata oggi?"
+    speak: true
+    intercept_mode: "auto"
+    timeout_seconds: 0
+  output_as: umore_utente
+  depends_on:
+    - start_1
+
+- id: analizza_sentiment
+  action: AI__prompt
+  params:
+    prompt: "L'utente ha risposto: '{{ umore_utente }}'. Analizza l'umore (positivo/negativo/neutro) e rispondi con una sola frase di supporto o felicità adatta al suo umore."
+    save_to_chat: true
+  depends_on:
+    - chiedi_umore
+```
 
 ---
 

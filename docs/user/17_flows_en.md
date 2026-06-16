@@ -82,9 +82,9 @@ When you double-click a node on the Canvas, the **Node Editor** opens. Here is w
 
 ## 4. Complete Node Catalog (Core Actions)
 
-The Flows module natively integrates **15 actions**. In addition to these, Hecos automatically imports all actions from active system Plugins (such as the camera `WEBCAM__capture`, or mail `MAIL__send`). 
+The Flows module natively integrates **19 actions**. In addition to these, Hecos automatically imports all actions from active system Plugins (such as the camera `WEBCAM__capture`, or mail `MAIL__send`). 
 
-Here is the list of the 15 fundamental building blocks of Hecos Flows:
+Here is the list of the fundamental building blocks of Hecos Flows:
 
 ### 🛠️ LOGIC Category
 The directors and traffic controllers: they delay, split, join, and evaluate decisions within the flow.
@@ -423,6 +423,294 @@ Interacts directly with the core AI memory and interfaces.
 Allows Flows to interact **bidirectionally** with the AI brain — not just to write static messages, but to send real prompts to the AI and capture its response as a variable.
 16. **AI__prompt**: Sends a text prompt to the full Hecos AgentExecutor (the complete brain, including routing, plugins, and tool calls). The flow **blocks** until the AI has finished responding; the response text is then returned and can be stored using `output_as`. _[Parameters: `prompt` (string), `save_to_chat` (bool, default: true)]_
    > Note: with `save_to_chat: true`, the prompt+response pair is written to the chat history as `[Flow] prompt text` (user role) and the AI reply (assistant role), so you can always review what the flow "thought".
+
+---
+
+### 🧭 CONTROL Category
+Nodes for controlling the execution flow.
+
+#### 17. `CONTROL__start` — Flow Entry Point
+Acts as the mandatory entry point for flow execution. Any node not connected (directly or indirectly via `depends_on` dependencies) to a `CONTROL__start` node will not execute. This prevents accidental execution of floating or isolated branches.
+
+If a flow contains one or more `CONTROL__start` nodes, execution will begin exclusively from them. If the `CONTROL__start` node is disabled (using `disable_mode: stop`), execution of the entire flow will fail immediately.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `priority` | integer | Startup priority order (default: `0`). Start nodes with lower values run first (e.g., `0` before `1`). |
+
+**Example 1: Simple Linear Startup**
+A basic flow that starts explicitly from the Start node and speaks a greeting.
+```yaml
+- id: start_1
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: notify_hello
+  action: AUDIO__speak
+  params:
+    text: "System ready and started."
+  depends_on:
+    - start_1
+```
+
+**Example 2: Ordered Execution of Multiple Branches**
+Two start nodes executed in temporal sequence using priority. `initialize` runs first, followed by `start_operation`.
+```yaml
+- id: initialize
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: set_var
+  action: LOGIC__set_variable
+  params:
+    name: system_state
+    value: "ready"
+  depends_on:
+    - initialize
+
+- id: start_operation
+  action: CONTROL__start
+  params:
+    priority: 1
+
+- id: run_task
+  action: SYSTEM__chat_message
+  params:
+    text: "Execution started. System state: {{ system_state }}"
+  depends_on:
+    - start_operation
+```
+
+**Example 3: Startup Security Verification**
+At startup, the flow verifies a condition before proceeding, stopping if necessary.
+```yaml
+- id: start_security
+  action: CONTROL__start
+  params:
+    priority: 0
+
+- id: check_connection
+  action: LOGIC__http_request
+  params:
+    method: GET
+    url: "https://api.ipify.org?format=json"
+    output_as: ip_data
+  depends_on:
+    - start_security
+
+- id: verify_ip
+  action: LOGIC__if_else
+  params:
+    condition: "{{ ip_data is defined and ip_data.ip != '' }}"
+    true_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Verification complete. IP: {{ ip_data.ip }}"
+    false_branch:
+      action: LOGIC__abort
+      params:
+        reason: "No internet connection on startup."
+  depends_on:
+    - check_connection
+```
+
+---
+
+### 🔄 FLOWS Category
+Nodes dedicated to managing and orchestrating other flows.
+
+#### 18. `FLOWS__run_flow` — Run External Flow
+Allows you to call and execute another saved flow within Hecos, making it possible to structure automations modularly (as sub-routines or libraries).
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `flow_id` | string | The ID of the external flow to execute (e.g., the slug/filename, `morning_routine`) |
+| `wait` | boolean | If `true` (default), waits for the sub-flow to complete before proceeding. If `false`, starts it in the background in parallel. |
+| `pass_context` | boolean | If `true` (default), passes all current variables of the caller flow to the sub-flow. |
+
+**Example 1: Synchronous Modular Execution (Wait)**
+The main flow runs the total lights off sub-flow, waits for it to complete, and then announces goodnight.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: turn_off_house
+  action: FLOWS__run_flow
+  params:
+    flow_id: "total_lights_off"
+    wait: true
+    pass_context: false
+  depends_on:
+    - start_1
+
+- id: final_greeting
+  action: AUDIO__speak
+  params:
+    text: "All lights have been turned off. Goodnight!"
+  depends_on:
+    - turn_off_house
+```
+
+**Example 2: Asynchronous Execution (Background - Fire and Forget)**
+The flow triggers a heavy data synchronization in the background without blocking user interaction or the rest of the current flow.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: trigger_backup
+  action: FLOWS__run_flow
+  params:
+    flow_id: "daily_nas_backup"
+    wait: false
+    pass_context: true
+  depends_on:
+    - start_1
+
+- id: immediate_notification
+  action: SYSTEM__chat_message
+  params:
+    text: "Backup has been started in the background. You can continue using Hecos freely."
+  depends_on:
+    - start_1
+```
+
+**Example 3: Dynamic Parameter Passing**
+Sets variables in the calling flow and passes them to the child flow to customize its output.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: set_data
+  action: LOGIC__set_variable
+  params:
+    name: notification_recipient
+    value: "Tony"
+  depends_on:
+    - start_1
+
+- id: send_custom_notification
+  action: FLOWS__run_flow
+  params:
+    flow_id: "send_telegram_notification"
+    wait: true
+    pass_context: true
+  depends_on:
+    - set_data
+```
+
+---
+
+### 👤 USER Category
+Nodes dedicated to direct interactive user interactions.
+
+#### 19. `USER__ask_input` — Ask User Input
+Pauses flow execution and waits for the user to provide input via chat (text) or voice. The received response is stored in the variable defined in the node's *Output As* field (e.g., `user_input`) to be used by subsequent blocks.
+
+If the flow is interrupted or cancelled (via the "Stop" button), the node detects the cancellation, unblocks the wait, and terminates cleanly.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `prompt` | string | The question/prompt to send to the chat and optionally read aloud. |
+| `speak` | boolean | If `true` (default), reads the prompt aloud via Text-to-Speech (TTS). |
+| `intercept_mode` | choice (`auto`\|`explicit`\|`api_only`) | **auto**: any message in chat is captured as the response.<br>**explicit**: responds only if the message starts with `@flow` (e.g., `@flow 22`). Recommended if using multiple chat clients.<br>**api_only**: only responds via a POST API call to `/api/flows/<run_id>/input`. |
+| `multi_run_priority`| choice (`first`\|`all`) | If multiple flows are waiting for input:<br>**first**: assigns the response only to the oldest flow.<br>**all**: sends the same response to all waiting flows. |
+| `timeout_seconds` | integer | Maximum wait time in seconds before timing out (default: `0` = wait forever). |
+| `on_timeout_continue`| boolean | If `true` (default: `false`), continues execution with an empty string (`""`) on timeout instead of failing the flow. |
+
+**Example 1: Interactive Choice (Yes/No)**
+Asks the user if they want to hear a joke, intercepts any response in chat, and branches execution.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: ask_choice
+  action: USER__ask_input
+  params:
+    prompt: "Would you like to hear a joke?"
+    speak: true
+    intercept_mode: "auto"
+    timeout_seconds: 60
+  output_as: joke_response
+  depends_on:
+    - start_1
+
+- id: evaluate_response
+  action: LOGIC__if_else
+  params:
+    condition: "'yes' in {{ joke_response | lower }} or 'ok' in {{ joke_response | lower }}"
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: "Why don't scientists trust atoms? Because they make up everything!"
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "No problem, maybe next time."
+  depends_on:
+    - ask_choice
+```
+
+**Example 2: Safe Numeric Setpoint with Timeout**
+Asks to enter a target temperature explicitly (using `@flow <temperature>`). If the user does not respond within 15 seconds, it continues using the default value.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: ask_temperature
+  action: USER__ask_input
+  params:
+    prompt: "At what temperature would you like to set the thermostat? Answer writing '@flow <degrees>'"
+    speak: false
+    intercept_mode: "explicit"
+    timeout_seconds: 15
+    on_timeout_continue: true
+  output_as: chosen_degrees
+  depends_on:
+    - start_1
+
+- id: verify_and_set
+  action: LOGIC__if_else
+  params:
+    condition: "{{ chosen_degrees != '' }}"
+    true_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "Setting the temperature to {{ chosen_degrees }} degrees."
+    false_branch:
+      action: SYSTEM__chat_message
+      params:
+        text: "No response. Keeping default temperature at 20 degrees."
+  depends_on:
+    - ask_temperature
+```
+
+**Example 3: Sentiment Analysis of Input**
+Asks the user how they feel, passes the input to the AI to analyze their mood, and responds accordingly.
+```yaml
+- id: start_1
+  action: CONTROL__start
+
+- id: ask_mood
+  action: USER__ask_input
+  params:
+    prompt: "Hi! How is your day going today?"
+    speak: true
+    intercept_mode: "auto"
+    timeout_seconds: 0
+  output_as: user_mood
+  depends_on:
+    - ask_mood
+
+- id: analyze_sentiment
+  action: AI__prompt
+  params:
+    prompt: "The user replied: '{{ user_mood }}'. Analyze their mood (positive/negative/neutral) and reply with a single sentence of support or happiness suitable for their mood."
+    save_to_chat: true
+  depends_on:
+    - ask_mood
+```
 
 ---
 
