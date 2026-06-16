@@ -241,6 +241,21 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
       return <LogicBuilderField key={key} label={label} value={val} onChange={(v) => setParam(key, v)} allVariables={allVariables} />;
     }
 
+    if (t.includes('select:')) {
+      const optionsStr = t.split('select:')[1].split(' ')[0];
+      const options = optionsStr.split('|');
+      // If there's no current value, set it to the first option
+      const currentVal = val ?? options[0];
+      return (
+        <div className="hc-field" key={key}>
+          <label>{label}</label>
+          <select value={currentVal} onChange={e => setParam(key, e.target.value)}>
+            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        </div>
+      );
+    }
+
     if (t.includes('bool')) {
       return (
         <div className="hc-field" key={key}>

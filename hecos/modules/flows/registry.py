@@ -268,6 +268,147 @@ _REGISTRY["FLOWS__run_flow"] = {
     "fn": _flows_run_flow,
 }
 
+
+# ── USER__ask_input ────────────────────────────────────────────────────────────
+
+def _user_ask_input(
+    prompt: str = "Please respond:",
+    speak: bool = True,
+    intercept_mode: str = "auto",   # "auto" | "explicit" | "api_only"
+    multi_run_priority: str = "first",  # "first" | "all"
+    **kwargs
+):
+    """
+    Pauses the flow and waits for a user response via chat or voice.
+
+    intercept_mode:
+      - "auto"      → any chat message while this run is waiting is treated as the answer
+      - "explicit"  → user must prefix with @flow (e.g. "@flow yes")
+      - "api_only"  → only /api/flows/<run_id>/input endpoint counts (manual or programmatic)
+
+    multi_run_priority:
+      - "first"  → if multiple flows are waiting, the oldest (first) one gets the reply
+      - "all"    → broadcast the same reply to all waiting flows simultaneously
+    """
+    import time
+
+    run_id = kwargs.get("_run_id", "unknown")
+    timeout_seconds = int(kwargs.get("_timeout_seconds", 0))
+    start_time = kwargs.get("_start_time", time.time())
+
+    try:
+        from hecos.modules.flows.engine import (
+            register_pending_input,
+            get_pending_input_value,
+            is_run_aborted,
+            get_event_bus,
+        )
+
+        # 1. Post the prompt to chat
+        try:
+            from hecos.memory.brain_interface import save_message
+            save_message(
+                role="assistant",
+                message=f"❓ {prompt}",
+                user_id="admin",
+                session_id=None,
+                persona_name="Flows",
+                broadcast_sse=True,
+            )
+        except Exception as e:
+            log.warning(f"[USER__ask_input] Could not write to chat: {e}")
+
+        # 2. Speak aloud if requested
+        if speak:
+            try:
+                from hecos.core.audio import voice
+                voice.speak(prompt)
+            except Exception as e:
+                log.warning(f"[USER__ask_input] TTS failed: {e}")
+
+        # 3. Register this run as waiting for input + emit SSE event
+        event = register_pending_input(
+            run_id,
+            kwargs.get("_flow_id", "unknown"),
+            intercept_mode=intercept_mode,
+            multi_run_priority=multi_run_priority
+        )
+        bus = get_event_bus()
+        bus.emit(run_id, {
+            "type":           "step_waiting_input",
+            "run_id":         run_id,
+            "prompt":         prompt,
+            "intercept_mode": intercept_mode,
+            "ts":             __import__("datetime").datetime.now().isoformat(),
+        })
+
+        # 4. Block the thread until answer arrives or timeout
+        effective_timeout = None
+        if timeout_seconds and timeout_seconds > 0:
+            elapsed = time.time() - start_time
+            remaining = timeout_seconds - elapsed
+            if remaining > 0:
+                effective_timeout = remaining
+            else:
+                effective_timeout = 0.1  # already expired
+
+        answered = event.wait(timeout=effective_timeout)
+
+        # 5. If aborted during wait, raise
+        if is_run_aborted(run_id):
+            from hecos.modules.flows.engine import FlowAbortException
+            raise FlowAbortException("Flow aborted while waiting for user input.")
+
+        # 6. Retrieve the value
+        value = get_pending_input_value(run_id)
+
+        if not answered or value is None:
+            log.warning(f"[USER__ask_input] Timed out waiting for input on run '{run_id}'.")
+            return ""
+
+        # 7. Echo reply into chat as a user message
+        try:
+            from hecos.memory.brain_interface import save_message
+            save_message(
+                role="user",
+                message=value,
+                user_id="admin",
+                session_id=None,
+                persona_name=None,
+                broadcast_sse=True,
+            )
+        except Exception:
+            pass
+
+        log.info(f"[USER__ask_input] Got answer for run '{run_id}': {value[:80]}")
+        return value
+
+    except Exception as e:
+        log.error(f"[USER__ask_input] Error: {e}")
+        raise
+
+
+_REGISTRY["USER__ask_input"] = {
+    "name": "USER__ask_input",
+    "description": (
+        "Pauses the flow and waits for a user response (typed or spoken). "
+        "The answer is stored in the output variable and can be used by LOGIC__if_else. "
+        "intercept_mode controls how the answer is captured from chat."
+    ),
+    "params": {
+        "prompt":             "string (Question to ask the user — shown in chat and spoken aloud)",
+        "speak":              "boolean (Speak the prompt via TTS — default: true)",
+        "intercept_mode":     "select:auto|explicit|api_only (How to capture the user reply from chat)",
+        "multi_run_priority": "select:first|all (If multiple flows wait at once: answer only the first, or all)",
+        "timeout_seconds":    "integer (Seconds to wait before giving up — 0 = wait forever)",
+        "on_timeout_continue":"boolean (Continue with empty string on timeout instead of failing)",
+    },
+    "category": "USER",
+    "icon": "🎤",
+    "fn": _user_ask_input,
+}
+
+
 def _setup_audio_wrappers():
     def _audio_speak(text: str = "", **kwargs):
         try:

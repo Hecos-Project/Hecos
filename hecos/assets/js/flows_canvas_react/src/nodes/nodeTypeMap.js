@@ -23,6 +23,7 @@ export const ACTION_TYPE_MAP = {
   DATA:       'actionNode',
   PLUGINS:    'actionNode',
   GENERAL:    'actionNode',
+  USER:       'actionNode',
 };
 
 // Category color map for badge colors on node header
@@ -45,6 +46,7 @@ export const CATEGORY_COLORS = {
   MEDIA:      { bg: '#0c1a2e', text: '#7dd3fc' },
   PLUGINS:    { bg: '#1a0a00', text: '#fdba74' },
   HTTP:       { bg: '#134e4a', text: '#6ee7b7' },
+  USER:       { bg: '#4c1d95', text: '#e879f9' },
 };
 
 export function getCategoryFromAction(actionName) {

@@ -120,6 +120,67 @@ def _unregister_active_run(flow_id: str, run_id: str):
     with _run_threads_lock:
         _run_threads.pop(run_id, None)
     _aborted_runs.discard(run_id)
+    # Clean up any pending input gate if the run finished/aborted
+    _cancel_pending_input(run_id)
+
+
+# ── User Input Gate ────────────────────────────────────────────────────────────
+# Maps run_id → {"event": threading.Event, "value": str|None, "flow_id": str}
+_PENDING_INPUTS: Dict[str, Dict] = {}
+_PENDING_INPUTS_LOCK = threading.Lock()
+
+
+def register_pending_input(
+    run_id: str,
+    flow_id: str,
+    intercept_mode: str = "auto",
+    multi_run_priority: str = "first",
+) -> threading.Event:
+    """Register a run as waiting for user input. Returns the Event to wait on."""
+    event = threading.Event()
+    with _PENDING_INPUTS_LOCK:
+        _PENDING_INPUTS[run_id] = {
+            "event": event,
+            "value": None,
+            "flow_id": flow_id,
+            "intercept_mode": intercept_mode,
+            "multi_run_priority": multi_run_priority,
+        }
+    log.info(f"[Flows.Engine] ⏸️ Run '{run_id}' waiting for user input (mode={intercept_mode}).")
+    return event
+
+
+def deliver_user_input(run_id: str, text: str) -> bool:
+    """Called by the API when the user submits a response. Unblocks the waiting thread."""
+    with _PENDING_INPUTS_LOCK:
+        entry = _PENDING_INPUTS.get(run_id)
+    if entry is None:
+        return False
+    entry["value"] = text
+    entry["event"].set()
+    log.info(f"[Flows.Engine] ✅ User input delivered to run '{run_id}': {text[:60]}")
+    return True
+
+
+def get_pending_input_value(run_id: str) -> Optional[str]:
+    """Retrieve the user's answer after the event has been set."""
+    with _PENDING_INPUTS_LOCK:
+        entry = _PENDING_INPUTS.get(run_id)
+    return entry["value"] if entry else None
+
+
+def _cancel_pending_input(run_id: str):
+    """Unblock any waiting thread for this run (called on abort/finish)."""
+    with _PENDING_INPUTS_LOCK:
+        entry = _PENDING_INPUTS.pop(run_id, None)
+    if entry:
+        entry["event"].set()  # Unblock the waiting thread so it can exit cleanly
+
+
+def get_all_pending_input_runs() -> list:
+    """Returns list of {run_id, flow_id} for all runs currently waiting for input."""
+    with _PENDING_INPUTS_LOCK:
+        return [{"run_id": rid, "flow_id": v["flow_id"]} for rid, v in _PENDING_INPUTS.items()]
 
 
 # ── Jinja2 template engine ─────────────────────────────────────────────────────

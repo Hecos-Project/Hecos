@@ -153,6 +153,34 @@ def init_flows_routes(app, cfg_mgr, logger=None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/flows/run/<run_id>/input", methods=["POST"])
+    @login_required
+    def api_flows_deliver_input(run_id):
+        """Deliver a user's text reply to a flow that is waiting for input."""
+        try:
+            from hecos.modules.flows.engine import deliver_user_input
+            payload = request.get_json(force=True)
+            text = str(payload.get("text", "")).strip()
+            if not text:
+                return jsonify({"ok": False, "error": "Empty input."}), 400
+            ok = deliver_user_input(run_id, text)
+            if not ok:
+                return jsonify({"ok": False, "error": "No flow waiting for input with that run_id."}), 404
+            return jsonify({"ok": True, "run_id": run_id})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/flows/pending_inputs", methods=["GET"])
+    @login_required
+    def api_flows_pending_inputs():
+        """List all runs currently blocked waiting for user input."""
+        try:
+            from hecos.modules.flows.engine import get_all_pending_input_runs
+            return jsonify({"ok": True, "pending": get_all_pending_input_runs()})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+
     @app.route("/api/flows/<flow_id>/status", methods=["GET"])
     @login_required
     def api_flows_status(flow_id):
