@@ -70,7 +70,8 @@ window.sendMessage = async function() {
 
     if (data.intercepted) {
       cursor.remove();
-      aiBubble.innerHTML = window.renderMarkdown("✅ *Risposta inviata al flusso.*");
+      const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
+      aiBubble.innerHTML = window.renderMarkdown(`✅ *${msg}*`);
       window.isStreaming = false; 
       if (window.sendBtn) window.sendBtn.disabled = false;
       return;
@@ -173,7 +174,8 @@ window.sendInternalMessage = async function(text) {
 
     if (data.intercepted) {
       cursor.remove();
-      aiBubble.innerHTML = window.renderMarkdown("✅ *Risposta inviata al flusso.*");
+      const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
+      aiBubble.innerHTML = window.renderMarkdown(`✅ *${msg}*`);
       window.isStreaming = false; 
       if (window.sendBtn) window.sendBtn.disabled = false;
       return;
