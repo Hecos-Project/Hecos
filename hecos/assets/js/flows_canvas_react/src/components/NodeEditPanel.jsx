@@ -92,6 +92,50 @@ function SoundField({ label, value, onChange }) {
   );
 }
 
+function LogicBuilderField({ label, value, onChange, allVariables }) {
+  const [v1, setV1] = useState('');
+  const [op, setOp] = useState('==');
+  const [v2, setV2] = useState('');
+
+  const handleUpdate = (newV1, newOp, newV2) => {
+    setV1(newV1); setOp(newOp); setV2(newV2);
+    if (!newV1) return;
+    
+    // Auto-detect if newV2 is a number or string
+    let formattedV2 = newV2;
+    if (newV2 && isNaN(Number(newV2))) {
+      formattedV2 = `'${newV2}'`;
+    }
+    
+    onChange(`{{ ${newV1} }} ${newOp} ${formattedV2}`);
+  };
+
+  return (
+    <div className="hc-field" style={{ marginBottom: 15 }}>
+      <label style={{ color: 'var(--accent)', fontWeight: 'bold' }}>
+        <i className="fas fa-magic" style={{ marginRight: 6 }}></i> Logic Builder
+      </label>
+      <div style={{ display: 'flex', gap: '6px', padding: '12px', background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '6px', marginBottom: '8px' }}>
+        <select style={{ flex: 2, minWidth: '100px' }} value={v1} onChange={e => handleUpdate(e.target.value, op, v2)}>
+          <option value="">— Variable —</option>
+          {allVariables.map(v => <option key={v} value={v}>{v}</option>)}
+        </select>
+        <select style={{ flex: 1, minWidth: '60px' }} value={op} onChange={e => handleUpdate(v1, e.target.value, v2)}>
+          <option value="==">==</option>
+          <option value="!=">!=</option>
+          <option value=">">&gt;</option>
+          <option value="<">&lt;</option>
+          <option value=">=">&gt;=</option>
+          <option value="<=">&lt;=</option>
+        </select>
+        <input type="text" style={{ flex: 2, minWidth: '80px' }} value={v2} onChange={e => handleUpdate(v1, op, e.target.value)} placeholder="Value..." />
+      </div>
+      <label style={{ fontSize: '0.75rem', opacity: 0.8 }}>Generated Expression (Editable)</label>
+      <input type="text" value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder="e.g. {{ var }} > 5" style={{ fontFamily: 'monospace' }} />
+    </div>
+  );
+}
+
 /**
  * Node Edit Panel — slides in from right when a node is double-clicked.
  * Shows a dynamic form generated from the action's params definition in the catalog.
@@ -189,6 +233,10 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
 
     if (key === 'sound' || t.includes('sound file')) {
       return <SoundField key={key} label={label} value={val} onChange={(v) => setParam(key, v)} />;
+    }
+
+    if (action === 'LOGIC__if_else' && key === 'condition') {
+      return <LogicBuilderField key={key} label={label} value={val} onChange={(v) => setParam(key, v)} allVariables={allVariables} />;
     }
 
     if (t.includes('bool')) {
@@ -312,15 +360,17 @@ export default function NodeEditPanel({ node, catalog, allNodeIds, allVariables,
         <hr className="hc-divider" />
 
         {/* Output As */}
-        <div className="hc-field">
-          <label>Output As (variable)</label>
-          <input
-            type="text"
-            value={outputAs}
-            onChange={e => setOutputAs(e.target.value)}
-            placeholder="e.g. result_var"
-          />
-        </div>
+        {action !== 'LOGIC__set_variable' && (
+          <div className="hc-field">
+            <label>Output As (variable)</label>
+            <input
+              type="text"
+              value={outputAs}
+              onChange={e => setOutputAs(e.target.value)}
+              placeholder="e.g. result_var"
+            />
+          </div>
+        )}
 
         {/* Depends On */}
         <div className="hc-field">

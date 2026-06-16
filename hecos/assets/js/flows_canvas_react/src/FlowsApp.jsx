@@ -473,7 +473,10 @@ export default function FlowsApp() {
           );
         }
 
-        const allVariables = Array.from(new Set(nodes.map(n => n.data?.outputAs).filter(Boolean)));
+        const allVariables = Array.from(new Set([
+          ...nodes.map(n => n.data?.outputAs).filter(Boolean),
+          ...nodes.filter(n => n.data?.action === 'LOGIC__set_variable').map(n => n.data?.params?.name).filter(Boolean)
+        ])).sort();
         return (
           <NodeEditPanel
             key={editNode.id}

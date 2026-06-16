@@ -76,7 +76,7 @@ def _bootstrap_builtin_actions():
             "name": "LOGIC__if_else",
             "description": "Evaluates a Jinja2 logical expression and branches to true_branch or false_branch.",
             "params": {
-                "condition":    "logic_condition (Jinja2 logical expression — use the Logic Builder above)",
+                "condition":    "string (Jinja2 logical expression — use the Logic Builder above)",
                 "true_branch":  "dict (action + params to run if condition is True)",
                 "false_branch": "dict (action + params to run if condition is False)",
             },
@@ -114,10 +114,10 @@ def _bootstrap_builtin_actions():
         },
         {
             "name": "LOGIC__set_variable",
-            "description": "Sets or updates a flow-scoped variable. ⚠️ Il campo 'name' è il nome della variabile (necessario).",
+            "description": "Sets or updates a flow-scoped variable. ⚠️ The 'name' field acts as the variable output name.",
             "params": {
-                "name":  "string (nome variabile — necessario, es: punteggio)",
-                "value": "any (valore statico o espressione Jinja2, es: '{{ input_data }}')",
+                "name":  "string (Variable Name - REQUIRED, e.g. score)",
+                "value": "any (Static value or Jinja2 expression, e.g. '{{ input_data }}')",
             },
             "category": "LOGIC",
             "icon": "📌",
