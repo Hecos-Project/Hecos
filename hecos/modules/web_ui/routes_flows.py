@@ -118,6 +118,22 @@ def init_flows_routes(app, cfg_mgr, logger=None):
             flow_data = get_flow(flow_id)
             if flow_data is None:
                 return jsonify({"ok": False, "error": f"Flow '{flow_id}' not found."}), 404
+
+            # --- Pre-run validation ---
+            pipeline = flow_data.get("pipeline", [])
+            start_nodes = [n for n in pipeline if n.get("action") == "CONTROL__start"]
+            if not start_nodes:
+                return jsonify({"ok": False, "error": "Flow cannot start: missing CONTROL__start node."}), 400
+            
+            all_disabled = True
+            for node in start_nodes:
+                if not node.get("disabled", False) or node.get("disable_mode", "skip") != "stop":
+                    all_disabled = False
+                    break
+            
+            if start_nodes and all_disabled:
+                return jsonify({"ok": False, "error": "Flow cannot start: CONTROL__start node is stopped."}), 400
+
             run_id = run_flow_async(flow_data)
             return jsonify({"ok": True, "run_id": run_id})
         except Exception as e:
