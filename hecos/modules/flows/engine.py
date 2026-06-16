@@ -82,6 +82,9 @@ def abort_run(run_id: str):
     if thread_id is not None:
         _inject_exception(thread_id, FlowAbortException)
         log.info(f"[Flows.Engine] ☠️ Injected FlowAbortException into thread {thread_id} (run={run_id})")
+    
+    # Crucial: Unblock the thread if it's currently waiting for user input
+    _cancel_pending_input(run_id)
 
 def _inject_exception(thread_id: int, exc_type: type) -> bool:
     """Use ctypes to raise an exception in the target thread."""
