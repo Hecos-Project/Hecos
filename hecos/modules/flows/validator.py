@@ -100,8 +100,9 @@ def validate_flow(flow_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
             depends = step.get("depends_on", [])
             if isinstance(depends, list):
                 for dep in depends:
-                    if dep not in all_ids and dep != step_id:
-                        log.warning(f"{prefix}: 'depends_on' references unknown step ID '{dep}'.")
+                    dep_id = dep if isinstance(dep, str) else dep.get("node")
+                    if dep_id and dep_id not in all_ids and dep_id != step_id:
+                        log.warning(f"{prefix}: 'depends_on' references unknown step ID '{dep_id}'.")
 
     # ── Summary
     is_valid = len(errors) == 0

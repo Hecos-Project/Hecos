@@ -66,15 +66,15 @@ pipeline:
 - id: ai__prompt_1
   action: AI__prompt
   position:
-    x: -1373
-    y: 142
+    x: -1622
+    y: 113
   params:
     on_timeout_continue: true
     prompt: 'Riassumi a parole tue il concetto che il tuo creatore ti ha fatto un
       pò schizzofrenico, e adesso passi la palla ad urania. Quindi cambia la personalità
       in Urania. Poi devi dire: ok, eccomi, sono Urania, ora ci penso io. '
     save_to_chat: true
-    timeout_seconds: 10
+    timeout_seconds: 1
   output_as: testo1
   depends_on:
   - executor__execute_slash_command_2
@@ -111,17 +111,6 @@ pipeline:
     timeout_seconds: 0
   depends_on:
   - audio__play_alarm_3
-- id: audio__speak_2
-  action: AUDIO__speak
-  position:
-    x: -862
-    y: 293
-  params:
-    on_timeout_continue: true
-    text: '{{ testo1 }}'
-    timeout_seconds: 0
-  depends_on:
-  - logic__if_else_1
 - id: executor__execute_slash_command_3
   action: EXECUTOR__execute_slash_command
   position:
@@ -136,30 +125,26 @@ pipeline:
 - id: logic__if_else_1
   action: LOGIC__if_else
   position:
-    x: -1156
-    y: 464
+    x: -1345
+    y: 450
   params:
-    condition: true
-    false_branch: {}
+    condition: '{{ testo1 is defined and testo1 != '''' and testo1 != ''[Timeout]''
+      }}'
+    false_branch:
+      action: AUDIO__speak
+      params:
+        text: 'Modello cloud non configurato: non ti preoccupare, funziono lo stesso
+          con le automazioni native.'
     on_timeout_continue: true
     timeout_seconds: 0
-    true_branch: {}
+    true_branch:
+      action: AUDIO__speak
+      params:
+        text: '{{ testo1 }}'
   depends_on:
   - ai__prompt_1
-- id: audio__speak_3
-  action: AUDIO__speak
-  position:
-    x: -845
-    y: 527
-  params:
-    on_timeout_continue: true
-    text: 'Modello cloud non configurato: non ti preoccupare, funziono lo stesso con
-      le automazioni native.  '
-    timeout_seconds: 0
-  depends_on:
-  - logic__if_else_1
 _meta:
   created_at: '2026-06-08T15:35:01.279057'
-  updated_at: '2026-06-15T11:38:32.124745'
+  updated_at: '2026-06-16T06:03:32.558102'
   last_run: '2026-06-15T07:53:34.273554'
 areas: []

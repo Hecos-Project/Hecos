@@ -62,11 +62,47 @@ function _applyNodeData(node) {
   
   // Convert depends_on which is a list in YAML but comma-sep string in node editor
   let deps = props.depends_on || [];
-  if (Array.isArray(deps)) deps = deps.join(', ');
+  if (Array.isArray(deps)) {
+      deps = deps.map(d => {
+          if (typeof d === 'object' && d.node) return `${d.node} (${d.branch || 'out'})`;
+          return d;
+      }).join(', ');
+  }
   document.getElementById('ne-depends').value = deps;
+
+  // Hide/show 'Output As' depending on action type
+  const outputRow = document.getElementById('ne-output').closest('div[style]');
+  const action = props.action || '';
+  if (outputRow) {
+    outputRow.style.display = action === 'LOGIC__set_variable' ? 'none' : '';
+  }
   
   // Rebuild the dynamic form based on the selected action schema
   buildDynamicForm();
+}
+
+// ── Variable Discovery ────────────────────────────────────────────────────────
+// Scans the current flow YAML to find all variables defined by set_variable
+// and output_as fields. Returns a sorted, unique array of variable names.
+function getAvailableVariables() {
+  const vars = new Set();
+  const yamlEl = document.getElementById('yaml-editor');
+  let yamlText = yamlEl ? yamlEl.value : '';
+  // Try CodeMirror instance if present
+  if (!yamlText && window._cmEditor) yamlText = window._cmEditor.getValue();
+  
+  let parsed = null;
+  try { parsed = jsyaml.load(yamlText); } catch(e) {}
+  
+  if (parsed && Array.isArray(parsed.pipeline)) {
+    for (const step of parsed.pipeline) {
+      if (step.output_as) vars.add(step.output_as);
+      if (step.action === 'LOGIC__set_variable' && step.params && step.params.name) {
+        vars.add(step.params.name);
+      }
+    }
+  }
+  return Array.from(vars).sort();
 }
 
 function closeNodeEditor() {
@@ -100,12 +136,23 @@ function saveNodeEditor() {
   
   // Update node
   _editingNode.title = stepId;
-  _editingNode.properties = {
-    action: action,
-    params: Object.keys(parsedObj).length ? JSON.stringify(parsedObj) : '{}',
-    output_as: outputAs,
-    depends_on: dependsStr ? dependsStr.split(',').map(s=>s.trim()).filter(s=>s) : []
-  };
+    let newDeps = [];
+    if (dependsStr) {
+        newDeps = dependsStr.split(',').map(s => {
+            s = s.trim();
+            if (!s) return null;
+            let m = s.match(/^(.*?)\s*\((.*?)\)$/);
+            if (m) return { node: m[1].trim(), branch: m[2].trim() };
+            return s;
+        }).filter(s => s);
+    }
+
+    _editingNode.properties = {
+      action: action,
+      params: Object.keys(parsedObj).length ? JSON.stringify(parsedObj) : '{}',
+      output_as: outputAs,
+      depends_on: newDeps
+    };
   
   // Update _nodeMap key if ID changed (LiteGraph legacy — no-op with ReactFlow bridge)
   const origId = document.getElementById('ne-orig-id').value;
@@ -147,6 +194,12 @@ function buildDynamicForm() {
   const actionName = document.getElementById('ne-action').value;
   const rawYaml = document.getElementById('ne-params').value.trim();
   
+  // Hide Output As for set_variable (it uses 'name' param directly)
+  const outputRow = document.getElementById('ne-output')?.closest('div[style]');
+  if (outputRow) {
+    outputRow.style.display = (actionName === 'LOGIC__set_variable') ? 'none' : '';
+  }
+
   container.innerHTML = ''; // reset
   const schema = getActionSchema(actionName);
   
@@ -342,6 +395,132 @@ function buildDynamicForm() {
       flex.appendChild(num);
       fieldWrap.appendChild(flex);
       
+    } else if (descLower.includes('dict') || descLower.includes('action + params') || descLower.includes('action to run') || descLower.includes('action definition') || key === 'true_branch' || key === 'false_branch' || key === 'on_success' || key === 'on_fail' || key === 'body' || key === 'branches' || key === 'default') {
+      // Nested dict/action parameter — render as a YAML textarea
+      const ta = document.createElement('textarea');
+      ta.id = elId;
+      ta.rows = 5;
+      ta.style = "margin-top: 5px; width: 100%; font-family: monospace; font-size: 0.82rem; resize: vertical; background: rgba(0,0,0,0.3); color: var(--text); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 6px;";
+      ta.placeholder = 'action: AUDIO__speak\nparams:\n  text: \'{{ variabile }}\'\n';
+      if (val !== undefined && val !== null) {
+        try {
+          ta.value = typeof val === 'object' ? jsyaml.dump(val).trimEnd() : String(val);
+        } catch(e) { ta.value = String(val); }
+      }
+      ta.oninput = syncYamlFromDynamicForm;
+      fieldWrap.appendChild(ta);
+    } else if (key === 'condition' && actionName === 'LOGIC__if_else') {
+      // ── Logic Builder ───────────────────────────────────────────────────────
+      const builderWrap = document.createElement('div');
+      builderWrap.style = 'display:flex; flex-direction:column; gap:8px; margin-top:5px;';
+
+      // Row 1: Dropdowns for structured building
+      const row = document.createElement('div');
+      row.style = 'display:flex; gap:6px; flex-wrap:wrap; align-items:center;';
+
+      const availVars = getAvailableVariables();
+
+      // Variabile dropdown
+      const selVar = document.createElement('select');
+      selVar.id = 'logic_var';
+      selVar.style = 'flex:2; min-width:100px;';
+      const emptyVarOpt = document.createElement('option');
+      emptyVarOpt.value = ''; emptyVarOpt.textContent = '— variabile —';
+      selVar.appendChild(emptyVarOpt);
+      // also option for manual entry
+      if (availVars.length === 0) {
+        const hint = document.createElement('option');
+        hint.value = ''; hint.textContent = '(nessuna variabile trovata)';
+        hint.disabled = true;
+        selVar.appendChild(hint);
+      } else {
+        availVars.forEach(v => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = v;
+          selVar.appendChild(o);
+        });
+      }
+
+      // Tipo (cast) dropdown
+      const selType = document.createElement('select');
+      selType.id = 'logic_type';
+      selType.style = 'flex:1; min-width:80px;';
+      [['', 'as-is'], ['| int', 'intero'], ['| float', 'decimale'], ['| lower', 'testo']].forEach(([v,l]) => {
+        const o = document.createElement('option'); o.value = v; o.textContent = l;
+        selType.appendChild(o);
+      });
+
+      // Operatore dropdown
+      const selOp = document.createElement('select');
+      selOp.id = 'logic_op';
+      selOp.style = 'flex:1; min-width:80px;';
+      [['>', '>'], ['<', '<'], ['==', '=='], ['!=', '!='], ['>=', '>='], ['<=', '<='], ['in', 'contiene'], ['not in', 'non contiene']].forEach(([v,l]) => {
+        const o = document.createElement('option'); o.value = v; o.textContent = l;
+        selOp.appendChild(o);
+      });
+
+      // Valore input
+      const inpVal = document.createElement('input');
+      inpVal.type = 'text';
+      inpVal.id = 'logic_cmpval';
+      inpVal.placeholder = 'valore...';
+      inpVal.style = 'flex:2; min-width:80px;';
+
+      row.appendChild(selVar);
+      row.appendChild(selType);
+      row.appendChild(selOp);
+      row.appendChild(inpVal);
+      builderWrap.appendChild(row);
+
+      // Preview / raw expression
+      const previewLabel = document.createElement('div');
+      previewLabel.style = 'font-size:0.7rem; color:var(--flows-muted); margin-bottom:2px;';
+      previewLabel.textContent = 'Espressione generata (modificabile a mano):';
+      builderWrap.appendChild(previewLabel);
+
+      const rawInp = document.createElement('input');
+      rawInp.type = 'text';
+      rawInp.id = elId;
+      rawInp.value = val !== undefined ? val : '';
+      rawInp.style = 'width:100%; font-family:monospace; font-size:0.88rem; background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.3); color:var(--text); border-radius:4px; padding:5px 8px; margin-top:2px;';
+      rawInp.placeholder = 'es: variabile1 | int > 5';
+      rawInp.oninput = syncYamlFromDynamicForm;
+      builderWrap.appendChild(rawInp);
+
+      // Wire up builder → raw expression
+      function _updateExprFromBuilder() {
+        const v = selVar.value;
+        const t = selType.value;
+        const op = selOp.value;
+        const cmp = inpVal.value.trim();
+        if (!v) return;
+        const varPart = t ? `${v} ${t}` : v;
+        // quote string comparisons if type is not int/float
+        let cmpPart = cmp;
+        if ((t === '' || t === '| lower') && cmp !== '' && isNaN(Number(cmp)) && !cmp.startsWith("'") && !cmp.startsWith('"')) {
+          cmpPart = `'${cmp}'`;
+        }
+        rawInp.value = `${varPart} ${op} ${cmpPart}`;
+        syncYamlFromDynamicForm();
+      }
+      selVar.onchange = _updateExprFromBuilder;
+      selType.onchange = _updateExprFromBuilder;
+      selOp.onchange = _updateExprFromBuilder;
+      inpVal.oninput = _updateExprFromBuilder;
+
+      // Pre-fill dropdowns by parsing existing condition string
+      if (val) {
+        // Try to parse: 'name | cast op value'
+        const m = String(val).trim().match(/^(\S+)(?:\s+(\|\s*\w+))?\s*(>|<|==|!=|>=|<=|in|not in)\s*(.+)$/);
+        if (m) {
+          selVar.value = m[1].trim() || '';
+          selType.value = m[2] ? m[2].trim() : '';
+          selOp.value = m[3].trim();
+          inpVal.value = m[4].trim().replace(/^['"]|['"]$/g, '');
+        }
+      }
+
+      fieldWrap.appendChild(builderWrap);
     } else {
       // Normal String input
       const inp = document.createElement('input');
@@ -373,6 +552,18 @@ function syncYamlFromDynamicForm() {
     } else if (el.type === 'number' || el.tagName.toLowerCase() === 'number') {
         const v = parseFloat(el.value);
         if (!isNaN(v)) newObj[key] = v;
+    } else if (el.tagName.toLowerCase() === 'textarea') {
+        // Dict/nested YAML param
+        const raw = el.value.trim();
+        if (raw !== '') {
+            try {
+                const parsed = jsyaml.load(raw);
+                if (parsed !== null && parsed !== undefined) newObj[key] = parsed;
+            } catch(e) {
+                // Keep as raw string if YAML parse fails
+                newObj[key] = raw;
+            }
+        }
     } else {
         if (el.value.trim() !== '') {
             newObj[key] = el.value.trim();

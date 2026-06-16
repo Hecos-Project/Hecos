@@ -181,7 +181,9 @@ def _topological_sort(steps: List[Dict]) -> List[Dict]:
         if step is None:
             return
         for dep in step.get("depends_on", []):
-            visit(dep)
+            dep_id = dep if isinstance(dep, str) else dep.get("node")
+            if dep_id:
+                visit(dep_id)
         visited.add(step_id)
         order.append(step)
 
@@ -222,6 +224,11 @@ def _handle_if_else(step: Dict, context: Dict, run_id: str, emit: Callable) -> A
     result = _eval_condition(_render(condition, context), context)
 
     branch_key = "true_branch" if result else "false_branch"
+    
+    if "_branch_results" not in context:
+        context["_branch_results"] = {}
+    context["_branch_results"][step["id"]] = branch_key
+
     branch = step["params"].get(branch_key)
     return _execute_branch(branch, f"{step['id']}_{branch_key}", context, run_id, emit)
 
@@ -476,9 +483,12 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
     context = dict(variables)
     context["_run_id"]  = run_id
     context["_flow_id"] = flow_id
+    context["_branch_results"] = {}
 
     try:
         sorted_steps = _topological_sort(pipeline)
+        skipped_nodes = set()
+
         for step in sorted_steps:
             # Cooperative abort check is now the FALLBACK;
             # primary kill path is ctypes exception injection in abort_run()
@@ -491,6 +501,39 @@ def run_flow(flow_data: Dict[str, Any], run_id: Optional[str] = None) -> str:
                     "ts":      datetime.datetime.now().isoformat(),
                 })
                 return run_id
+
+            step_id = step["id"]
+            should_skip = False
+            
+            # Check dependencies to see if we should skip this step
+            for dep in step.get("depends_on", []):
+                if isinstance(dep, str):
+                    if dep in skipped_nodes:
+                        should_skip = True
+                        break
+                elif isinstance(dep, dict):
+                    parent_id = dep.get("node")
+                    req_branch = dep.get("branch")
+                    if parent_id in skipped_nodes:
+                        should_skip = True
+                        break
+                    
+                    # Skip if parent took a different branch
+                    actual_branch = context["_branch_results"].get(parent_id)
+                    if actual_branch and req_branch and actual_branch != req_branch:
+                        should_skip = True
+                        break
+
+            if should_skip:
+                skipped_nodes.add(step_id)
+                emit(run_id, {
+                    "type":    "step_skipped",
+                    "run_id":  run_id,
+                    "step_id": step_id,
+                    "action":  step.get("action", ""),
+                    "ts":      datetime.datetime.now().isoformat(),
+                })
+                continue
 
             _execute_step(step, context, run_id, emit)
 
