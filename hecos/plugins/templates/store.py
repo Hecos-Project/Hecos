@@ -172,6 +172,13 @@ def save_template(data: dict) -> dict:
 
     store = _load()
     existing_id = data.get("id", "").strip()
+    is_default = bool(data.get("is_default", False))
+
+    # Enforce uniqueness per channel if this one is default
+    if is_default:
+        for tpl in store.values():
+            if tpl.get("channel") == channel and tpl.get("id") != existing_id:
+                tpl["is_default"] = False
 
     if existing_id and existing_id in store:
         # ── Update existing ──────────────────────────────────────────────────
@@ -184,7 +191,10 @@ def save_template(data: dict) -> dict:
         existing["subject"]     = data.get("subject",     existing.get("subject", ""))
         existing["body_html"]   = data.get("body_html",   existing.get("body_html", ""))
         existing["body_text"]   = data.get("body_text",   existing.get("body_text", ""))
+        existing["header"]      = data.get("header",      existing.get("header", ""))
+        existing["footer"]      = data.get("footer",      existing.get("footer", ""))
         existing["tags"]        = data.get("tags",        existing.get("tags", []))
+        existing["is_default"]  = is_default
         existing["updated_at"]  = _now_iso()
 
         # Re-derive variable list from current body fields
@@ -218,7 +228,10 @@ def save_template(data: dict) -> dict:
             "subject":     data.get("subject", ""),
             "body_html":   data.get("body_html", ""),
             "body_text":   data.get("body_text", ""),
+            "header":      data.get("header", ""),
+            "footer":      data.get("footer", ""),
             "tags":        data.get("tags", []),
+            "is_default":  is_default,
             "variables":   _extract_variables(all_text),
             "created_at":  now,
             "updated_at":  now,
@@ -264,6 +277,9 @@ def render_template(template_id: str, variables: dict) -> dict:
         "subject":   _interpolate(tpl.get("subject",   ""), variables),
         "body_html": _interpolate(tpl.get("body_html", ""), variables),
         "body_text": _interpolate(tpl.get("body_text", ""), variables),
+        # Header and footer are static: NOT interpolated — intentional feature
+        "header":    tpl.get("header", ""),
+        "footer":    tpl.get("footer", ""),
     }
 
 
@@ -311,7 +327,7 @@ def restore_version(template_id: str, version_index: int) -> dict:
 
     # Restore snapshot fields
     for field in ("name", "channel", "description", "subject",
-                  "body_html", "body_text", "tags", "variables"):
+                  "body_html", "body_text", "header", "footer", "tags", "is_default", "variables"):
         if field in target_snapshot:
             existing[field] = target_snapshot[field]
 

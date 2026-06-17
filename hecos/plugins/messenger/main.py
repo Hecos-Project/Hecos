@@ -88,7 +88,7 @@ class MessengerTools:
 
     # ── Public Tools ───────────────────────────────────────────────────────
 
-    def send_message(self, to: str, text: str, platform: str = None, is_app_open: bool = False) -> str:
+    def send_message(self, to: str, text: str, platform: str = None, skip_default_template: bool = False, is_app_open: bool = False) -> str:
         """
         Send a message to a contact or channel.
         :param to: Recipient with optional platform prefix.
@@ -96,12 +96,30 @@ class MessengerTools:
                              'discord:#general', '+393331234567' (with platform=whatsapp).
         :param text: Message body.
         :param platform: Optional platform override if 'to' has no prefix.
+        :param skip_default_template: Set to True if you already rendered a template manually via TemplateTools.
         """
         cfg = self._require_config()
         try:
             plat, recipient = dispatcher.parse_target(to, platform)
         except ValueError as e:
             return f"❌ {e}"
+
+        # Try to apply default template wrapper if not skipped
+        if not skip_default_template:
+            try:
+                from hecos.plugins.templates.store import list_templates
+                for t in list_templates(channel=plat):
+                    if t.get("is_default"):
+                        h = t.get("header", "").strip()
+                        f = t.get("footer", "").strip()
+                        parts = []
+                        if h: parts.append(h)
+                        parts.append(text)
+                        if f: parts.append(f)
+                        text = "\n\n".join(parts)
+                        break
+            except Exception:
+                pass
 
         return dispatcher.dispatch_send(plat, recipient, text, cfg, is_app_open)
 

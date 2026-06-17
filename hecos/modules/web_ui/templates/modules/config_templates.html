@@ -96,6 +96,18 @@
                  oninput="TemplateManager._dirty=true">
         </div>
 
+        <!-- Default Flag -->
+        <div class="tpl-field" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 20px;">
+          <label class="switch is-small" style="margin: 0;">
+            <input type="checkbox" id="tpl-edit-is-default" onchange="TemplateManager._dirty=true">
+            <span class="slider"></span>
+          </label>
+          <span style="font-size: 13px; color: var(--text); font-weight: 500;">
+            Usa come Default per questo canale
+            <span class="tpl-optional" style="font-weight: normal;">(verrà auto-applicato ai messaggi di chat)</span>
+          </span>
+        </div>
+
         <!-- ── Tabs ──────────────────────────────────────────────────── -->
         <div class="tpl-tabs">
           <button class="tpl-tab active" data-tab="tpl-tab-content" onclick="tplSwitchTab(this,'tpl-tab-content')">

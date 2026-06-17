@@ -115,14 +115,19 @@ window.TemplateManager = (() => {
     _val('tpl-edit-name',        tpl.name        || '');
     _val('tpl-edit-description', tpl.description || '');
 
+    const defaultCb = $('tpl-edit-is-default');
+    if (defaultCb) defaultCb.checked = !!tpl.is_default;
+
     _setChannel(tpl.channel);
 
     if (tpl.channel === 'email') {
       _val('tpl-edit-subject', tpl.subject || '');
       _setEmailBody(tpl.body_html || tpl.body_text || '');
     } else {
+      _val('tpl-edit-header',    tpl.header    || '');
       _val('tpl-edit-body-text', tpl.body_text || '');
-      _renderTextPreview(tpl.body_text || '');
+      _val('tpl-edit-footer',    tpl.footer    || '');
+      _renderTextPreview(tpl.header || '', tpl.body_text || '', tpl.footer || '');
     }
 
     _renderVariables(tpl.variables || []);
@@ -205,13 +210,17 @@ window.TemplateManager = (() => {
 
   /* ── Messenger plain-text editor ─────────────────────────────────────────── */
 
-  function _renderTextPreview(text) {
+  function _renderTextPreview(header, text, footer) {
     const prev = $('tpl-text-preview');
-    if (prev) prev.textContent = text || '(empty)';
+    if (!prev) return;
+    const headerVal = header !== undefined ? header : (_getVal('tpl-edit-header') || '');
+    const footerVal = footer  !== undefined ? footer  : (_getVal('tpl-edit-footer')  || '');
+    const parts = [headerVal, text, footerVal].filter(Boolean);
+    prev.textContent = parts.join('\n\n') || '(empty)';
   }
 
   function onTextBodyInput(val) {
-    _renderTextPreview(val);
+    _renderTextPreview(undefined, val, undefined);
     _dirty = true;
     _renderVariables(_extractVars(val));
   }
@@ -284,7 +293,7 @@ window.TemplateManager = (() => {
     const channel = _getVal('tpl-edit-channel');
     if (!name) { _toast('Name is required', 'error'); return; }
 
-    let bodyHtml = '', bodyText = '', subject = '';
+    let bodyHtml = '', bodyText = '', subject = '', footer = '';
 
     if (channel === 'email') {
       subject  = _getVal('tpl-edit-subject');
@@ -292,7 +301,11 @@ window.TemplateManager = (() => {
       bodyText = _stripHtml(bodyHtml);
     } else {
       bodyText = _getVal('tpl-edit-body-text');
+      footer   = _getVal('tpl-edit-footer');
     }
+    const header = (_activeChannel !== 'email') ? _getVal('tpl-edit-header') : '';
+    const isDefaultCb = $('tpl-edit-is-default');
+    const isDefault = isDefaultCb ? isDefaultCb.checked : false;
 
     const vars = _extractVars([subject, bodyHtml, bodyText].join(' '));
 
@@ -304,6 +317,9 @@ window.TemplateManager = (() => {
       subject,
       body_html:   bodyHtml,
       body_text:   bodyText,
+      header,
+      footer,
+      is_default:  isDefault,
       variables:   vars,
     };
 
@@ -353,7 +369,7 @@ window.TemplateManager = (() => {
     _dirty = false;
     _populateEditor({
       name: '', channel: channel || 'email', description: '',
-      subject: '', body_html: '', body_text: '', variables: []
+      subject: '', body_html: '', body_text: '', header: '', footer: '', is_default: false, variables: []
     });
     _showSection('tpl-editor-section');
     _renderSidebar();
@@ -423,8 +439,12 @@ window.TemplateManager = (() => {
         iframe.srcdoc = r.body_html || `<pre>${_esc(r.body_text)}</pre>`;
         iframe.style.display = '';
       }
+      // For messenger channels, combine header + body + footer
       const prev = $('tpl-preview-text');
-      if (prev) prev.textContent = r.body_text || '';
+      if (prev) {
+        const parts = [r.header, r.body_text, r.footer].filter(Boolean);
+        prev.textContent = parts.join('\n\n') || '';
+      }
       const subj = $('tpl-preview-subject');
       if (subj) subj.textContent = r.subject || '—';
     } catch (e) {
