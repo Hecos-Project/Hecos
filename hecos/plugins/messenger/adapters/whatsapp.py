@@ -161,7 +161,8 @@ def _send_via_pyautogui(phone: str, text: str, is_app_open: bool) -> str:
         return (
             f"⚠️ [FALLBACK] Procedura pyautogui avviata per `{phone}`. "
             "Nessuna verifica reale possibile (metodo cieco). "
-            "Per invii affidabili, usa il browser CDP."
+            "Per invii affidabili, usa il browser CDP. "
+            "Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
         )
 
     except ImportError:
@@ -179,7 +180,7 @@ def check(cfg) -> str:
     try:
         from hecos.modules.browser import engine
         from playwright.sync_api import sync_playwright  # noqa: F401
-        cdp_status = "CDP connesso" if engine.is_running() else "CDP non connesso (browser non avviato)"
+        cdp_status = "CDP connesso" if engine.is_running() else "CDP non connesso (browser non avviato). Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
         return f"BETA (Playwright pronto — {cdp_status})"
     except ImportError:
         pass

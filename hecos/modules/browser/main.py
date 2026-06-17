@@ -354,6 +354,7 @@ class BrowserTools:
             if win_tabs:
                 lines = [
                     "[BROWSER] CDP not active — showing tabs via Windows Accessibility (read-only, no direct DOM control).",
+                    "Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information.",
                     "Use AUTOMATION__focus_browser_tab(title_fragment) to switch to the desired tab.",
                     ""
                 ]
@@ -366,6 +367,7 @@ class BrowserTools:
         return (
             "[BROWSER] No browser tabs found. "
             "Make sure Chrome or Edge is open. "
+            "Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information. "
             "For full AI control launch Chrome via the '🤖 Open AI-Ready Chrome' button in the tray icon menu."
         )
 

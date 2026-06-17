@@ -40,7 +40,7 @@ def main():
             try:
                 browser = pw.chromium.connect_over_cdp('http://localhost:9222', timeout=15000)
             except Exception as e:
-                print(f"❌ Impossibile connettersi a CDP: {e}")
+                print(f"❌ Impossibile connettersi a CDP: {e}. Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information.")
                 return
 
             url_web = f"https://web.whatsapp.com/send?phone={phone}&text={quote(text)}"
