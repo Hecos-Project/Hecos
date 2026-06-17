@@ -134,6 +134,28 @@ def init_rag_routes(app, cfg_mgr, logger):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    # ── Source chunks ──────────────────────────────────────────────────────────
+    @app.route("/api/rag/source_chunks", methods=["GET"])
+    def rag_source_chunks():
+        """Retrieve all text chunks for a specific source."""
+        try:
+            source = request.args.get("source", "")
+            namespace = request.args.get("namespace", "knowledge")
+            user_id = request.args.get("user_id", "admin")
+            if not source:
+                return jsonify({"ok": False, "error": "No source"}), 400
+
+            engine = _engine()
+            if not engine._ensure_init():
+                return jsonify({"ok": False, "error": "RAG disabled"}), 400
+
+            chunks = engine._store.get_chunks_by_source(user_id, namespace, source)
+            texts = [c.get("text", "") for c in chunks]
+            return jsonify({"ok": True, "chunks": texts})
+        except Exception as e:
+            logger.error(f"[RAG] source_chunks error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     # ── Delete specific source ─────────────────────────────────────────────────
     @app.route("/api/rag/delete_source", methods=["POST"])
     def rag_delete_source():

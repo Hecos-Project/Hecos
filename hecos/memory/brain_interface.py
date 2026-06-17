@@ -33,8 +33,6 @@ def _vault(user_id: str = "admin") -> str:
     os.makedirs(path, exist_ok=True)
     return path
 
-def _profile_path(user_id: str = "admin") -> str:
-    return os.path.join(_vault(user_id), "profile.json")
 
 def _db_path(user_id: str = "admin") -> str:
     return os.path.join(_vault(user_id), "history.db")
@@ -144,12 +142,13 @@ def get_context(config: dict = None, dynamic_name: str = None,
             with open(PATH_IDENTITY, "r", encoding="utf-8") as f:
                 id_data = json.load(f)
 
-        # Load per-user profile notes
-        prof_path = _profile_path(user_id)
-        prof_data = {}
-        if os.path.exists(prof_path):
-            with open(prof_path, "r", encoding="utf-8") as f:
-                prof_data = json.load(f)
+        # Load per-user profile from AuthManager (rich SQLite DB)
+        try:
+            from hecos.core.auth.auth_manager import auth_mgr
+            prof_data = auth_mgr.get_profile(user_id) or {}
+        except Exception as e:
+            logger.error(f"[MEMORY] Error fetching profile from auth_mgr: {e}")
+            prof_data = {}
 
         from hecos.core.system.version import VERSION
         context = "\n[ACTIVE IDENTITY MEMORY]\n"
@@ -168,10 +167,24 @@ def get_context(config: dict = None, dynamic_name: str = None,
             user_label = prof_data.get("display_name") or id_data.get('author', {}).get('name', user_id)
             context += f"Your Creator (Admin) is {user_label}. Protocol: {ai_protocol}.\n"
 
-        # User notes from profile
-        notes = prof_data.get('notes') or id_data.get('author', {}).get('notes', '')
+        # User notes from profile (check both legacy 'notes' and new 'bio_notes')
+        notes = prof_data.get('bio_notes') or prof_data.get('notes') or id_data.get('author', {}).get('notes', '')
         if notes:
-            context += f"User notes: {notes}\n"
+            context += f"User notes/bio: {notes}\n"
+            
+        # Additional rich profile details
+        real_name = prof_data.get('real_name')
+        if real_name:
+            context += f"User's real name: {real_name}\n"
+        age = prof_data.get('age')
+        if age:
+            context += f"User's age: {age}\n"
+        interests = prof_data.get('interests')
+        if interests:
+            context += f"User's interests: {interests}\n"
+        extra_notes = prof_data.get('extra_notes')
+        if extra_notes:
+            context += f"Extra profile notes: {extra_notes}\n"
 
         # Avatar context hint (for Vision models)
         av = _avatar_path(user_id)
@@ -185,20 +198,12 @@ def get_context(config: dict = None, dynamic_name: str = None,
 
 
 def update_profile(key, value, user_id: str = "admin"):
-    """Updates a specific field in the user's profile JSON."""
+    """Updates a specific field in the user's profile via AuthManager SQLite DB."""
     try:
-        prof_path = _profile_path(user_id)
-        if not os.path.exists(prof_path):
-            data = {"display_name": user_id, "notes": ""}
-        else:
-            with open(prof_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-
-        data[key] = value
-
-        with open(prof_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-        return True
+        from hecos.core.auth.auth_manager import auth_mgr
+        # Map legacy 'notes' key to 'bio_notes' in SQLite
+        db_key = "bio_notes" if key == "notes" else key
+        return auth_mgr.update_profile(user_id, {db_key: value})
     except Exception as e:
         logger.error(f"Profile Update Error: {e}")
         return False

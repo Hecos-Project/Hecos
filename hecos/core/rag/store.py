@@ -97,11 +97,36 @@ class LanceDBStore:
         safe_uid = user_id.replace("-", "_")
         return f"{safe_uid}__{namespace}"
 
+    def _list_table_names(self) -> List[str]:
+        """Returns a flat list of table name strings, compatible with lancedb 0.20+ and 0.33+."""
+        try:
+            result = self._db.list_tables()
+            # lancedb 0.33+: returns ListTablesResponse(tables=[...], page_token=...)
+            if hasattr(result, 'tables'):
+                return list(result.tables)
+            # lancedb 0.20–0.32: returns a plain list of strings
+            names = []
+            for item in result:
+                if isinstance(item, str):
+                    names.append(item)
+                elif isinstance(item, tuple) and item[0] == 'tables':
+                    names.extend(item[1])
+            return names
+        except AttributeError:
+            # Very old lancedb: fall back to deprecated table_names()
+            try:
+                return list(self._db.table_names())
+            except Exception:
+                return []
+        except Exception as e:
+            logger.error(f"[RAG][Store] _list_table_names error: {e}")
+            return []
+
     def _get_or_create_table(self, user_id: str, namespace: str):
         """Open existing table or create with schema."""
         import pyarrow as pa
         tname = self._table_name(user_id, namespace)
-        if tname in self._db.table_names():
+        if tname in self._list_table_names():
             return self._db.open_table(tname)
         schema = pa.schema([
             pa.field("id",          pa.string()),
@@ -142,7 +167,7 @@ class LanceDBStore:
         Returns list of dicts with text, source, _distance, etc.
         """
         tname = self._table_name(user_id, namespace)
-        if tname not in self._db.table_names():
+        if tname not in self._list_table_names():
             return []
         table = self._db.open_table(tname)
         q = table.search(query_vector).limit(top_k)
@@ -158,7 +183,7 @@ class LanceDBStore:
     def delete_by_source(self, user_id: str, namespace: str, source: str) -> bool:
         """Remove all chunks from a given source."""
         tname = self._table_name(user_id, namespace)
-        if tname not in self._db.table_names():
+        if tname not in self._list_table_names():
             return True
         try:
             table = self._db.open_table(tname)
@@ -169,9 +194,23 @@ class LanceDBStore:
             logger.error(f"[RAG][Store] delete_by_source error: {e}")
             return False
 
+    def get_chunks_by_source(self, user_id: str, namespace: str, source: str) -> List[Dict]:
+        """Retrieve all chunks belonging to a specific source without semantic search."""
+        tname = self._table_name(user_id, namespace)
+        if tname not in self._list_table_names():
+            return []
+        try:
+            table = self._db.open_table(tname)
+            # Use .search() with a where filter to avoid needing pylance/pandas
+            results = table.search().where(f"source = '{source}'", prefilter=True).to_list()
+            return results
+        except Exception as e:
+            logger.error(f"[RAG][Store] get_chunks_by_source error: {e}")
+            return []
+
     def delete_by_session(self, user_id: str, namespace: str, session_id: str) -> bool:
         tname = self._table_name(user_id, namespace)
-        if tname not in self._db.table_names():
+        if tname not in self._list_table_names():
             return True
         try:
             table = self._db.open_table(tname)
@@ -187,7 +226,7 @@ class LanceDBStore:
         If only user_id given, wipe all namespaces for that user.
         If both given, wipe just that table.
         """
-        all_tables = self._db.table_names()
+        all_tables = self._list_table_names()
         for tname in all_tables:
             uid, ns = (tname.split("__", 1) + [""])[:2]
             if user_id and uid != user_id.replace("-", "_"):
@@ -204,7 +243,7 @@ class LanceDBStore:
     def count(self, user_id: str = None) -> int:
         """Total document chunk count across all tables for a user."""
         total = 0
-        for tname in self._db.table_names():
+        for tname in self._list_table_names():
             if user_id and not tname.startswith(user_id.replace("-", "_")):
                 continue
             try:
@@ -220,6 +259,7 @@ class StubStore:
     """Used when lancedb is not installed. All operations are no-ops."""
     def upsert(self, *a, **kw): pass
     def search(self, *a, **kw) -> list: return []
+    def get_chunks_by_source(self, *a, **kw) -> list: return []
     def delete_by_source(self, *a, **kw) -> bool: return True
     def delete_by_session(self, *a, **kw) -> bool: return True
     def wipe(self, *a, **kw): pass

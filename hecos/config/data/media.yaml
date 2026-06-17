@@ -1,7 +1,7 @@
 image_gen:
   enabled: true
-  provider: huggingface
-  model: black-forest-labs/FLUX.1-schnell
+  provider: pollinations
+  model: flux
   nologo: true
   api_key: ''
   api_key_comment: ''
@@ -9,7 +9,7 @@ image_gen:
   width: 1024
   height: 1024
   seed: -1
-  last_seed: 2086089310
+  last_seed: -1
   sampler: euler
   scheduler: simple
   guidance_scale: 0.0
@@ -21,9 +21,9 @@ image_gen:
   style: none
   optimize_for_flux: true
   flux_refiner_instructions: ''
-  show_metadata_in_chat: true
+  show_metadata_in_chat: false
   presets: {}
-  active_preset: ⚡ Flux Schnell (HuggingFace)
+  active_preset: ''
   custom_hf_models: []
 video_gen:
   enabled: false

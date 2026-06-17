@@ -23,7 +23,17 @@ class UserTools:
         try:
             profile = auth_mgr.get_profile(username)
             if not profile:
-                return f"No profile found for user '{username}'."
+                # Try to find by display_name or real_name
+                found = False
+                for u in auth_mgr.get_all_users():
+                    p = auth_mgr.get_profile(u["username"])
+                    if p.get("display_name", "").lower() == username.lower() or p.get("real_name", "").lower() == username.lower():
+                        profile = p
+                        username = u["username"]
+                        found = True
+                        break
+                if not found:
+                    return f"No profile found for user '{username}'."
             
             # Format nicely for the LLM
             res = f"### PROFILE: {username} ###\n"
@@ -51,6 +61,13 @@ class UserTools:
             return "No fields provided for update."
             
         try:
+            profile = auth_mgr.get_profile(username)
+            if not profile:
+                for u in auth_mgr.get_all_users():
+                    p = auth_mgr.get_profile(u["username"])
+                    if p.get("display_name", "").lower() == username.lower() or p.get("real_name", "").lower() == username.lower():
+                        username = u["username"]
+                        break
             success = auth_mgr.update_profile(username, fields)
             if success:
                 # If language was updated, sync it immediately

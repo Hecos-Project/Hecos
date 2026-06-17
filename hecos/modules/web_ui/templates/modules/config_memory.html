@@ -251,8 +251,8 @@ function loadRagSources() {
         html += `<div style="display:flex;justify-content:space-between;align-items:center;
                   padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
           <div style="display:flex;flex-direction:column;flex:1;min-width:0;padding-right:8px;">
-            <span style="color:var(--text);overflow:hidden;text-overflow:ellipsis; white-space:nowrap; font-size:11px;"
-                  title="${src}">${src}</span>
+            <a href="#" onclick="ragViewSource('${src.replace(/'/g,"\\'")}', 'knowledge'); return false;" style="color:var(--accent); text-decoration:underline; overflow:hidden;text-overflow:ellipsis; white-space:nowrap; font-size:11px;"
+                  title="Click to view contents of ${src}">${src}</a>
             <span style="color:var(--muted); font-size:9px;">${dayTime}</span>
           </div>
           <span style="color:var(--muted);white-space:nowrap;font-size:10px;">${chunks} chk</span>
@@ -368,7 +368,7 @@ function ragWipe() {
     .then(r => r.json()).then(d => {
       if (d.ok) { showToast('Vector store wiped.', 'success'); loadRagStatus(); }
       else showToast('Wipe failed: ' + d.error, 'error');
-    });
+    }).catch(err => showToast('Error: ' + err.message, 'error'));
 }
 
 function ragDeleteSource(source, namespace) {
@@ -378,7 +378,53 @@ function ragDeleteSource(source, namespace) {
     .then(r => r.json()).then(d => {
       if (d.ok) { showToast('Source removed.', 'success'); loadRagStatus(); }
       else showToast('Error: ' + d.error, 'error');
-    });
+    }).catch(err => showToast('Error: ' + err.message, 'error'));
+}
+
+function ragViewSource(source, namespace) {
+  fetch(`/api/rag/source_chunks?source=${encodeURIComponent(source)}&namespace=${encodeURIComponent(namespace)}`)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) {
+        showToast('Error fetching chunks: ' + d.error, 'error');
+        return;
+      }
+      if (!d.chunks || d.chunks.length === 0) {
+        showToast('No contents found for this source.', 'warning');
+        return;
+      }
+      
+      const contentHtml = d.chunks.map((c, i) => `
+        <div style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:10px; color:var(--accent); margin-bottom:4px;">Chunk ${i+1}</div>
+          <div style="white-space:pre-wrap; font-size:12px; color:var(--text);">${c}</div>
+        </div>
+      `).join('');
+      
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed';
+      modal.style.top = '50%';
+      modal.style.left = '50%';
+      modal.style.transform = 'translate(-50%, -50%)';
+      modal.style.background = 'var(--surface-color, #1e1e1e)';
+      modal.style.border = '1px solid var(--border)';
+      modal.style.padding = '20px';
+      modal.style.zIndex = '9999';
+      modal.style.width = '600px';
+      modal.style.maxWidth = '90vw';
+      modal.style.maxHeight = '80vh';
+      modal.style.overflowY = 'auto';
+      modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+      modal.innerHTML = `
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+          <h3 style="margin:0; color:var(--accent);">Source: ${source}</h3>
+          <button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:var(--text); cursor:pointer; font-size:16px;">✕</button>
+        </div>
+        ${contentHtml}
+      `;
+      document.body.appendChild(modal);
+    })
+    .catch(err => showToast('Error: ' + err.message, 'error'));
 }
 
 // Auto-load RAG status when memory panel is activated
