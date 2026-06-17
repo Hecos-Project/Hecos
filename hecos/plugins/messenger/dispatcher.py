@@ -37,8 +37,30 @@ def parse_target(to: str, platform: str = None) -> tuple[str, str]:
     )
 
 
-def dispatch_send(platform: str, recipient: str, text: str, config, is_app_open: bool = False) -> str:
-    """Send a message via the appropriate adapter. Returns a result string."""
+def dispatch_send(platform: str, recipient: str, text: str, config,
+                  is_app_open: bool = False,
+                  template_id: str = "",
+                  template_vars: dict = None) -> str:
+    """
+    Send a message via the appropriate adapter.
+
+    If *template_id* is provided, the template is rendered first and its
+    body_text is used as the message content (messenger platforms are plain-text).
+
+    :returns: Result string from the adapter.
+    """
+    # ── Template rendering (optional) ─────────────────────────────────────────
+    if template_id:
+        try:
+            from hecos.plugins.templates import store as tpl_store
+            rendered = tpl_store.render_template(template_id, template_vars or {})
+            # Messenger channels use plain text; fall back to body_html stripped if needed
+            text = rendered.get("body_text") or rendered.get("body_html") or text
+        except KeyError:
+            return f"❌ Template '{template_id}' not found."
+        except Exception as e:
+            logger.warning("MESSENGER", f"Template render error: {e}")
+
     logger.info("MESSENGER", f"Dispatching send → [{platform}] {recipient}")
 
     if platform == "telegram":
@@ -54,6 +76,7 @@ def dispatch_send(platform: str, recipient: str, text: str, config, is_app_open:
         return dc.send(config.discord, recipient, text)
 
     return f"❌ Platform '{platform}' is not supported."
+
 
 
 def dispatch_check(platform: str | None, config) -> dict[str, str]:

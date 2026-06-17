@@ -728,7 +728,25 @@ def _auto_register_hecos_modules():
             "EXECUTOR__create_dir": {"directory_path": "string"},
             "EXECUTOR__list_dir": {"directory_path": "string"},
             "EXECUTOR__kill_process": {"name": "string"},
-            "MAIL__send_email": {"to": "string", "subject": "string", "body": "string"},
+            # ── Mail ──────────────────────────────────────────────────────────────
+            "MAIL__send_email": {
+                "to":            "string (recipient email or contact name)",
+                "subject":       "string (email subject — overridden if template_id is set)",
+                "body":          "string (email body — overridden if template_id is set)",
+                "cc":            "string (optional CC addresses)",
+                "bcc":           "string (optional BCC addresses)",
+                "is_html":       "boolean (true = body is HTML)",
+                "template_id":   "string (optional — ID of an email template to use)",
+                "template_vars": "dict   (optional — variable values to interpolate in the template, e.g. {\"nome\": \"Mario\"})",
+            },
+            # ── Messenger ─────────────────────────────────────────────────────────
+            "MESSENGER__send_message": {
+                "to":            "string (recipient — prefix with platform, e.g. 'telegram:@username')",
+                "text":          "string (message text — overridden if template_id is set)",
+                "platform":      "string (optional — 'telegram' | 'whatsapp' | 'discord')",
+                "template_id":   "string (optional — ID of a messenger template to use)",
+                "template_vars": "dict   (optional — variable values to interpolate in the template)",
+            },
             "WEATHER__get_forecast": {"location": "string"},
         }
 

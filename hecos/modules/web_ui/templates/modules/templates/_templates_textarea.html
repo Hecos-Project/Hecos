@@ -1,0 +1,12 @@
+<!-- Shared textarea for messenger channels (WhatsApp, Telegram, Discord) -->
+<div class="tpl-field">
+  <label>Message Body</label>
+  <textarea id="tpl-edit-body-text" rows="10"
+            placeholder="Hi {{ nome }}, your order {{ ordine }} is ready!"
+            oninput="TemplateManager.onTextBodyInput(this.value)"
+            class="tpl-body-textarea"></textarea>
+</div>
+<div class="tpl-field">
+  <label>Live Preview</label>
+  <pre id="tpl-text-preview" class="tpl-text-preview">(empty)</pre>
+</div>

@@ -927,6 +927,7 @@
         "ext_messenger_title": "Messaggistica",
         "webui_desc_messenger": "Invia e ricevi messaggi tramite Telegram, WhatsApp e Discord.",
         "hub_mod_mail": "Mail",
+        "hub_mod_templates": "Templates",
         "webui_desc_mail": "Client di posta integrato. Legge profili SMTP/IMAP, gestisce bozze, invio e sincronizzazione con supporto provider automatico e integrazione Rubrica.",
         "mail_cfg_title": "Configurazione Account Mail",
         "mail_cfg_desc": "Inserisci l'indirizzo email e la password da usare per inviare e ricevere posta. Per provider come Gmail o Outlook usa una <strong>Password per le App</strong> (2FA).",

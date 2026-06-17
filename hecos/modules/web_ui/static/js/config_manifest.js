@@ -34,6 +34,7 @@ window.CONFIG_HUB = {
         { id: 'messenger', label: 'ext_messenger_title',  icon: '<i class="fab fa-telegram-plane"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MESSENGER' },
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
         { id: 'mail',      label: 'hub_mod_mail',         icon: '<i class="fas fa-envelope"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MAIL' },
+        { id: 'templates', label: 'hub_mod_templates',    icon: '<i class="fas fa-file-alt"></i>', cat: 'CONNETTIVITÀ', isCore: true },
         { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '<i class="fas fa-mobile-alt"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
@@ -152,6 +153,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'mcp', 'remote-triggers',
+    'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help', 'flows', 'lists'
 ]);

@@ -127,6 +127,27 @@ def send_email():
     to      = data.get("to", "")
     subject = data.get("subject", "")
     body    = data.get("body", "")
+    is_html = data.get("is_html", False)
+
+    # ── Template rendering (optional) ─────────────────────────────────────────
+    template_id   = data.get("template_id", "").strip()
+    template_vars = data.get("template_vars", {})
+    if template_id:
+        try:
+            from hecos.plugins.templates import store as tpl_store
+            rendered = tpl_store.render_template(template_id, template_vars)
+            subject  = rendered.get("subject")   or subject
+            # Prefer HTML body when available; fall back to plain text
+            if rendered.get("body_html"):
+                body    = rendered["body_html"]
+                is_html = True
+            elif rendered.get("body_text"):
+                body = rendered["body_text"]
+        except KeyError:
+            return jsonify({"ok": False, "error": f"Template '{template_id}' not found."}), 404
+        except Exception as e:
+            logger.warning(f"[MAIL API] template render error: {e}")
+
     if not to or not subject or not body:
         return jsonify({"ok": False, "error": "to, subject and body are required"}), 400
     try:
@@ -141,7 +162,7 @@ def send_email():
         ok, msg = client.send(
             to=resolved_to, subject=subject, body=body,
             cc=resolved_cc, bcc=resolved_bcc,
-            is_html=data.get("is_html", False),
+            is_html=is_html,
             attach_paths=data.get("attach_paths", [])
         )
         if ok:

@@ -83,6 +83,7 @@ _PANEL_MAP = {
     'calendar':        'modules/config_calendar.html',
     'contacts':        'modules/config_contacts.html',
     'mail':            'modules/config_mail.html',
+    'templates':       'modules/config_templates.html',
     'mcp':             'modules/config_mcp.html',
     'messenger':       'modules/config_messenger.html',
     'remote-triggers': 'modules/config_remote_triggers.html',
