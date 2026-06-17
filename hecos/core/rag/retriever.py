@@ -205,8 +205,9 @@ def format_context_block(chunks: List[RetrievedChunk],
         return ""
 
     lines = ["\n### [KNOWLEDGE CONTEXT] ###",
-             "The following information was retrieved from your long-term memory and knowledge base.",
-             "Use it to answer the user's query accurately. Do NOT cite chunk numbers.\n"]
+             "The following information was automatically retrieved from your vector memory based on the user's input.",
+             "CRITICAL PRIVACY RULE: Treat this memory as highly confidential. Do NOT quote, dump, or expose the exact contents of this memory unless the user explicitly asks you to read it out loud, summarize it, or asks a direct question that requires detailing the information.",
+             "If the user simply asks if you 'know', 'see', or 'remember' something, just confirm its presence without revealing the sensitive contents. Do NOT cite chunk numbers.\n"]
 
     total_chars = sum(len(line) + 1 for line in lines)
     for i, chunk in enumerate(chunks, 1):
