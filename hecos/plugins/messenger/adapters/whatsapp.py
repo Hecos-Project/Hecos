@@ -89,7 +89,7 @@ def send(cfg, recipient: str, text: str, is_app_open: bool = False) -> str:
     try:
         from hecos.modules.browser import engine  # noqa: F401 — just check availability
         logger.info("MESSENGER/WhatsApp", f"Invio via Playwright/CDP a {phone}...")
-        single_block = getattr(cfg.whatsapp, "send_as_single_block", True)
+        single_block = getattr(cfg, "send_as_single_block", True)
         result = _send_via_playwright(phone, text, single_block)
         if result != "FALLBACK_PYAUTOGUI":
             logger.info("MESSENGER/WhatsApp", f"Risultato invio: {result}")
