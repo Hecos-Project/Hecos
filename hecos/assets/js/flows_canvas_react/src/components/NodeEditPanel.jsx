@@ -116,11 +116,11 @@ function LogicBuilderField({ label, value, onChange, allVariables }) {
         <i className="fas fa-magic" style={{ marginRight: 6 }}></i> Logic Builder
       </label>
       <div style={{ display: 'flex', gap: '6px', padding: '12px', background: 'rgba(0, 212, 255, 0.05)', border: '1px solid rgba(0, 212, 255, 0.2)', borderRadius: '6px', marginBottom: '8px' }}>
-        <select style={{ flex: 2, minWidth: '100px' }} value={v1} onChange={e => handleUpdate(e.target.value, op, v2)}>
+        <select style={{ flex: 2, minWidth: '80px' }} value={v1} onChange={e => handleUpdate(e.target.value, op, v2)}>
           <option value="">— Variable —</option>
           {allVariables.map(v => <option key={v} value={v}>{v}</option>)}
         </select>
-        <select style={{ flex: 1, minWidth: '60px' }} value={op} onChange={e => handleUpdate(v1, e.target.value, v2)}>
+        <select style={{ flex: 1, minWidth: '45px' }} value={op} onChange={e => handleUpdate(v1, e.target.value, v2)}>
           <option value="==">==</option>
           <option value="!=">!=</option>
           <option value=">">&gt;</option>
@@ -128,7 +128,7 @@ function LogicBuilderField({ label, value, onChange, allVariables }) {
           <option value=">=">&gt;=</option>
           <option value="<=">&lt;=</option>
         </select>
-        <input type="text" style={{ flex: 2, minWidth: '80px' }} value={v2} onChange={e => handleUpdate(v1, op, e.target.value)} placeholder="Value..." />
+        <input type="text" style={{ flex: 2, minWidth: '70px' }} value={v2} onChange={e => handleUpdate(v1, op, e.target.value)} placeholder="Value..." />
       </div>
       <label style={{ fontSize: '0.75rem', opacity: 0.8 }}>Generated Expression (Editable)</label>
       <input type="text" value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder="e.g. {{ var }} > 5" style={{ fontFamily: 'monospace' }} />
