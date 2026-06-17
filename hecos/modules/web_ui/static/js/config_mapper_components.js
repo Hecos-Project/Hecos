@@ -133,6 +133,7 @@ function populateMessengerUI() {
     setVal  ('telegram-default-chat-id',   s.telegram_default_chat_id   || '');
     setCheck('whatsapp-enabled',           s.whatsapp_enabled           ?? false);
     setVal  ('whatsapp-phone-country-code',s.whatsapp_phone_country_code || '+39');
+    setCheck('whatsapp-send-as-single-block',s.whatsapp_send_as_single_block ?? true);
     setCheck('discord-enabled',            s.discord_enabled            ?? false);
     setVal  ('discord-webhook-url',        s.discord_webhook_url        || '');
 }
@@ -159,6 +160,7 @@ function buildMessengerPayload() {
                 telegram_default_chat_id:   getV('telegram-default-chat-id',    s.telegram_default_chat_id   || ''),
                 whatsapp_enabled:           waEnabled,
                 whatsapp_phone_country_code:getV('whatsapp-phone-country-code', s.whatsapp_phone_country_code || '+39'),
+                whatsapp_send_as_single_block:getC('whatsapp-send-as-single-block', s.whatsapp_send_as_single_block ?? true),
                 discord_enabled:            dcEnabled,
                 discord_webhook_url:        getV('discord-webhook-url',         s.discord_webhook_url        || '')
             }

@@ -21,7 +21,7 @@ _WA_MSG_SENT_SELECTOR = 'span[data-icon="msg-check"], span[data-icon="msg-dblche
 _WA_LOADING_SELECTOR  = 'div[data-testid="intro-md-beta-logo-dark"], div[data-testid="qrcode"]'
 
 
-def _send_via_playwright(phone: str, text: str) -> str:
+def _send_via_playwright(phone: str, text: str, send_as_single_block: bool = True) -> str:
     """
     Usa un subprocess per inviare il messaggio via Playwright/CDP.
     Questo evita il crash "Cannot switch to a different thread" (greenlet error)
@@ -36,7 +36,7 @@ def _send_via_playwright(phone: str, text: str) -> str:
     if not os.path.exists(worker_script):
         return "FALLBACK_PYAUTOGUI"
 
-    input_data = json.dumps({"phone": phone, "text": text})
+    input_data = json.dumps({"phone": phone, "text": text, "single_block": send_as_single_block})
 
     try:
         # Esegui il worker in un subprocess isolato
@@ -89,7 +89,8 @@ def send(cfg, recipient: str, text: str, is_app_open: bool = False) -> str:
     try:
         from hecos.modules.browser import engine  # noqa: F401 — just check availability
         logger.info("MESSENGER/WhatsApp", f"Invio via Playwright/CDP a {phone}...")
-        result = _send_via_playwright(phone, text)
+        single_block = getattr(cfg.whatsapp, "send_as_single_block", True)
+        result = _send_via_playwright(phone, text, single_block)
         if result != "FALLBACK_PYAUTOGUI":
             logger.info("MESSENGER/WhatsApp", f"Risultato invio: {result}")
             return result

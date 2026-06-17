@@ -26,6 +26,7 @@ try:
         enabled: bool = False
         session_name: str = "hecos"
         phone_country_code: str = "+39"
+        send_as_single_block: bool = True
 
     class DiscordConfig(BaseModel):
         enabled: bool = False

@@ -61,6 +61,11 @@ class MessengerTools:
                 "default": "+39",
                 "description": "Default country code prepended to bare phone numbers (e.g. '+39' for Italy)."
             },
+            "whatsapp_send_as_single_block": {
+                "type": "bool",
+                "default": True,
+                "description": "Send multiline text and templates as a single message block instead of multiple separate messages."
+            },
             # ── Discord ────────────────────────────────────────────────────
             "discord_enabled": {
                 "type": "bool",
@@ -209,6 +214,7 @@ def on_load(config: dict = None):
         "whatsapp": {
             "enabled":              plugin_cfg.get("whatsapp_enabled", False),
             "phone_country_code":   plugin_cfg.get("whatsapp_phone_country_code", "+39"),
+            "send_as_single_block": plugin_cfg.get("whatsapp_send_as_single_block", True),
         },
         "discord": {
             "enabled":          plugin_cfg.get("discord_enabled", False),

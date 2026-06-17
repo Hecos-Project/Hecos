@@ -25,6 +25,7 @@ def main():
         input_data = json.loads(raw_input)
         phone = input_data["phone"]
         text = input_data["text"]
+        single_block = input_data.get("single_block", True)
     except Exception as e:
         print(f"❌ Errore IPC json: {e}")
         return
@@ -153,10 +154,26 @@ def main():
                 time.sleep(0.2)
                 
                 # E scriviamo il testo vero
-                msg_box.type(text, delay=10)
+                if single_block:
+                    lines = text.split('\n')
+                    for i, line in enumerate(lines):
+                        if line:
+                            msg_box.type(line, delay=10)
+                        if i < len(lines) - 1:
+                            wa_page.keyboard.press("Shift+Enter")
+                else:
+                    msg_box.type(text, delay=10)
                 time.sleep(0.5)
             except Exception:
-                msg_box.type(text, delay=10)
+                if single_block:
+                    lines = text.split('\n')
+                    for i, line in enumerate(lines):
+                        if line:
+                            msg_box.type(line, delay=10)
+                        if i < len(lines) - 1:
+                            wa_page.keyboard.press("Shift+Enter")
+                else:
+                    msg_box.type(text, delay=10)
                 time.sleep(0.5)
 
             # Send

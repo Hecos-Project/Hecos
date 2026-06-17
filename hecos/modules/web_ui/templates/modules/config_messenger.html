@@ -65,6 +65,15 @@
             <input type="text" id="whatsapp-phone-country-code" placeholder="+39" autocomplete="off">
             <small style="color:#666; font-size:11px;">Aggiunto in automatico ai numeri digitati senza prefisso (es. +39 per l'Italia).</small>
         </div>
+
+        <div class="field">
+            <label>Invia in un unico blocco (Consigliato)</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-send-as-single-block" onchange="markDirty()">
+                <span class="slider"></span>
+            </label>
+            <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Invia i testi multiriga e i template in un unico messaggio (anziché dividere in più messaggi continui).</small>
+        </div>
     </div>
 
     <div class="card">
