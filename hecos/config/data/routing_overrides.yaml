@@ -34,6 +34,10 @@ overrides:
   MEDIA_PLAYER: >
     You are connected to the system's local media player. Even if you don't have physical ears or eyes, ALWAYS use MEDIA_PLAYER tools to fulfill any request concerning music, audio, playing, pausing, or stopping tracks. Do not tell the user you lack the ability to hear.
 
+  # 🧠 MEMORY / RAG: Privacy and context management
+  MEMORY: >
+    CRITICAL PRIVACY RULE: Treat this memory as highly confidential. Do NOT quote, dump, or expose the exact contents of this memory unless the user explicitly asks you to read it out loud, summarize it, or asks a direct question that requires detailing the information. If the user simply asks if you 'know', 'see', or 'remember' something, just confirm its presence without revealing the sensitive contents. Do NOT cite chunk numbers.
+
   # ─────────────────────────────────────────────────────────────────────────────
   # 💡 [IDEAS & EXAMPLES] - Copy and uncomment (remove #) to activate
   # ─────────────────────────────────────────────────────────────────────────────

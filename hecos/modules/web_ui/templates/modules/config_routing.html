@@ -59,3 +59,12 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Ensure the routing panel renders when lazily loaded into the DOM
+  if (window.routingLogic && typeof window.routingLogic.initRoutingPanel === 'function') {
+      window.routingLogic.initRoutingPanel();
+  } else if (window.routingRender && typeof window.routingRender.renderAllCards === 'function') {
+      window.routingRender.renderAllCards();
+  }
+</script>
