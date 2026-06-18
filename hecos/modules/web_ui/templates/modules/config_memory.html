@@ -31,7 +31,19 @@
 
   <!-- ── Episodic Memory Status ──────────────────────────── -->
   <div class="card">
-    <div class="card-title">Memory Status</div>
+    <div class="card-title" style="display:flex; align-items:center; gap:8px;">
+      Memory Status
+      <!-- Backup / Restore Chat History -->
+      <div style="display:flex; gap:6px; padding-left:10px;">
+        <button class="tpl-icon-btn" title="Backup Chat History" onclick="backupChatHistory()">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="tpl-icon-btn" title="Restore Chat History" onclick="document.getElementById('mem-restore-file').click()">
+          <i class="fas fa-upload"></i>
+        </button>
+        <input type="file" id="mem-restore-file" accept=".json" style="display:none" onchange="restoreChatHistory(event)">
+      </div>
+    </div>
     <p id="mem-status-text" style="color:var(--muted); font-size:0.9em;">Loading...</p>
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
       <select id="clear-range" class="mode-selector config-input" style="width:140px; margin:0;">
@@ -431,4 +443,83 @@ function ragViewSource(source, namespace) {
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(loadRagStatus, 800);
 });
+
+// ── Chat History Backup / Restore ─────────────────────────────────────────────
+
+async function backupChatHistory() {
+  try {
+    if (window.showToast) showToast('Preparing chat backup...', 'info');
+    const res = await fetch('/api/chat/sessions/backup');
+    if (!res.ok) throw new Error('Backup request failed');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+    const filename = `hecos_chat_backup_${new Date().toISOString().split('T')[0]}.json`;
+    const content  = JSON.stringify(data, null, 2);
+
+    if (window.showSaveFilePicker) {
+      try {
+        const fh = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+        });
+        const w = await fh.createWritable();
+        await w.write(content);
+        await w.close();
+      } catch(e) {
+        if (e.name === 'AbortError') return;
+        throw e;
+      }
+    } else {
+      const blob = new Blob([content], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+    if (window.showToast) showToast(`Backup di ${data.session_count} sessioni completato`, 'success');
+  } catch(err) {
+    console.error('[MEMORY] Chat backup error:', err);
+    if (window.showToast) showToast(err.message, 'error');
+    else alert('Backup error: ' + err.message);
+  }
+}
+
+async function restoreChatHistory(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  let mode = 'duplicate';
+  const msg = 'Ripristino Cronologia Chat\n\nOK = Aggiungi copie (sicuro)\nAnnulla = Sostituisci tutto (cancella le sessioni esistenti)';
+  if (!confirm(msg)) {
+    mode = 'replace';
+    if (!confirm('⚠️ Attenzione: TUTTE le sessioni esistenti verranno cancellate. Continuare?')) return;
+  }
+
+  try {
+    const text    = await file.text();
+    const payload = JSON.parse(text);
+    const sessions = payload.sessions || payload.chat?.sessions || [];
+    if (!Array.isArray(sessions)) throw new Error('File non valido: sessioni mancanti.');
+
+    if (window.showToast) showToast(`Ripristino di ${sessions.length} sessioni...`, 'info');
+
+    const res = await fetch('/api/chat/sessions/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessions, mode })
+    });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+    if (window.showToast) showToast(`Ripristinate ${result.restored_sessions} sessioni (${result.restored_messages} messaggi)`, 'success');
+    loadMemoryStatus();
+  } catch(err) {
+    console.error('[MEMORY] Chat restore error:', err);
+    if (window.showToast) showToast(err.message, 'error');
+    else alert('Errore: ' + err.message);
+  }
+}
 </script>
