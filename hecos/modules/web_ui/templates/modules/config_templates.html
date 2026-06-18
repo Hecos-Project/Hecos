@@ -7,9 +7,8 @@
   {% include 'modules/templates/_templates_styles.html' %}
 
   <!-- ── GrapeJS CDN (email builder) ──────────────────────────────────── -->
-  <script src="https://unpkg.com/grapesjs@0.21.13/dist/grapes.min.js" defer></script>
-  <link   rel="stylesheet" href="https://unpkg.com/grapesjs@0.21.13/dist/css/grapes.min.css">
-  <script src="https://unpkg.com/grapesjs-preset-newsletter@1.0.2/dist/grapesjs-preset-newsletter.min.js" defer></script>
+  <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.21.13/dist/css/grapes.min.css">
+  <script src="https://unpkg.com/grapesjs@0.21.13/dist/grapes.min.js"></script>
 
   <!-- ── Layout: Sidebar + Main ──────────────────────────────────────── -->
   <div class="tpl-layout">
@@ -67,6 +66,9 @@
         <!-- Header bar -->
         <div class="tpl-editor-topbar">
           <div class="tpl-editor-title">
+            <button class="tpl-btn tpl-sidebar-toggle" onclick="document.querySelector('.tpl-layout').classList.toggle('hide-sidebar')" title="Toggle Templates Sidebar">
+              <i class="fas fa-bars"></i>
+            </button>
             <i class="fas fa-pen-nib"></i>
             <input id="tpl-edit-name" type="text" placeholder="Template name…"
                    class="tpl-name-input" oninput="TemplateManager._dirty=true">
@@ -141,11 +143,22 @@
               </div>
               <!-- GrapeJS panels -->
               <div class="tpl-grapes-layout">
-                <div id="tpl-grapes-blocks" class="tpl-grapes-blocks"></div>
-                <div id="tpl-grapes-container" class="tpl-grapes-canvas"></div>
-                <div class="tpl-grapes-right">
-                  <div id="tpl-grapes-styles" class="tpl-grapes-panel"></div>
-                  <div id="tpl-grapes-traits" class="tpl-grapes-panel"></div>
+                <!-- TOP BAR: Blocks -->
+                <div class="tpl-grapes-topbar-wrapper" style="display: flex; gap: 10px; align-items: center; background: rgba(8,8,20,0.6); padding-right: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <div id="tpl-grapes-blocks" class="tpl-grapes-blocks-top" style="flex: 1;"></div>
+                  <button class="tpl-btn" onclick="document.querySelector('.tpl-grapes-layout').classList.toggle('hide-right-panel')" title="Toggle Properties Panel" style="white-space: nowrap;">
+                    <i class="fas fa-sliders-h"></i> <span style="margin-left:5px">Properties</span>
+                  </button>
+                  <button class="tpl-btn" onclick="document.querySelector('.tpl-layout').classList.toggle('hide-sidebar'); document.querySelector('.tpl-grapes-layout').classList.toggle('hide-right-panel');" title="Toggle Fullscreen Canvas" style="white-space: nowrap;">
+                    <i class="fas fa-expand"></i> <span style="margin-left:5px">Focus Mode</span>
+                  </button>
+                </div>
+                <div class="tpl-grapes-main">
+                  <div id="tpl-grapes-container" class="tpl-grapes-canvas"></div>
+                  <div class="tpl-grapes-right">
+                    <div id="tpl-grapes-styles" class="tpl-grapes-panel"></div>
+                    <div id="tpl-grapes-traits" class="tpl-grapes-panel"></div>
+                  </div>
                 </div>
               </div>
             </div>

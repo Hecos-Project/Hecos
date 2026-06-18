@@ -57,7 +57,7 @@ window.processAiMedia = function(html) {
       const isNative = NATIVE_VIDEO_EXTS.test(href);
 
       if (isNative) {
-        // Browser can play natively
+        // Browser can play natively — use HTML5 video element
         const video = document.createElement('video');
         video.controls = true;
         video.src = src;
@@ -67,35 +67,49 @@ window.processAiMedia = function(html) {
         a.replaceWith(video);
       } else {
         // Format not natively supported (e.g. MKV, AVI, WMV...)
-        // Show a rich card with play-in-external-player option
+        // Show a rich card with an inline player attempt + external fallbacks
         const card = document.createElement('div');
         card.className = 'chat-video-card';
         const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
         const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
-        
-        // Ensure we pass the original raw path if possible, or the src
-        const rawPath = href.startsWith('file://') ? href.replace(/^file:\/\/\/?/, '') : href;
+        const rawPath = href.startsWith('file://') ? href.replace(/^file:\\/\\/\\/?/, '') : href;
         const safeRawPath = rawPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const videoId = 'vid_' + Math.random().toString(36).slice(2, 9);
 
         card.innerHTML = `
           <div class="chat-video-card-header">
             <span class="chat-video-card-icon">${extIcon}</span>
             <div class="chat-video-card-info">
               <div class="chat-video-card-name" title="${fileName}">${fileName}</div>
-              <div class="chat-video-card-meta">${extName} — Non riproducibile nel browser</div>
+              <div class="chat-video-card-meta">${extName} — Streaming via Hecos</div>
+            </div>
+          </div>
+          <div class="chat-video-inline-player" id="player-wrap-${videoId}" style="display:none;">
+            <video id="${videoId}" controls style="width:100%; border-radius:8px; background:#000; margin-top:8px;">
+              <source src="${src}" type="video/mp4">
+              <source src="${src}" type="video/webm">
+              <source src="${src}">
+            </video>
+            <div class="chat-video-card-hint" style="margin-top:4px;">
+              <i class="fas fa-info-circle"></i>
+              Se il video non parte, usa <strong>Apri con VLC</strong> oppure <strong>Scarica</strong>.
             </div>
           </div>
           <div class="chat-video-card-actions">
-            <button onclick="window.openInVlc('${safeRawPath}')" class="chat-video-btn chat-video-btn-open">
-              <i class="fas fa-play"></i> Apri con VLC
+            <button onclick="(function(){
+              var w=document.getElementById('player-wrap-${videoId}');
+              var v=document.getElementById('${videoId}');
+              if(w.style.display==='none'){w.style.display='block'; v.play().catch(function(){});}
+              else{w.style.display='none'; v.pause();}
+            })()" class="chat-video-btn chat-video-btn-open">
+              <i class="fas fa-play"></i> Riproduci qui
+            </button>
+            <button onclick="window.openInVlc('${safeRawPath}')" class="chat-video-btn chat-video-btn-open" style="background:rgba(255,120,0,0.18); border-color:rgba(255,120,0,0.35); color:#ff7800;">
+              <i class="fas fa-external-link-alt"></i> Apri con VLC
             </button>
             <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
               <i class="fas fa-download"></i> Scarica
             </a>
-          </div>
-          <div class="chat-video-card-hint">
-            <i class="fas fa-info-circle"></i>
-            Il formato <strong>${extName}</strong> non è supportato nativamente dal browser.
           </div>
         `;
         a.replaceWith(card);

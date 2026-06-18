@@ -313,15 +313,18 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         "- [SYSTEM: explore:folder] - Open folder graphically\n"
         "- [FILE_MANAGER: list:folder] - List files for analysis\n"
         "- [DASHBOARD: resources] - Get hardware telemetry\n"
+        "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
     )
     
     media_formatting_rules = (
         "\n### MEDIA FORMATTING RULES ###\n"
         "- CRITICAL: You CAN and DO have the ability to display images, videos, and files directly in the chat UI. NEVER apologize or claim you lack a screen or visual interface.\n"
         "- If the user asks to 'show', 'preview', or list files/images/videos, you MUST use strict Markdown.\n"
-        "- For files/videos use: `[filename.ext](absolute_path_to_file)`\n"
+        "- For files/videos use: `[filename.ext](absolute_path_to_file)` e.g. `[Schindler.mkv](C:\\Users\\Tony\\Downloads\\Schindler.mkv)`\n"
         "- For images use: `![filename.ext](absolute_path_to_image)`\n"
+        "- VIDEO DISPLAY: When you find a video file, ALWAYS output a Markdown link with the EXACT full Windows path. The UI will automatically render a rich video card with playback controls. DO NOT say you cannot show videos — you CAN.\n"
         "- NEVER use `!(path)` or plain text listings. The UI renders rich graphical cards ONLY if you strictly use these Markdown formats.\n"
+        "- For local Windows paths, use backslashes: `[video.mkv](C:\\Users\\Tony\\Downloads\\video.mkv)`\n"
     )
 
 

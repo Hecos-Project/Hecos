@@ -17,7 +17,7 @@ except ImportError:
 # Relative imports from our extracted modules
 from .sys_tools import (
     list_processes_tool, kill_process_tool, reboot_system_tool, execute_shell_command_tool,
-    execute_background_command_tool
+    execute_background_command_tool, open_media_file_tool
 )
 from .sandbox import run_python_code_tool
 from .file_manager import (
@@ -99,6 +99,14 @@ class ExecutorTools:
     def execute_background_command(self, command: str) -> str:
         return execute_background_command_tool(command, self.tag)
 
+    def open_media_file(self, file_path: str) -> str:
+        """
+        Opens a media file (video, audio, image) using VLC if installed, otherwise the OS default player.
+        Use this whenever the user asks to play, open, or reproduce a video or audio file.
+        :param file_path: Absolute path to the media file (e.g. C:\\Users\\Tony\\Downloads\\movie.mkv).
+        """
+        return open_media_file_tool(file_path)
+
     # ── Code Sandbox ──────────────────────────────────────────────────────────
 
     def run_python_code(self, code: str) -> str:
@@ -142,6 +150,7 @@ def info():
             "list_processes": "List top running processes.",
             "kill_process": "Terminate a process by name.",
             "reboot_system": "Restart the Hecos system.",
+            "open_media_file": "Open a video or audio file with VLC or the OS default player. Use this to play any local media file.",
             "read_file": "Read a file's content by line range.",
             "write_file": "Write or create a file (overwrite or append).",
             "patch_file": "Surgically replace a text block inside a file.",

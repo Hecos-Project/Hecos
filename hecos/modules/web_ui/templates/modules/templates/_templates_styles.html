@@ -21,6 +21,7 @@
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.tpl-layout.hide-sidebar .tpl-sidebar { display: none; }
 .tpl-sidebar {
   width: 230px;
   min-width: 180px;
@@ -305,22 +306,75 @@
 }
 .tpl-grapes-layout {
   display: flex;
-  gap: 8px;
-  height: 440px;
+  flex-direction: column;
+  height: 70vh;
+  min-height: 600px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 8px;
   overflow: hidden;
+  background: rgba(10,10,22,0.95);
 }
-.tpl-grapes-blocks {
-  width: 150px;
+.tpl-grapes-blocks-top {
+  height: auto;
+  min-height: 60px;
   background: rgba(8,8,20,0.95);
-  overflow-y: auto;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  overflow-x: auto;
+  align-items: center;
+  padding: 8px;
   flex-shrink: 0;
 }
-.tpl-grapes-canvas { flex: 1; }
-.tpl-grapes-right  { width: 160px; flex-shrink: 0; overflow-y: auto; }
-.tpl-grapes-panel  { border-bottom: 1px solid rgba(255,255,255,0.06); }
+/* Left/Right sub-layout */
+.tpl-grapes-layout.hide-right-panel .tpl-grapes-right { display: none; }
+.tpl-grapes-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.tpl-grapes-canvas {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  /* Do NOT set background here - GrapeJS manages its own iframe background */
+}
+/* Ensure GrapeJS iframe fills the container and is interactive */
+.tpl-grapes-canvas > .gjs-editor,
+.tpl-grapes-canvas iframe {
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+  border: none !important;
+}
+/* GrapeJS editor frame */
+.gjs-editor {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+.gjs-cv-canvas {
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto !important;
+}
+/* Hide GrapeJS internal sidebars if they appear */
+.gjs-pn-views-container, .gjs-pn-panels {
+  display: none !important;
+}
+
+.tpl-grapes-right {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  background: rgba(8,8,20,0.97);
+}
+.tpl-grapes-panel { flex-shrink: 0; height: auto; }
 
 /* ── Messenger editor ────────────────────────────────────────────────────── */
 .tpl-messenger-info {
@@ -434,17 +488,6 @@
   border-radius: 6px;
   background: #fff;
 }
-.tpl-preview-text {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 6px;
-  padding: 12px;
-  font-size: 0.75rem;
-  color: rgba(255,255,255,0.65);
-  white-space: pre-wrap;
-  word-break: break-word;
-  min-height: 60px;
-}
 
 /* ── History tab ─────────────────────────────────────────────────────────── */
 .tpl-history-desc {
@@ -481,18 +524,100 @@
 
 /* ── Scrollbars ──────────────────────────────────────────────────────────── */
 .tpl-sidebar::-webkit-scrollbar,
-.tpl-tab-pane::-webkit-scrollbar { width: 4px; }
+.tpl-tab-pane::-webkit-scrollbar,
+.tpl-grapes-panel::-webkit-scrollbar { width: 6px; height: 6px; }
 .tpl-sidebar::-webkit-scrollbar-thumb,
-.tpl-tab-pane::-webkit-scrollbar-thumb {
+.tpl-tab-pane::-webkit-scrollbar-thumb,
+.tpl-grapes-panel::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.1);
   border-radius: 4px;
 }
 
-/* ── GrapeJS dark theme overrides ────────────────────────────────────────── */
-.gjs-one-bg  { background: rgba(8,8,20,0.97) !important; }
-.gjs-two-bg  { background: rgba(15,15,35,0.95) !important; }
-.gjs-four-bg { background: rgba(20,20,50,0.9) !important; }
-.gjs-pn-panel,
-.gjs-block-category .gjs-title { background: rgba(10,10,25,.97) !important; border-color: rgba(255,255,255,.06) !important; }
-.gjs-block { color: rgba(255,255,255,.8) !important; }
+/* ── GrapeJS Dark Theme — Minimal Safe Overrides ────────────────────────── */
+/* Only style the outer panel containers — do NOT override component behaviour */
+
+/* Dark backgrounds for the side panels */
+.gjs-one-bg { background: rgba(10,10,25,0.97) !important; }
+.gjs-two-bg { background: rgba(15,15,38,0.97) !important; }
+.gjs-three-bg { background: rgba(20,20,50,0.97) !important; }
+.gjs-four-bg { background: #00d4ff !important; color: #000 !important; }
+
+/* Right panel (style/traits/layers) */
+.gjs-sm-sector__title,
+.gjs-sm-sector .gjs-sm-title {
+  background: rgba(18,18,40,0.8) !important;
+  color: #00d4ff !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  padding: 10px 14px !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  cursor: pointer !important;
+}
+.gjs-sm-properties { padding: 10px !important; }
+.gjs-sm-property { margin-bottom: 10px !important; }
+.gjs-sm-label { color: rgba(255,255,255,0.5) !important; font-size: 0.68rem !important; }
+
+/* Inputs inside style panels */
+.gjs-field {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 5px !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.gjs-field input, .gjs-field select {
+  color: #e2e8f0 !important;
+  font-size: 0.73rem !important;
+}
+.gjs-field:focus-within { border-color: rgba(0,212,255,0.4) !important; }
+
+/* Block panel (top bar) */
+.tpl-grapes-blocks-top .gjs-blocks-c {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 5px;
+  padding: 6px 8px !important;
+  height: auto !important;
+}
+.tpl-grapes-blocks-top .gjs-block-category {
+  display: contents !important;
+  border: none !important;
+}
+.tpl-grapes-blocks-top .gjs-block-category > .gjs-title { display: none !important; }
+.tpl-grapes-blocks-top .gjs-block {
+  width: 78px !important;
+  height: 56px !important;
+  font-size: 0.65rem !important;
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 7px !important;
+  color: rgba(255,255,255,0.8) !important;
+  box-shadow: none !important;
+  padding: 6px !important;
+  cursor: grab !important;
+  transition: all .15s !important;
+}
+.tpl-grapes-blocks-top .gjs-block:hover {
+  background: rgba(0,212,255,0.12) !important;
+  border-color: rgba(0,212,255,0.4) !important;
+  color: #fff !important;
+}
+.gjs-block-label { font-size: 0.65rem !important; margin-top: 4px; }
+
+/* Buttons */
+.gjs-btn-prim {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: 5px !important;
+  font-size: 0.7rem !important;
+  padding: 5px 12px !important;
+}
+
+/* Layer manager */
+.gjs-layer-title { color: rgba(255,255,255,0.7) !important; }
+.gjs-layer--selected > .gjs-layer__inner { background: rgba(0,212,255,0.1) !important; }
 </style>

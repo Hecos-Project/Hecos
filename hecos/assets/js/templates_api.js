@@ -118,12 +118,12 @@ window.TemplateManager = (() => {
     const defaultCb = $('tpl-edit-is-default');
     if (defaultCb) defaultCb.checked = !!tpl.is_default;
 
-    _setChannel(tpl.channel);
-
     if (tpl.channel === 'email') {
       _val('tpl-edit-subject', tpl.subject || '');
-      _setEmailBody(tpl.body_html || tpl.body_text || '');
+      // Pass HTML directly so _initGrapeJS injects it on 'load'
+      _setChannel(tpl.channel, tpl.body_html || tpl.body_text || '');
     } else {
+      _setChannel(tpl.channel);
       _val('tpl-edit-header',    tpl.header    || '');
       _val('tpl-edit-body-text', tpl.body_text || '');
       _val('tpl-edit-footer',    tpl.footer    || '');
@@ -136,7 +136,7 @@ window.TemplateManager = (() => {
 
   /* ── Channel switch ───────────────────────────────────────────────────────── */
 
-  function _setChannel(ch) {
+  function _setChannel(ch, emailHtml) {
     _activeChannel = ch;
     ['email', 'whatsapp', 'telegram', 'discord'].forEach(c => {
       const el = $('tpl-editor-' + c);
@@ -145,7 +145,10 @@ window.TemplateManager = (() => {
     const chSel = $('tpl-edit-channel');
     if (chSel) chSel.value = ch;
 
-    if (ch === 'email' && !_grapeEditor) _initGrapeJS();
+    if (ch === 'email') {
+      // Always re-init GrapeJS so the canvas is fresh and HTML is injected correctly
+      _initGrapeJS(emailHtml || '');
+    }
   }
 
   function onChannelChange(ch) {
@@ -155,46 +158,129 @@ window.TemplateManager = (() => {
 
   /* ── GrapeJS (email editor) ───────────────────────────────────────────────── */
 
-  function _initGrapeJS() {
+  function _destroyGrapeJS() {
+    if (_grapeEditor) {
+      try { _grapeEditor.destroy(); } catch (_) {}
+      _grapeEditor = null;
+    }
+    ['tpl-grapes-container', 'tpl-grapes-blocks', 'tpl-grapes-styles', 'tpl-grapes-traits'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    });
+  }
+
+  function _initGrapeJS(pendingHtml) {
     if (typeof grapesjs === 'undefined') {
-      const loadingEl = $('tpl-grapes-loading');
-      if (loadingEl) loadingEl.style.display = '';
+      console.warn('[Templates] GrapeJS not yet loaded, retrying…');
+      setTimeout(() => _initGrapeJS(pendingHtml), 300);
       return;
     }
+
+    _destroyGrapeJS();
+
     const loadingEl = $('tpl-grapes-loading');
     if (loadingEl) loadingEl.style.display = 'none';
 
     _grapeEditor = grapesjs.init({
       container:  '#tpl-grapes-container',
-      height:     '420px',
+      height:     '100%',
       width:      '100%',
       fromElement: false,
       storageManager: false,
-      plugins:    ['gjs-preset-newsletter'],
-      pluginsOpts: {
-        'gjs-preset-newsletter': {
-          modalLabelImport: 'Paste HTML here',
-          modalLabelExport: 'Copy the HTML below',
-        }
+      // No plugins — plain GrapeJS works correctly
+      plugins:    [],
+      pluginsOpts: {},
+
+      // Redirect side panels to our containers
+      blockManager:  { appendTo: '#tpl-grapes-blocks'  },
+      styleManager:  {
+        appendTo: '#tpl-grapes-styles',
+        // Always show ALL sectors, regardless of selected component
+        sectors: [
+          { name: 'General',     open: true,  buildProps: ['float','display','position','top','right','left','bottom'] },
+          { name: 'Flex',        open: false, buildProps: ['flex-direction','flex-wrap','justify-content','align-items','align-content','order','flex-basis','flex-grow','flex-shrink','align-self'] },
+          { name: 'Dimension',   open: true,  buildProps: ['width','height','max-width','min-height','margin','padding'] },
+          { name: 'Typography',  open: true,  buildProps: ['font-family','font-size','font-weight','letter-spacing','color','line-height','text-align','text-decoration','text-shadow'] },
+          { name: 'Decorations', open: true,  buildProps: ['opacity','border-radius','border','box-shadow','background','background-color'] },
+          { name: 'Extra',       open: false, buildProps: ['transition','perspective','transform'] },
+        ],
       },
-      panels: { defaults: [] },
-      blockManager:  { appendTo: '#tpl-grapes-blocks' },
-      styleManager:  { appendTo: '#tpl-grapes-styles' },
       traitManager:  { appendTo: '#tpl-grapes-traits' },
+
+      // No built-in toolbar panels — we handle layout ourselves
+      panels: { defaults: [] },
+
+      // Canvas config — ensure canvas fills container and is editable
+      canvasCss: `
+        body { margin: 0; padding: 20px; background: #f4f4f4; font-family: sans-serif; }
+        [data-gjs-type] { outline: 1px dashed transparent; transition: outline .15s; }
+        [data-gjs-type]:hover { outline: 1px dashed rgba(0,212,255,0.5); }
+      `,
     });
 
     _grapeEditor.on('change:changesCount', () => { _dirty = true; });
 
-    // Apply any pending HTML
-    if (window._tplPendingHtml) {
-      _grapeEditor.setComponents(window._tplPendingHtml);
-      delete window._tplPendingHtml;
-    }
+    // Once the canvas iframe is loaded, inject the HTML
+    _grapeEditor.on('load', () => {
+      const html = pendingHtml || window._tplPendingHtml || '';
+      setTimeout(() => {
+        if (html) {
+          _grapeEditor.setComponents(html);
+        } else {
+          // Default skeleton with 3 sections
+          _grapeEditor.setComponents(_defaultEmailTemplate());
+        }
+        delete window._tplPendingHtml;
+        // Reset dirty flag after initial load to avoid fake unsaved changes warning
+        setTimeout(() => { _dirty = false; }, 200);
+      }, 80);
+    });
+  }
+
+  function _defaultEmailTemplate() {
+    return `
+<table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding:20px;">
+  <tr><td align="center">
+
+    <!-- ── HEADER ── -->
+    <table class="email-header" width="600" cellpadding="0" cellspacing="0"
+           style="background:#ffffff; border:2px dashed #00d4ff; border-radius:8px; margin-bottom:16px;">
+      <tr><td style="padding:16px; text-align:center; font-family:sans-serif;">
+        <p style="margin:0; color:#9ca3af; font-size:11px; text-transform:uppercase; letter-spacing:.1em;">Header</p>
+        <h2 style="margin:12px 0 0; color:#1f2937; font-size:22px;">Company Name</h2>
+      </td></tr>
+    </table>
+
+    <!-- ── BODY ── -->
+    <table class="email-body" width="600" cellpadding="0" cellspacing="0"
+           style="background:#ffffff; border:2px dashed #6366f1; border-radius:8px; margin-bottom:16px;">
+      <tr><td style="padding:24px; font-family:sans-serif;">
+        <p style="margin:0 0 4px; color:#9ca3af; font-size:11px; text-transform:uppercase; letter-spacing:.1em; text-align:center;">Body</p>
+        <h3 style="margin:12px 0 8px; color:#1f2937; font-size:18px;">Hello {{ nome }},</h3>
+        <p style="margin:0; color:#4b5563; line-height:1.7;">
+          Scrivi qui il tuo messaggio. Clicca una volta per selezionare, doppio clic per modificare il testo.
+        </p>
+      </td></tr>
+    </table>
+
+    <!-- ── FOOTER ── -->
+    <table class="email-footer" width="600" cellpadding="0" cellspacing="0"
+           style="background:#ffffff; border:2px dashed #9ca3af; border-radius:8px;">
+      <tr><td style="padding:16px; text-align:center; font-family:sans-serif;">
+        <p style="margin:0 0 4px; color:#9ca3af; font-size:11px; text-transform:uppercase; letter-spacing:.1em;">Footer</p>
+        <p style="margin:8px 0 0; color:#6b7280; font-size:13px;">
+          Cordiali saluti,<br><strong>Il Team di Hecos</strong>
+        </p>
+      </td></tr>
+    </table>
+
+  </td></tr>
+</table>`;
   }
 
   function _setEmailBody(html) {
     if (_grapeEditor) {
-      _grapeEditor.setComponents(html || '');
+      _grapeEditor.setComponents(html || _defaultEmailTemplate());
     } else {
       window._tplPendingHtml = html;
     }
@@ -202,8 +288,12 @@ window.TemplateManager = (() => {
 
   function _getEmailBody() {
     if (_grapeEditor) {
-      try { return _grapeEditor.runCommand('gjs-get-inlined-html') || _grapeEditor.getHtml(); }
-      catch { return _grapeEditor.getHtml(); }
+      try { 
+        const html = _grapeEditor.getHtml();
+        const css = _grapeEditor.getCss();
+        return html + (css ? `<style>${css}</style>` : ''); 
+      }
+      catch { return ''; }
     }
     return '';
   }
@@ -266,20 +356,15 @@ window.TemplateManager = (() => {
 
   async function loadFlowVariables() {
     try {
-      const res = await fetch('/api/flows/running');
-      if (!res.ok) { _toast('No running flows found', 'info'); return; }
+      const res = await fetch('/api/flows/variables');
+      if (!res.ok) { _toast('Could not fetch variables', 'error'); return; }
       const data = await res.json();
-      const runIds = Object.values(data || {});
-      if (!runIds.length) { _toast('No flow is currently running', 'info'); return; }
-
-      const varRes  = await fetch('/api/flows/' + runIds[0] + '/context');
-      const varData = await varRes.json();
-      const vars    = Object.keys(varData.context || {});
+      const vars = data.variables || [];
       if (vars.length) {
         _renderVariables(vars);
-        _toast(`Loaded ${vars.length} variable(s) from flow`);
+        _toast(`Loaded ${vars.length} variable(s) from saved flows`);
       } else {
-        _toast('No variables found in the running flow', 'info');
+        _toast('No variables found in any flow', 'info');
       }
     } catch (e) {
       _toast('Could not load flow variables: ' + e, 'error');
@@ -361,15 +446,62 @@ window.TemplateManager = (() => {
     }
   }
 
-  /* ── New template ─────────────────────────────────────────────────────────── */
-
   function newTemplate(channel) {
     if (_dirty && !confirm('You have unsaved changes. Discard them?')) return;
     _setActiveId(null);
     _dirty = false;
+    
+    let defaultEmailHtml = '';
+    const ch = channel || 'email';
+    if (ch === 'email') {
+      defaultEmailHtml = `
+<table class="main" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f9f9f9; padding: 20px;">
+  <tr>
+    <td align="center" valign="top">
+      
+      <!-- HEADER -->
+      <table width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 2px dashed #00d4ff; border-radius: 8px; margin-bottom: 20px;">
+        <tr>
+          <td align="center" style="padding: 20px;">
+            <div style="color: #888; font-size: 12px; text-transform: uppercase; margin-bottom: 10px; font-family: sans-serif;">Header</div>
+            <h2 style="color:#333; margin:0; font-family: sans-serif;">Company Logo / Title</h2>
+          </td>
+        </tr>
+      </table>
+      
+      <!-- BODY -->
+      <table width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 2px dashed #6366f1; border-radius: 8px; margin-bottom: 20px;">
+        <tr>
+          <td align="left" style="padding: 20px;">
+            <div style="text-align: center; color: #888; font-size: 12px; text-transform: uppercase; margin-bottom: 10px; font-family: sans-serif;">Body</div>
+            <div style="color:#444; line-height: 1.6; font-size: 16px; font-family: sans-serif;">
+              <p>Hello {{ nome }},</p>
+              <p>Trascina qui i blocchi per aggiungere contenuto. (Fai doppio-clic per modificare il testo)</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+      
+      <!-- FOOTER -->
+      <table width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 2px dashed #aaa; border-radius: 8px;">
+        <tr>
+          <td align="center" style="padding: 20px;">
+            <div style="color: #888; font-size: 12px; text-transform: uppercase; margin-bottom: 10px; font-family: sans-serif;">Footer</div>
+            <div style="color:#777; font-size: 13px; font-family: sans-serif;">
+              <p>Regards,<br>Hecos Team</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+</table>`;
+    }
+
     _populateEditor({
-      name: '', channel: channel || 'email', description: '',
-      subject: '', body_html: '', body_text: '', header: '', footer: '', is_default: false, variables: []
+      name: '', channel: ch, description: '',
+      subject: '', body_html: defaultEmailHtml, body_text: '', header: '', footer: '', is_default: false, variables: []
     });
     _showSection('tpl-editor-section');
     _renderSidebar();

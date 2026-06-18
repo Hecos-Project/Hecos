@@ -176,3 +176,52 @@ def execute_background_command_tool(command: str, tag: str) -> str:
         err_msg = f"Failed to start background command: {e}"
         AgentTracer.emit_action(tag, command, err_msg)
         return err_msg
+
+def open_media_file_tool(file_path: str) -> str:
+    """
+    Opens a media file (video, audio, image) with the best available player.
+    Tries VLC first (64-bit, then 32-bit), then falls back to the OS default.
+    Launches the player as a fully detached process so the UI is not blocked.
+    :param file_path: Absolute path to the media file to open.
+    """
+    import shlex
+
+    path = file_path.strip().strip('"').strip("'")
+
+    if not os.path.exists(path):
+        return f"❌ File not found: {path}"
+
+    vlc_candidates = [
+        r"C:\Program Files\VideoLAN\VLC\vlc.exe",
+        r"C:\Program Files (x86)\VideoLAN\VLC\vlc.exe",
+        os.path.expandvars(r"%LOCALAPPDATA%\Programs\VideoLAN\VLC\vlc.exe"),
+    ]
+    vlc_exe = next((c for c in vlc_candidates if os.path.isfile(c)), None)
+
+    try:
+        if vlc_exe:
+            # Launch VLC fully detached — no console, no wait
+            kwargs = {}
+            if sys.platform == "win32":
+                kwargs["creationflags"] = (
+                    subprocess.DETACHED_PROCESS |
+                    subprocess.CREATE_NEW_PROCESS_GROUP |
+                    subprocess.CREATE_NO_WINDOW
+                )
+            subprocess.Popen([vlc_exe, path], **kwargs)
+            fname = os.path.basename(path)
+            AgentTracer.emit_action("EXECUTOR", f"open_media_file: {path}", f"Launched VLC → {fname}")
+            return f"✅ VLC avviato con: `{fname}`"
+        else:
+            # Fallback: OS default player via os.startfile (Windows) or xdg-open (Linux)
+            if sys.platform == "win32":
+                os.startfile(path)
+            else:
+                subprocess.Popen(["xdg-open", path])
+            fname = os.path.basename(path)
+            AgentTracer.emit_action("EXECUTOR", f"open_media_file: {path}", f"Opened with OS default → {fname}")
+            return f"✅ Aperto con il player predefinito del sistema: `{fname}` (VLC non trovato nei percorsi standard)"
+    except Exception as e:
+        err = f"❌ Impossibile aprire il file: {e}"
+        AgentTracer.emit_action("EXECUTOR", f"open_media_file: {path}", err)
+        return err

@@ -278,6 +278,33 @@ def init_flows_routes(app, cfg_mgr, logger=None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/flows/variables", methods=["GET"])
+    @login_required
+    def api_flows_variables():
+        """Extract all variables defined via output_as in saved flows."""
+        try:
+            from hecos.modules.flows.storage import _get_flows_dir, _load_yaml_file
+            import os
+            flows_dir = _get_flows_dir()
+            variables = set()
+            for fname in sorted(os.listdir(flows_dir)):
+                if not fname.endswith(".yaml"): continue
+                try:
+                    data = _load_yaml_file(os.path.join(flows_dir, fname))
+                    # Check triggers for variables
+                    trigger = data.get("trigger", {})
+                    # For example, Discord triggers might provide specific context
+                    # Check pipeline nodes for output_as
+                    for node in data.get("pipeline", []):
+                        out_as = node.get("output_as")
+                        if out_as and isinstance(out_as, str):
+                            variables.add(out_as.strip())
+                except Exception:
+                    pass
+            return jsonify({"ok": True, "variables": sorted(list(variables))})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     # ── SSE: Real-time execution log ───────────────────────────────────────────
 
     @app.route("/api/flows/<flow_id>/log/stream", methods=["GET"])
