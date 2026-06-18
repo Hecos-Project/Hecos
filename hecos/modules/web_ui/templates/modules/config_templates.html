@@ -16,8 +16,19 @@
     <!-- ─── SIDEBAR ──────────────────────────────────────────────────── -->
     <aside class="tpl-sidebar">
       <div class="tpl-sidebar-header">
-        <i class="fas fa-file-alt"></i>
-        <span>Templates</span>
+        <div style="display: flex; align-items: center; flex: 1;">
+          <i class="fas fa-file-alt"></i>
+          <span>Templates</span>
+        </div>
+        <div class="tpl-sidebar-actions">
+          <button class="tpl-icon-btn" title="Export Templates" onclick="TemplateManager.exportTemplates()">
+            <i class="fas fa-download"></i>
+          </button>
+          <button class="tpl-icon-btn" title="Import Templates" onclick="document.getElementById('tpl-import-file').click()">
+            <i class="fas fa-upload"></i>
+          </button>
+          <input type="file" id="tpl-import-file" accept=".json" style="display: none" onchange="TemplateManager.importTemplates(event)">
+        </div>
       </div>
 
       <!-- Channel groups -->

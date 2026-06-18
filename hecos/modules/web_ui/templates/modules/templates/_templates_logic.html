@@ -75,6 +75,8 @@ function _tplLoadScript(src, onLoad) {
       });
     }
     TemplateManager.init();
+    // Load import/export extension
+    _tplLoadScript('/assets/js/templates_import_export.js');
   }
 
   _tplLoadScript('/assets/js/templates_api.js', _run);

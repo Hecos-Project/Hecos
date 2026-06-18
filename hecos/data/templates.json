@@ -8,11 +8,11 @@
     "body_html": "",
     "body_text": "",
     "header": "Messaggio inviato tramite Hecos",
-    "footer": "Saluti,\nUrania 9800 â€” Assistente del Divino Admin",
+    "footer": "Saluti,\nUrania 9800 — Assistente del Divino Admin",
     "tags": [],
     "variables": [],
     "created_at": "2026-06-17T10:26:43.777440+00:00",
-    "updated_at": "2026-06-17T12:44:21.420312+00:00",
+    "updated_at": "2026-06-18T08:25:15.542234+00:00",
     "versions": [
       {
         "id": "bbcd5a3b-557d-47db-97b9-7546b5df2cf5",
@@ -78,6 +78,23 @@
         "updated_at": "2026-06-17T11:42:25.976842+00:00",
         "is_default": true,
         "snapshot_at": "2026-06-17T12:44:21.420312+00:00"
+      },
+      {
+        "id": "bbcd5a3b-557d-47db-97b9-7546b5df2cf5",
+        "name": "Template 1",
+        "channel": "whatsapp",
+        "description": "messaggio 1 con header e footer",
+        "subject": "",
+        "body_html": "",
+        "body_text": "",
+        "header": "Messaggio inviato tramite Hecos",
+        "footer": "Saluti,\nUrania 9800 â€” Assistente del Divino Admin",
+        "tags": [],
+        "variables": [],
+        "created_at": "2026-06-17T10:26:43.777440+00:00",
+        "updated_at": "2026-06-17T12:44:21.420312+00:00",
+        "is_default": true,
+        "snapshot_at": "2026-06-18T08:25:15.542234+00:00"
       }
     ],
     "is_default": true

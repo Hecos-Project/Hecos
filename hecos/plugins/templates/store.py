@@ -13,6 +13,7 @@ Public API
   render_template(template_id, variables)  → dict  {subject, body_html, body_text}
   get_version_history(template_id) → list[dict]
   restore_version(template_id, version_index) → dict
+  import_templates(templates, mode) → int
 """
 
 from __future__ import annotations
@@ -241,6 +242,46 @@ def save_template(data: dict) -> dict:
         _save(store)
         logger.info(f"[TEMPLATES] Created template '{new_id}' ({channel})")
         return {k: v for k, v in template.items() if k != "versions"}
+
+
+def import_templates(templates: list[dict], mode: str = "restore") -> int:
+    """
+    Import a list of templates.
+    mode="restore": Keeps the original UUID. Overwrites existing templates with the same UUID.
+                    Ideal for automated backups.
+    mode="duplicate": Generates new UUIDs and appends " (Imported)" to the name.
+                      Ideal for sharing templates manually without risking overwrites.
+    
+    :param templates: List of template dictionaries.
+    :param mode: 'restore' or 'duplicate'
+    :returns: Number of templates successfully imported.
+    """
+    if not templates:
+        return 0
+
+    count = 0
+    for data in templates:
+        tpl_data = deepcopy(data)
+        
+        if mode == "duplicate":
+            # Remove ID to force creation of a new UUID
+            tpl_data.pop("id", None)
+            
+            # Append suffix if not already present
+            name = tpl_data.get("name", "Imported Template").strip()
+            if not name.endswith("(Imported)"):
+                tpl_data["name"] = f"{name} (Imported)"
+                
+            # Prevent changing the default template unintentionally
+            tpl_data["is_default"] = False
+            
+        try:
+            save_template(tpl_data)
+            count += 1
+        except Exception as e:
+            logger.error(f"[TEMPLATES] Failed to import template '{tpl_data.get('name', 'Unknown')}': {e}")
+            
+    return count
 
 
 def delete_template(template_id: str) -> bool:

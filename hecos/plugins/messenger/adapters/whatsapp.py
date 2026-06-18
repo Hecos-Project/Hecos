@@ -15,8 +15,8 @@ from urllib.parse import quote
 from hecos.core.logging import logger
 
 # ── WhatsApp Web selectors (update here if WA changes UI) ──────────────────
-_WA_MSG_BOX_SELECTOR  = 'div[contenteditable="true"][data-tab="10"]'
-_WA_MSG_BOX_FALLBACK  = 'div[contenteditable="true"][title="Type a message"]'
+_WA_MSG_BOX_SELECTOR  = 'div[contenteditable="true"][data-testid="conversation-compose-box-input"]'
+_WA_MSG_BOX_FALLBACK  = 'div[contenteditable="true"][tabindex="10"]'
 _WA_MSG_SENT_SELECTOR = 'span[data-icon="msg-check"], span[data-icon="msg-dblcheck"]'
 _WA_LOADING_SELECTOR  = 'div[data-testid="intro-md-beta-logo-dark"], div[data-testid="qrcode"]'
 

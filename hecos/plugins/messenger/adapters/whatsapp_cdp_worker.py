@@ -8,6 +8,8 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
 
 _WA_MSG_BOX_SELECTORS = [
+    'div[contenteditable="true"][data-testid="conversation-compose-box-input"]',
+    'div[contenteditable="true"][tabindex="10"]',
     'footer div[contenteditable="true"]',
     'div[contenteditable="true"][data-tab="10"]',
     'div[contenteditable="true"][title="Type a message"]',

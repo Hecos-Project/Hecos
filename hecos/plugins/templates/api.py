@@ -56,6 +56,43 @@ def list_templates():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+# ── Export & Import ────────────────────────────────────────────────────────────
+
+@templates_bp.route("/export", methods=["GET"])
+def export_templates():
+    """
+    Export all templates as a JSON file.
+    """
+    try:
+        items = _store().list_templates()
+        return jsonify({"version": 1, "templates": items, "count": len(items)})
+    except Exception as e:
+        logger.error("TEMPLATES API", f"export error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@templates_bp.route("/import", methods=["POST"])
+def import_templates_route():
+    """
+    Import templates from a JSON payload.
+    Query params:
+      mode: 'restore' (default) or 'duplicate'
+    """
+    mode = request.args.get("mode", "restore")
+    data = request.get_json(force=True) or {}
+    templates = data.get("templates", [])
+    
+    if not templates:
+        return jsonify({"ok": False, "error": "No templates array found in payload"}), 400
+        
+    try:
+        count = _store().import_templates(templates, mode=mode)
+        return jsonify({"ok": True, "imported_count": count})
+    except Exception as e:
+        logger.error("TEMPLATES API", f"import error: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 # ── Get single ─────────────────────────────────────────────────────────────────
 
 @templates_bp.route("/<template_id>", methods=["GET"])
