@@ -524,7 +524,7 @@
         "hub_mod_web": "Web Tools",
         "hub_mod_webcam": "Webcam",
         "hub_mod_executor": "Executor",
-        "hub_mod_hdcs": "Comandi Diretti (HDCS)",
+        "hub_mod_hdcs": "Comandi Diretti",
         "hub_mod_webui": "Motore WebUI",
         "webui_conf_mcp_title": "MCP Bridge (Model Context Protocol)",
         "hub_mod_help": "Guida & Supporto",
