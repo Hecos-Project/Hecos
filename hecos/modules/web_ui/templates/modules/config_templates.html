@@ -65,28 +65,28 @@
           <i class="fas fa-file-alt" style="font-size: 2rem; color: var(--accent); opacity: 0.5; margin-bottom: 8px;"></i>
           <h3 style="font-size: 1.1rem; margin-bottom: 4px;">No template selected</h3>
           <p style="color: var(--muted); font-size: 0.85rem; max-width: 400px; text-align: center; margin: 0 auto;">Choose an existing template from the sidebar or create a new one.</p>
-          <button class="tpl-btn" onclick="TemplateManager.newTemplate('email')" style="margin-top: 15px; background: rgba(var(--accent-rgb), 0.1); border-color: var(--accent);">
-            <i class="fas fa-plus"></i> New Email Template
+          <button class="btn btn-sm btn-secondary" onclick="TemplateManager.newTemplate('email')" style="margin-top: 12px; border-color: rgba(var(--accent-rgb), 0.4); color: var(--accent);">
+            <i class="fas fa-plus" style="font-size: 0.75rem;"></i> New Email Template
           </button>
         </div>
 
         <!-- Single Export Section -->
         <div class="tpl-section" style="width: 100%; max-width: 500px; text-align: left;">
-            <div class="tpl-section-title"><i class="fas fa-file-export"></i> Export Template</div>
+            <div class="tpl-section-title"><i class="fas fa-file-export" style="font-size: 0.8rem;"></i> Export Template</div>
             <p class="tpl-section-desc">Download a specific template as a JSON file.</p>
             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                 <select id="tpl-single-export-select" class="config-input" style="flex:1; max-width: 280px; padding: 6px 10px; font-size: 0.85rem;">
                     <!-- Populated by JS -->
                 </select>
-                <button type="button" class="tpl-btn" onclick="TemplateManager.exportSingleTemplate()">
-                    <i class="fas fa-download"></i> Export
+                <button type="button" class="btn btn-sm btn-secondary" onclick="TemplateManager.exportSingleTemplate()">
+                    <i class="fas fa-download" style="font-size: 0.75rem;"></i> Export
                 </button>
             </div>
         </div>
 
         <!-- Single Import Section -->
         <div class="tpl-section" style="width: 100%; max-width: 500px; text-align: left;">
-            <div class="tpl-section-title"><i class="fas fa-file-import"></i> Import Template</div>
+            <div class="tpl-section-title"><i class="fas fa-file-import" style="font-size: 0.8rem;"></i> Import Template</div>
             <p class="tpl-section-desc">Import a single template from a JSON file.</p>
             <div class="tpl-import-drop" id="tpl-single-import-drop"
                  onclick="document.getElementById('tpl-single-import-file').click()"
