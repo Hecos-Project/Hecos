@@ -198,8 +198,9 @@
             ${notes ? `<div class="pop-notes">${notes}</div>` : ''}
             <div class="pop-actions" style="margin-top:12px; display:flex; gap:8px;">
                 <button class="pop-edit" onclick="hcal.editEvent('${ev.id}')" style="background:var(--accent); color:white; border:none; padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;"><i class="fas fa-edit"></i> ${hcalT.edit || 'Edit'}</button>
-                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')"><i class="fas fa-trash-alt"></i> ${hcalT.delete || 'Delete'}</button>
-                <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'">${hcalT.cancel || 'Cancel'}</button>
+                <button class="pop-delete" onclick="hcal.deleteEvent('${ev.id}')" style="background:rgba(220,53,69,0.1); color:#dc3545; border:1px solid rgba(220,53,69,0.2); padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;"><i class="fas fa-trash-alt"></i></button>
+                <button class="pop-export" onclick="hcal.exportSingleEvent('${ev.id}')" style="background:rgba(255,255,255,0.1); color:var(--text); border:1px solid rgba(255,255,255,0.2); padding:4px 10px; border-radius:4px; font-size:12px; cursor:pointer;" title="Export Event"><i class="fas fa-download"></i></button>
+                <button class="pop-close" onclick="document.getElementById('cal-event-popup').style.display='none'" style="background:none; border:none; color:var(--muted); padding:4px 8px; cursor:pointer;"><i class="fas fa-times"></i></button>
             </div>
         `;
         popup.style.display = 'block';
@@ -208,9 +209,61 @@
         popup.style.left = Math.min(r.left, window.innerWidth - 340) + 'px';
     }
 
+    function exportSingleEvent(id) {
+        const ev = s.calendar.getEventById(id);
+        if (!ev) return;
+        const payload = {
+            title: ev.title,
+            start: ev.startStr,
+            end: ev.endStr || null,
+            allDay: ev.allDay,
+            color: ev.backgroundColor,
+            notes: ev.extendedProps?.notes || '',
+            remindMe: ev.extendedProps?.has_reminder || false,
+            interactive: ev.extendedProps?.interactive || false
+        };
+        const content = JSON.stringify(payload, null, 2);
+        const filename = `event_${(ev.title||'').replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'export'}.json`;
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    async function importSingleEvent(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        e.target.value = '';
+        try {
+            const text = await file.text();
+            const payload = JSON.parse(text);
+            if (!payload.title || !payload.start) {
+                throw new Error("Formato evento non valido (titolo o data d'inizio mancanti).");
+            }
+            if (window.toast) window.toast('info', 'Importazione evento...');
+            const res = await fetch('/api/ext/calendar/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || "Errore durante l'importazione");
+            if (window.toast) window.toast('success', `Evento "${payload.title}" importato`);
+            if (s.calendar) s.calendar.refetchEvents();
+            if (window.calendarWidget) window.calendarWidget.refresh();
+        } catch (err) {
+            console.error('[CALENDAR] Import error:', err);
+            if (window.toast) window.toast('error', err.message);
+            else alert('Errore: ' + err.message);
+        }
+    }
+
     Object.assign(window.hcal, {
         setView, openNewEventForm, editEvent, cancelForm,
-        pickStart, pickEnd, submitForm, deleteEvent, _showPopup
+        pickStart, pickEnd, submitForm, deleteEvent, _showPopup,
+        exportSingleEvent, importSingleEvent
     });
 
 })();

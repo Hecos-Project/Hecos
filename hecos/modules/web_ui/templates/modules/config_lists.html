@@ -3,7 +3,8 @@
     <div class="card" style="height: calc(100vh - 120px); display: flex; flex-direction: column;">
 
         <!-- Tab bar -->
-        <div class="lists-hub-tabs">
+    <div class="lists-hub-tabs" style="display: flex; align-items: center;">
+        <div style="display: flex; gap: 4px; flex: 1;">
             <button class="lists-hub-tab active" id="lhub-tab-app" onclick="listsHubShowTab('app')">
                 <i class="fas fa-list-check"></i>
                 <span data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
@@ -13,6 +14,17 @@
                 <span data-i18n="lists_tab_settings">{{ t('lists_tab_settings') or 'Configurazione' }}</span>
             </button>
         </div>
+        <!-- Backup / Restore icons (matching Templates style) -->
+        <div style="display: flex; gap: 6px; padding-left: 10px;">
+            <button class="lhub-icon-btn" title="Backup Lists" onclick="listsBackup()">
+                <i class="fas fa-download"></i>
+            </button>
+            <button class="lhub-icon-btn" title="Restore Lists" onclick="document.getElementById('lists-restore-file').click()">
+                <i class="fas fa-upload"></i>
+            </button>
+            <input type="file" id="lists-restore-file" accept=".json" style="display:none" onchange="listsRestore(event)">
+        </div>
+    </div>
 
         <!-- TAB: App (full-screen list manager) -->
         <div id="lhub-pane-app" class="lists-hub-pane" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">

@@ -565,3 +565,80 @@ def import_lists():
 
     return jsonify({"ok": True, "created": created, "count": len(created)}), 201
 
+
+# ── Backup / Restore ──────────────────────────────────────────────────────────
+
+@lists_bp.route("/backup", methods=["GET"])
+def backup_lists():
+    """
+    Returns a full JSON backup of all lists (including archived ones).
+    Format: { ok, count, exported_at, lists: [...] }
+    """
+    from hecos.plugins.lists import store
+    from datetime import datetime, timezone
+    try:
+        all_lists = store.get_lists(include_archived=True)
+        payload = []
+        for lst in all_lists:
+            d = _list_to_dict(lst["id"])
+            if d:
+                d["id"] = lst["id"]
+                d["archived"] = lst.get("archived", False)
+                payload.append(d)
+        return jsonify({
+            "ok": True,
+            "count": len(payload),
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "lists": payload
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@lists_bp.route("/restore", methods=["POST"])
+def restore_lists():
+    """
+    Restores lists from a JSON backup.
+    mode=duplicate (default): always creates new lists, preserving existing ones.
+    mode=replace: deletes all existing lists first, then recreates.
+    Body: { lists: [...], mode: 'duplicate'|'replace' }
+    """
+    from hecos.plugins.lists import store
+    data_req = request.get_json(force=True) or {}
+    lists_data = data_req.get("lists", [])
+    mode = data_req.get("mode", "duplicate")
+
+    if not lists_data:
+        return jsonify({"ok": False, "error": "No lists data provided"}), 400
+
+    try:
+        if mode == "replace":
+            existing = store.get_lists(include_archived=True)
+            for lst in existing:
+                store.delete_list(lst["id"])
+
+        created = []
+        for pl in lists_data:
+            lst = store.create_list(
+                name=pl.get("name", "Lista ripristinata"),
+                icon=pl.get("icon", "📋"),
+                color=pl.get("color") or None
+            )
+            if lst:
+                for item in pl.get("items", []):
+                    store.add_item(
+                        lst["id"],
+                        text=item.get("text", ""),
+                        priority=int(item.get("priority", 0)),
+                        label=item.get("label") or None
+                    )
+                    if item.get("status") == "done":
+                        items = store.get_items(lst["id"])
+                        last = next((i for i in items if i["text"] == item["text"]), None)
+                        if last:
+                            store.update_item(last["id"], status="done")
+                created.append({"id": lst["id"], "name": lst["name"]})
+
+        return jsonify({"ok": True, "restored_count": len(created), "lists": created}), 201
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500

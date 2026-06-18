@@ -4,7 +4,19 @@
      ══════════════════════════════════════════════════════════════════════════ -->
 <div class="card" style="padding:20px; margin-bottom:16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">{{ translations['ext_calendar_title'] }}</div>
+        <div class="card-title" style="margin-bottom:0; display:inline-flex; align-items:center; gap:8px;">
+            {{ translations['ext_calendar_title'] }}
+            <!-- Backup / Restore icons (matching Templates style) -->
+            <div style="display: flex; gap: 6px; padding-left: 10px;">
+                <button class="tpl-icon-btn" title="Backup Calendar" onclick="hcal.backupEvents()">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="tpl-icon-btn" title="Restore Calendar" onclick="document.getElementById('cal-restore-file').click()">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <input type="file" id="cal-restore-file" accept=".json" style="display:none" onchange="hcal.restoreEvents(event)">
+            </div>
+        </div>
         <div style="display:flex; gap:12px; font-size:12px; font-weight:normal; align-items:center;">
             <label style="color:var(--muted); display:flex; align-items:center; gap:6px;">{{ translations['ext_calendar_locale'] }}: 
                 <select id="cal-set-locale" onchange="hcal.saveSettings()" class="hcal-select">
@@ -75,9 +87,15 @@
             <button onclick="hcal.setView('timeGridWeek')"  id="cal-btn-week"   class="cal-view-btn">{{ translations['ext_calendar_week'] }}</button>
             <button onclick="hcal.setView('listWeek')"      id="cal-btn-list"   class="cal-view-btn">{{ translations['ext_calendar_list'] }}</button>
         </div>
-        <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
-            <i class="fas fa-plus"></i> {{ translations['ext_calendar_add_event'] }}
-        </button>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <button onclick="document.getElementById('cal-single-import-file').click()" class="hcal-btn-sec" style="padding:7px 16px; border-color: rgba(var(--accent-rgb), 0.3);" title="Importa un singolo evento JSON">
+                <i class="fas fa-file-import"></i> Import Event
+            </button>
+            <input type="file" id="cal-single-import-file" accept=".json" style="display:none" onchange="hcal.importSingleEvent(event)">
+            <button onclick="hcal.openNewEventForm()" class="btn btn-accent" style="padding:7px 16px; font-weight:700;">
+                <i class="fas fa-plus"></i> {{ translations['ext_calendar_add_event'] }}
+            </button>
+        </div>
     </div>
 
     <!-- FullCalendar mount point -->

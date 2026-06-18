@@ -311,4 +311,60 @@ def init_routes(app, root_dir: str = None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    # ── GET /api/ext/calendar/backup ──────────────────────────────────────────
+    @app.route("/api/ext/calendar/backup", methods=["GET"])
+    @login_required
+    def calendar_backup():
+        store = _get_store()
+        if not store:
+            return jsonify({"ok": False, "error": "Calendar plugin unavailable"}), 503
+        try:
+            from datetime import datetime, timezone
+            events = store.get_all()
+            return jsonify({
+                "ok": True,
+                "count": len(events),
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+                "events": events
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ── POST /api/ext/calendar/restore ────────────────────────────────────────
+    @app.route("/api/ext/calendar/restore", methods=["POST"])
+    @login_required
+    def calendar_restore():
+        store = _get_store()
+        if not store:
+            return jsonify({"ok": False, "error": "Calendar plugin unavailable"}), 503
+        try:
+            data = request.get_json(force=True) or {}
+            events_data = data.get("events", [])
+            mode = data.get("mode", "duplicate")
+
+            if mode == "replace":
+                existing = store.get_all()
+                for ev in existing:
+                    store.delete(ev["id"])
+
+            created = 0
+            for ev in events_data:
+                store.add(
+                    title=ev.get("title", "Evento ripristinato"),
+                    start_iso=ev.get("start_iso", ""),
+                    end_iso=ev.get("end_iso"),
+                    all_day=bool(ev.get("all_day", False)),
+                    color=ev.get("color"),
+                    notes=ev.get("notes"),
+                    linked_reminder_id=ev.get("linked_reminder_id"),
+                    interactive=bool(ev.get("interactive", False)),
+                    external_id=ev.get("external_id"),
+                    sync_source=ev.get("sync_source")
+                )
+                created += 1
+
+            return jsonify({"ok": True, "restored_count": created}), 201
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     logger.info("CALENDAR", "📅 Calendar WebUI routes registered.")
