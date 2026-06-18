@@ -117,6 +117,123 @@ Object.assign(TemplateManager, {
       // Reset input so the same file can be selected again
       event.target.value = '';
     }
+  },
+
+  async exportSingleTemplate() {
+    const select = document.getElementById('tpl-single-export-select');
+    if (!select || !select.value) {
+      if (typeof window.ui !== 'undefined' && window.ui.showToast) {
+        ui.showToast('Please select a template to export first.', 'error');
+      }
+      return;
+    }
+    
+    const templateId = select.value;
+    try {
+      const res = await fetch(`/api/templates/${templateId}`);
+      if (!res.ok) throw new Error('Failed to fetch template');
+      const data = await res.json();
+      if (!data.template) throw new Error('Template not found');
+
+      // The export format must match the import format: { templates: [ templateObj ] }
+      const exportObj = {
+        templates: [data.template],
+        count: 1,
+        exported_at: new Date().toISOString()
+      };
+      
+      const safeName = (data.template.name || 'template').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const defaultFilename = `template_${safeName}.json`;
+      const content = JSON.stringify(exportObj, null, 2);
+
+      if (window.showSaveFilePicker) {
+        try {
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName: defaultFilename,
+            types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+          throw err;
+        }
+      } else {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = defaultFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      
+      if (typeof window.ui !== 'undefined' && window.ui.showToast) {
+        ui.showToast('Template exported successfully', 'success');
+      }
+    } catch (err) {
+      console.error('Export single template error:', err);
+      if (typeof window.ui !== 'undefined' && window.ui.showToast) {
+        ui.showToast(err.message, 'error');
+      }
+    }
+  },
+
+  async importSingleDrop(event) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      const file = event.dataTransfer.files[0];
+      await this._processSingleImportFile(file);
+    }
+  },
+
+  async importSingleFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    await this._processSingleImportFile(file);
+    event.target.value = '';
+  },
+
+  async _processSingleImportFile(file) {
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      
+      if (!payload.templates || !Array.isArray(payload.templates) || payload.templates.length === 0) {
+        throw new Error("Invalid file format. Ensure this is a valid Template JSON file.");
+      }
+
+      // Single import logic always imports as duplicate (new ID) to prevent breaking existing ones
+      if (typeof window.ui !== 'undefined' && window.ui.showToast) {
+        ui.showToast('Importing template...', 'info');
+      }
+
+      const res = await fetch(`/api/templates/import?mode=duplicate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templates: payload.templates })
+      });
+
+      const result = await res.json();
+      if (!result.ok) throw new Error(result.error || 'Import failed');
+
+      if (typeof window.ui !== 'undefined' && window.ui.showToast) {
+        ui.showToast(`Template imported successfully!`, 'success');
+      }
+
+      await TemplateManager.init();
+    } catch (err) {
+      console.error('Single import error:', err);
+      if (typeof window.ui !== 'undefined' && window.ui.showToast) {
+        ui.showToast(err.message, 'error');
+      } else {
+        alert('Import error: ' + err.message);
+      }
+    }
   }
 
 });

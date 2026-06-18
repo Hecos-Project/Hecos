@@ -640,4 +640,48 @@
 /* Layer manager */
 .gjs-layer-title { color: rgba(255,255,255,0.7) !important; }
 .gjs-layer--selected > .gjs-layer__inner { background: rgba(0,212,255,0.1) !important; }
+
+/* ── Settings Sections (Import/Export Single) ── */
+.tpl-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+}
+.tpl-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tpl-section-title i { color: var(--accent); opacity: 0.8; }
+.tpl-section-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 14px;
+}
+.tpl-import-drop {
+    border: 2px dashed rgba(var(--accent-rgb), 0.3);
+    border-radius: 8px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.2s, background 0.2s;
+}
+.tpl-import-drop:hover, .tpl-import-drop.drag-over {
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.05);
+    color: var(--text);
+}
+.tpl-import-drop i { font-size: 1.3rem; color: var(--accent); opacity: 0.6; }
 </style>

@@ -66,10 +66,8 @@ window.TemplateManager = (() => {
       const data = await _apiFetch('/');
       _allTemplates = data.templates || [];
       _renderSidebar();
-      if (_allTemplates.length === 0) {
+      if (!_getActiveId()) {
         _showSection('tpl-empty-section');
-      } else {
-        _showSection('tpl-list-section');
       }
     } catch (e) {
       _toast('Error loading templates: ' + e, 'error');
@@ -91,6 +89,14 @@ window.TemplateManager = (() => {
               <span class="tpl-sidebar-date">${_shortDate(t.updated_at)}</span>
             </div>`).join('');
     });
+
+    const exportSelect = $('tpl-single-export-select');
+    if (exportSelect) {
+      exportSelect.innerHTML = _allTemplates.length === 0
+        ? `<option value="" disabled selected>No templates available</option>`
+        : `<option value="" disabled selected>Select a template...</option>` +
+          _allTemplates.map(t => `<option value="${t.id}">${_esc(t.name)} (${t.channel})</option>`).join('');
+    }
   }
 
   /* ── Open / edit a template ───────────────────────────────────────────────── */
