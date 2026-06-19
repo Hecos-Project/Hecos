@@ -62,6 +62,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
 
     @app.before_request
     def require_login():
+        if request.headers.get("X-Hecos-Internal") == "backup": return
         exempt_paths = ['/login', '/logout', '/static', '/assets', '/favicon.ico']
         if any(request.path.startswith(p) for p in exempt_paths): return
         
@@ -162,6 +163,29 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         logger.info("[WebUI] Hecos Templates plugin API loaded.")
     except Exception as _tpl_e:
         logger.warning(f"[WebUI] Templates plugin API could not load: {_tpl_e}")
+
+    # Global Backup Orchestrator
+    try:
+        from hecos.modules.backup.api import register_routes as init_backup_api
+        init_backup_api(app)
+        logger.info("[WebUI] Global Backup Orchestrator API loaded.")
+    except Exception as _bk_e:
+        logger.warning(f"[WebUI] Backup Orchestrator API could not load: {_bk_e}")
+
+    # Module-level Backup/Restore routes (calendar, reminders, history, memory, flows, users)
+    try:
+        from hecos.modules.backup.routes_modules import register_module_backup_routes
+        register_module_backup_routes(app)
+        logger.info("[WebUI] Module backup routes loaded.")
+    except Exception as _mbk_e:
+        logger.warning(f"[WebUI] Module backup routes could not load: {_mbk_e}")
+
+    # Start the Backup Scheduler (daemon thread — non-blocking)
+    try:
+        from hecos.modules.backup import scheduler as backup_scheduler
+        backup_scheduler.start(app)
+    except Exception as _bks_e:
+        logger.warning(f"[WebUI] Backup scheduler start error: {_bks_e}")
 
     # WEB_UI Shared Extensions
     try:
