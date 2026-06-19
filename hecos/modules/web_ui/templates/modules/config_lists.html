@@ -38,6 +38,11 @@
                     <button type="button" onclick="listsCreateList()" title="{{ t('lists_create_list') or 'Crea lista' }}">
                         <i class="fas fa-check"></i>
                     </button>
+                    <!-- Inline Import Button -->
+                    <button type="button" onclick="document.getElementById('lists-import-inline').click()" title="{{ t('lists_import_inline') or 'Importa singola lista (YAML/MD/TXT)' }}" style="margin-left: 4px;">
+                        <i class="fas fa-file-import"></i>
+                    </button>
+                    <input type="file" id="lists-import-inline" accept=".yaml,.yml,.txt,.md" style="display:none" onchange="if(typeof listsHandleImportFile === 'function') listsHandleImportFile(this)">
                 </div>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="listsClearDone()" id="lists-btn-cleardone" style="display:none;">
                     <i class="fas fa-broom"></i>

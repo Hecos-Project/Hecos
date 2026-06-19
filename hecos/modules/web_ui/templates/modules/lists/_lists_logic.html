@@ -377,6 +377,12 @@ async function listsDeleteActive() {
     }
 }
 
+function listsExportActive() {
+    if (!listsActiveListId) return;
+    // Uses the default YAML format, which can also be used by the AI to email the list
+    window.location.href = `/api/lists/${listsActiveListId}/export?format=yaml`;
+}
+
 function listsSetFilter(filter) {
     listsCurrentFilter = filter;
     document.querySelectorAll('.lists-filter-btn').forEach(btn => {
