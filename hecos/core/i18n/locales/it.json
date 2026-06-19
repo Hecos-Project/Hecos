@@ -819,6 +819,7 @@
         "ext_calendar_notes_label": "Note",
         "ext_calendar_btn_save": "Salva Evento",
         "ext_calendar_btn_cancel": "Annulla",
+        "ext_contacts_btn_export": "Esporta",
         "day_0": "Dom",
         "day_1": "Lun",
         "day_2": "Mar",

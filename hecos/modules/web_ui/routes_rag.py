@@ -176,3 +176,115 @@ def init_rag_routes(app, cfg_mgr, logger):
         except Exception as e:
             logger.error(f"[RAG] delete_source error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ── Full RAG Backup (sources + text chunks) ────────────────────────────────
+    @app.route("/api/rag/backup", methods=["GET"])
+    def rag_backup():
+        """
+        Exports ALL RAG sources with their actual text chunks from LanceDB.
+        The response includes the full text content so the backup is
+        self-contained and re-ingestable without any extra files.
+        """
+        from datetime import datetime, timezone
+        try:
+            user_id = request.args.get("user_id", "admin")
+
+            from hecos.core.rag.store import get_all_sources
+            sources_meta = get_all_sources()
+
+            engine = _engine()
+            if not engine._ensure_init():
+                # RAG disabled — still return sources metadata without chunks
+                return jsonify({
+                    "ok": True,
+                    "exported_at": datetime.now(timezone.utc).isoformat(),
+                    "note": "RAG is disabled. Only source metadata is included.",
+                    "source_count": len(sources_meta),
+                    "sources": [
+                        {"source": s, "namespace": m.get("namespace", "knowledge"),
+                         "meta": m, "chunks": []}
+                        for s, m in sources_meta.items()
+                    ]
+                })
+
+            sources_export = []
+            for source_name, meta in sources_meta.items():
+                namespace = meta.get("namespace", "knowledge")
+                uid       = meta.get("user_id", user_id)
+                try:
+                    raw_chunks = engine._store.get_chunks_by_source(uid, namespace, source_name)
+                    texts = [c.get("text", "") for c in raw_chunks if c.get("text")]
+                except Exception as ce:
+                    logger.warning(f"[RAG] backup: could not fetch chunks for '{source_name}': {ce}")
+                    texts = []
+
+                sources_export.append({
+                    "source":    source_name,
+                    "namespace": namespace,
+                    "user_id":   uid,
+                    "meta":      meta,
+                    "chunks":    texts
+                })
+
+            return jsonify({
+                "ok": True,
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+                "source_count": len(sources_export),
+                "sources": sources_export
+            })
+
+        except Exception as e:
+            logger.error(f"[RAG] backup error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ── RAG Restore (re-ingest text chunks) ───────────────────────────────────
+    @app.route("/api/rag/restore", methods=["POST"])
+    def rag_restore():
+        """
+        Restores a RAG backup by re-ingesting the text chunks.
+        Body: { sources: [ { source, namespace, user_id, chunks: [str, ...] } ] }
+        """
+        try:
+            data = request.get_json(force=True) or {}
+            sources_payload = data.get("sources", [])
+
+            engine = _engine()
+            if not engine._ensure_init():
+                return jsonify({"ok": False, "error": "RAG is disabled. Enable it first."}), 400
+
+            restored = 0
+            skipped  = 0
+            for item in sources_payload:
+                source    = item.get("source", "")
+                namespace = item.get("namespace", "knowledge")
+                uid       = item.get("user_id", "admin")
+                chunks    = item.get("chunks", [])
+
+                if not source or not chunks:
+                    skipped += 1
+                    continue
+
+                # Join all chunks back into a single text and re-ingest
+                full_text = "\n\n".join(chunks)
+                try:
+                    result = engine.ingest_text(
+                        full_text, source=source, user_id=uid, namespace=namespace
+                    )
+                    if result and result.ok:
+                        restored += 1
+                    else:
+                        skipped += 1
+                except Exception as ie:
+                    logger.error(f"[RAG] restore: ingest error for '{source}': {ie}")
+                    skipped += 1
+
+            return jsonify({
+                "ok": True,
+                "restored_sources": restored,
+                "skipped": skipped
+            }), 201
+
+        except Exception as e:
+            logger.error(f"[RAG] restore error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+

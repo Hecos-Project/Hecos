@@ -803,6 +803,7 @@
         "ext_calendar_notes_label": "Notes",
         "ext_calendar_btn_save": "Save Event",
         "ext_calendar_btn_cancel": "Cancel",
+        "ext_contacts_btn_export": "Export",
         "day_0": "Sun",
         "day_1": "Mon",
         "day_2": "Tue",

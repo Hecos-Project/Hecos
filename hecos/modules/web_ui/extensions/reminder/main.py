@@ -173,6 +173,53 @@ def init_routes(app, root_dir: str = None):
         ok = store.update_interactive(reminder_id, bool(interactive))
         return jsonify({"ok": ok})
 
+    # ── GET /api/ext/reminder/backup — Full Reminder Backup ───────────────────
+    @app.route("/api/ext/reminder/backup", methods=["GET"])
+    @login_required
+    def reminder_backup():
+        """Exports all reminders to a JSON backup."""
+        store = _get_store()
+        if not store:
+            return jsonify({"ok": False, "error": "Reminder plugin not available"}), 503
+        
+        reminders = store.get_all()
+        return jsonify({
+            "ok": True,
+            "reminders": reminders,
+            "count": len(reminders)
+        })
+
+    # ── POST /api/ext/reminder/restore — Restore from backup ──────────────────
+    @app.route("/api/ext/reminder/restore", methods=["POST"])
+    @login_required
+    def reminder_restore():
+        """
+        Restores reminders from a JSON backup.
+        Body: { reminders: [...], mode: 'duplicate' | 'replace' }
+        """
+        store = _get_store()
+        if not store:
+            return jsonify({"ok": False, "error": "Reminder plugin not available"}), 503
+            
+        data = request.get_json(force=True) or {}
+        reminders = data.get("reminders", [])
+        mode = data.get("mode", "duplicate")
+        
+        if not isinstance(reminders, list):
+            return jsonify({"ok": False, "error": "Invalid format, expected list of reminders"}), 400
+            
+        count = store.import_reminders(reminders, mode=mode)
+        
+        # We need to reload the scheduler with the new database content
+        sched = _get_scheduler()
+        if sched:
+            sched._reload_from_db()
+            
+        return jsonify({
+            "ok": True,
+            "imported": count
+        })
+
     # ── GET /hecos/config/reminder — config tab page ──────────────────────────
     @app.route("/hecos/config/reminder")
     @login_required

@@ -214,3 +214,49 @@ def get_upcoming(n: int = 5) -> list:
     except Exception as e:
         logger.error(f"[REMINDER] store.get_upcoming error: {e}")
         return []
+
+def import_reminders(reminders_list: list, mode: str = "duplicate") -> int:
+    """
+    Imports a list of reminders (from backup).
+    :param mode: 'duplicate' (generate new IDs, append) or 'replace' (wipe all, insert with new IDs).
+    Returns the number of imported reminders.
+    """
+    if not isinstance(reminders_list, list):
+        return 0
+
+    imported = 0
+    try:
+        from hecos.plugins.reminder.store import _get_conn
+        import uuid
+        from datetime import datetime
+
+        with _get_conn() as conn:
+            if mode == "replace":
+                conn.execute("DELETE FROM reminders")
+
+            for r in reminders_list:
+                try:
+                    # Give it a fresh ID to avoid collisions just in case
+                    new_id = str(uuid.uuid4())
+                    title = r.get("title", "Imported Reminder")
+                    when_iso = r.get("when_iso")
+                    cron_expr = r.get("cron_expr")
+                    repeat = int(r.get("repeat", 0))
+                    status = r.get("status", "active")
+                    created_at = r.get("created_at") or datetime.now().isoformat()
+                    interactive = r.get("interactive")
+                    r_mode = r.get("mode")
+
+                    conn.execute(
+                        "INSERT INTO reminders (id, title, when_iso, cron_expr, repeat, status, created_at, interactive, mode) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (new_id, title, when_iso, cron_expr, repeat, status, created_at, interactive, r_mode)
+                    )
+                    imported += 1
+                except Exception as row_e:
+                    logger.error(f"[REMINDER] store.import_reminders row error: {row_e}")
+                    
+        return imported
+    except Exception as e:
+        logger.error(f"[REMINDER] store.import_reminders error: {e}")
+        return imported

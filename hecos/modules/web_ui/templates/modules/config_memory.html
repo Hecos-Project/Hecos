@@ -60,14 +60,25 @@
     </small>
   </div>
 
-  <!-- ── RAG Vector Memory ────────────────────────────────── -->
+  <!-- ── RAG Vector Memory ──────────────────────────── -->
   <div class="card" id="rag-card">
-    <div class="card-title">RAG Vector Memory
+    <div class="card-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <span>RAG Vector Memory</span>
       <span id="rag-status-badge" style="
         font-size:10px; font-weight:600; padding:2px 8px; border-radius:12px;
-        margin-left:10px; background:var(--muted); color:#fff; vertical-align:middle;">
+        background:var(--muted); color:#fff; vertical-align:middle;">
         CHECKING...
       </span>
+      <!-- Backup / Restore RAG Sources -->
+      <div style="display:flex; gap:6px; padding-left:6px; margin-left:auto;">
+        <button class="tpl-icon-btn" title="Backup RAG Sources Registry" onclick="ragBackupSources()">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="tpl-icon-btn" title="Restore RAG Sources from backup" onclick="document.getElementById('rag-restore-file').click()">
+          <i class="fas fa-upload"></i>
+        </button>
+        <input type="file" id="rag-restore-file" accept=".json" style="display:none" onchange="ragRestoreSources(event)">
+      </div>
     </div>
 
     <div class="toggle-row">
@@ -520,6 +531,111 @@ async function restoreChatHistory(event) {
     console.error('[MEMORY] Chat restore error:', err);
     if (window.showToast) showToast(err.message, 'error');
     else alert('Errore: ' + err.message);
+  }
+}
+// ── RAG Sources Backup / Restore ─────────────────────────────────────────────
+
+async function ragBackupSources() {
+  try {
+    if (window.showToast) showToast('Esportazione knowledge base RAG...', 'info');
+
+    // Use the NEW full backup endpoint — includes actual text chunks
+    const res = await fetch('/api/rag/backup');
+    if (!res.ok) throw new Error('Backup request failed');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+    const payload = {
+      type: 'hecos_rag_backup_full',
+      exported_at: data.exported_at || new Date().toISOString(),
+      source_count: data.source_count,
+      sources: data.sources   // array: [{source, namespace, user_id, meta, chunks:[...testi...]}]
+    };
+
+    const filename = `hecos_rag_backup_${new Date().toISOString().split('T')[0]}.json`;
+    const content  = JSON.stringify(payload, null, 2);
+
+    if (window.showSaveFilePicker) {
+      try {
+        const fh = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'JSON Backup RAG', accept: { 'application/json': ['.json'] } }]
+        });
+        const w = await fh.createWritable();
+        await w.write(content);
+        await w.close();
+      } catch(e) {
+        if (e.name === 'AbortError') return;
+        throw e;
+      }
+    } else {
+      const blob = new Blob([content], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+    if (window.showToast) showToast(`Backup RAG completato (${data.source_count} fonti con testi)`, 'success');
+  } catch(err) {
+    console.error('[RAG] Backup error:', err);
+    if (window.showToast) showToast(err.message, 'error');
+    else alert('Errore backup RAG: ' + err.message);
+  }
+}
+
+async function ragRestoreSources(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  try {
+    const text    = await file.text();
+    const payload = JSON.parse(text);
+
+    // Support both old (object) and new (array) format
+    let sourcesArray = [];
+    if (Array.isArray(payload.sources)) {
+      // New full format: [{source, namespace, user_id, chunks:[...]}]
+      sourcesArray = payload.sources.filter(s => s.chunks && s.chunks.length > 0);
+    } else if (payload.sources && typeof payload.sources === 'object') {
+      // Old metadata-only format — no chunks to restore
+      if (window.showToast) showToast('Questo backup contiene solo metadati, non i testi. Esegui un nuovo backup per ottenere la versione completa.', 'warning');
+      return;
+    }
+
+    if (sourcesArray.length === 0) {
+      if (window.showToast) showToast('Nessuna fonte con testo trovata nel backup.', 'warning');
+      return;
+    }
+
+    const sourceNames = sourcesArray.map(s => s.source);
+    const listHtml = sourceNames.map(s => `\u2022 ${s}`).join('\n');
+    if (!confirm(
+      `Trovate ${sourcesArray.length} fonti nel backup:\n\n${listHtml}\n\nProcedere con il ripristino automatico nel RAG?`
+    )) return;
+
+    if (window.showToast) showToast(`Ripristino di ${sourcesArray.length} fonti in corso...`, 'info');
+
+    const res = await fetch('/api/rag/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sources: sourcesArray })
+    });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+    if (window.showToast) showToast(
+      `Ripristinate ${result.restored_sources} fonti${result.skipped > 0 ? ` (${result.skipped} saltate)` : ''}`,
+      result.skipped > 0 ? 'warning' : 'success'
+    );
+    // Refresh RAG status to show the newly restored sources
+    setTimeout(loadRagStatus, 800);
+
+  } catch(err) {
+    console.error('[RAG] Restore error:', err);
+    if (window.showToast) showToast(err.message, 'error');
+    else alert('Errore restore RAG: ' + err.message);
   }
 }
 </script>
