@@ -159,7 +159,7 @@ def register_module_backup_routes(app) -> None:
                 # Attach messages to each session
                 for s in sessions:
                     msgs = conn.execute(
-                        "SELECT * FROM messages WHERE session_id = ? ORDER BY id ASC",
+                        "SELECT * FROM history WHERE session_id = ? ORDER BY id ASC",
                         (s["id"],)
                     ).fetchall()
                     s["messages"] = [dict(m) for m in msgs]
@@ -331,7 +331,7 @@ def register_module_backup_routes(app) -> None:
     # FLOWS
     # ═══════════════════════════════════════════════════════════════════════════
 
-    @app.route("/api/flows/backup", methods=["GET"], endpoint="mbkp_flows_backup")
+    @app.route("/hecos/api/backup_module/flows/backup", methods=["GET"], endpoint="mbkp_flows_backup_unique")
     def flows_backup():
         """Esporta tutti i flow come JSON (dict {flow_id: flow_data})."""
         try:
@@ -349,7 +349,7 @@ def register_module_backup_routes(app) -> None:
             logger.error(f"[BACKUP] flows_backup error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
-    @app.route("/api/flows/restore", methods=["POST"], endpoint="mbkp_flows_restore")
+    @app.route("/hecos/api/backup_module/flows/restore", methods=["POST"], endpoint="mbkp_flows_restore_unique")
     def flows_restore():
         """
         Ripristina flow da JSON.
@@ -390,7 +390,7 @@ def register_module_backup_routes(app) -> None:
     # USERS
     # ═══════════════════════════════════════════════════════════════════════════
 
-    @app.route("/hecos/api/users/backup", methods=["GET"], endpoint="mbkp_users_backup")
+    @app.route("/hecos/api/backup_module/users/backup", methods=["GET"], endpoint="mbkp_users_backup_unique")
     def users_backup():
         """Esporta tutti gli utenti (senza password hash) come JSON."""
         try:
@@ -424,7 +424,7 @@ def register_module_backup_routes(app) -> None:
             logger.error(f"[BACKUP] users_backup error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
-    @app.route("/hecos/api/users/restore", methods=["POST"], endpoint="mbkp_users_restore")
+    @app.route("/hecos/api/backup_module/users/restore", methods=["POST"], endpoint="mbkp_users_restore_unique")
     def users_restore():
         """
         Ripristina utenti da JSON (solo campi profilo, NON le password).
@@ -487,11 +487,12 @@ def register_module_backup_routes(app) -> None:
         """Esporta tutti i file YAML/JSON da config/data."""
         try:
             import os
-            root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             data_dir = os.path.join(root, "config", "data")
             
             all_files = {}
             if os.path.isdir(data_dir):
+                logger.debug(f"[BACKUP] Scanning config directory: {data_dir}")
                 for fname in os.listdir(data_dir):
                     if fname.endswith(".yaml") or fname.endswith(".json"):
                         # Skip backup config itself to avoid recursion/overwriting loops, 
@@ -502,6 +503,9 @@ def register_module_backup_routes(app) -> None:
                         if os.path.isfile(fpath):
                             with open(fpath, "r", encoding="utf-8") as f:
                                 all_files[fname] = f.read()
+                logger.debug(f"[BACKUP] Collected {len(all_files)} files from {data_dir}")
+            else:
+                logger.warning(f"[BACKUP] Config directory not found: {data_dir}")
 
             return jsonify({
                 "ok": True, 
@@ -529,9 +533,10 @@ def register_module_backup_routes(app) -> None:
             if not isinstance(files_data, dict):
                 return jsonify({"ok": False, "error": "data must be a dict {filename: content}"}), 400
 
-            root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             data_dir = os.path.join(root, "config", "data")
             os.makedirs(data_dir, exist_ok=True)
+            logger.debug(f"[BACKUP] Restoring configs to: {data_dir}")
             
             imported = 0
             for fname, content in files_data.items():

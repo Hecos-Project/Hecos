@@ -35,9 +35,15 @@ def _call_internal(app, method: str, url: str, json_body=None) -> dict | None:
                     resp = client.post(url, json=json_body or {}, headers={"X-Hecos-Internal": "backup"})
         if resp.status_code == 200:
             return json.loads(resp.data)
+        else:
+            logger.warning("BACKUP", f"Internal call {method} {url} returned HTTP {resp.status_code}: {resp.data}")
+            try:
+                return json.loads(resp.data)
+            except Exception:
+                return {"ok": False, "error": f"HTTP {resp.status_code}: {resp.data.decode('utf-8', errors='ignore')}"}
     except Exception as e:
         logger.warning("BACKUP", f"Internal call {method} {url} failed: {e}")
-    return None
+        return {"ok": False, "error": str(e)}
 
 
 def backup_calendar(app) -> dict | None:
@@ -67,12 +73,12 @@ def backup_reminders(app) -> dict | None:
 
 def backup_flows(app) -> dict | None:
     """Export all flows (raw YAML bundle)."""
-    return _call_internal(app, "GET", "/api/flows/backup")
+    return _call_internal(app, "GET", "/hecos/api/backup_module/flows/backup")
 
 
 def backup_users(app) -> dict | None:
     """Export all users (no passwords)."""
-    return _call_internal(app, "GET", "/hecos/api/users/backup")
+    return _call_internal(app, "GET", "/hecos/api/backup_module/users/backup")
 
 
 def backup_lists(app) -> dict | None:
@@ -113,12 +119,12 @@ def restore_reminders(app, data: dict) -> dict:
 
 
 def restore_flows(app, data: dict) -> dict:
-    resp = _call_internal(app, "POST", "/api/flows/restore", data)
+    resp = _call_internal(app, "POST", "/hecos/api/backup_module/flows/restore", data)
     return resp or {"ok": False, "error": "No response from flows restore"}
 
 
 def restore_users(app, data: dict) -> dict:
-    resp = _call_internal(app, "POST", "/hecos/api/users/restore", data)
+    resp = _call_internal(app, "POST", "/hecos/api/backup_module/users/restore", data)
     return resp or {"ok": False, "error": "No response from users restore"}
 
 
