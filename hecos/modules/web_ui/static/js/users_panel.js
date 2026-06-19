@@ -205,17 +205,22 @@ async function loadUsersData() {
                 <thead style="background:rgba(255,255,255,0.03); color:var(--accent);"><tr>
                     <th style="padding:8px;">User</th>
                     <th style="padding:8px;">Role</th>
-                    <th style="padding:8px; text-align:right;">-</th>
+                    <th style="padding:8px; text-align:right;">Actions</th>
                 </tr></thead><tbody>`;
             res.users.forEach(u => {
                 const isSelf  = u.username === "admin";
-                const actions = isSelf
-                    ? `<i>self</i>`
+                const delBtn  = isSelf
+                    ? `<i style="font-size:9px;color:var(--muted);">admin</i>`
                     : `<button class="btn btn-danger" style="padding:2px 4px; font-size:8px;" onclick="deleteUser('${u.username}')">X</button>`;
                 html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                     <td style="padding:8px; font-weight:600;">${u.username}</td>
                     <td style="padding:8px; color:var(--muted);">${u.role}</td>
-                    <td style="padding:8px; text-align:right;">${actions}</td>
+                    <td style="padding:8px; text-align:right; display:flex; gap:4px; justify-content:flex-end;">
+                        <button class="btn btn-secondary" style="padding:2px 4px; font-size:8px;" onclick="usersExportSingle('${u.username}')" title="Export Profile">
+                            <i class="fas fa-file-export"></i>
+                        </button>
+                        ${delBtn}
+                    </td>
                 </tr>`;
             });
             html += `</tbody></table>`;
@@ -259,3 +264,123 @@ async function deleteUser(username) {
 // ─────────────────────────────────────────────────────────────────────────────
 loadMyProfile();
 loadUsersData();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Backup / Restore / Export
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function _usersDownloadJson(filename, content) {
+    if (window.showSaveFilePicker) {
+        try {
+            const fh = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+            });
+            const w = await fh.createWritable();
+            await w.write(content);
+            await w.close();
+            return;
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+        }
+    }
+    const blob = new Blob([content], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+/** Backup all users (admin only) */
+async function usersBackup() {
+    try {
+        if (window.showToast) showToast('Preparing users backup...', 'info');
+        const res  = await fetch('/hecos/api/users/backup');
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+        const payload  = {
+            type:        'hecos_users_backup',
+            exported_at: new Date().toISOString(),
+            users:       data.users
+        };
+        const filename = `hecos_users_backup_${new Date().toISOString().split('T')[0]}.json`;
+        await _usersDownloadJson(filename, JSON.stringify(payload, null, 2));
+        if (window.showToast) showToast(`Backup of ${data.count} users completed`, 'success');
+    } catch(err) {
+        console.error('[USERS] Backup error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Backup error: ' + err.message);
+    }
+}
+
+/** Export a single user's profile */
+async function usersExportSingle(username) {
+    try {
+        const res  = await fetch(`/hecos/api/users/${username}/export`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Export failed');
+
+        const payload  = {
+            type:        'hecos_users_backup',
+            exported_at: new Date().toISOString(),
+            users:       [data.user]
+        };
+        const safeUser = (username || 'user').replace(/[^a-z0-9_]/gi, '_');
+        const filename = `hecos_user_${safeUser}.json`;
+        await _usersDownloadJson(filename, JSON.stringify(payload, null, 2));
+        if (window.showToast) showToast(`Profile of ${username} exported`, 'success');
+    } catch(err) {
+        console.error('[USERS] Export error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Export error: ' + err.message);
+    }
+}
+
+/** Export MY own profile (works for any role) */
+async function usersExportMe() {
+    return usersExportSingle('me');
+}
+
+/** Restore users from a backup JSON file */
+async function usersRestoreFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    // merge = update existing profiles only (safe)
+    // replace = also create missing users with temp password
+    let mode = 'merge';
+    const msg = 'Restore Users\n\nOK = Merge (update existing profiles, skip unknown users)\nCancel = Replace (also create missing users with temp password \'hecos\')';
+    if (!confirm(msg)) {
+        mode = 'replace';
+        if (!confirm('⚠️ New users will be created with temporary password "hecos". Continue?')) return;
+    }
+
+    try {
+        const text    = await file.text();
+        const payload = JSON.parse(text);
+        const users   = payload.users || payload;
+        if (!Array.isArray(users)) throw new Error('Invalid file: users list missing.');
+
+        if (window.showToast) showToast(`Restoring ${users.length} users...`, 'info');
+
+        const res = await fetch('/hecos/api/users/restore', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ users, mode })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+        const msg2 = `Restored ${result.imported} profiles` + (result.skipped ? ` (${result.skipped} skipped)` : '');
+        if (window.showToast) showToast(msg2, 'success');
+        loadUsersData();
+        loadMyProfile();
+    } catch(err) {
+        console.error('[USERS] Restore error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+}

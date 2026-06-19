@@ -8,6 +8,18 @@
     {{ t('webui_conf_user_profile_title') or 'Profile Hub' }}
     <span id="sync-badge" class="sync-badge">Synced</span>
   </div>
+  <div style="display:flex; gap:6px; align-items:center;">
+    <button class="tpl-icon-btn" title="Export My Profile" onclick="usersExportMe()">
+        <i class="fas fa-file-export"></i>
+    </button>
+    <button class="tpl-icon-btn" title="Backup All Users (Admin)" onclick="usersBackup()" id="btn-users-backup">
+        <i class="fas fa-download"></i>
+    </button>
+    <button class="tpl-icon-btn" title="Restore Users from Backup (Admin)" onclick="document.getElementById('users-restore-file').click()" id="btn-users-restore">
+        <i class="fas fa-upload"></i>
+    </button>
+    <input type="file" id="users-restore-file" accept=".json" style="display:none" onchange="usersRestoreFile(event)">
+  </div>
 </div>
 
 <!-- GRID: 2 columns -->
