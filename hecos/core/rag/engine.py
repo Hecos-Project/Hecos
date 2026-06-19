@@ -71,6 +71,13 @@ class RAGEngine:
             )
 
     def is_enabled(self) -> bool:
+        if not self._rag_cfg:
+            try:
+                from hecos.app.config import ConfigManager
+                cfg = ConfigManager().config
+                self._rag_cfg = cfg.get("cognition", {}).get("rag", {})
+            except Exception:
+                self._rag_cfg = {}
         return self._rag_cfg.get("enabled", False)
 
     def status(self) -> str:
@@ -86,7 +93,7 @@ class RAGEngine:
 
         if not self._rag_cfg:
             try:
-                from hecos.config import ConfigManager
+                from hecos.app.config import ConfigManager
                 cfg = ConfigManager().config
             except Exception:
                 cfg = {}

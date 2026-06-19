@@ -1,7 +1,18 @@
 <!-- REMINDER MODULE CONFIG -->
 <div id="tab-reminder" class="panel">
     <div class="card">
-        <div class="card-title">{{ t('ext_reminder_title') }}</div>
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>{{ t('ext_reminder_title') }}</span>
+            <div style="display:flex; gap:6px;">
+                <button class="tpl-icon-btn" title="Backup Reminders" onclick="backupReminders()">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="tpl-icon-btn" title="Restore Reminders" onclick="document.getElementById('rem-restore-file').click()">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <input type="file" id="rem-restore-file" accept=".json" style="display:none" onchange="restoreReminders(event)">
+            </div>
+        </div>
         <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
             Configure the local scheduler for time-based reminders and natural language recurrence.
         </p>
@@ -188,7 +199,92 @@ window.refreshPresetRingtones = function() {
         });
 };
 
+// ── Backup / Restore Reminders ───────────────────────────────────────────────
+window.backupReminders = async function() {
+    try {
+        if (window.showToast) showToast('Preparing reminders backup...', 'info');
+        const res = await fetch('/api/ext/reminder/backup');
+        if (!res.ok) throw new Error('Backup request failed');
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+        const payload = {
+            type: 'hecos_reminders_backup',
+            exported_at: new Date().toISOString(),
+            reminders: data.reminders
+        };
+
+        const filename = `hecos_reminders_backup_${new Date().toISOString().split('T')[0]}.json`;
+        const content  = JSON.stringify(payload, null, 2);
+
+        if (window.showSaveFilePicker) {
+            try {
+                const fh = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+                });
+                const w = await fh.createWritable();
+                await w.write(content);
+                await w.close();
+            } catch(e) {
+                if (e.name === 'AbortError') return;
+                throw e;
+            }
+        } else {
+            const blob = new Blob([content], { type: 'application/json' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+        if (window.showToast) showToast(`Backup of ${data.count} reminders completed`, 'success');
+    } catch(err) {
+        console.error('[REMINDERS] Backup error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Backup error: ' + err.message);
+    }
+};
+
+window.restoreReminders = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    let mode = 'duplicate';
+    const msg = 'Restore Reminders\n\nOK = Add copies (safe)\nCancel = Replace all (erases existing reminders)';
+    if (!confirm(msg)) {
+        mode = 'replace';
+        if (!confirm('⚠️ Warning: ALL existing reminders will be erased. Continue?')) return;
+    }
+
+    try {
+        const text    = await file.text();
+        const payload = JSON.parse(text);
+        const reminders = payload.reminders || payload; // support both wrapped and raw list
+        if (!Array.isArray(reminders)) throw new Error('Invalid file: reminders list missing.');
+
+        if (window.showToast) showToast(`Restoring ${reminders.length} reminders...`, 'info');
+
+        const res = await fetch('/api/ext/reminder/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reminders, mode })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+        if (window.showToast) showToast(`Restored ${result.imported} reminders`, 'success');
+        window.refreshReminderConfig();
+    } catch(err) {
+        console.error('[REMINDERS] Restore error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
 // Initial load hook
+
 document.addEventListener('DOMContentLoaded', () => {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((m) => {

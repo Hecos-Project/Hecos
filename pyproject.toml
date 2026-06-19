@@ -32,6 +32,8 @@ dependencies = [
     "SpeechRecognition",
     "PyAudio",
     "fastembed",
+    "lancedb>=0.33.0",
+    "sentence-transformers",
     "sounddevice",
     "pygame",
     "GPUtil",

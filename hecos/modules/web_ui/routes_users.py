@@ -183,3 +183,122 @@ def init_users_routes(app, logger):
             
         # Fallback to no-avatar default? Not implemented yet, just 404 for now
         return jsonify({"error": "No avatar"}), 404
+
+    # ── Backup / Restore ──────────────────────────────────────────────────────
+
+    @app.route("/hecos/api/users/backup", methods=["GET"])
+    @admin_required
+    def users_backup():
+        """Export all user profiles (no password hashes) as JSON backup."""
+        try:
+            all_users = auth_mgr.get_all_users()
+            profiles = []
+            for u in all_users:
+                profile = auth_mgr.get_profile(u["username"])
+                if profile:
+                    # Never export password hash
+                    profile.pop("password_hash", None)
+                    profiles.append(profile)
+            return jsonify({"ok": True, "users": profiles, "count": len(profiles)})
+        except Exception as e:
+            logger.error(f"[Auth API] Errore users_backup: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/users/restore", methods=["POST"])
+    @admin_required
+    def users_restore():
+        """
+        Restore user profiles from a backup bundle.
+        Body: { users: [...], mode: 'merge' | 'replace' }
+        - merge  (default): update profile if user exists, skip creation of new users
+        - replace: for existing users, overwrite profile; for new users, create with temp password
+        NOTE: Passwords are NEVER exported, so restored accounts that don't exist get a
+              temporary password 'hecos' which the admin should change immediately.
+        """
+        try:
+            data  = request.get_json(force=True) or {}
+            users = data.get("users", [])
+            mode  = data.get("mode", "merge")
+
+            if not isinstance(users, list):
+                return jsonify({"ok": False, "error": "Invalid format"}), 400
+
+            imported = 0
+            skipped  = 0
+            for u in users:
+                username = u.get("username", "").strip()
+                if not username or username == "admin":
+                    skipped += 1
+                    continue
+
+                existing = auth_mgr.get_user_by_username(username)
+
+                if existing:
+                    # Always update profile fields for existing users
+                    profile_fields = {k: v for k, v in u.items()
+                                      if k not in ("id", "username", "password_hash", "avatar_path")}
+                    auth_mgr.update_profile(username, profile_fields)
+                    imported += 1
+                elif mode == "replace":
+                    # Create missing user with temporary password
+                    role = u.get("role", "guest")
+                    auth_mgr.create_user(username, "hecos", role)
+                    profile_fields = {k: v for k, v in u.items()
+                                      if k not in ("id", "username", "password_hash", "avatar_path")}
+                    auth_mgr.update_profile(username, profile_fields)
+                    imported += 1
+                else:
+                    skipped += 1
+
+            return jsonify({"ok": True, "imported": imported, "skipped": skipped}), 201
+        except Exception as e:
+            logger.error(f"[Auth API] Errore users_restore: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/users/<username>/export", methods=["GET"])
+    @login_required
+    def export_user(username):
+        """Export a single user's profile as JSON (admin or own profile only)."""
+        if username == "me":
+            username = current_user.username
+        if current_user.role != "admin" and current_user.username != username:
+            return jsonify({"ok": False, "error": "Non autorizzato"}), 403
+        try:
+            profile = auth_mgr.get_profile(username)
+            if not profile:
+                return jsonify({"ok": False, "error": "Utente non trovato"}), 404
+            profile.pop("password_hash", None)
+            return jsonify({"ok": True, "user": profile})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/users/import_single", methods=["POST"])
+    @admin_required
+    def import_user_single():
+        """
+        Import/update a single user profile from JSON.
+        Body: { user: {...} }
+        If the user doesn't exist, creates them with temp password 'hecos'.
+        """
+        try:
+            data = request.get_json(force=True) or {}
+            u    = data.get("user", {})
+            username = u.get("username", "").strip()
+            if not username:
+                return jsonify({"ok": False, "error": "Username mancante"}), 400
+            if username == "admin" and current_user.username != "admin":
+                return jsonify({"ok": False, "error": "Non puoi importare l'account admin"}), 403
+
+            existing = auth_mgr.get_user_by_username(username)
+            if not existing:
+                role = u.get("role", "guest")
+                auth_mgr.create_user(username, "hecos", role)
+
+            profile_fields = {k: v for k, v in u.items()
+                              if k not in ("id", "username", "password_hash", "avatar_path")}
+            auth_mgr.update_profile(username, profile_fields)
+            created = not existing
+            return jsonify({"ok": True, "created": created, "username": username}), 201
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+

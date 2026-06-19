@@ -50,9 +50,13 @@
 .field input[type=text],
 .field input[type=number],
 .field input[type=password],
+.field input[type=email],
+.field input[type=tel],
+.field input[type=date],
 .field select,
 .field textarea,
-.config-input {
+.config-input,
+.form-control {
   width: 100%;
   padding: 10px 14px;
   background: var(--bg3);
@@ -65,7 +69,7 @@
   outline: none;
 }
 
-.field input:focus, .field select:focus, .field textarea:focus, .config-input:focus { 
+.field input:focus, .field select:focus, .field textarea:focus, .config-input:focus, .form-control:focus { 
   border-color: var(--accent); 
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
 }

@@ -8,6 +8,8 @@ if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
 
 _WA_MSG_BOX_SELECTORS = [
+    'div[contenteditable="true"][data-testid="conversation-compose-box-input"]',
+    'div[contenteditable="true"][tabindex="10"]',
     'footer div[contenteditable="true"]',
     'div[contenteditable="true"][data-tab="10"]',
     'div[contenteditable="true"][title="Type a message"]',
@@ -25,6 +27,7 @@ def main():
         input_data = json.loads(raw_input)
         phone = input_data["phone"]
         text = input_data["text"]
+        single_block = input_data.get("single_block", True)
     except Exception as e:
         print(f"❌ Errore IPC json: {e}")
         return
@@ -38,9 +41,9 @@ def main():
     try:
         with sync_playwright() as pw:
             try:
-                browser = pw.chromium.connect_over_cdp('http://localhost:9222', timeout=15000)
+                browser = pw.chromium.connect_over_cdp('http://127.0.0.1:9222', timeout=15000)
             except Exception as e:
-                print(f"❌ Impossibile connettersi a CDP: {e}")
+                print(f"❌ Impossibile connettersi a CDP: {e}. Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information.")
                 return
 
             url_web = f"https://web.whatsapp.com/send?phone={phone}&text={quote(text)}"
@@ -153,10 +156,26 @@ def main():
                 time.sleep(0.2)
                 
                 # E scriviamo il testo vero
-                msg_box.type(text, delay=10)
+                if single_block:
+                    lines = text.split('\n')
+                    for i, line in enumerate(lines):
+                        if line:
+                            msg_box.type(line, delay=10)
+                        if i < len(lines) - 1:
+                            wa_page.keyboard.press("Shift+Enter")
+                else:
+                    msg_box.type(text, delay=10)
                 time.sleep(0.5)
             except Exception:
-                msg_box.type(text, delay=10)
+                if single_block:
+                    lines = text.split('\n')
+                    for i, line in enumerate(lines):
+                        if line:
+                            msg_box.type(line, delay=10)
+                        if i < len(lines) - 1:
+                            wa_page.keyboard.press("Shift+Enter")
+                else:
+                    msg_box.type(text, delay=10)
                 time.sleep(0.5)
 
             # Send

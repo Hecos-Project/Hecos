@@ -15,13 +15,13 @@ from urllib.parse import quote
 from hecos.core.logging import logger
 
 # ── WhatsApp Web selectors (update here if WA changes UI) ──────────────────
-_WA_MSG_BOX_SELECTOR  = 'div[contenteditable="true"][data-tab="10"]'
-_WA_MSG_BOX_FALLBACK  = 'div[contenteditable="true"][title="Type a message"]'
+_WA_MSG_BOX_SELECTOR  = 'div[contenteditable="true"][data-testid="conversation-compose-box-input"]'
+_WA_MSG_BOX_FALLBACK  = 'div[contenteditable="true"][tabindex="10"]'
 _WA_MSG_SENT_SELECTOR = 'span[data-icon="msg-check"], span[data-icon="msg-dblcheck"]'
 _WA_LOADING_SELECTOR  = 'div[data-testid="intro-md-beta-logo-dark"], div[data-testid="qrcode"]'
 
 
-def _send_via_playwright(phone: str, text: str) -> str:
+def _send_via_playwright(phone: str, text: str, send_as_single_block: bool = True) -> str:
     """
     Usa un subprocess per inviare il messaggio via Playwright/CDP.
     Questo evita il crash "Cannot switch to a different thread" (greenlet error)
@@ -36,7 +36,7 @@ def _send_via_playwright(phone: str, text: str) -> str:
     if not os.path.exists(worker_script):
         return "FALLBACK_PYAUTOGUI"
 
-    input_data = json.dumps({"phone": phone, "text": text})
+    input_data = json.dumps({"phone": phone, "text": text, "single_block": send_as_single_block})
 
     try:
         # Esegui il worker in un subprocess isolato
@@ -89,7 +89,8 @@ def send(cfg, recipient: str, text: str, is_app_open: bool = False) -> str:
     try:
         from hecos.modules.browser import engine  # noqa: F401 — just check availability
         logger.info("MESSENGER/WhatsApp", f"Invio via Playwright/CDP a {phone}...")
-        result = _send_via_playwright(phone, text)
+        single_block = getattr(cfg, "send_as_single_block", True)
+        result = _send_via_playwright(phone, text, single_block)
         if result != "FALLBACK_PYAUTOGUI":
             logger.info("MESSENGER/WhatsApp", f"Risultato invio: {result}")
             return result
@@ -161,7 +162,8 @@ def _send_via_pyautogui(phone: str, text: str, is_app_open: bool) -> str:
         return (
             f"⚠️ [FALLBACK] Procedura pyautogui avviata per `{phone}`. "
             "Nessuna verifica reale possibile (metodo cieco). "
-            "Per invii affidabili, usa il browser CDP."
+            "Per invii affidabili, usa il browser CDP. "
+            "Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
         )
 
     except ImportError:
@@ -179,7 +181,7 @@ def check(cfg) -> str:
     try:
         from hecos.modules.browser import engine
         from playwright.sync_api import sync_playwright  # noqa: F401
-        cdp_status = "CDP connesso" if engine.is_running() else "CDP non connesso (browser non avviato)"
+        cdp_status = "CDP connesso" if engine.is_running() else "CDP non connesso (browser non avviato). Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
         return f"BETA (Playwright pronto — {cdp_status})"
     except ImportError:
         pass

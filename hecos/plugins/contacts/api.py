@@ -274,3 +274,41 @@ def birthdays():
         return jsonify({"ok": True, "today": today, "upcoming": upcoming})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ── Full Backup/Restore ─────────────────────────────────────────────────────────
+
+@contacts_bp.route("/backup", methods=["GET"])
+def contacts_backup():
+    """Exports all contacts (with fields) to a JSON backup."""
+    from hecos.plugins.contacts import store
+    try:
+        contacts = store.list_all(limit=1000000)  # get practically all
+        return jsonify({
+            "ok": True,
+            "contacts": contacts,
+            "count": len(contacts)
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@contacts_bp.route("/restore", methods=["POST"])
+def contacts_restore():
+    """
+    Restores contacts from a JSON backup.
+    Body: { contacts: [...], mode: 'duplicate' | 'replace' }
+    """
+    from hecos.plugins.contacts import store
+    try:
+        data = request.get_json(force=True) or {}
+        contacts = data.get("contacts", [])
+        mode = data.get("mode", "duplicate")
+
+        if not isinstance(contacts, list):
+            return jsonify({"ok": False, "error": "Invalid format, expected list of contacts"}), 400
+
+        count = store.import_full_backup(contacts, mode=mode)
+        return jsonify({"ok": True, "imported": count}), 201
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500

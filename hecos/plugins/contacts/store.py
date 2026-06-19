@@ -400,3 +400,60 @@ def get_birthdays_upcoming(days: int = 7) -> list:
         return sorted(results, key=lambda x: x["days_until_birthday"])
     finally:
         conn.close()
+
+
+def import_full_backup(contacts_list: list, mode: str = "duplicate") -> int:
+    """
+    Imports a full JSON backup of contacts.
+    :param mode: 'duplicate' (new IDs, append) or 'replace' (wipe all first).
+    Returns number of imported contacts.
+    """
+    if not isinstance(contacts_list, list):
+        return 0
+
+    imported = 0
+    conn = _get_conn()
+    try:
+        if mode == "replace":
+            conn.execute("DELETE FROM contacts")
+            # fields delete cascaded by FOREIGN KEY constraints
+
+        for c in contacts_list:
+            try:
+                new_id = str(uuid.uuid4())
+                now = datetime.utcnow().isoformat()
+                
+                display_name = c.get("display_name") or f"{c.get('first_name', '')} {c.get('last_name', '')}".strip() or "Imported"
+                
+                conn.execute(
+                    """INSERT INTO contacts
+                       (id, display_name, first_name, last_name, company, role,
+                        birthday, address, notes, label_color, tags, photo_path, photo_url, created_at, updated_at)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (new_id, display_name, c.get("first_name"), c.get("last_name"), c.get("company"), c.get("role"),
+                     c.get("birthday"), c.get("address"), c.get("notes"), c.get("label_color"), c.get("tags"),
+                     c.get("photo_path"), c.get("photo_url"), c.get("created_at") or now, c.get("updated_at") or now)
+                )
+                
+                # Import fields
+                fields = c.get("fields", [])
+                if fields:
+                    for f in fields:
+                        fid = str(uuid.uuid4())
+                        conn.execute(
+                            "INSERT INTO contact_fields (id, contact_id, field_type, label, value, is_primary) VALUES (?,?,?,?,?,?)",
+                            (fid, new_id, f.get("field_type"), f.get("label"), f.get("value"), int(f.get("is_primary", 0)))
+                        )
+                imported += 1
+            except Exception as row_e:
+                logger.error(f"[CONTACTS] store.import_full_backup row error: {row_e}")
+        
+        conn.commit()
+        return imported
+    except Exception as e:
+        logger.error(f"[CONTACTS] store.import_full_backup error: {e}")
+        conn.rollback()
+        return imported
+    finally:
+        conn.close()
+

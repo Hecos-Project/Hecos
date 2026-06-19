@@ -39,7 +39,18 @@
 
     <!-- ── Storage ────────────────────────────────────────────────── -->
     <div class="card">
-        <div class="card-title"><i class="fas fa-folder-open"></i> Storage</div>
+        <div class="card-title">
+            <i class="fas fa-folder-open"></i> Storage
+            <div style="margin-left:auto; display:flex; gap:6px;">
+                <button class="tpl-icon-btn" title="Backup All Flows" onclick="flowsBackup()">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="tpl-icon-btn" title="Restore Flows from Backup" onclick="document.getElementById('flows-restore-file').click()">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <input type="file" id="flows-restore-file" accept=".json" style="display:none" onchange="flowsRestoreFile(event)">
+            </div>
+        </div>
 
         <div class="field mt-2">
             <label>Flows Directory</label>
@@ -298,4 +309,93 @@ function _syncFlowsSlider() {
 
 /* Auto-refresh when panel is populated by config_mapper_extras.js:populateFlowsUI */
 /* (refreshFlowsList is called directly from populateFlowsUI - no MutationObserver needed) */
+
+/* ── Flows Backup / Restore ─────────────────────────────────────── */
+
+window.flowsBackup = async function() {
+    try {
+        if (window.showToast) showToast('Preparing flows backup...', 'info');
+        const res  = await fetch('/api/flows/backup');
+        if (!res.ok) throw new Error('Backup request failed');
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+        const payload = {
+            type:        'hecos_flows_backup',
+            exported_at: new Date().toISOString(),
+            flows:       data.flows
+        };
+        const filename = `hecos_flows_backup_${new Date().toISOString().split('T')[0]}.json`;
+        const content  = JSON.stringify(payload, null, 2);
+
+        await _flowsDownloadJson(filename, content);
+        if (window.showToast) showToast(`Backup of ${data.count} flows completed`, 'success');
+    } catch(err) {
+        console.error('[FLOWS] Backup error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Backup error: ' + err.message);
+    }
+};
+
+window.flowsRestoreFile = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    let mode = 'merge';
+    const msg = 'Restore Flows\n\nOK = Merge (keep existing, add new)\nCancel = Replace all (delete existing flows first)';
+    if (!confirm(msg)) {
+        mode = 'replace';
+        if (!confirm('⚠️ Warning: ALL existing flows will be deleted. Continue?')) return;
+    }
+
+    try {
+        const text    = await file.text();
+        const payload = JSON.parse(text);
+        const flows   = payload.flows || payload;
+        if (!Array.isArray(flows)) throw new Error('Invalid file: flows list missing.');
+
+        if (window.showToast) showToast(`Restoring ${flows.length} flows...`, 'info');
+
+        const res = await fetch('/api/flows/restore', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ flows, mode })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+        const msg2 = `Restored ${result.imported} flows` + (result.skipped ? ` (${result.skipped} skipped — already exist)` : '');
+        if (window.showToast) showToast(msg2, 'success');
+        window.refreshFlowsList();
+    } catch(err) {
+        console.error('[FLOWS] Restore error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
+async function _flowsDownloadJson(filename, content) {
+    if (window.showSaveFilePicker) {
+        try {
+            const fh = await window.showSaveFilePicker({
+                suggestedName: filename,
+                types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+            });
+            const w = await fh.createWritable();
+            await w.write(content);
+            await w.close();
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+            throw e;
+        }
+    } else {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+}
 </script>

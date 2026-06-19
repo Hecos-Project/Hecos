@@ -1,6 +1,20 @@
 <!-- MESSENGER CONFIG PANEL -->
 <div id="tab-messenger" class="panel">
 
+    <!-- ── Info Templates ────────────────────────────────────────────────── -->
+    <div class="card" style="border-left: 4px solid var(--accent); background: rgba(var(--accent-rgb), 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-weight: 500; margin-bottom: 4px;"><i class="fas fa-file-alt" style="color:var(--accent); margin-right:6px;"></i> Gestione Template</div>
+            <p style="font-size: 12px; color: var(--muted); margin: 0;">
+                Crea messaggi predefiniti per WhatsApp, Telegram e Discord.<br>
+                Puoi impostare un template come <strong style="color:var(--text);">Default</strong> per formattare automaticamente le risposte di Hecos.
+            </p>
+        </div>
+        <button class="hc-cta-btn" onclick="hecos.switchTab('tab-templates'); if(typeof TemplateManager !== 'undefined') TemplateManager.init();">
+            <i class="fas fa-external-link-alt"></i> Apri Templates
+        </button>
+    </div>
+
     <div class="card">
         <div class="card-title"><i class="fab fa-telegram-plane"></i> Telegram (Raccomandato)</div>
         <p style="font-size:12px; color:#888; margin-bottom:16px;">
@@ -50,6 +64,15 @@
             <label>Prefisso Internazionale Default</label>
             <input type="text" id="whatsapp-phone-country-code" placeholder="+39" autocomplete="off">
             <small style="color:#666; font-size:11px;">Aggiunto in automatico ai numeri digitati senza prefisso (es. +39 per l'Italia).</small>
+        </div>
+
+        <div class="field">
+            <label>Invia in un unico blocco (Consigliato)</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-send-as-single-block" onchange="markDirty()">
+                <span class="slider"></span>
+            </label>
+            <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Invia i testi multiriga e i template in un unico messaggio (anziché dividere in più messaggi continui).</small>
         </div>
     </div>
 

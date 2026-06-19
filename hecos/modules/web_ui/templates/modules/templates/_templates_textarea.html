@@ -1,0 +1,52 @@
+<!-- Shared textarea for messenger channels (WhatsApp, Telegram, Discord) -->
+
+<!-- ── Header (static) ────────────────────────────────────────────────── -->
+<div class="tpl-field" style="margin-bottom: 12px;">
+  <label style="display:flex; align-items:center; gap:8px;">
+    <i class="fas fa-heading" style="color:var(--accent);"></i>
+    Header
+    <span class="tpl-optional" style="font-size:11px; color:var(--muted);">(static — no variables, always prepended)</span>
+  </label>
+  <textarea id="tpl-edit-header" rows="3"
+            placeholder="📢 Messaggio inviato da Antonio Meloni&#10;────────────────"
+            oninput="TemplateManager._dirty=true"
+            class="tpl-body-textarea"
+            style="border-bottom: 2px dashed var(--border); opacity: 0.85;"></textarea>
+  <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+    <i class="fas fa-lock" style="font-size:10px;"></i>
+    L'header viene aggiunto automaticamente in cima al messaggio. Non accetta variabili <code>{% raw %}{{ }}{% endraw %}</code>.
+  </div>
+</div>
+
+<!-- ── Message Body (dynamic) ─────────────────────────────────────────── -->
+<div class="tpl-field">
+  <label>Message Body</label>
+  <textarea id="tpl-edit-body-text" rows="10"
+            placeholder="Hi {{ nome }}, your order {{ ordine }} is ready!"
+            oninput="TemplateManager.onTextBodyInput(this.value)"
+            class="tpl-body-textarea"></textarea>
+</div>
+
+<!-- ── Footer / Firma ──────────────────────────────────────────────────── -->
+<div class="tpl-field" style="margin-top: 12px;">
+  <label style="display:flex; align-items:center; gap:8px;">
+    <i class="fas fa-signature" style="color:var(--accent);"></i>
+    Footer / Firma
+    <span class="tpl-optional" style="font-size:11px; color:var(--muted);">(static — no variables, always appended)</span>
+  </label>
+  <textarea id="tpl-edit-footer" rows="4"
+            placeholder="-- &#10;Cordiali saluti,&#10;Il Team di Hecos&#10;📞 +39 02 000 0000"
+            oninput="TemplateManager._dirty=true"
+            class="tpl-body-textarea"
+            style="border-top: 2px dashed var(--border); opacity: 0.85;"></textarea>
+  <div style="font-size:11px; color:var(--muted); margin-top:4px;">
+    <i class="fas fa-lock" style="font-size:10px;"></i>
+    Il footer viene aggiunto automaticamente in fondo al messaggio. Non accetta variabili <code>{% raw %}{{ }}{% endraw %}</code>.
+  </div>
+</div>
+
+<div class="tpl-field">
+  <label>Live Preview</label>
+  <pre id="tpl-text-preview" class="tpl-preview-text">(empty)</pre>
+</div>
+

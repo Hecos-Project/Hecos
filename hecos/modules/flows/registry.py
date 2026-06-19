@@ -589,7 +589,7 @@ _setup_system_wrappers()
 
 
 def _setup_ai_wrappers():
-    def _ai_prompt(prompt: str = "", save_to_chat: bool = True):
+    def _ai_prompt(prompt: str = "", save_to_chat: bool = True, **kwargs):
         """
         Sends a prompt directly to the Hecos AI brain (AgentExecutor) and
         returns the full response text. The flow blocks here until the AI
@@ -728,7 +728,25 @@ def _auto_register_hecos_modules():
             "EXECUTOR__create_dir": {"directory_path": "string"},
             "EXECUTOR__list_dir": {"directory_path": "string"},
             "EXECUTOR__kill_process": {"name": "string"},
-            "MAIL__send_email": {"to": "string", "subject": "string", "body": "string"},
+            # ── Mail ──────────────────────────────────────────────────────────────
+            "MAIL__send_email": {
+                "to":            "string (recipient email or contact name)",
+                "subject":       "string (email subject — overridden if template_id is set)",
+                "body":          "string (email body — overridden if template_id is set)",
+                "cc":            "string (optional CC addresses)",
+                "bcc":           "string (optional BCC addresses)",
+                "is_html":       "boolean (true = body is HTML)",
+                "template_id":   "string (optional — ID of an email template to use)",
+                "template_vars": "dict   (optional — variable values to interpolate in the template, e.g. {\"nome\": \"Mario\"})",
+            },
+            # ── Messenger ─────────────────────────────────────────────────────────
+            "MESSENGER__send_message": {
+                "to":            "string (recipient — prefix with platform, e.g. 'telegram:@username')",
+                "text":          "string (message text — overridden if template_id is set)",
+                "platform":      "string (optional — 'telegram' | 'whatsapp' | 'discord')",
+                "template_id":   "string (optional — ID of a messenger template to use)",
+                "template_vars": "dict   (optional — variable values to interpolate in the template)",
+            },
             "WEATHER__get_forecast": {"location": "string"},
         }
 
@@ -790,11 +808,21 @@ def execute_action(name: str, params: Dict[str, Any], context: Dict[str, Any]) -
       1. module.tools.<method>(**params)   [class-based singleton e.g. REMINDER, MAIL]
       2. module.<method>(**params)         [legacy/module-level functions]
     """
+    import inspect
+
+    def _call_with_filtered_params(method, params_dict):
+        sig = inspect.signature(method)
+        has_kwargs = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+        if has_kwargs:
+            return method(**params_dict)
+        filtered = {k: v for k, v in params_dict.items() if k in sig.parameters}
+        return method(**filtered)
+
     entry = _REGISTRY.get(name)
 
     if entry and entry.get("fn"):
         # Directly registered Python callable
-        return entry["fn"](**params)
+        return _call_with_filtered_params(entry["fn"], params)
 
     # Dynamic dispatch via module_loader
     if "__" in name:
@@ -812,13 +840,13 @@ def execute_action(name: str, params: Dict[str, Any], context: Dict[str, Any]) -
                     method = getattr(tools_instance, method_name, None)
                     if callable(method):
                         log.debug(f"[Flows] Dispatching {name} via module.tools")
-                        return method(**params)
+                        return _call_with_filtered_params(method, params)
 
                 # Priority 2: module-level function (legacy / free-function plugins)
                 method = getattr(plugin_mod, method_name, None)
                 if callable(method):
                     log.debug(f"[Flows] Dispatching {name} via module-level function")
-                    return method(**params)
+                    return _call_with_filtered_params(method, params)
 
                 # Nothing found — emit a helpful error
                 available = [m for m in dir(tools_instance or plugin_mod) if not m.startswith("_")]

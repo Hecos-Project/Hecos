@@ -103,9 +103,10 @@ def launch(headless: bool = False, block_ads: bool = True, timeout: int = 10000,
                 _LAST_ERROR = (
                     f"CDP Takeover failed: Chrome must be launched with "
                     f"'--remote-debugging-port={cdp_port}'. "
-                    f"Details: {cdp_e}"
+                    f"Details: {cdp_e}. "
+                    f"Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
                 )
-                logger.error(f"[BROWSER] ❌ CDP connection failed on port {cdp_port}: {cdp_e}")
+                logger.error(f"[BROWSER] ❌ CDP connection failed on port {cdp_port}: {cdp_e}. Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information.")
                 logger.info(f"[BROWSER] Falling back to standard app_mode...")
                 mode = "app_mode"
 

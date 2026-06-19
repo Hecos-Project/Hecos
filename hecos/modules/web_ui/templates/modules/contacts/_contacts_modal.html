@@ -122,11 +122,16 @@
         </div>
 
         <!-- Actions -->
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-            <button class="btn btn-secondary" onclick="contactsUI.closeForm()">{{ t('ext_contacts_btn_cancel')
-                }}</button>
-            <button class="btn btn-primary" onclick="contactsUI.save()"><i class="fas fa-save"></i> {{
-                t('ext_contacts_btn_save') }}</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <div>
+                <button class="btn btn-secondary" onclick="contactsUI.exportSingle()" id="btn-contact-export" style="display:none;" title="Export Contact">
+                    <i class="fas fa-file-export"></i> {{ t('ext_contacts_btn_export') or 'Export' }}
+                </button>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-secondary" onclick="contactsUI.closeForm()">{{ t('ext_contacts_btn_cancel') }}</button>
+                <button class="btn btn-primary" onclick="contactsUI.save()"><i class="fas fa-save"></i> {{ t('ext_contacts_btn_save') }}</button>
+            </div>
         </div>
     </div>
 </div>

@@ -288,4 +288,86 @@ function listsHubShowStatus(html, type) {
 function _lhubEsc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+// ── Backup / Restore ──────────────────────────────────────────────────────────
+async function listsBackup() {
+    try {
+        if (window.toast) window.toast('info', 'Preparing backup...');
+        const res = await fetch('/api/lists/backup');
+        if (!res.ok) throw new Error('Backup request failed');
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+        const defaultFilename = `hecos_lists_backup_${new Date().toISOString().split('T')[0]}.json`;
+        const content = JSON.stringify(data, null, 2);
+
+        if (window.showSaveFilePicker) {
+            try {
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: defaultFilename,
+                    types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
+                });
+                const writable = await fileHandle.createWritable();
+                await writable.write(content);
+                await writable.close();
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                throw err;
+            }
+        } else {
+            const blob = new Blob([content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = defaultFilename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+
+        if (window.toast) window.toast('success', `Backup di ${data.count} liste completato`);
+    } catch (err) {
+        console.error('[LISTS] Backup error:', err);
+        if (window.toast) window.toast('error', err.message);
+        else alert('Backup error: ' + err.message);
+    }
+}
+
+async function listsRestore(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    let mode = 'duplicate';
+    const msg = "Ripristino backup liste.\n\nOK = Aggiungi come copie (sicuro, mantiene tutto)\nAnnulla = Sostituisci tutto (cancella le liste esistenti)";
+    if (!confirm(msg)) {
+        mode = 'replace';
+        if (!confirm('⚠️ Attenzione: TUTTE le liste esistenti verranno cancellate. Continuare?')) return;
+    }
+
+    try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        if (!payload.lists || !Array.isArray(payload.lists)) {
+            throw new Error("File non valido. Assicurati che sia un backup JSON di Hecos Lists.");
+        }
+
+        if (window.toast) window.toast('info', `Ripristino di ${payload.lists.length} liste...`);
+
+        const res = await fetch('/api/lists/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lists: payload.lists, mode })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+        if (window.toast) window.toast('success', `Ripristinate ${result.restored_count} liste`);
+        // Refresh the lists view
+        if (typeof listsFetchLists === 'function') listsFetchLists();
+        listsHubLoadExportSelect();
+    } catch (err) {
+        console.error('[LISTS] Restore error:', err);
+        if (window.toast) window.toast('error', err.message);
+        else alert('Restore error: ' + err.message);
+    }
+}
 </script>

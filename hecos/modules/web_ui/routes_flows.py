@@ -278,6 +278,33 @@ def init_flows_routes(app, cfg_mgr, logger=None):
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/flows/variables", methods=["GET"])
+    @login_required
+    def api_flows_variables():
+        """Extract all variables defined via output_as in saved flows."""
+        try:
+            from hecos.modules.flows.storage import _get_flows_dir, _load_yaml_file
+            import os
+            flows_dir = _get_flows_dir()
+            variables = set()
+            for fname in sorted(os.listdir(flows_dir)):
+                if not fname.endswith(".yaml"): continue
+                try:
+                    data = _load_yaml_file(os.path.join(flows_dir, fname))
+                    # Check triggers for variables
+                    trigger = data.get("trigger", {})
+                    # For example, Discord triggers might provide specific context
+                    # Check pipeline nodes for output_as
+                    for node in data.get("pipeline", []):
+                        out_as = node.get("output_as")
+                        if out_as and isinstance(out_as, str):
+                            variables.add(out_as.strip())
+                except Exception:
+                    pass
+            return jsonify({"ok": True, "variables": sorted(list(variables))})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     # ── SSE: Real-time execution log ───────────────────────────────────────────
 
     @app.route("/api/flows/<flow_id>/log/stream", methods=["GET"])
@@ -315,5 +342,86 @@ def init_flows_routes(app, cfg_mgr, logger=None):
                 "X-Accel-Buffering": "no",
             },
         )
+
+    # ── Backup / Restore ──────────────────────────────────────────────────────
+
+    @app.route("/api/flows/backup", methods=["GET"])
+    @login_required
+    def api_flows_backup():
+        """Export all flows as a JSON bundle (each flow as raw YAML string)."""
+        try:
+            from hecos.modules.flows.storage import list_flows, get_flow_yaml
+            summaries = list_flows()
+            flows_bundle = []
+            for s in summaries:
+                yaml_text = get_flow_yaml(s["id"])
+                if yaml_text is not None:
+                    flows_bundle.append({
+                        "id":   s["id"],
+                        "name": s["name"],
+                        "yaml": yaml_text,
+                    })
+            return jsonify({
+                "ok": True,
+                "flows": flows_bundle,
+                "count": len(flows_bundle),
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/flows/restore", methods=["POST"])
+    @login_required
+    def api_flows_restore():
+        """
+        Restore flows from a backup bundle.
+        Body: { flows: [{id, name, yaml}], mode: 'merge' | 'replace' }
+        - merge  (default): skip existing flows with the same ID
+        - replace: overwrite all existing flows, then import
+        """
+        try:
+            from hecos.modules.flows.storage import save_flow, delete_flow, list_flows
+            import yaml as _yaml
+
+            data   = request.get_json(force=True) or {}
+            bundle = data.get("flows", [])
+            mode   = data.get("mode", "merge")
+
+            if not isinstance(bundle, list):
+                return jsonify({"ok": False, "error": "Invalid format: expected list of flows"}), 400
+
+            if mode == "replace":
+                # Delete all existing flows first
+                for existing in list_flows():
+                    delete_flow(existing["id"])
+
+            imported = 0
+            skipped  = 0
+            for entry in bundle:
+                flow_id   = entry.get("id", "").strip()
+                yaml_text = entry.get("yaml", "").strip()
+                if not flow_id or not yaml_text:
+                    continue
+
+                # In merge mode, skip flows that already exist
+                if mode == "merge":
+                    from hecos.modules.flows.storage import get_flow
+                    if get_flow(flow_id) is not None:
+                        skipped += 1
+                        continue
+
+                # Parse YAML and save
+                try:
+                    parsed = _yaml.safe_load(yaml_text)
+                    if not isinstance(parsed, dict):
+                        continue
+                    parsed["id"] = flow_id
+                    save_flow(parsed, raw_yaml=yaml_text)
+                    imported += 1
+                except Exception as exc:
+                    log.warning(f"[Flows.Restore] Failed to import flow '{flow_id}': {exc}")
+
+            return jsonify({"ok": True, "imported": imported, "skipped": skipped}), 201
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     _log.info("[Flows] Routes registered.")

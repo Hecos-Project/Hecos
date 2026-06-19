@@ -5,8 +5,14 @@
     "user_id": "admin",
     "namespace": "knowledge"
   },
-  "frasi da zoccola": {
-    "ingested_at": "2026-05-22 07:48:24",
+  "i miei cartoni preferiti": {
+    "ingested_at": "2026-06-17 09:14:02",
+    "chunks": 1,
+    "user_id": "admin",
+    "namespace": "knowledge"
+  },
+  "frasi sporcaccione per Urania": {
+    "ingested_at": "2026-06-17 09:36:32",
     "chunks": 1,
     "user_id": "admin",
     "namespace": "knowledge"

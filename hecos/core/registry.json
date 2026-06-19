@@ -592,6 +592,22 @@
             }
         ]
     },
+    "TEMPLATES": {
+        "description": "Find and render predefined templates for emails and messages.",
+        "commands": {
+            "list_templates": "List all available templates.",
+            "render_template": "Render a template by replacing its variables and combining header/body/footer."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "📝",
+        "category": "PLUGINS",
+        "module_type": "plugin",
+        "slash_commands": []
+    },
     "USERS": {
         "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
         "commands": {

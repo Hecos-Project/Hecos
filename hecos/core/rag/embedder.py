@@ -215,6 +215,9 @@ def get_embedder(embedder_type: str = "fastembed",
       3. Fallback subprocess se ST non è installato
       4. StubEmbedder — no-op d'emergenza
     """
+    if not model_name:
+        model_name = "BAAI/bge-small-en-v1.5"
+        
     # ── 1. FastEmbed (subprocess isolato) — SEMPRE preferito su Windows ──────
     #    Non usa FastEmbedEmbedder direttamente per evitare il crash onnx+Playwright.
     if embedder_type in ("fastembed", "onnx"):

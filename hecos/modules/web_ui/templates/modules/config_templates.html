@@ -1,0 +1,296 @@
+<!-- ──────────────────────────────────────────────────────────────────────── -->
+<!-- ORCHESTRATOR: Template Manager                                          -->
+<!-- Centralised editor for Email, WhatsApp, Telegram and Discord templates -->
+<!-- ──────────────────────────────────────────────────────────────────────── -->
+<div id="tab-templates" class="panel tpl-root">
+
+  {% include 'modules/templates/_templates_styles.html' %}
+
+  <!-- ── GrapeJS CDN (email builder) ──────────────────────────────────── -->
+  <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.21.13/dist/css/grapes.min.css">
+  <script src="https://unpkg.com/grapesjs@0.21.13/dist/grapes.min.js"></script>
+
+  <!-- ── Layout: Sidebar + Main ──────────────────────────────────────── -->
+  <div class="card" style="height: calc(100vh - 120px); display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: var(--radius);">
+    <div class="tpl-layout" style="flex: 1; border-radius: inherit;">
+
+    <!-- ─── SIDEBAR ──────────────────────────────────────────────────── -->
+    <aside class="tpl-sidebar">
+      <div class="tpl-sidebar-header">
+        <div style="display: flex; align-items: center; flex: 1;">
+          <i class="fas fa-file-alt"></i>
+          <span>Templates</span>
+        </div>
+        <div class="tpl-sidebar-actions">
+          <button class="tpl-icon-btn" title="Backup Templates" onclick="TemplateManager.exportTemplates()">
+            <i class="fas fa-download"></i>
+          </button>
+          <button class="tpl-icon-btn" title="Restore Templates" onclick="document.getElementById('tpl-import-file').click()">
+            <i class="fas fa-upload"></i>
+          </button>
+          <input type="file" id="tpl-import-file" accept=".json" style="display: none" onchange="TemplateManager.importTemplates(event)">
+        </div>
+      </div>
+
+      <!-- Channel groups -->
+      {% set channels = [
+        ('email',    'fas fa-envelope',        'Email'),
+        ('whatsapp', 'fab fa-whatsapp',        'WhatsApp'),
+        ('telegram', 'fab fa-telegram-plane',  'Telegram'),
+        ('discord',  'fab fa-discord',         'Discord'),
+      ] %}
+
+      {% for ch_id, ch_icon, ch_label in channels %}
+      <div class="tpl-channel-group">
+        <div class="tpl-channel-header">
+          <span><i class="{{ ch_icon }}"></i> {{ ch_label }}</span>
+          <button class="tpl-new-btn" title="New {{ ch_label }} template"
+                  onclick="TemplateManager.newTemplate('{{ ch_id }}')">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <div id="tpl-list-{{ ch_id }}" class="tpl-channel-list">
+          <div class="tpl-sidebar-empty">Loading…</div>
+        </div>
+      </div>
+      {% endfor %}
+    </aside>
+
+    <!-- ─── MAIN AREA ────────────────────────────────────────────────── -->
+    <main class="tpl-main">
+
+      <!-- Empty state -->
+      <div id="tpl-empty-section" class="tpl-empty-state" style="padding: 30px; display:flex; flex-direction:column; gap:15px; align-items:center;">
+        <div style="text-align:center; margin-bottom: 10px;">
+          <i class="fas fa-file-alt" style="font-size: 2rem; color: var(--accent); opacity: 0.5; margin-bottom: 8px;"></i>
+          <h3 style="font-size: 1.1rem; margin-bottom: 4px;">No template selected</h3>
+          <p style="color: var(--muted); font-size: 0.85rem; max-width: 400px; text-align: center; margin: 0 auto;">Choose an existing template from the sidebar or create a new one.</p>
+          <button class="btn btn-sm btn-secondary" onclick="TemplateManager.newTemplate('email')" style="margin-top: 12px; border-color: rgba(var(--accent-rgb), 0.4); color: var(--accent);">
+            <i class="fas fa-plus" style="font-size: 0.75rem;"></i> New Email Template
+          </button>
+        </div>
+
+        <!-- Single Export Section -->
+        <div class="tpl-section" style="width: 100%; max-width: 500px; text-align: left;">
+            <div class="tpl-section-title"><i class="fas fa-file-export" style="font-size: 0.8rem;"></i> Export Template</div>
+            <p class="tpl-section-desc">Download a specific template as a JSON file.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <select id="tpl-single-export-select" class="config-input" style="flex:1; max-width: 280px; padding: 6px 10px; font-size: 0.85rem;">
+                    <!-- Populated by JS -->
+                </select>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="TemplateManager.exportSingleTemplate()">
+                    <i class="fas fa-download" style="font-size: 0.75rem;"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Single Import Section -->
+        <div class="tpl-section" style="width: 100%; max-width: 500px; text-align: left;">
+            <div class="tpl-section-title"><i class="fas fa-file-import" style="font-size: 0.8rem;"></i> Import Template</div>
+            <p class="tpl-section-desc">Import a single template from a JSON file.</p>
+            <div class="tpl-import-drop" id="tpl-single-import-drop"
+                 onclick="document.getElementById('tpl-single-import-file').click()"
+                 ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                 ondragleave="this.classList.remove('drag-over')"
+                 ondrop="TemplateManager.importSingleDrop(event)">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Click or drag a JSON template file here</span>
+                <input type="file" id="tpl-single-import-file" accept=".json"
+                       style="display:none" onchange="TemplateManager.importSingleFile(event)">
+            </div>
+        </div>
+      </div>
+
+      <!-- List state (just a placeholder — editor opens immediately on click) -->
+      <div id="tpl-list-section" style="display:none"></div>
+
+      <!-- ── Editor ────────────────────────────────────────────────── -->
+      <div id="tpl-editor-section" style="display:none" class="tpl-editor">
+
+        <!-- Header bar -->
+        <div class="tpl-editor-topbar">
+          <div class="tpl-editor-title">
+            <button class="tpl-btn tpl-sidebar-toggle" onclick="document.querySelector('.tpl-layout').classList.toggle('hide-sidebar')" title="Toggle Templates Sidebar">
+              <i class="fas fa-bars"></i>
+            </button>
+            <i class="fas fa-pen-nib"></i>
+            <input id="tpl-edit-name" type="text" placeholder="Template name…"
+                   class="tpl-name-input" oninput="TemplateManager._dirty=true">
+          </div>
+          <div class="tpl-editor-actions">
+            <select id="tpl-edit-channel" class="tpl-channel-select"
+                    onchange="TemplateManager.onChannelChange(this.value)">
+              <option value="email">📧 Email</option>
+              <option value="whatsapp">💬 WhatsApp</option>
+              <option value="telegram">📨 Telegram</option>
+              <option value="discord">🔵 Discord</option>
+            </select>
+            <button class="tpl-btn tpl-btn-save" onclick="TemplateManager.saveTemplate()">
+              <i class="fas fa-save"></i> Save
+            </button>
+            <button class="tpl-btn tpl-btn-danger" id="tpl-delete-btn"
+                    onclick="TemplateManager.deleteTemplate(TemplateManager._activeId)" style="display:none">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="tpl-field">
+          <label>Description <span class="tpl-optional">(optional)</span></label>
+          <input id="tpl-edit-description" type="text" placeholder="Short description…"
+                 oninput="TemplateManager._dirty=true">
+        </div>
+
+        <!-- Default Flag -->
+        <div class="tpl-field" style="flex-direction: row; align-items: center; gap: 10px; margin-bottom: 20px;">
+          <label class="switch is-small" style="margin: 0;">
+            <input type="checkbox" id="tpl-edit-is-default" onchange="TemplateManager._dirty=true">
+            <span class="slider"></span>
+          </label>
+          <span style="font-size: 13px; color: var(--text); font-weight: 500;">
+            Usa come Default per questo canale
+            <span class="tpl-optional" style="font-weight: normal;">(verrà auto-applicato ai messaggi di chat)</span>
+          </span>
+        </div>
+
+        <!-- ── Tabs ──────────────────────────────────────────────────── -->
+        <div class="tpl-tabs">
+          <button class="tpl-tab active" data-tab="tpl-tab-content" onclick="tplSwitchTab(this,'tpl-tab-content')">
+            <i class="fas fa-edit"></i> Content
+          </button>
+          <button class="tpl-tab" data-tab="tpl-tab-variables" onclick="tplSwitchTab(this,'tpl-tab-variables')">
+            <i class="fas fa-code"></i> Variables
+          </button>
+          <button class="tpl-tab" data-tab="tpl-tab-preview" onclick="tplSwitchTab(this,'tpl-tab-preview')">
+            <i class="fas fa-eye"></i> Preview
+          </button>
+          <button id="tpl-tab-history" class="tpl-tab" data-tab="tpl-tab-history-pane"
+                  onclick="tplSwitchTab(this,'tpl-tab-history-pane')">
+            <i class="fas fa-history"></i> History
+          </button>
+        </div>
+
+        <!-- ─ Tab: Content ─────────────────────────────────────────── -->
+        <div id="tpl-tab-content" class="tpl-tab-pane active">
+
+          <!-- EMAIL editor -->
+          <div id="tpl-editor-email">
+            <div class="tpl-field">
+              <label>Subject</label>
+              <input id="tpl-edit-subject" type="text" placeholder="Email subject… {{ nome }}"
+                     oninput="TemplateManager._dirty=true">
+            </div>
+            <div class="tpl-grapes-wrapper">
+              <div id="tpl-grapes-loading" class="tpl-grapes-loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading email builder…
+              </div>
+              <!-- GrapeJS panels -->
+              <div class="tpl-grapes-layout">
+                <!-- TOP BAR: Blocks -->
+                <div class="tpl-grapes-topbar-wrapper" style="display: flex; gap: 10px; align-items: center; background: rgba(8,8,20,0.6); padding-right: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <div id="tpl-grapes-blocks" class="tpl-grapes-blocks-top" style="flex: 1;"></div>
+                  <button class="tpl-btn" onclick="document.querySelector('.tpl-grapes-layout').classList.toggle('hide-right-panel')" title="Toggle Properties Panel" style="white-space: nowrap;">
+                    <i class="fas fa-sliders-h"></i> <span style="margin-left:5px">Properties</span>
+                  </button>
+                  <button class="tpl-btn" onclick="document.querySelector('.tpl-layout').classList.toggle('hide-sidebar'); document.querySelector('.tpl-grapes-layout').classList.toggle('hide-right-panel');" title="Toggle Fullscreen Canvas" style="white-space: nowrap;">
+                    <i class="fas fa-expand"></i> <span style="margin-left:5px">Focus Mode</span>
+                  </button>
+                </div>
+                <div class="tpl-grapes-main">
+                  <div id="tpl-grapes-container" class="tpl-grapes-canvas"></div>
+                  <div class="tpl-grapes-right">
+                    <div id="tpl-grapes-styles" class="tpl-grapes-panel"></div>
+                    <div id="tpl-grapes-traits" class="tpl-grapes-panel"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- WHATSAPP editor -->
+          <div id="tpl-editor-whatsapp" style="display:none">
+            <div class="tpl-messenger-info">
+              <i class="fab fa-whatsapp" style="color:#25d366"></i>
+              WhatsApp supports <strong>plain text</strong> only.
+              Use <code>*bold*</code>, <code>_italic_</code>, <code>~strikethrough~</code>.
+            </div>
+            {% include 'modules/templates/_templates_textarea.html' %}
+          </div>
+
+          <!-- TELEGRAM editor -->
+          <div id="tpl-editor-telegram" style="display:none">
+            <div class="tpl-messenger-info">
+              <i class="fab fa-telegram-plane" style="color:#2ca5e0"></i>
+              Telegram supports <strong>Markdown</strong>: <code>**bold**</code>, <code>_italic_</code>, inline links.
+            </div>
+            {% include 'modules/templates/_templates_textarea.html' %}
+          </div>
+
+          <!-- DISCORD editor -->
+          <div id="tpl-editor-discord" style="display:none">
+            <div class="tpl-messenger-info">
+              <i class="fab fa-discord" style="color:#7289da"></i>
+              Discord supports <strong>Markdown</strong>: <code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>.
+            </div>
+            {% include 'modules/templates/_templates_textarea.html' %}
+          </div>
+        </div>
+
+        <!-- ─ Tab: Variables ───────────────────────────────────────── -->
+        <div id="tpl-tab-variables" class="tpl-tab-pane" style="display:none">
+          <div class="tpl-vars-header">
+            <p>Variables are detected automatically from <code>{{ "{{ var }}" }}</code> placeholders in your template.</p>
+            <button class="tpl-btn" onclick="TemplateManager.loadFlowVariables()" title="Import variables from the running flow">
+              <i class="fas fa-bolt"></i> Import from Flow
+            </button>
+          </div>
+          <div id="tpl-variables-list" class="tpl-vars-list">
+            <span style="opacity:.5;font-size:.75rem">No variables detected</span>
+          </div>
+          <div class="tpl-vars-hint">
+            Click a variable chip to copy it, or click while the body textarea is focused to insert at cursor.
+          </div>
+        </div>
+
+        <!-- ─ Tab: Preview ─────────────────────────────────────────── -->
+        <div id="tpl-tab-preview" class="tpl-tab-pane" style="display:none">
+          <div class="tpl-preview-controls">
+            <label>Test variables (JSON)</label>
+            <textarea id="tpl-preview-vars" rows="3"
+                      placeholder='{"nome": "Mario", "prodotto": "Hecos"}'></textarea>
+            <button class="tpl-btn tpl-btn-save" onclick="TemplateManager.previewRender()">
+              <i class="fas fa-play"></i> Render Preview
+            </button>
+          </div>
+          <div class="tpl-preview-result">
+            <div class="tpl-preview-subject-row">
+              <strong>Subject:</strong>
+              <span id="tpl-preview-subject" class="tpl-preview-subject-val">—</span>
+            </div>
+            <iframe id="tpl-preview-iframe" class="tpl-preview-iframe" style="display:none"
+                    sandbox="allow-same-origin"></iframe>
+            <pre id="tpl-preview-text" class="tpl-preview-text"></pre>
+          </div>
+        </div>
+
+        <!-- ─ Tab: History ─────────────────────────────────────────── -->
+        <div id="tpl-tab-history-pane" class="tpl-tab-pane" style="display:none">
+          <p class="tpl-history-desc">
+            Every save creates a new version snapshot. Click <em>Restore</em> to roll back.
+            Up to 20 versions are kept.
+          </p>
+          <div id="tpl-history-list" class="tpl-history-list">
+            <div class="tpl-history-empty">No versions yet</div>
+          </div>
+        </div>
+
+      </div><!-- /#tpl-editor-section -->
+    </main>
+
+    </div><!-- /.tpl-layout -->
+  </div><!-- /.card -->
+
+</div><!-- /#tab-templates -->
+
+{% include 'modules/templates/_templates_logic.html' %}

@@ -96,12 +96,14 @@ def _beep_async(freq, duration_ms):
         except:
             pass
 
+# ==============================================================================
+# MAI TOCCARE QUESTO CODICE, FA PARTE DELLE FUNZIONI CORE NATIVE DI HECOS!!
+# ==============================================================================
 def is_session_0():
     """Detects if we are running in Windows Session 0 (service mode)."""
     if os.name != 'nt': return False
     try:
         import ctypes
-        import os
         session_id = ctypes.c_uint32()
         ctypes.windll.kernel32.ProcessIdToSessionId(os.getpid(), ctypes.byref(session_id))
         return session_id.value == 0

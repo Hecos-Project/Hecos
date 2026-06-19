@@ -58,10 +58,97 @@
         } catch (e) { return iso; }
     }
 
+    // ── Backup / Restore ────────────────────────────────────────────────────────
+    async function backupEvents() {
+        try {
+            if (window.toast) window.toast('info', 'Preparing calendar backup...');
+            const res = await fetch('/api/ext/calendar/backup');
+            if (!res.ok) throw new Error('Backup request failed');
+            const data = await res.json();
+            if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+            const defaultFilename = `hecos_calendar_backup_${new Date().toISOString().split('T')[0]}.json`;
+            const content = JSON.stringify(data, null, 2);
+
+            if (window.showSaveFilePicker) {
+                try {
+                    const fileHandle = await window.showSaveFilePicker({
+                        suggestedName: defaultFilename,
+                        types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
+                    });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    throw err;
+                }
+            } else {
+                const blob = new Blob([content], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = defaultFilename;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(url);
+            }
+
+            if (window.toast) window.toast('success', `Backup di ${data.count} eventi completato`);
+        } catch (err) {
+            console.error('[CALENDAR] Backup error:', err);
+            if (window.toast) window.toast('error', err.message);
+            else alert('Backup error: ' + err.message);
+        }
+    }
+
+    async function restoreEvents(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        event.target.value = '';
+
+        let mode = 'duplicate';
+        const msg = "Ripristino backup calendario.\n\nOK = Aggiungi come copie (sicuro)\nAnnulla = Sostituisci tutto (cancella gli eventi esistenti)";
+        if (!confirm(msg)) {
+            mode = 'replace';
+            if (!confirm('⚠️ Attenzione: TUTTI gli eventi esistenti verranno cancellati. Continuare?')) return;
+        }
+
+        try {
+            const text = await file.text();
+            const payload = JSON.parse(text);
+            if (!payload.events || !Array.isArray(payload.events)) {
+                throw new Error("File non valido. Assicurati che sia un backup JSON di Hecos Calendar.");
+            }
+
+            if (window.toast) window.toast('info', `Ripristino di ${payload.events.length} eventi...`);
+
+            const res = await fetch('/api/ext/calendar/restore', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ events: payload.events, mode })
+            });
+            const result = await res.json();
+            if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+            if (window.toast) window.toast('success', `Ripristinati ${result.restored_count} eventi`);
+            
+            // Refresh calendar UI
+            if (s.calendar) s.calendar.refetchEvents();
+            if (window.calendarWidget) window.calendarWidget.refresh();
+
+        } catch (err) {
+            console.error('[CALENDAR] Restore error:', err);
+            if (window.toast) window.toast('error', err.message);
+            else alert('Restore error: ' + err.message);
+        }
+    }
+
     // Attach to namespace
     Object.assign(window.hcal, {
         _applyDayColors,
         _hexToRgba,
-        _fmt
+        _fmt,
+        backupEvents,
+        restoreEvents
     });
 })();
+
