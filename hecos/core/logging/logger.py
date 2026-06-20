@@ -23,6 +23,7 @@ if not os.path.exists(LOGS_DIR):
 # Fixed filenames for the active session (easier to find than dated ones)
 info_filename = os.path.join(LOGS_DIR, "hecos_main.log")
 debug_filename = os.path.join(LOGS_DIR, "hecos_debug.log")
+backup_filename = os.path.join(LOGS_DIR, "hecos_backup.log")
 
 # Global logger for Hecos (points to root for multi-library consistency)
 logger = logging.getLogger() 
@@ -47,6 +48,19 @@ debug_file_handler = logging.FileHandler(debug_filename, encoding='utf-8')
 debug_file_handler.setLevel(logging.DEBUG)
 debug_file_handler.addFilter(LevelFilter(logging.DEBUG))
 debug_file_handler.setFormatter(file_formatter)
+
+# Handler for BACKUP-ONLY file
+class BackupFilter(logging.Filter):
+    def filter(self, record):
+        try:
+            return "[BACKUP]" in record.getMessage()
+        except Exception:
+            return False
+
+backup_file_handler = logging.FileHandler(backup_filename, encoding='utf-8')
+backup_file_handler.setLevel(logging.DEBUG)
+backup_file_handler.addFilter(BackupFilter())
+backup_file_handler.setFormatter(file_formatter)
 
 # Console Handler (the one that shows in the chat)
 class ColorFormatter(logging.Formatter):
@@ -131,6 +145,7 @@ hub_handler.setFormatter(logging.Formatter('%(message)s'))
 if not logger.hasHandlers():
     logger.addHandler(info_file_handler)
     logger.addHandler(debug_file_handler)
+    logger.addHandler(backup_file_handler)
     # Check if we should use TUI scrolling or standard console
     # If running as a basic script, console_handler is fine.
     # But for the main app, init_logger will refine this.
@@ -184,6 +199,7 @@ def init_logger(config, allow_external_windows=True):
     # RI-AGGIUNTA FILE HANDLERS (Sempre attivi)
     logger.addHandler(info_file_handler)
     logger.addHandler(debug_file_handler)
+    logger.addHandler(backup_file_handler)
     logger.addHandler(hub_handler)
 
     # Remove all existing filters from console_handler before re-adding
