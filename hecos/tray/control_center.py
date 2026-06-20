@@ -399,7 +399,7 @@ if __name__ == "__main__":
                     log_output.controls.append(
                         ft.Container(
                             content=ft.Text(line, size=_font_size, font_family="monospace", color=_sev_color(line),
-                                            selectable=True, no_wrap=False),
+                                            selectable=False, no_wrap=False),
                             bgcolor=row_bg,
                             width=1000,
                             padding=ft.Padding(2, 2, 2, 2)
@@ -460,7 +460,7 @@ if __name__ == "__main__":
         ], spacing=8)
 
         log_container = ft.Container(
-            content=log_output,
+            content=ft.SelectionArea(content=log_output),
             bgcolor=CARD,
             border_radius=8,
             padding=10,
