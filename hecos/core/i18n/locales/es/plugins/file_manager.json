@@ -1,0 +1,20 @@
+{
+    "plugin_file_manager_desc": "Gestión de directorios y archivos del sistema con ruta de usuario y soporte de lectura de archivos.",
+    "plugin_file_manager_list_desc": "Enumera archivos y carpetas (por ejemplo, lista: escritorio, lista: núcleo, lista: complementos).",
+    "plugin_file_manager_conta_desc": "Proporciona un recuento detallado de los elementos de una carpeta.",
+    "plugin_file_manager_read_desc": "Lee el contenido de un archivo de texto (líneas configurables).",
+    "plugin_file_manager_max_read_lines_desc": "Número máximo de líneas para mostrar al leer un archivo",
+    "plugin_file_manager_max_list_items_desc": "Número máximo de elementos para enumerar (0 = sin lista)",
+    "plugin_file_manager_enable_path_mapping_desc": "Habilita el mapeo de rutas simbólicas (escritorio, núcleo, etc.)",
+    "plugin_file_manager_analysis": "Análisis de '{target}':",
+    "plugin_file_manager_folders": "Carpetas: {count}",
+    "plugin_file_manager_files": "Archivos: {count}",
+    "plugin_file_manager_folders_list": "Carpetas: {lista}",
+    "plugin_file_manager_files_list": "Archivos: {lista}",
+    "plugin_file_manager_not_found": "Ruta '{path}' no encontrada.",
+    "plugin_file_manager_count_res": "Cuente en '{target}': {carpetas} carpetas, {archivos} archivos.",
+    "plugin_file_manager_read_header": "Archivo '{target}' ({lines} líneas):",
+    "plugin_file_manager_read_header_full": "Archivo '{target}' (primeras {líneas} líneas de {total}):",
+    "plugin_file_manager_not_file": "'{ruta}' no es un archivo o no existe.",
+    "plugin_file_manager_cmd_unknown": "Comando FILE_MANAGER no reconocido. Utilice lista:, contar: o leer:"
+}

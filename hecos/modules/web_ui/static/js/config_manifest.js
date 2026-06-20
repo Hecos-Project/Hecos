@@ -61,7 +61,8 @@ window.CONFIG_HUB = {
         { id: 'plugins',   label: 'hub_mod_plugins',      icon: '<i class="fas fa-puzzle-piece"></i>', cat: 'SISTEMA' },
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA' },
-        { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' }
+        { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' },
+        { id: 'backup',    label: 'hub_mod_backup',       icon: '<i class="fas fa-shield-halved"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
     // Fallback Icons based on keywords (for MCP or new plugins)
@@ -154,5 +155,5 @@ window.LAZY_PANEL_IDS = new Set([
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help', 'flows', 'lists'
+    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help', 'flows', 'lists', 'backup'
 ]);

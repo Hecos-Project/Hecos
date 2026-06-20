@@ -1,0 +1,15 @@
+{
+    "plugin_dashboard_desc": "Monitorización de hardware y estado del backend de IA.",
+    "plugin_dashboard_webui_dashboard_enabled_desc": "Habilitar funciones del panel WebUI",
+    "plugin_dashboard_webui_telemetry_enabled_desc": "Habilitar telemetría en WebUI",
+    "plugin_dashboard_console_dashboard_enabled_desc": "Mostrar Tablero en Consola",
+    "plugin_dashboard_console_telemetry_enabled_desc": "Mostrar Telemetría de Hardware en Consola",
+    "plugin_dashboard_monitor_interval_desc": "Intervalo de comprobación en segundos",
+    "plugin_dashboard_timeout_desc": "Tiempo de espera para el estado del backend en segundos",
+    "plugin_dashboard_status_online": "EN LÍNEA (Telemetría activa)",
+    "plugin_dashboard_stats_cpu_ram": "CPU: {cpu}%, RAM: {ram}%.",
+    "plugin_dashboard_stats_vram_gpu": "VRAM: {vram}, Carga de GPU: {cargar}.",
+    "plugin_dashboard_stats_backend": "Backend de IA: {estado}.",
+    "plugin_dashboard_stats_full": "CPU: {cpu}%, RAM: {ram}%, Estado de GPU: {gpu_status}, Backend: {backend_status}.",
+    "plugin_dashboard_stats_full_gpu": "CPU: {cpu}%, RAM: {ram}%, VRAM: {vram}, Carga de GPU: {load}, Backend: {backend_status}."
+}

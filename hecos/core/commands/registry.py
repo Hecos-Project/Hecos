@@ -105,6 +105,24 @@ class CommandRegistry:
 
     # ── Lookup ────────────────────────────────────────────────────────────────
 
+    def _translate_cmd(self, cmd: dict) -> dict:
+        """Returns a copy of the command with a translated description if available."""
+        from hecos.core.i18n.translator import t
+        cmd_copy = cmd.copy()
+        # Translate description
+        desc_key = f"cmd_desc_{cmd['id'].replace('.', '_')}"
+        translated = t(desc_key)
+        if translated != desc_key:
+            cmd_copy["description"] = translated
+        # Translate category if needed
+        cat_key = f"cmd_cat_{cmd['category'].lower()}"
+        translated_cat = t(cat_key)
+        if translated_cat != cat_key:
+            cmd_copy["category_translated"] = translated_cat
+        else:
+            cmd_copy["category_translated"] = cmd["category"]
+        return cmd_copy
+
     def resolve(self, raw_input: str) -> Optional[dict]:
         """
         Given a raw string starting with '/' (e.g. "/img foto di un gatto"),
@@ -118,29 +136,31 @@ class CommandRegistry:
 
         cmd_id = self._alias_map.get(normalized) or self._alias_map.get(slash_cmd)
         if cmd_id:
-            return self._commands.get(cmd_id)
+            cmd = self._commands.get(cmd_id)
+            return self._translate_cmd(cmd) if cmd else None
         return None
 
     def get_all(self) -> list[dict]:
         """Return all registered command descriptors as a list."""
-        return list(self._commands.values())
+        return [self._translate_cmd(c) for c in self._commands.values()]
 
     def get_by_category(self, category: str) -> list[dict]:
-        return [c for c in self._commands.values() if c["category"] == category]
+        return [self._translate_cmd(c) for c in self._commands.values() if c["category"] == category]
 
     def search(self, query: str) -> list[dict]:
         """Full-text search across id, aliases, description."""
         q = query.lower().lstrip("/")
         results = []
         for cmd in self._commands.values():
+            translated_cmd = self._translate_cmd(cmd)
             haystack = (
-                cmd["id"] + " " +
-                " ".join(cmd["aliases"]) + " " +
-                cmd["description"] + " " +
-                cmd.get("example", "")
+                translated_cmd["id"] + " " +
+                " ".join(translated_cmd["aliases"]) + " " +
+                translated_cmd["description"] + " " +
+                translated_cmd.get("example", "")
             ).lower()
             if q in haystack:
-                results.append(cmd)
+                results.append(translated_cmd)
         return results
 
     def is_loaded(self) -> bool:

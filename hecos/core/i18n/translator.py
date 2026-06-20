@@ -24,23 +24,37 @@ class Translator:
         self._initialized = True
 
     def _load_translations(self):
-        """Loads JSON files for the selected language and the base one."""
+        """Loads JSON files for the selected language and the base one from their respective directories."""
+        self.base_translations = {}
+        self.translations = {}
+        
         # Load base (en)
-        en_path = os.path.join(self.locales_path, "en.json")
-        if os.path.exists(en_path):
-            with open(en_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self.base_translations = data.get('en', {})
+        en_dir = os.path.join(self.locales_path, "en")
+        if os.path.exists(en_dir) and os.path.isdir(en_dir):
+            for root, _, files in os.walk(en_dir):
+                for file in files:
+                    if file.endswith(".json"):
+                        try:
+                            with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                                self.base_translations.update(json.load(f))
+                        except Exception as e:
+                            logger.error(f"I18N: Error loading {file} for en: {e}")
 
         # Load current language
-        lang_path = os.path.join(self.locales_path, f"{self.language}.json")
-        if os.path.exists(lang_path):
-            with open(lang_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self.translations = data.get(self.language, {})
+        lang_dir = os.path.join(self.locales_path, self.language)
+        if os.path.exists(lang_dir) and os.path.isdir(lang_dir):
+            for root, _, files in os.walk(lang_dir):
+                for file in files:
+                    if file.endswith(".json"):
+                        try:
+                            with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                                self.translations.update(json.load(f))
+                        except Exception as e:
+                            logger.error(f"I18N: Error loading {file} for {self.language}: {e}")
         else:
-            logger.warning("I18N", f"Language '{self.language}' not found; using fallback 'en'.")
-            self.translations = self.base_translations
+            if self.language != 'en':
+                logger.warning("I18N", f"Language directory '{self.language}' not found; using fallback 'en'.")
+            self.translations = self.base_translations.copy()
 
     def set_language(self, language):
         """Changes the language at runtime."""

@@ -15,7 +15,11 @@ function addBubble(role, text, id, opts) {
   if (isUser) {
     const usrSrc = window.HecosUserAvatar;
     if (usrSrc) {
-        avatar.innerHTML = `<img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='<i class=\'fas fa-user\'></i>'">`;
+        avatar.innerHTML = `
+        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${usrSrc}')">
+          <img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='<i class=\'fas fa-user\'></i>'">
+          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+        </div>`;
     } else {
         avatar.innerHTML = '<i class="fas fa-user"></i>';
     }

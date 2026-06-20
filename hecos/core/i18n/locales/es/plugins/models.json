@@ -1,0 +1,7 @@
+{
+    "plugin_models_desc": "Cambia el modelo de IA según el backend activo (Ollama/Kobold).",
+    "plugin_models_set_desc": "Cambia el modelo activo usando el número de lista (por ejemplo, set:7).",
+    "plugin_models_lista_desc": "Muestra los modelos disponibles para el backend actual.",
+    "plugin_models_backend_desc": "Muestra el backend utilizado actualmente.",
+    "plugin_models_status_online": "ONLINE (Gestión de modelos)"
+}

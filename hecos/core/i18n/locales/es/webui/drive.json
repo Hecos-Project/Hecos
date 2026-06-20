@@ -1,0 +1,21 @@
+{
+    "webui_drive_dropzone": "Suelte los archivos aquí para subirlos a la carpeta actual",
+    "webui_drive_upload_to": "Suelte los archivos aquí para subirlos a:",
+    "webui_drive_dirs_files": "{dirs} carpetas · {files} archivos",
+    "webui_drive_empty": "Directorio vacío",
+    "webui_drive_upload_ok": "¡Subida completada!",
+    "webui_drive_delete_confirm": "¿Eliminar '{nombre}'?\nEsta operación es irreversible.",
+    "webui_drive_mkdir_success": "Carpeta '{nombre}' creada en {ruta}",
+    "webui_drive_root_label": "Conducir",
+    "webui_drive_no_links": "No hay enlaces disponibles.",
+    "webui_drive_root_hint": "Volver a la raíz",
+    "webui_drive_up_hint": "Directorio principal",
+    "webui_drive_new_folder": "Nueva carpeta",
+    "webui_drive_folders": "Carpetas",
+    "webui_drive_current_pos": "Posición actual",
+    "webui_drive_mkdir_hint": "Se creará en",
+    "webui_drive_folder_name_ph": "Nombre de la carpeta...",
+    "webui_drive_create": "Crear",
+    "webui_drive_drive_sel_hint": "Cambiar unidad",
+    "webui_drive_edit": "Editar"
+}

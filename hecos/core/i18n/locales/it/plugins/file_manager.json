@@ -1,0 +1,20 @@
+{
+    "plugin_file_manager_desc": "Gestione file e directory di system con supporto ai percorsi utente e lettura file.",
+    "plugin_file_manager_list_desc": "Elenca file e cartelle (es. list:desktop, list:core, list:plugins).",
+    "plugin_file_manager_conta_desc": "Fornisce un conteggio dettagliato degli elementi in una cartella.",
+    "plugin_file_manager_read_desc": "Legge il contenuto di un file di testo (prime righe configurabili).",
+    "plugin_file_manager_max_read_lines_desc": "Numero massimo di righe da mostrare quando si legge un file",
+    "plugin_file_manager_max_list_items_desc": "Numero massimo di elementi da elencare (0 = nessun elenco)",
+    "plugin_file_manager_enable_path_mapping_desc": "Abilita la mappatura dei percorsi simbolici (desktop, core, ecc.)",
+    "plugin_file_manager_analysis": "Analisi di '{target}':",
+    "plugin_file_manager_folders": "Cartelle: {count}",
+    "plugin_file_manager_files": "File: {count}",
+    "plugin_file_manager_folders_list": "Cartelle: {list}",
+    "plugin_file_manager_files_list": "File: {list}",
+    "plugin_file_manager_not_found": "Percorso '{path}' non trovato.",
+    "plugin_file_manager_count_res": "Conteggio in '{target}': {folders} cartelle, {files} file.",
+    "plugin_file_manager_read_header": "File '{target}' ({lines} righe):",
+    "plugin_file_manager_read_header_full": "File '{target}' (prime {lines} righe su {total}):",
+    "plugin_file_manager_not_file": "'{path}' non è un file o non esiste.",
+    "plugin_file_manager_cmd_unknown": "Comando FILE_MANAGER non riconosciuto. Usa list:, conta: o read:"
+}

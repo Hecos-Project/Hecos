@@ -1,0 +1,8 @@
+{
+    "plugin_help_desc": "Displays the list of all active commands and modules in the system.",
+    "plugin_help_cmd_lista": "Displays all available protocols.",
+    "plugin_help_cmd_refresh": "Regenerates the plugin registry and shows updated commands.",
+    "plugin_help_refresh_success": "✅ Capabilities registry regenerated.",
+    "plugin_help_cmd_unknown": "Unknown command. Use 'lista' or 'refresh'.",
+    "plugin_help_show_disabled_desc": "Shows disabled plugins in the guide"
+}

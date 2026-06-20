@@ -35,6 +35,19 @@ The Spotlight is a special floating search bar. To summon it:
 
 ---
 
+## 🎤 Voice Commands (Dictation)
+
+You can launch direct commands simply by **talking**! If you use the voice dictation feature, the system is able to understand when you want to execute a command instead of sending a normal text message.
+
+To activate it, just start your sentence (as the very first word) with one of the following voice "triggers":
+* **"Comando"** (e.g., *"Comando weather London"*)
+* **"Command"** (e.g., *"Command clear"*)
+* **"Slash"** (e.g., *"Slash help"*)
+
+The system will automatically intercept the keyword, transform it into the `/` symbol, and send the instruction directly to the command engine! It's extremely handy if your hands are not free to type.
+
+---
+
 ## 🧩 Using Direct Commands in "Flows"
 
 Flows is the place where you create automatic routines by linking many nodes together as if they were Lego bricks. 

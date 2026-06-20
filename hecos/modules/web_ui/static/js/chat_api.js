@@ -12,8 +12,17 @@ window.sendMessage = async function() {
       window.unlockAudioContext();
   }
 
-  const text = window.userInput ? window.userInput.value.trim() : '';
+  let text = window.userInput ? window.userInput.value.trim() : '';
   if(!text || window.isStreaming) return;
+
+  // Intercept voice dictation triggers for slash commands
+  const triggers = ["comando ", "command ", "slash "];
+  for (const t of triggers) {
+      if (text.toLowerCase().startsWith(t)) {
+          text = "/" + text.substring(t.length);
+          break;
+      }
+  }
 
   let attachCtx = '';
   let attachImgs = [];

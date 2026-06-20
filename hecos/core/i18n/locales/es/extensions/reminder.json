@@ -1,0 +1,19 @@
+{
+    "ext_reminder_title": "Recordatorio",
+    "ext_reminder_desc": "Muestra recordatorios próximos y permite una gestión rápida.",
+    "ext_reminder_expired": "venció",
+    "ext_reminder_recurrent": "periódico",
+    "ext_reminder_none": "No hay recordatorios activos",
+    "ext_reminder_err": "error de carga",
+    "ext_reminder_parse_err": "[RECORDATORIO] ❌ No puedo interpretar '{cuándo}'. Prueba: 'mañana a las 15', 'en 30 minutos', 'todos los lunes a las 9'.",
+    "ext_reminder_limit_err": "[RECORDATORIO] ❌ Se alcanzó el límite máximo de recordatorios activos (50).",
+    "ext_reminder_set_success": "✅ ¡Recordatorio configurado!",
+    "ext_reminder_set_error": "⚠️ Recordatorio guardado pero no programado (programador desactivado).",
+    "ext_reminder_list_title": "📋 **Recordatorios activos:**",
+    "ext_reminder_unknown_date": "❓ fecha desconocida",
+    "ext_reminder_not_found": "❌ No se encontró ningún recordatorio con ID `{id}`.",
+    "ext_reminder_cancelled": "🗑️ Recordatorio **{title}** cancelado.",
+    "ext_reminder_snoozed": "💤 Recordatorio **{title}** pospuesto hasta las {hora}.",
+    "ext_reminder_at": "en",
+    "ext_reminder_snooze": "Siesta"
+}

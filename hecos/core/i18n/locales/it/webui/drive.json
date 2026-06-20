@@ -1,0 +1,21 @@
+{
+    "webui_drive_dropzone": "Trascina file qui per caricarli nella cartella corrente",
+    "webui_drive_upload_to": "Trascina file qui per caricarli in:",
+    "webui_drive_dirs_files": "{dirs} cartelle · {files} file",
+    "webui_drive_empty": "Directory vuota",
+    "webui_drive_upload_ok": "Upload completato!",
+    "webui_drive_delete_confirm": "Eliminare '{name}'?\nL'operazione è irreversibile.",
+    "webui_drive_mkdir_success": "Cartella '{name}' creata in {path}",
+    "webui_drive_root_label": "Drive",
+    "webui_drive_no_links": "Nessun link disponibile.",
+    "webui_drive_root_hint": "Torna alla root",
+    "webui_drive_up_hint": "Cartella superiore",
+    "webui_drive_new_folder": "Nuova Cartella",
+    "webui_drive_folders": "Cartelle",
+    "webui_drive_current_pos": "Posizione corrente",
+    "webui_drive_mkdir_hint": "Verrà creata in",
+    "webui_drive_folder_name_ph": "Nome cartella...",
+    "webui_drive_create": "Crea",
+    "webui_drive_drive_sel_hint": "Cambio disco / periferica",
+    "webui_drive_edit": "Modifica"
+}
