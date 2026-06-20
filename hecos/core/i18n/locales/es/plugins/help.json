@@ -1,0 +1,8 @@
+{
+    "plugin_help_desc": "Muestra la lista de todos los comandos y módulos activos en el sistema.",
+    "plugin_help_cmd_lista": "Muestra todos los protocolos disponibles.",
+    "plugin_help_cmd_refresh": "Regenera el registro de complementos y muestra comandos actualizados.",
+    "plugin_help_refresh_success": "✅Registro de capacidades regenerado.",
+    "plugin_help_cmd_unknown": "Comando desconocido. Utilice 'lista' o 'actualizar'.",
+    "plugin_help_show_disabled_desc": "Muestra complementos deshabilitados en la guía."
+}

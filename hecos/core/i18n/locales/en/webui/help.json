@@ -1,0 +1,23 @@
+{
+    "doc_user_guide": "Operating Manual",
+    "doc_tech_guide": "Technical Guide",
+    "doc_resources": "Resources",
+    "doc_back_to_chat": "Back to Chat",
+    "doc_loading": "Loading guide...",
+    "doc_select_guide": "Select a guide from the sidebar to start.",
+    "doc_user_desc": "Daily usage guide, plugin configuration and voice commands.",
+    "doc_tech_desc": "System architecture, execution pipeline and developer best practices.",
+    "webui_help_about_title": "Help & About",
+    "webui_help_resources": "Documentation & Resources",
+    "webui_help_manual": "Operating Manual",
+    "webui_help_tech": "Technical Guide",
+    "webui_help_community": "GitHub Community",
+    "webui_help_diagnostics": "System Diagnostics",
+    "webui_help_desc": "Hecos is a native modular Helping Companion System designed for privacy, speed, and absolute simplicity.",
+    "webui_help_safety_instructions": "Used for safety disclaimers or acting context (prepended to AI instructions).",
+    "webui_help_full_check": "Full System Check",
+    "webui_help_fix_paths": "Fix Broken Paths",
+    "webui_help_install_svc": "Install Service",
+    "webui_help_uninstall_svc": "Uninstall Service",
+    "webui_help_diag_log_title": "Diagnostic Output"
+}

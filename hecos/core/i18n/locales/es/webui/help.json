@@ -1,0 +1,23 @@
+{
+    "doc_user_guide": "Manual de Operación",
+    "doc_tech_guide": "Guía Técnica",
+    "doc_resources": "Recursos",
+    "doc_back_to_chat": "Volver al Chat",
+    "doc_loading": "Cargando guía...",
+    "doc_select_guide": "Seleccione una guía en la barra lateral para comenzar.",
+    "doc_user_desc": "Guía de uso diario, configuración de plugins y comandos de voz.",
+    "doc_tech_desc": "Arquitectura del sistema, pipeline de ejecución y mejores prácticas para desarrolladores.",
+    "webui_help_diagnostics": "Diagnóstico de Sistema",
+    "webui_help_desc": "Hecos es una capa operativa modular nativa de IA diseñada para la privacidad, velocidad y simplicidad absoluta.",
+    "webui_help_resources": "Documentación y Recursos",
+    "webui_help_manual": "Manual de Operación",
+    "webui_help_tech": "Guía Técnica",
+    "webui_help_community": "Comunidad GitHub",
+    "webui_help_full_check": "Chequeo Completo",
+    "webui_help_fix_paths": "Arreglar Rutas",
+    "webui_help_install_svc": "Instalar Servicio",
+    "webui_help_uninstall_svc": "Desinstalar Servicio",
+    "webui_help_diag_log_title": "Resultado de Diagnóstico",
+    "webui_help_about_title": "Ayuda y acerca de",
+    "webui_help_safety_instructions": "Se utiliza para exenciones de responsabilidad de seguridad o contexto de actuación (antepuesto a las instrucciones de IA)."
+}

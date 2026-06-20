@@ -1,0 +1,12 @@
+{
+    "plugin_webcam_desc": "Access to PC optical vision to take snapshots of the environment or Admin.",
+    "plugin_webcam_snap_desc": "Activates the camera and saves an image in the 'scatti' folder.",
+    "plugin_webcam_status_online": "ONLINE (Optical Vision)",
+    "plugin_webcam_save_dir_desc": "Folder where acquired images are saved",
+    "plugin_webcam_img_format_desc": "Image format (jpg or png)",
+    "plugin_webcam_cam_index_desc": "Camera index (0 = first camera)",
+    "plugin_webcam_stab_delay_desc": "Delay in seconds before taking a shot to stabilize exposure",
+    "plugin_webcam_error_sensor": "Error: Optical sensor not detected or busy.",
+    "plugin_webcam_snap_saved": "Snapshot acquired. File stored at: {path}. You look interesting today, Admin.",
+    "plugin_webcam_error_read": "Hardware error: Frame read failed."
+}

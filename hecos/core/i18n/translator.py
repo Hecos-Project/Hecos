@@ -31,24 +31,26 @@ class Translator:
         # Load base (en)
         en_dir = os.path.join(self.locales_path, "en")
         if os.path.exists(en_dir) and os.path.isdir(en_dir):
-            for file in os.listdir(en_dir):
-                if file.endswith(".json"):
-                    try:
-                        with open(os.path.join(en_dir, file), 'r', encoding='utf-8') as f:
-                            self.base_translations.update(json.load(f))
-                    except Exception as e:
-                        logger.error(f"I18N: Error loading {file} for en: {e}")
+            for root, _, files in os.walk(en_dir):
+                for file in files:
+                    if file.endswith(".json"):
+                        try:
+                            with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                                self.base_translations.update(json.load(f))
+                        except Exception as e:
+                            logger.error(f"I18N: Error loading {file} for en: {e}")
 
         # Load current language
         lang_dir = os.path.join(self.locales_path, self.language)
         if os.path.exists(lang_dir) and os.path.isdir(lang_dir):
-            for file in os.listdir(lang_dir):
-                if file.endswith(".json"):
-                    try:
-                        with open(os.path.join(lang_dir, file), 'r', encoding='utf-8') as f:
-                            self.translations.update(json.load(f))
-                    except Exception as e:
-                        logger.error(f"I18N: Error loading {file} for {self.language}: {e}")
+            for root, _, files in os.walk(lang_dir):
+                for file in files:
+                    if file.endswith(".json"):
+                        try:
+                            with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                                self.translations.update(json.load(f))
+                        except Exception as e:
+                            logger.error(f"I18N: Error loading {file} for {self.language}: {e}")
         else:
             if self.language != 'en':
                 logger.warning("I18N", f"Language directory '{self.language}' not found; using fallback 'en'.")

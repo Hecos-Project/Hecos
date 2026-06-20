@@ -1,0 +1,21 @@
+{
+    "webui_drive_dropzone": "Drop files here to upload to current folder",
+    "webui_drive_upload_to": "Drop files here to upload to:",
+    "webui_drive_dirs_files": "{dirs} folders · {files} files",
+    "webui_drive_empty": "Directory empty",
+    "webui_drive_upload_ok": "Upload completed!",
+    "webui_drive_delete_confirm": "Delete '{name}'?\nThis operation is irreversible.",
+    "webui_drive_mkdir_success": "Folder '{name}' created in {path}",
+    "webui_drive_root_label": "Drive",
+    "webui_drive_no_links": "No links available.",
+    "webui_drive_root_hint": "Back to root",
+    "webui_drive_up_hint": "Parent directory",
+    "webui_drive_new_folder": "New Folder",
+    "webui_drive_folders": "Folders",
+    "webui_drive_current_pos": "Current position",
+    "webui_drive_mkdir_hint": "Will be created in",
+    "webui_drive_folder_name_ph": "Folder name...",
+    "webui_drive_create": "Create",
+    "webui_drive_drive_sel_hint": "Change drive",
+    "webui_drive_edit": "Edit"
+}

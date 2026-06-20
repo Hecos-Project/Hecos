@@ -1,0 +1,8 @@
+{
+    "room_open": "Control Room Panel",
+    "room_open_standalone": "Open standalone",
+    "room_close": "Close",
+    "room_edit_layout": "Edit Layout",
+    "room_add_widget": "Manage Widgets",
+    "room_loading": "Loading widgets..."
+}

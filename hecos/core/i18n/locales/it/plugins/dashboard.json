@@ -1,0 +1,7 @@
+{
+    "plugin_dashboard_stats_cpu_ram": "CPU: {cpu}%, RAM: {ram}%.",
+    "plugin_dashboard_stats_vram_gpu": "VRAM: {vram}, Carico GPU: {load}.",
+    "plugin_dashboard_stats_backend": "Backend AI: {status}.",
+    "plugin_dashboard_stats_full": "CPU: {cpu}%, RAM: {ram}%, Stato GPU: {gpu_status}, Backend: {backend_status}.",
+    "plugin_dashboard_stats_full_gpu": "CPU: {cpu}%, RAM: {ram}%, VRAM: {vram}, Carico GPU: {load}, Backend: {backend_status}."
+}
