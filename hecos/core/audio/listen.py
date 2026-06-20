@@ -53,7 +53,7 @@ def listen(state=None):
 
     try:
         if _persistent_source is None:
-            logger.warning("[LISTEN-DEBUG] Creating NEW microphone source!")
+            logger.debug("[LISTEN-DEBUG] Creating NEW microphone source!")
             _persistent_source = sr.Microphone()
             _persistent_source.__enter__()
         

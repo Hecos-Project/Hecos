@@ -11,6 +11,13 @@ By default, the system checks:
 - Active/Disabled Plugin scan.
 
 ### ⚡ One-Click Bootstrap
+
+> [!IMPORTANT]
+> **Installation Path**: We strongly recommend extracting and installing Hecos in a root directory like `C:\Hecos`. Avoid installing it in `Downloads`, `Desktop`, or deep folders, as long paths or special characters/spaces in the path can cause startup issues or broken functionalities.
+
+> [!WARNING]
+> **System Dependencies**: Before running the setup, ensure you have installed the required redistributables (like `VC_redist`) located in the **`dependencies`** folder. If these are missing, core components like the AI models and the Text-To-Speech engine will fail to start.
+
 The recommended way to start Hecos is using the universal bootstrap scripts in the root directory:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
