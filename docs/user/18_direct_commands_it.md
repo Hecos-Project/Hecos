@@ -35,6 +35,19 @@ La Spotlight è una speciale barra di ricerca fluttuante. Per evocarla:
 
 ---
 
+## 🎤 Comandi Vocali (Dettatura)
+
+Puoi lanciare i comandi diretti anche semplicemente **parlando**! Se utilizzi la funzione di dettatura vocale, il sistema è in grado di capire quando vuoi eseguire un comando invece di inviare un normale messaggio di testo.
+
+Per attivarlo, ti basta iniziare la frase (come primissima parola) con uno dei seguenti "trigger" vocali:
+* **"Comando"** (es. *"Comando meteo Roma"*)
+* **"Command"** (es. *"Command clear"*)
+* **"Slash"** (es. *"Slash help"*)
+
+Il sistema intercetterà automaticamente la parola chiave, la trasformerà nel simbolo `/` e invierà l'istruzione direttamente al motore dei comandi! È estremamente comodo se non hai le mani libere sulla tastiera.
+
+---
+
 ## 🧩 Usare i Comandi Diretti in "Flows" (Flussi)
 
 Flows è il posto dove crei routine automatiche (i "Flussi") unendo tanti nodi come se fossero mattoncini Lego. 
