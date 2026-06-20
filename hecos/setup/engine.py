@@ -251,6 +251,77 @@ def install_external_dependencies():
     print()
     return success
 
+def download_piper_engine():
+    import tempfile
+    import shutil
+    piper_exe = os.path.join(PIPER_DIR, "piper.exe") if os.name == 'nt' else os.path.join(PIPER_DIR, "piper")
+    if os.path.exists(piper_exe):
+        print("[*] Piper engine is already installed.")
+        return True
+
+    print("[*] Downloading Piper TTS engine...")
+    os.makedirs(PIPER_DIR, exist_ok=True)
+    
+    version = "2023.11.14-2"
+    if os.name == 'nt':
+        filename = "piper_windows_amd64.zip"
+        is_zip = True
+    else:
+        filename = "piper_linux_x86_64.tar.gz"
+        is_zip = False
+        
+    url = f"https://github.com/rhasspy/piper/releases/download/{version}/{filename}"
+    
+    try:
+        tmp_path = os.path.join(tempfile.gettempdir(), filename)
+        
+        def progress(block_num, block_size, total_size):
+            if total_size > 0:
+                percent = int(block_num * block_size * 100 / total_size)
+                print(f"\r    {percent}% complete...", end="", flush=True)
+                
+        urllib.request.urlretrieve(url, tmp_path, reporthook=progress)
+        print("\n[*] Extracting Piper engine...")
+        
+        extract_dir = os.path.join(tempfile.gettempdir(), "piper_extracted")
+        os.makedirs(extract_dir, exist_ok=True)
+        
+        if is_zip:
+            import zipfile
+            with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+        else:
+            import tarfile
+            with tarfile.open(tmp_path, 'r:gz') as tar_ref:
+                tar_ref.extractall(extract_dir)
+                
+        source_piper = os.path.join(extract_dir, "piper")
+        if os.path.exists(source_piper):
+            for item in os.listdir(source_piper):
+                s = os.path.join(source_piper, item)
+                d = os.path.join(PIPER_DIR, item)
+                if os.path.exists(d):
+                    if os.path.isdir(d):
+                        shutil.rmtree(d)
+                    else:
+                        os.remove(d)
+                shutil.move(s, d)
+        
+        try:
+            os.remove(tmp_path)
+            shutil.rmtree(extract_dir)
+        except Exception:
+            pass
+            
+        if os.name != 'nt':
+            os.chmod(piper_exe, 0o755)
+            
+        print("[+] Piper engine successfully installed.")
+        return True
+    except Exception as e:
+        print(f"\n[-] Failed to download/install Piper: {e}")
+        return False
+
 def unattended_onboarding(target_voices=None):
     print("=" * 60)
     print(f"  {T('onboarding_header')}")
@@ -265,7 +336,10 @@ def unattended_onboarding(target_voices=None):
     print(f"[*] {T('step_env')}")
     install_dependencies()
     
-    # Step 3: Voices (Multiple)
+    # Step 3: Piper Engine & Voices
+    print(f"\n[*] Piper TTS Engine")
+    download_piper_engine()
+    
     if target_voices:
         print(f"\n[*] {T('step_voice')} ({len(target_voices)} voices)")
         for v_key in target_voices:

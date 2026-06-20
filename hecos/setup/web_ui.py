@@ -227,6 +227,14 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                         <div class="hero">
                             <h2>3️⃣ STEP: {T('step_install').upper()}</h2>
                             <p class="tip">{T('tip_onboarding')}</p>
+                            
+                            <div style="margin:15px 0 25px 0; padding:12px 16px; background:rgba(255,204,0,0.06); border-radius:8px; border-left:3px solid #ffcc00;">
+                                <span style="color:#ffcc00; font-size:0.75rem; font-weight:700;">⚠️ ATTENTION / IMPORTANTE</span>
+                                <div style="color:#bbb; font-size:0.8rem; margin-top:5px; line-height:1.4;">
+                                    Before starting Hecos, ensure you have installed the required redistributables (like VC_redist) located in the <strong>dependencies</strong> folder, otherwise the AI and TTS modules will fail to start.
+                                </div>
+                            </div>
+
                             <button id="launch-btn" class="btn" style="width:100%; padding:16px; font-size:0.95rem; font-weight:600; letter-spacing:1px; margin:0;"
                                 onclick="
                                     this.innerHTML='⏳ INSTALLING... (Check console)';

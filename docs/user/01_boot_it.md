@@ -11,6 +11,13 @@ Per impostazione predefinita, il sistema controlla:
 - Scansione dei Plugin Attivi/Disattivati.
 
 ### ⚡ Bootstrap One-Click
+
+> [!IMPORTANT]
+> **Percorso di Installazione**: Consigliamo vivamente di estrarre e installare Hecos in una cartella principale come `C:\Hecos`. Evita di installarlo in `Download`, sul `Desktop` o in percorsi troppo lunghi con spazi, poiché ciò potrebbe causare malfunzionamenti o problemi di avvio dei moduli.
+
+> [!WARNING]
+> **Dipendenze di Sistema**: Prima di avviare l'installazione o il setup, assicurati di aver installato i pacchetti redistribuibili (come `VC_redist`) presenti nella cartella **`dependencies`** inclusa nel pacchetto. Se questi file mancano, componenti critici come l'IA e il motore vocale (TTS) non si avvieranno.
+
 Il modo consigliato per avviare Hecos è utilizzare gli script di bootstrap universale nella cartella principale:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`

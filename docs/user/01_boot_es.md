@@ -11,6 +11,13 @@ Por defecto, el sistema verifica:
 - Escaneo de Plugins activos/desactivados.
 
 ### ⚡ Bootstrap One-Click
+
+> [!IMPORTANT]
+> **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
+
+> [!WARNING]
+> **Dependencias del Sistema**: Antes de ejecutar la instalación o configuración, asegúrese de haber instalado los paquetes redistribuibles (como `VC_redist`) que se encuentran en la carpeta **`dependencies`** incluida en el paquete. Si faltan estos archivos, componentes críticos como la IA y el motor de voz (TTS) no se iniciarán.
+
 La forma recomendada de iniciar Hecos es utilizar los scripts de inicio universales en la carpeta raíz:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`

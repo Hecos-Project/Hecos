@@ -62,37 +62,44 @@ def migrate_schema():
         )
     """)
 
-    # 2. Add session_id to history (if not already there)
-    hist_cols = [row[1] for row in cur.execute("PRAGMA table_info(history)").fetchall()]
-    if "session_id" not in hist_cols:
-        cur.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
-        logger.info("[SESSION] Added session_id column to history table.")
-        
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='history'")
+    has_history = cur.fetchone() is not None
+
+    if has_history:
+        # 2. Add session_id to history (if not already there)
+        hist_cols = [row[1] for row in cur.execute("PRAGMA table_info(history)").fetchall()]
+        if "session_id" not in hist_cols:
+            cur.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
+            logger.info("[SESSION] Added session_id column to history table.")
+            
     sess_cols = [row[1] for row in cur.execute("PRAGMA table_info(sessions)").fetchall()]
     if "is_archived" not in sess_cols:
         cur.execute("ALTER TABLE sessions ADD COLUMN is_archived INTEGER DEFAULT 0")
         logger.info("[SESSION] Added is_archived column to sessions table.")
 
-    # 3. Clean up any legacy auto_wipe/incognito sessions that were wrongly saved to DB in the past
-    cur.execute("DELETE FROM history WHERE session_id IN (SELECT id FROM sessions WHERE privacy_mode IN ('auto_wipe', 'incognito'))")
+    if has_history:
+        # 3. Clean up any legacy auto_wipe/incognito sessions that were wrongly saved to DB in the past
+        cur.execute("DELETE FROM history WHERE session_id IN (SELECT id FROM sessions WHERE privacy_mode IN ('auto_wipe', 'incognito'))")
+    
     cur.execute("DELETE FROM sessions WHERE privacy_mode IN ('auto_wipe', 'incognito')")
 
-    # 4. Migrate legacy messages (session_id IS NULL) to a 'Legacy' session
-    cur.execute("SELECT COUNT(*) FROM history WHERE session_id IS NULL")
-    legacy_count = cur.fetchone()[0]
+    if has_history:
+        # 4. Migrate legacy messages (session_id IS NULL) to a 'Legacy' session
+        cur.execute("SELECT COUNT(*) FROM history WHERE session_id IS NULL")
+        legacy_count = cur.fetchone()[0]
 
-    if legacy_count > 0:
-        legacy_id = "legacy-" + datetime.now().strftime("%Y%m%d")
-        cur.execute("SELECT id FROM sessions WHERE id = ?", (legacy_id,))
-        if not cur.fetchone():
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            legacy_title = "Chat " + datetime.now().strftime("%d/%m/%Y")
-            cur.execute(
-                "INSERT INTO sessions (id, title, created_at, updated_at, privacy_mode) VALUES (?, ?, ?, ?, ?)",
-                (legacy_id, legacy_title, now, now, "normal")
-            )
-        cur.execute("UPDATE history SET session_id = ? WHERE session_id IS NULL", (legacy_id,))
-        logger.info(f"[SESSION] Migrated {legacy_count} legacy messages to session '{legacy_id}'.")
+        if legacy_count > 0:
+            legacy_id = "legacy-" + datetime.now().strftime("%Y%m%d")
+            cur.execute("SELECT id FROM sessions WHERE id = ?", (legacy_id,))
+            if not cur.fetchone():
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                legacy_title = "Chat " + datetime.now().strftime("%d/%m/%Y")
+                cur.execute(
+                    "INSERT INTO sessions (id, title, created_at, updated_at, privacy_mode) VALUES (?, ?, ?, ?, ?)",
+                    (legacy_id, legacy_title, now, now, "normal")
+                )
+            cur.execute("UPDATE history SET session_id = ? WHERE session_id IS NULL", (legacy_id,))
+            logger.info(f"[SESSION] Migrated {legacy_count} legacy messages to session '{legacy_id}'.")
 
     # 5. One-time rename of any sessions still carrying the old "Legacy Conversations" label
     cur.execute("SELECT id, created_at FROM sessions WHERE title = 'Legacy Conversations'")

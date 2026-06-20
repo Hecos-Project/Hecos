@@ -3,6 +3,13 @@
 Welcome to Hecos! Follow these steps to set up the system and start using AI on your PC immediately.
 
 ## 1. Installation (Bootstrap)
+
+> [!IMPORTANT]
+> **Installation Path**: We strongly recommend extracting and installing Hecos in a root directory like `C:\Hecos`. Avoid installing it in `Downloads`, `Desktop`, or deep folders, as long paths or special characters/spaces in the path can cause startup issues or broken functionalities.
+
+> [!WARNING]
+> **System Dependencies**: Before running the setup, ensure you have installed the required redistributables (like `VC_redist`) located in the **`dependencies`** folder. If these are missing, core components like the AI models and the Text-To-Speech engine will fail to start.
+
 The easiest way to start is using the automatic setup scripts in the root folder:
 - **Windows:** Double-click `START_SETUP_HERE_WIN.bat`
 - **Linux:** Open a terminal and run `bash START_SETUP_HERE_LINUX.sh`

@@ -83,6 +83,11 @@ class PiperDaemon:
                 
                 if not os.path.isfile(piper_path): piper_path = default_piper
                 if not os.path.isfile(model_path): model_path = default_model
+                
+                if not os.path.isfile(piper_path):
+                    logger.warning("PIPER_DAEMON", f"Piper executable not found at {piper_path}. TTS daemon will not start.")
+                    self._proc = None
+                    return
                     
                 self._sample_rate = _get_sample_rate(model_path)
                 speed = audio_cfg.get("speed", 1.0)
@@ -97,7 +102,12 @@ class PiperDaemon:
                     piper_path, "-m", model_path, "--json-input", "--debug"
                 ]
                 
-                kwargs = {"stdin": subprocess.PIPE, "stderr": subprocess.PIPE, "stdout": subprocess.DEVNULL}
+                kwargs = {
+                    "stdin": subprocess.PIPE, 
+                    "stderr": subprocess.PIPE, 
+                    "stdout": subprocess.DEVNULL,
+                    "cwd": os.path.dirname(piper_path)
+                }
                 if sys.platform == "win32":
                     kwargs["creationflags"] = 0x08000000  # NO_WINDOW
                     
