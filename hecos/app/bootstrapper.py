@@ -19,6 +19,9 @@ class SystemBootstrapper:
 
     def initialize(self):
         """Inizializzazione di tutti i componenti."""
+        from hecos.core.constants import ensure_directories
+        ensure_directories()
+        
         logger.init_logger(self.config_manager.config)
         
         # Initialize translator
