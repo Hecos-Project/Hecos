@@ -76,7 +76,7 @@ filters:
   remove_square_brackets: none
   custom_filters: []
   custom_replacements: {}
-language: it
+language: en
 llm:
   allow_cloud: true
   debug_llm: true
