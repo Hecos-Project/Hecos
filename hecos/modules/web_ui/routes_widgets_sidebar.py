@@ -12,6 +12,29 @@ from flask_login import login_required
 
 def init_widget_sidebar_routes(app, config_manager, _log, _get_config, _save_config):
 
+    @app.route("/api/widgets/<ext_id>/enabled", methods=["POST"])
+    @login_required
+    def api_set_widget_enabled(ext_id):
+        data = request.get_json(silent=True) or {}
+        if "enabled" not in data:
+            return jsonify({"ok": False, "error": "'enabled' field required"}), 400
+
+        enabled = bool(data["enabled"])
+        _log.info(f"WIDGETS: Setting enabled for [{ext_id}] to {enabled}")
+        
+        res = config_manager.set(enabled, "widgets", "per_widget", ext_id, "enabled")
+        if res:
+            # If disabling, also disable sidebar and room to avoid stale state
+            if not enabled:
+                config_manager.set(False, "widgets", "per_widget", ext_id, "visible")
+                config_manager.set(False, "widgets", "per_widget", ext_id, "room_visible")
+            ok = _save_config()
+            return jsonify({"ok": True, "ext_id": ext_id, "enabled": enabled})
+        
+        _log.warning(f"WIDGETS: Failed to set enabled for [{ext_id}]")
+        return jsonify({"ok": False, "error": "Failed to update config"}), 500
+
+
     @app.route("/api/widgets/<ext_id>/visible", methods=["POST"])
     @login_required
     def api_set_widget_visible(ext_id):
