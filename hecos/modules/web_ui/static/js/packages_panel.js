@@ -17,12 +17,7 @@ window.hpmInit = function () {
   hpmLoadPackages();
 };
 
-// Auto-init when the script is first loaded
-document.addEventListener('DOMContentLoaded', window.hpmInit);
-// Also init immediately if DOM is already ready (fragment lazy-load case)
-if (document.readyState !== 'loading') {
-  window.hpmInit();
-}
+// hpmInit auto-execution moved to bottom
 
 // ── Load & Render Installed Packages ─────────────────────────────────────────
 
@@ -299,7 +294,7 @@ function hpmInjectTab(installResult) {
   li.setAttribute('data-panel', tab_id);
   li.className = 'nav-item hpm-injected';
   li.innerHTML = `
-    <button class="nav-btn" onclick="loadPanel('${tab_id}')">
+    <button class="nav-btn" onclick="showTab('${tab_id}')">
       <i class="fas ${tab_icon || 'fa-cube'}" style="margin-right:6px;"></i>
       ${_hesc(tab_label || tab_id)}
     </button>`;
@@ -333,7 +328,7 @@ window.hpmWelcomeDrop = function (e) {
   const file = e.dataTransfer?.files?.[0];
   if (file) {
     // Navigate to packages tab first, then install
-    if (typeof loadPanel === 'function') loadPanel('packages');
+    if (typeof showTab === 'function') showTab('packages');
     setTimeout(() => hpmInstallFile(file), 400);
   }
 };
@@ -341,8 +336,14 @@ window.hpmWelcomeDrop = function (e) {
 window.hpmWelcomeFileSelected = function (e) {
   const file = e.target?.files?.[0];
   if (file) {
-    if (typeof loadPanel === 'function') loadPanel('packages');
+    if (typeof showTab === 'function') showTab('packages');
     setTimeout(() => hpmInstallFile(file), 400);
   }
   e.target.value = '';
 };
+
+// ── Auto-init ───────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', window.hpmInit);
+if (document.readyState !== 'loading') {
+  window.hpmInit();
+}
