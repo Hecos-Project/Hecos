@@ -259,7 +259,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                                         <div>
                                             <div style="color:#fff; font-size:0.82rem; font-weight:700; margin-bottom:4px;">Find the Hecos Tray Icon</div>
                                             <div style="color:#888; font-size:0.78rem; line-height:1.5;">
-                                                Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong> (the system clock area). You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons. The Hecos icon will appear there after setup completes. <br><span style="color:var(--accent);">If the icon does not appear, double-click on <b>start_icontray</b> inside the Hecos folder.</span>
+                                                Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong> (the system clock area). You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons. The Hecos tray icon is the one with the <strong style="color:#ccc;">Hecos logo</strong>. It will be launched automatically after setup completes. <br><span style="color:var(--accent);">If the icon does not appear, enter the Hecos folder and double-click on <b>START_HECOS_TRAY_WIN</b> (or the Linux equivalent).</span>
                                             </div>
                                         </div>
                                     </div>
@@ -366,7 +366,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                                 Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong>, near the system clock.
                                 You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons.
                                 The Hecos icon should already be visible. 
-                                <br><span style="color:var(--accent);">If the icon does not appear, double-click on <b>start_icontray</b> inside the Hecos folder.</span>
+                                <br><span style="color:var(--accent);">If the icon does not appear, enter the Hecos folder and double-click on <b>START_HECOS_TRAY_WIN</b>.</span>
                             </div>
                         </div>
                     </div>
