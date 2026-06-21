@@ -130,22 +130,34 @@ function hpmRenderRow(pkg, meta) {
        </span>`
     : '';
 
+  // Toggles Logic
+  const disableLazy = pkg.tag ? ['REMINDER','CALENDAR','WEB_UI','MCP_BRIDGE','DASHBOARD'].includes(pkg.tag.toUpperCase()) : false;
+  const disableEnabled = pkg.tag ? ['WEB_UI'].includes(pkg.tag.toUpperCase()) : false;
+  const isLazy = pkg.lazy_load === true;
+  const isBuiltin = (pkg.version === 'built-in');
+
+  let lazyHtml = '';
+  if (!disableLazy) {
+    lazyHtml = `
+      <label class="lazy-label" style="font-size:10px; margin-right:8px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+        <input type="checkbox" onchange="hpmToggleLazy('${pkg.id}', ${isBuiltin}, this.checked)" ${isLazy ? 'checked' : ''}> Lazy
+      </label>
+    `;
+  }
+
+  let switchHtml = '';
+  if (!isBroken) {
+    switchHtml = `
+      <label class="switch" ${disableEnabled ? 'style="visibility:hidden;pointer-events:none;"' : ''} title="${window.HPM_I18N?.enable || 'Enable'}/${window.HPM_I18N?.disable || 'Disable'}">
+        <input type="checkbox" onchange="hpmToggleEnabled('${pkg.id}', ${isBuiltin}, this.checked)" ${!isDisabled ? 'checked' : ''} ${disableEnabled ? 'disabled' : ''}>
+        <span class="slider"></span>
+      </label>
+    `;
+  }
+
   // Actions
   let actions = '';
   if (isRemovable) {
-    // Enable / Disable toggle
-    if (!isBroken) {
-      actions += isDisabled
-        ? `<button class="btn btn-sm btn-secondary" onclick="hpmSetStatus('${pkg.id}','installed')" title="${window.HPM_I18N?.enable || 'Enable'}"
-                  style="font-size:10px;padding:4px 10px;">
-             <i class="fas fa-play" style="font-size:10px;"></i>
-           </button>`
-        : `<button class="btn btn-sm btn-secondary" onclick="hpmSetStatus('${pkg.id}','disabled')" title="${window.HPM_I18N?.disable || 'Disable'}"
-                  style="font-size:10px;padding:4px 10px;">
-             <i class="fas fa-pause" style="font-size:10px;"></i>
-           </button>`;
-    }
-    // Uninstall
     actions += `
       <button class="btn btn-sm btn-danger"
               style="font-size:10px;padding:4px 10px;margin-left:4px;"
@@ -154,9 +166,9 @@ function hpmRenderRow(pkg, meta) {
         <i class="fas fa-trash-alt" style="font-size:10px;"></i>
       </button>`;
   } else {
-    // Core / built-in: only show a lock icon to signal it's protected
+    // Core / built-in: only show a lock icon to signal it's protected from uninstall
     actions = `<span title="${window.HPM_I18N?.tooltip_builtin || 'Built-in module — cannot be removed'}"
-                     style="font-size:10px;color:var(--muted);opacity:0.5;padding:0 4px;">
+                     style="font-size:10px;color:var(--muted);opacity:0.5;padding:0 4px;margin-left:4px;">
                  <i class="fas fa-lock"></i>
                </span>`;
   }
@@ -197,10 +209,53 @@ function hpmRenderRow(pkg, meta) {
 
       <!-- Actions -->
       <div style="display:flex;gap:5px;flex-shrink:0;align-items:center;">
+        ${lazyHtml}
+        ${switchHtml}
         ${actions}
       </div>
     </div>`;
 }
+
+// ── Toggles ───────────────────────────────────────────────────────────────────
+
+window.hpmToggleEnabled = function(id, isBuiltin, isChecked) {
+    const tag = id;
+    if (window.cfg) {
+        if (!window.cfg.plugins) window.cfg.plugins = {};
+        if (!window.cfg.plugins[tag]) window.cfg.plugins[tag] = {};
+        window.cfg.plugins[tag].enabled = isChecked;
+    }
+
+    if (!isBuiltin) {
+        // HPM Packages need to also update the registry DB via API
+        const status = isChecked ? 'installed' : 'disabled';
+        hpmSetStatus(id, status, true); // true = skip rendering to avoid conflict
+    } else {
+        if (typeof window.saveConfig === 'function') window.saveConfig(true);
+        // Refresh local UI instantly
+        const pkg = _packages.find(p => p.id === id);
+        if (pkg) {
+            pkg.status = isChecked ? 'installed' : 'disabled';
+            hpmRenderHierarchy();
+        }
+    }
+};
+
+window.hpmToggleLazy = function(id, isBuiltin, isChecked) {
+    const tag = id;
+    if (window.cfg) {
+        if (!window.cfg.plugins) window.cfg.plugins = {};
+        if (!window.cfg.plugins[tag]) window.cfg.plugins[tag] = {};
+        window.cfg.plugins[tag].lazy_load = isChecked;
+    }
+    
+    if (typeof window.saveConfig === 'function') window.saveConfig(true);
+    
+    const pkg = _packages.find(p => p.id === id);
+    if (pkg) {
+        pkg.lazy_load = isChecked;
+    }
+};
 
 // ── Utility ───────────────────────────────────────────────────────────────────
 
@@ -284,27 +339,29 @@ async function hpmInstallFile(file) {
 
 // ── Enable / Disable ──────────────────────────────────────────────────────────
 
-window.hpmSetStatus = async function (id, status) {
-  const card = document.getElementById(`hpm-pkg-${id}`);
-  if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
-
+window.hpmSetStatus = async function (id, status, skipRender = false) {
   try {
-    const resp = await fetch(`/api/packages/${id}/status`, {
+    const res = await fetch(`/api/packages/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status })
     });
-    const data = await resp.json();
-    if (data.ok) {
-      if (window.showToast) window.showToast(`Module ${status === 'installed' ? 'enabled' : 'disabled'}`, 'info');
-      hpmLoadPackages();
-    } else {
-      if (window.showToast) window.showToast(`${data.error}`, 'error');
-      if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+    const data = await res.json();
+    if (!data.ok) {
+      if (window.showToast) window.showToast('Error: ' + data.error, 'error');
+      return;
+    }
+    if (window.showToast) window.showToast(`Package ${status}`);
+    
+    // Always trigger saveConfig to ensure system.yaml is synced if we toggled the switch
+    if (typeof window.saveConfig === 'function') window.saveConfig(true);
+
+    if (!skipRender) {
+      const p = _packages.find(x => x.id === id);
+      if (p) { p.status = status; hpmRenderHierarchy(); }
     }
   } catch (err) {
-    if (window.showToast) window.showToast(`${err.message}`, 'error');
-    if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+    if (window.showToast) window.showToast('Network error', 'error');
   }
 };
 

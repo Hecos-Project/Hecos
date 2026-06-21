@@ -76,7 +76,7 @@ def _hpm_event_broadcast(event_name: str, payload: dict) -> None:
         logger.debug(f"[HPM:Routes] Could not broadcast event: {e}")
 
 
-def init_package_routes(app, hecos_root: str, _log=None):
+def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     """Register all HPM REST routes on the Flask app."""
 
     log = _log or logger
@@ -179,9 +179,14 @@ def init_package_routes(app, hecos_root: str, _log=None):
             ]
 
 
+            system_plugins = cfg_mgr.config.get("plugins", {})
+
             for m in BUILTIN_MODULES:
+                tag = m.get("id", "")
+                p_conf = system_plugins.get(tag, {})
                 m.setdefault("removable", False)
-                m.setdefault("status", "installed")
+                m["status"] = "installed" if p_conf.get("enabled", True) else "disabled"
+                m["lazy_load"] = p_conf.get("lazy_load", False)
                 m.setdefault("version", "built-in")
                 m.setdefault("author", "Hecos Core")
                 # Description is already set for core modules, fallback just in case:
@@ -195,6 +200,14 @@ def init_package_routes(app, hecos_root: str, _log=None):
                 "persona": 6, "theme": 7, "skill_pack": 8,
             }
             for p in hpm_packages:
+                tag = p.get("id", "")
+                p_conf = system_plugins.get(tag, {})
+                
+                # system.yaml overrides HPM status for true runtime state
+                if "enabled" in p_conf:
+                    p["status"] = "installed" if p_conf["enabled"] else "disabled"
+                    
+                p["lazy_load"] = p_conf.get("lazy_load", False)
                 p["level"] = TYPE_TO_LEVEL.get(p.get("type", "plugin"), 2)
                 p["removable"] = True
                 p.setdefault("fa_icon", "fa-cube")

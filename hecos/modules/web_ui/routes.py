@@ -68,6 +68,6 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     # Hecos Package Manager (HPM)
     try:
-        init_package_routes(app, root_dir, logger)
+        init_package_routes(app, root_dir, cfg_mgr, logger)
     except Exception as e:
         logger.warning(f"[WebUI] HPM routes failed to register: {e}")
