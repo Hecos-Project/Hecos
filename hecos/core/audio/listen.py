@@ -10,6 +10,13 @@ from . import voice
 from hecos.core.logging import logger
 import time
 
+# Importing soundfile ensures SpeechRecognition uses it for audio conversion
+# instead of falling back to the legacy flac-win32.exe which is blocked on Windows 11.
+try:
+    import soundfile  # noqa: F401 — side-effect import, makes sr use soundfile backend
+except ImportError:
+    pass  # graceful fallback: SpeechRecognition will try the flac binary
+
 try:
     import keyboard
 except ImportError:

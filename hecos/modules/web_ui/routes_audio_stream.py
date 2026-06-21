@@ -21,6 +21,12 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
             import tempfile
             import speech_recognition as sr
+            # soundfile import ensures SpeechRecognition uses the modern
+            # audio backend instead of legacy flac-win32.exe (blocked on Windows 11).
+            try:
+                import soundfile  # noqa: F401
+            except ImportError:
+                pass
 
             # Since the frontend now converts to WAV directly via AudioContext,
             # we can just save it and pass it to speech_recognition natively, skipping ffmpeg.
