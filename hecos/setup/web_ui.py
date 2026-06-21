@@ -329,7 +329,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             <style>{self.get_css_vars()}{self.get_main_styles()}</style>
             <style>
                 .done-card {{ background: linear-gradient(135deg, #0a1a15 0%, #0d1f18 100%); border: 2px solid var(--accent); border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 30px; box-shadow: 0 0 60px rgba(0,255,204,0.15); }}
-                .done-icon {{ font-size: 4rem; margin-bottom: 16px; }}
+                .done-icon {{ height: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 15px var(--accent-dim)); }}
                 .done-title {{ font-size: 1.8rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; margin: 0 0 10px 0; }}
                 .done-sub {{ color: #888; font-size: 0.9rem; margin: 0 0 30px 0; }}
                 .step-card {{ background: #111; border-radius: 12px; padding: 16px 20px; display: flex; gap: 16px; align-items: flex-start; text-align: left; margin-bottom: 12px; }}
@@ -348,7 +348,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     <h1 class="title-text">HECOS SETUP</h1>
                 </div>
                 <div class="done-card">
-                    <div class="done-icon">🎉</div>
+                    <img src="/logo.png" class="done-icon" alt="Hecos Logo">
                     <div class="done-title">INSTALLATION COMPLETE!</div>
                     <div class="done-sub">All components have been installed successfully. Hecos is ready to start.</div>
                 </div>
