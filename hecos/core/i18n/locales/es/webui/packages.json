@@ -12,7 +12,7 @@
     "hpm_action_disable": "Deshabilitar",
     "hpm_action_uninstall": "Desinstalar",
     "hpm_builtin_tooltip": "Módulo integrado — no se puede eliminar",
-    "hpm_confirm_uninstall": "¿Estás seguro de que quieres desinstalar el paquete '{0}'?",
+    "hpm_confirm_uninstall": "¿Estás seguro de que deseas desinstalar el paquete '%s'?",
     "hpm_desc_backend": "Gestiona la comunicación con los modelos de IA y el proveedor de la API.",
     "hpm_desc_keymanager": "Gestiona de forma segura las claves de API encriptadas.",
     "hpm_desc_routing": "Enruta las solicitudes hacia el modelo o herramienta más adecuada.",

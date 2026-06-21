@@ -12,7 +12,7 @@
     "hpm_action_disable": "Disable",
     "hpm_action_uninstall": "Uninstall",
     "hpm_builtin_tooltip": "Built-in module — cannot be removed",
-    "hpm_confirm_uninstall": "Are you sure you want to uninstall the package '{0}'?",
+    "hpm_confirm_uninstall": "Are you sure you want to uninstall the package '%s'?",
     "hpm_desc_backend": "Manages communication with AI models and the API provider.",
     "hpm_desc_keymanager": "Securely manages encrypted API keys.",
     "hpm_desc_routing": "Routes requests to the most suitable model or tool.",

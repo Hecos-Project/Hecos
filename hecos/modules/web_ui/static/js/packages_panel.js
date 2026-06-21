@@ -311,8 +311,8 @@ window.hpmSetStatus = async function (id, status) {
 // ── Uninstall ─────────────────────────────────────────────────────────────────
 
 window.hpmConfirmUninstall = function (id, name) {
-  const msgTemplate = window.HPM_I18N?.confirm_uninstall || 'Are you sure you want to uninstall the package \\'{0}\\'?';
-  const msg = msgTemplate.replace('{0}', name);
+  const msgTemplate = window.HPM_I18N?.confirm_uninstall || 'Are you sure you want to uninstall the package \'%s\'?';
+  const msg = msgTemplate.replace('%s', name);
   if (!confirm(msg)) return;
   hpmUninstall(id, name);
 };
