@@ -40,6 +40,7 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.4 offe
 * 🧠 **High-Performance RAG (FastEmbed)** — CPU-native, multi-tenant vector memory utilizing ONNX and LanceDB for blazing-fast document ingestion.
 * 🔐 **Per-User Vault Isolation** — Consolidated memory architecture ensuring absolute privacy separation for semantic data and chat history per profile.
 * 🛡️ **3-Tier Privacy Architecture** — Unified session management with **Normal**, **Auto-Wipe** (RAM-only store, cleared on exit), and **Incognito** (Zero-trace) modes.
+* 📦 **Hecos Package Manager (HPM)** — Centralized package installer with Ed25519 digital signatures to securely install third-party plugins, modules, and widgets.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Native support for the **Model Context Protocol**. Connect to thousands of external AI tools with a single click.
 * 🔭 **Deep MCP Discovery** — Advanced explorer with multi-registry search (Smithery, MCPSkills, GitHub) and one-click installation.
 * 🔒 **Professional Hecos PKI (HTTPS)** — Self-signing Root CA for a full "Green Lock" experience on all devices.
@@ -185,6 +186,8 @@ Included plugins:
 * **Web automation & Hardware dashboard**
 * **Media control & Model switching**
 * **Memory management**
+
+You can install new packages dynamically by dragging and dropping `.hpkg` files into the **Package Manager** inside the WebUI. All packages are verified via Ed25519 digital signatures for absolute security.
 
 ---
 
