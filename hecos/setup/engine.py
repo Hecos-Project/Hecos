@@ -125,7 +125,7 @@ def start_tray():
         script = os.path.join("scripts", "windows", "run", "HECOS_TRAY_WIN.bat")
         script_path = os.path.join(CWD, script)
         if os.path.exists(script_path):
-            subprocess.Popen(["cmd", "/c", "start", '""', script_path], cwd=CWD)
+            subprocess.Popen(["cmd", "/c", "start", "", script_path], cwd=CWD)
     else:
         script = os.path.join("scripts", "linux", "run", "HECOS_TRAY_LINUX.sh")
         script_path = os.path.join(CWD, script)
