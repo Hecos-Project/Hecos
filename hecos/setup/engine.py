@@ -71,7 +71,7 @@ def install_dependencies():
             "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
             "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
             "pywinauto", "playwright", "pywin32", "pystray", "pillow", "flet", "qrcode",
-            "psutil", "flask", "flask-login", "cryptography", "pynput", "SpeechRecognition", "PyAudio", "fastembed",
+            "psutil", "flask", "flask-login", "cryptography", "pynput", "SpeechRecognition", "PyAudio", "fastembed", "soundfile",
         ]
 
     cmd = [sys.executable, "-m", "pip", "install"] + packages
@@ -119,6 +119,18 @@ def enable_autostart():
     except Exception as e:
         print(f"[-] Error: {e}")
         return False
+
+def start_tray():
+    if os.name == 'nt':
+        script = os.path.join("scripts", "windows", "run", "HECOS_TRAY_WIN.bat")
+        script_path = os.path.join(CWD, script)
+        if os.path.exists(script_path):
+            subprocess.Popen(["cmd", "/c", "start", "", script_path], cwd=CWD)
+    else:
+        script = os.path.join("scripts", "linux", "run", "HECOS_TRAY_LINUX.sh")
+        script_path = os.path.join(CWD, script)
+        if os.path.exists(script_path):
+            subprocess.Popen(["bash", script_path], cwd=CWD, start_new_session=True)
 
 def auto_fix_piper_path():
     print(T("piper_check"))
@@ -356,6 +368,10 @@ def unattended_onboarding(target_voices=None):
     # Step 5: Autostart Link
     print("\n[*] Setting up System Infrastructure...")
     enable_autostart()
+    
+    # Step 6: Launch Tray
+    print("\n[*] Launching Hecos Tray Icon...")
+    start_tray()
     
     print("\n" + "=" * 60)
     print(f"  {T('onboarding_done')}")

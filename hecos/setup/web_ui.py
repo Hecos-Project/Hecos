@@ -88,6 +88,11 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if isinstance(v_list, str): v_list = [v_list]
                 unattended_onboarding(target_voices=v_list)
                 ONBOARDING_DONE = True
+                print("\n" + "="*60, file=sys.__stdout__)
+                print("[+] INSTALLATION COMPLETE! / INSTALLAZIONE COMPLETATA!", file=sys.__stdout__)
+                print("[*] You can now safely close this window and launch Hecos.", file=sys.__stdout__)
+                print("[*] Puoi chiudere questa finestra e avviare Hecos dal desktop.", file=sys.__stdout__)
+                print("="*60 + "\n", file=sys.__stdout__)
             elif self.path == '/fix':
                 auto_fix_piper_path()
             elif self.path == '/full_check':
@@ -254,7 +259,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                                         <div>
                                             <div style="color:#fff; font-size:0.82rem; font-weight:700; margin-bottom:4px;">Find the Hecos Tray Icon</div>
                                             <div style="color:#888; font-size:0.78rem; line-height:1.5;">
-                                                Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong> (the system clock area). You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons. The Hecos icon will appear there after setup completes. <br><span style="color:var(--accent);">If the icon does not appear, double-click on <b>start_icontray</b> inside the Hecos folder.</span>
+                                                Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong> (the system clock area). You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons. The Hecos tray icon is the one with the <strong style="color:#ccc;">Hecos logo</strong>. It will be launched automatically after setup completes. <br><span style="color:var(--accent);">If the icon does not appear, enter the Hecos folder and double-click on <b>START_HECOS_TRAY_WIN</b> (or the Linux equivalent).</span>
                                             </div>
                                         </div>
                                     </div>
@@ -324,7 +329,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             <style>{self.get_css_vars()}{self.get_main_styles()}</style>
             <style>
                 .done-card {{ background: linear-gradient(135deg, #0a1a15 0%, #0d1f18 100%); border: 2px solid var(--accent); border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 30px; box-shadow: 0 0 60px rgba(0,255,204,0.15); }}
-                .done-icon {{ font-size: 4rem; margin-bottom: 16px; }}
+                .done-icon {{ height: 80px; margin-bottom: 20px; filter: drop-shadow(0 0 15px var(--accent-dim)); }}
                 .done-title {{ font-size: 1.8rem; font-weight: 900; color: var(--accent); letter-spacing: 2px; margin: 0 0 10px 0; }}
                 .done-sub {{ color: #888; font-size: 0.9rem; margin: 0 0 30px 0; }}
                 .step-card {{ background: #111; border-radius: 12px; padding: 16px 20px; display: flex; gap: 16px; align-items: flex-start; text-align: left; margin-bottom: 12px; }}
@@ -343,7 +348,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     <h1 class="title-text">HECOS SETUP</h1>
                 </div>
                 <div class="done-card">
-                    <div class="done-icon">🎉</div>
+                    <img src="/logo.png" class="done-icon" alt="Hecos Logo">
                     <div class="done-title">INSTALLATION COMPLETE!</div>
                     <div class="done-sub">All components have been installed successfully. Hecos is ready to start.</div>
                 </div>
@@ -361,7 +366,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                                 Look at the <strong style="color:#ccc;">bottom-right corner of your taskbar</strong>, near the system clock.
                                 You may need to click the <strong style="color:#ccc;">▲ arrow</strong> to expand hidden icons.
                                 The Hecos icon should already be visible. 
-                                <br><span style="color:var(--accent);">If the icon does not appear, double-click on <b>start_icontray</b> inside the Hecos folder.</span>
+                                <br><span style="color:var(--accent);">If the icon does not appear, enter the Hecos folder and double-click on <b>START_HECOS_TRAY_WIN</b>.</span>
                             </div>
                         </div>
                     </div>

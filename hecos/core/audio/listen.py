@@ -10,6 +10,24 @@ from . import voice
 from hecos.core.logging import logger
 import time
 
+# Importing soundfile ensures SpeechRecognition uses it for audio conversion
+# instead of falling back to the legacy flac-win32.exe which is blocked on Windows 11.
+# Monkey-patch speech_recognition to use soundfile for FLAC conversion.
+# This prevents it from falling back to the legacy flac-win32.exe which is blocked on Windows 11.
+try:
+    import soundfile as sf
+    import io
+    def _custom_get_flac_data(self, convert_rate=None, convert_width=None):
+        wav_data = self.get_wav_data(convert_rate, convert_width)
+        wav_io = io.BytesIO(wav_data)
+        data, samplerate = sf.read(wav_io)
+        flac_io = io.BytesIO()
+        sf.write(flac_io, data, samplerate, format='FLAC')
+        return flac_io.getvalue()
+    sr.AudioData.get_flac_data = _custom_get_flac_data
+except ImportError:
+    pass  # graceful fallback: SpeechRecognition will try the flac binary
+
 try:
     import keyboard
 except ImportError:

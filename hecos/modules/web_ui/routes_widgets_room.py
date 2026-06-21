@@ -44,7 +44,7 @@ def init_widget_room_routes(app, config_manager, _log, _get_config, _save_config
             room_height = prefs.get(f"{ctx}_height", w.get("room_height", None))
             
             _log.debug(f"[ROOM] [{ctx}] widget={ext_id} visible={room_visible} span={room_span} theme={room_theme}")
-            if room_visible:
+            if room_visible and w.get("enabled", True):
                 room_widgets.append({
                     **w,
                     "room_visible": True,

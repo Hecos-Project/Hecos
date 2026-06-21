@@ -21,6 +21,21 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
             import tempfile
             import speech_recognition as sr
+            # Monkey-patch speech_recognition to use soundfile for FLAC conversion.
+            # This prevents it from falling back to the legacy flac-win32.exe (blocked on Win 11).
+            try:
+                import soundfile as sf
+                import io
+                def _custom_get_flac_data(self, convert_rate=None, convert_width=None):
+                    wav_data = self.get_wav_data(convert_rate, convert_width)
+                    wav_io = io.BytesIO(wav_data)
+                    data, samplerate = sf.read(wav_io)
+                    flac_io = io.BytesIO()
+                    sf.write(flac_io, data, samplerate, format='FLAC')
+                    return flac_io.getvalue()
+                sr.AudioData.get_flac_data = _custom_get_flac_data
+            except ImportError:
+                pass
 
             # Since the frontend now converts to WAV directly via AudioContext,
             # we can just save it and pass it to speech_recognition natively, skipping ffmpeg.

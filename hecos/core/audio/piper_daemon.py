@@ -166,6 +166,7 @@ class PiperDaemon:
             "output_file": filepath
         }
 
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self._synth_complete_event.clear()
         try:
             with self._lock:

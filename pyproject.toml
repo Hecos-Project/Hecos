@@ -38,6 +38,7 @@ dependencies = [
     "pygame",
     "GPUtil",
     "numpy",
+    "soundfile",
 ]
 
 [project.optional-dependencies]

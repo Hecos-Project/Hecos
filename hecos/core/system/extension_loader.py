@@ -98,6 +98,7 @@ def _get_widget_prefs(ext_id: str, config: dict) -> dict:
         prefs = prefs.__dict__
 
     return {
+        "enabled":      prefs.get("enabled", True) if isinstance(prefs, dict) else getattr(prefs, 'enabled', True),
         "visible":      prefs.get("visible", True) if isinstance(prefs, dict) else getattr(prefs, 'visible', True),
         "room_visible": prefs.get("room_visible", False) if isinstance(prefs, dict) else getattr(prefs, 'room_visible', False),
         "room_span":    prefs.get("room_span", 1) if isinstance(prefs, dict) else getattr(prefs, 'room_span', 1),
@@ -123,8 +124,12 @@ def get_sidebar_widgets(config: dict = None) -> list:
     # 1. Get all candidates
     all_widgets = get_all_widgets(config)
     
-    # 2. Filter by active and visible
-    visible_widgets = {w["extension_id"]: w for w in all_widgets if w.get("plugin_active") and w.get("visible")}
+    # 2. Filter by active, enabled, and visible
+    visible_widgets = {
+        w["extension_id"]: w
+        for w in all_widgets
+        if w.get("plugin_active") and w.get("enabled", True) and w.get("visible")
+    }
     
     # 3. Apply order
     if not config:
@@ -177,6 +182,7 @@ def get_all_widgets(config: dict = None) -> list:
         enriched = dict(manifest)
         enriched["extension_id"]  = ext_id
         enriched["plugin_active"] = plugin_active
+        enriched["enabled"]       = prefs.get("enabled", True)
         enriched["visible"]       = prefs.get("visible", True)
         enriched["room_visible"]  = prefs.get("room_visible", False)
         enriched["room_span"]     = prefs.get("room_span", 1)

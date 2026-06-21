@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # ─── WIDGET PERSISTENCE ───────────────────────────────────────────────────────
 
 class WidgetPersistence(BaseModel):
+    enabled: bool = True         # Master on/off switch (hides from sidebar AND room)
     visible: bool = True
     room_visible: bool = False
     room_span: int = 1
@@ -28,7 +29,7 @@ class WidgetsConfig(BaseModel):
     per_widget: Dict[str, WidgetPersistence] = Field(default_factory=dict)
     sidebar_status_collapsed: bool = False
     sidebar_audio_collapsed: bool = False
-    sidebar_widgets_enabled: bool = True
+    sidebar_widgets_enabled: bool = False
     room_layout: List[str] = Field(default_factory=list)
 
 
