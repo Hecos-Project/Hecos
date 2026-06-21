@@ -5,9 +5,53 @@
         <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Logo" style="height: 80px; width: auto; filter: drop-shadow(0 0 10px rgba(0,0,0,0.2));">
     </div>
     <h1 style="font-size:1.8em; margin-bottom:8px; color:var(--text);">Hecos Central Hub</h1>
-    <p style="color:var(--muted); max-width:450px; line-height:1.5; margin-bottom:25px; font-size:0.95em;">
+    <p style="color:var(--muted); max-width:450px; line-height:1.5; margin-bottom:20px; font-size:0.95em;">
         {{ t('webui_welcome_desc') or 'Benvenuto nel cuore della configurazione di Hecos. Qui puoi regolare i moduli, il comportamento del sistema e gestire i plugin AI.' }}
     </p>
+
+    <!-- ── HPM Quick Access ─────────────────────────────────────────── -->
+    <div style="background:var(--bg2);border:1px solid var(--border-color);
+                border-radius:14px;padding:14px 18px;margin-bottom:22px;
+                max-width:480px;width:100%;text-align:left;
+                position:relative;cursor:default;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+            <div style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));
+                        width:34px;height:34px;border-radius:9px;display:flex;
+                        align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="fas fa-cube" style="color:#fff;font-size:14px;"></i>
+            </div>
+            <div>
+                <div style="font-weight:700;font-size:0.9em;color:var(--text);">Package Manager</div>
+                <div style="font-size:0.75em;color:var(--muted);">Install or remove .hpkg packages</div>
+            </div>
+            <button onclick="event.stopPropagation(); loadPanel('packages');"
+                    style="margin-left:auto;background:var(--accent);color:#fff;
+                           border:none;border-radius:7px;padding:5px 12px;
+                           font-size:0.78em;font-weight:600;cursor:pointer;
+                           transition:opacity .15s;position:relative;z-index:2;"
+                    onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                Open <i class="fas fa-arrow-right" style="font-size:10px;margin-left:3px;"></i>
+            </button>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <!-- Drop zone inline -->
+            <div id="welcome-hpm-dropzone"
+                 style="flex:1;border:1.5px dashed var(--border-color);border-radius:9px;
+                        padding:10px;text-align:center;cursor:pointer;
+                        transition:border-color .2s,background .2s;font-size:0.78em;
+                        color:var(--muted);position:relative;z-index:2;"
+                 ondragover="event.preventDefault();this.style.borderColor='var(--accent)';"
+                 ondragleave="this.style.borderColor='var(--border-color)';"
+                 ondrop="hpmWelcomeDrop(event)"
+                 onclick="event.stopPropagation(); document.getElementById('welcome-hpm-input').click();">
+                <i class="fas fa-upload" style="margin-right:4px;"></i>
+                Drop .hpkg to install
+                <input type="file" id="welcome-hpm-input" accept=".hpkg,.zip"
+                       style="display:none;" onchange="hpmWelcomeFileSelected(event)">
+            </div>
+        </div>
+    </div>
+    <!-- ── / HPM ──────────────────────────────────────────────────────── -->
 
     <div style="display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:550px; margin-bottom:30px;">
         <div style="background:var(--bg2); padding:12px; border-radius:12px; border:1px solid var(--border-color); flex:1; min-width:180px;">

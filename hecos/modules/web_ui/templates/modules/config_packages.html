@@ -1,0 +1,115 @@
+<!-- ══════════════════════════════════════════════════════════════════════
+     HECOS PACKAGE MANAGER (HPM) — Config Panel Fragment
+     Loaded lazily via /hecos/config/fragment/packages
+     ════════════════════════════════════════════════════════════════════ -->
+<div id="tab-packages" class="panel">
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:16px;">
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
+      <div style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));
+                  width:44px;height:44px;border-radius:12px;display:flex;
+                  align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-cube" style="color:#fff;font-size:18px;"></i>
+      </div>
+      <div>
+        <div style="font-size:1.15em;font-weight:700;color:var(--text);">Hecos Package Manager</div>
+        <div style="font-size:0.8em;color:var(--muted);">
+          Install, manage and remove .hpkg packages — plugins, modules, widgets and more.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Install Drop Zone ────────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title" style="margin-bottom:12px;">
+      <i class="fas fa-upload" style="color:var(--accent);margin-right:6px;"></i>
+      Install Package
+    </div>
+
+    <div id="hpm-dropzone"
+         style="border:2px dashed var(--border-color);border-radius:12px;
+                padding:32px 20px;text-align:center;cursor:pointer;
+                transition:border-color .2s,background .2s;position:relative;
+                background:var(--bg2);"
+         ondragover="hpmDragOver(event)"
+         ondragleave="hpmDragLeave(event)"
+         ondrop="hpmDrop(event)"
+         onclick="document.getElementById('hpm-file-input').click()">
+
+      <div id="hpm-drop-icon" style="font-size:2em;margin-bottom:8px;color:var(--accent);">
+        <i class="fas fa-box-open"></i>
+      </div>
+      <div style="color:var(--text);font-weight:600;margin-bottom:4px;">
+        Drag &amp; drop a .hpkg file here
+      </div>
+      <div style="color:var(--muted);font-size:0.82em;">or click to browse</div>
+
+      <input type="file" id="hpm-file-input" accept=".hpkg,.zip"
+             style="display:none;" onchange="hpmFileSelected(event)">
+    </div>
+
+    <!-- Progress bar (hidden by default) -->
+    <div id="hpm-install-progress" style="display:none;margin-top:12px;">
+      <div style="background:var(--border-color);border-radius:6px;height:6px;overflow:hidden;">
+        <div id="hpm-progress-bar"
+             style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2,#7c3aed));
+                    border-radius:6px;transition:width .3s ease;"></div>
+      </div>
+      <div id="hpm-progress-label" style="font-size:0.78em;color:var(--muted);margin-top:4px;text-align:center;">
+        Preparing...
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Installed Packages ────────────────────────────────────────────── -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div class="card-title" style="margin:0;">
+        <i class="fas fa-boxes" style="color:var(--accent);margin-right:6px;"></i>
+        Installed Packages
+      </div>
+      <button class="btn-icon" onclick="hpmLoadPackages()" title="Refresh list"
+              style="padding:6px 10px;font-size:0.78em;">
+        <i class="fas fa-sync-alt"></i>
+      </button>
+    </div>
+
+    <div id="hpm-packages-grid" style="display:grid;gap:10px;">
+      <div style="text-align:center;padding:30px;color:var(--muted);font-size:0.9em;">
+        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>
+        Loading installed packages...
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Remote Registry (stub) ───────────────────────────────────────── -->
+  <div class="card" style="margin-top:16px;opacity:0.65;">
+    <div class="card-title" style="margin-bottom:8px;">
+      <i class="fas fa-globe" style="color:var(--accent);margin-right:6px;"></i>
+      Online Registry
+      <span style="background:var(--accent);color:#fff;font-size:0.68em;
+                   padding:2px 6px;border-radius:4px;margin-left:8px;">COMING SOON</span>
+    </div>
+    <p style="color:var(--muted);font-size:0.85em;margin:0;">
+      Browse and install community packages directly from the Hecos online registry.
+      This feature will be available in a future release.
+    </p>
+  </div>
+
+</div>
+
+<!-- Load the HPM panel script (once, on first tab open) -->
+<script>
+(function() {
+  if (!window._hpmScriptLoaded) {
+    window._hpmScriptLoaded = true;
+    const s = document.createElement('script');
+    s.src = '/static/js/packages_panel.js?v={{ version }}';
+    document.head.appendChild(s);
+  } else if (window.hpmInit) {
+    window.hpmInit();
+  }
+})();
+</script>
