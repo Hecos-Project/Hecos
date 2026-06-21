@@ -88,6 +88,11 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if isinstance(v_list, str): v_list = [v_list]
                 unattended_onboarding(target_voices=v_list)
                 ONBOARDING_DONE = True
+                print("\n" + "="*60, file=sys.__stdout__)
+                print("[+] INSTALLATION COMPLETE! / INSTALLAZIONE COMPLETATA!", file=sys.__stdout__)
+                print("[*] You can now safely close this window and launch Hecos.", file=sys.__stdout__)
+                print("[*] Puoi chiudere questa finestra e avviare Hecos dal desktop.", file=sys.__stdout__)
+                print("="*60 + "\n", file=sys.__stdout__)
             elif self.path == '/fix':
                 auto_fix_piper_path()
             elif self.path == '/full_check':
