@@ -13,9 +13,9 @@
         <i class="fas fa-cube" style="color:#fff;font-size:18px;"></i>
       </div>
       <div>
-        <div style="font-size:1.15em;font-weight:700;color:var(--text);">Hecos Package Manager</div>
+        <div style="font-size:1.15em;font-weight:700;color:var(--text);">{{ t('hpm_title') or 'Hecos Module Manager' }}</div>
         <div style="font-size:0.8em;color:var(--muted);">
-          Install, manage and remove .hpkg packages — plugins, modules, widgets and more.
+          {{ t('hpm_subtitle') or 'Manage and install .hpkg packages.' }}
         </div>
       </div>
     </div>
@@ -25,7 +25,7 @@
   <div class="card" style="margin-bottom:16px;">
     <div class="card-title" style="margin-bottom:12px;">
       <i class="fas fa-upload" style="color:var(--accent);margin-right:6px;"></i>
-      Install Package
+      {{ t('hpm_install_new') or 'Install New Package (.hpkg)' }}
     </div>
 
     <div id="hpm-dropzone"
@@ -42,9 +42,9 @@
         <i class="fas fa-box-open"></i>
       </div>
       <div style="color:var(--text);font-weight:600;margin-bottom:4px;">
-        Drag &amp; drop a .hpkg file here
+        {{ t('hpm_drag_drop') or 'Drag & drop a .hpkg file here' }}
       </div>
-      <div style="color:var(--muted);font-size:0.82em;">or click to browse</div>
+      <div style="color:var(--muted);font-size:0.82em;">{{ t('hpm_or_browse') or 'or click to browse' }}</div>
 
       <input type="file" id="hpm-file-input" accept=".hpkg,.zip"
              style="display:none;" onchange="hpmFileSelected(event)">
@@ -54,7 +54,7 @@
     <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
       <input type="checkbox" id="hpm-allow-unsigned" style="accent-color:var(--accent);">
       <label for="hpm-allow-unsigned" style="font-size:0.85em;color:var(--text);cursor:pointer;">
-        Allow unsigned packages (For local development only)
+        {{ t('hpm_allow_unsigned') or 'Allow unsigned packages (For local development only)' }}
       </label>
     </div>
 
@@ -66,7 +66,7 @@
                     border-radius:6px;transition:width .3s ease;"></div>
       </div>
       <div id="hpm-progress-label" style="font-size:0.78em;color:var(--muted);margin-top:4px;text-align:center;">
-        Preparing...
+        {{ t('hpm_preparing') or 'Preparing...' }}
       </div>
     </div>
   </div>
@@ -75,10 +75,10 @@
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div class="card-title" style="margin:0;">
-        <i class="fas fa-boxes" style="color:var(--accent);margin-right:6px;"></i>
-        Installed Packages
+        <i class="fas fa-layer-group" style="color:var(--accent);margin-right:6px;"></i>
+        {{ t('hpm_tab_all') or 'All Modules' }}
       </div>
-      <button class="btn-icon" onclick="hpmLoadPackages()" title="Refresh list"
+      <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
               style="padding:6px 10px;font-size:0.78em;">
         <i class="fas fa-sync-alt"></i>
       </button>
@@ -87,7 +87,7 @@
     <div id="hpm-packages-grid" style="display:grid;gap:10px;">
       <div style="text-align:center;padding:30px;color:var(--muted);font-size:0.9em;">
         <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>
-        Loading installed packages...
+        {{ t('webui_loading') or 'Loading installed packages...' }}
       </div>
     </div>
   </div>
@@ -96,17 +96,30 @@
   <div class="card" style="margin-top:16px;opacity:0.65;">
     <div class="card-title" style="margin-bottom:8px;">
       <i class="fas fa-globe" style="color:var(--accent);margin-right:6px;"></i>
-      Online Registry
+      {{ t('hpm_online_registry') or 'Online Registry' }}
       <span style="background:var(--accent);color:#fff;font-size:0.68em;
-                   padding:2px 6px;border-radius:4px;margin-left:8px;">COMING SOON</span>
+                   padding:2px 6px;border-radius:4px;margin-left:8px;">{{ t('hpm_coming_soon') or 'COMING SOON' }}</span>
     </div>
     <p style="color:var(--muted);font-size:0.85em;margin:0;">
-      Browse and install community packages directly from the Hecos online registry.
-      This feature will be available in a future release.
+      {{ t('hpm_registry_desc') or 'Browse and install community packages directly from the Hecos online registry. This feature will be available in a future release.' }}
     </p>
   </div>
 
 </div>
+
+<!-- Translations for JS -->
+<script>
+window.HPM_I18N = {
+  loading: "{{ t('webui_loading') or 'Loading modules...' }}",
+  no_modules: "{{ t('hpm_no_modules') or 'No modules found.' }}",
+  failed_load: "{{ t('hpm_failed_load') or 'Failed to load modules:' }}",
+  enable: "{{ t('hpm_action_enable') or 'Enable' }}",
+  disable: "{{ t('hpm_action_disable') or 'Disable' }}",
+  uninstall: "{{ t('hpm_action_uninstall') or 'Uninstall' }}",
+  tooltip_builtin: "{{ t('hpm_builtin_tooltip') or 'Built-in module — cannot be removed' }}",
+  confirm_uninstall: "{{ t('hpm_confirm_uninstall') or 'Are you sure you want to uninstall the package \"{0}\"?' }}"
+};
+</script>
 
 <!-- Load the HPM panel script (once, on first tab open) -->
 <script>

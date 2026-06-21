@@ -1,15 +1,26 @@
 /**
  * packages_panel.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Hecos Package Manager — Frontend Logic
+ * Hecos Package Manager — Unified Module Manager Frontend
  *
- * Handles:
- *   - Listing installed packages as cards
- *   - Drag-and-drop / file-picker upload for .hpkg files
- *   - Install, disable/enable, uninstall operations
- *   - Live updates via hpm:* events (SSE / state manager)
+ * Displays ALL modules (core L1 + HPM-installed L2-L8) in a single
+ * grouped, collapsible hierarchy.  Core modules are read-only (no Uninstall);
+ * HPM modules support enable/disable and uninstall.
  * ─────────────────────────────────────────────────────────────────────────────
  */
+
+// ── Level Metadata ────────────────────────────────────────────────────────────
+
+const HPM_LEVELS = {
+  1: { label: 'Level 1 — Core Modules',    badge: 'CORE',    color: '#66fcf1', types: ['core_module'] },
+  2: { label: 'Level 2 — Plugins',         badge: 'PLUGIN',  color: '#3b82f6', types: ['plugin', 'module'] },
+  3: { label: 'Level 3 — Extensions',      badge: 'EXT',     color: '#45a29e', types: ['extension'] },
+  4: { label: 'Level 4 — Apps',            badge: 'APP',     color: '#8b5cf6', types: ['app'] },
+  5: { label: 'Level 5 — Widgets',         badge: 'WIDGET',  color: '#f59e0b', types: ['widget'] },
+  6: { label: 'Level 6 — Personas',        badge: 'PERSONA', color: '#ec4899', types: ['persona'] },
+  7: { label: 'Level 7 — Themes',          badge: 'THEME',   color: '#10b981', types: ['theme'] },
+  8: { label: 'Level 8 — Skill Packs',     badge: 'SKILLS',  color: '#f97316', types: ['skill_pack'] },
+};
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 
@@ -17,9 +28,7 @@ window.hpmInit = function () {
   hpmLoadPackages();
 };
 
-// hpmInit auto-execution moved to bottom
-
-// ── Load & Render Installed Packages ─────────────────────────────────────────
+// ── Load & Render ─────────────────────────────────────────────────────────────
 
 window.hpmLoadPackages = async function () {
   const grid = document.getElementById('hpm-packages-grid');
@@ -28,116 +37,172 @@ window.hpmLoadPackages = async function () {
   grid.innerHTML = `
     <div style="text-align:center;padding:30px;color:var(--muted);font-size:0.9em;">
       <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>
-      Loading installed packages...
+      ${window.HPM_I18N?.loading || 'Loading modules...'}
     </div>`;
 
   try {
-    const resp = await fetch('/api/packages');
+    const resp = await fetch('/api/packages/all');
     const data = await resp.json();
-
     if (!data.ok) throw new Error(data.error || 'Unknown error');
 
     const packages = data.packages || [];
-
     if (packages.length === 0) {
       grid.innerHTML = `
         <div style="text-align:center;padding:40px;color:var(--muted);">
           <i class="fas fa-box-open" style="font-size:2em;margin-bottom:10px;display:block;opacity:0.4;"></i>
-          <div style="font-size:0.9em;">No packages installed yet.</div>
-          <div style="font-size:0.8em;margin-top:4px;">Drop a .hpkg file above to get started.</div>
+          <div style="font-size:0.9em;">${window.HPM_I18N?.no_modules || 'No modules found.'}</div>
         </div>`;
       return;
     }
 
-    grid.innerHTML = packages.map(hpmRenderCard).join('');
+    grid.innerHTML = hpmRenderHierarchy(packages);
 
   } catch (err) {
     grid.innerHTML = `
       <div style="color:var(--danger,#ef4444);padding:16px;text-align:center;font-size:0.85em;">
         <i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>
-        Failed to load packages: ${err.message}
+        ${window.HPM_I18N?.failed_load || 'Failed to load modules:'} ${err.message}
       </div>`;
   }
 };
 
-// ── Card Renderer ─────────────────────────────────────────────────────────────
+// ── Hierarchy Renderer ────────────────────────────────────────────────────────
 
-function hpmRenderCard(pkg) {
-  const isDisabled = pkg.status === 'disabled';
-  const isBroken   = pkg.status === 'broken';
+function hpmRenderHierarchy(packages) {
+  let html = '';
 
-  const typeColors = {
-    plugin:     '#3b82f6',
-    module:     '#8b5cf6',
-    theme:      '#10b981',
-    skill_pack: '#f59e0b',
-  };
-  const typeColor = typeColors[pkg.type] || '#6b7280';
+  for (const [lvl, meta] of Object.entries(HPM_LEVELS)) {
+    const level = parseInt(lvl);
+    const group = packages.filter(p => (p.level || 2) === level);
+    if (group.length === 0) continue;
 
-  const statusBadge = isDisabled
-    ? `<span style="background:#6b7280;color:#fff;font-size:0.68em;padding:2px 7px;border-radius:4px;">DISABLED</span>`
-    : isBroken
-      ? `<span style="background:#ef4444;color:#fff;font-size:0.68em;padding:2px 7px;border-radius:4px;">BROKEN</span>`
-      : `<span style="background:#10b981;color:#fff;font-size:0.68em;padding:2px 7px;border-radius:4px;">ACTIVE</span>`;
+    const isOpen = level <= 4; // collapse higher levels by default
+    html += `
+      <details ${isOpen ? 'open' : ''} style="margin-bottom:12px;">
+        <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;
+                        padding:10px 14px;border-radius:10px;
+                        background:var(--bg2);border:1px solid var(--border-color);
+                        user-select:none;list-style:none;">
+          <span style="font-size:10px;font-weight:800;letter-spacing:1.2px;
+                       text-transform:uppercase;color:${meta.color};">${meta.label}</span>
+          <span style="background:${meta.color}22;color:${meta.color};
+                       font-size:9px;font-weight:700;letter-spacing:.8px;
+                       padding:2px 7px;border-radius:4px;border:1px solid ${meta.color}44;">
+            ${meta.badge}
+          </span>
+          <span style="margin-left:auto;font-size:10px;color:var(--muted);
+                       background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:10px;">
+            ${group.length}
+          </span>
+        </summary>
+        <div style="display:grid;gap:6px;margin-top:8px;padding:0 2px;">
+          ${group.map(pkg => hpmRenderRow(pkg, meta)).join('')}
+        </div>
+      </details>`;
+  }
+
+  return html || `<p style="color:var(--muted);text-align:center;padding:20px;">${window.HPM_I18N?.no_modules || 'No modules found.'}</p>`;
+}
+
+// ── Row Renderer ──────────────────────────────────────────────────────────────
+
+function hpmRenderRow(pkg, meta) {
+  const isDisabled  = pkg.status === 'disabled';
+  const isBroken    = pkg.status === 'broken';
+  const isRemovable = pkg.removable === true;
+  const isCore      = pkg.level === 1;
+
+  const statusDot = isBroken
+    ? `<span style="width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0;" title="Broken"></span>`
+    : isDisabled
+      ? `<span style="width:7px;height:7px;border-radius:50%;background:#6b7280;flex-shrink:0;" title="Disabled"></span>`
+      : `<span style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;" title="Active"></span>`;
+
+  const tagBadge = pkg.tag
+    ? `<code style="font-size:9px;background:rgba(255,255,255,0.05);color:var(--muted);
+                    padding:1px 5px;border-radius:3px;letter-spacing:.5px;">${_hesc(pkg.tag)}</code>`
+    : '';
+
+  const versionBadge = (pkg.version && pkg.version !== 'built-in')
+    ? `<span style="font-size:0.68em;color:var(--muted);background:var(--bg3,var(--bg2));
+                    padding:1px 5px;border-radius:3px;border:1px solid var(--border-color);">
+         v${_hesc(pkg.version)}
+       </span>`
+    : '';
+
+  // Actions
+  let actions = '';
+  if (isRemovable) {
+    // Enable / Disable toggle
+    if (!isBroken) {
+      actions += isDisabled
+        ? `<button class="btn btn-sm btn-secondary" onclick="hpmSetStatus('${pkg.id}','installed')" title="${window.HPM_I18N?.enable || 'Enable'}"
+                  style="font-size:10px;padding:4px 10px;">
+             <i class="fas fa-play" style="font-size:10px;"></i>
+           </button>`
+        : `<button class="btn btn-sm btn-secondary" onclick="hpmSetStatus('${pkg.id}','disabled')" title="${window.HPM_I18N?.disable || 'Disable'}"
+                  style="font-size:10px;padding:4px 10px;">
+             <i class="fas fa-pause" style="font-size:10px;"></i>
+           </button>`;
+    }
+    // Uninstall
+    actions += `
+      <button class="btn btn-sm btn-danger"
+              style="font-size:10px;padding:4px 10px;margin-left:4px;"
+              onclick="hpmConfirmUninstall('${pkg.id}','${_hesc(pkg.name)}')"
+              title="${window.HPM_I18N?.uninstall || 'Uninstall'}">
+        <i class="fas fa-trash-alt" style="font-size:10px;"></i>
+      </button>`;
+  } else {
+    // Core / built-in: only show a lock icon to signal it's protected
+    actions = `<span title="${window.HPM_I18N?.tooltip_builtin || 'Built-in module — cannot be removed'}"
+                     style="font-size:10px;color:var(--muted);opacity:0.5;padding:0 4px;">
+                 <i class="fas fa-lock"></i>
+               </span>`;
+  }
 
   return `
     <div class="hpm-card" id="hpm-pkg-${pkg.id}"
          style="background:var(--bg2);border:1px solid var(--border-color);
-                border-radius:12px;padding:14px 16px;
-                display:flex;align-items:center;gap:14px;
-                transition:opacity .2s;${isDisabled ? 'opacity:0.65;' : ''}">
+                border-radius:9px;padding:10px 13px;
+                display:flex;align-items:center;gap:12px;
+                transition:opacity .2s;${isDisabled ? 'opacity:0.6;' : ''}">
 
       <!-- Icon -->
-      <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;
-                  background:${typeColor}22;display:flex;align-items:center;
-                  justify-content:center;">
-        <i class="fas fa-${hpmTypeIcon(pkg.type)}"
-           style="color:${typeColor};font-size:15px;"></i>
+      <div style="width:34px;height:34px;border-radius:8px;flex-shrink:0;
+                  background:${meta.color}18;display:flex;align-items:center;justify-content:center;">
+        <i class="fas ${_hesc(pkg.fa_icon || 'fa-cube')}"
+           style="color:${meta.color};font-size:14px;"></i>
       </div>
 
       <!-- Info -->
       <div style="flex:1;min-width:0;">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-weight:600;color:var(--text);font-size:0.95em;">${_hesc(pkg.name)}</span>
-          ${statusBadge}
-          <span style="font-size:0.72em;color:var(--muted);background:var(--bg3,var(--bg2));
-                       padding:1px 6px;border-radius:4px;border:1px solid var(--border-color);">
-            v${_hesc(pkg.version)}
-          </span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          ${statusDot}
+          <span style="font-weight:600;color:var(--text);font-size:0.88em;">${_hesc(pkg.name)}</span>
+          ${tagBadge}
+          ${versionBadge}
         </div>
-        <div style="font-size:0.78em;color:var(--muted);margin-top:2px;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          ${_hesc(pkg.description || '')}
-          ${pkg.author ? `<span style="margin-left:6px;opacity:0.6;">by ${_hesc(pkg.author)}</span>` : ''}
-        </div>
-        <div style="font-size:0.72em;color:var(--muted);margin-top:3px;opacity:0.7;">
-          Installed: ${pkg.installed_at ? pkg.installed_at.substring(0,10) : '—'}
-        </div>
+        ${pkg.description ? `
+        <div style="font-size:0.75em;color:var(--muted);margin-top:2px;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;">
+          ${_hesc(pkg.description)}
+        </div>` : ''}
+        ${!isCore ? `
+        <div style="font-size:0.68em;color:var(--muted);margin-top:2px;opacity:0.6;">
+          ${pkg.author ? `by ${_hesc(pkg.author)}` : ''}
+          ${pkg.installed_at ? ` · Installed ${pkg.installed_at.substring(0,10)}` : ''}
+        </div>` : ''}
       </div>
 
       <!-- Actions -->
-      <div style="display:flex;gap:6px;flex-shrink:0;">
-        ${isDisabled
-          ? `<button class="btn-sm btn-outline" onclick="hpmSetStatus('${pkg.id}','installed')" title="Enable">
-               <i class="fas fa-play" style="font-size:11px;"></i>
-             </button>`
-          : `<button class="btn-sm btn-outline" onclick="hpmSetStatus('${pkg.id}','disabled')" title="Disable">
-               <i class="fas fa-pause" style="font-size:11px;"></i>
-             </button>`
-        }
-        <button class="btn-sm btn-outline" style="color:var(--danger,#ef4444);border-color:var(--danger,#ef4444);"
-                onclick="hpmConfirmUninstall('${pkg.id}','${_hesc(pkg.name)}')"
-                title="Uninstall">
-          <i class="fas fa-trash-alt" style="font-size:11px;"></i>
-        </button>
+      <div style="display:flex;gap:5px;flex-shrink:0;align-items:center;">
+        ${actions}
       </div>
     </div>`;
 }
 
-function hpmTypeIcon(type) {
-  const icons = { plugin: 'plug', module: 'cubes', theme: 'palette', skill_pack: 'bolt' };
-  return icons[type] || 'cube';
-}
+// ── Utility ───────────────────────────────────────────────────────────────────
 
 function _hesc(s) {
   return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -172,7 +237,6 @@ window.hpmDrop = function (e) {
 window.hpmFileSelected = function (e) {
   const file = e.target?.files?.[0];
   if (file) hpmInstallFile(file);
-  // Reset input so the same file can be selected again
   e.target.value = '';
 };
 
@@ -180,7 +244,7 @@ window.hpmFileSelected = function (e) {
 
 async function hpmInstallFile(file) {
   if (!file.name.endsWith('.hpkg') && !file.name.endsWith('.zip')) {
-    if (window.showToast) window.showToast('❌ File must be a .hpkg package', 'error');
+    if (window.showToast) window.showToast('File must be a .hpkg package', 'error');
     return;
   }
 
@@ -188,7 +252,7 @@ async function hpmInstallFile(file) {
 
   const formData = new FormData();
   formData.append('hpkg_file', file);
-  
+
   const allowUnsigned = document.getElementById('hpm-allow-unsigned')?.checked || false;
   formData.append('allow_unsigned', allowUnsigned ? 'true' : 'false');
 
@@ -199,26 +263,22 @@ async function hpmInstallFile(file) {
     const data = await resp.json();
 
     if (data.ok) {
-      hpmSetProgress(true, '✅ Installed successfully!', 100);
+      hpmSetProgress(true, 'Installed successfully!', 100);
       setTimeout(() => hpmSetProgress(false), 1500);
-
       if (data.warnings?.length) {
-        if (window.showToast) window.showToast(`⚠️ ${data.warnings[0]}`, 'warning');
+        if (window.showToast) window.showToast(`Warning: ${data.warnings[0]}`, 'warning');
       } else {
-        if (window.showToast) window.showToast(`✅ Package installed!`, 'success');
+        if (window.showToast) window.showToast(`Package installed!`, 'success');
       }
-
-      // Reload the list and inject config tab if needed
       hpmLoadPackages();
       if (data.id) hpmInjectTab(data);
-
     } else {
       hpmSetProgress(false);
-      if (window.showToast) window.showToast(`❌ Install failed: ${data.error}`, 'error');
+      if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
     }
   } catch (err) {
     hpmSetProgress(false);
-    if (window.showToast) window.showToast(`❌ Network error: ${err.message}`, 'error');
+    if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
   }
 }
 
@@ -236,14 +296,14 @@ window.hpmSetStatus = async function (id, status) {
     });
     const data = await resp.json();
     if (data.ok) {
-      if (window.showToast) window.showToast(`Package ${status === 'installed' ? 'enabled' : 'disabled'}`, 'info');
+      if (window.showToast) window.showToast(`Module ${status === 'installed' ? 'enabled' : 'disabled'}`, 'info');
       hpmLoadPackages();
     } else {
-      if (window.showToast) window.showToast(`❌ ${data.error}`, 'error');
+      if (window.showToast) window.showToast(`${data.error}`, 'error');
       if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
     }
   } catch (err) {
-    if (window.showToast) window.showToast(`❌ ${err.message}`, 'error');
+    if (window.showToast) window.showToast(`${err.message}`, 'error');
     if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
   }
 };
@@ -251,7 +311,9 @@ window.hpmSetStatus = async function (id, status) {
 // ── Uninstall ─────────────────────────────────────────────────────────────────
 
 window.hpmConfirmUninstall = function (id, name) {
-  if (!confirm(`Uninstall "${name}"?\nAll files, templates and configuration for this package will be permanently removed.`)) return;
+  const msgTemplate = window.HPM_I18N?.confirm_uninstall || 'Are you sure you want to uninstall the package \\'{0}\\'?';
+  const msg = msgTemplate.replace('{0}', name);
+  if (!confirm(msg)) return;
   hpmUninstall(id, name);
 };
 
@@ -264,16 +326,15 @@ async function hpmUninstall(id, name) {
     const data = await resp.json();
 
     if (data.ok) {
-      if (window.showToast) window.showToast(`✅ "${name}" uninstalled`, 'success');
-      // Remove the tab from DOM if it was injected
+      if (window.showToast) window.showToast(`"${name}" uninstalled`, 'success');
       hpmRemoveTab(id);
       hpmLoadPackages();
     } else {
-      if (window.showToast) window.showToast(`❌ Uninstall failed: ${data.error}`, 'error');
+      if (window.showToast) window.showToast(`Uninstall failed: ${data.error}`, 'error');
       if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
     }
   } catch (err) {
-    if (window.showToast) window.showToast(`❌ ${err.message}`, 'error');
+    if (window.showToast) window.showToast(`${err.message}`, 'error');
     if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
   }
 }
@@ -281,18 +342,12 @@ async function hpmUninstall(id, name) {
 // ── Config Tab Injection (hot-reload without page refresh) ───────────────────
 
 function hpmInjectTab(installResult) {
-  // installResult.config_panel = { tab_id, tab_label, tab_icon }
   if (!installResult.config_panel) return;
   const { tab_id, tab_label, tab_icon } = installResult.config_panel;
   if (!tab_id) return;
-
-  // Avoid duplicates
   if (document.querySelector(`[data-panel="${tab_id}"]`)) return;
-
-  // Find the sidebar nav and inject a new item (matches existing CONFIG_HUB pattern)
   const nav = document.querySelector('#config-sidebar-nav, .config-nav, .sidebar-nav');
   if (!nav) return;
-
   const li = document.createElement('li');
   li.setAttribute('data-panel', tab_id);
   li.className = 'nav-item hpm-injected';
@@ -305,7 +360,6 @@ function hpmInjectTab(installResult) {
 }
 
 function hpmRemoveTab(pkg_id) {
-  // Remove any nav items injected for this package
   document.querySelectorAll(`.hpm-injected[data-panel="${pkg_id}"]`).forEach(el => el.remove());
 }
 
@@ -322,7 +376,6 @@ function hpmSetProgress(visible, label = '', pct = 0) {
 }
 
 // ── Welcome Screen Drop Zone Helpers ─────────────────────────────────────────
-// These are global so they can be called from inline handlers in config_welcome.html
 
 window.hpmWelcomeDrop = function (e) {
   e.preventDefault();
@@ -330,7 +383,6 @@ window.hpmWelcomeDrop = function (e) {
   if (dz) dz.style.borderColor = 'var(--border-color)';
   const file = e.dataTransfer?.files?.[0];
   if (file) {
-    // Navigate to packages tab first, then install
     if (typeof showTab === 'function') showTab('packages');
     setTimeout(() => hpmInstallFile(file), 400);
   }
@@ -345,7 +397,7 @@ window.hpmWelcomeFileSelected = function (e) {
   e.target.value = '';
 };
 
-// ── Auto-init ───────────────────────────────────────────────────────────────
+// ── Auto-init ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', window.hpmInit);
 if (document.readyState !== 'loading') {
   window.hpmInit();

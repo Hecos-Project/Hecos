@@ -135,6 +135,18 @@
   </button>
   {% endif %}
 
+  <!-- HPM / Package Manager Quick Button -->
+  <button id="sidebar-hpm-btn"
+          onclick="window.open('/hecos/config/ui#packages', '_blank')"
+          title="Install and manage modules"
+          style="display:flex; align-items:center; justify-content:center; gap:7px; width:100%; padding:9px 14px; background:var(--bg2); border:none; border-top:1px solid var(--border); color:var(--text); font-family:var(--font-sans, 'Inter', sans-serif); font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; cursor:pointer; transition:color 0.2s, background 0.2s; flex-shrink:0;"
+          onmouseover="this.style.background='rgba(var(--accent-rgb), 0.06)'; this.style.color='var(--accent)';"
+          onmouseout="this.style.background='var(--bg2)'; this.style.color='var(--text)';">
+    <i class="fas fa-cube" style="color:var(--accent);"></i>
+    <span>PACKAGE MANAGER</span>
+    <i class="fas fa-chevron-right" style="margin-left:auto; opacity:0.5;"></i>
+  </button>
+
   <div class="sidebar-footer">
     <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos &mdash; Created by <strong>Antonio Meloni</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
   </div>

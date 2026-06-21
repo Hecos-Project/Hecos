@@ -27,7 +27,10 @@ async function showTab(name, skipScroll = false) {
       if (mainWrapper)      mainWrapper.style.setProperty('display', 'none', 'important');
   } else {
       if (welcomeContainer) welcomeContainer.style.display = 'none';
-      if (mainWrapper)      mainWrapper.style.display = 'block';
+      if (mainWrapper) {
+          mainWrapper.style.removeProperty('display');
+          mainWrapper.style.setProperty('display', 'block', 'important');
+      }
       if (tBar && viewMode === 'tabs') tBar.style.display = 'block';
       if (wall && viewMode === 'wall') wall.style.display = 'flex';
   }

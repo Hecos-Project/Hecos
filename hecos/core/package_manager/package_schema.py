@@ -156,7 +156,17 @@ class HpkgManifest(BaseModel):
     @field_validator("type")
     @classmethod
     def type_must_be_valid(cls, v: str) -> str:
-        valid = {"plugin", "module", "theme", "skill_pack"}
+        valid = {
+            "plugin",       # Level 2 — single-responsibility tool
+            "module",       # Level 2 — alias kept for backwards compat
+            "core_module",  # Level 1 — built-in, not removable
+            "extension",    # Level 3 — child of a plugin or core module
+            "app",          # Level 4 — autonomous, has its own full UI
+            "widget",       # Level 5 — Control Room widget component
+            "persona",      # Level 6 — installable AI personality
+            "theme",        # Level 7 — CSS/UI theme
+            "skill_pack",   # Level 8 — additional HDCS command pack
+        }
         if v not in valid:
             raise ValueError(f"Package type '{v}' not valid. Must be one of: {valid}")
         return v
