@@ -1,0 +1,1 @@
+{"id": "test_pkg", "name": "Test", "version": "1.0.0", "type": "plugin", "hecos_min_version": "0.1.0", "target_dir": "plugins"}

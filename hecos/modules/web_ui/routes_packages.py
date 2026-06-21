@@ -126,9 +126,13 @@ def init_package_routes(app, hecos_root: str, _log=None):
         hpkg_bytes = hpkg_file.read()
         log.info(f"[HPM] Install requested: {hpkg_file.filename} ({len(hpkg_bytes)} bytes)")
 
+        # Read bypass flag
+        allow_unsigned_str = request.form.get("allow_unsigned", "false").lower()
+        allow_unsigned = allow_unsigned_str in ("true", "1", "yes")
+
         try:
             registry, installer, _ = _get_hpm_components(_hecos_src)
-            result = installer.install_bytes(hpkg_bytes)
+            result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned)
 
             if result.success:
                 response = {

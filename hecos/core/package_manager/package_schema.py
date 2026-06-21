@@ -124,6 +124,10 @@ class HpkgManifest(BaseModel):
         None,
         description="Optional SHA-256 checksum of the .hpkg file itself (without this field). For future signature verification."
     )
+    file_hashes: Dict[str, str] = Field(
+        default_factory=dict,
+        description="SHA-256 hashes of all files in the package. Used for signature verification."
+    )
 
     # Stub fields — reserved for future features
     signature: Optional[str] = Field(

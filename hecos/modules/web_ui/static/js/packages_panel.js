@@ -188,6 +188,9 @@ async function hpmInstallFile(file) {
 
   const formData = new FormData();
   formData.append('hpkg_file', file);
+  
+  const allowUnsigned = document.getElementById('hpm-allow-unsigned')?.checked || false;
+  formData.append('allow_unsigned', allowUnsigned ? 'true' : 'false');
 
   try {
     hpmSetProgress(true, 'Uploading...', 50);

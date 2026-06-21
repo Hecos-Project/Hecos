@@ -50,6 +50,14 @@
              style="display:none;" onchange="hpmFileSelected(event)">
     </div>
 
+    <!-- Security Options -->
+    <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="hpm-allow-unsigned" style="accent-color:var(--accent);">
+      <label for="hpm-allow-unsigned" style="font-size:0.85em;color:var(--text);cursor:pointer;">
+        Allow unsigned packages (For local development only)
+      </label>
+    </div>
+
     <!-- Progress bar (hidden by default) -->
     <div id="hpm-install-progress" style="display:none;margin-top:12px;">
       <div style="background:var(--border-color);border-radius:6px;height:6px;overflow:hidden;">

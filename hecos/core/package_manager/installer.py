@@ -90,20 +90,22 @@ class PackageInstaller:
         self._event_callback = event_callback
 
         self._validator = PackageValidator(hecos_version)
-        self._sig_verifier = SignatureVerifier()
+        
+        keys_dir = os.path.join(hecos_root, "data", "trusted_keys")
+        self._sig_verifier = SignatureVerifier(keys_dir)
 
     # ── Public API ───────────────────────────────────────────────────────────
 
-    def install_file(self, hpkg_path: str) -> InstallResult:
+    def install_file(self, hpkg_path: str, require_signature: bool = True) -> InstallResult:
         """Install from a file path."""
         try:
             with open(hpkg_path, "rb") as f:
                 data = f.read()
-            return self.install_bytes(data)
+            return self.install_bytes(data, require_signature=require_signature)
         except Exception as e:
             return InstallResult(success=False, error=f"Cannot read file: {e}")
 
-    def install_bytes(self, data: bytes) -> InstallResult:
+    def install_bytes(self, data: bytes, require_signature: bool = True) -> InstallResult:
         """Install from raw .hpkg bytes. Main entry point."""
 
         # ── Step 1: Validate ─────────────────────────────────────────────────
@@ -117,8 +119,23 @@ class PackageInstaller:
         manifest = val_result.manifest
         result = InstallResult(package_id=manifest.id)
 
-        # ── Step 2: Signature check (stub — always passes) ───────────────────
-        self._sig_verifier.verify(data, manifest.signature)
+        # ── Step 2: Signature check ──────────────────────────────────────────
+        # We verify the manifest mathematically against trusted public keys using the RAW json
+        # to ensure no Pydantic defaults alter the canonical payload.
+        import json
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            try:
+                raw_manifest_bytes = zf.read("hpkg_manifest.json")
+                raw_manifest_dict = json.loads(raw_manifest_bytes.decode("utf-8"))
+            except Exception as e:
+                return InstallResult(success=False, error=f"Could not read manifest for signature check: {e}")
+
+        is_valid = self._sig_verifier.verify_manifest(raw_manifest_dict, require_signature=require_signature)
+        if not is_valid:
+            return InstallResult(
+                success=False,
+                error="Signature verification failed. Package is untrusted or tampered with."
+            )
 
         # ── Step 3: Dependency resolution ────────────────────────────────────
         resolver = DependencyResolver(self._registry)
@@ -144,6 +161,42 @@ class PackageInstaller:
         try:
             with zipfile.ZipFile(io.BytesIO(data)) as zf:
                 zf.extractall(staging_dir)
+
+            # ── Step 4.5: File Hashes Verification ───────────────────────────
+            # Ensure no files inside the zip were manipulated after signing
+            import hashlib
+            expected_hashes = manifest.file_hashes or {}
+            
+            # If the package is required to be signed, but file_hashes is empty, we must reject it
+            # because the signature would only protect the manifest itself, not the code!
+            if require_signature and not expected_hashes:
+                raise RuntimeError("Manifest is missing file_hashes. Cannot guarantee integrity of extracted files.")
+
+            for root, _, files in os.walk(staging_dir):
+                for fname in files:
+                    # Skip manifest.json because it's the one containing the hashes and signature
+                    if fname == "hpkg_manifest.json":
+                        continue
+                        
+                    fpath = os.path.join(root, fname)
+                    rel_path = os.path.relpath(fpath, staging_dir).replace("\\", "/")
+                    
+                    if rel_path not in expected_hashes:
+                        # Allow harmless files like .DS_Store, but warn. For strictness, we reject unknown files.
+                        if fname in [".DS_Store", "Thumbs.db"]:
+                            continue
+                        if require_signature:
+                            raise RuntimeError(f"Unknown file '{rel_path}' found in package. Integrity check failed.")
+                        continue
+                        
+                    # Calculate hash
+                    sha256 = hashlib.sha256()
+                    with open(fpath, "rb") as bf:
+                        for chunk in iter(lambda: bf.read(4096), b""):
+                            sha256.update(chunk)
+                    
+                    if sha256.hexdigest() != expected_hashes[rel_path]:
+                        raise RuntimeError(f"Hash mismatch for '{rel_path}'. File corrupted or tampered.")
 
             # ── Step 5: pre_install hook ─────────────────────────────────────
             self._run_hook(staging_dir, "pre_install", manifest)
