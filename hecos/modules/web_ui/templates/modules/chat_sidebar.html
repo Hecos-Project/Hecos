@@ -75,19 +75,13 @@
     </div>
 
     <!-- Empty State -->
-    <div id="widgets-empty-state" class="sidebar-card" style="text-align:center; padding:24px 16px; {{ 'display:none;' if has_widgets }}">
-        <div style="font-size:32px; margin-bottom:12px; opacity:0.5;"><i class="fas fa-puzzle-piece"></i></div>
-        <div style="font-weight:600; color:var(--text); margin-bottom:4px;">{{ t('sidebar_empty_title') or 'Qui non c\'è niente' }}</div>
-        <div style="font-size:11px; color:var(--muted); margin-bottom:16px;">Personalizza la tua sidebar aggiungendo i widget che preferisci.</div>
-        
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-            <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="flex:1; justify-content:center;">
-                <i class="fas fa-plus"></i> {{ t('sidebar_empty_add') or 'Aggiungi Widgets' }}
-            </a>
-            <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="width:36px; padding:0; justify-content:center; color:var(--muted);" title="Configura">
-                <i class="fas fa-cog"></i>
-            </a>
-        </div>
+    <div id="widgets-empty-state" class="sidebar-card" style="text-align:center; padding:20px 16px; {{ 'display:none;' if has_widgets }}">
+        <div style="font-size:28px; margin-bottom:8px; opacity:0.4;"><i class="fas fa-puzzle-piece"></i></div>
+        <div style="font-weight:600; font-size:13px; color:var(--text); margin-bottom:3px;">{{ t('sidebar_empty_title') or 'No active widgets' }}</div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:14px;">{{ t('sidebar_empty_desc') or 'Add a widget to get started.' }}</div>
+        <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="display:inline-flex; align-items:center; gap:6px; justify-content:center; width:100%; padding:7px 12px;">
+            <i class="fas fa-plus"></i> {{ t('sidebar_empty_add') or 'Add a widget' }}
+        </a>
     </div>
   </div>
 

@@ -441,10 +441,15 @@ class PackageInstaller:
         """Re-run capability scanner so new module appears immediately."""
         try:
             from hecos.core.system import module_loader
+            from hecos.core.system import extension_loader
             from hecos.app.config import ConfigManager
             cfg = ConfigManager().config
             module_loader.update_capability_registry(cfg, debug_log=False)
-            logger.info("[HPM:Installer] Capability registry hot-reloaded.")
+            
+            webui_dir = os.path.join(self._hecos_root, "modules", "web_ui")
+            extension_loader.discover_webui_extensions(webui_dir)
+            
+            logger.info("[HPM:Installer] Capability registry and extensions hot-reloaded.")
         except Exception as e:
             logger.warning(f"[HPM:Installer] Hot-reload failed (non-critical): {e}")
 

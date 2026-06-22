@@ -172,6 +172,18 @@ def get_all_widgets(config: dict = None) -> list:
 
         req_plugin = manifest.get("required_plugin")
         plugin_active = _is_plugin_active(req_plugin, config)
+        
+        # Override plugin_active if it is an HPM package and is currently disabled
+        try:
+            from hecos.core.package_manager.registry import PackageRegistry
+            # hecos/core/system/extension_loader.py -> hecos/data
+            data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
+            reg = PackageRegistry(data_dir=data_dir)
+            pkg = reg.get_package(ext_id)
+            if pkg and pkg.get("status") not in ("installed", "active"):
+                plugin_active = False
+        except Exception:
+            pass
         prefs = _get_widget_prefs(ext_id, config)
 
         try:

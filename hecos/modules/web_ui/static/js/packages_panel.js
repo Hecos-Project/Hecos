@@ -438,6 +438,7 @@ async function hpmInstallFile(file, forceAllowUnsigned = false) {
       }
       hpmLoadPackages();
       if (data.id) hpmInjectTab(data);
+      if (typeof loadWidgetsPanel === 'function') loadWidgetsPanel();
     } else {
       hpmSetProgress(false);
       
@@ -485,6 +486,17 @@ window.hpmSetStatus = async function (id, status, skipRender = false) {
         });
     }
 
+    // Broadcast widget state change to update Control Room dynamically
+    const hpmChannel = new BroadcastChannel('hecos_widgets');
+    const isEnabled = (status === 'installed' || status === 'active');
+    hpmChannel.postMessage({ type: 'widget_update', id: id, field: 'enabled', value: isEnabled });
+    if (!isEnabled) {
+        hpmChannel.postMessage({ type: 'widget_update', id: id, field: 'room_visible', value: false });
+        hpmChannel.postMessage({ type: 'widget_update', id: id, field: 'visible', value: false });
+    }
+    
+    if (typeof loadWidgetsPanel === 'function') loadWidgetsPanel();
+
     if (!skipRender) {
       const p = _packages.find(x => x.id === id);
       if (p) { p.status = status; hpmRenderHierarchy(); }
@@ -512,9 +524,10 @@ async function hpmUninstall(id, name) {
     const data = await resp.json();
 
     if (data.ok) {
-      if (window.showToast) window.showToast(`"${name}" uninstalled`, 'success');
-      hpmRemoveTab(id);
+      if (window.showToast) window.showToast(`Package uninstalled.`);
       hpmLoadPackages();
+      hpmRemoveTab(id);
+      if (typeof loadWidgetsPanel === 'function') loadWidgetsPanel();
     } else {
       if (window.showToast) window.showToast(`Uninstall failed: ${data.error}`, 'error');
       if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }

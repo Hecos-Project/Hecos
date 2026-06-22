@@ -60,7 +60,8 @@
                 </div>
                 <iframe src="${FRAME_URL(id)}?t=${Date.now()}"
                         class="room-widget-iframe" loading="lazy" scrolling="no"
-                        frameborder="0" allowtransparency="true"></iframe>
+                        frameborder="0" allowtransparency="true"
+                        allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"></iframe>
             `;
 
             const applyStyles = (node) => {
