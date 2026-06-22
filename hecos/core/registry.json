@@ -1,4 +1,36 @@
 {
+    "AUTOMATION": {
+        "description": "Full PC control: mouse, keyboard, and window management. Use with WEBCAM.desktop_screenshot for a see-and-act loop.",
+        "commands": {
+            "get_screen_size": "Returns the screen resolution (width x height).",
+            "get_mouse_position": "Returns current cursor coordinates.",
+            "click_text": "Find text on screen using OCR and click it.",
+            "move_to": "Move cursor to (x, y).",
+            "click": "Click at (x, y) — left/right/middle, single/double.",
+            "scroll": "Scroll wheel at (x, y) — positive=up, negative=down.",
+            "drag": "Click-and-drag from one position to another.",
+            "type_text": "Simulate keyboard typing of a text string.",
+            "press_key": "Press and release a single key (enter, esc, f5...).",
+            "hotkey": "Execute a keyboard shortcut (ctrl+c, ctrl+shift+esc...).",
+            "type_and_enter": "Type text and press Enter.",
+            "list_windows": "List all visible window titles.",
+            "focus_window": "Bring a window to foreground by title.",
+            "minimize_window": "Minimize a window by title.",
+            "maximize_window": "Maximize a window by title.",
+            "get_browser_tabs": "List all open browser tabs via Windows Accessibility API. Use before focus_browser_tab.",
+            "focus_browser_tab": "Click a browser tab by title fragment (no coordinates needed).",
+            "read_window_controls": "Read the UI control tree of any application window."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. ATTENTION: For browser-specific tasks (searching, reading web content, or switching tabs in a browser), PREFER the BROWSER plugin if it's enabled in CDP Mode. Only use AUTOMATION for native desktop apps or if BROWSER tools fail.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "🖱️",
+        "category": "PLUGINS",
+        "module_type": "core_module",
+        "slash_commands": []
+    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -43,6 +75,28 @@
         "is_class_based": true,
         "is_lazy": true,
         "icon": "⚙️",
+        "category": "PLUGINS",
+        "module_type": "core_module",
+        "slash_commands": []
+    },
+    "FLOWS": {
+        "description": "Visual flow orchestration engine. Build multi-step automated pipelines with logic, scheduling, and data-passing between modules. Create via voice/text (NLP compiler), node-graph canvas, or YAML editor.",
+        "commands": {
+            "list_flows": "List all saved flows with their status and trigger.",
+            "get_flow": "Get the YAML definition of a specific flow by ID.",
+            "create_flow_from_nlp": "Compile a natural-language description into a YAML flow and save it.",
+            "run_flow": "Immediately execute a flow by ID.",
+            "enable_flow": "Enable a flow (will be triggered by its scheduler).",
+            "disable_flow": "Disable a flow without deleting it.",
+            "delete_flow": "Delete a flow permanently.",
+            "get_action_catalog": "List all registered actions available for use in flows."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "FLOWS ORCHESTRATION: When the user wants to create a recurring automation, schedule tasks, or chain multiple actions together (e.g. 'every morning do X then Y then Z'), use the Flows engine. Call FLOWS__create_flow_from_nlp with the user's description to compile it into an executable pipeline.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "⚡",
         "category": "PLUGINS",
         "module_type": "core_module",
         "slash_commands": []
@@ -113,6 +167,30 @@
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS",
+        "slash_commands": []
+    },
+    "SYS_NET": {
+        "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
+        "commands": {
+            "get_network_info": "Runs ipconfig to extract local IPv4, Subnet, Default Gateway, and active DNS servers.",
+            "get_proxy_status": "Reports the current proxy configuration status in Hecos, including the URL and whether it is active.",
+            "get_public_ip": "Interrogates an external service to find the current public outbound IP address.",
+            "ping_test": "Executes a network ping test to the specified target (IP or domain).",
+            "reset_dns": "Restores the DNS configuration of the active network adapter back to DHCP (automatic).",
+            "scan_local_network": "Executes an ARP scan ('arp -a') to discover active devices connected to the same LAN.",
+            "set_dns_servers": "Changes the DNS servers of the active network adapter to bypass ISP level blocking.",
+            "traceroute": "Performs a traceroute to show the network path and hop-by-hop latency to a host.",
+            "check_internet_speed": "Tests download/upload internet speed using speedtest-cli or a CDN fallback.",
+            "test_proxy": "Tests the configured Proxy by attempting to reach an external service and reports the visible IP."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module",
         "slash_commands": []
     },
     "WEB_UI": {
@@ -310,6 +388,38 @@
         "module_type": "plugin",
         "slash_commands": []
     },
+    "MAP": {
+        "description": "Geocoding e geolocalizzazione. Fornisce posizione home, coordinate e strumenti di mappa.",
+        "commands": {
+            "get_home_location": "Ottieni le coordinate lat/lon della posizione home dell'utente",
+            "geocode": "Geocodifica un indirizzo o città in coordinate lat/lon"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "🗺️",
+        "category": "PLUGINS",
+        "module_type": "plugin",
+        "slash_commands": []
+    },
+    "MESSENGER": {
+        "description": "Send messages via Telegram, WhatsApp, and Discord.",
+        "commands": {
+            "check_connection": "Test the connection to one or all messaging providers.",
+            "force_send": "Force-send by simulating an 'Enter' keystroke. Useful if WhatsApp Web gets stuck.",
+            "list_accounts": "List all configured messaging providers and their status.",
+            "send_message": "Send a message to a contact or channel."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "REMINDER": {
         "description": "Manage personal reminders with native push notifications, interactive alerts and text-to-speech.",
         "commands": {
@@ -377,37 +487,20 @@
         "slash_commands": []
     },
     "WEATHER_PRO": {
-        "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards.",
+        "description": "Real-time weather data and 7-day forecast via Open-Meteo. No API key required.",
         "commands": {
-            "get_current_weather": "Get current weather for a city or user's location.",
-            "get_weather_forecast": "Get 7-day daily weather forecast for a city."
+            "get_current_weather": "Get the current weather conditions for a specific city.",
+            "get_weather_data": "Returns the full Open-Meteo JSON payload enriched with:",
+            "get_weather_forecast": "Get a 7-day daily weather forecast for a specific city.",
+            "on_load": "Method"
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
-        "icon": "fa-cloud-sun",
+        "icon": "",
         "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": [
-            {
-                "command": "/weather",
-                "description": "Show current weather (optionally for a city: /weather Rome)",
-                "method": "get_current_weather",
-                "args_schema": {
-                    "city": "str?"
-                }
-            },
-            {
-                "command": "/forecast",
-                "description": "Show 7-day forecast (optionally for a city: /forecast Milan)",
-                "method": "get_weather_forecast",
-                "args_schema": {
-                    "city": "str?"
-                }
-            }
-        ]
+        "slash_commands": []
     },
     "WEBCAM": {
         "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",

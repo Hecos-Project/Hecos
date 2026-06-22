@@ -38,6 +38,8 @@ function renderPlugins(plugins) {
 
   hub.modules.forEach(m => {
     if (!m.pluginTag || m.id === 'plugins' || m.isExtension) return;
+    // HPM-installed packages are managed via Package Manager, not Module Manager
+    if (m.isHpm) return;
 
     const tag  = m.pluginTag;
     const pCfg = plugins[tag] || { enabled: true };
