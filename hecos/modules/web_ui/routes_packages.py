@@ -197,11 +197,12 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                     response["dep_issues"] = result.dep_report.summary
                 return jsonify(response)
             else:
+                is_signature_error = "signature" in result.error.lower()
                 return jsonify({
                     "ok": False,
                     "error": result.error,
-                    "warnings": result.warnings,
-                }), 422
+                    "signature_error": is_signature_error
+                }), 400
 
         except Exception as e:
             log.error(f"[HPM] Install error: {e}")

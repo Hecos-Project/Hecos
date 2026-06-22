@@ -33,52 +33,81 @@ window.hpmInit = function () {
 window.hpmSwitchTab = async function(tabId) {
   // Update buttons
   const btnPackages = document.getElementById('hpm-tab-btn-packages');
-  const btnBuiltin = document.getElementById('hpm-tab-btn-builtin');
-  
-  if (btnPackages && btnBuiltin) {
-    if (tabId === 'packages') {
-      btnPackages.classList.add('active');
-      btnBuiltin.classList.remove('active');
-    } else {
-      btnPackages.classList.remove('active');
-      btnBuiltin.classList.add('active');
-    }
-  }
+  const btnBuiltin  = document.getElementById('hpm-tab-btn-builtin');
+  const btnWidgets  = document.getElementById('hpm-tab-btn-widgets');
+
+  [btnPackages, btnBuiltin, btnWidgets].forEach(b => b && b.classList.remove('active'));
+  const activeBtn = document.getElementById(`hpm-tab-btn-${tabId}`);
+  if (activeBtn) activeBtn.classList.add('active');
 
   // Update panes
   document.getElementById('hpm-pane-packages').style.display = tabId === 'packages' ? 'block' : 'none';
-  document.getElementById('hpm-pane-builtin').style.display = tabId === 'builtin' ? 'block' : 'none';
+  document.getElementById('hpm-pane-builtin').style.display  = tabId === 'builtin'  ? 'block' : 'none';
+  const widgetsPane = document.getElementById('hpm-pane-widgets');
+  if (widgetsPane) widgetsPane.style.display = tabId === 'widgets' ? 'block' : 'none';
 
+  // ── Content loading per tab ────────────────────────────────────────────────
   if (tabId === 'packages') {
     hpmLoadPackages();
+
   } else if (tabId === 'builtin') {
     const builtinContainer = document.getElementById('hpm-builtin-container');
     const existingTab = document.getElementById('tab-plugins');
-    
+
     if (existingTab && existingTab.parentElement !== builtinContainer) {
-        builtinContainer.innerHTML = '';
-        builtinContainer.appendChild(existingTab);
-        existingTab.classList.remove('panel');
-        existingTab.style.display = 'block';
-        existingTab.classList.add('active');
-        if (typeof populatePlugins === 'function') populatePlugins();
+      builtinContainer.innerHTML = '';
+      builtinContainer.appendChild(existingTab);
+      existingTab.classList.remove('panel');
+      existingTab.style.display = 'block';
+      existingTab.classList.add('active');
+      if (typeof populatePlugins === 'function') populatePlugins();
     } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.includes('fa-spinner')) {
       try {
         if (typeof _loadPanel === 'function') {
-            await _loadPanel('plugins');
-            const loadedTab = document.getElementById('tab-plugins');
-            if (loadedTab) {
-                builtinContainer.innerHTML = '';
-                builtinContainer.appendChild(loadedTab);
-                loadedTab.classList.remove('panel');
-                loadedTab.style.display = 'block';
-                loadedTab.classList.add('active');
-            }
+          await _loadPanel('plugins');
+          const loadedTab = document.getElementById('tab-plugins');
+          if (loadedTab) {
+            builtinContainer.innerHTML = '';
+            builtinContainer.appendChild(loadedTab);
+            loadedTab.classList.remove('panel');
+            loadedTab.style.display = 'block';
+            loadedTab.classList.add('active');
+          }
         } else {
-            throw new Error("_loadPanel function not found");
+          throw new Error('_loadPanel function not found');
         }
       } catch (err) {
         builtinContainer.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load built-in modules: ${err.message}</div>`;
+      }
+    }
+
+  } else if (tabId === 'widgets') {
+    const widgetsContainer = document.getElementById('hpm-widgets-container');
+    const existingWidgetsTab = document.getElementById('tab-widgets');
+
+    if (existingWidgetsTab && existingWidgetsTab.parentElement !== widgetsContainer) {
+      widgetsContainer.innerHTML = '';
+      widgetsContainer.appendChild(existingWidgetsTab);
+      existingWidgetsTab.classList.remove('panel');
+      existingWidgetsTab.style.display = 'block';
+      existingWidgetsTab.classList.add('active');
+    } else if (!existingWidgetsTab && widgetsContainer && widgetsContainer.innerHTML.includes('fa-spinner')) {
+      try {
+        if (typeof _loadPanel === 'function') {
+          await _loadPanel('widgets');
+          const loadedWidgetsTab = document.getElementById('tab-widgets');
+          if (loadedWidgetsTab) {
+            widgetsContainer.innerHTML = '';
+            widgetsContainer.appendChild(loadedWidgetsTab);
+            loadedWidgetsTab.classList.remove('panel');
+            loadedWidgetsTab.style.display = 'block';
+            loadedWidgetsTab.classList.add('active');
+          }
+        } else {
+          throw new Error('_loadPanel function not found');
+        }
+      } catch (err) {
+        widgetsContainer.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load Widget Manager: ${err.message}</div>`;
       }
     }
   }
@@ -124,7 +153,20 @@ window.hpmLoadPackages = async function () {
 
 // ── Hierarchy Renderer ────────────────────────────────────────────────────────
 
+window.HPM_UI_STATE = window.HPM_UI_STATE || { collapsedCategories: [] };
+
+window.hpmToggleCategory = function(catLvl) {
+  const isCollapsed = window.HPM_UI_STATE.collapsedCategories.includes(catLvl);
+  if (isCollapsed) {
+    window.HPM_UI_STATE.collapsedCategories = window.HPM_UI_STATE.collapsedCategories.filter(c => c !== catLvl);
+  } else {
+    window.HPM_UI_STATE.collapsedCategories.push(catLvl);
+  }
+  hpmRenderHierarchy();
+};
+
 function hpmRenderHierarchy(packages) {
+  if (!packages) packages = _packages; // fallback if called from toggle
   let html = '';
 
   for (const [lvl, meta] of Object.entries(HPM_LEVELS)) {
@@ -132,13 +174,22 @@ function hpmRenderHierarchy(packages) {
     const group = packages.filter(p => (p.level || 2) === level);
     if (group.length === 0) continue;
 
-    const isOpen = level <= 4; // collapse higher levels by default
+    // By default collapse lower levels unless it's explicitly opened, but let's 
+    // keep levels <= 4 open initially if they aren't explicitly in the collapsed list.
+    let isCollapsed = window.HPM_UI_STATE.collapsedCategories.includes(level);
+    if (level > 4 && !window.HPM_UI_STATE.collapsedCategories.includes(level) && window.HPM_UI_STATE.collapsedCategories.length === 0) {
+        // Just as an initial state hint, we could force push to collapsedCategories.
+        // But for simplicity, we'll just check if it's explicitly collapsed.
+    }
+
     html += `
-      <details ${isOpen ? 'open' : ''} style="margin-bottom:12px;">
-        <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;
-                        padding:10px 14px;border-radius:10px;
-                        background:var(--bg2);border:1px solid var(--border-color);
-                        user-select:none;list-style:none;">
+      <div class="category-group ${isCollapsed ? 'collapsed' : ''}" style="margin-bottom:12px;">
+        <div class="category-header" onclick="hpmToggleCategory(${level})" 
+             style="cursor:pointer;display:flex;align-items:center;gap:10px;
+                    padding:10px 14px;border-radius:10px;
+                    background:var(--bg2);border:1px solid var(--border-color);
+                    user-select:none;">
+          <span class="cat-toggle" style="font-size:14px;color:var(--muted);width:16px;text-align:center;">${isCollapsed ? '⊕' : '⊖'}</span>
           <span style="font-size:10px;font-weight:800;letter-spacing:1.2px;
                        text-transform:uppercase;color:${meta.color};">${meta.label}</span>
           <span style="background:${meta.color}22;color:${meta.color};
@@ -150,14 +201,18 @@ function hpmRenderHierarchy(packages) {
                        background:rgba(255,255,255,0.05);padding:2px 8px;border-radius:10px;">
             ${group.length}
           </span>
-        </summary>
-        <div style="display:grid;gap:6px;margin-top:8px;padding:0 2px;">
+        </div>
+        <div class="category-content" style="${isCollapsed ? 'display:none;' : 'display:grid;gap:6px;margin-top:8px;padding:0 2px;'}">
           ${group.map(pkg => hpmRenderRow(pkg, meta)).join('')}
         </div>
-      </details>`;
+      </div>`;
   }
 
-  return html || `<p style="color:var(--muted);text-align:center;padding:20px;">${window.HPM_I18N?.no_modules || 'No modules found.'}</p>`;
+  const grid = document.getElementById('hpm-packages-grid');
+  if (grid) {
+    grid.innerHTML = html || `<p style="color:var(--muted);text-align:center;padding:20px;">${window.HPM_I18N?.no_modules || 'No modules found.'}</p>`;
+  }
+  return html;
 }
 
 // ── Row Renderer ──────────────────────────────────────────────────────────────
@@ -353,7 +408,7 @@ window.hpmFileSelected = function (e) {
 
 // ── Install ───────────────────────────────────────────────────────────────────
 
-async function hpmInstallFile(file) {
+async function hpmInstallFile(file, forceAllowUnsigned = false) {
   if (!file.name.endsWith('.hpkg') && !file.name.endsWith('.zip')) {
     if (window.showToast) window.showToast('File must be a .hpkg package', 'error');
     return;
@@ -364,7 +419,7 @@ async function hpmInstallFile(file) {
   const formData = new FormData();
   formData.append('hpkg_file', file);
 
-  const allowUnsigned = document.getElementById('hpm-allow-unsigned')?.checked || false;
+  const allowUnsigned = forceAllowUnsigned || (document.getElementById('hpm-allow-unsigned')?.checked || false);
   formData.append('allow_unsigned', allowUnsigned ? 'true' : 'false');
 
   try {
@@ -385,7 +440,21 @@ async function hpmInstallFile(file) {
       if (data.id) hpmInjectTab(data);
     } else {
       hpmSetProgress(false);
-      if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
+      
+      // Handle signature error explicitly
+      if (data.signature_error && !forceAllowUnsigned) {
+        const confirmUnsigned = confirm(`This package is unsigned or untrusted. Installing unsigned packages can be a security risk.\n\nDo you want to force install "${file.name}" anyway?`);
+        if (confirmUnsigned) {
+          // Check the box visually so the user sees it's now allowed
+          const checkbox = document.getElementById('hpm-allow-unsigned');
+          if (checkbox) checkbox.checked = true;
+          
+          // Retry install forcing unsigned
+          return hpmInstallFile(file, true);
+        }
+      } else {
+        if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
+      }
     }
   } catch (err) {
     hpmSetProgress(false);

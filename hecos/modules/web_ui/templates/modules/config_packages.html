@@ -24,10 +24,13 @@
   <!-- ── Tab Navigation ────────────────────────────────────────────────── -->
   <div class="filter-tabs" style="margin-bottom:20px; justify-content: flex-start;">
     <button id="hpm-tab-btn-packages" class="filter-btn active" onclick="hpmSwitchTab('packages')">
-      <i class="fas fa-box-open" style="margin-right:6px;"></i> Installed Packages
+      <i class="fas fa-box-open" style="margin-right:6px;"></i> Package Library
     </button>
     <button id="hpm-tab-btn-builtin" class="filter-btn" onclick="hpmSwitchTab('builtin')">
-      <i class="fas fa-microchip" style="margin-right:6px;"></i> Built-in Modules
+      <i class="fas fa-microchip" style="margin-right:6px;"></i> Core System
+    </button>
+    <button id="hpm-tab-btn-widgets" class="filter-btn" onclick="hpmSwitchTab('widgets')">
+      <i class="fas fa-th-large" style="margin-right:6px;"></i> Widget Layout
     </button>
   </div>
 
@@ -120,12 +123,21 @@
     </div>
   </div> <!-- End Packages Pane -->
 
-  <!-- ── BUILT-IN PANE ─────────────────────────────────────────────────── -->
+  <!-- ── BUILT-IN PANE ────────────────────────────────────────────── -->
   <div id="hpm-pane-builtin" style="display:none;">
     <!-- We will dynamically inject config_plugins.html here via JS, or just render the original Module Manager here -->
     <div id="hpm-builtin-container">
       <div style="text-align:center;padding:30px;color:var(--muted);">
         <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading Built-in Modules...
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WIDGETS PANE ──────────────────────────────────────────────── -->
+  <div id="hpm-pane-widgets" style="display:none;">
+    <div id="hpm-widgets-container">
+      <div style="text-align:center;padding:30px;color:var(--muted);">
+        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading Widget Manager...
       </div>
     </div>
   </div>

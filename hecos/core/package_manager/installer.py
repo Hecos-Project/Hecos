@@ -296,9 +296,19 @@ class PackageInstaller:
 
         copied_files = self._copy_tree(plugin_src, target_dir)
 
-        # Generate the runtime manifest.json inside the target directory
+        # Generate or update the runtime manifest.json inside the target directory
         runtime_manifest_path = os.path.join(target_dir, "manifest.json")
-        runtime_manifest_data = {
+        
+        import json
+        runtime_manifest_data = {}
+        if os.path.exists(runtime_manifest_path):
+            try:
+                with open(runtime_manifest_path, "r", encoding="utf-8") as f:
+                    runtime_manifest_data = json.load(f)
+            except Exception as e:
+                logger.warning(f"Could not read existing manifest.json: {e}")
+
+        runtime_manifest_data.update({
             "tag": manifest.tag or manifest.id.upper(),
             "name": manifest.name,
             "version": manifest.version,
@@ -308,15 +318,15 @@ class PackageInstaller:
             "commands": manifest.commands,
             "tool_schema": manifest.tool_schema,
             "slash_commands": manifest.slash_commands,
-        }
+        })
         if manifest.config_panel:
             runtime_manifest_data["icon"] = manifest.config_panel.tab_icon
             
-        import json
         with open(runtime_manifest_path, "w", encoding="utf-8") as f:
             json.dump(runtime_manifest_data, f, indent=4)
         
-        copied_files.append(runtime_manifest_path)
+        if runtime_manifest_path not in copied_files:
+            copied_files.append(runtime_manifest_path)
         return copied_files
 
     def _install_webui_assets(self, staging: str, manifest: HpkgManifest) -> List[str]:

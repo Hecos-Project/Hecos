@@ -53,20 +53,8 @@ async function loadWidgetsPanel() {
                     <div class="widget-desc">${displayDesc}</div>
                 </div>
                 <div class="widget-controls-col">
-                    <!-- Enabled master toggle -->
-                    <div class="widget-toggle-row">
-                        <span class="widget-toggle-lbl"><i class="fas fa-power-off" style="font-size:9px;"></i> Active</span>
-                        <label class="switch no-autosave" title="Enable or disable this widget entirely">
-                            <input type="checkbox"
-                                   id="check-enabled-${w.extension_id}"
-                                   ${widgetEnabled ? 'checked' : ''}
-                                   ${pluginOk ? '' : 'disabled'}
-                                   onchange="toggleWidgetEnabled('${w.extension_id}', this.checked, this)">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <!-- Sidebar toggle (greyed when widget disabled) -->
-                    <div class="widget-toggle-row" id="sidebar-row-${w.extension_id}" style="${widgetEnabled ? '' : 'opacity:0.3; pointer-events:none;'}">
+                    <!-- Sidebar toggle -->
+                    <div class="widget-toggle-row" id="sidebar-row-${w.extension_id}">
                         <span class="widget-toggle-lbl"><i class="fas fa-comments" style="font-size:9px;"></i> Sidebar</span>
                         <label class="switch no-autosave" title="Toggle sidebar visibility">
                             <input type="checkbox"
@@ -77,8 +65,8 @@ async function loadWidgetsPanel() {
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <!-- Room toggle (greyed when widget disabled) -->
-                    <div class="widget-toggle-row" id="room-row-${w.extension_id}" style="${widgetEnabled ? '' : 'opacity:0.3; pointer-events:none;'}">
+                    <!-- Room toggle -->
+                    <div class="widget-toggle-row" id="room-row-${w.extension_id}">
                         <span class="widget-toggle-lbl"><i class="fas fa-th-large" style="font-size:9px;"></i> Room</span>
                         <label class="switch no-autosave" title="Toggle Control Room visibility">
                             <input type="checkbox"
@@ -167,61 +155,6 @@ async function toggleSidebarWidgetsEnabled(enabled) {
     } catch (err) {
         if (window.showToast) window.showToast(`Errore: ${err.message}`, 'error');
         document.getElementById('global-sidebar-widgets-toggle').checked = !enabled;
-    }
-}
-
-// ── Widget Master Enabled ────────────────────────────────────────────────────
-async function toggleWidgetEnabled(id, enabled, inputEl) {
-    if (!id || id === 'undefined') return;
-
-    // If disabling, also visually uncheck sidebar/room immediately (optimistic XOR logic handles sync)
-    if (!enabled) {
-        const sideToggle = document.getElementById(`check-side-${id}`);
-        if (sideToggle) sideToggle.checked = false;
-        const roomToggle = document.getElementById(`check-room-${id}`);
-        if (roomToggle) roomToggle.checked = false;
-    }
-
-    const card = inputEl.closest('.widget-card');
-    card.style.opacity = '0.5'; card.style.pointerEvents = 'none';
-    try {
-        const resp = await fetch(`/api/widgets/${id}/enabled`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({enabled})
-        });
-        const data = await resp.json();
-        if (data.ok) {
-            syncLocalConfig(id, 'enabled', enabled);
-            if (!enabled) {
-                syncLocalConfig(id, 'visible', false);
-                syncLocalConfig(id, 'room_visible', false);
-            }
-            
-            // Dim/undim the other controls
-            const sideRow = document.getElementById(`sidebar-row-${id}`);
-            if (sideRow) {
-                sideRow.style.opacity = enabled ? '' : '0.3';
-                sideRow.style.pointerEvents = enabled ? '' : 'none';
-            }
-            const roomRow = document.getElementById(`room-row-${id}`);
-            if (roomRow) {
-                roomRow.style.opacity = enabled ? '' : '0.3';
-                roomRow.style.pointerEvents = enabled ? '' : 'none';
-            }
-
-            if (window.showToast) window.showToast(`Widget ${enabled ? 'attivato' : 'disattivato'}`, 'info');
-            broadcastWidgetSync(id, 'enabled', enabled);
-            if (!enabled) {
-                broadcastWidgetSync(id, 'visible', false);
-                broadcastWidgetSync(id, 'room_visible', false);
-            }
-        } else throw new Error(data.error);
-    } catch (err) {
-        if (window.showToast) window.showToast(`Errore: ${err.message}`, 'error');
-        inputEl.checked = !enabled;
-    } finally {
-        card.style.opacity = '1'; card.style.pointerEvents = 'all';
     }
 }
 

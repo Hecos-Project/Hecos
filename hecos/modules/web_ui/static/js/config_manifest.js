@@ -89,7 +89,8 @@ window.CONFIG_HUB = {
     internalTags: [
         'WEB_UI',
         'HELP',
-        'PLUGINS'
+        'PLUGINS',
+        'WIDGETS'
     ]
 };
 
