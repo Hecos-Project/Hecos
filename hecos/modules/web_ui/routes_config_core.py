@@ -84,6 +84,7 @@ _PANEL_MAP = {
     'contacts':        'modules/config_contacts.html',
     'mail':            'modules/config_mail.html',
     'templates':       'modules/config_templates.html',
+    'weather_pro':     'modules/config_weather_pro.html',
     'mcp':             'modules/config_mcp.html',
     'messenger':       'modules/config_messenger.html',
     'remote-triggers': 'modules/config_remote_triggers.html',
