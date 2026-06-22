@@ -21,8 +21,20 @@
     </div>
   </div>
 
-  <!-- ── Install Drop Zone ────────────────────────────────────────────── -->
-  <div class="card" style="margin-bottom:16px;">
+  <!-- ── Tab Navigation ────────────────────────────────────────────────── -->
+  <div class="filter-tabs" style="margin-bottom:20px; justify-content: flex-start;">
+    <button id="hpm-tab-btn-packages" class="filter-btn active" onclick="hpmSwitchTab('packages')">
+      <i class="fas fa-box-open" style="margin-right:6px;"></i> Installed Packages
+    </button>
+    <button id="hpm-tab-btn-builtin" class="filter-btn" onclick="hpmSwitchTab('builtin')">
+      <i class="fas fa-microchip" style="margin-right:6px;"></i> Built-in Modules
+    </button>
+  </div>
+
+  <!-- ── PACKAGES PANE ─────────────────────────────────────────────────── -->
+  <div id="hpm-pane-packages">
+    <!-- ── Install Drop Zone ────────────────────────────────────────────── -->
+    <div class="card" style="margin-bottom:16px;">
     <div class="card-title" style="margin-bottom:12px;">
       <i class="fas fa-upload" style="color:var(--accent);margin-right:6px;"></i>
       {{ t('hpm_install_new') or 'Install New Package (.hpkg)' }}
@@ -103,6 +115,19 @@
     <p style="color:var(--muted);font-size:0.85em;margin:0;">
       {{ t('hpm_registry_desc') or 'Browse and install community packages directly from the Hecos online registry. This feature will be available in a future release.' }}
     </p>
+  </div>
+
+    </div>
+  </div> <!-- End Packages Pane -->
+
+  <!-- ── BUILT-IN PANE ─────────────────────────────────────────────────── -->
+  <div id="hpm-pane-builtin" style="display:none;">
+    <!-- We will dynamically inject config_plugins.html here via JS, or just render the original Module Manager here -->
+    <div id="hpm-builtin-container">
+      <div style="text-align:center;padding:30px;color:var(--muted);">
+        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading Built-in Modules...
+      </div>
+    </div>
   </div>
 
 </div>

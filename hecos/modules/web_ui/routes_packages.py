@@ -131,74 +131,15 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                         "config_panel": snap.get("config_panel"),
                     }
 
-            # ── Core modules (L1) ─────────────────────────────────────────────
-            # Mirrors config_manifest.js CONFIG_HUB.modules where isCore=true,
-            # plus the non-core plugins that are shipped built-in with Hecos.
-            # All built-in modules are shipped with Hecos — not removable
-            BUILTIN_MODULES = [
-                # Level 1 — Core (isCore: true in config_manifest.js)
-                {"id": "backend",    "name": "AI Backend",      "fa_icon": "fa-server",          "type": "core_module", "level": 1, "tag": "MODELS",       "cat": "Intelligenza", "description": t("hpm_desc_backend")},
-                {"id": "keymanager", "name": "Key Manager",     "fa_icon": "fa-key",             "type": "core_module", "level": 1, "tag": "KEYMANAGER",   "cat": "Intelligenza", "description": t("hpm_desc_keymanager")},
-                {"id": "routing",    "name": "AI Routing",      "fa_icon": "fa-route",           "type": "core_module", "level": 1, "tag": "ROUTING",      "cat": "Intelligenza", "description": t("hpm_desc_routing")},
-                {"id": "ia",         "name": "Personality",     "fa_icon": "fa-user-astronaut",  "type": "core_module", "level": 1, "tag": "PERSONA",      "cat": "Intelligenza", "description": t("hpm_desc_ia")},
-                {"id": "filters",    "name": "Filters",         "fa_icon": "fa-filter",          "type": "core_module", "level": 1, "tag": "FILTERS",      "cat": "Intelligenza", "description": t("hpm_desc_filters")},
-                {"id": "memory",     "name": "Memory",          "fa_icon": "fa-memory",          "type": "core_module", "level": 1, "tag": "MEMORY",       "cat": "Intelligenza", "description": t("hpm_desc_memory")},
-                {"id": "agent",      "name": "AI Agent",        "fa_icon": "fa-robot",           "type": "core_module", "level": 1, "tag": "AGENT",        "cat": "Intelligenza", "description": t("hpm_desc_agent")},
-                {"id": "aesthetics", "name": "Aesthetics",      "fa_icon": "fa-palette",         "type": "core_module", "level": 1, "tag": "AESTHETICS",   "cat": "Multimedia", "description": t("hpm_desc_aesthetics")},
-                {"id": "mcp",        "name": "MCP Bridge",      "fa_icon": "fa-plug",            "type": "core_module", "level": 1, "tag": "MCP_BRIDGE",   "cat": "Connettività", "description": t("hpm_desc_mcp")},
-                {"id": "bridge",     "name": "Bridge",          "fa_icon": "fa-project-diagram", "type": "core_module", "level": 1, "tag": "BRIDGE",       "cat": "Connettività", "description": t("hpm_desc_bridge")},
-                {"id": "templates",  "name": "Templates",       "fa_icon": "fa-file-alt",        "type": "core_module", "level": 1, "tag": "TEMPLATES",    "cat": "Connettività", "description": t("hpm_desc_templates")},
-                {"id": "flows",      "name": "Flows Engine",    "fa_icon": "fa-project-diagram", "type": "core_module", "level": 1, "tag": "FLOWS",        "cat": "Risorse", "description": t("hpm_desc_flows")},
-                {"id": "sysnet",     "name": "Sys & Net",       "fa_icon": "fa-globe",           "type": "core_module", "level": 1, "tag": "SYS_NET",      "cat": "Sistema", "description": t("hpm_desc_sysnet")},
-                {"id": "automation", "name": "OS Automation",   "fa_icon": "fa-magic",           "type": "core_module", "level": 1, "tag": "AUTOMATION",   "cat": "Sistema", "description": t("hpm_desc_automation")},
-                {"id": "browser",    "name": "AI Browser",      "fa_icon": "fa-window-maximize", "type": "core_module", "level": 1, "tag": "BROWSER",      "cat": "Sistema", "description": t("hpm_desc_browser")},
-                {"id": "executor",   "name": "Executor",        "fa_icon": "fa-bolt",            "type": "core_module", "level": 1, "tag": "EXECUTOR",     "cat": "Sistema", "description": t("hpm_desc_executor")},
-                {"id": "hdcs",       "name": "HDCS Commands",   "fa_icon": "fa-terminal",        "type": "core_module", "level": 1, "tag": "HDCS",         "cat": "Sistema", "description": t("hpm_desc_hdcs")},
-                {"id": "widgets",    "name": "Widgets Engine",  "fa_icon": "fa-cubes",           "type": "core_module", "level": 1, "tag": "WIDGETS",      "cat": "Sistema", "description": t("hpm_desc_widgets")},
-                {"id": "webui",      "name": "Web Interface",   "fa_icon": "fa-desktop",         "type": "core_module", "level": 1, "tag": "WEB_UI",       "cat": "Sistema", "description": t("hpm_desc_webui")},
-                {"id": "backup",     "name": "Backup",          "fa_icon": "fa-shield-halved",   "type": "core_module", "level": 1, "tag": "BACKUP",       "cat": "Sistema", "description": t("hpm_desc_backup")},
-                {"id": "users",      "name": "Users",           "fa_icon": "fa-users-cog",       "type": "core_module", "level": 1, "tag": "USERS",        "cat": "Sistema", "description": t("hpm_desc_users")},
-                # Level 2 — Built-in Plugins (shipped with Hecos, not installed via HPM)
-                {"id": "voice",      "name": "Voice System",    "fa_icon": "fa-microphone-alt",  "type": "plugin",      "level": 2, "tag": "VOICE",        "cat": "Multimedia", "description": t("hpm_desc_voice")},
-                {"id": "media",      "name": "Media Player",    "fa_icon": "fa-music",           "type": "app",         "level": 4, "tag": "MEDIA_PLAYER", "cat": "Multimedia", "description": t("hpm_desc_media")},
-                {"id": "igen",       "name": "Image Gen",       "fa_icon": "fa-image",           "type": "app",         "level": 4, "tag": "IMAGE_GEN",    "cat": "Multimedia", "description": t("hpm_desc_igen")},
-                {"id": "messenger",  "name": "Messenger",       "fa_icon": "fa-comment-alt",     "type": "plugin",      "level": 2, "tag": "MESSENGER",    "cat": "Connettività", "description": t("hpm_desc_messenger")},
-                {"id": "contacts",   "name": "Contacts",        "fa_icon": "fa-address-book",    "type": "plugin",      "level": 2, "tag": "CONTACTS",     "cat": "Connettività", "description": t("hpm_desc_contacts")},
-                {"id": "mail",       "name": "Mail",            "fa_icon": "fa-envelope",        "type": "app",         "level": 4, "tag": "MAIL",         "cat": "Connettività", "description": t("hpm_desc_mail")},
-                {"id": "remote-triggers", "name": "Remote Triggers", "fa_icon": "fa-mobile-alt", "type": "plugin",     "level": 2, "tag": "REMOTE_TRIGGERS", "cat": "Connettività", "description": t("hpm_desc_remote_triggers")},
-                {"id": "drive",      "name": "Hecos Drive",     "fa_icon": "fa-hdd",             "type": "app",         "level": 4, "tag": "DRIVE",        "cat": "Risorse", "description": t("hpm_desc_drive")},
-                {"id": "web",        "name": "Web Search",      "fa_icon": "fa-globe",           "type": "plugin",      "level": 2, "tag": "WEB",          "cat": "Sistema", "description": t("hpm_desc_web")},
-                {"id": "webcam",     "name": "Webcam",          "fa_icon": "fa-camera",          "type": "plugin",      "level": 2, "tag": "WEBCAM",       "cat": "Sistema", "description": t("hpm_desc_webcam")},
-                {"id": "reminder",   "name": "Reminder",        "fa_icon": "fa-clock",           "type": "app",         "level": 4, "tag": "REMINDER",     "cat": "Sistema", "description": t("hpm_desc_reminder")},
-                {"id": "calendar",   "name": "Calendar",        "fa_icon": "fa-calendar-alt",    "type": "app",         "level": 4, "tag": "CALENDAR",     "cat": "Sistema", "description": t("hpm_desc_calendar")},
-                {"id": "lists",      "name": "Lists",           "fa_icon": "fa-list-check",      "type": "plugin",      "level": 2, "tag": "LISTS",        "cat": "Sistema", "description": t("hpm_desc_lists")},
-                {"id": "weather",    "name": "Weather",         "fa_icon": "fa-cloud-sun",       "type": "plugin",      "level": 2, "tag": "WEATHER",      "cat": "Sistema", "description": t("hpm_desc_weather")},
-                {"id": "map",        "name": "Maps",            "fa_icon": "fa-map-marked-alt",  "type": "plugin",      "level": 2, "tag": "MAP",          "cat": "Sistema", "description": t("hpm_desc_map")},
-                # Level 3 — Extensions (children of plugins)
-                {"id": "drive-editor", "name": "Drive Editor",  "fa_icon": "fa-edit",            "type": "extension",   "level": 3, "tag": "DRIVE_EDITOR", "cat": "Risorse", "parent_tag": "DRIVE", "description": t("hpm_desc_drive_editor")},
-            ]
-
-
-            system_plugins = cfg_mgr.config.get("plugins", {})
-
-            for m in BUILTIN_MODULES:
-                tag = m.get("id", "")
-                p_conf = system_plugins.get(tag, {})
-                m.setdefault("removable", False)
-                m["status"] = "installed" if p_conf.get("enabled", True) else "disabled"
-                m["lazy_load"] = p_conf.get("lazy_load", False)
-                m.setdefault("version", "built-in")
-                m.setdefault("author", "Hecos Core")
-                # Description is already set for core modules, fallback just in case:
-                m.setdefault("description", t("hpm_desc_fallback"))
-                m.setdefault("installed_at", None)
-
-            # HPM packages get their level from type
+            # ── HPM packages get their level from type
             TYPE_TO_LEVEL = {
                 "core_module": 1, "plugin": 2, "module": 2,
                 "extension": 3, "app": 4, "widget": 5,
                 "persona": 6, "theme": 7, "skill_pack": 8,
             }
+            
+            system_plugins = cfg_mgr.config.get("plugins", {})
+            
             for p in hpm_packages:
                 tag = p.get("id", "")
                 p_conf = system_plugins.get(tag, {})
@@ -213,8 +154,7 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                 p.setdefault("fa_icon", "fa-cube")
                 p.setdefault("cat", "Installed")
 
-            unified = BUILTIN_MODULES + hpm_packages
-            return jsonify({"ok": True, "packages": unified})
+            return jsonify({"ok": True, "packages": hpm_packages})
 
         except Exception as e:
             log.error(f"[HPM] GET /api/packages/all error: {e}")

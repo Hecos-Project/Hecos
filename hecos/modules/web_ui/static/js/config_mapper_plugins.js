@@ -157,7 +157,12 @@ function syncPluginStateToMemory(tag, enabled, extId = null) {
     } else {
         window.cfg.plugins[tag].enabled = enabled;
     }
-    if (typeof renderConfigHub === 'function') renderConfigHub();
+    if (typeof renderConfigHub === 'function') renderConfigHub(window.viewMode);
+    
+    // Auto-save instantly so the backend knows and the UI responds
+    if (typeof saveConfig === 'function') {
+        saveConfig(true);
+    }
 }
 
 /**

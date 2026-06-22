@@ -61,9 +61,8 @@ class HpkgManifest(BaseModel):
     """
     Root manifest schema for a .hpkg package.
 
-    Example hpkg_manifest.json:
-    {
-        "id": "mail",
+    Example hpkg_manifest.toml:
+    id = "mail"
         "name": "Hecos Mail",
         "version": "1.0.0",
         "hecos_min_version": "0.34.0",
@@ -74,10 +73,15 @@ class HpkgManifest(BaseModel):
         "plugin_dir": "plugin/",
         "config_panel": { ... },
         "widgets": [],
-        "dependencies": [],
-        "pip_requirements": ["imapclient>=2.3"],
-        "checksum_sha256": null
-    }
+    dependencies = []
+    pip_requirements = ["imapclient>=2.3"]
+
+    [config_panel]
+    tab_id = "mail"
+    tab_label = "Mail"
+    tab_icon = "fa-envelope"
+    template_file = "web_ui/templates/config_mail.html"
+    js_file = "web_ui/static/js/mail_panel.js"
     """
 
     # Identity
@@ -117,6 +121,38 @@ class HpkgManifest(BaseModel):
     pip_requirements: List[str] = Field(
         default_factory=list,
         description="List of pip requirements (same syntax as requirements.txt)"
+    )
+
+    # Runtime info (extracted into manifest.json for module_scanner)
+    tag: Optional[str] = Field(
+        None,
+        description="Runtime plugin tag (e.g., 'MAIL'). If omitted, defaults to uppercase ID."
+    )
+    lazy_load: bool = Field(
+        True,
+        description="Whether this plugin should be lazy loaded at runtime."
+    )
+    is_class_based: bool = Field(
+        True,
+        description="Whether the plugin uses the modern class-based structure."
+    )
+    commands: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Map of command names to short descriptions for LLM routing."
+    )
+    tool_schema: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of OpenAI function schemas this plugin provides."
+    )
+    slash_commands: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of slash commands this plugin registers in chat."
+    )
+
+    # Configuration integration
+    config_defaults: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Default config values to inject into plugins.yaml on install."
     )
 
     # Integrity

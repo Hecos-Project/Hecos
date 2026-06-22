@@ -51,6 +51,8 @@ window.CONFIG_HUB = {
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'lists',     label: 'hub_mod_lists',        icon: '<i class="fas fa-list-check"></i>', cat: 'SISTEMA', pluginTag: 'LISTS' },
+        { id: 'weather',   label: 'hub_mod_weather',      icon: '<i class="fas fa-cloud-sun"></i>', cat: 'SISTEMA', pluginTag: 'WEATHER' },
+        { id: 'map',       label: 'hub_mod_map',          icon: '<i class="fas fa-map-marked-alt"></i>', cat: 'SISTEMA', pluginTag: 'MAP' },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
 
         { id: 'widgets',   label: 'hub_mod_widgets',      icon: '<i class="fas fa-cubes"></i>', cat: 'SISTEMA', isCore: true },
@@ -58,7 +60,6 @@ window.CONFIG_HUB = {
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '<i class="fas fa-users-cog"></i>', cat: 'SISTEMA', adminOnly: true, pluginTag: 'USERS' },
         { id: 'security',  label: 'hub_mod_security',     icon: '<i class="fas fa-shield-alt"></i>', cat: 'SISTEMA', adminOnly: true },
-        { id: 'plugins',   label: 'hub_mod_plugins',      icon: '<i class="fas fa-puzzle-piece"></i>', cat: 'SISTEMA' },
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA' },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' },
@@ -87,7 +88,8 @@ window.CONFIG_HUB = {
     // Plugins that should NOT be shown in the Module Manager UI
     internalTags: [
         'WEB_UI',
-        'HELP'
+        'HELP',
+        'PLUGINS'
     ]
 };
 

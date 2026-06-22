@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import io
-import json
+import tomllib
 import zipfile
 from dataclasses import dataclass, field
 from typing import Optional
@@ -26,7 +26,7 @@ from hecos.core.logging import logger
 from .package_schema import HpkgManifest
 
 
-MANIFEST_FILENAME = "hpkg_manifest.json"
+MANIFEST_FILENAME = "hpkg_manifest.toml"
 
 
 @dataclass
@@ -156,9 +156,9 @@ class PackageValidator:
     @staticmethod
     def _parse_manifest(raw: str, result: ValidationResult) -> Optional[HpkgManifest]:
         try:
-            data = json.loads(raw)
-        except json.JSONDecodeError as e:
-            result.add_error(f"'{MANIFEST_FILENAME}' is not valid JSON: {e}")
+            data = tomllib.loads(raw)
+        except tomllib.TOMLDecodeError as e:
+            result.add_error(f"'{MANIFEST_FILENAME}' is not valid TOML: {e}")
             return None
         try:
             return HpkgManifest(**data)

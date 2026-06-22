@@ -25,7 +25,63 @@ const HPM_LEVELS = {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 window.hpmInit = function () {
-  hpmLoadPackages();
+  hpmSwitchTab('packages');
+};
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+
+window.hpmSwitchTab = async function(tabId) {
+  // Update buttons
+  const btnPackages = document.getElementById('hpm-tab-btn-packages');
+  const btnBuiltin = document.getElementById('hpm-tab-btn-builtin');
+  
+  if (btnPackages && btnBuiltin) {
+    if (tabId === 'packages') {
+      btnPackages.classList.add('active');
+      btnBuiltin.classList.remove('active');
+    } else {
+      btnPackages.classList.remove('active');
+      btnBuiltin.classList.add('active');
+    }
+  }
+
+  // Update panes
+  document.getElementById('hpm-pane-packages').style.display = tabId === 'packages' ? 'block' : 'none';
+  document.getElementById('hpm-pane-builtin').style.display = tabId === 'builtin' ? 'block' : 'none';
+
+  if (tabId === 'packages') {
+    hpmLoadPackages();
+  } else if (tabId === 'builtin') {
+    const builtinContainer = document.getElementById('hpm-builtin-container');
+    const existingTab = document.getElementById('tab-plugins');
+    
+    if (existingTab && existingTab.parentElement !== builtinContainer) {
+        builtinContainer.innerHTML = '';
+        builtinContainer.appendChild(existingTab);
+        existingTab.classList.remove('panel');
+        existingTab.style.display = 'block';
+        existingTab.classList.add('active');
+        if (typeof populatePlugins === 'function') populatePlugins();
+    } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.includes('fa-spinner')) {
+      try {
+        if (typeof _loadPanel === 'function') {
+            await _loadPanel('plugins');
+            const loadedTab = document.getElementById('tab-plugins');
+            if (loadedTab) {
+                builtinContainer.innerHTML = '';
+                builtinContainer.appendChild(loadedTab);
+                loadedTab.classList.remove('panel');
+                loadedTab.style.display = 'block';
+                loadedTab.classList.add('active');
+            }
+        } else {
+            throw new Error("_loadPanel function not found");
+        }
+      } catch (err) {
+        builtinContainer.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load built-in modules: ${err.message}</div>`;
+      }
+    }
+  }
 };
 
 // ── Load & Render ─────────────────────────────────────────────────────────────
@@ -354,7 +410,11 @@ window.hpmSetStatus = async function (id, status, skipRender = false) {
     if (window.showToast) window.showToast(`Package ${status}`);
     
     // Always trigger saveConfig to ensure system.yaml is synced if we toggled the switch
-    if (typeof window.saveConfig === 'function') window.saveConfig(true);
+    if (typeof window.saveConfig === 'function') {
+        window.saveConfig(true).then(() => {
+            if (typeof window.renderConfigHub === 'function') window.renderConfigHub(window.viewMode);
+        });
+    }
 
     if (!skipRender) {
       const p = _packages.find(x => x.id === id);

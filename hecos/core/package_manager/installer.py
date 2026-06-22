@@ -122,11 +122,12 @@ class PackageInstaller:
         # ── Step 2: Signature check ──────────────────────────────────────────
         # We verify the manifest mathematically against trusted public keys using the RAW json
         # to ensure no Pydantic defaults alter the canonical payload.
+        import tomllib
         import json
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             try:
-                raw_manifest_bytes = zf.read("hpkg_manifest.json")
-                raw_manifest_dict = json.loads(raw_manifest_bytes.decode("utf-8"))
+                raw_manifest_bytes = zf.read("hpkg_manifest.toml")
+                raw_manifest_dict = tomllib.loads(raw_manifest_bytes.decode("utf-8"))
             except Exception as e:
                 return InstallResult(success=False, error=f"Could not read manifest for signature check: {e}")
 
@@ -174,8 +175,8 @@ class PackageInstaller:
 
             for root, _, files in os.walk(staging_dir):
                 for fname in files:
-                    # Skip manifest.json because it's the one containing the hashes and signature
-                    if fname == "hpkg_manifest.json":
+                    # Skip manifest.toml because it's the one containing the hashes and signature
+                    if fname == "hpkg_manifest.toml":
                         continue
                         
                     fpath = os.path.join(root, fname)
@@ -231,6 +232,9 @@ class PackageInstaller:
             ok = self._registry.register(manifest_dict, install_path, installed_files)
             if not ok:
                 raise RuntimeError("Failed to register package in the database.")
+
+            # ── Step 10.5: Inject Config Defaults ─────────────────────────────
+            self._inject_config_defaults(manifest)
 
             # ── Step 11: Hot-reload capability registry ───────────────────────
             self._hot_reload()
@@ -290,7 +294,30 @@ class PackageInstaller:
         os.makedirs(target_base, exist_ok=True)
         target_dir = os.path.join(target_base, manifest.id)
 
-        return self._copy_tree(plugin_src, target_dir)
+        copied_files = self._copy_tree(plugin_src, target_dir)
+
+        # Generate the runtime manifest.json inside the target directory
+        runtime_manifest_path = os.path.join(target_dir, "manifest.json")
+        runtime_manifest_data = {
+            "tag": manifest.tag or manifest.id.upper(),
+            "name": manifest.name,
+            "version": manifest.version,
+            "description": manifest.description,
+            "lazy_load": manifest.lazy_load,
+            "is_class_based": manifest.is_class_based,
+            "commands": manifest.commands,
+            "tool_schema": manifest.tool_schema,
+            "slash_commands": manifest.slash_commands,
+        }
+        if manifest.config_panel:
+            runtime_manifest_data["icon"] = manifest.config_panel.tab_icon
+            
+        import json
+        with open(runtime_manifest_path, "w", encoding="utf-8") as f:
+            json.dump(runtime_manifest_data, f, indent=4)
+        
+        copied_files.append(runtime_manifest_path)
+        return copied_files
 
     def _install_webui_assets(self, staging: str, manifest: HpkgManifest) -> List[str]:
         """Copy HTML templates and JS/CSS assets to web_ui directories."""
@@ -372,6 +399,33 @@ class PackageInstaller:
             logger.warning(f"[HPM:Installer] Hook '{hook_name}' failed for '{manifest.id}': {e}")
 
     # ── Private: Hot-Reload ──────────────────────────────────────────────────
+
+    def _inject_config_defaults(self, manifest: HpkgManifest) -> None:
+        """Inject config defaults into plugins.yaml if not already present."""
+        if not manifest.config_defaults:
+            return
+
+        try:
+            from hecos.app.config import ConfigManager
+            cfg_mgr = ConfigManager()
+            tag = manifest.tag or manifest.id.upper()
+            
+            # Check existing config, if empty, inject
+            existing = cfg_mgr.get_plugin_config(tag)
+            
+            needs_save = False
+            for k, v in manifest.config_defaults.items():
+                if existing.get(k) is None:
+                    cfg_mgr.set_plugin_config(tag, k, v)
+                    needs_save = True
+            
+            if needs_save:
+                # Setting values inside the dict requires a save call,
+                # though set_plugin_config already calls save(), it might be redundant
+                # but it ensures the defaults are persisted.
+                logger.info(f"[HPM:Installer] Injected default config for '{tag}'.")
+        except Exception as e:
+            logger.warning(f"[HPM:Installer] Failed to inject config defaults: {e}")
 
     def _hot_reload(self) -> None:
         """Re-run capability scanner so new module appears immediately."""
