@@ -11,12 +11,38 @@ need to manually edit _PANEL_MAP for every new HPM package.
 """
 import os
 import glob
+import time
 from flask import request, jsonify, render_template
+
+# ── Server-side options cache ─────────────────────────────────────────────────
+# Avoids expensive YAML reload + filesystem glob + personality sync on every
+# tab click or /hecos/options request. Invalidated on config save or after TTL.
+_OPTIONS_CACHE: dict = {}
+_OPTIONS_CACHE_TS: float = 0.0
+_OPTIONS_CACHE_TTL: float = 60.0  # seconds
+
+
+def _invalidate_options_cache():
+    """Call this after a config save to force a fresh build on next request."""
+    global _OPTIONS_CACHE_TS
+    _OPTIONS_CACHE_TS = 0.0
 
 
 def _build_options_dict(cfg_mgr, fast=False):
-    """Build the zoptions dict containing model lists, Piper voices, personalities."""
-    cfg = cfg_mgr.reload()
+    """Build the zoptions dict containing model lists, Piper voices, personalities.
+    Results are cached in memory for _OPTIONS_CACHE_TTL seconds to avoid
+    repeated disk I/O and filesystem scans on every tab click.
+    Pass fast=False to force a full rebuild (used by /hecos/options endpoint).
+    """
+    global _OPTIONS_CACHE, _OPTIONS_CACHE_TS
+
+    now = time.monotonic()
+    # Return cached result if still valid
+    if _OPTIONS_CACHE and (now - _OPTIONS_CACHE_TS) < _OPTIONS_CACHE_TTL:
+        return _OPTIONS_CACHE
+
+    # ── Full build ────────────────────────────────────────────────────────────
+    cfg = cfg_mgr.config  # Use in-memory config; no disk reload needed here
 
     # Dynamically resolve Hecos root directory
     hecos_root  = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -30,12 +56,14 @@ def _build_options_dict(cfg_mgr, fast=False):
 
     from hecos.app.model_manager import ModelManager
     mm         = ModelManager(cfg_mgr)
-    categorized = mm.get_available_models(fast_mode=fast)
+    # Always use fast_mode=True for WebUI fragment requests — the slow network
+    # fetch happens only via the background /hecos/options call from JS.
+    categorized = mm.get_available_models(fast_mode=True)
     ollama_models = categorized.get("Ollama (Local)", [])
 
+    # Sync personalities only if the cache is cold (avoid disk write per request)
     cfg_mgr.sync_available_personalities()
-    cfg = cfg_mgr.reload()
-    personalita = list(cfg.get("ai", {}).get("available_personalities", {}).values())
+    personalita = list(cfg_mgr.config.get("ai", {}).get("available_personalities", {}).values())
 
     cloud_models_flat = []
     cloud_by_provider = {}
@@ -45,7 +73,7 @@ def _build_options_dict(cfg_mgr, fast=False):
             provider = cat.replace("Cloud (", "").replace(")", "").lower()
             cloud_by_provider[provider] = models
 
-    return {
+    result = {
         "piper_voices":  onnx_files,
         "piper_dir":     piper_path_dir,
         "ollama_models": ollama_models,
@@ -53,6 +81,11 @@ def _build_options_dict(cfg_mgr, fast=False):
         "cloud_models":  cloud_by_provider,
         "all_cloud":     cloud_models_flat,
     }
+
+    # Store in cache
+    _OPTIONS_CACHE    = result
+    _OPTIONS_CACHE_TS = now
+    return result
 
 
 # ── PANEL MAP: tab_id → template fragment ──────────────────────────────────
@@ -134,6 +167,11 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
     def _sm():
         return get_sm() if callable(get_sm) else get_sm
 
+    # ── Rendered HTML shell cache ─────────────────────────────────────────────
+    # The index.html render is the most expensive server-side operation:
+    # Jinja injects 80KB i18n + 10KB config. Cache the output for a few seconds.
+    _ui_cache: dict = {}
+
     @app.route("/hecos/config/ui")
     def config_ui():
         """Shell route — serves the lightweight Central Hub skeleton.
@@ -143,16 +181,33 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         """
         try:
             from hecos.core.i18n.translator import get_translator
+            from flask_login import current_user as cu
+            import time as _t
+
+            lang     = cfg_mgr.config.get("language", "en")
+            user_id  = getattr(cu, "id", "anon") if cu.is_authenticated else "anon"
+            cache_key = f"{lang}:{user_id}"
+            now_ts   = _t.monotonic()
+
+            # Return cached shell if still valid (10s TTL)
+            cached = _ui_cache.get(cache_key)
+            if cached and (now_ts - cached[0]) < 10.0:
+                return cached[1]
+
             translations  = get_translator().get_translations()
-            # Use in-memory config — no disk reload needed for the shell page.
-            # The JS will fetch fresh config via /hecos/config if needed.
             zconfig_data  = cfg_mgr.config
-            return render_template(
+            rendered = render_template(
                 "index.html",
                 zconfig=zconfig_data,
                 zoptions={},
                 translations=translations,
             )
+            _ui_cache[cache_key] = (now_ts, rendered)
+            # Evict other keys to avoid memory growth on multi-user setups
+            if len(_ui_cache) > 10:
+                oldest_key = min(_ui_cache, key=lambda k: _ui_cache[k][0])
+                _ui_cache.pop(oldest_key, None)
+            return rendered
         except Exception as e:
             return f"<h1>Errore: index.html non trovato</h1><p>{str(e)}</p>", 500
 
@@ -317,6 +372,9 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                 import threading
                 import copy
                 threading.Thread(target=_bg_sync, args=(copy.deepcopy(cfg_mgr.config),), daemon=True).start()
+
+                # Invalidate the options cache so the next tab click gets fresh data
+                _invalidate_options_cache()
 
                 return jsonify({"ok": True})
             return jsonify({"ok": False, "error": "Save failed"}), 500

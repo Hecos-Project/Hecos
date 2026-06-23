@@ -28,6 +28,7 @@ dependencies = [
     "psutil",
     "flask",
     "flask-login",
+    "flask-compress",
     "cryptography",
     "pynput",
     "SpeechRecognition",

@@ -24,6 +24,24 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
                 static_folder=stc_dir,
                 static_url_path='/static')
     
+    # ── Gzip/Brotli compression (Flask-Compress) ──────────────────────────────
+    # Compresses JSON, HTML, JS, CSS responses transparently.
+    # Reduces the 80KB i18n payload to ~15KB and JS bundles by ~65%.
+    try:
+        from flask_compress import Compress
+        compress = Compress()
+        app.config['COMPRESS_ALGORITHM']      = ['br', 'gzip']  # Brotli preferred, gzip fallback
+        app.config['COMPRESS_MIMETYPES']      = [
+            'text/html', 'text/css', 'text/javascript',
+            'application/javascript', 'application/json'
+        ]
+        app.config['COMPRESS_MIN_SIZE']       = 512   # Only compress if > 512 bytes
+        app.config['COMPRESS_LEVEL']          = 6     # gzip level (1-9, 6 = good balance)
+        compress.init_app(app)
+        logger.info("[WebUI] Compression enabled (Brotli/gzip via Flask-Compress).")
+    except ImportError:
+        logger.warning("[WebUI] flask-compress not installed — responses will not be compressed.")
+
     app.hecos_config_manager = config_manager
     
     # FIX: Force CSS/JS mimetypes
@@ -92,6 +110,22 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     else:
         wz_log.setLevel(_lg.INFO)
         wz_log.propagate = True
+
+    # ── Aggressive caching for versioned static files ─────────────────────────
+    # JS/CSS already carry ?v=VERSION in the URL, so the browser can safely
+    # cache them for 1 year. This eliminates 41 HTTP round-trips on repeat visits.
+    @app.after_request
+    def add_cache_headers(response):
+        path = request.path
+        # Cache versioned static assets aggressively (JS, CSS, images, fonts)
+        if path.startswith('/static/') or path.startswith('/assets/'):
+            # If the URL contains a version/cache-bust query param, cache 1 year
+            if request.args.get('v') or request.args.get('t'):
+                response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+            else:
+                # No version param — short cache (5 min) to be safe
+                response.headers['Cache-Control'] = 'public, max-age=300'
+        return response
 
     # Register all routes
     from .routes import init_routes
