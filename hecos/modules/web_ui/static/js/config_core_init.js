@@ -58,47 +58,83 @@ async function initAll(attempt = 1) {
             } catch(e) { console.warn('[Init] Agent config fetch failed:', e); }
         }
 
-        // ── PHASE 2: Background metadata (options, registry, audio, media) ──
-        // /hecos/options calls ModelManager (slow) — must NOT block anything.
-        console.log('[Init] Loading background metadata...');
-        const metaPromise = Promise.allSettled([
-            fetchWithTimeout('/hecos/options'),
-            fetchWithTimeout('/api/plugins/registry'),
-            fetchWithTimeout('/api/audio/devices'),
-            fetchWithTimeout('/api/audio/config'),
-            fetchWithTimeout('/hecos/api/config/media'),
-            fetch('/api/webui/state')
-        ]);
+        // ── PHASE 2: Background metadata — fully independent, non-blocking ──────
+        // Each request is processed as soon as it resolves.
+        // /hecos/options (ModelManager) is intentionally last and non-blocking.
+        console.log('[Init] Phase 2: launching background fetches...');
 
-        metaPromise.then(async (results) => {
-            const [resOpts, resReg, resAudio, resAudCfg, resMed, resState] = results;
+        // 2a. Plugin registry — merges dynamic plugins into hub (CRITICAL, fast)
+        fetchWithTimeout('/api/plugins/registry')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) { try { mergeRegistry(data); } catch(e) {} }
+            })
+            .catch(() => {});
 
-            if (resOpts.status === 'fulfilled' && resOpts.value.ok) {
-                try { window.sysOptions = await resOpts.value.json(); } catch (e) { }
-            }
-            if (resReg.status === 'fulfilled' && resReg.value.ok) {
-                try { mergeRegistry(await resReg.value.json()); } catch (e) { }
-            }
-            if (resState.status === 'fulfilled' && resState.value.ok) {
-                try { uiState = Object.assign(uiState, await resState.value.json()); } catch (e) { }
-            }
-            if (resAudio.status === 'fulfilled'  && resAudio.value.ok)  try { audioDevices = await resAudio.value.json();               } catch (e) { }
-            if (resAudCfg.status === 'fulfilled' && resAudCfg.value.ok) try { audioConfig  = (await resAudCfg.value.json()).config;       } catch (e) { }
-            if (resMed.status === 'fulfilled'    && resMed.value.ok)    try {
-                mediaConfig = await resMed.value.json();
-                if (_panelCache['igen'] && typeof populateMediaUI === 'function') populateMediaUI();
-            } catch (e) { }
+        // 2b. HPM hub panels — adds config tabs for installed HPM packages (fast)
+        fetchWithTimeout('/api/hub/panels')
+            .then(r => r.ok ? r.json() : null)
+            .then(panels => {
+                if (panels && Array.isArray(panels)) {
+                    try { mergeHubPanels(panels); } catch(e) {}
+                }
+            })
+            .catch(() => {});
 
-            console.log('[Init] Background metadata loaded.');
-            // Final re-render: apply registry merges + plugin state filters
+        // 2c. UI state (fast)
+        fetch('/api/webui/state')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) uiState = Object.assign(uiState, data);
+            })
+            .catch(() => {});
+
+        // 2d. Audio devices + config (fast)
+        fetchWithTimeout('/api/audio/devices')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data) audioDevices = data; })
+            .catch(() => {});
+
+        fetchWithTimeout('/api/audio/config')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data && data.config) audioConfig = data.config; })
+            .catch(() => {});
+
+        // 2e. Media config (fast)
+        fetchWithTimeout('/hecos/api/config/media')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) {
+                    mediaConfig = data;
+                    if (_panelCache['igen'] && typeof populateMediaUI === 'function') populateMediaUI();
+                }
+            })
+            .catch(() => {});
+
+        // 2f. Core re-render: fired after registry + HPM panels are likely ready (50ms grace)
+        setTimeout(() => {
             renderConfigHub(viewMode);
             populateUI();
             isInitialLoading = false;
             setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + new Date().toLocaleTimeString() + ')', 'ok');
             console.timeEnd('[Init] Total load');
-        });
+            console.log('[Init] Phase 2 complete.');
+        }, 50);
+
+        // 2g. Model list — SLOW (Ollama/cloud network query). Loaded LAST, completely non-blocking.
+        // UI is already fully functional before this completes.
+        fetchWithTimeout('/hecos/options', 8000)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data) {
+                    window.sysOptions = data;
+                    console.log('[Init] Options loaded (models available for backend panel).');
+                }
+            })
+            .catch(() => { console.log('[Init] /hecos/options unavailable (Ollama offline?). Using cache.'); });
 
         console.log('[Init] Hub ready. Background sync in progress...');
+
 
     } catch (e) {
         console.warn(`Init attempt ${attempt} failed:`, e);
@@ -167,6 +203,47 @@ async function saveUIState() {
     } catch(e) { console.error("Could not save UI state:", e); }
 }
 
+/**
+ * Merges HPM-installed config panel tabs into CONFIG_HUB.
+ * Called with the response from GET /api/hub/panels.
+ * Each panel gets a tab in the hub without needing manual edits to config_manifest.js.
+ */
+function mergeHubPanels(panels) {
+    const hub = window.CONFIG_HUB;
+    let added = 0;
+    panels.forEach(p => {
+        const panelId = p.id;
+        if (!panelId) return;
+        // Skip if already registered (either static or from previous mergeRegistry call)
+        const exists = hub.modules.find(m => m.id === panelId || m.pluginTag === p.plugin_tag);
+        if (!exists) {
+            hub.modules.push({
+                id:        panelId,
+                label:     p.name || panelId,
+                icon:      p.icon ? `<i class="fas ${p.icon}"></i>` : '<i class="fas fa-puzzle-piece"></i>',
+                cat:       p.category || 'CONNETTIVITÀ',
+                pluginTag: p.plugin_tag || panelId.toUpperCase(),
+                isHpm:     true
+            });
+            added++;
+        }
+        // Ensure the panel_id is in the lazy set so the tab renders
+        if (window.LAZY_PANEL_IDS) {
+            window.LAZY_PANEL_IDS.add(panelId);
+        }
+        // Ensure tagMap is updated for visibility filtering
+        if (p.plugin_tag && hub.tagMap && !hub.tagMap[p.plugin_tag]) {
+            hub.tagMap[p.plugin_tag] = panelId;
+        }
+    });
+    if (added > 0) {
+        console.log(`[HubPanels] Merged ${added} HPM panel(s) into hub.`);
+        // Re-render to show newly added tabs
+        if (typeof renderConfigHub === 'function') renderConfigHub(window.viewMode || 'list');
+    }
+}
+
+window.mergeHubPanels = mergeHubPanels;
 window.initAll       = initAll;
 window.mergeRegistry = mergeRegistry;
 window.loadUIState   = loadUIState;

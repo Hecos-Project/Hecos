@@ -56,7 +56,6 @@ window.CONFIG_HUB = {
         { id: 'map',       label: 'hub_mod_map',          icon: '<i class="fas fa-map-marked-alt"></i>', cat: 'SISTEMA', pluginTag: 'MAP' },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
 
-        { id: 'widgets',   label: 'hub_mod_widgets',      icon: '<i class="fas fa-cubes"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '<i class="fas fa-users-cog"></i>', cat: 'SISTEMA', adminOnly: true, pluginTag: 'USERS' },
@@ -160,6 +159,6 @@ window.LAZY_PANEL_IDS = new Set([
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help', 'flows', 'lists', 'backup',
+    'drive', 'drive-editor', 'logs', 'privacy', 'help', 'flows', 'lists', 'backup',
     'weather_pro'
 ]);

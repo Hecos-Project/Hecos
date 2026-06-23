@@ -3,6 +3,10 @@ routes_config_core.py
 ─────────────────────────────────────────────────────────────────────────────
 Hecos WebUI — Core Configuration Routes
 Handles UI shell, lazy panel fragment loading, and main system config CRUD.
+
+Phase 2 enhancement: config_fragment auto-discovers templates for HPM packages
+using the naming convention `modules/config_<panel_id>.html`, eliminating the
+need to manually edit _PANEL_MAP for every new HPM package.
 ─────────────────────────────────────────────────────────────────────────────
 """
 import os
@@ -103,6 +107,27 @@ _PANEL_MAP = {
 # Panels that require zoptions (model lists, piper voices, personalities)
 _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}
 
+# Cache: HPM panel template auto-discovery result (panel_id -> template_name)
+_HPM_PANEL_CACHE: dict = {}
+
+
+def _discover_hpm_panel(panel_id: str) -> str | None:
+    """
+    Auto-discovers a config panel HTML template for HPM-installed packages.
+    Checks the standard template directory for `modules/config_<panel_id>.html`.
+    Results are cached in memory so repeated lookups are O(1).
+    """
+    if panel_id in _HPM_PANEL_CACHE:
+        return _HPM_PANEL_CACHE[panel_id]
+
+    base_dir   = os.path.dirname(__file__)
+    tpl_dir    = os.path.join(base_dir, "templates")
+    # Convention: modules/config_<panel_id>.html
+    candidate  = os.path.join(tpl_dir, "modules", f"config_{panel_id}.html")
+    result     = f"modules/config_{panel_id}.html" if os.path.isfile(candidate) else None
+    _HPM_PANEL_CACHE[panel_id] = result
+    return result
+
 
 def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
     """Register core UI and system configuration routes."""
@@ -136,9 +161,18 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
     def config_fragment(panel_id):
         """Lazy-load endpoint: returns a single config panel as an HTML fragment.
         Called by the frontend fetch engine when the user first clicks a tab.
-        Options are built only for panels that actually need them.
+
+        Resolution order:
+          1. _PANEL_MAP (hardcoded core panels)
+          2. HPM auto-discovery: modules/config_<panel_id>.html (no edit needed)
+          3. 404 if neither found
         """
         template_name = _PANEL_MAP.get(panel_id)
+
+        # Phase 2: HPM auto-discovery fallback (no _PANEL_MAP edit needed)
+        if not template_name:
+            template_name = _discover_hpm_panel(panel_id)
+
         if not template_name:
             return f"<p style='color:red'>Panel '{panel_id}' not found.</p>", 404
 
@@ -160,6 +194,57 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         except Exception as e:
             logger.error(f"[WebUI] Fragment '{panel_id}' error: {e}")
             return f"<p style='color:red'>Error loading panel: {e}</p>", 500
+
+    @app.route("/api/hub/panels", methods=["GET"])
+    def hub_panels():
+        """Dynamic Central Hub: returns HPM-installed config panels.
+        The frontend mergeHubPanels() calls this endpoint to register tabs
+        without requiring manual edits to config_manifest.js.
+        
+        Returns a list of panel descriptors:
+          { id, name, icon, category, plugin_tag, version, description }
+        """
+        try:
+            from hecos.core.package_manager.registry import PackageRegistry
+            import json as _json
+
+            hecos_root = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            )
+            data_dir = os.path.join(hecos_root, "hecos", "data")
+            reg      = PackageRegistry(data_dir)
+            packages = reg.list_all()
+
+            panels = []
+            for pkg in packages:
+                if pkg.get("status") == "disabled":
+                    continue
+
+                manifest = pkg.get("manifest_snapshot") or {}
+                if isinstance(manifest, str):
+                    try: manifest = _json.loads(manifest)
+                    except: manifest = {}
+
+                cp = manifest.get("config_panel")
+                if not cp:
+                    # No config panel declared → skip (don't add a tab)
+                    continue
+
+                tab_id = cp.get("tab_id") or pkg["id"].replace("_", "-")
+                panels.append({
+                    "id":          tab_id,
+                    "name":        pkg.get("name") or manifest.get("name", pkg["id"]),
+                    "icon":        cp.get("tab_icon", "fa-puzzle-piece"),
+                    "category":    cp.get("category", "CONNETTIVITÀ"),
+                    "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
+                    "version":     pkg.get("version", ""),
+                    "description": pkg.get("description", ""),
+                })
+
+            return jsonify(panels)
+        except Exception as e:
+            logger.warning(f"[WebUI] /api/hub/panels error: {e}")
+            return jsonify([])
 
     @app.route("/hecos/config", methods=["GET"])
     def get_config():
