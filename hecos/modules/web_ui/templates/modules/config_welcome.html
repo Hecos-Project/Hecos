@@ -56,3 +56,46 @@
     </div>
 
 </div>
+
+<script>
+window.hpmWelcomeDrop = function(e) {
+    e.preventDefault();
+    const dz = document.getElementById('welcome-hpm-dropzone');
+    if (dz) {
+        dz.style.borderColor = 'var(--border)';
+        dz.style.color = 'var(--muted)';
+        dz.style.background = 'var(--bg3)';
+    }
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+        if (typeof showTab === 'function') showTab('packages');
+        
+        // Wait until packages_panel.js is loaded and hpmInstallFile is available
+        const checkAndInstall = () => {
+            if (typeof window.hpmInstallFile === 'function') {
+                window.hpmInstallFile(file);
+            } else {
+                setTimeout(checkAndInstall, 100);
+            }
+        };
+        checkAndInstall();
+    }
+};
+
+window.hpmWelcomeFileSelected = function(e) {
+    const file = e.target?.files?.[0];
+    if (file) {
+        if (typeof showTab === 'function') showTab('packages');
+        
+        const checkAndInstall = () => {
+            if (typeof window.hpmInstallFile === 'function') {
+                window.hpmInstallFile(file);
+            } else {
+                setTimeout(checkAndInstall, 100);
+            }
+        };
+        checkAndInstall();
+    }
+    e.target.value = '';
+};
+</script>

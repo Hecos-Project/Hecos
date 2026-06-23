@@ -285,6 +285,15 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                     continue
 
                 tab_id = cp.get("tab_id") or pkg["id"].replace("_", "-")
+                
+                js_file = cp.get("js_file")
+                if js_file and js_file.startswith("web_ui/static/"):
+                    js_file = js_file.replace("web_ui/static/", "", 1)
+                    
+                css_file = cp.get("css_file")
+                if css_file and css_file.startswith("web_ui/static/"):
+                    css_file = css_file.replace("web_ui/static/", "", 1)
+
                 panels.append({
                     "id":          tab_id,
                     "name":        pkg.get("name") or manifest.get("name", pkg["id"]),
@@ -293,6 +302,8 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                     "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
                     "version":     pkg.get("version", ""),
                     "description": pkg.get("description", ""),
+                    "js_file":     js_file,
+                    "css_file":    css_file,
                 })
 
             return jsonify(panels)

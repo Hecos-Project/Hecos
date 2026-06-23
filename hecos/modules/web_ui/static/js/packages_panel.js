@@ -487,13 +487,10 @@ window.hpmSetStatus = async function (id, status, skipRender = false) {
     }
 
     // Broadcast widget state change to update Control Room dynamically
+    // We send an event to tell the UI to refresh widgets. The backend already handles
+    // hiding disabled packages via `plugin_active = False`.
     const hpmChannel = new BroadcastChannel('hecos_widgets');
-    const isEnabled = (status === 'installed' || status === 'active');
-    hpmChannel.postMessage({ type: 'widget_update', id: id, field: 'enabled', value: isEnabled });
-    if (!isEnabled) {
-        hpmChannel.postMessage({ type: 'widget_update', id: id, field: 'room_visible', value: false });
-        hpmChannel.postMessage({ type: 'widget_update', id: id, field: 'visible', value: false });
-    }
+    hpmChannel.postMessage({ type: 'widgets_reload_request' });
     
     if (typeof loadWidgetsPanel === 'function') loadWidgetsPanel();
 
@@ -573,28 +570,6 @@ function hpmSetProgress(visible, label = '', pct = 0) {
   if (bar) bar.style.width = `${pct}%`;
   if (lbl) lbl.textContent = label;
 }
-
-// ── Welcome Screen Drop Zone Helpers ─────────────────────────────────────────
-
-window.hpmWelcomeDrop = function (e) {
-  e.preventDefault();
-  const dz = document.getElementById('welcome-hpm-dropzone');
-  if (dz) dz.style.borderColor = 'var(--border-color)';
-  const file = e.dataTransfer?.files?.[0];
-  if (file) {
-    if (typeof showTab === 'function') showTab('packages');
-    setTimeout(() => hpmInstallFile(file), 400);
-  }
-};
-
-window.hpmWelcomeFileSelected = function (e) {
-  const file = e.target?.files?.[0];
-  if (file) {
-    if (typeof showTab === 'function') showTab('packages');
-    setTimeout(() => hpmInstallFile(file), 400);
-  }
-  e.target.value = '';
-};
 
 // ── Auto-init ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', window.hpmInit);

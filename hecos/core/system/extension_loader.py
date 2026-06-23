@@ -176,12 +176,30 @@ def get_all_widgets(config: dict = None) -> list:
         # Override plugin_active if it is an HPM package and is currently disabled
         try:
             from hecos.core.package_manager.registry import PackageRegistry
-            # hecos/core/system/extension_loader.py -> hecos/data
             data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
             reg = PackageRegistry(data_dir=data_dir)
-            pkg = reg.get_package(ext_id)
-            if pkg and pkg.get("status") not in ("installed", "active"):
-                plugin_active = False
+            
+            # Map the extension_id to a package. We check if the extension path is inside any package's widgets.
+            hpm_packages = reg.list_all()
+            for p in hpm_packages:
+                snap = p.get("manifest_snapshot") or {}
+                if isinstance(snap, str):
+                    import json
+                    try: snap = json.loads(snap)
+                    except: snap = {}
+                
+                # Check if this widget belongs to this package
+                is_mine = False
+                for w in snap.get("widgets", []):
+                    epath = w.get("extension_path", "")
+                    if epath.endswith(ext_id) or epath.endswith(f"/{ext_id}/"):
+                        is_mine = True
+                        break
+                
+                if is_mine:
+                    if p.get("status") not in ("installed", "active"):
+                        plugin_active = False
+                    break
         except Exception:
             pass
         prefs = _get_widget_prefs(ext_id, config)

@@ -235,6 +235,22 @@ function mergeHubPanels(panels) {
         if (p.plugin_tag && hub.tagMap && !hub.tagMap[p.plugin_tag]) {
             hub.tagMap[p.plugin_tag] = panelId;
         }
+
+        // Dynamic Asset Loader (CSS/JS)
+        if (p.css_file && !document.querySelector(`link[href="/static/${p.css_file}"]`)) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = `/static/${p.css_file}`;
+            document.head.appendChild(link);
+            console.log(`[HPM AssetLoader] Injected CSS: ${p.css_file}`);
+        }
+        if (p.js_file && !document.querySelector(`script[src^="/static/${p.js_file}"]`)) {
+            const script = document.createElement('script');
+            script.src = `/static/${p.js_file}?v=${window.VERSION || Date.now()}`;
+            script.defer = true;
+            document.head.appendChild(script);
+            console.log(`[HPM AssetLoader] Injected JS: ${p.js_file}`);
+        }
     });
     if (added > 0) {
         console.log(`[HubPanels] Merged ${added} HPM panel(s) into hub.`);
