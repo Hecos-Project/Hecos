@@ -22,7 +22,6 @@
     "hpm_desc_agent": "Gestiona las iteraciones del bucle agéntico de la IA y la ejecución de tareas.",
     "hpm_desc_aesthetics": "Configuraciones visuales, temas de la interfaz de usuario y esquemas de color.",
     "hpm_desc_mcp": "Integración con el protocolo MCP (Model Context Protocol).",
-    "hpm_desc_bridge": "Gestiona webhooks y conexiones de API externas genéricas.",
     "hpm_desc_templates": "Gestor de plantillas para respuestas predefinidas.",
     "hpm_desc_flows": "Motor de automatización basado en diagramas visuales de nodos.",
     "hpm_desc_sysnet": "Herramientas para interactuar con el sistema de archivos y la red local.",

@@ -274,7 +274,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             response = litellm.completion(**params)
 
             if stream:
-                return response  # Restituisce il generatore per il bridge WebUI
+                return response  # Restituisce il generatore per lo stream in tempo reale
 
             # UPDATE TELEMETRY WITH REAL DATA
             try:

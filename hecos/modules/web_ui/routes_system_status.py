@@ -29,12 +29,7 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             elif backend == "kobold": model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
             else: model = "?"
 
-            br    = cfg.get("bridge", {})
-            flags = [k for k, v in [
-                ("proc",        br.get("use_processor")),
-                ("think-strip", br.get("remove_think_tags")),
-                ("tools",       br.get("enable_tools")),
-            ] if v]
+
 
             sm = _sm()
             last_tool = None
@@ -113,7 +108,6 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
                 "persona":    persona,
                 "avatar":     avatar_path,
                 "avatar_size": cfg.get("ai", {}).get("avatar_size", "medium"),
-                "bridge":     ", ".join(flags) if flags else "default",
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,

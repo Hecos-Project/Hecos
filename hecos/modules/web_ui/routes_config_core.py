@@ -64,7 +64,6 @@ _PANEL_MAP = {
     'agent':           'modules/config_agent.html',
     'ia':              'modules/config_persona.html',
     'filters':         'modules/config_filters.html',
-    'bridge':          'modules/config_bridge.html',
     'memory':          'modules/config_memory.html',
     'voice':           'modules/config_voice.html',
     'system':          'modules/config_system.html',
