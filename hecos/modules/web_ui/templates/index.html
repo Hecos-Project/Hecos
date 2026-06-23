@@ -34,8 +34,21 @@
         <!-- Populated immediately by config_core.js at DOMContentLoaded — no delay -->
         <div id="tab-engine-init-msg" style="padding:10px 14px; color:var(--muted); font-size: var(--font-size-sm); display:flex; align-items:center; gap:6px;">
           <i class="fas fa-cog" style="animation: spin 1.2s linear infinite; font-size:13px;"></i>
-          <span>Initializing Tab Engine<span class="dot-anim"></span></span>
+          <span id="init-text">Initializing Tab Engine<span class="dot-anim"></span></span>
         </div>
+        <script>
+            // Check if scripts are already cached to show a custom message on first load
+            if (!localStorage.getItem('hecos_scripts_cached')) {
+                const initText = document.getElementById('init-text');
+                if (initText) {
+                    initText.innerHTML = `Initializing Tab Engine (First load takes a bit longer...) <span class="dot-anim"></span>`;
+                }
+            }
+            // Mark cache as loaded when window load event fires
+            window.addEventListener('load', () => {
+                localStorage.setItem('hecos_scripts_cached', 'true');
+            });
+        </script>
      </div>
   </div>
 
