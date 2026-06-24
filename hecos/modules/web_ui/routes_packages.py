@@ -76,6 +76,54 @@ def _hpm_event_broadcast(event_name: str, payload: dict) -> None:
         logger.debug(f"[HPM:Routes] Could not broadcast event: {e}")
 
 
+def _refresh_jinja_loader(app) -> None:
+    """
+    Hot-reload the Jinja2 template loader to include any extension template
+    directories that were installed AFTER server startup.
+    Safe to call multiple times — it deduplicates paths.
+    """
+    try:
+        from jinja2 import FileSystemLoader, ChoiceLoader
+        import sys
+        hecos_src = getattr(sys, "_hecos_src_dir", None)
+        if not hecos_src:
+            return
+        ext_root = os.path.join(hecos_src, "modules", "web_ui", "extensions")
+        if not os.path.isdir(ext_root):
+            return
+
+        # Collect all extension template dirs
+        new_loaders = []
+        existing_paths = set()
+
+        # Harvest existing paths from the current loader
+        current = app.jinja_loader
+        if isinstance(current, ChoiceLoader):
+            for ldr in current.loaders:
+                if isinstance(ldr, FileSystemLoader):
+                    for p in ldr.searchpath:
+                        existing_paths.add(os.path.normcase(os.path.abspath(p)))
+        elif isinstance(current, FileSystemLoader):
+            for p in current.searchpath:
+                existing_paths.add(os.path.normcase(os.path.abspath(p)))
+
+        for ext_name in os.listdir(ext_root):
+            tpl_dir = os.path.join(ext_root, ext_name, "templates")
+            if os.path.isdir(tpl_dir):
+                norm = os.path.normcase(os.path.abspath(tpl_dir))
+                if norm not in existing_paths:
+                    new_loaders.append(FileSystemLoader(tpl_dir))
+                    logger.info(f"[HPM:Routes] Jinja loader hot-patched: +{tpl_dir}")
+
+        if new_loaders:
+            if isinstance(app.jinja_loader, ChoiceLoader):
+                app.jinja_loader = ChoiceLoader(app.jinja_loader.loaders + new_loaders)
+            else:
+                app.jinja_loader = ChoiceLoader([app.jinja_loader] + new_loaders)
+    except Exception as _e:
+        logger.warning(f"[HPM:Routes] _refresh_jinja_loader failed: {_e}")
+
+
 def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     """Register all HPM REST routes on the Flask app."""
 
@@ -85,6 +133,10 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     _hecos_src = os.path.join(hecos_root, "hecos")
     if not os.path.isdir(_hecos_src):
         _hecos_src = hecos_root  # fallback: already pointing at hecos/
+
+    # Store for use by _refresh_jinja_loader (which is stateless/helper)
+    import sys as _sys
+    _sys._hecos_src_dir = _hecos_src
 
     # ── GET /api/packages ─────────────────────────────────────────────────────
     @app.route("/api/packages", methods=["GET"])
@@ -188,6 +240,19 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
             result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned)
 
             if result.success:
+                # ── Hot-patch Jinja loader so widget templates are found immediately ──
+                _refresh_jinja_loader(app)
+
+                # ── Re-discover extensions so new widgets appear without restart ──
+                try:
+                    from hecos.core.system.extension_loader import discover_webui_extensions, load_eager_extensions
+                    webui_ext_dir = os.path.join(_hecos_src, "modules", "web_ui")
+                    discover_webui_extensions(webui_ext_dir)
+                    load_eager_extensions(app, "WEB_UI")
+                    logger.info(f"[HPM:Routes] Extensions re-discovered after install.")
+                except Exception as _ext_e:
+                    logger.warning(f"[HPM:Routes] Extension re-discovery failed: {_ext_e}")
+
                 response = {
                     "ok": True,
                     "id": result.package_id,

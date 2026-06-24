@@ -1,0 +1,23 @@
+{
+    "extension_id": "webcam_widget",
+    "parent_plugin": "WEB_UI",
+    "display_name": "Webcam Feed",
+    "version": "1.0.0",
+    "description": "Live local webcam stream for the Hecos sidebar and Control Room. Supports device selection, auto-start preferences, and stop/start controls.",
+    "sidebar_widget": true,
+    "eager_load": true,
+    "config_schema": {
+        "webcam_widget_enabled": {
+            "type": "bool",
+            "default": true,
+            "description": "Enable Webcam Widget in the UI"
+        }
+    },
+    "tag": "WEBCAM_WIDGET",
+    "name": "Webcam Feed Widget",
+    "lazy_load": false,
+    "is_class_based": true,
+    "commands": {},
+    "tool_schema": [],
+    "slash_commands": []
+}
