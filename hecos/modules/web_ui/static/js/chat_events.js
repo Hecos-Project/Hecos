@@ -178,8 +178,8 @@ window.initEvents = function() {
       if (window.reminderWidget && window.reminderWidget.refresh) {
         window.reminderWidget.refresh();
       }
-    } else if (ev.type === 'widgets_refresh') {
-      console.log("[WIDGETS] SSE refresh signal received.");
+    } else if (ev.type === 'widgets_refresh' || ev.type === 'hpm:package_uninstalled' || ev.type === 'hpm:package_installed' || ev.type === 'hpm:package_status_changed') {
+      console.log(`[WIDGETS/HPM] SSE refresh signal received: ${ev.type}`);
       // 1. Sidebar refresh
       if (typeof window.refreshSidebarWidgets === 'function') {
         window.refreshSidebarWidgets();

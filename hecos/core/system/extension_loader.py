@@ -242,6 +242,25 @@ def discover_webui_extensions(webui_module_dir: str):
     discover_extensions("WEB_UI", webui_module_dir)
 
 
+def purge_extension(ext_id: str, plugin_tag: str = "WEB_UI") -> bool:
+    """
+    Remove an extension from the in-memory registry immediately (runtime purge).
+    Called after a package is uninstalled so the widget disappears without restart.
+    Returns True if the extension was found and removed, False otherwise.
+    """
+    removed = False
+    if plugin_tag in _extension_registry and ext_id in _extension_registry[plugin_tag]:
+        del _extension_registry[plugin_tag][ext_id]
+        removed = True
+        logger.info(f"[EXT_LOADER] Extension '{ext_id}' purged from registry.")
+
+    key = (plugin_tag, ext_id)
+    if key in _extension_paths:
+        del _extension_paths[key]
+
+    return removed
+
+
 def load_eager_extensions(app, plugin_tag: str):
     """
     Immediately loads all extensions for *plugin_tag* that have 'eager_load': true.

@@ -78,9 +78,10 @@ def _hpm_event_broadcast(event_name: str, payload: dict) -> None:
 
 def _refresh_jinja_loader(app) -> None:
     """
-    Hot-reload the Jinja2 template loader to include any extension template
-    directories that were installed AFTER server startup.
-    Safe to call multiple times — it deduplicates paths.
+    Hot-reload the Jinja2 template loader to:
+    - ADD template directories from newly installed extensions.
+    - REMOVE template directories from uninstalled extensions (path no longer on disk).
+    Safe to call multiple times — deduplicates paths automatically.
     """
     try:
         from jinja2 import FileSystemLoader, ChoiceLoader
@@ -89,37 +90,66 @@ def _refresh_jinja_loader(app) -> None:
         if not hecos_src:
             return
         ext_root = os.path.join(hecos_src, "modules", "web_ui", "extensions")
-        if not os.path.isdir(ext_root):
-            return
 
-        # Collect all extension template dirs
-        new_loaders = []
-        existing_paths = set()
-
-        # Harvest existing paths from the current loader
+        # Collect all existing loader paths to compare
         current = app.jinja_loader
+        current_loaders = []
         if isinstance(current, ChoiceLoader):
-            for ldr in current.loaders:
-                if isinstance(ldr, FileSystemLoader):
-                    for p in ldr.searchpath:
-                        existing_paths.add(os.path.normcase(os.path.abspath(p)))
-        elif isinstance(current, FileSystemLoader):
-            for p in current.searchpath:
-                existing_paths.add(os.path.normcase(os.path.abspath(p)))
+            current_loaders = list(current.loaders)
+        else:
+            current_loaders = [current]
 
-        for ext_name in os.listdir(ext_root):
-            tpl_dir = os.path.join(ext_root, ext_name, "templates")
-            if os.path.isdir(tpl_dir):
-                norm = os.path.normcase(os.path.abspath(tpl_dir))
-                if norm not in existing_paths:
-                    new_loaders.append(FileSystemLoader(tpl_dir))
-                    logger.info(f"[HPM:Routes] Jinja loader hot-patched: +{tpl_dir}")
+        # Scan which extension template dirs actually exist on disk right now
+        existing_tpl_dirs = set()
+        if os.path.isdir(ext_root):
+            for ext_name in os.listdir(ext_root):
+                tpl_dir = os.path.join(ext_root, ext_name, "templates")
+                if os.path.isdir(tpl_dir):
+                    existing_tpl_dirs.add(os.path.normcase(os.path.abspath(tpl_dir)))
 
-        if new_loaders:
-            if isinstance(app.jinja_loader, ChoiceLoader):
-                app.jinja_loader = ChoiceLoader(app.jinja_loader.loaders + new_loaders)
+        # Build the new loader list:
+        # - Keep non-extension loaders (core templates, etc.) always
+        # - Keep extension loaders only if the path still exists on disk
+        # - Add any new paths not already present
+        new_loaders = []
+        seen_paths = set()
+
+        for ldr in current_loaders:
+            if isinstance(ldr, FileSystemLoader):
+                # Check if this is an extension template dir
+                kept_paths = []
+                for p in ldr.searchpath:
+                    norm = os.path.normcase(os.path.abspath(p))
+                    # If it's under ext_root, only keep it if it still exists
+                    is_ext_path = norm.startswith(os.path.normcase(os.path.abspath(ext_root))) if os.path.isdir(ext_root) else False
+                    if is_ext_path:
+                        if norm in existing_tpl_dirs and norm not in seen_paths:
+                            kept_paths.append(p)
+                            seen_paths.add(norm)
+                    else:
+                        # Non-extension path — always keep
+                        if norm not in seen_paths:
+                            kept_paths.append(p)
+                            seen_paths.add(norm)
+                if kept_paths:
+                    if len(kept_paths) == len(ldr.searchpath):
+                        new_loaders.append(ldr)  # Unchanged loader, keep reference
+                    else:
+                        new_loaders.append(FileSystemLoader(kept_paths))
             else:
-                app.jinja_loader = ChoiceLoader([app.jinja_loader] + new_loaders)
+                new_loaders.append(ldr)
+
+        # Add NEW extension dirs not yet in the loader
+        for tpl_dir in sorted(existing_tpl_dirs):
+            if tpl_dir not in seen_paths:
+                new_loaders.append(FileSystemLoader(tpl_dir))
+                logger.info(f"[HPM:Routes] Jinja loader hot-patched: +{tpl_dir}")
+
+        if len(new_loaders) == 1:
+            app.jinja_loader = new_loaders[0]
+        else:
+            app.jinja_loader = ChoiceLoader(new_loaders)
+
     except Exception as _e:
         logger.warning(f"[HPM:Routes] _refresh_jinja_loader failed: {_e}")
 
@@ -345,6 +375,31 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
             result = uninstaller.uninstall(pkg_id)
 
             if result.success:
+                # ── Purge extensions from the in-memory registry immediately ──
+                try:
+                    from hecos.core.system.extension_loader import purge_extension
+                    from hecos.core.package_manager.registry import PackageRegistry
+                    import sys as _sys_u
+
+                    # The package was already removed from DB by uninstaller,
+                    # so we inspect removed_files to find extension dirs
+                    webui_ext_root = os.path.join(_hecos_src, "modules", "web_ui", "extensions")
+                    if os.path.isdir(webui_ext_root):
+                        for ext_name in os.listdir(webui_ext_root):
+                            # Check this extension no longer exists on disk (uninstaller deleted it)
+                            ext_dir = os.path.join(webui_ext_root, ext_name)
+                            if not os.path.isdir(ext_dir):
+                                # It was deleted — purge from memory
+                                purge_extension(ext_name, "WEB_UI")
+                                log.info(f"[HPM] Purged extension from registry: {ext_name}")
+                    
+                    # Also update the Jinja loader to remove stale paths
+                    _refresh_jinja_loader(app)
+
+                except Exception as _purge_e:
+                    log.warning(f"[HPM] Extension purge failed: {_purge_e}")
+
+                _hpm_event_broadcast("hpm:package_uninstalled", {"id": pkg_id})
                 return jsonify({
                     "ok": True,
                     "id": pkg_id,
