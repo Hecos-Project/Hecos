@@ -270,7 +270,8 @@ function hpmRenderRow(pkg, meta) {
   let actions = '';
   if (isRemovable) {
     actions += `
-      <button class="btn btn-sm btn-danger"
+      <button type="button"
+              class="btn btn-sm btn-danger"
               style="font-size:10px;padding:4px 10px;margin-left:4px;"
               onclick="hpmConfirmUninstall('${pkg.id}','${_hesc(pkg.name)}')"
               title="${window.HPM_I18N?.uninstall || 'Uninstall'}">
@@ -444,15 +445,14 @@ async function hpmInstallFile(file, forceAllowUnsigned = false) {
       
       // Handle signature error explicitly
       if (data.signature_error && !forceAllowUnsigned) {
-        const confirmUnsigned = confirm(`This package is unsigned or untrusted. Installing unsigned packages can be a security risk.\n\nDo you want to force install "${file.name}" anyway?`);
-        if (confirmUnsigned) {
+        const msg = `This package is unsigned or untrusted. Installing unsigned packages can be a security risk.<br><br>Do you want to force install "<b>${file.name}</b>" anyway?`;
+        hpmShowConfirm(msg, 'Force Install', () => {
           // Check the box visually so the user sees it's now allowed
           const checkbox = document.getElementById('hpm-allow-unsigned');
           if (checkbox) checkbox.checked = true;
-          
           // Retry install forcing unsigned
-          return hpmInstallFile(file, true);
-        }
+          hpmInstallFile(file, true);
+        });
       } else {
         if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
       }
@@ -505,11 +505,34 @@ window.hpmSetStatus = async function (id, status, skipRender = false) {
 
 // ── Uninstall ─────────────────────────────────────────────────────────────────
 
+function hpmShowConfirm(msgHtml, confirmBtnText, onConfirm) {
+  const modal = document.getElementById('hpm-confirm-modal');
+  const textEl = document.getElementById('hpm-confirm-modal-text');
+  const yesBtn = document.getElementById('hpm-confirm-modal-yes');
+  
+  if (modal && textEl && yesBtn) {
+    textEl.innerHTML = msgHtml;
+    yesBtn.innerHTML = confirmBtnText;
+    modal.style.display = 'flex';
+    yesBtn.onclick = function() {
+      modal.style.display = 'none';
+      onConfirm();
+    };
+  } else {
+    // Fallback if modal is missing from DOM
+    const plainMsg = msgHtml.replace(/<[^>]+>/g, '').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    if (!confirm(plainMsg)) return;
+    onConfirm();
+  }
+}
+
 window.hpmConfirmUninstall = function (id, name) {
   const msgTemplate = window.HPM_I18N?.confirm_uninstall || 'Are you sure you want to uninstall the package \'%s\'?';
   const msg = msgTemplate.replace('%s', name);
-  if (!confirm(msg)) return;
-  hpmUninstall(id, name);
+  
+  hpmShowConfirm(msg, window.HPM_I18N?.uninstall || 'Uninstall', () => {
+    hpmUninstall(id, name);
+  });
 };
 
 async function hpmUninstall(id, name) {

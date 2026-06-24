@@ -107,8 +107,9 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         "messages": messages,
         "temperature": specific_config.get('temperature', 0.7),
         "top_p": specific_config.get('top_p', 0.9),
-        "num_retries": 1,
-        "stream": stream
+        "num_retries": 0,  # We handle retries manually with key failover
+        "stream": stream,
+        "timeout": 300 if backend_type in ("ollama", "kobold") else 90,  # Prevent infinite hangs
     }
     
     # Aggiungi i tools se presenti e se il backend lo supporta
@@ -309,8 +310,17 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             return content
 
         except Exception as e:
+            import traceback
             error_msg = str(e)
-            zlog_error(f"LiteLLM: Error (attempt {_attempt + 1}): {error_msg}")
+            error_type = type(e).__name__
+            
+            # Detailed logging so we can see EXACTLY why a call failed
+            zlog_error(f"LiteLLM: [{error_type}] Error (attempt {_attempt + 1}) with model '{model_name}': {error_msg}")
+            
+            # Log full stack trace for unexpected errors
+            if "Timeout" in error_type or "timeout" in error_msg.lower():
+                zlog_error(f"LiteLLM: TIMEOUT detected on attempt {_attempt + 1}! Provider='{provider}', Model='{model_name}'. Check network or API status.")
+                return f"⚠️ Timeout: il provider '{provider}' non ha risposto entro il limite di tempo. Prova a inviare di nuovo il messaggio."
 
             # ── KeyManager: notify failure and attempt failover ──────────
             _failed_key = params.get("api_key", None)
@@ -340,7 +350,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 return f"⚠️ Errore 404: Il modello '{model_name}' non è stato trovato o l'endpoint è errato."
             if "503" in error_msg or "ServiceUnavailableError" in error_msg:
                 return f"⚠️ Server AI Sovraccarico (Errore 503). Il provider {provider} è momentaneamente non disponibile. Dettagli: {error_msg[:100]}"
-            return f"⚠️ Errore LLM imprevisto: {error_msg[:250]}"
+            return f"⚠️ Errore LLM imprevisto [{error_type}]: {error_msg[:250]}"
 
     # All keys exhausted
     return f"⚠️ Tutte le chiavi API per '{provider}' sono esaurite o non valide. Aggiungi nuove chiavi nel Key Manager."

@@ -1,7 +1,7 @@
 image_gen:
   enabled: true
-  provider: pollinations
-  model: flux
+  provider: huggingface
+  model: ''
   nologo: true
   api_key: ''
   api_key_comment: ''
@@ -23,7 +23,7 @@ image_gen:
   flux_refiner_instructions: ''
   show_metadata_in_chat: false
   presets: {}
-  active_preset: ''
+  active_preset: ⚡ Flux Schnell (HuggingFace)
   custom_hf_models: []
 video_gen:
   enabled: false
