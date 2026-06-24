@@ -39,7 +39,7 @@ window.hpmSwitchTab = async function(tabId) {
       existingTab.style.display = 'block';
       existingTab.classList.add('active');
       if (typeof window.populatePlugins === 'function') window.populatePlugins();
-    } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.includes('fa-spinner')) {
+    } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.trim() === '') {
       try {
         if (typeof window._loadPanel === 'function') {
           await window._loadPanel('plugins');
@@ -69,7 +69,7 @@ window.hpmSwitchTab = async function(tabId) {
       existingWidgetsTab.classList.remove('panel');
       existingWidgetsTab.style.display = 'block';
       existingWidgetsTab.classList.add('active');
-    } else if (!existingWidgetsTab && widgetsContainer && widgetsContainer.innerHTML.includes('fa-spinner')) {
+    } else if (!existingWidgetsTab && widgetsContainer && widgetsContainer.innerHTML.trim() === '') {
       try {
         if (typeof window._loadPanel === 'function') {
           await window._loadPanel('widgets');
@@ -96,9 +96,8 @@ window.hpmLoadPackages = async function () {
   if (!grid) return;
 
   grid.innerHTML = `
-    <div style="text-align:center;padding:30px;color:var(--muted);font-size:0.9em;">
-      <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>
-      ${window.HPM_I18N?.loading || 'Loading modules...'}
+    <div style="text-align:center;padding:30px;color:var(--muted);">
+      <i class="fas fa-spinner fa-spin" style="font-size: 1.5em;"></i>
     </div>`;
 
   try {

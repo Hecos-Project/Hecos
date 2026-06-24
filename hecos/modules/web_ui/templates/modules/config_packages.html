@@ -100,10 +100,6 @@
     </div>
 
     <div id="hpm-packages-grid" style="display:grid;gap:10px;">
-      <div style="text-align:center;padding:30px;color:var(--muted);font-size:0.9em;">
-        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>
-        {{ t('webui_loading') or 'Loading installed packages...' }}
-      </div>
     </div>
   </div>
 
@@ -125,18 +121,12 @@
   <div id="hpm-pane-builtin" style="display:none;">
     <!-- We will dynamically inject config_plugins.html here via JS, or just render the original Module Manager here -->
     <div id="hpm-builtin-container">
-      <div style="text-align:center;padding:30px;color:var(--muted);">
-        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading Built-in Modules...
-      </div>
     </div>
   </div>
 
   <!-- ── WIDGETS PANE ──────────────────────────────────────────────── -->
   <div id="hpm-pane-widgets" style="display:none;">
     <div id="hpm-widgets-container">
-      <div style="text-align:center;padding:30px;color:var(--muted);">
-        <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading Widget Manager...
-      </div>
     </div>
   </div>
 
