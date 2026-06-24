@@ -1,0 +1,317 @@
+<!-- WEATHER PRO WIDGET -->
+<style>
+.wp-widget {
+    font-family: var(--font-sans, 'Inter', sans-serif);
+    background: var(--bg2, #111118);
+    border-radius: 14px;
+    overflow: hidden;
+    color: var(--text, #e8e8f0);
+}
+
+/* ── Header ── */
+.wp-header {
+    position: relative;
+    padding: 18px 16px 14px;
+    background: linear-gradient(135deg, #1a3a6b 0%, #0d2040 60%, #1a2a5e 100%);
+    text-align: center;
+}
+.wp-location {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 4px;
+}
+.wp-temp-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+.wp-icon-main {
+    font-size: 36px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+.wp-temp-main {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1;
+    color: #fff;
+}
+.wp-condition {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 10px;
+}
+.wp-feels {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 2px;
+}
+.wp-meta-row {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 8px;
+}
+.wp-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+}
+.wp-meta-item i {
+    font-size: 10px;
+    opacity: 0.8;
+}
+.wp-refresh-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: rgba(255,255,255,0.6);
+    border-radius: 6px;
+    width: 26px; height: 26px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: background 0.2s, color 0.2s;
+    display: flex; align-items: center; justify-content: center;
+}
+.wp-refresh-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.wp-refresh-btn.spinning i { animation: wp-spin 0.8s linear infinite; }
+@keyframes wp-spin { to { transform: rotate(360deg); } }
+
+/* ── City search ── */
+.wp-search-row {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px 0;
+}
+.wp-search-input {
+    flex: 1;
+    background: var(--bg3, rgba(255,255,255,0.06));
+    border: 1px solid var(--border, rgba(255,255,255,0.1));
+    border-radius: 8px;
+    color: var(--text, #e8e8f0);
+    font-size: 12px;
+    padding: 5px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.wp-search-input:focus { border-color: var(--accent, #5e8aff); }
+.wp-search-btn {
+    background: var(--accent, #5e8aff);
+    border: none; border-radius: 8px;
+    color: #fff; font-size: 11px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+.wp-search-btn:hover { opacity: 0.85; }
+
+/* ── Forecast row ── */
+.wp-forecast {
+    display: flex;
+    gap: 0;
+    padding: 10px 8px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.wp-forecast::-webkit-scrollbar { display: none; }
+.wp-day {
+    flex: 1;
+    min-width: 40px;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    cursor: default;
+}
+.wp-day:hover { background: rgba(255,255,255,0.06); }
+.wp-day-name {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted, #888);
+    margin-bottom: 5px;
+}
+.wp-day-icon { font-size: 16px; margin-bottom: 5px; }
+.wp-day-max { font-size: 12px; font-weight: 600; color: var(--text, #e8e8f0); }
+.wp-day-min { font-size: 10px; color: var(--muted, #888); }
+
+/* ── Error / loading states ── */
+.wp-loading, .wp-error {
+    text-align: center;
+    padding: 24px 16px;
+    font-size: 12px;
+    color: var(--muted, #888);
+}
+.wp-error { color: #ff6b6b; }
+</style>
+
+<div class="wp-widget" id="wp-root">
+    <div id="wp-loading" class="wp-loading">
+        <i class="fas fa-circle-notch fa-spin"></i> Loading weather…
+    </div>
+    <div id="wp-content" style="display:none;">
+        <div class="wp-header">
+            <button class="wp-refresh-btn" id="wp-refresh-btn" onclick="wpRefresh()" title="Refresh">
+                <i class="fas fa-sync-alt" id="wp-refresh-icon"></i>
+            </button>
+            <div class="wp-location" id="wp-location">—</div>
+            <div class="wp-temp-row">
+                <div class="wp-icon-main" id="wp-icon-main">☁️</div>
+                <div class="wp-temp-main" id="wp-temp">—°</div>
+            </div>
+            <div class="wp-condition" id="wp-condition">—</div>
+            <div class="wp-feels" id="wp-feels"></div>
+            <div class="wp-meta-row">
+                <div class="wp-meta-item"><i class="fas fa-tint"></i> <span id="wp-hum">—</span>%</div>
+                <div class="wp-meta-item"><i class="fas fa-wind"></i> <span id="wp-wind">—</span></div>
+                <div class="wp-meta-item"><i class="fas fa-umbrella"></i> <span id="wp-prec">0</span>mm</div>
+            </div>
+        </div>
+
+        <div class="wp-search-row">
+            <input class="wp-search-input" id="wp-city-input" type="text"
+                   placeholder="Search city…" onkeydown="if(event.key==='Enter') wpSearch()">
+            <button class="wp-search-btn" onclick="wpSearch()">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+
+        <div class="wp-forecast" id="wp-forecast"></div>
+    </div>
+    <div id="wp-error" class="wp-error" style="display:none;">
+        <i class="fas fa-exclamation-circle"></i><br>
+        <span id="wp-error-msg">Could not load weather data.</span>
+    </div>
+</div>
+
+<script>
+(function() {
+    const WMO_ICONS = {
+        0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+        45:'🌫️', 48:'🌫️',
+        51:'🌦️', 53:'🌧️', 55:'🌧️',
+        61:'🌧️', 63:'🌧️', 65:'🌧️',
+        71:'❄️', 73:'❄️', 75:'❄️', 77:'❄️',
+        80:'🌦️', 81:'🌧️', 82:'⛈️',
+        85:'🌨️', 86:'🌨️',
+        95:'⛈️', 96:'⛈️', 99:'⛈️'
+    };
+
+    const WMO_DESC = {
+        0:'Clear sky', 1:'Mainly clear', 2:'Partly cloudy', 3:'Overcast',
+        45:'Fog', 48:'Rime fog',
+        51:'Light drizzle', 53:'Moderate drizzle', 55:'Dense drizzle',
+        61:'Slight rain', 63:'Moderate rain', 65:'Heavy rain',
+        71:'Slight snow', 73:'Moderate snow', 75:'Heavy snow', 77:'Snow grains',
+        80:'Slight showers', 81:'Moderate showers', 82:'Violent showers',
+        85:'Slight snow showers', 86:'Heavy snow showers',
+        95:'Thunderstorm', 96:'Thunderstorm', 99:'Thunderstorm'
+    };
+
+    const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    let _currentCity = '';
+
+    function getIcon(code) { return WMO_ICONS[code] || '🌡️'; }
+    function getDesc(code) { return WMO_DESC[code] || `Code ${code}`; }
+
+    function getDayLabel(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        const today = new Date();
+        if (d.toDateString() === today.toDateString()) return 'Today';
+        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+        if (d.toDateString() === tomorrow.toDateString()) return 'Tmrw';
+        return DAY_NAMES[d.getDay()];
+    }
+
+    function setLoading(on) {
+        document.getElementById('wp-loading').style.display = on ? 'block' : 'none';
+        document.getElementById('wp-content').style.display = on ? 'none' : 'block';
+        document.getElementById('wp-error').style.display = 'none';
+    }
+
+    function setError(msg) {
+        document.getElementById('wp-loading').style.display = 'none';
+        document.getElementById('wp-content').style.display = 'none';
+        document.getElementById('wp-error').style.display = 'block';
+        document.getElementById('wp-error-msg').textContent = msg;
+    }
+
+    function render(data) {
+        if (data.error) { setError(data.error); return; }
+
+        const c = data.current || {};
+        const u = data.current_units || {};
+        const daily = data.daily || {};
+
+        const tempUnit = u.temperature_2m || '°C';
+        const windUnit = u.wind_speed_10m || 'km/h';
+
+        document.getElementById('wp-location').textContent = data.location || '—';
+        document.getElementById('wp-temp').textContent = `${c.temperature_2m ?? '—'}${tempUnit}`;
+        document.getElementById('wp-icon-main').textContent = getIcon(c.weather_code);
+        document.getElementById('wp-condition').textContent = getDesc(c.weather_code);
+        document.getElementById('wp-feels').textContent =
+            `Feels like ${c.apparent_temperature ?? '—'}${tempUnit}`;
+        document.getElementById('wp-hum').textContent = c.relative_humidity_2m ?? '—';
+        document.getElementById('wp-wind').textContent = `${c.wind_speed_10m ?? '—'} ${windUnit}`;
+        document.getElementById('wp-prec').textContent = c.precipitation ?? '0';
+
+        // Forecast
+        const fEl = document.getElementById('wp-forecast');
+        fEl.innerHTML = '';
+        const dates = daily.time || [];
+        const tmax = daily.temperature_2m_max || [];
+        const tmin = daily.temperature_2m_min || [];
+        const wcs = daily.weather_code || [];
+
+        for (let i = 0; i < Math.min(7, dates.length); i++) {
+            fEl.innerHTML += `
+                <div class="wp-day">
+                    <div class="wp-day-name">${getDayLabel(dates[i])}</div>
+                    <div class="wp-day-icon">${getIcon(wcs[i])}</div>
+                    <div class="wp-day-max">${tmax[i] ?? '—'}°</div>
+                    <div class="wp-day-min">${tmin[i] ?? '—'}°</div>
+                </div>`;
+        }
+
+        setLoading(false);
+    }
+
+    async function fetchWeather(city = '') {
+        const btn = document.getElementById('wp-refresh-btn');
+        btn.classList.add('spinning');
+        try {
+            const q = city ? `?city=${encodeURIComponent(city)}` : '';
+            const resp = await fetch(`/api/weather_pro/data${q}`, { credentials: 'same-origin' });
+            const data = await resp.json();
+            render(data);
+        } catch(e) {
+            setError('Network error. Check connection.');
+        } finally {
+            btn.classList.remove('spinning');
+        }
+    }
+
+    window.wpRefresh = function() { fetchWeather(_currentCity); };
+    window.wpSearch = function() {
+        const v = document.getElementById('wp-city-input').value.trim();
+        if (v) { _currentCity = v; fetchWeather(v); }
+    };
+
+    // Init — fetch immediately, then auto-refresh every 30 min
+    fetchWeather();
+    setInterval(() => fetchWeather(_currentCity), 30 * 60 * 1000);
+})();
+</script>
