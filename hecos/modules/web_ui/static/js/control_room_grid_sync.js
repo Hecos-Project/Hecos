@@ -21,7 +21,17 @@
             _widgetChannel = new BroadcastChannel('hecos_widgets');
             _widgetChannel.onmessage = (event) => {
                 const data = event.data;
-                if (!data || data.type !== 'widget_update') return;
+                if (!data) return;
+
+                // ── Structural reload (from HPM enable/disable/uninstall) ──
+                if (data.type === 'widgets_reload_request') {
+                    if (global.controlRoomGrid) {
+                        global.controlRoomGrid.debouncedRefresh();
+                    }
+                    return;
+                }
+
+                if (data.type !== 'widget_update') return;
                 
                 // Snappy DOM update for aesthetics if grid exists
                 const grid = document.querySelector('#room-grid, #home-grid');

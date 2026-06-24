@@ -49,6 +49,10 @@ class ConfigPanelDescriptor(BaseModel):
 class WidgetDescriptor(BaseModel):
     """Describes a sidebar/control room widget bundled with this package."""
 
+    id: str = Field(
+        ...,
+        description="Unique ID of the widget extension (e.g. 'webcam_widget')"
+    )
     extension_path: str = Field(
         ...,
         description="Path inside zip to the extension directory, e.g. 'web_ui/extensions/my_widget/'"

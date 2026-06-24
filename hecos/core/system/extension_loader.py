@@ -191,8 +191,8 @@ def get_all_widgets(config: dict = None) -> list:
                 # Check if this widget belongs to this package
                 is_mine = False
                 for w in snap.get("widgets", []):
-                    epath = w.get("extension_path", "")
-                    if epath.endswith(ext_id) or epath.endswith(f"/{ext_id}/"):
+                    epath = w.get("extension_path", "").rstrip("/")
+                    if epath.endswith(ext_id) or epath.endswith(f"/{ext_id}"):
                         is_mine = True
                         break
                 

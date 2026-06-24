@@ -167,14 +167,29 @@ window.HPM_I18N = {
 };
 </script>
 
-<!-- Load the HPM panel script (once, on first tab open) -->
+<!-- Load the HPM panel scripts (once, on first tab open) -->
 <script>
 (function() {
   if (!window._hpmScriptLoaded) {
     window._hpmScriptLoaded = true;
-    const s = document.createElement('script');
-    s.src = '/static/js/packages_panel.js?v={{ version }}';
-    document.head.appendChild(s);
+    const scripts = [
+      '/static/js/packages_panel_render.js',
+      '/static/js/packages_panel_install.js',
+      '/static/js/packages_panel_manage.js',
+      '/static/js/packages_panel.js'
+    ];
+    let loadedCount = 0;
+    scripts.forEach(src => {
+      const s = document.createElement('script');
+      s.src = src + '?v={{ version }}';
+      s.onload = () => {
+        loadedCount++;
+        if (loadedCount === scripts.length && window.hpmInit) {
+          window.hpmInit();
+        }
+      };
+      document.head.appendChild(s);
+    });
   } else if (window.hpmInit) {
     window.hpmInit();
   }
