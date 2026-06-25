@@ -356,7 +356,7 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
             logger.warning(f"[WebUI] /api/hub/panels error: {e}")
             return jsonify([])
 
-    @app.route("/hpm/static/<plugin_id>/<path:filename>")
+    @app.route("/hpm_plugin/<plugin_id>/<path:filename>")
     def hpm_plugin_static(plugin_id, filename):
         """Serve static assets (JS, CSS, images) from installed HPM plugins."""
         import re
