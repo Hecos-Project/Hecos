@@ -114,11 +114,17 @@ async function initAll(attempt = 1) {
         // 2f. Core re-render: fired after registry + HPM panels are likely ready (50ms grace)
         setTimeout(() => {
             renderConfigHub(viewMode);
-            populateUI();
+            // Guard: populateUI lives in config_mapper.js (Phase 2 script).
+            // If it's already loaded (e.g. cached from a previous visit), run it now.
+            // Otherwise the phase2 loader will call it after all mappers are ready.
+            if (typeof populateUI === 'function') {
+                try { populateUI(); } catch(e) { console.warn('[Init] populateUI failed (mapper not ready?):', e); }
+            }
             isInitialLoading = false;
+            window.HECOS_HUB_READY = true;  // Signal phase2 loader to start
             setSaveMsg((I18N.msg_synced || 'Synced') + ' (' + new Date().toLocaleTimeString() + ')', 'ok');
             console.timeEnd('[Init] Total load');
-            console.log('[Init] Phase 2 complete.');
+            console.log('[Init] Phase 2 complete — hub ready.');
         }, 50);
 
         // 2g. Model list — SLOW (Ollama/cloud network query). Loaded LAST, completely non-blocking.
