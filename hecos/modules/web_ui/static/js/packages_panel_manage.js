@@ -89,7 +89,7 @@ window.hpmUninstall = async function(id, name) {
     if (data.ok) {
       if (window.showToast) window.showToast(`Package uninstalled.`);
       if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
-      if (typeof window.hpmRemoveTab === 'function') window.hpmRemoveTab(id);
+      if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
       if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
     } else {
       if (window.showToast) window.showToast(`Uninstall failed: ${data.error}`, 'error');

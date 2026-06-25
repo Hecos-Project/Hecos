@@ -1,0 +1,183 @@
+<div class="plugin-config-panel" style="padding: 10px;">
+  
+  <!-- Preset Toolbar -->
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; flex-wrap:wrap;">
+    <span style="font-size:12px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:1px; white-space:nowrap;"><i class="fas fa-bolt"></i> Preset</span>
+    <select id="igen-preset" onchange="loadIgenPreset()" class="config-input" style="flex:1; min-width:180px; padding:6px 12px; font-size:13px;">
+      <option value="">— Select a preset —</option>
+    </select>
+    <button id="igen-preset-update-btn" onclick="updateIgenPreset()" title="Update selected user preset with current values" style="display:none; padding:7px 14px; border-radius:8px; border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.1); color:var(--accent); cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap;"><i class="fas fa-sync"></i> Update</button>
+    <button onclick="saveIgenPreset()" title="Save current config as a new preset" class="btn btn-sm" style="white-space:nowrap;"><i class="fas fa-save"></i> Save As</button>
+    <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;"><i class="fas fa-trash"></i> Delete</button>
+  </div>
+
+  <!-- Enable Toggle -->
+  <div class="toggle-row">
+    <div class="toggle-info" style="font-weight:600; color:var(--text);">Enable Image Generation</div>
+    <label class="switch"><input type="checkbox" id="igen-enabled" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+  </div>
+
+  <!-- Provider & Model -->
+  <div class="grid-2" style="margin-top:12px;">
+    <div class="field">
+      <label>Provider</label>
+      <select id="igen-provider" onchange="onProviderChanged(true)" data-cfg-plugin="MEDIA">
+        <!-- Populated dynamically -->
+      </select>
+    </div>
+    <div class="field">
+      <label>Model
+        <button onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh</button>
+        <button id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,231,231,0.1); cursor:pointer;" title="Remove this custom model"><i class="fas fa-times"></i> Delete</button>
+      </label>
+      <select id="igen-model" onchange="checkCustomModelSelect()" data-cfg-plugin="MEDIA"><option>flux</option></select>
+      <span id="igen-model-status" style="font-size:11px;color:var(--muted);"></span>
+    </div>
+  </div>
+
+  <!-- API Key Injection Box -->
+  <div class="field" style="margin-top:10px; padding:10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px;">
+    <label>API Key for selected provider (Optional)</label>
+    <div style="display:flex; gap:6px;">
+        <input type="password" id="igen-api-key" placeholder="Overrides Keys Manager. Leave empty to use system key..." style="flex:1;">
+        <button onclick="saveKeyToEnv()" style="padding:6px 10px; font-size:11px; border-radius:6px; border:1px solid var(--accent); background:rgba(var(--accent-rgb), 0.1); color:var(--accent); cursor:pointer;" title="Save this key globally to .env">Save globally</button>
+    </div>
+    <small style="color:var(--muted);font-size:11px;margin-top:4px;display:block;">If provided here, it overrides the global .env key. <br><b>Pollinations and Airforce are FREE and require NO key.</b></small>
+  </div>
+
+  <!-- HF Hub Explorer -->
+  <details id="igen-hf-explorer-wrapper" style="margin-top:10px; display:none; background:var(--glass-b); padding:10px; border-radius:12px; border:1px solid var(--border);">
+    <summary style="cursor:pointer; font-weight:600; color:var(--text); list-style:none; display:flex; align-items:center; gap:6px;">
+      <span style="font-size:13px;">Search Hugging Face Hub <small style="font-weight:400; color:var(--muted);">— find custom models</small></span>
+    </summary>
+    <div style="margin-top:10px; background:rgba(231,76,60,0.06); border-left:3px solid #e74c3c; padding:8px; font-size:11px; color:var(--text); line-height:1.4;">
+      <strong><i class="fas fa-exclamation-triangle"></i> Limitation:</strong> Free HF Inference API only supports a fraction of models.
+    </div>
+    <div style="margin-top:10px;">
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="igen-hf-search-q" placeholder="Model name, style, or tag..." style="flex:1;" onkeydown="if(event.key==='Enter') searchHFHub()">
+        <button onclick="searchHFHub()" style="padding:6px 15px; border-radius:7px; border:1px solid var(--border); background:var(--accent); color:#fff; cursor:pointer; font-weight:600;">Search</button>
+      </div>
+      <div id="igen-hf-results" style="margin-top:10px; max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; background:var(--bg2);">
+         <div style="padding:10px; text-align:center; color:var(--muted); font-size:12px;">Enter a query to find text-to-image models.</div>
+      </div>
+    </div>
+  </details>
+
+  <!-- Aspect Ratio -->
+  <div class="grid-2" style="margin-top:14px;">
+    <div class="field">
+      <label>Aspect Ratio</label>
+      <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" data-cfg-plugin="MEDIA">
+        <option value="1:1">1:1 — Square</option>
+        <option value="16:9">16:9 — Landscape (HD)</option>
+        <option value="9:16">9:16 — Portrait (Mobile)</option>
+        <option value="4:3">4:3 — Classic Landscape</option>
+        <option value="3:4">3:4 — Classic Portrait</option>
+        <option value="custom"><i class="fas fa-ruler-combined"></i> Custom (manual W × H)</option>
+      </select>
+    </div>
+    <div class="field" id="igen-custom-dims" style="display:none;">
+      <label>Custom Size (px)</label>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <input type="number" id="igen-width" min="256" max="2048" step="64" placeholder="W" style="width:50%;">
+        <span style="color:var(--muted);">×</span>
+        <input type="number" id="igen-height" min="256" max="2048" step="64" placeholder="H" style="width:50%;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Negative Prompt -->
+  <div class="field" style="margin-top:10px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <label style="margin:0;">Negative Prompt</label>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <small style="color:var(--muted);font-size:11px;">Enable</small>
+        <label class="switch"><input type="checkbox" id="igen-use-neg-prompt" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+      </div>
+    </div>
+    <textarea id="igen-neg-prompt" rows="2" placeholder="distorted, extra fingers..." data-cfg-plugin="MEDIA"></textarea>
+  </div>
+
+  <!-- CFG & Steps -->
+  <div class="grid-2" style="margin-top:10px;">
+    <div class="field">
+      <label>CFG Scale (Guidance)</label>
+      <div style="display:flex; align-items:center;">
+        <input type="range" id="igen-guidance" min="0" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=parseFloat(this.value).toFixed(1)">
+        <span id="igen-guidance-val" style="margin-left:10px; width:38px; font-weight:bold; text-align:right;">0.0</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Inference Steps</label>
+      <div style="display:flex; align-items:center;">
+        <input type="range" id="igen-steps" min="1" max="100" step="1" style="flex:1;" oninput="document.getElementById('igen-steps-val').textContent=this.value">
+        <span id="igen-steps-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">30</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seed -->
+  <div class="field" style="margin-top:10px;">
+    <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="number" id="igen-seed" min="-1" max="2147483647" value="-1" style="flex:1;" data-cfg-plugin="MEDIA">
+      <button onclick="document.getElementById('igen-seed').value=-1; saveIgenConfig();" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer;"><i class="fas fa-dice"></i></button>
+    </div>
+  </div>
+
+  <!-- Advanced -->
+  <details style="margin-top:14px;">
+    <summary style="cursor:pointer; font-weight:600; color:var(--text); display:flex; gap:6px;"><span style="font-size:13px;">Advanced Sampling</span></summary>
+    <div class="grid-2" style="margin-top:10px;">
+      <div class="field">
+        <label>Sampler</label>
+        <select id="igen-sampler">
+          <option value="euler_a">Euler Ancestral</option>
+          <option value="euler">Euler</option>
+          <option value="dpm++2m">DPM++ 2M</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Scheduler</label>
+        <select id="igen-scheduler">
+          <option value="simple">Simple</option>
+          <option value="euler">Euler</option>
+          <option value="dpm++">DPM++</option>
+        </select>
+      </div>
+    </div>
+  </details>
+
+  <!-- Style Options -->
+  <div class="toggle-row" style="margin-top:14px;">
+    <div class="toggle-info"><strong>Auto-Enrich Prompt</strong></div>
+    <label class="switch"><input type="checkbox" id="igen-auto-enrich" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+  </div>
+  <div class="field" style="margin-top:5px;">
+    <label>Enrichment Keywords</label>
+    <input type="text" id="igen-enrich-keywords" placeholder="masterpiece, 8k..." data-cfg-plugin="MEDIA">
+  </div>
+  <div class="field" style="margin-top:10px;">
+    <label>Artistic Style</label>
+    <select id="igen-style" data-cfg-plugin="MEDIA">
+      <option value="none">None</option>
+      <option value="cinematic">Cinematic</option>
+      <option value="anime">Anime</option>
+      <option value="3d_render">3D Render</option>
+    </select>
+  </div>
+  <div class="toggle-row" style="margin-top:10px;">
+    <div class="toggle-info">Remove Logo (Pollinations)</div>
+    <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
+  </div>
+  <div class="toggle-row" style="margin-top:10px; background:var(--bg3); padding:8px; border-radius:8px;">
+    <div class="toggle-info"><strong>Show Config in Chat</strong></div>
+    <label class="switch"><input type="checkbox" id="igen-show-metadata"><span class="slider"></span></label>
+  </div>
+
+  <!-- Save Button -->
+  <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+    <button id="igen-main-save-btn" onclick="saveIgenConfig()" class="btn" style="padding:10px 20px; font-weight:bold; width:100%;">Save Configuration</button>
+  </div>
+</div>

@@ -44,4 +44,45 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     register_manage_routes(app, _hecos_src, cfg_mgr, log)
     register_search_routes(app, _hecos_src, cfg_mgr, log)
 
+    # Automatically load standalone API routes for HPM packages
+    try:
+        from hecos.core.package_manager.registry import PackageRegistry
+        data_dir = os.path.join(hecos_root, "hecos", "data")
+        if not os.path.isdir(data_dir):
+            data_dir = os.path.join(hecos_root, "data")
+        reg = PackageRegistry(data_dir)
+        import json as _json
+        for pkg in reg.list_all():
+            if pkg.get("status") == "disabled":
+                continue
+            manifest = pkg.get("manifest_snapshot") or {}
+            if isinstance(manifest, str):
+                try: manifest = _json.loads(manifest)
+                except: manifest = {}
+            
+            cp = manifest.get("config_panel", {})
+            api_routes_file = cp.get("api_routes_file")
+            
+            if api_routes_file:
+                plugin_id = pkg["id"]
+                plugin_path = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
+                if not os.path.isdir(plugin_path):
+                    plugin_path = os.path.join(hecos_root, "plugins", plugin_id)
+                abs_route_path = os.path.join(plugin_path, api_routes_file)
+                
+                if os.path.isfile(abs_route_path):
+                    import importlib.util
+                    spec = importlib.util.spec_from_file_location(f"plugin_routes_{plugin_id}", abs_route_path)
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    if hasattr(mod, 'init_plugin_routes'):
+                        try:
+                            # HPM plugins routes must accept (app, cfg_mgr, hecos_root, logger)
+                            mod.init_plugin_routes(app, cfg_mgr, hecos_root, log)
+                            log.info(f"[HPM:Routes] Registered standalone API routes for '{plugin_id}'")
+                        except Exception as e:
+                            log.error(f"[HPM:Routes] Error initializing routes for '{plugin_id}': {e}")
+    except Exception as e:
+        log.error(f"[HPM:Routes] Failed to auto-discover HPM API routes: {e}")
+
     log.info("[HPM] Package Manager routes registered.")

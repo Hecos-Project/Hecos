@@ -275,40 +275,6 @@
         "module_type": "plugin",
         "slash_commands": []
     },
-    "IMAGE_GEN": {
-        "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
-        "commands": {
-            "generate_image": "Generates an image from a text description. Uses the configured provider."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image.",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "🎨",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": [
-            {
-                "id": "img",
-                "aliases": [
-                    "/img",
-                    "/image",
-                    "/photo",
-                    "/foto"
-                ],
-                "description": "Genera un'immagine AI da una descrizione testuale",
-                "usage": "/img <descrizione>",
-                "example": "/img foto fotorealistica di un gatto su Marte",
-                "icon": "🖼️",
-                "method": "generate_image",
-                "args_schema": {
-                    "prompt": "str"
-                },
-                "requires_args": true
-            }
-        ]
-    },
     "LISTS": {
         "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
         "commands": {

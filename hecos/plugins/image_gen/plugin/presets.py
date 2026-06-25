@@ -1,7 +1,7 @@
 """
 Plugin: Image Generation — Preset Manager
 Manages built-in (read-only) and user-defined (CRUD) configuration presets.
-Presets are stored in the `presets` dict inside config/data/media.yaml.
+Reads/writes from the package's own config manager.
 """
 
 from __future__ import annotations
@@ -15,8 +15,6 @@ except ImportError:
         def error(self, *a): print("[PRESETS ERR]", *a)
     logger = _L()
 
-
-# ── Built-in Presets (read-only, shipped with Hecos) ─────────────────────────
 
 BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
     "⚡ Flux Free (Pollinations)": {
@@ -90,49 +88,39 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
 }
 
 
-# ── Public API ─────────────────────────────────────────────────────────────────
-
 def get_all_presets(user_presets: dict) -> dict[str, dict]:
-    """Returns merged dict of built-in + user presets."""
     combined = dict(BUILTIN_PRESETS)
     combined.update(user_presets)
     return combined
 
 
 def get_preset(name: str, user_presets: dict) -> dict | None:
-    """Return the preset dict by name (built-in or user). None if not found."""
     return get_all_presets(user_presets).get(name)
 
 
 def save_user_preset(name: str, config_snapshot: dict) -> bool:
-    """
-    Saves (or overwrites) a user preset with the given name.
-    Strips internal meta keys. Persists to media.yaml.
-    Returns True on success.
-    """
-    from hecos.core.media_config import get_media_config, save_media_config
+    from ..config.config_manager import get_config, save_config
 
     if not name or not name.strip():
         logger.error("[PRESETS] Cannot save preset with empty name.")
         return False
-
     name = name.strip()
-
-    # Disallow overwriting built-ins
     if name in BUILTIN_PRESETS:
         logger.error(f"[PRESETS] '{name}' is a built-in preset and cannot be overwritten.")
         return False
 
     try:
-        media_cfg = get_media_config()
-        presets: dict = media_cfg.get("image_gen", {}).get("presets", {})
-        # Strip internal and non-serializable keys
+        cfg = get_config()
+        igen = cfg.get("image_gen", {})
+        presets = igen.get("presets", {})
+        
         snapshot = {k: v for k, v in config_snapshot.items()
                     if not k.startswith("_") and k != "presets" and k != "active_preset"}
         presets[name] = snapshot
-
-        media_cfg.setdefault("image_gen", {})["presets"] = presets
-        ok = save_media_config(media_cfg)
+        
+        igen["presets"] = presets
+        cfg["image_gen"] = igen
+        ok = save_config(cfg)
         if ok:
             logger.info(f"[PRESETS] Saved user preset '{name}'.")
         return ok
@@ -142,25 +130,24 @@ def save_user_preset(name: str, config_snapshot: dict) -> bool:
 
 
 def delete_user_preset(name: str) -> bool:
-    """
-    Deletes a user preset by name. Built-ins cannot be deleted.
-    Returns True on success.
-    """
-    from hecos.core.media_config import get_media_config, save_media_config
+    from ..config.config_manager import get_config, save_config
 
     if name in BUILTIN_PRESETS:
         logger.error(f"[PRESETS] '{name}' is a built-in preset and cannot be deleted.")
         return False
 
     try:
-        media_cfg = get_media_config()
-        presets: dict = media_cfg.get("image_gen", {}).get("presets", {})
+        cfg = get_config()
+        igen = cfg.get("image_gen", {})
+        presets = igen.get("presets", {})
         if name not in presets:
             logger.error(f"[PRESETS] Preset '{name}' not found.")
             return False
+            
         del presets[name]
-        media_cfg.setdefault("image_gen", {})["presets"] = presets
-        ok = save_media_config(media_cfg)
+        igen["presets"] = presets
+        cfg["image_gen"] = igen
+        ok = save_config(cfg)
         if ok:
             logger.info(f"[PRESETS] Deleted user preset '{name}'.")
         return ok

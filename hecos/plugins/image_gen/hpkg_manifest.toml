@@ -1,0 +1,45 @@
+id = "image_gen"
+name = "Image Generation"
+version = "1.0.0"
+author = "Hecos"
+description = "AI Image Generation — Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration."
+icon = "🎨"
+category = "PLUGINS"
+plugin_tag = "IMAGE_GEN"
+is_class_based = true
+lazy_load = true
+
+dependencies = []
+python_requires = ">=3.11"
+
+[routing]
+instructions = "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image."
+
+[slash_commands.img]
+aliases = ["/img", "/image", "/photo", "/foto"]
+description = "Genera un'immagine AI da una descrizione testuale"
+usage = "/img <descrizione>"
+example = "/img foto fotorealistica di un gatto su Marte"
+icon = "🖼️"
+method = "generate_image"
+requires_args = true
+
+[tool_schema]
+name = "IMAGE_GEN__generate_image"
+description = "Generates an image from a text description. Uses the configured provider."
+
+[tool_schema.parameters]
+type = "object"
+required = ["prompt"]
+
+[tool_schema.parameters.properties.prompt]
+type = "string"
+description = "Detailed description of the image or photo to generate. Translate to English if needed."
+
+[config_panel]
+template_file = "web/templates/config_panel.html"
+js_files = ["web/static/js/igen_panel.js", "web/static/js/media_logic.js"]
+css_file = "web/static/css/image_gen.css"
+api_routes_file = "web/routes.py"
+config_api_get = "/hecos/api/plugins/image_gen/config"
+config_api_post = "/hecos/api/plugins/image_gen/config"

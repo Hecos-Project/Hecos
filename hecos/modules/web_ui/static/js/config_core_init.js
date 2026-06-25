@@ -270,3 +270,22 @@ window.initAll       = initAll;
 window.mergeRegistry = mergeRegistry;
 window.loadUIState   = loadUIState;
 window.saveUIState   = saveUIState;
+
+window.hpmRefreshConfigHub = async function() {
+    try {
+        const res = await fetch('/api/hub/panels');
+        if (res && res.ok) {
+            const panels = await res.json();
+            // Remove existing HPM panels
+            if (window.CONFIG_HUB && window.CONFIG_HUB.modules) {
+                window.CONFIG_HUB.modules = window.CONFIG_HUB.modules.filter(m => !m.isHpm);
+            }
+            window.mergeHubPanels(panels);
+            if (typeof window.renderConfigHub === 'function') {
+                window.renderConfigHub(window.viewMode);
+            }
+        }
+    } catch (e) {
+        console.warn("[HubRefresh] Failed to refresh HPM panels:", e);
+    }
+};

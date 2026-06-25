@@ -81,14 +81,7 @@ document.addEventListener('change', (e) => {
         }
     }
 
-    // Sync Image Gen enabled state between locations
-    if (e.target.id === 'igen-enabled') {
-        const other = document.querySelector('[data-plugin="IMAGE_GEN"]');
-        if (other) other.checked = e.target.checked;
-    } else if (e.target.dataset.plugin === 'IMAGE_GEN') {
-        const other = document.getElementById('igen-enabled');
-        if (other) other.checked = e.target.checked;
-    }
+
 
     // Avatar preview on persona change
     if (e.target.id === 'ia-personality-main') {

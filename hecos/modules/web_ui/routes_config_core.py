@@ -102,7 +102,6 @@ _PANEL_MAP = {
     'system':          'modules/config_system.html',
     'media':           'modules/config_media.html',
     'aesthetics':      'modules/config_styles.html',
-    'igen':            'modules/config_igen.html',
     'webui':           'modules/config_utils.html',
     'web':             'modules/config_utils.html',
     'webcam':          'modules/config_utils.html',
@@ -146,7 +145,6 @@ _HPM_PANEL_CACHE: dict = {}
 def _discover_hpm_panel(panel_id: str) -> str | None:
     """
     Auto-discovers a config panel HTML template for HPM-installed packages.
-    Checks the standard template directory for `modules/config_<panel_id>.html`.
     Results are cached in memory so repeated lookups are O(1).
     """
     if panel_id in _HPM_PANEL_CACHE:
@@ -154,11 +152,43 @@ def _discover_hpm_panel(panel_id: str) -> str | None:
 
     base_dir   = os.path.dirname(__file__)
     tpl_dir    = os.path.join(base_dir, "templates")
-    # Convention: modules/config_<panel_id>.html
     candidate  = os.path.join(tpl_dir, "modules", f"config_{panel_id}.html")
-    result     = f"modules/config_{panel_id}.html" if os.path.isfile(candidate) else None
-    _HPM_PANEL_CACHE[panel_id] = result
-    return result
+    if os.path.isfile(candidate):
+        result = f"modules/config_{panel_id}.html"
+        _HPM_PANEL_CACHE[panel_id] = result
+        return result
+
+    # Check directly via PackageRegistry for standalone plugins
+    try:
+        hecos_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        data_dir = os.path.join(hecos_root, "data")
+        from hecos.core.package_manager.registry import PackageRegistry
+        reg = PackageRegistry(data_dir)
+        import json as _json
+        for pkg in reg.list_all():
+            if pkg.get("status") == "disabled":
+                continue
+            manifest = pkg.get("manifest_snapshot") or {}
+            if isinstance(manifest, str):
+                try: manifest = _json.loads(manifest)
+                except: manifest = {}
+            cp = manifest.get("config_panel")
+            if cp:
+                tab_id = cp.get("tab_id") or pkg["id"].replace("_", "-")
+                if tab_id == panel_id:
+                    tf = cp.get("template_file")
+                    if tf:
+                        plugin_path = os.path.join(hecos_root, "plugins", pkg["id"])
+                        abs_template = os.path.join(plugin_path, tf)
+                        if os.path.isfile(abs_template):
+                            result = f"HPM_RAW:{abs_template}"
+                            _HPM_PANEL_CACHE[panel_id] = result
+                            return result
+    except Exception:
+        pass
+
+    _HPM_PANEL_CACHE[panel_id] = None
+    return None
 
 
 def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
@@ -237,7 +267,22 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
             zoptions_data = {}
             if panel_id in _PANELS_NEEDING_OPTIONS:
                 zoptions_data = _build_options_dict(cfg_mgr, fast=True)
-            zconfig_data = cfg_mgr.config  # Use in-memory config (no disk I/O per tab click)
+            zconfig_data = cfg_mgr.config  # Use in-memory config
+            
+            # HPM raw templates (from plugin directory)
+            if template_name.startswith("HPM_RAW:"):
+                file_path = template_name.split("HPM_RAW:")[1]
+                from flask import render_template_string
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                return render_template_string(
+                    content,
+                    zconfig=zconfig_data,
+                    zoptions=zoptions_data,
+                    translations=translations,
+                    current_user=current_user,
+                )
+
             return render_template(
                 template_name,
                 zconfig=zconfig_data,

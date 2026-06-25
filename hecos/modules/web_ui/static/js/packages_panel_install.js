@@ -63,7 +63,7 @@ window.hpmInstallFile = async function(file, forceAllowUnsigned = false) {
         if (window.showToast) window.showToast(`Package installed!`, 'success');
       }
       if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
-      if (data.id && typeof window.hpmInjectTab === 'function') window.hpmInjectTab(data);
+      if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
       if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
     } else {
       window.hpmSetProgress(false);

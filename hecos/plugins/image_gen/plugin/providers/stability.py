@@ -1,5 +1,6 @@
 import os
-from hecos.core.media.image_providers.utils import log_debug, save_image_bytes, get_proxies, ensure_english_prompt
+from .utils import log_debug, save_image_bytes, get_proxies, ensure_english_prompt
+
 
 class StabilityProvider:
     NAME = "stability"
@@ -12,8 +13,7 @@ class StabilityProvider:
     def generate(prompt: str, width: int, height: int, model: str, api_key: str = "",
                  negative_prompt: str = "", guidance_scale: float = 7.5,
                  num_inference_steps: int = 30, seed: int = -1,
-                 sampler: str = "", scheduler: str = "",
-                 aspect_ratio: str = "1:1") -> str:
+                 sampler: str = "", scheduler: str = "") -> str:
         if not api_key:
             api_key = os.environ.get("STABILITY_API_KEY", "").strip()
         if not api_key:
@@ -32,32 +32,22 @@ class StabilityProvider:
         else:
             endpoint = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "image/*"
-        }
-        data = {
-            "prompt": eng_prompt,
-            "output_format": "jpeg",
-        }
+        headers = {"Authorization": f"Bearer {api_key}", "Accept": "image/*"}
+        data = {"prompt": eng_prompt, "output_format": "jpeg"}
         if "sd3" in model_lower:
             data["model"] = "sd3-turbo" if "turbo" in model_lower else "sd3"
-            
-        # Advanced Parameters
         data["negative_prompt"] = negative_prompt
         data["cfg_scale"] = guidance_scale
-        # Use the aspect_ratio from config (Stability native field; ignored for Ultra which uses WxH)
         if "ultra" not in model_lower:
-            # Map common ratios; Stability accepts these string values natively
-            data["aspect_ratio"] = aspect_ratio if aspect_ratio and aspect_ratio != "custom" else "1:1"
+            data["aspect_ratio"] = "1:1"  # default; could be passed from config
         if seed is not None and seed != -1:
             data["seed"] = seed
         if sampler and sampler.lower() not in ("", "none"):
             data["sampler"] = sampler
 
-        log_debug(f"[Stability] endpoint={endpoint}")
-        r = requests.post(endpoint, headers=headers, files={"none": ""}, data=data, timeout=60, proxies=get_proxies())
-        log_debug(f"[Stability] HTTP {r.status_code}, bytes={len(r.content)}")
+        r = requests.post(endpoint, headers=headers, files={"none": ""}, data=data,
+                          timeout=60, proxies=get_proxies())
+        log_debug(f"[Stability] HTTP {r.status_code}")
 
         if r.status_code != 200:
             try:
@@ -70,8 +60,6 @@ class StabilityProvider:
             raise Exception("Stability returned HTML instead of image")
 
         return save_image_bytes(r.content, "png", prompt=prompt, params={
-            "provider": "stability",
-            "model": model,
-            "guidance_scale": guidance_scale,
-            "inference_steps": num_inference_steps
+            "provider": "stability", "model": model,
+            "guidance_scale": guidance_scale, "inference_steps": num_inference_steps
         })
