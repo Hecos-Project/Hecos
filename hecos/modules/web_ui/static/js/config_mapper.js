@@ -13,60 +13,66 @@
  */
 
 function populateUI() {
-  try {
-    const c = window.cfg;
+  console.log("Starting UI population...");
+  const c = window.cfg;
+  if (!c) { console.error("cfg not found"); return; }
 
-    // 1. Backend / LLM / AI / Bridge / Filters
-    populateBackendUI();
+  const safeCall = (name, fn) => {
+      try { fn(); } catch (err) { console.error(`[populateUI] ${name} failed:`, err); }
+  };
 
-    // 2. Audio Module
-    if (typeof populateAudioUI === 'function')  populateAudioUI();
+  // 1. Backend / LLM / AI / Bridge / Filters
+  safeCall('Backend', () => populateBackendUI());
 
-    // 3. System Module
-    if (typeof populateSystemUI === 'function') populateSystemUI();
+  // 2. Audio Module
+  if (typeof populateAudioUI === 'function') safeCall('Audio', () => populateAudioUI());
 
-    // 4. Media & Image Gen
-    if (typeof populateMediaUI === 'function')  populateMediaUI();
+  // 3. System Module
+  if (typeof populateSystemUI === 'function') safeCall('System', () => populateSystemUI());
 
-    // 5. Drive
-    populateDriveUI();
+  // 4. Media & Image Gen
+  if (typeof populateMediaUI === 'function') safeCall('Media', () => populateMediaUI());
 
-    // 6. Remote Triggers
-    populateRemoteTriggersUI();
+  // 5. Drive
+  if (typeof populateDriveUI === 'function') safeCall('Drive', () => populateDriveUI());
 
-    // 7. Reminder
-    if (typeof populateReminderUI === 'function') populateReminderUI();
+  // 6. Remote Triggers
+  if (typeof populateRemoteTriggersUI === 'function') safeCall('RemoteTriggers', () => populateRemoteTriggersUI());
 
-    // 7b. Messenger
-    if (typeof populateMessengerUI === 'function') populateMessengerUI();
+  // 7. Reminder
+  if (typeof populateReminderUI === 'function') safeCall('Reminder', () => populateReminderUI());
 
-    // 8. Privacy / WebUI / Agent
-    populatePrivacyUI();
-    populateWebUIConfig();
-    populateAgentUI();
+  // 7b. Messenger
+  if (typeof populateMessengerUI === 'function') safeCall('Messenger', () => populateMessengerUI());
 
-    // 10. Standalone plugin enabled toggles
-    document.querySelectorAll('[data-plugin]').forEach(cb => {
-      const tag = cb.dataset.plugin;
-      if (c.plugins?.[tag]) cb.checked = c.plugins[tag].enabled !== false;
-    });
+  // 8. Privacy / WebUI / Agent
+  if (typeof populatePrivacyUI === 'function') safeCall('Privacy', () => populatePrivacyUI());
+  if (typeof populateWebUIConfig === 'function') safeCall('WebUIConfig', () => populateWebUIConfig());
+  if (typeof populateAgentUI === 'function') safeCall('Agent', () => populateAgentUI());
 
-    // 11. Plugin Manager list
-    renderPlugins(c.plugins || {});
+  // 10. Standalone plugin enabled toggles
+  safeCall('StandaloneToggles', () => {
+      document.querySelectorAll('[data-plugin]').forEach(cb => {
+          const tag = cb.dataset.plugin;
+          if (c.plugins?.[tag]) cb.checked = c.plugins[tag].enabled !== false;
+      });
+  });
 
-    // 12. Executor / Automation / Browser / Flows extras
-    if (window.populateExecutorUI)   window.populateExecutorUI();
-    if (window.populateAutomationUI) window.populateAutomationUI();
-    if (window.populateBrowserUI)    window.populateBrowserUI();
-    if (window.populateFlowsUI)      window.populateFlowsUI();
+  // 11. Plugin Manager list
+  safeCall('PluginsList', () => {
+      if (typeof renderPlugins === 'function') renderPlugins(c.plugins || {});
+  });
 
-    // 13. Restart indicator badges
-    initRestartIndicators();
+  // 12. Executor / Automation / Browser / Flows extras
+  if (typeof populateExecutorUI === 'function')   safeCall('Executor', () => populateExecutorUI());
+  if (typeof populateAutomationUI === 'function') safeCall('Automation', () => populateAutomationUI());
+  if (typeof populateBrowserUI === 'function')    safeCall('Browser', () => populateBrowserUI());
+  if (typeof populateFlowsUI === 'function')      safeCall('Flows', () => populateFlowsUI());
 
-    console.log("UI Populated successfully.");
-  } catch (err) {
-    console.error("UI Population failed:", err);
-  }
+  // 13. Restart indicator badges
+  if (typeof initRestartIndicators === 'function') safeCall('RestartIndicators', () => initRestartIndicators());
+
+  console.log("UI Populated successfully.");
 }
 
 function buildPayload() {

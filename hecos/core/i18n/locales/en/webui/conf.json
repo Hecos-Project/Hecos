@@ -112,7 +112,7 @@
     "webui_conf_sys_log_file": "File only",
     "webui_conf_sys_fastboot": "Fast Boot (skip integrity checks)",
     "webui_conf_sys_lang": "Language",
-    "webui_conf_plugin_active_title": "Hecos Module Manager",
+    "webui_conf_plugin_active_title": "Built-in Modules",
     "webui_conf_plugin_desc_file": "Local File management",
     "webui_conf_plugin_desc_help": "Dynamic Guide",
     "webui_conf_plugin_desc_media": "Audio/Video playback",
