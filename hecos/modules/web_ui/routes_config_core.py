@@ -237,7 +237,7 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
             zoptions_data = {}
             if panel_id in _PANELS_NEEDING_OPTIONS:
                 zoptions_data = _build_options_dict(cfg_mgr, fast=True)
-            zconfig_data = cfg_mgr.reload()
+            zconfig_data = cfg_mgr.config  # Use in-memory config (no disk I/O per tab click)
             return render_template(
                 template_name,
                 zconfig=zconfig_data,

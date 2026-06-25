@@ -7,6 +7,8 @@
     "sidebar_widget": true,
     "eager_load": true,
     "tag": "WEATHER_PRO_WIDGET",
+    "visible": false,
+    "room_visible": true,
     "lazy_load": false,
     "is_class_based": true,
     "commands": {},
