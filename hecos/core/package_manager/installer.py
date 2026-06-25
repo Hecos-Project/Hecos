@@ -52,14 +52,27 @@ class PackageInstaller:
         registry: PackageRegistry,
         hecos_version: str = "0.35.0",
         event_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+        cfg_mgr = None,
     ):
         self._hecos_root = hecos_root
         self._registry = registry
         self._version = hecos_version
         self._event_callback = event_callback
+        self._cfg_mgr = cfg_mgr
+
+        # Read HPM config or fallback
+        hpm_cfg = {}
+        if cfg_mgr and hasattr(cfg_mgr, "config"):
+            hpm_cfg = cfg_mgr.config.get("hpm", {})
+            
+        self._allow_unsigned_global = hpm_cfg.get("allow_unsigned_packages", False)
 
         self._validator = PackageValidator(hecos_version)
-        keys_dir = os.path.join(hecos_root, "data", "trusted_keys")
+        
+        # Override trusted_keys_dir if specified in config
+        keys_dir = hpm_cfg.get("trusted_keys_dir")
+        if not keys_dir:
+            keys_dir = os.path.join(hecos_root, "data", "trusted_keys")
         self._sig_verifier = SignatureVerifier(keys_dir)
 
     def install_file(self, hpkg_path: str, require_signature: bool = True) -> InstallResult:
@@ -88,7 +101,8 @@ class PackageInstaller:
             except Exception as e:
                 return InstallResult(success=False, error=f"Could not read manifest for signature check: {e}")
 
-        is_valid = self._sig_verifier.verify_manifest(raw_manifest_dict, require_signature=require_signature)
+        req_sig = require_signature and not self._allow_unsigned_global
+        is_valid = self._sig_verifier.verify_manifest(raw_manifest_dict, require_signature=req_sig)
         if not is_valid:
             return InstallResult(success=False, error="Signature verification failed. Package is untrusted or tampered with.")
 
@@ -114,7 +128,7 @@ class PackageInstaller:
             import hashlib
             expected_hashes = manifest.file_hashes or {}
             
-            if require_signature and not expected_hashes:
+            if req_sig and not expected_hashes:
                 raise RuntimeError("Manifest is missing file_hashes. Cannot guarantee integrity of extracted files.")
 
             for root, _, files in os.walk(staging_dir):
@@ -128,7 +142,7 @@ class PackageInstaller:
                     if rel_path not in expected_hashes:
                         if fname in [".DS_Store", "Thumbs.db"]:
                             continue
-                        if require_signature:
+                        if req_sig:
                             raise RuntimeError(f"Unknown file '{rel_path}' found in package. Integrity check failed.")
                         continue
                         

@@ -11,11 +11,7 @@
     <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;"><i class="fas fa-trash"></i> Delete</button>
   </div>
 
-  <!-- Enable Toggle -->
-  <div class="toggle-row">
-    <div class="toggle-info" style="font-weight:600; color:var(--text);">Enable Image Generation</div>
-    <label class="switch"><input type="checkbox" id="igen-enabled" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
-  </div>
+
 
   <!-- Provider & Model -->
   <div class="grid-2" style="margin-top:12px;">
@@ -133,17 +129,34 @@
       <div class="field">
         <label>Sampler</label>
         <select id="igen-sampler">
-          <option value="euler_a">Euler Ancestral</option>
           <option value="euler">Euler</option>
-          <option value="dpm++2m">DPM++ 2M</option>
+          <option value="euler_a">Euler Ancestral</option>
+          <option value="heun">Heun</option>
+          <option value="dpm_2">DPM2</option>
+          <option value="dpm_2_a">DPM2 Ancestral</option>
+          <option value="lms">LMS</option>
+          <option value="dpm_fast">DPM Fast</option>
+          <option value="dpm_adaptive">DPM Adaptive</option>
+          <option value="dpm++_2s_a">DPM++ 2S a</option>
+          <option value="dpm++_2m">DPM++ 2M</option>
+          <option value="dpm++_sde">DPM++ SDE</option>
+          <option value="dpm++_2m_sde">DPM++ 2M SDE</option>
+          <option value="dpm++_3m_sde">DPM++ 3M SDE</option>
+          <option value="uni_pc">UniPC</option>
+          <option value="uni_pc_bh2">UniPC BH2</option>
+          <option value="ddim">DDIM</option>
+          <option value="plms">PLMS</option>
         </select>
       </div>
       <div class="field">
         <label>Scheduler</label>
         <select id="igen-scheduler">
+          <option value="normal">Normal</option>
+          <option value="karras">Karras</option>
+          <option value="exponential">Exponential</option>
+          <option value="sgm_uniform">SGM Uniform</option>
           <option value="simple">Simple</option>
-          <option value="euler">Euler</option>
-          <option value="dpm++">DPM++</option>
+          <option value="ddim_uniform">DDIM Uniform</option>
         </select>
       </div>
     </div>

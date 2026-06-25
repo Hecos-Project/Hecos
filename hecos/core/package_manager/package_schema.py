@@ -42,6 +42,22 @@ class ConfigPanelDescriptor(BaseModel):
         None,
         description="Optional path to a CSS file inside the zip"
     )
+    
+    category: Optional[str] = Field(
+        "CONNETTIVITÀ",
+        description="Category in the Config Hub (e.g. MULTIMEDIA, SISTEMA, CONNETTIVITÀ)"
+    )
+    
+    api_routes_file: Optional[str] = Field(
+        None,
+        description="Path inside zip to a .py file exporting init_plugin_routes()"
+    )
+    
+    config_api_get: Optional[str] = Field(None, description="GET endpoint for config JSON")
+    config_api_post: Optional[str] = Field(None, description="POST endpoint for config JSON")
+
+    class Config:
+        extra = "allow"
 
 
 # ── Widget Descriptor ───────────────────────────────────────────────────────

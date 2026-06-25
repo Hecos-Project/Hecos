@@ -35,9 +35,10 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     if not os.path.isdir(_hecos_src):
         _hecos_src = hecos_root  # fallback: already pointing at hecos/
 
-    # Store for use by _refresh_jinja_loader (which is stateless/helper)
+    # Store for use by _refresh_jinja_loader and _get_hpm_components
     import sys as _sys
     _sys._hecos_src_dir = _hecos_src
+    _sys._hecos_cfg_mgr = cfg_mgr
 
     register_list_routes(app, _hecos_src, cfg_mgr, log)
     register_install_routes(app, _hecos_src, cfg_mgr, log)

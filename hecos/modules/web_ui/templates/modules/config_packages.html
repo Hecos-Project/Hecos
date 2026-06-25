@@ -6,17 +6,24 @@
 
   <!-- ── Header ──────────────────────────────────────────────────────── -->
   <div class="card" style="margin-bottom:16px;">
-    <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
-      <div style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));
-                  width:44px;height:44px;border-radius:12px;display:flex;
-                  align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-cube" style="color:#fff;font-size:18px;"></i>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));
+                    width:44px;height:44px;border-radius:12px;display:flex;
+                    align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-cube" style="color:#fff;font-size:18px;"></i>
+        </div>
+        <div>
+          <div style="font-size:1.15em;font-weight:700;color:var(--text);">{{ t('hpm_title') or 'Hecos Module Manager' }}</div>
+          <div style="font-size:0.8em;color:var(--muted);">
+            {{ t('hpm_subtitle') or 'Manage and install .hpkg packages.' }}
+          </div>
+        </div>
       </div>
       <div>
-        <div style="font-size:1.15em;font-weight:700;color:var(--text);">{{ t('hpm_title') or 'Hecos Module Manager' }}</div>
-        <div style="font-size:0.8em;color:var(--muted);">
-          {{ t('hpm_subtitle') or 'Manage and install .hpkg packages.' }}
-        </div>
+        <button class="btn btn-sm btn-outline" onclick="showTab('hpm-settings')" title="HPM Settings">
+          <i class="fas fa-cog"></i>
+        </button>
       </div>
     </div>
   </div>

@@ -127,6 +127,7 @@ _PANEL_MAP = {
     'drive-editor':    'modules/config_drive_editor.html',
     'logs':            'modules/config_logs.html',
     'privacy':         'modules/config_privacy.html',
+    'hpm-settings':    'modules/config_hpm_settings.html',
     'widgets':         'modules/config_widgets.html',
     'help':            'modules/config_help.html',
     'flows':           'modules/config_flows.html',
@@ -329,32 +330,55 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                     # No config panel declared → skip (don't add a tab)
                     continue
 
-                tab_id = cp.get("tab_id") or pkg["id"].replace("_", "-")
+                # Build HPM-specific static paths using the dedicated /hpm/static/ route
+                plugin_id = pkg["id"]
+                tab_id = cp.get("tab_id") or plugin_id.replace("_", "-")
+                js_file_raw = cp.get("js_file")
+                css_file_raw = cp.get("css_file")
                 
-                js_file = cp.get("js_file")
-                if js_file and js_file.startswith("web_ui/static/"):
-                    js_file = js_file.replace("web_ui/static/", "", 1)
-                    
-                css_file = cp.get("css_file")
-                if css_file and css_file.startswith("web_ui/static/"):
-                    css_file = css_file.replace("web_ui/static/", "", 1)
+                js_url  = f"hpm_plugin/{plugin_id}/{js_file_raw}"  if js_file_raw  else None
+                css_url = f"hpm_plugin/{plugin_id}/{css_file_raw}" if css_file_raw else None
 
                 panels.append({
                     "id":          tab_id,
                     "name":        pkg.get("name") or manifest.get("name", pkg["id"]),
-                    "icon":        cp.get("tab_icon", "fa-puzzle-piece"),
-                    "category":    cp.get("category", "CONNETTIVITÀ"),
+                    "icon":        cp.get("tab_icon", ""),
+                    "category":    cp.get("category", "CONNETTIV\u00c0"),
                     "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
                     "version":     pkg.get("version", ""),
                     "description": pkg.get("description", ""),
-                    "js_file":     js_file,
-                    "css_file":    css_file,
+                    "js_file":     js_url,
+                    "css_file":    css_url,
                 })
 
             return jsonify(panels)
         except Exception as e:
             logger.warning(f"[WebUI] /api/hub/panels error: {e}")
             return jsonify([])
+
+    @app.route("/hpm/static/<plugin_id>/<path:filename>")
+    def hpm_plugin_static(plugin_id, filename):
+        """Serve static assets (JS, CSS, images) from installed HPM plugins."""
+        import re
+        from flask import send_from_directory, abort
+        # Security: only allow alphanumeric/underscore plugin IDs
+        if not re.match(r'^[a-z0-9_\-]+$', plugin_id):
+            abort(404)
+        hecos_root = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
+        plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
+        # Build the full path and ensure it stays within the plugin dir
+        full_path = os.path.realpath(os.path.join(plugin_base, filename))
+        plugin_base_real = os.path.realpath(plugin_base)
+        if not full_path.startswith(plugin_base_real):
+            abort(403)  # Path traversal attempt
+        directory = os.path.dirname(full_path)
+        basename = os.path.basename(full_path)
+        try:
+            return send_from_directory(directory, basename)
+        except Exception:
+            abort(404)
 
     @app.route("/hecos/config", methods=["GET"])
     def get_config():

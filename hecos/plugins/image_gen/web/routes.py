@@ -6,8 +6,13 @@ Mapped via 'api_routes_file' in hpkg_manifest.toml.
 from flask import request, jsonify
 
 def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
-    # This must be imported inside to avoid circular imports during Hecos startup
-    from ..config.config_manager import get_config, save_config
+    # Absolute imports to avoid parent package errors in dynamic loaders
+    import sys
+    import os
+    plugin_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if plugin_path not in sys.path:
+        sys.path.insert(0, plugin_path)
+    from config.config_manager import get_config, save_config
 
     # --- 1. Config Persistence ---
 
@@ -57,7 +62,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def get_image_gen_models():
         provider = request.args.get("provider", "pollinations")
         try:
-            from ..plugin.providers import get_models_for_provider
+            from plugin.providers import get_models_for_provider
             models = get_models_for_provider(provider)
             
             # Inject user custom models for Hugging Face
@@ -117,7 +122,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/hecos/api/plugins/image_gen/presets", methods=["GET"])
     def list_presets():
         try:
-            from ..plugin.presets import BUILTIN_PRESETS
+            from plugin.presets import BUILTIN_PRESETS
             user_presets = get_config().get("image_gen", {}).get("presets", {})
             result = []
             for name, data in BUILTIN_PRESETS.items():
@@ -131,7 +136,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/hecos/api/plugins/image_gen/presets/load/<path:name>", methods=["GET"])
     def load_preset(name):
         try:
-            from ..plugin.presets import get_preset
+            from plugin.presets import get_preset
             user_presets = get_config().get("image_gen", {}).get("presets", {})
             preset = get_preset(name, user_presets)
             if preset is None:
@@ -149,7 +154,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             config_snapshot = data.get("config", {})
             if not name:
                 return jsonify({"ok": False, "error": "Preset name is required"}), 400
-            from ..plugin.presets import save_user_preset
+            from plugin.presets import save_user_preset
             ok = save_user_preset(name, config_snapshot)
             return jsonify({"ok": ok, "name": name})
         except Exception as exc:
@@ -158,7 +163,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/hecos/api/plugins/image_gen/presets/delete/<path:name>", methods=["DELETE"])
     def delete_preset(name):
         try:
-            from ..plugin.presets import delete_user_preset
+            from plugin.presets import delete_user_preset
             ok = delete_user_preset(name)
             if not ok:
                 return jsonify({"ok": False, "error": f"Cannot delete '{name}'"}), 400
@@ -181,7 +186,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 url += f"&search={urllib.parse.quote(query)}"
                 
             headers = {"User-Agent": "Hecos/0.18.2"}
-            from ..plugin.providers.utils import get_proxies
+            from plugin.providers.utils import get_proxies
             prox = get_proxies("huggingface")
             
             r = requests.get(url, headers=headers, timeout=15, proxies=prox)

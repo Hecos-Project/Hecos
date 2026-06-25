@@ -69,11 +69,16 @@ def generate_keys(out_dir: str):
 
 def pack_and_sign(src_dir: str, private_key_path: str, out_file: str):
     """Pack a directory into a .hpkg file and sign it."""
-    manifest_path = os.path.join(src_dir, "hpkg_manifest.json")
-    if not os.path.isfile(manifest_path):
-        print(f"Error: {manifest_path} not found.")
-        print("A package must contain an 'hpkg_manifest.json' file at the root.")
-        sys.exit(1)
+    is_toml = False
+    manifest_path = os.path.join(src_dir, "hpkg_manifest.toml")
+    if os.path.isfile(manifest_path):
+        is_toml = True
+    else:
+        manifest_path = os.path.join(src_dir, "hpkg_manifest.json")
+        if not os.path.isfile(manifest_path):
+            print(f"Error: {manifest_path} not found (neither .toml nor .json).")
+            print("A package must contain an 'hpkg_manifest.toml' or '.json' file at the root.")
+            sys.exit(1)
 
     if not os.path.isfile(private_key_path):
         print(f"Error: Private key '{private_key_path}' not found.")
@@ -95,7 +100,7 @@ def pack_and_sign(src_dir: str, private_key_path: str, out_file: str):
     file_hashes = {}
     for root, _, files in os.walk(src_dir):
         for fname in files:
-            if fname == "hpkg_manifest.json":
+            if fname in ["hpkg_manifest.json", "hpkg_manifest.toml"]:
                 continue
 
             fpath = os.path.join(root, fname)
@@ -110,8 +115,13 @@ def pack_and_sign(src_dir: str, private_key_path: str, out_file: str):
 
     # 3. Load Manifest and update hashes
     try:
-        with open(manifest_path, "r", encoding="utf-8") as f:
-            manifest = json.load(f)
+        if is_toml:
+            import tomllib
+            with open(manifest_path, "rb") as f:
+                manifest = tomllib.load(f)
+        else:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
     except Exception as e:
         print(f"Error reading manifest: {e}")
         sys.exit(1)
@@ -133,13 +143,20 @@ def pack_and_sign(src_dir: str, private_key_path: str, out_file: str):
     print(f"Creating archive: {out_file}")
     with zipfile.ZipFile(out_file, "w", zipfile.ZIP_DEFLATED) as zf:
         # Write the updated manifest directly from memory
-        manifest_data = json.dumps(manifest, indent=2).encode("utf-8")
-        zf.writestr("hpkg_manifest.json", manifest_data)
+        manifest_name = "hpkg_manifest.toml" if is_toml else "hpkg_manifest.json"
+        
+        if is_toml:
+            import tomli_w
+            manifest_data = tomli_w.dumps(manifest).encode("utf-8")
+        else:
+            manifest_data = json.dumps(manifest, indent=2).encode("utf-8")
+            
+        zf.writestr(manifest_name, manifest_data)
         
         # Write all other files
         for root, _, files in os.walk(src_dir):
             for fname in files:
-                if fname == "hpkg_manifest.json":
+                if fname in ["hpkg_manifest.json", "hpkg_manifest.toml"]:
                     continue
                 fpath = os.path.join(root, fname)
                 arcname = os.path.relpath(fpath, src_dir).replace("\\", "/")
@@ -161,7 +178,7 @@ def main():
     # pack
     parser_pack = subparsers.add_parser("pack", help="Pack and sign a directory into a .hpkg file")
     parser_pack.add_argument("--src", required=True, help="Source directory containing the plugin")
-    parser_pack.add_argument("--key", required=True, help="Path to the private.pem key")
+    parser_pack.add_argument("--key", required=False, help="Path to the private.pem key (defaults to config)")
     parser_pack.add_argument("--out", required=True, help="Output .hpkg file path")
 
     args = parser.parse_args()
@@ -169,6 +186,24 @@ def main():
     if args.command == "keygen":
         generate_keys(args.out_dir)
     elif args.command == "pack":
+        if not args.key:
+            try:
+                # Fallback to system config
+                sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from hecos.app.config import ConfigManager
+                cfg_mgr = ConfigManager()
+                hpm_cfg = cfg_mgr.config.get("hpm", {})
+                args.key = hpm_cfg.get("private_key_path")
+                if not args.key:
+                    print("Error: --key not provided and 'private_key_path' not configured in Hecos.")
+                    sys.exit(1)
+            except ImportError:
+                print("Error: Hecos ConfigManager not found. Provide --key.")
+                sys.exit(1)
+            except Exception as e:
+                print(f"Error loading Hecos config: {e}")
+                sys.exit(1)
+                
         pack_and_sign(args.src, args.key, args.out)
 
 

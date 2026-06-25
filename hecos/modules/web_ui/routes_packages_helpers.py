@@ -22,12 +22,15 @@ def _get_hpm_components(hecos_root: str):
         data_dir = os.path.join(hecos_root, "data")
         os.makedirs(data_dir, exist_ok=True)
 
+        cfg_mgr = getattr(sys, "_hecos_cfg_mgr", None)
+
         registry = PackageRegistry(data_dir=data_dir)
         installer = PackageInstaller(
             hecos_root=hecos_root,
             registry=registry,
             hecos_version=VERSION,
             event_callback=_hpm_event_broadcast,
+            cfg_mgr=cfg_mgr
         )
         uninstaller = PackageUninstaller(
             hecos_root=hecos_root,

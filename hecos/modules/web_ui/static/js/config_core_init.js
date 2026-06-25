@@ -223,10 +223,14 @@ function mergeHubPanels(panels) {
         // Skip if already registered (either static or from previous mergeRegistry call)
         const exists = hub.modules.find(m => m.id === panelId || m.pluginTag === p.plugin_tag);
         if (!exists) {
+            // icon can be either a raw HTML string (e.g. '<i class="fas fa-image"></i>')
+            // or a plain class name (e.g. 'fa-puzzle-piece') from legacy entries
+            const rawIcon = p.icon || '';
+            const iconHtml = rawIcon.includes('<') ? rawIcon : `<i class="fas ${rawIcon || 'fa-puzzle-piece'}"></i>`;
             hub.modules.push({
                 id:        panelId,
                 label:     p.name || panelId,
-                icon:      p.icon ? `<i class="fas ${p.icon}"></i>` : '<i class="fas fa-puzzle-piece"></i>',
+                icon:      iconHtml,
                 cat:       p.category || 'CONNETTIVITÀ',
                 pluginTag: p.plugin_tag || panelId.toUpperCase(),
                 isHpm:     true
@@ -243,16 +247,21 @@ function mergeHubPanels(panels) {
         }
 
         // Dynamic Asset Loader (CSS/JS)
-        if (p.css_file && !document.querySelector(`link[href="/static/${p.css_file}"]`)) {
+        // HPM plugin assets are served via /hpm/static/<plugin_id>/<path>
+        // core assets remain under /static/<path>
+        const cssPrefix = p.css_file && p.css_file.startsWith('hpm_plugin/') ? '/' : '/static/';
+        const jsPrefix  = p.js_file  && p.js_file.startsWith('hpm_plugin/')  ? '/' : '/static/';
+        
+        if (p.css_file && !document.querySelector(`link[href^="${cssPrefix}${p.css_file}"]`)) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = `/static/${p.css_file}`;
+            link.href = `${cssPrefix}${p.css_file}`;
             document.head.appendChild(link);
             console.log(`[HPM AssetLoader] Injected CSS: ${p.css_file}`);
         }
-        if (p.js_file && !document.querySelector(`script[src^="/static/${p.js_file}"]`)) {
+        if (p.js_file && !document.querySelector(`script[src^="${jsPrefix}${p.js_file}"]`)) {
             const script = document.createElement('script');
-            script.src = `/static/${p.js_file}?v=${window.VERSION || Date.now()}`;
+            script.src = `${jsPrefix}${p.js_file}?v=${window.VERSION || Date.now()}`;
             script.defer = true;
             document.head.appendChild(script);
             console.log(`[HPM AssetLoader] Injected JS: ${p.js_file}`);

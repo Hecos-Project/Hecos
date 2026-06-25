@@ -1,0 +1,33 @@
+<div class="config-panel" id="panel-hpm-settings">
+    <h2><i class="fas fa-box" style="color:var(--accent);"></i> <span data-i18n="hub_mod_hpm_settings">HPM Settings</span></h2>
+    <div class="panel-desc" data-i18n="hub_mod_hpm_settings_desc">Configure Hecos Package Manager behaviors and developer keys.</div>
+
+    <div class="card" style="margin-top:20px;">
+        <h3><i class="fas fa-shield-alt" style="margin-right:8px;"></i> Security & Paths</h3>
+        <p class="text-sm text-muted" style="margin-bottom:15px;">Configure the paths for the digital signature system.</p>
+
+        <div class="grid-2">
+            <div>
+                <label>Trusted Keys Directory</label>
+                <input type="text" id="hpm-trusted-keys-dir" class="form-control" data-cfg-layer="hpm" data-cfg-key="trusted_keys_dir" placeholder="Default: data/trusted_keys">
+                <div class="field-hint">Folder where HPM looks for trusted public keys.</div>
+            </div>
+            <div>
+                <label>Developer Private Key File</label>
+                <input type="text" id="hpm-private-key-path" class="form-control" data-cfg-layer="hpm" data-cfg-key="private_key_path" placeholder="e.g. C:\hecos_keys\private.pem">
+                <div class="field-hint">Used by the HPM Builder to automatically sign packages.</div>
+            </div>
+        </div>
+
+        <div class="toggle-row" style="margin-top:20px;">
+            <div class="toggle-info">
+                <strong>Allow Unsigned Packages</strong><br>
+                <small class="text-muted">Globally allow installation of unsigned/untrusted packages without warnings.</small>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="hpm-allow-unsigned" data-cfg-layer="hpm" data-cfg-key="allow_unsigned_packages">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+</div>
