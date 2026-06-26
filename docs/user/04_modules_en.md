@@ -17,6 +17,17 @@ Hecos natively includes several powerful modules:
 - **Browser Automation**: A module to semantically interact with and navigate web pages.
 - **OS Automation**: A module to automate operating system tasks through programmatic mouse and keyboard control.
 
+### Module Types
+Hecos supports an 8-layer architecture where everything is defined as a module:
+- **Core Modules**: Built-in, non-removable OS and system functions.
+- **Plugins**: Reactive tools and capabilities called by the AI.
+- **Apps**: Autonomous mini-applications with their own standalone UI and lifecycle.
+- **Widgets**: Interactive frontend components for the Control Room dashboard.
+- **Personas**: Installable AI personalities and behavioral profiles.
+- **Themes**: Custom CSS and styling packages to customize the UI.
+- **Skill Packs**: Additional slash-command packs for the chat interface.
+- **MCP Servers**: Universal external tool bridges via the Model Context Protocol.
+
 ### 📦 Hecos Package Manager (HPM)
 Starting with version 0.35.0, Hecos introduces the **Hecos Package Manager**, a centralized system that makes the platform potentially universal.
 - **Standalone Packages (`.hpkg`)**: You can install new core modules, plugins, extensions, widgets, and personas simply by dragging and dropping `.hpkg` bundles into the Package Manager inside the WebUI.

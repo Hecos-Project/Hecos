@@ -17,6 +17,17 @@ Hecos incluye de forma nativa varios módulos potentes:
 - **Automatización del Navegador**: Un módulo para interactuar semánticamente con páginas web y extraer información.
 - **Automatización del SO**: Un módulo para automatizar tareas del sistema operativo mediante el control del ratón y el teclado.
 
+### Tipos de Módulos
+Hecos soporta una arquitectura de 8 capas donde todo se define como un módulo:
+- **Core Modules**: Funciones del SO y del sistema integradas y no extraíbles.
+- **Plugins**: Herramientas y capacidades reactivas llamadas por la IA.
+- **Apps**: Mini-aplicaciones autónomas con su propia UI y ciclo de vida.
+- **Widgets**: Componentes frontend interactivos para el panel (Control Room).
+- **Personas**: Personalidades de IA y perfiles de comportamiento instalables.
+- **Themes**: Paquetes de estilos y CSS personalizados para la UI.
+- **Skill Packs**: Paquetes de comandos slash adicionales para el chat.
+- **MCP Servers**: Puentes universales para herramientas externas vía el Model Context Protocol.
+
 ### 📦 Gestor de Paquetes Hecos (HPM)
 A partir de la versión 0.35.0, Hecos introduce el **Gestor de Paquetes Hecos**, un sistema centralizado que hace que la plataforma sea potencialmente universal.
 - **Paquetes Independientes (`.hpkg`)**: Puedes instalar nuevos módulos core, plugins, extensiones, widgets y personalidades simplemente arrastrando y soltando archivos `.hpkg` en el Gestor de Paquetes dentro de la WebUI.

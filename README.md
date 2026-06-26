@@ -53,12 +53,15 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.35.0 offe
 ---
 
 ## 🧠 How It Works
-Hecos is built around a modular architecture:
-* **Core** → AI routing, processing, execution
-* **Plugins** → Actions and capabilities (system, web, media, etc.)
-* **Memory** → Identity and persistent storage
-* **UI** → User interaction layer
-* **Bridge** → External integrations and APIs
+Hecos is built around a highly modular, 8-layer architecture. Everything is a **module**:
+* **Core Modules** → Built-in, non-removable OS/system functions
+* **Plugins** → Reactive tools and capabilities called by the AI (system, web, media, etc.)
+* **Apps** → Autonomous mini-applications with their own standalone UI and lifecycle
+* **Personas** → Installable AI personalities and behavioral profiles
+* **Widgets** → Interactive frontend components for the Control Room dashboard
+* **Themes** → Custom CSS and styling packages for the UI
+* **Skill Packs** → Additional slash-command packs for the chat interface
+* **MCP Servers** → Universal external tool bridges via the Model Context Protocol
 
 The AI generates structured commands that are interpreted and executed through the plugin system.
 
