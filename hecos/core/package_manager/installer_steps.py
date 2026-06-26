@@ -7,6 +7,21 @@ from typing import List
 from hecos.core.logging import logger
 from .package_schema import HpkgManifest
 
+# ── Default target directory per module type ────────────────────────────────
+# Used when the manifest does not override `target_dir` explicitly.
+# Types with no backend code (widget) don't need a code install directory.
+TYPE_DEFAULT_DIR = {
+    "core_module": "plugins",
+    "plugin":      "plugins",
+    "module":      "plugins",
+    "extension":   "plugins",
+    "app":         "apps",
+    "widget":      None,          # widget-only: no backend, skip code install
+    "persona":     "personas",
+    "theme":       "themes",
+    "skill_pack":  "skill_packs",
+}
+
 def copy_tree(src: str, dst: str) -> List[str]:
     copied: List[str] = []
     for root, _, files in os.walk(src):
@@ -31,12 +46,40 @@ def rollback(installed_files: List[str], pkg_id: str) -> None:
     logger.info(f"[HPM:Installer] Rollback complete for '{pkg_id}'.")
 
 
+def _resolve_target_dir(manifest: HpkgManifest) -> str | None:
+    """
+    Return the resolved target directory for this package type.
+    Returns None for types that have no backend code to install (e.g. widget).
+    If `manifest.target_dir` is explicitly set to something other than 'plugins'
+    (the schema default), we honour that override.
+    """
+    pkg_type = manifest.type
+    default_for_type = TYPE_DEFAULT_DIR.get(pkg_type)
+
+    # If the developer explicitly overrode target_dir away from the default 'plugins',
+    # respect their choice — but only if this type normally HAS a target directory.
+    if default_for_type is not None and manifest.target_dir != "plugins":
+        return manifest.target_dir
+
+    return default_for_type
+
+
 def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
+    # Determine the target directory based on module type
+    target_dir_name = _resolve_target_dir(manifest)
+
+    if target_dir_name is None:
+        logger.info(
+            f"[HPM:Installer] Type '{manifest.type}' has no backend code — "
+            f"skipping code install for '{manifest.id}'."
+        )
+        return []
+
     plugin_dir_in_zip = manifest.plugin_dir or f"{manifest.id}/"
     plugin_src = os.path.join(staging, plugin_dir_in_zip.rstrip("/"))
 
     if not os.path.isdir(plugin_src):
-        for candidate in ["plugin", "module", manifest.id]:
+        for candidate in ["plugin", "module", "app", manifest.id]:
             candidate_path = os.path.join(staging, candidate)
             if os.path.isdir(candidate_path):
                 plugin_src = candidate_path
@@ -45,7 +88,7 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
             logger.warning(f"[HPM:Installer] No plugin code directory found in package '{manifest.id}'. Skipping code install.")
             return []
 
-    target_base = os.path.join(hecos_root, manifest.target_dir)
+    target_base = os.path.join(hecos_root, target_dir_name)
     os.makedirs(target_base, exist_ok=True)
     target_dir = os.path.join(target_base, manifest.id)
 

@@ -6,6 +6,10 @@ import os
 from hecos.core.logging import logger
 from .package_schema import HpkgManifest
 
+# Types that participate in the system.yaml `plugins` section
+# (they have a runtime tag and can be enabled/disabled by the plugin loader)
+_PLUGIN_NAMESPACE_TYPES = {"core_module", "plugin", "module", "extension", "app", "skill_pack"}
+
 def run_hook(staging: str, hook_name: str, manifest: HpkgManifest) -> None:
     hooks_path = os.path.join(staging, "install_hooks.py")
     if not os.path.isfile(hooks_path):
@@ -22,8 +26,21 @@ def run_hook(staging: str, hook_name: str, manifest: HpkgManifest) -> None:
         logger.warning(f"[HPM:Installer] Hook '{hook_name}' failed for '{manifest.id}': {e}")
 
 def inject_config_defaults(manifest: HpkgManifest) -> None:
+    """
+    Inject manifest.config_defaults into system.yaml under plugins.<TAG>.
+    Skipped for types that don't participate in the plugin namespace
+    (e.g. widget-only, persona, theme).
+    """
     if not manifest.config_defaults:
         return
+
+    if manifest.type not in _PLUGIN_NAMESPACE_TYPES:
+        logger.debug(
+            f"[HPM:Installer] Skipping config_defaults injection for "
+            f"type '{manifest.type}' ('{manifest.id}') — not a plugin-namespace type."
+        )
+        return
+
     try:
         from hecos.app.config import ConfigManager
         cfg_mgr = ConfigManager()
