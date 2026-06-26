@@ -1,5 +1,5 @@
-"""
-Plugin: Image Generation — Generator
+﻿"""
+Plugin: Image Generation â€” Generator
 Core generation loop: reads autonomous config, resolves params, builds prompt,
 handles key rotation, retry logic, and delegates to the provider engine.
 """
@@ -19,7 +19,7 @@ except ImportError:
         @staticmethod
         def t(k, **kw): return k
 
-from ..config.config_manager import get_image_gen_config, save_image_gen_section
+from ..igen_config.config_manager import get_image_gen_config, save_image_gen_section
 from .dimensions import resolve_dimensions
 from .prompt_engine import build_prompt
 from .providers import generate_image as _engine_generate
@@ -38,7 +38,7 @@ def _is_retriable(err_msg: str) -> bool:
 
 
 def _get_api_key(provider: str, pinned_key: str) -> str:
-    """Tries pinned key → KeyManager → OS env."""
+    """Tries pinned key â†’ KeyManager â†’ OS env."""
     if pinned_key:
         return pinned_key
 
@@ -120,7 +120,7 @@ def run_generation(raw_prompt: str) -> str:
             meta_str = f"\n\n> **[Image Gen Config]** Provider: `{provider}`, Model: `{model}`, Seed: `{seed}`, CFG: `{guidance}`, Sampler: `{sampler}`, Steps: `{steps}`"
 
         final_width, final_height = resolve_dimensions(aspect_ratio, width, height)
-        logger.info(f"[GENERATOR] Aspect ratio '{aspect_ratio}' → {final_width}×{final_height}")
+        logger.info(f"[GENERATOR] Aspect ratio '{aspect_ratio}' â†’ {final_width}Ã—{final_height}")
 
         final_prompt = build_prompt(
             raw_prompt=raw_prompt, style=style, auto_enrich=auto_enrich,
@@ -143,7 +143,7 @@ def run_generation(raw_prompt: str) -> str:
                 raise Exception(msg)
 
             try:
-                logger.info(f"[GENERATOR] Attempt {attempt}/{max_attempts} — {provider}/{model}")
+                logger.info(f"[GENERATOR] Attempt {attempt}/{max_attempts} â€” {provider}/{model}")
                 filename = _engine_generate(
                     prompt=final_prompt, provider=provider, model=model,
                     width=final_width, height=final_height, api_key=api_key,
@@ -175,4 +175,5 @@ def run_generation(raw_prompt: str) -> str:
         if "Artist" not in err_str:
             provider_name = cfg.get("provider", "unknown").capitalize() if "cfg" in dir() else "Unknown"
             err_str = f"Artist [{provider_name}] rejected: {err_str}"
-        return f"⚠️ Image generation failed. {err_str}. Verify provider config or prompt safety.{meta_str}"
+        return f"âš ï¸ Image generation failed. {err_str}. Verify provider config or prompt safety.{meta_str}"
+

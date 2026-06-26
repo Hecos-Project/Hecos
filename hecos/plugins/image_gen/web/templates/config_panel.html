@@ -19,7 +19,7 @@
   <div class="grid-2" style="margin-top:12px;">
     <div class="field">
       <label>Provider</label>
-      <select id="igen-provider" onchange="onProviderChanged(true)" class="config-input" data-cfg-plugin="MEDIA">
+      <select id="igen-provider" onchange="onProviderChanged(true)" class="config-input" data-igen-managed>
         <!-- Populated dynamically -->
       </select>
     </div>
@@ -28,7 +28,7 @@
         <button type="button" onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh</button>
         <button type="button" id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,231,231,0.1); cursor:pointer;" title="Remove this custom model"><i class="fas fa-times"></i> Delete</button>
       </label>
-      <select id="igen-model" onchange="checkCustomModelSelect()" class="config-input" data-cfg-plugin="MEDIA"><option>flux</option></select>
+      <select id="igen-model" onchange="checkCustomModelSelect()" class="config-input" data-igen-managed><option>flux</option></select>
       <span id="igen-model-status" style="font-size:11px;color:var(--muted);"></span>
     </div>
   </div>
@@ -71,7 +71,7 @@
   <div class="grid-2" style="margin-top:14px;">
     <div class="field">
       <label>Aspect Ratio</label>
-      <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" class="config-input" data-cfg-plugin="MEDIA">
+      <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" class="config-input" data-igen-managed>
         <option value="1:1">1:1 — Square</option>
         <option value="16:9">16:9 — Landscape (HD)</option>
         <option value="9:16">9:16 — Portrait (Mobile)</option>
@@ -96,10 +96,10 @@
       <label style="margin:0;">Negative Prompt</label>
       <div style="display:flex; align-items:center; gap:8px;">
         <small style="color:var(--muted);font-size:11px;">Enable</small>
-        <label class="switch"><input type="checkbox" id="igen-use-neg-prompt" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+        <label class="switch"><input type="checkbox" id="igen-use-neg-prompt" data-igen-managed><span class="slider"></span></label>
       </div>
     </div>
-    <textarea id="igen-neg-prompt" class="config-input" rows="2" placeholder="distorted, extra fingers..." data-cfg-plugin="MEDIA"></textarea>
+    <textarea id="igen-neg-prompt" class="config-input" rows="2" placeholder="distorted, extra fingers..." data-igen-managed></textarea>
   </div>
 
   <!-- CFG & Steps -->
@@ -124,7 +124,7 @@
   <div class="field" style="margin-top:10px;">
     <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
     <div style="display:flex; gap:8px; align-items:center;">
-      <input type="number" id="igen-seed" class="config-input" min="-1" max="2147483647" value="-1" style="flex:1;" data-cfg-plugin="MEDIA">
+      <input type="number" id="igen-seed" class="config-input" min="-1" max="2147483647" value="-1" style="flex:1;" data-igen-managed>
       <button type="button" onclick="document.getElementById('igen-seed').value=-1; saveIgenConfig();" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer;"><i class="fas fa-dice"></i></button>
     </div>
   </div>
@@ -140,7 +140,7 @@
     <div class="grid-2" style="margin-top:10px;">
       <div class="field">
         <label>Sampler</label>
-        <select id="igen-sampler" class="config-input">
+        <select id="igen-sampler" class="config-input" data-igen-managed>
           <option value="euler">Euler</option>
           <option value="euler_a">Euler Ancestral</option>
           <option value="heun">Heun</option>
@@ -162,7 +162,7 @@
       </div>
       <div class="field">
         <label>Scheduler</label>
-        <select id="igen-scheduler" class="config-input">
+        <select id="igen-scheduler" class="config-input" data-igen-managed>
           <option value="normal">Normal</option>
           <option value="karras">Karras</option>
           <option value="exponential">Exponential</option>
@@ -182,15 +182,15 @@
   <!-- Style Options -->
   <div class="toggle-row" style="margin-top:14px;">
     <div class="toggle-info"><strong>Auto-Enrich Prompt</strong></div>
-    <label class="switch"><input type="checkbox" id="igen-auto-enrich" data-cfg-plugin="MEDIA"><span class="slider"></span></label>
+    <label class="switch"><input type="checkbox" id="igen-auto-enrich" data-igen-managed><span class="slider"></span></label>
   </div>
   <div class="field" style="margin-top:5px;">
     <label>Enrichment Keywords</label>
-    <input type="text" id="igen-enrich-keywords" class="config-input" placeholder="masterpiece, 8k..." data-cfg-plugin="MEDIA">
+    <input type="text" id="igen-enrich-keywords" class="config-input" placeholder="masterpiece, 8k..." data-igen-managed>
   </div>
   <div class="field" style="margin-top:10px;">
     <label>Artistic Style</label>
-    <select id="igen-style" class="config-input" data-cfg-plugin="MEDIA">
+    <select id="igen-style" class="config-input" data-igen-managed>
       <option value="none">None</option>
       <option value="cinematic">Cinematic</option>
       <option value="anime">Anime</option>
@@ -199,16 +199,17 @@
   </div>
   <div class="toggle-row" style="margin-top:10px;">
     <div class="toggle-info">Remove Logo (Pollinations)</div>
-    <label class="switch"><input type="checkbox" id="igen-nologo"><span class="slider"></span></label>
+    <label class="switch"><input type="checkbox" id="igen-nologo" data-igen-managed><span class="slider"></span></label>
   </div>
   <div class="toggle-row" style="margin-top:10px; background:var(--bg3); padding:8px; border-radius:8px;">
     <div class="toggle-info"><strong>Show Config in Chat</strong></div>
-    <label class="switch"><input type="checkbox" id="igen-show-metadata"><span class="slider"></span></label>
+    <label class="switch"><input type="checkbox" id="igen-show-metadata" data-igen-managed><span class="slider"></span></label>
   </div>
 
-  <!-- Save Button -->
-  <div style="margin-top:20px; display:flex; justify-content:flex-end;">
-    <button type="button" id="igen-main-save-btn" onclick="saveIgenConfig()" class="btn" style="padding:10px 20px; font-weight:bold; width:100%;">Save Configuration</button>
+  <!-- Save Button — replaced by auto-save; status shown here -->
+  <div style="margin-top:20px; display:flex; justify-content:flex-end; align-items:center; gap:12px;">
+    <span id="igen-save-status" style="font-size:12px; color:var(--muted); transition:color 0.3s;"></span>
+    <button type="button" id="igen-main-save-btn" onclick="saveIgenConfig(false)" class="btn" style="padding:10px 20px; font-weight:bold;">Save Configuration</button>
   </div>
 </div>
 

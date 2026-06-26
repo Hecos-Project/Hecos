@@ -1,5 +1,5 @@
-"""
-Plugin: Image Generation — Entry Point
+﻿"""
+Plugin: Image Generation â€” Entry Point
 Thin wrapper: registers the tool, delegates all logic to sub-modules.
 """
 
@@ -26,7 +26,7 @@ class ImageGenTools:
                 "description": "Genera un'immagine AI da una descrizione testuale",
                 "usage": "/img <descrizione>",
                 "example": "/img foto fotorealistica di un gatto su Marte",
-                "icon": "🖼️",
+                "icon": "ðŸ–¼ï¸",
                 "method": "generate_image",
                 "args_schema": {"prompt": "str"},
                 "requires_args": True,
@@ -44,7 +44,7 @@ class ImageGenTools:
         return run_generation(prompt)
 
 
-# ── Module exports ─────────────────────────────────────────────────────────────
+# â”€â”€ Module exports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 tools = ImageGenTools()
 
 def info():
@@ -52,3 +52,4 @@ def info():
 
 def status():
     return tools.status
+

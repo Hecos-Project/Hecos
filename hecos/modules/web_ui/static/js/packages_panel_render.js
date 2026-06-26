@@ -36,6 +36,9 @@ window.hpmRenderHierarchy = function(packages) {
   if (!packages) return '';
   let html = '';
 
+  const totalCountEl = document.getElementById('hpm-total-count');
+  if (totalCountEl) totalCountEl.textContent = packages.length;
+
   for (const [lvl, meta] of Object.entries(window.HPM_LEVELS)) {
     const level = parseInt(lvl);
     const group = packages.filter(p => (p.level || 2) === level);

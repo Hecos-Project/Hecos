@@ -1,4 +1,4 @@
-"""
+﻿"""
 Autonomous routes for image_gen package.
 Handles config persistence, models fetching, presets, and HuggingFace API proxy.
 Mapped via 'api_routes_file' in hpkg_manifest.toml.
@@ -12,7 +12,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     plugin_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if plugin_path not in sys.path:
         sys.path.insert(0, plugin_path)
-    from config.config_manager import get_config, save_config
+    from igen_config.config_manager import get_config, save_config
 
     # --- 1. Config Persistence ---
 
@@ -108,7 +108,7 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             
             refined = client.generate(system_prompt, user_msg, backend_config, llm_cfg)
             
-            if refined and not isinstance(refined, dict) and not refined.startswith("⚠️"):
+            if refined and not isinstance(refined, dict) and not refined.startswith("âš ï¸"):
                 cleaned = refined.strip().strip('"').strip("'")
                 return jsonify({"ok": True, "refined": cleaned})
                 
@@ -222,3 +222,4 @@ def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             return jsonify({"ok": True, "models": models})
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
+

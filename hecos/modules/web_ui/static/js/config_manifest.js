@@ -34,7 +34,6 @@ window.CONFIG_HUB = {
         { id: 'mail',      label: 'hub_mod_mail',         icon: '<i class="fas fa-envelope"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MAIL' },
         { id: 'templates', label: 'hub_mod_templates',    icon: '<i class="fas fa-file-alt"></i>', cat: 'CONNETTIVITÀ', isCore: true },
         { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '<i class="fas fa-mobile-alt"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
-        { id: 'weather_pro',label: 'Weather Pro',         icon: '<i class="fas fa-cloud-sun"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'WEATHER_PRO' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
@@ -142,8 +141,7 @@ window.CONFIG_HUB.tagMap = {
     'BROWSER':    'browser',
     'USERS':      'users',
     'FLOWS':      'flows',
-    'LISTS':      'lists',
-    'WEATHER_PRO':'weather_pro'
+    'LISTS':      'lists'
 };
 
 /**
@@ -157,6 +155,5 @@ window.LAZY_PANEL_IDS = new Set([
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'lists', 'backup',
-    'weather_pro'
+    'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'lists', 'backup'
 ]);

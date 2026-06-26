@@ -96,9 +96,10 @@
   <!-- ── Installed Packages ────────────────────────────────────────────── -->
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div class="card-title" style="margin:0;">
+      <div class="card-title" style="margin:0; display:flex; align-items:center;">
         <i class="fas fa-layer-group" style="color:var(--accent);margin-right:6px;"></i>
         {{ t('hpm_tab_all') or 'All Modules' }}
+        <span id="hpm-total-count" style="margin-left:10px; background:rgba(255,255,255,0.08); color:var(--muted); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:700;">0</span>
       </div>
       <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
               style="padding:6px 10px;font-size:0.78em;">

@@ -1,5 +1,5 @@
 """
-Plugin: Image Generation — Preset Manager
+Plugin: Image Generation â€” Preset Manager
 Manages built-in (read-only) and user-defined (CRUD) configuration presets.
 Reads/writes from the package's own config manager.
 """
@@ -99,7 +99,12 @@ def get_preset(name: str, user_presets: dict) -> dict | None:
 
 
 def save_user_preset(name: str, config_snapshot: dict) -> bool:
-    from ..config.config_manager import get_config, save_config
+    import sys, os
+    try:
+        from igen_config.config_manager import get_config, save_config
+    except ImportError:
+        # Fallback if imported inside Hecos plugin loader
+        from ..igen_config.config_manager import get_config, save_config
 
     if not name or not name.strip():
         logger.error("[PRESETS] Cannot save preset with empty name.")
@@ -130,7 +135,12 @@ def save_user_preset(name: str, config_snapshot: dict) -> bool:
 
 
 def delete_user_preset(name: str) -> bool:
-    from ..config.config_manager import get_config, save_config
+    import sys, os
+    try:
+        from igen_config.config_manager import get_config, save_config
+    except ImportError:
+        # Fallback if imported inside Hecos plugin loader
+        from ..igen_config.config_manager import get_config, save_config
 
     if name in BUILTIN_PRESETS:
         logger.error(f"[PRESETS] '{name}' is a built-in preset and cannot be deleted.")
@@ -154,3 +164,4 @@ def delete_user_preset(name: str) -> bool:
     except Exception as e:
         logger.error(f"[PRESETS] Failed deleting preset '{name}': {e}")
         return False
+

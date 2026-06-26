@@ -1,7 +1,7 @@
 {
     "tag": "IMAGE_GEN",
     "name": "Image Generation",
-    "version": "1.0.0",
+    "version": "1.0.8",
     "description": "AI Image Generation \u2014 Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration.",
     "lazy_load": true,
     "is_class_based": true,
