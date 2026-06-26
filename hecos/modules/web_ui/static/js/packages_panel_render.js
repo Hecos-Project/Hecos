@@ -170,8 +170,8 @@ window.hpmRenderRow = function(pkg, meta) {
           ${versionBadge}
         </div>
         ${pkg.description ? `
-        <div style="font-size:0.75em;color:var(--muted);margin-top:2px;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;">
+        <div style="font-size:0.75em;color:var(--muted);margin-top:4px;
+                    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;max-width:450px;">
           ${window._hesc(pkg.description)}
         </div>` : ''}
         ${!isCore ? `

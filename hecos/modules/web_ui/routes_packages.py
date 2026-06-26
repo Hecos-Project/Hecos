@@ -24,6 +24,7 @@ from hecos.modules.web_ui.routes_packages_list import register_list_routes
 from hecos.modules.web_ui.routes_packages_install import register_install_routes
 from hecos.modules.web_ui.routes_packages_manage import register_manage_routes
 from hecos.modules.web_ui.routes_packages_search import register_search_routes
+from hecos.modules.web_ui.routes_packages_store import register_store_routes
 
 def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     """Register all HPM REST routes on the Flask app."""
@@ -44,6 +45,7 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     register_install_routes(app, _hecos_src, cfg_mgr, log)
     register_manage_routes(app, _hecos_src, cfg_mgr, log)
     register_search_routes(app, _hecos_src, cfg_mgr, log)
+    register_store_routes(app, _hecos_src, cfg_mgr, log)
 
     # Automatically load standalone API routes for HPM packages
     try:

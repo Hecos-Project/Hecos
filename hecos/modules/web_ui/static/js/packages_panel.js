@@ -13,8 +13,9 @@ window.hpmSwitchTab = async function(tabId) {
   const btnPackages = document.getElementById('hpm-tab-btn-packages');
   const btnBuiltin  = document.getElementById('hpm-tab-btn-builtin');
   const btnWidgets  = document.getElementById('hpm-tab-btn-widgets');
+  const btnStore    = document.getElementById('hpm-tab-btn-store');
 
-  [btnPackages, btnBuiltin, btnWidgets].forEach(b => b && b.classList.remove('active'));
+  [btnPackages, btnBuiltin, btnWidgets, btnStore].forEach(b => b && b.classList.remove('active'));
   const activeBtn = document.getElementById(`hpm-tab-btn-${tabId}`);
   if (activeBtn) activeBtn.classList.add('active');
 
@@ -23,6 +24,8 @@ window.hpmSwitchTab = async function(tabId) {
   document.getElementById('hpm-pane-builtin').style.display  = tabId === 'builtin'  ? 'block' : 'none';
   const widgetsPane = document.getElementById('hpm-pane-widgets');
   if (widgetsPane) widgetsPane.style.display = tabId === 'widgets' ? 'block' : 'none';
+  const storePane = document.getElementById('hpm-pane-store');
+  if (storePane) storePane.style.display = tabId === 'store' ? 'block' : 'none';
 
   // ── Content loading per tab ────────────────────────────────────────────────
   if (tabId === 'packages') {
@@ -88,8 +91,15 @@ window.hpmSwitchTab = async function(tabId) {
         widgetsContainer.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load Widget Manager: ${err.message}</div>`;
       }
     }
+  } else if (tabId === 'store') {
+    if (typeof window.hpmStoreInit === 'function') {
+      if (!window.HPM_STORE_STATE || !window.HPM_STORE_STATE.catalog) {
+        window.hpmStoreInit();
+      }
+    }
   }
 };
+
 
 window.hpmLoadPackages = async function () {
   const grid = document.getElementById('hpm-packages-grid');

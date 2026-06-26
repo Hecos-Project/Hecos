@@ -117,13 +117,19 @@ def init_explorer_routes(app, logger):
                     except Exception: pass
                     
                     kwargs = {
-                        "title": d_title,
-                        "filetypes": d_filetypes
+                        "title": d_title
                     }
+                    if not data.get("pick_dir", False):
+                        kwargs["filetypes"] = d_filetypes
+                        
                     if d_initdir and os.path.exists(d_initdir):
                         kwargs["initialdir"] = d_initdir
 
-                    path = filedialog.askopenfilename(**kwargs)
+                    if data.get("pick_dir", False):
+                        path = filedialog.askdirectory(**kwargs)
+                    else:
+                        path = filedialog.askopenfilename(**kwargs)
+                        
                     root.destroy()
                     q.put(path)
                 except Exception as e:
