@@ -231,6 +231,7 @@ snapshots/*
 !hecos/assets/Hecos_Logo_SQR_NBG_.png
 !hecos/assets/Hecos_Logo_SQR_NBG_LogoOnly.png
 !hecos/assets/Hecos_Logo_SQR_NBG_LogoOnly.ico
+!hecos/assets/Urania_9800_Logo.png
 
 # Website assets
 !docs/assets/images/*
