@@ -1,4 +1,5 @@
 {
+    "hub_mod_map": "Map & Location",
     "hub_mod_flows": "Flows",
     "hub_mod_contacts": "Address Book",
     "hub_cat_intelligenza": "Intelligence",
@@ -22,7 +23,6 @@
     "hub_mod_media": "Media Gallery",
     "hub_mod_igen": "Image Gen",
     "hub_mod_mcp": "MCP Bridge",
-    "hub_mod_bridge": "Bridge",
     "hub_mod_triggers": "Triggers",
     "hub_mod_drive": "Hecos Drive",
     "hub_mod_editor": "File Editor",

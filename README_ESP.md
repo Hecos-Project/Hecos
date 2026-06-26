@@ -38,8 +38,9 @@ Ahora completamente migrato a una **arquitectura estable de Runtime Alpha**, Hec
 * 🔄 **Regeneración Corregida** — Se resolvieron problemas de duplicación de historial y errores de sesión durante la regeneración.
 * 🗃️ **Archivo de Chat de Modo Dual** — Sistema de archivo contextual con recuperación individual de chats y borrado masivo.
 * 🧠 **RAG de Alto Rendimiento (FastEmbed)** — Memoria vectorial multiusuario nativa de CPU que utiliza ONNX y LanceDB para una ingesta de documentos ultra rápida.
-* 🔐 **Aislamiento de Vault por Usuario** — Arquitectura de memoria consolidada que garantiza una separación absoluta de la privacidad de los datos semánticos y el historial por perfil.
+* 🔐 **Aislamiento de Vault por Usuario** — Arquitectura de memoria consolidata que garantiza una separación absoluta de la privacidad de los datos semánticos y el historial por perfil.
 * 🛡️ **Arquitectura de Privacidad de 3 Niveles** — Gestión unificada de sesiones con modos **Normal**, **Auto-Wipe** (limpieza automática), e **Incógnito** (cero rastro).
+* 📦 **Hecos Package Manager (HPM)** — Gestor de paquetes centralizado con firmas digitales Ed25519 para instalar de forma segura plugins, módulos y widgets de terceros.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Soporte nativo para el **Model Context Protocol**. Conéctate a miles de herramientas AI con un solo clic.
 * 🔭 **Deep MCP Discovery** — Explorador avanzado con búsqueda multi-registro (Smithery, MCPSkills, GitHub) e instalación inmediata.
 * 🔒 **Hecos PKI Profesional (HTTPS)** — Certificación Root CA integrada para habilitar Mic/Cámara en toda la LAN de forma segura.
@@ -164,6 +165,8 @@ Plugins incluidos:
 * **Automatización Web y Dashboard de hardware**
 * **Control multimedia y Cambio de modelo**
 * **Gestión de memoria**
+
+Puedes instalar nuevos paquetes dinámicamente arrastrando y soltando archivos `.hpkg` en el **Package Manager** dentro de la WebUI. Todos los paquetes se verifican mediante firmas digitales Ed25519 para una seguridad absoluta.
 
 ---
 

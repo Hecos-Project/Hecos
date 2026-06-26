@@ -1,0 +1,82 @@
+id = "image_gen"
+name = "Image Generation"
+version = "1.0.8"
+author = "Hecos"
+description = "AI Image Generation — Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration."
+icon = "🎨"
+category = "PLUGINS"
+plugin_tag = "IMAGE_GEN"
+is_class_based = true
+plugin_dir = "."
+lazy_load = true
+dependencies = []
+python_requires = ">=3.11"
+signature = "sVR8C82ob92GY5ZbjGYrxSphHj4xCJKwhFgwfbNiFBnY2MGkp9k+aLGdb6oxbTLm0gG4OdEDFTGuWC9g6y8qDA=="
+
+[routing]
+instructions = "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image."
+
+[[slash_commands]]
+id = "img"
+aliases = [
+    "/img",
+    "/image",
+    "/photo",
+    "/foto",
+]
+description = "Genera un'immagine AI da una descrizione testuale"
+usage = "/img <descrizione>"
+example = "/img foto fotorealistica di un gatto su Marte"
+icon = "🖼️"
+method = "generate_image"
+requires_args = true
+
+[[tool_schema]]
+name = "IMAGE_GEN__generate_image"
+description = "Generates an image from a text description. Uses the configured provider."
+
+[tool_schema.parameters]
+type = "object"
+required = [
+    "prompt",
+]
+
+[tool_schema.parameters.properties.prompt]
+type = "string"
+description = "Detailed description of the image or photo to generate. Translate to English if needed."
+
+[config_panel]
+tab_id = "igen"
+tab_label = "Image Gen"
+category = "MULTIMEDIA"
+tab_icon = "<i class=\"fas fa-image\"></i>"
+template_file = "web/templates/config_panel.html"
+js_file = "web/static/js/igen_panel.js"
+css_file = "web/static/css/image_gen.css"
+api_routes_file = "web/routes.py"
+config_api_get = "/hecos/api/plugins/image_gen/config"
+config_api_post = "/hecos/api/plugins/image_gen/config"
+
+[file_hashes]
+"main.py" = "f7b5bec89f3e1e62eea6395cb98aee6e95dcaea33fa1e904e554acab024b5667"
+"igen_config/config_manager.py" = "e4491c6d08a4937b512d6fc0684b955631cc87ec48d7872c64d37c8ddd1a9b31"
+"igen_config/defaults.toml" = "c7ebaaada55b389ea45d375d1b86655bc5627e4a979ca9b6638658781c58dce1"
+"igen_config/__init__.py" = "e3300b082c5f4b2cce28d981fd8f91d40d225213e908eaca6e4275b2b256cb1a"
+"plugin/dimensions.py" = "ac68f98fddf2fbe9e35f3ada5b552f574ec5201e83420e2b0f427afc9f63b8f7"
+"plugin/generator.py" = "8dfca81f31aa53373e5fada6aceb7173ef4d0505dc6d6ac22a5d86312de3b444"
+"plugin/main.py" = "0a9d07f6ea2185240baf033b643e33465a298a79c7193d77bbf03ed8a4a6bc56"
+"plugin/presets.py" = "491b6ec3359ea8a4538c571aff11ea32bc6d5e7f5781e5dd79a00190b0795cd9"
+"plugin/prompt_engine.py" = "4ea9245052911ccfb46320403203672c08b3afc6a01b9f4e46cb409a0b1c551b"
+"plugin/__init__.py" = "e3300b082c5f4b2cce28d981fd8f91d40d225213e908eaca6e4275b2b256cb1a"
+"plugin/providers/airforce.py" = "3031344a256e0e46d985c1ebab0c9499f9f4cec1573de7b71e94283c2b928627"
+"plugin/providers/gemini.py" = "a531cc628a95f74068eb218cce24ebe7fa5dac0bcfed3598db0972ae7754b6ec"
+"plugin/providers/huggingface.py" = "abf3b51e06a7142325797184dee4cc8959b836670eddea8fe74677789787c0f1"
+"plugin/providers/openai.py" = "56fad495dbdc2496893006b97d1a2f6e2b49377d3dc9f935181dc4c6846f2e33"
+"plugin/providers/pollinations.py" = "3b770955491651e2ac1fb3d3c8e5fe9a195de820c8c5b9aeb4e413a02f051d4d"
+"plugin/providers/stability.py" = "bb20bb1e0fc5db4d40b5b3853f0402418713225c2a099ad4aebb5acc8007956b"
+"plugin/providers/utils.py" = "030da6b428f2daaed8c6ea89f54928219a83600f66a096eabd35c9ebeb4dc8cf"
+"plugin/providers/__init__.py" = "3fb8840104dcd6664b55a023313d776417a52ba453569ddae5c39099fa9beeb5"
+"web/routes.py" = "11fa3740ca68133ba4b75e168ad0028c9d9d08dc77219a046d7919560c6ebb2c"
+"web/static/css/image_gen.css" = "dd07354d9df1096c7244cd98fa013298145fbab20feac15f934cc3d0d2b41ae0"
+"web/static/js/igen_panel.js" = "8f051a7fcb8bc95422fa2a333451d65cb34c9a9fdaba23c54cac8b74f4cd421b"
+"web/templates/config_panel.html" = "de9d4bbeb6958261736638c17eba944e7faef49854643e9c7ac6ec934bce6894"

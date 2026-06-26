@@ -67,16 +67,6 @@ function populateBackendUI() {
         if (personaEl && personaEl.value) window.loadPersonaAvatar(personaEl.value);
     }
 
-    // 6. Bridge
-    const br = c.bridge || {};
-    setCheck('br-processor',    br.use_processor       ?? false);
-    setCheck('br-think-tags',   br.remove_think_tags   ?? true);
-    setCheck('br-debug',        br.debug_log            ?? true);
-    setCheck('br-tools',        br.enable_tools         ?? true);
-    setCheck('br-voice-stt',    br.webui_voice_stt      ?? true);
-    setCheck('br-voice-enabled',br.webui_voice_enabled  ?? false);
-    setVal('br-delay',          br.chunk_delay_ms       ?? 0);
-
     // 7. Text Filters
     const fi = c.filters || {};
     const _boolStr = (v, def) => v === true ? 'both' : v === false ? 'none' : v || def;
@@ -156,15 +146,6 @@ function buildBackendPayload(out) {
     out.privacy.default_mode       = getV('pr-default-mode',        out.privacy.default_mode       || 'normal');
     out.privacy.auto_wipe_enabled  = getC('pr-auto-wipe',           out.privacy.auto_wipe_enabled  ?? false);
     out.privacy.incognito_shortcut = getC('pr-incognito-shortcut',  out.privacy.incognito_shortcut ?? true);
-
-    out.bridge = out.bridge || {};
-    out.bridge.use_processor       = getC('br-processor',    out.bridge.use_processor      ?? false);
-    out.bridge.remove_think_tags   = getC('br-think-tags',   out.bridge.remove_think_tags  ?? true);
-    out.bridge.debug_log           = getC('br-debug',        out.bridge.debug_log          ?? true);
-    out.bridge.enable_tools        = getC('br-tools',        out.bridge.enable_tools       ?? true);
-    out.bridge.webui_voice_stt     = getC('br-voice-stt',    out.bridge.webui_voice_stt    ?? true);
-    out.bridge.webui_voice_enabled = getC('br-voice-enabled',out.bridge.webui_voice_enabled ?? false);
-    out.bridge.chunk_delay_ms      = parseInt(getV('br-delay', out.bridge.chunk_delay_ms)) || 0;
 
     out.filters = out.filters || {};
     out.filters.remove_asterisks       = getV('fl-ast',    out.filters.remove_asterisks       || 'both');

@@ -21,7 +21,7 @@ function renderPlugins(plugins) {
 
   let htmlCore = `<details open style="margin-bottom:10px;">
     <summary style="cursor:pointer; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(102,252,241,0.2); user-select:none; display:flex; align-items:center; gap:10px;">
-      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">${window.t ? window.t('hub_mod_plugins') : 'Hecos Module Manager'} (Level 1)</strong>
+      <strong style="color:var(--cyan);font-size:11px;opacity:0.8;letter-spacing:1px;text-transform:uppercase;">${window.t ? window.t('hub_mod_plugins') : 'Built-in modules'} (Level 1)</strong>
       <span class="p-tag core">CORE</span>
       <span style="margin-left:auto; font-size:10px; color:var(--muted); font-weight:800; background:rgba(255,255,255,0.05); padding:2px 8px; border-radius:10px;">${coreCount}</span>
     </summary>`;
@@ -38,6 +38,8 @@ function renderPlugins(plugins) {
 
   hub.modules.forEach(m => {
     if (!m.pluginTag || m.id === 'plugins' || m.isExtension) return;
+    // HPM-installed packages are managed via Package Manager, not Module Manager
+    if (m.isHpm) return;
 
     const tag  = m.pluginTag;
     const pCfg = plugins[tag] || { enabled: true };
@@ -157,7 +159,12 @@ function syncPluginStateToMemory(tag, enabled, extId = null) {
     } else {
         window.cfg.plugins[tag].enabled = enabled;
     }
-    if (typeof renderConfigHub === 'function') renderConfigHub();
+    if (typeof renderConfigHub === 'function') renderConfigHub(window.viewMode);
+    
+    // Auto-save instantly so the backend knows and the UI responds
+    if (typeof saveConfig === 'function') {
+        saveConfig(true);
+    }
 }
 
 /**

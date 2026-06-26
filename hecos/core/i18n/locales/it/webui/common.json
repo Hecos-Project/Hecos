@@ -163,5 +163,8 @@
     "webui_telemetry_warning": "ATTENZIONE: L'attivazione del monitoraggio hardware in tempo reale potrebbe causare instabilità o rallentamenti su sistemi con risorse limitate.",
     "webui_desc_messenger": "Invia e ricevi messaggi tramite Telegram, WhatsApp e Discord.",
     "webui_desc_mail": "Client di posta integrato. Legge profili SMTP/IMAP, gestisce bozze, invio e sincronizzazione con supporto provider automatico e integrazione Rubrica.",
-    "webui_desc_lists": "Gestione liste universale. Supporta liste della spesa, task, blacklists. Permette livelli di priorità, etichette e drag & drop."
+    "webui_desc_lists": "Gestione liste universale. Supporta liste della spesa, task, blacklists. Permette livelli di priorità, etichette e drag & drop.",
+    "sidebar_empty_title": "Nessun widget attivo",
+    "sidebar_empty_add": "Aggiungi un widget",
+    "sidebar_empty_desc": "Aggiungi un widget per iniziare."
 }

@@ -70,19 +70,6 @@ class BackendConfig(BaseModel):
     ollama: OllamaBackendConfig = Field(default_factory=OllamaBackendConfig)
 
 
-# ─── BRIDGE ───────────────────────────────────────────────────────────────────
-
-class BridgeConfig(BaseModel):
-    use_processor: bool = True
-    chunk_delay_ms: int = 0
-    debug_log: bool = True
-    remove_think_tags: bool = True
-    local_voice_enabled: bool = False
-    webui_voice_enabled: bool = True
-    webui_voice_stt: bool = True
-    enable_tools: bool = True
-
-
 # ─── COGNITION ────────────────────────────────────────────────────────────────
 
 class RAGConfig(BaseModel):
@@ -218,7 +205,6 @@ class SystemConfig(BaseModel):
     model_config = ConfigDict(extra='ignore')
     ai: AIConfig = Field(default_factory=AIConfig)
     backend: BackendConfig = Field(default_factory=BackendConfig)
-    bridge: BridgeConfig = Field(default_factory=BridgeConfig)
     cognition: CognitionConfig = Field(default_factory=CognitionConfig)
     filters: FiltersConfig = Field(default_factory=FiltersConfig)
     language: str = "en"

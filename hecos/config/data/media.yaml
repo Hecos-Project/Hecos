@@ -20,7 +20,8 @@ image_gen:
   enrich_keywords: ''
   style: none
   optimize_for_flux: true
-  flux_refiner_instructions: ''
+  flux_refiner_instructions: Convert keywords into a descriptive natural language
+    paragraph for Flux. Output ONLY the optimised prompt, no preamble.
   show_metadata_in_chat: false
   presets: {}
   active_preset: ''

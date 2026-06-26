@@ -1,24 +1,101 @@
 <!-- WELCOME PANEL -->
-<div id="tab-welcome" class="panel active" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding: 40px 20px; animation: fadeIn 0.8s ease;">
+<div id="tab-welcome" class="panel active">
 
-    <div style="margin-bottom: 20px;">
-        <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Logo" style="height: 80px; width: auto; filter: drop-shadow(0 0 10px rgba(0,0,0,0.2));">
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div style="text-align:center; padding: 40px 20px 30px; animation: fadeIn 0.8s ease;">
+        <div style="margin-bottom: 20px;">
+            <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Logo" style="height: 80px; width: auto; filter: drop-shadow(0 0 10px rgba(0,0,0,0.2));">
+        </div>
+        <h1 style="font-size:1.8em; margin-bottom:8px; color:var(--text);">Hecos Central Hub</h1>
+        <p style="color:var(--muted); max-width:480px; margin:0 auto; line-height:1.5; font-size:0.95em;">
+            {{ t('webui_welcome_desc') or 'Benvenuto nel cuore della configurazione di Hecos. Qui puoi regolare i moduli, il comportamento del sistema e gestire i plugin AI.' }}
+        </p>
     </div>
-    <h1 style="font-size:1.8em; margin-bottom:8px; color:var(--text);">Hecos Central Hub</h1>
-    <p style="color:var(--muted); max-width:450px; line-height:1.5; margin-bottom:25px; font-size:0.95em;">
-        {{ t('webui_welcome_desc') or 'Benvenuto nel cuore della configurazione di Hecos. Qui puoi regolare i moduli, il comportamento del sistema e gestire i plugin AI.' }}
-    </p>
 
-    <div style="display:flex; gap:15px; flex-wrap:wrap; justify-content:center; max-width:550px; margin-bottom:30px;">
-        <div style="background:var(--bg2); padding:12px; border-radius:12px; border:1px solid var(--border-color); flex:1; min-width:180px;">
-            <div style="font-size:20px; margin-bottom:8px; color:var(--accent);"><i class="fas fa-search"></i></div>
-            <h3 style="margin-bottom:4px; font-size:0.9em; color:var(--text);">{{ t('webui_welcome_search') or 'Quick Search' }}</h3>
-            <p style="font-size:0.8em; color:var(--muted); margin:0;">{{ t('webui_welcome_search_desc') or 'Use the search bar at the top to instantly find any setting.' }}</p>
+    <!-- ── HPM Quick Access ───────────────────────────────────────────────── -->
+    <div class="card" style="max-width:600px; margin:0 auto 20px; text-align:left; cursor:default; position:relative;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+            <div style="background:linear-gradient(135deg, var(--accent), var(--accent2)); width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <i class="fas fa-cube" style="color:#fff; font-size:18px;"></i>
+            </div>
+            <div>
+                <div style="font-weight:700; font-size:1.1em; color:var(--text);">Package Manager</div>
+                <div style="font-size:0.85em; color:var(--muted);">Install or remove .hpkg packages</div>
+            </div>
+            <button onclick="showTab('packages');" class="btn btn-primary" style="margin-left:auto; padding:8px 16px;">
+                Open <i class="fas fa-arrow-right" style="font-size:10px; margin-left:4px;"></i>
+            </button>
         </div>
-        <div style="background:var(--bg2); padding:12px; border-radius:12px; border:1px solid var(--border-color); flex:1; min-width:180px;">
-            <div style="font-size:20px; margin-bottom:8px; color:var(--accent);"><i class="fas fa-save"></i></div>
-            <h3 style="margin-bottom:4px; font-size:0.9em; color:var(--text);">{{ t('webui_welcome_save') or 'Auto Save' }}</h3>
-            <p style="font-size:0.8em; color:var(--muted); margin:0;">{{ t('webui_welcome_save_desc') or 'Changes are persisted automatically as you tweak them.' }}</p>
+        <div style="display:flex; gap:8px;">
+            <!-- Drop zone inline -->
+            <div id="welcome-hpm-dropzone"
+                 style="flex:1; border:1.5px dashed var(--border); background:var(--bg3); border-radius:10px; padding:14px; text-align:center; cursor:pointer; transition:all .2s; font-size:0.85em; color:var(--muted);"
+                 ondragover="event.preventDefault(); this.style.borderColor='var(--accent)'; this.style.color='var(--accent)'; this.style.background='rgba(var(--accent-rgb),0.05)';"
+                 ondragleave="this.style.borderColor='var(--border)'; this.style.color='var(--muted)'; this.style.background='var(--bg3)';"
+                 ondrop="hpmWelcomeDrop(event)"
+                 onclick="document.getElementById('welcome-hpm-input').click();">
+                <i class="fas fa-upload" style="margin-right:6px;"></i>
+                Drop .hpkg to install
+                <input type="file" id="welcome-hpm-input" accept=".hpkg,.zip" style="display:none;" onchange="hpmWelcomeFileSelected(event)">
+            </div>
         </div>
     </div>
+
+    <!-- ── Tips Row ───────────────────────────────────────────────────────── -->
+    <div style="display:flex; gap:20px; justify-content:center; max-width:600px; margin:0 auto; padding-bottom:40px;">
+        <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:24px 20px;">
+            <div style="font-size:24px; margin-bottom:12px; color:var(--accent);"><i class="fas fa-search"></i></div>
+            <h3 style="margin:0 0 6px; font-size:1em; color:var(--text);">{{ t('webui_welcome_search') or 'Quick Search' }}</h3>
+            <p style="font-size:0.85em; color:var(--muted); margin:0;">{{ t('webui_welcome_search_desc') or 'Use the search bar at the top to instantly find any setting.' }}</p>
+        </div>
+        <div class="card" style="flex:1; margin-bottom:0; text-align:center; padding:24px 20px;">
+            <div style="font-size:24px; margin-bottom:12px; color:var(--accent);"><i class="fas fa-save"></i></div>
+            <h3 style="margin:0 0 6px; font-size:1em; color:var(--text);">{{ t('webui_welcome_save') or 'Auto Save' }}</h3>
+            <p style="font-size:0.85em; color:var(--muted); margin:0;">{{ t('webui_welcome_save_desc') or 'Changes are persisted automatically as you tweak them.' }}</p>
+        </div>
+    </div>
+
 </div>
+
+<script>
+window.hpmWelcomeDrop = function(e) {
+    e.preventDefault();
+    const dz = document.getElementById('welcome-hpm-dropzone');
+    if (dz) {
+        dz.style.borderColor = 'var(--border)';
+        dz.style.color = 'var(--muted)';
+        dz.style.background = 'var(--bg3)';
+    }
+    const file = e.dataTransfer?.files?.[0];
+    if (file) {
+        if (typeof showTab === 'function') showTab('packages');
+        
+        // Wait until packages_panel.js is loaded and hpmInstallFile is available
+        const checkAndInstall = () => {
+            if (typeof window.hpmInstallFile === 'function') {
+                window.hpmInstallFile(file);
+            } else {
+                setTimeout(checkAndInstall, 100);
+            }
+        };
+        checkAndInstall();
+    }
+};
+
+window.hpmWelcomeFileSelected = function(e) {
+    const file = e.target?.files?.[0];
+    if (file) {
+        if (typeof showTab === 'function') showTab('packages');
+        
+        const checkAndInstall = () => {
+            if (typeof window.hpmInstallFile === 'function') {
+                window.hpmInstallFile(file);
+            } else {
+                setTimeout(checkAndInstall, 100);
+            }
+        };
+        checkAndInstall();
+    }
+    e.target.value = '';
+};
+</script>

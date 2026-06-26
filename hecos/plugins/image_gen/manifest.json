@@ -1,32 +1,25 @@
 {
     "tag": "IMAGE_GEN",
-    "description": "Generates AI art and images from text descriptions using advanced image models (Gemini Imagen, SD, etc). Use this for artistic creation.",
-    "icon": "\ud83c\udfa8",
-    "category": "PLUGINS",
+    "name": "Image Generation",
+    "version": "1.0.8",
+    "description": "AI Image Generation \u2014 Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration.",
     "lazy_load": true,
     "is_class_based": true,
-    "status": "ONLINE",
-    "routing_instructions": "[IMAGE_GEN: generate_image:description] - Generate an image from a textual prompt. Only use this if the user explicitly asks to create, draw, or generate an image.",
-    "commands": {
-        "generate_image": "Generates an image from a text description. Uses the configured provider."
-    },
+    "commands": {},
     "tool_schema": [
         {
-            "type": "function",
-            "function": {
-                "name": "IMAGE_GEN__generate_image",
-                "description": "Generates an image from a text description. Uses the configured provider.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "prompt": {
-                            "type": "string",
-                            "description": "Detailed description of the image or photo to generate. Translate to English if needed."
-                        }
-                    },
-                    "required": [
-                        "prompt"
-                    ]
+            "name": "IMAGE_GEN__generate_image",
+            "description": "Generates an image from a text description. Uses the configured provider.",
+            "parameters": {
+                "type": "object",
+                "required": [
+                    "prompt"
+                ],
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "Detailed description of the image or photo to generate. Translate to English if needed."
+                    }
                 }
             }
         }
@@ -45,10 +38,8 @@
             "example": "/img foto fotorealistica di un gatto su Marte",
             "icon": "\ud83d\uddbc\ufe0f",
             "method": "generate_image",
-            "args_schema": {
-                "prompt": "str"
-            },
             "requires_args": true
         }
-    ]
+    ],
+    "icon": "<i class=\"fas fa-image\"></i>"
 }

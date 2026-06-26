@@ -75,6 +75,19 @@ window.controlRoom = (function () {
         }
     }
 
+    // ── HPM package events: reset loaded flag so next open always re-fetches ──
+    (function() {
+        const _hpmChannel = new BroadcastChannel('hecos_widgets');
+        _hpmChannel.onmessage = (e) => {
+            if (e.data && e.data.type === 'widgets_reload_request') {
+                _loaded = false;
+                if (_isOpen && window.controlRoomGrid) {
+                    window.controlRoomGrid.debouncedRefresh();
+                }
+            }
+        };
+    })();
+
     // localStorage cross-tab sync (structural changes only)
     window.addEventListener('storage', (e) => {
         if (e.key === 'hecos_sidebar_sync' || e.key === 'hecos_room_sync') refresh();

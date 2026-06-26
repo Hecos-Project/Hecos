@@ -17,6 +17,7 @@ from .routes_security import init_security_routes
 from .routes_keys import init_keys_routes
 from .routes_docs import init_docs_routes
 from .routes_mcp_explore import init_mcp_explore_routes
+from .routes_packages import init_package_routes
 
 def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     """Initializes all component routes for the Web UI."""
@@ -65,3 +66,8 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as e:
             logger.warning(f"[WebUI] Hecos Flows routes unavailable: {e}")
 
+    # Hecos Package Manager (HPM)
+    try:
+        init_package_routes(app, root_dir, cfg_mgr, logger)
+    except Exception as e:
+        logger.warning(f"[WebUI] HPM routes failed to register: {e}")

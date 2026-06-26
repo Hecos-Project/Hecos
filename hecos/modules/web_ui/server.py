@@ -107,9 +107,9 @@ class HecosWebUIServer:
                     pass
 
                 if ssl_context:
-                    app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False, ssl_context=ssl_context)
+                    app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False, ssl_context=ssl_context, threaded=True)
                 else:
-                    app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False)
+                    app.run(host="0.0.0.0", port=self.port, debug=debug_on, use_reloader=False, threaded=True)
 
             except Exception as e:
                 self.logger.error(f"[WebUI] Flask exception: {e}")

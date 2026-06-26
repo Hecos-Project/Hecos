@@ -172,6 +172,36 @@ def get_all_widgets(config: dict = None) -> list:
 
         req_plugin = manifest.get("required_plugin")
         plugin_active = _is_plugin_active(req_plugin, config)
+        
+        # Override plugin_active if it is an HPM package and is currently disabled
+        try:
+            from hecos.core.package_manager.registry import PackageRegistry
+            data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
+            reg = PackageRegistry(data_dir=data_dir)
+            
+            # Map the extension_id to a package. We check if the extension path is inside any package's widgets.
+            hpm_packages = reg.list_all()
+            for p in hpm_packages:
+                snap = p.get("manifest_snapshot") or {}
+                if isinstance(snap, str):
+                    import json
+                    try: snap = json.loads(snap)
+                    except: snap = {}
+                
+                # Check if this widget belongs to this package
+                is_mine = False
+                for w in snap.get("widgets", []):
+                    epath = w.get("extension_path", "").rstrip("/")
+                    if epath.endswith(ext_id) or epath.endswith(f"/{ext_id}"):
+                        is_mine = True
+                        break
+                
+                if is_mine:
+                    if p.get("status") not in ("installed", "active"):
+                        plugin_active = False
+                    break
+        except Exception:
+            pass
         prefs = _get_widget_prefs(ext_id, config)
 
         try:
@@ -182,9 +212,9 @@ def get_all_widgets(config: dict = None) -> list:
         enriched = dict(manifest)
         enriched["extension_id"]  = ext_id
         enriched["plugin_active"] = plugin_active
-        enriched["enabled"]       = prefs.get("enabled", True)
-        enriched["visible"]       = prefs.get("visible", True)
-        enriched["room_visible"]  = prefs.get("room_visible", False)
+        enriched["enabled"]       = prefs.get("enabled", manifest.get("enabled", True))
+        enriched["visible"]       = prefs.get("visible", manifest.get("visible", False))
+        enriched["room_visible"]  = prefs.get("room_visible", manifest.get("room_visible", True))
         enriched["room_span"]     = prefs.get("room_span", 1)
         enriched["room_height"]   = prefs.get("room_height", None)
         enriched["theme"]         = prefs.get("theme", "default")
@@ -210,6 +240,25 @@ def discover_webui_extensions(webui_module_dir: str):
     the synthetic 'WEB_UI' parent tag.  Called once during server boot.
     """
     discover_extensions("WEB_UI", webui_module_dir)
+
+
+def purge_extension(ext_id: str, plugin_tag: str = "WEB_UI") -> bool:
+    """
+    Remove an extension from the in-memory registry immediately (runtime purge).
+    Called after a package is uninstalled so the widget disappears without restart.
+    Returns True if the extension was found and removed, False otherwise.
+    """
+    removed = False
+    if plugin_tag in _extension_registry and ext_id in _extension_registry[plugin_tag]:
+        del _extension_registry[plugin_tag][ext_id]
+        removed = True
+        logger.info(f"[EXT_LOADER] Extension '{ext_id}' purged from registry.")
+
+    key = (plugin_tag, ext_id)
+    if key in _extension_paths:
+        del _extension_paths[key]
+
+    return removed
 
 
 def load_eager_extensions(app, plugin_tag: str):

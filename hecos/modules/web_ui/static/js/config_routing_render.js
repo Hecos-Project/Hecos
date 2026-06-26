@@ -21,7 +21,7 @@ window.routingRender = {
 
         // Sort: BROWSER, AUTOMATION, IMAGE_GEN usually first, then alphabetical
         const sortedTags = Array.from(allTags).sort((a, b) => {
-            const highPriority = ['BROWSER', 'AUTOMATION', 'WEBCAM', 'FLOWS', 'IMAGE_GEN'];
+            const highPriority = ['BROWSER', 'AUTOMATION', 'WEBCAM', 'FLOWS'];
             const aPrio = highPriority.indexOf(a);
             const bPrio = highPriority.indexOf(b);
             if (aPrio !== -1 && bPrio !== -1) return aPrio - bPrio;
@@ -46,7 +46,7 @@ window.routingRender = {
         
         // FontAwesome icon map — mirrors config_manifest.js exactly
         const iconMap = {
-            'IMAGE_GEN':        '<i class="fas fa-image"></i>',
+
             'WEBCAM':           '<i class="fas fa-camera"></i>',
             'MEDIA_PLAYER':     '<i class="fas fa-music"></i>',
             'MEMORY':           '<i class="fas fa-memory"></i>',

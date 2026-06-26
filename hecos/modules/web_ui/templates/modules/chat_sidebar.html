@@ -75,19 +75,13 @@
     </div>
 
     <!-- Empty State -->
-    <div id="widgets-empty-state" class="sidebar-card" style="text-align:center; padding:24px 16px; {{ 'display:none;' if has_widgets }}">
-        <div style="font-size:32px; margin-bottom:12px; opacity:0.5;"><i class="fas fa-puzzle-piece"></i></div>
-        <div style="font-weight:600; color:var(--text); margin-bottom:4px;">{{ t('sidebar_empty_title') or 'Qui non c\'è niente' }}</div>
-        <div style="font-size:11px; color:var(--muted); margin-bottom:16px;">Personalizza la tua sidebar aggiungendo i widget che preferisci.</div>
-        
-        <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-            <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="flex:1; justify-content:center;">
-                <i class="fas fa-plus"></i> {{ t('sidebar_empty_add') or 'Aggiungi Widgets' }}
-            </a>
-            <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="width:36px; padding:0; justify-content:center; color:var(--muted);" title="Configura">
-                <i class="fas fa-cog"></i>
-            </a>
-        </div>
+    <div id="widgets-empty-state" class="sidebar-card" style="text-align:center; padding:20px 16px; {{ 'display:none;' if has_widgets }}">
+        <div style="font-size:28px; margin-bottom:8px; opacity:0.4;"><i class="fas fa-puzzle-piece"></i></div>
+        <div style="font-weight:600; font-size:13px; color:var(--text); margin-bottom:3px;">{{ t('sidebar_empty_title') or 'No active widgets' }}</div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:14px;">{{ t('sidebar_empty_desc') or 'Add a widget to get started.' }}</div>
+        <a href="/hecos/config/ui#widgets" target="_blank" class="sidebar-btn" style="display:inline-flex; align-items:center; gap:6px; justify-content:center; width:100%; padding:7px 12px;">
+            <i class="fas fa-plus"></i> {{ t('sidebar_empty_add') or 'Add a widget' }}
+        </a>
     </div>
   </div>
 
@@ -134,6 +128,18 @@
     <i class="fas fa-chevron-right" id="sidebar-expand-chevron"></i>
   </button>
   {% endif %}
+
+  <!-- HPM / Package Manager Quick Button -->
+  <button id="sidebar-hpm-btn"
+          onclick="window.open('/hecos/config/ui#packages', '_blank')"
+          title="Install and manage modules"
+          style="display:flex; align-items:center; justify-content:center; gap:7px; width:100%; padding:9px 14px; background:var(--bg2); border:none; border-top:1px solid var(--border); color:var(--text); font-family:var(--font-sans, 'Inter', sans-serif); font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; cursor:pointer; transition:color 0.2s, background 0.2s; flex-shrink:0;"
+          onmouseover="this.style.background='rgba(var(--accent-rgb), 0.06)'; this.style.color='var(--accent)';"
+          onmouseout="this.style.background='var(--bg2)'; this.style.color='var(--text)';">
+    <i class="fas fa-cube" style="color:var(--accent);"></i>
+    <span>PACKAGE MANAGER</span>
+    <i class="fas fa-chevron-right" style="margin-left:auto; opacity:0.5;"></i>
+  </button>
 
   <div class="sidebar-footer">
     <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos &mdash; Created by <strong>Antonio Meloni</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>

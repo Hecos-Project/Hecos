@@ -9,6 +9,7 @@ description = "Helping Companion System"
 dependencies = [
     "pydantic>=2.0",
     "pyyaml",
+    "tomli-w",
     "litellm",
     "tenacity",
     "babel",
@@ -27,6 +28,7 @@ dependencies = [
     "psutil",
     "flask",
     "flask-login",
+    "flask-compress",
     "cryptography",
     "pynput",
     "SpeechRecognition",

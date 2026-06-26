@@ -6,6 +6,9 @@
 
 async function saveConfig(silent = false) {
   if (isInitialLoading) return;
+  // Guard: buildPayload lives in config_mapper.js (Phase 2 script).
+  // If mappers aren't loaded yet, silently skip — no data loss since no panel is open yet.
+  if (typeof buildPayload !== 'function') return;
   if (!silent) setSaveMsg(I18N.msg_saving || 'Saving...', 'muted');
   try {
     const payload = buildPayload();

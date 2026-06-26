@@ -27,10 +27,8 @@ window.CONFIG_HUB = {
         { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA' },
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '<i class="fas fa-palette"></i>', cat: 'MULTIMEDIA', isCore: true },
         { id: 'media',         label: 'webui_mp_title',   icon: '<i class="fas fa-music"></i>', cat: 'MULTIMEDIA', pluginTag: 'MEDIA_PLAYER' },
-        { id: 'igen',      label: 'hub_mod_igen',         icon: '<i class="fas fa-image"></i>', cat: 'MULTIMEDIA', pluginTag: 'IMAGE_GEN' },
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
-        { id: 'bridge',    label: 'hub_mod_bridge',       icon: '<i class="fas fa-project-diagram"></i>', cat: 'CONNETTIVITÀ', isCore: true },
         { id: 'messenger', label: 'ext_messenger_title',  icon: '<i class="fab fa-telegram-plane"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MESSENGER' },
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
         { id: 'mail',      label: 'hub_mod_mail',         icon: '<i class="fas fa-envelope"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MAIL' },
@@ -51,17 +49,18 @@ window.CONFIG_HUB = {
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'lists',     label: 'hub_mod_lists',        icon: '<i class="fas fa-list-check"></i>', cat: 'SISTEMA', pluginTag: 'LISTS' },
+
+        { id: 'map',       label: 'hub_mod_map',          icon: '<i class="fas fa-map-marked-alt"></i>', cat: 'SISTEMA', pluginTag: 'MAP' },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
 
-        { id: 'widgets',   label: 'hub_mod_widgets',      icon: '<i class="fas fa-cubes"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '<i class="fas fa-users-cog"></i>', cat: 'SISTEMA', adminOnly: true, pluginTag: 'USERS' },
         { id: 'security',  label: 'hub_mod_security',     icon: '<i class="fas fa-shield-alt"></i>', cat: 'SISTEMA', adminOnly: true },
-        { id: 'plugins',   label: 'hub_mod_plugins',      icon: '<i class="fas fa-puzzle-piece"></i>', cat: 'SISTEMA' },
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA' },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' },
+        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'backup',    label: 'hub_mod_backup',       icon: '<i class="fas fa-shield-halved"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
@@ -87,7 +86,9 @@ window.CONFIG_HUB = {
     // Plugins that should NOT be shown in the Module Manager UI
     internalTags: [
         'WEB_UI',
-        'HELP'
+        'HELP',
+        'PLUGINS',
+        'WIDGETS'
     ]
 };
 
@@ -120,7 +121,6 @@ window.getIconForModule = function(id, name, metaIcon) {
 };
 
 window.CONFIG_HUB.tagMap = {
-    'IMAGE_GEN': 'igen',
     'MCP_BRIDGE': 'mcp',
     'DRIVE': 'drive',
     'REMOTE_TRIGGERS': 'remote-triggers',
@@ -151,9 +151,9 @@ window.CONFIG_HUB.tagMap = {
  */
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
-    'memory', 'voice', 'system', 'media', 'aesthetics', 'igen', 'webui',
+    'memory', 'voice', 'system', 'media', 'aesthetics', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'widgets', 'help', 'flows', 'lists', 'backup'
+    'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'lists', 'backup'
 ]);
