@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.27.4 (Runtime Alpha)
+# Hecos - Version 0.35.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.28.0`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
+> **Runtime Alpha Status**: Hecos is currently in `v0.35.0`. This is a Helping Companion System that bridges high-level reasoning with root-level system execution.
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem that bridges AI reasoning with root-level system execution and advanced networking. It transforms local hardware into a sovereign digital entity through an integrated dashboard and professional-grade security infrastructure.
@@ -21,11 +21,11 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced AI orchestration intuitive.
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.4 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.35.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS.
 
 ---
 
-## ✨ Key Features (v0.27.4)
+## ✨ Key Features (v0.35.0)
 * ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally.
 * ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands.
 * **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding.
@@ -40,7 +40,7 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.27.4 offe
 * 🧠 **High-Performance RAG (FastEmbed)** — CPU-native, multi-tenant vector memory utilizing ONNX and LanceDB for blazing-fast document ingestion.
 * 🔐 **Per-User Vault Isolation** — Consolidated memory architecture ensuring absolute privacy separation for semantic data and chat history per profile.
 * 🛡️ **3-Tier Privacy Architecture** — Unified session management with **Normal**, **Auto-Wipe** (RAM-only store, cleared on exit), and **Incognito** (Zero-trace) modes.
-* 📦 **Hecos Package Manager (HPM)** — Centralized package installer with Ed25519 digital signatures to securely install third-party plugins, modules, and widgets.
+* 📦 **Hecos Package Manager (HPM)** — The ultimate piece for universal extensibility. A centralized, dynamic installer that supports standalone `.hpkg` bundles. Easily install third-party plugins, widgets, and config panels with drag-and-drop, isolated configurations, and Ed25519 digital signatures.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Native support for the **Model Context Protocol**. Connect to thousands of external AI tools with a single click.
 * 🔭 **Deep MCP Discovery** — Advanced explorer with multi-registry search (Smithery, MCPSkills, GitHub) and one-click installation.
 * 🔒 **Professional Hecos PKI (HTTPS)** — Self-signing Root CA for a full "Green Lock" experience on all devices.
@@ -187,7 +187,7 @@ Included plugins:
 * **Media control & Model switching**
 * **Memory management**
 
-You can install new packages dynamically by dragging and dropping `.hpkg` files into the **Package Manager** inside the WebUI. All packages are verified via Ed25519 digital signatures for absolute security.
+You can install new packages dynamically by dragging and dropping `.hpkg` bundles into the **Package Manager** inside the WebUI. These standalone bundles contain their own logic, UI panels, and configuration schemas, making Hecos infinitely and universally extensible. All packages are verified via Ed25519 digital signatures for absolute security.
 
 ---
 
@@ -245,7 +245,7 @@ Hecos uses a modular documentation system localized in EN, IT, and ES.
 
 ### Local Access (Modular)
 Detailed guides are located in the `docs/` folder:
-- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.28.0.
+- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.35.0.
 - 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details.
 
 
