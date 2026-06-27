@@ -215,9 +215,9 @@ function _hpmStoreRenderCard(pkg) {
   const customIconHtml = `<img src="${_hesc(finalIconUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.outerHTML='<i class=\\'fas ${icon}\\' style=\\'color:${meta.color};font-size:18px;\\'></i>'">`;
 
   const finalScreenshotUrl = (pkg.screenshots && pkg.screenshots.length > 0) ? pkg.screenshots[0] : fallbackScreenshot;
-  const screenshotHtml = `<div style="width:100%; height:130px; margin-top:10px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.15);">
-         <img src="${_hesc(finalScreenshotUrl)}" style="width:100%; height:100%; object-fit:cover; cursor:zoom-in; transition:transform 0.3s ease;" 
-              onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
+  const screenshotHtml = `<div style="width:100%; height:130px; margin-top:10px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center;">
+         <img src="${_hesc(finalScreenshotUrl)}" style="width:100%; height:100%; object-fit:contain; padding:12px; box-sizing:border-box; cursor:zoom-in; transition:transform 0.3s ease;" 
+              onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'"
               onclick="window.open(this.src, '_blank')" loading="lazy" onerror="this.parentElement.style.display='none'">
        </div>`;
 
