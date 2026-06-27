@@ -23,7 +23,7 @@ _chat_log = logging.getLogger("HecosChatRoutes")
 _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 
 
-def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", sender_tab_id=None):
+def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None):
     sess = _sessions.get(session_id)
     if not sess:
         return
@@ -53,6 +53,7 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
             state_manager=sm,
             trace_callback=_session_trace,
             current_user_id=user_id,
+            current_user_role=user_role,
             session_id=session_id,
             sender_tab_id=sender_tab_id
         )

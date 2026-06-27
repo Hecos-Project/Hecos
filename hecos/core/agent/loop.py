@@ -13,11 +13,12 @@ class AgentExecutor:
     Orchestrates the repeated multi-turn connection between Brain and Plugins.
     """
     
-    def __init__(self, config=None, config_manager=None, state_manager=None, max_iterations=None, trace_callback=None, current_user_id="admin", session_id=None, sender_tab_id=None):
+    def __init__(self, config=None, config_manager=None, state_manager=None, max_iterations=None, trace_callback=None, current_user_id="admin", current_user_role="admin", session_id=None, sender_tab_id=None):
         self.config = config
         self.config_manager = config_manager
         self.state_manager = state_manager
         self.current_user_id = current_user_id
+        self.current_user_role = current_user_role
         self.session_id = session_id
         self.sender_tab_id = sender_tab_id
         # Optional direct callback for WebUI session traces.
@@ -105,6 +106,7 @@ class AgentExecutor:
                     raw_input=testo_pulito,
                     config=self.config,
                     config_manager=self.config_manager,
+                    current_user_role=self.current_user_role,
                     current_user_id=self.current_user_id,
                     session_id=self.session_id,
                     sender_tab_id=self.sender_tab_id,

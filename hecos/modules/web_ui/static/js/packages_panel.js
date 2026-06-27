@@ -131,6 +131,9 @@ window.hpmLoadPackages = async function () {
         grid.innerHTML = window.hpmRenderHierarchy(packages);
     }
 
+    // Silently check for updates in background (non-blocking)
+    _hpmCheckUpdatesBackground(packages);
+
   } catch (err) {
     grid.innerHTML = `
       <div style="color:var(--danger,#ef4444);padding:16px;text-align:center;font-size:0.85em;">
@@ -139,6 +142,99 @@ window.hpmLoadPackages = async function () {
       </div>`;
   }
 };
+
+/**
+ * Silently checks the store catalog for updates and patches the rendered cards.
+ * Does NOT block the initial render.
+ */
+async function _hpmCheckUpdatesBackground(packages) {
+  try {
+    // Use cached catalog if available, or fetch a fresh one
+    const url = '/api/hpm/store/catalog';
+    const resp = await fetch(url);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data.ok || !data.catalog) return;
+
+    const catalogPkgs = data.catalog.packages || [];
+    const catalogMap = {};
+    catalogPkgs.forEach(p => { catalogMap[p.id] = p.version; });
+
+    let updatesFound = 0;
+
+    packages.forEach(pkg => {
+      const catalogVersion = catalogMap[pkg.id];
+      if (!catalogVersion || pkg.version === 'built-in') return;
+
+      const hasUpdate = catalogVersion !== pkg.version;
+      pkg.update_available = hasUpdate;
+      pkg.catalog_version = catalogVersion;
+
+      if (hasUpdate) {
+        updatesFound++;
+        // Inject a small update badge into the already-rendered card
+        const card = document.getElementById(`hpm-pkg-${pkg.id}`);
+        if (card && !card.querySelector('.hpm-update-badge')) {
+          const actionsDiv = card.querySelector('div[style*="flex-shrink:0"]');
+          if (actionsDiv) {
+            const badge = document.createElement('button');
+            badge.className = 'hpm-update-badge btn btn-sm';
+            badge.title = `Update to v${catalogVersion}`;
+            badge.style.cssText = `
+              background:linear-gradient(135deg,#f59e0b,#d97706);
+              color:#fff;border:none;border-radius:6px;
+              padding:4px 9px;font-size:10px;font-weight:700;
+              cursor:pointer;margin-right:4px;display:inline-flex;
+              align-items:center;gap:4px;`;
+            badge.innerHTML = `<i class="fas fa-arrow-up"></i> v${catalogVersion}`;
+            badge.onclick = () => {
+              // Switch to Store tab and trigger install
+              if (typeof window.hpmSwitchTab === 'function') {
+                window.hpmSwitchTab('store');
+                // Wait for store to init then install
+                setTimeout(() => {
+                  const catalogPkg = catalogPkgs.find(p => p.id === pkg.id);
+                  if (catalogPkg && typeof window.hpmStoreInstall === 'function') {
+                    window.hpmStoreInstall(catalogPkg.id, catalogPkg.download_url, catalogPkg.name);
+                  }
+                }, 800);
+              }
+            };
+            actionsDiv.prepend(badge);
+          }
+        }
+      }
+    });
+
+    // Update the Store tab button badge
+    if (updatesFound > 0) {
+      const storeBtn = document.getElementById('hpm-tab-btn-store');
+      if (storeBtn) {
+        const existingBadge = storeBtn.querySelector('.hpm-update-count');
+        if (!existingBadge) {
+          const updateBadge = document.createElement('span');
+          updateBadge.className = 'hpm-update-count';
+          updateBadge.style.cssText = `
+            position:absolute;top:-6px;right:-6px;
+            background:#f59e0b;color:#000;
+            font-size:0.55em;font-weight:800;padding:2px 5px;
+            border-radius:6px;letter-spacing:.5px;`;
+          updateBadge.textContent = updatesFound;
+          storeBtn.querySelector('span')?.remove(); // Remove "NEW" badge
+          storeBtn.appendChild(updateBadge);
+        } else {
+          existingBadge.textContent = updatesFound;
+        }
+      }
+    }
+  } catch (e) {
+    // Silently fail — store might be offline
+    console.debug('[HPM] Update check failed (offline?):', e.message);
+  }
+}
+
+window.hpmCheckUpdates = _hpmCheckUpdatesBackground;
+
 
 // ── Auto-init ─────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', window.hpmInit);
