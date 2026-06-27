@@ -13,15 +13,6 @@ pipeline:
     text: Buongiorno. Questa è la routine del mattino 01
   depends_on:
   - audio__play_alarm_2
-- id: control__start_1
-  action: CONTROL__start
-  position:
-    x: -875
-    y: 20
-  params:
-    on_timeout_continue: true
-    priority: 0
-    timeout_seconds: 0
 - id: audio__play_alarm_2
   action: AUDIO__play_alarm
   position:
@@ -88,6 +79,16 @@ pipeline:
     text: '{{ notizie1 }}'
   depends_on:
   - Notizie della giornata
+- id: control__start_1
+  action: CONTROL__start
+  position:
+    x: -674
+    y: 298
+  params:
+    on_timeout_continue: true
+    priority: 0
+    timeout_seconds: 0
+  disable_mode: stop
 - id: audio__speak_2
   action: AUDIO__speak
   position:
@@ -161,7 +162,7 @@ pipeline:
   - audio__speak_5
 _meta:
   created_at: '2026-06-08T07:28:13.772859'
-  updated_at: '2026-06-24T14:56:27.004565'
+  updated_at: '2026-06-27T07:02:12.883251'
   last_run: '2026-06-08T15:30:03.922517'
 areas:
 - id: area_6510

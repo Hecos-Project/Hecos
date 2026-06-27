@@ -70,7 +70,7 @@ def _save_cache(cache_file: str, catalog: dict) -> None:
 
 def _fetch_remote_catalog(cfg_mgr) -> dict:
     """Download the catalog JSON from the configured store URL."""
-    url = cfg_mgr.get("hpm.store_catalog_url", CATALOG_URL) if cfg_mgr else CATALOG_URL
+    url = (cfg_mgr.get("hpm.store_catalog_url") or CATALOG_URL) if cfg_mgr else CATALOG_URL
     
     # If the URL is a local file path, read it directly
     if not url.startswith("http"):

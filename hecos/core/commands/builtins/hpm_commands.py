@@ -50,7 +50,7 @@ def _fetch_store_catalog(config_manager=None) -> list[dict]:
 
     url = "https://hecos-project.github.io/store/index.json"
     if config_manager:
-        url = config_manager.get("hpm.store_catalog_url", url)
+        url = config_manager.get("hpm.store_catalog_url") or url
 
     # Local development or local file override
     if not url.startswith("http"):
