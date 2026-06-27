@@ -172,3 +172,31 @@ def install_i18n(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[
     i18n_dst = os.path.join(hecos_root, "core", "i18n", "locales")
     os.makedirs(i18n_dst, exist_ok=True)
     return copy_tree(i18n_src, i18n_dst)
+
+def install_docs(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
+    target_dir_name = _resolve_target_dir(manifest)
+    if target_dir_name is None:
+        # Fallback for widgets
+        if manifest.widgets:
+            ext_base = os.path.join(hecos_root, "modules", "web_ui", "extensions")
+            target_base = os.path.join(ext_base, os.path.basename(manifest.widgets[0].extension_path.rstrip("/")))
+        else:
+            return []
+    else:
+        target_base = os.path.join(hecos_root, target_dir_name, manifest.id)
+        
+    os.makedirs(target_base, exist_ok=True)
+    installed = []
+    
+    docs = []
+    if getattr(manifest, "readme", None): docs.append(manifest.readme)
+    if getattr(manifest, "changelog", None): docs.append(manifest.changelog)
+    
+    for doc in docs:
+        src = os.path.join(staging, doc)
+        if os.path.isfile(src):
+            dst = os.path.join(target_base, os.path.basename(doc))
+            shutil.copy2(src, dst)
+            installed.append(dst)
+            
+    return installed

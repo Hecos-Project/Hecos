@@ -256,6 +256,12 @@ function _hpmStoreRenderCard(pkg) {
                   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
         ${_hesc(pkg.description || 'No description available.')}
       </div>
+      <div style="margin-top:-6px;text-align:right;">
+        <span onclick="window.hpmStoreShowReadMe('${pkg.id}')"
+              style="font-size:0.75em;color:var(--accent);cursor:pointer;font-weight:600;">
+          Leggi di più <i class="fas fa-chevron-right" style="font-size:0.8em;margin-left:2px;"></i>
+        </span>
+      </div>
 
       <!-- Tags -->
       ${pkg.tags && pkg.tags.length ? `
@@ -283,16 +289,50 @@ function _hpmStoreBuildDetailModal() {
     <div id="hpm-store-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
          z-index:9999;align-items:center;justify-content:center;padding:20px;">
       <div style="background:var(--bg2);border:1px solid var(--border-color);border-radius:16px;
-                  max-width:560px;width:100%;max-height:80vh;overflow-y:auto;padding:28px;
-                  box-shadow:0 20px 60px rgba(0,0,0,.6);">
-        <div id="hpm-store-detail-content"></div>
-        <div style="margin-top:20px;text-align:right;">
+                  max-width:700px;width:100%;max-height:85vh;overflow-y:auto;padding:28px;
+                  box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative;">
+        <div id="hpm-store-detail-content" style="color:var(--text);font-size:0.9em;line-height:1.6;"></div>
+        <div style="margin-top:20px;text-align:right;border-top:1px solid var(--border-color);padding-top:16px;">
           <button onclick="document.getElementById('hpm-store-detail-modal').style.display='none'"
-                  class="btn btn-secondary">Close</button>
+                  class="btn btn-secondary">Chiudi</button>
         </div>
       </div>
     </div>`;
 }
+
+window.hpmStoreShowReadMe = async function(pkgId) {
+  const pkg = _hpmStoreCatalogCache.find(p => p.id === pkgId);
+  if (!pkg) return;
+  
+  const modal = document.getElementById('hpm-store-detail-modal');
+  const content = document.getElementById('hpm-store-detail-content');
+  
+  modal.style.display = 'flex';
+  content.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
+  
+  let mdText = "Nessuna documentazione fornita.";
+  
+  try {
+    if (pkg.readme_url) {
+      const res = await fetch(pkg.readme_url);
+      if (res.ok) mdText = await res.text();
+    } else {
+      // Fallback: try raw github if standard structured
+      const url = \`https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/\${pkg.id}_src/README.md\`;
+      const res = await fetch(url);
+      if (res.ok) mdText = await res.text();
+    }
+  } catch(e) {
+    console.error("Failed to fetch README", e);
+  }
+  
+  // Basic markdown rendering if marked is available, else text
+  if (typeof marked !== 'undefined') {
+    content.innerHTML = marked.parse(mdText);
+  } else {
+    content.innerHTML = \`<pre style="white-space:pre-wrap;font-family:inherit;">\${_hesc(mdText)}</pre>\`;
+  }
+};
 
 function _hpmStoreBuildProgressModal() {
   return `

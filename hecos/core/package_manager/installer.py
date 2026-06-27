@@ -26,7 +26,9 @@ from .installer_steps import (
     install_webui_assets,
     install_widgets,
     install_i18n,
-    rollback
+    install_docs,
+    rollback,
+    _resolve_target_dir
 )
 
 @dataclass
@@ -112,7 +114,11 @@ class PackageInstaller:
         result.dep_report = dep_report
 
         if dep_report.missing_packages:
-            result.warnings.append(f"Missing HPM packages: {dep_report.missing_packages}")
+            return InstallResult(
+                success=False, 
+                error=f"Missing required HPM packages: {', '.join(dep_report.missing_packages)}. Please install them first."
+            )
+            
         if dep_report.pip_failures:
             result.warnings.append(f"Some pip requirements failed to install: {dep_report.pip_failures}")
 
@@ -169,8 +175,12 @@ class PackageInstaller:
             # ── Step 9: Copy i18n files ───────────────────────────────────────
             installed_files.extend(install_i18n(staging_dir, manifest, self._hecos_root))
 
+            # ── Step 9.5: Copy documentation files ────────────────────────────
+            installed_files.extend(install_docs(staging_dir, manifest, self._hecos_root))
+
             # ── Step 10: Register in DB ───────────────────────────────────────
-            install_path = os.path.join(self._hecos_root, manifest.target_dir, manifest.id)
+            target_dir_name = _resolve_target_dir(manifest) or manifest.target_dir
+            install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
             manifest_dict = manifest.model_dump()
             ok = self._registry.register(manifest_dict, install_path, installed_files)
             if not ok:

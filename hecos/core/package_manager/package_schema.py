@@ -143,6 +143,37 @@ class HpkgManifest(BaseModel):
         default_factory=list,
         description="List of sidebar/control room widgets bundled with this package"
     )
+    
+    # Store & Documentation
+    readme: str = Field(
+        "README.md",
+        description="Path inside zip to the markdown documentation file. Mandatory for Store."
+    )
+    readme_url: Optional[str] = Field(
+        None,
+        description="Optional URL to a raw markdown file for Store preview."
+    )
+    changelog: Optional[str] = Field(
+        None,
+        description="Path inside zip to the changelog markdown file."
+    )
+    repository_url: Optional[str] = Field(
+        None,
+        description="URL to the package's source code repository."
+    )
+    homepage: Optional[str] = Field(
+        None,
+        description="URL to the package's homepage."
+    )
+    license: str = Field(
+        "MIT",
+        description="License of the package."
+    )
+    keywords: List[str] = Field(
+        default_factory=list,
+        description="List of keywords to help search for this package in the Store."
+    )
+    
     icon_url: Optional[str] = Field(
         None,
         description="Optional URL to an icon image for the package (used in Store)"
