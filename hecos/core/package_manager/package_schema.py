@@ -143,6 +143,14 @@ class HpkgManifest(BaseModel):
         default_factory=list,
         description="List of sidebar/control room widgets bundled with this package"
     )
+    icon_url: Optional[str] = Field(
+        None,
+        description="Optional URL to an icon image for the package (used in Store)"
+    )
+    screenshots: List[str] = Field(
+        default_factory=list,
+        description="Optional list of screenshot URLs showcasing the package (used in Store)"
+    )
 
     # Dependencies
     dependencies: List[str] = Field(

@@ -208,6 +208,18 @@ function _hpmStoreRenderCard(pkg) {
          <i class="fas fa-download" style="margin-right:4px;"></i> Install
        </button>`;
 
+  const customIconHtml = pkg.icon_url 
+    ? `<img src="${_hesc(pkg.icon_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;" onerror="this.outerHTML='<i class=\\'fas ${icon}\\' style=\\'color:${meta.color};font-size:18px;\\'></i>'">` 
+    : `<i class="fas ${icon}" style="color:${meta.color};font-size:18px;"></i>`;
+
+  const screenshotHtml = (pkg.screenshots && pkg.screenshots.length > 0)
+    ? `<div style="width:100%; height:130px; margin-top:10px; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.15);">
+         <img src="${_hesc(pkg.screenshots[0])}" style="width:100%; height:100%; object-fit:cover; cursor:zoom-in; transition:transform 0.3s ease;" 
+              onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"
+              onclick="window.open(this.src, '_blank')" loading="lazy" onerror="this.parentElement.style.display='none'">
+       </div>`
+    : '';
+
   return `
     <div class="hpm-store-card" style="background:var(--bg2);border:1px solid var(--border-color);
          border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;
@@ -218,8 +230,8 @@ function _hpmStoreRenderCard(pkg) {
       <!-- Card Header -->
       <div style="display:flex;align-items:flex-start;gap:13px;">
         <div style="width:44px;height:44px;border-radius:12px;flex-shrink:0;
-                    background:${meta.color}20;display:flex;align-items:center;justify-content:center;">
-          <i class="fas ${icon}" style="color:${meta.color};font-size:18px;"></i>
+                    background:${meta.color}20;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          ${customIconHtml}
         </div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;color:var(--text);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
@@ -235,6 +247,8 @@ function _hpmStoreRenderCard(pkg) {
           </div>
         </div>
       </div>
+      
+      ${screenshotHtml}
 
       <!-- Description -->
       <div style="font-size:0.8em;color:var(--muted);line-height:1.5;
