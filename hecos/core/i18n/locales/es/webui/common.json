@@ -164,5 +164,10 @@
     "webui_telemetry_warning": "ADVERTENCIA: Habilitar la supervisión de hardware en tiempo real puede provocar inestabilidad o caídas de rendimiento en sistemas de bajos recursos.",
     "webui_desc_messenger": "Envía y recibe mensajes a través de Telegram, WhatsApp y Discord.",
     "webui_desc_mail": "Cliente de correo integrado. Lee perfiles SMTP/IMAP, gestiona borradores, envía y sincroniza con soporte automático de proveedores e integración con la libreta de direcciones.",
-    "webui_desc_lists": "Gestión de listas universales. Admite listas de compras, tareas, listas negras. Proporciona niveles de prioridad, etiquetas y arrastrar y soltar."
+    "webui_desc_lists": "Gestión de listas universales. Admite listas de compras, tareas, listas negras. Proporciona niveles de prioridad, etiquetas y arrastrar y soltar.",
+    "auth_username_label": "Identificador",
+    "auth_password_label": "Código de Acceso",
+    "auth_remember_me": "Mantener la sesión iniciada",
+    "auth_login_button": "Autenticar",
+    "auth_invalid_credentials": "Credenciales inválidas. Inténtalo de nuevo."
 }
