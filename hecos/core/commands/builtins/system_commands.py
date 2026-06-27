@@ -131,6 +131,45 @@ def _cmd_reload_commands(raw_args_str="", config=None, **kwargs) -> str:
         return f"❌ Errore reload registry: {e}"
 
 
+def _cmd_souls(raw_args_str="", config=None, config_manager=None, **kwargs) -> str:
+    """List all available AI personalities (souls)."""
+    try:
+        from hecos.modules.personality.main import tools as personality_tools
+        return personality_tools.list_souls(config_manager=config_manager)
+    except Exception as e:
+        # Fallback: scan the personality directory directly
+        try:
+            import os
+            hecos_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+            p_dir = os.path.join(hecos_dir, "personality")
+            files = sorted([f for f in os.listdir(p_dir) if f.endswith('.yaml')])
+            if not files:
+                return "❌ Nessuna personalità trovata."
+            cfg = config or (config_manager.config if config_manager else {})
+            active = cfg.get("ai", {}).get("active_personality", "")
+            lines = ["## 🧠 Personalità Disponibili\n"]
+            for i, f in enumerate(files):
+                name = f.replace('.yaml', '')
+                marker = " ✦ *attiva*" if f == active else ""
+                lines.append(f"{i+1}. **{name}**{marker}")
+            lines.append("\n*Usa `/soul <nome>` per cambiare.*")
+            return "\n".join(lines)
+        except Exception as e2:
+            return f"❌ Errore: {e2}"
+
+
+def _cmd_soul(raw_args_str="", config=None, config_manager=None, **kwargs) -> str:
+    """Switch the active AI personality by name or index number."""
+    name = raw_args_str.strip()
+    if not name:
+        return "**Uso:** `/soul <nome_o_indice>` — es. `/soul Motoko` oppure `/soul 2`\n\nUsa `/souls` per vedere la lista completa."
+    try:
+        from hecos.modules.personality.main import tools as personality_tools
+        return personality_tools.switch_soul(name, config_manager=config_manager)
+    except Exception as e:
+        return f"❌ Errore durante il cambio personalità: {e}"
+
+
 # ── Command descriptors ───────────────────────────────────────────────────────
 
 SYSTEM_COMMANDS = [
@@ -209,5 +248,31 @@ SYSTEM_COMMANDS = [
         "requires_args": False,
         "save_to_memory": False,
         "_handler": _cmd_reload_commands,
+    },
+    {
+        "id": "souls",
+        "aliases": ["/souls", "/personas", "/personality list"],
+        "description": "Elenca tutte le personalità (Souls) disponibili",
+        "usage": "/souls",
+        "example": "/souls",
+        "icon": "📋",
+        "category": "PERSONA",
+        "requires_auth": "any",
+        "requires_args": False,
+        "save_to_memory": False,
+        "_handler": _cmd_souls,
+    },
+    {
+        "id": "soul",
+        "aliases": ["/soul", "/persona", "/switch soul"],
+        "description": "Cambia la personalità attiva (per nome o numero)",
+        "usage": "/soul <nome_o_indice>",
+        "example": "/soul Motoko",
+        "icon": "🧠",
+        "category": "PERSONA",
+        "requires_auth": "any",
+        "requires_args": True,
+        "save_to_memory": False,
+        "_handler": _cmd_soul,
     },
 ]
