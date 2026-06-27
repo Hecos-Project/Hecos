@@ -205,6 +205,9 @@ function _hpmStoreRenderCard(pkg) {
               style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;
                      border:none;border-radius:8px;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;
                      transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+         <i class="fas fa-download" style="margin-right:4px;"></i> Install
+       </button>`;
+
   const fallbackIcon = 'https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png';
   const fallbackScreenshot = 'https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png';
 
