@@ -113,8 +113,8 @@
                 style="padding:6px 10px;font-size:0.78em;">
           <i class="fas fa-sync-alt"></i>
         </button>
-        <button class="btn-icon" onclick="if(window._packages)window.hpmCheckUpdates(window._packages);"
-                title="Check for updates"
+        <button class="btn-icon" onclick="window.hpmCheckUpdates()"
+                title="{{ t('hpm_btn_check_updates') or 'Check for updates' }}"
                 style="padding:6px 10px;font-size:0.78em;">
           <i class="fas fa-arrow-circle-up"></i>
         </button>
@@ -164,36 +164,50 @@ window.HPM_I18N = {
   disable: "{{ t('hpm_action_disable') or 'Disable' }}",
   uninstall: "{{ t('hpm_action_uninstall') or 'Uninstall' }}",
   tooltip_builtin: "{{ t('hpm_builtin_tooltip') or 'Built-in module — cannot be removed' }}",
-  confirm_uninstall: "{{ t('hpm_confirm_uninstall') or 'Are you sure you want to uninstall the package \"%s\"?' }}"
+  confirm_uninstall: "{{ t('hpm_confirm_uninstall') or 'Are you sure you want to uninstall the package \"%s\"?' }}",
+  btn_check_updates: "{{ t('hpm_btn_check_updates') or 'Check for updates' }}",
+  btn_checking: "{{ t('hpm_btn_checking') or 'Checking...' }}",
+  update_avail_single: "{{ t('hpm_update_avail_single') or 'update available' }}",
+  update_avail_plural: "{{ t('hpm_update_avail_plural') or 'updates available' }}",
+  update_all_ok: "{{ t('hpm_update_all_ok') or 'All modules are up to date!' }}",
+  update_offline: "{{ t('hpm_update_offline') or 'Cannot contact the Store. Check your connection.' }}",
+  update_no_modules: "{{ t('hpm_update_no_modules') or 'No modules loaded. Refresh the list first.' }}"
 };
 </script>
 
-<!-- Load the HPM panel scripts (once, on first tab open) -->
+<!-- Load the HPM panel scripts — always reload to pick up changes -->
 <script>
 (function() {
-  if (!window._hpmScriptLoaded) {
-    window._hpmScriptLoaded = true;
-    const scripts = [
-      '/static/js/packages_panel_render.js',
-      '/static/js/packages_panel_install.js',
-      '/static/js/packages_panel_manage.js',
-      '/static/js/packages_panel_store.js',
-      '/static/js/packages_panel.js'
-    ];
-    let loadedCount = 0;
-    scripts.forEach(src => {
-      const s = document.createElement('script');
-      s.src = src + '?v={{ version }}';
-      s.onload = () => {
-        loadedCount++;
-        if (loadedCount === scripts.length && window.hpmInit) {
-          window.hpmInit();
-        }
-      };
-      document.head.appendChild(s);
-    });
-  } else if (window.hpmInit) {
-    window.hpmInit();
-  }
+  // Use a timestamp so JS changes are always picked up without restarting
+  const _hpmTs = Date.now();
+  const scripts = [
+    '/static/js/packages_panel_render.js',
+    '/static/js/packages_panel_install.js',
+    '/static/js/packages_panel_manage.js',
+    '/static/js/packages_panel_store.js',
+    '/static/js/packages_panel.js'
+  ];
+
+  // Remove old script tags from previous loads so we get fresh ones
+  scripts.forEach(src => {
+    document.querySelectorAll(`script[src^="${src}"]`).forEach(el => el.remove());
+  });
+
+  // Reset state so init runs again
+  window._hpmScriptLoaded = false;
+  window._hpmStoreState = null;
+
+  let loadedCount = 0;
+  scripts.forEach(src => {
+    const s = document.createElement('script');
+    s.src = src + '?v={{ version }}&t=' + _hpmTs;
+    s.onload = () => {
+      loadedCount++;
+      if (loadedCount === scripts.length && window.hpmInit) {
+        window.hpmInit();
+      }
+    };
+    document.head.appendChild(s);
+  });
 })();
 </script>

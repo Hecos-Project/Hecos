@@ -144,17 +144,26 @@ window.hpmLoadPackages = async function () {
 };
 
 /**
- * Silently checks the store catalog for updates and patches the rendered cards.
- * Does NOT block the initial render.
+ * Checks the store catalog for updates.
+ * @param {Array}   packages     - The currently loaded packages array
+ * @param {boolean} showFeedback - If true, shows toasts and button spinner (manual call)
  */
-async function _hpmCheckUpdatesBackground(packages) {
+async function _hpmCheckUpdatesBackground(packages, showFeedback = false) {
+  const checkBtn = document.querySelector('button[onclick*="hpmCheckUpdates"]');
+
+  if (showFeedback && checkBtn) {
+    checkBtn.disabled = true;
+    checkBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    checkBtn.title = window.HPM_I18N?.btn_checking || 'Checking…';
+  }
+
   try {
-    // Use cached catalog if available, or fetch a fresh one
-    const url = '/api/hpm/store/catalog';
+    // Force a fresh catalog fetch when called manually, use cache otherwise
+    const url = showFeedback ? '/api/hpm/store/catalog?refresh=1' : '/api/hpm/store/catalog';
     const resp = await fetch(url);
-    if (!resp.ok) return;
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
-    if (!data.ok || !data.catalog) return;
+    if (!data.ok || !data.catalog) throw new Error(data.error || 'Invalid catalog');
 
     const catalogPkgs = data.catalog.packages || [];
     const catalogMap = {};
@@ -172,7 +181,7 @@ async function _hpmCheckUpdatesBackground(packages) {
 
       if (hasUpdate) {
         updatesFound++;
-        // Inject a small update badge into the already-rendered card
+        // Inject update badge into the already-rendered card
         const card = document.getElementById(`hpm-pkg-${pkg.id}`);
         if (card && !card.querySelector('.hpm-update-badge')) {
           const actionsDiv = card.querySelector('div[style*="flex-shrink:0"]');
@@ -188,10 +197,8 @@ async function _hpmCheckUpdatesBackground(packages) {
               align-items:center;gap:4px;`;
             badge.innerHTML = `<i class="fas fa-arrow-up"></i> v${catalogVersion}`;
             badge.onclick = () => {
-              // Switch to Store tab and trigger install
               if (typeof window.hpmSwitchTab === 'function') {
                 window.hpmSwitchTab('store');
-                // Wait for store to init then install
                 setTimeout(() => {
                   const catalogPkg = catalogPkgs.find(p => p.id === pkg.id);
                   if (catalogPkg && typeof window.hpmStoreInstall === 'function') {
@@ -206,34 +213,105 @@ async function _hpmCheckUpdatesBackground(packages) {
       }
     });
 
-    // Update the Store tab button badge
-    if (updatesFound > 0) {
-      const storeBtn = document.getElementById('hpm-tab-btn-store');
-      if (storeBtn) {
-        const existingBadge = storeBtn.querySelector('.hpm-update-count');
-        if (!existingBadge) {
-          const updateBadge = document.createElement('span');
-          updateBadge.className = 'hpm-update-count';
-          updateBadge.style.cssText = `
-            position:absolute;top:-6px;right:-6px;
-            background:#f59e0b;color:#000;
-            font-size:0.55em;font-weight:800;padding:2px 5px;
-            border-radius:6px;letter-spacing:.5px;`;
-          updateBadge.textContent = updatesFound;
-          storeBtn.querySelector('span')?.remove(); // Remove "NEW" badge
-          storeBtn.appendChild(updateBadge);
-        } else {
-          existingBadge.textContent = updatesFound;
-        }
+    // ── Update the Store tab button badge ────────────────────────────────────
+    const storeBtn = document.getElementById('hpm-tab-btn-store');
+    if (storeBtn) {
+      // Remove old NEW badge or update count
+      storeBtn.querySelectorAll('span').forEach(s => s.remove());
+      if (updatesFound > 0) {
+        const updateBadge = document.createElement('span');
+        updateBadge.className = 'hpm-update-count';
+        updateBadge.style.cssText = `
+          position:absolute;top:-6px;right:-6px;
+          background:#f59e0b;color:#000;
+          font-size:0.55em;font-weight:800;padding:2px 5px;
+          border-radius:6px;letter-spacing:.5px;`;
+        updateBadge.textContent = updatesFound;
+        storeBtn.appendChild(updateBadge);
       }
     }
+
+    // ── Feedback toast (only on manual call) ─────────────────────────────────
+    if (showFeedback) {
+      if (updatesFound > 0) {
+        const names = packages
+          .filter(p => p.update_available)
+          .map(p => p.name)
+          .join(', ');
+        const availStr = updatesFound === 1 
+            ? (window.HPM_I18N?.update_avail_single || 'update available')
+            : (window.HPM_I18N?.update_avail_plural || 'updates available');
+        _hpmShowUpdateToast(
+          `⬆️ ${updatesFound} ${availStr}: ${names}`,
+          'update'
+        );
+      } else {
+        _hpmShowUpdateToast(window.HPM_I18N?.update_all_ok || 'All modules are up to date!', 'ok');
+      }
+    }
+
   } catch (e) {
-    // Silently fail — store might be offline
-    console.debug('[HPM] Update check failed (offline?):', e.message);
+    console.debug('[HPM] Update check failed:', e.message);
+    if (showFeedback) {
+      _hpmShowUpdateToast(window.HPM_I18N?.update_offline || 'Cannot contact the Store. Check your connection.', 'warn');
+    }
+  } finally {
+    // Restore button
+    if (showFeedback && checkBtn) {
+      checkBtn.disabled = false;
+      checkBtn.innerHTML = '<i class="fas fa-arrow-circle-up"></i>';
+      checkBtn.title = window.HPM_I18N?.btn_check_updates || 'Check for updates';
+    }
   }
 }
 
-window.hpmCheckUpdates = _hpmCheckUpdatesBackground;
+/** Tiny inline toast shown below the packages header — auto-dismisses after 4s */
+function _hpmShowUpdateToast(msg, type) {
+  // Remove any previous toast
+  document.getElementById('hpm-update-toast')?.remove();
+
+  const colors = {
+    ok:     { bg: 'rgba(16,185,129,.12)', border: '#10b981', text: '#10b981' },
+    update: { bg: 'rgba(245,158,11,.12)', border: '#f59e0b', text: '#f59e0b' },
+    warn:   { bg: 'rgba(239,68,68,.1)',   border: '#ef4444', text: '#ef4444' },
+  };
+  const c = colors[type] || colors.ok;
+
+  const toast = document.createElement('div');
+  toast.id = 'hpm-update-toast';
+  toast.style.cssText = `
+    margin-top:10px;padding:10px 16px;border-radius:10px;
+    background:${c.bg};border:1px solid ${c.border};
+    color:${c.text};font-size:0.83em;font-weight:600;
+    display:flex;align-items:center;justify-content:space-between;
+    animation:fadeIn .2s ease;`;
+  toast.innerHTML = `
+    <span>${msg}</span>
+    <button onclick="this.parentElement.remove()"
+            style="background:none;border:none;color:${c.text};cursor:pointer;font-size:14px;padding:0 0 0 10px;opacity:.7;">✕</button>`;
+
+  // Insert after the packages card header (before the grid)
+  const grid = document.getElementById('hpm-packages-grid');
+  if (grid && grid.parentElement) {
+    grid.parentElement.insertBefore(toast, grid);
+  }
+
+  // Auto-dismiss after 5s
+  setTimeout(() => toast.remove(), 5000);
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+// Called automatically (silent) or manually from the button (with feedback)
+window.hpmCheckUpdates = function(packages, manual = true) {
+  if (!packages && window._packages) packages = window._packages;
+  if (!packages || packages.length === 0) {
+    if (manual) _hpmShowUpdateToast(window.HPM_I18N?.update_no_modules || 'No modules loaded. Refresh the list first.', 'warn');
+    return;
+  }
+  _hpmCheckUpdatesBackground(packages, manual);
+};
+
+
 
 
 // ── Auto-init ─────────────────────────────────────────────────────────────────

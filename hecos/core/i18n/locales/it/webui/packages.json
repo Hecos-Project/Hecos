@@ -59,5 +59,12 @@
     "hpm_coming_soon": "PROSSIMAMENTE",
     "hpm_registry_desc": "Sfoglia e installa i pacchetti della community direttamente dal registro online di Hecos. Questa funzionalità sarà disponibile in un aggiornamento futuro.",
     "hpm_failed_load": "Impossibile caricare i moduli:",
-    "hpm_no_modules": "Nessun modulo trovato."
+    "hpm_no_modules": "Nessun modulo trovato.",
+    "hpm_btn_check_updates": "Controlla aggiornamenti",
+    "hpm_btn_checking": "Controllo in corso...",
+    "hpm_update_avail_single": "aggiornamento disponibile",
+    "hpm_update_avail_plural": "aggiornamenti disponibili",
+    "hpm_update_all_ok": "Tutti i moduli sono aggiornati!",
+    "hpm_update_offline": "Impossibile contattare lo Store. Verifica la connessione.",
+    "hpm_update_no_modules": "Nessun modulo caricato. Ricarica prima la lista."
 }
