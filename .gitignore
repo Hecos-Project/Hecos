@@ -328,4 +328,15 @@ hecos/plugins/webcam/
 hecos/plugins/weather_pro/
 hecos/plugins/image_gen/
 hecos/plugins/media_player/
+
+# WebUI Extensions belonging to HPM packages
+hecos/modules/web_ui/extensions/voice_visualizer/
+hecos/modules/web_ui/extensions/weather_pro_widget/
+hecos/modules/web_ui/extensions/media_player_widget/
+
+# WebUI Templates belonging to HPM packages
+hecos/modules/web_ui/templates/modules/config_weather_pro.html
+hecos/modules/web_ui/templates/modules/config_media_player.html
+hecos/modules/web_ui/templates/modules/media_player/
+hecos/modules/web_ui/templates/modules/media/_media_player.html
 
