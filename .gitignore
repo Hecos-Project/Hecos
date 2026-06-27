@@ -319,4 +319,13 @@ workspace/flows/*
 !workspace/flows/morning_routine_01.yaml
 !workspace/flows/onboarding.yaml
 !workspace/flows/.gitkeep
+
+# ── HPM Packages: Distributed via Store only ──────────────────────────────
+# These plugins are standalone HPM packages, installable from the official store.
+# They are NOT part of the Hecos Core and MUST NOT be pushed to the core repo.
+# Build and release them separately from the Hecos-Packages repository.
+hecos/plugins/webcam/
+hecos/plugins/weather_pro/
+hecos/plugins/image_gen/
+hecos/plugins/media_player/
 
