@@ -32,9 +32,6 @@ _singleton_socket = None
 _STATUS_POLL_NORMAL  = 3    # seconds between checks when stable
 _STATUS_POLL_STARTUP = 1    # seconds between checks while waiting for server to come up
 
-# Global flag to temporarily suppress auto-opening when launching headless
-suppress_autoopen = False
-
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
     was_online = False
@@ -61,26 +58,18 @@ def _monitor_status(icon: "pystray.Icon"):
                 play_beep(400, 100)
                 play_beep(600, 150)
 
-                # Auto-open/refresh WebUI
-                global suppress_autoopen
-                if settings.get("autoopen_webui", True) and not suppress_autoopen:
-                    from hecos.tray.browser_manager import intelligent_open_webui
-                    time.sleep(1.0)
-                    intelligent_open_webui(icon, None)
-                
-                # Reset the suppression flag after boot
-                if suppress_autoopen:
-                    print("[TRAY] Suppressed auto-open for headless launch. Resetting flag.")
-                    suppress_autoopen = False
-
-                # Auto-open/refresh AI Browser (Headless/Integrated)
-                if settings.get("autoopen_ai_browser", False):
-                    from hecos.tray.browser_manager import intelligent_open_ai_browser
-                    time.sleep(1.5)
-                    intelligent_open_ai_browser(icon, None)
+                headless_lock = os.path.join(_ROOT, ".headless_boot")
+                is_headless = os.path.exists(headless_lock)
+                if is_headless:
+                    try:
+                        os.remove(headless_lock)
+                        print("[TRAY] Suppressed auto-open for headless launch (lock file removed).")
+                    except Exception: pass
 
                 # Auto-launch Chrome in AI-Ready mode if setting is enabled
-                if settings.get("auto_launch_chrome_for_ai", False):
+                # MUST be launched FIRST so that if autoopen_webui is true, it opens inside this browser
+                if settings.get("auto_launch_chrome_for_ai", False) and not is_headless:
+                    cdp_port = _get_cdp_port()
                     if not is_ai_ready_browser_running(cdp_port):
                         time.sleep(0.5)
                         from hecos.tray.network_utils import get_scheme
@@ -92,6 +81,19 @@ def _monitor_status(icon: "pystray.Icon"):
                             elif startup_url.startswith("https://") and real_scheme == "http":
                                 startup_url = startup_url.replace("https://", "http://", 1)
                         launch_ai_ready_browser(cdp_port=cdp_port, startup_url=startup_url)
+                        time.sleep(1.5)
+
+                # Auto-open/refresh WebUI
+                if settings.get("autoopen_webui", True) and not is_headless:
+                    from hecos.tray.browser_manager import intelligent_open_webui
+                    time.sleep(1.0)
+                    intelligent_open_webui(icon, None)
+
+                # Auto-open/refresh AI Browser (Headless/Integrated)
+                if settings.get("autoopen_ai_browser", False) and not is_headless:
+                    from hecos.tray.browser_manager import intelligent_open_ai_browser
+                    time.sleep(1.5)
+                    intelligent_open_ai_browser(icon, None)
 
             # Auto-start service if the toggle says it should be running
             # (use is_hecos_running() here — process check is enough for start logic)

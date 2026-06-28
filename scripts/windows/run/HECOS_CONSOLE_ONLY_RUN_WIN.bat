@@ -42,6 +42,7 @@ echo.
 
 set HECOS_BOOT_MODE=console
 set HECOS_HEADLESS=1
+echo 1 > .headless_boot
 !PYTHON_CMD! hecos\monitor.py
 
 echo.

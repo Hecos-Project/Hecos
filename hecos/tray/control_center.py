@@ -143,7 +143,7 @@ if __name__ == "__main__":
             ("start_hecos_on_launch",    "Start Core with Tray",         True),
             ("autoopen_webui",            "Auto-open WebUI on Startup",    True),
             ("autoopen_ai_browser",       "Auto-open Playwright Browser",  False),
-            ("auto_launch_chrome_for_ai", "Auto-launch AI-Ready Chrome",   False),
+            ("auto_launch_chrome_for_ai", "Auto-launch AI-Ready Chrome (CDP Mode - Allows AI to control browser)",   False),
             ("show_technical_menu",       "Show Technical Menu in Tray",   True),
         ]
 

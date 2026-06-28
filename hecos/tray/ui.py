@@ -138,9 +138,6 @@ def build_menu(icon_ref: list):
         launch_console(script)
 
     def open_console_headless(i, it):
-        import hecos.tray.tray_app
-        hecos.tray.tray_app.suppress_autoopen = True
-        
         script = os.path.join(
             _ROOT, "scripts",
             "windows" if sys.platform == "win32" else "linux",

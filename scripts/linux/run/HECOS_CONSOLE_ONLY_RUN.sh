@@ -25,6 +25,7 @@ echo ""
 
 export HECOS_BOOT_MODE=console
 export HECOS_HEADLESS=1
+echo 1 > .headless_boot
 python3 hecos/monitor.py
 
 echo ""
