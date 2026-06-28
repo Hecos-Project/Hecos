@@ -43,7 +43,6 @@ window.CONFIG_HUB = {
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'web',       label: 'hub_mod_web',          icon: '<i class="fas fa-globe"></i>', cat: 'SISTEMA', pluginTag: 'WEB' },
         { id: 'webcam',    label: 'hub_mod_webcam',       icon: '<i class="fas fa-camera"></i>', cat: 'SISTEMA', pluginTag: 'WEBCAM' },
-        { id: 'calendar',  label: 'ext_calendar_title',   icon: '<i class="fas fa-calendar-alt"></i>', cat: 'SISTEMA', pluginTag: 'CALENDAR' },
         { id: 'automation',label: 'hub_mod_automation',  icon: '<i class="fas fa-magic"></i>', cat: 'SISTEMA', pluginTag: 'AUTOMATION', isCore: true },
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
