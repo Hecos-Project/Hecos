@@ -43,7 +43,6 @@ window.CONFIG_HUB = {
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'web',       label: 'hub_mod_web',          icon: '<i class="fas fa-globe"></i>', cat: 'SISTEMA', pluginTag: 'WEB' },
         { id: 'webcam',    label: 'hub_mod_webcam',       icon: '<i class="fas fa-camera"></i>', cat: 'SISTEMA', pluginTag: 'WEBCAM' },
-        { id: 'reminder',  label: 'ext_reminder_title',   icon: '<i class="fas fa-clock"></i>', cat: 'SISTEMA', pluginTag: 'REMINDER' },
         { id: 'calendar',  label: 'ext_calendar_title',   icon: '<i class="fas fa-calendar-alt"></i>', cat: 'SISTEMA', pluginTag: 'CALENDAR' },
         { id: 'automation',label: 'hub_mod_automation',  icon: '<i class="fas fa-magic"></i>', cat: 'SISTEMA', pluginTag: 'AUTOMATION', isCore: true },
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
@@ -100,7 +99,6 @@ window.getIconForModule = function(id, name, metaIcon) {
         'media_player_widget': '<i class="fas fa-music"></i>',
         'quick_links':         '<i class="fas fa-bolt"></i>',
         'calendar':            '<i class="fas fa-calendar-alt"></i>',
-        'reminder':            '<i class="fas fa-clock"></i>',
         'emoticons':           '<i class="fas fa-smile"></i>',
         'weather_widget':      '<i class="fas fa-cloud-sun"></i>',
         'telemetry_widget':    '<i class="fas fa-tachometer-alt"></i>',
@@ -132,7 +130,6 @@ window.CONFIG_HUB.tagMap = {
     'MODELS': 'backend',
     'DRIVE_EDITOR': 'drive-editor',
     'MESSENGER': 'messenger',
-    'REMINDER': 'reminder',
     'CALENDAR': 'calendar',
     'CONTACTS': 'contacts',
     'MAIL': 'mail',
@@ -154,6 +151,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice', 'system', 'media', 'aesthetics', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'messenger', 'reminder', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
+    'messenger', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'lists', 'backup'
 ]);
