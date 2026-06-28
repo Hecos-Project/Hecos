@@ -259,7 +259,12 @@ function _hpmStoreRenderCard(pkg) {
       <div style="margin-top:-6px;text-align:right;">
         <span onclick="window.hpmStoreShowReadMe('${pkg.id}')"
               style="font-size:0.75em;color:var(--accent);cursor:pointer;font-weight:600;">
-          Leggi di più <i class="fas fa-chevron-right" style="font-size:0.8em;margin-left:2px;"></i>
+          ${(function(){
+            const l = document.documentElement.lang || 'en';
+            if (l.startsWith('it')) return 'Leggi di più';
+            if (l.startsWith('es')) return 'Leer más';
+            return 'Read more';
+          })()} <i class="fas fa-chevron-right" style="font-size:0.8em;margin-left:2px;"></i>
         </span>
       </div>
 
@@ -294,14 +299,20 @@ function _hpmStoreBuildDetailModal() {
         <div id="hpm-store-detail-content" style="color:var(--text);font-size:0.9em;line-height:1.6;"></div>
         <div style="margin-top:20px;text-align:right;border-top:1px solid var(--border-color);padding-top:16px;">
           <button onclick="document.getElementById('hpm-store-detail-modal').style.display='none'"
-                  class="btn btn-secondary">Chiudi</button>
+                  class="btn btn-secondary">${(function(){
+            const l = document.documentElement.lang || 'en';
+            if (l.startsWith('it')) return 'Chiudi';
+            if (l.startsWith('es')) return 'Cerrar';
+            return 'Close';
+          })()}</button>
         </div>
       </div>
     </div>`;
 }
 
 window.hpmStoreShowReadMe = async function(pkgId) {
-  const pkg = _hpmStoreCatalogCache.find(p => p.id === pkgId);
+  const pkgs = window.HPM_STORE_STATE.catalog?.packages || [];
+  const pkg = pkgs.find(p => p.id === pkgId);
   if (!pkg) return;
   
   const modal = document.getElementById('hpm-store-detail-modal');
@@ -310,7 +321,10 @@ window.hpmStoreShowReadMe = async function(pkgId) {
   modal.style.display = 'flex';
   content.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin fa-2x"></i></div>';
   
-  let mdText = "Nessuna documentazione fornita.";
+  let mdText = "No documentation provided.";
+  const lang = document.documentElement.lang || 'en';
+  if (lang.startsWith('it')) mdText = "Nessuna documentazione fornita.";
+  else if (lang.startsWith('es')) mdText = "No se proporcionó documentación.";
   
   try {
     if (pkg.readme_url) {
@@ -318,7 +332,7 @@ window.hpmStoreShowReadMe = async function(pkgId) {
       if (res.ok) mdText = await res.text();
     } else {
       // Fallback: try raw github if standard structured
-      const url = \`https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/\${pkg.id}_src/README.md\`;
+      const url = `https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/${pkg.id}_src/README.md`;
       const res = await fetch(url);
       if (res.ok) mdText = await res.text();
     }
@@ -330,7 +344,7 @@ window.hpmStoreShowReadMe = async function(pkgId) {
   if (typeof marked !== 'undefined') {
     content.innerHTML = marked.parse(mdText);
   } else {
-    content.innerHTML = \`<pre style="white-space:pre-wrap;font-family:inherit;">\${_hesc(mdText)}</pre>\`;
+    content.innerHTML = `<pre style="white-space:pre-wrap;font-family:inherit;">${_hesc(mdText)}</pre>`;
   }
 };
 
