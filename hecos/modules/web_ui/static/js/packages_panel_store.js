@@ -103,6 +103,7 @@ function _hpmStoreBuildShell() {
       <div style="position:relative;flex:1;min-width:220px;">
         <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;"></i>
         <input id="hpm-store-search" type="text" placeholder="Search modules…"
+               name="hpm_store_search_q" autocomplete="off" autocorrect="off" autocapitalize="off"
                style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border-color);
                       border-radius:10px;padding:9px 12px 9px 34px;color:var(--text);font-size:0.88em;outline:none;transition:border-color .2s;"
                onfocus="this.style.borderColor='var(--accent)'"
