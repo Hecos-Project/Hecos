@@ -137,6 +137,18 @@ def build_menu(icon_ref: list):
         )
         launch_console(script)
 
+    def open_console_headless(i, it):
+        import hecos.tray.tray_app
+        hecos.tray.tray_app.suppress_autoopen = True
+        
+        script = os.path.join(
+            _ROOT, "scripts",
+            "windows" if sys.platform == "win32" else "linux",
+            "run",
+            "HECOS_CONSOLE_ONLY_RUN_WIN.bat" if sys.platform == "win32" else "HECOS_CONSOLE_ONLY_RUN.sh"
+        )
+        launch_console(script)
+
     def toggle_technical_menu(i, it):
         s = load_settings()
         s["show_technical_menu"] = not s.get("show_technical_menu", True)
@@ -145,6 +157,7 @@ def build_menu(icon_ref: list):
 
     technical_submenu = pystray.Menu(
         pystray.MenuItem("📟  Launch Console", open_console),
+        pystray.MenuItem("📟  Launch Console (Headless)", open_console_headless),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Show Technical Menu", toggle_technical_menu,
                          checked=lambda it: load_settings().get("show_technical_menu", True)),

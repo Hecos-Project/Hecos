@@ -182,3 +182,11 @@ routing_engine:
 system:
   fast_boot: true
   flask_debug: false
+  # boot_mode: 'console' runs full console UI (default).
+  # boot_mode: 'webui' skips console threads (audio listen, PTT bus,
+  # boot animation, status bar) for faster startup when using the web interface.
+  boot_mode: webui
+  # Set to true to verify the local backend (Ollama/Kobold) at startup.
+  # If you are using cloud models (Gemini, OpenAI, etc.), keep this false
+  # to avoid waiting several seconds for a local server that is not running.
+  check_local_backend_on_boot: false

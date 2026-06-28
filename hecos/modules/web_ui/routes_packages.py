@@ -56,14 +56,18 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
         reg = PackageRegistry(data_dir)
         import json as _json
         for pkg in reg.list_all():
+            if not pkg:
+                continue
             if pkg.get("status") == "disabled":
                 continue
             manifest = pkg.get("manifest_snapshot") or {}
             if isinstance(manifest, str):
                 try: manifest = _json.loads(manifest)
                 except: manifest = {}
+            if not manifest:
+                manifest = {}
             
-            cp = manifest.get("config_panel", {})
+            cp = manifest.get("config_panel") or {}
             api_routes_file = cp.get("api_routes_file")
             
             if api_routes_file:

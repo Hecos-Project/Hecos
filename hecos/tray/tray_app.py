@@ -32,6 +32,9 @@ _singleton_socket = None
 _STATUS_POLL_NORMAL  = 3    # seconds between checks when stable
 _STATUS_POLL_STARTUP = 1    # seconds between checks while waiting for server to come up
 
+# Global flag to temporarily suppress auto-opening when launching headless
+suppress_autoopen = False
+
 def _monitor_status(icon: "pystray.Icon"):
     attempted_start = False
     was_online = False
@@ -59,10 +62,16 @@ def _monitor_status(icon: "pystray.Icon"):
                 play_beep(600, 150)
 
                 # Auto-open/refresh WebUI
-                if settings.get("autoopen_webui", True):
+                global suppress_autoopen
+                if settings.get("autoopen_webui", True) and not suppress_autoopen:
                     from hecos.tray.browser_manager import intelligent_open_webui
                     time.sleep(1.0)
                     intelligent_open_webui(icon, None)
+                
+                # Reset the suppression flag after boot
+                if suppress_autoopen:
+                    print("[TRAY] Suppressed auto-open for headless launch. Resetting flag.")
+                    suppress_autoopen = False
 
                 # Auto-open/refresh AI Browser (Headless/Integrated)
                 if settings.get("autoopen_ai_browser", False):

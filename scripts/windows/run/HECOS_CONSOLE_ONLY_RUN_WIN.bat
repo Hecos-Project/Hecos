@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title HECOS CORE - ACTIVE SESSION RUNNER (Native Text Console)
+title HECOS CORE - ACTIVE SESSION RUNNER (Headless Console)
 pushd "%~dp0"
 cd ..\..\..
 set ROOT_DIR=%CD%
@@ -11,7 +11,7 @@ echo.
 set HECOS_VERSION=Unknown
 if exist hecos\core\version set /p HECOS_VERSION=<hecos\core\version
 echo  ==============================================================
-echo   HECOS CORE NATIVE TERMINAL v%HECOS_VERSION%
+echo   HECOS CORE HEADLESS TERMINAL v%HECOS_VERSION%
 echo  ==============================================================
 echo.
 if exist "python_env\python.exe" (
@@ -36,11 +36,12 @@ if %ERRORLEVEL% EQU 0 (
   )
 )
 
-echo [*] Starting interactive terminal...
+echo [*] Starting interactive terminal (Headless Mode)...
 echo [*] Press F9 for a Safe Restart of the program.
 echo.
 
 set HECOS_BOOT_MODE=console
+set HECOS_HEADLESS=1
 !PYTHON_CMD! hecos\monitor.py
 
 echo.
