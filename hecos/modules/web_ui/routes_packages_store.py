@@ -71,6 +71,7 @@ def _save_cache(cache_file: str, catalog: dict) -> None:
 def _fetch_remote_catalog(cfg_mgr) -> dict:
     """Download the catalog JSON from the configured store URL."""
     url = (cfg_mgr.get("hpm.store_catalog_url") or CATALOG_URL) if cfg_mgr else CATALOG_URL
+    logger.info(f"[HPM:Store] Attempting to fetch remote catalog from: {url}")
     
     # If the URL is a local file path, read it directly
     if not url.startswith("http"):
@@ -78,15 +79,60 @@ def _fetch_remote_catalog(cfg_mgr) -> dict:
             with open(url, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            logger.warning(f"[HPM:Store] Could not read local catalog at {url}: {e}")
+            logger.error(f"[HPM:Store] Could not read local catalog at {url}: {e}")
             raise
+
+    # Prepare robust SSL context (useful on some Windows setups or proxies)
+    import ssl
+    try:
+        ctx = ssl.create_default_context()
+    except Exception:
+        ctx = ssl._create_unverified_context()
 
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "Hecos-HPM/1.0", "Accept": "application/json"},
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/plain, */*"
+        },
     )
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    
+    # Optional fallback URL just in case
+    fallback_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/store/index.json"
+    
+    urls_to_try = [url]
+    if url == CATALOG_URL:
+        urls_to_try.append(fallback_url)
+
+    last_error = None
+    for attempt_url in urls_to_try:
+        try:
+            logger.debug(f"[HPM:Store] Requesting {attempt_url}...")
+            req.full_url = attempt_url
+            with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+                status_code = resp.getcode()
+                raw_data = resp.read()
+                logger.info(f"[HPM:Store] Response {status_code} from {attempt_url}. Size: {len(raw_data)} bytes")
+                
+                try:
+                    return json.loads(raw_data.decode("utf-8"))
+                except json.JSONDecodeError as je:
+                    logger.error(f"[HPM:Store] JSON decode failed for {attempt_url}. Error: {je}")
+                    logger.debug(f"[HPM:Store] Raw response snippet: {raw_data[:200]}")
+                    last_error = je
+                    continue
+
+        except urllib.error.HTTPError as he:
+            logger.error(f"[HPM:Store] HTTP Error {he.code} fetching {attempt_url}: {he.reason}")
+            last_error = he
+        except urllib.error.URLError as ue:
+            logger.error(f"[HPM:Store] URL Error fetching {attempt_url}: {ue.reason}")
+            last_error = ue
+        except Exception as e:
+            logger.error(f"[HPM:Store] Unexpected error fetching {attempt_url}: {e}")
+            last_error = e
+
+    raise RuntimeError(f"All attempts to fetch catalog failed. Last error: {last_error}")
 
 
 def _enrich_catalog(catalog: dict, registry) -> dict:
