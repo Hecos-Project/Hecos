@@ -1,0 +1,301 @@
+<!-- REMINDER MODULE CONFIG -->
+<div id="tab-reminder" class="panel">
+    <div class="card">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>{{ t('ext_reminder_title') }}</span>
+            <div style="display:flex; gap:6px;">
+                <button class="tpl-icon-btn" title="Backup Reminders" onclick="backupReminders()">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="tpl-icon-btn" title="Restore Reminders" onclick="document.getElementById('rem-restore-file').click()">
+                    <i class="fas fa-upload"></i>
+                </button>
+                <input type="file" id="rem-restore-file" accept=".json" style="display:none" onchange="restoreReminders(event)">
+            </div>
+        </div>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+            Configure the local scheduler for time-based reminders and natural language recurrence.
+        </p>
+
+        <!-- Dynamic config toggles mapped for window.cfg.plugins.REMINDER -->
+        <div class="field mt-3">
+            <label>Reminder Alert Mode</label>
+            <select id="rem-mode" data-cfg-plugin="REMINDER" data-cfg-key="reminder_mode" onchange="if(window.saveConfig) window.saveConfig(true);">
+                <option value="voice">Voice Only (TTS)</option>
+                <option value="ringtone">Ringtone Only</option>
+                <option value="both">Both (Voice + Ringtone)</option>
+            </select>
+        </div>
+
+        <div class="field mt-3">
+            <label>Preset Ringtone</label>
+            <div style="display:flex; gap:6px;">
+                <select id="rem-preset" style="flex:1;" onchange="document.getElementById('rem-ringtone').value = this.value; if(window.saveConfig) window.saveConfig(true);">
+                    <option value="Default_System_Alert.mp3">Default System Alert (Default_System_Alert.mp3)</option>
+                </select>
+                <button type="button" class="btn btn-outline-accent btn-sm" onclick="window.refreshPresetRingtones()" title="Refresh folder">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">Add your sounds (.wav, .mp3, .ogg) to <code>assets/sounds</code> folder.</p>
+        </div>
+
+        <div class="field mt-3">
+            <label>Custom Ringtone Path (Absolute Path)</label>
+            <div style="display:flex; gap:6px;">
+                <input style="flex:1;" type="text" id="rem-ringtone" data-cfg-plugin="REMINDER" data-cfg-key="ringtone_path" placeholder="Filename or absolute path" onchange="if(window.saveConfig) window.saveConfig(true);">
+                <button type="button" class="btn btn-secondary" onclick="HecosFilePicker.open({title:'Select Ringtone', mode:'file', onSelect: p => { document.getElementById('rem-ringtone').value = p; saveConfig(); window.refreshPresetRingtones(); }})" title="Browse Files">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+            </div>
+        </div>
+        <div class="field mt-3">
+            <label>Time Format</label>
+            <select id="rem-time-format" data-cfg-plugin="REMINDER" data-cfg-key="time_format" onchange="if(window.saveConfig) window.saveConfig(true);">
+                <option value="24h">24h (15:00)</option>
+                <option value="12h">12h (03:00 PM)</option>
+            </select>
+        </div>
+
+        <div class="field mt-3">
+            <label>Max Active Reminders</label>
+            <input type="number" id="rem-max" data-cfg-plugin="REMINDER" data-cfg-key="max_reminders" value="50" min="1" max="500" onchange="if(window.saveConfig) window.saveConfig(true);">
+        </div>
+
+        <div class="field mt-3">
+            <label>Default Snooze Time (minutes)</label>
+            <input type="number" id="rem-snooze" data-cfg-plugin="REMINDER" data-cfg-key="snooze_default_minutes" value="15" min="1" max="60" onchange="if(window.saveConfig) window.saveConfig(true);">
+        </div>
+
+        <div class="field mt-3">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="margin:0;">Enable Interactive Snooze UI</label>
+                <label class="switch is-small">
+                    <input type="checkbox" id="rem-snooze-ui" data-cfg-plugin="REMINDER" data-cfg-key="reminder_snooze_ui" onchange="if(window.saveConfig) window.saveConfig(true);">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">If enabled, the alarm plays repeatedly until you manually Snooze or Stop it from the chat UI.</p>
+        </div>
+
+    </div>
+
+    <!-- Reminder History List -->
+    <div class="card" id="card-active-reminders">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span><i class="fas fa-history"></i> Reminder History</span>
+            <div style="display:flex; gap:6px;">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="window.clearReminderHistory()">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+                <button type="button" class="btn btn-outline-accent btn-sm" onclick="window.refreshReminderConfig()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div id="reminder-config-list" style="margin-top:10px; max-height: 400px; overflow-y: auto;">
+            <p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading reminders...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+window.refreshReminderConfig = function() {
+    const list = document.getElementById('reminder-config-list');
+    if (!list) return;
+
+    fetch('/api/ext/reminder/all')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.ok || !data.reminders || data.reminders.length === 0) {
+                list.innerHTML = '<p class="text-muted" style="font-size:13px; margin:10px 0;">No active reminders at the moment.</p>';
+                return;
+            }
+
+            let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+            data.reminders.reverse().forEach(r => {
+                let timeInfo = '';
+                if (r.repeat && r.cron_expr) {
+                    timeInfo = `<span class="badge bg-primary" style="font-size:10px;margin-right:6px;">Recurring</span> <small>${r.cron_expr}</small>`;
+                } else if (r.when_iso) {
+                    const d = new Date(r.when_iso);
+                    timeInfo = `<i class="far fa-calendar-alt"></i> ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                } else {
+                    timeInfo = 'N/A';
+                }
+
+                const statusColor = r.status === 'active' ? 'color:var(--green);' : (r.status === 'fired' ? 'color:var(--yellow);' : 'color:var(--red);');
+                
+                let isInt = r.interactive === 1;
+                if (r.interactive === null || r.interactive === undefined) {
+                    const sw = document.getElementById('reminder_snooze_ui');
+                    isInt = sw ? sw.checked : false;
+                }
+                const modePill = isInt ? '<span style="background:rgba(255,200,60,0.15);border:1px solid rgba(255,200,60,0.3);color:#ffc83c;padding:1px 6px;border-radius:12px;font-size:9px;margin-left:8px;font-weight:bold;">INTERACTIVE</span>' 
+                                       : '<span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#aaa;padding:1px 6px;border-radius:12px;font-size:9px;margin-left:8px;font-weight:bold;">SIMPLE</span>';
+
+                html += `
+                <div style="background:rgba(0,0,0,0.1); border:1px solid rgba(255,255,255,0.05); border-radius:6px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="font-size:14px; color:var(--text);">${r.title}</strong><br>
+                        <small style="color:var(--muted); font-size:11px;">
+                            ${timeInfo} | Status: <span style="${statusColor}">${r.status.toUpperCase()}</span> ${modePill}
+                        </small>
+                    </div>
+                    <div>
+                        ${r.status === 'active' ? `<button type="button" class="btn btn-sm btn-outline-danger" style="padding:4px 8px; border:none; background:rgba(255,0,0,0.2);" onclick="window.cancelReminderFromConfig('${r.id}')"><i class="fas fa-times"></i></button>` : ''}
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            list.innerHTML = html;
+        })
+        .catch(e => {
+            list.innerHTML = '<p style="color:var(--red); font-size:13px;">Error loading reminders.</p>';
+        });
+};
+
+window.cancelReminderFromConfig = function(id) {
+    // Stop audio loop first (in case this reminder is currently ringing)
+    fetch('/api/ext/reminder/stop', { method: 'POST' });
+    fetch(`/api/ext/reminder/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            window.refreshReminderConfig();
+        });
+};
+
+window.clearReminderHistory = function() {
+    if (!confirm('Clear all finished and cancelled reminders for privacy?')) return;
+    fetch(`/api/ext/reminder/history`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            window.refreshReminderConfig();
+        });
+};
+
+window.refreshPresetRingtones = function() {
+    fetch('/api/ext/reminder/ringtones')
+        .then(r => r.json())
+        .then(data => {
+            const select = document.getElementById('rem-preset');
+            if (!select) return;
+            const currentVal = document.getElementById('rem-ringtone').value;
+            let html = '';
+            if (data.ok && data.ringtones) {
+                data.ringtones.forEach(f => {
+                    const label = f.replace(/\.(mp3|wav|ogg)$/i, '').replace(/_/g, ' ');
+                    html += `<option value="${f}">${label} (${f})</option>`;
+                });
+            }
+            if (!html) {
+                html = '<option value="Default_System_Alert.mp3">Default System Alert (Default_System_Alert.mp3)</option>';
+            }
+            select.innerHTML = html;
+            // Match dropdown 
+            if (data.ringtones && data.ringtones.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        });
+};
+
+// ── Backup / Restore Reminders ───────────────────────────────────────────────
+window.backupReminders = async function() {
+    try {
+        if (window.showToast) showToast('Preparing reminders backup...', 'info');
+        const res = await fetch('/api/ext/reminder/backup');
+        if (!res.ok) throw new Error('Backup request failed');
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Backup failed');
+
+        const payload = {
+            type: 'hecos_reminders_backup',
+            exported_at: new Date().toISOString(),
+            reminders: data.reminders
+        };
+
+        const filename = `hecos_reminders_backup_${new Date().toISOString().split('T')[0]}.json`;
+        const content  = JSON.stringify(payload, null, 2);
+
+        if (window.showSaveFilePicker) {
+            try {
+                const fh = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+                });
+                const w = await fh.createWritable();
+                await w.write(content);
+                await w.close();
+            } catch(e) {
+                if (e.name === 'AbortError') return;
+                throw e;
+            }
+        } else {
+            const blob = new Blob([content], { type: 'application/json' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+        }
+        if (window.showToast) showToast(`Backup of ${data.count} reminders completed`, 'success');
+    } catch(err) {
+        console.error('[REMINDERS] Backup error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Backup error: ' + err.message);
+    }
+};
+
+window.restoreReminders = async function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = '';
+
+    let mode = 'duplicate';
+    const msg = 'Restore Reminders\n\nOK = Add copies (safe)\nCancel = Replace all (erases existing reminders)';
+    if (!confirm(msg)) {
+        mode = 'replace';
+        if (!confirm('⚠️ Warning: ALL existing reminders will be erased. Continue?')) return;
+    }
+
+    try {
+        const text    = await file.text();
+        const payload = JSON.parse(text);
+        const reminders = payload.reminders || payload; // support both wrapped and raw list
+        if (!Array.isArray(reminders)) throw new Error('Invalid file: reminders list missing.');
+
+        if (window.showToast) showToast(`Restoring ${reminders.length} reminders...`, 'info');
+
+        const res = await fetch('/api/ext/reminder/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reminders, mode })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error || 'Restore failed');
+
+        if (window.showToast) showToast(`Restored ${result.imported} reminders`, 'success');
+        window.refreshReminderConfig();
+    } catch(err) {
+        console.error('[REMINDERS] Restore error:', err);
+        if (window.showToast) showToast(err.message, 'error');
+        else alert('Error: ' + err.message);
+    }
+};
+
+// Initial load hook
+
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+            if (m.target.id === 'tab-reminder' && m.target.classList.contains('active')) {
+                window.refreshReminderConfig();
+                window.refreshPresetRingtones();
+            }
+        });
+    });
+    
+    const panel = document.getElementById('tab-reminder');
+    if (panel) observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+});
+</script>

@@ -207,39 +207,6 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "CALENDAR": {
-        "description": "Calendar plugin",
-        "commands": {
-            "add_event": "Creates a new calendar event.",
-            "delete_event": "Deletes a calendar event by ID.",
-            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
-            "list_events": "Returns a formatted list of upcoming calendar events.",
-            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": [
-            {
-                "id": "calendar",
-                "aliases": [
-                    "/calendar",
-                    "/calendario",
-                    "/appuntamenti"
-                ],
-                "description": "Elenca i prossimi eventi nel calendario",
-                "usage": "/calendar",
-                "example": "/calendar",
-                "icon": "📅",
-                "method": "list_events",
-                "args_schema": {},
-                "requires_args": false
-            }
-        ]
-    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {
@@ -448,6 +415,56 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "REMINDER": {
+        "description": "Manage personal reminders with native push notifications, interactive alerts and text-to-speech.",
+        "commands": {
+            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "parse_and_set_reminder": "Helper for HDCS (Direct Commands). Parses a raw string like 'chiamare Marco alle 18:30 --interactive'",
+            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
+            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
+            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏰",
+                "method": "parse_and_set_reminder",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Elenca tutti i promemoria attivi",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "args_schema": {},
+                "requires_args": false
+            }
+        ]
     },
     "USERS": {
         "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",

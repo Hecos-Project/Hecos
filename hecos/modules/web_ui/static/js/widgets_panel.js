@@ -29,13 +29,24 @@ async function loadWidgetsPanel() {
 
             const icon = window.getIconForModule ? window.getIconForModule(w.extension_id, w.display_name) : `<i class="fas fa-cube"></i>`;
 
-            // Per-widget prefs
+            // Per-widget prefs — enforce XOR: only one of sidebar/room can be active
             const prefs = w.prefs || {};
             const widgetEnabled  = w.enabled !== false;
-            const sidebarVisible = w.visible !== false;
-            const roomVisible   = prefs.room_visible === true || w.room_visible === true;
-            const roomSpan      = prefs.room_span || w.room_span || 1;
-            const roomTheme     = prefs.theme || w.theme || 'default';
+            let sidebarVisible = w.visible === true;
+            let roomVisible    = w.room_visible === true;
+
+            // XOR enforcement at render time:
+            // If both somehow ended up true, room takes priority.
+            if (sidebarVisible && roomVisible) {
+                sidebarVisible = false;
+            }
+            // If neither is true, default to Control Room (room_visible = true)
+            if (!sidebarVisible && !roomVisible) {
+                roomVisible = true;
+            }
+
+            const roomSpan  = prefs.room_span || w.room_span || 1;
+            const roomTheme = prefs.theme || w.theme || 'default';
 
             // We safely call t() from window if defined
             const safeTranslate = (key) => typeof window.t === 'function' ? window.t(key) : key;
@@ -162,21 +173,38 @@ async function toggleSidebarWidgetsEnabled(enabled) {
 async function toggleWidgetVisibility(id, visible, inputEl) {
     if (!id || id === 'undefined') return;
 
-    // OPTIMISTIC XOR: If sidebar enabled, disable room immediately
+    // MANDATORY XOR: sidebar and room are mutually exclusive.
+    // Enabling sidebar → disables room.
+    // Disabling sidebar → enables room.
+    const roomToggle = document.getElementById(`check-room-${id}`);
     if (visible) {
-        const roomToggle = document.getElementById(`check-room-${id}`);
+        // Sidebar ON → force Room OFF
         if (roomToggle && roomToggle.checked) {
-            console.log(`[XOR] Auto-disabling room for ${id}`);
             roomToggle.checked = false;
             syncLocalConfig(id, 'room_visible', false);
             broadcastWidgetSync(id, 'room_visible', false);
             const spanRow = document.getElementById(`span-row-${id}`);
             if (spanRow) { spanRow.style.opacity = '0.3'; spanRow.style.pointerEvents = 'none'; }
-            const themeRow = document.getElementById(`theme-row-${id}`);
-            if (themeRow) { themeRow.style.opacity = '0.3'; themeRow.style.pointerEvents = 'none'; }
+            // Also persist to backend asynchronously
+            fetch(`/api/widgets/${id}/room_visible`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({visible: false})
+            });
+        }
+    } else {
+        // Sidebar OFF → force Room ON
+        if (roomToggle && !roomToggle.checked) {
+            roomToggle.checked = true;
+            syncLocalConfig(id, 'room_visible', true);
+            broadcastWidgetSync(id, 'room_visible', true);
+            const spanRow = document.getElementById(`span-row-${id}`);
+            if (spanRow) { spanRow.style.opacity = ''; spanRow.style.pointerEvents = ''; }
+            fetch(`/api/widgets/${id}/room_visible`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({visible: true})
+            });
         }
     }
-
     const card = inputEl.closest('.widget-card');
     card.style.opacity = '0.5'; card.style.pointerEvents = 'none';
     try {
@@ -219,14 +247,31 @@ function syncLocalConfig(widgetId, field, value) {
 async function toggleRoomVisibility(id, visible, inputEl) {
     if (!id || id === 'undefined') return;
 
-    // OPTIMISTIC XOR: If room enabled, disable sidebar immediately
+    // MANDATORY XOR: sidebar and room are mutually exclusive.
+    // Enabling room → disables sidebar.
+    // Disabling room → enables sidebar.
+    const sideToggle = document.getElementById(`check-side-${id}`);
     if (visible) {
-        const sideToggle = document.getElementById(`check-side-${id}`);
+        // Room ON → force Sidebar OFF
         if (sideToggle && sideToggle.checked) {
-            console.log(`[XOR] Auto-disabling sidebar for ${id}`);
             sideToggle.checked = false;
             syncLocalConfig(id, 'visible', false);
             broadcastWidgetSync(id, 'visible', false);
+            fetch(`/api/widgets/${id}/visible`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({visible: false})
+            });
+        }
+    } else {
+        // Room OFF → force Sidebar ON
+        if (sideToggle && !sideToggle.checked) {
+            sideToggle.checked = true;
+            syncLocalConfig(id, 'visible', true);
+            broadcastWidgetSync(id, 'visible', true);
+            fetch(`/api/widgets/${id}/visible`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({visible: true})
+            });
         }
     }
 

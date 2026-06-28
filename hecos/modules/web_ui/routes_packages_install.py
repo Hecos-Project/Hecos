@@ -83,7 +83,9 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                             _wid = _w.get("id", "")
                             if _wid:
                                 cfg_mgr.set(True, "widgets", "per_widget", _wid, "enabled")
-                                cfg_mgr.set(True, "widgets", "per_widget", _wid, "visible")
+                                # XOR default: widgets start in Control Room, not sidebar
+                                cfg_mgr.set(False, "widgets", "per_widget", _wid, "visible")
+                                cfg_mgr.set(True, "widgets", "per_widget", _wid, "room_visible")
                         if (_tag and _pkg_type in _PLUGIN_NS_TYPES) or _mdict.get("widgets"):
                             cfg_mgr.save()
                             log.info(f"[HPM] Force-enabled '{_tag}' in live cfg_mgr after install.")

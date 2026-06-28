@@ -1,13 +1,23 @@
-import sqlite3
+import sqlite3, shutil, os
 
-def run():
-    db_path = r"c:\Hecos\hecos\data\packages.db"
-    conn = sqlite3.connect(db_path)
-    cur = conn.cursor()
-    cur.execute("DELETE FROM packages WHERE id='reminder'")
-    conn.commit()
-    conn.close()
-    print("Deleted 'reminder' from packages.db")
+db_path = r"c:\Hecos\hecos\data\packages.db"
+conn = sqlite3.connect(db_path)
+cur = conn.cursor()
+cur.execute("DELETE FROM packages WHERE id='reminder'")
+conn.commit()
+conn.close()
+print("Removed from DB")
 
-if __name__ == "__main__":
-    run()
+# Remove installed plugin code
+plugin_dir = r"c:\Hecos\hecos\plugins\reminder"
+if os.path.exists(plugin_dir):
+    shutil.rmtree(plugin_dir)
+    print(f"Removed {plugin_dir}")
+
+# Remove any stale extension
+ext_dir = r"c:\Hecos\hecos\modules\web_ui\extensions\reminder"
+if os.path.exists(ext_dir):
+    shutil.rmtree(ext_dir)
+    print(f"Removed {ext_dir}")
+
+print("Clean done - ready for fresh install")
