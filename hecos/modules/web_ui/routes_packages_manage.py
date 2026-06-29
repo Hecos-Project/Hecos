@@ -179,6 +179,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                         if ext_id:
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "enabled")
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "visible")
+                            cfg_mgr.set(True, "widgets", "per_widget", ext_id, "room_visible")
                             widgets_modified += 1
                     if widgets_modified > 0:
                         cfg_mgr.save()
