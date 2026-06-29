@@ -49,14 +49,35 @@ window.hpmInstallFile = async function(file, forceAllowUnsigned = false) {
   formData.append('allow_unsigned', allowUnsigned ? 'true' : 'false');
 
   try {
-    window.hpmSetProgress(true, 'Uploading...', 50);
+    window.hpmSetProgress(true, '<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Uploading to Hecos...', 50);
+    
+    // Simulate backend progress steps while waiting for fetch
+    let simPct = 50;
+    const simSteps = [
+      { t: 1500, l: "Verifying Cryptographic Signature..." },
+      { t: 3000, l: "Extracting Package Contents..." },
+      { t: 5000, l: "Configuring Extensions..." },
+      { t: 8000, l: "Finalizing Installation..." }
+    ];
+    
+    const simTimers = simSteps.map((step, idx) => {
+      return setTimeout(() => {
+        simPct += 10;
+        window.hpmSetProgress(true, `<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> ${step.l}`, simPct);
+      }, step.t);
+    });
+
     const resp = await fetch('/api/packages/install', { method: 'POST', body: formData });
-    window.hpmSetProgress(true, 'Processing...', 80);
+    
+    // Clear simulation timers if fetch finishes early
+    simTimers.forEach(t => clearTimeout(t));
+    
+    window.hpmSetProgress(true, '<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Processing response...', 95);
     const data = await resp.json();
 
     if (data.ok) {
-      window.hpmSetProgress(true, 'Installed successfully!', 100);
-      setTimeout(() => window.hpmSetProgress(false), 1500);
+      window.hpmSetProgress(true, '<i class="fas fa-check-circle" style="margin-right:6px; color:var(--green);"></i> Installed successfully!', 100);
+      setTimeout(() => window.hpmSetProgress(false), 2000);
       if (data.warnings?.length) {
         if (window.showToast) window.showToast(`Warning: ${data.warnings[0]}`, 'warning');
       } else {
@@ -97,5 +118,5 @@ window.hpmSetProgress = function(visible, label = '', pct = 0) {
   if (!container) return;
   container.style.display = visible ? 'block' : 'none';
   if (bar) bar.style.width = `${pct}%`;
-  if (lbl) lbl.textContent = label;
+  if (lbl) lbl.innerHTML = label;
 };

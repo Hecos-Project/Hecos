@@ -1,0 +1,161 @@
+id = "calendar"
+name = "Calendar"
+version = "1.0.0"
+hecos_min_version = "0.34.0"
+type = "plugin"
+author = "Hecos Core Team"
+description = "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules."
+target_dir = "plugins"
+plugin_dir = "."
+lazy_load = true
+is_class_based = true
+tag = "CALENDAR"
+icon_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png"
+readme = "README.md"
+readme_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/README.md"
+license = "MIT"
+pip_requirements = [
+    "holidays",
+]
+api_routes_file = "calendar/main.py"
+widgets = [
+    { id = "calendar", extension_path = "calendar/" },
+]
+signature = "i7P574w4zUItGxfP8MBx4SyrUskd1xoU5lN4ZaLBJH0ZTpzi14U2uVlP5VZWMes5GAiF2mGp96Gm4H2iMFVJDA=="
+
+[config_defaults]
+enabled = true
+defaults_file = "calendar_config/defaults.toml"
+template_file = "web_ui/templates/config_calendar.html"
+
+[config_panel]
+tab_id = "calendar"
+tab_label = "Calendar"
+tab_icon = "<i class=\"far fa-calendar-alt\"></i>"
+template_file = "web_ui/templates/config_calendar.html"
+category = "SISTEMA"
+
+[commands]
+add_event = "Adds an event to the calendar."
+list_events = "Lists upcoming calendar events."
+delete_event = "Deletes a calendar event by ID."
+get_date_info = "Gets current date context, including localized formatting and upcoming holidays."
+
+[[tool_schema]]
+name = "CALENDAR__add_event"
+description = "Adds a new event to the Hecos calendar. Use this when the user says 'add to calendar', 'schedule a meeting', 'remember that on [date]', 'crea un evento', 'segna sul calendario'. Accepts natural language dates."
+
+[tool_schema.parameters]
+type = "object"
+required = [
+    "title",
+    "start",
+]
+
+[tool_schema.parameters.properties.title]
+type = "string"
+description = "Title/label of the event (e.g. 'Doctor appointment', 'Team standup', 'Dentist')."
+
+[tool_schema.parameters.properties.start]
+type = "string"
+description = "Start date/time in natural language or ISO format ('tomorrow at 10:00', 'next Monday at 14:30', '2026-06-01 09:00')."
+
+[tool_schema.parameters.properties.end]
+type = "string"
+description = "Optional: End date/time. If omitted, the event defaults to 1 hour duration."
+
+[tool_schema.parameters.properties.all_day]
+type = "boolean"
+description = "If true, the event spans the full day with no specific time. Default: false."
+
+[tool_schema.parameters.properties.notes]
+type = "string"
+description = "Optional: Additional notes or description for the event."
+
+[tool_schema.parameters.properties.color]
+type = "string"
+description = "Optional: Color code for the event (e.g. '#3498db', 'red', 'green'). Defaults to the system accent color."
+
+[[tool_schema]]
+name = "CALENDAR__list_events"
+description = "Returns a formatted list of upcoming calendar events. Use when the user asks 'what do I have scheduled?', 'show my calendar', 'cosa ho sul calendario', 'eventi di questa settimana'."
+
+[tool_schema.parameters]
+type = "object"
+
+[tool_schema.parameters.properties.n]
+type = "integer"
+description = "Max number of events to return. Default: 10."
+
+[[tool_schema]]
+name = "CALENDAR__delete_event"
+description = "Deletes a calendar event. Use when the user says 'cancel that appointment', 'remove the event', 'elimina l'evento'. Ask for the event title or ID first using list_events if unsure."
+
+[tool_schema.parameters]
+type = "object"
+required = [
+    "event_id",
+]
+
+[tool_schema.parameters.properties.event_id]
+type = "string"
+description = "The ID (full UUID or first 8 chars) of the event to delete."
+
+[[tool_schema]]
+name = "CALENDAR__get_date_info"
+description = "Returns robust temporal awareness containing the current date/time natively translated, checks if today is a public holiday, and lists upcoming public holidays in a specified country. Crucial for understanding relative dates ('il prossimo ponte', 'oggi è festa?', 'when is christmas?')."
+
+[tool_schema.parameters]
+type = "object"
+
+[tool_schema.parameters.properties.country]
+type = "string"
+description = "The ISO country code (e.g., 'IT' for Italy, 'US' for USA). Default: 'IT'."
+
+[tool_schema.parameters.properties.year]
+type = "integer"
+description = "Optional year to check holidays for. Defaults to current year."
+
+[[slash_commands]]
+id = "calendar"
+aliases = [
+    "/calendar",
+    "/calendario",
+    "/appuntamenti",
+]
+description = "Elenca i prossimi eventi nel calendario"
+usage = "/calendar"
+example = "/calendar"
+icon = "📅"
+method = "list_events"
+requires_args = false
+
+[file_hashes]
+"main.py" = "68bf4287193979b65030c07edddde9603f6cfb5fda9d9d6bf2bf8bb2a9729cc1"
+"manifest.json" = "167b0f20aa6b097da20f473c551480db5fa42b75fcf38c1c082f445ce01ebc4b"
+"README.md" = "84f7cbd4eb014a9536a48404930c3e901c6b47a902d7dbc37e79b0cd47ab127d"
+"store.py" = "08c07632c49404b46caab94d051f1ac39123d58d87bf611dea79fa49582f7325"
+"sync_manager.py" = "eb6664b4d87f87f98a744b428b6830c696dc8da10c70d9e0cb3b33dd54fcec77"
+"__init__.py" = "c7ddbbe9a141fc9c62c6b2f65a1ca3a30f8e4bd97f8ae06c367f6b1efdb643db"
+"calendar/main.py" = "def15db9cb300e76a85125d4b2d59f56280a459c3bc3867abe3e70bcbcde1028"
+"calendar/manifest.json" = "416a2a99d4813933f44a8cc90ca78d30ab1fafa58ed7c7f264bfec4db062920c"
+"calendar/__init__.py" = "04ebb1ac2d16abfdd60fb0a6a35c10d24db55f84730b4f7c6932de199739322c"
+"calendar/static/css/calendar.css" = "522ee73b536c0c0f0258b644f3565a88da351206e7ade3e895b72ee7aba45224"
+"calendar/static/css/hecos_wheel_picker.css" = "97b7edec353e280c5a5486832a6f3122db74fc49d97d9ad5f39bdd09b74430a3"
+"calendar/static/js/fullcalendar.min.js" = "f22eea0d765adbf3ee72ac369fb4723d8591067c52c93df169ebdd5094d12fc6"
+"calendar/static/js/hecos_wheel_picker.js" = "52eb937115dfe026778e1b1c59fe287339b0020edb5992b5eb567073e9f3a27a"
+"calendar/static/js/calendar/cal_config.js" = "7c8224fffb34c8580a7107194b863544bae677e00f171f37990bc31dabe37c53"
+"calendar/static/js/calendar/cal_events.js" = "dd99f0b423816d3d9c0a8c5365744ffd2fef13e526a40d0456576d6ba67792ca"
+"calendar/static/js/calendar/cal_init.js" = "a0b464fdc79e7489c2aeea210a73253911d719ad2b42d0331f64d9ec4edfd469"
+"calendar/static/js/calendar/cal_state.js" = "a7feba6523a5d24abd73870fc092be344f1ebb3891a6d1d7547ff01780c752ab"
+"calendar/static/js/calendar/cal_utils.js" = "da0450a58b1912939e35cf53fdc6b56697773713bebf863014f561d537994d09"
+"calendar/templates/calendar_widget.html" = "e6dc814182fa9446efc752717263ee5e4025479850503f53cbeb7e764df28d40"
+"calendar_config/config_manager.py" = "501d40f31ca45e6f46c93eb3beb4dc4c8d15506bd7eb995605c62b9df883b72e"
+"calendar_config/defaults.toml" = "871cd1d75a5db5d98c61935316c46a24ade1831c20421d3802eaeebd1f7106f6"
+"web_ui/templates/config_calendar.html" = "8ce9012fe8cc2dc33a1a1acc593aceec6764621a7f8756acf59e47d8cdeb6741"
+"web_ui/templates/calendar/_calendar_assets.html" = "e29f8775399df3fbc30df5577caf4faa26620ce4fd887b2e4db4451a61e4731c"
+"web_ui/templates/calendar/_calendar_event_popup.html" = "ba65ab3df5d92da1b33e8cbffbf67f7ebf57e3e191203ca09851c0456fa8be09"
+"web_ui/templates/calendar/_calendar_form.html" = "b4936842dbca15d5661a99b8328f0a528663736a372c5f84c6ef3738d62e57eb"
+"web_ui/templates/calendar/_calendar_main_card.html" = "c62aece9490bd19fa3f483a22b6d77855c1f9bb88e2d613ee92aaa8142f46c12"
+"web_ui/templates/calendar/_calendar_styles.html" = "f2ce22f57ac1e3a297916360b28aa2486fb179a5bdd99deac963340e45d4e0cd"
+"web_ui/templates/calendar/_calendar_translations.html" = "c93ca0d4ee0a1ed1e5994bf799638f069e3213188cf6f9068d297dcfcf532a98"

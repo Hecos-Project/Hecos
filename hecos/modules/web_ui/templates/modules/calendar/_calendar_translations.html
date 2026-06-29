@@ -1,0 +1,17 @@
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     Calendar: Translations for calendar_panel.js
+     Exposes window.hcalTranslations so that the static JS file can access
+     server-side translated strings without Jinja2 in the JS file.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+window.hcalTranslations = {
+    addEvent : "{{ translations['ext_calendar_add_event'] }}",
+    newEvent : "{{ translations['ext_calendar_new_event'] }}",
+    edit     : "{{ translations['chat_btn_edit'] }}",
+    delete   : "{{ translations['chat_btn_delete'] }}",
+    save     : "{{ translations['webui_conf_btn_save'] }}",
+    cancel   : "{{ translations['ext_calendar_btn_cancel'] }}",
+    msgError : "{{ translations['ext_calendar_msg_error'] }}",
+    msgSaved : "{{ translations['ext_calendar_msg_saved'] }}"
+};
+</script>
