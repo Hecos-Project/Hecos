@@ -221,12 +221,21 @@ function mergeHubPanels(panels) {
         const panelId = p.id;
         if (!panelId) return;
         // Skip if already registered (either static or from previous mergeRegistry call)
-        const exists = hub.modules.find(m => m.id === panelId || m.pluginTag === p.plugin_tag);
-        if (!exists) {
-            // icon can be either a raw HTML string (e.g. '<i class="fas fa-image"></i>')
-            // or a plain class name (e.g. 'fa-puzzle-piece') from legacy entries
-            const rawIcon = p.icon || '';
-            const iconHtml = rawIcon.includes('<') ? rawIcon : `<i class="fas ${rawIcon || 'fa-puzzle-piece'}"></i>`;
+        const existing = hub.modules.find(m => m.id === panelId || m.pluginTag === p.plugin_tag);
+        
+        const rawIcon = p.icon || '';
+        const iconHtml = rawIcon.includes('<') ? rawIcon : `<i class="fas ${rawIcon || 'fa-puzzle-piece'}"></i>`;
+
+        if (existing) {
+            // Overwrite generic registry data with specific HPM package data
+            existing.id = panelId;
+            existing.label = p.name || panelId;
+            existing.icon = iconHtml;
+            existing.cat = p.category || existing.cat || 'CONNETTIVITÀ';
+            existing.pluginTag = p.plugin_tag || panelId.toUpperCase();
+            existing.isHpm = true;
+            added++;
+        } else {
             hub.modules.push({
                 id:        panelId,
                 label:     p.name || panelId,

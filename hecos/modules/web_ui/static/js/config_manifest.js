@@ -129,7 +129,6 @@ window.CONFIG_HUB.tagMap = {
     'MODELS': 'backend',
     'DRIVE_EDITOR': 'drive-editor',
     'MESSENGER': 'messenger',
-    'CALENDAR': 'calendar',
     'CONTACTS': 'contacts',
     'MAIL': 'mail',
     'MEDIA_PLAYER': 'media',
@@ -150,6 +149,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice', 'system', 'media', 'aesthetics', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'messenger', 'calendar', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
+    'messenger', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'lists', 'backup'
 ]);
