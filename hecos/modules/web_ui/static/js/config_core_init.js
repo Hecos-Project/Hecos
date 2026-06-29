@@ -24,6 +24,20 @@ async function initAll(attempt = 1) {
     // At this point window.cfg may already be populated (Jinja pre-injection)
     // or may be empty {}. Either way, render NOW so the user sees the menu.
     setViewMode(viewMode, true);
+
+    // If cfg is pre-injected by Jinja, fetch HPM panels BEFORE first render
+    // so installed packages appear in the sidebar immediately (no flicker).
+    const cfgPreInjected = window.cfg && Object.keys(window.cfg).length > 0;
+    if (cfgPreInjected) {
+        try {
+            const _r0panels = await fetchWithTimeout('/api/hub/panels', 2000);
+            if (_r0panels && _r0panels.ok) {
+                const _p0 = await _r0panels.json();
+                if (Array.isArray(_p0)) mergeHubPanels(_p0);
+            }
+        } catch(_e0) { /* non-critical, proceed */ }
+    }
+
     renderConfigHub(viewMode);
     // Only call showTab if there's an active tab to restore (not 'welcome')
     if (activeTab && activeTab !== 'welcome') {

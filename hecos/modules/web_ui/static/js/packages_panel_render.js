@@ -112,7 +112,7 @@ window.hpmRenderRow = function(pkg, meta) {
   let lazyHtml = '';
   if (!disableLazy) {
     lazyHtml = `
-      <label class="lazy-label" style="font-size:10px; margin-right:8px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+      <label class="lazy-label no-autosave" style="font-size:10px; margin-right:8px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
         <input type="checkbox" onchange="hpmToggleLazy('${pkg.id}', ${isBuiltin}, this.checked)" ${isLazy ? 'checked' : ''}> Lazy
       </label>
     `;
@@ -121,7 +121,7 @@ window.hpmRenderRow = function(pkg, meta) {
   let switchHtml = '';
   if (!isBroken) {
     switchHtml = `
-      <label class="switch" ${disableEnabled ? 'style="visibility:hidden;pointer-events:none;"' : ''} title="${window.HPM_I18N?.enable || 'Enable'}/${window.HPM_I18N?.disable || 'Disable'}">
+      <label class="switch no-autosave" ${disableEnabled ? 'style="visibility:hidden;pointer-events:none;"' : ''} title="${window.HPM_I18N?.enable || 'Enable'}/${window.HPM_I18N?.disable || 'Disable'}">
         <input type="checkbox" onchange="hpmToggleEnabled('${pkg.id}', ${isBuiltin}, this.checked)" ${!isDisabled ? 'checked' : ''} ${disableEnabled ? 'disabled' : ''}>
         <span class="slider"></span>
       </label>

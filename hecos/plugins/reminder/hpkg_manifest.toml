@@ -1,6 +1,6 @@
 id = "reminder"
 name = "Reminder"
-version = "1.0.0"
+version = "1.0.1"
 author = "Hecos Core Team"
 description = "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions."
 type = "plugin"
@@ -21,7 +21,7 @@ is_class_based = true
 widgets = [
     { id = "reminder", extension_path = "reminder/" },
 ]
-signature = "FtvWTVXPvvEN1PBPyo6Av7x9MZPXgMtb0T3rTqhXUUEWAJqkSwkk6kTnj6uZIDnbD0Wb8LXuYzWMvTTzyhL4Cw=="
+signature = "1BOCS3AmTqSRS5oQkz/1NRnTWFdShtG5IGOPucRVMeFMRNEAAbpsg1FzUbSStCyFwweRZ9ZB1JI+ZR6kCjwUDw=="
 
 [commands]
 set_reminder = "Creates a reminder. Fires TTS + WebUI alert at the specified time."
@@ -131,13 +131,19 @@ description = "How many minutes to postpone the reminder. Default: 15."
 [config_panel]
 tab_id = "reminder"
 tab_label = "Reminder"
-tab_icon = "<i class=\"fas fa-clock\"></i>"
+tab_icon = "fa-clock"
 category = "SISTEMA"
 template_file = "templates/config/config_reminder.html"
+api_routes_file = "web/routes.py"
+config_api_get = "/hecos/api/plugins/reminder/config"
+config_api_post = "/hecos/api/plugins/reminder/config"
+
+[config_defaults]
+enabled = true
 
 [file_hashes]
 "main.py" = "d0fdc9e1b1f24a6cf85d9e6108c8c5d3face668646905c7d48751fd0145edc83"
-"notifier.py" = "b57be266754c3678d458b74f0f184d7e76f6d6f71ab174896ed217dc1b5d866d"
+"notifier.py" = "6d832fe21db8b6285265e3e0dcf6662b978d6e35ad4a991f91ab01c25b12e538"
 "parser.py" = "0462f0182d1cdeb0d3e43863742efa4846cc63f3671e60267cb8956970095fb2"
 "README.md" = "e4c68ddfbd9cb31e080ce9d38feaf7f5b33f301a9d1350db779da1118cecf1a5"
 "scheduler.py" = "1069880ec0337f95175393cb7df8d28c2b6c97b258ce0475c8fc66f27a5a2b95"
@@ -147,4 +153,8 @@ template_file = "templates/config/config_reminder.html"
 "reminder/manifest.json" = "39653a0743f857b2a733824a0b45f39cef661cc23ad81adeb39d11ae06079675"
 "reminder/__init__.py" = "c808cedf3a3c00163514b02346d492fcc649f9950e9ebff1dfa2f01021acae51"
 "reminder/templates/reminder_widget.html" = "5bb2bc3fe93ceb59edd45be9c8650827e31d64866db8df0fc8b13994ff06bf5a"
-"templates/config/config_reminder.html" = "50b654aed3ba13182f5fa1c868f816affe3f7b111bdd788719176d63917d8235"
+"reminder_config/config_manager.py" = "571679cb9d81c612c0dfb973975c4ce03b3e056dd085288d54c4d94907c2e5a6"
+"reminder_config/defaults.toml" = "8964095083c1ae2ab6ca98b581a299291d41f65a34609f05e0845c5b00ef6298"
+"reminder_config/__init__.py" = "2f59ef07028edb835724001e18dc4ae44a7b5ed75b1cd24ba0ca6876c4b3e5bc"
+"templates/config/config_reminder.html" = "1dc869ed2540abab694ca9cc8939a6a91e7a0998cb727a74fcd3feae8320658f"
+"web/routes.py" = "a1d73b719043af2ac8a301298aa938a1a8d33c0e298dfa66e98c568fa1c84720"

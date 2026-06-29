@@ -29,13 +29,6 @@ class PluginHelp(BaseModel):
     show_disabled: bool = False
 
 
-class PluginImageGen(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    width: int = 1024
-    height: int = 1024
-    nologo: bool = False
-
 
 class PluginMediaPlayer(BaseModel):
     enabled: bool = True
@@ -126,16 +119,6 @@ class PluginDrive(BaseModel):
     })
 
 
-class PluginReminder(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = False
-    reminder_mode: str = "voice"
-    ringtone_path: str = "Default_System_Alert.mp3"
-    time_format: str = "24h"
-    max_reminders: int = 50
-    snooze_default_minutes: int = 15
-    reminder_snooze_ui: bool = False
-
 
 class MCPServerConfig(BaseModel):
     command: str
@@ -169,10 +152,6 @@ class PluginBrowser(BaseModel):
     browser_engine_mode: str = "app_mode"
     cdp_port: int = 9222
 
-
-class PluginCalendar(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = False
 
 
 class PluginUsers(BaseModel):
@@ -247,7 +226,6 @@ class PluginsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
-    IMAGE_GEN: PluginImageGen = Field(default_factory=PluginImageGen)
     MEDIA_PLAYER: PluginMediaPlayer = Field(default_factory=PluginMediaPlayer)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
@@ -257,11 +235,9 @@ class PluginsConfig(BaseModel):
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
     REMOTE_TRIGGERS: PluginRemoteTriggers = Field(default_factory=PluginRemoteTriggers)
-    REMINDER: PluginReminder = Field(default_factory=PluginReminder)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
-    CALENDAR: PluginCalendar = Field(default_factory=PluginCalendar)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
     MAIL: PluginMail = Field(default_factory=PluginMail)

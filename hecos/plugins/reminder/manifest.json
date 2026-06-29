@@ -1,7 +1,7 @@
 {
     "tag": "REMINDER",
     "name": "Reminder",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
     "lazy_load": true,
     "is_class_based": true,
@@ -119,5 +119,5 @@
             "requires_args": false
         }
     ],
-    "icon": "<i class=\"fas fa-clock\"></i>"
+    "icon": "fa-clock"
 }

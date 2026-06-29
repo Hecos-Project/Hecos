@@ -111,8 +111,8 @@ def fire_reminder(reminder: dict) -> None:
     logger.info("REMINDER", f"🔔 FIRE: [{reminder_id}] '{title}'")
 
     def _alert_async():
-        from hecos.app.config import ConfigManager
-        plugin_config = ConfigManager().config.get("plugins", {}).get("REMINDER", {})
+        from hecos.plugins.reminder.reminder_config import get_reminder_config
+        plugin_config = get_reminder_config()
 
         mode = reminder.get("mode") # Per-reminder override
         if not mode:
@@ -171,8 +171,8 @@ def fire_reminder(reminder: dict) -> None:
     r_interactive = reminder.get("interactive")
     if r_interactive is None:
         try:
-            from hecos.app.config import ConfigManager
-            _snooze = ConfigManager().config.get("plugins", {}).get("REMINDER", {}).get("reminder_snooze_ui", False)
+            from hecos.plugins.reminder.reminder_config import get_reminder_config
+            _snooze = get_reminder_config().get("reminder_snooze_ui", False)
         except Exception:
             _snooze = False
     else:
