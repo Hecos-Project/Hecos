@@ -181,8 +181,8 @@ window.hpmRenderRow = function(pkg, meta) {
         </div>` : ''}
       </div>
 
-      <!-- Actions -->
-      <div style="display:flex;gap:5px;flex-shrink:0;align-items:center;">
+      <!-- Actions — class 'hpm-card-actions' is used by the update badge injector -->
+      <div class="hpm-card-actions" style="display:flex;gap:5px;flex-shrink:0;align-items:center;">
         ${lazyHtml}
         ${switchHtml}
         ${actions}

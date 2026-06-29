@@ -1,3 +1,0 @@
-"""
-Hecos Calendar WebUI Extension
-"""

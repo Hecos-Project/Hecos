@@ -6,6 +6,25 @@
 
 window.hpmInit = function () {
   window.hpmSwitchTab('packages');
+  // Attempt to update counts for loaded panels
+  setTimeout(() => {
+    if (document.getElementById('tab-plugins')) {
+      const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
+      if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
+    }
+    if (document.getElementById('tab-widgets')) {
+      const widgetCount = document.querySelectorAll('#tab-widgets .toggle-row, #tab-widgets .widget-card, #tab-widgets [data-widget]').length;
+      if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
+    }
+  }, 1000);
+};
+
+window.hpmUpdateCount = function(tabId, count) {
+  const el = document.getElementById(`hpm-cnt-${tabId}`);
+  if (el) {
+    el.textContent = `(${count})`;
+  }
+  localStorage.setItem(`hpm-cache-cnt-${tabId}`, count);
 };
 
 window.hpmSwitchTab = async function(tabId) {
@@ -42,6 +61,12 @@ window.hpmSwitchTab = async function(tabId) {
       existingTab.style.display = 'block';
       existingTab.classList.add('active');
       if (typeof window.populatePlugins === 'function') window.populatePlugins();
+      
+      setTimeout(() => {
+        const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
+        if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
+      }, 500);
+      
     } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.trim() === '') {
       try {
         if (typeof window._loadPanel === 'function') {
@@ -53,6 +78,11 @@ window.hpmSwitchTab = async function(tabId) {
             loadedTab.classList.remove('panel');
             loadedTab.style.display = 'block';
             loadedTab.classList.add('active');
+            
+            setTimeout(() => {
+              const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
+              if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
+            }, 500);
           }
         } else {
           throw new Error('_loadPanel function not found');
@@ -72,6 +102,12 @@ window.hpmSwitchTab = async function(tabId) {
       existingWidgetsTab.classList.remove('panel');
       existingWidgetsTab.style.display = 'block';
       existingWidgetsTab.classList.add('active');
+      
+      setTimeout(() => {
+        const widgetCount = document.querySelectorAll('#tab-widgets .toggle-row, #tab-widgets .widget-card, #tab-widgets [data-widget]').length;
+        if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
+      }, 500);
+      
     } else if (!existingWidgetsTab && widgetsContainer && widgetsContainer.innerHTML.trim() === '') {
       try {
         if (typeof window._loadPanel === 'function') {
@@ -83,6 +119,11 @@ window.hpmSwitchTab = async function(tabId) {
             loadedWidgetsTab.classList.remove('panel');
             loadedWidgetsTab.style.display = 'block';
             loadedWidgetsTab.classList.add('active');
+            
+            setTimeout(() => {
+              const widgetCount = document.querySelectorAll('#tab-widgets .toggle-row, #tab-widgets .widget-card, #tab-widgets [data-widget]').length;
+              if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
+            }, 500);
           }
         } else {
           throw new Error('_loadPanel function not found');
@@ -117,6 +158,9 @@ window.hpmLoadPackages = async function () {
 
     const packages = data.packages || [];
     window._packages = packages; // Store globally for toggle and uninstall logic
+    
+    // Update count dynamically
+    window.hpmUpdateCount('packages', packages.length);
     
     if (packages.length === 0) {
       grid.innerHTML = `
@@ -166,6 +210,7 @@ async function _hpmCheckUpdatesBackground(packages, showFeedback = false) {
     if (!data.ok || !data.catalog) throw new Error(data.error || 'Invalid catalog');
 
     const catalogPkgs = data.catalog.packages || [];
+    window.hpmUpdateCount('store', catalogPkgs.length);
     const catalogMap = {};
     catalogPkgs.forEach(p => { catalogMap[p.id] = p.version; });
 
@@ -184,7 +229,7 @@ async function _hpmCheckUpdatesBackground(packages, showFeedback = false) {
         // Inject update badge into the already-rendered card
         const card = document.getElementById(`hpm-pkg-${pkg.id}`);
         if (card && !card.querySelector('.hpm-update-badge')) {
-          const actionsDiv = card.querySelector('div[style*="flex-shrink:0"]');
+          const actionsDiv = card.querySelector('.hpm-card-actions');
           if (actionsDiv) {
             const badge = document.createElement('button');
             badge.className = 'hpm-update-badge btn btn-sm';
