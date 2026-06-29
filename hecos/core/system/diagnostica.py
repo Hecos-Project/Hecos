@@ -92,21 +92,23 @@ def check_backend_async(config):
 
     def _run_check():
         import urllib.request, urllib.error
+        probe_timeout = config.get('backend', {}).get('ollama', {}).get('probe_timeout_sec', 3)
         try:
             if backend_type == 'kobold':
                 url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
                 try:
-                    urllib.request.urlopen(url, timeout=3)
+                    urllib.request.urlopen(url, timeout=probe_timeout)
                     logger.info(f"[DIAG] Kobold backend: ONLINE")
                 except Exception as e:
                     logger.warning(f"[DIAG] Kobold backend not responding: {e}")
             else:  # ollama
-                tags_url = "http://localhost:11434/api/tags"
+                ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
+                tags_url = ollama_base + '/api/tags'
                 try:
-                    urllib.request.urlopen(tags_url, timeout=3)
-                    logger.info(f"[DIAG] Ollama backend: ONLINE")
+                    urllib.request.urlopen(tags_url, timeout=probe_timeout)
+                    logger.info(f"[DIAG] Ollama backend: ONLINE ({ollama_base})")
                 except Exception as e:
-                    logger.warning(f"[DIAG] Ollama backend not responding: {e}")
+                    logger.warning(f"[DIAG] Ollama backend not responding at {ollama_base}: {e}")
         except Exception as e:
             logger.warning(f"[DIAG] Backend check error: {e}")
 

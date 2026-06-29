@@ -29,7 +29,8 @@ class ModelManager:
             categorized_models["Ollama (Local)"].extend(list(cache.values()))
         else:
             try:
-                response = requests.get("http://localhost:11434/api/tags", timeout=1)
+                ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
+                response = requests.get(f"{ollama_base}/api/tags", timeout=1)
                 if response.status_code == 200:
                     models_ollama = [m['name'] for m in response.json().get('models', [])]
                     self.config_manager.set({str(i+1): name for i, name in enumerate(models_ollama)}, 'backend', 'ollama', 'available_models')
@@ -178,7 +179,9 @@ class ModelManager:
         """Fetches model sizes from Ollama."""
         model_sizes = {}
         try:
-            response = requests.get("http://localhost:11434/api/tags", timeout=2)
+            config = self.config_manager.config
+            ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
+            response = requests.get(f"{ollama_base}/api/tags", timeout=2)
             if response.status_code == 200:
                 data = response.json()
                 for model in data.get('models', []):
