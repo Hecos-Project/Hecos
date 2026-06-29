@@ -225,6 +225,13 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                     # Also update the Jinja loader to remove stale paths
                     _refresh_jinja_loader(app)
 
+                    # ── Clear Config Panel Cache ──
+                    try:
+                        from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                        clear_hpm_panel_cache()
+                    except ImportError:
+                        pass
+
                     # Forcefully hide any uninstalled widgets from the config (mimic Widget Layout "off")
                     for ext_id in widget_ids_to_hide:
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")

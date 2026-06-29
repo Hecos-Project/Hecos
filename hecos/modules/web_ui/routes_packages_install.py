@@ -43,6 +43,13 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
             result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned)
 
             if result.success:
+                # ── Clear Config Panel Cache ──
+                try:
+                    from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                    clear_hpm_panel_cache()
+                except ImportError:
+                    pass
+
                 # ── Hot-patch Jinja loader so widget templates are found immediately ──
                 _refresh_jinja_loader(app)
 

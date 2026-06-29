@@ -1,7 +1,7 @@
 {
     "tag": "CALENDAR",
     "name": "Calendar",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
     "icon": "<i class=\"far fa-calendar-alt\"></i>",
     "lazy_load": true,

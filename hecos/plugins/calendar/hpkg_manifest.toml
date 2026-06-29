@@ -1,9 +1,9 @@
 id = "calendar"
 name = "Calendar"
-version = "1.0.0"
+version = "1.0.3"
 hecos_min_version = "0.34.0"
 type = "plugin"
-author = "Hecos Core Team"
+author = "Antonio Meloni"
 description = "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules."
 target_dir = "plugins"
 plugin_dir = "."
@@ -21,7 +21,7 @@ api_routes_file = "calendar/main.py"
 widgets = [
     { id = "calendar", extension_path = "calendar/" },
 ]
-signature = "i7P574w4zUItGxfP8MBx4SyrUskd1xoU5lN4ZaLBJH0ZTpzi14U2uVlP5VZWMes5GAiF2mGp96Gm4H2iMFVJDA=="
+signature = "ubeWULueTtWLsoPo/khVLLw6dfuhEJ8WTdmwk2MPebVpnunnGOno8A/Sax7ef0/1htvhtzJ0O3YxB/7M7cTLCw=="
 
 [config_defaults]
 enabled = true

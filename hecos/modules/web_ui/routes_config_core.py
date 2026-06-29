@@ -141,6 +141,10 @@ _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}
 _HPM_PANEL_CACHE: dict = {}
 
 
+def clear_hpm_panel_cache():
+    """Clears the HPM panel cache (called after a package install/uninstall)."""
+    _HPM_PANEL_CACHE.clear()
+
 def _discover_hpm_panel(panel_id: str) -> str | None:
     """
     Auto-discovers a config panel HTML template for HPM-installed packages.
