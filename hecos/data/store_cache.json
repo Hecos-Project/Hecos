@@ -19,7 +19,7 @@
         "dall-e",
         "gemini"
       ],
-      "download_url": "https://github.com/Hecos-Project/Hecos-Packages/releases/latest/download/image_gen-1.0.8.hpkg",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
       "size_bytes": 34376,
       "sha256": "a15ce93a163f3e02495e6d1931a6ec69ffaf808c9a3c52bebf468e0f8805e313",
       "screenshots": [],
@@ -43,7 +43,7 @@
         "api",
         "open-meteo"
       ],
-      "download_url": "https://github.com/Hecos-Project/Hecos-Packages/releases/latest/download/weather_pro-1.0.0.hpkg",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.0.hpkg",
       "size_bytes": 11507,
       "sha256": "4f69d9c11afe592de22e84dc1af9d98f5e3a3f393aeac9e5a27d9683afde699e",
       "screenshots": [],
@@ -55,7 +55,7 @@
     {
       "id": "voice_visualizer",
       "name": "Voice Visualizer",
-      "type": "plugin",
+      "type": "widget",
       "level": 2,
       "version": "1.0.0",
       "author": "Antonio Meloni",
@@ -68,7 +68,7 @@
         "retro",
         "aesthetic"
       ],
-      "download_url": "https://github.com/Hecos-Project/Hecos-Packages/releases/latest/download/voice_visualizer-1.0.0.hpkg",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.0.hpkg",
       "size_bytes": 11334,
       "sha256": "6b57e157a0bb9a9b5f6d3aaf6b48caa2c9dd6622add0f75d70695b39ceff094b",
       "screenshots": [],
@@ -92,7 +92,7 @@
         "vision",
         "live"
       ],
-      "download_url": "https://github.com/Hecos-Project/Hecos-Packages/releases/latest/download/webcam_widget-1.0.0.hpkg",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam_widget-1.0.0.hpkg",
       "size_bytes": 3914,
       "sha256": "d323519615c39c969436a92aa0f50a5775917e6676b16618e10f3c5abf4311a6",
       "screenshots": [],
@@ -102,5 +102,5 @@
       "featured": false
     }
   ],
-  "cached_at": 1782719855.842417
+  "cached_at": 1782724894.0025034
 }
