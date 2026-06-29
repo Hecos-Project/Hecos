@@ -609,6 +609,7 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal) {
       modal.style.display = 'none';
       window.hpmStoreLoad();
       if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+      if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
     }, 1800);
   } else if (event === 'error') {
     bar.style.width    = '100%';

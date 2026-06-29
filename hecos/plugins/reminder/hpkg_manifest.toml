@@ -21,7 +21,7 @@ is_class_based = true
 widgets = [
     { id = "reminder", extension_path = "reminder/" },
 ]
-signature = "qPOrc8y3keQz9msK+fUoAQnbzj0MfwoW9RqEgN81/WyBPZHMH4gzX72o08gphkDl3hLECrAb9FfjOtcU8ik3AQ=="
+signature = "FtvWTVXPvvEN1PBPyo6Av7x9MZPXgMtb0T3rTqhXUUEWAJqkSwkk6kTnj6uZIDnbD0Wb8LXuYzWMvTTzyhL4Cw=="
 
 [commands]
 set_reminder = "Creates a reminder. Fires TTS + WebUI alert at the specified time."
@@ -147,4 +147,4 @@ template_file = "templates/config/config_reminder.html"
 "reminder/manifest.json" = "39653a0743f857b2a733824a0b45f39cef661cc23ad81adeb39d11ae06079675"
 "reminder/__init__.py" = "c808cedf3a3c00163514b02346d492fcc649f9950e9ebff1dfa2f01021acae51"
 "reminder/templates/reminder_widget.html" = "5bb2bc3fe93ceb59edd45be9c8650827e31d64866db8df0fc8b13994ff06bf5a"
-"templates/config/config_reminder.html" = "40bf0101b98b919ad4e3f7d7ab6b47c512005e4ec3ff32492fcfa4eb7083fdeb"
+"templates/config/config_reminder.html" = "50b654aed3ba13182f5fa1c868f816affe3f7b111bdd788719176d63917d8235"
