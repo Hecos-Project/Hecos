@@ -17,9 +17,25 @@ window.hpmSetStatus = async function (id, status, skipRender = false) {
       return;
     }
     if (window.showToast) window.showToast(`Package ${status}`);
-    
-    // Only trigger saveConfig for builtin legacy plugins, not for HPM packages.
-    // HPM backend directly modifies the config when disabling packages.
+
+    const isEnabled = (status === 'installed');
+    const pkgTag = data.tag;
+
+    // ── Update window.cfg in memory so the hub filters correctly ──────────
+    if (pkgTag && window.cfg && window.cfg.plugins) {
+      if (!window.cfg.plugins[pkgTag]) window.cfg.plugins[pkgTag] = {};
+      window.cfg.plugins[pkgTag].enabled = isEnabled;
+    }
+
+    // ── Refresh the config hub (add/remove the panel tab instantly) ────────
+    const evictId = isEnabled ? null : (data.panel_id || null);
+    if (typeof window.hpmRefreshConfigHub === 'function') {
+      window.hpmRefreshConfigHub(evictId);
+    } else if (typeof window.renderConfigHub === 'function') {
+      window.renderConfigHub(window.viewMode);
+    }
+
+    // ── For builtin legacy plugins also save config ─────────────────────
     if (window._packages) {
         const pkg = window._packages.find(x => x.id === id);
         if (pkg && pkg.version === 'built-in') {
@@ -29,17 +45,17 @@ window.hpmSetStatus = async function (id, status, skipRender = false) {
                 });
             }
         }
-        
+
         // Broadcast widget state change to update Control Room dynamically
         const hpmChannel = new BroadcastChannel('hecos_widgets');
         hpmChannel.postMessage({ type: 'widgets_reload_request' });
-        
+
         if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
 
         if (!skipRender) {
-          if (pkg) { 
-            pkg.status = status; 
-            if (typeof window.hpmRenderHierarchy === 'function') window.hpmRenderHierarchy(); 
+          if (pkg) {
+            pkg.status = status;
+            if (typeof window.hpmRenderHierarchy === 'function') window.hpmRenderHierarchy();
           }
         }
     }

@@ -242,35 +242,6 @@
         "module_type": "plugin",
         "slash_commands": []
     },
-    "IMAGE_GEN": {
-        "description": "AI Image Generation — Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration.",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "<i class=\"fas fa-image\"></i>",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": [
-            {
-                "id": "img",
-                "aliases": [
-                    "/img",
-                    "/image",
-                    "/photo",
-                    "/foto"
-                ],
-                "description": "Genera un'immagine AI da una descrizione testuale",
-                "usage": "/img <descrizione>",
-                "example": "/img foto fotorealistica di un gatto su Marte",
-                "icon": "🖼️",
-                "method": "generate_image",
-                "requires_args": true
-            }
-        ]
-    },
     "LISTS": {
         "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
         "commands": {

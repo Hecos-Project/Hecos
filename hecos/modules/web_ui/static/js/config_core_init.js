@@ -289,7 +289,19 @@ window.mergeRegistry = mergeRegistry;
 window.loadUIState   = loadUIState;
 window.saveUIState   = saveUIState;
 
-window.hpmRefreshConfigHub = async function() {
+window.hpmRefreshConfigHub = async function(evictPanelId = null) {
+    // If a panel is being disabled, remove it from cache and DOM so it vanishes instantly
+    if (evictPanelId) {
+        if (window._panelCache) delete window._panelCache[evictPanelId];
+        if (window.LAZY_PANEL_IDS) window.LAZY_PANEL_IDS.delete(evictPanelId);
+        const domPanel = document.getElementById('tab-' + evictPanelId);
+        if (domPanel) domPanel.remove();
+        // If this was the active tab, go back to welcome
+        if (typeof activeTab !== 'undefined' && activeTab === evictPanelId) {
+            if (typeof showTab === 'function') showTab('welcome');
+        }
+    }
+
     try {
         const res = await fetch('/api/hub/panels');
         if (res && res.ok) {

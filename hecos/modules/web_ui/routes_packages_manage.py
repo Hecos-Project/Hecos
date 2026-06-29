@@ -145,20 +145,22 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             pkg = registry.get(pkg_id)
             if not pkg:
                 return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+
+            # Extract snap and tag first so they are always available for the response
+            import json as _json
+            snap = pkg.get("manifest_snapshot", {})
+            if isinstance(snap, str):
+                try: snap = _json.loads(snap)
+                except: snap = {}
+            pkg_tag = snap.get("tag") or pkg_id.upper()
+            panel_id = (snap.get("config_panel") or {}).get("tab_id") or pkg_id
+
             ok = registry.set_status(pkg_id, status)
             if ok:
-                # If disabling, also disable all associated widgets in config to force UI refresh
                 if status == "disabled":
-                    snap = pkg.get("manifest_snapshot", {})
-                    if isinstance(snap, str):
-                        import json
-                        try: snap = json.loads(snap)
-                        except: snap = {}
                     widgets_modified = 0
-                    tag = snap.get("tag")
-                    if tag:
-                        cfg_mgr.set(False, "plugins", tag, "enabled")
-                        widgets_modified += 1
+                    cfg_mgr.set(False, "plugins", pkg_tag, "enabled")
+                    widgets_modified += 1
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
@@ -169,23 +171,13 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                     if widgets_modified > 0:
                         cfg_mgr.save()
                 elif status == "installed":
-                    # Re-enable the widget in the config so it can appear again
-                    snap = pkg.get("manifest_snapshot", {})
-                    if isinstance(snap, str):
-                        import json
-                        try: snap = json.loads(snap)
-                        except: snap = {}
                     widgets_modified = 0
-                    tag = snap.get("tag")
-                    if tag:
-                        cfg_mgr.set(True, "plugins", tag, "enabled")
-                        widgets_modified += 1
+                    cfg_mgr.set(True, "plugins", pkg_tag, "enabled")
+                    widgets_modified += 1
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "enabled")
-                            # We also turn it back on for the sidebar (visible=True), 
-                            # but we leave room_visible untouched to respect user preference
                             cfg_mgr.set(True, "widgets", "per_widget", ext_id, "visible")
                             widgets_modified += 1
                     if widgets_modified > 0:
@@ -194,7 +186,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                 _hpm_event_broadcast("hpm:package_status_changed", {
                     "id": pkg_id, "status": status
                 })
-            return jsonify({"ok": ok, "id": pkg_id, "status": status})
+            return jsonify({"ok": ok, "id": pkg_id, "status": status, "tag": pkg_tag, "panel_id": panel_id})
         except Exception as e:
             log.error(f"[HPM] PATCH /api/packages/{pkg_id}/status error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
