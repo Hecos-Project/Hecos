@@ -4,11 +4,12 @@
 
 The **Chat** is the primary interface of the Hecos WebUI. It provides a rich, modern environment for interacting with your AI.
 
+![Hecos Chat Interface](https://github.com/Hecos-Project/Hecos-Assets/blob/main/Hecos_ImageGen_Module_1.png?raw=true)
+
 ---
 
 ### 🎛️ SYSTEM OVERVIEW
 
-![Hecos Chat Interface](https://github.com/Hecos-Project/Hecos-Assets/blob/main/Hecos_Chat_0020.png?raw=true)
 
 ---
 
@@ -38,6 +39,9 @@ The sidebar acts as the telemetry and control deck for the active companion sess
     * `PTT (Push-to-Talk)`: Dual-mode input. Click the chat icon to switch between standard On/Off or PTT. Alternatively, use the **`Ctrl+Shift`** hotkey combo to engage a hardware-level walkie-talkie mode.
 * **Control Room:** A collapsible, slide-out node integrated directly within the chat view to manage active widgets, widgets pipelines, and environmental states.
 * **Packet Manager Link:** Located at the absolute bottom of the sidebar, this terminal shortcut bypasses the Central Hub, dropping you straight into the module installer/updater matrix.
+
+![Hecos Chat Interface](https://github.com/Hecos-Project/Hecos-Assets/blob/main/Hecos_Chat_0020.png?raw=true)
+
 
 ### 2. Main Chat Engine & Top Terminal
 The central processing view handles data rendering and environmental monitoring.

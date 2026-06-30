@@ -29,16 +29,36 @@ Hecos is a modern system that offers two ways to interact:
 
 2. **WebUI (The Face)**: This is the modern interface you open in your browser. Here you can chat visually, send images, and configure every detail with a simple and intuitive graphic interface.
 
-![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main///003_HecosChat_001.png?raw=true)
+![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main////001_HecosPortal_001.png?raw=true)
 
 
 ## 🏛️ The Five Pillars of the WebUI
 The Hecos WebUI is elegantly divided into five main areas, each with a specific purpose:
 - **The Chat** — The main conversational interface where you talk with Hecos, send images, and trigger commands.
+
+![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main///003_HecosChat_001.png?raw=true)
+
+
 - **Central Hub** — The configuration and management center. Install packages, tune settings, and manage users.
+
+![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main////008_HecosCentralHub_002.png?raw=true)
+
+
 - **Control Room** — A live dashboard where interactive widgets (weather, telemetry, calendar, etc.) run side by side.
+
+![Hecos - Control Room ](https://github.com/Hecos-Project/Hecos-Assets/blob/main////005_HecosChat_Direct_ControlRoom_integrata.png?raw=true)
+
+
 - **Flows** — The visual automation builder. Create routines and automations by chaining nodes together.
+
+![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main////012_Hecos_Flows_003.png?raw=true)
+
+
 - **Hecos Drive** — The integrated file explorer and code editor, shared between you and the AI.
+
+![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main////016_Hecos_Drive_FileManager_002.png?raw=true)
+
+
 
 ### 🛠️ Built-in WebUI Tools
 In addition to the main pillars, the WebUI includes essential background tools:
