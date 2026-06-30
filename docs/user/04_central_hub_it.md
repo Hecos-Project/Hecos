@@ -2,6 +2,8 @@
 
 > *"Il centro di configurazione e gestione. Installa pacchetti, regola le impostazioni e gestisci gli utenti."*
 
+![Hecos - Central Hub](https://github.com/Hecos-Project/Hecos-Assets/blob/main////009_HecosCentralHub_003.png?raw=true)
+
 Il **Central Hub** è il centro di comando di Hecos. Accessibile tramite l'icona dell'ingranaggio nella WebUI o premendo **F7**, ti permette di riconfigurare il sistema in tempo reale senza dover modificare complessi file YAML.
 
 ## Funzionalità

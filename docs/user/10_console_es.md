@@ -2,6 +2,9 @@
 
 > *"La ventana de comandos donde el sistema piensa, realiza comprobaciones de seguridad y te permite gestionarlo todo."*
 
+![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main//Hecos_Core_002.png?raw=true)
+
+
 La **Consola de Hecos** es la ventana de terminal cruda y nativa que se abre al iniciar Hecos por primera vez. Es el corazón palpitante del sistema.
 
 ## ¿Por qué una Consola?

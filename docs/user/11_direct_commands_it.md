@@ -6,6 +6,9 @@ Normalmente, quando scrivi ad Hecos, l'AI deve leggere il tuo messaggio, pensare
 
 Ecco a cosa servono i comandi diretti. Iniziano tutti con una barra `/` (lo *slash*) e dicono al sistema di eseguire immediatamente un'azione, saltando completamente il "cervello" dell'AI.
 
+![Hecos - Direct Comands](https://github.com/Hecos-Project/Hecos-Assets/blob/main///004_HecosChat_Direct_Commands.png?raw=true)
+
+
 ---
 
 ## 🎩 Come si usano nella Chat

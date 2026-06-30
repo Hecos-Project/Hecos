@@ -1,37 +1,46 @@
 # 📁 Hecos Drive
 
-> *"Un file explorer e un editor di codice integrati. La tua IA ha accesso diretto al tuo workspace."*
+> *"Un file explorer e un code editor integrati. La tua IA ha accesso diretto al tuo spazio di lavoro."*
+
+![Hecos - Drive](https://github.com/Hecos-Project/Hecos-Assets/blob/main////////015_Hecos_Drive_FileManager.png?raw=true)
+
 > — Tour WebUI Hecos
 
-**Hecos Drive** è uno dei cinque pilastri principali della WebUI di Hecos. È un file manager e un editor di codice integrati che danno sia a te che all'IA un accesso diretto e contestuale ai file nel tuo workspace.
+**Hecos Drive** è uno dei cinque pilastri principali della WebUI di Hecos. È un file manager e un code editor integrati che offrono a te e all'IA un accesso diretto e contestuale ai file del tuo spazio di lavoro.
 
 ## Cos'è Hecos Drive?
 
-Hecos Drive non è solo un browser di file — è il ponte tra l'IA e il tuo filesystem. Quando Hecos ha bisogno di leggere, scrivere o modificare un file durante un'attività, usa il Drive come workspace. Puoi seguire tutto in tempo reale.
+Hecos Drive non è solo un file browser: è il ponte tra l'IA e il tuo filesystem. Quando Hecos deve leggere, scrivere o modificare un file durante un'attività, utilizza Drive come spazio di lavoro. Puoi seguire le sue operazioni in tempo reale.
 
-## Funzionalità Principali
+![Hecos - Drive ](https://github.com/Hecos-Project/Hecos-Assets/blob/main/////////016_Hecos_Drive_FileManager_002.png?raw=true)
 
-### 📂 File Explorer
+
+## Funzionalità Chiave
+
+### 📂 Esplora File
 - Sfoglia cartelle e file all'interno del workspace configurato.
 - Crea, rinomina, sposta ed elimina file direttamente dall'interfaccia.
-- Trascina file nella Chat per inviarli a Hecos per l'analisi.
+- Trascina i file nella Chat per inviarli a Hecos per l'analisi.
 
 ### ✏️ Editor di Codice Integrato
-- **Evidenziazione della sintassi** per 50+ linguaggi di programmazione.
+- **Evidenziazione della sintassi** per oltre 50 linguaggi di programmazione.
 - **Navigazione rapida** tra i file aperti.
 - **Anteprima live** per i file Markdown.
 - Supporta la modifica diretta dei file di configurazione di Hecos (es. flows, personas).
 
-### 🤖 Workspace AI-Aware
-- Quando chiedi a Hecos di *"creare uno script Python"* o *"modificare il file di configurazione"*, scrive direttamente nel Drive.
-- Puoi aprire immediatamente qualsiasi file generato dall'IA nell'editor per revisionarlo o modificarlo.
+### 🤖 Spazio di Lavoro Condiviso con l'IA
+- Quando chiedi a Hecos di *"creare uno script Python"* o *"modificare il file di configurazione"*, scrive direttamente su Drive.
+- Puoi aprire immediatamente qualsiasi file generato dall'IA nell'editor per rivederlo o modificarlo.
 
 ## Come Accedervi
 
-Il Drive è accessibile dalla navigazione del **Central Hub** (menu superiore → tab Drive) o tramite comando diretto:
+Drive è accessibile dalla navigazione del **Central Hub** (menu superiore → scheda Drive) o tramite comando diretto:
 ```
 /drive
 ```
 
+
+![Hecos - Drive ](https://github.com/Hecos-Project/Hecos-Assets/blob/main//////////017_Hecos_Drive_FileManager_003_File_Editor.png?raw=true)
+
 ---
-*Hecos Drive ti mantiene sempre in controllo: vedi esattamente cosa legge e scrive l'IA.*
+*Hecos Drive ti mantiene sotto controllo: vedi sempre esattamente cosa l'IA legge e scrive.*

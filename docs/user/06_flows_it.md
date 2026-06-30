@@ -2,6 +2,8 @@
 
 Il modulo **Flows** di Hecos è il "direttore d'orchestra" del sistema. Ti permette di creare automazioni, routine e comportamenti complessi concatenando azioni in modo logico e sequenziale. 
 
+![Hecos - Flows Automations](https://github.com/Hecos-Project/Hecos-Assets/blob/main/////010_Hecos_Flows_001.png?raw=true)
+
 Puoi creare un flusso usando il linguaggio naturale (ci penserà l'IA a scriverlo per te), disegnandolo tramite il **Canvas Visuale** (Node Palette), o scrivendolo direttamente in formato **YAML**.
 
 ---
@@ -19,6 +21,8 @@ Un Flow è composto da una serie di **Nodi** (o *Steps*). Ogni nodo esegue un'un
 
 Dietro le quinte (o nell'editor YAML integrato), ogni flusso è descritto in formato YAML (uno standard estremamente leggibile e diffuso). 
 A differenza del `JSON` (che utilizza rigide parentesi graffe e virgolette continue `{"chiave": "valore"}`), lo **YAML** usa la semplice indentazione (spazi) e la sintassi `chiave: valore` (in inglese, "key-value").
+
+![Hecos - Flows Automations](https://github.com/Hecos-Project/Hecos-Assets/blob/main//////011_Hecos_Flows_002.png?raw=true)
 
 ### 💡 Risolvere il dubbio sulla "key"
 Quando ti trovi nel Node Editor (doppio clic su un nodo) e leggi "Parameters (YAML)", oppure quando vedi un parametro chiamato `key` in informatica, significa semplicemente il **nome identificativo di quel parametro**.
@@ -51,7 +55,9 @@ Quando fai doppio clic su un nodo nel Canvas, si apre il **Node Editor**. Ecco a
   > Ad esempio, scrivere `text: Ciao` funziona **solo** per i nodi che parlano o scrivono (come `AUDIO__speak` o `SYSTEM__chat_message`). Se lo scrivi dentro un `LOGIC__delay`, il nodo lo ignorerà o darà errore, perché il delay accetta esclusivamente la chiave `seconds: 10`. 
   > Da adesso, quando trascini un nodo nella tela, **i suoi parametri obbligatori ti appariranno già pre-compilati in automatico** (con valori come `<string>` o `0`). Dovrai solo sovrascrivere il valore di esempio con i tuoi dati reali!
 
-- **Output As (Variable)**: Molti nodi generano un risultato (es. la lettura dell'orario, l'esito di un calcolo, la risposta di una API). Se inserisci un nome in questo campo (es. `valore_meteo`), il risultato prodotto da questo nodo diventerà una **Variabile**. I nodi successivi potranno usare questa variabile nei propri Parametri scrivendo `{{ valore_meteo }}` (grazie alla sintassi Jinja2).
+- **Output As (Variable)**: Molti nodi generano un risultato (es. la lettura dell'orario, l'esito di un calcolo, la risposta di una API). Se inserisci un nome in questo campo (es. `valore_meteo`), il risultato prodotto by questo nodo diventerà una **Variabile**. I nodi successivi potranno usare questa variabile nei propri Parametri scrivendo `{{ valore_meteo }}` (grazie alla sintassi Jinja2).
+
+![Hecos - Flows Automations](https://github.com/Hecos-Project/Hecos-Assets/blob/main///////012_Hecos_Flows_003.png?raw=true)
 
   Ecco 3 esempi pratici completi per farti capire esattamente come "far viaggiare" i dati tra i blocchi:
 

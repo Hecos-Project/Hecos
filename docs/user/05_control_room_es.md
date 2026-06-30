@@ -1,25 +1,28 @@
 # 🎛️ Control Room
 
-> *"Un panel interactivo estilo masonry donde múltiples widgets interactivos se ejecutan simultáneamente."*
+> *"Un panel dedicado al estilo masonry donde se ejecutan múltiples widgets interactivos simultáneamente."*
+
+![Hecos - Control Room](https://github.com/Hecos-Project/Hecos-Assets/blob/main///006_Hecos_ControlRoom_Standalone.png?raw=true)
+
 > — Tour WebUI Hecos
 
-La **Control Room** (Sala de Control) es uno de los cinco pilares principales de la WebUI de Hecos. Es un panel dedicado a pantalla completa donde puedes ejecutar y organizar múltiples **widgets** interactivos uno al lado del otro en un diseño de cuadrícula responsivo.
+La **Control Room** es uno de los cinco pilares principales de la WebUI de Hecos. Es un panel de control dedicado a pantalla completa donde puede ejecutar y organizar múltiples **widgets** interactivos uno al lado del otro en un diseño de cuadrícula responsivo.
 
 ## ¿Qué es la Control Room?
 
-A diferencia del Chat principal, que está centrado en la conversación, la Control Room te ofrece una vista permanente y de un vistazo de tu sistema y tus datos. Piensa en ella como tu **panel de control de misión**: un espacio que puedes llenar con exactamente la información que te interesa.
+A diferencia del Chat principal, que está enfocado en la conversación, la Control Room le brinda una vista permanente y rápida de su sistema y datos. Piense en ello como su **panel de control de misión**: un espacio que puede llenar exactamente con la información que le interesa.
 
 ## Cómo Abrirla
 
-Puedes acceder a la Control Room desde:
-- La **barra lateral** del Chat principal (haz clic en el icono de cuadrícula).
-- O a través del atajo de teclado mostrado en la barra superior.
+Puede acceder a la Control Room desde:
+- La **barra lateral** del Chat principal (haga clic en el icono de cuadrícula).
+- O a través del atajo de teclado que se muestra en la barra superior.
 
-## La Cuadrícula de Widgets
+## Cuadrícula de Widgets
 
-La Control Room utiliza una **cuadrícula de arrastrar y soltar** (impulsada por GridStack). Puedes:
-- **Añadir widgets** desde la Biblioteca de Paquetes.
-- **Redimensionar** cualquier widget arrastrando su esquina.
+La Control Room utiliza una **cuadrícula drag-and-drop** (impulsada por GridStack). Puede:
+- **Agregar widgets** desde la Biblioteca de Paquetes.
+- **Cambiar el tamaño** de cualquier widget arrastrando su esquina.
 - **Reordenar** los widgets libremente: el diseño se guarda automáticamente.
 - **Eliminar** un widget de la sala sin desinstalarlo.
 
@@ -27,16 +30,18 @@ La Control Room utiliza una **cuadrícula de arrastrar y soltar** (impulsada por
 
 | Widget | Descripción |
 |--------|-------------|
-| **OS Telemetry** | Gráficos en tiempo real del uso de CPU, RAM y VRAM. |
-| **Weather Pro** | Datos meteorológicos en vivo y pronóstico de 7 días. |
+| **OS Telemetry** | Gráficos de uso de CPU, RAM y VRAM en tiempo real. |
+| **Weather Pro** | Datos del clima en vivo y pronóstico de 7 días. |
 | **Calendar** | Próximos eventos y recordatorios de un vistazo. |
-| **Quick Links** | Tus enlaces favoritos, a un clic de distancia. |
+| **Quick Links** | Sus enlaces favoritos, a un clic de distancia. |
 | **Voice Visualizer** | Visualización animada cuando Hecos habla. |
-| **Webcam Feed** | Transmisión en vivo desde tu cámara web local. |
+| **Webcam Feed** | Transmisión de cámara en vivo desde su cámara web local. |
 
-## Añadir Nuevos Widgets
+## Agregar Nuevos Widgets
 
-Los nuevos widgets se pueden instalar directamente desde la **Biblioteca de Paquetes** (Central Hub → Paquetes → Tienda). Una vez instalados, aparecen automáticamente en el panel "Añadir Widget" dentro de la Control Room.
+Los nuevos widgets se pueden instalar directamente desde la **Biblioteca de Paquetes** (Central Hub → Paquetes → Store). Una vez instalados, aparecen automáticamente en el panel "Agregar Widget" dentro de la Control Room.
+
+![Hecos - Control Room](https://github.com/Hecos-Project/Hecos-Assets/blob/main////005_HecosChat_Direct_ControlRoom_integrata.png?raw=true)
 
 ---
-*La Control Room crece contigo. Instala nuevos paquetes para expandir lo que tu panel puede mostrar.*
+*La Control Room crece con usted. Instale nuevos paquetes para ampliar lo que puede mostrar su panel de control.*

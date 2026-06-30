@@ -1,6 +1,9 @@
 # 🎛️ Control Room
 
 > *"Un'interfaccia dedicata e in stile masonry dove più widget interattivi vengono eseguiti contemporaneamente."*
+
+![Hecos - Control Room](https://github.com/Hecos-Project/Hecos-Assets/blob/main///006_Hecos_ControlRoom_Standalone.png?raw=true)
+
 > — Tour WebUI Hecos
 
 La **Control Room** è uno dei cinque pilastri principali della WebUI di Hecos. È una dashboard dedicata e a schermo intero dove puoi eseguire e disporre più **widget** interattivi affiancati in un layout a griglia responsivo.
@@ -11,7 +14,7 @@ A differenza della Chat principale, incentrata sulla conversazione, la Control R
 
 ## Come Aprirla
 
-Puoi accedere alla Control Room da:
+Puedes accedere alla Control Room da:
 - La **sidebar** della Chat principale (clicca sull'icona griglia).
 - Oppure tramite la scorciatoia da tastiera mostrata nella topbar.
 
@@ -32,11 +35,13 @@ La Control Room utilizza una **griglia drag-and-drop** (alimentata da GridStack)
 | **Calendar** | Eventi e promemoria a colpo d'occhio. |
 | **Quick Links** | I tuoi link preferiti, a un click. |
 | **Voice Visualizer** | Animazione visiva quando Hecos parla. |
-| **Webcam Feed** | Feed live dalla tua webcam locale. |
+| **Webcam Feed** | Feed live dalla webcam locale. |
 
 ## Aggiungere Nuovi Widget
 
 I nuovi widget possono essere installati direttamente dalla **Libreria Pacchetti** (Central Hub → Pacchetti → Store). Una volta installati, appaiono automaticamente nel pannello "Aggiungi Widget" all'interno della Control Room.
+
+![Hecos - Control Room](https://github.com/Hecos-Project/Hecos-Assets/blob/main////005_HecosChat_Direct_ControlRoom_integrata.png?raw=true)
 
 ---
 *La Control Room cresce con te. Installa nuovi pacchetti per espandere ciò che la tua dashboard può mostrare.*

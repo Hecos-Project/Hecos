@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-06-29T09:41:29Z",
+  "generated_at": "2026-06-29T12:01:55Z",
   "packages": [
     {
       "id": "calendar",
@@ -14,7 +14,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.3.hpkg",
       "size_bytes": 124665,
-      "sha256": "b487a735dd757ff6a094b264b46cbc7a5e1e2677cf778862c0974a829341d805",
+      "sha256": "cc1dd2090fa02804ea57e09f909595c434c04ed94ef4255313fe9f6f4829d107",
       "screenshots": [],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#calendar",
@@ -31,8 +31,8 @@
       "description": "AI Image Generation \u2014 Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
-      "size_bytes": 34807,
-      "sha256": "73e2bf6ae6ef354d67254cc806a015ad41f95d80e4d5d8a59523a64a7c732158",
+      "size_bytes": 34809,
+      "sha256": "916b6c344fe0c0636bfd66bdc32233051d89ef4421b9f22ef6f7bad602d1b8da",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/.github/main/profile/003_HecosChat_001.png"
       ],
@@ -51,8 +51,8 @@
       "description": "A user-managed sidebar widget to store and quickly access your favorite links.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
-      "size_bytes": 14634,
-      "sha256": "52cfbf896c56b60bfa680cf7bf82e2aa72f16a8e611b9e0f046debee4822e781",
+      "size_bytes": 7910,
+      "sha256": "7bd28be1d5d3c548beabc73b113dd4f33ed08c4d8fcaba4f670905cf0923e572",
       "screenshots": [],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#quick_links",
@@ -69,8 +69,8 @@
       "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.2.hpkg",
-      "size_bytes": 31998,
-      "sha256": "3c5b41324557083e946006d20046d9262bff6c210a4651909d4e2b717607cce8",
+      "size_bytes": 31999,
+      "sha256": "bd8d23ba9e1139e95ab19a1d63ca4f9a1794d19720890830bc3007c41b151597",
       "screenshots": [],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#reminder",
@@ -87,8 +87,8 @@
       "description": "Retro-80s voice animation. Shows KITT-style scanner or a pixelated talking mouth when Hecos speaks.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.0.hpkg",
-      "size_bytes": 11335,
-      "sha256": "4124f9e44d56622bdb16e7f1c0f397f57865873e1b9433e365cd32dc91d72189",
+      "size_bytes": 11614,
+      "sha256": "63807f781a6a2b175139192cb5e97ec3cbb1f591aa8cc00a9ef302b0e25b8786",
       "screenshots": [],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#voice_visualizer",
@@ -105,8 +105,8 @@
       "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
-      "size_bytes": 14144,
-      "sha256": "14531d10419122e7cf0461e0adf45f44dd0ac78b77d6ffe466bea62ab2b843ae",
+      "size_bytes": 14997,
+      "sha256": "4cc2683abd97fea0f4c5acab6d3c0e9bdd8e2994cd86db3ce0bf5ab51298a533",
       "screenshots": [],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#weather_pro",
@@ -114,5 +114,5 @@
       "featured": false
     }
   ],
-  "cached_at": 1782732530.5796525
+  "cached_at": 1782797667.2589574
 }
