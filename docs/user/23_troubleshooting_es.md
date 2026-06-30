@@ -1,4 +1,4 @@
-# 🛠️ 11. Resolución de Problemas
+# 🛠️ 24. Resolución de Problemas Hardware
 
 Si encuentras dificultades, sigue estos pasos rápidos para restaurar el funcionamiento correcto de Hecos.
 

@@ -1,4 +1,4 @@
-# Módulo Flows: Automatizaciones Visuales
+# 🔀 7. Flows: Automatizaciones Visuales
 
 El módulo **Flows** de Hecos es el "orquestador" del sistema. Le permite crear automatizaciones, rutinas y comportamientos complejos encadenando acciones de manera lógica y secuencial.
 

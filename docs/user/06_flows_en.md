@@ -1,4 +1,4 @@
-# Flows Module: Visual Automations
+# 🔀 7. Flows: Visual Automations
 
 The **Flows** module of Hecos is the "orchestrator" of the system. It allows you to create automations, routines, and complex behaviors by chaining actions in a logical and sequential way.
 

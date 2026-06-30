@@ -1,4 +1,4 @@
-# 19. Gestione Liste
+﻿# u{1F4CB} Gestione Liste
 
 Il modulo **Lists** (Gestione Liste) di Hecos è lo strumento ideale per organizzare le tue attività, appunti, liste della spesa o note di sviluppo direttamente all'interno dell'ecosistema. È progettato per essere leggero, accessibile e veloce, offrendo sia una visualizzazione completa a schermo intero che un pratico widget da inserire nella tua Control Room.
 

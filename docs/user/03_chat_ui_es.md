@@ -1,4 +1,4 @@
-# 💬 Chat y UI
+# 💬 4. Interfaz de Chat & UI
 
 > *"La interfaz conversacional principal donde hablas con Hecos, envías imágenes y activas comandos. Un nexo cibernético que conecta tu núcleo local con la nube."*
 > — Tour WebUI Hecos

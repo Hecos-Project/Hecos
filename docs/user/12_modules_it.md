@@ -1,4 +1,4 @@
-# 🔌 4. Sistema Modulare / Moduli
+# 🔌 13. Sistema Modulare
 
 Hecos è costruito su un'architettura **Module-Native**. Ogni capacità (gestione file, hardware, multimedia) è gestita da un modulo indipendente.
 

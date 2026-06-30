@@ -1,4 +1,4 @@
-# 🌐 Hecos Proxy
+# 🌐 10. Hecos Proxy
 
 > *"Un proxy de enrutamiento local integrado para evitar restricciones y conectar de forma segura tus módulos a la web."*
 

@@ -1,4 +1,4 @@
-# 💾 Copia de Seguridad Centralizada
+# 💾 9. Copia de Seguridad Centralizada
 
 > *"Una solución de un solo clic para almacenar de forma segura toda tu configuración y memorias de Hecos."*
 

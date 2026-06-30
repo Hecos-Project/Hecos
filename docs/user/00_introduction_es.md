@@ -1,4 +1,4 @@
-# 🪐 Bienvenidos a Hecos
+# 🪐 1. Bienvenidos a Hecos
 
 > 💡 Hecos es tu compañero de todos los días. Puedes hablarle de lo que quieras; puede controlar tu computadora, enviar mensajes y, con su función nativa de cambio de personalidad, puede actuar como un mayordomo, un amigo o incluso tu pareja virtual. ¿Necesitas que funcione sin IA? No hay problema — Hecos ejecuta potentes flujos de automatización, responde a comandos directos y gestiona tu calendario, recordatorios, plataformas de mensajería, cuentas de correo electrónico y listas por sí solo de forma totalmente autónoma.
 

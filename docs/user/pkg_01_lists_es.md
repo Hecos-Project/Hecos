@@ -1,4 +1,4 @@
-# 19. Gestión de Listas
+# 📋 Gestión de Listas
 
 El módulo **Lists** (Gestión de Listas) de Hecos es la herramienta ideal para organizar tus tareas, notas, listas de compras o apuntes de desarrollo directamente dentro del ecosistema. Está diseñado para ser ligero, accesible y rápido, ofreciendo tanto una vista completa a pantalla completa en el Central Hub como un práctico widget para tu Control Room.
 

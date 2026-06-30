@@ -1,4 +1,4 @@
-# 🔑 13. Key Manager & Failover
+# 🔑 23. Key Manager & Failover
 
 Manage your API keys without system restarts.
 - **Auto-Failover**: Instantly switches to the next available key on 429 (Rate Limit) or credential errors.

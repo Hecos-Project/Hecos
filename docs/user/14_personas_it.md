@@ -1,4 +1,4 @@
-# 🎭 5. L'Anima del Sistema: Personalità Native
+# 🎭 15. L'Anima del Sistema: Personalità Native
 
 Una capacità fondamentale del sistema modulare è il **Personality Switching** nativo. Hecos non è solo un assistente rigido: adatta il suo comportamento, il tono e il carattere in base alla personalità (persona) che carichi. Ogni persona è programmata per agire diversamente e soddisfare un ruolo unico nella tua vita quotidiana.
 

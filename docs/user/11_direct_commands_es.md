@@ -1,4 +1,4 @@
-# 18. Comandos Directos (HDCS)
+# ⌨️ 12. Comandos Directos (HDCS)
 
 Imagine tener una **varita mágica** que le permita dar órdenes precisas a Hecos sin tener que mantener una larga conversación con la Inteligencia Artificial. Esta varita mágica se llama **HDCS (Hecos Direct Command System)**, o simplemente: **Comandos Directos**.
 

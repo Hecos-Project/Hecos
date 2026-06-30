@@ -1,4 +1,4 @@
-# 🧭 14. Routing delle Istruzioni IA & Override dei Plugin
+# 🧭 21. Routing delle Istruzioni IA & Override dei Plugin
 
 Hecos utilizza un **sistema di istruzioni a tre livelli** per controllare con precisione il comportamento dell'IA con ogni singolo plugin. Capire questo sistema sblocca una delle funzionalità più potenti di Hecos: la capacità di riprogrammare permanentemente il comportamento dell'IA senza toccare una riga di codice.
 

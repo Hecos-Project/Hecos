@@ -1,4 +1,4 @@
-# 🔄 6. Gestión de Respuestas
+# 🔄 17. Gestión de Respuestas
 
 Hecos ofrece herramientas avanzadas para gestionar el flujo de la conversación.
 

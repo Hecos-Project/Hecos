@@ -1,4 +1,4 @@
-# Modulo Flows: Automazioni Visive
+# 🔀 7. Flows: Automazioni Visive
 
 Il modulo **Flows** di Hecos è il "direttore d'orchestra" del sistema. Ti permette di creare automazioni, routine e comportamenti complessi concatenando azioni in modo logico e sequenziale. 
 

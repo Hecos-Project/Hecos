@@ -1,4 +1,4 @@
-# 🧭 14. Enrutamiento de Instrucciones de IA y Overrides de Plugins
+# 🧭 21. Enrutamiento de Instrucciones IA y Overrides
 
 Hecos utiliza un **sistema de instrucciones de tres niveles** para controlar con precisión el comportamiento de la IA con cada plugin. Entender este sistema desbloquea una de las funcionalidades más potentes de Hecos: la capacidad de reprogramar permanentemente el comportamiento de la IA sin tocar una sola línea de código.
 

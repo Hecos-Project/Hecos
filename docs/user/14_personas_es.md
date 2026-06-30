@@ -1,4 +1,4 @@
-# 🎭 5. El Alma del Sistema: Personas Nativas
+# 🎭 15. El Alma del Sistema: Personas Nativas
 
 Una capacidad fundamental del sistema modular es el **Cambio de Personalidad** nativo. Hecos no es solo un asistente rígido: adapta su comportamiento, tono y carácter según la personalidad (persona) que cargues. Cada persona está programada para actuar de manera diferente y cumplir un rol único en tu vida diaria.
 

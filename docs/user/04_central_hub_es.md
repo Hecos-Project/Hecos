@@ -1,4 +1,4 @@
-# ⚙️ Central Hub
+# ⚙️ 5. Central Hub
 
 > *"El centro de configuración y gestión. Instala paquetes, ajusta la configuración y gestiona usuarios."*
 

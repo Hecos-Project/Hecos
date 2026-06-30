@@ -1,4 +1,4 @@
-# 🚀 1. Arranque y Controles Iniciales
+# 🚀 3. Arranque y Controles Iniciales
 
 Al iniciar el ejecutable o el script de Python, Hecos comienza su secuencia de **Arranque Sincronizado**.
 

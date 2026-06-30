@@ -1,4 +1,4 @@
-# 🪐 Welcome to Hecos
+# 🪐 1. Welcome to Hecos
 
 > 💡 Hecos is your everyday companion. You can talk to it about whatever you want; it can control your computer, send messages, and with its native personality-switching feature, it can act as a butler, a friend, or even your virtual partner. Need it to work without AI? No problem — Hecos runs powerful automation flows, responds to direct commands, and manages your calendar, reminders, messenger platforms, mail accounts, and lists completely on its own.
 

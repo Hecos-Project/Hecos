@@ -1,4 +1,4 @@
-# 💻 La Consola (CLI)
+# 💻 11. La Consola (CLI)
 
 > *"La ventana de comandos donde el sistema piensa, realiza comprobaciones de seguridad y te permite gestionarlo todo."*
 

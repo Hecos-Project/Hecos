@@ -1,4 +1,4 @@
-# ⚡ Quick Start Guide
+# ⚡ 2. Quick Start Guide
 
 Welcome to Hecos! Follow these steps to set up the system and start using AI on your PC immediately.
 

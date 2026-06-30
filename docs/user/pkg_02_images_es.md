@@ -1,4 +1,4 @@
-# 🎨 7. Generación de Imágenes
+# 🎨 Generación de Imágenes
 
 Hecos puede crear contenido visual original utilizando el plugin `IMAGE_GEN`.
 

@@ -1,4 +1,4 @@
-# 🚀 1. Avvio e Controllo Iniziale
+# 🚀 3. Avvio e Controllo Iniziale
 
 All'avvio dell'eseguibile o dello script Python, Hecos inizia la sua sequenza di **Avvio Sincronizzato**.
 

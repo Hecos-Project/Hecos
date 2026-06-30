@@ -1,4 +1,4 @@
-# 18. Direct Commands (HDCS)
+# ⌨️ 12. Direct Commands (HDCS)
 
 Imagine having a **magic wand** that lets you give precise orders to Hecos without having to have a long conversation with the Artificial Intelligence. This magic wand is called **HDCS (Hecos Direct Command System)**, or simply: **Direct Commands**.
 

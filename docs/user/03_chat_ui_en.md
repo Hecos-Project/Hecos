@@ -1,4 +1,4 @@
-# 💬 Chat & UI
+# 💬 4. Chat Interface & UI
 
 > *"The main conversational interface where you talk with Hecos, send images, and trigger commands. A cybernetic nexus connecting your local core to the cloud."*
 

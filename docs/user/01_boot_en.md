@@ -1,4 +1,4 @@
-# 🚀 1. Boot & Initial Checks
+# 🚀 3. Boot & Initial Checks
 
 Upon launching the executable or Python script, Hecos begins its **Synchronized Boot** sequence.
 

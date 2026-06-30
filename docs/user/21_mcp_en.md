@@ -1,4 +1,4 @@
-# 🔌 Universal Tool Hub (MCP Bridge)
+# 🔌 22. Universal Tool Hub (MCP Bridge)
 Transform Hecos into a multi-tool superpower by connecting external servers via the **Model Context Protocol**.
 
 ## What is MCP?

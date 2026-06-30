@@ -1,4 +1,4 @@
-# 🛡️ 9. Advanced Security (Hecos PKI)
+# 🛡️ 19. Advanced Security (Hecos PKI)
 
 Hecos puts security at the center, especially when accessing the interface from other devices.
 

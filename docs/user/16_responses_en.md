@@ -1,4 +1,4 @@
-# 🔄 6. Response Management
+# 🔄 17. Response Management
 
 Hecos offers advanced tools to manage the conversation flow.
 

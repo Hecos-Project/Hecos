@@ -1,4 +1,4 @@
-# 🤖 12. Agente Autonomo e Sandbox
+# 🤖 14. Agente Autonomo e Sandbox
 
 Hecos è dotato di un motore di ragionamento avanzato che gli permette di operare come un Agente autonomo.
 

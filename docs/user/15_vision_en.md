@@ -1,4 +1,4 @@
-# 👁️ 5. Vision & Multimodal Interaction
+# 👁️ 16. Vision & Multimodal Interaction
 
 Hecos natively supports computer vision through the `VISION_AI` and `WEBCAM` plugins.
 

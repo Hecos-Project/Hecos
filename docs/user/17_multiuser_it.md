@@ -1,4 +1,4 @@
-# 👥 Gestione Multi-Utente e Profili
+# 👥 18. Gestione Multi-Utente e Profili
 Hecos supporta più utenti indipendenti, ciascuno con i propri dati e impostazioni isolate.
 
 ## Caratteristiche

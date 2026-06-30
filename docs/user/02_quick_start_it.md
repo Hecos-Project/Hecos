@@ -1,4 +1,4 @@
-# ⚡ Guida Rapida di Avvio
+# ⚡ 2. Guida Rapida di Avvio
 
 Benvenuto in Hecos! Segui questi passaggi per configurare il sistema e iniziare subito a utilizzare l'IA sul tuo PC.
 

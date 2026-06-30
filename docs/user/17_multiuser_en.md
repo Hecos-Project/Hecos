@@ -1,4 +1,4 @@
-# 👥 Multi-User & Profile Management
+# 👥 18. Multi-User & Profile Management
 Hecos supports multiple independent users, each with their own isolated data and settings.
 
 ## Features

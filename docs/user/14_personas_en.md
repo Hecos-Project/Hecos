@@ -1,4 +1,4 @@
-# 🎭 5. The Soul of the Machine: Native Personas
+# 🎭 15. The Soul of the Machine: Native Personas
 
 A fundamental capability of the modular system is its native **Personality Switching**. Hecos isn't just a rigid assistant — it adapts its behavior, tone, and character based on the persona you load. Each persona is programmed to fulfill a unique role in your daily life.
 

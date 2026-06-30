@@ -1,4 +1,4 @@
-# 🎛️ Control Room
+# 🎛️ 6. Control Room
 
 > *"Un'interfaccia dedicata e in stile masonry dove più widget interattivi vengono eseguiti contemporaneamente."*
 

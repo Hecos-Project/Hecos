@@ -1,4 +1,4 @@
-# 🧭 14. AI Instruction Routing & Plugin Overrides
+# 🧭 21. AI Instruction Routing & Plugin Overrides
 
 Hecos uses a **three-tier instruction system** to precisely control how the AI behaves with every plugin. Understanding this system unlocks one of Hecos's most powerful features: the ability to permanently reprogram the AI's behavior without touching a single line of code.
 

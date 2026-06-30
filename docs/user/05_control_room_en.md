@@ -1,4 +1,4 @@
-# 🎛️ Control Room
+# 🎛️ 6. Control Room
 
 > *"A dedicated masonry-style dashboard where multiple interactive widgets run simultaneously."*
 

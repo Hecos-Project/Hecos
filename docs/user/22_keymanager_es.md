@@ -1,4 +1,4 @@
-# 🔑 13. Gestor de Llaves y Failover
+# 🔑 23. Gestor de Llaves y Failover
 
 El Key Manager es el módulo central para la gestión de licencias y llaves API en Hecos.
 

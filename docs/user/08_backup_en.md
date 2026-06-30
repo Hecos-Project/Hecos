@@ -1,4 +1,4 @@
-# 💾 Centralized Backup
+# 💾 9. Centralized Backup
 
 > *"A one-click solution to safely store your entire Hecos configuration and memories."*
 

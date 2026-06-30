@@ -1,4 +1,4 @@
-# ⚡ Guía de Inicio Rápido
+# ⚡ 2. Guía de Inicio Rápido
 
 ¡Bienvenido a Hecos! Siga estos pasos para configurar el sistema y comenzar a usar la IA en su PC de inmediato.
 

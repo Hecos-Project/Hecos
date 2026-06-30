@@ -1,4 +1,4 @@
-# 19. Lists Management
+﻿# u{1F4CB} Lists Management
 
 The Hecos **Lists** module is the ideal tool to organize your tasks, notes, shopping lists, or development tasks directly within the ecosystem. It is designed to be lightweight, accessible, and fast, offering both a full-screen Hub view and a practical widget for your Control Room.
 

@@ -1,4 +1,4 @@
-# 💻 The Console (CLI)
+# 💻 11. The Console (CLI)
 
 > *"The command window where the system thinks, performs security checks, and lets you manage everything."*
 

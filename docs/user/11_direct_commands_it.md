@@ -1,4 +1,4 @@
-# 18. Comandi Diretti (HDCS)
+# ⌨️ 12. Comandi Diretti (HDCS)
 
 Immagina di avere una **bacchetta magica** che ti permette di dare ordini precisi ad Hecos senza dover fare lunghi discorsi con l'Intelligenza Artificiale. Questa bacchetta magica si chiama **HDCS (Hecos Direct Command System)**, o più semplicemente: i **Comandi Diretti**.
 
