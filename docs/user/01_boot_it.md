@@ -24,6 +24,9 @@ Il modo consigliato per avviare Hecos è utilizzare gli script di bootstrap univ
 
 Questi script gestiscono automaticamente il controllo dell'ambiente, le dipendenze e lanciano il **Wizard di Setup**.
 
+> [!TIP]
+> **Avvii successivi**: Dopo aver completato il setup iniziale, il modo più comodo e veloce per avviare Hecos nell'uso quotidiano è usare `START_HECOS_TRAY_WIN.bat` (Windows) o `START_HECOS_TRAY_LINUX.sh` (Linux). Questo avvierà il sistema silenziosamente in background con l'icona nella barra delle applicazioni (System Tray).
+
 ### 🧩 Avvio Componenti Singoli
 Per utenti avanzati, i componenti possono essere avviati singolarmente:
 - **Interfaccia Web:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)

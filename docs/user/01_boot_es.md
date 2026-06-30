@@ -24,6 +24,9 @@ La forma recomendada de iniciar Hecos es utilizar los scripts de inicio universa
 
 Estos scripts gestionan automáticamente la comprobación del entorno, las dependencias e inician el **Asistente de Configuración**.
 
+> [!TIP]
+> **Inicios Posteriores**: Después de completar la configuración inicial, la forma más rápida y conveniente de iniciar Hecos en el uso diario es usar `START_HECOS_TRAY_WIN.bat` (Windows) o `START_HECOS_TRAY_LINUX.sh` (Linux). Esto iniciará el sistema silenciosamente en segundo plano con el icono en la bandeja del sistema (System Tray).
+
 ### 🧩 Inicio de Componentes Individuales
 Para usuarios avanzados, los componentes se pueden iniciar por separado:
 - **Interfaz Web:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)

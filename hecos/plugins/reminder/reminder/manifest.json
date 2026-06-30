@@ -1,0 +1,14 @@
+{
+    "extension_id": "reminder",
+    "display_name": "Reminder",
+    "required_plugin": "REMINDER",
+    "enabled": true,
+    "visible": false,
+    "sidebar_widget": true,
+    "room_visible": true,
+    "room_span": 1,
+    "room_height": "250px",
+    "theme": "default",
+    "description": "Local Reminder Widget",
+    "eager_load": true
+}
