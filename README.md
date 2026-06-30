@@ -53,14 +53,38 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.35.0 offe
 ---
 
 ## 🧠 How It Works
-Hecos is built around a modular architecture:
-* **Core** → AI routing, processing, execution
-* **Plugins** → Actions and capabilities (system, web, media, etc.)
-* **Memory** → Identity and persistent storage
-* **UI** → User interaction layer
-* **Bridge** → External integrations and APIs
+Hecos is built around a highly modular, 8-layer architecture. Everything is a **module**:
+* **Core Modules** → Built-in, non-removable OS/system functions
+* **Plugins** → Reactive tools and capabilities called by the AI (system, web, media, etc.)
+* **Apps** → Autonomous mini-applications with their own standalone UI and lifecycle
+* **Personas** → Installable AI personalities and behavioral profiles
+* **Widgets** → Interactive frontend components for the Control Room dashboard
+* **Themes** → Custom CSS and styling packages for the UI
+* **Skill Packs** → Additional slash-command packs for the chat interface
+* **MCP Servers** → Universal external tool bridges via the Model Context Protocol
 
 The AI generates structured commands that are interpreted and executed through the plugin system.
+
+---
+
+### 🎭 The Soul of the Machine: Native Personas
+
+A fundamental capability of Hecos is its native **Personality Switching**. Hecos isn't just a cold, rigid assistant — it adapts its behavior, tone, and character based on the persona you load. Each persona is programmed to act differently and fulfill a unique role in your daily life.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Hecos-Project/hecos/main/hecos/assets/Urania_9800_Logo.png" width="400">
+  <br>
+  <em>Urania 9800, the official Hecos Mascot and your everyday friendly companion.</em>
+</p>
+
+Out of the box, Hecos includes several pre-configured personalities:
+* **Hecos System Soul** — The neutral, rigid, and detached core system. Perfect for raw automation and precise tasks.
+* **Urania 9800** — The lively mascot. A true, everyday friend designed for casual, empathetic, and cheerful interaction.
+* **Sebastian Pro** — The perfect, highly professional butler. Polite, efficient, and eager to serve.
+* **Atlas** — The imposing, authoritative digital guardian.
+* **Nova X-01** — A precise, analytical robotic entity for those who prefer purely logical interactions.
+
+You can hot-swap these personas at any time, changing not just the voice and tone, but the very "soul" of the system.
 
 ---
 

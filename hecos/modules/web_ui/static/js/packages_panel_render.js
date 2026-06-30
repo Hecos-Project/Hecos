@@ -112,7 +112,7 @@ window.hpmRenderRow = function(pkg, meta) {
   let lazyHtml = '';
   if (!disableLazy) {
     lazyHtml = `
-      <label class="lazy-label" style="font-size:10px; margin-right:8px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+      <label class="lazy-label no-autosave" style="font-size:10px; margin-right:8px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
         <input type="checkbox" onchange="hpmToggleLazy('${pkg.id}', ${isBuiltin}, this.checked)" ${isLazy ? 'checked' : ''}> Lazy
       </label>
     `;
@@ -121,7 +121,7 @@ window.hpmRenderRow = function(pkg, meta) {
   let switchHtml = '';
   if (!isBroken) {
     switchHtml = `
-      <label class="switch" ${disableEnabled ? 'style="visibility:hidden;pointer-events:none;"' : ''} title="${window.HPM_I18N?.enable || 'Enable'}/${window.HPM_I18N?.disable || 'Disable'}">
+      <label class="switch no-autosave" ${disableEnabled ? 'style="visibility:hidden;pointer-events:none;"' : ''} title="${window.HPM_I18N?.enable || 'Enable'}/${window.HPM_I18N?.disable || 'Disable'}">
         <input type="checkbox" onchange="hpmToggleEnabled('${pkg.id}', ${isBuiltin}, this.checked)" ${!isDisabled ? 'checked' : ''} ${disableEnabled ? 'disabled' : ''}>
         <span class="slider"></span>
       </label>
@@ -170,8 +170,8 @@ window.hpmRenderRow = function(pkg, meta) {
           ${versionBadge}
         </div>
         ${pkg.description ? `
-        <div style="font-size:0.75em;color:var(--muted);margin-top:2px;
-                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;">
+        <div style="font-size:0.75em;color:var(--muted);margin-top:4px;
+                    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;max-width:450px;">
           ${window._hesc(pkg.description)}
         </div>` : ''}
         ${!isCore ? `
@@ -181,8 +181,8 @@ window.hpmRenderRow = function(pkg, meta) {
         </div>` : ''}
       </div>
 
-      <!-- Actions -->
-      <div style="display:flex;gap:5px;flex-shrink:0;align-items:center;">
+      <!-- Actions — class 'hpm-card-actions' is used by the update badge injector -->
+      <div class="hpm-card-actions" style="display:flex;gap:5px;flex-shrink:0;align-items:center;">
         ${lazyHtml}
         ${switchHtml}
         ${actions}

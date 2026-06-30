@@ -16,15 +16,18 @@ def get_h1(content):
     return None
 
 def process_wiki():
+    if not os.path.exists(WIKI_DIR):
+        print(f"Wiki directory not found: {WIKI_DIR}")
+        return
+
     files = [f for f in os.listdir(WIKI_DIR) if f.endswith(".md") and not f.startswith("_")]
     
     # Map: base_name -> {lang -> {filename, title}}
     structure = {}
     
     for filename in files:
-        # Expected format: XX_name_lang.md
         parts = filename.replace(".md", "").split("_")
-        if len(parts) < 3:
+        if len(parts) < 2:
             continue
             
         lang = parts[-1]
@@ -64,44 +67,19 @@ def process_wiki():
         
         for lang_code, info in langs.items():
             content = info["content"]
-            # Remove existing switcher if present (simple check for "---")
-            if content.startswith("[[ 🇬🇧") or "Languages" in content[:50]:
-                # This is a bit risky, let's just prepend if not already there
-                pass
             
             # Simple injection: replace first line if it's already a switcher, or prepend
-            if " | " in content.split("\n")[0] and "[[" in content.split("\n")[0]:
+            first_line = content.split("\n")[0]
+            if " | " in first_line and "[[" in first_line:
                 lines = content.split("\n")
-                # Skip the first few lines if they look like a header
                 new_content = switcher_line + "\n".join(lines[2:]) # Skip old switcher + separator
             else:
-                new_content = switcher_line + content
+                new_content = switcher_line + "\n" + content
                 
             with open(info["path"], "w", encoding="utf-8") as f:
                 f.write(new_content)
 
-    # 2. Generate _Sidebar.md
-    sidebar_content = "### 🌐 Languages\n"
-    sidebar_content += "* [[ 🇬🇧 English | 00_introduction_en ]]\n"
-    sidebar_content += "* [[ 🇮🇹 Italiano | 00_introduction_it ]]\n"
-    sidebar_content += "* [[ 🇪🇸 Español | 00_introduction_es ]]\n\n"
-    
-    for lang_code, lang_info in LANGUAGES.items():
-        sidebar_content += f"### {lang_info['label']}\n"
-        
-        # Sort pages by prefix
-        sorted_pages = sorted(structure.items(), key=lambda x: x[0])
-        for base_name, langs in sorted_pages:
-            if lang_code in langs:
-                page_info = langs[lang_code]
-                sidebar_content += f"* [[ {page_info['title']} | {page_info['filename']} ]]\n"
-        sidebar_content += "\n"
-        
-    sidebar_path = os.path.join(WIKI_DIR, "_Sidebar.md")
-    with open(sidebar_path, "w", encoding="utf-8") as f:
-        f.write(sidebar_content)
-        
-    print(f"Processed {len(files)} files. Generated _Sidebar.md")
+    print(f"Processed {len(files)} files and injected language switchers.")
 
 if __name__ == "__main__":
     process_wiki()

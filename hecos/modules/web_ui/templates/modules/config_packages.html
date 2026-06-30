@@ -31,15 +31,35 @@
   <!-- ── Tab Navigation ────────────────────────────────────────────────── -->
   <div class="filter-tabs" style="margin-bottom:20px; justify-content: flex-start;">
     <button id="hpm-tab-btn-packages" class="filter-btn active" onclick="hpmSwitchTab('packages')">
-      <i class="fas fa-box-open" style="margin-right:6px;"></i> Package Library
+      <i class="fas fa-box-open" style="margin-right:6px;"></i> Package Library <span id="hpm-cnt-packages" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
     </button>
     <button id="hpm-tab-btn-builtin" class="filter-btn" onclick="hpmSwitchTab('builtin')">
-      <i class="fas fa-microchip" style="margin-right:6px;"></i> Core System
+      <i class="fas fa-microchip" style="margin-right:6px;"></i> Core System <span id="hpm-cnt-builtin" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
     </button>
     <button id="hpm-tab-btn-widgets" class="filter-btn" onclick="hpmSwitchTab('widgets')">
-      <i class="fas fa-th-large" style="margin-right:6px;"></i> Widget Layout
+      <i class="fas fa-th-large" style="margin-right:6px;"></i> Widget Layout <span id="hpm-cnt-widgets" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
+    </button>
+    <button id="hpm-tab-btn-store" class="filter-btn" onclick="hpmSwitchTab('store')"
+            style="position:relative;">
+      <i class="fas fa-store" style="margin-right:6px;"></i> Store <span id="hpm-cnt-store" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
+      <span style="position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,var(--accent),#7c3aed);
+                   color:#fff;font-size:0.55em;font-weight:800;padding:2px 5px;border-radius:6px;
+                   letter-spacing:.5px;">NEW</span>
     </button>
   </div>
+
+  <script>
+  (function(){
+    const counts = ['packages', 'builtin', 'widgets', 'store'];
+    counts.forEach(c => {
+      const el = document.getElementById(`hpm-cnt-${c}`);
+      if (el) {
+        const val = localStorage.getItem(`hpm-cache-cnt-${c}`);
+        el.textContent = val ? `(${val})` : '(…)';
+      }
+    });
+  })();
+  </script>
 
   <!-- ── PACKAGES PANE ─────────────────────────────────────────────────── -->
   <div id="hpm-pane-packages">
@@ -101,41 +121,37 @@
         {{ t('hpm_tab_all') or 'All Modules' }}
         <span id="hpm-total-count" style="margin-left:10px; background:rgba(255,255,255,0.08); color:var(--muted); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:700;">0</span>
       </div>
-      <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
-              style="padding:6px 10px;font-size:0.78em;">
-        <i class="fas fa-sync-alt"></i>
-      </button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
+                style="padding:6px 10px;font-size:0.78em;">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <button class="btn-icon" onclick="window.hpmCheckUpdates()"
+                title="{{ t('hpm_btn_check_updates') or 'Check for updates' }}"
+                style="padding:6px 10px;font-size:0.78em;">
+          <i class="fas fa-arrow-circle-up"></i>
+        </button>
+      </div>
     </div>
 
     <div id="hpm-packages-grid" style="display:grid;gap:10px;">
     </div>
   </div>
 
-  <!-- ── Remote Registry (stub) ───────────────────────────────────────── -->
-  <div class="card" style="margin-top:16px;opacity:0.65;">
-    <div class="card-title" style="margin-bottom:8px;">
-      <i class="fas fa-globe" style="color:var(--accent);margin-right:6px;"></i>
-      {{ t('hpm_online_registry') or 'Online Registry' }}
-      <span style="background:var(--accent);color:#fff;font-size:0.68em;
-                   padding:2px 6px;border-radius:4px;margin-left:8px;">{{ t('hpm_coming_soon') or 'COMING SOON' }}</span>
-    </div>
-    <p style="color:var(--muted);font-size:0.85em;margin:0;">
-      {{ t('hpm_registry_desc') or 'Browse and install community packages directly from the Hecos online registry. This feature will be available in a future release.' }}
-    </p>
-  </div>
 </div> <!-- End Packages Pane -->
 
   <!-- ── BUILT-IN PANE ────────────────────────────────────────────── -->
   <div id="hpm-pane-builtin" style="display:none;">
-    <!-- We will dynamically inject config_plugins.html here via JS, or just render the original Module Manager here -->
-    <div id="hpm-builtin-container">
-    </div>
+    <div id="hpm-builtin-container"></div>
   </div>
 
   <!-- ── WIDGETS PANE ──────────────────────────────────────────────── -->
   <div id="hpm-pane-widgets" style="display:none;">
-    <div id="hpm-widgets-container">
-    </div>
+    <div id="hpm-widgets-container"></div>
+  </div>
+
+  <!-- ── STORE PANE ────────────────────────────────────────────────── -->
+  <div id="hpm-pane-store" style="display:none;">
   </div>
 
 </div>
@@ -161,35 +177,50 @@ window.HPM_I18N = {
   disable: "{{ t('hpm_action_disable') or 'Disable' }}",
   uninstall: "{{ t('hpm_action_uninstall') or 'Uninstall' }}",
   tooltip_builtin: "{{ t('hpm_builtin_tooltip') or 'Built-in module — cannot be removed' }}",
-  confirm_uninstall: "{{ t('hpm_confirm_uninstall') or 'Are you sure you want to uninstall the package \"%s\"?' }}"
+  confirm_uninstall: "{{ t('hpm_confirm_uninstall') or 'Are you sure you want to uninstall the package \"%s\"?' }}",
+  btn_check_updates: "{{ t('hpm_btn_check_updates') or 'Check for updates' }}",
+  btn_checking: "{{ t('hpm_btn_checking') or 'Checking...' }}",
+  update_avail_single: "{{ t('hpm_update_avail_single') or 'update available' }}",
+  update_avail_plural: "{{ t('hpm_update_avail_plural') or 'updates available' }}",
+  update_all_ok: "{{ t('hpm_update_all_ok') or 'All modules are up to date!' }}",
+  update_offline: "{{ t('hpm_update_offline') or 'Cannot contact the Store. Check your connection.' }}",
+  update_no_modules: "{{ t('hpm_update_no_modules') or 'No modules loaded. Refresh the list first.' }}"
 };
 </script>
 
-<!-- Load the HPM panel scripts (once, on first tab open) -->
+<!-- Load the HPM panel scripts — always reload to pick up changes -->
 <script>
 (function() {
-  if (!window._hpmScriptLoaded) {
-    window._hpmScriptLoaded = true;
-    const scripts = [
-      '/static/js/packages_panel_render.js',
-      '/static/js/packages_panel_install.js',
-      '/static/js/packages_panel_manage.js',
-      '/static/js/packages_panel.js'
-    ];
-    let loadedCount = 0;
-    scripts.forEach(src => {
-      const s = document.createElement('script');
-      s.src = src + '?v={{ version }}';
-      s.onload = () => {
-        loadedCount++;
-        if (loadedCount === scripts.length && window.hpmInit) {
-          window.hpmInit();
-        }
-      };
-      document.head.appendChild(s);
-    });
-  } else if (window.hpmInit) {
-    window.hpmInit();
-  }
+  // Use a timestamp so JS changes are always picked up without restarting
+  const _hpmTs = Date.now();
+  const scripts = [
+    '/static/js/packages_panel_render.js',
+    '/static/js/packages_panel_install.js',
+    '/static/js/packages_panel_manage.js',
+    '/static/js/packages_panel_store.js',
+    '/static/js/packages_panel.js'
+  ];
+
+  // Remove old script tags from previous loads so we get fresh ones
+  scripts.forEach(src => {
+    document.querySelectorAll(`script[src^="${src}"]`).forEach(el => el.remove());
+  });
+
+  // Reset state so init runs again
+  window._hpmScriptLoaded = false;
+  window._hpmStoreState = null;
+
+  let loadedCount = 0;
+  scripts.forEach(src => {
+    const s = document.createElement('script');
+    s.src = src + '?v={{ version }}&t=' + _hpmTs;
+    s.onload = () => {
+      loadedCount++;
+      if (loadedCount === scripts.length && window.hpmInit) {
+        window.hpmInit();
+      }
+    };
+    document.head.appendChild(s);
+  });
 })();
 </script>

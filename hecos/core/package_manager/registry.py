@@ -60,10 +60,21 @@ class PackageRegistry:
                     status            TEXT NOT NULL DEFAULT 'installed',
                     install_path      TEXT NOT NULL,
                     installed_at      TEXT NOT NULL,
+                    updated_at        TEXT,
+                    previous_version  TEXT,
                     manifest_snapshot TEXT NOT NULL,
                     config_panel_tab  TEXT
                 )
             """)
+            # Migrate: add new columns to existing databases gracefully
+            for col, col_def in [
+                ("updated_at",       "TEXT"),
+                ("previous_version", "TEXT"),
+            ]:
+                try:
+                    conn.execute(f"ALTER TABLE packages ADD COLUMN {col} {col_def}")
+                except Exception:
+                    pass  # Column already exists
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS installed_files (
                     id       INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,11 +101,8 @@ class PackageRegistry:
     ) -> bool:
         """
         Register a successfully installed package.
-        
-        Args:
-            manifest:        The parsed hpkg_manifest dict.
-            install_path:    Absolute path where the package code was installed.
-            installed_files: All files written to disk (for clean uninstall).
+        If the package already exists (update scenario), the previous version
+        is preserved in `previous_version` and `updated_at` is stamped.
         """
         pkg_id = manifest.get("id", "")
         if not pkg_id:
@@ -103,28 +111,69 @@ class PackageRegistry:
 
         config_panel_tab = None
         if manifest.get("config_panel"):
-            config_panel_tab = manifest["config_panel"].get("tab_id")
+            cp = manifest["config_panel"]
+            if isinstance(cp, dict):
+                config_panel_tab = cp.get("tab_id")
+
+        now = datetime.utcnow().isoformat()
 
         with self._lock:
             try:
                 with self._connect() as conn:
-                    conn.execute("""
-                        INSERT OR REPLACE INTO packages
-                            (id, name, version, type, author, description,
-                             status, install_path, installed_at, manifest_snapshot, config_panel_tab)
-                        VALUES (?, ?, ?, ?, ?, ?, 'installed', ?, ?, ?, ?)
-                    """, (
-                        pkg_id,
-                        manifest.get("name", pkg_id),
-                        manifest.get("version", "0.0.0"),
-                        manifest.get("type", "plugin"),
-                        manifest.get("author", "Unknown"),
-                        manifest.get("description", ""),
-                        install_path,
-                        datetime.utcnow().isoformat(),
-                        json.dumps(manifest, ensure_ascii=False),
-                        config_panel_tab,
-                    ))
+                    # Check if this is an update (package already exists)
+                    existing = conn.execute(
+                        "SELECT version, installed_at FROM packages WHERE id = ?", (pkg_id,)
+                    ).fetchone()
+
+                    if existing:
+                        # UPDATE path — preserve original install timestamp, bump updated_at
+                        conn.execute("""
+                            UPDATE packages SET
+                                name=?, version=?, type=?, author=?, description=?,
+                                status='installed', install_path=?,
+                                updated_at=?, previous_version=?,
+                                manifest_snapshot=?, config_panel_tab=?
+                            WHERE id=?
+                        """, (
+                            manifest.get("name", pkg_id),
+                            manifest.get("version", "0.0.0"),
+                            manifest.get("type", "plugin"),
+                            manifest.get("author", "Unknown"),
+                            manifest.get("description", ""),
+                            install_path,
+                            now,
+                            existing["version"],  # previous_version = old version
+                            json.dumps(manifest, ensure_ascii=False),
+                            config_panel_tab,
+                            pkg_id,
+                        ))
+                        logger.info(
+                            f"[HPM:Registry] Package '{pkg_id}' updated "
+                            f"from v{existing['version']} to v{manifest.get('version')}."
+                        )
+                    else:
+                        # FRESH install path
+                        conn.execute("""
+                            INSERT INTO packages
+                                (id, name, version, type, author, description,
+                                 status, install_path, installed_at, updated_at,
+                                 previous_version, manifest_snapshot, config_panel_tab)
+                            VALUES (?, ?, ?, ?, ?, ?, 'installed', ?, ?, NULL, NULL, ?, ?)
+                        """, (
+                            pkg_id,
+                            manifest.get("name", pkg_id),
+                            manifest.get("version", "0.0.0"),
+                            manifest.get("type", "plugin"),
+                            manifest.get("author", "Unknown"),
+                            manifest.get("description", ""),
+                            install_path,
+                            now,
+                            json.dumps(manifest, ensure_ascii=False),
+                            config_panel_tab,
+                        ))
+                        logger.info(
+                            f"[HPM:Registry] Package '{pkg_id}' v{manifest.get('version')} registered."
+                        )
 
                     # Store file list for atomic uninstallation
                     if installed_files:
@@ -134,7 +183,6 @@ class PackageRegistry:
                             [(pkg_id, fp) for fp in installed_files]
                         )
                     conn.commit()
-                logger.info(f"[HPM:Registry] Package '{pkg_id}' v{manifest.get('version')} registered.")
                 return True
             except Exception as e:
                 logger.error(f"[HPM:Registry] Failed to register '{pkg_id}': {e}")

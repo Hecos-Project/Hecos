@@ -1,0 +1,20 @@
+# Calendar Package — Factory Defaults
+# Read-only: shipped with the package.
+# User settings are written to calendar.toml in the same directory.
+
+[calendar]
+calendar_locale  = "it-IT"
+calendar_country = "IT"
+bg_color         = ""
+bg_image         = ""
+calendar_sync_urls = []
+
+[calendar.day_colors]
+# 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+0 = ""
+1 = ""
+2 = ""
+3 = ""
+4 = ""
+5 = ""
+6 = ""

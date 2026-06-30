@@ -167,5 +167,10 @@
     "webui_desc_lists": "Universal list management. Supports shopping lists, tasks, blacklists. Provides priority levels, labels and drag & drop.",
     "sidebar_empty_title": "No active widgets",
     "sidebar_empty_add": "Add a widget",
-    "sidebar_empty_desc": "Add a widget to get started."
+    "sidebar_empty_desc": "Add a widget to get started.",
+    "auth_username_label": "Username",
+    "auth_password_label": "Access Code",
+    "auth_remember_me": "Keep me logged in",
+    "auth_login_button": "Authenticate",
+    "auth_invalid_credentials": "Invalid credentials. Please try again."
 }

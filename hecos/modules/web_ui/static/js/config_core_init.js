@@ -24,6 +24,20 @@ async function initAll(attempt = 1) {
     // At this point window.cfg may already be populated (Jinja pre-injection)
     // or may be empty {}. Either way, render NOW so the user sees the menu.
     setViewMode(viewMode, true);
+
+    // If cfg is pre-injected by Jinja, fetch HPM panels BEFORE first render
+    // so installed packages appear in the sidebar immediately (no flicker).
+    const cfgPreInjected = window.cfg && Object.keys(window.cfg).length > 0;
+    if (cfgPreInjected) {
+        try {
+            const _r0panels = await fetchWithTimeout('/api/hub/panels', 2000);
+            if (_r0panels && _r0panels.ok) {
+                const _p0 = await _r0panels.json();
+                if (Array.isArray(_p0)) mergeHubPanels(_p0);
+            }
+        } catch(_e0) { /* non-critical, proceed */ }
+    }
+
     renderConfigHub(viewMode);
     // Only call showTab if there's an active tab to restore (not 'welcome')
     if (activeTab && activeTab !== 'welcome') {
@@ -221,12 +235,21 @@ function mergeHubPanels(panels) {
         const panelId = p.id;
         if (!panelId) return;
         // Skip if already registered (either static or from previous mergeRegistry call)
-        const exists = hub.modules.find(m => m.id === panelId || m.pluginTag === p.plugin_tag);
-        if (!exists) {
-            // icon can be either a raw HTML string (e.g. '<i class="fas fa-image"></i>')
-            // or a plain class name (e.g. 'fa-puzzle-piece') from legacy entries
-            const rawIcon = p.icon || '';
-            const iconHtml = rawIcon.includes('<') ? rawIcon : `<i class="fas ${rawIcon || 'fa-puzzle-piece'}"></i>`;
+        const existing = hub.modules.find(m => m.id === panelId || m.pluginTag === p.plugin_tag);
+        
+        const rawIcon = p.icon || '';
+        const iconHtml = rawIcon.includes('<') ? rawIcon : `<i class="fas ${rawIcon || 'fa-puzzle-piece'}"></i>`;
+
+        if (existing) {
+            // Overwrite generic registry data with specific HPM package data
+            existing.id = panelId;
+            existing.label = p.name || panelId;
+            existing.icon = iconHtml;
+            existing.cat = p.category || existing.cat || 'CONNETTIVITÀ';
+            existing.pluginTag = p.plugin_tag || panelId.toUpperCase();
+            existing.isHpm = true;
+            added++;
+        } else {
             hub.modules.push({
                 id:        panelId,
                 label:     p.name || panelId,
@@ -280,7 +303,19 @@ window.mergeRegistry = mergeRegistry;
 window.loadUIState   = loadUIState;
 window.saveUIState   = saveUIState;
 
-window.hpmRefreshConfigHub = async function() {
+window.hpmRefreshConfigHub = async function(evictPanelId = null) {
+    // If a panel is being disabled, remove it from cache and DOM so it vanishes instantly
+    if (evictPanelId) {
+        if (window._panelCache) delete window._panelCache[evictPanelId];
+        if (window.LAZY_PANEL_IDS) window.LAZY_PANEL_IDS.delete(evictPanelId);
+        const domPanel = document.getElementById('tab-' + evictPanelId);
+        if (domPanel) domPanel.remove();
+        // If this was the active tab, go back to welcome
+        if (typeof activeTab !== 'undefined' && activeTab === evictPanelId) {
+            if (typeof showTab === 'function') showTab('welcome');
+        }
+    }
+
     try {
         const res = await fetch('/api/hub/panels');
         if (res && res.ok) {

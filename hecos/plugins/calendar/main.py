@@ -13,7 +13,7 @@ class CalendarTools:
     """Hecos Calendar plugin — exposes all calendar LLM tools."""
 
     def __init__(self, config=None):
-        self._cfg = config # This will be the config dict passed by on_load
+        self._cfg = None # Not needed anymore, we use our own config manager
         self.status = "ONLINE"
         
         self.slash_commands = [
@@ -104,10 +104,9 @@ class CalendarTools:
     def sync_calendars(self) -> str:
         """Manually triggers synchronization with external Google/Apple calendars."""
         from hecos.plugins.calendar import sync_manager
+        from hecos.plugins.calendar.calendar_config.config_manager import get_calendar_config
         try:
-            sync_urls = []
-            if self._cfg and isinstance(self._cfg, dict):
-                sync_urls = self._cfg.get("extensions", {}).get("calendar", {}).get("calendar_sync_urls", [])
+            sync_urls = get_calendar_config().get("calendar_sync_urls", [])
             
             if not sync_urls:
                 return "ℹ️ No external calendar URLs configured. Add them in the Calendar settings."
@@ -129,10 +128,9 @@ class CalendarTools:
         except ImportError:
             return "⚠️ Temporal awareness requires the `babel` and `holidays` packages. Please run `pip install babel holidays` in the Hecos environment."
         
-        # Try to get defaults from extensions config
-        cal_cfg = {}
-        if self._cfg and isinstance(self._cfg, dict):
-            cal_cfg = self._cfg.get("extensions", {}).get("calendar", {})
+        # Get config from autonomous config manager
+        from hecos.plugins.calendar.calendar_config.config_manager import get_calendar_config
+        cal_cfg = get_calendar_config()
 
         # Use configured country if "IT" (default) is passed and we have a preference
         if country == "IT":
@@ -143,10 +141,8 @@ class CalendarTools:
         # Format "today" natively using babel.
         locale_str = cal_cfg.get("calendar_locale") or "it_IT"
         try:
-            if not cal_cfg and self._cfg and isinstance(self._cfg, dict):
-                lang = self._cfg.get("language", "it")
-                if "it" in lang.lower(): locale_str = "it_IT"
-                elif "en" in lang.lower(): locale_str = "en_US"
+            # Fallback locale logic if no config found (not strictly needed but good to have)
+            pass
         except:
             pass
 
@@ -213,14 +209,9 @@ class CalendarTools:
             try:
                 import babel.dates
                 locale_str = "it_IT"
-                if self._cfg and isinstance(self._cfg, dict):
-                    cal_cfg = self._cfg.get("extensions", {}).get("calendar", {})
-                    locale_str = cal_cfg.get("calendar_locale")
-                    if not locale_str:
-                        lang = self._cfg.get("language", "it")
-                        if "it" in lang.lower(): locale_str = "it_IT"
-                        elif "en" in lang.lower(): locale_str = "en_US"
-                        else: locale_str = "en_US"
+                from hecos.plugins.calendar.calendar_config.config_manager import get_calendar_config
+                cal_cfg = get_calendar_config()
+                locale_str = cal_cfg.get("calendar_locale") or "en_US"
                 return babel.dates.format_datetime(dt, format="full", locale=locale_str)
             except ImportError:
                 return dt.strftime("%A %d %B %Y at %H:%M")
@@ -233,15 +224,15 @@ tools = CalendarTools()
 
 def on_load(config):
     """Called by module_scanner when the plugin is loaded."""
-    tools._cfg = config
-    logger.debug("CALENDAR", "Plugin loaded and config injected.")
+    logger.debug("CALENDAR", "Plugin loaded.")
     
     # Trigger an initial background sync
     try:
         import threading
         def _bg_sync():
             from hecos.plugins.calendar import sync_manager
-            urls = config.get("extensions", {}).get("calendar", {}).get("calendar_sync_urls", [])
+            from hecos.plugins.calendar.calendar_config.config_manager import get_calendar_config
+            urls = get_calendar_config().get("calendar_sync_urls", [])
             if urls:
                 sync_manager.sync_all(urls)
         

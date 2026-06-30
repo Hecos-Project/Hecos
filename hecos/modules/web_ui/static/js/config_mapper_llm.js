@@ -22,12 +22,14 @@ function populateBackendUI() {
     populateSelect('ollama-model', sysOptions.ollama_models   || [], c.backend?.ollama?.model);
 
     setVal('cloud-temp',     c.backend?.cloud?.temperature   ?? 0.7);
-    setVal('ollama-temp',    c.backend?.ollama?.temperature  ?? 0.3);
-    setVal('ollama-gpu',     c.backend?.ollama?.num_gpu      ?? 25);
-    setVal('ollama-predict', c.backend?.ollama?.num_predict  ?? 250);
-    setVal('ollama-ctx',     c.backend?.ollama?.num_ctx      ?? 4096);
-    setVal('ollama-top-p',   c.backend?.ollama?.top_p        ?? 0.9);
-    setVal('ollama-repeat',  c.backend?.ollama?.repeat_penalty ?? 1.1);
+    setVal('ollama-temp',         c.backend?.ollama?.temperature    ?? 0.3);
+    setVal('ollama-gpu',          c.backend?.ollama?.num_gpu        ?? 25);
+    setVal('ollama-predict',      c.backend?.ollama?.num_predict    ?? 250);
+    setVal('ollama-ctx',          c.backend?.ollama?.num_ctx        ?? 4096);
+    setVal('ollama-top-p',        c.backend?.ollama?.top_p          ?? 0.9);
+    setVal('ollama-repeat',       c.backend?.ollama?.repeat_penalty ?? 1.1);
+    setVal('ollama-probe-timeout',c.backend?.ollama?.probe_timeout_sec ?? 3);
+    setVal('ollama-url',          c.backend?.ollama?.url            || 'http://localhost:11434');
 
     setVal('kobold-url',   c.backend?.kobold?.url         || 'http://localhost:5001');
     setVal('kobold-model', c.backend?.kobold?.model       || '');
@@ -90,12 +92,14 @@ function buildBackendPayload(out) {
     out.backend.cloud.model           = getV('cloud-model',    out.backend.cloud.model);
     out.backend.cloud.temperature     = parseFloat(getV('cloud-temp',    out.backend.cloud.temperature))     || 0.7;
     out.backend.ollama.model          = getV('ollama-model',   out.backend.ollama.model);
-    out.backend.ollama.temperature    = parseFloat(getV('ollama-temp',   out.backend.ollama.temperature))    || 0.3;
-    out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu',      out.backend.ollama.num_gpu))        || 33;
-    out.backend.ollama.num_predict    = parseInt(getV('ollama-predict',  out.backend.ollama.num_predict))    || 1024;
-    out.backend.ollama.num_ctx        = parseInt(getV('ollama-ctx',      out.backend.ollama.num_ctx))        || 4096;
-    out.backend.ollama.top_p          = parseFloat(getV('ollama-top-p',  out.backend.ollama.top_p))          || 0.95;
-    out.backend.ollama.repeat_penalty = parseFloat(getV('ollama-repeat', out.backend.ollama.repeat_penalty)) || 1.1;
+    out.backend.ollama.temperature    = parseFloat(getV('ollama-temp',    out.backend.ollama.temperature))    || 0.3;
+    out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu',        out.backend.ollama.num_gpu))        || 33;
+    out.backend.ollama.num_predict    = parseInt(getV('ollama-predict',    out.backend.ollama.num_predict))    || 1024;
+    out.backend.ollama.num_ctx        = parseInt(getV('ollama-ctx',        out.backend.ollama.num_ctx))        || 4096;
+    out.backend.ollama.top_p          = parseFloat(getV('ollama-top-p',   out.backend.ollama.top_p))          || 0.95;
+    out.backend.ollama.repeat_penalty = parseFloat(getV('ollama-repeat',  out.backend.ollama.repeat_penalty)) || 1.1;
+    out.backend.ollama.probe_timeout_sec = parseInt(getV('ollama-probe-timeout', out.backend.ollama.probe_timeout_sec)) || 3;
+    out.backend.ollama.url            = getV('ollama-url', out.backend.ollama.url || 'http://localhost:11434');
     out.backend.kobold.url            = getV('kobold-url',   out.backend.kobold.url);
     out.backend.kobold.model          = getV('kobold-model', out.backend.kobold.model);
     out.backend.kobold.temperature    = parseFloat(getV('kobold-temp',  out.backend.kobold.temperature))    || 0.7;

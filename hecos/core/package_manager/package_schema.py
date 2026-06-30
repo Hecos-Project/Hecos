@@ -7,11 +7,16 @@ Every .hpkg zip must contain an hpkg_manifest.json at its root that
 conforms to this schema. Pydantic is used for validation so that error
 messages are clear for third-party developers.
 
-Package types:
-  plugin      → installs into hecos/plugins/<id>/
-  module      → installs into hecos/modules/<id>/
-  theme       → installs CSS/assets only
-  skill_pack  → installs additional HDCS slash-command packs
+Package types and their default install destinations:
+  core_module → hecos/plugins/<id>/          (Level 1 — built-in, not removable)
+  plugin      → hecos/plugins/<id>/          (Level 2 — single-responsibility, reactive)
+  module      → hecos/plugins/<id>/          (Level 2 — alias, kept for backwards compat)
+  extension   → hecos/plugins/<id>/          (Level 3 — child of a plugin or core module)
+  app         → hecos/apps/<id>/             (Level 4 — autonomous, has its own full UI)
+  widget      → (web_ui/extensions only)     (Level 5 — Control Room widget, no backend)
+  persona     → hecos/personas/<id>/         (Level 6 — installable AI personality)
+  theme       → hecos/themes/<id>/           (Level 7 — CSS/UI theme pack)
+  skill_pack  → hecos/skill_packs/<id>/      (Level 8 — additional HDCS command pack)
 ─────────────────────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
@@ -109,7 +114,13 @@ class HpkgManifest(BaseModel):
     name: str = Field(..., description="Human-readable package name")
     version: str = Field(..., description="SemVer package version, e.g. '1.0.0'")
     hecos_min_version: str = Field("0.1.0", description="Minimum Hecos version required")
-    type: str = Field("plugin", description="Package type: plugin | module | theme | skill_pack")
+    type: str = Field(
+        "plugin",
+        description=(
+            "Package type: core_module | plugin | module | extension "
+            "| app | widget | persona | theme | skill_pack"
+        )
+    )
     author: str = Field("Unknown", description="Author name or organization")
     description: str = Field("", description="Short description of what this package does")
 
@@ -132,11 +143,54 @@ class HpkgManifest(BaseModel):
         default_factory=list,
         description="List of sidebar/control room widgets bundled with this package"
     )
+    
+    # Store & Documentation
+    readme: str = Field(
+        "README.md",
+        description="Path inside zip to the markdown documentation file. Mandatory for Store."
+    )
+    readme_url: Optional[str] = Field(
+        None,
+        description="Optional URL to a raw markdown file for Store preview."
+    )
+    changelog: Optional[str] = Field(
+        None,
+        description="Path inside zip to the changelog markdown file."
+    )
+    repository_url: Optional[str] = Field(
+        None,
+        description="URL to the package's source code repository."
+    )
+    homepage: Optional[str] = Field(
+        None,
+        description="URL to the package's homepage."
+    )
+    license: str = Field(
+        "MIT",
+        description="License of the package."
+    )
+    keywords: List[str] = Field(
+        default_factory=list,
+        description="List of keywords to help search for this package in the Store."
+    )
+    
+    icon_url: Optional[str] = Field(
+        None,
+        description="Optional URL to an icon image for the package (used in Store)"
+    )
+    screenshots: List[str] = Field(
+        default_factory=list,
+        description="Optional list of screenshot URLs showcasing the package (used in Store)"
+    )
 
     # Dependencies
     dependencies: List[str] = Field(
         default_factory=list,
-        description="List of other hpkg IDs that must be installed first"
+        description="List of other hpkg IDs that must be installed first (hard requirement — blocks install if missing)"
+    )
+    optional_dependencies: List[str] = Field(
+        default_factory=list,
+        description="List of other hpkg IDs that enhance this package but are NOT required (warning only, never blocks install)"
     )
     pip_requirements: List[str] = Field(
         default_factory=list,

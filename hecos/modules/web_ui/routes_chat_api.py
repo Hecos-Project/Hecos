@@ -68,6 +68,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             return jsonify({"ok": False, "error": "Empty message"}), 400
 
         uid = current_user.username if current_user.is_authenticated else "admin"
+        urole = current_user.role if current_user.is_authenticated else "admin"
 
         # ── Flow input intercept ───────────────────────────────────────────────
         # If any flow is paused waiting for user input, route this message there
@@ -128,7 +129,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         threading.Thread(
             target=_run_inference,
-            args=(sid, user_msg, history, cfg_mgr, images, uid, tab_id),
+            args=(sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id),
             daemon=True,
         ).start()
         return jsonify({"ok": True, "session_id": sid})

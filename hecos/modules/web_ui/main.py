@@ -71,6 +71,8 @@ class WebUIPlugin:
         if cfg_mgr:
             self._port = cfg_mgr.config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
             self._auto_open = cfg_mgr.config.get("plugins", {}).get("WEB_UI", {}).get("auto_open_browser", False)
+            if os.environ.get("HECOS_HEADLESS") == "1":
+                self._auto_open = False
 
     def _set_state_manager(self, sm):
         """Injects the live StateManager from the main application."""

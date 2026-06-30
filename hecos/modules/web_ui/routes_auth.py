@@ -25,9 +25,11 @@ def init_auth_routes(app, cfg_mgr, logger):
             
             # Auth failed
             logger.warning(f"[WebUI Auth] Failed login attempt for user '{username}'.")
-            error = "Credenziali non valide. Riprova."
+            from hecos.core.i18n.translator import t
+            error = t("auth_invalid_credentials", default="Credenziali non valide. Riprova.")
 
-        return render_template('login.html', error=error, zconfig=cfg_mgr.config)
+        from hecos.core.i18n.translator import t
+        return render_template('login.html', error=error, zconfig=cfg_mgr.config, t=t)
 
     @app.route('/logout')
     @login_required

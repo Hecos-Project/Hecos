@@ -1,0 +1,15 @@
+[calendar]
+calendar_locale = "en-US"
+calendar_country = "IT"
+day_colors = [
+    "rgba(219,26,26,0.35)",
+    "transparent",
+    "transparent",
+    "transparent",
+    "rgba(44,147,6,0.2)",
+    "transparent",
+    "transparent",
+]
+bg_color = ""
+bg_image = ""
+calendar_sync_urls = []

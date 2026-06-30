@@ -70,6 +70,7 @@ if exist "python_env\python.exe" (
 )
 
 :: Starting the monitor
+set HECOS_BOOT_MODE=webui
 !PYTHON_CMD! hecos\monitor.py --script hecos.modules.web_ui.server
 
 echo.

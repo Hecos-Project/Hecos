@@ -23,11 +23,19 @@ python scripts/hpm_cli.py keygen --out-dir keys
 - **`private.pem`**: Da mantenere segreta. Serve per firmare.
 - **`public.pem`**: Da condividere. Copia questa chiave in `hecos/data/trusted_keys/` affinché Hecos si fidi dei pacchetti firmati da te.
 
-### 2. Creazione del Pacchetto (Pack & Sign)
-Prepara la cartella del tuo modulo (es. `mio_modulo/`) assicurandoti che contenga il file `hpkg_manifest.json`.
+### 2. Preparazione del Manifest
+Ogni modulo deve contenere un file `hpkg_manifest.toml` nella sua cartella principale. Il manifest ora richiede obbligatoriamente un file di documentazione (di default `README.md`). Altri campi utili per lo Store includono:
+- `changelog`: File markdown con le modifiche.
+- `repository_url`: Indirizzo del repository (es. GitHub).
+- `homepage`: Sito web del progetto.
+- `license`: Licenza del pacchetto.
+- `keywords`: Parole chiave per la ricerca.
+
+### 3. Creazione del Pacchetto (Pack & Sign)
+Prepara la cartella del tuo modulo (es. `mio_modulo/`) assicurandoti che contenga il manifest e il file README.
 ```bash
 python scripts/hpm_cli.py pack --src mio_modulo/ --key keys/private.pem --out mio_modulo_v1.hpkg
 ```
-Lo script calcolerà l'hash (SHA-256) di ogni file all'interno della cartella, firmerà il manifest usando la chiave privata e creerà un archivio `.hpkg` pronto per la distribuzione.
+Lo script verificherà la presenza del `README.md`, calcolerà l'hash (SHA-256) di ogni file all'interno della cartella, firmerà il manifest usando la chiave privata e creerà un archivio `.hpkg` pronto per la distribuzione.
 
 > **Nota**: Durante lo sviluppo locale, puoi bypassare la verifica della firma spuntando la casella "Allow unsigned packages" nella WebUI del Package Manager.

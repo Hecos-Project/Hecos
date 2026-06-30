@@ -19,7 +19,47 @@
             <input type="text" id="hpm-private-key-path" class="config-input" data-cfg-layer="hpm" data-cfg-key="private_key_path" placeholder="e.g. C:\hecos_keys\private.pem">
             <p style="font-size:10px; color:var(--muted); margin-top:4px;">Used by the HPM Builder to automatically sign packages.</p>
         </div>
+        
+        <div class="field mt-3">
+            <label>Store Catalog URL or Local Path</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="hpm-store-catalog-url" class="config-input" style="flex:1;" data-cfg-layer="hpm" data-cfg-key="store_catalog_url" placeholder="Default: https://hecos-project.github.io/store/index.json">
+                <button class="btn btn-outline" style="padding:6px 12px;" onclick="window._hpmPickLocalStore()" title="Browse for local folder">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">Can be a remote URL or an absolute local folder path containing index.json.</p>
+        </div>
     </div>
+
+    <script>
+    window._hpmPickLocalStore = async function() {
+        try {
+            const resp = await fetch('/api/system/explorer/pick-native', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    title: 'Select Local Store Directory',
+                    pick_dir: true
+                })
+            });
+            const data = await resp.json();
+            if (data.ok && data.path) {
+                // Point it specifically to the index.json inside the chosen directory
+                const sep = data.path.includes('\\') ? '\\' : '/';
+                const fullPath = data.path + sep + 'index.json';
+                const input = document.getElementById('hpm-store-catalog-url');
+                input.value = fullPath;
+                
+                // Dispatch event to trigger save
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } catch (e) {
+            console.error('Failed to pick store directory:', e);
+        }
+    };
+    </script>
 
     <div class="card">
         <div class="card-title"><i class="fas fa-unlock-alt"></i> Package Permissions</div>

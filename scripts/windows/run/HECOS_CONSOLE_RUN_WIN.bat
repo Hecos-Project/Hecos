@@ -25,19 +25,22 @@ if exist "python_env\python.exe" (
 
 if not defined PYTHON_CMD set PYTHON_CMD=python
 :: Auto-check environment before starting
-echo [*] Verifica configurazione ambiente...
-!PYTHON_CMD! hecos\setup_wizard.py --auto
-if %ERRORLEVEL% NEQ 0 (
-  echo [!] Problema di configurazione rilevato.
-  echo [!] Lancio del Setup Wizard riparatore...
-  timeout /t 3
-  call scripts\windows\setup\HECOS_SETUP_CONSOLE_WIN.bat
+!PYTHON_CMD! -c "import sys,msvcrt,time; print('[*] Press ESC to skip environment check (2s)...', end='\r', flush=True); end=time.time()+2; skip=False; exec('while time.time()<end:\n if msvcrt.kbhit() and ord(msvcrt.getch())==27: skip=True; break\n time.sleep(0.05)'); print('[*] Environment check SKIPPED!                       ' if skip else '[*] Running environment verification...              '); sys.exit(1 if skip else 0)"
+if %ERRORLEVEL% EQU 0 (
+  !PYTHON_CMD! hecos\setup_wizard.py --auto
+  if !ERRORLEVEL! NEQ 0 (
+    echo [!] Problema di configurazione rilevato.
+    echo [!] Lancio del Setup Wizard riparatore...
+    timeout /t 3
+    call scripts\windows\setup\HECOS_SETUP_CONSOLE_WIN.bat
+  )
 )
 
 echo [*] Starting interactive terminal...
 echo [*] Press F9 for a Safe Restart of the program.
 echo.
 
+set HECOS_BOOT_MODE=console
 !PYTHON_CMD! hecos\monitor.py
 
 echo.

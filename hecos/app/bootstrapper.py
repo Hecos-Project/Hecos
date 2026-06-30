@@ -19,18 +19,39 @@ class SystemBootstrapper:
 
     def initialize(self):
         """Inizializzazione di tutti i componenti."""
+        import time as _time
+        _boot_ts = _time.strftime("%d/%m/%Y %H:%M:%S")
+        _boot_t0 = _time.time()
+        
         from hecos.core.constants import ensure_directories
         ensure_directories()
         
         logger.init_logger(self.config_manager.config)
         
-        # Initialize translator
+        # ── First-ever log line after restart ─────────────────────────────────────────
+        logger.info(f"[BOOT] {'=' * 54}")
+        logger.info(f"[BOOT]   🚀 HECOS AVVIO — {_boot_ts}")
+        logger.info(f"[BOOT] {'=' * 54}")
+        # ─────────────────────────────────────────────────────────────────────────
+        
+        self._boot_t0 = _boot_t0
+        import os
+        env_mode = os.environ.get("HECOS_BOOT_MODE")
+        if env_mode:
+            self._is_webui_mode = (env_mode.lower() == "webui")
+        else:
+            self._is_webui_mode = (
+                self.config_manager.config.get("system", {}).get("boot_mode", "console") == "webui"
+            )
+        logger.info(f"[BOOT] Mode: {'WEBUI-ONLY' if self._is_webui_mode else 'CONSOLE+WEBUI'} (Env: {env_mode})")
         language = self.config_manager.config.get("language", "en")
         translator.init_translator(language)
         processore.configure(self.config_manager.config)
         logger.info("[APP] Hecos boot sequence initiated.")
         
-        interface.setup_console()
+        # Skip console setup in webui-only mode
+        if not self._is_webui_mode:
+            interface.setup_console()
         self.state_manager.system_status = translator.t("loading_memory")
         brain_interface.initialize_vault()
         brain_interface.maybe_clear_on_restart(self.config_manager.config)

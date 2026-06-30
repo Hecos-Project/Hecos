@@ -98,37 +98,52 @@ class HecosApplication:
             ptt_status=self.state_manager.push_to_talk
         )
 
-        if not config.get("system", {}).get("fast_boot", False):
-            self.bootstrapper.show_boot_animation()
-        
-        self.state_manager.system_status = translator.t("ready")
-        interface.show_complete_ui(
-            config,
-            self.state_manager.voice_status,
-            self.state_manager.listening_status,
-            self.state_manager.system_status,
-            ptt_status=self.state_manager.push_to_talk
-        )
+        is_webui_mode = self.bootstrapper._is_webui_mode
 
-        if dashboard_mod:
-            ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
-        else:
-            ui_updater.stop()
+        if not is_webui_mode:
+            if not config.get("system", {}).get("fast_boot", False):
+                self.bootstrapper.show_boot_animation()
+            
+            self.state_manager.system_status = translator.t("ready")
+            interface.show_complete_ui(
+                config,
+                self.state_manager.voice_status,
+                self.state_manager.listening_status,
+                self.state_manager.system_status,
+                ptt_status=self.state_manager.push_to_talk
+            )
+
+            if dashboard_mod:
+                ui_updater.start(self.config_manager, self.state_manager, dashboard_mod)
+            else:
+                ui_updater.stop()
 
         # [WEB_UI] Inject live managers into plugin if active, then start the Flask server.
-        # Must happen BEFORE show_welcome() so the link info is printed after server is live.
         web_ui_mod = module_loader.get_plugin_module("WEB_UI")
         if web_ui_mod and hasattr(web_ui_mod, "tools"):
             if hasattr(web_ui_mod.tools, "_set_config_manager"):
                 web_ui_mod.tools._set_config_manager(self.config_manager)
             if hasattr(web_ui_mod.tools, "_set_state_manager"):
                 web_ui_mod.tools._set_state_manager(self.state_manager)
-            # Start the Flask server now that managers are injected.
-            # In console mode this is never triggered otherwise (the server starts
-            # lazily only when the agent calls open_browser/get_panel_url).
             if hasattr(web_ui_mod.tools, "_ensure_server"):
                 try:
                     web_ui_mod.tools._ensure_server()
+                    # ── Server Live Banner ─────────────────────────────────────────────
+                    import socket
+                    try:
+                        _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                        _s.connect(('10.254.254.254', 1))
+                        _lan = _s.getsockname()[0]
+                        _s.close()
+                    except Exception:
+                        _lan = "127.0.0.1"
+                    _port = config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
+                    _scheme = "https" if config.get("plugins", {}).get("WEB_UI", {}).get("https_enabled") else "http"
+                    logger.info(f"[BOOT] {'=' * 54}")
+                    logger.info(f"[BOOT]   🚀 SERVER LIVE  →  {_scheme}://{_lan}:{_port}/chat")
+                    logger.info(f"[BOOT]   🔑 Pannello     →  {_scheme}://{_lan}:{_port}/hecos/config/ui")
+                    logger.info(f"[BOOT] {'=' * 54}")
+                    # ──────────────────────────────────────────────────────────────────
                 except Exception as _ws_e:
                     logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
 
@@ -143,25 +158,25 @@ class HecosApplication:
         interface.move_to_body()
         self.bootstrapper.show_welcome()
 
-        # Avvia bus audio PTT (necessario per Console autonoma)
-        try:
-            from hecos.core.audio import ptt_bus, smartwatch_bus
-            ptt_bus.start(state=self.state_manager)
-            smartwatch_bus.start(state=self.state_manager)
-            logger.info("[APP] PTT and Smartwatch Bus started.")
-        except Exception as e:
-            logger.warning(f"[APP] Could not start audio bus: {e}")
+        # Avvia bus audio PTT e thread ascolto SOLO in modalità console
+        if not is_webui_mode:
+            try:
+                from hecos.core.audio import ptt_bus, smartwatch_bus
+                ptt_bus.start(state=self.state_manager)
+                smartwatch_bus.start(state=self.state_manager)
+                logger.info("[APP] PTT and Smartwatch Bus started.")
+            except Exception as e:
+                logger.warning(f"[APP] Could not start audio bus: {e}")
 
-        # Avvia thread ascolto
-        ascolto_thread = AscoltoThread(self.state_manager)
-        ascolto_thread.start()
+            ascolto_thread = AscoltoThread(self.state_manager)
+            ascolto_thread.start()
 
-        # Activate readline-style prompt tracking (protects prompt from log clobbering)
-        interface.set_active_prompt(prefisso, "")
-        from hecos.ui.ui_updater import stdout_lock
-        with stdout_lock:
-            sys.stdout.write("\n" + prefisso)
-            sys.stdout.flush()
+            # Activate readline-style prompt tracking
+            interface.set_active_prompt(prefisso, "")
+            from hecos.ui.ui_updater import stdout_lock
+            with stdout_lock:
+                sys.stdout.write("\n" + prefisso)
+                sys.stdout.flush()
 
         # Main loop
         while self.running:

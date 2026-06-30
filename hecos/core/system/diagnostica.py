@@ -5,7 +5,7 @@ DESCRIPTION: Handles pre-flight checks and hardware status.
 
 import os
 import time
-import requests
+import threading
 import importlib
 import glob
 import psutil
@@ -23,6 +23,10 @@ ROSSO = '\033[91m'
 CIANO = '\033[96m'
 GIALLO = '\033[93m'
 RESET = '\033[0m'
+BOLD  = '\033[1m'
+
+# Tracks when the boot sequence started (set in start_wake_sequence)
+_BOOT_START_TIME: float = 0.0
 
 def check_bypass():
     try:
@@ -69,151 +73,108 @@ def check_hardware():
     ram_status = f"{VERDE}OK{RESET}" if ram < 85 else f"{ROSSO}CRITICAL ({ram}%){RESET}"
     return f"   [+] CPU Core: {cpu_status} | Neural Memory (RAM): {ram_status}"
 
-def check_backend(config):
-    """Verifies the status of the active backend (Ollama, Kobold, or Cloud)."""
+def check_backend_async(config):
+    """
+    Verifies the status of the active backend in a background thread.
+    Controlled by system.check_local_backend_on_boot in system.yaml.
+    If set to false (default), skips the check entirely.
+    """
+    check_enabled = config.get('system', {}).get('check_local_backend_on_boot', False)
+    if not check_enabled:
+        logger.debug("[DIAG] Backend check skipped (check_local_backend_on_boot=false).")
+        return
+
     backend_type = config.get('backend', {}).get('type', 'ollama')
-    print(f"   [>] Checking {backend_type.upper()} backend...")
-    
-    if backend_type == 'kobold':
-        url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
-        try:
-            r = requests.get(url, timeout=2)
-            if r.status_code == 200:
-                print(f"   [+] {VERDE}Kobold Backend: ONLINE{RESET}")
-                return True
-            else:
-                print(f"   [-] {ROSSO}Kobold Backend: ERROR ({r.status_code}){RESET}")
-                return False
-        except Exception as e:
-            print(f"   [-] {ROSSO}Kobold Backend: NOT RESPONDING ({e}){RESET}")
-            return False
-    elif backend_type == 'cloud':
-        # For cloud, we don't perform heavy network checks here, 
-        # let the client handle connection/quota errors.
-        print(f"   [+] {VERDE}Backend CLOUD: READY (LiteLLM){RESET}")
-        return True
-    else:  # ollama
-        ollama_cfg = config.get('backend', {}).get('ollama', {})
-        model = ollama_cfg.get('model', 'llama3.2:1b')
-        url = "http://localhost:11434/api/generate"
-        
-        # Send the same GPU parameters used by client.py in production
-        options = {}
-        if ollama_cfg.get('num_gpu') is not None:
-            options["num_gpu"] = int(ollama_cfg['num_gpu'])
-        if ollama_cfg.get('num_ctx') is not None:
-            options["num_ctx"] = int(ollama_cfg['num_ctx'])
-        if ollama_cfg.get('keep_alive') is not None:
-            options["keep_alive"] = ollama_cfg['keep_alive']
-        
-        payload = {"model": model, "prompt": "hi", "stream": False, "options": options}
-        try:
-            # Fast Check: Just verify if Ollama is alive and knows the model
-            tags_url = "http://localhost:11434/api/tags"
-            r_tags = requests.get(tags_url, timeout=2)
-            if r_tags.status_code == 200:
-                models = [m['name'] for m in r_tags.json().get('models', [])]
-                if model in models or any(model in m for m in models):
-                    print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
-                    return True
-            
-            # Fallback to the heavier check if tags fail or model not sure
-            print(f"   [>] Initializing VRAM for: {model}...")
-            response = requests.post(url, json=payload, timeout=5) # Reduced timeout for boot
-            if response.status_code == 200:
-                print(f"   [+] {VERDE}{translator.t('diag_neural_online')}{RESET}")
-                return True
-            return False
-        except Exception as e:
-            logger.error(f"DIAGNOSTICS: Ollama not responding: {e}")
-            print(f"   [-] {ROSSO}{translator.t('diag_ollama_error')}{RESET}")
-            return False
+    # Only run the check for local backends that require a running server
+    if backend_type not in ('ollama', 'kobold'):
+        logger.debug(f"[DIAG] Backend check skipped for cloud backend '{backend_type}'.")
+        return
 
-def scan_plugins(config):
+    def _run_check():
+        import urllib.request, urllib.error
+        probe_timeout = config.get('backend', {}).get('ollama', {}).get('probe_timeout_sec', 3)
+        try:
+            if backend_type == 'kobold':
+                url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
+                try:
+                    urllib.request.urlopen(url, timeout=probe_timeout)
+                    logger.info(f"[DIAG] Kobold backend: ONLINE")
+                except Exception as e:
+                    logger.warning(f"[DIAG] Kobold backend not responding: {e}")
+            else:  # ollama
+                ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
+                tags_url = ollama_base + '/api/tags'
+                try:
+                    urllib.request.urlopen(tags_url, timeout=probe_timeout)
+                    logger.info(f"[DIAG] Ollama backend: ONLINE ({ollama_base})")
+                except Exception as e:
+                    logger.warning(f"[DIAG] Ollama backend not responding at {ollama_base}: {e}")
+        except Exception as e:
+            logger.warning(f"[DIAG] Backend check error: {e}")
+
+    t = threading.Thread(target=_run_check, daemon=True, name="HecosBackendCheck")
+    t.start()
+    logger.debug("[DIAG] Backend check started asynchronously.")
+
+def scan_plugins_fast(config):
     """
-    Automatically search and query additional modules.
-    Supports the 'enabled' flag in config.json to skip or report disabled plugins.
+    Fast plugin status scan: reads the already-built capability registry JSON
+    instead of re-importing all plugin modules from scratch (which is what the
+    old scan_plugins() did and was the main cause of slow boot).
     """
+    from hecos.core.system.module_state import REGISTRY_PATH
     results = []
-    from hecos.core.system import module_loader
-    
-    # Ensure registry is fresh
-    module_loader.update_capability_registry(config)
-    
-    plugins_dir = "plugins"
-    if not os.path.exists(plugins_dir):
-        plugins_dir = os.path.join("hecos", "plugins")
-
-    if not os.path.exists(plugins_dir):
-        return [f"   [-] {ROSSO}Directory 'plugins' not found!{RESET}"]
-
-    plugin_dirs = [d for d in os.listdir(plugins_dir) 
-                  if os.path.isdir(os.path.join(plugins_dir, d)) 
-                  and not d.startswith("__")
-                  and d != "plugins_disabled"]
-    
-    for plugin_dir in plugin_dirs:
-        main_file = os.path.join(plugins_dir, plugin_dir, "main.py")
-        if not os.path.exists(main_file):
-            continue
-            
-        try:
-            # Import plugin to read tag and status
-            spec = importlib.util.spec_from_file_location(f"diag.{plugin_dir}", main_file)
-            if spec is None: continue
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Retrieve tag and info
-            info_data = module.info() if hasattr(module, "info") else {"tag": plugin_dir.lower()}
-            tag = info_data.get('tag', plugin_dir.lower())
-            display_name = plugin_dir.upper()
-            
-            # CHECK ENABLED FLAG IN CONFIG
-            is_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
-            
-            if is_enabled:
-                if hasattr(module, "status"):
-                    status_result = module.status()
-                    # If status is "READY", "ACTIVE", or "ONLINE", try to translate it
-                    if status_result in ("READY", "ACTIVE", "ONLINE"): 
-                        status_result = translator.t(status_result.lower() if status_result in ("READY", "ONLINE") else "ready")
-                    elif status_result in ("ERROR", "OFFLINE"):
-                        status_result = translator.t(status_result.lower())
-                    
-                    results.append(f"   [+] Plugin '{display_name}': {VERDE}{status_result}{RESET}")
-                else:
-                    results.append(f"   [+] Plugin '{display_name}': {VERDE}{translator.t('ready')}{RESET}")
+    try:
+        if not os.path.isfile(REGISTRY_PATH):
+            return [f"   [-] {ROSSO}Registry file not found — run module_loader first.{RESET}"]
+        with open(REGISTRY_PATH, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+        for tag, info in registry.items():
+            status = info.get('status', 'ONLINE')
+            if 'DORMANT' in status or status == 'ONLINE':
+                results.append(f"   [+] {tag}: {VERDE}{status}{RESET}")
+            elif status in ('OFFLINE', 'ERROR'):
+                results.append(f"   [-] {tag}: {ROSSO}{status}{RESET}")
             else:
-                results.append(f"   [!] Plugin '{display_name}': {GIALLO}{translator.t('disabled')}{RESET}")
-                
-        except Exception as e:
-            results.append(f"   [-] Plugin '{plugin_dir.upper()}': {ROSSO}LOADING ERROR ({e}){RESET}")
-    
+                results.append(f"   [!] {tag}: {GIALLO}{status}{RESET}")
+    except Exception as e:
+        results.append(f"   [-] {ROSSO}Could not read registry: {e}{RESET}")
     return results
+
 
 def run_initial_check(config):
     return start_wake_sequence(config)
 
 
 def start_wake_sequence(config):
+    global _BOOT_START_TIME
+    _BOOT_START_TIME = time.time()
+    _ts = time.strftime("%d/%m/%Y %H:%M:%S")
+
     os.system('cls' if os.name == 'nt' else 'clear')
-    
-    # Use centralized variables from hecos.core.version
-    print(f"{CIANO}{get_version_string()}{RESET}")
+
+    # ── Boot Banner ──────────────────────────────────────────────────────────
+    print(f"{CIANO}{BOLD}")
+    print(f"╔══════════════════════════════════════════════════════╗")
+    print(f"║   🚀 HECOS AVVIO  —  {_ts:<31}║")
+    print(f"║   {get_version_string():<51}║")
+    print(f"╚══════════════════════════════════════════════════════╝{RESET}")
+    print()
+    logger.info(f"[BOOT] === HECOS AVVIO [{_ts}] ===")
+    # ─────────────────────────────────────────────────────────────────────────
+
     print(f"{CIANO}{COPYRIGHT}{RESET}")
     print(f"{CIANO}{'─' * 55}{RESET}\n")
-    
+
     print(f"{CIANO}==================================================={RESET}")
     print(f"{CIANO}  {translator.t('welcome', version=VERSION)}{RESET}")
     print(f"{CIANO}  {translator.t('boot_sequence')}{RESET}")
     print(f"{CIANO}==================================================={RESET}")
     print(f"{CIANO}      (Press ESC at any time to skip){RESET}")
     print(f"{CIANO}==================================================={RESET}\n")
-    
-    # FAST BOOT CHECK (Set to true in config -> system -> fast_boot)
+
     fast_boot = config.get("system", {}).get("fast_boot", False)
-    
+
     if check_bypass(): return True
     if not fast_boot:
         missing = check_folders()
@@ -222,40 +183,43 @@ def start_wake_sequence(config):
             time.sleep(2)
             return False
         print(f"   [+] {VERDE}{translator.t('diag_structure_ok')}{RESET}")
-    
+
         if check_bypass(): return True
         print(check_hardware())
-        
+
         if check_bypass(): return True
         print(f"   [+] {VERDE}{translator.t('diag_voice_ok')}{RESET}")
-        
+
         if check_bypass(): return True
         energy_threshold = config.get('listening', {}).get('energy_threshold', 'N/D')
         print(f"   [+] {VERDE}{translator.t('diag_mic_ready', soglia=energy_threshold)}{RESET}")
-        
-        # Check backend
+
+        # Backend check — async, non-blocking, skipped for cloud backends
+        check_backend_async(config)
+
+        # Plugin Scan — FAST: reads registry JSON, does NOT re-import modules
         if check_bypass(): return True
-        check_backend(config)
-        
-        # Plugin Scan
-        if check_bypass(): return True
-        results = scan_plugins(config)
+        results = scan_plugins_fast(config)
         for res in results[:5]:
             if check_bypass(): return True
             print(res)
-    
+
         print(f"\n{CIANO}==================================================={RESET}")
-    
-    # Estrae la frase personalizzata adatta alla lingua corrente
+
     from hecos.core.system.greeting import get_spoken_greeting, get_ui_greeting
     intro_greeting_voc = get_spoken_greeting(config)
     intro_greeting_ui = get_ui_greeting(config)
- 
-    # Print in UI locale, speak in VOICE language (Always at startup)
+
     print_and_speak(f"{CIANO}[SYSTEM] {RESET}" + intro_greeting_ui, intro_greeting_voc)
-    
+
     while msvcrt.kbhit():
         msvcrt.getch()
-        
+
+    elapsed = time.time() - _BOOT_START_TIME
+    logger.info(f"[BOOT] === Hecos pronto in {elapsed:.1f}s ===")
+    print(f"{CIANO}{'─' * 55}{RESET}")
+    print(f"{CIANO}   ✅ Hecos pronto in {elapsed:.1f}s{RESET}")
+    print(f"{CIANO}{'─' * 55}{RESET}")
+
     time.sleep(0.5)
-    return True
+    return True

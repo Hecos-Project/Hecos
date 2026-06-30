@@ -119,7 +119,21 @@ function renderConfigHub(mode = 'tabs') {
         const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
         const isMcp     = (m.cat === 'MCP');
         const isCore    = !!m.isCore;
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore);
+        // HPM packages: if cfg is ready and the plugin is not explicitly disabled, show it.
+        // This covers the case where mergeHubPanels hasn't run yet (Phase 0 render)
+        // but the package is installed and enabled in system.yaml.
+        const isHpmEnabled = !!(m.isHpm && cfgReady && m.pluginTag && (() => {
+            const p = window.cfg.plugins && window.cfg.plugins[m.pluginTag];
+            return !p || p.enabled !== false;
+        })());
+        
+        if (m.id === 'calendar') {
+            console.log(`[DEBUG CALENDAR] inCache:${inCache} inLazySet:${inLazySet} hasPanel:${hasPanel} isMapped:${isMapped} isMcp:${isMcp} isCore:${isCore} isHpmEnabled:${isHpmEnabled}`);
+            console.log(`[DEBUG CALENDAR] isHpm:${m.isHpm} cfgReady:${cfgReady} pluginTag:${m.pluginTag}`);
+            console.log(`[DEBUG CALENDAR] window.cfg.plugins['CALENDAR'] =`, window.cfg.plugins && window.cfg.plugins['CALENDAR']);
+        }
+
+        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore || isHpmEnabled);
     });
 
     // Category filter

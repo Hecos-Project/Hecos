@@ -114,8 +114,6 @@ _PANEL_MAP = {
     'security':        'modules/config_security.html',
     'payload':         'modules/config_payload.html',
     'plugins':         'modules/config_plugins.html',
-    'reminder':        'modules/config_reminder.html',
-    'calendar':        'modules/config_calendar.html',
     'contacts':        'modules/config_contacts.html',
     'mail':            'modules/config_mail.html',
     'templates':       'modules/config_templates.html',
@@ -142,6 +140,10 @@ _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}
 # Cache: HPM panel template auto-discovery result (panel_id -> template_name)
 _HPM_PANEL_CACHE: dict = {}
 
+
+def clear_hpm_panel_cache():
+    """Clears the HPM panel cache (called after a package install/uninstall)."""
+    _HPM_PANEL_CACHE.clear()
 
 def _discover_hpm_panel(panel_id: str) -> str | None:
     """

@@ -52,6 +52,7 @@ class KoboldBackendConfig(BaseModel):
 
 
 class OllamaBackendConfig(BaseModel):
+    url: str = "http://localhost:11434"
     model: str = "qwen2.5:1.5b"
     available_models: Dict[str, str] = {}
     num_ctx: int = 4096
@@ -61,6 +62,7 @@ class OllamaBackendConfig(BaseModel):
     top_p: float = 0.9
     repeat_penalty: float = 1.1
     keep_alive: str = "120m"
+    probe_timeout_sec: int = 3
 
 
 class BackendConfig(BaseModel):
@@ -179,6 +181,7 @@ class RoutingEngineConfig(BaseModel):
 class SystemFlagsConfig(BaseModel):
     fast_boot: bool = True
     flask_debug: bool = False
+    check_local_backend_on_boot: bool = False
 
 
 # ─── AGENT (inline in system.yaml for legacy compatibility) ───────────────────

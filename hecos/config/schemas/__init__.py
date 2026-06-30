@@ -14,11 +14,11 @@ File → Schema mapping:
 from .system_schema import SystemConfig
 from .plugins_schema import (
     PluginsFileConfig, PluginsConfig, ExtensionsConfig,
-    PluginFileManager, PluginHelp, PluginImageGen,
+    PluginFileManager, PluginHelp,
     PluginMediaPlayer, PluginSystem, PluginSysNet, PluginWeb, PluginWebcam,
     PluginWebUI, PluginExecutor, PluginDrive, PluginRemoteTriggers,
-    PluginReminder, PluginMCPBridge, PluginAutomation, PluginBrowser,
-    PluginCalendar, PluginUsers,
+    PluginMCPBridge, PluginAutomation, PluginBrowser,
+    PluginUsers,
     CalendarExtensionConfig, MCPServerConfig,
 )
 from .widgets_schema import WidgetsFileConfig, WidgetsConfig, WidgetPersistence
@@ -27,11 +27,11 @@ from .agent_schema import AgentConfig
 __all__ = [
     "SystemConfig",
     "PluginsFileConfig", "PluginsConfig", "ExtensionsConfig",
-    "PluginFileManager", "PluginHelp", "PluginImageGen",
+    "PluginFileManager", "PluginHelp",
     "PluginMediaPlayer", "PluginSystem", "PluginSysNet", "PluginWeb",
     "PluginWebcam", "PluginWebUI", "PluginExecutor", "PluginDrive",
-    "PluginRemoteTriggers", "PluginReminder", "PluginMCPBridge",
-    "PluginAutomation", "PluginBrowser", "PluginCalendar", "PluginUsers",
+    "PluginRemoteTriggers", "PluginMCPBridge",
+    "PluginAutomation", "PluginBrowser", "PluginUsers",
     "CalendarExtensionConfig", "MCPServerConfig",
     "WidgetsFileConfig", "WidgetsConfig", "WidgetPersistence",
     "AgentConfig",

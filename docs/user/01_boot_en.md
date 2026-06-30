@@ -1,4 +1,4 @@
-# 🚀 1. Boot & Initial Checks
+# 🚀 3. Boot & Initial Checks
 
 Upon launching the executable or Python script, Hecos begins its **Synchronized Boot** sequence.
 
@@ -23,6 +23,9 @@ The recommended way to start Hecos is using the universal bootstrap scripts in t
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
 These scripts automatically handle environment checks, dependencies, and launch the **Setup Wizard**.
+
+> [!TIP]
+> **Subsequent Boots**: After completing the initial setup, the fastest and most convenient way to start Hecos for daily use is using `START_HECOS_TRAY_WIN.bat` (Windows) or `START_HECOS_TRAY_LINUX.sh` (Linux). This will start the system silently in the background with the System Tray icon.
 
 ### 🧩 Individual Component Launch
 For advanced users, components can be started individually:

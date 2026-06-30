@@ -60,6 +60,13 @@ class CommandRegistry:
         except Exception as e:
             _log.error(f"[HDCS Registry] Error loading flow builtins: {e}")
 
+        try:
+            from .builtins.hpm_commands import HPM_COMMANDS
+            for cmd in HPM_COMMANDS:
+                self._register(cmd)
+        except Exception as e:
+            _log.error(f"[HDCS Registry] Error loading HPM commands: {e}")
+
         # 2. Plugin auto-discovery
         try:
             from .discovery import discover_plugin_commands

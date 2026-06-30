@@ -43,6 +43,13 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
             result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned)
 
             if result.success:
+                # ── Clear Config Panel Cache ──
+                try:
+                    from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                    clear_hpm_panel_cache()
+                except ImportError:
+                    pass
+
                 # ── Hot-patch Jinja loader so widget templates are found immediately ──
                 _refresh_jinja_loader(app)
 
@@ -57,9 +64,9 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     log.warning(f"[HPM:Routes] Extension re-discovery failed: {_ext_e}")
 
                 # ── Force-enable the package in the LIVE cfg_mgr ──
-                # _inject_config_defaults in installer creates a *separate* ConfigManager
-                # instance and only writes if the key is missing. We must also update
-                # the live shared instance so the widget is immediately visible.
+                # Only relevant for plugin-namespace types. Widgets (widget-only),
+                # personas and themes don't have a runtime `plugins.TAG` entry.
+                _PLUGIN_NS_TYPES = {"core_module", "plugin", "module", "extension", "app", "skill_pack"}
                 try:
                     import json as _json, zipfile as _zf, io as _io
                     _zb = _zf.ZipFile(_io.BytesIO(hpkg_bytes))
@@ -74,16 +81,19 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         except ImportError:
                             import tomli as _toml
                         _mdict = _toml.loads(_raw_manifest.decode("utf-8"))
+                        _pkg_type = _mdict.get("type", "plugin")
                         _tag = _mdict.get("tag", "")
-                        if _tag:
+                        if _tag and _pkg_type in _PLUGIN_NS_TYPES:
                             # Force enable — overwrite regardless of previous state
                             cfg_mgr.set(True, "plugins", _tag, "enabled")
                         for _w in _mdict.get("widgets", []):
                             _wid = _w.get("id", "")
                             if _wid:
                                 cfg_mgr.set(True, "widgets", "per_widget", _wid, "enabled")
-                                cfg_mgr.set(True, "widgets", "per_widget", _wid, "visible")
-                        if _tag or _mdict.get("widgets"):
+                                # XOR default: widgets start in Control Room, not sidebar
+                                cfg_mgr.set(False, "widgets", "per_widget", _wid, "visible")
+                                cfg_mgr.set(True, "widgets", "per_widget", _wid, "room_visible")
+                        if (_tag and _pkg_type in _PLUGIN_NS_TYPES) or _mdict.get("widgets"):
                             cfg_mgr.save()
                             log.info(f"[HPM] Force-enabled '{_tag}' in live cfg_mgr after install.")
                 except Exception as _ce:
@@ -98,6 +108,8 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                 }
                 if result.dep_report and result.dep_report.has_issues:
                     response["dep_issues"] = result.dep_report.summary
+                if result.dep_report and result.dep_report.missing_optional:
+                    response["optional_missing"] = result.dep_report.missing_optional
                 return jsonify(response)
             else:
                 is_signature_error = "signature" in result.error.lower()

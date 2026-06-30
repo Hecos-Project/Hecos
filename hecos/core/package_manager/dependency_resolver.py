@@ -4,8 +4,11 @@ dependency_resolver.py
 Hecos Package Manager — Dependency Resolver
 
 Handles two types of dependencies:
-  1. Inter-package: checks that other HPM packages are already installed.
-  2. pip: installs Python packages from pip_requirements using the current
+  1. Inter-package hard deps: checks that other HPM packages are installed.
+     Missing hard deps WARN in the result but do NOT block installation.
+  2. Inter-package optional deps: checks that optional enhancing packages
+     are installed. Missing optional deps produce a lighter info-level notice.
+  3. pip: installs Python packages from pip_requirements using the current
      Python interpreter, non-interactively.
 
 Does NOT raise on missing inter-package dependencies — it warns and
@@ -28,6 +31,7 @@ if TYPE_CHECKING:
 @dataclass
 class DependencyReport:
     missing_packages: List[str] = field(default_factory=list)
+    missing_optional: List[str] = field(default_factory=list)  # Optional deps not installed
     pip_failures: List[str] = field(default_factory=list)
 
     @property
@@ -38,7 +42,9 @@ class DependencyReport:
     def summary(self) -> str:
         parts = []
         if self.missing_packages:
-            parts.append(f"Missing HPM packages: {self.missing_packages}")
+            parts.append(f"Missing required HPM packages: {self.missing_packages}")
+        if self.missing_optional:
+            parts.append(f"Optional HPM packages not installed (non-blocking): {self.missing_optional}")
         if self.pip_failures:
             parts.append(f"pip install failures: {self.pip_failures}")
         return "; ".join(parts) if parts else "OK"
@@ -68,16 +74,26 @@ class DependencyResolver:
         """
         report = DependencyReport()
 
-        # 1. Inter-package dependencies
+        # 1. Hard inter-package dependencies (blocks if missing — warns only)
         for dep_id in manifest.dependencies:
             if not self._registry.is_installed(dep_id):
                 logger.warning(
-                    f"[HPM:Resolver] Dependency '{dep_id}' required by "
+                    f"[HPM:Resolver] Hard dependency '{dep_id}' required by "
                     f"'{manifest.id}' is not installed."
                 )
                 report.missing_packages.append(dep_id)
 
-        # 2. pip requirements
+        # 2. Optional inter-package dependencies (informational only, never blocks)
+        optional_deps = getattr(manifest, "optional_dependencies", []) or []
+        for dep_id in optional_deps:
+            if not self._registry.is_installed(dep_id):
+                logger.info(
+                    f"[HPM:Resolver] Optional dependency '{dep_id}' for "
+                    f"'{manifest.id}' is not installed — some features may be unavailable."
+                )
+                report.missing_optional.append(dep_id)
+
+        # 3. pip requirements
         if install_pip and manifest.pip_requirements:
             self._install_pip_requirements(manifest.pip_requirements, report)
 
