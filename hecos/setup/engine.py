@@ -70,7 +70,7 @@ def install_dependencies():
             "pydantic>=2.0", "pyyaml", "litellm", "tenacity", "babel", "holidays",
             "requests", "icalendar", "python-vlc", "dateparser", "apscheduler",
             "pyautogui", "pygetwindow", "pytesseract", "opencv-python",
-            "pywinauto", "playwright", "pywin32", "pystray", "pillow", "flet", "qrcode",
+            "pywinauto", "playwright", "pywin32", "pystray", "pillow", "customtkinter", "qrcode",
             "psutil", "flask", "flask-login", "cryptography", "pynput", "SpeechRecognition", "PyAudio", "fastembed", "soundfile",
         ]
 
