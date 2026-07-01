@@ -63,61 +63,61 @@
   <!-- Advanced Settings Card -->
   <div class="card" id="km-advanced-card">
     <div class="card-title" style="display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="kmToggleAdvanced()">
-      ⚙️ Impostazioni Avanzate
+      {{ t('webui_km_adv_title') }}
       <span id="km-adv-arrow" style="margin-left:auto;transition:transform 0.2s;font-size:12px;">▼</span>
     </div>
     <div id="km-advanced-body" style="display:none;margin-top:12px;">
       <p style="font-size:11px;color:var(--muted);margin:0 0 12px;">
-        Controlla i tempi di risposta e il comportamento del failover tra le chiavi API.
+        {{ t('webui_km_adv_desc') }}
       </p>
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;flex-wrap:wrap;">
 
         <div class="field">
           <label style="display:flex;align-items:center;gap:6px;">
-            ⏱️ Timeout richiesta cloud (secondi)
-            <span title="Tempo massimo di attesa per una risposta dall'API cloud prima di passare alla chiave successiva." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
+            {{ t('webui_km_adv_timeout') }}
+            <span title="{{ t('webui_km_adv_timeout_tt') }}" style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
           </label>
           <input type="number" id="km-cloud-timeout" min="5" max="120" step="5" value="30"
                  style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
-          <small style="color:var(--muted);font-size:10px;">Default: 30s · Consigliato: 20-45s</small>
+          <small style="color:var(--muted);font-size:10px;">{{ t('webui_km_adv_timeout_hint') }}</small>
         </div>
 
         <div class="field">
           <label style="display:flex;align-items:center;gap:6px;">
-            🔄 Cooldown chiave in errore (secondi)
-            <span title="Durata della pausa per una chiave che ha ricevuto un errore 429 (rate limit) o timeout." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
+            {{ t('webui_km_adv_cooldown') }}
+            <span title="{{ t('webui_km_adv_cooldown_tt') }}" style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
           </label>
           <input type="number" id="km-cooldown" min="30" max="3600" step="30" value="60"
                  style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
-          <small style="color:var(--muted);font-size:10px;">Default: 60s · Aumenta se hai poche chiavi</small>
+          <small style="color:var(--muted);font-size:10px;">{{ t('webui_km_adv_cooldown_hint') }}</small>
         </div>
 
         <div class="field">
           <label style="display:flex;align-items:center;gap:6px;">
-            🔁 Max tentativi failover
-            <span title="Numero massimo di chiavi diverse da provare in sequenza prima di arrendersi e restituire un errore." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
+            {{ t('webui_km_adv_retries') }}
+            <span title="{{ t('webui_km_adv_retries_tt') }}" style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
           </label>
           <input type="number" id="km-max-retries" min="1" max="15" step="1" value="5"
                  style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
-          <small style="color:var(--muted);font-size:10px;">Default: 5 · Uguale al numero di chiavi</small>
+          <small style="color:var(--muted);font-size:10px;">{{ t('webui_km_adv_retries_hint') }}</small>
         </div>
 
       </div>
 
       <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
-        <button class="btn btn-primary" onclick="kmSaveAdvanced()" style="padding:5px 14px;font-size:12px;">💾 Salva Impostazioni</button>
-        <button class="btn btn-secondary" onclick="kmResetAdvanced()" style="padding:5px 14px;font-size:12px;">↺ Ripristina Default</button>
+        <button class="btn btn-primary" onclick="kmSaveAdvanced()" style="padding:5px 14px;font-size:12px;">{{ t('webui_km_adv_save') }}</button>
+        <button class="btn btn-secondary" onclick="kmResetAdvanced()" style="padding:5px 14px;font-size:12px;">{{ t('webui_km_adv_reset') }}</button>
         <span id="km-adv-feedback" style="font-size:11px;color:var(--green);"></span>
       </div>
 
       <div style="margin-top:14px;padding:10px 12px;background:rgba(0,243,255,0.04);border-radius:8px;border:1px solid rgba(0,243,255,0.1);">
         <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.8;">
-          <strong style="color:var(--fg);font-size:11px;">💡 Come funziona il failover:</strong><br>
-          1. Hecos tenta la <strong>chiave #1</strong> con il timeout impostato<br>
-          2. Se riceve 429/401/timeout → marca la chiave in cooldown e prende la <strong>chiave #2</strong><br>
-          3. Ripete fino a esaurimento tentativi o chiavi disponibili<br>
-          4. Le chiavi in cooldown vengono automaticamente ripristinate dopo il tempo impostato
+          <strong style="color:var(--fg);font-size:11px;">{{ t('webui_km_adv_help_title') }}</strong><br>
+          {{ t('webui_km_adv_help_1') | safe }}<br>
+          {{ t('webui_km_adv_help_2') | safe }}<br>
+          {{ t('webui_km_adv_help_3') }}<br>
+          {{ t('webui_km_adv_help_4') }}
         </div>
       </div>
     </div>
@@ -398,15 +398,15 @@ function kmSaveAdvanced() {
     body: JSON.stringify(payload)
   }).then(r => r.json()).then(d => {
     if (d.ok) {
-      fb.textContent = '✅ Salvate! Le modifiche avranno effetto dalla prossima richiesta.';
+      fb.textContent = window.hecos_t ? window.hecos_t('webui_km_adv_save_ok') : '✅ Salvate! Le modifiche avranno effetto dalla prossima richiesta.';
       fb.style.color = 'var(--green)';
     } else {
-      fb.textContent = '⚠️ ' + (d.error || 'Errore salvataggio');
+      fb.textContent = (window.hecos_t ? window.hecos_t('webui_km_adv_err_save') : '⚠️ Errore salvataggio') + ' ' + (d.error || '');
       fb.style.color = 'var(--red)';
     }
     setTimeout(() => { fb.textContent = ''; }, 4000);
   }).catch(err => {
-    fb.textContent = '⚠️ Errore di rete: ' + err;
+    fb.textContent = (window.hecos_t ? window.hecos_t('webui_km_adv_err_net') : '⚠️ Errore di rete: ') + err;
     fb.style.color = 'var(--red)';
   });
 }
