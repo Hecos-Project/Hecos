@@ -1,6 +1,7 @@
 """
 hecos/tray/control_center.py
-Hecos Tray Dashboard — Enterprise Panel (Ultra-Stable / No Font Icons)
+Hecos Tray Dashboard — CustomTkinter Edition (replaces Flet)
+Ultra-light: opens in < 400ms, no Flutter/Dart runtime required.
 """
 
 import sys
@@ -8,7 +9,9 @@ import os
 import subprocess
 import threading
 
+
 def show_control_center(icon=None, item=None):
+    """Launch the dashboard in a separate subprocess (non-blocking)."""
     global _proc
     with threading.Lock():
         if '_proc' in globals() and _proc and _proc.poll() is None:
@@ -21,8 +24,16 @@ def show_control_center(icon=None, item=None):
             cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")),
         )
 
+
+# ── Dashboard App (runs when launched as subprocess) ───────────────────────────
+
 if __name__ == "__main__":
-    import flet as ft
+    import time
+    import webbrowser
+    import urllib.request
+    import json as _json
+
+    import customtkinter as ctk
     from hecos.tray.config import load_settings, save_settings, HECOS_PORT
     from hecos.tray.network_utils import is_hecos_online, get_lan_ip, get_scheme, get_urls
     from hecos.tray.system_utils import get_version
@@ -31,618 +42,595 @@ if __name__ == "__main__":
         intelligent_open_webui, launch_ai_ready_browser
     )
 
-    # ── Constants (Explicit Hex) ──────────────────────────────────
-    ACCENT  = "#00b4d8" # Hecos Cyan
-    ACCENT2 = "#0077b6" # Hecos Blue
+    # ── Single Instance Lock ───────────────────────────────────────────────────
+    import socket as _sock
+    try:
+        __lock_socket = _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM)
+        __lock_socket.bind(("127.0.0.1", 54321))
+    except _sock.error:
+        print("[Tray Dashboard] Already running.")
+        sys.exit(0)
+
+    # ── Theme ──────────────────────────────────────────────────────────────────
+    ctk.set_appearance_mode("dark")
+    ctk.set_default_color_theme("blue")
+
+    # ── Color Palette ──────────────────────────────────────────────────────────
     BG      = "#111318"
     SURFACE = "#1a1d24"
     CARD    = "#22262f"
+    ACCENT  = "#00b4d8"
+    ACCENT2 = "#0077b6"
     TEXT    = "#e2e8f0"
     MUTED   = "#64748b"
-    BORDER  = "#2d3240"
     RED     = "#ef4444"
+    GREEN   = "#22c55e"
+    AMBER   = "#f59e0b"
+    BORDER  = "#2d3240"
 
-    # ── Helpers ──────────────────────────────────────────────────
-    def _title(text):
-        return ft.Text(text, size=18, weight="bold", color=TEXT)
+    # ── App Window ─────────────────────────────────────────────────────────────
+    app = ctk.CTk()
+    app.title("Hecos Tray Dashboard")
+    app.geometry("780x540")
+    app.minsize(680, 480)
+    app.configure(fg_color=BG)
+    app.resizable(True, True)
 
-    def _subtitle(text):
-        return ft.Text(text, size=11, color=MUTED)
+    # Icon
+    try:
+        ico = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets",
+                                           "Hecos_Logo_SQR_NBG_LogoOnly_Mask_001.ico"))
+        if os.path.exists(ico):
+            app.iconbitmap(ico)
+    except Exception:
+        pass
 
-    def _section_label(text):
-        return ft.Text(text, size=10, color=MUTED, weight="bold")
+    # ── Layout: sidebar + content ───────────────────────────────────────────────
+    sidebar = ctk.CTkFrame(app, width=190, fg_color=SURFACE, corner_radius=0)
+    sidebar.pack(side="left", fill="y", padx=(0, 1))
+    sidebar.pack_propagate(False)
 
-    def _info_row(label, value, value_color=TEXT):
-        return ft.Container(
-            content=ft.Row([
-                ft.Text(label, size=11, color=MUTED, expand=1),
-                ft.Text(value, size=11, weight="bold", color=value_color),
-            ]),
-            padding=ft.Padding(16, 9, 16, 9),
+    # Separator line
+    sep = ctk.CTkFrame(app, width=1, fg_color=BORDER, corner_radius=0)
+    sep.pack(side="left", fill="y")
+
+    content_frame = ctk.CTkFrame(app, fg_color=BG, corner_radius=0)
+    content_frame.pack(side="left", fill="both", expand=True)
+
+    # ── Sidebar Header ─────────────────────────────────────────────────────────
+    hdr = ctk.CTkFrame(sidebar, fg_color="transparent")
+    hdr.pack(fill="x", padx=12, pady=(20, 8))
+    ctk.CTkLabel(hdr, text="HECOS", font=ctk.CTkFont(size=22, weight="bold"),
+                 text_color=ACCENT).pack(anchor="w")
+    ctk.CTkLabel(hdr, text=f"v{get_version()}", font=ctk.CTkFont(size=10),
+                 text_color=MUTED).pack(anchor="w")
+
+    # ── Nav buttons ────────────────────────────────────────────────────────────
+    NAV_ITEMS = [
+        ("status",   "◉  Status"),
+        ("settings", "⚙  Settings"),
+        ("browser",  "🌐  Browser"),
+        ("mobile",   "📱  Remote Access"),
+        ("logs",     "📋  Live Logs"),
+        ("about",    "ℹ  About"),
+    ]
+
+    _active_tab = {"key": None}
+    _nav_btns = {}
+    _content_widgets = []  # keep refs to destroy on tab switch
+
+    def _clear_content():
+        for w in _content_widgets:
+            try:
+                w.destroy()
+            except Exception:
+                pass
+        _content_widgets.clear()
+
+    def _highlight(active_key):
+        for k, btn in _nav_btns.items():
+            if k == active_key:
+                btn.configure(fg_color=ACCENT2, text_color="#ffffff")
+            else:
+                btn.configure(fg_color="transparent", text_color=TEXT)
+
+    def _switch_tab(key):
+        if _active_tab["key"] == key:
+            return
+        _active_tab["key"] = key
+        _highlight(key)
+        _clear_content()
+        TAB_BUILDERS[key]()
+
+    nav_area = ctk.CTkScrollableFrame(sidebar, fg_color="transparent", corner_radius=0)
+    nav_area.pack(fill="both", expand=True, padx=4)
+
+    for _key, _label in NAV_ITEMS:
+        _btn = ctk.CTkButton(
+            nav_area, text=_label, anchor="w",
+            fg_color="transparent", text_color=TEXT,
+            hover_color=BORDER, corner_radius=8,
+            font=ctk.CTkFont(size=12),
+            command=lambda k=_key: _switch_tab(k)
         )
+        _btn.pack(fill="x", pady=2, ipady=4)
+        _nav_btns[_key] = _btn
 
-    def _card(*controls):
-        return ft.Container(
-            content=ft.Column(list(controls), spacing=0),
-            bgcolor=CARD, border_radius=10,
-            padding=ft.Padding(0, 4, 0, 4),
-            margin=ft.Margin(0, 0, 0, 8),
-        )
+    # ── Sidebar bottom buttons ─────────────────────────────────────────────────
+    bottom = ctk.CTkFrame(sidebar, fg_color="transparent")
+    bottom.pack(fill="x", padx=8, pady=(0, 12))
 
-    # BUGFIX: Strict avoidance of 'ink=True' or native flet buttons to prevent gray overlays
-    def _safe_btn(label, bgcolor, textcolor, on_click):
-        return ft.Container(
-            content=ft.Text(label, size=11, color=textcolor, text_align="center", weight="bold"),
-            bgcolor=bgcolor, border_radius=8,
-            padding=ft.Padding(14, 8, 14, 8),
-            on_click=on_click,
-        )
+    def _open_chat():
+        threading.Thread(target=lambda: intelligent_open_webui(None, None), daemon=True).start()
 
-    def _build_status(page, body_col):
+    def _restart_core():
+        from hecos.tray.orchestrator import restart_hecos
+        from hecos.tray.system_utils import play_beep
+        play_beep(400, 100)
+        threading.Thread(target=restart_hecos, daemon=True).start()
+
+    ctk.CTkButton(bottom, text="Open Chat", fg_color=ACCENT, text_color="#000000",
+                  hover_color=ACCENT2, corner_radius=8, font=ctk.CTkFont(size=11, weight="bold"),
+                  command=_open_chat).pack(fill="x", pady=(0, 5))
+    ctk.CTkButton(bottom, text="Restart Core", fg_color=CARD, text_color=TEXT,
+                  hover_color=BORDER, corner_radius=8, font=ctk.CTkFont(size=11),
+                  command=_restart_core).pack(fill="x")
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Helper widgets
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _make_card(parent, **kw):
+        f = ctk.CTkFrame(parent, fg_color=CARD, corner_radius=10, **kw)
+        return f
+
+    def _title(parent, text):
+        lbl = ctk.CTkLabel(parent, text=text,
+                           font=ctk.CTkFont(size=18, weight="bold"), text_color=TEXT)
+        lbl.pack(anchor="w", pady=(0, 2))
+        _content_widgets.append(lbl)
+        return lbl
+
+    def _subtitle(parent, text):
+        lbl = ctk.CTkLabel(parent, text=text, font=ctk.CTkFont(size=11), text_color=MUTED)
+        lbl.pack(anchor="w", pady=(0, 8))
+        _content_widgets.append(lbl)
+        return lbl
+
+    def _section_label(parent, text):
+        lbl = ctk.CTkLabel(parent, text=text,
+                           font=ctk.CTkFont(size=10, weight="bold"), text_color=MUTED)
+        lbl.pack(anchor="w", pady=(8, 2))
+        _content_widgets.append(lbl)
+        return lbl
+
+    def _info_row(card, label, value, value_color=TEXT):
+        row = ctk.CTkFrame(card, fg_color="transparent")
+        row.pack(fill="x", padx=14, pady=5)
+        ctk.CTkLabel(row, text=label, font=ctk.CTkFont(size=11), text_color=MUTED,
+                     anchor="w").pack(side="left", expand=True, fill="x")
+        ctk.CTkLabel(row, text=value, font=ctk.CTkFont(size=11, weight="bold"),
+                     text_color=value_color, anchor="e").pack(side="right")
+        return row
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB: STATUS
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_status():
+        sc = ctk.CTkScrollableFrame(content_frame, fg_color="transparent", corner_radius=0)
+        sc.pack(fill="both", expand=True, padx=20, pady=20)
+        _content_widgets.append(sc)
+
+        _title(sc, "System Status")
+
         online = is_hecos_online()
         cdp_p  = _get_cdp_port()
         cdp_ok = is_ai_ready_browser_running(cdp_p)
 
-        scheme = get_scheme()
-        lan_ip = get_lan_ip()
-        
+        _section_label(sc, "CORE")
+        c1 = _make_card(sc)
+        c1.pack(fill="x", pady=(0, 8))
+        _info_row(c1, "Status",   "🟢 Online" if online else "🔴 Offline",
+                  ACCENT if online else RED)
+        _info_row(c1, "Protocol", get_scheme().upper())
+        _info_row(c1, "Port",     str(HECOS_PORT))
 
+        _section_label(sc, "BROWSER (CDP)")
+        c2 = _make_card(sc)
+        c2.pack(fill="x", pady=(0, 8))
+        _info_row(c2, "Connection",
+                  f"🟢 Port {cdp_p} Open" if cdp_ok else f"🔴 Port {cdp_p} Closed",
+                  ACCENT if cdp_ok else RED)
 
-        def refresh(e):
-            body_col.controls.clear()
-            body_col.controls.append(_build_status(page, body_col))
-            page.update()
-            
+        browser_lbl = ctk.CTkLabel(c2, text="Detecting…", font=ctk.CTkFont(size=11),
+                                   text_color=MUTED)
+        row_f = ctk.CTkFrame(c2, fg_color="transparent")
+        row_f.pack(fill="x", padx=14, pady=5)
+        ctk.CTkLabel(row_f, text="Active Engine", font=ctk.CTkFont(size=11),
+                     text_color=MUTED, anchor="w").pack(side="left", expand=True, fill="x")
+        browser_lbl.pack(in_=row_f, side="right")
 
-        browser_val = ft.Text("Detecting...", size=11, weight="bold", color=MUTED) if cdp_ok else ft.Text("Not Detected", size=11, weight="bold", color=MUTED)
-        browser_row = ft.Container(
-            content=ft.Row([
-                ft.Text("Active Engine", size=11, color=MUTED, expand=1),
-                browser_val,
-            ]), padding=ft.Padding(16, 9, 16, 9)
-        )
-        
-        def fetch_browser_version():
-            import urllib.request, json
+        def _fetch_browser():
             try:
-                with urllib.request.urlopen(f"http://127.0.0.1:{cdp_p}/json/version", timeout=1) as response:
-                    data = json.loads(response.read().decode())
-                    b = data.get("Browser", "Unknown")
-                    browser_val.value = b
-                    browser_val.color = TEXT
+                with urllib.request.urlopen(f"http://127.0.0.1:{cdp_p}/json/version",
+                                            timeout=1) as r:
+                    data = _json.loads(r.read().decode())
+                val = data.get("Browser", "Unknown")
+                col = TEXT
             except Exception:
-                browser_val.value = "Active (Engine Unknown)"
-                browser_val.color = ACCENT
-            try: page.update()
-            except: pass
-            
+                val = "Active (Engine Unknown)" if cdp_ok else "Not Detected"
+                col = ACCENT if cdp_ok else MUTED
+            try:
+                browser_lbl.configure(text=val, text_color=col)
+            except Exception:
+                pass
+
         if cdp_ok:
-            threading.Thread(target=fetch_browser_version, daemon=True).start()
+            threading.Thread(target=_fetch_browser, daemon=True).start()
 
-        return ft.Column([
-            _title("System Status"),
-            ft.Container(height=10),
-            _section_label("CORE"),
-            _card(
-                _info_row("Status",   "🟢 Online"  if online else "🔴 Offline", ACCENT if online else RED),
-                _info_row("Protocol", scheme.upper()),
-                _info_row("Port",     str(HECOS_PORT)),
-            ),
-            _section_label("BROWSER (CDP)"),
-            _card(
-                _info_row("Connection", f"🟢 Port {cdp_p} Open" if cdp_ok else f"🔴 Port {cdp_p} Closed", ACCENT if cdp_ok else RED),
-                browser_row,
-            ),
-            ft.Container(height=8),
-            _safe_btn("↻ Refresh", SURFACE, TEXT, refresh),
-        ], spacing=6, expand=1, scroll="auto")
+        def _refresh():
+            _switch_tab("status")
 
-    def _build_settings(page, body_col):
-        cfg = load_settings()
+        ctk.CTkButton(sc, text="↻ Refresh", fg_color=SURFACE, text_color=TEXT,
+                      hover_color=BORDER, corner_radius=8,
+                      command=_refresh).pack(anchor="w", pady=(8, 0))
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB: SETTINGS
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_settings():
+        sc = ctk.CTkScrollableFrame(content_frame, fg_color="transparent", corner_radius=0)
+        sc.pack(fill="both", expand=True, padx=20, pady=20)
+        _content_widgets.append(sc)
+
+        _title(sc, "Settings")
+        _subtitle(sc, "Changes apply immediately.")
+
         toggles = [
-            ("start_hecos_on_launch",    "Start Core with Tray",         True),
-            ("autoopen_webui",            "Auto-open WebUI on Startup",    True),
-            ("autoopen_ai_browser",       "Auto-open Playwright Browser",  False),
-            ("auto_launch_chrome_for_ai", "Auto-launch AI-Ready Chrome (CDP Mode - Allows AI to control browser)",   False),
-            ("show_technical_menu",       "Show Technical Menu in Tray",   True),
+            ("start_hecos_on_launch",    "Start Core with Tray",              True),
+            ("autoopen_webui",            "Auto-open WebUI on Startup",        True),
+            ("autoopen_ai_browser",       "Auto-open Playwright Browser",      False),
+            ("auto_launch_chrome_for_ai", "Auto-launch AI-Ready Chrome (CDP)", False),
+            ("show_technical_menu",       "Show Technical Menu in Tray",       True),
         ]
 
-        def _make_row(key, label, default):
-            def on_change(e):
-                s = load_settings(); s[key] = e.control.value; save_settings(s)
+        cfg = load_settings()
 
-            return ft.Container(
-                content=ft.Row([
-                    ft.Text(label, size=12, color=TEXT, expand=1),
-                    ft.Switch(value=cfg.get(key, default), active_color=ACCENT, on_change=on_change),
-                ]),
-                bgcolor=CARD, border_radius=10,
-                padding=ft.Padding(16, 4, 16, 4),
-                margin=ft.Margin(0, 0, 0, 6),
-            )
+        for key, label, default in toggles:
+            row = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=10)
+            row.pack(fill="x", pady=4)
 
-        return ft.Column([
-            _title("Settings"),
-            _subtitle("Changes apply immediately."),
-            ft.Container(height=10),
-            *[_make_row(k, lbl, d) for k, lbl, d in toggles],
-        ], spacing=0, expand=1)
+            ctk.CTkLabel(row, text=label, font=ctk.CTkFont(size=12), text_color=TEXT,
+                         anchor="w").pack(side="left", padx=14, pady=10, expand=True, fill="x")
 
-    def _build_browser(page, body_col):
-        def row(title, sub, btn_label, bgcolor, action):
-            return ft.Container(
-                content=ft.Row([
-                    ft.Column([
-                        ft.Text(title, size=12, weight="bold", color=TEXT),
-                        ft.Text(sub, size=10, color=MUTED),
-                    ], expand=1, spacing=2),
-                    _safe_btn(btn_label, bgcolor, "#ffffff", lambda e, a=action: threading.Thread(target=a, daemon=True).start()),
-                ], vertical_alignment="center"),
-                bgcolor=CARD, border_radius=10,
-                padding=ft.Padding(16, 14, 16, 14),
-                margin=ft.Margin(0, 0, 0, 6),
-            )
+            var = ctk.BooleanVar(value=cfg.get(key, default))
 
-        return ft.Column([
-            _title("Browser Control"),
-            _subtitle("Manage browser sessions."),
-            ft.Container(height=10),
-            row("Open Hecos Chat",      "Launch or refresh the main WebUI.",         "Open",   ACCENT2, lambda: intelligent_open_webui(None, None)),
-            row("Open AI-Ready Chrome", "Chrome with CDP remote debugging enabled.", "Launch", ACCENT2, lambda: launch_ai_ready_browser(_get_cdp_port())),
-            row("Open Config Hub",      "Open the Central Configuration Hub.",       "Open",   ACCENT2, lambda: __import__('webbrowser').open(get_urls()[1])),
-        ], spacing=0, expand=1)
+            def _on_toggle(v=var, k=key):
+                s = load_settings()
+                s[k] = v.get()
+                save_settings(s)
 
-    def _build_mobile(page, body_col):
+            sw = ctk.CTkSwitch(row, text="", variable=var, onvalue=True, offvalue=False,
+                               progress_color=ACCENT, command=_on_toggle)
+            sw.pack(side="right", padx=14, pady=10)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB: BROWSER
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_browser():
+        sc = ctk.CTkScrollableFrame(content_frame, fg_color="transparent", corner_radius=0)
+        sc.pack(fill="both", expand=True, padx=20, pady=20)
+        _content_widgets.append(sc)
+
+        _title(sc, "Browser Control")
+        _subtitle(sc, "Manage browser sessions.")
+
+        browser_actions = [
+            ("Open Hecos Chat",
+             "Launch or refresh the main WebUI.",
+             lambda: intelligent_open_webui(None, None)),
+            ("Open AI-Ready Chrome",
+             "Chrome with CDP remote debugging enabled.",
+             lambda: launch_ai_ready_browser(_get_cdp_port())),
+            ("Open Config Hub",
+             "Open the Central Configuration Hub.",
+             lambda: webbrowser.open(get_urls()[1])),
+        ]
+
+        for title, sub, action in browser_actions:
+            card = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=10)
+            card.pack(fill="x", pady=4)
+
+            info = ctk.CTkFrame(card, fg_color="transparent")
+            info.pack(side="left", fill="both", expand=True, padx=14, pady=10)
+            ctk.CTkLabel(info, text=title, font=ctk.CTkFont(size=12, weight="bold"),
+                         text_color=TEXT, anchor="w").pack(anchor="w")
+            ctk.CTkLabel(info, text=sub, font=ctk.CTkFont(size=10),
+                         text_color=MUTED, anchor="w").pack(anchor="w")
+
+            ctk.CTkButton(card, text="Open", fg_color=ACCENT2, text_color="#ffffff",
+                          hover_color=ACCENT, corner_radius=8, width=70,
+                          command=lambda a=action: threading.Thread(target=a, daemon=True).start()
+                          ).pack(side="right", padx=14, pady=10)
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB: REMOTE ACCESS (Mobile)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _build_mobile():
+        sc = ctk.CTkScrollableFrame(content_frame, fg_color="transparent", corner_radius=0)
+        sc.pack(fill="both", expand=True, padx=20, pady=20)
+        _content_widgets.append(sc)
+
+        _title(sc, "Remote Access")
+        _subtitle(sc, "Scan the QR code or copy the link to access Hecos from other devices.")
+
         scheme = get_scheme()
         lan_ip = get_lan_ip()
-        url = f"{scheme}://{lan_ip}:{HECOS_PORT}/chat"
+        url_chat  = f"{scheme}://{lan_ip}:{HECOS_PORT}/chat"
         url_local = f"{scheme}://127.0.0.1:{HECOS_PORT}"
         url_lan   = f"{scheme}://{lan_ip}:{HECOS_PORT}"
-        qr_ctrl = ft.Text("Generating QR…", color=MUTED)
+
+        # QR Code
         try:
             import qrcode
-            qr = qrcode.QRCode(box_size=1, border=2)
-            qr.add_data(url)
+            from PIL import Image as _PIL_Image, ImageTk
+            qr = qrcode.QRCode(box_size=5, border=2)
+            qr.add_data(url_chat)
             qr.make(fit=True)
-            matrix = qr.get_matrix()
-            
-            rows = []
-            block_size = 5
-            for row in matrix:
-                flet_row = []
-                for cell in row:
-                    flet_row.append(
-                        ft.Container(
-                            width=block_size, 
-                            height=block_size, 
-                            bgcolor=ACCENT if cell else CARD
-                        )
-                    )
-                rows.append(ft.Row(flet_row, spacing=0))
-                
-            qr_ctrl = ft.Container(
-                content=ft.Column(rows, spacing=0),
-                bgcolor=CARD,
-                border_radius=8,
-                padding=10
-            )
-        except Exception as ex:
-            qr_ctrl = ft.Text(f"QR error: {ex}", color=RED, size=11)
+            img = qr.make_image(fill_color=ACCENT, back_color=CARD)
+            # Convert to CTkImage
+            pil_img = img.convert("RGB")
+            ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img,
+                                   size=(min(200, pil_img.width), min(200, pil_img.height)))
+            qr_card = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=10)
+            qr_card.pack(pady=(0, 10))
+            ctk.CTkLabel(qr_card, image=ctk_img, text="").pack(padx=20, pady=20)
+        except Exception as e:
+            qr_card = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=10)
+            qr_card.pack(fill="x", pady=(0, 10))
+            ctk.CTkLabel(qr_card, text=f"QR unavailable (pip install qrcode pillow)\n{e}",
+                         font=ctk.CTkFont(size=10), text_color=MUTED).pack(padx=20, pady=20)
 
-        def do_copy(e):
-            page.clipboard.set(url)
+        # URL rows with copy
+        def _url_row(label, val):
+            row = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=10)
+            row.pack(fill="x", pady=3)
+            ctk.CTkLabel(row, text=label, font=ctk.CTkFont(size=11), text_color=MUTED,
+                         anchor="w").pack(side="left", padx=14, pady=8, expand=True, fill="x")
+            ctk.CTkLabel(row, text=val, font=ctk.CTkFont(size=11, weight="bold"),
+                         text_color=TEXT, anchor="e").pack(side="left", expand=True, fill="x")
+            ctk.CTkButton(row, text="📋", width=32, fg_color="transparent", text_color=MUTED,
+                          hover_color=BORDER, corner_radius=6,
+                          command=lambda v=val: app.clipboard_clear() or app.clipboard_append(v)
+                          ).pack(side="right", padx=8)
 
-        def make_copy_row(label, val):
-            def _do_copy(e):
-                page.clipboard.set(val)
-            return ft.Container(
-                content=ft.Row([
-                    ft.Text(label, size=11, color=MUTED, expand=1),
-                    ft.Text(val, size=11, weight="bold", color=TEXT),
-                    ft.Container(
-                        content=ft.Text("📋", size=13, color=MUTED),
-                        on_click=_do_copy,
-                        padding=ft.Padding(10, 0, 5, 0),
-                        tooltip=f"Copy {val}"
-                    )
-                ]),
-                padding=ft.Padding(16, 9, 16, 9),
-            )
+        _url_row("Localhost", url_local)
+        _url_row("LAN Host", url_lan)
 
-        public_ip_val = ft.Text("Detecting...", size=11, weight="bold", color=MUTED)
-        public_ip_row = ft.Container(
-            content=ft.Row([
-                ft.Text("Remote Access", size=11, color=MUTED, expand=1),
-                public_ip_val,
-            ]), padding=ft.Padding(16, 9, 16, 9)
-        )
+        pub_lbl = ctk.CTkLabel(sc, text="Remote: detecting…", font=ctk.CTkFont(size=11),
+                               text_color=MUTED)
+        pub_lbl.pack(anchor="w", pady=(6, 0))
 
-        def fetch_pub_ip():
-            import urllib.request
+        def _fetch_pub():
             try:
-                ip = urllib.request.urlopen("https://api.ipify.org", timeout=4).read().decode("utf-8")
-                remote_url = f"{scheme}://{ip}:{HECOS_PORT}"
-                public_ip_val.value = remote_url
-                public_ip_val.color = TEXT
-                def _do_copy_remote(e): page.clipboard.set(remote_url)
-                public_ip_row.content.controls.append(
-                    ft.Container(
-                        content=ft.Text("📋", size=13, color=MUTED),
-                        on_click=_do_copy_remote,
-                        padding=ft.Padding(10, 0, 5, 0),
-                        tooltip=f"Copy {remote_url}"
-                    )
+                ip = urllib.request.urlopen("https://api.ipify.org", timeout=4).read().decode()
+                remote = f"{scheme}://{ip}:{HECOS_PORT}"
+                pub_lbl.configure(
+                    text=f"Remote: {remote}",
+                    text_color=TEXT
                 )
             except Exception:
-                public_ip_val.value = "Unreachable"
-                public_ip_val.color = RED
-            try:
-                page.update()
-            except: pass
+                pub_lbl.configure(text="Remote: Unreachable", text_color=RED)
 
-        threading.Thread(target=fetch_pub_ip, daemon=True).start()
+        threading.Thread(target=_fetch_pub, daemon=True).start()
 
-        network_section = ft.Column([
-            _section_label("NETWORK INTERFACES"),
-            _card(
-                make_copy_row("Localhost", url_local),
-                make_copy_row("LAN Host", url_lan),
-                public_ip_row,
-            ),
-        ], visible=False)
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB: LIVE LOGS
+    # ─────────────────────────────────────────────────────────────────────────
 
-        def toggle_network(e):
-            network_section.visible = not network_section.visible
-            toggle_btn.content.controls[0].value = "▽ Hide Technical Details" if network_section.visible else "▷ Show Technical Details"
-            page.update()
+    def _build_logs():
+        # Outer container
+        outer = ctk.CTkFrame(content_frame, fg_color="transparent", corner_radius=0)
+        outer.pack(fill="both", expand=True, padx=20, pady=20)
+        _content_widgets.append(outer)
 
-        toggle_btn = ft.Container(
-            content=ft.Row([
-                ft.Text("▷ Show Technical Details", size=11, color=ACCENT, weight="bold"),
-            ]),
-            on_click=toggle_network,
-            padding=ft.Padding(12, 5, 12, 5),
-            border_radius=6,
-        )
+        _title(outer, "Live Logs")
+        _subtitle(outer, "Read directly from disk — works even when the WebUI is offline.")
 
-        return ft.Column([
-            _title("Remote Access (Mobile & PC)"),
-            _subtitle("Scan the QR code or copy the link to access Hecos from other devices."),
-            ft.Container(height=14),
-            ft.Container(
-                content=ft.Column([
-                    qr_ctrl,
-                    ft.Container(height=10),
-                    ft.Row([
-                        ft.Text(url, size=12, color=TEXT, weight="bold", selectable=True),
-                        ft.Container(
-                            content=ft.Text("📋", size=14, color=MUTED),
-                            on_click=do_copy,
-                            padding=ft.Padding(10, 5, 5, 5),
-                            tooltip="Copy Link"
-                        )
-                    ], alignment="center", spacing=0),
-                ], horizontal_alignment="center"),
-                bgcolor=CARD, border_radius=14, padding=24,
-            ),
-            ft.Container(height=10),
-            toggle_btn,
-            network_section,
-        ], spacing=6, horizontal_alignment="center", expand=1)
-
-    def _build_logs(page, body_col):
-        """Standalone log viewer — reads files directly from disk, no WebUI needed."""
         logs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
 
-        # Severity colors
-        SEV = {
-            "ERROR":    RED,
-            "CRITICAL": RED,
-            "WARNING":  "#f59e0b",
-            "INFO":     "#ffffff",
-            "DEBUG":    "#94a3b8", # Brightened from #64748b to Slate 400 for selection contrast
+        SEV_COLORS = {
+            "ERROR": RED, "CRITICAL": RED,
+            "WARNING": AMBER,
+            "INFO": "#ffffff",
+            "DEBUG": "#94a3b8",
         }
 
-        def _sev_color(line: str) -> str:
-            upper = line.upper()
-            for kw, col in SEV.items():
-                if kw in upper:
+        def _sev_color(line):
+            u = line.upper()
+            for kw, col in SEV_COLORS.items():
+                if kw in u:
                     return col
             return MUTED
 
-        log_output = ft.Column(scroll="auto", spacing=1, expand=1, auto_scroll=True)
-        file_dd    = ft.Dropdown(width=280, text_size=11, bgcolor=CARD, border_color=BORDER, color=TEXT)
-        lines_note = ft.Text("", size=10, color=MUTED)
+        # Top controls
+        ctrl_row = ctk.CTkFrame(outer, fg_color="transparent")
+        ctrl_row.pack(fill="x", pady=(0, 6))
 
-        _last_sz = 0
-        _font_size = 10
+        # File selector
+        log_files = []
+        try:
+            log_files = sorted(
+                [f for f in os.listdir(logs_dir) if f.endswith(".log")],
+                key=lambda x: os.path.getmtime(os.path.join(logs_dir, x)),
+                reverse=True
+            )
+        except Exception:
+            pass
 
-        def _zoom_in(e):
-            nonlocal _font_size
-            if _font_size < 30:
-                _font_size += 2
-                _last_sz = 0  # Force redraw
-                _load_log(auto=False)
+        default_log = "hecos_main.log" if "hecos_main.log" in log_files else (log_files[0] if log_files else "")
 
-        def _zoom_out(e):
-            nonlocal _font_size
-            if _font_size > 6:
-                _font_size -= 2
-                _last_sz = 0  # Force redraw
-                _load_log(auto=False)
+        file_var = ctk.StringVar(value=default_log)
+        file_dd = ctk.CTkOptionMenu(ctrl_row, variable=file_var,
+                                    values=log_files if log_files else ["(no logs)"],
+                                    fg_color=CARD, button_color=ACCENT2,
+                                    dropdown_fg_color=CARD, text_color=TEXT,
+                                    font=ctk.CTkFont(size=11), width=260)
+        file_dd.pack(side="left", padx=(0, 8))
 
-        def _load_log(e=None, auto=False):
-            nonlocal _last_sz
-            selected = file_dd.value
-            if not selected:
-                if not auto:
-                    log_output.controls.clear()
-                    log_output.controls.append(ft.Text("No log file selected.", color=MUTED, size=11))
-                    page.update()
+        lines_lbl = ctk.CTkLabel(ctrl_row, text="", font=ctk.CTkFont(size=10), text_color=MUTED)
+        lines_lbl.pack(side="right")
+
+        font_size = [10]  # mutable
+
+        # Log text widget (tkinter Text for performance with large files)
+        import tkinter as tk
+        log_frame = ctk.CTkFrame(outer, fg_color=CARD, corner_radius=8)
+        log_frame.pack(fill="both", expand=True, pady=(4, 0))
+
+        log_text = tk.Text(
+            log_frame, wrap="none",
+            bg=CARD, fg=TEXT, selectbackground=ACCENT2, selectforeground="#ffffff",
+            insertbackground=ACCENT,
+            font=("Consolas", font_size[0]),
+            relief="flat", padx=6, pady=4,
+            state="disabled"
+        )
+        scroll_y = ctk.CTkScrollbar(log_frame, command=log_text.yview)
+        scroll_x = ctk.CTkScrollbar(log_frame, orientation="horizontal",
+                                    command=log_text.xview)
+        log_text.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+
+        scroll_y.pack(side="right", fill="y")
+        scroll_x.pack(side="bottom", fill="x")
+        log_text.pack(side="left", fill="both", expand=True)
+
+        # Tags for coloring
+        for kw, col in SEV_COLORS.items():
+            log_text.tag_configure(kw, foreground=col)
+        log_text.tag_configure("MUTED", foreground=MUTED)
+
+        _last_size = [0]
+
+        def _load(auto=False):
+            fname = file_var.get()
+            if not fname or fname == "(no logs)":
                 return
-            path = os.path.join(logs_dir, selected)
+            path = os.path.join(logs_dir, fname)
             try:
                 sz = os.path.getsize(path)
-                if auto and sz == _last_sz:
+                if auto and sz == _last_size[0]:
                     return
-                _last_sz = sz
-                
+                _last_size[0] = sz
                 with open(path, "r", encoding="utf-8", errors="replace") as f:
                     all_lines = f.readlines()
-                tail = all_lines[-300:] if len(all_lines) > 300 else all_lines
-                lines_note.value = f"{len(all_lines)} total lines — showing last {len(tail)}"
-                
-                log_output.controls.clear()
-                for i, raw in enumerate(tail):
-                    line = raw.rstrip()
-                    row_bg = CARD if i % 2 == 0 else "#151e2f"  # Alternate striping
-                    log_output.controls.append(
-                        ft.Container(
-                            content=ft.Text(line, size=_font_size, font_family="monospace", color=_sev_color(line),
-                                            selectable=False, no_wrap=False),
-                            bgcolor=row_bg,
-                            width=1000,
-                            padding=ft.Padding(2, 2, 2, 2)
-                        )
-                    )
-            except Exception as ex:
-                log_output.controls.clear()
-                log_output.controls.append(ft.Text(f"Error: {ex}", color=RED, size=11))
-            page.update()
-
-        # Populate file dropdown
-        def _refresh_list(e=None):
-            file_dd.options.clear()
-            try:
-                files = sorted(
-                    [f for f in os.listdir(logs_dir) if f.endswith(".log")],
-                    key=lambda x: os.path.getmtime(os.path.join(logs_dir, x)),
-                    reverse=True
+                tail = all_lines[-400:] if len(all_lines) > 400 else all_lines
+                lines_lbl.configure(
+                    text=f"{len(all_lines)} lines — showing last {len(tail)}"
                 )
-                for f in files:
-                    file_dd.options.append(ft.dropdown.Option(f))
-                if files:
-                    if "hecos_main.log" in files:
-                        file_dd.value = "hecos_main.log"
-                    else:
-                        file_dd.value = files[0]
-            except Exception:
-                file_dd.options.append(ft.dropdown.Option("(no logs found)"))
-            _load_log()
+                log_text.configure(state="normal")
+                log_text.delete("1.0", "end")
+                for line in tail:
+                    stripped = line.rstrip()
+                    col_tag = "MUTED"
+                    u = stripped.upper()
+                    for kw in ("ERROR", "CRITICAL", "WARNING", "INFO", "DEBUG"):
+                        if kw in u:
+                            col_tag = kw
+                            break
+                    log_text.insert("end", stripped + "\n", col_tag)
+                log_text.configure(state="disabled")
+                log_text.see("end")
+            except Exception as ex:
+                log_text.configure(state="normal")
+                log_text.delete("1.0", "end")
+                log_text.insert("end", f"Error reading log: {ex}")
+                log_text.configure(state="disabled")
 
-        def _on_dd_change(e):
-            _load_log(e=e, auto=False)
-            
-        file_dd.on_change = _on_dd_change
+        def _on_file_change(choice):
+            _last_size[0] = 0
+            _load()
 
-        zoom_in_btn = ft.Container(
-            content=ft.Text("A+", size=11, color=TEXT, weight="bold"),
-            on_click=_zoom_in,
-            padding=ft.Padding(10, 6, 10, 6),
-            bgcolor=BG, border_radius=6
-        )
-        zoom_out_btn = ft.Container(
-            content=ft.Text("A-", size=11, color=TEXT, weight="bold"),
-            on_click=_zoom_out,
-            padding=ft.Padding(10, 6, 10, 6),
-            bgcolor=BG, border_radius=6
-        )
+        file_dd.configure(command=_on_file_change)
 
-        controls_row = ft.Row([
-            file_dd,
-            ft.Container(
-                content=ft.Text("↻ Refresh", size=11, color=ACCENT, weight="bold"),
-                on_click=lambda e: (_refresh_list(), _load_log()),
-                padding=ft.Padding(10, 6, 10, 6),
-                border_radius=6,
-            ),
-            ft.Row([zoom_out_btn, zoom_in_btn], spacing=4),
-        ], spacing=8)
+        # Zoom buttons
+        def _zoom(delta):
+            font_size[0] = max(6, min(24, font_size[0] + delta))
+            log_text.configure(font=("Consolas", font_size[0]))
 
-        log_container = ft.Container(
-            content=ft.SelectionArea(content=log_output),
-            bgcolor=CARD,
-            border_radius=8,
-            padding=10,
-            expand=True,
-        )
+        btn_row = ctk.CTkFrame(ctrl_row, fg_color="transparent")
+        btn_row.pack(side="left", padx=8)
+        ctk.CTkButton(btn_row, text="A-", width=34, fg_color=SURFACE, text_color=TEXT,
+                      hover_color=BORDER, corner_radius=6,
+                      command=lambda: _zoom(-2)).pack(side="left", padx=2)
+        ctk.CTkButton(btn_row, text="A+", width=34, fg_color=SURFACE, text_color=TEXT,
+                      hover_color=BORDER, corner_radius=6,
+                      command=lambda: _zoom(2)).pack(side="left", padx=2)
+        ctk.CTkButton(btn_row, text="↻", width=34, fg_color=SURFACE, text_color=ACCENT,
+                      hover_color=BORDER, corner_radius=6,
+                      command=_load).pack(side="left", padx=2)
 
-        result = ft.Column([
-            _title("Live Logs"),
-            _subtitle("Read directly from disk — works even when the WebUI is offline."),
-            ft.Container(height=8),
-            controls_row,
-            lines_note,
-            ft.Container(height=6),
-            log_container,
-        ], spacing=4, expand=True)
+        # Initial load
+        _load()
 
-        _refresh_list()
-
+        # Auto-refresh every 2 seconds while this tab is active
         def _auto_refresh():
-            import time
-            while True:
+            while _active_tab["key"] == "logs":
                 time.sleep(2)
-                # Break out of loop if the user switches to a different tab
-                if not body_col.controls or body_col.controls[0] != result:
-                    break
-                _load_log(auto=True)
-                
-        import threading
+                try:
+                    _load(auto=True)
+                except Exception:
+                    pass
+
         threading.Thread(target=_auto_refresh, daemon=True).start()
 
-        return result
+    # ─────────────────────────────────────────────────────────────────────────
+    # TAB: ABOUT
+    # ─────────────────────────────────────────────────────────────────────────
 
-    def _build_about(page, body_col):
-        return ft.Column([
-            _title("About Hecos"),
-            ft.Container(height=10),
-            ft.Container(
-                content=ft.Column([
-                    ft.Container(height=12),
-                    ft.Text("HECOS", size=32, weight="bold", color=ACCENT, text_align="center"),
-                    ft.Text("Helping Companion System", size=13, color=MUTED, text_align="center"),
-                    ft.Container(height=12),
-                    _info_row("Version",  get_version()),
-                    _info_row("Creator",  "Antonio Meloni"),
-                    _info_row("Port",     str(HECOS_PORT)),
-                    ft.Container(height=12),
-                ], spacing=4, horizontal_alignment="center"),
-                bgcolor=CARD, border_radius=14, padding=20, expand=1,
-            ),
-        ], spacing=6, expand=1)
+    def _build_about():
+        sc = ctk.CTkScrollableFrame(content_frame, fg_color="transparent", corner_radius=0)
+        sc.pack(fill="both", expand=True, padx=20, pady=20)
+        _content_widgets.append(sc)
 
-    # ── Master Layout ──────────────────────────────────────────────
-    def _build_ui_master(page: ft.Page):
-        page.title = "Hecos Tray Dashboard"
-        page.bgcolor = BG
-        page.theme_mode = "dark"
-        page.theme = ft.Theme(color_scheme_seed="#00d9b2")  # Teal accent for text selection
-        page.padding = 0
-        try:
-            page.window.icon = "Hecos_Logo_SQR_NBG_LogoOnly.ico"
-        except:
-            try:
-                page.window_icon = "Hecos_Logo_SQR_NBG_LogoOnly.ico"
-            except:
-                pass
-        
-        try:
-            page.window.width = 760
-            page.window.height = 560
-        except:
-            page.window_width = 760
-            page.window_height = 560
+        _title(sc, "About Hecos")
 
-        nav_refs = {}
-        body_col = ft.Column(expand=1, scroll="auto")
+        card = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=14)
+        card.pack(fill="x", pady=(10, 0))
 
-        # Replaced ALL Font Icons with extremely standard Unicode equivalents
-        nav_items = [
-            ("status",   "◉", "Status"),
-            ("settings", "⚙", "Settings"),
-            ("browser",  "🌐", "Browser"),
-            ("mobile",   "📱", "Remote Access"),
-            ("logs",     "📋", "Live Logs"),
-            ("about",    "ℹ", "About"),
-        ]
+        ctk.CTkLabel(card, text="HECOS", font=ctk.CTkFont(size=32, weight="bold"),
+                     text_color=ACCENT).pack(pady=(20, 0))
+        ctk.CTkLabel(card, text="Helping Companion System",
+                     font=ctk.CTkFont(size=13), text_color=MUTED).pack()
+        ctk.CTkFrame(card, height=1, fg_color=BORDER).pack(fill="x", padx=20, pady=14)
 
-        def _highlight(active):
-            for k, c in nav_refs.items():
-                c.bgcolor = ACCENT2 if k == active else SURFACE
-                for ctrl in c.content.controls:
-                    ctrl.color = "#ffffff" if k == active else TEXT
-            page.update()
+        _info_row(card, "Version",  get_version())
+        _info_row(card, "Creator",  "Antonio Meloni")
+        _info_row(card, "Port",     str(HECOS_PORT))
 
-        def _show_tab(key):
-            _highlight(key)
-            body_col.controls.clear()
-            builders = {
-                "status":   _build_status,
-                "settings": _build_settings,
-                "browser":  _build_browser,
-                "mobile":   _build_mobile,
-                "logs":     _build_logs,
-                "about":    _build_about,
-            }
-            if key in builders:
-                body_col.controls.append(builders[key](page, body_col))
-            page.update()
+        ctk.CTkFrame(card, height=12, fg_color="transparent").pack()
 
-        def _make_nav_btn(key, icon_str, label):
-            c = ft.Container(
-                content=ft.Row([
-                    ft.Text(icon_str, size=15, color=TEXT), # Text instead of ft.Icon
-                    ft.Text(label, size=12, color=TEXT),
-                ], spacing=8),
-                border_radius=8,
-                padding=ft.Padding(12, 9, 12, 9),
-                on_click=lambda e, k=key: _show_tab(k),
-                bgcolor=SURFACE
-            )
-            nav_refs[key] = c
-            return c
+    # ── Tab dispatch ───────────────────────────────────────────────────────────
+    TAB_BUILDERS = {
+        "status":   _build_status,
+        "settings": _build_settings,
+        "browser":  _build_browser,
+        "mobile":   _build_mobile,
+        "logs":     _build_logs,
+        "about":    _build_about,
+    }
 
-        def _do_restart():
-            from hecos.tray.orchestrator import restart_hecos
-            from hecos.tray.system_utils import play_beep
-            play_beep(400, 100)
-            threading.Thread(target=restart_hecos, daemon=True).start()
+    # ── Open default tab ───────────────────────────────────────────────────────
+    _switch_tab("status")
 
-        # Build Sidebar
-        sidebar_controls = [
-            ft.Container(
-                content=ft.Column([
-                    ft.Text("HECOS", size=22, weight="bold", color=ACCENT),
-                    ft.Text(f"v{get_version()}", size=10, color=MUTED),
-                ], spacing=2),
-                padding=ft.Padding(12, 0, 0, 12)
-            ),
-            ft.Container(height=6),
-        ]
-        
-        for k, ic, lbl in nav_items:
-            sidebar_controls.append(_make_nav_btn(k, ic, lbl))
-            
-        sidebar_controls.extend([
-            ft.Container(expand=1),
-            ft.Container(height=8),
-            _safe_btn("Open Chat", ACCENT, "#000000", lambda e: threading.Thread(target=intelligent_open_webui, args=(None, None), daemon=True).start()),
-            ft.Container(height=6),
-            _safe_btn("Restart Core", CARD, TEXT, lambda e: _do_restart()),
-        ])
+    # ── Center window on screen ────────────────────────────────────────────────
+    app.update_idletasks()
+    w, h = app.winfo_width(), app.winfo_height()
+    sw, sh = app.winfo_screenwidth(), app.winfo_screenheight()
+    app.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
 
-        sidebar = ft.Container(
-            width=185, 
-            bgcolor=SURFACE,
-            padding=ft.Padding(8, 20, 8, 20),
-            content=ft.Column(sidebar_controls, spacing=3, expand=1)
-        )
-
-        # Assemble Root Node
-        root_container = ft.Container(
-            content=ft.Row([
-                sidebar,
-                # Explicit vertical border
-                ft.Container(width=1, bgcolor=BORDER),
-                ft.Container(content=body_col, expand=1, padding=20),
-            ], spacing=0, expand=1),
-            expand=1,
-            bgcolor=BG
-        )
-
-        page.add(root_container)
-        _show_tab("status")
-
-    assets_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets"))
-    
-    # ── Single Instance Lock ──
-    try:
-        import socket
-        __lock_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        __lock_socket.bind(("127.0.0.1", 54321))
-    except socket.error:
-        print("[Tray Dashboard] Process is already active. Ignoring launch request.")
-        sys.exit(0)
-    
-    ft.app(target=_build_ui_master, assets_dir=assets_path)
+    app.mainloop()
