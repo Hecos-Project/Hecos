@@ -261,10 +261,12 @@ if __name__ == "__main__":
             except Exception:
                 val = "Active (Engine Unknown)" if cdp_ok else "Not Detected"
                 col = ACCENT if cdp_ok else MUTED
-            try:
-                browser_lbl.configure(text=val, text_color=col)
-            except Exception:
-                pass
+            
+            def _update_ui(v, c):
+                try: browser_lbl.configure(text=v, text_color=c)
+                except: pass
+            
+            app.after(0, _update_ui, val, col)
 
         if cdp_ok:
             threading.Thread(target=_fetch_browser, daemon=True).start()
@@ -444,13 +446,21 @@ if __name__ == "__main__":
         toggle_btn.configure(command=_toggle_network)
 
         def _fetch_pub():
+            def _update_ui(txt, col, enable_btn, remote_url=None):
+                try:
+                    pub_lbl.configure(text=txt, text_color=col)
+                    if enable_btn and remote_url:
+                        pub_copy_btn.configure(state="normal", command=lambda: app.clipboard_clear() or app.clipboard_append(remote_url))
+                    else:
+                        pub_copy_btn.configure(state="disabled")
+                except: pass
+                
             try:
                 ip = urllib.request.urlopen("https://api.ipify.org", timeout=4).read().decode()
                 remote = f"{scheme}://{ip}:{HECOS_PORT}"
-                pub_lbl.configure(text=remote, text_color=TEXT)
-                pub_copy_btn.configure(state="normal", command=lambda: app.clipboard_clear() or app.clipboard_append(remote))
+                app.after(0, _update_ui, remote, TEXT, True, remote)
             except Exception:
-                pub_lbl.configure(text="Unreachable", text_color=RED)
+                app.after(0, _update_ui, "Unreachable", RED, False)
 
         threading.Thread(target=_fetch_pub, daemon=True).start()
 
@@ -607,10 +617,8 @@ if __name__ == "__main__":
         def _auto_refresh():
             while _active_tab["key"] == "logs":
                 time.sleep(2)
-                try:
-                    _load(auto=True)
-                except Exception:
-                    pass
+                if _active_tab["key"] == "logs":
+                    app.after(0, lambda: _load(auto=True))
 
         threading.Thread(target=_auto_refresh, daemon=True).start()
 

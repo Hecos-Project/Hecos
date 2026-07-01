@@ -271,13 +271,26 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         if rag_cfg.get("enabled", False):
             from hecos.core.rag import get_rag_engine
             rag_engine = get_rag_engine(config)
-            rag_context_block = rag_engine.context_for_query(
-                query=user_text,
-                user_id=user_id,
-                top_k=rag_cfg.get("top_k", 5),
-            )
-            if rag_context_block:
-                logger.debug("BRAIN", f"RAG: {len(rag_context_block)} chars injected into system prompt")
+            
+            if not getattr(rag_engine, '_initialized', False):
+                import threading
+                def _bg_init():
+                    try:
+                        logger.info("[BRAIN] Background RAG initialization started...")
+                        rag_engine._ensure_init()
+                    except Exception as e:
+                        logger.error(f"[BRAIN] Background RAG init failed: {e}")
+                
+                threading.Thread(target=_bg_init, daemon=True).start()
+                logger.info("[BRAIN] RAG Engine not ready yet, skipping context for this turn to avoid delay.")
+            else:
+                rag_context_block = rag_engine.context_for_query(
+                    query=user_text,
+                    user_id=user_id,
+                    top_k=rag_cfg.get("top_k", 5),
+                )
+                if rag_context_block:
+                    logger.debug("BRAIN", f"RAG: {len(rag_context_block)} chars injected into system prompt")
     except Exception as _rag_err:
         logger.warning(f"[BRAIN] RAG context retrieval failed: {_rag_err}")
     # ──────────────────────────────────────────────────────────────────────────
