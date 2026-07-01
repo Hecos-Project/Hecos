@@ -395,9 +395,9 @@ if __name__ == "__main__":
             ctk.CTkLabel(qr_card, text=f"QR unavailable (pip install qrcode pillow)\n{e}",
                          font=ctk.CTkFont(size=10), text_color=MUTED).pack(padx=20, pady=20)
 
-        # URL rows with copy
-        def _url_row(label, val):
-            row = ctk.CTkFrame(sc, fg_color=CARD, corner_radius=10)
+        # The URL copy rows
+        def _url_row(parent, label, val):
+            row = ctk.CTkFrame(parent, fg_color=CARD, corner_radius=10)
             row.pack(fill="x", pady=3)
             ctk.CTkLabel(row, text=label, font=ctk.CTkFont(size=11), text_color=MUTED,
                          anchor="w").pack(side="left", padx=14, pady=8, expand=True, fill="x")
@@ -408,23 +408,49 @@ if __name__ == "__main__":
                           command=lambda v=val: app.clipboard_clear() or app.clipboard_append(v)
                           ).pack(side="right", padx=8)
 
-        _url_row("Localhost", url_local)
-        _url_row("LAN Host", url_lan)
+        # ── Toggle Button ──
+        toggle_btn = ctk.CTkButton(sc, text="▷ Show Technical Details", fg_color="transparent",
+                                   text_color=ACCENT, hover_color=BORDER, corner_radius=8,
+                                   font=ctk.CTkFont(size=11, weight="bold"), anchor="w")
+        toggle_btn.pack(fill="x", pady=(10, 0))
 
-        pub_lbl = ctk.CTkLabel(sc, text="Remote: detecting…", font=ctk.CTkFont(size=11),
-                               text_color=MUTED)
-        pub_lbl.pack(anchor="w", pady=(6, 0))
+        # ── Network Section (Hidden by default) ──
+        network_section = ctk.CTkFrame(sc, fg_color="transparent")
+
+        _section_label(network_section, "NETWORK INTERFACES")
+        _url_row(network_section, "Localhost", url_local)
+        _url_row(network_section, "LAN Host", url_lan)
+
+        pub_row = ctk.CTkFrame(network_section, fg_color=CARD, corner_radius=10)
+        pub_row.pack(fill="x", pady=3)
+        ctk.CTkLabel(pub_row, text="Remote Access", font=ctk.CTkFont(size=11), text_color=MUTED,
+                     anchor="w").pack(side="left", padx=14, pady=8, expand=True, fill="x")
+        pub_lbl = ctk.CTkLabel(pub_row, text="Detecting…", font=ctk.CTkFont(size=11, weight="bold"),
+                               text_color=MUTED, anchor="e")
+        pub_lbl.pack(side="left", expand=True, fill="x")
+        
+        pub_copy_btn = ctk.CTkButton(pub_row, text="📋", width=32, fg_color="transparent", text_color=MUTED,
+                                     hover_color=BORDER, corner_radius=6, state="disabled")
+        pub_copy_btn.pack(side="right", padx=8)
+
+        def _toggle_network():
+            if network_section.winfo_ismapped():
+                network_section.pack_forget()
+                toggle_btn.configure(text="▷ Show Technical Details")
+            else:
+                network_section.pack(fill="x", pady=(5, 0))
+                toggle_btn.configure(text="▽ Hide Technical Details")
+
+        toggle_btn.configure(command=_toggle_network)
 
         def _fetch_pub():
             try:
                 ip = urllib.request.urlopen("https://api.ipify.org", timeout=4).read().decode()
                 remote = f"{scheme}://{ip}:{HECOS_PORT}"
-                pub_lbl.configure(
-                    text=f"Remote: {remote}",
-                    text_color=TEXT
-                )
+                pub_lbl.configure(text=remote, text_color=TEXT)
+                pub_copy_btn.configure(state="normal", command=lambda: app.clipboard_clear() or app.clipboard_append(remote))
             except Exception:
-                pub_lbl.configure(text="Remote: Unreachable", text_color=RED)
+                pub_lbl.configure(text="Unreachable", text_color=RED)
 
         threading.Thread(target=_fetch_pub, daemon=True).start()
 
