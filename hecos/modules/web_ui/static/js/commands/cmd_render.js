@@ -47,7 +47,7 @@ export function renderResults(commands, selectedIndex, container) {
         const primaryAlias = cmd.aliases[0];
         
         div.innerHTML = `
-            <div class="cmd-item-icon">${cmd.icon || '⚡'}</div>
+            <div class="cmd-item-icon">${(function(ic){ return (ic && !ic.startsWith('fa-') && !ic.startsWith('fas ') && !ic.startsWith('<i ')) ? ic : '⚡'; })(cmd.icon)}</div>
             <div class="cmd-item-content">
                 <div class="cmd-item-header">
                     <span class="cmd-item-alias">${primaryAlias}</span>

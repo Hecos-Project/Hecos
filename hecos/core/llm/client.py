@@ -102,6 +102,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         if extra_messages:
             messages.extend(extra_messages)
 
+    # Read cloud timeout from runtime-configurable global (settable via Key Manager UI)
+    try:
+        import hecos.core.keys.key_manager as _km_mod
+        _cloud_timeout = getattr(_km_mod, "_KM_CLOUD_TIMEOUT", 30)
+    except Exception:
+        _cloud_timeout = 30
+
     params = {
         "model": model_name,
         "messages": messages,
@@ -109,7 +116,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         "top_p": specific_config.get('top_p', 0.9),
         "num_retries": 0,  # We handle retries manually with key failover
         "stream": stream,
-        "timeout": 300 if backend_type in ("ollama", "kobold") else 90,  # Prevent infinite hangs
+        "timeout": 300 if backend_type in ("ollama", "kobold") else _cloud_timeout,  # Cloud: configurable, Local: 5min
     }
     
     # Aggiungi i tools se presenti e se il backend lo supporta
@@ -246,23 +253,28 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
 
     # ── Retry loop with auto-failover ────────────────────────────────────
     from hecos.core.keys import get_key_manager as _get_km
-    _max_key_retries = 8  # max chiavi diverse da provare in sequenza
+    # Read max retries from runtime-configurable global (settable via Key Manager UI)
+    try:
+        import hecos.core.keys.key_manager as _km_settings
+        _max_key_retries = getattr(_km_settings, "_KM_MAX_RETRIES", 5)
+    except Exception:
+        _max_key_retries = 5
     _tried_keys: list = []
 
     for _attempt in range(_max_key_retries):
-        # On retry: get a fresh key from the pool (skip already tried ones)
+        # On retry: get a fresh key from the pool, explicitly excluding already-tried ones
         if _attempt > 0 and backend_type == "cloud" and provider:
             try:
                 _km2 = _get_km()
-                _next_key = _km2.get_key(provider)
-                # If we get the same key (or None), stop retrying
-                if not _next_key or _next_key in _tried_keys:
+                _next_key = _km2.get_key(provider, exclude=_tried_keys)
+                if not _next_key:
+                    zlog_info("LiteLLM", f"[FAILOVER] No more available keys for '{provider}' after {_attempt} attempts.")
                     break
                 params["api_key"] = _next_key
                 if provider == "gemini":
                     os.environ["GEMINI_API_KEY"] = _next_key
                 masked2 = f"{_next_key[:4]}...{_next_key[-4:]}" if len(_next_key) > 8 else "***"
-                zlog_info("LiteLLM", f"[FAILOVER] Switching to next key for '{provider}' ({masked2})")
+                zlog_info("LiteLLM", f"[FAILOVER] Switching to key #{_attempt+1} for '{provider}' ({masked2})")
                 _current_api_key_for_provider = _next_key
             except Exception:
                 break
@@ -315,12 +327,21 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             error_type = type(e).__name__
             
             # Detailed logging so we can see EXACTLY why a call failed
-            zlog_error(f"LiteLLM: [{error_type}] Error (attempt {_attempt + 1}) with model '{model_name}': {error_msg}")
+            zlog_error(f"LiteLLM: [{error_type}] Error (attempt {_attempt + 1}/{_max_key_retries}) with model '{model_name}': {error_msg}")
             
-            # Log full stack trace for unexpected errors
+            # Timeout: mark key as temporarily cooling, return immediately (don't retry all keys)
             if "Timeout" in error_type or "timeout" in error_msg.lower():
-                zlog_error(f"LiteLLM: TIMEOUT detected on attempt {_attempt + 1}! Provider='{provider}', Model='{model_name}'. Check network or API status.")
-                return f"⚠️ Timeout: il provider '{provider}' non ha risposto entro il limite di tempo. Prova a inviare di nuovo il messaggio."
+                zlog_error(f"LiteLLM: TIMEOUT on attempt {_attempt + 1}! Provider='{provider}', Model='{model_name}'.")
+                # Mark the timed-out key as temporarily rate-limited (60s) so next request skips it
+                _timed_out_key = params.get("api_key", None)
+                if _timed_out_key and backend_type == "cloud" and provider:
+                    try:
+                        _km_err = _get_km()
+                        _km_err.mark_exhausted(provider, _timed_out_key, "rate_limited", cooldown=60.0)
+                        zlog_info("LiteLLM", f"[KeyManager] Timed-out key marked for 60s cooldown — will try next key on next request.")
+                    except Exception:
+                        pass
+                return f"⚠️ Timeout: il provider '{provider}' non ha risposto in {params.get('timeout', 30)}s. Hecos proverà un'altra chiave alla prossima richiesta."
 
             # ── KeyManager: notify failure and attempt failover ──────────
             _failed_key = params.get("api_key", None)

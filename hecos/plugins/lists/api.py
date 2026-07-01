@@ -8,7 +8,7 @@ from hecos.core.logging import logger
 
 lists_bp = Blueprint("lists", __name__, url_prefix="/api/lists")
 
-def register_routes(app):
+def init_plugin_routes(app, cfg_mgr, root_dir, logger):
     """Registers the lists blueprint on the Flask app (idempotent)."""
     if "lists" not in app.blueprints:
         app.register_blueprint(lists_bp)

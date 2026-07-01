@@ -17,7 +17,15 @@ from hecos.core.logging import logger
 DEFAULT_COOLDOWN = 60.0
 
 # How many retry attempts with different keys before giving up
-MAX_RETRIES = 10
+MAX_RETRIES = 5
+
+# Default timeout for cloud API calls (seconds)
+DEFAULT_CLOUD_TIMEOUT = 30
+
+# ── Runtime-overridable globals (set via Key Manager UI without restart) ──────
+_KM_CLOUD_TIMEOUT: int = 30    # cloud API request timeout in seconds
+_KM_COOLDOWN:      int = 60    # cooldown for rate-limited/timed-out keys
+_KM_MAX_RETRIES:   int = 5     # max failover attempts per request
 
 
 class KeyManager:
@@ -86,19 +94,23 @@ class KeyManager:
 
     # ─── Key Access ─────────────────────────────────────────────────────────
 
-    def get_key(self, provider: str) -> Optional[str]:
+    def get_key(self, provider: str, exclude: list = None) -> Optional[str]:
         """
         Returns the next available key string for the given provider.
-        Applies ordered failover: tries keys in pool order, skipping unavailable ones.
+        Applies ordered failover: tries keys in pool order, skipping unavailable ones
+        and any keys listed in the 'exclude' list (already-tried keys).
         Returns None if no key is available.
         """
         if not self._loaded:
             self.load()
 
         provider = provider.lower()
+        exclude = exclude or []
         with self._pool_lock:
             pool = self._pools.get(provider, [])
             for entry in pool:
+                if entry.value in exclude:
+                    continue  # skip already-tried keys
                 if entry.is_available():
                     entry.last_used = time.time()
                     if entry.status == STATUS_UNKNOWN:

@@ -60,6 +60,68 @@
     <button class="btn btn-primary" onclick="kmAddKey()" style="margin-top:8px;">{{ t('webui_km_add_btn') }}</button>
     <div id="km-add-feedback" style="font-size:12px;margin-top:8px;"></div>
   </div>
+  <!-- Advanced Settings Card -->
+  <div class="card" id="km-advanced-card">
+    <div class="card-title" style="display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="kmToggleAdvanced()">
+      ⚙️ Impostazioni Avanzate
+      <span id="km-adv-arrow" style="margin-left:auto;transition:transform 0.2s;font-size:12px;">▼</span>
+    </div>
+    <div id="km-advanced-body" style="display:none;margin-top:12px;">
+      <p style="font-size:11px;color:var(--muted);margin:0 0 12px;">
+        Controlla i tempi di risposta e il comportamento del failover tra le chiavi API.
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;flex-wrap:wrap;">
+
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:6px;">
+            ⏱️ Timeout richiesta cloud (secondi)
+            <span title="Tempo massimo di attesa per una risposta dall'API cloud prima di passare alla chiave successiva." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
+          </label>
+          <input type="number" id="km-cloud-timeout" min="5" max="120" step="5" value="30"
+                 style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
+          <small style="color:var(--muted);font-size:10px;">Default: 30s · Consigliato: 20-45s</small>
+        </div>
+
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:6px;">
+            🔄 Cooldown chiave in errore (secondi)
+            <span title="Durata della pausa per una chiave che ha ricevuto un errore 429 (rate limit) o timeout." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
+          </label>
+          <input type="number" id="km-cooldown" min="30" max="3600" step="30" value="60"
+                 style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
+          <small style="color:var(--muted);font-size:10px;">Default: 60s · Aumenta se hai poche chiavi</small>
+        </div>
+
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:6px;">
+            🔁 Max tentativi failover
+            <span title="Numero massimo di chiavi diverse da provare in sequenza prima di arrendersi e restituire un errore." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
+          </label>
+          <input type="number" id="km-max-retries" min="1" max="15" step="1" value="5"
+                 style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
+          <small style="color:var(--muted);font-size:10px;">Default: 5 · Uguale al numero di chiavi</small>
+        </div>
+
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+        <button class="btn btn-primary" onclick="kmSaveAdvanced()" style="padding:5px 14px;font-size:12px;">💾 Salva Impostazioni</button>
+        <button class="btn btn-secondary" onclick="kmResetAdvanced()" style="padding:5px 14px;font-size:12px;">↺ Ripristina Default</button>
+        <span id="km-adv-feedback" style="font-size:11px;color:var(--green);"></span>
+      </div>
+
+      <div style="margin-top:14px;padding:10px 12px;background:rgba(0,243,255,0.04);border-radius:8px;border:1px solid rgba(0,243,255,0.1);">
+        <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.8;">
+          <strong style="color:var(--fg);font-size:11px;">💡 Come funziona il failover:</strong><br>
+          1. Hecos tenta la <strong>chiave #1</strong> con il timeout impostato<br>
+          2. Se riceve 429/401/timeout → marca la chiave in cooldown e prende la <strong>chiave #2</strong><br>
+          3. Ripete fino a esaurimento tentativi o chiavi disponibili<br>
+          4. Le chiavi in cooldown vengono automaticamente ripristinate dopo il tempo impostato
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -298,4 +360,61 @@ document.getElementById('km-add-provider')?.addEventListener('change', function(
   // Also load immediately if panel is already visible
   if (panel.classList.contains('active')) kmRefresh();
 })();
+// ── Advanced Settings ──────────────────────────────────────────────
+function kmToggleAdvanced() {
+  const body  = document.getElementById('km-advanced-body');
+  const arrow = document.getElementById('km-adv-arrow');
+  const open  = body.style.display !== 'none';
+  body.style.display  = open ? 'none' : '';
+  arrow.style.transform = open ? '' : 'rotate(180deg)';
+  if (!open) kmLoadAdvanced();
+}
+
+function kmLoadAdvanced() {
+  fetch('/hecos/api/keymanager/settings')
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok && d.settings) {
+        const s = d.settings;
+        const el = (id) => document.getElementById(id);
+        if (s.cloud_timeout   !== undefined) el('km-cloud-timeout').value = s.cloud_timeout;
+        if (s.cooldown        !== undefined) el('km-cooldown').value       = s.cooldown;
+        if (s.max_retries     !== undefined) el('km-max-retries').value    = s.max_retries;
+      }
+    })
+    .catch(() => {});
+}
+
+function kmSaveAdvanced() {
+  const payload = {
+    cloud_timeout : parseInt(document.getElementById('km-cloud-timeout').value, 10) || 30,
+    cooldown      : parseInt(document.getElementById('km-cooldown').value, 10)      || 60,
+    max_retries   : parseInt(document.getElementById('km-max-retries').value, 10)   || 5
+  };
+  const fb = document.getElementById('km-adv-feedback');
+  fetch('/hecos/api/keymanager/settings', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      fb.textContent = '✅ Salvate! Le modifiche avranno effetto dalla prossima richiesta.';
+      fb.style.color = 'var(--green)';
+    } else {
+      fb.textContent = '⚠️ ' + (d.error || 'Errore salvataggio');
+      fb.style.color = 'var(--red)';
+    }
+    setTimeout(() => { fb.textContent = ''; }, 4000);
+  }).catch(err => {
+    fb.textContent = '⚠️ Errore di rete: ' + err;
+    fb.style.color = 'var(--red)';
+  });
+}
+
+function kmResetAdvanced() {
+  document.getElementById('km-cloud-timeout').value = 30;
+  document.getElementById('km-cooldown').value      = 60;
+  document.getElementById('km-max-retries').value   = 5;
+  kmSaveAdvanced();
+}
 </script>
