@@ -55,7 +55,7 @@ cognition:
   max_history_messages: 20
   rag:
     enabled: true
-    embedder: fastembed
+    embedder: sentence_transformers
     embedder_model: BAAI/bge-small-en-v1.5
     chunk_size: 512
     chunk_overlap: 64
