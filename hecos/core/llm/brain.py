@@ -364,7 +364,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
     # Temporary model resolution (to understand what we're about to use)
     from app.model_manager import ModelManager
     effective_backend_type, effective_default_model = ModelManager.get_effective_model_info(config)
-    modello_risolto_temp = manager.resolve_model(tag, config_override=config)
+    modello_risolto_temp = ModelManager.resolve_model(tag, config_override=config)
     current_model = (modello_risolto_temp or effective_default_model).lower()
 
     is_legacy = False

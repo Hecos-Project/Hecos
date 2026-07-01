@@ -101,21 +101,35 @@ class KeyManager:
         and any keys listed in the 'exclude' list (already-tried keys).
         Returns None if no key is available.
         """
+        logger.debug("KeyManager", f"get_key called for provider='{provider}', exclude={exclude}")
         if not self._loaded:
+            logger.debug("KeyManager", "Pool not loaded, calling load()")
             self.load()
 
         provider = provider.lower()
         exclude = exclude or []
+        
+        logger.debug("KeyManager", f"Acquiring pool_lock for get_key('{provider}')")
         with self._pool_lock:
+            logger.debug("KeyManager", f"Lock acquired for get_key('{provider}')")
             pool = self._pools.get(provider, [])
-            for entry in pool:
+            logger.debug("KeyManager", f"Pool for '{provider}' has {len(pool)} keys")
+            for i, entry in enumerate(pool):
+                logger.debug("KeyManager", f"Checking key #{i+1}: status={entry.status}, value=***{entry.value[-4:] if entry.value else ''}")
                 if entry.value in exclude:
+                    logger.debug("KeyManager", f"Key #{i+1} is in exclude list, skipping.")
                     continue  # skip already-tried keys
+                
                 if entry.is_available():
                     entry.last_used = time.time()
                     if entry.status == STATUS_UNKNOWN:
                         entry.status = STATUS_VALID
+                    logger.debug("KeyManager", f"Selected key #{i+1}")
                     return entry.value
+                else:
+                    logger.debug("KeyManager", f"Key #{i+1} is NOT available (cooldown/invalid).")
+                    
+        logger.warning("KeyManager", f"No available keys found for '{provider}'!")
         return None
 
     def get_entry(self, provider: str, value: str) -> Optional[ApiKeyEntry]:
