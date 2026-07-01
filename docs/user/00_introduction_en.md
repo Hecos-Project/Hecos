@@ -1,5 +1,8 @@
 # 🪐 1. Welcome to Hecos
 
+**The Native Modular AI Operating Layer — Privacy · Speed · Simplicity**
+*Hecos lives on your computer. Your memories, your data, your privacy remain on your computer.*
+
 > 💡 Hecos is your everyday companion. You can talk to it about whatever you want; it can control your computer, send messages, and with its native personality-switching feature, it can act as a butler, a friend, or even your virtual partner. Need it to work without AI? No problem — Hecos runs powerful automation flows, responds to direct commands, and manages your calendar, reminders, messenger platforms, mail accounts, and lists completely on its own.
 
 🛠️ **Under the Hood (For Developers & Power Users):** Now advancing through `v0.36.0 Alpha`, Hecos has evolved into a fully fledged, distributed modular platform. The ecosystem features a decoupled **Client-Server architecture** consisting of a headless CLI Core (the backend server) and an advanced WebUI (the client). The system synchronizes an interactive Chat view, a real-time **Control Room** powered by live telemetry widgets, and **Hecos Flows**—a visual automation engine that executes workflows with or without LLM overhead. 

@@ -1,3 +1,0 @@
-"""
-Hecos Calendar Plugin
-"""

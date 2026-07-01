@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-06-29T12:01:55Z",
+  "generated_at": "2026-06-30T09:59:31Z",
   "packages": [
     {
       "id": "calendar",
@@ -13,9 +13,11 @@
       "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.3.hpkg",
-      "size_bytes": 124665,
-      "sha256": "cc1dd2090fa02804ea57e09f909595c434c04ed94ef4255313fe9f6f4829d107",
-      "screenshots": [],
+      "size_bytes": 890174,
+      "sha256": "a2ea6f973aa5a2b168c9c88532eb13c351763afdd8981792b9d0eef17d3b54c1",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/preview.png"
+      ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#calendar",
       "fa_icon": "fa-box",
@@ -31,10 +33,10 @@
       "description": "AI Image Generation \u2014 Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
-      "size_bytes": 34809,
-      "sha256": "916b6c344fe0c0636bfd66bdc32233051d89ef4421b9f22ef6f7bad602d1b8da",
+      "size_bytes": 535607,
+      "sha256": "34d8cd1a99f9601cfa387ae3db0487b5703bf57461627f74d53f80d67ea58655",
       "screenshots": [
-        "https://raw.githubusercontent.com/Hecos-Project/.github/main/profile/003_HecosChat_001.png"
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/image_gen_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#image_gen",
@@ -53,7 +55,9 @@
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
       "size_bytes": 7910,
       "sha256": "7bd28be1d5d3c548beabc73b113dd4f33ed08c4d8fcaba4f670905cf0923e572",
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#quick_links",
       "fa_icon": "fa-box",
@@ -69,9 +73,11 @@
       "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.2.hpkg",
-      "size_bytes": 31999,
-      "sha256": "bd8d23ba9e1139e95ab19a1d63ca4f9a1794d19720890830bc3007c41b151597",
-      "screenshots": [],
+      "size_bytes": 841633,
+      "sha256": "c13eae6b83f0c1cf995c0b7adc806c73be7eb0f56819e651a72b6a85947217f2",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/reminder_src/preview.png"
+      ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#reminder",
       "fa_icon": "fa-box",
@@ -89,7 +95,9 @@
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.0.hpkg",
       "size_bytes": 11614,
       "sha256": "63807f781a6a2b175139192cb5e97ec3cbb1f591aa8cc00a9ef302b0e25b8786",
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#voice_visualizer",
       "fa_icon": "fa-box",
@@ -107,12 +115,14 @@
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
       "size_bytes": 14997,
       "sha256": "4cc2683abd97fea0f4c5acab6d3c0e9bdd8e2994cd86db3ce0bf5ab51298a533",
-      "screenshots": [],
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#weather_pro",
       "fa_icon": "fa-box",
       "featured": false
     }
   ],
-  "cached_at": 1782797667.2589574
+  "cached_at": 1782884661.6416924
 }

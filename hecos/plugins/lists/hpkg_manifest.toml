@@ -1,0 +1,266 @@
+id = "lists"
+name = "Lists Manager"
+version = "2.0.0"
+author = "Antonio Meloni"
+description = "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels."
+type = "plugin"
+target_dir = "plugins"
+plugin_dir = "."
+hecos_min_version = "0.34.0"
+readme = "README.md"
+readme_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/lists_src/README.md"
+icon_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png"
+dependencies = []
+optional_dependencies = []
+pip_requirements = []
+tag = "LISTS"
+lazy_load = true
+is_class_based = true
+widgets = [
+    { id = "lists_widget", extension_path = "lists_widget/" },
+]
+signature = "zP7WJX53+DuSjXWLdel4l6nMIFikRBFEkSsaOSGhakzxGQUVIjzHweH8lHVus9wgF6G1SuZr7KxoNkOHNSz0Ag=="
+
+[commands]
+create_list = "Crea una nuova lista vuota."
+list_lists = "Mostra tutte le liste attive con il conteggio degli elementi."
+show_list = "Mostra tutti gli elementi di una specifica lista."
+add_to_list = "Aggiunge uno o più elementi a una lista. Crea la lista se non esiste."
+check_item = "Segna un elemento come completato in una lista."
+uncheck_item = "Ripristina un elemento come da fare."
+remove_from_list = "Elimina definitivamente un elemento da una lista."
+clear_done = "Rimuove tutti gli elementi già completati da una lista."
+delete_list = "Elimina un'intera lista."
+archive_list = "Archivia una lista (la nasconde dalla visuale principale)."
+
+[[slash_commands]]
+id = "lists"
+aliases = [
+    "/list",
+    "/lists",
+    "/liste",
+]
+description = "Mostra tutte le liste"
+usage = "/list"
+example = "/list"
+icon = "📋"
+method = "list_lists"
+requires_args = false
+
+[[slash_commands]]
+id = "list_show"
+aliases = [
+    "/lista",
+]
+description = "Mostra una lista"
+usage = "/lista <nome>"
+example = "/lista Spesa"
+icon = "🔍"
+method = "show_list"
+requires_args = true
+
+[[slash_commands]]
+id = "list_add"
+aliases = [
+    "/list add",
+    "/lista aggiungi",
+]
+description = "Aggiunge elemento"
+usage = "/list add <lista> <elemento>"
+example = "/list add Spesa Uova"
+icon = "➕"
+method = "add_to_list"
+requires_args = true
+
+[[slash_commands]]
+id = "list_done"
+aliases = [
+    "/list done",
+    "/lista spunta",
+]
+description = "Spunta elemento"
+usage = "/list done <lista> <elemento>"
+example = "/list done Spesa Uova"
+icon = "✅"
+method = "check_item"
+requires_args = true
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__create_list"
+description = "Creates a new empty list. Use this when the user asks to 'create a list', 'crea la lista della spesa'."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "name",
+]
+
+[tool_schema.function.parameters.properties.name]
+type = "string"
+description = "The name of the list (e.g. 'Spesa', 'Cose da fare')."
+
+[tool_schema.function.parameters.properties.icon]
+type = "string"
+description = "Optional emoji icon for the list."
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__list_lists"
+description = "Lists all active lists."
+
+[tool_schema.function.parameters]
+type = "object"
+
+[tool_schema.function.parameters.properties]
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__show_list"
+description = "Shows the content of a specific list. Use when user asks 'what's in the shopping list?', 'cosa c'è nella spesa?'."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "list_name",
+]
+
+[tool_schema.function.parameters.properties.list_name]
+type = "string"
+description = "The name of the list to show."
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__add_to_list"
+description = "Adds one or more items to a list. Use this when user says 'add milk to shopping list', 'aggiungi pane e latte alla spesa'."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "list_name",
+    "items",
+]
+
+[tool_schema.function.parameters.properties.list_name]
+type = "string"
+description = "The name of the list."
+
+[tool_schema.function.parameters.properties.items]
+type = "string"
+description = "The item(s) to add. Can be a single item or multiple items separated by comma."
+
+[tool_schema.function.parameters.properties.priority]
+type = "integer"
+description = "Optional priority: 0 (normal), 1 (high), 2 (urgent). Default is 0."
+
+[tool_schema.function.parameters.properties.label]
+type = "string"
+description = "Optional category/label for the item."
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__check_item"
+description = "Marks an item as done/completed. Use when user says 'I bought milk', 'ho preso il pane', 'spunta uova dalla spesa'."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "list_name",
+    "item_text",
+]
+
+[tool_schema.function.parameters.properties.list_name]
+type = "string"
+description = "The name of the list."
+
+[tool_schema.function.parameters.properties.item_text]
+type = "string"
+description = "The text or partial text of the item to check."
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__uncheck_item"
+description = "Restores a completed item back to pending."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "list_name",
+    "item_text",
+]
+
+[tool_schema.function.parameters.properties.list_name]
+type = "string"
+description = "The name of the list."
+
+[tool_schema.function.parameters.properties.item_text]
+type = "string"
+description = "The item to restore."
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__remove_from_list"
+description = "Deletes an item from a list completely."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "list_name",
+    "item_text",
+]
+
+[tool_schema.function.parameters.properties.list_name]
+type = "string"
+description = "The name of the list."
+
+[tool_schema.function.parameters.properties.item_text]
+type = "string"
+description = "The item to remove."
+
+[[tool_schema]]
+
+[tool_schema.function]
+name = "LISTS__clear_done"
+description = "Clears all completed items from a list."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "list_name",
+]
+
+[tool_schema.function.parameters.properties.list_name]
+type = "string"
+description = "The name of the list to clean up."
+
+[config_panel]
+tab_id = "lists"
+tab_label = "Liste"
+tab_icon = "fa-list-check"
+category = "SISTEMA"
+template_file = "templates/config/config_lists.html"
+api_routes_file = "api.py"
+config_api_get = "/hecos/api/plugins/lists/config"
+config_api_post = "/hecos/api/plugins/lists/config"
+
+[config_defaults]
+export_folder = "%USERPROFILE%\\Desktop"
+
+[file_hashes]
+"api.py" = "15fb675271fbc1df2d165beae0847affd6c9362b0cd88edea5b39775930170b7"
+"main.py" = "4dfdc59ec99f720a00015772345ad0dacfdb5ff293420f75c39a22196510b501"
+"preview.png" = "0ba1f2baf424dfacd966ecaeaba1bed722427ec931ec0ab7bda5830f6b5e0568"
+"README.md" = "d8e8ffbcaadd91d37970cc4f8a1625198d44d456f8ff7799187a6af47eda438d"
+"store.py" = "3087898e8ced3c1f3c8870e742be3d5ad4b524e0bdd2dbc0d0ad3d5fa855fe91"
+"__init__.py" = "4a9287339ec05fa025eb687ec2b67d6638b0cca86d94c1f71a8f7ecad27d08f1"
+"lists_widget/main.py" = "9091dbf9bf6b2a9accc179bcb3f3668c40fb380e1a2052ba42dc98fe8532f4a8"
+"lists_widget/manifest.json" = "bdfe38b880b90f209e2708086f187944ee24281d16c976bdf35047c84c44f2b7"
+"lists_widget/templates/lists_widget_widget.html" = "a33150366785e94adf175449b0c41ee3339a42c641e1877b406c7a6b4bbb2ecf"
+"templates/config/config_lists.html" = "278fd68e5ef51ef31094a1c7b92fa6cad76cf1ae7679a4b8c02c0c48c9c05acf"

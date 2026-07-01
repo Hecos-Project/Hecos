@@ -7,7 +7,10 @@
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
-**Helping Companion System (Privato, Veloce, Semplice)**
+**The Native Modular AI Operating Layer — Privacy · Speed · Simplicity**
+
+*Hecos vive sul tuo computer. I tuoi ricordi, i tuoi dati, la tua privacy restano sul tuo computer.*
+*Una piattaforma potente che unisce l'intelligenza artificiale all'esecuzione di sistema — funziona perfettamente sia con che senza AI, attraverso i flussi di automazione e i comandi diretti.*
 
 ---
 
@@ -41,6 +44,7 @@ Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 
 * 🔐 **Isolamento Vault per Utente** — Architettura di memoria consolidata che garantisce l'assoluta separazione della privacy per i dati semantici la cronologia per ciascun profilo.
 * 🛡️ **Architettura Privacy a 3 Livelli** — Gestione sessioni unificata con le modalità **Normale**, **Auto-Wipe** (cancellazione all'uscita), e **Incognito** (modalità fantasma).
 * 📦 **Hecos Package Manager (HPM)** — Installatore di pacchetti centralizzato con firme digitali Ed25519 per installare in sicurezza plugin e moduli di terze parti.
+* 🔑 **Backend Universale & Key Manager** — Usa modelli locali o connettiti a provider cloud. Anche nella seconda opzione, lavora in sicurezza e gratuitamente tramite il Key Manager integrato che gestisce chiavi API multiple per ogni provider.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Supporto nativo per il **Model Context Protocol**. Collegati a migliaia di tool AI esterni con un solo click.
 * 🔭 **Deep MCP Discovery** — Explorer avanzato con ricerca multi-registry (Smithery, MCPSkills, GitHub) e installazione immediata.
 * 🔒 **Hecos PKI Professionale (HTTPS)** — Certificazione Root CA integrata per abilitare Mic/Camera su tutta la LAN in sicurezza.

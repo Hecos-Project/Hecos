@@ -1,1 +1,0 @@
-# Hecos REMINDER Plugin

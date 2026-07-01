@@ -129,7 +129,6 @@ _PANEL_MAP = {
     'widgets':         'modules/config_widgets.html',
     'help':            'modules/config_help.html',
     'flows':           'modules/config_flows.html',
-    'lists':           'modules/config_lists.html',
     'backup':          'modules/config_backup.html',
     'packages':        'modules/config_packages.html',
 }

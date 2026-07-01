@@ -1,0 +1,970 @@
+<!-- LISTS WIDGET — Mini-App Operativa -->
+<div class="sidebar-card" id="lists-widget" style="padding:10px 12px; display:flex; flex-direction:column; height:100%;">
+    <!-- Header -->
+    <div class="sidebar-card-title" style="cursor:pointer; display:flex; align-items:center; gap:6px; margin-bottom:0; padding:0;" onclick="_lwToggle()">
+        <span class="ql-icon"><i class="fas fa-list-check"></i></span>
+        <span class="ql-title" data-i18n="hub_mod_lists">{{ t('hub_mod_lists') or 'Gestore Liste' }}</span>
+        <span onclick="event.stopPropagation(); _lwOpenFull()"
+              style="margin-left:auto; cursor:pointer; font-size:12px; opacity:0.6; padding-right:8px;"
+              title="{{ t('lists_fullscreen') or 'Vista completa' }}"><i class="fas fa-cog"></i></span>
+        <span class="ql-chevron" id="lw-toggle-icon"><i class="fas fa-chevron-down"></i></span>
+    </div>
+
+    <!-- Body -->
+    <div id="lw-body" class="ql-body" style="margin-top:10px; flex:1; display:flex; flex-direction:column; min-height:0;">
+
+        <!-- Two-column layout: list nav + content -->
+        <div class="lw-app" id="lw-app">
+
+            <!-- Left: list nav -->
+            <div class="lw-nav" id="lw-nav">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Right: items of selected list -->
+            <div class="lw-content" id="lw-content">
+                <div class="lw-placeholder" id="lw-placeholder">
+                    <i class="fas fa-hand-pointer"></i>
+                    <span>{{ t('lists_select_title') or 'Seleziona una lista' }}</span>
+                </div>
+                <div id="lw-items-wrap" style="display:none; flex-direction:column; height:100%;">
+                    <!-- Filter tabs -->
+                    <div class="lw-filters" id="lw-filters">
+                        <button type="button" class="lw-filter active" data-f="all"    onclick="_lwSetFilter('all')"     >{{ t('lists_filter_all') or 'Tutti' }}</button>
+                        <button type="button" class="lw-filter"        data-f="pending" onclick="_lwSetFilter('pending')" >{{ t('lists_filter_pending') or 'Da fare' }}</button>
+                        <button type="button" class="lw-filter"        data-f="done"    onclick="_lwSetFilter('done')"    >{{ t('lists_filter_done') or 'Fatti' }}</button>
+                    </div>
+                    <div class="lw-items-scroll" id="lw-items">
+                        <!-- Items populated by JS -->
+                    </div>
+                    <!-- RESIZER -->
+                    <div class="lw-items-resizer" id="lw-items-resizer" title="Trascina per ridimensionare">
+                        <div class="lw-resizer-handle"></div>
+                    </div>
+                    <!-- Labels management (always visible) -->
+                    <div class="lw-labels-row" style="background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.06); padding: 5px; min-height: 0; max-height: 80px; overflow-y: auto; flex-shrink: 0;">
+                        <div style="font-size: 0.65rem; font-weight: 600; color: var(--muted); margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-tags"></i>
+                            <span>{{ t('lists_categories_title') or 'Gestisci Etichette di Sistema' }}</span>
+                        </div>
+                        <div class="lw-labels-pills" id="lw-labels-pills">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <!-- Quick add: text + priority + label + button -->
+                    <div class="lw-quick-add">
+                        <input type="text" id="lw-add-input" placeholder="{{ t('lists_add_ph') or 'Aggiungi...' }}"
+                               class="lw-add-text-input"
+                               onkeydown="if(event.key==='Enter') _lwAddItem()">
+                        <select id="lw-add-priority" class="lw-prio-select" title="{{ t('lists_priority') or 'Priorità' }}">
+                            <option value="0">—</option>
+                            <option value="1">P1</option>
+                            <option value="2">P2</option>
+                        </select>
+                        <input type="text" id="lw-add-label" placeholder="#{{ t('lists_label_ph') or 'label' }}"
+                               class="lw-label-input" title="{{ t('lists_label') or 'Etichetta' }}"
+                               onkeydown="if(event.key==='Enter') _lwAddItem()" list="lw-categories-datalist">
+                        <datalist id="lw-categories-datalist"></datalist>
+                        <button type="button" class="lw-add-btn" onclick="_lwAddItem()" title="{{ t('lists_add_btn') or 'Aggiungi' }}">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer: inline new list input -->
+        <div class="lw-footer">
+            <div class="lw-new-list-bar">
+                <i class="fas fa-plus" style="color:var(--accent); font-size:0.75rem; flex-shrink:0;"></i>
+                <input type="text" id="lw-new-list-input"
+                       placeholder="{{ t('lists_new_list_ph') or 'Nome nuova lista...' }}"
+                       onkeydown="if(event.key==='Enter') _lwCreateList()">
+                <button type="button" onclick="_lwCreateList()" title="{{ t('lists_create_list') or 'Crea lista' }}"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* ── Lists Widget Layout ── */
+.lw-app {
+    display: flex;
+    gap: 0;
+    flex: 0 1 auto;
+    max-height: calc(100% - 42px);
+    min-height: 120px;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.15);
+}
+
+/* Nav column */
+.lw-nav {
+    width: 38%;
+    min-width: 90px;
+    max-width: 120px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 4px;
+    scrollbar-width: thin;
+}
+.lw-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+}
+.lw-nav-item:hover { background: rgba(255,255,255,0.06); }
+.lw-nav-item.active { background: rgba(var(--accent-rgb), 0.18); }
+.lw-nav-item:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: rgba(var(--accent-rgb), 0.12);
+}
+.lw-nav-item:focus:not(:focus-visible) { outline: none; }
+.lw-nav-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+.lw-nav-icon i { font-size: 0.95rem; color: var(--accent); }
+.lw-nav-name {
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+    line-height: 1.2;
+}
+.lw-nav-item.active .lw-nav-name { color: var(--text); }
+.lw-nav-count {
+    background: var(--accent);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 8px;
+    min-width: 16px;
+}
+.lw-nav-empty {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+    padding: 12px 4px;
+    font-style: italic;
+}
+
+/* Content column */
+.lw-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.lw-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+.lw-placeholder i { font-size: 1.4rem; }
+
+/* Items scroll area */
+.lw-items-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    scrollbar-width: thin;
+}
+.lw-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 6px;
+    border-radius: 5px;
+    transition: background 0.15s;
+    cursor: default;
+}
+.lw-row:hover { background: rgba(255,255,255,0.04); }
+.lw-row:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: rgba(var(--accent-rgb), 0.08);
+}
+.lw-row:focus:not(:focus-visible) { outline: none; }
+.lw-row input[type="checkbox"] {
+    width: 14px; height: 14px;
+    cursor: pointer;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+}
+.lw-row-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.lw-row-text {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text);
+    line-height: 1.3;
+    word-break: break-word;
+}
+.lw-row.done .lw-row-text {
+    text-decoration: line-through;
+    color: var(--muted);
+}
+.lw-row-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.65rem;
+    opacity: 0.6;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+.lw-row:hover .lw-row-del { opacity: 1; }
+.lw-row-del:hover { color: var(--red, #f44); }
+.lw-items-empty {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    padding: 20px 8px;
+    font-style: italic;
+}
+
+/* Filter tabs */
+.lw-filters {
+    display: flex;
+    gap: 2px;
+    padding: 5px 6px 3px;
+    flex-shrink: 0;
+}
+.lw-filter {
+    flex: 1;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--muted);
+    font-size: 0.63rem;
+    font-family: inherit;
+    padding: 3px 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+}
+.lw-filter:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.lw-filter.active {
+    background: rgba(var(--accent-rgb), 0.15);
+    border-color: rgba(var(--accent-rgb), 0.3);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Item badges */
+.lw-row-badges {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+.lw-badge {
+    font-size: 0.57rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+.lw-badge-p1 { background: rgba(255,160,0,0.18); color: #ffa800; }
+.lw-badge-p2 { background: rgba(255,60,60,0.18); color: #ff4444; }
+.lw-badge-label { background: rgba(var(--accent-rgb),0.12); color: var(--accent); font-weight: 400; }
+
+/* Quick add bar */
+.lw-items-resizer {
+    height: 12px;
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 0;
+    background: rgba(0,0,0,0.1);
+    border-top: 1px solid rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+}
+.lw-items-resizer:hover, .lw-items-resizer.active {
+    background: rgba(var(--accent-rgb), 0.1);
+}
+.lw-resizer-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.15s;
+}
+.lw-items-resizer:hover .lw-resizer-handle, .lw-items-resizer.active .lw-resizer-handle {
+    background: var(--accent);
+}
+
+.lw-quick-add {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 5px 6px;
+    gap: 4px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+/* Main text input — fixed max width so other controls stay visible */
+.lw-add-text-input {
+    width: 0;
+    flex: 0 1 115px;
+    min-width: 65px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 0.75rem;
+    font-family: inherit;
+    padding: 3px 0;
+}
+.lw-add-text-input::placeholder { color: var(--muted); opacity: 0.65; }
+
+/* Priority select in quick-add */
+.lw-prio-select {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-family: inherit;
+    padding: 2px 1px;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 40px;
+    outline: none;
+}
+.lw-prio-select:focus { border-color: var(--accent); color: var(--text); }
+
+/* Label input in quick-add */
+.lw-label-input {
+    flex: 0 1 85px;
+    min-width: 65px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 0.7rem;
+    font-family: inherit;
+    padding: 3px 5px;
+    outline: none;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+.lw-label-input:focus { border-color: var(--accent); background: rgba(var(--accent-rgb),0.06); }
+.lw-label-input::placeholder { opacity: 0.45; }
+
+/* Add button — always visible */
+.lw-add-btn {
+    background: rgba(var(--accent-rgb), 0.22);
+    border: none;
+    border-radius: 5px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 4px 9px;
+    font-size: 0.78rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    min-width: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.lw-add-btn:hover { background: rgba(var(--accent-rgb), 0.42); }
+
+/* Footer: new list bar */
+.lw-footer {
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+.lw-new-list-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(var(--accent-rgb), 0.07);
+    border: 1px solid rgba(var(--accent-rgb), 0.18);
+    border-radius: 7px;
+    padding: 5px 9px;
+}
+.lw-new-list-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 0.75rem;
+    font-family: inherit;
+    padding: 2px 0;
+}
+.lw-new-list-bar input::placeholder { color: var(--muted); opacity: 0.65; }
+.lw-new-list-bar button {
+    background: rgba(var(--accent-rgb), 0.2);
+    border: none;
+    border-radius: 4px;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 3px 7px;
+    font-size: 0.7rem;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+.lw-new-list-bar button:hover { background: rgba(var(--accent-rgb), 0.38); }
+
+/* Labels management row */
+.lw-labels-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    min-height: 0;
+}
+.lw-labels-toggle {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 0.65rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    opacity: 0.7;
+    transition: opacity 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+.lw-labels-toggle:hover { opacity: 1; color: var(--accent); }
+.lw-labels-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    padding-top: 2px;
+}
+.lw-label-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(var(--accent-rgb), 0.1);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    border-radius: 10px;
+    padding: 3px 6px 3px 8px;
+    font-size: 0.65rem;
+    color: var(--accent);
+    line-height: 1.4;
+}
+.lw-label-pill-del {
+    background: rgba(255,60,60,0.0);
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 0.62rem;
+    line-height: 1;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.lw-label-pill-del:hover {
+    color: #ff4444;
+    background: rgba(255,60,60,0.15);
+}
+.lw-labels-empty {
+    font-size: 0.65rem;
+    color: var(--muted);
+    font-style: italic;
+    opacity: 0.7;
+}
+</style>
+
+<script>
+(function() {
+    // ── State ────────────────────────────────────────────────────────────
+    let _lw_collapsed  = localStorage.getItem('hecos-lw-collapsed') === '1';
+    let _lw_lists      = [];
+    let _lw_activeId   = localStorage.getItem('hecos-lw-active') || null;
+    let _lw_items      = [];
+    let _lw_filter     = 'all';
+
+    // ── Collapse ─────────────────────────────────────────────────────────
+    function _lwApplyCollapsed(yes) {
+        const body = document.getElementById('lw-body');
+        const tog  = document.getElementById('lw-toggle-icon');
+        if (body) body.style.display = yes ? 'none' : '';
+        if (tog)  tog.classList.toggle('collapsed', yes);
+    }
+    window._lwToggle = function() {
+        _lw_collapsed = !_lw_collapsed;
+        localStorage.setItem('hecos-lw-collapsed', _lw_collapsed ? '1' : '0');
+        _lwApplyCollapsed(_lw_collapsed);
+    };
+
+    // ── Navigation ───────────────────────────────────────────────────────
+    window._lwOpenFull = function() {
+        if (typeof showTab === 'function') {
+            showTab('lists');
+        } else {
+            window.open('/hecos/config/ui#lists', '_blank');
+        }
+    };
+
+    // ── Fetch lists ──────────────────────────────────────────────────────
+    async function _lwFetchLists() {
+        try {
+            const res  = await fetch('/api/lists');
+            const data = await res.json();
+            _lw_lists = (data.ok && data.lists) ? data.lists : [];
+            _lwRenderNav();
+            // if previously selected list still exists, refresh items
+            if (_lw_activeId && _lw_lists.find(l => l.id === _lw_activeId)) {
+                await _lwFetchItems(_lw_activeId);
+            } else if (_lw_lists.length > 0 && !_lw_activeId) {
+                // auto-select first list
+                _lwSelectList(_lw_lists[0].id);
+            } else if (_lw_lists.length === 0) {
+                _lwShowPlaceholder();
+            }
+        } catch(e) {
+            console.error('[LW] fetch lists error:', e);
+        }
+    }
+
+    // ── Render nav ───────────────────────────────────────────────────────
+    function _lwRenderNav() {
+        const nav = document.getElementById('lw-nav');
+        if (!nav) return;
+        if (_lw_lists.length === 0) {
+            nav.innerHTML = '<div class="lw-nav-empty">Nessuna lista</div>';
+            return;
+        }
+        nav.innerHTML = _lw_lists.map((lst, idx) => {
+            const active = lst.id === _lw_activeId ? ' active' : '';
+            const count  = lst.pending_count || 0;
+            const iconHtml = lst.icon || '<i class="fas fa-list-check"></i>';
+            const dateStr = lst.created_at ? _lwFmtDate(lst.created_at) : '';
+            const tip = dateStr ? `Created: ${dateStr}` : '';
+            return `
+            <div class="lw-nav-item${active}" onclick="_lwSelectList('${lst.id}')"
+                 tabindex="0" data-id="${lst.id}" data-idx="${idx}"
+                 title="${_lwEsc(lst.name)}${tip ? ' — ' + tip : ''}"
+                 aria-label="${_lwEsc(lst.name)}" role="option"
+                 onkeydown="_lwNavKeydown(event, '${lst.id}', ${idx})">
+                <div class="lw-nav-icon">${iconHtml}</div>
+                <div class="lw-nav-name" title="${_lwEsc(lst.name)}">${_lwEsc(lst.name)}</div>
+                ${count > 0 ? `<div class="lw-nav-count">${count}</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // ── Select list ──────────────────────────────────────────────────────
+    window._lwSelectList = async function(id) {
+        _lw_activeId = id;
+        localStorage.setItem('hecos-lw-active', id);
+        _lwRenderNav();
+        await _lwFetchItems(id);
+    };
+
+    // ── Fetch items (with filter) ─────────────────────────────────────────
+    async function _lwFetchItems(listId) {
+        try {
+            const url = _lw_filter === 'all'
+                ? `/api/lists/${listId}/items`
+                : `/api/lists/${listId}/items?status=${_lw_filter}`;
+            const res  = await fetch(url);
+            const data = await res.json();
+            _lw_items = (data.ok && data.items) ? data.items : [];
+            _lwRenderItems();
+        } catch(e) {
+            console.error('[LW] fetch items error:', e);
+        }
+    }
+
+    // ── Render items (with badges) ───────────────────────────────────────
+    function _lwRenderItems() {
+        const wrap        = document.getElementById('lw-items-wrap');
+        const placeholder = document.getElementById('lw-placeholder');
+        const container   = document.getElementById('lw-items');
+        if (!wrap || !container) return;
+
+        placeholder.style.display = 'none';
+        wrap.style.display = 'flex';
+
+        if (_lw_items.length === 0) {
+            const msg = _lw_filter === 'done' ? 'Nessun completato' :
+                        _lw_filter === 'pending' ? 'Nessun da fare' : 'Lista vuota';
+            container.innerHTML = `<div class="lw-items-empty"><i class="fas fa-check-circle" style="opacity:0.3;"></i><br>${msg}</div>`;
+            return;
+        }
+
+        container.innerHTML = _lw_items.map((item, idx) => {
+            const done = item.status === 'done';
+            let badges = '';
+            if (item.priority === 1) badges += `<span class="lw-badge lw-badge-p1">P1</span>`;
+            if (item.priority === 2) badges += `<span class="lw-badge lw-badge-p2">P2</span>`;
+            if (item.label) {
+                // Label badge with a trash icon to remove the label from the item
+                badges += `<span class="lw-badge lw-badge-label" style="display:inline-flex; align-items:center; gap:3px;">
+                              ${_lwEsc(item.label)}
+                              <button type="button" onclick="event.stopPropagation(); _lwRemoveLabelFromItem('${item.id}')"
+                                      style="background:none; border:none; color:inherit; opacity:0.6; cursor:pointer; padding:0; font-size:0.55rem; display:flex;">
+                                  <i class="fas fa-times"></i>
+                              </button>
+                           </span>`;
+            }
+            const badgesHtml = badges ? `<div class="lw-row-badges">${badges}</div>` : '';
+
+            // Date tooltip
+            const tipParts = [];
+            if (item.created_at)   tipParts.push(`Created: ${_lwFmtDate(item.created_at)}`);
+            if (item.completed_at) tipParts.push(`Done: ${_lwFmtDate(item.completed_at)}`);
+            const tip = tipParts.join(' | ');
+
+            return `
+            <div class="lw-row${done ? ' done' : ''}" data-id="${item.id}" data-idx="${idx}"
+                 tabindex="0" role="listitem" title="${_lwEsc(tip)}"
+                 onkeydown="_lwItemKeydown(event, '${item.id}', ${idx})">
+                <input type="checkbox" ${done ? 'checked' : ''}
+                       onchange="_lwToggleItem('${item.id}', this.checked, this.closest('.lw-row'))">
+                <div class="lw-row-body">
+                    <span class="lw-row-text">${_lwEsc(item.text)}</span>
+                    ${badgesHtml}
+                </div>
+                <button type="button" class="lw-row-del" onclick="event.stopPropagation(); _lwDelItem('${item.id}')" title="{{ t('lists_delete_btn') or 'Elimina' }}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Set filter ─────────────────────────────────────────────────────────
+    window._lwSetFilter = function(f) {
+        _lw_filter = f;
+        document.querySelectorAll('#lw-filters .lw-filter').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.f === f);
+        });
+        if (_lw_activeId) _lwFetchItems(_lw_activeId);
+    };
+
+    function _lwShowPlaceholder() {
+        const wrap = document.getElementById('lw-items-wrap');
+        const placeholder = document.getElementById('lw-placeholder');
+        if (wrap) wrap.style.display = 'none';
+        if (placeholder) placeholder.style.display = '';
+    }
+
+    // ── Toggle item ──────────────────────────────────────────────────────
+    window._lwToggleItem = async function(itemId, checked, rowEl) {
+        if (rowEl) rowEl.classList.toggle('done', checked);
+        try {
+            await fetch(`/api/lists/items/${itemId}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status: checked ? 'done' : 'pending' })
+            });
+            await _lwFetchLists(); // refresh counts
+        } catch(e) { console.error('[LW] toggle error:', e); }
+    };
+
+    // ── Delete item ──────────────────────────────────────────────────────
+    window._lwDelItem = async function(itemId) {
+        if (!confirm('Eliminare questo elemento?')) return;
+        try {
+            await fetch(`/api/lists/items/${itemId}`, { method: 'DELETE' });
+            await _lwFetchItems(_lw_activeId);
+            await _lwFetchLists();
+        } catch(e) { console.error('[LW] delete item error:', e); }
+    };
+
+    // ── Remove label from item ───────────────────────────────────────────
+    window._lwRemoveLabelFromItem = async function(itemId) {
+        try {
+            await fetch(`/api/lists/items/${itemId}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ label: '' }) // Clear label
+            });
+            await _lwFetchItems(_lw_activeId);
+        } catch(e) { console.error('[LW] remove item label error:', e); }
+    };
+
+    // ── Add item ─────────────────────────────────────────────────────────
+    window._lwAddItem = async function() {
+        if (!_lw_activeId) return;
+        const input   = document.getElementById('lw-add-input');
+        const prioEl  = document.getElementById('lw-add-priority');
+        const labelEl = document.getElementById('lw-add-label');
+        const text    = input   ? input.value.trim()          : '';
+        const prio    = prioEl  ? parseInt(prioEl.value, 10)  : 0;
+        const label   = labelEl ? labelEl.value.trim().replace(/^#/, '') : '';
+        if (!text) return;
+        input.value = '';
+        if (prioEl)  prioEl.value  = '0';
+        if (labelEl) labelEl.value = '';
+        try {
+            const res = await fetch(`/api/lists/${_lw_activeId}/items`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text, priority: prio, label: label || null })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                await _lwFetchItems(_lw_activeId); // re-fetch so filter applies
+                await _lwFetchLists();
+                const scrollEl = document.getElementById('lw-items');
+                if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+                input.focus();
+            }
+        } catch(e) { console.error('[LW] add item error:', e); }
+    };
+
+    // ── Create list (inline input, no prompt) ────────────────────────────
+    window._lwCreateList = async function() {
+        const input = document.getElementById('lw-new-list-input');
+        const name  = input ? input.value.trim() : '';
+        if (!name) { if (input) input.focus(); return; }
+        input.value = '';
+        try {
+            const res = await fetch('/api/lists', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, icon: '<i class="fas fa-list-check"></i>' })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                await _lwFetchLists();
+                _lwSelectList(data.list.id);
+            }
+        } catch(e) { console.error('[LW] create list error:', e); }
+    };
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+    function _lwEsc(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function _lwFmtDate(iso) {
+        if (!iso) return '';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
+        } catch(e) { return iso.slice(0,10); }
+    }
+
+    // ── Keyboard Navigation ──────────────────────────────────────────────
+    window._lwNavKeydown = function(e, listId, idx) {
+        const nav = document.getElementById('lw-nav');
+        const items = Array.from(nav.querySelectorAll('.lw-nav-item'));
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (idx + 1 < items.length) items[idx + 1].focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (idx > 0) items[idx - 1].focus();
+                break;
+            case 'Enter':
+            case ' ':
+                e.preventDefault();
+                _lwSelectList(listId);
+                // After selecting, move focus to first item
+                setTimeout(() => {
+                    const firstItem = document.querySelector('#lw-items .lw-row');
+                    if (firstItem) firstItem.focus();
+                }, 150);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                setTimeout(() => {
+                    const firstItem = document.querySelector('#lw-items .lw-row');
+                    if (firstItem) firstItem.focus();
+                }, 100);
+                break;
+        }
+    };
+
+    window._lwItemKeydown = function(e, itemId, idx) {
+        const container = document.getElementById('lw-items');
+        const rows = Array.from(container.querySelectorAll('.lw-row'));
+        const row = rows[idx];
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                if (idx + 1 < rows.length) rows[idx + 1].focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                if (idx > 0) {
+                    rows[idx - 1].focus();
+                } else {
+                    // Move back to nav column
+                    const activeNav = document.querySelector('#lw-nav .lw-nav-item.active');
+                    if (activeNav) activeNav.focus();
+                }
+                break;
+            case ' ':
+            case 'Enter':
+                e.preventDefault();
+                if (row) {
+                    const cb = row.querySelector('input[type="checkbox"]');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        _lwToggleItem(itemId, cb.checked, row);
+                    }
+                }
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                const activeNav = document.querySelector('#lw-nav .lw-nav-item.active');
+                if (activeNav) activeNav.focus();
+                break;
+            case 'Delete':
+            case 'Backspace':
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    _lwDelItem(itemId);
+                }
+                break;
+        }
+    };
+
+    // ── Labels management ────────────────────────────────────────────────
+    let _lw_labels = [];
+
+    async function _lwFetchCategories() {
+        try {
+            const res = await fetch('/api/lists/categories');
+            const data = await res.json();
+            if (data.categories) {
+                _lw_labels = data.categories;
+                // Populate datalist for quick-add autocomplete
+                const dl = document.getElementById('lw-categories-datalist');
+                if (dl) dl.innerHTML = _lw_labels.map(c => `<option value="${_lwEsc(c.name)}">`).join('');
+                // Render pills if panel is open
+                _lwRenderLabels();
+            }
+        } catch(e) { console.error('[LW] fetch cat error:', e); }
+    }
+
+    function _lwRenderLabels() {
+        const pills = document.getElementById('lw-labels-pills');
+        if (!pills) return;
+        if (_lw_labels.length === 0) {
+            pills.innerHTML = `<span class="lw-labels-empty">Nessuna etichetta salvata</span>`;
+            return;
+        }
+        pills.innerHTML = _lw_labels.map(c => `
+            <span class="lw-label-pill">
+                <i class="fas fa-tag" style="font-size:0.55rem;"></i>
+                ${_lwEsc(c.name)}
+                <button type="button" class="lw-label-pill-del"
+                        onclick="_lwDeleteLabel('${c.id}', '${_lwEsc(c.name)}')"
+                        title="Elimina etichetta">
+                    <i class="fas fa-trash" style="font-size:0.6rem;"></i>
+                </button>
+            </span>`).join('');
+    }
+
+
+    window._lwDeleteLabel = async function(catId, name) {
+        if (!confirm(`Eliminare l'etichetta "${name}"?`)) return;
+        try {
+            await fetch(`/api/lists/categories/${catId}`, { method: 'DELETE' });
+            await _lwFetchCategories();
+        } catch(e) { console.error('[LW] delete label error:', e); }
+    };
+
+    function _lwInit() {
+        _lwApplyCollapsed(_lw_collapsed);
+        _lwFetchLists();
+        _lwFetchCategories();
+        setInterval(_lwFetchLists, 60000);
+
+        // -- Resizer logic --
+        const resizer = document.getElementById('lw-items-resizer');
+        const itemsScroll = document.getElementById('lw-items');
+        let isResizing = false;
+
+        if (resizer && itemsScroll) {
+            resizer.addEventListener('mousedown', function(e) {
+                isResizing = true;
+                resizer.classList.add('active');
+                document.body.style.cursor = 'ns-resize';
+                e.preventDefault(); 
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing) return;
+                const rect = itemsScroll.getBoundingClientRect();
+                let newHeight = e.clientY - rect.top;
+                if (newHeight < 40) newHeight = 40;
+                
+                itemsScroll.style.flex = 'none';
+                itemsScroll.style.height = newHeight + 'px';
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (isResizing) {
+                    isResizing = false;
+                    resizer.classList.remove('active');
+                    document.body.style.cursor = '';
+                    localStorage.setItem('hecos-lw-items-height', itemsScroll.style.height);
+                }
+            });
+            
+            const savedHeight = localStorage.getItem('hecos-lw-items-height');
+            if (savedHeight) {
+                itemsScroll.style.flex = 'none';
+                itemsScroll.style.height = savedHeight;
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _lwInit);
+    } else {
+        _lwInit();
+    }
+})();
+</script>

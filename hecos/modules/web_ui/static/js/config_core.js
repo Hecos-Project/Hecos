@@ -16,8 +16,8 @@
  */
 
 // ── Shared Global State ────────────────────────────────────────────────────────
-window.cfg         = {};
-window.sysOptions  = {};
+window.cfg         = window.cfg || {};
+window.sysOptions  = window.sysOptions || {};
 let audioDevices   = null;
 let audioConfig    = null;
 let mediaConfig    = null;

@@ -7,7 +7,10 @@
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
-**Helping Companion System (Private, Fast, Simple)**
+**The Native Modular AI Operating Layer — Privacy · Speed · Simplicity**
+
+*Hecos lives on your computer. Your memories, your data, your privacy remain on your computer.*
+*A powerful platform that bridges intelligence with system execution — works equally well with or without AI, through automation flows and direct commands.*
 
 ---
 
@@ -41,6 +44,7 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.35.0 offe
 * 🔐 **Per-User Vault Isolation** — Consolidated memory architecture ensuring absolute privacy separation for semantic data and chat history per profile.
 * 🛡️ **3-Tier Privacy Architecture** — Unified session management with **Normal**, **Auto-Wipe** (RAM-only store, cleared on exit), and **Incognito** (Zero-trace) modes.
 * 📦 **Hecos Package Manager (HPM)** — The ultimate piece for universal extensibility. A centralized, dynamic installer that supports standalone `.hpkg` bundles. Easily install third-party plugins, widgets, and config panels with drag-and-drop, isolated configurations, and Ed25519 digital signatures.
+* 🔑 **Universal Backend & Key Manager** — Use local models or connect to cloud providers. Even in the cloud, work freely and securely with the built-in Key Manager that handles multiple API keys for each provider.
 * 🔌 **Universal Tool Hub (MCP Bridge)** — Native support for the **Model Context Protocol**. Connect to thousands of external AI tools with a single click.
 * 🔭 **Deep MCP Discovery** — Advanced explorer with multi-registry search (Smithery, MCPSkills, GitHub) and one-click installation.
 * 🔒 **Professional Hecos PKI (HTTPS)** — Self-signing Root CA for a full "Green Lock" experience on all devices.

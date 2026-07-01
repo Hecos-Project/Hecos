@@ -1,40 +1,32 @@
 {
     "tag": "LISTS",
     "name": "Lists Manager",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
-    "icon": "📋",
     "lazy_load": true,
     "is_class_based": true,
-    "on_load": true,
-    "status": "ONLINE",
-    "config_schema": {
-        "export_folder": {
-            "type": "str",
-            "default": "%USERPROFILE%\\Desktop",
-            "description": "Default folder for exporting lists"
-        }
-    },
     "commands": {
         "create_list": "Crea una nuova lista vuota.",
         "list_lists": "Mostra tutte le liste attive con il conteggio degli elementi.",
         "show_list": "Mostra tutti gli elementi di una specifica lista.",
-        "add_to_list": "Aggiunge uno o più elementi a una lista. Crea la lista se non esiste.",
+        "add_to_list": "Aggiunge uno o pi\u00f9 elementi a una lista. Crea la lista se non esiste.",
         "check_item": "Segna un elemento come completato in una lista.",
         "uncheck_item": "Ripristina un elemento come da fare.",
         "remove_from_list": "Elimina definitivamente un elemento da una lista.",
-        "clear_done": "Rimuove tutti gli elementi già completati da una lista.",
+        "clear_done": "Rimuove tutti gli elementi gi\u00e0 completati da una lista.",
         "delete_list": "Elimina un'intera lista.",
         "archive_list": "Archivia una lista (la nasconde dalla visuale principale)."
     },
     "tool_schema": [
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__create_list",
                 "description": "Creates a new empty list. Use this when the user asks to 'create a list', 'crea la lista della spesa'.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "name"
+                    ],
                     "properties": {
                         "name": {
                             "type": "string",
@@ -44,13 +36,11 @@
                             "type": "string",
                             "description": "Optional emoji icon for the list."
                         }
-                    },
-                    "required": ["name"]
+                    }
                 }
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__list_lists",
                 "description": "Lists all active lists.",
@@ -61,29 +51,33 @@
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__show_list",
-                "description": "Shows the content of a specific list. Use when user asks 'what's in the shopping list?', 'cosa c'è nella spesa?'.",
+                "description": "Shows the content of a specific list. Use when user asks 'what's in the shopping list?', 'cosa c'\u00e8 nella spesa?'.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "list_name"
+                    ],
                     "properties": {
                         "list_name": {
                             "type": "string",
                             "description": "The name of the list to show."
                         }
-                    },
-                    "required": ["list_name"]
+                    }
                 }
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__add_to_list",
                 "description": "Adds one or more items to a list. Use this when user says 'add milk to shopping list', 'aggiungi pane e latte alla spesa'.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "list_name",
+                        "items"
+                    ],
                     "properties": {
                         "list_name": {
                             "type": "string",
@@ -101,18 +95,20 @@
                             "type": "string",
                             "description": "Optional category/label for the item."
                         }
-                    },
-                    "required": ["list_name", "items"]
+                    }
                 }
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__check_item",
                 "description": "Marks an item as done/completed. Use when user says 'I bought milk', 'ho preso il pane', 'spunta uova dalla spesa'.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "list_name",
+                        "item_text"
+                    ],
                     "properties": {
                         "list_name": {
                             "type": "string",
@@ -122,18 +118,20 @@
                             "type": "string",
                             "description": "The text or partial text of the item to check."
                         }
-                    },
-                    "required": ["list_name", "item_text"]
+                    }
                 }
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__uncheck_item",
                 "description": "Restores a completed item back to pending.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "list_name",
+                        "item_text"
+                    ],
                     "properties": {
                         "list_name": {
                             "type": "string",
@@ -143,18 +141,20 @@
                             "type": "string",
                             "description": "The item to restore."
                         }
-                    },
-                    "required": ["list_name", "item_text"]
+                    }
                 }
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__remove_from_list",
                 "description": "Deletes an item from a list completely.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "list_name",
+                        "item_text"
+                    ],
                     "properties": {
                         "list_name": {
                             "type": "string",
@@ -164,25 +164,25 @@
                             "type": "string",
                             "description": "The item to remove."
                         }
-                    },
-                    "required": ["list_name", "item_text"]
+                    }
                 }
             }
         },
         {
-            "type": "function",
             "function": {
                 "name": "LISTS__clear_done",
                 "description": "Clears all completed items from a list.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "list_name"
+                    ],
                     "properties": {
                         "list_name": {
                             "type": "string",
                             "description": "The name of the list to clean up."
                         }
-                    },
-                    "required": ["list_name"]
+                    }
                 }
             }
         }
@@ -190,47 +190,56 @@
     "slash_commands": [
         {
             "id": "lists",
-            "aliases": ["/list", "/lists", "/liste"],
+            "aliases": [
+                "/list",
+                "/lists",
+                "/liste"
+            ],
             "description": "Mostra tutte le liste",
             "usage": "/list",
             "example": "/list",
-            "icon": "📋",
+            "icon": "\ud83d\udccb",
             "method": "list_lists",
-            "args_schema": {},
             "requires_args": false
         },
         {
             "id": "list_show",
-            "aliases": ["/lista"],
+            "aliases": [
+                "/lista"
+            ],
             "description": "Mostra una lista",
             "usage": "/lista <nome>",
             "example": "/lista Spesa",
-            "icon": "🔍",
+            "icon": "\ud83d\udd0d",
             "method": "show_list",
-            "args_schema": {"list_name": "str"},
             "requires_args": true
         },
         {
             "id": "list_add",
-            "aliases": ["/list add", "/lista aggiungi"],
+            "aliases": [
+                "/list add",
+                "/lista aggiungi"
+            ],
             "description": "Aggiunge elemento",
             "usage": "/list add <lista> <elemento>",
             "example": "/list add Spesa Uova",
-            "icon": "➕",
+            "icon": "\u2795",
             "method": "add_to_list",
-            "args_schema": {"list_name": "str", "items": "str"},
             "requires_args": true
         },
         {
             "id": "list_done",
-            "aliases": ["/list done", "/lista spunta"],
+            "aliases": [
+                "/list done",
+                "/lista spunta"
+            ],
             "description": "Spunta elemento",
             "usage": "/list done <lista> <elemento>",
             "example": "/list done Spesa Uova",
-            "icon": "✅",
+            "icon": "\u2705",
             "method": "check_item",
-            "args_schema": {"list_name": "str", "item_text": "str"},
             "requires_args": true
         }
-    ]
+    ],
+    "icon": "fa-list-check"
 }
