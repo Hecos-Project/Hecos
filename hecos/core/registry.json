@@ -404,6 +404,22 @@
         "module_type": "plugin",
         "slash_commands": []
     },
+    "MAP": {
+        "description": "Simple Map Module based on Leaflet and Nominatim.",
+        "commands": {
+            "get_home_location": "Ottieni le coordinate lat/lon della posizione home dell'utente",
+            "geocode": "Geocodifica un indirizzo o città in coordinate lat/lon"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "plugin",
+        "slash_commands": []
+    },
     "MESSENGER": {
         "description": "Send messages via Telegram, WhatsApp, and Discord.",
         "commands": {

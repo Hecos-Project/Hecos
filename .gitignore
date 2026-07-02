@@ -328,6 +328,7 @@ hecos/plugins/webcam/
 hecos/plugins/weather_pro/
 hecos/plugins/image_gen/
 hecos/plugins/media_player/
+hecos/plugins/map/
 
 # WebUI Extensions belonging to HPM packages
 hecos/modules/web_ui/extensions/voice_visualizer/

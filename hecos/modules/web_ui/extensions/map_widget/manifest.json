@@ -1,31 +1,14 @@
 {
     "extension_id": "map_widget",
-    "parent_plugin": "WEB_UI",
     "display_name": "GPS Map",
-    "version": "1.0.0",
-    "description": "Mappa interattiva con posizione home e GPS live in tempo reale.",
+    "required_plugin": "MAP",
+    "enabled": true,
+    "visible": false,
     "sidebar_widget": true,
-    "eager_load": true,
-    "config_schema": {
-        "map_widget_enabled": {
-            "type": "bool",
-            "default": true,
-            "description": "Enable GPS Map Widget in the UI"
-        },
-        "default_zoom": {
-            "type": "int",
-            "default": 13,
-            "description": "Default zoom level for the map (1-19)"
-        },
-        "tile_style": {
-            "type": "str",
-            "default": "dark",
-            "description": "Map tile style: 'dark', 'light', or 'satellite'"
-        },
-        "enable_live_gps": {
-            "type": "bool",
-            "default": true,
-            "description": "Enable real-time GPS tracking via browser geolocation API"
-        }
-    }
+    "room_visible": true,
+    "room_span": 1,
+    "room_height": "420px",
+    "theme": "default",
+    "description": "Interactive GPS map with home location and real-time geolocation.",
+    "eager_load": true
 }

@@ -10,9 +10,12 @@
 /* ── Body collapse animation ── */
 .mw-body {
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 600px;
+    max-height: 2000px; /* Increased from 600px to allow vertical stretching */
     opacity: 1;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .mw-body.collapsed {
@@ -28,6 +31,7 @@
     gap: 6px;
     margin-bottom: 8px;
     flex-wrap: wrap;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 .mw-badge {
@@ -73,7 +77,9 @@
     overflow: hidden;
     background: var(--bg2);
     border: 1px solid var(--border);
-    height: 200px;
+    min-height: 200px;
+    height: auto;
+    flex: 1; /* Allow it to stretch to fill available height */
     margin-bottom: 8px;
 }
 

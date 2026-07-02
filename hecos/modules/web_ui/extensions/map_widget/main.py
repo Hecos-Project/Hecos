@@ -10,13 +10,23 @@ from flask import jsonify, send_from_directory
 
 try:
     from hecos.core.logging import logger
-    from hecos.plugins.map.main import tools as map_tools
 except ImportError:
-    map_tools = None
     logger = None
 
 
-def init_routes(app):
+def _get_map_tools():
+    """
+    Lazy-import the MAP plugin tools singleton.
+    Works whether MAP was loaded at boot or installed later as an HPM package.
+    """
+    try:
+        from hecos.plugins.map.main import tools
+        return tools
+    except ImportError:
+        return None
+
+
+def init_routes(app, root_dir=None):
     """Registers the isolated API routes for the Map Widget."""
 
     _static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -31,6 +41,7 @@ def init_routes(app):
         Returns the geocoded home location from the user profile.
         Response: { ok: true, lat: float, lon: float, display_name: str }
         """
+        map_tools = _get_map_tools()
         if not map_tools:
             return jsonify({"ok": False, "error": "Plugin MAP non disponibile."}), 503
 
@@ -62,6 +73,7 @@ def init_routes(app):
         if not q:
             return jsonify({"ok": False, "error": "Missing query param 'q'"}), 400
 
+        map_tools = _get_map_tools()
         if not map_tools:
             return jsonify({"ok": False, "error": "Plugin MAP non disponibile."}), 503
 

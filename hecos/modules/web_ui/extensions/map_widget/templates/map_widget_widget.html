@@ -1,33 +1,54 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="/ext/map_widget/static/css/map_widget.css?v={{ version }}">
 
-<div class="sidebar-card map-widget-card" id="map-widget" style="padding:10px 12px; position:relative; overflow:hidden;">
+<div class="sidebar-card map-widget-card" id="map-widget" style="padding:10px 12px; position:relative; overflow:hidden; display:flex; flex-direction:column; height:100%;">
 
     <!-- Header / Title Row -->
     <div class="sidebar-card-title m-0 p-0"
          style="cursor:pointer; display:flex; align-items:center; gap:6px; z-index:2; position:relative;"
          onclick="mapWidget.toggleBody()"
-         title="Clicca per espandere/comprimere">
-        <i class="fas fa-map-marked-alt"></i> GPS MAP
+         title="Click to expand/collapse">
+        <i class="fas fa-map-marked-alt"></i> Simple Maps
         <span id="mw-location"
-              style="font-size:10px; color:var(--muted); text-transform:none; margin-left:auto;
-                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;"
-              title="Posizione home">Caricamento...</span>
+              style="flex:1; text-align:center; font-size:10px; color:var(--muted); text-transform:none; padding:0 5px;
+                     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+              title="Current Position">Loading...</span>
+        
+        <!-- Source Selector Dropdown -->
+        <select id="mw-source-selector" 
+                onclick="event.stopPropagation()" 
+                onchange="mapWidget.changeSource(this.value)"
+                style="font-size:10px; padding:2px 4px; background:var(--bg-card); color:var(--text); border:1px solid var(--border); border-radius:4px; outline:none; cursor:pointer;">
+            <option value="profile">User Profile</option>
+            <option value="gps">GPS Sensor</option>
+            <option value="ip">Network (IP)</option>
+            <option value="manual">Manual Address</option>
+        </select>
     </div>
 
     <!-- Body -->
     <div class="mw-body" id="mw-body" style="z-index:2; position:relative; margin-top:10px;">
+    
+        <!-- Manual Address Input (Hidden by default) -->
+        <div id="mw-manual-input-container" style="display:none; margin-bottom:10px; gap:5px; align-items:center;" onclick="event.stopPropagation()">
+            <input type="text" id="mw-manual-address" placeholder="e.g. Colosseum, Rome or 10 Downing St, London" 
+                   onkeydown="if(event.key === 'Enter') mapWidget.fetchManualLocation()"
+                   style="flex:1; font-size:11px; padding:4px 6px; background:var(--bg-input); color:var(--text); border:1px solid var(--border); border-radius:4px; outline:none; width:100%;">
+            <button onclick="mapWidget.fetchManualLocation()" style="font-size:11px; padding:4px 8px; background:var(--accent); color:#fff; border:none; border-radius:4px; cursor:pointer;" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
 
         <!-- GPS Badge Row -->
         <div class="mw-status-row" id="mw-status-row">
-            <div class="mw-badge mw-badge-home" id="mw-badge-home" title="Posizione home dal profilo">
+            <div class="mw-badge mw-badge-home" id="mw-badge-home" title="Home position from profile">
                 <i class="fas fa-home"></i> <span id="mw-home-label">Home</span>
             </div>
-            <div class="mw-badge mw-badge-live" id="mw-badge-live" title="GPS live (dispositivo)" style="display:none;">
+            <div class="mw-badge mw-badge-live" id="mw-badge-live" title="Live GPS (Device)" style="display:none;">
                 <i class="fas fa-satellite-dish fa-pulse"></i> Live
             </div>
-            <div class="mw-badge mw-badge-error" id="mw-badge-error" title="Errore" style="display:none;">
-                <i class="fas fa-exclamation-triangle"></i> <span id="mw-error-text">Errore</span>
+            <div class="mw-badge mw-badge-error" id="mw-badge-error" title="Error" style="display:none;">
+                <i class="fas fa-exclamation-triangle"></i> <span id="mw-error-text">Error</span>
             </div>
         </div>
 
@@ -36,17 +57,17 @@
             <div id="mw-map"></div>
             <div id="mw-map-placeholder" class="mw-placeholder">
                 <i class="fas fa-spinner fa-spin"></i>
-                <span>Caricamento mappa...</span>
+                <span>Loading map...</span>
             </div>
         </div>
 
         <!-- Coordinates Info -->
         <div class="mw-coords-row" id="mw-coords-row" style="display:none;">
-            <div class="mw-coord-item" title="Latitudine home">
+            <div class="mw-coord-item" title="Latitude">
                 <i class="fas fa-arrows-alt-v"></i>
                 <span id="mw-lat">--</span>
             </div>
-            <div class="mw-coord-item" title="Longitudine home">
+            <div class="mw-coord-item" title="Longitude">
                 <i class="fas fa-arrows-alt-h"></i>
                 <span id="mw-lon">--</span>
             </div>
@@ -55,7 +76,7 @@
         <!-- Live GPS Note -->
         <div class="mw-gps-note" id="mw-gps-note" style="display:none;">
             <i class="fas fa-info-circle"></i>
-            <span id="mw-gps-note-text">GPS live attivo</span>
+            <span id="mw-gps-note-text">Live GPS active</span>
         </div>
 
     </div>
