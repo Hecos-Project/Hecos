@@ -8,20 +8,54 @@
 
 async function loadWidgetsPanel() {
     const container = document.getElementById('widgets-list');
+    if (!container) return;
     
     // Set initial global toggle state
     const globalToggle = document.getElementById('global-sidebar-widgets-toggle');
     if (globalToggle && window.parent?.cfg?.widgets) {
         globalToggle.checked = window.parent.cfg.widgets.sidebar_widgets_enabled !== false;
     }
+
+    // ── Stale-while-revalidate: render cached data immediately ───────────────
+    if (window._widgetsData && window._widgetsData.length > 0) {
+        _renderWidgetCards(container, window._widgetsData);
+
+        // Silently re-fetch in background and update only if changed
+        fetch('/api/widgets')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok || !data.widgets) return;
+                const fresh = JSON.stringify(data.widgets);
+                const stale = JSON.stringify(window._widgetsData);
+                if (fresh !== stale) {
+                    window._widgetsData = data.widgets;
+                    const c2 = document.getElementById('widgets-list');
+                    if (c2) _renderWidgetCards(c2, window._widgetsData);
+                }
+            })
+            .catch(() => { /* keep stale */ });
+        return;
+    }
+    // ─────────────────────────────────────────────────────────────────────────
     
     try {
         const resp = await fetch('/api/widgets');
         const data = await resp.json();
-        if (!data.ok) throw new Error(data.error);
+        if (!data.ok) throw new Error(data.error || 'Server error');
 
-        container.innerHTML = '';
-        data.widgets.forEach(w => {
+        window._widgetsData = data.widgets || [];
+        _renderWidgetCards(container, window._widgetsData);
+    } catch(e) {
+        if (container) container.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load widgets: ${e.message}</div>`;
+    }
+}
+
+// Expose globally so packages_panel_manage.js can call window.loadWidgetsPanel()
+window.loadWidgetsPanel = loadWidgetsPanel;
+
+function _renderWidgetCards(container, widgets) {
+    container.innerHTML = '';
+    widgets.forEach(w => {
             const card = document.createElement('div');
             const pluginOk = w.plugin_active !== false;
             card.className = `widget-card ${pluginOk ? '' : 'plugin-disabled'}`;
@@ -127,10 +161,7 @@ async function loadWidgetsPanel() {
             // Prepare for sync
             card.dataset.bg_color = w.bg_color || '';
             card.dataset.bg_image = w.bg_image || '';
-        });
-    } catch (err) {
-        container.innerHTML = `<div style="color:var(--red); padding:20px;">Error: ${err.message}</div>`;
-    }
+    });
 }
 
 // ── Channels ────────────────────────────────────────────────────────────────

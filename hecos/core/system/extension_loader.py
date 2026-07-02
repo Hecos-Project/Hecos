@@ -165,6 +165,30 @@ def get_all_widgets(config: dict = None) -> list:
     all_webui = _extension_registry.get("WEB_UI", {})
     order = _sidebar_order(config)
 
+    # ── Pre-load HPM disabled widget set (ONE query before the loop) ──────────
+    _hpm_disabled_ext_ids: set = set()
+    try:
+        from hecos.core.package_manager.registry import PackageRegistry
+        data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
+        reg = PackageRegistry(data_dir=data_dir)
+        hpm_packages = reg.list_all()
+        for p in hpm_packages:
+            if p.get("status") in ("installed", "active"):
+                continue
+            # Package is disabled — collect all its widget ext_ids
+            snap = p.get("manifest_snapshot") or {}
+            if isinstance(snap, str):
+                try: snap = json.loads(snap)
+                except: snap = {}
+            for w in snap.get("widgets", []):
+                epath = w.get("extension_path", "").rstrip("/")
+                if epath:
+                    # ext_id is the last segment of the extension_path
+                    _hpm_disabled_ext_ids.add(epath.split("/")[-1].split("\\")[-1])
+    except Exception:
+        pass
+    # ─────────────────────────────────────────────────────────────────────────
+
     result = []
     for ext_id, manifest in all_webui.items():
         if not manifest.get("sidebar_widget", False):
@@ -172,36 +196,11 @@ def get_all_widgets(config: dict = None) -> list:
 
         req_plugin = manifest.get("required_plugin")
         plugin_active = _is_plugin_active(req_plugin, config)
-        
-        # Override plugin_active if it is an HPM package and is currently disabled
-        try:
-            from hecos.core.package_manager.registry import PackageRegistry
-            data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data")
-            reg = PackageRegistry(data_dir=data_dir)
-            
-            # Map the extension_id to a package. We check if the extension path is inside any package's widgets.
-            hpm_packages = reg.list_all()
-            for p in hpm_packages:
-                snap = p.get("manifest_snapshot") or {}
-                if isinstance(snap, str):
-                    import json
-                    try: snap = json.loads(snap)
-                    except: snap = {}
-                
-                # Check if this widget belongs to this package
-                is_mine = False
-                for w in snap.get("widgets", []):
-                    epath = w.get("extension_path", "").rstrip("/")
-                    if epath.endswith(ext_id) or epath.endswith(f"/{ext_id}"):
-                        is_mine = True
-                        break
-                
-                if is_mine:
-                    if p.get("status") not in ("installed", "active"):
-                        plugin_active = False
-                    break
-        except Exception:
-            pass
+
+        # Override: if the widget belongs to a disabled HPM package, mark inactive
+        if ext_id in _hpm_disabled_ext_ids:
+            plugin_active = False
+
         prefs = _get_widget_prefs(ext_id, config)
 
         try:

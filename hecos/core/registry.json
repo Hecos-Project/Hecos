@@ -303,83 +303,6 @@
             }
         ]
     },
-    "LISTS": {
-        "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
-        "commands": {
-            "create_list": "Crea una nuova lista vuota.",
-            "list_lists": "Mostra tutte le liste attive con il conteggio degli elementi.",
-            "show_list": "Mostra tutti gli elementi di una specifica lista.",
-            "add_to_list": "Aggiunge uno o più elementi a una lista. Crea la lista se non esiste.",
-            "check_item": "Segna un elemento come completato in una lista.",
-            "uncheck_item": "Ripristina un elemento come da fare.",
-            "remove_from_list": "Elimina definitivamente un elemento da una lista.",
-            "clear_done": "Rimuove tutti gli elementi già completati da una lista.",
-            "delete_list": "Elimina un'intera lista.",
-            "archive_list": "Archivia una lista (la nasconde dalla visuale principale)."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "fa-list-check",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": [
-            {
-                "id": "lists",
-                "aliases": [
-                    "/list",
-                    "/lists",
-                    "/liste"
-                ],
-                "description": "Mostra tutte le liste",
-                "usage": "/list",
-                "example": "/list",
-                "icon": "📋",
-                "method": "list_lists",
-                "requires_args": false
-            },
-            {
-                "id": "list_show",
-                "aliases": [
-                    "/lista"
-                ],
-                "description": "Mostra una lista",
-                "usage": "/lista <nome>",
-                "example": "/lista Spesa",
-                "icon": "🔍",
-                "method": "show_list",
-                "requires_args": true
-            },
-            {
-                "id": "list_add",
-                "aliases": [
-                    "/list add",
-                    "/lista aggiungi"
-                ],
-                "description": "Aggiunge elemento",
-                "usage": "/list add <lista> <elemento>",
-                "example": "/list add Spesa Uova",
-                "icon": "➕",
-                "method": "add_to_list",
-                "requires_args": true
-            },
-            {
-                "id": "list_done",
-                "aliases": [
-                    "/list done",
-                    "/lista spunta"
-                ],
-                "description": "Spunta elemento",
-                "usage": "/list done <lista> <elemento>",
-                "example": "/list done Spesa Uova",
-                "icon": "✅",
-                "method": "check_item",
-                "requires_args": true
-            }
-        ]
-    },
     "MAIL": {
         "description": "Full-featured Email plugin for Hecos. Send, receive, search and manage emails via SMTP/IMAP. Integrates with the Contacts plugin for address lookup. Reads credentials from the user profile.",
         "commands": {
@@ -404,22 +327,6 @@
         "module_type": "plugin",
         "slash_commands": []
     },
-    "MAP": {
-        "description": "Simple Map Module based on Leaflet and Nominatim.",
-        "commands": {
-            "get_home_location": "Ottieni le coordinate lat/lon della posizione home dell'utente",
-            "geocode": "Geocodifica un indirizzo o città in coordinate lat/lon"
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": []
-    },
     "MESSENGER": {
         "description": "Send messages via Telegram, WhatsApp, and Discord.",
         "commands": {
@@ -435,6 +342,56 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "REMINDER": {
+        "description": "Manage personal reminders with native push notifications, interactive alerts and text-to-speech.",
+        "commands": {
+            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "parse_and_set_reminder": "Helper for HDCS (Direct Commands). Parses a raw string like 'chiamare Marco alle 18:30 --interactive'",
+            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
+            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
+            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏰",
+                "method": "parse_and_set_reminder",
+                "args_schema": {
+                    "query": "str"
+                },
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Elenca tutti i promemoria attivi",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "args_schema": {},
+                "requires_args": false
+            }
+        ]
     },
     "USERS": {
         "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",

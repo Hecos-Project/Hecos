@@ -45,6 +45,11 @@ def init_chat_media_routes(app, logger):
         css_dir = os.path.join(os.path.dirname(__file__), "static", "css")
         return send_from_directory(css_dir, filename)
 
+    @app.route("/static/sounds/<path:filename>")
+    def serve_static_sounds(filename):
+        sounds_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "sounds"))
+        return send_from_directory(sounds_dir, filename)
+
     @app.route("/api/upload", methods=["POST"])
     def api_upload():
         """

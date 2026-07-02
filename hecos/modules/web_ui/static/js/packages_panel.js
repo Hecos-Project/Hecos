@@ -142,10 +142,39 @@ window.hpmSwitchTab = async function(tabId) {
 };
 
 
-window.hpmLoadPackages = async function () {
+window.hpmLoadPackages = async function (forceRefresh = false) {
   const grid = document.getElementById('hpm-packages-grid');
   if (!grid) return;
 
+  // ── Stale-while-revalidate: show cached data immediately ─────────────────
+  if (window._packages && window._packages.length > 0 && !forceRefresh) {
+    // Render what we have right now — zero latency
+    if (typeof window.hpmRenderHierarchy === 'function') {
+      grid.innerHTML = window.hpmRenderHierarchy(window._packages);
+    }
+    window.hpmUpdateCount('packages', window._packages.length);
+
+    // Then silently re-fetch in background and update only if changed
+    try {
+      const resp  = await fetch('/api/packages/all');
+      const data  = await resp.json();
+      if (!data.ok) return;
+      const fresh = JSON.stringify(data.packages || []);
+      const stale = JSON.stringify(window._packages);
+      if (fresh !== stale) {
+        window._packages = data.packages || [];
+        window.hpmUpdateCount('packages', window._packages.length);
+        if (typeof window.hpmRenderHierarchy === 'function') {
+          grid.innerHTML = window.hpmRenderHierarchy(window._packages);
+        }
+        _hpmCheckUpdatesBackground(window._packages);
+      }
+    } catch (_) { /* silent — keep showing stale */ }
+    return;
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // First load (no cache) — show spinner
   grid.innerHTML = `
     <div style="text-align:center;padding:30px;color:var(--muted);">
       <i class="fas fa-spinner fa-spin" style="font-size: 1.5em;"></i>
@@ -157,11 +186,10 @@ window.hpmLoadPackages = async function () {
     if (!data.ok) throw new Error(data.error || 'Unknown error');
 
     const packages = data.packages || [];
-    window._packages = packages; // Store globally for toggle and uninstall logic
-    
-    // Update count dynamically
+    window._packages = packages;
+
     window.hpmUpdateCount('packages', packages.length);
-    
+
     if (packages.length === 0) {
       grid.innerHTML = `
         <div style="text-align:center;padding:40px;color:var(--muted);">
@@ -172,10 +200,9 @@ window.hpmLoadPackages = async function () {
     }
 
     if (typeof window.hpmRenderHierarchy === 'function') {
-        grid.innerHTML = window.hpmRenderHierarchy(packages);
+      grid.innerHTML = window.hpmRenderHierarchy(packages);
     }
 
-    // Silently check for updates in background (non-blocking)
     _hpmCheckUpdatesBackground(packages);
 
   } catch (err) {
