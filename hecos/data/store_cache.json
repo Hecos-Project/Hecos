@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-07-01T06:25:04Z",
+  "generated_at": "2026-07-02T11:47:55Z",
   "packages": [
     {
       "id": "calendar",
@@ -64,6 +64,26 @@
       "featured": false
     },
     {
+      "id": "map",
+      "name": "Simple Maps",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.1",
+      "author": "Antonio Meloni",
+      "description": "Simple Map Module based on Leaflet and Nominatim.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/map-1.0.1.hpkg",
+      "size_bytes": 447234,
+      "sha256": "2682b412943446d695d814756874db31d110a20e99521544e23ded267cad119c",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/map_src/preview.png"
+      ],
+      "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#map",
+      "fa_icon": "fa-box",
+      "featured": false
+    },
+    {
       "id": "quick_links",
       "name": "Quick Links",
       "type": "widget",
@@ -109,14 +129,16 @@
       "type": "widget",
       "level": 5,
       "version": "1.0.0",
-      "author": "Hecos Team",
+      "author": "Antonio Meloni",
       "description": "Retro-80s voice animation. Shows KITT-style scanner or a pixelated talking mouth when Hecos speaks.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.0.hpkg",
-      "size_bytes": 11614,
-      "sha256": "0a7d0500ebded2bea67d124c2dd9171e9ca1091a7844468b9e0e2c3e3366656b",
+      "size_bytes": 1275230,
+      "sha256": "1cf675947fc9939a7fc4df7c69844a35902ab02433bb97c3cc12f293ad4c639b",
       "screenshots": [
-        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_1.png",
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_2.png",
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_3.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#voice_visualizer",
@@ -144,5 +166,5 @@
       "featured": false
     }
   ],
-  "cached_at": 1782980966.7637868
+  "cached_at": 1782993116.5323684
 }
