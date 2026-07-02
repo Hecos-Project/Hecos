@@ -49,7 +49,7 @@ service = [
     "pywin32; sys_platform=='win32'",
     "pystray",
     "pillow",
-    "flet",
+    "customtkinter",
     "qrcode",
 ]
 

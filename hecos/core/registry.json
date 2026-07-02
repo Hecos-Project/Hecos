@@ -31,6 +31,38 @@
         "module_type": "core_module",
         "slash_commands": []
     },
+    "BROWSER": {
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
+        "commands": {
+            "open_url": "Navigate the browser to a URL.",
+            "get_current_url": "Return the current page URL.",
+            "go_back": "Navigate back to the previous page.",
+            "get_page_text": "Read all visible text from the current page.",
+            "get_links": "List all hyperlinks on the page.",
+            "get_inputs": "List all interactive form elements.",
+            "get_title": "Return the page title.",
+            "click_element": "Click an element by visible text or aria-label.",
+            "type_in_field": "Fill a form field by label/placeholder and optionally press Enter.",
+            "scroll": "Scroll the page up or down.",
+            "press_key": "Press a keyboard key in the browser.",
+            "run_js": "Execute JavaScript code on the page.",
+            "screenshot": "Take a viewport screenshot for vision analysis.",
+            "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
+            "switch_tab": "Switch focus to a specific tab by its ID.",
+            "new_tab": "Open a new tab and navigate to a URL.",
+            "close_tab": "Close the currently active tab.",
+            "close": "Close the browser window."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "BROWSER CONTROL DECISION TREE — Follow these steps in order: (1) ALWAYS start with BROWSER__list_tabs. (2) If it returns a list of tabs → you are in CDP mode. Use BROWSER__switch_tab(index) to go to the right tab, then use BROWSER page tools (get_page_text, click_element, type_in_field). (3) If list_tabs returns 'CDP connection is not active' → Chrome was NOT launched in AI-Ready mode. IMMEDIATELY fall back to: AUTOMATION__get_browser_tabs to find open tabs by title (this reads from Windows accessibility, real browser windows only), then AUTOMATION__focus_browser_tab with the matching title fragment. NEVER stop and ask the user — always attempt the fallback automatically.",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "🌐",
+        "category": "PLUGINS",
+        "module_type": "core_module",
+        "slash_commands": []
+    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -207,39 +239,6 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "CALENDAR": {
-        "description": "Calendar plugin",
-        "commands": {
-            "add_event": "Creates a new calendar event.",
-            "delete_event": "Deletes a calendar event by ID.",
-            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
-            "list_events": "Returns a formatted list of upcoming calendar events.",
-            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": [
-            {
-                "id": "calendar",
-                "aliases": [
-                    "/calendar",
-                    "/calendario",
-                    "/appuntamenti"
-                ],
-                "description": "Elenca i prossimi eventi nel calendario",
-                "usage": "/calendar",
-                "example": "/calendar",
-                "icon": "📅",
-                "method": "list_events",
-                "args_schema": {},
-                "requires_args": false
-            }
-        ]
-    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {
@@ -304,95 +303,6 @@
             }
         ]
     },
-    "LISTS": {
-        "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
-        "commands": {
-            "create_list": "Crea una nuova lista vuota.",
-            "list_lists": "Mostra tutte le liste attive con il conteggio degli elementi.",
-            "show_list": "Mostra tutti gli elementi di una specifica lista.",
-            "add_to_list": "Aggiunge uno o più elementi a una lista. Crea la lista se non esiste.",
-            "check_item": "Segna un elemento come completato in una lista.",
-            "uncheck_item": "Ripristina un elemento come da fare.",
-            "remove_from_list": "Elimina definitivamente un elemento da una lista.",
-            "clear_done": "Rimuove tutti gli elementi già completati da una lista.",
-            "delete_list": "Elimina un'intera lista.",
-            "archive_list": "Archivia una lista (la nasconde dalla visuale principale)."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "📋",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": [
-            {
-                "id": "lists",
-                "aliases": [
-                    "/list",
-                    "/lists",
-                    "/liste"
-                ],
-                "description": "Mostra tutte le liste",
-                "usage": "/list",
-                "example": "/list",
-                "icon": "📋",
-                "method": "list_lists",
-                "args_schema": {},
-                "requires_args": false
-            },
-            {
-                "id": "list_show",
-                "aliases": [
-                    "/lista"
-                ],
-                "description": "Mostra una lista",
-                "usage": "/lista <nome>",
-                "example": "/lista Spesa",
-                "icon": "🔍",
-                "method": "show_list",
-                "args_schema": {
-                    "list_name": "str"
-                },
-                "requires_args": true
-            },
-            {
-                "id": "list_add",
-                "aliases": [
-                    "/list add",
-                    "/lista aggiungi"
-                ],
-                "description": "Aggiunge elemento",
-                "usage": "/list add <lista> <elemento>",
-                "example": "/list add Spesa Uova",
-                "icon": "➕",
-                "method": "add_to_list",
-                "args_schema": {
-                    "list_name": "str",
-                    "items": "str"
-                },
-                "requires_args": true
-            },
-            {
-                "id": "list_done",
-                "aliases": [
-                    "/list done",
-                    "/lista spunta"
-                ],
-                "description": "Spunta elemento",
-                "usage": "/list done <lista> <elemento>",
-                "example": "/list done Spesa Uova",
-                "icon": "✅",
-                "method": "check_item",
-                "args_schema": {
-                    "list_name": "str",
-                    "item_text": "str"
-                },
-                "requires_args": true
-            }
-        ]
-    },
     "MAIL": {
         "description": "Full-featured Email plugin for Hecos. Send, receive, search and manage emails via SMTP/IMAP. Integrates with the Contacts plugin for address lookup. Reads credentials from the user profile.",
         "commands": {
@@ -413,22 +323,6 @@
         "is_class_based": true,
         "is_lazy": true,
         "icon": "📧",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": []
-    },
-    "MAP": {
-        "description": "Geocoding e geolocalizzazione. Fornisce posizione home, coordinate e strumenti di mappa.",
-        "commands": {
-            "get_home_location": "Ottieni le coordinate lat/lon della posizione home dell'utente",
-            "geocode": "Geocodifica un indirizzo o città in coordinate lat/lon"
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "🗺️",
         "category": "PLUGINS",
         "module_type": "plugin",
         "slash_commands": []
@@ -513,22 +407,6 @@
         "icon": "👥",
         "category": "PLUGINS",
         "module_type": "plugin",
-        "slash_commands": []
-    },
-    "WEATHER_PRO": {
-        "description": "Real-time weather data and 7-day forecast via Open-Meteo. No API key required.",
-        "commands": {
-            "get_current_weather": "Get the current weather conditions for a specific city.",
-            "get_weather_data": "Returns the full Open-Meteo JSON payload enriched with:",
-            "get_weather_forecast": "Get a 7-day daily weather forecast for a specific city.",
-            "on_load": "Method"
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
         "slash_commands": []
     },
     "WEBCAM": {

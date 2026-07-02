@@ -196,7 +196,7 @@ function showHint(commands) {
             font-size: 13px;
         `;
         item.innerHTML = `
-            <span style="font-size:16px;width:20px;text-align:center">${cmd.icon || '⚡'}</span>
+            <span style="font-size:16px;width:20px;text-align:center">${(function(ic){ return (ic && !ic.startsWith('fa-') && !ic.startsWith('fas ') && !ic.startsWith('<i ')) ? ic : '⚡'; })(cmd.icon)}</span>
             <span style="font-family:'JetBrains Mono',monospace;color:#00f3ff;min-width:100px">${cmd.aliases[0]}</span>
             <span style="color:#888;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cmd.description}</span>
             <span style="color:#444;font-size:10px;text-transform:uppercase">${cmd.category}</span>

@@ -98,20 +98,44 @@ window.hpmUninstall = async function(id, name) {
   const card = document.getElementById(`hpm-pkg-${id}`);
   if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
 
+  const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+  const lblUninst = _ti('Uninstalling...', 'Disinstallazione in corso...', 'Desinstalando...');
+  
+  if (typeof window.hpmSetProgress === 'function') {
+      window.hpmSetProgress(true, `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${lblUninst}`, 50);
+  }
+
   try {
     const resp = await fetch(`/api/packages/${id}`, { method: 'DELETE' });
     const data = await resp.json();
 
     if (data.ok) {
-      if (window.showToast) window.showToast(`Package uninstalled.`);
+      const lblSuccess = _ti('Uninstalled successfully!', 'Disinstallato con successo!', '¡Desinstalado con éxito!');
+      const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
+      const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
+
+      if (typeof window.hpmSetProgress === 'function') {
+          window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>${hintHTML}</div>`, 100);
+          
+          const container = document.getElementById('hpm-install-progress');
+          if (container) {
+              container.ondblclick = () => window.hpmSetProgress(false);
+              container.style.cursor = 'default';
+          }
+      } else {
+          if (window.showToast) window.showToast(`Package uninstalled.`);
+      }
+      
       if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
       if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
       if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
     } else {
+      if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
       if (window.showToast) window.showToast(`Uninstall failed: ${data.error}`, 'error');
       if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
     }
   } catch (err) {
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
     if (window.showToast) window.showToast(`${err.message}`, 'error');
     if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
   }

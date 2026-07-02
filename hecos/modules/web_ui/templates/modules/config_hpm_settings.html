@@ -76,4 +76,118 @@
         </div>
     </div>
 
+    <div class="card">
+        <div class="card-title"><i class="fas fa-volume-up"></i> Install Experience</div>
+        
+        <div class="field mt-3">
+            <label>Install Success Sound</label>
+            <div style="display:flex; gap:8px;">
+                <select id="hpm-sound-select" class="config-input" style="flex:1;" onchange="window._hpmSoundChanged(this.value)">
+                    <option value="success.mp3">Caricamento suoni in corso...</option>
+                </select>
+                <button class="btn btn-outline" style="padding:6px 12px;" onclick="window._hpmPickLocalSound()" title="Scegli un file locale dal PC">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+                <button class="btn btn-outline" style="padding:6px 12px;" onclick="window._hpmTestSound()" title="Test Sound">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">Sound to play when a package finishes installing.</p>
+        </div>
+    </div>
+
+    <script>
+    window._hpmPickLocalSound = async function() {
+        try {
+            const payload = {
+                title: 'Seleziona Suono Installazione (mp3, wav)',
+                pick_dir: false,
+                filetypes: [["Audio Files", "*.mp3 *.wav *.ogg *.aac"], ["All Files", "*.*"]]
+            };
+            if (window._hpmSoundsDir) {
+                payload.initialdir = window._hpmSoundsDir;
+            }
+            const resp = await fetch('/api/system/explorer/pick-native', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (data.ok && data.path) {
+                const val = 'custom|' + data.path;
+                
+                // Aggiungiamo alla tendina se non esiste
+                const sel = document.getElementById('hpm-sound-select');
+                let found = false;
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value === val) found = true;
+                }
+                if (!found) {
+                    const opt = document.createElement('option');
+                    opt.value = val;
+                    opt.text = "Custom: " + data.path.split('\\\\').pop().split('/').pop();
+                    sel.appendChild(opt);
+                }
+                
+                sel.value = val;
+                window._hpmSoundChanged(val);
+            }
+        } catch (e) {
+            console.error('Failed to pick sound:', e);
+        }
+    };
+
+    (async function(){
+        const sel = document.getElementById('hpm-sound-select');
+        if (!sel) return;
+        
+        const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+        
+        try {
+            const resp = await fetch('/api/hpm/settings/sounds');
+            const data = await resp.json();
+            if (data.ok && data.sounds) {
+                window._hpmSoundsDir = data.sounds_dir;
+                let html = '';
+                data.sounds.forEach(s => {
+                    const isDefault = (s === 'success.mp3') ? ' (Default)' : '';
+                    html += `<option value="${s}">${s}${isDefault}</option>`;
+                });
+                html += `<option value="none">${_ti('No sound', 'Nessun suono', 'Sin sonido')}</option>`;
+                sel.innerHTML = html;
+            }
+        } catch(e) {}
+        
+        const current = localStorage.getItem('hpm_install_sound') || 'success.mp3';
+        
+        // Se c'è un suono custom selezionato in precedenza, lo rimettiamo in lista
+        if (current.startsWith('custom|')) {
+            const path = current.substring(7);
+            const opt = document.createElement('option');
+            opt.value = current;
+            opt.text = "Custom: " + path.split('\\\\').pop().split('/').pop();
+            sel.appendChild(opt);
+        }
+        
+        sel.value = current;
+    })();
+
+    window._hpmSoundChanged = function(val) {
+        localStorage.setItem('hpm_install_sound', val);
+        window._hpmTestSound();
+    };
+
+    window._hpmTestSound = function() {
+        const val = document.getElementById('hpm-sound-select').value;
+        if (val !== 'none') {
+            if (val.startsWith('custom|')) {
+                const path = val.substring(7);
+                new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(()=>{});
+            } else {
+                new Audio('/static/sounds/' + val).play().catch(()=>{});
+            }
+        }
+    };
+    </script>
+
 </div>

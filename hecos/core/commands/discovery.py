@@ -33,7 +33,10 @@ def discover_plugin_commands(config=None) -> list[dict]:
                 
             for tag, meta in registry_data.items():
                 commands_dict = meta.get("commands", {})
-                icon = meta.get("icon", "🔌")
+                icon_raw = meta.get("icon", "🔌")
+                # Sanitize: if icon is a FontAwesome CSS class (e.g. "fa-list-check"),
+                # it would render as raw text in the command palette. Fall back to emoji.
+                icon = icon_raw if (icon_raw and not icon_raw.startswith("fa-") and not icon_raw.startswith("fas ") and not icon_raw.startswith("far ")) else "🔌"
                 category = meta.get("category", "PLUGINS")
                 
                 for method_name, desc in commands_dict.items():

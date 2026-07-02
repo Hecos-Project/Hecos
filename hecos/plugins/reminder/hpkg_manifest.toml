@@ -21,7 +21,7 @@ is_class_based = true
 widgets = [
     { id = "reminder", extension_path = "reminder/" },
 ]
-signature = "OiD6UfoXkXnkA8o8NZzZ/0MTZIesiOzBSvHX+dLQKDrzh3fCf5sLHrZHClfNzrqI6oYC4RWStztXbjvmu1u4Dw=="
+signature = "AVI+l6oh0wyey0WHF/zd/xKuKYGHpWfmttIB7fZai5QzUVws97Gtxis4PpCz4UDyW9FG4mTSYWm5XPKPQc7rDA=="
 
 [commands]
 set_reminder = "Creates a reminder. Fires TTS + WebUI alert at the specified time."
@@ -145,6 +145,7 @@ enabled = true
 "main.py" = "d0fdc9e1b1f24a6cf85d9e6108c8c5d3face668646905c7d48751fd0145edc83"
 "notifier.py" = "6d832fe21db8b6285265e3e0dcf6662b978d6e35ad4a991f91ab01c25b12e538"
 "parser.py" = "0462f0182d1cdeb0d3e43863742efa4846cc63f3671e60267cb8956970095fb2"
+"preview.png" = "0ba1f2baf424dfacd966ecaeaba1bed722427ec931ec0ab7bda5830f6b5e0568"
 "README.md" = "e4c68ddfbd9cb31e080ce9d38feaf7f5b33f301a9d1350db779da1118cecf1a5"
 "scheduler.py" = "1069880ec0337f95175393cb7df8d28c2b6c97b258ce0475c8fc66f27a5a2b95"
 "store.py" = "e8b2a2c0d83efbaf499550cf0b53b59584a97b725398bb3b3033d9fdae765f0a"

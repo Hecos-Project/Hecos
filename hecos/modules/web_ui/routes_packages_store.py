@@ -344,7 +344,24 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
 
                     _refresh_jinja_loader(app)
                     _hpm_event_broadcast("hpm:installed", {"id": pkg_id})
-                    yield _sse("done", {"message": "Installed successfully!", "id": pkg_id})
+                    
+                    pkg_meta = registry.get(pkg_id) or {}
+                    snap = pkg_meta.get("manifest_snapshot", {})
+                    if isinstance(snap, str):
+                        try:
+                            import json as _j
+                            snap = _j.loads(snap)
+                        except: snap = {}
+                    panel_id = (snap.get("config_panel") or {}).get("tab_id") or pkg_id
+
+                    yield _sse("done", {
+                        "message": "Installed successfully!", 
+                        "id": pkg_id,
+                        "name": pkg_meta.get("name", pkg_id),
+                        "type": pkg_meta.get("type", ""),
+                        "install_path": pkg_meta.get("install_path", ""),
+                        "config_panel": panel_id if snap.get("config_panel") else ""
+                    })
 
             except Exception as e:
                 log.error(f"[HPM:Store] Unexpected error during store install of '{pkg_id}': {e}")

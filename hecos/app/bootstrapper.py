@@ -108,23 +108,35 @@ class SystemBootstrapper:
         else:
             logger.warning("APP", "DASHBOARD plugin disabled; hardware monitoring inactive.")
 
-        # ── RAG Embedder Daemon — Avvio asincrono in background ────────────────
-        # Il daemon (subprocess Python separato) viene avviato qui per iniziare
-        # a caricare il modello ONNX prima che arrivi la prima richiesta.
-        # Non è bloccante: il subprocess si avvia in background e segnala "ready"
-        # quando ha finito di caricare. Le richieste RAG attendono automaticamente.
+        # ── RAG Warm-Up — Pre-caricamento asincrono del modello embedding ─────────
+        # Avvio un thread daemon che pre-inizializza il RAG engine in background,
+        # così il primo messaggio in chat NON deve attendere il download/load del modello.
+        # Il thread parte DOPO che Hecos è già avviato, è completamente non-bloccante
+        # e non rallenta il boot: usa il singleton get_rag_engine già esistente.
         try:
             rag_cfg = config.get("cognition", {}).get("rag", {})
             if rag_cfg.get("enabled", False):
-                model_name = rag_cfg.get("embedder_model", "BAAI/bge-small-en-v1.5")
-                self.state_manager.system_status = "Starting RAG embedder daemon..."
-                from hecos.core.rag.embedder_daemon import get_daemon
-                _daemon = get_daemon(model_name)
-                _daemon.start()  # avvia il subprocess (non-blocking)
-                logger.info("[APP] RAG embedder daemon subprocess avviato in background.")
+                import threading
+
+                def _rag_warmup():
+                    try:
+                        from hecos.core.rag.engine import get_rag_engine
+                        logger.info("[RAG][WarmUp] Background pre-load started...")
+                        engine = get_rag_engine(config)
+                        ok = engine._ensure_init()
+                        if ok:
+                            logger.info("[RAG][WarmUp] ✅ Embedding model ready — first chat will be instant.")
+                        else:
+                            logger.warning("[RAG][WarmUp] Engine init returned False (RAG disabled or error).")
+                    except Exception as _wu_e:
+                        logger.warning(f"[RAG][WarmUp] Non-fatal warm-up error: {_wu_e}")
+
+                _t = threading.Thread(target=_rag_warmup, daemon=True, name="RAGWarmUp")
+                _t.start()
+                logger.info("[APP] RAG warm-up thread avviato in background (non-bloccante).")
         except Exception as _rag_boot_e:
-            logger.warning("APP", f"RAG daemon start failed (non-fatal): {_rag_boot_e}")
-        # ──────────────────────────────────────────────────────────────────────
+            logger.warning("APP", f"RAG warm-up thread error (non-fatal): {_rag_boot_e}")
+        # ──────────────────────────────────────────────────────────────────────────
 
     def show_boot_animation(self):
         """Shows boot animation inside the scrolling body area."""

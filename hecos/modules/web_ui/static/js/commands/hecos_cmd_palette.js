@@ -55,6 +55,15 @@
         });
     }
 
+    // Sanitize icon: if it's a FontAwesome CSS class string (e.g. "fa-list-check"),
+    // return a fallback emoji to avoid rendering raw text in the palette.
+    function _safeIcon(icon, fallback) {
+        fallback = fallback || '⚡';
+        if (!icon) return fallback;
+        if (icon.startsWith('fa-') || icon.startsWith('fas ') || icon.startsWith('far ') || icon.startsWith('<i ')) return fallback;
+        return icon;
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // MODE A: Inline Hint Dropdown (chat input "/" trigger)
     // ══════════════════════════════════════════════════════════════════════════
@@ -166,7 +175,7 @@
                 transition:all 0.1s;
             `;
             item.innerHTML = `
-                <span style="font-size:16px;width:22px;text-align:center">${cmd.icon || '⚡'}</span>
+                <span style="font-size:16px;width:22px;text-align:center">${_safeIcon(cmd.icon, '⚡')}</span>
                 <span style="font-family:'JetBrains Mono',monospace;color:#00f3ff;min-width:110px;font-size:13px">${cmd.aliases[0]}</span>
                 <span style="color:#777;flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cmd.description}</span>
                 <span style="color:#333;font-size:10px;text-transform:uppercase;letter-spacing:0.5px">${cmd.category}</span>
@@ -308,7 +317,7 @@
             `;
             const catColor = cmd.category === 'CORE' ? '#00f3ff' : cmd.category === 'FLOWS' ? '#bb86fc' : '#aaa';
             div.innerHTML = `
-                <span style="font-size:18px;width:24px;text-align:center">${cmd.icon || '⚡'}</span>
+                <span style="font-size:18px;width:24px;text-align:center">${_safeIcon(cmd.icon, '⚡')}</span>
                 <div style="flex:1">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
                         <span style="font-family:'JetBrains Mono',monospace;color:#00f3ff;font-size:14px;font-weight:500">${cmd.aliases[0]}</span>

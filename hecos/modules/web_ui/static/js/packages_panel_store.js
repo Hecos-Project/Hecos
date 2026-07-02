@@ -527,9 +527,10 @@ window.hpmStoreShowReadMe = async function (pkgId) {
 function _hpmStoreBuildProgressModal() {
   return `
     <div id="hpm-store-progress-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);
-         z-index:10000;align-items:center;justify-content:center;padding:20px;">
+         z-index:10000;align-items:center;justify-content:center;padding:20px;"
+         ondblclick="this.style.display='none'">
       <div style="background:var(--bg2);border:1px solid var(--border-color);border-radius:16px;
-                  max-width:420px;width:100%;padding:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+                  max-width:420px;width:100%;padding:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);cursor:default;">
         <div id="hpm-store-progress-icon" style="font-size:2.5em;margin-bottom:16px;">
           <i class="fas fa-download" style="color:var(--accent);animation:pulse 1.5s infinite;"></i>
         </div>
@@ -540,6 +541,9 @@ function _hpmStoreBuildProgressModal() {
                       border-radius:6px;transition:width .4s ease;"></div>
         </div>
         <div id="hpm-store-progress-msg" style="font-size:0.82em;color:var(--muted);min-height:1.4em;"></div>
+        <div id="hpm-store-progress-hint" style="display:none;font-size:0.75em;color:var(--muted);margin-top:20px;opacity:0.6;">
+          ${_t('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}
+        </div>
       </div>
     </div>`;
 }
@@ -602,15 +606,40 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal) {
     bar.style.width    = payload.step === 'download' ? '40%' : '75%';
   } else if (event === 'done') {
     bar.style.width    = '100%';
-    msg.textContent    = payload.message || 'Done!';
+    msg.textContent    = payload.message || _t('Done!', 'Fatto!', '¡Hecho!');
     icon.innerHTML     = '<i class="fas fa-check-circle" style="color:#10b981;"></i>';
-    title.textContent  = 'Installed Successfully!';
-    setTimeout(() => {
-      modal.style.display = 'none';
-      window.hpmStoreLoad();
-      if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
-      if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
-    }, 1800);
+    title.textContent  = _t('Installed Successfully!', 'Installato con successo!', '¡Instalado con éxito!');
+    
+    const hintEl = document.getElementById('hpm-store-progress-hint');
+    if (hintEl) hintEl.style.display = 'block';
+
+    let extraHTML = '';
+    if (payload.install_path) {
+        const lblPath = _t('Installed in:', 'Installato in:', 'Instalado en:');
+        extraHTML += `<div style="margin-top:12px; font-size: 0.95em; color: var(--text);">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${payload.install_path}</code></div>`;
+    }
+    if (payload.config_panel) {
+        const lblCfg = _t('Available in the Configuration menu', 'Disponibile nel menu Configurazione', 'Disponible en el menú Configuración');
+        extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--muted);"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
+    }
+    if (extraHTML) {
+        msg.innerHTML = (payload.message || _t('Done!', 'Fatto!', '¡Hecho!')) + extraHTML;
+    }
+
+    const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
+    if (sound !== 'none') {
+        if (sound.startsWith('custom|')) {
+            const path = sound.substring(7);
+            new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
+        } else {
+            new Audio(`/static/sounds/${sound}`).play().catch(() => {});
+        }
+    }
+
+    // Refresh store without closing modal automatically
+    window.hpmStoreLoad();
+    if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+    if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
   } else if (event === 'error') {
     bar.style.width    = '100%';
     bar.style.background = '#ef4444';

@@ -1,5 +1,5 @@
 ai:
-  active_personality: Jun_my_little_princess.yaml
+  active_personality: Hecos_System_Soul.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -56,7 +56,7 @@ cognition:
   rag:
     enabled: true
     embedder: sentence_transformers
-    embedder_model: all-MiniLM-L6-v2
+    embedder_model: BAAI/bge-small-en-v1.5
     chunk_size: 512
     chunk_overlap: 64
     top_k: 5

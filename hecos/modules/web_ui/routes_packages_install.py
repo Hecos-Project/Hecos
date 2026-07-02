@@ -14,6 +14,19 @@ from hecos.modules.web_ui.routes_packages_helpers import (
     _hpm_event_broadcast
 )
 
+def _invalidate_all_caches():
+    """Invalidate packages and widgets caches after any install/uninstall event."""
+    try:
+        from hecos.modules.web_ui.routes_packages_list import invalidate_packages_cache
+        invalidate_packages_cache()
+    except Exception:
+        pass
+    try:
+        from hecos.modules.web_ui.routes_widgets_api import invalidate_widgets_cache
+        invalidate_widgets_cache()
+    except Exception:
+        pass
+
 def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
 
     @app.route("/api/packages/install", methods=["POST"])
@@ -100,10 +113,24 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     log.warning(f"[HPM] Could not force-enable in live cfg_mgr: {_ce}")
 
                 _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
+                _invalidate_all_caches()
+
+                pkg_meta = registry.get(result.package_id) or {}
+                snap = pkg_meta.get("manifest_snapshot", {})
+                if isinstance(snap, str):
+                    try:
+                        import json as _j
+                        snap = _j.loads(snap)
+                    except: snap = {}
+                panel_id = (snap.get("config_panel") or {}).get("tab_id") or result.package_id
 
                 response = {
                     "ok": True,
                     "id": result.package_id,
+                    "name": pkg_meta.get("name", result.package_id),
+                    "type": pkg_meta.get("type", ""),
+                    "install_path": pkg_meta.get("install_path", ""),
+                    "config_panel": panel_id if snap.get("config_panel") else "",
                     "warnings": result.warnings,
                 }
                 if result.dep_report and result.dep_report.has_issues:

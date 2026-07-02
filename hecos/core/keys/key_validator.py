@@ -68,7 +68,7 @@ def _validate_gemini(key: str) -> dict:
     try:
         # Simplest metadata call that doesn't consume usage for text generation
         url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key}"
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=5)
         
         if r.status_code == 200:
             return {"valid": True, "status": "valid", "message": "Key is active"}
@@ -85,7 +85,7 @@ def _validate_groq(key: str) -> dict:
     try:
         url = "https://api.groq.com/openai/v1/models"
         headers = {"Authorization": f"Bearer {key}"}
-        r = requests.get(url, headers=headers, timeout=10)
+        r = requests.get(url, headers=headers, timeout=5)
         
         if r.status_code == 200:
             return {"valid": True, "status": "valid", "message": "Connection successful"}
@@ -102,7 +102,7 @@ def _validate_openai(key: str) -> dict:
     try:
         url = "https://api.openai.com/v1/models"
         headers = {"Authorization": f"Bearer {key}"}
-        r = requests.get(url, headers=headers, timeout=10)
+        r = requests.get(url, headers=headers, timeout=5)
         
         if r.status_code == 200:
             return {"valid": True, "status": "valid", "message": "Key is active"}
@@ -125,7 +125,7 @@ def _validate_anthropic(key: str) -> dict:
             "content-type": "application/json"
         }
         # Send an empty/bad payload to just check auth
-        r = requests.post(url, headers=headers, json={}, timeout=10)
+        r = requests.post(url, headers=headers, json={}, timeout=5)
         
         # 400 Bad Request with "invalid_request_error" means auth was OK but payload was bad (Good!)
         # if key is bad, it gives 401.

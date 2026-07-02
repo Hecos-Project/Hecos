@@ -14,6 +14,19 @@ from hecos.modules.web_ui.routes_packages_helpers import (
     _hpm_event_broadcast
 )
 
+def _invalidate_all_caches():
+    """Invalidate packages and widgets caches after any package state change."""
+    try:
+        from hecos.modules.web_ui.routes_packages_list import invalidate_packages_cache
+        invalidate_packages_cache()
+    except Exception:
+        pass
+    try:
+        from hecos.modules.web_ui.routes_widgets_api import invalidate_widgets_cache
+        invalidate_widgets_cache()
+    except Exception:
+        pass
+
 def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
 
     @app.route("/api/packages/<pkg_id>", methods=["GET"])
@@ -110,6 +123,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                     log.warning(f"[HPM:Routes] Extension re-discovery after update failed: {_ext_e}")
 
                 _hpm_event_broadcast("hpm:package_updated", {"id": pkg_id})
+                _invalidate_all_caches()
                 response = {
                     "ok": True,
                     "id": pkg_id,
@@ -187,6 +201,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                 _hpm_event_broadcast("hpm:package_status_changed", {
                     "id": pkg_id, "status": status
                 })
+                _invalidate_all_caches()
             return jsonify({"ok": ok, "id": pkg_id, "status": status, "tag": pkg_tag, "panel_id": panel_id})
         except Exception as e:
             log.error(f"[HPM] PATCH /api/packages/{pkg_id}/status error: {e}")
@@ -248,6 +263,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                     log.warning(f"[HPM] Extension purge failed: {_purge_e}")
 
                 _hpm_event_broadcast("hpm:package_uninstalled", {"id": pkg_id})
+                _invalidate_all_caches()
                 return jsonify({
                     "ok": True,
                     "id": pkg_id,
@@ -262,4 +278,21 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
 
         except Exception as e:
             log.error(f"[HPM] DELETE /api/packages/{pkg_id} error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/hpm/settings/sounds", methods=["GET"])
+    @login_required
+    def api_hpm_settings_sounds():
+        """Lists available sound files in assets/sounds."""
+        sounds_dir = os.path.abspath(os.path.join(_hecos_src, "assets", "sounds"))
+        try:
+            os.makedirs(sounds_dir, exist_ok=True)
+            files = [
+                f for f in os.listdir(sounds_dir)
+                if f.lower().endswith((".mp3", ".wav", ".ogg", ".aac"))
+            ]
+            files.sort()
+            return jsonify({"ok": True, "sounds": files, "sounds_dir": sounds_dir})
+        except Exception as e:
+            log.error(f"[HPM] GET /api/hpm/settings/sounds error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
