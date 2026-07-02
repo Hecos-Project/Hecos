@@ -46,7 +46,6 @@ window.CONFIG_HUB = {
         { id: 'automation',label: 'hub_mod_automation',  icon: '<i class="fas fa-magic"></i>', cat: 'SISTEMA', pluginTag: 'AUTOMATION', isCore: true },
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
-        { id: 'lists',     label: 'hub_mod_lists',        icon: '<i class="fas fa-list-check"></i>', cat: 'SISTEMA', pluginTag: 'LISTS' },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
 
         { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
@@ -133,8 +132,7 @@ window.CONFIG_HUB.tagMap = {
     'AUTOMATION': 'automation',
     'BROWSER':    'browser',
     'USERS':      'users',
-    'FLOWS':      'flows',
-    'LISTS':      'lists'
+    'FLOWS':      'flows'
 };
 
 /**
@@ -148,5 +146,5 @@ window.LAZY_PANEL_IDS = new Set([
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'lists', 'backup'
+    'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
 ]);
