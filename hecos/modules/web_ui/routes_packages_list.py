@@ -25,6 +25,9 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 if isinstance(raw_snap, str):
                     try: raw_snap = _json.loads(raw_snap)
                     except: raw_snap = {}
+                # Promote image fields to top-level BEFORE redacting snapshot
+                p.setdefault("icon_url", raw_snap.get("icon_url"))
+                p.setdefault("screenshots", raw_snap.get("screenshots") or [])
                 if isinstance(p.get("manifest_snapshot"), dict) or isinstance(p.get("manifest_snapshot"), str):
                     p["manifest_snapshot"] = {
                         "id": raw_snap.get("id"),
@@ -67,6 +70,10 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 
                 # Store tag using the manifest tag field (e.g. "WEBCAM_WIDGET")
                 pkg_tag = raw_snap.get("tag", "") or p.get("id", "").upper()
+
+                # Promote image fields to top-level BEFORE redacting snapshot
+                p.setdefault("icon_url", raw_snap.get("icon_url"))
+                p.setdefault("screenshots", raw_snap.get("screenshots") or [])
 
                 # Redact the large snapshot now that we've extracted what we need
                 if isinstance(p.get("manifest_snapshot"), (dict, str)):

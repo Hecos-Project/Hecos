@@ -28,6 +28,45 @@ def show_control_center(icon=None, item=None):
 # ── Dashboard App (runs when launched as subprocess) ───────────────────────────
 
 if __name__ == "__main__":
+    import os
+    import sys
+    import tkinter as tk
+
+    # ── Single Instance Lock ───────────────────────────────────────────────────
+    import socket as _sock
+    try:
+        __lock_socket = _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM)
+        __lock_socket.bind(("127.0.0.1", 54321))
+    except _sock.error:
+        print("[Tray Dashboard] Already running.")
+        sys.exit(0)
+
+    # ── Native Splash Screen (Isolated Process) ────────────────────────────────
+    import subprocess
+    logo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png"))
+    
+    splash_code = f"""
+import tkinter as tk
+splash = tk.Tk()
+splash.overrideredirect(True)
+splash.configure(bg='#111318')
+sw, sh = splash.winfo_screenwidth(), splash.winfo_screenheight()
+splash.geometry(f'280x280+{{(sw-280)//2}}+{{(sh-280)//2}}')
+try:
+    img = tk.PhotoImage(file=r'{logo_path}')
+    img = img.subsample(max(1, img.width() // 150))
+    lbl = tk.Label(splash, image=img, bg='#111318')
+    lbl.image = img
+    lbl.pack(expand=True, pady=(30, 0))
+except Exception:
+    pass
+tk.Label(splash, text='Loading Hecos Dashboard...', fg='#00b4d8', bg='#111318', font=('Helvetica', 11, 'bold')).pack(pady=20)
+splash.mainloop()
+"""
+    # Launch splash in a separate process to avoid tkinter dual-root freezing issues
+    splash_proc = subprocess.Popen([sys.executable, "-c", splash_code], creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+
+    # ── Heavy Imports ──────────────────────────────────────────────────────────
     import time
     import webbrowser
     import urllib.request
@@ -41,15 +80,6 @@ if __name__ == "__main__":
         _get_cdp_port, is_ai_ready_browser_running,
         intelligent_open_webui, launch_ai_ready_browser
     )
-
-    # ── Single Instance Lock ───────────────────────────────────────────────────
-    import socket as _sock
-    try:
-        __lock_socket = _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM)
-        __lock_socket.bind(("127.0.0.1", 54321))
-    except _sock.error:
-        print("[Tray Dashboard] Already running.")
-        sys.exit(0)
 
     # ── Theme ──────────────────────────────────────────────────────────────────
     ctk.set_appearance_mode("dark")
@@ -76,10 +106,17 @@ if __name__ == "__main__":
     app.configure(fg_color=BG)
     app.resizable(True, True)
 
-    # Icon
+    # Icon and AppUserModelID for Taskbar
+    try:
+        import ctypes
+        myappid = 'hecos.tray.dashboard'
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except Exception:
+        pass
+
     try:
         ico = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "assets",
-                                           "Hecos_Logo_SQR_NBG_LogoOnly_Mask_001.ico"))
+                                           "Hecos_Logo_SQR_NBG_LogoOnly.ico"))
         if os.path.exists(ico):
             app.iconbitmap(ico)
     except Exception:
@@ -172,8 +209,8 @@ if __name__ == "__main__":
     ctk.CTkButton(bottom, text="Open Chat", fg_color=ACCENT, text_color="#000000",
                   hover_color=ACCENT2, corner_radius=8, font=ctk.CTkFont(size=11, weight="bold"),
                   command=_open_chat).pack(fill="x", pady=(0, 5))
-    ctk.CTkButton(bottom, text="Restart Core", fg_color=CARD, text_color=TEXT,
-                  hover_color=BORDER, corner_radius=8, font=ctk.CTkFont(size=11),
+    ctk.CTkButton(bottom, text="Restart Core", fg_color=RED, text_color="#ffffff",
+                  hover_color="#b91c1c", corner_radius=8, font=ctk.CTkFont(size=11, weight="bold"),
                   command=_restart_core).pack(fill="x")
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -231,7 +268,7 @@ if __name__ == "__main__":
         _section_label(sc, "CORE")
         c1 = _make_card(sc)
         c1.pack(fill="x", pady=(0, 8))
-        _info_row(c1, "Status",   "🟢 Online" if online else "🔴 Offline",
+        _info_row(c1, "Status",   "Online" if online else "Offline",
                   ACCENT if online else RED)
         _info_row(c1, "Protocol", get_scheme().upper())
         _info_row(c1, "Port",     str(HECOS_PORT))
@@ -240,23 +277,25 @@ if __name__ == "__main__":
         c2 = _make_card(sc)
         c2.pack(fill="x", pady=(0, 8))
         _info_row(c2, "Connection",
-                  f"🟢 Port {cdp_p} Open" if cdp_ok else f"🔴 Port {cdp_p} Closed",
+                  f"Port {cdp_p} Open" if cdp_ok else f"Port {cdp_p} Closed",
                   ACCENT if cdp_ok else RED)
 
-        browser_lbl = ctk.CTkLabel(c2, text="Detecting…", font=ctk.CTkFont(size=11),
-                                   text_color=MUTED)
         row_f = ctk.CTkFrame(c2, fg_color="transparent")
         row_f.pack(fill="x", padx=14, pady=5)
         ctk.CTkLabel(row_f, text="Active Engine", font=ctk.CTkFont(size=11),
                      text_color=MUTED, anchor="w").pack(side="left", expand=True, fill="x")
-        browser_lbl.pack(in_=row_f, side="right")
+        browser_lbl = ctk.CTkLabel(row_f, text="Detecting…", font=ctk.CTkFont(size=11),
+                                   text_color=MUTED)
+        browser_lbl.pack(side="right")
 
         def _fetch_browser():
             try:
                 with urllib.request.urlopen(f"http://127.0.0.1:{cdp_p}/json/version",
                                             timeout=1) as r:
                     data = _json.loads(r.read().decode())
-                val = data.get("Browser", "Unknown")
+                val = data.get("Browser", "")
+                if not val:
+                    val = "Unknown Engine"
                 col = TEXT
             except Exception:
                 val = "Active (Engine Unknown)" if cdp_ok else "Not Detected"
@@ -270,6 +309,8 @@ if __name__ == "__main__":
 
         if cdp_ok:
             threading.Thread(target=_fetch_browser, daemon=True).start()
+        else:
+            browser_lbl.configure(text="Not Detected", text_color=MUTED)
 
         def _refresh():
             _switch_tab("status")
@@ -666,5 +707,11 @@ if __name__ == "__main__":
     w, h = app.winfo_width(), app.winfo_height()
     sw, sh = app.winfo_screenwidth(), app.winfo_screenheight()
     app.geometry(f"{w}x{h}+{(sw - w) // 2}+{(sh - h) // 2}")
+
+    # Terminate splash screen just before showing the main window
+    try:
+        splash_proc.terminate()
+    except Exception:
+        pass
 
     app.mainloop()

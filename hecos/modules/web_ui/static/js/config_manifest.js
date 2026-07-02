@@ -47,8 +47,6 @@ window.CONFIG_HUB = {
         { id: 'browser',   label: 'hub_mod_browser',     icon: '<i class="fas fa-window-maximize"></i>', cat: 'SISTEMA', pluginTag: 'BROWSER', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'lists',     label: 'hub_mod_lists',        icon: '<i class="fas fa-list-check"></i>', cat: 'SISTEMA', pluginTag: 'LISTS' },
-
-        { id: 'map',       label: 'hub_mod_map',          icon: '<i class="fas fa-map-marked-alt"></i>', cat: 'SISTEMA', pluginTag: 'MAP' },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
 
         { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
