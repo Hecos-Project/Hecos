@@ -219,6 +219,34 @@ def get_tools_schema():
         if tag not in _loaded_plugins: # Don't duplicate if already awakened
             tools_list.extend(schema_list)
 
+    # --- BUILT-IN SYSTEM TOOLS (always present) ---
+    tools_list.append({
+        "type": "function",
+        "function": {
+            "name": "SYSTEM__describe_module",
+            "description": (
+                "Returns a detailed capability profile (capability card) for any installed Hecos module or package. "
+                "Use this when the user asks 'what can X do?', 'does the webcam plugin have a widget?', "
+                "'what commands does the reminder module have?', 'list all LLM tools of calendar', "
+                "or any question about a specific module's features, type, or capabilities."
+            ),
+            "parameters": {
+                "type": "object",
+                "required": ["module_id"],
+                "properties": {
+                    "module_id": {
+                        "type": "string",
+                        "description": (
+                            "The ID of the module to describe (e.g. 'webcam', 'calendar', 'reminder', "
+                            "'lists', 'weather_pro', 'voice_visualizer', 'quick_links', 'map', "
+                            "'image_gen', 'webcam_feed'). Use lowercase with underscores."
+                        )
+                    }
+                }
+            }
+        }
+    })
+
     return tools_list if tools_list else None
 
 def get_legacy_schema():

@@ -57,6 +57,30 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             log.error(f"[HPM] GET /api/packages/{pkg_id}/manifest error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/packages/<pkg_id>/capabilities", methods=["GET"])
+    @login_required
+    def api_get_package_capabilities(pkg_id):
+        """Return the capability card structure for a package."""
+        try:
+            from hecos.core.system.capability_inspector import build_card
+            from dataclasses import asdict
+            
+            # Check if auto-introspect is enabled in config
+            cfg = cfg_mgr.config if cfg_mgr else {}
+            introspect = (
+                cfg.get("hpm", {}).get("auto_introspect", False)
+                if isinstance(cfg, dict) else False
+            )
+            
+            card = build_card(pkg_id, introspect=introspect)
+            if card is None:
+                return jsonify({"ok": False, "error": f"Capabilities for '{pkg_id}' not found"}), 404
+                
+            return jsonify({"ok": True, "card": asdict(card)})
+        except Exception as e:
+            log.error(f"[HPM] GET /api/packages/{pkg_id}/capabilities error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/packages/<pkg_id>/update", methods=["POST"])
     @login_required
     def api_update_package(pkg_id):

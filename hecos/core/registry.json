@@ -343,56 +343,6 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "REMINDER": {
-        "description": "Manage personal reminders with native push notifications, interactive alerts and text-to-speech.",
-        "commands": {
-            "cancel_reminder": "Cancels an active reminder by its ID (full or first-8-chars prefix).",
-            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
-            "parse_and_set_reminder": "Helper for HDCS (Direct Commands). Parses a raw string like 'chiamare Marco alle 18:30 --interactive'",
-            "set_reminder": "Creates a new reminder. Fires a TTS alert and WebUI notification when due.",
-            "snooze_reminder": "Postpones a reminder by the specified number of minutes from now.",
-            "stop_audio": "Signals the notifier to stop any currently playing or looping audio."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": [
-            {
-                "id": "reminder",
-                "aliases": [
-                    "/reminder",
-                    "/ricorda",
-                    "/promemoria"
-                ],
-                "description": "Imposta un nuovo promemoria",
-                "usage": "/reminder <titolo> alle <ora>",
-                "example": "/reminder chiamata Marco alle 15:30",
-                "icon": "⏰",
-                "method": "parse_and_set_reminder",
-                "args_schema": {
-                    "query": "str"
-                },
-                "requires_args": true
-            },
-            {
-                "id": "reminders",
-                "aliases": [
-                    "/reminders",
-                    "/promemoria list"
-                ],
-                "description": "Elenca tutti i promemoria attivi",
-                "usage": "/reminders",
-                "example": "/reminders",
-                "icon": "📋",
-                "method": "list_reminders",
-                "args_schema": {},
-                "requires_args": false
-            }
-        ]
-    },
     "USERS": {
         "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
         "commands": {
@@ -411,13 +361,10 @@
     },
     "WEBCAM": {
         "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
-        "commands": {
-            "take_snapshot": "Takes a photo. Use target='server' for PC webcam, target='client' for the user's own phone or browser.",
-            "desktop_screenshot": "Captures the entire desktop screen (or a specific monitor) and saves it as an image file for visual analysis."
-        },
+        "commands": {},
         "status": "ONLINE (DORMANT)",
         "example": "",
-        "routing_instructions": "WEBCAM ROUTING RULE: When the user says 'phone', 'smartphone', 'mobile', 'il telefono', 'browser', or any remote device, you MUST call WEBCAM take_snapshot with target='client'. NEVER use target='server' when the user is asking from a phone.",
+        "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true,
         "icon": "",

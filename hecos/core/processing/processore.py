@@ -62,6 +62,52 @@ def configure(new_config):
     logger.info("[PROCESSOR] Hardware configuration synchronized.")
 
 
+def _handle_system_tool(method_name: str, args: dict, call_id: str) -> str | None:
+    """
+    Dispatcher for built-in SYSTEM__ LLM tools.
+    These are tools always available to the AI without requiring an installed plugin.
+
+    Currently supported:
+      - describe_module(module_id) → returns capability card as text
+    """
+    if method_name == "describe_module":
+        module_id = args.get("module_id", "") if isinstance(args, dict) else str(args).strip()
+        if not module_id:
+            return "Error: module_id parameter is required."
+        try:
+            from hecos.core.system.capability_inspector import build_card
+            # Check if auto-introspect is enabled in config
+            introspect = current_config.get("hpm", {}).get("auto_introspect", False) \
+                if isinstance(current_config, dict) else False
+            card = build_card(module_id.strip().lower(), introspect=introspect)
+            if card is None:
+                return (
+                    f"Module '{module_id}' is not installed or not found. "
+                    f"Known packages: webcam, webcam_feed, calendar, reminder, lists, "
+                    f"weather_pro, map, image_gen, voice_visualizer, quick_links."
+                )
+            # Return as structured text for the LLM to summarize
+            return (
+                f"Module: {card.name} (id={card.id}) v{card.version}\n"
+                f"Type: {card.type} | Author: {card.author}\n"
+                f"Description: {card.description}\n"
+                f"LLM Tools ({len(card.llm_tools)}): {', '.join(card.llm_tools) or 'none'}\n"
+                f"Direct Commands (/): {', '.join(card.slash_commands) or 'none'}\n"
+                f"Has Widget: {card.has_widget} | Config Panel: {card.has_config_panel} | "
+                f"API Routes: {card.has_api_routes} | System Calls: {card.has_system_calls}\n"
+                + (f"Syscall notes: {card.syscall_notes}\n" if card.syscall_notes else "")
+                + (f"Notes: {card.notes}" if card.notes else "")
+            )
+        except Exception as e:
+            logger.error(f"[SYSTEM__describe_module] Error: {e}")
+            return f"Error retrieving capability card for '{module_id}': {e}"
+
+    # Unknown SYSTEM tool
+    logger.warning(f"[PROCESSOR] Unknown SYSTEM built-in tool: '{method_name}'")
+    return None
+
+
+
 def process_exchange(user_text, voice_status, sm=None):
     """Manages the entire chain: AI -> Plugin -> Cleaning -> Response.
     NOW REFACTORED TO USE THE AGENTIC LOOP."""
@@ -201,6 +247,15 @@ def extract_and_execute_tools(raw_response, config=None):
                 continue # Skip native plugin processing
         # ----------------------------------------------------------------------
         
+        # --- SYSTEM BUILT-IN TOOLS (describe_module, etc.) ---
+        # Intercept SYSTEM__xxx tool calls before native plugin lookup.
+        if module_to_call.upper() == "SYSTEM":
+            result = _handle_system_tool(method_name, action_or_args, call_id)
+            if result is not None:
+                tool_results.append({"id": call_id, "output": str(result), "tag": "SYSTEM"})
+            continue
+        # ----------------------------------------------------
+
         plugin_obj = module_loader.get_plugin_module(module_to_call.upper(), legacy=False)
         is_legacy_oop = False
         if not plugin_obj:

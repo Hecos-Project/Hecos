@@ -162,3 +162,99 @@ window.hpmInjectTab = function(installResult) {
 window.hpmRemoveTab = function(pkg_id) {
   document.querySelectorAll(`.hpm-injected[data-panel="${pkg_id}"]`).forEach(el => el.remove());
 };
+
+window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
+  try {
+    const res = await fetch(`/hecos/api/packages/${pkg_id}/capabilities`);
+    const data = await res.json();
+    if (!data.ok) {
+      if (window.showToast) window.showToast('Error: ' + data.error, 'error');
+      return;
+    }
+    const c = data.card;
+    
+    // Format card as HTML
+    let html = `
+      <div style="text-align:left; font-size:13px; line-height:1.5;">
+        <div style="margin-bottom:10px;">
+          <span style="display:inline-block; padding:2px 6px; background:var(--bg3, #2a2a35); border-radius:4px; font-weight:bold; font-size:11px; margin-right:6px;">${c.type.toUpperCase()}</span>
+          <span style="font-size:16px; font-weight:bold; color:var(--text);">${c.name} <span style="opacity:0.5;font-weight:normal;font-size:12px;">v${c.version}</span></span>
+        </div>
+        <p style="color:var(--muted); margin-bottom:15px; font-size:14px;">${c.description}</p>
+        
+        <table style="width:100%; border-collapse:collapse; margin-bottom:15px;">
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:6px 0; color:var(--muted); width:40%;">Author</td>
+            <td style="padding:6px 0; font-weight:500;">${c.author || 'Unknown'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:6px 0; color:var(--muted);">Has Widget</td>
+            <td style="padding:6px 0;">${c.has_widget ? '<span style="color:#10b981;">Yes</span>' : 'No'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:6px 0; color:var(--muted);">Config Panel</td>
+            <td style="padding:6px 0;">${c.has_config_panel ? '<span style="color:#10b981;">Yes</span>' : 'No'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:6px 0; color:var(--muted);">API Routes</td>
+            <td style="padding:6px 0;">${c.has_api_routes ? '<span style="color:#10b981;">Yes</span>' : 'No'}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-color);">
+            <td style="padding:6px 0; color:var(--muted);">System Calls</td>
+            <td style="padding:6px 0;">${c.has_system_calls ? '<span style="color:#10b981;">Yes</span>' : 'No'}</td>
+          </tr>
+        </table>
+    `;
+
+    if (c.llm_tools && c.llm_tools.length > 0) {
+      html += `
+        <div style="margin-bottom:10px;">
+          <div style="font-weight:bold; margin-bottom:4px;">LLM Tools:</div>
+          <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            ${c.llm_tools.map(t => `<span style="background:rgba(59,130,246,0.15); color:#3b82f6; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(59,130,246,0.3);">${t}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (c.slash_commands && c.slash_commands.length > 0) {
+      html += `
+        <div style="margin-bottom:10px;">
+          <div style="font-weight:bold; margin-bottom:4px;">Slash Commands:</div>
+          <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            ${c.slash_commands.map(cmd => `<span style="background:rgba(236,72,153,0.15); color:#ec4899; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(236,72,153,0.3);">${cmd}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (c.syscall_notes || c.notes) {
+      html += `<div style="margin-top:15px; padding:10px; background:var(--bg2); border-radius:6px; border:1px solid var(--border-color);">`;
+      if (c.syscall_notes) html += `<div style="margin-bottom:6px;"><strong>Syscalls:</strong> <span style="color:var(--muted);">${c.syscall_notes}</span></div>`;
+      if (c.notes) html += `<div><strong>Notes:</strong> <span style="color:var(--muted);">${c.notes}</span></div>`;
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Module Capabilities',
+        html: html,
+        icon: 'info',
+        background: 'var(--bg1)',
+        color: 'var(--text)',
+        confirmButtonColor: '#3b82f6',
+        confirmButtonText: 'Close',
+        customClass: {
+          popup: 'hecos-swal-popup'
+        }
+      });
+    } else {
+      alert(`Capabilities for ${c.name}:\n\nType: ${c.type}\nTools: ${c.llm_tools.join(', ')}\nCommands: ${c.slash_commands.join(', ')}`);
+    }
+
+  } catch (err) {
+    if (window.showToast) window.showToast('Network error: ' + err.message, 'error');
+  }
+};
