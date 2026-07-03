@@ -185,5 +185,3 @@ system:
   fast_boot: true
   flask_debug: false
   check_local_backend_on_boot: false
-hpm:
-  auto_introspect: false
