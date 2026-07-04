@@ -239,39 +239,6 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "CALENDAR": {
-        "description": "Calendar plugin",
-        "commands": {
-            "add_event": "Creates a new calendar event.",
-            "delete_event": "Deletes a calendar event by ID.",
-            "get_date_info": "Returns today's date formatted natively, current holidays, and upcoming public holidays.",
-            "list_events": "Returns a formatted list of upcoming calendar events.",
-            "sync_calendars": "Manually triggers synchronization with external Google/Apple calendars."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": [
-            {
-                "id": "calendar",
-                "aliases": [
-                    "/calendar",
-                    "/calendario",
-                    "/appuntamenti"
-                ],
-                "description": "Elenca i prossimi eventi nel calendario",
-                "usage": "/calendar",
-                "example": "/calendar",
-                "icon": "📅",
-                "method": "list_events",
-                "args_schema": {},
-                "requires_args": false
-            }
-        ]
-    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {
@@ -359,19 +326,6 @@
         "is_class_based": true,
         "is_lazy": true,
         "icon": "👥",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": []
-    },
-    "WEBCAM": {
-        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
         "category": "PLUGINS",
         "module_type": "plugin",
         "slash_commands": []

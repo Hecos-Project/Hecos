@@ -324,20 +324,46 @@ workspace/flows/*
 # These plugins are standalone HPM packages, installable from the official store.
 # They are NOT part of the Hecos Core and MUST NOT be pushed to the core repo.
 # Build and release them separately from the Hecos-Packages repository.
-hecos/plugins/webcam/
-hecos/plugins/weather_pro/
+
+# Core Plugins (HPM)
+hecos/plugins/calendar/
 hecos/plugins/image_gen/
-hecos/plugins/media_player/
+hecos/plugins/lists/
 hecos/plugins/map/
+hecos/plugins/media_player/
+hecos/plugins/quick_links/
+hecos/plugins/reminder/
+hecos/plugins/weather_pro/
+hecos/plugins/webcam/
 
 # WebUI Extensions belonging to HPM packages
+hecos/modules/web_ui/extensions/calendar/
+hecos/modules/web_ui/extensions/media_player_widget/
+hecos/modules/web_ui/extensions/reminder/
 hecos/modules/web_ui/extensions/voice_visualizer/
 hecos/modules/web_ui/extensions/weather_pro_widget/
-hecos/modules/web_ui/extensions/media_player_widget/
+hecos/modules/web_ui/extensions/webcam_feed/
 
-# WebUI Templates belonging to HPM packages
-hecos/modules/web_ui/templates/modules/config_weather_pro.html
+# WebUI Templates belonging to HPM packages (config files)
+hecos/modules/web_ui/templates/modules/config_calendar.html
+hecos/modules/web_ui/templates/modules/config_image_gen.html
+hecos/modules/web_ui/templates/modules/config_lists.html
+hecos/modules/web_ui/templates/modules/config_map.html
 hecos/modules/web_ui/templates/modules/config_media_player.html
+hecos/modules/web_ui/templates/modules/config_quick_links.html
+hecos/modules/web_ui/templates/modules/config_reminder.html
+hecos/modules/web_ui/templates/modules/config_voice_visualizer.html
+hecos/modules/web_ui/templates/modules/config_weather_pro.html
+hecos/modules/web_ui/templates/modules/config_webcam.html
+hecos/modules/web_ui/templates/modules/config_webcam_feed.html
+hecos/modules/web_ui/templates/config_calendar.html
+hecos/modules/web_ui/templates/config_reminder.html
+hecos/modules/web_ui/templates/config_lists.html
+
+# WebUI Template Folders belonging to HPM packages
 hecos/modules/web_ui/templates/modules/media_player/
 hecos/modules/web_ui/templates/modules/media/_media_player.html
+hecos/modules/web_ui/templates/calendar/
+hecos/modules/web_ui/templates/reminder/
+hecos/modules/web_ui/templates/lists/
 

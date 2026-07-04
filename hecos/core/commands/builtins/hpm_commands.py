@@ -255,9 +255,9 @@ def _cmd_hpm_install(raw_args_str="", **kwargs) -> str:
                 registry=reg2,
                 hecos_version=VERSION,
             )
-            result = installer.install(hpkg_path=dest, allow_unsigned=False)
-            if not result.get("ok"):
-                return f"❌ Installation failed: {result.get('error', 'Unknown error')}"
+            result = installer.install_file(hpkg_path=dest, require_signature=True)
+            if not result.success:
+                return f"❌ Installation failed: {result.error or 'Unknown error'}"
 
     except Exception as e:
         return f"❌ Could not install `{pkg_id}`: {e}"

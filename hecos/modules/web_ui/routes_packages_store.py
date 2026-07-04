@@ -330,16 +330,16 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
 
                     try:
                         registry, installer, _ = _get_hpm_components(_hecos_src)
-                        result = installer.install(
+                        result = installer.install_file(
                             hpkg_path=hpkg_path,
-                            allow_unsigned=allow_unsigned,
+                            require_signature=not allow_unsigned,
                         )
                     except Exception as e:
                         yield _sse("error", {"message": f"Installation failed: {e}"})
                         return
 
-                    if not result.get("ok"):
-                        yield _sse("error", {"message": result.get("error", "Unknown error")})
+                    if not result.success:
+                        yield _sse("error", {"message": result.error or "Unknown error"})
                         return
 
                     _refresh_jinja_loader(app)
