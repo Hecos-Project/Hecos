@@ -165,7 +165,7 @@ window.hpmRemoveTab = function(pkg_id) {
 
 window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
   try {
-    const res = await fetch(`/hecos/api/packages/${pkg_id}/capabilities`);
+    const res = await fetch(`/api/packages/${pkg_id}/capabilities`);
     const data = await res.json();
     if (!data.ok) {
       if (window.showToast) window.showToast('Error: ' + data.error, 'error');
@@ -237,19 +237,13 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
 
     html += `</div>`;
 
-    if (typeof Swal !== 'undefined') {
-      Swal.fire({
-        title: 'Module Capabilities',
-        html: html,
-        icon: 'info',
-        background: 'var(--bg1)',
-        color: 'var(--text)',
-        confirmButtonColor: '#3b82f6',
-        confirmButtonText: 'Close',
-        customClass: {
-          popup: 'hecos-swal-popup'
-        }
-      });
+    const modal = document.getElementById('hpm-info-modal');
+    const textEl = document.getElementById('hpm-info-modal-text');
+    const titleEl = document.getElementById('hpm-info-modal-title');
+    if (modal && textEl) {
+      if (titleEl) titleEl.innerHTML = `<i class="fas fa-info-circle" style="color:#3b82f6; margin-right:8px;"></i>Module Capabilities`;
+      textEl.innerHTML = html;
+      modal.style.display = 'flex';
     } else {
       alert(`Capabilities for ${c.name}:\n\nType: ${c.type}\nTools: ${c.llm_tools.join(', ')}\nCommands: ${c.slash_commands.join(', ')}`);
     }

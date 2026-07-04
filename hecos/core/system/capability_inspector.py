@@ -273,7 +273,7 @@ def _run_introspection(card: ModuleCapabilityCard, plugin_id: str, manifest: dic
 
 def _get_hecos_root() -> str:
     """Walk up from this file to reach the hecos package root."""
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def _discover_plugin_ids() -> list[str]:
