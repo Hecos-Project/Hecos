@@ -203,6 +203,7 @@ def _load_installed_manifest(plugin_id: str) -> dict[str, Any] | None:
             return None
 
     candidates = [
+        os.path.join(hecos_root, "hpm", plugin_id, "hpkg_manifest.toml"),
         os.path.join(hecos_root, "plugins", plugin_id, "hpkg_manifest.toml"),
         os.path.join(hecos_root, "modules", "web_ui", "extensions", plugin_id, "hpkg_manifest.toml"),
     ]
@@ -228,8 +229,11 @@ def _run_introspection(card: ModuleCapabilityCard, plugin_id: str, manifest: dic
 
     # 1. Inspect plugin class methods
     try:
-        import importlib
-        mod = importlib.import_module(f"hecos.plugins.{plugin_id}.main")
+        try:
+            mod = importlib.import_module(f"hecos.hpm.{plugin_id}.main")
+        except ImportError:
+            mod = importlib.import_module(f"hecos.plugins.{plugin_id}.main")
+        
         classes = inspect.getmembers(mod, inspect.isclass)
         for _, cls in classes:
             if cls.__module__ == mod.__name__:
@@ -260,10 +264,11 @@ def _run_introspection(card: ModuleCapabilityCard, plugin_id: str, manifest: dic
         from hecos.modules.web_ui.server_flask import get_app
         app = get_app()
         if app:
-            prefix = f"/hecos/api/plugins/{plugin_id}"
+            prefix_plugin = f"/hecos/api/plugins/{plugin_id}"
+            prefix_hpm    = f"/hecos/api/hpm/{plugin_id}"
             card.auto_routes = [
                 rule.rule for rule in app.url_map.iter_rules()
-                if rule.rule.startswith(prefix)
+                if rule.rule.startswith(prefix_plugin) or rule.rule.startswith(prefix_hpm)
             ]
     except Exception:
         pass
@@ -277,13 +282,16 @@ def _get_hecos_root() -> str:
 
 
 def _discover_plugin_ids() -> list[str]:
-    """Fallback: scan plugins/ directory for installed plugin IDs."""
+    """Fallback: scan hpm/ and plugins/ directories for installed plugin IDs."""
     root = _get_hecos_root()
-    plugins_dir = os.path.join(root, "plugins")
-    if not os.path.isdir(plugins_dir):
-        return []
-    return [
-        d for d in os.listdir(plugins_dir)
-        if os.path.isdir(os.path.join(plugins_dir, d))
-        and not d.startswith("_")
-    ]
+    found = []
+    
+    for d_name in ["hpm", "plugins"]:
+        scan_dir = os.path.join(root, d_name)
+        if os.path.isdir(scan_dir):
+            for d in os.listdir(scan_dir):
+                if os.path.isdir(os.path.join(scan_dir, d)) and not d.startswith("_"):
+                    if d not in found:
+                        found.append(d)
+    
+    return found

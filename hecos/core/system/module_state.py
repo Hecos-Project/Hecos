@@ -49,6 +49,8 @@ def get_plugin_module(tag, legacy=False):
             
             if parent_dir_name == "modules":
                 module_name = f"hecos.modules.{plugin_dir}.main"
+            elif parent_dir_name == "hpm":
+                module_name = f"hecos.hpm.{plugin_dir}.main"
             elif parent_dir_name == "plugins":
                 module_name = f"hecos.plugins.{plugin_dir}.main"
             else:

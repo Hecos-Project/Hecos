@@ -144,8 +144,8 @@ class HpkgManifest(BaseModel):
 
     # Install targets
     target_dir: str = Field(
-        "plugins",
-        description="Root dir to copy plugin/module code into: 'plugins' or 'modules'"
+        "hpm",
+        description="Root dir to copy plugin/module code into: 'hpm' (default), 'personas', 'themes'"
     )
     plugin_dir: Optional[str] = Field(
         None,

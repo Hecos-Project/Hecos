@@ -326,15 +326,15 @@ workspace/flows/*
 # Build and release them separately from the Hecos-Packages repository.
 
 # Core Plugins (HPM)
-hecos/plugins/calendar/
-hecos/plugins/image_gen/
-hecos/plugins/lists/
-hecos/plugins/map/
+hecos/hpm/calendar/
+hecos/hpm/image_gen/
+hecos/hpm/lists/
+hecos/hpm/map/
 hecos/plugins/media_player/
-hecos/plugins/quick_links/
-hecos/plugins/reminder/
-hecos/plugins/weather_pro/
-hecos/plugins/webcam/
+hecos/hpm/quick_links/
+hecos/hpm/reminder/
+hecos/hpm/weather_pro/
+hecos/hpm/webcam/
 
 # WebUI Extensions belonging to HPM packages
 hecos/modules/web_ui/extensions/calendar/
@@ -366,4 +366,4 @@ hecos/modules/web_ui/templates/modules/media/_media_player.html
 hecos/modules/web_ui/templates/calendar/
 hecos/modules/web_ui/templates/reminder/
 hecos/modules/web_ui/templates/lists/
-
+

@@ -51,11 +51,18 @@ def update_capability_registry(config=None, debug_log=True):
     if not os.path.exists(primary_plugins_dir):
         primary_plugins_dir = "plugins"
 
+    hpm_dir = os.path.join(base, "hpm")
+
     # Build list of all directories to scan
     scan_targets = []
     if os.path.exists(modules_dir):
         scan_targets.append({"path": modules_dir, "type": "core_module"})
-    
+
+    # hpm/ is the primary home for all HPM-installed packages
+    if os.path.exists(hpm_dir):
+        scan_targets.append({"path": hpm_dir, "type": "plugin"})
+
+    # plugins/ kept for legacy (pre-HPM) built-in modules
     if os.path.exists(primary_plugins_dir):
         scan_targets.append({"path": primary_plugins_dir, "type": "plugin"})
         
