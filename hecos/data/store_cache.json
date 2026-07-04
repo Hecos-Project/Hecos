@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-07-04T08:39:15Z",
+  "generated_at": "2026-07-04T10:56:11Z",
   "packages": [
     {
       "id": "calendar",
@@ -13,15 +13,33 @@
       "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.3.hpkg",
-      "size_bytes": 890316,
-      "sha256": "b7a42c1f21986db7714322a51db9dcc3779bc1ae184cf9376d8ee807d3812e6d",
+      "size_bytes": 890320,
+      "sha256": "8528be6846a71ad3cb997fe1e409b93967fccd4487908d3ddeb3b7c8a1d29c30",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#calendar",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "add_event",
+          "list_events",
+          "delete_event",
+          "get_date_info"
+        ],
+        "slash_commands": [
+          "/calendar",
+          "/calendario",
+          "/appuntamenti"
+        ],
+        "has_widget": true,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": "Stores events in local SQLite DB. Includes shared datetime-picker UI component for other modules. Supports public holidays via 'holidays' library."
+      }
     },
     {
       "id": "image_gen",
@@ -34,14 +52,30 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
       "size_bytes": 535774,
-      "sha256": "f01de7fe34a27b8edcaa1afd88c4f97a2ff31bf2fa282b8a0968cb5ef328544b",
+      "sha256": "ab9e94a1404a85de5a183894f2520df4c6292c9eaa06a64e466436104380cd10",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/image_gen_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#image_gen",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "IMAGE_GEN__generate_image"
+        ],
+        "slash_commands": [
+          "/img",
+          "/image",
+          "/photo",
+          "/foto"
+        ],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": false,
+        "has_system_calls": false,
+        "notes": "Supports multiple AI providers: Pollinations (free, default), Gemini, OpenAI DALL-E, Stability AI, HuggingFace. Requires network access. Provider and model are configurable."
+      }
     },
     {
       "id": "lists",
@@ -53,15 +87,42 @@
       "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/lists-2.0.0.hpkg",
-      "size_bytes": 937853,
-      "sha256": "752a18aae8279de0031fe6f76bb8251fe7e065dbc830491596a7770757dfbb77",
+      "size_bytes": 937855,
+      "sha256": "f51a478718e33f67870d29b23902449316337d309a247e87a05e83a1b87e150a",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/lists_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#lists",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "slash_commands": [
+          "/list",
+          "/lists",
+          "/liste",
+          "/lista",
+          "/list add",
+          "/lista aggiungi",
+          "/list done",
+          "/lista spunta"
+        ],
+        "has_widget": true,
+        "has_config_panel": true,
+        "has_api_routes": false,
+        "has_system_calls": false,
+        "notes": "Universal list manager: shopping, to-do, blacklists, any type. Supports item priorities, labels, and archiving. Data stored in local SQLite DB. Export to desktop supported."
+      }
     },
     {
       "id": "map",
@@ -73,15 +134,27 @@
       "description": "Simple Map Module based on Leaflet and Nominatim.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/map-1.0.1.hpkg",
-      "size_bytes": 447409,
-      "sha256": "19ce176f55f3736071c9d7c6053b05359aed17be60b25ea8f9ab158f71c009fb",
+      "size_bytes": 447404,
+      "sha256": "23c614ad6f75d0c078418e8810a75662bbb2ee2ef7c34b998be2f6ed22280b40",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/map_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#map",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "",
+          ""
+        ],
+        "slash_commands": [],
+        "has_widget": true,
+        "has_config_panel": false,
+        "has_api_routes": false,
+        "has_system_calls": false,
+        "notes": "Uses Leaflet.js for map rendering and OpenStreetMap Nominatim for free geocoding. No API key required. Home location is read from user profile config."
+      }
     },
     {
       "id": "quick_links",
@@ -94,14 +167,23 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
       "size_bytes": 8105,
-      "sha256": "18c65e7ba558bf6584e8960355ebf47280649e8f29a43866477e1e15c0adcd22",
+      "sha256": "453148a8242dc66eb19f83feada90a249ae683a66d4cf75e04411cb4306d0a6c",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#quick_links",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": true,
+        "has_config_panel": false,
+        "has_api_routes": false,
+        "has_system_calls": false,
+        "notes": "Pure frontend widget. User manages bookmarks/links directly in the sidebar. Data persisted via the widget's own API routes. No LLM interaction."
+      }
     },
     {
       "id": "reminder",
@@ -113,15 +195,35 @@
       "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.2.hpkg",
-      "size_bytes": 841771,
-      "sha256": "2b488971af10c4a010009a170ce89cf12782cdfc7edc1cf775ee7c2e762e46b5",
+      "size_bytes": 841770,
+      "sha256": "5c104ca19251e83daa10489ab200121856db86ef1e4ccf93a79b027da3fab4ec",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/reminder_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#reminder",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "slash_commands": [
+          "/reminder",
+          "/ricorda",
+          "/promemoria",
+          "/reminders",
+          "/promemoria list"
+        ],
+        "has_widget": true,
+        "has_config_panel": true,
+        "has_api_routes": false,
+        "has_system_calls": false,
+        "notes": "Fires TTS voice alerts and WebUI browser notifications. Supports natural language times and CRON-style recurrence. Uses 'schedule' library for background scheduling."
+      }
     },
     {
       "id": "voice_visualizer",
@@ -133,8 +235,8 @@
       "description": "Retro-80s voice animation. Shows KITT-style scanner or a pixelated talking mouth when Hecos speaks.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.2.hpkg",
-      "size_bytes": 1275505,
-      "sha256": "11f36ebe1c68b4b3a8acc882532304eb70d2ac4f6ac40f9b2cd3be60572cce4a",
+      "size_bytes": 1275498,
+      "sha256": "5a95c0b95ffa9ff23e017b8ee7410a30a38c49de607ea348241e864b53274695",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_1.png",
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_2.png",
@@ -143,7 +245,16 @@
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#voice_visualizer",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": true,
+        "has_config_panel": false,
+        "has_api_routes": false,
+        "has_system_calls": true,
+        "notes": "Pure visual widget. No LLM tools and no direct commands. Automatically activates when Hecos speaks. Offers multiple animation modes: KITT scanner, EQ bars, sine wave, pulsing orb, pixelated mouth."
+      }
     },
     {
       "id": "weather_pro",
@@ -155,15 +266,27 @@
       "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
-      "size_bytes": 15152,
-      "sha256": "8179f1eb55d3ba0f5b366298e9afa6662402543a3b37905b68d8314e063676bc",
+      "size_bytes": 15156,
+      "sha256": "b6138163103c5572f3db8c6bbc7c22a0c8030bb899a05280689f1a2be82d4a16",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#weather_pro",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "",
+          ""
+        ],
+        "slash_commands": [],
+        "has_widget": true,
+        "has_config_panel": true,
+        "has_api_routes": false,
+        "has_system_calls": false,
+        "notes": "Hybrid plugin+widget. Uses Open-Meteo API (free, no key needed). Shows current conditions and 7-day forecast. Widget available in sidebar and Control Room."
+      }
     },
     {
       "id": "webcam",
@@ -176,14 +299,26 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam-1.0.2.hpkg",
       "size_bytes": 6356,
-      "sha256": "1e5225cb248e7bac196ba0531e1a0395c5c00f5053a4c6c0ee97655f61aac43c",
+      "sha256": "1c25081a2c9fb1f19c85e06584bdb5af336236750887a7ae69a351e43eeeec32",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#webcam",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "WEBCAM__take_snapshot",
+          "WEBCAM__desktop_screenshot"
+        ],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": false,
+        "has_api_routes": false,
+        "has_system_calls": true,
+        "notes": "Backend snapshot plugin (distinct from Webcam Feed widget). Saves JPG/PNG to hecos/media/snapshots. Can trigger browser-side capture on client devices via [CAMERA_SNAPSHOT_REQUEST] signal. Also captures full desktop screenshots."
+      }
     },
     {
       "id": "webcam_feed",
@@ -196,15 +331,24 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam_feed-1.0.1.hpkg",
       "size_bytes": 859140,
-      "sha256": "f3eede8e52b67da2de5f876b98c33126abaa5e4a01f04a1b00900573d142e971",
+      "sha256": "c3727bd27add2739d8b36b3a497752168e1c909dd4bee66f54b8c449a155927d",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/webcam_feed_src/preview.png"
       ],
       "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
       "homepage": "https://hecos-project.github.io/store/#webcam_feed",
       "fa_icon": "fa-box",
-      "featured": false
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": true,
+        "has_config_panel": false,
+        "has_api_routes": false,
+        "has_system_calls": true,
+        "notes": "Pure frontend widget. No backend processing. Streams from the device running the browser (PC, phone, tablet). Supports auto-start and camera device selection."
+      }
     }
   ],
-  "cached_at": 1783160552.7570345
+  "cached_at": 1783166654.259776
 }
