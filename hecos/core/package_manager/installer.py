@@ -77,15 +77,15 @@ class PackageInstaller:
             keys_dir = os.path.join(hecos_root, "data", "trusted_keys")
         self._sig_verifier = SignatureVerifier(keys_dir)
 
-    def install_file(self, hpkg_path: str, require_signature: bool = True) -> InstallResult:
+    def install_file(self, hpkg_path: str, require_signature: bool = True, skip_dep_check: bool = False) -> InstallResult:
         try:
             with open(hpkg_path, "rb") as f:
                 data = f.read()
-            return self.install_bytes(data, require_signature=require_signature)
+            return self.install_bytes(data, require_signature=require_signature, skip_dep_check=skip_dep_check)
         except Exception as e:
             return InstallResult(success=False, error=f"Cannot read file: {e}")
 
-    def install_bytes(self, data: bytes, require_signature: bool = True) -> InstallResult:
+    def install_bytes(self, data: bytes, require_signature: bool = True, skip_dep_check: bool = False) -> InstallResult:
         # ── Step 1: Validate ─────────────────────────────────────────────────
         val_result = self._validator.validate_bytes(data)
         if not val_result.valid:
@@ -114,10 +114,15 @@ class PackageInstaller:
         result.dep_report = dep_report
 
         if dep_report.missing_packages:
-            return InstallResult(
-                success=False, 
-                error=f"Missing required HPM packages: {', '.join(dep_report.missing_packages)}. Please install them first."
-            )
+            if not skip_dep_check:
+                return InstallResult(
+                    success=False,
+                    error=f"Missing required HPM packages: {', '.join(dep_report.missing_packages)}. Please install them first.",
+                    dep_report=dep_report,
+                )
+            else:
+                result.warnings.append(f"Installed without required HPM packages: {dep_report.missing_packages}")
+                logger.warning(f"[HPM:Installer] Forced install — missing HPM deps: {dep_report.missing_packages}")
             
         if dep_report.pip_failures:
             result.warnings.append(f"Some pip requirements failed to install: {dep_report.pip_failures}")
@@ -211,6 +216,12 @@ class PackageInstaller:
             logger.error(f"[HPM:Installer] Installation failed for '{manifest.id}': {e}")
             result.error = str(e)
             rollback(installed_files, manifest.id)
+            # Also deregister from DB to avoid ghost packages
+            try:
+                self._registry.unregister(manifest.id)
+                logger.info(f"[HPM:Installer] DB entry removed for '{manifest.id}' (rollback).")
+            except Exception as db_e:
+                logger.debug(f"[HPM:Installer] Could not deregister '{manifest.id}' from DB (may not have been registered): {db_e}")
 
         finally:
             shutil.rmtree(staging_dir, ignore_errors=True)

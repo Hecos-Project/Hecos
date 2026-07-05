@@ -1,7 +1,0 @@
-[reminder]
-reminder_mode = "voice"
-ringtone_path = "Default_System_Alert.mp3"
-time_format = "24h"
-max_reminders = 50
-snooze_default_minutes = 15
-reminder_snooze_ui = false

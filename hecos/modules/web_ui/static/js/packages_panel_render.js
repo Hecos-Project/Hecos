@@ -130,6 +130,17 @@ window.hpmRenderRow = function(pkg, meta) {
 
   // Actions
   let actions = '';
+  
+  // Info/Capabilities Button
+  actions += `
+    <button type="button"
+            class="btn btn-sm"
+            style="font-size:10px;padding:4px 10px;margin-left:4px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);"
+            onclick="hpmShowCapabilities('${pkg.id}','${window._hesc(pkg.name)}')"
+            title="View Capabilities">
+      <i class="fas fa-info-circle" style="font-size:11px;color:#3b82f6;"></i>
+    </button>`;
+
   if (isRemovable) {
     actions += `
       <button type="button"
@@ -141,7 +152,7 @@ window.hpmRenderRow = function(pkg, meta) {
       </button>`;
   } else {
     // Core / built-in: only show a lock icon to signal it's protected from uninstall
-    actions = `<span title="${window.HPM_I18N?.tooltip_builtin || 'Built-in module — cannot be removed'}"
+    actions += `<span title="${window.HPM_I18N?.tooltip_builtin || 'Built-in module — cannot be removed'}"
                      style="font-size:10px;color:var(--muted);opacity:0.5;padding:0 4px;margin-left:4px;">
                  <i class="fas fa-lock"></i>
                </span>`;

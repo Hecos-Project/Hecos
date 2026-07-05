@@ -104,7 +104,6 @@ _PANEL_MAP = {
     'aesthetics':      'modules/config_styles.html',
     'webui':           'modules/config_utils.html',
     'web':             'modules/config_utils.html',
-    'webcam':          'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
     'automation':      'modules/config_utils.html',
 

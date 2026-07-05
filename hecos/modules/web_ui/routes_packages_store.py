@@ -309,6 +309,7 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
             return jsonify({"ok": False, "error": "id and download_url are required"}), 400
 
         allow_unsigned = body.get("allow_unsigned", False)
+        skip_dep_check = body.get("skip_dep_check", False)
 
         def _sse(event: str, data: dict) -> str:
             return f"event: {event}\ndata: {json.dumps(data)}\n\n"
@@ -330,16 +331,21 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
 
                     try:
                         registry, installer, _ = _get_hpm_components(_hecos_src)
-                        result = installer.install(
+                        result = installer.install_file(
                             hpkg_path=hpkg_path,
-                            allow_unsigned=allow_unsigned,
+                            require_signature=not allow_unsigned,
+                            skip_dep_check=skip_dep_check,
                         )
                     except Exception as e:
                         yield _sse("error", {"message": f"Installation failed: {e}"})
                         return
 
-                    if not result.get("ok"):
-                        yield _sse("error", {"message": result.get("error", "Unknown error")})
+                    if not result.success:
+                        missing = result.dep_report.missing_packages if result.dep_report else []
+                        yield _sse("error", {
+                            "message": result.error or "Unknown error",
+                            "missing_deps": missing,
+                        })
                         return
 
                     _refresh_jinja_loader(app)
@@ -354,13 +360,18 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                         except: snap = {}
                     panel_id = (snap.get("config_panel") or {}).get("tab_id") or pkg_id
 
+                    pip_installed = result.dep_report.pip_installed if result.dep_report else []
+                    pip_failures = result.dep_report.pip_failures if result.dep_report else []
+
                     yield _sse("done", {
                         "message": "Installed successfully!", 
                         "id": pkg_id,
                         "name": pkg_meta.get("name", pkg_id),
                         "type": pkg_meta.get("type", ""),
                         "install_path": pkg_meta.get("install_path", ""),
-                        "config_panel": panel_id if snap.get("config_panel") else ""
+                        "config_panel": panel_id if snap.get("config_panel") else "",
+                        "pip_installed": pip_installed,
+                        "pip_failures": pip_failures
                     })
 
             except Exception as e:

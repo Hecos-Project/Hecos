@@ -47,13 +47,15 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
         hpkg_bytes = hpkg_file.read()
         log.info(f"[HPM] Install requested: {hpkg_file.filename} ({len(hpkg_bytes)} bytes)")
 
-        # Read bypass flag
         allow_unsigned_str = request.form.get("allow_unsigned", "false").lower()
         allow_unsigned = allow_unsigned_str in ("true", "1", "yes")
 
+        skip_dep_str = request.form.get("skip_dep_check", "false").lower()
+        skip_dep = skip_dep_str in ("true", "1", "yes")
+
         try:
             registry, installer, _ = _get_hpm_components(_hecos_src)
-            result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned)
+            result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned, skip_dep_check=skip_dep)
 
             if result.success:
                 # ── Clear Config Panel Cache ──
@@ -140,10 +142,12 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                 return jsonify(response)
             else:
                 is_signature_error = "signature" in result.error.lower()
+                missing = result.dep_report.missing_packages if result.dep_report else []
                 return jsonify({
                     "ok": False,
                     "error": result.error,
-                    "signature_error": is_signature_error
+                    "signature_error": is_signature_error,
+                    "missing_deps": missing,
                 }), 400
 
         except Exception as e:

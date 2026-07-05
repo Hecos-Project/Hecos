@@ -31,18 +31,18 @@ backend:
     url: http://localhost:5001
     model: ''
     max_length: 512
-    temperature: 0.8
-    top_p: 0.92
+    temperature: 0.7
+    top_p: 0.95
     rep_pen: 1.1
   ollama:
-    url: http://localhost:11434
+    url: admin
     model: ''
     available_models: {}
     num_ctx: 4096
-    num_gpu: 25
-    num_predict: 250
+    num_gpu: 33
+    num_predict: 1024
     temperature: 0.3
-    top_p: 0.9
+    top_p: 0.95
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
@@ -72,13 +72,15 @@ filters:
 language: en
 llm:
   allow_cloud: true
-  debug_llm: true
+  debug_llm: false
   providers:
     gemini:
       api_key: ''
       models:
+      - veo-3.0-fast-generate-001
+      - veo-3.0-generate-001
+      - veo-2.0-generate-001
       - gemini-2.5-flash-native-audio-preview-09-2025
-      - gemini-2.5-flash-native-audio-latest
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.0-flash
@@ -105,7 +107,9 @@ llm:
       - nano-banana-pro-preview
       - gemini-3.1-flash-image-preview
       - gemini-3.1-flash-image
+      - gemini-3.1-flash-lite-image
       - gemini-3.5-flash
+      - gemini-omni-flash-preview
       - lyria-3-clip-preview
       - lyria-3-pro-preview
       - gemini-3.1-flash-tts-preview
@@ -123,12 +127,10 @@ llm:
       - imagen-4.0-generate-001
       - imagen-4.0-ultra-generate-001
       - imagen-4.0-fast-generate-001
-      - veo-2.0-generate-001
-      - veo-3.0-generate-001
-      - veo-3.0-fast-generate-001
       - veo-3.1-generate-preview
       - veo-3.1-fast-generate-preview
       - veo-3.1-lite-generate-preview
+      - gemini-2.5-flash-native-audio-latest
     openai:
       api_key: ''
       models:
@@ -140,24 +142,25 @@ llm:
     groq:
       api_key: ''
       models:
-      - compound-mini
       - compound
-      - openai/gpt-oss-safeguard-20b
-      - llama-3.3-70b-versatile
-      - groq/compound
-      - openai/gpt-oss-120b
-      - llama-3.1-8b-instant
-      - whisper-large-v3
-      - canopylabs/orpheus-v1-english
-      - meta-llama/llama-prompt-guard-2-22m
-      - openai/gpt-oss-20b
+      - compound-mini
       - meta-llama/llama-prompt-guard-2-86m
       - qwen/qwen3-32b
-      - allam-2-7b
       - whisper-large-v3-turbo
-      - groq/compound-mini
+      - llama-3.1-8b-instant
+      - qwen/qwen3.6-27b
+      - whisper-large-v3
       - canopylabs/orpheus-arabic-saudi
+      - groq/compound-mini
+      - openai/gpt-oss-120b
+      - llama-3.3-70b-versatile
       - meta-llama/llama-4-scout-17b-16e-instruct
+      - meta-llama/llama-prompt-guard-2-22m
+      - canopylabs/orpheus-v1-english
+      - allam-2-7b
+      - openai/gpt-oss-safeguard-20b
+      - groq/compound
+      - openai/gpt-oss-20b
 logging:
   level: DEBUG
   destination: console

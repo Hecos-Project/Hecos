@@ -172,6 +172,40 @@ def _cmd_soul(raw_args_str="", config=None, config_manager=None, **kwargs) -> st
 
 # ── Command descriptors ───────────────────────────────────────────────────────
 
+
+
+def _cmd_info(raw_args_str: str = "", config=None, config_manager=None, **kwargs) -> str:
+    """Show the capability card for a named Hecos module/package."""
+    plugin_id = raw_args_str.strip().lower()
+    if not plugin_id:
+        return (
+            "**Usage:** `/info <module_id>`\n"
+            "**Example:** `/info webcam`\n\n"
+            "Shows the capability profile of an installed Hecos module."
+        )
+
+    try:
+        from hecos.core.system.capability_inspector import build_card
+
+        # Check if auto-introspect is enabled in config
+        cfg = config or (config_manager.config if config_manager else {})
+        introspect = (
+            cfg.get("hpm", {}).get("auto_introspect", False)
+            if isinstance(cfg, dict) else False
+        )
+
+        card = build_card(plugin_id, introspect=introspect)
+        if card is None:
+            return (
+                f"❌ Module **{plugin_id}** not found or not installed.\n"
+                f"Use `/modules` to list all installed modules."
+            )
+        return "```\n" + card.format_card() + "\n```"
+    except Exception as e:
+        import logging
+        logging.getLogger("HecosSystemCommands").error(f"[/info] Error building card for '{plugin_id}': {e}")
+        return f"❌ Error retrieving info for **{plugin_id}**: {e}"
+
 SYSTEM_COMMANDS = [
     {
         "id": "help",
@@ -274,5 +308,18 @@ SYSTEM_COMMANDS = [
         "requires_args": True,
         "save_to_memory": False,
         "_handler": _cmd_soul,
+    },
+    {
+        "id": "info",
+        "aliases": ["/info", "/module info", "/pkg info"],
+        "description": "Shows the capability card for a Hecos module or package",
+        "usage": "/info <module_id>",
+        "example": "/info webcam",
+        "icon": "🧩",
+        "category": "CORE",
+        "requires_auth": "any",
+        "requires_args": True,
+        "save_to_memory": False,
+        "_handler": _cmd_info,
     },
 ]

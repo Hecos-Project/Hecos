@@ -9,17 +9,19 @@ from .package_schema import HpkgManifest
 
 # ── Default target directory per module type ────────────────────────────────
 # Used when the manifest does not override `target_dir` explicitly.
-# Types with no backend code (widget) don't need a code install directory.
+# All HPM-managed types with backend code land in `hpm/`.
+# Pure data types (persona, theme) keep their own semantic directories.
+# widget-only packages have no backend code to install.
 TYPE_DEFAULT_DIR = {
-    "core_module": "plugins",
-    "plugin":      "plugins",
-    "module":      "plugins",
-    "extension":   "plugins",
-    "app":         "apps",
+    "core_module": "hpm",
+    "plugin":      "hpm",
+    "module":      "hpm",
+    "extension":   "hpm",
+    "app":         "hpm",
     "widget":      None,          # widget-only: no backend, skip code install
     "persona":     "personas",
     "theme":       "themes",
-    "skill_pack":  "skill_packs",
+    "skill_pack":  "hpm",
 }
 
 def copy_tree(src: str, dst: str) -> List[str]:
@@ -50,15 +52,15 @@ def _resolve_target_dir(manifest: HpkgManifest) -> str | None:
     """
     Return the resolved target directory for this package type.
     Returns None for types that have no backend code to install (e.g. widget).
-    If `manifest.target_dir` is explicitly set to something other than 'plugins'
+    If `manifest.target_dir` is explicitly set to something other than 'hpm'
     (the schema default), we honour that override.
     """
     pkg_type = manifest.type
     default_for_type = TYPE_DEFAULT_DIR.get(pkg_type)
 
-    # If the developer explicitly overrode target_dir away from the default 'plugins',
+    # If the developer explicitly overrode target_dir away from the default 'hpm',
     # respect their choice — but only if this type normally HAS a target directory.
-    if default_for_type is not None and manifest.target_dir != "plugins":
+    if default_for_type is not None and manifest.target_dir != "hpm":
         return manifest.target_dir
 
     return default_for_type
