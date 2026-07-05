@@ -42,6 +42,10 @@ class ModuleCapabilityCard:
     syscall_notes:    str  = ""
     notes:            str  = ""
 
+    # Dependencies (from hpkg_manifest.toml)
+    dependencies:     list[str] = field(default_factory=list)
+    pip_requirements: list[str] = field(default_factory=list)
+
     # Auto-detected (populated only if introspection is enabled)
     auto_tools:       list[dict] = field(default_factory=list)   # [{name, doc}]
     auto_commands:    list[str]  = field(default_factory=list)
@@ -145,6 +149,8 @@ def build_card(plugin_id: str, introspect: bool = False) -> ModuleCapabilityCard
         has_system_calls = cap.get("has_system_calls", False),
         syscall_notes    = cap.get("syscall_notes", ""),
         notes            = cap.get("notes", ""),
+        dependencies     = manifest.get("dependencies", []),
+        pip_requirements = manifest.get("pip_requirements", []),
     )
 
     if introspect:

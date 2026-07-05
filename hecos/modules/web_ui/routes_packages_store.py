@@ -354,13 +354,18 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                         except: snap = {}
                     panel_id = (snap.get("config_panel") or {}).get("tab_id") or pkg_id
 
+                    pip_installed = result.dep_report.pip_installed if result.dep_report else []
+                    pip_failures = result.dep_report.pip_failures if result.dep_report else []
+
                     yield _sse("done", {
                         "message": "Installed successfully!", 
                         "id": pkg_id,
                         "name": pkg_meta.get("name", pkg_id),
                         "type": pkg_meta.get("type", ""),
                         "install_path": pkg_meta.get("install_path", ""),
-                        "config_panel": panel_id if snap.get("config_panel") else ""
+                        "config_panel": panel_id if snap.get("config_panel") else "",
+                        "pip_installed": pip_installed,
+                        "pip_failures": pip_failures
                     })
 
             except Exception as e:

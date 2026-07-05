@@ -228,6 +228,31 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
       `;
     }
 
+    if (c.dependencies && c.dependencies.length > 0) {
+      html += `
+        <div style="margin-bottom:10px;">
+          <div style="font-weight:bold; margin-bottom:4px; color:#60a5fa;">Dependencies (Hecos):</div>
+          <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            ${c.dependencies.map(d => `<span style="background:rgba(59,130,246,0.15); color:#60a5fa; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(59,130,246,0.3);">${window._hesc ? window._hesc(d) : d}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (c.pip_requirements && c.pip_requirements.length > 0) {
+      html += `
+        <div style="margin-bottom:10px;">
+          <div style="font-weight:bold; margin-bottom:4px; color:#fbbf24;">Dependencies (PIP):</div>
+          <div style="display:flex; flex-wrap:wrap; gap:5px;">
+            ${c.pip_requirements.map(p => {
+              let clean = p.split('==')[0].split('>=')[0];
+              return `<span style="background:rgba(245,158,11,0.15); color:#fbbf24; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(245,158,11,0.3);">${window._hesc ? window._hesc(clean) : clean}</span>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     if (c.syscall_notes || c.notes) {
       html += `<div style="margin-top:15px; padding:10px; background:var(--bg2); border-radius:6px; border:1px solid var(--border-color);">`;
       if (c.syscall_notes) html += `<div style="margin-bottom:6px;"><strong>Syscalls:</strong> <span style="color:var(--muted);">${c.syscall_notes}</span></div>`;

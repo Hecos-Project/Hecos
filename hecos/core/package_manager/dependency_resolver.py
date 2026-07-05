@@ -33,6 +33,7 @@ class DependencyReport:
     missing_packages: List[str] = field(default_factory=list)
     missing_optional: List[str] = field(default_factory=list)  # Optional deps not installed
     pip_failures: List[str] = field(default_factory=list)
+    pip_installed: List[str] = field(default_factory=list)
 
     @property
     def has_issues(self) -> bool:
@@ -130,6 +131,7 @@ class DependencyResolver:
                     report.pip_failures.append(req)
                 else:
                     logger.info(f"[HPM:Resolver] pip: '{req}' installed successfully.")
+                    report.pip_installed.append(req)
             except subprocess.TimeoutExpired:
                 logger.error(f"[HPM:Resolver] pip timed out for '{req}'.")
                 report.pip_failures.append(req)

@@ -411,6 +411,21 @@ window.hpmStoreShowReadMe = async function (pkgId) {
           <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">
             ${pkg.tags.map(t => `<span style="font-size:0.67em;background:rgba(255,255,255,.07);color:var(--muted);padding:2px 7px;border-radius:5px;">#${_hesc(t)}</span>`).join('')}
           </div>` : ''}
+        ${(pkg.dependencies && pkg.dependencies.length > 0) || (pkg.pip_requirements && pkg.pip_requirements.length > 0) ? `
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);">
+            ${pkg.dependencies && pkg.dependencies.length ? `
+              <div style="font-size:0.72em;color:var(--muted);display:flex;align-items:center;gap:6px;">
+                <i class="fas fa-boxes" style="color:#3b82f6;"></i>
+                <span style="font-weight:600;opacity:0.7;">${_t('Depends on:','Dipende da:','Depende de:')}</span>
+                ${pkg.dependencies.map(d => `<span style="background:rgba(59,130,246,0.15);color:#60a5fa;padding:2px 6px;border-radius:4px;font-weight:600;">${_hesc(d)}</span>`).join('')}
+              </div>` : ''}
+            ${pkg.pip_requirements && pkg.pip_requirements.length ? `
+              <div style="font-size:0.72em;color:var(--muted);display:flex;align-items:center;gap:6px;">
+                <i class="fab fa-python" style="color:#f59e0b;"></i>
+                <span style="font-weight:600;opacity:0.7;">PIP:</span>
+                ${pkg.pip_requirements.map(p => `<span style="background:rgba(245,158,11,0.15);color:#fbbf24;padding:2px 6px;border-radius:4px;font-weight:600;">${_hesc(p.split('==')[0].split('>=')[0])}</span>`).join('')}
+              </div>` : ''}
+          </div>` : ''}
       </div>
     </div>`;
 
@@ -549,7 +564,82 @@ function _hpmStoreBuildProgressModal() {
 }
 
 // ── Install via SSE ───────────────────────────────────────────────────────────
-window.hpmStoreInstall = async function (pkgId, downloadUrl, pkgName) {
+window.hpmStoreInstall = async function (pkgId, downloadUrl, pkgName, skipDepsCheck = false) {
+  const pkg = STATE.catalog?.packages?.find(p => p.id === pkgId);
+  
+  if (!skipDepsCheck && pkg && pkg.dependencies && pkg.dependencies.length > 0) {
+    const missingDeps = [];
+    for (const d of pkg.dependencies) {
+      const depPkg = STATE.catalog?.packages?.find(p => p.id === d);
+      if (!depPkg || !depPkg.installed) {
+        missingDeps.push({ id: d, name: depPkg ? depPkg.name : d, url: depPkg ? depPkg.download_url : '' });
+      }
+    }
+    
+    if (missingDeps.length > 0) {
+      let depModal = document.getElementById('hpm-store-dep-modal');
+      if (!depModal) {
+        depModal = document.createElement('div');
+        depModal.id = 'hpm-store-dep-modal';
+        depModal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10001;align-items:center;justify-content:center;padding:20px;';
+        document.body.appendChild(depModal);
+      }
+      
+      const names = missingDeps.map(m => m.name).join(', ');
+      const title = _t('Missing Dependencies', 'Dipendenze Mancanti', 'Dependencias Faltantes');
+      const desc = _t(
+        `This package requires the following modules: <b>${names}</b>. Do you want to install them automatically before proceeding?`,
+        `Questo pacchetto richiede i seguenti moduli: <b>${names}</b>. Vuoi installarli automaticamente prima di procedere?`,
+        `Este paquete requiere los siguientes módulos: <b>${names}</b>. ¿Quieres instalarlos automáticamente antes de proceder?`
+      );
+      const btnAll = _t('Install All', 'Installa Tutto', 'Instalar Todo');
+      const btnOnly = _t('Install Only ', 'Installa Solo ', 'Instalar Solo ') + pkgName;
+      const btnCancel = _t('Cancel', 'Annulla', 'Cancelar');
+      
+      depModal.innerHTML = `
+        <div style="background:var(--bg2);border:1px solid var(--border-color);border-radius:16px;max-width:450px;width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <i class="fas fa-exclamation-triangle" style="font-size:2em;color:#f59e0b;"></i>
+            <div style="font-weight:800;font-size:1.2em;color:var(--text);">${title}</div>
+          </div>
+          <div style="font-size:0.9em;color:var(--muted);line-height:1.5;margin-bottom:24px;">${desc}</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button id="hpm-btn-inst-all" class="btn" style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;">
+              <i class="fas fa-boxes" style="margin-right:6px;"></i>${btnAll}
+            </button>
+            <button id="hpm-btn-inst-only" class="btn btn-secondary" style="padding:10px;border-radius:8px;font-weight:600;">
+              ${btnOnly}
+            </button>
+            <button id="hpm-btn-inst-cancel" style="background:transparent;border:none;color:var(--muted);padding:8px;cursor:pointer;font-weight:600;margin-top:4px;">
+              ${btnCancel}
+            </button>
+          </div>
+        </div>
+      `;
+      depModal.style.display = 'flex';
+      
+      document.getElementById('hpm-btn-inst-cancel').onclick = () => { depModal.style.display = 'none'; };
+      document.getElementById('hpm-btn-inst-only').onclick = () => { 
+        depModal.style.display = 'none'; 
+        window.hpmStoreInstall(pkgId, downloadUrl, pkgName, true); 
+      };
+      document.getElementById('hpm-btn-inst-all').onclick = async () => {
+        depModal.style.display = 'none';
+        for (const m of missingDeps) {
+          if (m.url) await _doSingleInstall(m.id, m.url, m.name);
+        }
+        await _doSingleInstall(pkgId, downloadUrl, pkgName);
+        if (window.hpmStoreReloadRemote) window.hpmStoreReloadRemote();
+      };
+      return;
+    }
+  }
+  
+  await _doSingleInstall(pkgId, downloadUrl, pkgName);
+  if (window.hpmStoreReloadRemote) window.hpmStoreReloadRemote();
+};
+
+async function _doSingleInstall(pkgId, downloadUrl, pkgName) {
   const modal = document.getElementById('hpm-store-progress-modal');
   const bar   = document.getElementById('hpm-store-progress-bar');
   const msg   = document.getElementById('hpm-store-progress-msg');
@@ -621,6 +711,14 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal) {
     if (payload.config_panel) {
         const lblCfg = _t('Available in the Configuration menu', 'Disponibile nel menu Configurazione', 'Disponible en el menú Configuración');
         extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--muted);"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
+    }
+    if (payload.pip_installed && payload.pip_installed.length > 0) {
+        const lblPip = _t('Installed PIP dependencies:', 'Dipendenze PIP installate:', 'Dependencias PIP instaladas:');
+        extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--text);"><i class="fab fa-python" style="margin-right:4px;color:#f59e0b;"></i>${lblPip} <span style="color:var(--muted);">${payload.pip_installed.join(', ')}</span></div>`;
+    }
+    if (payload.pip_failures && payload.pip_failures.length > 0) {
+        const lblPipFail = _t('Failed PIP dependencies:', 'Dipendenze PIP non installate:', 'Dependencias PIP fallidas:');
+        extraHTML += `<div style="margin-top:4px; font-size: 0.85em; color: #ef4444;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>${lblPipFail} <span>${payload.pip_failures.join(', ')}</span></div>`;
     }
     if (extraHTML) {
         msg.innerHTML = (payload.message || _t('Done!', 'Fatto!', '¡Hecho!')) + extraHTML;
