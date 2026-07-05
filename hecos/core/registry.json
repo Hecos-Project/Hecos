@@ -239,6 +239,84 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "MEDIA_PLAYER": {
+        "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
+        "commands": {
+            "play": "Play a media file or URL",
+            "pause": "Pause/resume playback",
+            "stop": "Stop playback",
+            "next_track": "Skip to next track",
+            "prev_track": "Go to previous track",
+            "set_volume": "Set volume (0–100)",
+            "get_status": "Get current playback status",
+            "create_playlist": "Create a named playlist",
+            "add_to_playlist": "Add a file to a playlist",
+            "remove_from_playlist": "Remove a track from a playlist",
+            "delete_playlist": "Delete a playlist",
+            "list_playlists": "List all saved playlists",
+            "get_playlist": "Show playlist contents",
+            "play_playlist": "Load and play a saved playlist",
+            "scan_folder": "Scan a folder for media files"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-play-circle",
+        "category": "PLUGINS",
+        "module_type": "plugin",
+        "slash_commands": [
+            {
+                "id": "play",
+                "aliases": [
+                    "/play"
+                ],
+                "description": "Play a media file or URL",
+                "usage": "/play <path>",
+                "example": "/play C:\\music\\song.mp3",
+                "icon": "▶️",
+                "method": "play",
+                "requires_args": true
+            },
+            {
+                "id": "stop",
+                "aliases": [
+                    "/stop"
+                ],
+                "description": "Stop playback",
+                "usage": "/stop",
+                "example": "/stop",
+                "icon": "⏹️",
+                "method": "stop",
+                "requires_args": false
+            },
+            {
+                "id": "pause",
+                "aliases": [
+                    "/pause"
+                ],
+                "description": "Pause or resume playback",
+                "usage": "/pause",
+                "example": "/pause",
+                "icon": "⏸️",
+                "method": "pause",
+                "requires_args": false
+            },
+            {
+                "id": "playlist",
+                "aliases": [
+                    "/playlist"
+                ],
+                "description": "List all saved playlists",
+                "usage": "/playlist",
+                "example": "/playlist",
+                "icon": "📋",
+                "method": "list_playlists",
+                "requires_args": false
+            }
+        ]
+    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {

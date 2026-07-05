@@ -330,6 +330,7 @@ hecos/hpm/calendar/
 hecos/hpm/image_gen/
 hecos/hpm/lists/
 hecos/hpm/map/
+hecos/hpm/media_player/
 hecos/plugins/media_player/
 hecos/hpm/quick_links/
 hecos/hpm/reminder/
