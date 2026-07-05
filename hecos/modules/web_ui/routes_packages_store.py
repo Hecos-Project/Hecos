@@ -309,6 +309,7 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
             return jsonify({"ok": False, "error": "id and download_url are required"}), 400
 
         allow_unsigned = body.get("allow_unsigned", False)
+        skip_dep_check = body.get("skip_dep_check", False)
 
         def _sse(event: str, data: dict) -> str:
             return f"event: {event}\ndata: {json.dumps(data)}\n\n"
@@ -333,13 +334,18 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
                         result = installer.install_file(
                             hpkg_path=hpkg_path,
                             require_signature=not allow_unsigned,
+                            skip_dep_check=skip_dep_check,
                         )
                     except Exception as e:
                         yield _sse("error", {"message": f"Installation failed: {e}"})
                         return
 
                     if not result.success:
-                        yield _sse("error", {"message": result.error or "Unknown error"})
+                        missing = result.dep_report.missing_packages if result.dep_report else []
+                        yield _sse("error", {
+                            "message": result.error or "Unknown error",
+                            "missing_deps": missing,
+                        })
                         return
 
                     _refresh_jinja_loader(app)
