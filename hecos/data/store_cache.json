@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-07-04T10:56:11Z",
+  "generated_at": "2026-07-05T06:28:50Z",
   "packages": [
     {
       "id": "calendar",
@@ -13,8 +13,8 @@
       "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.3.hpkg",
-      "size_bytes": 890320,
-      "sha256": "8528be6846a71ad3cb997fe1e409b93967fccd4487908d3ddeb3b7c8a1d29c30",
+      "size_bytes": 890333,
+      "sha256": "8091ac932a9dfe16e1999bb9f55bb13f89be59f313355ab1adcffa1508eff58a",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/preview.png"
       ],
@@ -39,7 +39,13 @@
         "has_api_routes": true,
         "has_system_calls": false,
         "notes": "Stores events in local SQLite DB. Includes shared datetime-picker UI component for other modules. Supports public holidays via 'holidays' library."
-      }
+      },
+      "dependencies": [
+        "reminder"
+      ],
+      "pip_requirements": [
+        "holidays"
+      ]
     },
     {
       "id": "image_gen",
@@ -48,11 +54,11 @@
       "level": 5,
       "version": "1.0.8",
       "author": "Antonio Meloni",
-      "description": "AI Image Generation \u2014 Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration.",
+      "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
-      "size_bytes": 535774,
-      "sha256": "ab9e94a1404a85de5a183894f2520df4c6292c9eaa06a64e466436104380cd10",
+      "size_bytes": 535872,
+      "sha256": "f259fda50b2db8563e34fa443af162978e03320e9d05d3139e79734d24e89ec8",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/image_gen_src/preview.png"
       ],
@@ -75,7 +81,13 @@
         "has_api_routes": false,
         "has_system_calls": false,
         "notes": "Supports multiple AI providers: Pollinations (free, default), Gemini, OpenAI DALL-E, Stability AI, HuggingFace. Requires network access. Provider and model are configurable."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": [
+        "requests",
+        "httpx",
+        "openai"
+      ]
     },
     {
       "id": "lists",
@@ -88,7 +100,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/lists-2.0.0.hpkg",
       "size_bytes": 937855,
-      "sha256": "f51a478718e33f67870d29b23902449316337d309a247e87a05e83a1b87e150a",
+      "sha256": "c9bc24a2fe5b734f8af880f7dc1b0164dcdfd6daa60f4ee6d8f28312ed670d77",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/lists_src/preview.png"
       ],
@@ -122,7 +134,9 @@
         "has_api_routes": false,
         "has_system_calls": false,
         "notes": "Universal list manager: shopping, to-do, blacklists, any type. Supports item priorities, labels, and archiving. Data stored in local SQLite DB. Export to desktop supported."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": []
     },
     {
       "id": "map",
@@ -135,7 +149,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/map-1.0.1.hpkg",
       "size_bytes": 447404,
-      "sha256": "23c614ad6f75d0c078418e8810a75662bbb2ee2ef7c34b998be2f6ed22280b40",
+      "sha256": "f9420c1eca9d4218bf7e407e5b8de3cb132b41cee0dd6b6a501e71951bd07cc5",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/map_src/preview.png"
       ],
@@ -154,7 +168,11 @@
         "has_api_routes": false,
         "has_system_calls": false,
         "notes": "Uses Leaflet.js for map rendering and OpenStreetMap Nominatim for free geocoding. No API key required. Home location is read from user profile config."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": [
+        "requests"
+      ]
     },
     {
       "id": "quick_links",
@@ -167,7 +185,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
       "size_bytes": 8105,
-      "sha256": "453148a8242dc66eb19f83feada90a249ae683a66d4cf75e04411cb4306d0a6c",
+      "sha256": "d29affa2d45d897e92040ee941f7684177fd63044eb243e4d3ac45228003ae24",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -183,7 +201,9 @@
         "has_api_routes": false,
         "has_system_calls": false,
         "notes": "Pure frontend widget. User manages bookmarks/links directly in the sidebar. Data persisted via the widget's own API routes. No LLM interaction."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": []
     },
     {
       "id": "reminder",
@@ -196,7 +216,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.2.hpkg",
       "size_bytes": 841770,
-      "sha256": "5c104ca19251e83daa10489ab200121856db86ef1e4ccf93a79b027da3fab4ec",
+      "sha256": "8b04157336db69d77c1e59c0e1aae4fc1855b9f259c4e94003b35f1b5fe49274",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/reminder_src/preview.png"
       ],
@@ -223,7 +243,11 @@
         "has_api_routes": false,
         "has_system_calls": false,
         "notes": "Fires TTS voice alerts and WebUI browser notifications. Supports natural language times and CRON-style recurrence. Uses 'schedule' library for background scheduling."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": [
+        "schedule"
+      ]
     },
     {
       "id": "voice_visualizer",
@@ -236,7 +260,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.2.hpkg",
       "size_bytes": 1275498,
-      "sha256": "5a95c0b95ffa9ff23e017b8ee7410a30a38c49de607ea348241e864b53274695",
+      "sha256": "a7a1300b9eee21fca96f60bab0e5d2982983ba4fc963087e4dd1ce27867999f1",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_1.png",
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_2.png",
@@ -254,7 +278,9 @@
         "has_api_routes": false,
         "has_system_calls": true,
         "notes": "Pure visual widget. No LLM tools and no direct commands. Automatically activates when Hecos speaks. Offers multiple animation modes: KITT scanner, EQ bars, sine wave, pulsing orb, pixelated mouth."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": []
     },
     {
       "id": "weather_pro",
@@ -267,7 +293,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
       "size_bytes": 15156,
-      "sha256": "b6138163103c5572f3db8c6bbc7c22a0c8030bb899a05280689f1a2be82d4a16",
+      "sha256": "d21db9b0e4e2e4fbb5c36909c5eb3858f8f0358e4868a60dae2c5cc7fdb00875",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -286,7 +312,9 @@
         "has_api_routes": false,
         "has_system_calls": false,
         "notes": "Hybrid plugin+widget. Uses Open-Meteo API (free, no key needed). Shows current conditions and 7-day forecast. Widget available in sidebar and Control Room."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": []
     },
     {
       "id": "webcam",
@@ -299,7 +327,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam-1.0.2.hpkg",
       "size_bytes": 6356,
-      "sha256": "1c25081a2c9fb1f19c85e06584bdb5af336236750887a7ae69a351e43eeeec32",
+      "sha256": "dee40aff0abba74d7cbf0c45ed6317421b5061b3e72e636a6cd0074e81c651a5",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -318,7 +346,13 @@
         "has_api_routes": false,
         "has_system_calls": true,
         "notes": "Backend snapshot plugin (distinct from Webcam Feed widget). Saves JPG/PNG to hecos/media/snapshots. Can trigger browser-side capture on client devices via [CAMERA_SNAPSHOT_REQUEST] signal. Also captures full desktop screenshots."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": [
+        "opencv-python",
+        "pillow",
+        "pyautogui"
+      ]
     },
     {
       "id": "webcam_feed",
@@ -331,7 +365,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam_feed-1.0.1.hpkg",
       "size_bytes": 859140,
-      "sha256": "c3727bd27add2739d8b36b3a497752168e1c909dd4bee66f54b8c449a155927d",
+      "sha256": "7e6e9c01cd6071f59c7b2fab1e05ce81d2c4127623d2d37d8054a905420e39b4",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/webcam_feed_src/preview.png"
       ],
@@ -347,8 +381,10 @@
         "has_api_routes": false,
         "has_system_calls": true,
         "notes": "Pure frontend widget. No backend processing. Streams from the device running the browser (PC, phone, tablet). Supports auto-start and camera device selection."
-      }
+      },
+      "dependencies": [],
+      "pip_requirements": []
     }
   ],
-  "cached_at": 1783231145.4074168
+  "cached_at": 1783245432.9272094
 }

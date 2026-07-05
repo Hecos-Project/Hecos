@@ -565,77 +565,7 @@ function _hpmStoreBuildProgressModal() {
 
 // ── Install via SSE ───────────────────────────────────────────────────────────
 window.hpmStoreInstall = async function (pkgId, downloadUrl, pkgName, skipDepsCheck = false) {
-  const pkg = STATE.catalog?.packages?.find(p => p.id === pkgId);
-  
-  if (!skipDepsCheck && pkg && pkg.dependencies && pkg.dependencies.length > 0) {
-    const missingDeps = [];
-    for (const d of pkg.dependencies) {
-      const depPkg = STATE.catalog?.packages?.find(p => p.id === d);
-      if (!depPkg || !depPkg.installed) {
-        missingDeps.push({ id: d, name: depPkg ? depPkg.name : d, url: depPkg ? depPkg.download_url : '' });
-      }
-    }
-    
-    if (missingDeps.length > 0) {
-      let depModal = document.getElementById('hpm-store-dep-modal');
-      if (!depModal) {
-        depModal = document.createElement('div');
-        depModal.id = 'hpm-store-dep-modal';
-        depModal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10001;align-items:center;justify-content:center;padding:20px;';
-        document.body.appendChild(depModal);
-      }
-      
-      const names = missingDeps.map(m => m.name).join(', ');
-      const title = _t('Missing Dependencies', 'Dipendenze Mancanti', 'Dependencias Faltantes');
-      const desc = _t(
-        `This package requires the following modules: <b>${names}</b>. Do you want to install them automatically before proceeding?`,
-        `Questo pacchetto richiede i seguenti moduli: <b>${names}</b>. Vuoi installarli automaticamente prima di procedere?`,
-        `Este paquete requiere los siguientes módulos: <b>${names}</b>. ¿Quieres instalarlos automáticamente antes de proceder?`
-      );
-      const btnAll = _t('Install All', 'Installa Tutto', 'Instalar Todo');
-      const btnOnly = _t('Install Only ', 'Installa Solo ', 'Instalar Solo ') + pkgName;
-      const btnCancel = _t('Cancel', 'Annulla', 'Cancelar');
-      
-      depModal.innerHTML = `
-        <div style="background:var(--bg2);border:1px solid var(--border-color);border-radius:16px;max-width:450px;width:100%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.6);">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <i class="fas fa-exclamation-triangle" style="font-size:2em;color:#f59e0b;"></i>
-            <div style="font-weight:800;font-size:1.2em;color:var(--text);">${title}</div>
-          </div>
-          <div style="font-size:0.9em;color:var(--muted);line-height:1.5;margin-bottom:24px;">${desc}</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <button id="hpm-btn-inst-all" class="btn" style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;padding:10px;border-radius:8px;font-weight:700;">
-              <i class="fas fa-boxes" style="margin-right:6px;"></i>${btnAll}
-            </button>
-            <button id="hpm-btn-inst-only" class="btn btn-secondary" style="padding:10px;border-radius:8px;font-weight:600;">
-              ${btnOnly}
-            </button>
-            <button id="hpm-btn-inst-cancel" style="background:transparent;border:none;color:var(--muted);padding:8px;cursor:pointer;font-weight:600;margin-top:4px;">
-              ${btnCancel}
-            </button>
-          </div>
-        </div>
-      `;
-      depModal.style.display = 'flex';
-      
-      document.getElementById('hpm-btn-inst-cancel').onclick = () => { depModal.style.display = 'none'; };
-      document.getElementById('hpm-btn-inst-only').onclick = () => { 
-        depModal.style.display = 'none'; 
-        _doSingleInstall(pkgId, downloadUrl, pkgName, true);
-      };
-      document.getElementById('hpm-btn-inst-all').onclick = async () => {
-        depModal.style.display = 'none';
-        for (const m of missingDeps) {
-          if (m.url) await _doSingleInstall(m.id, m.url, m.name);
-        }
-        await _doSingleInstall(pkgId, downloadUrl, pkgName);
-        if (window.hpmStoreReloadRemote) window.hpmStoreReloadRemote();
-      };
-      return;
-    }
-  }
-  
-  await _doSingleInstall(pkgId, downloadUrl, pkgName);
+  await _doSingleInstall(pkgId, downloadUrl, pkgName, skipDepsCheck);
   if (window.hpmStoreReloadRemote) window.hpmStoreReloadRemote();
 };
 
@@ -648,6 +578,7 @@ async function _doSingleInstall(pkgId, downloadUrl, pkgName, skipDepCheck = fals
   if (!modal) return;
 
   modal.style.display = 'flex';
+  modal.ondblclick = function() { this.style.display = 'none'; };
   bar.style.width = '10%';
   bar.style.background = '';
   title.textContent = `Installing ${pkgName}…`;
@@ -739,14 +670,35 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal, pkgId,
     if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
   } else if (event === 'error') {
-    if (payload.missing_deps && payload.missing_deps.length > 0 && typeof window.hpmShowConfirm === 'function') {
-      modal.style.display = 'none';
-      const lblMissing = _t('Missing required modules:', 'Moduli richiesti mancanti:', 'Módulos requeridos faltantes:');
-      const msgHtml = `<div style="font-size:1.1em;margin-bottom:10px;">${_t('Do you want to install them automatically?', 'Vuoi installarli automaticamente?', '¿Quieres instalarlos automáticamente?')}</div>
-                       <div style="font-size:0.9em;color:var(--muted);"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:6px;"></i>${lblMissing} <b>${payload.missing_deps.join(', ')}</b></div>`;
+    if (payload.missing_deps && payload.missing_deps.length > 0) {
+      bar.style.width      = '100%';
+      bar.style.background = '#f59e0b';
+      icon.innerHTML       = '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;animation:pulse 1.5s infinite;"></i>';
+      title.textContent    = _t('Missing Dependencies', 'Dipendenze Mancanti', 'Dependencias Faltantes');
       
-      window.hpmShowConfirm(msgHtml, _t('Install All', 'Installa Tutto', 'Instalar Todo'), async () => {
+      const lblMissing = _t('Missing required modules:', 'Moduli richiesti mancanti:', 'Módulos requeridos faltantes:');
+      const question = _t('Do you want to install them automatically?', 'Vuoi installarli automaticamente?', '¿Quieres instalarlos automáticamente?');
+      
+      msg.innerHTML = `
+        <div style="font-size:1.05em; margin-bottom:12px; color:var(--text);">${question}</div>
+        <div style="font-size:0.9em; color:var(--muted); margin-bottom:20px;">
+          <i class="fas fa-box-open" style="margin-right:6px;"></i>${lblMissing} <b style="color:var(--text);">${payload.missing_deps.join(', ')}</b>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button id="hpm-dep-install-all" style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;flex:1;">
+            <i class="fas fa-download" style="margin-right:6px;"></i> ${_t('Install All', 'Installa Tutto', 'Instalar Todo')}
+          </button>
+          <button id="hpm-dep-install-only" style="background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.1);padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;flex:1;">
+            ${_t('Install Only', 'Installa Solo', 'Instalar Solo')}
+          </button>
+        </div>
+      `;
+      
+      modal.ondblclick = null;
+      
+      document.getElementById('hpm-dep-install-all').onclick = async () => {
         try {
+          msg.innerHTML = `<div style="padding:10px;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> ${_t('Resolving...', 'Risoluzione in corso...', 'Resolviendo...')}</div>`;
           const catResp = await fetch('/api/hpm/store/catalog?refresh=1');
           const catData = await catResp.json();
           if (catData && catData.catalog && catData.catalog.packages) {
@@ -760,9 +712,14 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal, pkgId,
             if (window.hpmStoreReloadRemote) window.hpmStoreReloadRemote();
           }
         } catch(e) {
-            if (window.showToast) window.showToast('Error resolving dependencies', 'error');
+          msg.innerHTML = `<div style="color:#ef4444;"><i class="fas fa-times"></i> Error resolving dependencies</div>`;
         }
-      });
+      };
+      
+      document.getElementById('hpm-dep-install-only').onclick = () => {
+        _doSingleInstall(pkgId, downloadUrl, pkgName, true);
+      };
+      
       return;
     }
 
