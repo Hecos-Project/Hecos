@@ -1,0 +1,64 @@
+{
+  "TestList": {
+    "name": "TestList",
+    "created": "2026-07-06T01:22:31Z",
+    "items": [
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\16 - Ambient Guitars.mp3",
+        "name": "16 - Ambient Guitars.mp3",
+        "type": "audio"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\23 - Monkey Island Night (Ambient).mp3",
+        "name": "23 - Monkey Island Night (Ambient).mp3",
+        "type": "audio"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\Il.Pianeta.Delle.Scimmie.(1968).BDRip.1080p.ITA.Dts.ENG.Aac.Subs.Chaps.[TbZ].mkv",
+        "name": "Il.Pianeta.Delle.Scimmie.(1968).BDRip.1080p.ITA.Dts.ENG.Aac.Subs.Chaps.[TbZ].mkv",
+        "type": "video"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\Prince - Purple Rain.mp3",
+        "name": "Prince - Purple Rain.mp3",
+        "type": "audio"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\Sonido de Lluvia y Truenos 4 Horas Tormenta Fuerte Relax Lluvia y Truenos Rain Storm.mp3",
+        "name": "Sonido de Lluvia y Truenos 4 Horas Tormenta Fuerte Relax Lluvia y Truenos Rain Storm.mp3",
+        "type": "audio"
+      }
+    ]
+  },
+  "Desktop Media Playlist": {
+    "name": "Desktop Media Playlist",
+    "created": "2026-07-06T01:38:23Z",
+    "items": [
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\16 - Ambient Guitars.mp3",
+        "name": "16 - Ambient Guitars.mp3",
+        "type": "audio"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\23 - Monkey Island Night (Ambient).mp3",
+        "name": "23 - Monkey Island Night (Ambient).mp3",
+        "type": "audio"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\Il.Pianeta.Delle.Scimmie.(1968).BDRip.1080p.ITA.Dts.ENG.Aac.Subs.Chaps.[TbZ].mkv",
+        "name": "Il.Pianeta.Delle.Scimmie.(1968).BDRip.1080p.ITA.Dts.ENG.Aac.Subs.Chaps.[TbZ].mkv",
+        "type": "video"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\Prince - Purple Rain.mp3",
+        "name": "Prince - Purple Rain.mp3",
+        "type": "audio"
+      },
+      {
+        "path": "C:\\Users\\Tony\\Desktop\\media\\Sonido de Lluvia y Truenos 4 Horas Tormenta Fuerte Relax Lluvia y Truenos Rain Storm.mp3",
+        "name": "Sonido de Lluvia y Truenos 4 Horas Tormenta Fuerte Relax Lluvia y Truenos Rain Storm.mp3",
+        "type": "audio"
+      }
+    ]
+  }
+}
