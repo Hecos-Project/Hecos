@@ -21,21 +21,21 @@ def init_routes(app, root_dir: str = None):
     def _get_plugin():
         """Lazy-imports the reminder plugin tools singleton."""
         try:
-            from hecos.hpm.reminder.main import tools
+            from hecos.plugins.reminder.main import tools
             return tools
         except ImportError:
             return None
 
     def _get_store():
         try:
-            from hecos.hpm.reminder import store
+            from hecos.plugins.reminder import store
             return store
         except ImportError:
             return None
 
     def _get_scheduler():
         try:
-            from hecos.hpm.reminder import scheduler
+            from hecos.plugins.reminder import scheduler
             return scheduler
         except ImportError:
             return None

@@ -8,6 +8,17 @@
 let _backupCfg = {};
 let _backupStatusInterval = null;
 let _dynamicModules = [];
+let _moduleMeta = {};  // { modId: { label, icon } } populated by backupLoadConfig
+
+/**
+ * Resolve a translated label.
+ * Only returns the i18n string if the key actually exists in window.I18N.
+ * Falls back to the label provided by the server (already localised).
+ */
+function _backupI18n(key, fallback) {
+    if (window.I18N && window.I18N[key]) return window.I18N[key];
+    return fallback;
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -54,15 +65,21 @@ async function backupLoadConfig() {
 
         // Dynamic Modules UI
         const meta = data.modules_meta || {};
+        _moduleMeta = meta;
         _dynamicModules = Object.keys(meta);
         
-        const grid = document.querySelector('.backup-modules-grid');
+        // getElementById first (new template), fallback to querySelector (old cached DOM)
+        const grid = document.getElementById('backup-modules-grid')
+                  || document.querySelector('.backup-modules-grid');
         if (grid) {
             grid.innerHTML = '';
             for (const [mod, info] of Object.entries(meta)) {
-                const isEnabled = data.config.modules ? !!data.config.modules[mod] : true;
+                const isEnabled = data.config.modules ? data.config.modules[mod] !== false : true;
                 const checkedStr = isEnabled ? 'checked' : '';
-                const lbl = window.t ? (window.t(`hub_mod_${mod}`) || window.t(`ext_${mod}_title`) || info.label) : info.label;
+                // Use server label as primary source; only override if a real i18n key exists
+                const lbl = _backupI18n(`hub_mod_${mod}`, null)
+                         || _backupI18n(`ext_${mod}_title`, null)
+                         || info.label;
                 const icon = info.icon || '📦';
                 
                 grid.innerHTML += `
@@ -72,12 +89,16 @@ async function backupLoadConfig() {
                     </label>
                 `;
             }
+            console.log('[Backup] Grid populated with', _dynamicModules.length, 'modules:', _dynamicModules);
+        } else {
+            console.warn('[Backup] backup-modules-grid not found in DOM');
         }
 
     } catch (e) {
         console.error('[Backup] loadConfig error:', e);
     }
 }
+
 
 async function backupSaveConfig(silent = false) {
     try {
@@ -307,26 +328,16 @@ function _backupShowRestoreModal(filename, file) {
     const renderMods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
     
     const checkboxes = renderMods.map(m => {
-        let lbl = m;
-        // Basic fallback map if meta isn't available
-        const fallbackMap = {
-            'calendar': 'Calendar',
-            'contacts': 'Contatti',
-            'chat': 'Chat History',
-            'memory': 'Memory / RAG',
-            'reminders': 'Promemoria',
-            'flows': 'Flows',
-            'users': 'Utenti',
-            'lists': 'Liste',
-            'system_config': 'Configurazioni'
-        };
-        lbl = fallbackMap[m] || m;
-        if (window.t) {
-            lbl = window.t(`hub_mod_${m}`) || window.t(`ext_${m}_title`) || lbl;
-        }
+        // Use the label from _moduleMeta (populated by backupLoadConfig), then i18n, then mod id
+        const metaInfo = _moduleMeta[m] || {};
+        const lbl = _backupI18n(`hub_mod_${m}`, null)
+                 || _backupI18n(`ext_${m}_title`, null)
+                 || metaInfo.label
+                 || m;
+        const icon = metaInfo.icon || '';
         return `
         <label class="backup-mod-check">
-            <input type="checkbox" id="restore-mod-${m}" checked> ${lbl}
+            <input type="checkbox" id="restore-mod-${m}" checked> ${icon} ${lbl}
         </label>
         `;
     }).join('');

@@ -189,17 +189,40 @@ class PackageUninstaller:
 
     @staticmethod
     def _cleanup_empty_dirs(removed_files: List[str]) -> None:
-        """Remove any directories that became empty after file removal."""
+        """Remove any directories that became empty after file removal, including untracked __pycache__."""
+        import shutil
         seen_dirs = set()
+        
+        # Build the set of all ancestor directories for the removed files
         for fp in removed_files:
-            parent = os.path.dirname(fp)
-            seen_dirs.add(parent)
+            curr = os.path.dirname(fp)
+            # Walk up a few levels to ensure we clean parent dirs (e.g., hpm/pkg_name)
+            # but stop before we hit the root of the filesystem.
+            for _ in range(5):
+                if curr and os.path.basename(curr):
+                    seen_dirs.add(curr)
+                    curr = os.path.dirname(curr)
+                else:
+                    break
+
         # Sort deepest first so we clean bottom-up
         for d in sorted(seen_dirs, key=len, reverse=True):
             try:
-                if os.path.isdir(d) and not os.listdir(d):
-                    os.rmdir(d)
-                    logger.debug(f"[HPM:Uninstaller] Removed empty dir: {d}")
+                if os.path.isdir(d):
+                    # 1. Purge untracked __pycache__ aggressively
+                    pycache = os.path.join(d, "__pycache__")
+                    if os.path.isdir(pycache):
+                        shutil.rmtree(pycache)
+                        
+                    # 2. Remove any orphaned .pyc files (e.g. from Python < 3.2 or manual compilation)
+                    for f in os.listdir(d):
+                        if f.endswith(".pyc"):
+                            os.remove(os.path.join(d, f))
+
+                    # 3. If directory is now completely empty, remove it
+                    if not os.listdir(d):
+                        os.rmdir(d)
+                        logger.debug(f"[HPM:Uninstaller] Removed empty dir: {d}")
             except Exception:
                 pass  # Non-critical
 

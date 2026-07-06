@@ -142,6 +142,15 @@ def restore_system_config(app, data: dict) -> dict:
 
 # ── Module registry ──────────────────────────────────────────────────────────
 
+def _get_installed_hpm_packages(data_dir: str) -> set:
+    try:
+        from hecos.core.package_manager.registry import PackageRegistry
+        reg = PackageRegistry(data_dir=data_dir)
+        return {p["id"] for p in reg.list_all() if p.get("status") == "installed"}
+    except Exception as e:
+        logger.error(f"[BACKUP] Error reading HPM registry: {e}")
+        return set()
+
 def _make_hpm_backup_fn(endpoint: str):
     def fn(app):
         return _call_internal(app, "GET", endpoint)
@@ -167,14 +176,21 @@ def get_backup_fns() -> dict:
         import os, tomllib
         root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         hpm_dir = os.path.join(root, "hpm")
+        data_dir = os.path.join(root, "data")
+        installed_pkgs = _get_installed_hpm_packages(data_dir)
+        
         if os.path.isdir(hpm_dir):
             for d in os.listdir(hpm_dir):
                 mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
                 if os.path.exists(mf_path):
                     with open(mf_path, "rb") as f:
                         mf_data = tomllib.load(f)
+                    
+                    pkg_id = mf_data.get("id", d)
+                    if pkg_id not in installed_pkgs:
+                        continue
+                    
                     if "backup" in mf_data and mf_data["backup"].get("enabled"):
-                        pkg_id = mf_data.get("id", d)
                         endpoint = mf_data["backup"].get("backup_endpoint")
                         if endpoint:
                             fns[pkg_id] = _make_hpm_backup_fn(endpoint)
@@ -198,14 +214,21 @@ def get_restore_fns() -> dict:
         import os, tomllib
         root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         hpm_dir = os.path.join(root, "hpm")
+        data_dir = os.path.join(root, "data")
+        installed_pkgs = _get_installed_hpm_packages(data_dir)
+        
         if os.path.isdir(hpm_dir):
             for d in os.listdir(hpm_dir):
                 mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
                 if os.path.exists(mf_path):
                     with open(mf_path, "rb") as f:
                         mf_data = tomllib.load(f)
+                    
+                    pkg_id = mf_data.get("id", d)
+                    if pkg_id not in installed_pkgs:
+                        continue
+                    
                     if "backup" in mf_data and mf_data["backup"].get("enabled"):
-                        pkg_id = mf_data.get("id", d)
                         endpoint = mf_data["backup"].get("restore_endpoint")
                         if endpoint:
                             fns[pkg_id] = _make_hpm_restore_fn(endpoint)
@@ -231,6 +254,9 @@ def get_backup_metadata() -> dict:
         import os, tomllib
         root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         hpm_dir = os.path.join(root, "hpm")
+        data_dir = os.path.join(root, "data")
+        installed_pkgs = _get_installed_hpm_packages(data_dir)
+        
         if os.path.isdir(hpm_dir):
             for d in os.listdir(hpm_dir):
                 mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
@@ -238,11 +264,14 @@ def get_backup_metadata() -> dict:
                     with open(mf_path, "rb") as f:
                         mf_data = tomllib.load(f)
                     
+                    pkg_id = mf_data.get("id", d)
+                    if pkg_id not in installed_pkgs:
+                        continue
+                    
                     b_cfg = mf_data.get("backup")
                     if b_cfg and isinstance(b_cfg, dict) and b_cfg.get("enabled"):
-                        mod_id = mf_data.get("id", d)
-                        meta[mod_id] = {
-                            "label": mf_data.get("name", mod_id.capitalize()),
+                        meta[pkg_id] = {
+                            "label": mf_data.get("name", pkg_id.capitalize()),
                             "icon": b_cfg.get("icon", "📦")
                         }
     except Exception as e:

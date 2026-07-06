@@ -60,7 +60,7 @@ def update_capability_registry(config=None, debug_log=True):
 
     # hpm/ is the primary home for all HPM-installed packages
     if os.path.exists(hpm_dir):
-        scan_targets.append({"path": hpm_dir, "type": "plugin"})
+        scan_targets.append({"path": hpm_dir, "type": "hpm"})
 
     # plugins/ kept for legacy (pre-HPM) built-in modules
     if os.path.exists(primary_plugins_dir):
@@ -86,6 +86,13 @@ def update_capability_registry(config=None, debug_log=True):
             sys.path.append(parent_dir)
         if abs_p_dir not in sys.path:
             sys.path.append(abs_p_dir)
+
+        # For HPM packages, also add hecos root (parent of hpm/) so that
+        # 'from hecos.hpm.reminder import store' resolves via hecos/__init__.py
+        if module_type == "hpm":
+            hecos_root = os.path.dirname(parent_dir)  # …/Hecos/
+            if hecos_root not in sys.path:
+                sys.path.insert(0, hecos_root)
             
         plugin_dirs = [d for d in os.listdir(plugins_dir)
                       if os.path.isdir(os.path.join(plugins_dir, d))
@@ -141,7 +148,12 @@ def update_capability_registry(config=None, debug_log=True):
             # --- EAGER LOADING (Backward compatibility or Critical Plugins) ---
             try:
                 # Dynamic module import - determine prefix based on type
-                pkg_prefix = "modules" if module_type == "core_module" else "plugins"
+                if module_type == "core_module":
+                    pkg_prefix = "modules"
+                elif module_type == "hpm":
+                    pkg_prefix = "hpm"
+                else:
+                    pkg_prefix = "plugins"
                 spec = importlib.util.spec_from_file_location(
                     f"{pkg_prefix}.{plugin_dir}.main",
                     main_file
