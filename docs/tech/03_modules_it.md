@@ -6,7 +6,7 @@ Hecos è suddiviso in pacchetti logici distinti:
 - `hecos.core.config`: Gestisce il caricamento e la validazione dei file YAML (Pydantic v2).
 - `hecos.core.memory`: Database SQLite e gestione della persistenza dell'architettura.
 - `hecos.core.security`: Motore PKI per HTTPS e Sandbox AST per l'esecuzione sicura del codice.
-- `hecos.plugins`: Directory radice per tutte le estensioni e le capacità del sistema.
+- `hecos.hpm`: Directory radice per tutti i moduli HPM e i pacchetti installati.
 - `hecos.core.package_manager`: Gestore dei pacchetti (HPM), installazione e validazione firme (Ed25519) per moduli e plugin.
 
 ---

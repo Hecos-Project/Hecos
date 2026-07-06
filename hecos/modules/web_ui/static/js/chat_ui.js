@@ -117,7 +117,11 @@ window.refreshStatus = async function() {
     const sbS = document.getElementById('sb-soul');
     const tbM = document.getElementById('tb-model');
     if (sbB) sbB.textContent = d.backend || '—';
-    if (sbM) sbM.textContent = d.model || '—';
+    if (sbM) {
+        const fullModel = d.model || '—';
+        sbM.title = fullModel;
+        sbM.textContent = fullModel.includes('/') ? fullModel.split('/').pop() : fullModel;
+    }
     if (sbS) sbS.textContent = d.persona || '—';
 
     window.HecosPersonaName = d.persona || 'Hecos';
