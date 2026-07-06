@@ -175,7 +175,7 @@ async function mpLoadPlaylists() {
                 <div class="playlist-header" onclick="mpTogglePlaylistItems('${pl.name}')">
                     <span style="font-size:16px;">📂</span>
                     <span class="playlist-title">${pl.name}</span>
-                    <span class="playlist-meta">${pl.items ? pl.items.length : 0} ${mpT.tracks}</span>
+                    <span class="playlist-meta">${pl.count !== undefined ? pl.count : (pl.items ? pl.items.length : 0)} ${mpT.tracks}</span>
                     <button class="btn btn-secondary btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpControl('play_playlist',{name:'${pl.name}'})" title="Play All"><i class="fas fa-play"></i></button>
                     <button class="btn btn-danger btn-xs btn-circle" style="width:24px; height:24px; padding:0; border:none;" onclick="event.stopPropagation(); mpDeletePlaylist('${pl.name}')"><i class="fas fa-trash-alt"></i></button>
                 </div>
