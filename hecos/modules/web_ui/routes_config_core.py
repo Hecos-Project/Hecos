@@ -377,7 +377,10 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         hecos_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         )
-        plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
+        # Try hpm/ first (new location), fall back to plugins/ for legacy packages
+        plugin_base = os.path.join(hecos_root, "hecos", "hpm", plugin_id)
+        if not os.path.isdir(plugin_base):
+            plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
         # Build the full path and ensure it stays within the plugin dir
         full_path = os.path.realpath(os.path.join(plugin_base, filename))
         plugin_base_real = os.path.realpath(plugin_base)

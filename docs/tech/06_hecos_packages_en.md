@@ -1,0 +1,470 @@
+# Anatomy of a Hecos Package (HPM)
+
+This guide explains in detail how a Hecos package (`.hpkg`) is structured, what each file does, which paths to follow, and how to create a working package from scratch — even if you are a beginner.
+
+---
+
+## What Is a Hecos Package?
+
+A Hecos package is an `.hpkg` archive (internally a signed ZIP file) that can contain one or more of the following components:
+
+| Component | Description |
+|---|---|
+| **Backend Plugin** | Python logic, LLM tools, slash commands |
+| **Config Panel** | Configuration panel in the Central Hub (HTML/JS/CSS) |
+| **Widget** | UI components for the Sidebar or Control Room |
+| **API Routes** | Custom Flask endpoints for the package |
+
+Once installed via HPM, the package is extracted to:
+```
+C:\Hecos\hecos\hpm\<package_id>\
+```
+
+---
+
+## Standard Source Folder Structure
+
+> By convention, source folders are named `<package_id>_src` and live in `C:\Hecos-Packages\`.
+
+### Basic Package (backend plugin only)
+
+```text
+my_package_src/
+|-- hpkg_manifest.toml        # [REQUIRED] Main package manifest
+|-- main.py                   # [REQUIRED] Entry point -- must expose a `tools` object
+|-- README.md                 # [REQUIRED] Package documentation
+|-- preview.png               # [OPTIONAL] Preview image for the Store
+|-- CHANGELOG.md              # [OPTIONAL] Version history
+```
+
+### Full Package (plugin + config panel + API routes)
+
+```text
+my_package_src/
+|-- hpkg_manifest.toml
+|-- main.py                               # Root entry point (re-exports from plugin/)
+|-- README.md
+|-- preview.png
+|
+|-- plugin/                               # Backend logic
+|   |-- __init__.py
+|   |-- main.py                           # Tools class -- LLM tools
+|   |-- generator.py                      # Additional logic modules
+|   |-- providers/                        # Sub-modules (optional)
+|       |-- __init__.py
+|       |-- my_provider.py
+|
+|-- my_package_config/                    # Autonomous package config
+|   |-- __init__.py
+|   |-- config_manager.py                 # TOML read/write
+|   |-- defaults.toml                     # Default values
+|
+|-- web/                                  # Config Panel frontend
+    |-- routes.py                         # Custom Flask routes
+    |-- templates/
+    |   |-- config_panel.html             # HTML panel fragment
+    |-- static/
+        |-- css/
+        |   |-- my_style.css
+        |-- js/
+            |-- my_panel.js
+```
+
+---
+
+## The Manifest: hpkg_manifest.toml
+
+The manifest is the heart of the package. HPM reads it to know everything about the package.
+
+### Identity Section (required)
+
+```toml
+id = "my_package"              # Unique snake_case identifier
+name = "My Package"            # Human-readable name for Store/Hub
+version = "1.0.0"              # Semantic version (MAJOR.MINOR.PATCH)
+hecos_min_version = "0.39.0"   # Minimum required Hecos version
+author = "Your Name"
+license = "GPL-3.0"
+description = "Short, clear description of the package."
+icon = "emoji"
+category = "PLUGINS"           # PLUGINS | MULTIMEDIA | CONNETTIVITA | UTILITY
+type = "plugin"                # plugin | widget | extension
+```
+
+### Runtime Section (backend plugin)
+
+```toml
+plugin_tag = "MY_PACKAGE"      # Unique UPPERCASE tag
+is_class_based = true          # true = Tools class; false = flat module
+plugin_dir = "."               # Plugin root folder
+lazy_load = true               # true = loaded only when needed
+```
+
+### Python Dependencies
+
+```toml
+pip_requirements = [
+    "requests",
+    "httpx",
+]
+python_requires = ">=3.11"
+dependencies = []              # Dependencies on other HPM packages
+```
+
+### LLM Routing
+
+```toml
+[routing]
+instructions = "[MY_PACKAGE: do_something:description] - Use this tool only if..."
+```
+
+### Slash Commands
+
+```toml
+[[slash_commands]]
+id = "my_cmd"
+aliases = ["/my", "/cmd"]
+description = "Does something useful"
+usage = "/my <argument>"
+example = "/my practical example"
+icon = "emoji"
+method = "do_something"        # Method name in the Tools class
+requires_args = true
+```
+
+### Tool Schema (for LLM)
+
+```toml
+[[tool_schema]]
+name = "MY_PACKAGE__do_something"
+description = "Tool description for the LLM."
+
+[tool_schema.parameters]
+type = "object"
+required = ["input"]
+
+[tool_schema.parameters.properties.input]
+type = "string"
+description = "The user input."
+```
+
+### Config Panel
+
+```toml
+[config_panel]
+tab_id = "my_tab"
+tab_label = "My Panel"
+category = "UTILITY"
+tab_icon = "<i class=\"fas fa-cog\"></i>"
+template_file = "web/templates/config_panel.html"
+js_file = "web/static/js/my_panel.js"
+css_file = "web/static/css/my_style.css"
+api_routes_file = "web/routes.py"
+config_api_get = "/hecos/api/plugins/my_package/config"
+config_api_post = "/hecos/api/plugins/my_package/config"
+```
+
+### Capabilities
+
+```toml
+[capabilities]
+llm_tools = ["MY_PACKAGE__do_something"]
+slash_commands = ["/my", "/cmd"]
+has_widget = false
+has_config_panel = true
+has_api_routes = true
+has_system_calls = false
+notes = "Additional notes for users."
+```
+
+---
+
+## The Backend: plugin/main.py
+
+```python
+"""
+MODULE: My Package
+"""
+from hecos.core.logging import logger
+
+class MypackageTools:
+    def __init__(self):
+        self.tag = "MY_PACKAGE"
+
+    def status(self) -> str:
+        return "Loaded"
+
+    def do_something(self, input: str) -> str:
+        logger.info(f"[MY_PACKAGE] Called with: {input}")
+        return f"Result for: {input}"
+
+tools = MypackageTools()
+```
+
+### Root entry point (root main.py)
+
+```python
+"""
+Root entry point -- re-exports from plugin/ folder.
+The module_scanner looks for the tools object here.
+"""
+from .plugin.main import tools, status
+```
+
+---
+
+## Autonomous Configuration
+
+Packages must never write to the Hecos core config. Each package has its own private TOML file.
+
+### <id>_config/defaults.toml
+
+```toml
+[my_package]
+provider = "default"
+api_key = ""
+timeout = 30
+```
+
+### <id>_config/config_manager.py
+
+```python
+from pathlib import Path
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
+try:
+    import tomli_w
+    _HAS_TOMLI_W = True
+except ImportError:
+    _HAS_TOMLI_W = False
+
+_THIS_DIR = Path(__file__).parent.resolve()
+_DEFAULTS_FILE = _THIS_DIR / "defaults.toml"
+_CONFIG_FILE   = _THIS_DIR / "my_package.toml"
+
+def get_config() -> dict:
+    if not _CONFIG_FILE.exists():
+        _create_from_defaults()
+    try:
+        return tomllib.loads(_CONFIG_FILE.read_bytes().decode("utf-8"))
+    except Exception:
+        return tomllib.loads(_DEFAULTS_FILE.read_bytes().decode("utf-8"))
+
+def save_config(data: dict) -> bool:
+    if not _HAS_TOMLI_W:
+        return False
+    try:
+        _CONFIG_FILE.write_bytes(tomli_w.dumps(data).encode("utf-8"))
+        return True
+    except Exception:
+        return False
+
+def _create_from_defaults():
+    save_config(tomllib.loads(_DEFAULTS_FILE.read_bytes().decode("utf-8")))
+```
+
+---
+
+## API Routes: web/routes.py
+
+The init function has a mandatory signature:
+
+```python
+from flask import request, jsonify
+
+def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
+    import os, sys
+
+    # Add the package folder to sys.path for relative imports
+    plugin_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if plugin_path not in sys.path:
+        sys.path.insert(0, plugin_path)
+
+    from my_package_config.config_manager import get_config, save_config
+
+    @app.route("/hecos/api/plugins/my_package/config", methods=["GET"])
+    def get_my_config():
+        return jsonify(get_config())
+
+    @app.route("/hecos/api/plugins/my_package/config", methods=["POST"])
+    def post_my_config():
+        data = request.get_json(force=True)
+        ok = save_config(data)
+        return jsonify({"ok": ok})
+```
+
+> All endpoints must follow `/hecos/api/plugins/<package_id>/...`
+
+---
+
+## Frontend: Config Panel
+
+### web/templates/config_panel.html
+
+HTML fragment (no `<html>`, `<head>`, `<body>`):
+
+```html
+<div id="tab-my_tab" class="panel module-config-panel">
+  <div class="card">
+    <!-- Use data-icon-injected="true" if you use display:flex to avoid double icons -->
+    <div class="card-title" data-icon-injected="true" style="display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="fas fa-cog"></i> Settings</span>
+    </div>
+    
+    <div class="field">
+      <label for="my-provider">Provider</label>
+      <select id="my-provider" class="config-input">
+        <option value="default">Default</option>
+      </select>
+    </div>
+    <button onclick="myPanel.save()" class="btn btn-primary">Save</button>
+  </div>
+</div>
+```
+
+> **UI Best Practices**:
+> - Use native Hecos CSS classes: `.card`, `.card-title`, `.field`, `.config-input`, `.btn btn-primary`.
+> - **CRITICAL**: Hecos automatically injects an icon into every `.card-title`. If your div uses `display:flex` (e.g., to put buttons on the right), add `data-icon-injected="true"` or the injector will destroy your layout.
+
+### web/static/js/my_panel.js
+
+```javascript
+const myPanel = (() => {
+  const API_GET  = "/hecos/api/plugins/my_package/config";
+  const API_POST = "/hecos/api/plugins/my_package/config";
+
+  async function init() {
+    const res = await fetch(API_GET);
+    if (!res.ok) return;
+    const cfg = await res.json();
+    document.getElementById("my-provider").value = cfg.my_package?.provider || "default";
+  }
+
+  async function save() {
+    const payload = { my_package: { provider: document.getElementById("my-provider").value } };
+    const res = await fetch(API_POST, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    // Use native Hecos banners (window.showToast), NEVER window.saveConfig(true)
+    if (data.ok) window.showToast("Saved!", "success");
+  }
+
+  // HTML is injected dynamically, DOMContentLoaded will not work here.
+  // Use a MutationObserver or expose the init function to be called by the Hub.
+  const observer = new MutationObserver((mutations) => {
+    if (document.getElementById("my-provider")) {
+      init();
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  return { init, save };
+})();
+```
+
+---
+
+## Legacy Compatibility (`config_defaults`)
+
+In older packages, configuration was injected into `system.yaml` via `[config_defaults]`. **This approach is deprecated**. The only allowed use today is to tell the Hub that the plugin is active, if strictly necessary:
+
+```toml
+[config_defaults]
+enabled = true   # Only this. Nothing else.
+```
+
+---
+
+## Static Asset URLs
+
+JS/CSS files are served by Flask via:
+```
+/hpm_plugin/<package_id>/<relative_path>
+```
+Example: `/hpm_plugin/image_gen/web/static/js/igen_panel.js`
+
+These URLs are generated automatically by the Hub from the `js_file` and `css_file` fields in the manifest.
+
+---
+
+## Widgets
+
+The widget structure is different from the config panel. Each widget has its own folder with a `manifest.json`:
+
+```text
+my_widget/
+|-- manifest.json       # Widget JSON manifest
+|-- main.py             # Backend logic
+|-- __init__.py
+|-- templates/
+    |-- my_widget.html
+```
+
+Declaration in the main TOML manifest:
+```toml
+[[widgets]]
+id = "my_widget"
+label = "My Widget"
+icon = "fa-star"
+extension_path = "my_widget/"
+has_room_view = true
+```
+
+---
+
+## Package Lifecycle
+
+```
+1. Development  ->  *_src/ folder with hpkg_manifest.toml
+2. Build        ->  HPM Builder creates signed .hpkg (Ed25519)
+3. Install      ->  HPM extracts to hecos/hpm/<id>/
+4. Boot         ->  LOADER loads the plugin; Flask registers API routes
+5. Hub          ->  Reads manifest.json and injects HTML/JS/CSS in browser
+```
+
+---
+
+## Runtime Installation Paths
+
+| Resource | Path |
+|---|---|
+| Full package | `C:\Hecos\hecos\hpm\<id>\` |
+| Runtime manifest | `C:\Hecos\hecos\hpm\<id>\manifest.json` |
+| Private TOML config | `C:\Hecos\hecos\hpm\<id>\<id>_config\<id>.toml` |
+| Config panel HTML | `C:\Hecos\hecos\hpm\<id>\web\templates\` |
+| Static JS/CSS | `C:\Hecos\hecos\hpm\<id>\web\static\` |
+
+---
+
+## Conventions and Rules
+
+1. **Package `id`**: always `snake_case` lowercase. E.g.: `image_gen`, `my_weather`.
+2. **`plugin_tag`**: always `SCREAMING_SNAKE_CASE`. E.g.: `IMAGE_GEN`, `MY_WEATHER`.
+3. **Autonomous config**: never write to the global Hecos config. Use a private TOML in `<id>_config/`.
+4. **Imports in routes.py**: always use `sys.path.insert` to add the package folder, since the file is loaded dynamically outside the Python package context.
+5. **API endpoints**: always follow the pattern `/hecos/api/plugins/<id>/<resource>`.
+6. **No browser popups**: use Hecos native banners for notifications and feedback.
+7. **Mandatory signature**: distributed packages must be signed with Ed25519. For local development, "Allow unsigned packages" can be enabled in the Package Manager.
+
+---
+
+## Development Tool: Hecos HPM Builder
+
+```bash
+cd C:\Hecos-Packages\Hecos_HPM_Builder
+python main.py
+```
+
+Available functions:
+- **Validate + Build**: validates the manifest and creates the signed `.hpkg`
+- **Scaffold New Package**: creates the base structure of a new package (guided)
+- **Edit Manifest**: interactive manifest editor
+- **Build All**: recompiles all packages in the source folder
+
+> Cryptographic keys: `C:\hpm_private.pem` (private, never commit!) and `C:\Hecos\hecos\data\trusted_keys\hpm_public.pem` (public).
