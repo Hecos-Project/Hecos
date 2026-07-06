@@ -7,8 +7,7 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 let _backupCfg = {};
 let _backupStatusInterval = null;
-
-const ALL_MODULES = ['calendar', 'contacts', 'chat', 'memory', 'reminders', 'flows', 'users', 'lists', 'system_config'];
+let _dynamicModules = [];
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -53,11 +52,26 @@ async function backupLoadConfig() {
         const cronEl = document.getElementById('backup-cron-custom');
         if (cronEl) cronEl.value = data.config.schedule_cron || '';
 
-        // Module checkboxes
-        const modules = data.config.modules || {};
-        for (const [mod, enabled] of Object.entries(modules)) {
-            const el = document.getElementById(`backup-mod-${mod}`);
-            if (el) el.checked = !!enabled;
+        // Dynamic Modules UI
+        const meta = data.modules_meta || {};
+        _dynamicModules = Object.keys(meta);
+        
+        const grid = document.querySelector('.backup-modules-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            for (const [mod, info] of Object.entries(meta)) {
+                const isEnabled = data.config.modules ? !!data.config.modules[mod] : true;
+                const checkedStr = isEnabled ? 'checked' : '';
+                const lbl = window.t ? (window.t(`hub_mod_${mod}`) || window.t(`ext_${mod}_title`) || info.label) : info.label;
+                const icon = info.icon || '📦';
+                
+                grid.innerHTML += `
+                    <label class="backup-mod-check">
+                        <input type="checkbox" id="backup-mod-${mod}" ${checkedStr}>
+                        ${icon} ${lbl}
+                    </label>
+                `;
+            }
         }
 
     } catch (e) {
@@ -74,7 +88,7 @@ async function backupSaveConfig(silent = false) {
         const custom_cron = document.getElementById('backup-cron-custom')?.value.trim() || '';
 
         const modules = {};
-        ALL_MODULES.forEach(mod => {
+        _dynamicModules.forEach(mod => {
             const el = document.getElementById(`backup-mod-${mod}`);
             modules[mod] = el ? el.checked : true;
         });
@@ -289,11 +303,33 @@ function _backupGetModuleLabel(m) {
 
 function _backupShowRestoreModal(filename, file) {
     // Build module selection checkboxes
-    const checkboxes = ALL_MODULES.map(m => `
+    // Note: The UI dynamically builds these now, so we can just use _dynamicModules or Object.keys(_backupCfg.modules)
+    const renderMods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
+    
+    const checkboxes = renderMods.map(m => {
+        let lbl = m;
+        // Basic fallback map if meta isn't available
+        const fallbackMap = {
+            'calendar': 'Calendar',
+            'contacts': 'Contatti',
+            'chat': 'Chat History',
+            'memory': 'Memory / RAG',
+            'reminders': 'Promemoria',
+            'flows': 'Flows',
+            'users': 'Utenti',
+            'lists': 'Liste',
+            'system_config': 'Configurazioni'
+        };
+        lbl = fallbackMap[m] || m;
+        if (window.t) {
+            lbl = window.t(`hub_mod_${m}`) || window.t(`ext_${m}_title`) || lbl;
+        }
+        return `
         <label class="backup-mod-check">
-            <input type="checkbox" id="restore-mod-${m}" checked> ${_backupGetModuleLabel(m)}
+            <input type="checkbox" id="restore-mod-${m}" checked> ${lbl}
         </label>
-    `).join('');
+        `;
+    }).join('');
 
     const src = filename ? `<strong>${filename}</strong>` : (file ? `<strong>${file.name}</strong>` : '');
 
@@ -339,14 +375,16 @@ function _backupShowRestoreModal(filename, file) {
 }
 
 function backupToggleAllRestoreMods(checked) {
-    ['calendar','contacts','chat','memory','reminders','flows','users','lists'].forEach(m => {
+    const mods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
+    mods.forEach(m => {
         const el = document.getElementById(`restore-mod-${m}`);
         if (el) el.checked = checked;
     });
 }
 
 async function _backupDoRestore(filename, file) {
-    const selectedMods = ['calendar','contacts','chat','memory','reminders','flows','users','lists']
+    const renderMods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
+    const selectedMods = renderMods
         .filter(m => document.getElementById(`restore-mod-${m}`)?.checked);
 
     document.getElementById('backup-restore-modal').style.display = 'none';

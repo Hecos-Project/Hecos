@@ -30,35 +30,8 @@ def register_routes(app) -> None:
             cfg = bstore.load()
             cfg["presets"] = bstore.SCHEDULE_PRESETS
 
-            # Static modules metadata
-            modules_meta = {
-                "chat": {"label": "Chat History", "icon": "💬"},
-                "memory": {"label": "Memory / RAG", "icon": "🧠"},
-                "contacts": {"label": "Contacts", "icon": "👤"},
-                "flows": {"label": "Flows", "icon": "⚡"},
-                "users": {"label": "Users", "icon": "👥"},
-                "system_config": {"label": "System Config", "icon": "⚙️"},
-            }
-
-            # HPM modules metadata
-            try:
-                import tomllib
-                root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                hpm_dir = os.path.join(root, "hpm")
-                if os.path.isdir(hpm_dir):
-                    for d in os.listdir(hpm_dir):
-                        mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
-                        if os.path.exists(mf_path):
-                            with open(mf_path, "rb") as f:
-                                mf_data = tomllib.load(f)
-                            pkg_id = mf_data.get("id", d)
-                            if "backup" in mf_data and mf_data["backup"].get("enabled"):
-                                modules_meta[pkg_id] = {
-                                    "label": mf_data.get("name", d.capitalize()),
-                                    "icon": mf_data.get("backup", {}).get("icon", "📦")
-                                }
-            except Exception as pe:
-                logger.warning("BACKUP API", f"Error reading HPM manifests: {pe}")
+            from hecos.modules.backup.orchestrator import get_backup_metadata
+            modules_meta = get_backup_metadata()
 
             return jsonify({"ok": True, "config": cfg, "modules_meta": modules_meta})
         except Exception as e:

@@ -195,6 +195,35 @@
       },
       "verification_step": "Send [WEB: search:Test] to AI, verify it triggers a browser search.",
       "notes": "Commands: search:<text>, open:<site>."
+    },
+    {
+      "id": "HPM_backup_contract",
+      "description": "Dynamic Global Backup via HPM manifest discovery. Each installed HPM package can opt-in to the global backup/restore cycle by declaring a [backup] section in its hpkg_manifest.toml. The orchestrator auto-discovers all installed packages at runtime and registers their backup/restore endpoints without requiring hardcoded module lists.",
+      "risk": "low",
+      "available_in": ["web"],
+      "implementation": {
+        "core_files": [
+          "hecos/modules/backup/orchestrator.py -> get_backup_fns(), get_restore_fns(), get_backup_metadata()",
+          "hecos/modules/backup/api.py -> backup_get_config()",
+          "hecos/modules/web_ui/static/js/backup_panel.js -> backupLoadConfig()"
+        ],
+        "entry_points": [
+          "GET /hecos/api/backup/config  ->  returns modules_meta (dynamic)",
+          "POST /hecos/api/backup/run   ->  triggers full backup using discovered fns",
+          "POST /hecos/api/backup/restore -> restores selected modules"
+        ],
+        "config_keys": [],
+        "hpkg_manifest_schema": {
+          "[backup]": {
+            "enabled": "bool  — must be true for the package to appear in the backup UI",
+            "backup_endpoint": "str  — relative URL called via POST to export data, e.g. /api/lists/backup. Must return {ok, data}",
+            "restore_endpoint": "str  — relative URL called via POST to import data, e.g. /api/lists/restore. Receives {data} payload",
+            "icon": "str  — optional emoji shown next to the module name in the UI (default: 📦)"
+          }
+        }
+      },
+      "verification_step": "Open Config > Backup tab. Verify the 'Lists Manager' module appears dynamically (no hardcoded entry). Run backup and confirm lists.json is present in the ZIP.",
+      "notes": "Core built-in modules (contacts, chat, memory, flows, users, system_config) use static functions. HPM packages use the _make_hpm_backup_fn/_make_hpm_restore_fn proxy pattern. The UI (backup_panel.js) builds all checkboxes dynamically via _dynamicModules array populated from the /config endpoint."
     }
   ]
 }

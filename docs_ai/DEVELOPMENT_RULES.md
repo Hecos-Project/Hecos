@@ -45,3 +45,35 @@ Hecos non è più un bridge, ma un ecosistema nativo.
 
 > [!WARNING]
 > La modifica del `plugin_loader.py` (Kernel) può compromettere l'intero ecosistema. Procedere con test isolati.
+
+### 10. HPM Backup Contract (MANDATORY for packages with persistent data)
+
+Any HPM package that stores user data **must** opt into the Global Backup system by declaring a `[backup]` section in its `hpkg_manifest.toml`.
+
+#### Required fields
+
+```toml
+[backup]
+enabled            = true
+backup_endpoint    = "/api/<package-id>/backup"   # POST → must return { ok: bool, data: any }
+restore_endpoint   = "/api/<package-id>/restore"  # POST ← receives { data: any }
+icon               = "📦"                         # optional — emoji shown in the UI
+```
+
+#### API contract
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `backup_endpoint` | `POST` | Export all package data. Return `{"ok": true, "data": <serializable>}`. |
+| `restore_endpoint` | `POST` | Import data from backup. Receives `{"data": <serializable>}`. Return `{"ok": true}`. |
+
+#### How discovery works
+
+1. `orchestrator.get_backup_fns()` scans every `hpm/<package>/hpkg_manifest.toml` at runtime.
+2. Packages with `[backup] enabled = true` and a valid `backup_endpoint` are registered via `_make_hpm_backup_fn()`.
+3. `orchestrator.get_backup_metadata()` returns icon + label for each discovered package.
+4. `GET /hecos/api/backup/config` exposes `modules_meta` to the frontend.
+5. `backup_panel.js → backupLoadConfig()` renders module checkboxes **dynamically** — no hardcoded list needed.
+
+> [!IMPORTANT]
+> Never add a new HPM package to the hardcoded arrays in `backup_panel.js` or `api.py`. The discovery system handles it automatically through `hpkg_manifest.toml`.

@@ -215,7 +215,44 @@ def get_restore_fns() -> dict:
     return fns
 
 
-# ── Full backup orchestration ─────────────────────────────────────────────────
+def get_backup_metadata() -> dict:
+    """Return metadata for all available backup modules."""
+    meta = {
+        "contacts": {"label": "Contatti", "icon": "📒"},
+        "chat": {"label": "Chat History", "icon": "💬"},
+        "memory": {"label": "Memory / RAG", "icon": "🧠"},
+        "flows": {"label": "Flows", "icon": "⚡"},
+        "users": {"label": "Utenti", "icon": "👤"},
+        "system_config": {"label": "Configurazioni", "icon": "⚙️"},
+    }
+    
+    # Discover HPM packages
+    try:
+        import os, tomllib
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        hpm_dir = os.path.join(root, "hpm")
+        if os.path.isdir(hpm_dir):
+            for d in os.listdir(hpm_dir):
+                mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
+                if os.path.exists(mf_path):
+                    with open(mf_path, "rb") as f:
+                        mf_data = tomllib.load(f)
+                    
+                    b_cfg = mf_data.get("backup")
+                    if b_cfg and isinstance(b_cfg, dict) and b_cfg.get("enabled"):
+                        mod_id = mf_data.get("id", d)
+                        meta[mod_id] = {
+                            "label": mf_data.get("name", mod_id.capitalize()),
+                            "icon": b_cfg.get("icon", "📦")
+                        }
+    except Exception as e:
+        logger.error(f"[Backup] Failed to extract HPM metadata: {e}")
+        
+    return meta
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Full backup orchestration
+# ═══════════════════════════════════════════════════════════════════════════
 
 def run_full_backup(app, dest_path: str, modules_enabled: dict | None = None) -> dict:
     """
