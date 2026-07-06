@@ -7,8 +7,18 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 let _backupCfg = {};
 let _backupStatusInterval = null;
+let _dynamicModules = [];
+let _moduleMeta = {};  // { modId: { label, icon } } populated by backupLoadConfig
 
-const ALL_MODULES = ['calendar', 'contacts', 'chat', 'memory', 'reminders', 'flows', 'users', 'lists', 'system_config'];
+/**
+ * Resolve a translated label.
+ * Only returns the i18n string if the key actually exists in window.I18N.
+ * Falls back to the label provided by the server (already localised).
+ */
+function _backupI18n(key, fallback) {
+    if (window.I18N && window.I18N[key]) return window.I18N[key];
+    return fallback;
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
@@ -53,17 +63,42 @@ async function backupLoadConfig() {
         const cronEl = document.getElementById('backup-cron-custom');
         if (cronEl) cronEl.value = data.config.schedule_cron || '';
 
-        // Module checkboxes
-        const modules = data.config.modules || {};
-        for (const [mod, enabled] of Object.entries(modules)) {
-            const el = document.getElementById(`backup-mod-${mod}`);
-            if (el) el.checked = !!enabled;
+        // Dynamic Modules UI
+        const meta = data.modules_meta || {};
+        _moduleMeta = meta;
+        _dynamicModules = Object.keys(meta);
+        
+        // getElementById first (new template), fallback to querySelector (old cached DOM)
+        const grid = document.getElementById('backup-modules-grid')
+                  || document.querySelector('.backup-modules-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            for (const [mod, info] of Object.entries(meta)) {
+                const isEnabled = data.config.modules ? data.config.modules[mod] !== false : true;
+                const checkedStr = isEnabled ? 'checked' : '';
+                // Use server label as primary source; only override if a real i18n key exists
+                const lbl = _backupI18n(`hub_mod_${mod}`, null)
+                         || _backupI18n(`ext_${mod}_title`, null)
+                         || info.label;
+                const icon = info.icon || '📦';
+                
+                grid.innerHTML += `
+                    <label class="backup-mod-check">
+                        <input type="checkbox" id="backup-mod-${mod}" ${checkedStr}>
+                        ${icon} ${lbl}
+                    </label>
+                `;
+            }
+            console.log('[Backup] Grid populated with', _dynamicModules.length, 'modules:', _dynamicModules);
+        } else {
+            console.warn('[Backup] backup-modules-grid not found in DOM');
         }
 
     } catch (e) {
         console.error('[Backup] loadConfig error:', e);
     }
 }
+
 
 async function backupSaveConfig(silent = false) {
     try {
@@ -74,7 +109,7 @@ async function backupSaveConfig(silent = false) {
         const custom_cron = document.getElementById('backup-cron-custom')?.value.trim() || '';
 
         const modules = {};
-        ALL_MODULES.forEach(mod => {
+        _dynamicModules.forEach(mod => {
             const el = document.getElementById(`backup-mod-${mod}`);
             modules[mod] = el ? el.checked : true;
         });
@@ -289,11 +324,23 @@ function _backupGetModuleLabel(m) {
 
 function _backupShowRestoreModal(filename, file) {
     // Build module selection checkboxes
-    const checkboxes = ALL_MODULES.map(m => `
+    // Note: The UI dynamically builds these now, so we can just use _dynamicModules or Object.keys(_backupCfg.modules)
+    const renderMods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
+    
+    const checkboxes = renderMods.map(m => {
+        // Use the label from _moduleMeta (populated by backupLoadConfig), then i18n, then mod id
+        const metaInfo = _moduleMeta[m] || {};
+        const lbl = _backupI18n(`hub_mod_${m}`, null)
+                 || _backupI18n(`ext_${m}_title`, null)
+                 || metaInfo.label
+                 || m;
+        const icon = metaInfo.icon || '';
+        return `
         <label class="backup-mod-check">
-            <input type="checkbox" id="restore-mod-${m}" checked> ${_backupGetModuleLabel(m)}
+            <input type="checkbox" id="restore-mod-${m}" checked> ${icon} ${lbl}
         </label>
-    `).join('');
+        `;
+    }).join('');
 
     const src = filename ? `<strong>${filename}</strong>` : (file ? `<strong>${file.name}</strong>` : '');
 
@@ -339,14 +386,16 @@ function _backupShowRestoreModal(filename, file) {
 }
 
 function backupToggleAllRestoreMods(checked) {
-    ['calendar','contacts','chat','memory','reminders','flows','users','lists'].forEach(m => {
+    const mods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
+    mods.forEach(m => {
         const el = document.getElementById(`restore-mod-${m}`);
         if (el) el.checked = checked;
     });
 }
 
 async function _backupDoRestore(filename, file) {
-    const selectedMods = ['calendar','contacts','chat','memory','reminders','flows','users','lists']
+    const renderMods = _dynamicModules.length ? _dynamicModules : Object.keys(_backupCfg.modules || {});
+    const selectedMods = renderMods
         .filter(m => document.getElementById(`restore-mod-${m}`)?.checked);
 
     document.getElementById('backup-restore-modal').style.display = 'none';

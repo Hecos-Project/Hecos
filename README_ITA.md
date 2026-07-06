@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.37.0 (Runtime Alpha)
+# Hecos - Versione 0.39.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato Runtime Alpha**: Hecos è attualmente in `v0.37.0`[cite: 1]. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root[cite: 1].
+> **Stato Runtime Alpha**: Hecos è attualmente in `v0.39.0`[cite: 1]. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root[cite: 1].
 
 ## 🚀 Panoramica
 **Hecos** è un **Helping Companion System**: un ecosistema locale progettato per unire fluidamente tecnologia e vita umana, combinando AI reasoning, automazione visiva ed esecuzione di sistema diretta[cite: 1]. Invece di inseguire concetti astratti come la sovranità digitale, Hecos si concentra su un'unica missione pragmatica: **migliorare la vita umana**, trasformando l'hardware locale in uno strumento pratico ed estremamente efficiente per tutti i giorni[cite: 1].
@@ -21,11 +21,11 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea[cite: 1].
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata[cite: 1].
 
-Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.37.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa[cite: 1]. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale[cite: 1].
+Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.39.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa[cite: 1]. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale[cite: 1].
 
 ---
 
-## ✨ Caratteristiche Principali (v0.37.0)
+## ✨ Caratteristiche Principali (v0.39.0)
 * ⚡ **HDCS (Comandi Diretti)** — Esegui istantaneamente oltre 150 funzioni native saltando il "cervello" dell'IA digitando `/` nella chat o con `Ctrl+Alt+Spazio` ovunque[cite: 1].
 * ⚙️ **Motore di Automazione Flows** — Editor visuale a nodi (drag-and-drop) per la creazione di automazioni complesse multi-step, trigger e azioni con integrazione NLP vocale[cite: 1].
 * **📅 Calendario Integrato** — Modulo calendario completo con tracciamento delle festività e codifica a colori localizzata per gli eventi[cite: 1].
@@ -264,7 +264,7 @@ Hecos utilizza un sistema di documentazione modulare localizzato in EN, IT e ES[
 
 ### Accesso Locale (Modulare)
 Le guide dettagliate si trovano nella cartella `docs/`[cite: 1]:
-- 📖 **[Guida Unificata (ITA)](docs/GUIDA_UNIFICATA_ITA.md)**: Tutto ciò che devi sapere sulla v0.35.0[cite: 1].
+- 📖 **[Guida Unificata (ITA)](docs/GUIDA_UNIFICATA_ITA.md)**: Tutto ciò che devi sapere sulla v0.39.0[cite: 1].
 - 🏗️ **[Guida Tecnica](docs/tech/)**: (Admin/Dev) Dettagli sull'architettura di sistema e OOP[cite: 1].
 
 ### Accesso Online

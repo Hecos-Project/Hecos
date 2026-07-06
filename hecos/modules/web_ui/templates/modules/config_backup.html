@@ -386,43 +386,9 @@ select.backup-form-control { cursor: pointer; }
             {{ t('backup_modules_title') or 'Moduli da includere' }}
         </div>
         <div class="backup-card-body">
-            <div class="backup-modules-grid">
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-calendar" checked>
-                    📅 {{ t('ext_calendar_title') or 'Calendar' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-contacts" checked>
-                    📒 {{ t('hub_mod_contacts') or 'Contatti' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-chat" checked>
-                    💬 {{ t('backup_mod_chat') or 'Chat History' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-memory" checked>
-                    🧠 {{ t('hub_mod_memory') or 'Memory / RAG' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-reminders" checked>
-                    ⏰ {{ t('ext_reminder_title') or 'Promemoria' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-flows" checked>
-                    ⚡ {{ t('hub_mod_flows') or 'Flows' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-users" checked>
-                    👤 {{ t('hub_mod_users') or 'Utenti' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-lists" checked>
-                    📋 {{ t('hub_mod_lists') or 'Liste' }}
-                </label>
-                <label class="backup-mod-check">
-                    <input type="checkbox" id="backup-mod-system_config" checked>
-                    ⚙️ {{ t('backup_mod_system_config') or 'Configurazioni' }}
-                </label>
+            {# Checkboxes are populated dynamically by backup_panel.js → backupLoadConfig() #}
+            <div class="backup-modules-grid" id="backup-modules-grid">
+                <span style="color:var(--muted);font-size:0.82rem;grid-column:1/-1;">{{ t('backup_loading_modules') or 'Caricamento moduli...' }}</span>
             </div>
         </div>
     </div>

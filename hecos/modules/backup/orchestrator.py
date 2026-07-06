@@ -140,32 +140,148 @@ def restore_system_config(app, data: dict) -> dict:
 
 # ── Module registry ──────────────────────────────────────────────────────────
 
-_BACKUP_FNS = {
-    "calendar":  backup_calendar,
-    "contacts":  backup_contacts,
-    "chat":      backup_chat,
-    "memory":    backup_memory,
-    "reminders": backup_reminders,
-    "flows":     backup_flows,
-    "users":     backup_users,
-    "lists":     backup_lists,
-    "system_config": backup_system_config,
-}
+# ── Module registry ──────────────────────────────────────────────────────────
 
-_RESTORE_FNS = {
-    "calendar":  restore_calendar,
-    "contacts":  restore_contacts,
-    "chat":      restore_chat,
-    "memory":    restore_memory,
-    "reminders": restore_reminders,
-    "flows":     restore_flows,
-    "users":     restore_users,
-    "lists":     restore_lists,
-    "system_config": restore_system_config,
-}
+def _get_installed_hpm_packages(data_dir: str) -> set:
+    try:
+        from hecos.core.package_manager.registry import PackageRegistry
+        reg = PackageRegistry(data_dir=data_dir)
+        return {p["id"] for p in reg.list_all() if p.get("status") == "installed"}
+    except Exception as e:
+        logger.error(f"[BACKUP] Error reading HPM registry: {e}")
+        return set()
+
+def _make_hpm_backup_fn(endpoint: str):
+    def fn(app):
+        return _call_internal(app, "GET", endpoint)
+    return fn
+
+def _make_hpm_restore_fn(endpoint: str):
+    def fn(app, data):
+        return _call_internal(app, "POST", endpoint, data) or {"ok": False, "error": f"No response from {endpoint}"}
+    return fn
+
+def get_backup_fns() -> dict:
+    fns = {
+        "contacts":  backup_contacts,
+        "chat":      backup_chat,
+        "memory":    backup_memory,
+        "flows":     backup_flows,
+        "users":     backup_users,
+        "system_config": backup_system_config,
+    }
+    
+    # Discover HPM packages
+    try:
+        import os, tomllib
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        hpm_dir = os.path.join(root, "hpm")
+        data_dir = os.path.join(root, "data")
+        installed_pkgs = _get_installed_hpm_packages(data_dir)
+        
+        if os.path.isdir(hpm_dir):
+            for d in os.listdir(hpm_dir):
+                mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
+                if os.path.exists(mf_path):
+                    with open(mf_path, "rb") as f:
+                        mf_data = tomllib.load(f)
+                    
+                    pkg_id = mf_data.get("id", d)
+                    if pkg_id not in installed_pkgs:
+                        continue
+                    
+                    if "backup" in mf_data and mf_data["backup"].get("enabled"):
+                        endpoint = mf_data["backup"].get("backup_endpoint")
+                        if endpoint:
+                            fns[pkg_id] = _make_hpm_backup_fn(endpoint)
+    except Exception as e:
+        logger.error(f"[BACKUP] Error discovering HPM backup fns: {e}")
+        
+    return fns
+
+def get_restore_fns() -> dict:
+    fns = {
+        "contacts":  restore_contacts,
+        "chat":      restore_chat,
+        "memory":    restore_memory,
+        "flows":     restore_flows,
+        "users":     restore_users,
+        "system_config": restore_system_config,
+    }
+    
+    # Discover HPM packages
+    try:
+        import os, tomllib
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        hpm_dir = os.path.join(root, "hpm")
+        data_dir = os.path.join(root, "data")
+        installed_pkgs = _get_installed_hpm_packages(data_dir)
+        
+        if os.path.isdir(hpm_dir):
+            for d in os.listdir(hpm_dir):
+                mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
+                if os.path.exists(mf_path):
+                    with open(mf_path, "rb") as f:
+                        mf_data = tomllib.load(f)
+                    
+                    pkg_id = mf_data.get("id", d)
+                    if pkg_id not in installed_pkgs:
+                        continue
+                    
+                    if "backup" in mf_data and mf_data["backup"].get("enabled"):
+                        endpoint = mf_data["backup"].get("restore_endpoint")
+                        if endpoint:
+                            fns[pkg_id] = _make_hpm_restore_fn(endpoint)
+    except Exception as e:
+        logger.error(f"[BACKUP] Error discovering HPM restore fns: {e}")
+        
+    return fns
 
 
-# ── Full backup orchestration ─────────────────────────────────────────────────
+def get_backup_metadata() -> dict:
+    """Return metadata for all available backup modules."""
+    meta = {
+        "contacts": {"label": "Contatti", "icon": "📒"},
+        "chat": {"label": "Chat History", "icon": "💬"},
+        "memory": {"label": "Memory / RAG", "icon": "🧠"},
+        "flows": {"label": "Flows", "icon": "⚡"},
+        "users": {"label": "Utenti", "icon": "👤"},
+        "system_config": {"label": "Configurazioni", "icon": "⚙️"},
+    }
+    
+    # Discover HPM packages
+    try:
+        import os, tomllib
+        root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        hpm_dir = os.path.join(root, "hpm")
+        data_dir = os.path.join(root, "data")
+        installed_pkgs = _get_installed_hpm_packages(data_dir)
+        
+        if os.path.isdir(hpm_dir):
+            for d in os.listdir(hpm_dir):
+                mf_path = os.path.join(hpm_dir, d, "hpkg_manifest.toml")
+                if os.path.exists(mf_path):
+                    with open(mf_path, "rb") as f:
+                        mf_data = tomllib.load(f)
+                    
+                    pkg_id = mf_data.get("id", d)
+                    if pkg_id not in installed_pkgs:
+                        continue
+                    
+                    b_cfg = mf_data.get("backup")
+                    if b_cfg and isinstance(b_cfg, dict) and b_cfg.get("enabled"):
+                        meta[pkg_id] = {
+                            "label": mf_data.get("name", pkg_id.capitalize()),
+                            "icon": b_cfg.get("icon", "📦")
+                        }
+    except Exception as e:
+        logger.error(f"[Backup] Failed to extract HPM metadata: {e}")
+        
+    return meta
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Full backup orchestration
+# ═══════════════════════════════════════════════════════════════════════════
 
 def run_full_backup(app, dest_path: str, modules_enabled: dict | None = None) -> dict:
     """
@@ -182,13 +298,14 @@ def run_full_backup(app, dest_path: str, modules_enabled: dict | None = None) ->
         filename = f"hecos_backup_{ts_str}.zip"
         zip_path = str(dest_path).rstrip("/\\") + "/" + filename if dest_path else filename
 
+        backup_fns = get_backup_fns()
         if modules_enabled is None:
-            modules_enabled = {k: True for k in _BACKUP_FNS}
+            modules_enabled = {k: True for k in backup_fns}
 
         results = {}
         bundle = {}
 
-        for mod_name, fn in _BACKUP_FNS.items():
+        for mod_name, fn in backup_fns.items():
             if not modules_enabled.get(mod_name, True):
                 results[mod_name] = {"skipped": True}
                 logger.debug("BACKUP", f"Module {mod_name} skipped (disabled in config).")
@@ -259,7 +376,7 @@ def run_full_backup(app, dest_path: str, modules_enabled: dict | None = None) ->
 
 def backup_single_module(app, module_name: str) -> dict:
     """Run backup for a single module. Returns the raw data dict."""
-    fn = _BACKUP_FNS.get(module_name)
+    fn = get_backup_fns().get(module_name)
     if not fn:
         return {"ok": False, "error": f"Unknown module: {module_name}"}
     try:
@@ -287,7 +404,7 @@ def restore_from_zip(app, zip_bytes: bytes, modules: list | None = None) -> dict
             if not manifest.get("hecos_backup"):
                 return {"ok": False, "error": "Invalid backup file"}
 
-            for mod_name, restore_fn in _RESTORE_FNS.items():
+            for mod_name, restore_fn in get_restore_fns().items():
                 if modules is not None and mod_name not in modules:
                     results[mod_name] = {"skipped": True}
                     continue

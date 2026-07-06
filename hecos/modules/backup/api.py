@@ -25,11 +25,15 @@ def register_routes(app) -> None:
     # ── GET /hecos/api/backup/config ─────────────────────────────────────────
     @app.route("/hecos/api/backup/config", methods=["GET"])
     def backup_get_config():
-        """Return current backup configuration."""
+        """Return current backup configuration and metadata."""
         try:
             cfg = bstore.load()
             cfg["presets"] = bstore.SCHEDULE_PRESETS
-            return jsonify({"ok": True, "config": cfg})
+
+            from hecos.modules.backup.orchestrator import get_backup_metadata
+            modules_meta = get_backup_metadata()
+
+            return jsonify({"ok": True, "config": cfg, "modules_meta": modules_meta})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
 

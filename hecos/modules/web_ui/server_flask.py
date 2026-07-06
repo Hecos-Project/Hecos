@@ -158,14 +158,6 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_remote_triggers import init_remote_trigger_routes
     init_remote_trigger_routes(app, logger, get_state_manager)
 
-    # Media Player Extension Route Integration
-    try:
-        from hecos.plugins.media_player.routes import init_routes as init_media_player
-        init_media_player(app)
-        logger.info("[WebUI] Hecos Media Player plugin loaded.")
-    except Exception as _mp_e:
-        logger.warning(f"[WebUI] Media Player plugin could not load: {_mp_e}")
-
     # Contacts Plugin Route Integration
     try:
         from hecos.plugins.contacts.api import register_routes as init_contacts_api

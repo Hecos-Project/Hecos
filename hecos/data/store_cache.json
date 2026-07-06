@@ -1,20 +1,20 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-07-05T06:28:50Z",
+  "generated_at": "2026-07-06T04:51:53Z",
   "packages": [
     {
       "id": "calendar",
       "name": "Calendar",
       "type": "plugin",
       "level": 5,
-      "version": "1.0.3",
+      "version": "1.0.4",
       "author": "Antonio Meloni",
       "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.3.hpkg",
-      "size_bytes": 890333,
-      "sha256": "8091ac932a9dfe16e1999bb9f55bb13f89be59f313355ab1adcffa1508eff58a",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.4.hpkg",
+      "size_bytes": 891716,
+      "sha256": "eaa276938f4ce8fc8258af60748cf9b515d18893282a35380d3c447af5bc69c7",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/preview.png"
       ],
@@ -58,7 +58,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
       "size_bytes": 535872,
-      "sha256": "f259fda50b2db8563e34fa443af162978e03320e9d05d3139e79734d24e89ec8",
+      "sha256": "ce99cf76b595723f6fc2ea7d2cae6f505a246af06336ab039f0dac1438834712",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/image_gen_src/preview.png"
       ],
@@ -94,13 +94,13 @@
       "name": "Lists Manager",
       "type": "plugin",
       "level": 5,
-      "version": "2.0.0",
+      "version": "2.0.1",
       "author": "Antonio Meloni",
-      "description": "Universal list manager plugin. Supports shopping lists, to-do lists, blacklists, and any other list type with items, priorities, and labels.",
+      "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/lists-2.0.0.hpkg",
-      "size_bytes": 937855,
-      "sha256": "c9bc24a2fe5b734f8af880f7dc1b0164dcdfd6daa60f4ee6d8f28312ed670d77",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/lists-2.0.1.hpkg",
+      "size_bytes": 938088,
+      "sha256": "545016a0c08a0ad72475cdf8ba16c46e9618eb1c8232807ee1bedcd5152fb8ea",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/lists_src/preview.png"
       ],
@@ -110,14 +110,14 @@
       "featured": false,
       "capabilities": {
         "llm_tools": [
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "create_list",
+          "list_lists",
+          "show_list",
+          "add_to_list",
+          "check_item",
+          "uncheck_item",
+          "remove_from_list",
+          "clear_done"
         ],
         "slash_commands": [
           "/list",
@@ -148,8 +148,8 @@
       "description": "Simple Map Module based on Leaflet and Nominatim.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/map-1.0.1.hpkg",
-      "size_bytes": 447404,
-      "sha256": "f9420c1eca9d4218bf7e407e5b8de3cb132b41cee0dd6b6a501e71951bd07cc5",
+      "size_bytes": 447407,
+      "sha256": "38e83457277adfdfb7d171a511086944a7414e353769d8999d81ca1c84221836",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/map_src/preview.png"
       ],
@@ -159,8 +159,8 @@
       "featured": false,
       "capabilities": {
         "llm_tools": [
-          "",
-          ""
+          "get_home_location",
+          "geocode"
         ],
         "slash_commands": [],
         "has_widget": true,
@@ -175,6 +175,59 @@
       ]
     },
     {
+      "id": "media_player",
+      "name": "Hecos Media Player",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.1.0",
+      "author": "Antonio Meloni",
+      "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/media_player-1.1.0.hpkg",
+      "size_bytes": 1141124,
+      "sha256": "f632f6bc37f6bd0d8742588a5c68ba1d4163359d16854368c2d8a95e5c8dc2de",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/media_player_src/preview.png"
+      ],
+      "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#media_player",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "play",
+          "pause",
+          "stop",
+          "next_track",
+          "prev_track",
+          "set_volume",
+          "get_status",
+          "create_playlist",
+          "add_to_playlist",
+          "remove_from_playlist",
+          "delete_playlist",
+          "list_playlists",
+          "get_playlist",
+          "play_playlist",
+          "scan_folder",
+          "play_by_index"
+        ],
+        "slash_commands": [
+          "/play",
+          "/stop",
+          "/pause",
+          "/playlist"
+        ],
+        "has_widget": true,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": true,
+        "notes": ""
+      },
+      "dependencies": [],
+      "pip_requirements": []
+    },
+    {
       "id": "quick_links",
       "name": "Quick Links",
       "type": "widget",
@@ -185,7 +238,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
       "size_bytes": 8105,
-      "sha256": "d29affa2d45d897e92040ee941f7684177fd63044eb243e4d3ac45228003ae24",
+      "sha256": "287d803a013ea7fb80fadab57e89594089bfa61d26b086e9135242f08de9dcd8",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -210,13 +263,13 @@
       "name": "Reminder",
       "type": "plugin",
       "level": 5,
-      "version": "1.0.2",
+      "version": "1.0.3",
       "author": "Antonio Meloni",
       "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.2.hpkg",
-      "size_bytes": 841770,
-      "sha256": "8b04157336db69d77c1e59c0e1aae4fc1855b9f259c4e94003b35f1b5fe49274",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.3.hpkg",
+      "size_bytes": 842746,
+      "sha256": "2e10b0503b85937978b7f150745d67cc2531eb33488e963f826227baa565a152",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/reminder_src/preview.png"
       ],
@@ -226,10 +279,10 @@
       "featured": false,
       "capabilities": {
         "llm_tools": [
-          "",
-          "",
-          "",
-          ""
+          "set_reminder",
+          "list_reminders",
+          "cancel_reminder",
+          "snooze_reminder"
         ],
         "slash_commands": [
           "/reminder",
@@ -260,7 +313,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.2.hpkg",
       "size_bytes": 1275498,
-      "sha256": "a7a1300b9eee21fca96f60bab0e5d2982983ba4fc963087e4dd1ce27867999f1",
+      "sha256": "7c611789acc3f3e1141d098e323c459421e764d2727cd894a3bc73eb53d579b3",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_1.png",
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_2.png",
@@ -292,8 +345,8 @@
       "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
-      "size_bytes": 15156,
-      "sha256": "d21db9b0e4e2e4fbb5c36909c5eb3858f8f0358e4868a60dae2c5cc7fdb00875",
+      "size_bytes": 15155,
+      "sha256": "d28c31b0e4a912e704f11b2f431d031ec80d60daa72bf69b64193cc8dee15d09",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -303,8 +356,8 @@
       "featured": false,
       "capabilities": {
         "llm_tools": [
-          "",
-          ""
+          "get_current_weather",
+          "get_weather_forecast"
         ],
         "slash_commands": [],
         "has_widget": true,
@@ -327,7 +380,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam-1.0.2.hpkg",
       "size_bytes": 6356,
-      "sha256": "dee40aff0abba74d7cbf0c45ed6317421b5061b3e72e636a6cd0074e81c651a5",
+      "sha256": "f1817a739604ae5544e5551f9a5f7b6b0f7b59ce6c5f219155e9bd8ecded7c99",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -365,7 +418,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam_feed-1.0.1.hpkg",
       "size_bytes": 859140,
-      "sha256": "7e6e9c01cd6071f59c7b2fab1e05ce81d2c4127623d2d37d8054a905420e39b4",
+      "sha256": "f1f5df3ec96a4a8411ce7fe017e4a4e5d1b149676c4c16f3d8462a43fb722f93",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/webcam_feed_src/preview.png"
       ],
@@ -386,5 +439,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1783245432.9272094
+  "cached_at": 1783322434.6829574
 }

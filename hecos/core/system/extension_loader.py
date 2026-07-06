@@ -278,33 +278,59 @@ def load_extension_routes(app, plugin_tag: str, ext_id: str):
     key = (plugin_tag, ext_id)
     main_path = _extension_paths.get(key)
 
-
     if not main_path or not os.path.exists(main_path):
         logger.error(f"EXT_LOADER: Extension [{plugin_tag}:{ext_id}] not found or not registered.")
         return False
 
     try:
-        plugin_dir = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(main_path))))
-        module_name = f"plugins.{plugin_dir}.extensions.{ext_id}.main"
+        import sys
 
+        # Build a stable, unique module name from the actual file path.
+        # We normalise the path so it works regardless of whether the
+        # extension lives under modules/web_ui/extensions/, hpm/<pkg>/<ext>/,
+        # or any other future location.
+        abs_path   = os.path.abspath(main_path)
+        # Replace path separators with dots and strip the .py suffix to get
+        # a dotted module name fragment, then keep only the last 5 segments
+        # so the name stays reasonably short while remaining unique.
+        path_parts = abs_path.replace("\\", "/").rstrip("/")
+        parts      = [p for p in path_parts.split("/") if p]
+        # Take up to last 5 path components, drop .py from the last one
+        tail       = parts[-5:]
+        tail[-1]   = tail[-1].replace(".py", "")
+        module_name = ".".join(tail)
 
-        spec = importlib.util.spec_from_file_location(module_name, main_path)
+        # If already loaded, skip
+        if module_name in sys.modules:
+            return True
+
+        spec = importlib.util.spec_from_file_location(module_name, abs_path)
         if not spec:
             return False
 
         module = importlib.util.module_from_spec(spec)
-        import sys
         sys.modules[module_name] = module
 
         spec.loader.exec_module(module)
 
-
         if hasattr(module, "init_routes"):
-            module.init_routes(app)
-            logger.debug("EXT_LOADER", f"Extension [{plugin_tag}:{ext_id}] routes registered.")
+            try:
+                module.init_routes(app)
+                logger.debug("EXT_LOADER", f"Extension [{plugin_tag}:{ext_id}] routes registered.")
+            except AssertionError as flask_err:
+                # Flask raises AssertionError when routes are added after the first
+                # request has been handled (hot-reload scenario).  Log it as a
+                # warning instead of an error — the extension will be fully active
+                # on the next clean boot.
+                logger.warning(
+                    f"EXT_LOADER: Extension [{plugin_tag}:{ext_id}] routes could not be "
+                    f"registered during hot-reload (Flask already started): {flask_err}. "
+                    f"Will be active on next restart."
+                )
 
         return True
     except Exception as e:
         import traceback
         logger.error(f"EXT_LOADER: Failed to load extension [{plugin_tag}:{ext_id}]: {e}")
         return False
+

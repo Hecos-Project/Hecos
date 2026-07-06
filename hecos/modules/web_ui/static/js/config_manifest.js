@@ -26,7 +26,6 @@ window.CONFIG_HUB = {
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA' },
         { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '<i class="fas fa-palette"></i>', cat: 'MULTIMEDIA', isCore: true },
-        { id: 'media',         label: 'webui_mp_title',   icon: '<i class="fas fa-music"></i>', cat: 'MULTIMEDIA', pluginTag: 'MEDIA_PLAYER' },
         
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
         { id: 'messenger', label: 'ext_messenger_title',  icon: '<i class="fab fa-telegram-plane"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MESSENGER' },
@@ -127,7 +126,6 @@ window.CONFIG_HUB.tagMap = {
     'MESSENGER': 'messenger',
     'CONTACTS': 'contacts',
     'MAIL': 'mail',
-    'MEDIA_PLAYER': 'media',
     'AUTOMATION': 'automation',
     'BROWSER':    'browser',
     'USERS':      'users',
@@ -141,7 +139,7 @@ window.CONFIG_HUB.tagMap = {
  */
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
-    'memory', 'voice', 'system', 'media', 'aesthetics', 'webui',
+    'memory', 'voice', 'aesthetics', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
     'messenger', 'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',

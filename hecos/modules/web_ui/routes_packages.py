@@ -72,9 +72,13 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
             
             if api_routes_file:
                 plugin_id = pkg["id"]
-                plugin_path = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
-                if not os.path.isdir(plugin_path):
-                    plugin_path = os.path.join(hecos_root, "plugins", plugin_id)
+                # Search in priority order: hecos/hpm, hecos/plugins, plugins (legacy)
+                _candidate_dirs = [
+                    os.path.join(hecos_root, "hecos", "hpm", plugin_id),
+                    os.path.join(hecos_root, "hecos", "plugins", plugin_id),
+                    os.path.join(hecos_root, "plugins", plugin_id),
+                ]
+                plugin_path = next((d for d in _candidate_dirs if os.path.isdir(d)), _candidate_dirs[1])
                 abs_route_path = os.path.join(plugin_path, api_routes_file)
                 
                 if os.path.isfile(abs_route_path):
@@ -89,6 +93,8 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                             log.info(f"[HPM:Routes] Registered standalone API routes for '{plugin_id}'")
                         except Exception as e:
                             log.error(f"[HPM:Routes] Error initializing routes for '{plugin_id}': {e}")
+                else:
+                    log.warning(f"[HPM:Routes] api_routes_file not found for '{plugin_id}': {abs_route_path}")
     except Exception as e:
         log.error(f"[HPM:Routes] Failed to auto-discover HPM API routes: {e}")
 
