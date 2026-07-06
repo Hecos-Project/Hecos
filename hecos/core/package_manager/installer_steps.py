@@ -131,7 +131,11 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
 def install_webui_assets(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
     webui_src = os.path.join(staging, "web_ui")
     if not os.path.isdir(webui_src):
-        return []
+        # Fallback for packages that use 'web' instead of 'web_ui' (like image_gen)
+        webui_src = os.path.join(staging, "web")
+        if not os.path.isdir(webui_src):
+            return []
+            
     webui_base = os.path.join(hecos_root, "modules", "web_ui")
     installed: List[str] = []
 

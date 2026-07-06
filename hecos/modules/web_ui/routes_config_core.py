@@ -179,12 +179,22 @@ def _discover_hpm_panel(panel_id: str) -> str | None:
                 if tab_id == panel_id:
                     tf = cp.get("template_file")
                     if tf:
-                        plugin_path = os.path.join(hecos_root, "plugins", pkg["id"])
-                        abs_template = os.path.join(plugin_path, tf)
-                        if os.path.isfile(abs_template):
-                            result = f"HPM_RAW:{abs_template}"
+                        # 1. Check if it was copied verbatim into templates/modules/
+                        basename = os.path.basename(tf)
+                        candidate_verbatim = os.path.join(tpl_dir, "modules", basename)
+                        if os.path.isfile(candidate_verbatim):
+                            result = f"modules/{basename}"
                             _HPM_PANEL_CACHE[panel_id] = result
                             return result
+
+                        # 2. Fallback to the raw file inside the package's actual install directory
+                        install_path = pkg.get("install_path")
+                        if install_path:
+                            abs_template = os.path.join(install_path, tf)
+                            if os.path.isfile(abs_template):
+                                result = f"HPM_RAW:{abs_template}"
+                                _HPM_PANEL_CACHE[panel_id] = result
+                                return result
     except Exception:
         pass
 
