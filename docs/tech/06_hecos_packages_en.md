@@ -6,14 +6,16 @@ This guide explains in detail how a Hecos package (`.hpkg`) is structured, what 
 
 ## What Is a Hecos Package?
 
-A Hecos package is an `.hpkg` archive (internally a signed ZIP file) that can contain one or more of the following components:
+The term "Package" refers to the distribution format (`.hpkg`), but inside it can be any type of **Hecos Module**. Hecos is designed to grow with you. Thanks to the Hecos Package Manager (HPM), the system is infinitely expandable.
 
-| Component | Description |
-|---|---|
-| **Backend Plugin** | Python logic, LLM tools, slash commands |
-| **Config Panel** | Configuration panel in the Central Hub (HTML/JS/CSS) |
-| **Widget** | UI components for the Sidebar or Control Room |
-| **API Routes** | Custom Flask endpoints for the package |
+A package is not necessarily just a plugin; it can be any of these categories:
+
+- **Plugins & Core Modules**: Add native integrations like PC/Browser automation, email clients, messenger bridges, and image generation.
+- **Autonomous Apps**: Install full web applications that run entirely locally within the Hecos ecosystem (e.g., calendars, lists, mail managers). Unlike plugins, these have their own independent UI and a strong separate logic.
+- **Control Room Widgets**: Expand your system dashboard with new real-time monitoring tools and live telemetry.
+- **Personas & Themes**: Customize the look, feel, and "soul" (behavior and prompts) of your agent.
+
+Regardless of the type, all modules share the same distribution format: a cryptographically signed ZIP archive with the `.hpkg` extension. Inside, they can combine one or more components: backend logic, user interfaces (HTML/JS/CSS), and API routes.
 
 Once installed via HPM, the package is extracted to:
 ```

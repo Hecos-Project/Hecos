@@ -6,14 +6,16 @@ Esta guía explica en detalle cómo está estructurado un paquete Hecos (`.hpkg`
 
 ## ¿Qué es un Paquete Hecos?
 
-Un paquete Hecos es un archivo `.hpkg` (internamente un archivo ZIP firmado) que puede contener uno o más de los siguientes componentes:
+El término "Paquete" se refiere al formato de distribución (`.hpkg`), pero en su interior puede haber cualquier tipo de **Módulo Hecos**. Hecos está diseñado para crecer contigo. Gracias al Hecos Package Manager (HPM), el sistema es infinitamente expansible.
 
-| Componente | Descripción |
-|---|---|
-| **Plugin Backend** | Lógica Python, herramientas LLM, comandos slash |
-| **Config Panel** | Panel de configuración en el Central Hub (HTML/JS/CSS) |
-| **Widget** | Componentes de interfaz de usuario para la Sidebar o Control Room |
-| **Rutas API** | Endpoints Flask personalizados para el paquete |
+Un paquete no es necesariamente solo un plugin; puede ser de cualquiera de estas categorías:
+
+- **Plugins y Módulos Core**: Añaden integraciones nativas como automatización de PC/Navegador, clientes de correo, puentes de mensajería y generación de imágenes.
+- **Apps Autónomas**: Instalan aplicaciones web completas que se ejecutan de forma local dentro del ecosistema Hecos (ej. calendarios, listas, gestores de correo). A diferencia de los plugins, estas tienen su propia interfaz de usuario independiente y una lógica separada.
+- **Control Room Widgets**: Expanden el panel de control del sistema con nuevas herramientas de monitorización en tiempo real y telemetría.
+- **Personas y Temas**: Personalizan el aspecto, la interfaz y el "alma" (comportamiento y prompts) de tu agente.
+
+Independientemente del tipo, todos los módulos comparten el mismo formato de distribución: un archivo ZIP firmado criptográficamente con la extensión `.hpkg`. En su interior, pueden combinar uno o más componentes: lógica de backend, interfaces de usuario (HTML/JS/CSS) y rutas API.
 
 Una vez instalado a través de HPM, el paquete se extrae en:
 ```

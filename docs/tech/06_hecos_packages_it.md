@@ -4,18 +4,20 @@ Questa guida spiega in dettaglio come e strutturato un pacchetto Hecos (`.hpkg`)
 
 ---
 
-## Cos e un Pacchetto Hecos?
+## Che cos'è un Pacchetto Hecos?
 
-Un pacchetto Hecos e un archivio `.hpkg` (internamente un file ZIP firmato) che puo contenere uno o piu dei seguenti componenti:
+Il termine "Pacchetto" si riferisce al formato di distribuzione (`.hpkg`), ma al suo interno può esserci qualsiasi tipo di **Modulo Hecos**. Hecos è progettato per crescere, e grazie all'Hecos Package Manager (HPM), il sistema è infinitamente espandibile. 
 
-| Componente | Descrizione |
-|---|---|
-| **Plugin Backend** | Logica Python, strumenti LLM, comandi slash |
-| **Config Panel** | Pannello di configurazione nel Central Hub (HTML/JS/CSS) |
-| **Widget** | Componenti UI per la Sidebar o la Control Room |
-| **Rotte API** | Endpoint Flask personalizzati per il pacchetto |
+Un pacchetto non è necessariamente un plugin; può essere una qualsiasi di queste categorie:
 
-Una volta installato tramite HPM, il pacchetto viene estratto in:
+- **Plugin & Core Modules**: Aggiungono capacità logiche all'agente (automazione PC, generazione immagini, connettività). 
+- **Autonomous Apps (App Autonome)**: Vere e proprie applicazioni web complete che girano interamente in locale all'interno dell'ecosistema Hecos (es. calendari, liste, gestori mail). A differenza dei plugin, queste hanno una propria UI indipendente e una forte logica separata.
+- **Control Room Widgets**: Strumenti UI miniaturizzati per espandere la dashboard di sistema (telemetria in tempo reale, orologi, ecc).
+- **Personas & Themes**: Modificano l'aspetto visivo (CSS/grafica) e l'"anima" (comportamento e prompt) dell'agente.
+
+Indipendentemente dal tipo, tutti i moduli condividono lo stesso formato di distribuzione: un archivio ZIP firmato crittograficamente con estensione `.hpkg`. All'interno, possono combinare uno o più componenti: logica backend, interfacce utente (HTML/JS/CSS) e rotte API.
+
+Una volta installato, il pacchetto viene estratto in:
 ```
 C:\Hecos\hecos\hpm\<id_pacchetto>\
 ```
