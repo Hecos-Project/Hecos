@@ -327,22 +327,6 @@
         "module_type": "plugin",
         "slash_commands": []
     },
-    "MESSENGER": {
-        "description": "Send messages via Telegram, WhatsApp, and Discord.",
-        "commands": {
-            "check_connection": "Test the connection to one or all messaging providers.",
-            "force_send": "Force-send by simulating an 'Enter' keystroke. Useful if WhatsApp Web gets stuck.",
-            "list_accounts": "List all configured messaging providers and their status.",
-            "send_message": "Send a message to a contact or channel."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": []
-    },
     "USERS": {
         "description": "Gestione informazioni utente e preferenze (Lazy Loading enabled).",
         "commands": {

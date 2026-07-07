@@ -454,3 +454,24 @@ Funciones disponibles:
 - **Scaffold New Package**: crea la estructura de un nuevo paquete.
 - **Edit Manifest**: editor interactivo de manifiestos.
 - **Build All**: recompila todos los paquetes de la carpeta fuente.
+
+> Claves criptográficas: `C:\hpm_private.pem` (privada, ¡nunca confirmarla!) y `C:\Hecos\hecos\data\trusted_keys\hpm_public.pem` (pública).
+
+---
+
+## Troubleshooting & Common Gotchas (Solución de problemas)
+
+Al desarrollar o extraer módulos integrados en paquetes HPM independientes, ten cuidado con estos problemas comunes:
+
+1. **Importaciones Relativas y Errores de Hot-Reloading**
+   Si necesitas llamar a funciones de `main.py` dentro de `routes.py` (ej. llamar a `on_load()` después de guardar la configuración), **NO** uses un simple `import main` mientras modificas `sys.path`. Si `main.py` utiliza importaciones relativas (ej. `from .config_manager import ...`), Python lanzará un `ImportError: attempted relative import with no known parent package` porque no reconocerá el módulo como parte de un paquete durante la recarga en caliente.
+   **Solución:** Usa `importlib` con la ruta absoluta del paquete (ej. `plugin_main = importlib.import_module("hpm.messenger.main")`).
+
+2. **Arrays de Objetos en el Manifiesto (`[[slash_commands]]`)**
+   Los comandos directos deben declararse en el `hpkg_manifest.toml` como un array de tablas (usando `[[slash_commands]]`). El instalador (Hecos 0.40+) leerá estos campos complejos *directamente del TOML* (extrayendo `hpkg_manifest.toml` del paquete) como un mecanismo de respaldo si la conversión del manifiesto JSON pierde los datos estructurados. Asegúrate de que el array en el archivo TOML tenga el formato correcto.
+
+3. **Limpieza de la Configuración Integrada (`plugins.yaml`)**
+   Al transformar un antiguo módulo integrado en un paquete autónomo, recuerda que su antigua configuración aún podría permanecer en `C:\Hecos\hecos\config\data\plugins.yaml`. El nuevo paquete leerá de su TOML privado (`<id>_config.toml`), pero la entrada heredada huérfana saturará el sistema. Elimina los campos en `plugins.yaml`, dejando como máximo `enabled: true` y `lazy_load: true` (aunque Hecos habilita de forma nativa los paquetes instalados de manera predeterminada).
+
+4. **Persistencia de la Configuración (Desinstalación)**
+   Durante la eliminación de un paquete a través de HPM, la carpeta del paquete (ej. `hpm/messenger`) no se elimina por completo si contiene archivos generados en tiempo de ejecución (como el archivo de configuración TOML). Esta es una característica de seguridad **intencional** para evitar que los usuarios pierdan sus ajustes privados durante cada actualización o reinstalación del paquete.

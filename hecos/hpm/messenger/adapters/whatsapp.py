@@ -181,7 +181,18 @@ def check(cfg) -> str:
     try:
         from hecos.modules.browser import engine
         from playwright.sync_api import sync_playwright  # noqa: F401
-        cdp_status = "CDP connesso" if engine.is_running() else "CDP non connesso (browser non avviato). Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
+        
+        import socket
+        def is_port_open(p):
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.2)
+                return s.connect_ex(('127.0.0.1', p)) == 0
+                
+        if is_port_open(9222):
+            cdp_status = "CDP attivo (porta 9222 aperta)"
+        else:
+            cdp_status = "CDP non connesso (browser non avviato). Attention: CDP browser not active, CDP port closed or browser not running. Open: Tray Dashboard for more information."
+            
         return f"BETA (Playwright pronto — {cdp_status})"
     except ImportError:
         pass

@@ -1,0 +1,174 @@
+id = "messenger"
+name = "Messenger"
+version = "1.0.1"
+author = "Antonio Meloni"
+license = "GPL-3.0"
+description = "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n"
+type = "plugin"
+target_dir = "hpm"
+plugin_dir = "."
+hecos_min_version = "0.40.0"
+icon_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png"
+readme = "README.md"
+readme_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/messenger_src/README.md"
+dependencies = []
+optional_dependencies = [
+    "templates",
+]
+tag = "MESSENGER"
+lazy_load = true
+is_class_based = true
+api_routes_file = "web/routes.py"
+signature = "GRLaMAotYUkJROi1cmKoSWOOB7CAU3bSRZXNVx8UjIGYxFbWs3SwGaRkewM3aJ36Lw9jGUT8nT7yHCSrqocsBA=="
+
+[commands]
+send_message = "Sends a text message to a contact or channel on the specified platform."
+list_accounts = "Lists all connected and configured messaging accounts and their status."
+check_connection = "Checks the connectivity status of one or all configured messaging providers."
+force_send = "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+
+[config_panel]
+tab_id = "messenger"
+tab_label = "Messenger"
+tab_icon = "fa-paper-plane"
+category = "CONNETTIVITÀ"
+template_file = "web/templates/config_messenger.html"
+api_routes_file = "web/routes.py"
+config_api_get = "/hecos/api/plugins/messenger/config"
+config_api_post = "/hecos/api/plugins/messenger/config"
+
+[config_defaults]
+telegram_enabled = false
+telegram_bot_token = ""
+telegram_default_chat_id = ""
+whatsapp_enabled = false
+whatsapp_phone_country_code = "+39"
+whatsapp_send_as_single_block = true
+discord_enabled = false
+discord_webhook_url = ""
+discord_default_channel = ""
+
+[capabilities]
+llm_tools = [
+    "send_message",
+    "list_accounts",
+    "check_connection",
+    "force_send",
+]
+slash_commands = [
+    "/msg",
+    "/send",
+]
+has_widget = false
+has_config_panel = true
+has_api_routes = true
+has_system_calls = false
+syscall_notes = ""
+notes = ""
+
+[[slash_commands]]
+id = "msg"
+aliases = [
+    "/msg",
+    "/send",
+]
+description = "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord)."
+usage = "/msg <piattaforma:destinatario> <testo_del_messaggio>"
+example = "/msg whatsapp:+393331234567 Ciao, questo è un test!"
+icon = "💬"
+method = "msg_command"
+requires_args = true
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MESSENGER__send_message"
+description = "Sends a text message to a contact or group on a specified messaging platform. Supported platforms: 'telegram', 'whatsapp', 'discord'. Use this when the user says 'manda un messaggio', 'send a message', 'scrivi a', 'write to', 'message on telegram/whatsapp/discord'. The 'to' field must include the platform prefix, e.g.: 'telegram:@username', 'telegram:123456789', 'discord:#channel-name', 'whatsapp:+393331234567'."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "to",
+    "text",
+]
+
+[tool_schema.function.parameters.properties.to]
+type = "string"
+description = "The recipient, including platform prefix. Examples: 'telegram:@myuser', 'telegram:123456789', 'whatsapp:+393331234567', 'discord:#general'. If the user does not specify a platform and only one is configured, default to that one."
+
+[tool_schema.function.parameters.properties.text]
+type = "string"
+description = "The message body to send. Can be a single line or multi-line text. Preserve formatting if the user specifies it."
+
+[tool_schema.function.parameters.properties.platform]
+type = "string"
+description = "Optional: explicit platform override ('telegram', 'whatsapp', 'discord'). Use this if the 'to' field does not contain a prefix."
+enum = [
+    "telegram",
+    "whatsapp",
+    "discord",
+]
+
+[tool_schema.function.parameters.properties.is_app_open]
+type = "boolean"
+description = "Set to true if the user tells you WhatsApp or the target app is already open on their desktop. Significantly speeds up the sending procedure."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MESSENGER__list_accounts"
+description = "Returns the list of all configured messaging accounts with their status (connected, disabled, error). Use this when the user asks 'which messaging accounts do I have?', 'quali account ho configurato?', 'show messenger status'."
+
+[tool_schema.function.parameters]
+type = "object"
+
+[tool_schema.function.parameters.properties]
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MESSENGER__check_connection"
+description = "Tests the connection to one or all configured messaging providers and returns the live status. Use this when the user says 'check messenger', 'testa la connessione', 'is telegram connected?'."
+
+[tool_schema.function.parameters]
+type = "object"
+
+[tool_schema.function.parameters.properties.platform]
+type = "string"
+description = "Optional: which platform to test ('telegram', 'whatsapp', 'discord'). If omitted, all configured providers are tested."
+enum = [
+    "telegram",
+    "whatsapp",
+    "discord",
+]
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MESSENGER__force_send"
+description = "Presses 'Enter' on the host machine to force sending a message if it got stuck in the text input box (especially useful for WhatsApp). Use this when the user says 'invialo', 'premi invio', 'send it again', or asks to manually trigger the send command."
+
+[tool_schema.function.parameters]
+type = "object"
+
+[tool_schema.function.parameters.properties]
+
+[file_hashes]
+"dispatcher.py" = "171a23dbec3ba14a2d870f7d15cb9431bd70852218b4560f8388e409fd98d701"
+"main.py" = "785d8addd055eee0c9ad358366d2fb3609f17faaaa046c197dc5f6358730fea8"
+"manifest_runtime_patch.json" = "68efefeb5cf12bc0f31afa2ece8b6ef98fb0df70ba20ea73a703b80cd4a624dc"
+"README.md" = "9df5ca952eef78f1db690e799ae2f5c408d13609186156c43a5f2a9ff806067c"
+"adapters/discord.py" = "b194cb6b91faea8673fe58e4e10f4e918b721b33d1160bee11ffe63d4655c11f"
+"adapters/telegram.py" = "6b4a605a8e36df9822fbd6a855482ffe349ff6b3c8cf5a7314ade4226285c1b6"
+"adapters/whatsapp.py" = "81a1989f2c1bef62b799fb27f03280957d04c0013f694299af816447d9778966"
+"adapters/whatsapp_cdp_worker.py" = "3c51b01f97ccaec8afa82e1d7c2529faeb381df1ddf99a7c015222dd750cb169"
+"adapters/__init__.py" = "ed2c3a54e175773c07bccf662a40a031d6017ddbcf2b3d11859b12507152b12f"
+"messenger_config/config_manager.py" = "4d9a439277b7eb9f5c6a2146a8b513cd2d2ce517c40f8b9ee373fa5e697402af"
+"messenger_config/defaults.toml" = "f016f87ed03e63c5ffd156485a5dd09d04e520cf43fd4d02eed51a0c5955681e"
+"messenger_config/__init__.py" = "6bc3916cdcd1f082b3bd10e9feef7bf338023fdcf2335ff6fbf09c379988dde0"
+"web/routes.py" = "1acb6b98219e13745e619fb2da686c4268a7a52a0e39addbba8dfee4014ced3a"
+"web/templates/config_messenger.html" = "00f1256f6515bf0b6c3584ea96a4167aaa8e523380aaf97651d7a91638d5c060"

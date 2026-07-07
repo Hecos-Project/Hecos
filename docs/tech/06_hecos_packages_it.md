@@ -472,3 +472,23 @@ Funzioni disponibili:
 - **Build All**: ricompila tutti i pacchetti nella cartella sorgente
 
 > Chiavi crittografiche: `C:\hpm_private.pem` (privata) e `C:\Hecos\hecos\data\trusted_keys\hpm_public.pem` (pubblica).
+
+---
+
+## Troubleshooting & Common Gotchas
+
+Durante lo sviluppo o l'estrazione di moduli built-in in pacchetti HPM, presta attenzione a queste insidie comuni:
+
+1. **Import Relativi ed Errori di Hot-Reloading**
+   Se nel file `routes.py` devi chiamare funzioni di `main.py` (es. `on_load()` dopo il salvataggio della config), **NON** fare un semplice `import main` aggiungendo il path a `sys.path`. Se `main.py` usa import relativi (es. `from .config_manager import ...`), Python lancerà `ImportError: attempted relative import with no known parent package` perché non riconoscerà il modulo come parte di un package.
+   **Soluzione:** Usa `importlib` con il percorso assoluto del pacchetto in esecuzione (es. `plugin_main = importlib.import_module("hpm.messenger.main")`).
+
+2. **Array di Oggetti nel Manifest (`[[slash_commands]]`)**
+   I comandi diretti (Slash Commands) devono essere dichiarati nell'`hpkg_manifest.toml` come array di table (usando `[[slash_commands]]`). L'installer (da Hecos 0.40+) leggerà questi campi complessi *direttamente dal TOML* (estraendo `hpkg_manifest.toml` dal pacchetto) come meccanismo di fallback qualora la conversione JSON del builder perda i dati strutturati. Assicurati che l'array nel TOML sia formattato correttamente.
+
+3. **Pulizia della Configurazione Built-in (`plugins.yaml`)**
+   Quando trasformi un ex modulo built-in in un pacchetto HPM autonomo, ricorda che la vecchia configurazione del modulo potrebbe essere rimasta in `C:\Hecos\hecos\config\data\plugins.yaml`. Il nuovo pacchetto leggerà dal suo TOML privato (`<id>_config.toml`), ma la vecchia entry orfana continuerà a ingombrare il sistema. Elimina i campi in `plugins.yaml` lasciando al massimo `enabled: true` e `lazy_load: true` se necessario (anche se di default Hecos carica i pacchetti installati senza bisogno di elencarli).
+
+4. **Persistenza della Configurazione (Disinstallazione)**
+   Durante la rimozione di un pacchetto tramite l'HPM, la cartella del pacchetto (es. `hpm/messenger`) non viene eliminata se contiene file generati a runtime (come il file TOML della configurazione). Questo è un comportamento **voluto** (salvavita) per evitare che gli utenti perdano le proprie impostazioni private ad ogni aggiornamento o reinstallazione del pacchetto.
+

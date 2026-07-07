@@ -106,6 +106,37 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
         except Exception as e:
             logger.warning(f"Could not read existing manifest.json: {e}")
 
+    # ── Resolve slash_commands ───────────────────────────────────────────────
+    # The HPM Builder converts hpkg_manifest.toml → JSON for bundling, but the
+    # TOML `[[slash_commands]]` array-of-tables is sometimes dropped during that
+    # conversion (the Pydantic model gets an empty list).
+    # Fix: if slash_commands is empty, read the raw hpkg_manifest.toml directly
+    # from the staging directory and extract the data from there as the ground truth.
+    resolved_slash_commands = manifest.slash_commands or []
+    if not resolved_slash_commands:
+        toml_path = os.path.join(staging, "hpkg_manifest.toml")
+        if os.path.exists(toml_path):
+            try:
+                try:
+                    import tomllib
+                except ImportError:
+                    import tomli as tomllib  # type: ignore
+                with open(toml_path, "rb") as tf:
+                    raw_toml = tomllib.load(tf)
+                # [[slash_commands]] in TOML becomes a list of dicts at top-level
+                raw_cmds = raw_toml.get("slash_commands", [])
+                if isinstance(raw_cmds, list) and raw_cmds and isinstance(raw_cmds[0], dict):
+                    resolved_slash_commands = raw_cmds
+                    logger.debug(
+                        f"[HPM:Installer] slash_commands resolved from TOML "
+                        f"for '{manifest.id}': {len(resolved_slash_commands)} command(s)"
+                    )
+            except Exception as toml_e:
+                logger.warning(
+                    f"[HPM:Installer] Could not read hpkg_manifest.toml for "
+                    f"slash_commands fallback: {toml_e}"
+                )
+
     runtime_manifest_data.update({
         "tag": manifest.tag or manifest.id.upper(),
         "name": manifest.name,
@@ -115,14 +146,14 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
         "is_class_based": manifest.is_class_based,
         "commands": manifest.commands,
         "tool_schema": manifest.tool_schema,
-        "slash_commands": manifest.slash_commands,
+        "slash_commands": resolved_slash_commands,
     })
     if manifest.config_panel:
         runtime_manifest_data["icon"] = manifest.config_panel.tab_icon
-        
+
     with open(runtime_manifest_path, "w", encoding="utf-8") as f:
-        json.dump(runtime_manifest_data, f, indent=4)
-    
+        json.dump(runtime_manifest_data, f, indent=4, ensure_ascii=False)
+
     if runtime_manifest_path not in copied_files:
         copied_files.append(runtime_manifest_path)
     return copied_files

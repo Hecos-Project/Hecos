@@ -62,7 +62,7 @@ window.routingRender = {
             'DRIVE_EDITOR':     '<i class="fas fa-edit"></i>',
             'MAIL':             '<i class="fas fa-envelope"></i>',
             'CONTACTS':         '<i class="fas fa-address-book"></i>',
-            'MESSENGER':        '<i class="fab fa-telegram-plane"></i>',
+
             'REMINDER':         '<i class="fas fa-clock"></i>',
             'CALENDAR':         '<i class="fas fa-calendar-alt"></i>',
             'MCP_BRIDGE':       '<i class="fas fa-plug"></i>',

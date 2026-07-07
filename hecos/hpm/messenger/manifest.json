@@ -1,13 +1,10 @@
 {
     "tag": "MESSENGER",
     "name": "Messenger",
-    "version": "1.0.0",
-    "description": "Send and receive messages via Telegram, WhatsApp, and Discord. Route messages to the right platform using natural language commands.",
-    "icon": "💬",
+    "version": "1.0.1",
+    "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
     "lazy_load": true,
     "is_class_based": true,
-    "on_load": true,
-    "status": "ONLINE",
     "commands": {
         "send_message": "Sends a text message to a contact or channel on the specified platform.",
         "list_accounts": "Lists all connected and configured messaging accounts and their status.",
@@ -22,6 +19,10 @@
                 "description": "Sends a text message to a contact or group on a specified messaging platform. Supported platforms: 'telegram', 'whatsapp', 'discord'. Use this when the user says 'manda un messaggio', 'send a message', 'scrivi a', 'write to', 'message on telegram/whatsapp/discord'. The 'to' field must include the platform prefix, e.g.: 'telegram:@username', 'telegram:123456789', 'discord:#channel-name', 'whatsapp:+393331234567'.",
                 "parameters": {
                     "type": "object",
+                    "required": [
+                        "to",
+                        "text"
+                    ],
                     "properties": {
                         "to": {
                             "type": "string",
@@ -34,14 +35,17 @@
                         "platform": {
                             "type": "string",
                             "description": "Optional: explicit platform override ('telegram', 'whatsapp', 'discord'). Use this if the 'to' field does not contain a prefix.",
-                            "enum": ["telegram", "whatsapp", "discord"]
+                            "enum": [
+                                "telegram",
+                                "whatsapp",
+                                "discord"
+                            ]
                         },
                         "is_app_open": {
                             "type": "boolean",
                             "description": "Set to true if the user tells you WhatsApp or the target app is already open on their desktop. Significantly speeds up the sending procedure."
                         }
-                    },
-                    "required": ["to", "text"]
+                    }
                 }
             }
         },
@@ -67,7 +71,11 @@
                         "platform": {
                             "type": "string",
                             "description": "Optional: which platform to test ('telegram', 'whatsapp', 'discord'). If omitted, all configured providers are tested.",
-                            "enum": ["telegram", "whatsapp", "discord"]
+                            "enum": [
+                                "telegram",
+                                "whatsapp",
+                                "discord"
+                            ]
                         }
                     }
                 }
@@ -84,5 +92,21 @@
                 }
             }
         }
-    ]
+    ],
+    "slash_commands": [
+        {
+            "id": "msg",
+            "aliases": [
+                "/msg",
+                "/send"
+            ],
+            "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
+            "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
+            "example": "/msg whatsapp:+393331234567 Ciao, questo è un test!",
+            "icon": "💬",
+            "method": "msg_command",
+            "requires_args": true
+        }
+    ],
+    "icon": "fa-paper-plane"
 }

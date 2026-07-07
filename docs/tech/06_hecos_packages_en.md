@@ -470,3 +470,22 @@ Available functions:
 - **Build All**: recompiles all packages in the source folder
 
 > Cryptographic keys: `C:\hpm_private.pem` (private, never commit!) and `C:\Hecos\hecos\data\trusted_keys\hpm_public.pem` (public).
+
+---
+
+## Troubleshooting & Common Gotchas
+
+When developing or extracting built-in modules into standalone HPM packages, beware of these common pitfalls:
+
+1. **Relative Imports and Hot-Reloading Errors**
+   If you need to call functions from `main.py` inside `routes.py` (e.g., calling `on_load()` after saving the configuration), **DO NOT** use a simple `import main` while tweaking `sys.path`. If `main.py` uses relative imports (e.g., `from .config_manager import ...`), Python will throw an `ImportError: attempted relative import with no known parent package` because it won't recognize the module as part of a package during the hot-reload.
+   **Solution:** Use `importlib` with the absolute package path (e.g., `plugin_main = importlib.import_module("hpm.messenger.main")`).
+
+2. **Arrays of Objects in Manifest (`[[slash_commands]]`)**
+   Direct slash commands must be declared in the `hpkg_manifest.toml` as an array of tables (using `[[slash_commands]]`). The installer (Hecos 0.40+) will read these complex fields *directly from the TOML* (extracting `hpkg_manifest.toml` from the package) as a fallback mechanism if the JSON manifest conversion loses structured data. Ensure your array in the TOML file is properly formatted.
+
+3. **Cleaning up Built-in Configuration (`plugins.yaml`)**
+   When transforming an old built-in module into an autonomous HPM package, remember that its old configuration might still linger in `C:\Hecos\hecos\config\data\plugins.yaml`. The new package will read from its private TOML (`<id>_config.toml`), but the orphaned legacy entry will clutter the system. Delete the fields in `plugins.yaml`, leaving at most `enabled: true` and `lazy_load: true` (although Hecos natively enables installed packages by default).
+
+4. **Configuration Persistence (Uninstallation)**
+   During package removal via HPM, the package folder (e.g., `hpm/messenger`) is not fully deleted if it contains files generated at runtime (such as the TOML configuration file). This is an **intentional** safety feature to prevent users from losing their private settings during every package update or reinstallation.

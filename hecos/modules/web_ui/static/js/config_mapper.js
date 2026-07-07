@@ -42,8 +42,7 @@ function populateUI() {
   // 7. Reminder
   if (typeof populateReminderUI === 'function') safeCall('Reminder', () => populateReminderUI());
 
-  // 7b. Messenger
-  if (typeof populateMessengerUI === 'function') safeCall('Messenger', () => populateMessengerUI());
+  // 7b. Removed
 
   // 8. Privacy / WebUI / Agent
   if (typeof populatePrivacyUI === 'function') safeCall('Privacy', () => populatePrivacyUI());
@@ -130,14 +129,7 @@ function buildPayload() {
         }
     }
 
-    // 6b. Messenger
-    if (typeof buildMessengerPayload === 'function') {
-        const msgPart = buildMessengerPayload();
-        if (msgPart?.plugins?.MESSENGER) {
-            out.plugins['MESSENGER'] = out.plugins['MESSENGER'] || {};
-            Object.assign(out.plugins['MESSENGER'], msgPart.plugins.MESSENGER);
-        }
-    }
+    // 6b. Removed
 
     // 7. WebUI
     const webuiPart = buildWebUIPayload();

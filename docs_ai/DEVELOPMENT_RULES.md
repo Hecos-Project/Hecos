@@ -76,4 +76,17 @@ icon               = "📦"                         # optional — emoji shown i
 5. `backup_panel.js → backupLoadConfig()` renders module checkboxes **dynamically** — no hardcoded list needed.
 
 > [!IMPORTANT]
-> Never add a new HPM package to the hardcoded arrays in `backup_panel.js` or `api.py`. The discovery system handles it automatically through `hpkg_manifest.toml`.
+> Never add a new HPM package to the hardcoded arrays in `backup_panel.js` or `api.py`. The discovery system handles it automatically through `hpkg_manifest.toml`.
+
+### 11. HPM Package Extraction (Standalone Modules)
+
+When extracting a legacy built-in module to a standalone HPM package, strictly follow these rules:
+
+1. **Standalone Configuration (`<id>_config.toml`)**:
+   HPM packages MUST manage their own configuration via a private `.toml` file. Never write to Hecos core `plugins.yaml`. When extracting a package, ensure you completely remove its legacy configuration block from `config/data/plugins.yaml` to avoid cluttering the system.
+
+2. **Hot-Reloading and Imports**:
+   If a package exposes an API route (e.g. `web/routes.py`) that hot-reloads the package logic (`main.py`) after a config change, do **NOT** use relative imports inside `main.py` if you plan to import it directly via `sys.path` hacks. Instead, either use absolute imports across the package, or load `main.py` using `importlib.import_module(f"hpm.{package_id}.main")` to maintain the package context.
+
+3. **Array of Objects in Manifest**:
+   Complex manifest properties like `[[slash_commands]]` or `[[tool_schema]]` must be declared as TOML array of tables. The HPM Installer will automatically read them from `hpkg_manifest.toml` inside the package archive.

@@ -64,15 +64,15 @@ def dispatch_send(platform: str, recipient: str, text: str, config,
     logger.info("MESSENGER", f"Dispatching send → [{platform}] {recipient}")
 
     if platform == "telegram":
-        from hecos.plugins.messenger.adapters import telegram as tg
+        from .adapters import telegram as tg
         return tg.send(config.telegram, recipient, text)
 
     if platform == "whatsapp":
-        from hecos.plugins.messenger.adapters import whatsapp as wa
+        from .adapters import whatsapp as wa
         return wa.send(config.whatsapp, recipient, text, is_app_open)
 
     if platform == "discord":
-        from hecos.plugins.messenger.adapters import discord as dc
+        from .adapters import discord as dc
         return dc.send(config.discord, recipient, text)
 
     return f"❌ Platform '{platform}' is not supported."
@@ -86,20 +86,20 @@ def dispatch_check(platform: str | None, config) -> dict[str, str]:
     """
     results = {}
 
-    targets = [platform] if platform else list(PLATFORM_PREFIXES)
+    targets = [platform.lower()] if platform else list(PLATFORM_PREFIXES)
 
     for p in targets:
         try:
             if p == "telegram":
-                from hecos.plugins.messenger.adapters import telegram as tg
+                from .adapters import telegram as tg
                 results["telegram"] = tg.check(config.telegram)
 
             elif p == "whatsapp":
-                from hecos.plugins.messenger.adapters import whatsapp as wa
+                from .adapters import whatsapp as wa
                 results["whatsapp"] = wa.check(config.whatsapp)
 
             elif p == "discord":
-                from hecos.plugins.messenger.adapters import discord as dc
+                from .adapters import discord as dc
                 results["discord"] = dc.check(config.discord)
 
         except Exception as exc:

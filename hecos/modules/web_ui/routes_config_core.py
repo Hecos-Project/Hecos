@@ -118,7 +118,7 @@ _PANEL_MAP = {
     'templates':       'modules/config_templates.html',
     'weather_pro':     'modules/config_weather_pro.html',
     'mcp':             'modules/config_mcp.html',
-    'messenger':       'modules/config_messenger.html',
+
     'drive':           'modules/config_drive.html',
     'drive-editor':    'modules/config_drive_editor.html',
     'logs':            'modules/config_logs.html',

@@ -94,53 +94,6 @@ function buildReminderPayload() {
     };
 }
 
-// ── Messenger ─────────────────────────────────────────────────────────────────
-function populateMessengerUI() {
-    const c = window.cfg;
-    if (!c?.plugins?.MESSENGER) return;
-    const s = c.plugins.MESSENGER;
-    setCheck('telegram-enabled',           s.telegram_enabled           ?? false);
-    setVal  ('telegram-bot-token',         s.telegram_bot_token         || '');
-    setVal  ('telegram-default-chat-id',   s.telegram_default_chat_id   || '');
-    setCheck('whatsapp-enabled',           s.whatsapp_enabled           ?? false);
-    setVal  ('whatsapp-phone-country-code',s.whatsapp_phone_country_code || '+39');
-    setCheck('whatsapp-send-as-single-block',s.whatsapp_send_as_single_block ?? true);
-    setCheck('discord-enabled',            s.discord_enabled            ?? false);
-    setVal  ('discord-webhook-url',        s.discord_webhook_url        || '');
-}
-
-function buildMessengerPayload() {
-    const s = window.cfg?.plugins?.MESSENGER || {};
-    const tgEl  = document.getElementById('telegram-enabled');
-    const waEl  = document.getElementById('whatsapp-enabled');
-    const dcEl  = document.getElementById('discord-enabled');
-
-    // Only build payload when the Messenger panel is actually loaded in DOM
-    if (!tgEl && !waEl && !dcEl) return null;
-
-    const tgEnabled = tgEl ? tgEl.checked : (s.telegram_enabled  ?? false);
-    const waEnabled = waEl ? waEl.checked : (s.whatsapp_enabled  ?? false);
-    const dcEnabled = dcEl ? dcEl.checked : (s.discord_enabled   ?? false);
-
-    return {
-        plugins: {
-            MESSENGER: {
-                enabled:                    tgEnabled || waEnabled || dcEnabled,
-                telegram_enabled:           tgEnabled,
-                telegram_bot_token:         getV('telegram-bot-token',          s.telegram_bot_token         || ''),
-                telegram_default_chat_id:   getV('telegram-default-chat-id',    s.telegram_default_chat_id   || ''),
-                whatsapp_enabled:           waEnabled,
-                whatsapp_phone_country_code:getV('whatsapp-phone-country-code', s.whatsapp_phone_country_code || '+39'),
-                whatsapp_send_as_single_block:getC('whatsapp-send-as-single-block', s.whatsapp_send_as_single_block ?? true),
-                discord_enabled:            dcEnabled,
-                discord_webhook_url:        getV('discord-webhook-url',         s.discord_webhook_url        || '')
-            }
-        }
-    };
-}
-
-window.populateRemoteTriggersUI  = populateRemoteTriggersUI;
-window.buildRemoteTriggersPayload = buildRemoteTriggersPayload;
 window.populateWebUIConfig       = populateWebUIConfig;
 window.buildWebUIPayload         = buildWebUIPayload;
 window.populatePrivacyUI         = populatePrivacyUI;
@@ -148,5 +101,3 @@ window.populateAgentUI           = populateAgentUI;
 window.buildAgentPayload         = buildAgentPayload;
 window.populateReminderUI        = populateReminderUI;
 window.buildReminderPayload      = buildReminderPayload;
-window.populateMessengerUI       = populateMessengerUI;
-window.buildMessengerPayload     = buildMessengerPayload;
