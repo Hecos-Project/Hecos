@@ -44,19 +44,6 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             except Exception:
                 logger.warning(f"[WebUI] Hecos Drive non disponibile: {e}")
 
-    # Remote Triggers — Tasti hardware iPhone e Webhooks Arduino 
-    rt_enabled = cfg_mgr.config.get('plugins', {}).get('REMOTE_TRIGGERS', {}).get('enabled', True)
-    if rt_enabled:
-        try:
-            from . . remote_triggers.routes import init_remote_triggers_routes
-            init_remote_triggers_routes(app, logger)
-        except Exception as e:
-            try:
-                from hecos.plugins.remote_triggers.routes import init_remote_triggers_routes
-                init_remote_triggers_routes(app, logger)
-            except Exception:
-                pass
-
     # Hecos Flows — Visual orchestration engine
     flows_enabled = cfg_mgr.config.get('plugins', {}).get('FLOWS', {}).get('enabled', True)
     if flows_enabled:

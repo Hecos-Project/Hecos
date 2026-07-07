@@ -32,7 +32,6 @@ window.CONFIG_HUB = {
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
         { id: 'mail',      label: 'hub_mod_mail',         icon: '<i class="fas fa-envelope"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MAIL' },
         { id: 'templates', label: 'hub_mod_templates',    icon: '<i class="fas fa-file-alt"></i>', cat: 'CONNETTIVITÀ', isCore: true },
-        { id: 'remote-triggers', label: 'hub_mod_triggers', icon: '<i class="fas fa-mobile-alt"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'REMOTE_TRIGGERS' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
@@ -115,7 +114,6 @@ window.getIconForModule = function(id, name, metaIcon) {
 window.CONFIG_HUB.tagMap = {
     'MCP_BRIDGE': 'mcp',
     'DRIVE': 'drive',
-    'REMOTE_TRIGGERS': 'remote-triggers',
     'EXECUTOR': 'executor',
     'WEB': 'web',
     'WEBCAM': 'webcam',

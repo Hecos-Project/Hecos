@@ -119,7 +119,6 @@ _PANEL_MAP = {
     'weather_pro':     'modules/config_weather_pro.html',
     'mcp':             'modules/config_mcp.html',
     'messenger':       'modules/config_messenger.html',
-    'remote-triggers': 'modules/config_remote_triggers.html',
     'drive':           'modules/config_drive.html',
     'drive-editor':    'modules/config_drive_editor.html',
     'logs':            'modules/config_logs.html',

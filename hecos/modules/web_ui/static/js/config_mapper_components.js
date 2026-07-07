@@ -1,37 +1,8 @@
 /**
  * config_mapper_components.js
- * Populate + build payload for: RemoteTriggers, WebUI, Privacy, Agent, Reminder.
+ * Populate + build payload for: WebUI, Privacy, Agent, Reminder.
  * Depends on: config_mapper_utils.js
  */
-
-// ── Remote Triggers ────────────────────────────────────────────────────────────
-function populateRemoteTriggersUI() {
-    const c = window.cfg;
-    if (!c?.plugins?.REMOTE_TRIGGERS) return;
-    const settings = c.plugins.REMOTE_TRIGGERS.settings || {};
-    setCheck('rt-enable-mediasession', settings.enable_mediasession ?? true);
-    setCheck('rt-enable-volume-keys',  settings.enable_volume_keys  ?? true);
-    setCheck('rt-enable-volume-loop',  settings.enable_volume_loop  ?? false);
-    setCheck('rt-feedback-sounds',     settings.feedback_sounds     ?? true);
-    setCheck('rt-visual-indicator',    settings.visual_indicator    ?? true);
-}
-
-function buildRemoteTriggersPayload() {
-    const settings = window.cfg?.plugins?.REMOTE_TRIGGERS?.settings || {};
-    return {
-        plugins: {
-            REMOTE_TRIGGERS: {
-                settings: {
-                    enable_mediasession: getC('rt-enable-mediasession', settings.enable_mediasession),
-                    enable_volume_keys:  getC('rt-enable-volume-keys',  settings.enable_volume_keys),
-                    enable_volume_loop:  getC('rt-enable-volume-loop',  settings.enable_volume_loop),
-                    feedback_sounds:     getC('rt-feedback-sounds',     settings.feedback_sounds),
-                    visual_indicator:    getC('rt-visual-indicator',    settings.visual_indicator)
-                }
-            }
-        }
-    };
-}
 
 // ── WebUI ──────────────────────────────────────────────────────────────────────
 function populateWebUIConfig() {

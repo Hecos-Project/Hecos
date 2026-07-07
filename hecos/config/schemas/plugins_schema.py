@@ -92,18 +92,6 @@ class PluginExecutor(BaseModel):
     workspace_dir: str = "workspace/sandbox"
 
 
-class PluginRemoteTriggers(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    settings: Dict[str, Any] = Field(default_factory=lambda: {
-        "enable_mediasession": True,
-        "enable_volume_keys": True,
-        "enable_volume_loop": False,
-        "feedback_sounds": True,
-        "visual_indicator": True
-    })
-
-
 class PluginDrive(BaseModel):
     enabled: bool = True
     lazy_load: bool = True
@@ -234,7 +222,6 @@ class PluginsConfig(BaseModel):
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
-    REMOTE_TRIGGERS: PluginRemoteTriggers = Field(default_factory=PluginRemoteTriggers)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)

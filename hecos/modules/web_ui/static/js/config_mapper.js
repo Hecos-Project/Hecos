@@ -120,13 +120,6 @@ function buildPayload() {
     buildPluginsPayload(out);
     if (window.buildFlowsPayload) window.buildFlowsPayload(out);
 
-    // 5. Remote Triggers
-    const rtPart = buildRemoteTriggersPayload();
-    if (rtPart?.plugins?.REMOTE_TRIGGERS) {
-        out.plugins['REMOTE_TRIGGERS'] = out.plugins['REMOTE_TRIGGERS'] || {};
-        out.plugins['REMOTE_TRIGGERS'].settings = rtPart.plugins.REMOTE_TRIGGERS.settings;
-    }
-
     // 6. Reminder
     if (typeof buildReminderPayload === 'function') {
         const remPart = buildReminderPayload();

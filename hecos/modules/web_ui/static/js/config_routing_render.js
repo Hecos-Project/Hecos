@@ -66,7 +66,6 @@ window.routingRender = {
             'REMINDER':         '<i class="fas fa-clock"></i>',
             'CALENDAR':         '<i class="fas fa-calendar-alt"></i>',
             'MCP_BRIDGE':       '<i class="fas fa-plug"></i>',
-            'REMOTE_TRIGGERS':  '<i class="fas fa-mobile-alt"></i>',
             'DASHBOARD':        '<i class="fas fa-tachometer-alt"></i>',
             'DOMOTICA':         '<i class="fas fa-home"></i>',
             'USERS':            '<i class="fas fa-users"></i>',

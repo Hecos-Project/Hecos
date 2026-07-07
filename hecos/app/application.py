@@ -161,10 +161,9 @@ class HecosApplication:
         # Avvia bus audio PTT e thread ascolto SOLO in modalità console
         if not is_webui_mode:
             try:
-                from hecos.core.audio import ptt_bus, smartwatch_bus
+                from hecos.core.audio import ptt_bus
                 ptt_bus.start(state=self.state_manager)
-                smartwatch_bus.start(state=self.state_manager)
-                logger.info("[APP] PTT and Smartwatch Bus started.")
+                logger.info("[APP] PTT Bus started.")
             except Exception as e:
                 logger.warning(f"[APP] Could not start audio bus: {e}")
 
