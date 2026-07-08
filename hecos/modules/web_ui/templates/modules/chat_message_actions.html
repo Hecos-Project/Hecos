@@ -125,4 +125,54 @@
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* TTS Progress Bar */
+.tts-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+.tts-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.tts-cancel-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 12px;
+  transition: color 0.2s;
+}
+.tts-cancel-btn:hover {
+  color: var(--red);
+}
+.tts-progress-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg2);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.tts-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease-out;
+  box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.5);
+}
 </style>

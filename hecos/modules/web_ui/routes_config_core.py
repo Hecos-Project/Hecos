@@ -118,8 +118,7 @@ _PANEL_MAP = {
     'templates':       'modules/config_templates.html',
     'weather_pro':     'modules/config_weather_pro.html',
     'mcp':             'modules/config_mcp.html',
-    'messenger':       'modules/config_messenger.html',
-    'remote-triggers': 'modules/config_remote_triggers.html',
+
     'drive':           'modules/config_drive.html',
     'drive-editor':    'modules/config_drive_editor.html',
     'logs':            'modules/config_logs.html',
@@ -179,12 +178,22 @@ def _discover_hpm_panel(panel_id: str) -> str | None:
                 if tab_id == panel_id:
                     tf = cp.get("template_file")
                     if tf:
-                        plugin_path = os.path.join(hecos_root, "plugins", pkg["id"])
-                        abs_template = os.path.join(plugin_path, tf)
-                        if os.path.isfile(abs_template):
-                            result = f"HPM_RAW:{abs_template}"
+                        # 1. Check if it was copied verbatim into templates/modules/
+                        basename = os.path.basename(tf)
+                        candidate_verbatim = os.path.join(tpl_dir, "modules", basename)
+                        if os.path.isfile(candidate_verbatim):
+                            result = f"modules/{basename}"
                             _HPM_PANEL_CACHE[panel_id] = result
                             return result
+
+                        # 2. Fallback to the raw file inside the package's actual install directory
+                        install_path = pkg.get("install_path")
+                        if install_path:
+                            abs_template = os.path.join(install_path, tf)
+                            if os.path.isfile(abs_template):
+                                result = f"HPM_RAW:{abs_template}"
+                                _HPM_PANEL_CACHE[panel_id] = result
+                                return result
     except Exception:
         pass
 
@@ -367,7 +376,10 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         hecos_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         )
-        plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
+        # Try hpm/ first (new location), fall back to plugins/ for legacy packages
+        plugin_base = os.path.join(hecos_root, "hecos", "hpm", plugin_id)
+        if not os.path.isdir(plugin_base):
+            plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
         # Build the full path and ensure it stays within the plugin dir
         full_path = os.path.realpath(os.path.join(plugin_base, filename))
         plugin_base_real = os.path.realpath(plugin_base)

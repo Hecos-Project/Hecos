@@ -1,37 +1,8 @@
 /**
  * config_mapper_components.js
- * Populate + build payload for: RemoteTriggers, WebUI, Privacy, Agent, Reminder.
+ * Populate + build payload for: WebUI, Privacy, Agent, Reminder.
  * Depends on: config_mapper_utils.js
  */
-
-// ── Remote Triggers ────────────────────────────────────────────────────────────
-function populateRemoteTriggersUI() {
-    const c = window.cfg;
-    if (!c?.plugins?.REMOTE_TRIGGERS) return;
-    const settings = c.plugins.REMOTE_TRIGGERS.settings || {};
-    setCheck('rt-enable-mediasession', settings.enable_mediasession ?? true);
-    setCheck('rt-enable-volume-keys',  settings.enable_volume_keys  ?? true);
-    setCheck('rt-enable-volume-loop',  settings.enable_volume_loop  ?? false);
-    setCheck('rt-feedback-sounds',     settings.feedback_sounds     ?? true);
-    setCheck('rt-visual-indicator',    settings.visual_indicator    ?? true);
-}
-
-function buildRemoteTriggersPayload() {
-    const settings = window.cfg?.plugins?.REMOTE_TRIGGERS?.settings || {};
-    return {
-        plugins: {
-            REMOTE_TRIGGERS: {
-                settings: {
-                    enable_mediasession: getC('rt-enable-mediasession', settings.enable_mediasession),
-                    enable_volume_keys:  getC('rt-enable-volume-keys',  settings.enable_volume_keys),
-                    enable_volume_loop:  getC('rt-enable-volume-loop',  settings.enable_volume_loop),
-                    feedback_sounds:     getC('rt-feedback-sounds',     settings.feedback_sounds),
-                    visual_indicator:    getC('rt-visual-indicator',    settings.visual_indicator)
-                }
-            }
-        }
-    };
-}
 
 // ── WebUI ──────────────────────────────────────────────────────────────────────
 function populateWebUIConfig() {
@@ -123,53 +94,6 @@ function buildReminderPayload() {
     };
 }
 
-// ── Messenger ─────────────────────────────────────────────────────────────────
-function populateMessengerUI() {
-    const c = window.cfg;
-    if (!c?.plugins?.MESSENGER) return;
-    const s = c.plugins.MESSENGER;
-    setCheck('telegram-enabled',           s.telegram_enabled           ?? false);
-    setVal  ('telegram-bot-token',         s.telegram_bot_token         || '');
-    setVal  ('telegram-default-chat-id',   s.telegram_default_chat_id   || '');
-    setCheck('whatsapp-enabled',           s.whatsapp_enabled           ?? false);
-    setVal  ('whatsapp-phone-country-code',s.whatsapp_phone_country_code || '+39');
-    setCheck('whatsapp-send-as-single-block',s.whatsapp_send_as_single_block ?? true);
-    setCheck('discord-enabled',            s.discord_enabled            ?? false);
-    setVal  ('discord-webhook-url',        s.discord_webhook_url        || '');
-}
-
-function buildMessengerPayload() {
-    const s = window.cfg?.plugins?.MESSENGER || {};
-    const tgEl  = document.getElementById('telegram-enabled');
-    const waEl  = document.getElementById('whatsapp-enabled');
-    const dcEl  = document.getElementById('discord-enabled');
-
-    // Only build payload when the Messenger panel is actually loaded in DOM
-    if (!tgEl && !waEl && !dcEl) return null;
-
-    const tgEnabled = tgEl ? tgEl.checked : (s.telegram_enabled  ?? false);
-    const waEnabled = waEl ? waEl.checked : (s.whatsapp_enabled  ?? false);
-    const dcEnabled = dcEl ? dcEl.checked : (s.discord_enabled   ?? false);
-
-    return {
-        plugins: {
-            MESSENGER: {
-                enabled:                    tgEnabled || waEnabled || dcEnabled,
-                telegram_enabled:           tgEnabled,
-                telegram_bot_token:         getV('telegram-bot-token',          s.telegram_bot_token         || ''),
-                telegram_default_chat_id:   getV('telegram-default-chat-id',    s.telegram_default_chat_id   || ''),
-                whatsapp_enabled:           waEnabled,
-                whatsapp_phone_country_code:getV('whatsapp-phone-country-code', s.whatsapp_phone_country_code || '+39'),
-                whatsapp_send_as_single_block:getC('whatsapp-send-as-single-block', s.whatsapp_send_as_single_block ?? true),
-                discord_enabled:            dcEnabled,
-                discord_webhook_url:        getV('discord-webhook-url',         s.discord_webhook_url        || '')
-            }
-        }
-    };
-}
-
-window.populateRemoteTriggersUI  = populateRemoteTriggersUI;
-window.buildRemoteTriggersPayload = buildRemoteTriggersPayload;
 window.populateWebUIConfig       = populateWebUIConfig;
 window.buildWebUIPayload         = buildWebUIPayload;
 window.populatePrivacyUI         = populatePrivacyUI;
@@ -177,5 +101,3 @@ window.populateAgentUI           = populateAgentUI;
 window.buildAgentPayload         = buildAgentPayload;
 window.populateReminderUI        = populateReminderUI;
 window.buildReminderPayload      = buildReminderPayload;
-window.populateMessengerUI       = populateMessengerUI;
-window.buildMessengerPayload     = buildMessengerPayload;

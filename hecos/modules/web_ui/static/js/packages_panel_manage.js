@@ -141,6 +141,46 @@ window.hpmUninstall = async function(id, name) {
   }
 };
 
+window.hpmVerifyPackage = async function(id, name) {
+  try {
+    const lblVerifying = _ti('Verifying...', 'Verifica in corso...', 'Verificando...');
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(true, lblVerifying, 100);
+    
+    const res = await fetch(`/api/packages/${id}/verify`);
+    const data = await res.json();
+    
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+    
+    if (data.ok) {
+      if (data.status === 'valid') {
+        const title = _ti('Verification Passed', 'Verifica Superata', 'Verificación Superada');
+        const msg = _ti(`All files for package <b>${name}</b> are intact.`, `Tutti i file del pacchetto <b>${name}</b> sono integri.`, `Todos los archivos del paquete <b>${name}</b> están intactos.`);
+        window.hpmShowMessage(title, msg, 'success');
+      } else if (data.status === 'unverified') {
+        const title = _ti('Cannot Verify', 'Impossibile Verificare', 'No se puede verificar');
+        window.hpmShowMessage(title, data.message, 'info');
+      } else {
+        const title = _ti('Verification Failed', 'Verifica Fallita', 'Verificación Fallida');
+        let msg = _ti(`Package <b>${name}</b> has missing or modified files:`, `Il pacchetto <b>${name}</b> ha file mancanti o modificati:`, `El paquete <b>${name}</b> tiene archivos faltantes o modificados:`);
+        msg += `<br><br><div style="max-height:150px; overflow-y:auto; font-size:0.85em; text-align:left; background:var(--bg-card); padding:8px; border-radius:4px;">`;
+        if (data.missing_files && data.missing_files.length) {
+            msg += `<strong style="color:var(--danger);">Missing:</strong><br>${data.missing_files.join('<br>')}<br><br>`;
+        }
+        if (data.modified_files && data.modified_files.length) {
+            msg += `<strong style="color:var(--warning);">Modified:</strong><br>${data.modified_files.join('<br>')}`;
+        }
+        msg += `</div>`;
+        window.hpmShowMessage(title, msg, 'error');
+      }
+    } else {
+      if (window.showToast) window.showToast(`Verify error: ${data.error}`, 'error');
+    }
+  } catch (err) {
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+    if (window.showToast) window.showToast(`${err.message}`, 'error');
+  }
+};
+
 window.hpmInjectTab = function(installResult) {
   if (!installResult.config_panel) return;
   const { tab_id, tab_label, tab_icon } = installResult.config_panel;
@@ -276,4 +316,181 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
   } catch (err) {
     if (window.showToast) window.showToast('Network error: ' + err.message, 'error');
   }
+};
+
+window._hpmSelectionMode = false;
+window._hpmSelectedPackages = new Set();
+
+window.hpmToggleSelectionMode = function() {
+    window._hpmSelectionMode = !window._hpmSelectionMode;
+    window._hpmSelectedPackages.clear();
+    
+    const toolbar = document.getElementById('hpm-selection-toolbar');
+    const selectModeBtn = document.getElementById('hpm-btn-select-mode');
+    
+    if (toolbar) toolbar.style.display = window._hpmSelectionMode ? 'flex' : 'none';
+    
+    if (selectModeBtn) {
+        if (window._hpmSelectionMode) {
+            selectModeBtn.style.background = 'var(--accent)';
+            selectModeBtn.style.color = '#fff';
+        } else {
+            selectModeBtn.style.background = '';
+            selectModeBtn.style.color = '';
+        }
+    }
+    
+    const chkAll = document.getElementById('hpm-select-all');
+    if (chkAll) chkAll.checked = false;
+    
+    window.hpmUpdateSelectionUI();
+    if (typeof window.hpmRenderHierarchy === 'function') window.hpmRenderHierarchy();
+};
+
+window.hpmToggleSelectAll = function() {
+    const chkAll = document.getElementById('hpm-select-all');
+    const isChecked = chkAll ? chkAll.checked : false;
+    
+    window._hpmSelectedPackages.clear();
+    if (isChecked && window._packages) {
+        window._packages.forEach(pkg => {
+            if (pkg.removable === true) {
+                window._hpmSelectedPackages.add(pkg.id);
+            }
+        });
+    }
+    
+    window.hpmUpdateSelectionUI();
+    if (typeof window.hpmRenderHierarchy === 'function') window.hpmRenderHierarchy();
+};
+
+window.hpmTogglePackageSelection = function(pkgId) {
+    if (window._hpmSelectedPackages.has(pkgId)) {
+        window._hpmSelectedPackages.delete(pkgId);
+    } else {
+        window._hpmSelectedPackages.add(pkgId);
+    }
+    window.hpmUpdateSelectionUI();
+};
+
+window.hpmUpdateSelectionUI = function() {
+    const countEl = document.getElementById('hpm-selected-count');
+    const btnUninstall = document.getElementById('hpm-btn-uninstall-selected');
+    const count = window._hpmSelectedPackages.size;
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    const uninstallStr = _ti('Uninstall', 'Disinstalla', 'Desinstalar');
+    
+    // Dynamic translations for toolbar buttons
+    const lblSelectAll = document.getElementById('lbl-hpm-select-all');
+    if (lblSelectAll) lblSelectAll.innerText = _ti('Select all', 'Seleziona tutti', 'Seleccionar todo');
+    
+    const btnCancel = document.getElementById('btn-hpm-cancel-sel');
+    if (btnCancel) btnCancel.innerText = _ti('Cancel', 'Annulla', 'Cancelar');
+    
+    const btnMode = document.getElementById('hpm-btn-select-mode');
+    if (btnMode) btnMode.title = _ti('Select multiple', 'Seleziona multipli', 'Seleccionar múltiples');
+
+    if (countEl) countEl.innerText = count;
+    
+    if (btnUninstall) {
+        if (count > 0) {
+            btnUninstall.style.opacity = '1';
+            btnUninstall.style.pointerEvents = 'auto';
+            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> ${uninstallStr} (${count})`;
+        } else {
+            btnUninstall.style.opacity = '0.5';
+            btnUninstall.style.pointerEvents = 'none';
+            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> ${uninstallStr}`;
+        }
+    }
+};
+
+window.hpmUninstallSelected = function() {
+    if (window._hpmSelectedPackages.size === 0) return;
+    
+    const count = window._hpmSelectedPackages.size;
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    
+    const msgTemplate = _ti(
+        `Are you sure you want to uninstall <b>{count} packages</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">This operation cannot be undone.</span>`,
+        `Sei sicuro di voler disinstallare <b>{count} pacchetti</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questa operazione non è annullabile.</span>`,
+        `¿Estás seguro de que deseas desinstalar <b>{count} paquetes</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Esta operación no se puede deshacer.</span>`
+    );
+    const msg = msgTemplate.replace('{count}', count);
+    const title = _ti(`Uninstall ${count}`, `Disinstalla ${count}`, `Desinstalar ${count}`);
+    
+    window.hpmShowConfirm(msg, title, async () => {
+        // Estrai gli id PRIMA di disabilitare la modalità, altrimenti si azzerano
+        const ids = Array.from(window._hpmSelectedPackages);
+        window.hpmToggleSelectionMode(); // esci dalla modalità selezione e azzera il set
+        
+        window.hpmSetProgress(true, `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${_ti(`Uninstalling (${ids.length} packages)...`, `Disinstallazione in corso (${ids.length} pacchetti)...`, `Desinstalando (${ids.length} paquetes)...`)}`, 30);
+        
+        try {
+            const resp = await fetch('/api/packages/uninstall/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            });
+            const data = await resp.json();
+            
+            if (data.ok) {
+                let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
+                data.results.forEach(r => {
+                    const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+                    const removedMsg = r.ok ? `<span style="color:var(--muted)">${_ti('removed', 'rimosso', 'eliminado')}</span>` : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
+                    extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
+                        <span style="color:var(--text);">${icon}${r.id}</span>
+                        ${removedMsg}
+                    </div>`;
+                });
+                extraHTML += `</div>`;
+
+                if (data.succeeded > 0) {
+                    const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
+                    if (sound !== 'none') {
+                        if (sound.startsWith('custom|')) {
+                            const path = sound.substring(7);
+                            new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
+                        } else {
+                            new Audio(`/static/sounds/${sound}`).play().catch(() => {});
+                        }
+                    }
+                }
+
+                const lblHint = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${_ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}</div>`;
+                const lblSuccess = data.failed === 0 
+                    ? _ti('Batch uninstall completed!', 'Disinstallazione batch completata!', '¡Desinstalación por lotes completada!')
+                    : _ti('Completed with some errors', 'Completato con alcuni errori', 'Completado con algunos errores');
+                
+                const mainIconColor = data.failed === 0 ? '#10b981' : (data.succeeded > 0 ? '#f59e0b' : '#ef4444');
+                const mainIcon = data.failed === 0 ? 'fa-check-circle' : (data.succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
+
+                window.hpmSetProgress(true, `
+                  <div style="text-align:center; padding: 10px 0;">
+                      <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i> 
+                      <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
+                      <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${data.succeeded} ${_ti('removed', 'rimossi', 'eliminados')} • ${data.failed} ${_ti('failed', 'falliti', 'fallidos')}</div>
+                      ${extraHTML}
+                      ${lblHint}
+                  </div>`, 100);
+                
+                const container = document.getElementById('hpm-install-progress');
+                if (container) {
+                    container.ondblclick = () => window.hpmSetProgress(false);
+                    container.style.cursor = 'default';
+                }
+
+                if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+                if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
+                if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
+            } else {
+                window.hpmSetProgress(false);
+                if (window.showToast) window.showToast(`Batch uninstall error: ${data.error}`, 'error');
+            }
+        } catch (err) {
+            window.hpmSetProgress(false);
+            if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+        }
+    });
 };

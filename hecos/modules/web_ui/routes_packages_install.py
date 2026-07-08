@@ -153,3 +153,145 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
         except Exception as e:
             log.error(f"[HPM] Install error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/packages/install/batch", methods=["POST"])
+    @login_required
+    def api_install_packages_batch():
+        """
+        Install multiple .hpkg packages in a single request.
+        Field name: 'hpkg_files[]'  (multipart, multiple files)
+        Returns: { ok, total, succeeded, failed, results: [{filename, ok, id, name, error, warnings}, ...] }
+        """
+        files = request.files.getlist("hpkg_files[]")
+        if not files:
+            return jsonify({"ok": False, "error": "No 'hpkg_files[]' in request"}), 400
+
+        allow_unsigned_str = request.form.get("allow_unsigned", "false").lower()
+        allow_unsigned = allow_unsigned_str in ("true", "1", "yes")
+        skip_dep_str = request.form.get("skip_dep_check", "false").lower()
+        skip_dep = skip_dep_str in ("true", "1", "yes")
+
+        registry, installer, _ = _get_hpm_components(_hecos_src)
+
+        results = []
+        succeeded = 0
+        failed = 0
+
+        for hpkg_file in files:
+            filename = hpkg_file.filename or "unknown.hpkg"
+            if not (filename.endswith(".hpkg") or filename.endswith(".zip")):
+                results.append({"filename": filename, "ok": False, "error": "Not a .hpkg file"})
+                failed += 1
+                continue
+
+            try:
+                hpkg_bytes = hpkg_file.read()
+                log.info(f"[HPM:Batch] Installing: {filename} ({len(hpkg_bytes)} bytes)")
+                result = installer.install_bytes(hpkg_bytes, require_signature=not allow_unsigned, skip_dep_check=skip_dep)
+
+                if result.success:
+                    # ── Hot-patch Jinja & re-discover extensions ──
+                    _refresh_jinja_loader(app)
+                    try:
+                        from hecos.core.system.extension_loader import discover_webui_extensions, load_eager_extensions
+                        webui_ext_dir = os.path.join(_hecos_src, "modules", "web_ui")
+                        discover_webui_extensions(webui_ext_dir)
+                        load_eager_extensions(app, "WEB_UI")
+                    except Exception as _ext_e:
+                        log.warning(f"[HPM:Batch] Extension re-discovery failed for {filename}: {_ext_e}")
+
+                    # ── Clear config panel cache ──
+                    try:
+                        from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                        clear_hpm_panel_cache()
+                    except ImportError:
+                        pass
+
+                    # ── Force-enable plugin/widgets in live cfg_mgr ──
+                    _PLUGIN_NS_TYPES = {"core_module", "plugin", "module", "extension", "app", "skill_pack"}
+                    try:
+                        import zipfile as _zf, io as _io
+                        try:
+                            import tomllib as _toml
+                        except ImportError:
+                            import tomli as _toml
+                        _zb = _zf.ZipFile(_io.BytesIO(hpkg_bytes))
+                        _raw_manifest = None
+                        for _name in _zb.namelist():
+                            if _name.endswith("hpkg_manifest.toml"):
+                                _raw_manifest = _zb.read(_name)
+                                break
+                        if _raw_manifest:
+                            _mdict = _toml.loads(_raw_manifest.decode("utf-8"))
+                            _pkg_type = _mdict.get("type", "plugin")
+                            _tag = _mdict.get("tag", "")
+                            if _tag and _pkg_type in _PLUGIN_NS_TYPES:
+                                cfg_mgr.set(True, "plugins", _tag, "enabled")
+                            for _w in _mdict.get("widgets", []):
+                                _wid = _w.get("id", "")
+                                if _wid:
+                                    cfg_mgr.set(True, "widgets", "per_widget", _wid, "enabled")
+                                    cfg_mgr.set(False, "widgets", "per_widget", _wid, "visible")
+                                    cfg_mgr.set(True, "widgets", "per_widget", _wid, "room_visible")
+                            if (_tag and _pkg_type in _PLUGIN_NS_TYPES) or _mdict.get("widgets"):
+                                cfg_mgr.save()
+                    except Exception as _ce:
+                        log.warning(f"[HPM:Batch] Could not force-enable in live cfg_mgr for {filename}: {_ce}")
+
+                    pkg_meta = registry.get(result.package_id) or {}
+                    snap = pkg_meta.get("manifest_snapshot", {})
+                    if isinstance(snap, str):
+                        try:
+                            import json as _j
+                            snap = _j.loads(snap)
+                        except:
+                            snap = {}
+                    panel_id = (snap.get("config_panel") or {}).get("tab_id") or result.package_id
+
+                    entry = {
+                        "filename": filename,
+                        "ok": True,
+                        "id": result.package_id,
+                        "name": pkg_meta.get("name", result.package_id),
+                        "type": pkg_meta.get("type", ""),
+                        "install_path": pkg_meta.get("install_path", ""),
+                        "config_panel": panel_id if snap.get("config_panel") else "",
+                        "warnings": result.warnings or [],
+                    }
+                    if result.dep_report and result.dep_report.has_issues:
+                        entry["dep_issues"] = result.dep_report.summary
+                    results.append(entry)
+                    succeeded += 1
+
+                    _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
+
+                else:
+                    results.append({
+                        "filename": filename,
+                        "ok": False,
+                        "error": result.error,
+                        "signature_error": "signature" in (result.error or "").lower(),
+                        "missing_deps": result.dep_report.missing_packages if result.dep_report else [],
+                    })
+                    failed += 1
+
+            except Exception as e:
+                log.error(f"[HPM:Batch] Error installing {filename}: {e}")
+                results.append({"filename": filename, "ok": False, "error": str(e)})
+                failed += 1
+
+        _invalidate_all_caches()
+        if succeeded > 0:
+            try:
+                from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                clear_hpm_panel_cache()
+            except ImportError:
+                pass
+
+        return jsonify({
+            "ok": True,
+            "total": len(results),
+            "succeeded": succeeded,
+            "failed": failed,
+            "results": results,
+        })

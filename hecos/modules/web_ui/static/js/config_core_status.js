@@ -34,7 +34,14 @@ async function refreshStatus() {
 
     setSpanText('s-bridge', d.bridge   || '—');
     setSpanText('s-config', d.config   || '—');
-    setSpanText('s-model',  d.model    || '—');
+    
+    const fullM = d.model || '—';
+    const shortM = fullM.includes('/') ? fullM.split('/').pop() : fullM;
+    const elModel = document.getElementById('s-model');
+    if (elModel) {
+        elModel.title = fullM;
+        elModel.textContent = shortM;
+    }
     setSpanText('s-tool',   d.last_tool || '—');
 
     // Format tokens: P/C

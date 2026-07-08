@@ -2,7 +2,8 @@ import os
 import json
 import threading
 import time
-from flask import request, jsonify
+import uuid
+from flask import request, jsonify, Response, stream_with_context
 
 def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def _sm():
@@ -65,6 +66,25 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as exc:
             logger.error(f"[WebUI] transcribe_audio error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500
+
+    @app.route("/api/audio/test/progress/<job_id>", methods=["GET"])
+    def tts_progress(job_id):
+        from hecos.modules.web_ui.routes_chat_tts import get_tts_progress
+        
+        def generate():
+            while True:
+                prog = get_tts_progress(job_id)
+                if not prog:
+                    yield f"data: {json.dumps({'status': 'not_found'})}\n\n"
+                    break
+                    
+                yield f"data: {json.dumps(prog)}\n\n"
+                
+                if prog["status"] in ["done", "error"]:
+                    break
+                time.sleep(0.2)
+                
+        return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
     @app.route("/api/audio/stop", methods=["POST"])
     def stop_audio():
@@ -137,18 +157,25 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             voice_cfg["onnx_model"] = onnx_model
 
             from hecos.modules.web_ui.routes_chat import generate_voice_file, set_last_audio_path
-            wav_path = generate_voice_file(text, voice_cfg)
-
-            if not wav_path:
-                return jsonify({
-                    "ok": False,
-                    "error": "Piper synthesis failed. Check Hecos logs for details."
-                }), 500
-
+            
             if mode == "web":
-                set_last_audio_path(wav_path)
-                return jsonify({"ok": True, "url": "/api/audio"})
+                job_id = str(uuid.uuid4())
+                
+                def _generate_web():
+                    wav_path = generate_voice_file(text, voice_cfg, job_id=job_id)
+                    if wav_path:
+                        set_last_audio_path(wav_path)
+                        
+                threading.Thread(target=_generate_web, daemon=True).start()
+                return jsonify({"ok": True, "job_id": job_id})
             else:
+                wav_path = generate_voice_file(text, voice_cfg)
+                if not wav_path:
+                    return jsonify({
+                        "ok": False,
+                        "error": "Piper synthesis failed. Check Hecos logs for details."
+                    }), 500
+                    
                 def _play_server_side():
                     try:
                         from hecos.core.audio.voice import _play_wav

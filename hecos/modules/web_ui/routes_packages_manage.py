@@ -81,6 +81,60 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             log.error(f"[HPM] GET /api/packages/{pkg_id}/capabilities error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/packages/<pkg_id>/verify", methods=["GET"])
+    @login_required
+    def api_verify_package(pkg_id):
+        """Verify the integrity of an installed package using file hashes."""
+        try:
+            import hashlib
+            registry, _, _ = _get_hpm_components(_hecos_src)
+            pkg = registry.get(pkg_id)
+            if not pkg:
+                return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+            
+            manifest = registry.get_manifest(pkg_id) or {}
+            file_hashes = manifest.get("file_hashes", {})
+            if not file_hashes:
+                return jsonify({"ok": True, "status": "unverified", "message": "No file hashes available in manifest"})
+                
+            install_path = pkg.get("install_path")
+            if not install_path or not os.path.exists(install_path):
+                return jsonify({"ok": False, "error": "Install path missing or not found"}), 404
+                
+            missing = []
+            modified = []
+            
+            for rel_path, expected_hash in file_hashes.items():
+                # Prevent path traversal in relative path
+                safe_rel = rel_path.replace("\\", "/").lstrip("/")
+                abs_path = os.path.join(install_path, safe_rel)
+                
+                if not os.path.exists(abs_path):
+                    missing.append(rel_path)
+                    continue
+                    
+                sha256 = hashlib.sha256()
+                with open(abs_path, "rb") as f:
+                    while chunk := f.read(8192):
+                        sha256.update(chunk)
+                        
+                if sha256.hexdigest().lower() != expected_hash.lower():
+                    modified.append(rel_path)
+                    
+            if not missing and not modified:
+                return jsonify({"ok": True, "status": "valid", "message": "All files verified successfully"})
+            else:
+                return jsonify({
+                    "ok": True, 
+                    "status": "invalid", 
+                    "missing_files": missing,
+                    "modified_files": modified,
+                    "message": f"Verification failed: {len(missing)} missing, {len(modified)} modified"
+                })
+        except Exception as e:
+            log.error(f"[HPM] GET /api/packages/{pkg_id}/verify error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/packages/<pkg_id>/update", methods=["POST"])
     @login_required
     def api_update_package(pkg_id):
@@ -320,3 +374,97 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
         except Exception as e:
             log.error(f"[HPM] GET /api/hpm/settings/sounds error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/packages/uninstall/batch", methods=["POST"])
+    @login_required
+    def api_uninstall_packages_batch():
+        """
+        Uninstall multiple packages by ID.
+        Body: { "ids": ["pkg1", "pkg2", ...] }
+        Returns: { ok, total, succeeded, failed, results: [{id, ok, removed_files_count, error}, ...] }
+        """
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids", [])
+        if not isinstance(ids, list) or not ids:
+            return jsonify({"ok": False, "error": "Missing or empty 'ids' list"}), 400
+
+        registry, _, uninstaller = _get_hpm_components(_hecos_src)
+
+        results = []
+        succeeded = 0
+        failed = 0
+        any_cache_invalidate = False
+
+        for pkg_id in ids:
+            try:
+                pkg = registry.get(pkg_id)
+                if not pkg:
+                    results.append({"id": pkg_id, "ok": False, "error": "Not installed"})
+                    failed += 1
+                    continue
+
+                snap = pkg.get("manifest_snapshot", {})
+                if isinstance(snap, str):
+                    import json
+                    try: snap = json.loads(snap)
+                    except: snap = {}
+                widget_ids_to_hide = [w.get("id") for w in snap.get("widgets", []) if w.get("id")]
+
+                log.info(f"[HPM:Batch] Uninstalling: {pkg_id}")
+                result = uninstaller.uninstall(pkg_id)
+
+                if result.success:
+                    any_cache_invalidate = True
+                    try:
+                        from hecos.core.system.extension_loader import purge_extension
+                        for ext_id in widget_ids_to_hide:
+                            purge_extension(ext_id, "WEB_UI")
+                        _refresh_jinja_loader(app)
+
+                        for ext_id in widget_ids_to_hide:
+                            cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")
+                            cfg_mgr.set(False, "widgets", "per_widget", ext_id, "visible")
+                            cfg_mgr.set(False, "widgets", "per_widget", ext_id, "room_visible")
+                        tag = snap.get("tag")
+                        if tag:
+                            cfg_mgr.set(False, "plugins", tag, "enabled")
+                        if widget_ids_to_hide or tag:
+                            cfg_mgr.save()
+                    except Exception as _purge_e:
+                        log.warning(f"[HPM:Batch] Extension purge failed for {pkg_id}: {_purge_e}")
+
+                    _hpm_event_broadcast("hpm:package_uninstalled", {"id": pkg_id})
+                    results.append({
+                        "id": pkg_id,
+                        "ok": True,
+                        "removed_files_count": len(result.removed_files),
+                        "skipped_files": result.skipped_files,
+                    })
+                    succeeded += 1
+                else:
+                    results.append({
+                        "id": pkg_id,
+                        "ok": False,
+                        "error": result.error,
+                    })
+                    failed += 1
+            except Exception as e:
+                log.error(f"[HPM:Batch] DELETE {pkg_id} error: {e}")
+                results.append({"id": pkg_id, "ok": False, "error": str(e)})
+                failed += 1
+
+        if any_cache_invalidate:
+            _invalidate_all_caches()
+            try:
+                from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                clear_hpm_panel_cache()
+            except ImportError:
+                pass
+
+        return jsonify({
+            "ok": True,
+            "total": len(results),
+            "succeeded": succeeded,
+            "failed": failed,
+            "results": results,
+        })

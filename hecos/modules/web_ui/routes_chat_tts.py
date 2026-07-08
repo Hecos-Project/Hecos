@@ -29,7 +29,12 @@ def get_last_audio_path() -> str:
     return _last_audio_path
 
 
-def generate_voice_file(text: str, voice_cfg: dict) -> str:
+_tts_jobs = {}
+
+def get_tts_progress(job_id: str) -> dict:
+    return _tts_jobs.get(job_id, None)
+
+def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> str:
     """
     Runs PiperDaemon in-memory synthesis and creates risposta.wav instantly.
     Returns the absolute path to the generated WAV, or None on failure.
@@ -40,17 +45,31 @@ def generate_voice_file(text: str, voice_cfg: dict) -> str:
         daemon = get_daemon()
         
         _chat_log.info("[Audio] WebUI generating WAV via in-memory PiperDaemon...")
-        success = daemon.generate_wav(text, out)
+        
+        if job_id:
+            _tts_jobs[job_id] = {"current": 0, "total": 1, "status": "generating"}
+            def progress_callback(current, total):
+                _tts_jobs[job_id]["current"] = current
+                _tts_jobs[job_id]["total"] = total
+                if current == total:
+                    _tts_jobs[job_id]["status"] = "done"
+            success = daemon.generate_wav_chunked(text, out, progress_callback)
+        else:
+            success = daemon.generate_wav_chunked(text, out)
         
         if success:
             _chat_log.info("[Audio] Native in-memory WAV generation successful.")
             return out
         else:
             _chat_log.error("[Audio] Native in-memory WAV generation failed.")
+            if job_id and job_id in _tts_jobs:
+                _tts_jobs[job_id]["status"] = "error"
             return None
             
     except Exception as e:
         _chat_log.error(f"[Audio] generate_voice_file error: {e}")
+        if job_id and job_id in _tts_jobs:
+            _tts_jobs[job_id]["status"] = "error"
         return None
 
 

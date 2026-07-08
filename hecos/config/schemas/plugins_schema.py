@@ -61,15 +61,6 @@ class PluginWeb(BaseModel):
     open_in_new_tab: bool = False
 
 
-class PluginWebcam(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    camera_index: int = 0
-    image_format: str = "jpg"
-    save_directory: str = "snapshots"
-    stabilization_delay: float = 0.5
-
-
 class PluginWebUI(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
@@ -90,18 +81,6 @@ class PluginExecutor(BaseModel):
     shell_timeout: int = 15
     max_read_lines: int = 200
     workspace_dir: str = "workspace/sandbox"
-
-
-class PluginRemoteTriggers(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    settings: Dict[str, Any] = Field(default_factory=lambda: {
-        "enable_mediasession": True,
-        "enable_volume_keys": True,
-        "enable_volume_loop": False,
-        "feedback_sounds": True,
-        "visual_indicator": True
-    })
 
 
 class PluginDrive(BaseModel):
@@ -210,16 +189,6 @@ class PluginFlows(BaseModel):
     autosave_interval_minutes: int = 1
 
 
-class PluginLists(BaseModel):
-    """Lists plugin config — universal list manager."""
-    enabled: bool = True
-    lazy_load: bool = True
-    default_icon: str = "📋"
-    max_items_per_list: int = 500
-    max_lists: int = 50
-    show_completed: bool = True
-
-
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
@@ -230,11 +199,9 @@ class PluginsConfig(BaseModel):
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)
-    WEBCAM: PluginWebcam = Field(default_factory=PluginWebcam)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
-    REMOTE_TRIGGERS: PluginRemoteTriggers = Field(default_factory=PluginRemoteTriggers)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
     AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
@@ -242,36 +209,13 @@ class PluginsConfig(BaseModel):
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
     MAIL: PluginMail = Field(default_factory=PluginMail)
     FLOWS: PluginFlows = Field(default_factory=PluginFlows)
-    LISTS: PluginLists = Field(default_factory=PluginLists)
     extra_dirs: List[str] = []
 
 
 # ─── EXTENSIONS ───────────────────────────────────────────────────────────────
 
-class CalendarExtensionConfig(BaseModel):
-    model_config = ConfigDict(extra='allow')
-    calendar_locale: str = "en-US"
-    calendar_country: str = "US"
-    day_colors: List[str] = Field(default_factory=lambda: [""] * 7)
-    calendar_sync_urls: List[str] = Field(default_factory=list)
-    bg_color: str = ""
-    bg_image: str = ""
-
-    @field_validator('day_colors', mode='before')
-    @classmethod
-    def validate_day_colors(cls, v):
-        if isinstance(v, dict):
-            try:
-                sorted_keys = sorted(v.keys(), key=lambda x: int(x))
-                return [v[k] for k in sorted_keys]
-            except (ValueError, TypeError):
-                return list(v.values())
-        return v
-
-
 class ExtensionsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
-    calendar: CalendarExtensionConfig = Field(default_factory=CalendarExtensionConfig)
 
 
 # ─── ROOT SCHEMA FOR plugins.yaml ─────────────────────────────────────────────

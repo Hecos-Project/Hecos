@@ -168,13 +168,33 @@ class PackageValidator:
 
     def _check_hecos_version(self, manifest: HpkgManifest, result: ValidationResult) -> None:
         try:
+            from packaging.version import Version
+            from packaging.specifiers import SpecifierSet
+            
+            current_ver = Version(self._hecos_version)
+            
+            # Check min version (backwards compatible exact version string)
+            min_ver = Version(manifest.hecos_min_version)
+            if current_ver < min_ver:
+                result.add_error(
+                    f"This package requires Hecos >= {manifest.hecos_min_version}, "
+                    f"but the current version is {self._hecos_version}."
+                )
+                
+            # Check max version constraint if specified (e.g., "<1.0.0")
+            if manifest.hecos_max_version:
+                max_spec = SpecifierSet(manifest.hecos_max_version)
+                if current_ver not in max_spec:
+                    result.add_error(
+                        f"This package requires Hecos {manifest.hecos_max_version}, "
+                        f"but the current version is {self._hecos_version}."
+                    )
+        except ImportError:
+            # Fallback if packaging is not available
             def _parse(v: str):
-                return tuple(int(x) for x in v.split(".")[:3])
-
-            required = _parse(manifest.hecos_min_version)
-            current = _parse(self._hecos_version)
-
-            if current < required:
+                return tuple(int(x) for x in v.split(".")[:3] if x.isdigit())
+            
+            if _parse(self._hecos_version) < _parse(manifest.hecos_min_version):
                 result.add_error(
                     f"This package requires Hecos >= {manifest.hecos_min_version}, "
                     f"but the current version is {self._hecos_version}."

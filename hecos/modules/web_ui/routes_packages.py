@@ -72,14 +72,13 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
             
             if api_routes_file:
                 plugin_id = pkg["id"]
-                # Search in priority order: hecos/hpm, hecos/plugins, plugins (legacy)
-                _candidate_dirs = [
-                    os.path.join(hecos_root, "hecos", "hpm", plugin_id),
-                    os.path.join(hecos_root, "hecos", "plugins", plugin_id),
-                    os.path.join(hecos_root, "plugins", plugin_id),
-                ]
-                plugin_path = next((d for d in _candidate_dirs if os.path.isdir(d)), _candidate_dirs[1])
-                abs_route_path = os.path.join(plugin_path, api_routes_file)
+                install_path = pkg.get("install_path")
+                
+                if install_path:
+                    abs_route_path = os.path.join(install_path, api_routes_file)
+                else:
+                    # Fallback if install_path is missing for some reason
+                    abs_route_path = os.path.join(hecos_root, "hpm", plugin_id, api_routes_file)
                 
                 if os.path.isfile(abs_route_path):
                     import importlib.util

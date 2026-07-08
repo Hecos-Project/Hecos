@@ -88,7 +88,7 @@
       </div>
       <div style="color:var(--muted);font-size:0.82em;">{{ t('hpm_or_browse') or 'or click to browse' }}</div>
 
-      <input type="file" id="hpm-file-input" accept=".hpkg,.zip"
+      <input type="file" id="hpm-file-input" accept=".hpkg,.zip" multiple
              style="display:none;" onchange="hpmFileSelected(event)">
     </div>
 
@@ -122,6 +122,10 @@
         <span id="hpm-total-count" style="margin-left:10px; background:rgba(255,255,255,0.08); color:var(--muted); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:700;">0</span>
       </div>
       <div style="display:flex;gap:6px;">
+        <button id="hpm-btn-select-mode" class="btn-icon" onclick="hpmToggleSelectionMode()" title="Select multiple"
+                style="padding:6px 10px;font-size:0.78em;">
+          <i class="fas fa-check-square"></i>
+        </button>
         <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
                 style="padding:6px 10px;font-size:0.78em;">
           <i class="fas fa-sync-alt"></i>
@@ -130,6 +134,21 @@
                 title="{{ t('hpm_btn_check_updates') or 'Check for updates' }}"
                 style="padding:6px 10px;font-size:0.78em;">
           <i class="fas fa-arrow-circle-up"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Selezione Batch Toolbar -->
+    <div id="hpm-selection-toolbar" style="display:none; background:var(--bg3, #2a2a35); border-radius:8px; padding:10px 14px; margin-bottom:12px; align-items:center; justify-content:space-between; border:1px solid var(--accent);">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <input type="checkbox" id="hpm-select-all" onchange="hpmToggleSelectAll()" style="accent-color:var(--accent); width:16px; height:16px; cursor:pointer;">
+        <label for="hpm-select-all" id="lbl-hpm-select-all" style="font-size:0.9em; font-weight:600; cursor:pointer;">Select all</label>
+        <span id="hpm-selected-count" style="background:var(--accent); color:#fff; font-size:0.75em; padding:2px 8px; border-radius:12px; font-weight:bold;">0</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="btn-hpm-cancel-sel" class="btn btn-sm btn-secondary" onclick="hpmToggleSelectionMode()">Cancel</button>
+        <button id="hpm-btn-uninstall-selected" class="btn btn-sm btn-danger" style="background:#ef4444; border:none; color:white; opacity:0.5; pointer-events:none;" onclick="hpmUninstallSelected()">
+          <i class="fas fa-trash" style="margin-right:6px;"></i> Uninstall
         </button>
       </div>
     </div>

@@ -729,7 +729,12 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal, pkgId,
     title.textContent  = _t('Installation Failed', 'Installazione Fallita', 'Instalación Fallida');
 
     let errHTML = `<div>${_hesc(payload.message || 'Installation failed.')}</div>`;
+    if (payload.missing_deps && payload.missing_deps.length > 0) {
+        const lblMissing = _t('Missing modules:', 'Moduli mancanti:', 'Módulos faltantes:');
+        errHTML += `<div style="margin-top:8px;font-size:0.85em;"><i class="fas fa-box-open" style="margin-right:4px;"></i>${lblMissing} <span style="color:var(--text);">${payload.missing_deps.join(', ')}</span></div>`;
+    }
     msg.innerHTML = errHTML;
+    
     const hintEl = document.getElementById('hpm-store-progress-hint');
     if (hintEl) hintEl.style.display = 'block';
     setTimeout(() => { modal.style.display = 'none'; bar.style.background = ''; }, 6000);
@@ -771,3 +776,11 @@ function _hpmStoreShowBanner(text, type) {
     </div>`;
   banner.style.display = 'block';
 }
+
+document.addEventListener('hpmProgressUpdate', (e) => {
+    const modal = document.getElementById('hpm-store-progress-modal');
+    if (modal && modal.style.display !== 'none') {
+        const msg = document.getElementById('hpm-store-progress-msg');
+        if (msg) msg.textContent = e.detail.message || e.detail.step || '';
+    }
+});

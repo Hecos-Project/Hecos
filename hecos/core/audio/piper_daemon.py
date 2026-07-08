@@ -180,6 +180,103 @@ class PiperDaemon:
         waited = self._synth_complete_event.wait(120.0)
         return waited and os.path.exists(filepath)
 
+    def generate_wav_chunked(self, text: str, filepath: str, progress_callback=None) -> bool:
+        """
+        Splits text into sentences, generates temp wav files, and merges them.
+        Prevents IPC timeouts on very long texts.
+        """
+        if not text: return False
+        
+        self._ensure_running()
+        if self._proc is None or self._proc.poll() is not None:
+            logger.error("PIPER_DAEMON", "Piper IPC Daemon is dead.")
+            return False
+
+        if not self._ready_event.wait(timeout=30.0):
+            logger.error("PIPER_DAEMON", "Piper did not initialize within 30s.")
+            return False
+
+        clean = text.replace('"', "").replace('\n', " ").strip()
+        if not clean: return False
+
+        import re
+        raw = re.split(r'(?<=[.!?…])\s+|(?<=[—\-]{2})\s*', clean)
+        sentences = [r.strip() for r in raw if r.strip()]
+        
+        root = _get_project_root()
+        temp_dir = os.path.join(root, "hecos", "media", "audio", "temp_tts")
+        os.makedirs(temp_dir, exist_ok=True)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        temp_files = []
+        success = True
+        
+        total = len(sentences)
+        self._stop_flag = False
+        
+        try:
+            for i, s in enumerate(sentences):
+                if self._stop_flag: 
+                    success = False
+                    break
+                    
+                if progress_callback:
+                    progress_callback(i, total)
+                    
+                uid = uuid.uuid4().hex[:8]
+                tmp_wav = os.path.join(temp_dir, f"chunk_{uid}.wav")
+                
+                req = {"text": s, "output_file": tmp_wav}
+                self._synth_complete_event.clear()
+                
+                with self._lock:
+                    if self._proc and self._proc.poll() is None:
+                        try:
+                            self._proc.stdin.write((json.dumps(req) + "\n").encode('utf-8'))
+                            self._proc.stdin.flush()
+                        except: 
+                            success = False
+                            break
+                            
+                waited = self._synth_complete_event.wait(30.0)
+                if not waited or not os.path.exists(tmp_wav) or os.path.getsize(tmp_wav) <= 44:
+                    logger.error("PIPER_DAEMON", f"Timeout or failure waiting for TTS chunk synthesis: {s}")
+                    success = False
+                    break
+                    
+                temp_files.append(tmp_wav)
+            
+            if success and temp_files:
+                # Merge WAV files
+                try:
+                    import wave
+                    data = []
+                    params = None
+                    for tmp in temp_files:
+                        with wave.open(tmp, 'rb') as wf:
+                            if params is None:
+                                params = wf.getparams()
+                            data.append(wf.readframes(wf.getnframes()))
+                            
+                    with wave.open(filepath, 'wb') as wf:
+                        wf.setparams(params)
+                        for d in data:
+                            wf.writeframes(d)
+                except Exception as e:
+                    logger.error("PIPER_DAEMON", f"Error merging chunked WAVs: {e}")
+                    success = False
+        finally:
+            # Cleanup temp files
+            for tmp in temp_files:
+                try:
+                    if os.path.exists(tmp): os.remove(tmp)
+                except: pass
+                
+        if progress_callback and success:
+            progress_callback(total, total)
+            
+        return success and os.path.exists(filepath)
+
     def speak(self, text: str, state=None, _run_id=None, _timeout=0, _start=0):
         """
         Main PC TTS. Splits text into phrases, generates temp wav files

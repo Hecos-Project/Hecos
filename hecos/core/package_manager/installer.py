@@ -87,6 +87,7 @@ class PackageInstaller:
 
     def install_bytes(self, data: bytes, require_signature: bool = True, skip_dep_check: bool = False) -> InstallResult:
         # ── Step 1: Validate ─────────────────────────────────────────────────
+        self._emit("hpm:progress", {"step": "validation", "message": "Validating package schema..."})
         val_result = self._validator.validate_bytes(data)
         if not val_result.valid:
             return InstallResult(success=False, error=f"Validation failed: {val_result.error_summary}")
@@ -95,6 +96,7 @@ class PackageInstaller:
         result = InstallResult(package_id=manifest.id)
 
         # ── Step 2: Signature check ──────────────────────────────────────────
+        self._emit("hpm:progress", {"step": "signature", "message": "Verifying package signature..."})
         import tomllib
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             try:
@@ -109,6 +111,7 @@ class PackageInstaller:
             return InstallResult(success=False, error="Signature verification failed. Package is untrusted or tampered with.")
 
         # ── Step 3: Dependency resolution ────────────────────────────────────
+        self._emit("hpm:progress", {"step": "dependencies", "message": "Resolving dependencies..."})
         resolver = DependencyResolver(self._registry)
         dep_report = resolver.resolve(manifest, install_pip=True)
         result.dep_report = dep_report
@@ -128,6 +131,7 @@ class PackageInstaller:
             result.warnings.append(f"Some pip requirements failed to install: {dep_report.pip_failures}")
 
         # ── Step 4: Extract to staging ───────────────────────────────────────
+        self._emit("hpm:progress", {"step": "extract", "message": "Extracting package files..."})
         staging_dir = tempfile.mkdtemp(prefix="hpm_staging_")
         installed_files: List[str] = []
 
@@ -136,6 +140,7 @@ class PackageInstaller:
                 zf.extractall(staging_dir)
 
             # ── Step 4.5: File Hashes Verification ───────────────────────────
+            self._emit("hpm:progress", {"step": "hash_check", "message": "Verifying file integrity..."})
             import hashlib
             expected_hashes = manifest.file_hashes or {}
             
@@ -166,9 +171,11 @@ class PackageInstaller:
                         raise RuntimeError(f"Hash mismatch for '{rel_path}'. File corrupted or tampered.")
 
             # ── Step 5: pre_install hook ─────────────────────────────────────
+            self._emit("hpm:progress", {"step": "hooks", "message": "Running pre-install hook..."})
             run_hook(staging_dir, "pre_install", manifest)
 
             # ── Step 6: Copy plugin/module code ──────────────────────────────
+            self._emit("hpm:progress", {"step": "copy_code", "message": "Installing core logic..."})
             installed_files.extend(install_plugin_code(staging_dir, manifest, self._hecos_root))
 
             # ── Step 7: Copy WebUI assets ─────────────────────────────────────
@@ -184,6 +191,7 @@ class PackageInstaller:
             installed_files.extend(install_docs(staging_dir, manifest, self._hecos_root))
 
             # ── Step 10: Register in DB ───────────────────────────────────────
+            self._emit("hpm:progress", {"step": "register", "message": "Registering in database..."})
             target_dir_name = _resolve_target_dir(manifest) or manifest.target_dir
             install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
             manifest_dict = manifest.model_dump()
@@ -198,6 +206,7 @@ class PackageInstaller:
             hot_reload(self._hecos_root)
 
             # ── Step 12: post_install hook ────────────────────────────────────
+            self._emit("hpm:progress", {"step": "hooks", "message": "Running post-install hook..."})
             run_hook(staging_dir, "post_install", manifest)
 
             # ── Step 13: Emit event ───────────────────────────────────────────
