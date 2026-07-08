@@ -23,7 +23,12 @@ def get_active_tags():
     return list(_loaded_plugins.keys()) + list(_loaded_legacy_plugins.keys()) + list(_lazy_plugins_paths.keys())
 
 def get_plugin_module(tag, legacy=False):
-    """Returns the plugin module if active, or triggers a lazy load if dormant."""
+    """Returns the plugin module if active, or triggers a lazy load if dormant.
+    
+    For isolated HPM plugins, _loaded_plugins may contain a ModuleProxy instead
+    of a real Python module. ModuleProxy is duck-type compatible (it has a .tools
+    attribute), so the caller (processing/__init__.py) works without modification.
+    """
     # 1. Quick check if already loaded
     if legacy:
         module = _loaded_legacy_plugins.get(tag)

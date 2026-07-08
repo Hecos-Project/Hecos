@@ -65,13 +65,14 @@ class DependencyResolver:
     def __init__(self, registry: "PackageRegistry"):
         self._registry = registry
 
-    def resolve(self, manifest, install_pip: bool = True) -> DependencyReport:
+    def resolve(self, manifest, install_pip: bool = True, install_path: str = None) -> DependencyReport:
         """
         Check inter-package deps and optionally install pip requirements.
 
         Args:
             manifest:    Parsed HpkgManifest object.
             install_pip: If True, pip requirements are installed automatically.
+            install_path: Directory where the package is installed (needed for isolated venv).
         """
         report = DependencyReport()
 
@@ -121,7 +122,8 @@ class DependencyResolver:
 
         # 3. pip requirements
         if install_pip and manifest.pip_requirements:
-            self._install_pip_requirements(manifest.pip_requirements, report)
+            pip_isolation = getattr(manifest, "pip_isolation", "shared")
+            self._install_pip_requirements(manifest.pip_requirements, report, pip_isolation, install_path)
 
         if not report.has_issues:
             logger.info(f"[HPM:Resolver] All dependencies for '{manifest.id}' satisfied.")
@@ -135,16 +137,68 @@ class DependencyResolver:
     # ── Private ──────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _install_pip_requirements(requirements: List[str], report: DependencyReport) -> None:
-        """Install pip packages using the running Python interpreter."""
+    def _install_pip_requirements(requirements: List[str], report: DependencyReport, isolation: str = "shared", install_path: str = None) -> None:
+        """Install pip packages either globally or in an isolated venv."""
+        import os
+        import subprocess
+
+        python_exe = sys.executable
+
+        if isolation == "isolated":
+            if not install_path:
+                logger.error("[HPM:Resolver] Cannot isolate pip dependencies: install_path is None.")
+                report.pip_failures.extend(requirements)
+                return
+
+            venv_dir = os.path.join(install_path, "venv")
+            if not os.path.exists(venv_dir):
+                logger.info(f"[HPM:Resolver] Creating virtual environment at {venv_dir}...")
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "venv", venv_dir],
+                        check=True,
+                        capture_output=True
+                    )
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"[HPM:Resolver] Failed to create venv: {e.stderr}")
+                    report.pip_failures.extend(requirements)
+                    return
+
+            # Determine the python executable inside the venv
+            if os.name == 'nt':
+                python_exe = os.path.join(venv_dir, "Scripts", "python.exe")
+            else:
+                python_exe = os.path.join(venv_dir, "bin", "python")
+
+            if not os.path.exists(python_exe):
+                logger.error(f"[HPM:Resolver] Venv python executable not found: {python_exe}")
+                report.pip_failures.extend(requirements)
+                return
+
+            # Install hecos_sdk automatically
+            sdk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "hecos_sdk"))
+            if os.path.exists(sdk_path):
+                logger.info("[HPM:Resolver] Installing hecos_sdk into isolated venv...")
+                try:
+                    subprocess.run(
+                        [python_exe, "-m", "pip", "install", sdk_path],
+                        check=True,
+                        capture_output=True
+                    )
+                except subprocess.CalledProcessError as e:
+                    logger.warning(f"[HPM:Resolver] Failed to install hecos_sdk: {e.stderr}")
+            else:
+                logger.warning(f"[HPM:Resolver] hecos_sdk not found at {sdk_path}, skipping SDK install.")
+
         for req in requirements:
             req = req.strip()
+
             if not req or req.startswith("#"):
                 continue
             logger.info(f"[HPM:Resolver] pip install: {req}")
             try:
                 result = subprocess.run(
-                    [sys.executable, "-m", "pip", "install", req, "--quiet", "--no-input"],
+                    [python_exe, "-m", "pip", "install", req, "--quiet", "--no-input"],
                     capture_output=True,
                     text=True,
                     timeout=120,  # 2-minute timeout per package

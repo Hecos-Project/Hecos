@@ -90,7 +90,7 @@ def update_capability_registry(config=None, debug_log=True):
         # For HPM packages, also add hecos root (parent of hpm/) so that
         # 'from hecos.hpm.reminder import store' resolves via hecos/__init__.py
         if module_type == "hpm":
-            hecos_root = os.path.dirname(parent_dir)  # …/Hecos/
+            hecos_root = os.path.dirname(parent_dir)  # .../Hecos/
             if hecos_root not in sys.path:
                 sys.path.insert(0, hecos_root)
             
@@ -102,10 +102,62 @@ def update_capability_registry(config=None, debug_log=True):
         for plugin_dir in plugin_dirs:
             main_file = os.path.join(plugins_dir, plugin_dir, "main.py")
             manifest_file = os.path.join(plugins_dir, plugin_dir, "manifest.json")
+            runner_file = os.path.join(plugins_dir, plugin_dir, "runner.py")
+            module_abs_dir = os.path.join(plugins_dir, plugin_dir)
             if not os.path.exists(main_file):
                 continue
 
-            # --- NEW SECTION: LAZY LOADING via manifest.json ---
+            # ── PHASE B: HPM Isolated Subprocess (ModuleBus) ────────────────
+            # If the plugin directory contains runner.py it is ready for
+            # full subprocess isolation. Route it through the ModuleBus.
+            if module_type == "hpm" and os.path.exists(runner_file):
+                if not os.path.exists(manifest_file):
+                    logger.warning(f"LOADER: HPM module '{plugin_dir}' has runner.py but no manifest.json — skipping subprocess start.")
+                    # Fall through to legacy importlib loading below
+                else:
+                    try:
+                        with open(manifest_file, "r", encoding="utf-8") as f:
+                            manifest_data = json.load(f)
+
+                        tag = manifest_data.get("tag", plugin_dir.upper()).upper()
+                        plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                        if not plugin_enabled:
+                            if debug_log: logger.debug("LOADER", f"HPM module {plugin_dir} disabled by config.")
+                            continue
+
+                        from hecos.core.module_bus import get_bus
+                        bus = get_bus()
+                        proxy = bus.start_module(tag, module_abs_dir)
+
+                        if proxy:
+                            # Register the proxy in the loaded plugins map so
+                            # processing/__init__.py can find it via get_plugin_module()
+                            _loaded_plugins[tag] = proxy
+
+                            # Populate skills_map so the agent brain knows about this tool
+                            skills_map[tag] = {
+                                "description": manifest_data.get("description", ""),
+                                "commands":    manifest_data.get("commands", {}),
+                                "status":      "ONLINE (ISOLATED)",
+                                "example":     manifest_data.get("example", ""),
+                                "routing_instructions": manifest_data.get("routing_instructions", ""),
+                                "is_class_based": True,
+                                "is_lazy":     False,
+                                "icon":        manifest_data.get("icon", ""),
+                                "category":    manifest_data.get("category", "PLUGINS"),
+                                "slash_commands": manifest_data.get("slash_commands", []),
+                                "module_type": "hpm_isolated",
+                            }
+                            if debug_log: logger.debug("LOADER", f"HPM module '{plugin_dir}' started as isolated subprocess (tag={tag}).")
+                        else:
+                            logger.error(f"LOADER: ModuleBus failed to start HPM module '{plugin_dir}'.")
+
+                    except Exception as e:
+                        logger.error(f"LOADER: Error starting isolated HPM module '{plugin_dir}': {e}")
+                    continue  # Do not fall through to importlib path
+            # ── END PHASE B ────────────────────────────────────────────────
+
+            # --- LAZY LOADING via manifest.json (non-HPM or HPM without runner.py) ---
             if os.path.exists(manifest_file):
                 try:
                     with open(manifest_file, "r", encoding="utf-8") as f:
