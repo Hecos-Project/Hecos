@@ -178,6 +178,9 @@ window.initEvents = function() {
       if (window.reminderWidget && window.reminderWidget.refresh) {
         window.reminderWidget.refresh();
       }
+    } else if (ev.type === 'hpm:progress') {
+      const payload = ev.data || ev;
+      document.dispatchEvent(new CustomEvent('hpmProgressUpdate', { detail: payload }));
     } else if (ev.type === 'widgets_refresh' || ev.type === 'hpm:package_uninstalled' || ev.type === 'hpm:package_installed' || ev.type === 'hpm:package_status_changed') {
       console.log(`[WIDGETS/HPM] SSE refresh signal received: ${ev.type}`);
       // 1. Sidebar refresh

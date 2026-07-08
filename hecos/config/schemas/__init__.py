@@ -15,11 +15,11 @@ from .system_schema import SystemConfig
 from .plugins_schema import (
     PluginsFileConfig, PluginsConfig, ExtensionsConfig,
     PluginFileManager, PluginHelp,
-    PluginMediaPlayer, PluginSystem, PluginSysNet, PluginWeb, PluginWebcam,
+    PluginMediaPlayer, PluginSystem, PluginSysNet, PluginWeb,
     PluginWebUI, PluginExecutor, PluginDrive,
     PluginMCPBridge, PluginAutomation, PluginBrowser,
     PluginUsers,
-    CalendarExtensionConfig, MCPServerConfig,
+    MCPServerConfig,
 )
 from .widgets_schema import WidgetsFileConfig, WidgetsConfig, WidgetPersistence
 from .agent_schema import AgentConfig
@@ -29,10 +29,10 @@ __all__ = [
     "PluginsFileConfig", "PluginsConfig", "ExtensionsConfig",
     "PluginFileManager", "PluginHelp",
     "PluginMediaPlayer", "PluginSystem", "PluginSysNet", "PluginWeb",
-    "PluginWebcam", "PluginWebUI", "PluginExecutor", "PluginDrive",
+    "PluginWebUI", "PluginExecutor", "PluginDrive",
     "PluginMCPBridge",
     "PluginAutomation", "PluginBrowser", "PluginUsers",
-    "CalendarExtensionConfig", "MCPServerConfig",
+    "MCPServerConfig",
     "WidgetsFileConfig", "WidgetsConfig", "WidgetPersistence",
     "AgentConfig",
 ]

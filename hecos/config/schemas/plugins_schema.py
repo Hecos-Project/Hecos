@@ -189,16 +189,6 @@ class PluginFlows(BaseModel):
     autosave_interval_minutes: int = 1
 
 
-class PluginLists(BaseModel):
-    """Lists plugin config — universal list manager."""
-    enabled: bool = True
-    lazy_load: bool = True
-    default_icon: str = "📋"
-    max_items_per_list: int = 500
-    max_lists: int = 50
-    show_completed: bool = True
-
-
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
@@ -219,7 +209,6 @@ class PluginsConfig(BaseModel):
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
     MAIL: PluginMail = Field(default_factory=PluginMail)
     FLOWS: PluginFlows = Field(default_factory=PluginFlows)
-    LISTS: PluginLists = Field(default_factory=PluginLists)
     extra_dirs: List[str] = []
 
 

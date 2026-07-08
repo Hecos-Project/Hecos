@@ -59,6 +59,7 @@ window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, sk
           status: 'pending', // pending, installing, done, failed, canceled
           allowUnsigned,
           skipDepCheck,
+          progressMsg: '',
           result: null
       });
   });
@@ -97,7 +98,8 @@ window.hpmRenderInstallQueue = function() {
             action = `<button onclick="window.hpmCancelQueueItem('${item.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 5px;" title="${_ti('Cancel', 'Annulla', 'Cancelar')}"><i class="fas fa-times"></i></button>`;
         } else if (item.status === 'installing') {
             icon = '<i class="fas fa-circle-notch fa-spin" style="color:var(--accent); margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:var(--accent)">${_ti('Installing...', 'Installazione...', 'Instalando...')}</span>`;
+            let txt = item.progressMsg ? item.progressMsg : _ti('Installing...', 'Installazione...', 'Instalando...');
+            msg = `<span style="color:var(--accent)">${txt}</span>`;
         } else if (item.status === 'done') {
             icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
             msg = `<span style="color:var(--muted)">${_ti('Installed', 'Installato', 'Instalado')}</span>`;
@@ -344,3 +346,13 @@ window.hpmSetProgress = function(visible, label = '', pct = 0) {
   if (bar) bar.style.width = `${pct}%`;
   if (lbl) lbl.innerHTML = label;
 };
+
+document.addEventListener('hpmProgressUpdate', (e) => {
+    if (window._hpmInstallQueue) {
+        const item = window._hpmInstallQueue.find(i => i.status === 'installing');
+        if (item) {
+            item.progressMsg = e.detail.message || e.detail.step || '';
+            window.hpmRenderInstallQueue();
+        }
+    }
+});
