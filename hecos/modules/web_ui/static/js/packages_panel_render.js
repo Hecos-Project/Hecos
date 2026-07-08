@@ -140,6 +140,15 @@ window.hpmRenderRow = function(pkg, meta) {
           <i class="fas fa-info-circle" style="font-size:11px;color:#3b82f6;"></i>
         </button>`;
 
+      actions += `
+        <button type="button"
+                class="btn btn-sm"
+                style="font-size:10px;padding:4px 10px;margin-left:4px; border:1px solid var(--border-color); color:var(--text-color); background:transparent;"
+                onclick="window.hpmVerifyPackage('${pkg.id}', '${window._hesc(pkg.name)}')"
+                title="${window.HPM_I18N?.verify || 'Verify Integrity'}">
+          <i class="fas fa-check-double" style="font-size:10px; opacity:0.8;"></i>
+        </button>`;
+
       if (isRemovable) {
         actions += `
           <button type="button"

@@ -27,35 +27,15 @@ def run_hook(staging: str, hook_name: str, manifest: HpkgManifest) -> None:
 
 def inject_config_defaults(manifest: HpkgManifest) -> None:
     """
-    Inject manifest.config_defaults into system.yaml under plugins.<TAG>.
-    Skipped for types that don't participate in the plugin namespace
-    (e.g. widget-only, persona, theme).
+    Deprecated in 0.40.0.
+    Config injection into system.yaml is no longer supported.
+    Packages must use HPMBaseConfigManager (Pydantic+TOML) instead.
     """
-    if not manifest.config_defaults:
-        return
-
-    if manifest.type not in _PLUGIN_NAMESPACE_TYPES:
-        logger.debug(
-            f"[HPM:Installer] Skipping config_defaults injection for "
-            f"type '{manifest.type}' ('{manifest.id}') — not a plugin-namespace type."
+    if manifest.config_defaults:
+        logger.warning(
+            f"[HPM:Installer] Package '{manifest.id}' uses deprecated 'config_defaults'. "
+            f"This is no longer supported in Hecos 0.40+. Please migrate to HPMBaseConfigManager."
         )
-        return
-
-    try:
-        from hecos.app.config import ConfigManager
-        cfg_mgr = ConfigManager()
-        tag = manifest.tag or manifest.id.upper()
-        existing = cfg_mgr.config.get("plugins", {}).get(tag, {})
-        needs_save = False
-        for k, v in manifest.config_defaults.items():
-            if existing.get(k) is None:
-                cfg_mgr.set(v, "plugins", tag, k)
-                needs_save = True
-        if needs_save:
-            cfg_mgr.save()
-            logger.info(f"[HPM:Installer] Injected default config for '{tag}'.")
-    except Exception as e:
-        logger.warning(f"[HPM:Installer] Failed to inject config defaults: {e}")
 
 def hot_reload(hecos_root: str) -> None:
     try:

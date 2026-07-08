@@ -70,11 +70,27 @@
                 <div style="font-size:11px; color:var(--muted); font-weight:normal; margin-top:4px;">Globally allow installation of untrusted packages without warnings.</div>
             </div>
             <label class="switch">
-                <input type="checkbox" id="hpm-allow-unsigned" data-cfg-layer="hpm" data-cfg-key="allow_unsigned_packages">
+                <input type="checkbox" id="hpm-allow-unsigned" data-cfg-layer="hpm" data-cfg-key="allow_unsigned_packages" onchange="document.getElementById('hpm-unsigned-warning').style.display = this.checked ? 'block' : 'none'">
                 <span class="slider"></span>
             </label>
         </div>
+        <div id="hpm-unsigned-warning" style="display:none; margin-top:12px; padding:10px; background:rgba(239, 68, 68, 0.1); border-left:4px solid #ef4444; border-radius:4px; font-size:12px; color:var(--text-color);">
+            <i class="fas fa-exclamation-triangle" style="color:#ef4444; margin-right:6px;"></i>
+            <strong>Warning:</strong> Allowing unsigned packages bypasses security checks (signature and file hashes). This should only be used for local development. Malicious packages could compromise your system.
+        </div>
     </div>
+    
+    <script>
+    // Initialize warning visibility based on initial state
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const cb = document.getElementById('hpm-allow-unsigned');
+            if (cb) {
+                document.getElementById('hpm-unsigned-warning').style.display = cb.checked ? 'block' : 'none';
+            }
+        }, 500); // Wait for config to load
+    });
+    </script>
 
     <div class="card">
         <div class="card-title"><i class="fas fa-volume-up"></i> Install Experience</div>

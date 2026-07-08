@@ -141,6 +141,46 @@ window.hpmUninstall = async function(id, name) {
   }
 };
 
+window.hpmVerifyPackage = async function(id, name) {
+  try {
+    const lblVerifying = _ti('Verifying...', 'Verifica in corso...', 'Verificando...');
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(true, lblVerifying, 100);
+    
+    const res = await fetch(`/api/packages/${id}/verify`);
+    const data = await res.json();
+    
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+    
+    if (data.ok) {
+      if (data.status === 'valid') {
+        const title = _ti('Verification Passed', 'Verifica Superata', 'Verificación Superada');
+        const msg = _ti(`All files for package <b>${name}</b> are intact.`, `Tutti i file del pacchetto <b>${name}</b> sono integri.`, `Todos los archivos del paquete <b>${name}</b> están intactos.`);
+        window.hpmShowMessage(title, msg, 'success');
+      } else if (data.status === 'unverified') {
+        const title = _ti('Cannot Verify', 'Impossibile Verificare', 'No se puede verificar');
+        window.hpmShowMessage(title, data.message, 'info');
+      } else {
+        const title = _ti('Verification Failed', 'Verifica Fallita', 'Verificación Fallida');
+        let msg = _ti(`Package <b>${name}</b> has missing or modified files:`, `Il pacchetto <b>${name}</b> ha file mancanti o modificati:`, `El paquete <b>${name}</b> tiene archivos faltantes o modificados:`);
+        msg += `<br><br><div style="max-height:150px; overflow-y:auto; font-size:0.85em; text-align:left; background:var(--bg-card); padding:8px; border-radius:4px;">`;
+        if (data.missing_files && data.missing_files.length) {
+            msg += `<strong style="color:var(--danger);">Missing:</strong><br>${data.missing_files.join('<br>')}<br><br>`;
+        }
+        if (data.modified_files && data.modified_files.length) {
+            msg += `<strong style="color:var(--warning);">Modified:</strong><br>${data.modified_files.join('<br>')}`;
+        }
+        msg += `</div>`;
+        window.hpmShowMessage(title, msg, 'error');
+      }
+    } else {
+      if (window.showToast) window.showToast(`Verify error: ${data.error}`, 'error');
+    }
+  } catch (err) {
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+    if (window.showToast) window.showToast(`${err.message}`, 'error');
+  }
+};
+
 window.hpmInjectTab = function(installResult) {
   if (!installResult.config_panel) return;
   const { tab_id, tab_label, tab_icon } = installResult.config_panel;

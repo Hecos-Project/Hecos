@@ -81,6 +81,60 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             log.error(f"[HPM] GET /api/packages/{pkg_id}/capabilities error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/packages/<pkg_id>/verify", methods=["GET"])
+    @login_required
+    def api_verify_package(pkg_id):
+        """Verify the integrity of an installed package using file hashes."""
+        try:
+            import hashlib
+            registry, _, _ = _get_hpm_components(_hecos_src)
+            pkg = registry.get(pkg_id)
+            if not pkg:
+                return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+            
+            manifest = registry.get_manifest(pkg_id) or {}
+            file_hashes = manifest.get("file_hashes", {})
+            if not file_hashes:
+                return jsonify({"ok": True, "status": "unverified", "message": "No file hashes available in manifest"})
+                
+            install_path = pkg.get("install_path")
+            if not install_path or not os.path.exists(install_path):
+                return jsonify({"ok": False, "error": "Install path missing or not found"}), 404
+                
+            missing = []
+            modified = []
+            
+            for rel_path, expected_hash in file_hashes.items():
+                # Prevent path traversal in relative path
+                safe_rel = rel_path.replace("\\", "/").lstrip("/")
+                abs_path = os.path.join(install_path, safe_rel)
+                
+                if not os.path.exists(abs_path):
+                    missing.append(rel_path)
+                    continue
+                    
+                sha256 = hashlib.sha256()
+                with open(abs_path, "rb") as f:
+                    while chunk := f.read(8192):
+                        sha256.update(chunk)
+                        
+                if sha256.hexdigest().lower() != expected_hash.lower():
+                    modified.append(rel_path)
+                    
+            if not missing and not modified:
+                return jsonify({"ok": True, "status": "valid", "message": "All files verified successfully"})
+            else:
+                return jsonify({
+                    "ok": True, 
+                    "status": "invalid", 
+                    "missing_files": missing,
+                    "modified_files": modified,
+                    "message": f"Verification failed: {len(missing)} missing, {len(modified)} modified"
+                })
+        except Exception as e:
+            log.error(f"[HPM] GET /api/packages/{pkg_id}/verify error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/packages/<pkg_id>/update", methods=["POST"])
     @login_required
     def api_update_package(pkg_id):

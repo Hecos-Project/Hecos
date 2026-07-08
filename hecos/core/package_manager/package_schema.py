@@ -21,7 +21,7 @@ Package types and their default install destinations:
 """
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -128,10 +128,12 @@ class HpkgManifest(BaseModel):
     """
 
     # Identity
+    manifest_version: str = Field("1", description="Version of the manifest schema itself")
     id: str = Field(..., description="Unique package identifier (slug, no spaces)")
     name: str = Field(..., description="Human-readable package name")
     version: str = Field(..., description="SemVer package version, e.g. '1.0.0'")
     hecos_min_version: str = Field("0.1.0", description="Minimum Hecos version required")
+    hecos_max_version: Optional[str] = Field(None, description="Maximum Hecos version supported")
     type: str = Field(
         "plugin",
         description=(
@@ -202,17 +204,21 @@ class HpkgManifest(BaseModel):
     )
 
     # Dependencies
-    dependencies: List[str] = Field(
+    dependencies: Union[List[str], Dict[str, str]] = Field(
         default_factory=list,
-        description="List of other hpkg IDs that must be installed first (hard requirement — blocks install if missing)"
+        description="List of other hpkg IDs or Dict of ID -> constraint that must be installed first"
     )
-    optional_dependencies: List[str] = Field(
+    optional_dependencies: Union[List[str], Dict[str, str]] = Field(
         default_factory=list,
-        description="List of other hpkg IDs that enhance this package but are NOT required (warning only, never blocks install)"
+        description="List/Dict of other hpkg IDs that enhance this package but are NOT required"
     )
     pip_requirements: List[str] = Field(
         default_factory=list,
         description="List of pip requirements (same syntax as requirements.txt)"
+    )
+    pip_requirements_locked: Dict[str, Dict[str, str]] = Field(
+        default_factory=dict,
+        description="Locked pip requirements mapping package name to version and sha256"
     )
 
     # Runtime info (extracted into manifest.json for module_scanner)
@@ -241,10 +247,10 @@ class HpkgManifest(BaseModel):
         description="List of slash commands this plugin registers in chat."
     )
 
-    # Configuration integration
+    # Configuration integration (Deprecated in 0.40+)
     config_defaults: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Default config values to inject into plugins.yaml on install."
+        description="Deprecated. Use HPMBaseConfigManager (Pydantic+TOML) instead."
     )
 
     # Integrity

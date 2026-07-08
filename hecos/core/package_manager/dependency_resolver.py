@@ -75,24 +75,49 @@ class DependencyResolver:
         """
         report = DependencyReport()
 
+        # Helper to check constraints
+        def _check_constraint(dep_id: str, constraint: str, is_optional: bool) -> bool:
+            record = self._registry.get(dep_id)
+            if not record:
+                if is_optional:
+                    logger.info(f"[HPM:Resolver] Optional dependency '{dep_id}' for '{manifest.id}' is not installed.")
+                    report.missing_optional.append(dep_id)
+                else:
+                    logger.warning(f"[HPM:Resolver] Hard dependency '{dep_id}' required by '{manifest.id}' is not installed.")
+                    report.missing_packages.append(dep_id)
+                return False
+                
+            if constraint:
+                try:
+                    from packaging.specifiers import SpecifierSet
+                    from packaging.version import Version
+                    installed_version = Version(record.get("version", "0.0.0"))
+                    spec = SpecifierSet(constraint)
+                    if installed_version not in spec:
+                        msg = f"Dependency '{dep_id}' {constraint} required by '{manifest.id}', but version {installed_version} is installed."
+                        if is_optional:
+                            logger.info(f"[HPM:Resolver] Optional {msg}")
+                            report.missing_optional.append(dep_id)
+                        else:
+                            logger.warning(f"[HPM:Resolver] Hard {msg}")
+                            report.missing_packages.append(dep_id)
+                        return False
+                except ImportError:
+                    pass  # If packaging is missing, ignore constraints gracefully
+                except Exception as e:
+                    logger.error(f"[HPM:Resolver] Error checking constraint for '{dep_id}': {e}")
+            return True
+
         # 1. Hard inter-package dependencies (blocks if missing — warns only)
-        for dep_id in manifest.dependencies:
-            if not self._registry.is_installed(dep_id):
-                logger.warning(
-                    f"[HPM:Resolver] Hard dependency '{dep_id}' required by "
-                    f"'{manifest.id}' is not installed."
-                )
-                report.missing_packages.append(dep_id)
+        deps = manifest.dependencies if isinstance(manifest.dependencies, dict) else {d: "" for d in manifest.dependencies}
+        for dep_id, constraint in deps.items():
+            _check_constraint(dep_id, constraint, is_optional=False)
 
         # 2. Optional inter-package dependencies (informational only, never blocks)
-        optional_deps = getattr(manifest, "optional_dependencies", []) or []
-        for dep_id in optional_deps:
-            if not self._registry.is_installed(dep_id):
-                logger.info(
-                    f"[HPM:Resolver] Optional dependency '{dep_id}' for "
-                    f"'{manifest.id}' is not installed — some features may be unavailable."
-                )
-                report.missing_optional.append(dep_id)
+        opt_deps_attr = getattr(manifest, "optional_dependencies", []) or []
+        opt_deps = opt_deps_attr if isinstance(opt_deps_attr, dict) else {d: "" for d in opt_deps_attr}
+        for dep_id, constraint in opt_deps.items():
+            _check_constraint(dep_id, constraint, is_optional=True)
 
         # 3. pip requirements
         if install_pip and manifest.pip_requirements:
