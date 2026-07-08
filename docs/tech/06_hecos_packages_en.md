@@ -491,3 +491,11 @@ When developing or extracting built-in modules into standalone HPM packages, bew
 
 4. **Configuration Persistence (Uninstallation)**
    During package removal via HPM, the package folder (e.g., `hpm/messenger`) is not fully deleted if it contains files generated at runtime (such as the TOML configuration file). This is an **intentional** safety feature to prevent users from losing their private settings during every package update or reinstallation.
+
+
+## HPM 0.40.0 Architecture Upgrades
+As of Hecos 0.40.0, the package manager includes several advanced features to ensure system stability and security:
+- **Dependency Version Constraints**: `dependencies` and `optional_dependencies` in the manifest can now specify constraints (e.g. `{"image_gen": ">=1.0.0"}`) evaluated using the Python `packaging` library.
+- **Pip Lockfiles**: `pip_requirements` now enforce strict versions (e.g., `"requests==2.34.2"`) to prevent version drift between installations.
+- **Integrity Verification**: A new `/verify` API calculates the SHA-256 of all installed files and compares them to the Ed25519-signed `manifest_snapshot`.
+- **Hecos Max Version**: Packages can specify `hecos_max_version` to prevent silent breakage when Hecos introduces breaking API changes.

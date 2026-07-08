@@ -493,3 +493,11 @@ Durante lo sviluppo o l'estrazione di moduli built-in in pacchetti HPM, presta a
 4. **Persistenza della Configurazione (Disinstallazione)**
    Durante la rimozione di un pacchetto tramite l'HPM, la cartella del pacchetto (es. `hpm/messenger`) non viene eliminata se contiene file generati a runtime (come il file TOML della configurazione). Questo è un comportamento **voluto** (salvavita) per evitare che gli utenti perdano le proprie impostazioni private ad ogni aggiornamento o reinstallazione del pacchetto.
 
+
+
+## Novità Architetturali HPM 0.40.0
+A partire da Hecos 0.40.0, il gestore pacchetti include funzionalità avanzate per garantire stabilità e sicurezza:
+- **Vincoli di Versione Dipendenze**: `dependencies` e `optional_dependencies` nel manifest supportano vincoli (es. `{"image_gen": ">=1.0.0"}`) valutati tramite la libreria Python `packaging`.
+- **Pip Lockfiles**: I `pip_requirements` ora forzano versioni fisse (es. `"requests==2.34.2"`) per evitare conflitti o derive di versione (version drift).
+- **Verifica Integrità**: Una nuova API `/verify` ricalcola l'hash SHA-256 di tutti i file installati e lo confronta con il `manifest_snapshot` firmato con Ed25519.
+- **Hecos Max Version**: I pacchetti possono ora specificare `hecos_max_version` per prevenire crash silenziosi in caso di breaking changes nelle API di Hecos.
