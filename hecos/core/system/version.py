@@ -21,7 +21,7 @@ PROJECT_NAME = "Hecos"
 PROJECT_CODENAME = "Runtime Alpha"
 
 # Data di rilascio (aggiorna quando fai una release)
-RELEASE_DATE = "2026-06-08"
+RELEASE_DATE = "2026-07-08"
 
 # Autore e copyright
 AUTHOR = "Antonio Meloni"
