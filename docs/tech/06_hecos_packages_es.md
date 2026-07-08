@@ -217,57 +217,59 @@ from .plugin.main import tools, status
 
 ## Configuración Autónoma
 
-Los paquetes nunca deben escribir en la configuración central de Hecos. Cada paquete tiene su propio archivo TOML privado.
+> **⚠️ Enfoque Actualizado (Hecos 0.40+)**  
+> El antiguo sistema basado en `defaults.toml` + código custom está **deprecado**. Todos los paquetes usan ahora **`HPMBaseConfigManager` (Pydantic + TOML)**.  
+> Lee la guía completa: **[`07_package_config_system_es.md`](file:///C:/Hecos/docs/tech/07_package_config_system_es.md)**
 
-### <id>_config/defaults.toml
+Cada paquete tiene su propio archivo TOML privado (nunca escribir en el config global de Hecos). Los valores por defecto se declaran directamente en los campos del modelo Pydantic. Estructura mínima:
 
-```toml
-[mi_paquete]
-provider = "default"
-api_key = ""
-timeout = 30
+```text
+mi_paquete_config/
+├── __init__.py          # Vacío
+└── config_manager.py   # Esquema Pydantic + HPMBaseConfigManager
 ```
 
-### <id>_config/config_manager.py
+Quick start:
 
 ```python
+# mi_paquete_config/config_manager.py
 from pathlib import Path
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
-try:
-    import tomli_w
-    _HAS_TOMLI_W = True
-except ImportError:
-    _HAS_TOMLI_W = False
+from pydantic import BaseModel, Field
 
-_THIS_DIR = Path(__file__).parent.resolve()
-_DEFAULTS_FILE = _THIS_DIR / "defaults.toml"
-_CONFIG_FILE   = _THIS_DIR / "mi_paquete.toml"
+try:
+    from hecos.core.package_manager.config import HPMBaseConfigManager
+except ImportError:
+    class HPMBaseConfigManager: pass
+
+class MiPkgConfig(BaseModel):
+    enabled: bool = True
+    provider: str = "default"
+    api_key: str = ""
+    timeout: int = 30
+
+_CONFIG_FILE = Path(__file__).parent / "mi_paquete.toml"
+_manager = None
+if hasattr(HPMBaseConfigManager, "get"):
+    _manager = HPMBaseConfigManager(MiPkgConfig, _CONFIG_FILE, "mi_paquete")
 
 def get_config() -> dict:
-    if not _CONFIG_FILE.exists():
-        _create_from_defaults()
-    try:
-        return tomllib.loads(_CONFIG_FILE.read_bytes().decode("utf-8"))
-    except Exception:
-        return tomllib.loads(_DEFAULTS_FILE.read_bytes().decode("utf-8"))
+    if _manager: return {"mi_paquete": _manager.get().model_dump(mode='json')}
+    return {"mi_paquete": MiPkgConfig().model_dump(mode='json')}
 
 def save_config(data: dict) -> bool:
-    if not _HAS_TOMLI_W:
-        return False
-    try:
-        _CONFIG_FILE.write_bytes(tomli_w.dumps(data).encode("utf-8"))
-        return True
-    except Exception:
-        return False
+    if _manager and "mi_paquete" in data:
+        obj = MiPkgConfig.model_validate(data["mi_paquete"])
+        return _manager.save(obj)
+    return False
 
-def _create_from_defaults():
-    save_config(tomllib.loads(_DEFAULTS_FILE.read_bytes().decode("utf-8")))
+def get_config_obj() -> MiPkgConfig:
+    return _manager.get() if _manager else MiPkgConfig()
 ```
 
+Ver [`07_package_config_system_es.md`](file:///C:/Hecos/docs/tech/07_package_config_system_es.md) para la guía completa con sub-modelos anidados, patrón merge, checklists y troubleshooting.
+
 ---
+
 
 ## Rutas API: web/routes.py
 

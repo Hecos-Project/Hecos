@@ -217,57 +217,59 @@ from .plugin.main import tools, status
 
 ## Autonomous Configuration
 
-Packages must never write to the Hecos core config. Each package has its own private TOML file.
+> **⚠️ Updated Approach (Hecos 0.40+)**  
+> The old system based on `defaults.toml` + custom code is **deprecated**. All packages now use **`HPMBaseConfigManager` (Pydantic + TOML)**.  
+> Read the full guide: **[`07_package_config_system_en.md`](file:///C:/Hecos/docs/tech/07_package_config_system_en.md)**
 
-### <id>_config/defaults.toml
+Each package has its own private TOML file (never write to Hecos global config). Default values are declared directly in the Pydantic model fields. Minimum structure:
 
-```toml
-[my_package]
-provider = "default"
-api_key = ""
-timeout = 30
+```text
+my_package_config/
+├── __init__.py          # Empty
+└── config_manager.py   # Pydantic schema + HPMBaseConfigManager
 ```
 
-### <id>_config/config_manager.py
+Quick start:
 
 ```python
+# my_package_config/config_manager.py
 from pathlib import Path
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
-try:
-    import tomli_w
-    _HAS_TOMLI_W = True
-except ImportError:
-    _HAS_TOMLI_W = False
+from pydantic import BaseModel, Field
 
-_THIS_DIR = Path(__file__).parent.resolve()
-_DEFAULTS_FILE = _THIS_DIR / "defaults.toml"
-_CONFIG_FILE   = _THIS_DIR / "my_package.toml"
+try:
+    from hecos.core.package_manager.config import HPMBaseConfigManager
+except ImportError:
+    class HPMBaseConfigManager: pass
+
+class MyPkgConfig(BaseModel):
+    enabled: bool = True
+    provider: str = "default"
+    api_key: str = ""
+    timeout: int = 30
+
+_CONFIG_FILE = Path(__file__).parent / "my_package.toml"
+_manager = None
+if hasattr(HPMBaseConfigManager, "get"):
+    _manager = HPMBaseConfigManager(MyPkgConfig, _CONFIG_FILE, "my_package")
 
 def get_config() -> dict:
-    if not _CONFIG_FILE.exists():
-        _create_from_defaults()
-    try:
-        return tomllib.loads(_CONFIG_FILE.read_bytes().decode("utf-8"))
-    except Exception:
-        return tomllib.loads(_DEFAULTS_FILE.read_bytes().decode("utf-8"))
+    if _manager: return {"my_package": _manager.get().model_dump(mode='json')}
+    return {"my_package": MyPkgConfig().model_dump(mode='json')}
 
 def save_config(data: dict) -> bool:
-    if not _HAS_TOMLI_W:
-        return False
-    try:
-        _CONFIG_FILE.write_bytes(tomli_w.dumps(data).encode("utf-8"))
-        return True
-    except Exception:
-        return False
+    if _manager and "my_package" in data:
+        obj = MyPkgConfig.model_validate(data["my_package"])
+        return _manager.save(obj)
+    return False
 
-def _create_from_defaults():
-    save_config(tomllib.loads(_DEFAULTS_FILE.read_bytes().decode("utf-8")))
+def get_config_obj() -> MyPkgConfig:
+    return _manager.get() if _manager else MyPkgConfig()
 ```
 
+See [`07_package_config_system_en.md`](file:///C:/Hecos/docs/tech/07_package_config_system_en.md) for the full guide with nested sub-models, merge pattern, checklists and troubleshooting.
+
 ---
+
 
 ## API Routes: web/routes.py
 
