@@ -73,6 +73,39 @@ function buildMessageActions(msgEl, role, historyIndex) {
       listenBtn.disabled = true;
       listenBtn.style.opacity = '0.5';
       
+      // Remove any existing progress bars or badges
+      bubble.querySelectorAll('.audio-badge, .tts-progress-container').forEach(e => e.remove());
+
+      const progressContainer = document.createElement('div');
+      progressContainer.className = 'tts-progress-container';
+      progressContainer.innerHTML = `
+        <div class="tts-progress-header">
+            <span class="tts-progress-text">Generating audio... (0%)</span>
+            <button class="tts-cancel-btn" title="Cancel Generation">✖</button>
+        </div>
+        <div class="tts-progress-track">
+            <div class="tts-progress-fill" style="width: 0%;"></div>
+        </div>
+      `;
+      bubble.appendChild(progressContainer);
+      
+      const progressFill = progressContainer.querySelector('.tts-progress-fill');
+      const progressText = progressContainer.querySelector('.tts-progress-text');
+      const cancelBtn = progressContainer.querySelector('.tts-cancel-btn');
+      
+      let isCancelled = false;
+      let evtSource = null;
+
+      cancelBtn.onclick = () => {
+          isCancelled = true;
+          if (evtSource) evtSource.close();
+          fetch('/api/audio/stop', { method: 'POST' }).catch(() => {});
+          progressContainer.remove();
+          listenBtn.disabled = false;
+          listenBtn.style.opacity = '1';
+          showToast(`❌ Generation Cancelled`);
+      };
+      
       try {
           const res = await fetch('/api/audio/test', {
               method: 'POST',
@@ -80,21 +113,62 @@ function buildMessageActions(msgEl, role, historyIndex) {
               body: JSON.stringify({ text: textToSpeak, mode: 'web' })
           });
           const data = await res.json();
-          if (data.ok) {
-              if (typeof window.tryLoadAudio === 'function') {
-                  window._lastAiBubble = bubble;
-                  window.tryLoadAudio(bubble);
-              }
+          if (data.ok && data.job_id) {
+              evtSource = new EventSource(`/api/audio/test/progress/${data.job_id}`);
+              
+              evtSource.onmessage = (event) => {
+                  if (isCancelled) return;
+                  const prog = JSON.parse(event.data);
+                  
+                  if (prog.status === 'not_found' || prog.status === 'error') {
+                      evtSource.close();
+                      progressContainer.remove();
+                      listenBtn.disabled = false;
+                      listenBtn.style.opacity = '1';
+                      showToast(`❌ TTS Error`);
+                      return;
+                  }
+                  
+                  if (prog.total > 0) {
+                      const pct = Math.round((prog.current / prog.total) * 100);
+                      progressFill.style.width = `${pct}%`;
+                      progressText.textContent = `Generating audio... (${pct}%)`;
+                  }
+                  
+                  if (prog.status === 'done') {
+                      evtSource.close();
+                      progressContainer.remove();
+                      listenBtn.disabled = false;
+                      listenBtn.style.opacity = '1';
+                      if (typeof window.tryLoadAudio === 'function') {
+                          window._lastAiBubble = bubble;
+                          window.tryLoadAudio(bubble);
+                      }
+                  }
+              };
+              
+              evtSource.onerror = () => {
+                  evtSource.close();
+                  if (!isCancelled) {
+                      progressContainer.remove();
+                      listenBtn.disabled = false;
+                      listenBtn.style.opacity = '1';
+                      showToast(`❌ TTS Stream Error`);
+                  }
+              };
           } else {
+              progressContainer.remove();
+              listenBtn.disabled = false;
+              listenBtn.style.opacity = '1';
               const errLabel = t('chat_toast_tts_err') === 'chat_toast_tts_err' ? 'TTS Error' : t('chat_toast_tts_err');
-              showToast(`❌ ${errLabel}: ${data.error}`);
+              showToast(`❌ ${errLabel}: ${data.error || 'Unknown Error'}`);
           }
       } catch (e) {
-          const errNetLabel = t('chat_toast_err_net') === 'chat_toast_err_net' ? 'Network Error' : t('chat_toast_err_net');
-          showToast(`❌ ${errNetLabel}: ${e.message}`);
-      } finally {
+          progressContainer.remove();
           listenBtn.disabled = false;
           listenBtn.style.opacity = '1';
+          const errNetLabel = t('chat_toast_err_net') === 'chat_toast_err_net' ? 'Network Error' : t('chat_toast_err_net');
+          showToast(`❌ ${errNetLabel}: ${e.message}`);
       }
     };
     bar.appendChild(listenBtn);

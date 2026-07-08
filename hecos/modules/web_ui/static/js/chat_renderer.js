@@ -184,6 +184,10 @@ async function tryLoadAudio(bubble) {
   const url = '/api/audio?t=' + Date.now();
   console.log("[Audio] Attempting to load audio from:", url);
   
+  // Remove existing audio badges to prevent duplicates
+  const existingBadges = bubble.querySelectorAll('.audio-badge');
+  existingBadges.forEach(b => b.remove());
+
   const badge = document.createElement('div');
   badge.className='audio-badge';
   badge.innerHTML = '<i class="fas fa-volume-up"></i> ';
