@@ -39,121 +39,244 @@ window.hpmInstallFile = function(file, forceAllowUnsigned = false, skipDepCheck 
     window.hpmInstallBatch([file], forceAllowUnsigned, skipDepCheck);
 };
 
+window._hpmInstallQueue = [];
+window._hpmInstallRunning = false;
+
 window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, skipDepCheck = false) {
   const files = Array.from(fileList).filter(f => f.name.endsWith('.hpkg') || f.name.endsWith('.zip'));
-  
   if (files.length === 0) {
     if (window.showToast) window.showToast('No valid .hpkg packages selected', 'error');
     return;
   }
 
-  const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-  
-  const isSingle = files.length === 1;
-  const label = isSingle ? `Installing ${files[0].name}...` : `Installing ${files.length} packages...`;
-  
-  window.hpmSetProgress(true, label, 30);
-
-  const formData = new FormData();
-  files.forEach(f => formData.append('hpkg_files[]', f));
-
   const allowUnsigned = forceAllowUnsigned || (document.getElementById('hpm-allow-unsigned')?.checked || false);
-  formData.append('allow_unsigned', allowUnsigned ? 'true' : 'false');
-  if (skipDepCheck) {
-    formData.append('skip_dep_check', 'true');
-  }
 
-  try {
-    window.hpmSetProgress(true, `<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Uploading & processing...`, 50);
-    
-    let simPct = 50;
-    const simTimer = setInterval(() => {
-      if (simPct < 90) {
-        simPct += 5;
-        window.hpmSetProgress(true, `<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Processing batch...`, simPct);
-      }
-    }, 2000);
-
-    const resp = await fetch('/api/packages/install/batch', { method: 'POST', body: formData });
-    clearInterval(simTimer);
-    
-    window.hpmSetProgress(true, '<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Finalizing...', 95);
-    const data = await resp.json();
-
-    if (data.ok) {
-      let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
-      
-      data.results.forEach(r => {
-          const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
-          const msg = r.ok ? '<span style="color:var(--muted)">installed</span>' : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
-          extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
-              <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">${icon}${r.filename}</span>
-              ${msg}
-          </div>`;
+  // Add files to the queue
+  files.forEach(f => {
+      window._hpmInstallQueue.push({
+          id: Math.random().toString(36).substring(2, 10),
+          file: f,
+          status: 'pending', // pending, installing, done, failed, canceled
+          allowUnsigned,
+          skipDepCheck,
+          result: null
       });
-      extraHTML += `</div>`;
+  });
 
-      // Se almeno 1 pacchetto ha avuto successo, suoniamo success (suono unico)
-      if (data.succeeded > 0) {
-          const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
-          if (sound !== 'none') {
-              if (sound.startsWith('custom|')) {
-                  const path = sound.substring(7);
-                  new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
-              } else {
-                  new Audio(`/static/sounds/${sound}`).play().catch(() => {});
-              }
-          }
-      }
+  window.hpmRenderInstallQueue();
 
-      const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
-      const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
-      const lblSuccess = data.failed === 0 
-          ? _ti('Batch completed successfully!', 'Operazione completata!', '¡Completado con éxito!')
-          : _ti('Completed with some errors', 'Completato con errori', 'Completado con errores');
-      
-      const mainIconColor = data.failed === 0 ? '#10b981' : (data.succeeded > 0 ? '#f59e0b' : '#ef4444');
-      const mainIcon = data.failed === 0 ? 'fa-check-circle' : (data.succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
-
-      window.hpmSetProgress(true, `
-        <div style="text-align:center; padding: 10px 0;">
-            <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i> 
-            <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
-            <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${data.succeeded} succeeded • ${data.failed} failed</div>
-            ${extraHTML}
-            ${hintHTML}
-        </div>`, 100);
-      
-      const container = document.getElementById('hpm-install-progress');
-      if (container) {
-          container.ondblclick = () => window.hpmSetProgress(false);
-          container.style.cursor = 'default';
-      }
-
-      // Check missing deps per fallbacks (we handle only the first one with missing deps for simplicity)
-      const missingDepsResult = data.results.find(r => !r.ok && r.missing_deps && r.missing_deps.length > 0);
-      if (missingDepsResult && data.results.length === 1 && !forceAllowUnsigned) {
-         // Trigger the interactive missing deps dialogue just for single-file for UX continuity
-         return _handleMissingDepsDialogue(fileList[0], missingDepsResult.missing_deps, forceAllowUnsigned);
-      }
-
-      if (data.failed > 0 && window.showToast) {
-         window.showToast(`Batch finished with ${data.failed} error(s)`, 'warning');
-      }
-
-      if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
-      if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
-      if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
-
-    } else {
-      window.hpmSetProgress(false);
-      if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
-    }
-  } catch (err) {
-    window.hpmSetProgress(false);
-    if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+  if (!window._hpmInstallRunning) {
+      window._hpmInstallRunning = true;
+      _hpmProcessQueue(); // non-blocking start
   }
 };
+
+window.hpmCancelQueueItem = function(id) {
+    const item = window._hpmInstallQueue.find(i => i.id === id);
+    if (item && item.status === 'pending') {
+        item.status = 'canceled';
+        window.hpmRenderInstallQueue();
+    }
+};
+
+window.hpmRenderInstallQueue = function() {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    let html = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:200px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
+    
+    let total = window._hpmInstallQueue.length;
+    let completed = 0;
+
+    window._hpmInstallQueue.forEach(item => {
+        let icon = '';
+        let msg = '';
+        let action = '';
+
+        if (item.status === 'pending') {
+            icon = '<i class="far fa-circle" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:var(--muted)">${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
+            action = `<button onclick="window.hpmCancelQueueItem('${item.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 5px;" title="${_ti('Cancel', 'Annulla', 'Cancelar')}"><i class="fas fa-times"></i></button>`;
+        } else if (item.status === 'installing') {
+            icon = '<i class="fas fa-circle-notch fa-spin" style="color:var(--accent); margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:var(--accent)">${_ti('Installing...', 'Installazione...', 'Instalando...')}</span>`;
+        } else if (item.status === 'done') {
+            icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:var(--muted)">${_ti('Installed', 'Installato', 'Instalado')}</span>`;
+            completed++;
+        } else if (item.status === 'failed') {
+            icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:#ef4444" title="${item.result?.error || ''}">${_ti('Error', 'Errore', 'Error')}</span>`;
+            completed++;
+        } else if (item.status === 'canceled') {
+            icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:var(--muted)">${_ti('Canceled', 'Annullato', 'Cancelado')}</span>`;
+            completed++;
+        }
+
+        html += `<div style="margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; padding: 4px; border-radius: 4px; ${item.status==='installing' ? 'background:rgba(255,255,255,0.05);' : ''}">
+            <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;" title="${item.file.name}">${icon}${item.file.name}</span>
+            <div style="display:flex; align-items:center; gap:8px;">${msg}${action}</div>
+        </div>`;
+    });
+    
+    html += `</div>`;
+    
+    let pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    const header = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px;">${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')} (${completed}/${total})</div>`;
+    
+    window.hpmSetProgress(true, header + html, pct);
+};
+
+async function _hpmProcessQueue() {
+    let hasPending = true;
+    while (hasPending) {
+        const item = window._hpmInstallQueue.find(i => i.status === 'pending');
+        if (!item) {
+            hasPending = false;
+            break;
+        }
+
+        item.status = 'installing';
+        window.hpmRenderInstallQueue();
+
+        const formData = new FormData();
+        formData.append('hpkg_files[]', item.file);
+        formData.append('allow_unsigned', item.allowUnsigned ? 'true' : 'false');
+        if (item.skipDepCheck) formData.append('skip_dep_check', 'true');
+
+        try {
+            const resp = await fetch('/api/packages/install/batch', { method: 'POST', body: formData });
+            const data = await resp.json();
+            
+            if (data.ok && data.results && data.results.length > 0) {
+                const r = data.results[0];
+                item.status = r.ok ? 'done' : 'failed';
+                item.result = r;
+            } else {
+                item.status = 'failed';
+                item.result = { ok: false, error: data.error || 'Unknown error' };
+            }
+        } catch (err) {
+            item.status = 'failed';
+            item.result = { ok: false, error: err.message };
+        }
+
+        window.hpmRenderInstallQueue();
+    }
+
+    window._hpmInstallRunning = false;
+    _hpmShowFinalSummary();
+}
+
+function _hpmShowFinalSummary() {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    
+    let succeeded = window._hpmInstallQueue.filter(i => i.status === 'done').length;
+    let failed = window._hpmInstallQueue.filter(i => i.status === 'failed').length;
+    let canceled = window._hpmInstallQueue.filter(i => i.status === 'canceled').length;
+    let total = window._hpmInstallQueue.length;
+    let isSingle = total === 1;
+
+    // Check missing deps for single-file install UX continuity
+    if (isSingle && failed === 1) {
+        const r = window._hpmInstallQueue[0].result;
+        if (r && !r.ok && r.missing_deps && r.missing_deps.length > 0 && !window._hpmInstallQueue[0].allowUnsigned) {
+            const fileItem = window._hpmInstallQueue[0].file;
+            window._hpmInstallQueue = []; // Reset queue before recursive dialog
+            return _handleMissingDepsDialogue(fileItem, r.missing_deps, false);
+        }
+    }
+
+    let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
+    window._hpmInstallQueue.forEach(item => {
+        let icon = '', msg = '';
+        if (item.status === 'done') {
+            icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:var(--muted)">${_ti('installed', 'installato', 'instalado')}</span>`;
+        } else if (item.status === 'failed') {
+            icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:#ef4444">${item.result?.error || 'error'}</span>`;
+        } else if (item.status === 'canceled') {
+            icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
+            msg = `<span style="color:var(--muted)">${_ti('canceled', 'annullato', 'cancelado')}</span>`;
+        }
+        
+        extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
+            <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">${icon}${item.file.name}</span>
+            ${msg}
+        </div>`;
+    });
+    extraHTML += `</div>`;
+
+    if (isSingle && succeeded === 1) {
+        extraHTML = '';
+        const r = window._hpmInstallQueue[0].result;
+        if (r && r.install_path) {
+            const lblPath = _ti('Installed in:', 'Installato in:', 'Instalado en:');
+            extraHTML += `<div style="margin-top:12px; font-size: 0.95em; color: var(--text); font-weight:normal;">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${r.install_path}</code></div>`;
+        }
+        if (r && r.config_panel) {
+            const lblCfg = _ti('Available in the Configuration menu', 'Disponibile nel menu Configurazione', 'Disponible en el menú Configuración');
+            extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--muted); font-weight:normal;"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
+        }
+    }
+
+    if (succeeded > 0) {
+        const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
+        if (sound !== 'none') {
+            if (sound.startsWith('custom|')) {
+                const path = sound.substring(7);
+                new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
+            } else {
+                new Audio(`/static/sounds/${sound}`).play().catch(() => {});
+            }
+        }
+    }
+
+    const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
+    const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
+    
+    let lblSuccess = '';
+    if (isSingle) {
+        if (succeeded === 1) lblSuccess = _ti('Installed successfully!', 'Installato con successo!', '¡Instalado con éxito!');
+        else if (canceled === 1) lblSuccess = _ti('Installation canceled', 'Installazione annullata', 'Instalación cancelada');
+        else lblSuccess = _ti('Installation failed', 'Installazione fallita', 'Instalación fallida');
+    } else {
+        if (failed === 0 && canceled === 0) lblSuccess = _ti('Batch completed successfully!', 'Operazione completata!', '¡Completado con éxito!');
+        else lblSuccess = _ti('Completed with some issues', 'Completato con problemi', 'Completado con problemas');
+    }
+    
+    const mainIconColor = (failed === 0 && canceled === 0) ? '#10b981' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
+    const mainIcon = (failed === 0 && canceled === 0) ? 'fa-check-circle' : (succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
+    
+    const batchStatsHtml = isSingle ? '' : `<div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('succeeded', 'installati', 'completados')} • ${failed} ${_ti('failed', 'falliti', 'fallidos')} • ${canceled} ${_ti('canceled', 'annullati', 'cancelados')}</div>`;
+
+    window.hpmSetProgress(true, `
+      <div style="text-align:center; padding: 10px 0;">
+          <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i> 
+          <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
+          ${batchStatsHtml}
+          ${extraHTML}
+          ${hintHTML}
+      </div>`, 100);
+    
+    const container = document.getElementById('hpm-install-progress');
+    if (container) {
+        container.ondblclick = () => {
+            window.hpmSetProgress(false);
+            window._hpmInstallQueue = []; // Clear queue on close
+        };
+        container.style.cursor = 'default';
+    }
+
+    if (failed > 0 && window.showToast && !isSingle) {
+       window.showToast(`Batch finished with ${failed} error(s)`, 'warning');
+    }
+
+    if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+    if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
+    if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
+}
 
 function _handleMissingDepsDialogue(file, missing_deps, forceAllowUnsigned) {
     const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };

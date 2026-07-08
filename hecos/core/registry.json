@@ -239,35 +239,6 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "IMAGE_GEN": {
-        "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "<i class=\"fas fa-image\"></i>",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": [
-            {
-                "id": "img",
-                "aliases": [
-                    "/img",
-                    "/image",
-                    "/photo",
-                    "/foto"
-                ],
-                "description": "Genera un'immagine AI da una descrizione testuale",
-                "usage": "/img <descrizione>",
-                "example": "/img foto fotorealistica di un gatto su Marte",
-                "icon": "🖼️",
-                "method": "generate_image",
-                "requires_args": true
-            }
-        ]
-    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {

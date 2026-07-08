@@ -337,18 +337,30 @@ window.hpmUpdateSelectionUI = function() {
     const countEl = document.getElementById('hpm-selected-count');
     const btnUninstall = document.getElementById('hpm-btn-uninstall-selected');
     const count = window._hpmSelectedPackages.size;
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    const uninstallStr = _ti('Uninstall', 'Disinstalla', 'Desinstalar');
     
+    // Dynamic translations for toolbar buttons
+    const lblSelectAll = document.getElementById('lbl-hpm-select-all');
+    if (lblSelectAll) lblSelectAll.innerText = _ti('Select all', 'Seleziona tutti', 'Seleccionar todo');
+    
+    const btnCancel = document.getElementById('btn-hpm-cancel-sel');
+    if (btnCancel) btnCancel.innerText = _ti('Cancel', 'Annulla', 'Cancelar');
+    
+    const btnMode = document.getElementById('hpm-btn-select-mode');
+    if (btnMode) btnMode.title = _ti('Select multiple', 'Seleziona multipli', 'Seleccionar múltiples');
+
     if (countEl) countEl.innerText = count;
     
     if (btnUninstall) {
         if (count > 0) {
             btnUninstall.style.opacity = '1';
             btnUninstall.style.pointerEvents = 'auto';
-            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> Disinstalla (${count})`;
+            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> ${uninstallStr} (${count})`;
         } else {
             btnUninstall.style.opacity = '0.5';
             btnUninstall.style.pointerEvents = 'none';
-            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> Disinstalla`;
+            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> ${uninstallStr}`;
         }
     }
 };
@@ -357,15 +369,22 @@ window.hpmUninstallSelected = function() {
     if (window._hpmSelectedPackages.size === 0) return;
     
     const count = window._hpmSelectedPackages.size;
-    const msg = `Sei sicuro di voler disinstallare <b>${count} pacchetti</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questa operazione non è annullabile.</span>`;
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
     
-    window.hpmShowConfirm(msg, `Disinstalla ${count}`, async () => {
-        window.hpmToggleSelectionMode(); // esci dalla modalità selezione
-        
+    const msgTemplate = _ti(
+        `Are you sure you want to uninstall <b>{count} packages</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">This operation cannot be undone.</span>`,
+        `Sei sicuro di voler disinstallare <b>{count} pacchetti</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questa operazione non è annullabile.</span>`,
+        `¿Estás seguro de que deseas desinstalar <b>{count} paquetes</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Esta operación no se puede deshacer.</span>`
+    );
+    const msg = msgTemplate.replace('{count}', count);
+    const title = _ti(`Uninstall ${count}`, `Disinstalla ${count}`, `Desinstalar ${count}`);
+    
+    window.hpmShowConfirm(msg, title, async () => {
+        // Estrai gli id PRIMA di disabilitare la modalità, altrimenti si azzerano
         const ids = Array.from(window._hpmSelectedPackages);
-        window._hpmSelectedPackages.clear();
+        window.hpmToggleSelectionMode(); // esci dalla modalità selezione e azzera il set
         
-        window.hpmSetProgress(true, `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> Disinstallazione in corso (${ids.length} pacchetti)...`, 30);
+        window.hpmSetProgress(true, `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${_ti(`Uninstalling (${ids.length} packages)...`, `Disinstallazione in corso (${ids.length} pacchetti)...`, `Desinstalando (${ids.length} paquetes)...`)}`, 30);
         
         try {
             const resp = await fetch('/api/packages/uninstall/batch', {
@@ -379,10 +398,10 @@ window.hpmUninstallSelected = function() {
                 let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
                 data.results.forEach(r => {
                     const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
-                    const msg = r.ok ? '<span style="color:var(--muted)">rimosso</span>' : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
+                    const removedMsg = r.ok ? `<span style="color:var(--muted)">${_ti('removed', 'rimosso', 'eliminado')}</span>` : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
                     extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
                         <span style="color:var(--text);">${icon}${r.id}</span>
-                        ${msg}
+                        ${removedMsg}
                     </div>`;
                 });
                 extraHTML += `</div>`;
@@ -399,10 +418,10 @@ window.hpmUninstallSelected = function() {
                     }
                 }
 
-                const lblHint = '<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">Fai doppio clic per chiudere</div>';
+                const lblHint = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${_ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}</div>`;
                 const lblSuccess = data.failed === 0 
-                    ? 'Disinstallazione batch completata!'
-                    : 'Completato con alcuni errori';
+                    ? _ti('Batch uninstall completed!', 'Disinstallazione batch completata!', '¡Desinstalación por lotes completada!')
+                    : _ti('Completed with some errors', 'Completato con alcuni errori', 'Completado con algunos errores');
                 
                 const mainIconColor = data.failed === 0 ? '#10b981' : (data.succeeded > 0 ? '#f59e0b' : '#ef4444');
                 const mainIcon = data.failed === 0 ? 'fa-check-circle' : (data.succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
@@ -411,7 +430,7 @@ window.hpmUninstallSelected = function() {
                   <div style="text-align:center; padding: 10px 0;">
                       <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i> 
                       <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
-                      <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${data.succeeded} rimossi • ${data.failed} falliti</div>
+                      <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${data.succeeded} ${_ti('removed', 'rimossi', 'eliminados')} • ${data.failed} ${_ti('failed', 'falliti', 'fallidos')}</div>
                       ${extraHTML}
                       ${lblHint}
                   </div>`, 100);
