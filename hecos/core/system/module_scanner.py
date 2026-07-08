@@ -103,16 +103,22 @@ def update_capability_registry(config=None, debug_log=True):
             main_file = os.path.join(plugins_dir, plugin_dir, "main.py")
             manifest_file = os.path.join(plugins_dir, plugin_dir, "manifest.json")
             runner_file = os.path.join(plugins_dir, plugin_dir, "runner.py")
+            venv_dir = os.path.join(plugins_dir, plugin_dir, "venv")
             module_abs_dir = os.path.join(plugins_dir, plugin_dir)
             if not os.path.exists(main_file):
                 continue
 
-            # ── PHASE B: HPM Isolated Subprocess (ModuleBus) ────────────────
-            # If the plugin directory contains runner.py it is ready for
-            # full subprocess isolation. Route it through the ModuleBus.
-            if module_type == "hpm" and os.path.exists(runner_file):
+            # ── HPM Isolated Subprocess (ModuleBus) ────────────────────────
+            # A module is ready for subprocess isolation if either:
+            #   (a) it has a local runner.py (legacy Phase B signal), OR
+            #   (b) it has a venv/ directory (Phase C: uses hecos_sdk.runner)
+            is_isolated = module_type == "hpm" and (
+                os.path.exists(runner_file) or os.path.exists(venv_dir)
+            )
+            if is_isolated:
                 if not os.path.exists(manifest_file):
-                    logger.warning(f"LOADER: HPM module '{plugin_dir}' has runner.py but no manifest.json — skipping subprocess start.")
+                    logger.warning(f"LOADER: HPM module '{plugin_dir}' is isolated but has no manifest.json — skipping subprocess start.")
+
                     # Fall through to legacy importlib loading below
                 else:
                     try:

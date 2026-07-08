@@ -151,16 +151,32 @@ class DependencyResolver:
                 return
 
             venv_dir = os.path.join(install_path, "venv")
-            if not os.path.exists(venv_dir):
+            pyvenv_cfg = os.path.join(venv_dir, "pyvenv.cfg")
+
+            # Re-create venv if broken (missing pyvenv.cfg) or not yet created
+            if not os.path.exists(pyvenv_cfg):
+                # Clean up any partial venv directory first
+                if os.path.exists(venv_dir):
+                    import shutil
+                    shutil.rmtree(venv_dir, ignore_errors=True)
+
                 logger.info(f"[HPM:Resolver] Creating virtual environment at {venv_dir}...")
                 try:
+                    # Use --copies to avoid Windows symlink permission issues.
+                    # Do NOT use --without-pip: let venv bundle pip directly (reliable on all Python installs).
                     subprocess.run(
-                        [sys.executable, "-m", "venv", venv_dir],
+                        [sys.executable, "-m", "venv", "--copies", venv_dir],
                         check=True,
-                        capture_output=True
+                        capture_output=True,
+                        timeout=300  # pip bundling can be slow on first run
                     )
+                    logger.info("[HPM:Resolver] Virtual environment created successfully.")
                 except subprocess.CalledProcessError as e:
-                    logger.error(f"[HPM:Resolver] Failed to create venv: {e.stderr}")
+                    logger.error(f"[HPM:Resolver] Failed to create venv: {e.stderr.decode(errors='replace')}")
+                    report.pip_failures.extend(requirements)
+                    return
+                except subprocess.TimeoutExpired:
+                    logger.error("[HPM:Resolver] Venv creation timed out after 300s.")
                     report.pip_failures.extend(requirements)
                     return
 
@@ -175,20 +191,27 @@ class DependencyResolver:
                 report.pip_failures.extend(requirements)
                 return
 
-            # Install hecos_sdk automatically
+            # Install hecos_sdk into the venv
             sdk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "hecos_sdk"))
             if os.path.exists(sdk_path):
                 logger.info("[HPM:Resolver] Installing hecos_sdk into isolated venv...")
                 try:
                     subprocess.run(
-                        [python_exe, "-m", "pip", "install", sdk_path],
+                        [python_exe, "-m", "pip", "install", "--no-deps", sdk_path],
                         check=True,
-                        capture_output=True
+                        capture_output=True,
+                        timeout=60
                     )
+                    logger.info("[HPM:Resolver] hecos_sdk installed successfully into venv.")
                 except subprocess.CalledProcessError as e:
-                    logger.warning(f"[HPM:Resolver] Failed to install hecos_sdk: {e.stderr}")
+                    logger.warning(f"[HPM:Resolver] Failed to install hecos_sdk: {e.stderr.decode(errors='replace')}")
+                except subprocess.TimeoutExpired:
+                    logger.warning("[HPM:Resolver] hecos_sdk install timed out.")
             else:
                 logger.warning(f"[HPM:Resolver] hecos_sdk not found at {sdk_path}, skipping SDK install.")
+
+
+
 
         for req in requirements:
             req = req.strip()
@@ -201,7 +224,7 @@ class DependencyResolver:
                     [python_exe, "-m", "pip", "install", req, "--quiet", "--no-input"],
                     capture_output=True,
                     text=True,
-                    timeout=120,  # 2-minute timeout per package
+                    timeout=600,  # 10-minute timeout per package (openai and similar are large)
                 )
                 if result.returncode != 0:
                     logger.error(
