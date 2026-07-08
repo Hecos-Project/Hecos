@@ -61,15 +61,6 @@ class PluginWeb(BaseModel):
     open_in_new_tab: bool = False
 
 
-class PluginWebcam(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    camera_index: int = 0
-    image_format: str = "jpg"
-    save_directory: str = "snapshots"
-    stabilization_delay: float = 0.5
-
-
 class PluginWebUI(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
@@ -218,7 +209,6 @@ class PluginsConfig(BaseModel):
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)
-    WEBCAM: PluginWebcam = Field(default_factory=PluginWebcam)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
@@ -235,30 +225,8 @@ class PluginsConfig(BaseModel):
 
 # ─── EXTENSIONS ───────────────────────────────────────────────────────────────
 
-class CalendarExtensionConfig(BaseModel):
-    model_config = ConfigDict(extra='allow')
-    calendar_locale: str = "en-US"
-    calendar_country: str = "US"
-    day_colors: List[str] = Field(default_factory=lambda: [""] * 7)
-    calendar_sync_urls: List[str] = Field(default_factory=list)
-    bg_color: str = ""
-    bg_image: str = ""
-
-    @field_validator('day_colors', mode='before')
-    @classmethod
-    def validate_day_colors(cls, v):
-        if isinstance(v, dict):
-            try:
-                sorted_keys = sorted(v.keys(), key=lambda x: int(x))
-                return [v[k] for k in sorted_keys]
-            except (ValueError, TypeError):
-                return list(v.values())
-        return v
-
-
 class ExtensionsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
-    calendar: CalendarExtensionConfig = Field(default_factory=CalendarExtensionConfig)
 
 
 # ─── ROOT SCHEMA FOR plugins.yaml ─────────────────────────────────────────────

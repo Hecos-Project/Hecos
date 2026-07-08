@@ -206,7 +206,7 @@ class AgentExecutor:
                 # append it as a markdown image so the user can actually see it.
                 # We use the new /snapshots/ route for this.
                 import re
-                for res in tool_results:
+                for res in accumulated_tool_results:
                     out = res.get("output", "")
                     if out and isinstance(out, str):
                         # 1. Check for explicit [[IMG:...]] from ImageGen
