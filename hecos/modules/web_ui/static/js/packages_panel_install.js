@@ -24,26 +24,38 @@ window.hpmDragLeave = function (e) {
 window.hpmDrop = function (e) {
   e.preventDefault();
   window.hpmDragLeave(e);
-  const file = e.dataTransfer?.files?.[0];
-  if (file) window.hpmInstallFile(file);
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) window.hpmInstallBatch(files);
 };
 
 window.hpmFileSelected = function (e) {
-  const file = e.target?.files?.[0];
-  if (file) window.hpmInstallFile(file);
+  const files = e.target?.files;
+  if (files && files.length > 0) window.hpmInstallBatch(files);
   e.target.value = '';
 };
 
-window.hpmInstallFile = async function(file, forceAllowUnsigned = false, skipDepCheck = false) {
-  if (!file.name.endsWith('.hpkg') && !file.name.endsWith('.zip')) {
-    if (window.showToast) window.showToast('File must be a .hpkg package', 'error');
+// Legacy compatibility wrapper
+window.hpmInstallFile = function(file, forceAllowUnsigned = false, skipDepCheck = false) {
+    window.hpmInstallBatch([file], forceAllowUnsigned, skipDepCheck);
+};
+
+window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, skipDepCheck = false) {
+  const files = Array.from(fileList).filter(f => f.name.endsWith('.hpkg') || f.name.endsWith('.zip'));
+  
+  if (files.length === 0) {
+    if (window.showToast) window.showToast('No valid .hpkg packages selected', 'error');
     return;
   }
 
-  window.hpmSetProgress(true, `Installing ${file.name}...`, 30);
+  const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+  
+  const isSingle = files.length === 1;
+  const label = isSingle ? `Installing ${files[0].name}...` : `Installing ${files.length} packages...`;
+  
+  window.hpmSetProgress(true, label, 30);
 
   const formData = new FormData();
-  formData.append('hpkg_file', file);
+  files.forEach(f => formData.append('hpkg_files[]', f));
 
   const allowUnsigned = forceAllowUnsigned || (document.getElementById('hpm-allow-unsigned')?.checked || false);
   formData.append('allow_unsigned', allowUnsigned ? 'true' : 'false');
@@ -52,49 +64,65 @@ window.hpmInstallFile = async function(file, forceAllowUnsigned = false, skipDep
   }
 
   try {
-    window.hpmSetProgress(true, '<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Uploading to Hecos...', 50);
+    window.hpmSetProgress(true, `<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Uploading & processing...`, 50);
     
-    // Simulate backend progress steps while waiting for fetch
     let simPct = 50;
-    const simSteps = [
-      { t: 1500, l: "Verifying Cryptographic Signature..." },
-      { t: 3000, l: "Extracting Package Contents..." },
-      { t: 5000, l: "Configuring Extensions..." },
-      { t: 8000, l: "Finalizing Installation..." }
-    ];
-    
-    const simTimers = simSteps.map((step, idx) => {
-      return setTimeout(() => {
-        simPct += 10;
-        window.hpmSetProgress(true, `<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> ${step.l}`, simPct);
-      }, step.t);
-    });
+    const simTimer = setInterval(() => {
+      if (simPct < 90) {
+        simPct += 5;
+        window.hpmSetProgress(true, `<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Processing batch...`, simPct);
+      }
+    }, 2000);
 
-    const resp = await fetch('/api/packages/install', { method: 'POST', body: formData });
+    const resp = await fetch('/api/packages/install/batch', { method: 'POST', body: formData });
+    clearInterval(simTimer);
     
-    // Clear simulation timers if fetch finishes early
-    simTimers.forEach(t => clearTimeout(t));
-    
-    window.hpmSetProgress(true, '<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Processing response...', 95);
+    window.hpmSetProgress(true, '<i class="fas fa-cog fa-spin" style="margin-right:6px; color:var(--accent);"></i> Finalizing...', 95);
     const data = await resp.json();
 
     if (data.ok) {
-      const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-      let extraHTML = '';
-      if (data.install_path) {
-          const lblPath = _ti('Installed in:', 'Installato in:', 'Instalado en:');
-          extraHTML += `<div style="margin-top:12px; font-size: 0.95em; color: var(--text); font-weight:normal;">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${data.install_path}</code></div>`;
-      }
-      if (data.config_panel) {
-          const lblCfg = _ti('Available in the Configuration menu', 'Disponibile nel menu Configurazione', 'Disponible en el menú Configuración');
-          extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--muted); font-weight:normal;"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
-      }
+      let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
       
+      data.results.forEach(r => {
+          const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+          const msg = r.ok ? '<span style="color:var(--muted)">installed</span>' : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
+          extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
+              <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">${icon}${r.filename}</span>
+              ${msg}
+          </div>`;
+      });
+      extraHTML += `</div>`;
+
+      // Se almeno 1 pacchetto ha avuto successo, suoniamo success (suono unico)
+      if (data.succeeded > 0) {
+          const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
+          if (sound !== 'none') {
+              if (sound.startsWith('custom|')) {
+                  const path = sound.substring(7);
+                  new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
+              } else {
+                  new Audio(`/static/sounds/${sound}`).play().catch(() => {});
+              }
+          }
+      }
+
       const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
       const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
-      const lblSuccess = _ti('Installed successfully!', 'Installato con successo!', '¡Instalado con éxito!');
+      const lblSuccess = data.failed === 0 
+          ? _ti('Batch completed successfully!', 'Operazione completata!', '¡Completado con éxito!')
+          : _ti('Completed with some errors', 'Completato con errori', 'Completado con errores');
       
-      window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>${extraHTML}${hintHTML}</div>`, 100);
+      const mainIconColor = data.failed === 0 ? '#10b981' : (data.succeeded > 0 ? '#f59e0b' : '#ef4444');
+      const mainIcon = data.failed === 0 ? 'fa-check-circle' : (data.succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
+
+      window.hpmSetProgress(true, `
+        <div style="text-align:center; padding: 10px 0;">
+            <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i> 
+            <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
+            <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${data.succeeded} succeeded • ${data.failed} failed</div>
+            ${extraHTML}
+            ${hintHTML}
+        </div>`, 100);
       
       const container = document.getElementById('hpm-install-progress');
       if (container) {
@@ -102,104 +130,87 @@ window.hpmInstallFile = async function(file, forceAllowUnsigned = false, skipDep
           container.style.cursor = 'default';
       }
 
-      const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
-      if (sound !== 'none') {
-          if (sound.startsWith('custom|')) {
-              const path = sound.substring(7);
-              new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
-          } else {
-              new Audio(`/static/sounds/${sound}`).play().catch(() => {});
-          }
+      // Check missing deps per fallbacks (we handle only the first one with missing deps for simplicity)
+      const missingDepsResult = data.results.find(r => !r.ok && r.missing_deps && r.missing_deps.length > 0);
+      if (missingDepsResult && data.results.length === 1 && !forceAllowUnsigned) {
+         // Trigger the interactive missing deps dialogue just for single-file for UX continuity
+         return _handleMissingDepsDialogue(fileList[0], missingDepsResult.missing_deps, forceAllowUnsigned);
       }
 
-      // Rimuovo il setTimeout automatico
-      if (data.warnings?.length) {
-        if (window.showToast) window.showToast(`Warning: ${data.warnings[0]}`, 'warning');
+      if (data.failed > 0 && window.showToast) {
+         window.showToast(`Batch finished with ${data.failed} error(s)`, 'warning');
       }
+
       if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
       if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
       if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
+
     } else {
       window.hpmSetProgress(false);
-      // Handle signature error explicitly
-      if (data.signature_error && !forceAllowUnsigned) {
-        const msg = `This package is unsigned or untrusted. Installing unsigned packages can be a security risk.<br><br>Do you want to force install "<b>${file.name}</b>" anyway?`;
-        if (typeof window.hpmShowConfirm === 'function') {
-            window.hpmShowConfirm(msg, 'Force Install', () => {
-                const checkbox = document.getElementById('hpm-allow-unsigned');
-                if (checkbox) checkbox.checked = true;
-                window.hpmInstallFile(file, true);
-            });
-        }
-      } else if (data.missing_deps && data.missing_deps.length > 0) {
-        const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-        const lblMissing = _ti('Missing required modules:', 'Moduli richiesti mancanti:', 'Módulos requeridos faltantes:');
-        const question = _ti('Do you want to install them automatically?', 'Vuoi installarli automaticamente?', '¿Quieres instalarlos automáticamente?');
-        const btnAll = _ti('Install All', 'Installa Tutto', 'Instalar Todo');
-        const btnOnly = _ti('Install Only', 'Installa Solo', 'Instalar Solo');
-
-        const html = `
-          <div style="text-align:center; padding:10px 0;">
-            <i class="fas fa-exclamation-triangle" style="font-size:1.8em; color:#f59e0b; margin-bottom:12px;"></i>
-            <div style="font-size:1.05em; margin-bottom:12px; color:var(--text);">${question}</div>
-            <div style="font-size:0.9em; color:var(--muted); margin-bottom:20px;">
-              <i class="fas fa-box-open" style="margin-right:6px;"></i>${lblMissing} <b style="color:var(--text);">${data.missing_deps.join(', ')}</b>
-            </div>
-            <div style="display:flex; gap:10px; justify-content:center;">
-              <button id="hpm-local-dep-all" style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;flex:1;">
-                <i class="fas fa-download" style="margin-right:6px;"></i> ${btnAll}
-              </button>
-              <button id="hpm-local-dep-only" style="background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.1);padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;flex:1;">
-                ${btnOnly}
-              </button>
-            </div>
-          </div>
-        `;
-        window.hpmSetProgress(true, html, 100);
-        
-        // Remove click-to-close behavior so user has to choose
-        const container = document.getElementById('hpm-install-progress');
-        if (container) { container.ondblclick = null; container.style.cursor = 'default'; }
-
-        document.getElementById('hpm-local-dep-all').onclick = async () => {
-           window.hpmSetProgress(true, `<div style="text-align:center;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> ${_ti('Resolving...', 'Risoluzione in corso...', 'Resolviendo...')}</div>`, 50);
-           try {
-             // To install remote deps for a local file, we fetch the catalog, install them via API, then retry local
-             const catResp = await fetch('/api/hpm/store/catalog?refresh=1');
-             const catData = await catResp.json();
-             if (catData && catData.catalog && catData.catalog.packages) {
-                for (const d of data.missing_deps) {
-                   const depPkg = catData.catalog.packages.find(p => p.id === d);
-                   if (depPkg) {
-                      // Attempt single remote install using the store API manually
-                      await fetch('/api/hpm/store/install', {
-                         method: 'POST',
-                         headers: { 'Content-Type': 'application/json' },
-                         body: JSON.stringify({ id: depPkg.id, download_url: depPkg.download_url, allow_unsigned: true, skip_dep_check: true })
-                      });
-                   }
-                }
-             }
-             // Retry local install forced
-             formData.set('skip_dep_check', 'true');
-             window.hpmInstallFile(file, forceAllowUnsigned, true);
-           } catch(e) {
-             if (window.showToast) window.showToast('Error resolving dependencies', 'error');
-           }
-        };
-
-        document.getElementById('hpm-local-dep-only').onclick = () => {
-           window.hpmInstallFile(file, forceAllowUnsigned, true);
-        };
-      } else {
-        if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
-      }
+      if (window.showToast) window.showToast(`Install failed: ${data.error}`, 'error');
     }
   } catch (err) {
     window.hpmSetProgress(false);
     if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
   }
 };
+
+function _handleMissingDepsDialogue(file, missing_deps, forceAllowUnsigned) {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    const lblMissing = _ti('Missing required modules:', 'Moduli richiesti mancanti:', 'Módulos requeridos faltantes:');
+    const question = _ti('Do you want to install them automatically?', 'Vuoi installarli automaticamente?', '¿Quieres instalarlos automáticamente?');
+    const btnAll = _ti('Install All', 'Installa Tutto', 'Instalar Todo');
+    const btnOnly = _ti('Install Only', 'Installa Solo', 'Instalar Solo');
+
+    const html = `
+      <div style="text-align:center; padding:10px 0;">
+        <i class="fas fa-exclamation-triangle" style="font-size:1.8em; color:#f59e0b; margin-bottom:12px;"></i>
+        <div style="font-size:1.05em; margin-bottom:12px; color:var(--text);">${question}</div>
+        <div style="font-size:0.9em; color:var(--muted); margin-bottom:20px;">
+          <i class="fas fa-box-open" style="margin-right:6px;"></i>${lblMissing} <b style="color:var(--text);">${missing_deps.join(', ')}</b>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button id="hpm-local-dep-all" style="background:linear-gradient(135deg,var(--accent),var(--accent2,#7c3aed));color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;flex:1;">
+            <i class="fas fa-download" style="margin-right:6px;"></i> ${btnAll}
+          </button>
+          <button id="hpm-local-dep-only" style="background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.1);padding:10px 18px;border-radius:8px;font-weight:600;cursor:pointer;flex:1;">
+            ${btnOnly}
+          </button>
+        </div>
+      </div>
+    `;
+    window.hpmSetProgress(true, html, 100);
+    
+    const container = document.getElementById('hpm-install-progress');
+    if (container) { container.ondblclick = null; container.style.cursor = 'default'; }
+
+    document.getElementById('hpm-local-dep-all').onclick = async () => {
+       window.hpmSetProgress(true, `<div style="text-align:center;"><i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> ${_ti('Resolving...', 'Risoluzione in corso...', 'Resolviendo...')}</div>`, 50);
+       try {
+         const catResp = await fetch('/api/hpm/store/catalog?refresh=1');
+         const catData = await catResp.json();
+         if (catData && catData.catalog && catData.catalog.packages) {
+            for (const d of missing_deps) {
+               const depPkg = catData.catalog.packages.find(p => p.id === d);
+               if (depPkg) {
+                  await fetch('/api/hpm/store/install', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ id: depPkg.id, download_url: depPkg.download_url, allow_unsigned: true, skip_dep_check: true })
+                  });
+               }
+            }
+         }
+         window.hpmInstallBatch([file], forceAllowUnsigned, true);
+       } catch(e) {
+         if (window.showToast) window.showToast('Error resolving dependencies', 'error');
+       }
+    };
+
+    document.getElementById('hpm-local-dep-only').onclick = () => {
+       window.hpmInstallBatch([file], forceAllowUnsigned, true);
+    };
+}
 
 window.hpmSetProgress = function(visible, label = '', pct = 0) {
   const container = document.getElementById('hpm-install-progress');

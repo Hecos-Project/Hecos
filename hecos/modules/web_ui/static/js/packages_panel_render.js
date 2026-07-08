@@ -130,32 +130,51 @@ window.hpmRenderRow = function(pkg, meta) {
 
   // Actions
   let actions = '';
-  
-  // Info/Capabilities Button
-  actions += `
-    <button type="button"
-            class="btn btn-sm"
-            style="font-size:10px;padding:4px 10px;margin-left:4px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);"
-            onclick="hpmShowCapabilities('${pkg.id}','${window._hesc(pkg.name)}')"
-            title="View Capabilities">
-      <i class="fas fa-info-circle" style="font-size:11px;color:#3b82f6;"></i>
-    </button>`;
+  if (!window._hpmSelectionMode) {
+      actions += `
+        <button type="button"
+                class="btn btn-sm"
+                style="font-size:10px;padding:4px 10px;margin-left:4px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);"
+                onclick="hpmShowCapabilities('${pkg.id}','${window._hesc(pkg.name)}')"
+                title="View Capabilities">
+          <i class="fas fa-info-circle" style="font-size:11px;color:#3b82f6;"></i>
+        </button>`;
 
-  if (isRemovable) {
-    actions += `
-      <button type="button"
-              class="btn btn-sm btn-danger"
-              style="font-size:10px;padding:4px 10px;margin-left:4px;"
-              onclick="hpmConfirmUninstall('${pkg.id}','${window._hesc(pkg.name)}')"
-              title="${window.HPM_I18N?.uninstall || 'Uninstall'}">
-        <i class="fas fa-trash-alt" style="font-size:10px;"></i>
-      </button>`;
-  } else {
-    // Core / built-in: only show a lock icon to signal it's protected from uninstall
-    actions += `<span title="${window.HPM_I18N?.tooltip_builtin || 'Built-in module — cannot be removed'}"
-                     style="font-size:10px;color:var(--muted);opacity:0.5;padding:0 4px;margin-left:4px;">
-                 <i class="fas fa-lock"></i>
-               </span>`;
+      if (isRemovable) {
+        actions += `
+          <button type="button"
+                  class="btn btn-sm btn-danger"
+                  style="font-size:10px;padding:4px 10px;margin-left:4px;"
+                  onclick="hpmConfirmUninstall('${pkg.id}','${window._hesc(pkg.name)}')"
+                  title="${window.HPM_I18N?.uninstall || 'Uninstall'}">
+            <i class="fas fa-trash-alt" style="font-size:10px;"></i>
+          </button>`;
+      } else {
+        actions += `<span title="${window.HPM_I18N?.tooltip_builtin || 'Built-in module — cannot be removed'}"
+                         style="font-size:10px;color:var(--muted);opacity:0.5;padding:0 4px;margin-left:4px;">
+                     <i class="fas fa-lock"></i>
+                   </span>`;
+      }
+  }
+
+  let selectionHtml = '';
+  if (window._hpmSelectionMode) {
+      if (isRemovable) {
+          const isSelected = window._hpmSelectedPackages && window._hpmSelectedPackages.has(pkg.id);
+          selectionHtml = `
+            <div style="margin-right:2px; display:flex; align-items:center;">
+              <input type="checkbox" style="width:16px; height:16px; accent-color:var(--accent); cursor:pointer;" 
+                     ${isSelected ? 'checked' : ''} 
+                     onchange="hpmTogglePackageSelection('${pkg.id}')">
+            </div>
+          `;
+      } else {
+          selectionHtml = `
+            <div style="margin-right:2px; width:16px; display:flex; align-items:center; justify-content:center; opacity:0.3;" title="Built-in module">
+              <i class="fas fa-lock" style="font-size:10px;"></i>
+            </div>
+          `;
+      }
   }
 
   return `
@@ -164,6 +183,8 @@ window.hpmRenderRow = function(pkg, meta) {
                 border-radius:9px;padding:10px 13px;
                 display:flex;align-items:center;gap:12px;
                 transition:opacity .2s;${isDisabled ? 'opacity:0.6;' : ''}">
+
+      ${selectionHtml}
 
       <!-- Icon -->
       <div style="width:34px;height:34px;border-radius:8px;flex-shrink:0;

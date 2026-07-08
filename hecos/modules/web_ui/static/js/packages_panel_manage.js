@@ -277,3 +277,161 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
     if (window.showToast) window.showToast('Network error: ' + err.message, 'error');
   }
 };
+
+window._hpmSelectionMode = false;
+window._hpmSelectedPackages = new Set();
+
+window.hpmToggleSelectionMode = function() {
+    window._hpmSelectionMode = !window._hpmSelectionMode;
+    window._hpmSelectedPackages.clear();
+    
+    const toolbar = document.getElementById('hpm-selection-toolbar');
+    const selectModeBtn = document.getElementById('hpm-btn-select-mode');
+    
+    if (toolbar) toolbar.style.display = window._hpmSelectionMode ? 'flex' : 'none';
+    
+    if (selectModeBtn) {
+        if (window._hpmSelectionMode) {
+            selectModeBtn.style.background = 'var(--accent)';
+            selectModeBtn.style.color = '#fff';
+        } else {
+            selectModeBtn.style.background = '';
+            selectModeBtn.style.color = '';
+        }
+    }
+    
+    const chkAll = document.getElementById('hpm-select-all');
+    if (chkAll) chkAll.checked = false;
+    
+    window.hpmUpdateSelectionUI();
+    if (typeof window.hpmRenderHierarchy === 'function') window.hpmRenderHierarchy();
+};
+
+window.hpmToggleSelectAll = function() {
+    const chkAll = document.getElementById('hpm-select-all');
+    const isChecked = chkAll ? chkAll.checked : false;
+    
+    window._hpmSelectedPackages.clear();
+    if (isChecked && window._packages) {
+        window._packages.forEach(pkg => {
+            if (pkg.removable === true) {
+                window._hpmSelectedPackages.add(pkg.id);
+            }
+        });
+    }
+    
+    window.hpmUpdateSelectionUI();
+    if (typeof window.hpmRenderHierarchy === 'function') window.hpmRenderHierarchy();
+};
+
+window.hpmTogglePackageSelection = function(pkgId) {
+    if (window._hpmSelectedPackages.has(pkgId)) {
+        window._hpmSelectedPackages.delete(pkgId);
+    } else {
+        window._hpmSelectedPackages.add(pkgId);
+    }
+    window.hpmUpdateSelectionUI();
+};
+
+window.hpmUpdateSelectionUI = function() {
+    const countEl = document.getElementById('hpm-selected-count');
+    const btnUninstall = document.getElementById('hpm-btn-uninstall-selected');
+    const count = window._hpmSelectedPackages.size;
+    
+    if (countEl) countEl.innerText = count;
+    
+    if (btnUninstall) {
+        if (count > 0) {
+            btnUninstall.style.opacity = '1';
+            btnUninstall.style.pointerEvents = 'auto';
+            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> Disinstalla (${count})`;
+        } else {
+            btnUninstall.style.opacity = '0.5';
+            btnUninstall.style.pointerEvents = 'none';
+            btnUninstall.innerHTML = `<i class="fas fa-trash" style="margin-right:6px;"></i> Disinstalla`;
+        }
+    }
+};
+
+window.hpmUninstallSelected = function() {
+    if (window._hpmSelectedPackages.size === 0) return;
+    
+    const count = window._hpmSelectedPackages.size;
+    const msg = `Sei sicuro di voler disinstallare <b>${count} pacchetti</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questa operazione non è annullabile.</span>`;
+    
+    window.hpmShowConfirm(msg, `Disinstalla ${count}`, async () => {
+        window.hpmToggleSelectionMode(); // esci dalla modalità selezione
+        
+        const ids = Array.from(window._hpmSelectedPackages);
+        window._hpmSelectedPackages.clear();
+        
+        window.hpmSetProgress(true, `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> Disinstallazione in corso (${ids.length} pacchetti)...`, 30);
+        
+        try {
+            const resp = await fetch('/api/packages/uninstall/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: ids })
+            });
+            const data = await resp.json();
+            
+            if (data.ok) {
+                let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
+                data.results.forEach(r => {
+                    const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+                    const msg = r.ok ? '<span style="color:var(--muted)">rimosso</span>' : `<span style="color:#ef4444">${r.error || 'error'}</span>`;
+                    extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
+                        <span style="color:var(--text);">${icon}${r.id}</span>
+                        ${msg}
+                    </div>`;
+                });
+                extraHTML += `</div>`;
+
+                if (data.succeeded > 0) {
+                    const sound = localStorage.getItem('hpm_install_sound') || 'success.mp3';
+                    if (sound !== 'none') {
+                        if (sound.startsWith('custom|')) {
+                            const path = sound.substring(7);
+                            new Audio('/api/local_file?path=' + encodeURIComponent(path)).play().catch(() => {});
+                        } else {
+                            new Audio(`/static/sounds/${sound}`).play().catch(() => {});
+                        }
+                    }
+                }
+
+                const lblHint = '<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">Fai doppio clic per chiudere</div>';
+                const lblSuccess = data.failed === 0 
+                    ? 'Disinstallazione batch completata!'
+                    : 'Completato con alcuni errori';
+                
+                const mainIconColor = data.failed === 0 ? '#10b981' : (data.succeeded > 0 ? '#f59e0b' : '#ef4444');
+                const mainIcon = data.failed === 0 ? 'fa-check-circle' : (data.succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
+
+                window.hpmSetProgress(true, `
+                  <div style="text-align:center; padding: 10px 0;">
+                      <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i> 
+                      <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
+                      <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${data.succeeded} rimossi • ${data.failed} falliti</div>
+                      ${extraHTML}
+                      ${lblHint}
+                  </div>`, 100);
+                
+                const container = document.getElementById('hpm-install-progress');
+                if (container) {
+                    container.ondblclick = () => window.hpmSetProgress(false);
+                    container.style.cursor = 'default';
+                }
+
+                if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+                if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
+                if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
+            } else {
+                window.hpmSetProgress(false);
+                if (window.showToast) window.showToast(`Batch uninstall error: ${data.error}`, 'error');
+            }
+        } catch (err) {
+            window.hpmSetProgress(false);
+            if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+        }
+    });
+};
