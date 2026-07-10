@@ -26,6 +26,12 @@ def _invalidate_all_caches():
         invalidate_widgets_cache()
     except Exception:
         pass
+    # Reload slash commands registry so newly installed modules appear immediately
+    try:
+        from hecos.core.commands.registry import get_registry
+        get_registry(reload=True)
+    except Exception:
+        pass
 
 def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
 
@@ -117,6 +123,14 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                 _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
                 _invalidate_all_caches()
 
+                # ── Reload command registry so new slash commands appear live ──
+                try:
+                    from hecos.core.commands.registry import get_registry
+                    get_registry(reload=True)
+                    log.info(f"[HPM] Command registry reloaded after install of '{result.package_id}'")
+                except Exception as _cr_e:
+                    log.warning(f"[HPM] Command registry reload failed: {_cr_e}")
+
                 pkg_meta = registry.get(result.package_id) or {}
                 snap = pkg_meta.get("manifest_snapshot", {})
                 if isinstance(snap, str):
@@ -124,6 +138,28 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         import json as _j
                         snap = _j.loads(snap)
                     except: snap = {}
+
+                # ── Dynamically load API routes for the newly installed package ──
+                try:
+                    cp = snap.get("config_panel") or {}
+                    api_routes_file = cp.get("api_routes_file")
+                    if api_routes_file:
+                        plugin_id = result.package_id
+                        install_path = pkg_meta.get("install_path")
+                        if install_path:
+                            abs_route_path = os.path.join(install_path, api_routes_file)
+                            if os.path.isfile(abs_route_path):
+                                import importlib.util
+                                spec = importlib.util.spec_from_file_location(f"plugin_routes_{plugin_id}", abs_route_path)
+                                mod = importlib.util.module_from_spec(spec)
+                                spec.loader.exec_module(mod)
+                                if hasattr(mod, 'init_plugin_routes'):
+                                    # Pass hecos_root correctly. We use _hecos_src root dir.
+                                    mod.init_plugin_routes(app, cfg_mgr, os.path.dirname(_hecos_src) if _hecos_src.endswith("hecos") else _hecos_src, log)
+                                    log.info(f"[HPM:Routes] Dynamically registered API routes for newly installed '{plugin_id}'")
+                except Exception as _route_e:
+                    log.error(f"[HPM:Routes] Failed to dynamically load routes for '{result.package_id}': {_route_e}")
+
                 panel_id = (snap.get("config_panel") or {}).get("tab_id") or result.package_id
 
                 response = {

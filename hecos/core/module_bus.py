@@ -1,4 +1,4 @@
-﻿"""
+"""
 hecos/core/module_bus.py
 ─────────────────────────────────────────────────────────────────────────────
 ModuleBus — Lifecycle manager for all isolated HPM module subprocesses.
@@ -33,18 +33,60 @@ class ModuleBus:
         self._proxies: Dict[str, ModuleProxy] = {}
         self._lock = threading.Lock()
         atexit.register(self.shutdown_all)
+        # Kill any orphaned runner processes left over from a previous Hecos crash
+        self._kill_orphan_runners()
+
+    @staticmethod
+    def _kill_orphan_runners():
+        """Kill any hecos_sdk.runner subprocesses left over from a previous session."""
+        try:
+            import psutil
+            for proc in psutil.process_iter(['pid', 'cmdline']):
+                try:
+                    cmdline = proc.info.get('cmdline') or []
+                    if 'hecos_sdk.runner' in ' '.join(cmdline) or (
+                        'hecos_sdk' in ' '.join(cmdline) and 'runner' in ' '.join(cmdline)
+                    ):
+                        proc.kill()
+                        logger.info(f"[ModuleBus] Killed orphaned runner PID={proc.pid}")
+                except Exception:
+                    pass
+        except ImportError:
+            # psutil not available — fall back to platform-specific kill
+            if os.name == 'nt':
+                try:
+                    import subprocess
+                    subprocess.run(
+                        ['taskkill', '/F', '/FI', 'IMAGENAME eq python.exe',
+                         '/FI', 'WINDOWTITLE eq hecos_sdk*'],
+                        capture_output=True, timeout=5
+                    )
+                except Exception:
+                    pass
 
     def start_module(self, tag, module_dir, venv_python_exe=None):
+        # Prevent zombie processes: if it's already running, stop it first!
+        if tag in self._proxies:
+            self.stop_plugin(tag)
+
         venv_exe = venv_python_exe or self._resolve_venv_python(module_dir)
         proxy = ModuleProxy(tag, module_dir, venv_exe)
         ok = proxy.start()
         if ok:
             with self._lock:
                 self._proxies[tag] = proxy
+            # Pre-fetch manifest so _manifest_cache is populated before first call.
+            # This allows _ToolsInterface to build correct method signatures.
+            try:
+                import time; time.sleep(0.5)  # brief wait for subprocess to be ready
+                proxy.get_manifest()
+            except Exception as e:
+                logger.warning(f"[ModuleBus] Could not pre-fetch manifest for '{tag}': {e}")
             logger.info(f"[ModuleBus] Module '{tag}' started from {module_dir}")
             return proxy
         logger.error(f"[ModuleBus] Failed to start plugin '{tag}'")
         return None
+
 
     def stop_plugin(self, tag):
         with self._lock:

@@ -265,8 +265,12 @@ class PackageRegistry:
         """Return the manifest snapshot stored at install time."""
         record = self.get(pkg_id)
         if record and record.get("manifest_snapshot"):
+            snap = record["manifest_snapshot"]
+            # _row_to_dict already deserializes JSON → may already be a dict
+            if isinstance(snap, dict):
+                return snap
             try:
-                return json.loads(record["manifest_snapshot"])
+                return json.loads(snap)
             except Exception:
                 pass
         return None

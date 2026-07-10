@@ -168,24 +168,22 @@
         "slash_commands": []
     },
     "MEMORY": {
-        "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
+        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
         "commands": {
+            "rag_ingest_file": "Ingest a local file into the vector knowledge base.",
+            "rag_search": "Perform a semantic search in the long-term vector memory (RAG).",
+            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
             "read_history": "Extract the last N saved messages from the database history.",
             "remember_info": "Save important information about the user in the biographical profile.",
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
-            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile).",
-            "rag_search": "Perform a semantic search in the long-term vector memory (RAG knowledge base).",
-            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
-            "rag_ingest_file": "Ingest a local file (.txt, .md, .pdf) into the vector knowledge base."
+            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Vault Access Granted)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
-        "module_type": "core_module",
         "slash_commands": []
     },
     "MODELS": {
@@ -195,55 +193,13 @@
             "list_models": "Lists all available models for the currently selected backend.",
             "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE (Model management)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
-        "module_type": "core_module",
         "slash_commands": []
-    },
-    "PERSONALITY": {
-        "description": "Manage and switch AI personalities (souls) dynamically.",
-        "commands": {
-            "list_souls": "Elenca tutte le personalità (souls) attualmente disponibili nel sistema.",
-            "switch_soul": "Cambia la personalità attiva. Accetta sia il nome esatto (es. \"Motoko\") sia l'indice numerico."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": [
-            {
-                "id": "switch_soul",
-                "aliases": [
-                    "/soul",
-                    "/persona",
-                    "/personality"
-                ],
-                "description": "Cambia l'anima (personalità) attiva del sistema",
-                "usage": "/soul <nome_o_indice>",
-                "icon": "🧠",
-                "category": "SYSTEM",
-                "requires_args": true
-            },
-            {
-                "id": "list_souls",
-                "aliases": [
-                    "/souls",
-                    "/personas"
-                ],
-                "description": "Elenca le personalità disponibili",
-                "usage": "/souls",
-                "icon": "📋",
-                "category": "SYSTEM",
-                "requires_args": false
-            }
-        ]
     },
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
@@ -273,17 +229,14 @@
         "description": "Native Web Interface — Chat + Config Panel on localhost:7070",
         "commands": {
             "get_panel_url": "Returns the URL of the chat interface.",
-            "open_browser": "Opens the Hecos web interface in the default browser if not already open.",
-            "set_state_manager": "Injects the live StateManager from the main application."
+            "open_browser": "Opens the Hecos web interface in the default browser if not already open."
         },
-        "status": "ONLINE (DORMANT)",
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
-        "module_type": "core_module",
         "slash_commands": []
     },
     "IMAGE_GEN": {
@@ -337,19 +290,18 @@
         "slash_commands": []
     },
     "DRIVE": {
-        "description": "HTTP File Manager (Hecos Drive)",
+        "description": "Interfaccia Web per la gestione dei file (Upload, Download, Folder Explorer). È lo spazio di archiviazione personale dell'utente accessibile da WebUI.",
         "commands": {
-            "count_items": "Counts the total number of files and folders in a given path.",
-            "get_root": "Returns the configured root directory for the drive.",
-            "list_files": "SCANS and lists files/folders in a path to return the names to the AI.",
-            "read_file": "Reads the textual content of a file."
+            "/drive": "Apre il File Manager nel browser"
         },
-        "status": "ONLINE",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
-        "is_class_based": true,
+        "is_class_based": false,
+        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
+        "module_type": "plugin",
         "slash_commands": []
     },
     "MAIL": {
@@ -372,22 +324,6 @@
         "is_class_based": true,
         "is_lazy": true,
         "icon": "📧",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": []
-    },
-    "TEMPLATES": {
-        "description": "Find and render predefined templates for emails and messages.",
-        "commands": {
-            "list_templates": "List all available templates.",
-            "render_template": "Render a template by replacing its variables and combining header/body/footer."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "📝",
         "category": "PLUGINS",
         "module_type": "plugin",
         "slash_commands": []

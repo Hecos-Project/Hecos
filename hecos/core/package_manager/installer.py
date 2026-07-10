@@ -118,7 +118,7 @@ class PackageInstaller:
         install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
         
         resolver = DependencyResolver(self._registry)
-        dep_report = resolver.resolve(manifest, install_pip=True, install_path=install_path)
+        dep_report = resolver.resolve(manifest, install_pip=not skip_dep_check, install_path=install_path)
         result.dep_report = dep_report
 
         if dep_report.missing_packages:

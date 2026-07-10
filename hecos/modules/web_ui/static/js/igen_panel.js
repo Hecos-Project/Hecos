@@ -215,7 +215,8 @@ window.collectIgenConfig = function() {
         style:                  get('igen-style', 'none'),
         nologo:                 chk('igen-nologo', true),
         optimize_for_flux:      chk('igen-optimize-flux', true),
-        show_metadata_in_chat:  chk('igen-show-metadata', false),
+        show_metadata:          chk('igen-show-metadata', false),
+        routing_override:       get('igen-routing-override', ''),
         enabled:                chk('igen-enabled', true),
         api_key:                get('igen-api-key', ''),
     };
@@ -252,7 +253,8 @@ window.applyIgenConfig = function(cfg) {
     set('igen-style',           cfg.style               || 'none');
     chk('igen-nologo',          cfg.nologo              ?? true);
     chk('igen-optimize-flux',   cfg.optimize_for_flux   ?? true);
-    chk('igen-show-metadata',   cfg.show_metadata_in_chat ?? false);
+    chk('igen-show-metadata',   cfg.show_metadata       ?? false);
+    set('igen-routing-override', cfg.routing_override   || '');
     chk('igen-enabled',         cfg.enabled             ?? true);
 
     onAspectRatioChanged();

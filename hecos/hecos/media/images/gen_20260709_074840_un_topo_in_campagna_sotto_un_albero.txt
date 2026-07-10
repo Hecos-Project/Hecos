@@ -1,0 +1,8 @@
+HECOS IMAGE METADATA
+=====================
+Date: 2026-07-09 07:48:40
+Provider: huggingface
+Model: black-forest-labs/FLUX.1-schnell
+Guidance_scale: 0.0
+Inference_steps: 4
+Prompt: un topo in campagna sotto un albero

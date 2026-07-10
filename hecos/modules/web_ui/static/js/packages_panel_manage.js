@@ -85,6 +85,35 @@ window.hpmShowConfirm = function(msgHtml, confirmBtnText, onConfirm) {
   }
 };
 
+/**
+ * hpmShowMessage — mostra un messaggio informativo nel modal HPM esistente.
+ * @param {string} title   - Titolo del modal
+ * @param {string} msgHtml - Contenuto HTML del messaggio
+ * @param {string} type    - 'success' | 'error' | 'info' (default)
+ */
+window.hpmShowMessage = function(title, msgHtml, type) {
+  const modal   = document.getElementById('hpm-info-modal');
+  const titleEl = document.getElementById('hpm-info-modal-title');
+  const textEl  = document.getElementById('hpm-info-modal-text');
+
+  if (modal && titleEl && textEl) {
+    // Icona colorata in base al tipo
+    const iconMap = {
+      success: '<i class="fas fa-check-circle" style="color:#22c55e; margin-right:8px;"></i>',
+      error:   '<i class="fas fa-times-circle" style="color:#ef4444; margin-right:8px;"></i>',
+      info:    '<i class="fas fa-info-circle"  style="color:#3b82f6; margin-right:8px;"></i>',
+    };
+    const icon = iconMap[type] || iconMap.info;
+    titleEl.innerHTML = icon + window._hesc(title);
+    textEl.innerHTML  = msgHtml;
+    modal.style.display = 'flex';
+  } else {
+    // Fallback senza DOM
+    const plainMsg = msgHtml.replace(/<[^>]+>/g, '');
+    alert(title + '\n\n' + plainMsg);
+  }
+};
+
 window.hpmConfirmUninstall = function (id, name) {
   const msgTemplate = window.HPM_I18N?.confirm_uninstall || 'Are you sure you want to uninstall the package \'%s\'?';
   const msg = msgTemplate.replace('%s', name);
@@ -143,6 +172,7 @@ window.hpmUninstall = async function(id, name) {
 
 window.hpmVerifyPackage = async function(id, name) {
   try {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
     const lblVerifying = _ti('Verifying...', 'Verifica in corso...', 'Verificando...');
     if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(true, lblVerifying, 100);
     
@@ -152,25 +182,55 @@ window.hpmVerifyPackage = async function(id, name) {
     if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
     
     if (data.ok) {
+      const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
+      const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
+      
+      let htmlContent = '';
+      
       if (data.status === 'valid') {
         const title = _ti('Verification Passed', 'Verifica Superata', 'Verificación Superada');
         const msg = _ti(`All files for package <b>${name}</b> are intact.`, `Tutti i file del pacchetto <b>${name}</b> sono integri.`, `Todos los archivos del paquete <b>${name}</b> están intactos.`);
-        window.hpmShowMessage(title, msg, 'success');
+        htmlContent = `<div style="text-align:center; padding: 10px 0;">
+          <i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i>
+          <b style="font-size:1.1em; color:var(--text)">${title}</b>
+          <div style="font-size:0.9em; color:var(--muted); margin-top:8px;">${msg}</div>
+          ${hintHTML}
+        </div>`;
       } else if (data.status === 'unverified') {
         const title = _ti('Cannot Verify', 'Impossibile Verificare', 'No se puede verificar');
-        window.hpmShowMessage(title, data.message, 'info');
+        htmlContent = `<div style="text-align:center; padding: 10px 0;">
+          <i class="fas fa-info-circle" style="margin-right:6px; color:#3b82f6; font-size:1.5em; margin-bottom:8px; display:block;"></i>
+          <b style="font-size:1.1em; color:var(--text)">${title}</b>
+          <div style="font-size:0.9em; color:var(--muted); margin-top:8px;">${data.message}</div>
+          ${hintHTML}
+        </div>`;
       } else {
         const title = _ti('Verification Failed', 'Verifica Fallita', 'Verificación Fallida');
         let msg = _ti(`Package <b>${name}</b> has missing or modified files:`, `Il pacchetto <b>${name}</b> ha file mancanti o modificati:`, `El paquete <b>${name}</b> tiene archivos faltantes o modificados:`);
-        msg += `<br><br><div style="max-height:150px; overflow-y:auto; font-size:0.85em; text-align:left; background:var(--bg-card); padding:8px; border-radius:4px;">`;
+        msg += `<div style="max-height:120px; overflow-y:auto; font-size:0.85em; text-align:left; background:rgba(0,0,0,0.2); padding:8px; border-radius:6px; margin-top:10px; border:1px solid rgba(255,255,255,0.05);">`;
         if (data.missing_files && data.missing_files.length) {
-            msg += `<strong style="color:var(--danger);">Missing:</strong><br>${data.missing_files.join('<br>')}<br><br>`;
+            msg += `<strong style="color:#ef4444;">Missing:</strong><br>${data.missing_files.join('<br>')}<br><br>`;
         }
         if (data.modified_files && data.modified_files.length) {
-            msg += `<strong style="color:var(--warning);">Modified:</strong><br>${data.modified_files.join('<br>')}`;
+            msg += `<strong style="color:#f59e0b;">Modified:</strong><br>${data.modified_files.join('<br>')}`;
         }
         msg += `</div>`;
-        window.hpmShowMessage(title, msg, 'error');
+        
+        htmlContent = `<div style="text-align:center; padding: 10px 0;">
+          <i class="fas fa-exclamation-triangle" style="margin-right:6px; color:#ef4444; font-size:1.5em; margin-bottom:8px; display:block;"></i>
+          <b style="font-size:1.1em; color:var(--text)">${title}</b>
+          <div style="font-size:0.9em; color:var(--muted); margin-top:8px;">${msg}</div>
+          ${hintHTML}
+        </div>`;
+      }
+      
+      if (typeof window.hpmSetProgress === 'function') {
+        window.hpmSetProgress(true, htmlContent, 100);
+        const container = document.getElementById('hpm-install-progress');
+        if (container) {
+            container.ondblclick = () => window.hpmSetProgress(false);
+            container.style.cursor = 'default';
+        }
       }
     } else {
       if (window.showToast) window.showToast(`Verify error: ${data.error}`, 'error');

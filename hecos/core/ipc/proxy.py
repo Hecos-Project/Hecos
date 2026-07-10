@@ -36,10 +36,41 @@ class _ToolsInterface:
 
     def __getattr__(self, method_name: str):
         proxy = object.__getattribute__(self, "_proxy")
-        # Return a callable that forwards the call via IPC
-        def _remote(**kwargs):
-            return proxy.call(method_name, kwargs)
-        return _remote
+
+        # Build a wrapper with the real signature from the manifest so that
+        # executor._build_kwargs inspects the correct parameter names.
+        # We read slash_commands from the cached manifest to reconstruct the sig.
+        import inspect as _inspect
+
+        manifest = proxy._manifest_cache or {}
+        # Find the matching slash command schema
+        args_schema = {}
+        for sc in manifest.get("slash_commands", []):
+            if sc.get("method") == method_name:
+                args_schema = sc.get("args_schema") or {}
+                break
+
+        if args_schema:
+            # Build a real function with named parameters
+            param_names = list(args_schema.keys())
+            # Build params list (all str, no defaults)
+            params = [_inspect.Parameter("self", _inspect.Parameter.POSITIONAL_OR_KEYWORD)] + [
+                _inspect.Parameter(p, _inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                for p in param_names
+            ]
+            def _make_remote(mname, pnames):
+                def _remote(self_ignored=None, **kwargs):
+                    return proxy.call(mname, kwargs)
+                _remote.__signature__ = _inspect.Signature(
+                    [_inspect.Parameter(p, _inspect.Parameter.POSITIONAL_OR_KEYWORD) for p in pnames]
+                )
+                return _remote
+            return _make_remote(method_name, param_names)
+        else:
+            # Fallback: generic **kwargs wrapper
+            def _remote(**kwargs):
+                return proxy.call(method_name, kwargs)
+            return _remote
 
 
 class ModuleProxy:
@@ -72,6 +103,10 @@ class ModuleProxy:
         try:
             env = os.environ.copy()
             env["PYTHONIOENCODING"] = "utf-8"
+            kwargs = {}
+            if os.name == 'nt':
+                kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW
+                
             self._process = subprocess.Popen(
                 [self._python_exe, "-m", "hecos_sdk.runner"],
                 cwd=self.plugin_dir,
@@ -83,6 +118,7 @@ class ModuleProxy:
                 errors="replace",
                 bufsize=1,  # line-buffered
                 env=env,
+                **kwargs
             )
             # Start a background thread to forward stderr to the Hecos logger
             t = threading.Thread(target=self._stderr_relay, daemon=True)

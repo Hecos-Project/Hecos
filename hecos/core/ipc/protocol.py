@@ -52,8 +52,8 @@ def make_shutdown() -> str:
 
 def parse_response(line: str) -> Dict[str, Any]:
     """Parse a JSON-Line response from the plugin subprocess.
-    Returns the decoded dict, or a synthetic error dict on failure."""
+    Returns the decoded dict, or treats raw text chatter as a warning log."""
     try:
         return json.loads(line.strip())
-    except json.JSONDecodeError as e:
-        return {"type": "result", "id": None, "ok": False, "error": f"Protocol parse error: {e}  raw={line!r}"}
+    except json.JSONDecodeError:
+        return {"type": "log", "level": "warning", "msg": f"[STDOUT CHATTER] {line.strip()}"}

@@ -7,14 +7,14 @@ def _get_version():
         # core/version si trova al livello superiore rispetto a core/system/
         version_file = os.path.join(current_dir, "..", "version")
         if os.path.exists(version_file):
-            with open(version_file, "r") as f:
+            with open(version_file, "r", encoding="utf-8-sig") as f:
                 return f.read().strip()
     except Exception:
         pass
     return "0.0.0"
 
 # Versione del core (letta dal file centralizzato)
-VERSION = "0.18.2"
+VERSION = _get_version()
 
 # Nome del progetto
 PROJECT_NAME = "Hecos"

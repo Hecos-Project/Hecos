@@ -191,6 +191,19 @@ class DependencyResolver:
                 report.pip_failures.extend(requirements)
                 return
 
+            # ── Bootstrap: ensure wheel + setuptools are in the new venv ──────
+            logger.info("[HPM:Resolver] Bootstrapping wheel/setuptools in isolated venv...")
+            try:
+                subprocess.run(
+                    [python_exe, "-m", "pip", "install", "--upgrade", "pip", "wheel", "setuptools"],
+                    check=True,
+                    capture_output=True,
+                    timeout=120
+                )
+                logger.info("[HPM:Resolver] pip/wheel/setuptools bootstrapped.")
+            except Exception as _boot_e:
+                logger.warning(f"[HPM:Resolver] Bootstrap step failed (non-fatal): {_boot_e}")
+
             # Install hecos_sdk into the venv
             sdk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "hecos_sdk"))
             if os.path.exists(sdk_path):
@@ -200,7 +213,7 @@ class DependencyResolver:
                         [python_exe, "-m", "pip", "install", "--no-deps", sdk_path],
                         check=True,
                         capture_output=True,
-                        timeout=60
+                        timeout=120
                     )
                     logger.info("[HPM:Resolver] hecos_sdk installed successfully into venv.")
                 except subprocess.CalledProcessError as e:

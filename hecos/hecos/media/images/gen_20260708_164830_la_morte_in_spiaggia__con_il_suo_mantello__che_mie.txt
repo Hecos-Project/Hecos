@@ -1,0 +1,8 @@
+HECOS IMAGE METADATA
+=====================
+Date: 2026-07-08 16:48:30
+Provider: pollinations
+Model: flux
+Guidance_scale: 0.0
+Inference_steps: 4
+Prompt: la morte in spiaggia, con il suo mantello, che miete vittime. le rocce all'orizzonte altissime e il mare in burrasca

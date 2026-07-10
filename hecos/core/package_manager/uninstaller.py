@@ -88,7 +88,13 @@ class PackageUninstaller:
         # ── Step 3: Remove WebUI assets (templates, static, widgets) ─────────
         self._remove_webui_assets(manifest, result)
 
-        # ── Step 4: Remove empty leftover directories ─────────────────────────
+        # ── Step 4: Remove empty leftover directories and wipe install_path ──
+        install_path = record.get("install_path", "")
+        if install_path and os.path.isdir(install_path):
+            import shutil
+            logger.info(f"[HPM:Uninstaller] Wiping remaining install directory (including venv): {install_path}")
+            shutil.rmtree(install_path, ignore_errors=True)
+            
         self._cleanup_empty_dirs(result.removed_files)
 
         # ── Step 5: Unregister from DB ────────────────────────────────────────
