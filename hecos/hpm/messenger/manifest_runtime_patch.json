@@ -1,0 +1,17 @@
+{
+    "slash_commands": [
+        {
+            "id": "msg",
+            "aliases": [
+                "/msg",
+                "/send"
+            ],
+            "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
+            "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
+            "example": "/msg whatsapp:+393331234567 Ciao!",
+            "icon": "💬",
+            "method": "msg_command",
+            "requires_args": true
+        }
+    ]
+}

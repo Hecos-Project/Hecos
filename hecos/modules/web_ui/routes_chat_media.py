@@ -122,7 +122,7 @@ def init_chat_media_routes(app, logger):
             images = [
                 {"name": f, "url": f"/api/images/{f}"}
                 for f in os.listdir(IMAGES_DIR)
-                if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif"))
+                if f.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm", ".avi", ".mov"))
             ]
             images.sort(key=lambda x: os.path.getmtime(os.path.join(IMAGES_DIR, x["name"])), reverse=True)
             return jsonify(images)

@@ -116,7 +116,6 @@ _PANEL_MAP = {
     'contacts':        'modules/config_contacts.html',
     'mail':            'modules/config_mail.html',
     'templates':       'modules/config_templates.html',
-    'weather_pro':     'modules/config_weather_pro.html',
     'mcp':             'modules/config_mcp.html',
 
     'drive':           'modules/config_drive.html',
@@ -422,12 +421,7 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
 
             # DEBUG: Log the full AI block we receive
             ai_block  = incoming.get("ai", {})
-            cal_block = incoming.get("extensions", {}).get("calendar", {})
             logger.info(f"[CONFIG-DEBUG] Incoming payload - ai.active_personality: {ai_block.get('active_personality', '<<NOT PRESENT>>')}")
-            if cal_block:
-                logger.info(f"[CONFIG-DEBUG] Incoming calendar payload: {cal_block.get('calendar_locale')} / {cal_block.get('calendar_country')}")
-            else:
-                logger.info("[CONFIG-DEBUG] Incoming payload HAS NO CALENDAR EXTENSION BLOCK.")
 
             save_result = cfg_mgr.update_config(incoming)
             logger.info(f"[CONFIG-DEBUG] update_config returned: {save_result}")

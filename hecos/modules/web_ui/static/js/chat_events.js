@@ -178,6 +178,10 @@ window.initEvents = function() {
       if (window.reminderWidget && window.reminderWidget.refresh) {
         window.reminderWidget.refresh();
       }
+    } else if (ev.type === 'reminder_stop') {
+      console.log('[Reminder] SSE reminder_stop received:', ev);
+      const existing = document.getElementById('hecos-reminder-banner');
+      if (existing) existing.remove();
     } else if (ev.type === 'hpm:progress') {
       const payload = ev.data || ev;
       document.dispatchEvent(new CustomEvent('hpmProgressUpdate', { detail: payload }));

@@ -239,35 +239,120 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "IMAGE_GEN": {
-        "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
-        "commands": {},
-        "status": "ONLINE (ISOLATED)",
+    "CALENDAR": {
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+        "commands": {
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+        },
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "is_lazy": false,
-        "icon": "<i class=\"fas fa-image\"></i>",
+        "is_lazy": true,
+        "icon": "<i class=\"far fa-calendar-alt\"></i>",
         "category": "PLUGINS",
+        "module_type": "hpm",
         "slash_commands": [
             {
-                "id": "img",
+                "id": "calendar",
                 "manifest_version": "1",
                 "aliases": [
-                    "/img",
-                    "/image",
-                    "/photo",
-                    "/foto"
+                    "/calendar",
+                    "/calendario",
+                    "/appuntamenti"
                 ],
-                "description": "Genera un'immagine AI da una descrizione testuale",
-                "usage": "/img <descrizione>",
-                "example": "/img foto fotorealistica di un gatto su Marte",
-                "icon": "🖼️",
-                "method": "generate_image",
+                "description": "Elenca i prossimi eventi nel calendario",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "requires_args": false
+            }
+        ]
+    },
+    "MESSENGER": {
+        "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
+        "commands": {
+            "send_message": "Sends a text message to a contact or channel on the specified platform.",
+            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
+            "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
+            "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-paper-plane",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "msg",
+                "manifest_version": "1",
+                "aliases": [
+                    "/msg",
+                    "/send"
+                ],
+                "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
+                "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
+                "example": "/msg whatsapp:+393331234567 Ciao, questo è un test!",
+                "icon": "💬",
+                "method": "msg_command",
                 "requires_args": true
             }
-        ],
-        "module_type": "hpm_isolated"
+        ]
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "method": "set_reminder",
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Elenca tutti i promemoria attivi",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "requires_args": false
+            }
+        ]
     },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",

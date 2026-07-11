@@ -4,27 +4,44 @@ import psutil
 import time
 
 def get_hecos_processes():
-    """Finds all python processes related to Hecos."""
+    """Finds all python and piper processes."""
     hecos_procs = []
+    my_pid = os.getpid()
+    
     for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
         try:
-            cmdline = proc.info.get('cmdline')
-            if not cmdline: continue
-            
+            pid = proc.info['pid']
+            if pid == my_pid:
+                continue
+                
+            name = proc.info.get('name', '').lower()
+            cmdline = proc.info.get('cmdline') or []
             cmd_str = " ".join(cmdline).lower()
             
-            # Identify process type
             p_type = None
-            if "monitor.py" in cmd_str:
-                if "web_ui.server" in cmd_str or "hecos_web" in cmd_str:
+            
+            # Solo Python o Piper
+            if not ("python" in name or "piper" in name):
+                continue
+                
+            if "piper" in name:
+                p_type = "Piper TTS"
+            elif "monitor.py" in cmd_str:
+                if "web_ui" in cmd_str or "hecos_web" in cmd_str:
                     p_type = "Web Monitor"
                 else:
                     p_type = "Console Monitor"
-            elif "main.py" in cmd_str:
-                p_type = "Hecos (App)"
+            elif "hecos.app.main" in cmd_str or "main.py" in cmd_str:
+                p_type = "Hecos Core"
             elif "web_ui.server" in cmd_str:
-                p_type = "Web Server (App)"
-            
+                p_type = "Web Server"
+            elif "tray" in cmd_str:
+                p_type = "Hecos Tray"
+            elif "hecos_sdk.runner" in cmd_str:
+                p_type = "HPM Subprocess"
+            elif "python" in name:
+                p_type = "Python (Generic)"
+
             if p_type:
                 hecos_procs.append({
                     "pid": proc.info['pid'],
@@ -47,28 +64,34 @@ def main():
         input("\nPremi INVIO per uscire...")
         return
 
-    # Count duplicates
+    # Count duplicates based on exact command line
     counts = {}
     for p in procs:
-        counts[p['type']] = counts.get(p['type'], 0) + 1
+        counts[p['cmd']] = counts.get(p['cmd'], 0) + 1
     
     print(f"\nProcessi trovati ({len(procs)}):")
-    print(f"{'PID':<8} | {'Tipo':<20} | {'Comando'}")
-    print("-" * 60)
+    print(f"{'PID':<8} | {'Tipo':<18} | {'Comando'}")
+    print("-" * 80)
     
     has_duplicates = False
     for p in procs:
         warn = ""
-        if counts[p['type']] > 1:
+        if counts[p['cmd']] > 1:
             warn = " [!!! DUPLICATO !!!]"
             has_duplicates = True
-        print(f"{p['pid']:<8} | {p['type']:<20} | {p['cmd']}{warn}")
+        
+        # Truncate cmd for display if too long
+        display_cmd = p['cmd']
+        if len(display_cmd) > 60:
+            display_cmd = display_cmd[:57] + "..."
+            
+        print(f"{p['pid']:<8} | {p['type']:<18} | {display_cmd}{warn}")
 
     if has_duplicates:
-        print("\n" + "!"*60)
-        print(" ATTENZIONE: Sono state rilevate istanze duplicate!")
+        print("\n" + "!"*80)
+        print(" ATTENZIONE: Sono state rilevate istanze duplicate (stesso comando)!")
         print(" Questo potrebbe causare conflitti di memoria o dati vecchi.")
-        print("!"*60)
+        print("!"*80)
 
     print("\nCosa vuoi fare?")
     print("1) Chiudi TUTTI i processi Hecos")
@@ -88,11 +111,11 @@ def main():
     
     elif choice == '2':
         for p in procs:
-            if counts[p['type']] > 1:
+            if counts[p['cmd']] > 1:
                 try:
                     psutil.Process(p['pid']).terminate()
                     print(f"Terminato duplicato PID {p['pid']} ({p['type']})")
-                    counts[p['type']] -= 1 # Keep at least one
+                    counts[p['cmd']] -= 1 # Keep at least one
                 except: pass
     
     elif choice.isdigit():

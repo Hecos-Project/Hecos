@@ -19,12 +19,7 @@ overrides:
   
   # 🎨 IMAGE GENERATION: Prompt optimization and artistic style.
   # Note: Uses neutral language to avoid false-positive safety filter triggers.
-#   IMAGE_GEN: >
-#     Only generate images if explicitly requested. For real-world photos, suggest 
-#     using the camera. For creative or complex anatomical requests, adopt a 
-#     style like 'fine-art photography', 'classic anatomy', or 'cinematic lighting' 
-#     to ensure professional, high-quality aesthetic output.
-# 
+
   # 📸 WEBCAM / EYES: Correct target management (Smartphone vs PC).
   WEBCAM: >
     When the user mentions smartphone, mobile, or browser, always use target='client'. 

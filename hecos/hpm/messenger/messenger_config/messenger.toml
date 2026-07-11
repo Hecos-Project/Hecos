@@ -1,14 +1,14 @@
-[telegram]
+[messenger.telegram]
 enabled = false
 bot_token = ""
 default_chat_id = ""
 
-[whatsapp]
+[messenger.whatsapp]
 enabled = true
 phone_country_code = "+39"
-send_as_single_block = true
+send_as_single_block = false
 
-[discord]
+[messenger.discord]
 enabled = false
 webhook_url = ""
 default_channel = ""

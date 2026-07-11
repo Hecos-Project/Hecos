@@ -29,72 +29,225 @@ function _getChatGalleryIndex(url) {
   return idx >= 0 ? idx : 0;
 }
 
-// ── Open gallery (double-click) ───────────────────────────────────────────────
+// ── Self-contained Image Gallery ──────────────────────────────────────────────
+
+function _ensureGalleryModal() {
+  if (document.getElementById('hg-gallery-modal')) return;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    #hg-gallery-modal {
+      display:none; position:fixed; inset:0; z-index:99999;
+      background:rgba(0,0,0,0.92); flex-direction:column;
+      align-items:center; justify-content:center;
+      animation:hg-fadein 0.2s ease;
+    }
+    #hg-gallery-modal.open { display:flex; }
+    @keyframes hg-fadein { from{opacity:0} to{opacity:1} }
+
+    #hg-gallery-main {
+      position:relative; display:flex; align-items:center;
+      justify-content:center; width:100%; flex:1;
+    }
+    #hg-gallery-img {
+      max-width:90vw; max-height:75vh; border-radius:8px;
+      object-fit:contain; box-shadow:0 8px 48px #000a;
+      transition:opacity .15s ease;
+    }
+    #hg-gallery-prev, #hg-gallery-next {
+      position:absolute; top:50%; transform:translateY(-50%);
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+      color:#fff; font-size:22px; padding:10px 16px; border-radius:10px;
+      cursor:pointer; transition:background .2s;
+      backdrop-filter:blur(4px); user-select:none;
+    }
+    #hg-gallery-prev:hover, #hg-gallery-next:hover { background:rgba(255,255,255,0.2); }
+    #hg-gallery-prev { left:16px; }
+    #hg-gallery-next { right:16px; }
+    #hg-gallery-close {
+      position:absolute; top:14px; right:18px;
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+      color:#fff; font-size:18px; padding:5px 12px; border-radius:8px;
+      cursor:pointer; z-index:1;
+    }
+    #hg-gallery-close:hover { background:rgba(255,80,80,0.3); }
+    #hg-gallery-counter {
+      position:absolute; top:14px; left:50%; transform:translateX(-50%);
+      color:rgba(255,255,255,0.7); font-size:13px; font-weight:500;
+      background:rgba(0,0,0,0.4); padding:4px 12px; border-radius:20px;
+    }
+    #hg-gallery-name {
+      color:rgba(255,255,255,0.6); font-size:12px; margin-top:10px;
+      max-width:80vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    #hg-gallery-filmstrip {
+      display:flex; gap:8px; padding:10px 16px; overflow-x:auto;
+      max-width:90vw; margin-top:4px;
+    }
+    .hg-strip-thumb {
+      width:56px; height:56px; border-radius:6px; object-fit:cover;
+      cursor:pointer; opacity:0.5; border:2px solid transparent;
+      transition:opacity .15s, border-color .15s; flex-shrink:0;
+    }
+    .hg-strip-thumb.active { opacity:1; border-color:#fff; }
+    .hg-strip-thumb:hover { opacity:0.85; }
+    #hg-gallery-actions {
+      display:flex; gap:10px; margin-top:8px; margin-bottom:10px;
+    }
+    .hg-act-btn {
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+      color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer;
+      font-size:12px; transition:background .2s;
+    }
+    .hg-act-btn:hover { background:rgba(255,255,255,0.2); }
+  `;
+  document.head.appendChild(style);
+
+  const modal = document.createElement('div');
+  modal.id = 'hg-gallery-modal';
+  modal.innerHTML = `
+    <div id="hg-gallery-main">
+      <button id="hg-gallery-close">✕</button>
+      <div id="hg-gallery-counter"></div>
+      <button id="hg-gallery-prev">‹</button>
+      <img id="hg-gallery-img" src="" alt="">
+      <video id="hg-gallery-vid" src="" controls autoplay style="display:none; max-width:90vw; max-height:75vh; border-radius:8px; box-shadow:0 8px 48px #000a; outline:none;"></video>
+      <button id="hg-gallery-next">›</button>
+    </div>
+    <div id="hg-gallery-name"></div>
+    <div id="hg-gallery-actions">
+      <button class="hg-act-btn" id="hg-act-download">⬇ Scarica</button>
+      <button class="hg-act-btn" id="hg-act-folder">📁 Apri cartella</button>
+    </div>
+    <div id="hg-gallery-filmstrip"></div>
+  `;
+  document.body.appendChild(modal);
+
+  // Wire up controls
+  let _items = [], _idx = 0;
+
+  function _show(index) {
+    if (!_items.length) return;
+    _idx = (index + _items.length) % _items.length;
+    const item = _items[_idx];
+    const img = document.getElementById('hg-gallery-img');
+    const vid = document.getElementById('hg-gallery-vid');
+    
+    // Check if it's a video
+    const isVideo = item.url.match(/\.(mp4|webm|avi|mov)$/i);
+    
+    if (isVideo) {
+      img.style.display = 'none';
+      img.src = '';
+      vid.style.display = 'block';
+      vid.src = item.url;
+      vid.play().catch(() => {});
+    } else {
+      vid.style.display = 'none';
+      vid.pause();
+      vid.src = '';
+      img.style.display = 'block';
+      img.style.opacity = '0';
+      img.src = item.url;
+      img.onload = () => { img.style.opacity = '1'; };
+    }
+    
+    document.getElementById('hg-gallery-name').textContent = item.name || '';
+    document.getElementById('hg-gallery-counter').textContent = `${_idx + 1} / ${_items.length}`;
+    document.querySelectorAll('.hg-strip-thumb').forEach((t, i) => {
+      t.classList.toggle('active', i === _idx);
+      if (i === _idx) t.scrollIntoView({ behavior:'smooth', inline:'nearest', block:'nearest' });
+    });
+  }
+
+  window._hg_gallery_show = _show;
+  window._hg_gallery_open = function(items, startIdx) {
+    _items = items;
+    const strip = document.getElementById('hg-gallery-filmstrip');
+    strip.innerHTML = '';
+    items.forEach((item, i) => {
+      const th = document.createElement('img');
+      th.src = item.url;
+      th.className = 'hg-strip-thumb';
+      th.onclick = () => _show(i);
+      strip.appendChild(th);
+    });
+    _show(startIdx || 0);
+    modal.classList.add('open');
+  };
+
+  document.getElementById('hg-gallery-close').onclick = () => {
+    modal.classList.remove('open');
+    document.getElementById('hg-gallery-vid').pause();
+  };
+  document.getElementById('hg-gallery-prev').onclick  = () => _show(_idx - 1);
+  document.getElementById('hg-gallery-next').onclick  = () => _show(_idx + 1);
+  modal.addEventListener('click', e => { 
+    if (e.target === modal) {
+      modal.classList.remove('open');
+      document.getElementById('hg-gallery-vid').pause();
+    }
+  });
+
+  document.getElementById('hg-act-download').onclick = () => {
+    if (!_items[_idx]) return;
+    const a = document.createElement('a');
+    a.href = _items[_idx].url; a.download = _items[_idx].name || 'media';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+  document.getElementById('hg-act-folder').onclick = () => {
+    fetch('/api/open_media_folder', { method:'POST' }).catch(() => {});
+  };
+
+  document.addEventListener('keydown', e => {
+    if (!modal.classList.contains('open')) return;
+    if (e.key === 'ArrowLeft')  _show(_idx - 1);
+    if (e.key === 'ArrowRight') _show(_idx + 1);
+    if (e.key === 'Escape') {
+      modal.classList.remove('open');
+      document.getElementById('hg-gallery-vid').pause();
+    }
+  });
+}
+
+// ── Open gallery (button click / double-click on image) ────────────────────────
 window.openChatGallery = async function(url) {
+  _ensureGalleryModal();
+
   let items = [];
   try {
     const res = await fetch('/api/images');
     if (res.ok) {
       const images = await res.json();
-      items = images.map(img => ({
-        name: img.name,
-        type: 'image',
-        url: img.url
-      }));
-    } else {
-      items = _getChatGalleryItems();
+      if (Array.isArray(images) && images.length) {
+        items = images.map(img => ({ name: img.name, url: img.url }));
+      }
     }
   } catch (err) {
-    console.error("[Gallery] Failed to fetch full image list, falling back to chat images.", err);
+    console.warn('[Gallery] /api/images failed, falling back to chat images.', err);
+  }
+
+  if (!items.length) {
     items = _getChatGalleryItems();
   }
 
+  if (!items.length) {
+    if (window.showToast) window.showToast('📭 Nessuna immagine trovata.', 'info');
+    return;
+  }
+
   let idx = 0;
-  if (url && items.length > 0) {
-    let rawPath = url.split("?")[0];
-    let decodedName = rawPath.split("/").pop();
-    idx = items.findIndex(item => item.url.endsWith(decodedName) || item.name === decodedName || item.url === url);
-    if (idx < 0) idx = 0;
-  } else if (items.length === 0) {
-    console.warn("[Gallery] No images to show.");
-    return;
+  if (url) {
+    const rawName = url.split('?')[0].split('/').pop();
+    const found = items.findIndex(item =>
+      item.url === url ||
+      item.url.endsWith(rawName) ||
+      item.name === rawName
+    );
+    if (found >= 0) idx = found;
   }
 
-  if (typeof window.HecosMediaPlayer === 'undefined') {
-    // Lazy load the media player script and CSS if not already present
-    if (!document.getElementById('hmp-css')) {
-      const link = document.createElement('link');
-      link.id   = 'hmp-css';
-      link.rel  = 'stylesheet';
-      link.href = '/media_player_static/css/media_player.css';
-      document.head.appendChild(link);
-    }
-
-    const scripts = [
-      '/media_player_static/js/player_image.js',
-      '/media_player_static/js/player_video.js',
-      '/media_player_static/js/player_audio.js',
-      '/media_player_static/js/player_filmstrip.js',
-      '/media_player_static/js/media_player.js',
-    ];
-
-    // Load scripts sequentially then open
-    scripts.reduce((promise, src) => promise.then(() => new Promise((resolve) => {
-      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = resolve;
-      s.onerror = resolve; // fail silently, open anyway
-      document.head.appendChild(s);
-    })), Promise.resolve()).then(() => {
-      if (typeof window.HecosMediaPlayer !== 'undefined') {
-        window.HecosMediaPlayer.open(items, idx);
-      }
-    });
-    return;
-  }
-
-  window.HecosMediaPlayer.open(items, idx);
+  window._hg_gallery_open(items, idx);
 };
 
 // ── Open media folder directly ───────────────────────────────────────────────

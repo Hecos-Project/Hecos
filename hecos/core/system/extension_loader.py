@@ -28,6 +28,9 @@ def discover_extensions(plugin_tag: str, plugin_dir: str):
         return
 
     for ext_name in os.listdir(ext_root):
+        if ext_name.startswith(".") or ext_name.endswith((".bak", ".old", ".disabled")):
+            continue
+            
         ext_dir = os.path.join(ext_root, ext_name)
         if not os.path.isdir(ext_dir):
             continue

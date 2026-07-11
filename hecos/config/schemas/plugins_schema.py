@@ -30,11 +30,6 @@ class PluginHelp(BaseModel):
 
 
 
-class PluginMediaPlayer(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-
-
 class PluginSystem(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
@@ -195,7 +190,6 @@ class PluginsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
-    MEDIA_PLAYER: PluginMediaPlayer = Field(default_factory=PluginMediaPlayer)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)

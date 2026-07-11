@@ -1,18 +1,4 @@
-extensions:
-  calendar:
-    bg_color: ''
-    bg_image: ''
-    calendar_country: US
-    calendar_locale: en-US
-    calendar_sync_urls: []
-    day_colors:
-    - ''
-    - ''
-    - ''
-    - ''
-    - ''
-    - ''
-    - ''
+extensions: {}
 plugins:
   AUTOMATION:
     allow_window_control: true
@@ -111,13 +97,6 @@ plugins:
   REMINDER:
     enabled: true
     lazy_load: false
-    max_reminders: 50
-    reminder_mode: voice
-    reminder_snooze_ui: false
-    ringtone_path: Default_System_Alert.mp3
-    snooze_default_minutes: 15
-    time_format: 24h
-  
   SYSTEM:
     enable_config_set: true
     enabled: true

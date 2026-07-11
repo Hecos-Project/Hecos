@@ -1,0 +1,174 @@
+<!-- MESSENGER CONFIG PANEL -->
+<div id="tab-messenger" class="panel">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2><i class="fas fa-paper-plane" style="color:var(--accent); margin-right:10px;"></i> Configurazione Messenger</h2>
+        <button class="hc-cta-btn" onclick="saveMessengerConfig()">
+            <i class="fas fa-save"></i> Salva
+        </button>
+    </div>
+
+    <!-- ── Info Templates ────────────────────────────────────────────────── -->
+    <div class="card" style="border-left: 4px solid var(--accent); background: rgba(var(--accent-rgb), 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-weight: 500; margin-bottom: 4px;"><i class="fas fa-file-alt" style="color:var(--accent); margin-right:6px;"></i> Gestione Template</div>
+            <p style="font-size: 12px; color: var(--muted); margin: 0;">
+                Crea messaggi predefiniti per WhatsApp, Telegram e Discord.<br>
+                Puoi impostare un template come <strong style="color:var(--text);">Default</strong> per formattare automaticamente le risposte di Hecos.
+            </p>
+        </div>
+        <button class="hc-cta-btn" onclick="hecos.switchTab('tab-templates'); if(typeof TemplateManager !== 'undefined') TemplateManager.init();">
+            <i class="fas fa-external-link-alt"></i> Apri Templates
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-telegram-plane"></i> Telegram (Raccomandato)</div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            Usa l'API ufficiale di Telegram per inviare messaggi in modo rapido e affidabile. Crea un bot tramite <a href="https://t.me/BotFather" target="_blank" style="color:var(--cyan);">@BotFather</a>.
+        </p>
+
+        <div class="field">
+            <label>Abilita Provider Telegram</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="telegram-enabled">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>Telegram Bot Token</label>
+            <input type="password" id="telegram-bot-token" placeholder="123456789:ABCDE..." autocomplete="off">
+            <small style="color:#666; font-size:11px;">Il token segreto rilasciato da @BotFather.</small>
+        </div>
+
+        <div class="field">
+            <label>Default Chat ID</label>
+            <input type="text" id="telegram-default-chat-id" placeholder="@mio_canale o 12345678" autocomplete="off">
+            <small style="color:#666; font-size:11px;">Usato come fallback se il comando non specifica il destinatario.</small>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-whatsapp"></i> WhatsApp <span class="p-tag" style="background: rgba(255,200,0,0.2); color: #ffcc00; font-size:9px; vertical-align:middle; margin-left:10px;">BETA</span></div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            Hecos supporta l'invio sia tramite l'App Desktop ufficiale che tramite WhatsApp Web.
+            <br><br>
+            <strong style="color:var(--text);">Opzione 1 (Consigliata):</strong> Installa l'App ufficiale di WhatsApp per Windows e fai l'accesso. Hecos rileverà l'app e invierà i messaggi molto più velocemente senza aprire nuove schede.
+            <br>
+            <strong style="color:var(--text);">Opzione 2:</strong> Se l'App non è installata, Hecos aprirà in automatico una scheda nel tuo browser su WhatsApp Web. Assicurati di aver già scansionato il QR code per mantenere la sessione attiva.
+        </p>
+
+        <div class="field">
+            <label>Abilita Provider WhatsApp</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-enabled">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>Prefisso Internazionale Default</label>
+            <input type="text" id="whatsapp-phone-country-code" placeholder="+39" autocomplete="off">
+            <small style="color:#666; font-size:11px;">Aggiunto in automatico ai numeri digitati senza prefisso (es. +39 per l'Italia).</small>
+        </div>
+
+        <div class="field">
+            <label>Invia in un unico blocco (Consigliato)</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-send-as-single-block">
+                <span class="slider"></span>
+            </label>
+            <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Invia i testi multiriga e i template in un unico messaggio (anziché dividere in più messaggi continui).</small>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-discord"></i> Discord</div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            Invia messaggi su un server Discord configurando un Incoming Webhook. Non richiede la creazione di un Web Bot.
+        </p>
+
+        <div class="field">
+            <label>Abilita Provider Discord</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="discord-enabled">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>Discord Webhook URL</label>
+            <input type="password" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+            <small style="color:#666; font-size:11px;">Copia l'URL dalle Impostazioni Server → Integrazioni → Webhooks.</small>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    async function loadMessengerConfig() {
+        try {
+            const res = await fetch("/hecos/api/plugins/messenger/config");
+            const data = await res.json();
+            if (data.ok && data.config) {
+                const cfg = data.config;
+                if (cfg.telegram) {
+                    document.getElementById("telegram-enabled").checked = cfg.telegram.enabled || false;
+                    document.getElementById("telegram-bot-token").value = cfg.telegram.bot_token || "";
+                    document.getElementById("telegram-default-chat-id").value = cfg.telegram.default_chat_id || "";
+                }
+                if (cfg.whatsapp) {
+                    document.getElementById("whatsapp-enabled").checked = cfg.whatsapp.enabled || false;
+                    document.getElementById("whatsapp-phone-country-code").value = cfg.whatsapp.phone_country_code || "+39";
+                    document.getElementById("whatsapp-send-as-single-block").checked = cfg.whatsapp.send_as_single_block !== false;
+                }
+                if (cfg.discord) {
+                    document.getElementById("discord-enabled").checked = cfg.discord.enabled || false;
+                    document.getElementById("discord-webhook-url").value = cfg.discord.webhook_url || "";
+                }
+            }
+        } catch (e) {
+            console.error("Errore caricamento config messenger", e);
+        }
+    }
+
+    async function saveMessengerConfig() {
+        const payload = {
+            telegram: {
+                enabled: document.getElementById("telegram-enabled").checked,
+                bot_token: document.getElementById("telegram-bot-token").value,
+                default_chat_id: document.getElementById("telegram-default-chat-id").value
+            },
+            whatsapp: {
+                enabled: document.getElementById("whatsapp-enabled").checked,
+                phone_country_code: document.getElementById("whatsapp-phone-country-code").value,
+                send_as_single_block: document.getElementById("whatsapp-send-as-single-block").checked
+            },
+            discord: {
+                enabled: document.getElementById("discord-enabled").checked,
+                webhook_url: document.getElementById("discord-webhook-url").value
+            }
+        };
+
+        try {
+            const res = await fetch("/hecos/api/plugins/messenger/config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.ok) {
+                hecos.showToast("Configurazione salvata con successo", "success");
+            } else {
+                hecos.showToast("Errore nel salvataggio: " + data.error, "error");
+            }
+        } catch (e) {
+            console.error("Errore salvataggio", e);
+            hecos.showToast("Errore di rete durante il salvataggio", "error");
+        }
+    }
+
+    // Load config on mount
+    loadMessengerConfig();
+</script>

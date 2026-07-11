@@ -135,7 +135,7 @@ class CommandExecutor:
             result["output"] = f"❌ Errore durante l'esecuzione di `{cmd['aliases'][0]}`: {e}"
 
         # ── Save to memory ────────────────────────────────────────────────────
-        if result["ok"] and result.get("save_to_memory", True):
+        if result["ok"] and result.get("save_to_memory", True) and page_context == "chat":
             try:
                 from hecos.memory import brain_interface
                 brain_interface.save_message(
