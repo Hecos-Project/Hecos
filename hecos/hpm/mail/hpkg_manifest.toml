@@ -1,0 +1,154 @@
+id = "mail"
+manifest_version = "1"
+name = "Mail"
+version = "1.0.0"
+author = "Hecos"
+license = "GPL-3.0"
+description = "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration."
+type = "plugin"
+pip_isolation = "shared"
+target_dir = "hpm"
+plugin_dir = "."
+hecos_min_version = "0.40.0"
+icon_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png"
+readme = "README.md"
+readme_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/mail_src/README.md"
+dependencies = [
+    "templates",
+]
+tag = "MAIL"
+lazy_load = true
+is_class_based = true
+api_routes_file = "web/routes.py"
+signature = "UydN2QJfjN7TmkK7VlbRBMPFomM0kgBBXucys4Zt5gzgpXe6UbsnQUa8+LZMKW/4PCrOh4CJ4zjvQPanuMqeCA=="
+
+[commands]
+sync_emails = "Synchronizes the mailbox by fetching new messages via IMAP."
+send_email = "Sends an email using the SMTP client. Supports HTML, text, and attachments."
+list_emails = "Lists emails from the inbox or a specified folder."
+get_email = "Retrieves a single email by ID with full body and attachments."
+
+[config_panel]
+tab_id = "mail"
+tab_label = "Mail"
+tab_icon = "fa-envelope"
+category = "CONNETTIVITÀ"
+template_file = "web/templates/config_mail.html"
+api_routes_file = "web/routes.py"
+config_api_get = "/api/mail/config"
+config_api_post = "/api/mail/config"
+
+[capabilities]
+llm_tools = [
+    "send_email",
+    "sync_emails",
+    "list_emails",
+    "get_email",
+]
+slash_commands = []
+has_widget = false
+has_config_panel = true
+has_api_routes = true
+has_system_calls = false
+syscall_notes = ""
+notes = "Stores messages in local SQLite DB at hecos/memory/mail.db. Credentials stored in mail.toml (never in git)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MAIL__send_email"
+description = "Sends an email to one or more recipients. Use when the user says 'send an email', 'manda una mail', 'scrivi a [name]', 'write to [email]'. Supports plain text and HTML body, CC, BCC."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "to",
+    "subject",
+    "body",
+]
+
+[tool_schema.function.parameters.properties.to]
+type = "string"
+description = "Recipient email address or comma-separated list of addresses."
+
+[tool_schema.function.parameters.properties.subject]
+type = "string"
+description = "Subject line of the email."
+
+[tool_schema.function.parameters.properties.body]
+type = "string"
+description = "Email body content. Can be plain text or HTML."
+
+[tool_schema.function.parameters.properties.cc]
+type = "string"
+description = "Optional: CC recipients (comma-separated email addresses)."
+
+[tool_schema.function.parameters.properties.bcc]
+type = "string"
+description = "Optional: BCC recipients (comma-separated email addresses)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MAIL__sync_emails"
+description = "Fetches and syncs new emails from the IMAP server. Use when the user says 'check my email', 'sync mail', 'controlla le email', 'nuove email?'."
+
+[tool_schema.function.parameters]
+type = "object"
+
+[tool_schema.function.parameters.properties.folder]
+type = "string"
+description = "Optional: IMAP folder to sync (default: INBOX)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MAIL__list_emails"
+description = "Lists emails from the inbox or specified folder. Use when the user asks 'show my emails', 'mostrami le email', 'lista messaggi', 'ultime email'."
+
+[tool_schema.function.parameters]
+type = "object"
+
+[tool_schema.function.parameters.properties.folder]
+type = "string"
+description = "Optional: IMAP folder name (default: INBOX)."
+
+[tool_schema.function.parameters.properties.limit]
+type = "integer"
+description = "Optional: max number of emails to return (default: 20)."
+
+[[tool_schema]]
+type = "function"
+
+[tool_schema.function]
+name = "MAIL__get_email"
+description = "Retrieves a single email by its ID. Use when the user asks to read or open a specific message."
+
+[tool_schema.function.parameters]
+type = "object"
+required = [
+    "email_id",
+]
+
+[tool_schema.function.parameters.properties.email_id]
+type = "string"
+description = "The unique ID of the email to retrieve."
+
+[file_hashes]
+"api.py" = "efe61d5032dd5c1bc85e8272e63b3fefddd7e8488038a20062c40bb40eb737f6"
+"credential_helper.py" = "47dec53da519a70e18377f49a0b00562012eb10494b0fa6726ef19e60a602042"
+"hooks.py" = "0d5aaf7a1fa86835a22dee2ca63f8a330bdc9b1dbab69bee04737b57768c0f7a"
+"imap_client.py" = "7542cd07f189e98fb6e6acb718faf6ef1ecbf9e757a8287bc535fcfaa731e687"
+"main.py" = "29af5c041a1ac820ff1b94b248d8a3e9ee02a97e6dc9262e25241f342ea2f521"
+"models.py" = "5bcba5f1a4bfde5333b1f002da538a71a08b3985679eef749208603e4900e416"
+"README.md" = "dfd66dd9876b8bb8fb13fe75edb477350f11199ed0e5c2b1666f2b0ee954b4ce"
+"smtp_client.py" = "fef5bfb7c740e08e0ef23fba6cd6229324288763921ab172f503c2d86a377037"
+"store.py" = "234ebd4c4c2dfd23a7b6d1bb5a3bba8c648ac11a943f8f95ae65a2f7d0836087"
+"mail_config/config_manager.py" = "ad75daf6f38cc1c0b0dc199a384a309a61fdcc5f803d6e3870d8c7b11575d300"
+"mail_config/defaults.toml" = "fbc3c41f82c1d2882133b680d9407a5c9dec12bddf4e1d164cf7c1ffc04a97fe"
+"mail_config/__init__.py" = "2fe4669d493e101f39f18fe3ce75c9ce6d0c9cd5be252d825efb8e44f82e18b1"
+"web/routes.py" = "b9605ff2f14b249d64a51717559d556655d77f95627c0eb6132fba913980fbbe"
+"web/templates/config_mail.html" = "a4dacc8b28c8cc93c84bec2d6781b995079b1142ba398f60caaa1eef97e467b2"

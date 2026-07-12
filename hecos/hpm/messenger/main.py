@@ -46,22 +46,35 @@ class MessengerTools:
         except ValueError as e:
             return f"❌ {e}"
 
-        # Try to apply default template wrapper if not skipped
+        # Check explicit template via config
+        explicit_template_id = ""
+        if plat == "whatsapp" and getattr(cfg.whatsapp, "use_template", False):
+            explicit_template_id = getattr(cfg.whatsapp, "template_id", "")
+
+        # Try to apply template wrapper if not skipped
         if not skip_default_template:
             try:
-                from hecos.plugins.templates.store import list_templates
-                for t in list_templates(channel=plat):
-                    if t.get("is_default"):
-                        h = t.get("header", "").strip()
-                        f = t.get("footer", "").strip()
-                        parts = []
-                        if h: parts.append(h)
-                        parts.append(text)
-                        if f: parts.append(f)
-                        text = "\n\n".join(parts)
-                        break
-            except Exception:
-                pass
+                from hecos.plugins.templates.store import list_templates, get_template
+                
+                template_to_apply = None
+                if explicit_template_id:
+                    template_to_apply = get_template(explicit_template_id)
+                else:
+                    for t in list_templates(channel=plat):
+                        if t.get("is_default"):
+                            template_to_apply = t
+                            break
+
+                if template_to_apply:
+                    h = template_to_apply.get("header", "").strip()
+                    f = template_to_apply.get("footer", "").strip()
+                    parts = []
+                    if h: parts.append(h)
+                    parts.append(text)
+                    if f: parts.append(f)
+                    text = "\n\n".join(parts)
+            except Exception as e:
+                logger.warning("MESSENGER", f"Error applying template: {e}")
 
         return dispatcher.dispatch_send(plat, recipient, text, cfg, is_app_open)
 

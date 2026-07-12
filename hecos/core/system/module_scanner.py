@@ -105,6 +105,16 @@ def update_capability_registry(config=None, debug_log=True):
             runner_file = os.path.join(plugins_dir, plugin_dir, "runner.py")
             venv_dir = os.path.join(plugins_dir, plugin_dir, "venv")
             module_abs_dir = os.path.join(plugins_dir, plugin_dir)
+            
+            # --- I18N LOCALES INJECTION ---
+            locales_dir = os.path.join(module_abs_dir, "locales")
+            if os.path.exists(locales_dir):
+                try:
+                    from hecos.core.i18n.translator import register_package_locales
+                    register_package_locales(locales_dir)
+                except Exception as e:
+                    logger.error(f"LOADER: Failed to register locales for {plugin_dir}: {e}")
+
             if not os.path.exists(main_file):
                 continue
 

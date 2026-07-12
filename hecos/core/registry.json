@@ -168,22 +168,24 @@
         "slash_commands": []
     },
     "MEMORY": {
-        "description": "Access to the Vault of memories and Admin profile (Identity and History).",
+        "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
         "commands": {
-            "rag_ingest_file": "Ingest a local file into the vector knowledge base.",
-            "rag_search": "Perform a semantic search in the long-term vector memory (RAG).",
-            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
             "read_history": "Extract the last N saved messages from the database history.",
             "remember_info": "Save important information about the user in the biographical profile.",
             "reset_memory": "Execute the Tabula Rasa protocol: clear the entire episodic chat history.",
-            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile)."
+            "who_am_i": "Ask Hecos to retrieve identity data for the Admin and the AI (context profile).",
+            "rag_search": "Perform a semantic search in the long-term vector memory (RAG knowledge base).",
+            "rag_store": "Store a piece of information permanently in the vector knowledge base.",
+            "rag_ingest_file": "Ingest a local file (.txt, .md, .pdf) into the vector knowledge base."
         },
-        "status": "ONLINE (Vault Access Granted)",
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
+        "is_lazy": true,
         "icon": "",
         "category": "PLUGINS",
+        "module_type": "core_module",
         "slash_commands": []
     },
     "MODELS": {
@@ -193,13 +195,55 @@
             "list_models": "Lists all available models for the currently selected backend.",
             "set_model": "Sets a new active AI model based on the numeric index obtained from list_models."
         },
-        "status": "ONLINE (Model management)",
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "core_module",
+        "slash_commands": []
+    },
+    "PERSONALITY": {
+        "description": "Manage and switch AI personalities (souls) dynamically.",
+        "commands": {
+            "list_souls": "Elenca tutte le personalità (souls) attualmente disponibili nel sistema.",
+            "switch_soul": "Cambia la personalità attiva. Accetta sia il nome esatto (es. \"Motoko\") sia l'indice numerico."
+        },
+        "status": "ONLINE",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS",
-        "slash_commands": []
+        "slash_commands": [
+            {
+                "id": "switch_soul",
+                "aliases": [
+                    "/soul",
+                    "/persona",
+                    "/personality"
+                ],
+                "description": "Cambia l'anima (personalità) attiva del sistema",
+                "usage": "/soul <nome_o_indice>",
+                "icon": "🧠",
+                "category": "SYSTEM",
+                "requires_args": true
+            },
+            {
+                "id": "list_souls",
+                "aliases": [
+                    "/souls",
+                    "/personas"
+                ],
+                "description": "Elenca le personalità disponibili",
+                "usage": "/souls",
+                "icon": "📋",
+                "category": "SYSTEM",
+                "requires_args": false
+            }
+        ]
     },
     "SYS_NET": {
         "description": "Strumenti di rete avanzati: IP, Ping, Stato Proxy, Mappatura LAN e VPN/DNS.",
@@ -239,39 +283,23 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "CALENDAR": {
-        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+    "MAIL": {
+        "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
         "commands": {
-            "add_event": "Adds an event to the calendar.",
-            "list_events": "Lists upcoming calendar events.",
-            "delete_event": "Deletes a calendar event by ID.",
-            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+            "sync_emails": "Synchronizes the mailbox by fetching new messages via IMAP.",
+            "send_email": "Sends an email using the SMTP client. Supports HTML, text, and attachments.",
+            "list_emails": "Lists emails from the inbox or a specified folder.",
+            "get_email": "Retrieves a single email by ID with full body and attachments."
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true,
-        "icon": "<i class=\"far fa-calendar-alt\"></i>",
+        "icon": "fa-envelope",
         "category": "PLUGINS",
         "module_type": "hpm",
-        "slash_commands": [
-            {
-                "id": "calendar",
-                "manifest_version": "1",
-                "aliases": [
-                    "/calendar",
-                    "/calendario",
-                    "/appuntamenti"
-                ],
-                "description": "Elenca i prossimi eventi nel calendario",
-                "usage": "/calendar",
-                "example": "/calendar",
-                "icon": "📅",
-                "method": "list_events",
-                "requires_args": false
-            }
-        ]
+        "slash_commands": []
     },
     "MESSENGER": {
         "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
@@ -306,53 +334,18 @@
             }
         ]
     },
-    "REMINDER": {
-        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
-        "commands": {
-            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
-            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
-            "cancel_reminder": "Cancels an active reminder by ID.",
-            "snooze_reminder": "Postpones a reminder by N minutes from now."
-        },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+        "commands": {},
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true,
-        "icon": "fa-clock",
+        "icon": "fa-file-alt",
         "category": "PLUGINS",
         "module_type": "hpm",
-        "slash_commands": [
-            {
-                "id": "reminder",
-                "manifest_version": "1",
-                "aliases": [
-                    "/reminder",
-                    "/ricorda",
-                    "/promemoria"
-                ],
-                "description": "Imposta un nuovo promemoria",
-                "usage": "/reminder <titolo> alle <ora>",
-                "example": "/reminder chiamata Marco alle 15:30",
-                "icon": "⏱",
-                "method": "set_reminder",
-                "requires_args": true
-            },
-            {
-                "id": "reminders",
-                "manifest_version": "1",
-                "aliases": [
-                    "/reminders",
-                    "/promemoria list"
-                ],
-                "description": "Elenca tutti i promemoria attivi",
-                "usage": "/reminders",
-                "example": "/reminders",
-                "icon": "📋",
-                "method": "list_reminders",
-                "requires_args": false
-            }
-        ]
+        "slash_commands": []
     },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
@@ -385,30 +378,6 @@
         "is_class_based": false,
         "is_lazy": true,
         "icon": "",
-        "category": "PLUGINS",
-        "module_type": "plugin",
-        "slash_commands": []
-    },
-    "MAIL": {
-        "description": "Full-featured Email plugin for Hecos. Send, receive, search and manage emails via SMTP/IMAP. Integrates with the Contacts plugin for address lookup. Reads credentials from the user profile.",
-        "commands": {
-            "send_email": "Sends an email to one or more recipients.",
-            "read_inbox": "Reads messages from a mail folder (inbox, sent, drafts, trash).",
-            "search_emails": "Searches emails by keyword, sender or subject.",
-            "reply_email": "Replies to an email message.",
-            "forward_email": "Forwards an email to other recipients.",
-            "delete_email": "Deletes or trashes an email.",
-            "move_email": "Moves an email to another folder.",
-            "save_draft": "Saves a message as draft.",
-            "sync_inbox": "Forces a sync/refresh of the inbox.",
-            "get_email_addresses_for_contact": "Returns email addresses of a contact from the address book."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "📧",
         "category": "PLUGINS",
         "module_type": "plugin",
         "slash_commands": []

@@ -165,16 +165,14 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
 
     # Mail Plugin Route Integration
     try:
-        from hecos.plugins.mail.api import register_routes as init_mail_api
-        init_mail_api(app)
-        logger.info("[WebUI] Hecos Mail plugin API loaded.")
-    except Exception as _ml_e:
-        logger.warning(f"[WebUI] Mail plugin API could not load: {_ml_e}")
+        # Mail API registration removed (handled by HPM loader)
+        logger.info("[WebUI] Hecos Mail plugin API removed from core.")
+    except Exception as _mail_e:
+        logger.warning(f"[WebUI] Mail plugin error: {_mail_e}")
 
     # Templates Plugin Route Integration
     try:
-        from hecos.plugins.templates.api import register_routes as init_templates_api
-        init_templates_api(app)
+        # Templates API registration removed (handled by HPM loader)
         logger.info("[WebUI] Hecos Templates plugin API loaded.")
     except Exception as _tpl_e:
         logger.warning(f"[WebUI] Templates plugin API could not load: {_tpl_e}")

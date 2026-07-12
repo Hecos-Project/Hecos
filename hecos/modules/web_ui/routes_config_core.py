@@ -114,8 +114,6 @@ _PANEL_MAP = {
     'payload':         'modules/config_payload.html',
     'plugins':         'modules/config_plugins.html',
     'contacts':        'modules/config_contacts.html',
-    'mail':            'modules/config_mail.html',
-    'templates':       'modules/config_templates.html',
     'mcp':             'modules/config_mcp.html',
 
     'drive':           'modules/config_drive.html',

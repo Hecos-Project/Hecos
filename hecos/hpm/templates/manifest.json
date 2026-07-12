@@ -1,0 +1,53 @@
+{
+    "tag": "TEMPLATES",
+    "name": "Templates",
+    "version": "1.0.2",
+    "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+    "lazy_load": true,
+    "is_class_based": true,
+    "commands": {},
+    "tool_schema": [
+        {
+            "type": "function",
+            "function": {
+                "name": "TEMPLATES__list_templates",
+                "description": "List all available templates. Channel is optional (e.g. 'whatsapp', 'email', 'telegram', 'discord').",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "channel": {
+                            "type": "string",
+                            "description": "Optional channel filter."
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "TEMPLATES__render_template",
+                "description": "Render a template by replacing its variables and combining header/body/footer. Use this before sending a message if you want to use a specific template.",
+                "parameters": {
+                    "type": "object",
+                    "required": [
+                        "template_id_or_name",
+                        "variables"
+                    ],
+                    "properties": {
+                        "template_id_or_name": {
+                            "type": "string",
+                            "description": "The ID or the exact Name of the template."
+                        },
+                        "variables": {
+                            "type": "string",
+                            "description": "A JSON string containing the variables to inject (e.g. '{\"nome\": \"Mario\"}')."
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "slash_commands": [],
+    "icon": "fa-file-alt"
+}

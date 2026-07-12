@@ -1,0 +1,25 @@
+<!-- ORCHESTRATOR: Mail Module View -->
+<div id="tab-mail" class="panel config-mail">
+    
+    <!-- Main mail 3-column grid (folder sidebar + message list + preview) -->
+    {% include 'modules/mail/_mail_grid.html' %}
+    
+    <!-- Compose / Reply / Forward slide-in modal -->
+    {% include 'modules/mail/_mail_compose.html' %}
+    
+    <!-- Account & Server config panel (shown when user clicks ⚙️) -->
+    <div id="mail-config-panel" style="display:none; padding: 1.5rem;">
+        {% include 'modules/mail/_mail_config.html' %}
+    </div>
+
+</div>
+
+{% include 'modules/mail/_mail_styles.html' %}
+{% include 'modules/mail/_mail_logic.html' %}
+
+<script>
+// Auto-initialize when the panel is first displayed (lazy load)
+if (typeof initMailPanel === 'function') {
+    initMailPanel();
+}
+</script>

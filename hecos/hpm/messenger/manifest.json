@@ -1,7 +1,7 @@
 {
     "tag": "MESSENGER",
     "name": "Messenger",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
     "lazy_load": true,
     "is_class_based": true,

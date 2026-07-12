@@ -14,6 +14,7 @@ function renderPlugins(plugins) {
   let coreCount = 0, pluginCount = 0, extensionCount = 0;
   hub.modules.forEach(m => {
     if (!m.pluginTag || m.id === 'plugins') return;
+    if (m.isHpm) return; // HPM packages are not shown in this native list
     if (m.isExtension) extensionCount++;
     else if (m.isCore) coreCount++;
     else pluginCount++;

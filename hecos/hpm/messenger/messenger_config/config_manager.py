@@ -21,6 +21,8 @@ class WhatsAppConfig(BaseModel):
     enabled: bool = False
     phone_country_code: str = "+39"
     send_as_single_block: bool = True
+    use_template: bool = False
+    template_id: str = ""
 
 
 class DiscordConfig(BaseModel):

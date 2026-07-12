@@ -24,14 +24,24 @@ class Translator:
         self._initialized = True
 
     def _load_translations(self):
-        """Loads JSON files for the selected language and the base one from their respective directories."""
+        """Loads JSON files for the selected language and the base one from their respective directories.
+        
+        Only loads core Hecos translations (commands, core, lists, webui/).
+        Module-specific translations are loaded via register_package_locales()
+        when each HPM package boots.
+        """
         self.base_translations = {}
         self.translations = {}
         
+        # Subdirectories that belong to HPM packages — skip them here.
+        _PACKAGE_DIRS = {"extensions", "plugins"}
+
         # Load base (en)
         en_dir = os.path.join(self.locales_path, "en")
         if os.path.exists(en_dir) and os.path.isdir(en_dir):
-            for root, _, files in os.walk(en_dir):
+            for root, dirs, files in os.walk(en_dir):
+                # Prune package-owned subdirs so os.walk never descends into them
+                dirs[:] = [d for d in dirs if d not in _PACKAGE_DIRS]
                 for file in files:
                     if file.endswith(".json"):
                         try:
@@ -43,7 +53,8 @@ class Translator:
         # Load current language
         lang_dir = os.path.join(self.locales_path, self.language)
         if os.path.exists(lang_dir) and os.path.isdir(lang_dir):
-            for root, _, files in os.walk(lang_dir):
+            for root, dirs, files in os.walk(lang_dir):
+                dirs[:] = [d for d in dirs if d not in _PACKAGE_DIRS]
                 for file in files:
                     if file.endswith(".json"):
                         try:
@@ -55,6 +66,53 @@ class Translator:
             if self.language != 'en':
                 logger.warning("I18N", f"Language directory '{self.language}' not found; using fallback 'en'.")
             self.translations = self.base_translations.copy()
+
+    def register_package_locales(self, locales_dir: str):
+        """Merges translations from an HPM package's locales/ directory into the
+        global translation dictionaries. Called by the HPM loader when a package boots.
+
+        Expected structure inside locales_dir:
+            en.json   — English (base fallback)
+            it.json   — Italian (optional)
+            es.json   — Spanish (optional)
+            <lang>.json for any other supported language
+
+        Args:
+            locales_dir: Absolute path to the package's locales/ folder.
+        """
+        if not os.path.isdir(locales_dir):
+            return
+
+        # Always merge EN into base_translations (fallback)
+        en_path = os.path.join(locales_dir, "en.json")
+        if os.path.exists(en_path):
+            try:
+                with open(en_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.base_translations.update(data)
+                    # If current lang is EN, also update translations
+                    if self.language == 'en':
+                        self.translations.update(data)
+            except Exception as e:
+                logger.error(f"I18N: Error loading package locale en.json from {locales_dir}: {e}")
+
+        # Merge current language (skip if already handled above)
+        if self.language != 'en':
+            lang_path = os.path.join(locales_dir, f"{self.language}.json")
+            if os.path.exists(lang_path):
+                try:
+                    with open(lang_path, 'r', encoding='utf-8') as f:
+                        self.translations.update(json.load(f))
+                except Exception as e:
+                    logger.error(f"I18N: Error loading package locale {self.language}.json from {locales_dir}: {e}")
+            else:
+                # Fallback: use EN keys already loaded above
+                if os.path.exists(en_path):
+                    try:
+                        with open(en_path, 'r', encoding='utf-8') as f:
+                            self.translations.update(json.load(f))
+                    except Exception:
+                        pass
 
     def set_language(self, language):
         """Changes the language at runtime."""
@@ -98,3 +156,13 @@ def get_translator():
 def t(key, **kwargs):
     """Shorthand for translating."""
     return get_translator().t(key, **kwargs)
+
+def register_package_locales(locales_dir: str):
+    """Module-level helper: registers an HPM package's locales/ folder with the
+    global Translator instance. Call this from the HPM loader or from the package's
+    own __init__.py / main.py after the package boots.
+
+    Args:
+        locales_dir: Absolute path to the package's locales/ directory.
+    """
+    get_translator().register_package_locales(locales_dir)

@@ -68,6 +68,22 @@
         </div>
 
         <div class="field">
+            <label>Usa template specifico</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-use-template" onchange="document.getElementById('whatsapp-template-container').style.display = this.checked ? 'block' : 'none'">
+                <span class="slider"></span>
+            </label>
+            <small style="color:#666; font-size:11px; display:block; margin-top:4px;">Forza l'uso di un template specifico ignorando quello di Default.</small>
+        </div>
+
+        <div class="field" id="whatsapp-template-container" style="display:none; margin-left:15px; padding-left:15px; border-left:2px solid var(--accent);">
+            <label>Seleziona Template</label>
+            <select id="whatsapp-template-id" class="config-input">
+                <option value="">Caricamento templates...</option>
+            </select>
+        </div>
+
+        <div class="field">
             <label>Prefisso Internazionale Default</label>
             <input type="text" id="whatsapp-phone-country-code" placeholder="+39" autocomplete="off">
             <small style="color:#666; font-size:11px;">Aggiunto in automatico ai numeri digitati senza prefisso (es. +39 per l'Italia).</small>
@@ -122,6 +138,32 @@
                     document.getElementById("whatsapp-enabled").checked = cfg.whatsapp.enabled || false;
                     document.getElementById("whatsapp-phone-country-code").value = cfg.whatsapp.phone_country_code || "+39";
                     document.getElementById("whatsapp-send-as-single-block").checked = cfg.whatsapp.send_as_single_block !== false;
+                    
+                    const useTemplateCb = document.getElementById("whatsapp-use-template");
+                    useTemplateCb.checked = cfg.whatsapp.use_template || false;
+                    useTemplateCb.dispatchEvent(new Event('change'));
+                    
+                    // Fetch and populate templates
+                    try {
+                        const tplRes = await fetch("/hecos/api/plugins/templates?channel=whatsapp");
+                        const tplData = await tplRes.json();
+                        const sel = document.getElementById("whatsapp-template-id");
+                        if (tplData.ok && tplData.templates) {
+                            sel.innerHTML = '<option value="">-- Nessun template --</option>';
+                            for (let t of tplData.templates) {
+                                let opt = document.createElement("option");
+                                opt.value = t.id;
+                                opt.textContent = t.name + (t.is_default ? " (Default)" : "");
+                                if (cfg.whatsapp.template_id === t.id) opt.selected = true;
+                                sel.appendChild(opt);
+                            }
+                        } else {
+                            sel.innerHTML = '<option value="">Impossibile caricare templates</option>';
+                        }
+                    } catch (e) {
+                        console.warn("Modulo templates non installato o API non raggiungibile", e);
+                        document.getElementById("whatsapp-template-id").innerHTML = '<option value="">Modulo templates non installato</option>';
+                    }
                 }
                 if (cfg.discord) {
                     document.getElementById("discord-enabled").checked = cfg.discord.enabled || false;
@@ -143,7 +185,9 @@
             whatsapp: {
                 enabled: document.getElementById("whatsapp-enabled").checked,
                 phone_country_code: document.getElementById("whatsapp-phone-country-code").value,
-                send_as_single_block: document.getElementById("whatsapp-send-as-single-block").checked
+                send_as_single_block: document.getElementById("whatsapp-send-as-single-block").checked,
+                use_template: document.getElementById("whatsapp-use-template").checked,
+                template_id: document.getElementById("whatsapp-template-id").value
             },
             discord: {
                 enabled: document.getElementById("discord-enabled").checked,

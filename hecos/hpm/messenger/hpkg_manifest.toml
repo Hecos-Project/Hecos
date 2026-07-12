@@ -1,7 +1,7 @@
 id = "messenger"
 manifest_version = "1"
 name = "Messenger"
-version = "1.0.1"
+version = "1.0.2"
 author = "Antonio Meloni"
 license = "GPL-3.0"
 description = "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n"
@@ -13,15 +13,15 @@ hecos_min_version = "0.40.0"
 icon_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview_square.png"
 readme = "README.md"
 readme_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/messenger_src/README.md"
-dependencies = []
-optional_dependencies = [
+dependencies = [
     "templates",
 ]
+optional_dependencies = []
 tag = "MESSENGER"
 lazy_load = true
 is_class_based = true
 api_routes_file = "web/routes.py"
-signature = "HDa6L7Tt5fcPLBwXif3k1xxLscHoYeHvQxf3SORUZQoGQXV5HjazMGu7C1l+69v0uGiBTKLFrc3kBfhudH+7Dw=="
+signature = "fp5tIfBrUI1tBVmoC++XU3DD/7g3FoOrmfIzm31gxlofdeumDTbNNMVtkCL/CJTx48t1rfGNlDyUCeP+tTzRAA=="
 
 [commands]
 send_message = "Sends a text message to a contact or channel on the specified platform."
@@ -151,16 +151,20 @@ type = "object"
 
 [file_hashes]
 "dispatcher.py" = "171a23dbec3ba14a2d870f7d15cb9431bd70852218b4560f8388e409fd98d701"
-"main.py" = "785d8addd055eee0c9ad358366d2fb3609f17faaaa046c197dc5f6358730fea8"
+"main.py" = "17d1c9d0c00c2b151a054ff19a9e81004bbad8cb9525e1a0440efe70e7f23abc"
 "manifest_runtime_patch.json" = "68efefeb5cf12bc0f31afa2ece8b6ef98fb0df70ba20ea73a703b80cd4a624dc"
+"preview.png" = "60d7e4d177c96c0d7febe004419a8860570b765c0105e76389047e0a425eaf8c"
 "README.md" = "9df5ca952eef78f1db690e799ae2f5c408d13609186156c43a5f2a9ff806067c"
 "adapters/discord.py" = "b194cb6b91faea8673fe58e4e10f4e918b721b33d1160bee11ffe63d4655c11f"
 "adapters/telegram.py" = "6b4a605a8e36df9822fbd6a855482ffe349ff6b3c8cf5a7314ade4226285c1b6"
 "adapters/whatsapp.py" = "81a1989f2c1bef62b799fb27f03280957d04c0013f694299af816447d9778966"
 "adapters/whatsapp_cdp_worker.py" = "3c51b01f97ccaec8afa82e1d7c2529faeb381df1ddf99a7c015222dd750cb169"
 "adapters/__init__.py" = "ed2c3a54e175773c07bccf662a40a031d6017ddbcf2b3d11859b12507152b12f"
-"messenger_config/config_manager.py" = "25b62e3907f055660346e97f78bc5f7d3512edf65c237e04e5b672c4fe7ef81c"
+"locales/en.json" = "377c442ba23cd3c128e437bd36b4435873ffc4dbe04ab4657131991f44094075"
+"locales/es.json" = "d80f2ed35d9eac534f2568d3d85565f2613664f9cb9a62dd166225a190c79827"
+"locales/it.json" = "059e8146dbf18948a83fbb8594ed12e454d4c40bf2fa342be036751bd94cc77f"
+"messenger_config/config_manager.py" = "6cd76a6a3f625a1947ad365285e642c22655175b6e9f74ed2f4ee6ff30d46ce1"
 "messenger_config/messenger.toml" = "648f4374d1e662460a135f9bd7a58da392bbf61b82a892c9e60025210574289c"
 "messenger_config/__init__.py" = "6bc3916cdcd1f082b3bd10e9feef7bf338023fdcf2335ff6fbf09c379988dde0"
 "web/routes.py" = "1acb6b98219e13745e619fb2da686c4268a7a52a0e39addbba8dfee4014ced3a"
-"web/templates/config_messenger.html" = "00f1256f6515bf0b6c3584ea96a4167aaa8e523380aaf97651d7a91638d5c060"
+"web/templates/config_messenger.html" = "c7cfe45b763cc3bcad2bf511ffd0f3cd51dbf31f7302f53e61039d2aaa54fd10"
