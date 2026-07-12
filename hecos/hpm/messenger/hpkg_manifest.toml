@@ -21,7 +21,7 @@ tag = "MESSENGER"
 lazy_load = true
 is_class_based = true
 api_routes_file = "web/routes.py"
-signature = "fp5tIfBrUI1tBVmoC++XU3DD/7g3FoOrmfIzm31gxlofdeumDTbNNMVtkCL/CJTx48t1rfGNlDyUCeP+tTzRAA=="
+signature = "B5fpxdtFyMqNPg60MIDz8xGNNibDR5WSQeZi3hdlJ4HQBgCEAFpFM6/Mwy0rJucOaZsL3lj9KJcFmMAXwtCOCQ=="
 
 [commands]
 send_message = "Sends a text message to a contact or channel on the specified platform."
@@ -153,7 +153,7 @@ type = "object"
 "dispatcher.py" = "171a23dbec3ba14a2d870f7d15cb9431bd70852218b4560f8388e409fd98d701"
 "main.py" = "17d1c9d0c00c2b151a054ff19a9e81004bbad8cb9525e1a0440efe70e7f23abc"
 "manifest_runtime_patch.json" = "68efefeb5cf12bc0f31afa2ece8b6ef98fb0df70ba20ea73a703b80cd4a624dc"
-"preview.png" = "60d7e4d177c96c0d7febe004419a8860570b765c0105e76389047e0a425eaf8c"
+"preview_1.png" = "60d7e4d177c96c0d7febe004419a8860570b765c0105e76389047e0a425eaf8c"
 "README.md" = "9df5ca952eef78f1db690e799ae2f5c408d13609186156c43a5f2a9ff806067c"
 "adapters/discord.py" = "b194cb6b91faea8673fe58e4e10f4e918b721b33d1160bee11ffe63d4655c11f"
 "adapters/telegram.py" = "6b4a605a8e36df9822fbd6a855482ffe349ff6b3c8cf5a7314ade4226285c1b6"
@@ -167,4 +167,4 @@ type = "object"
 "messenger_config/messenger.toml" = "648f4374d1e662460a135f9bd7a58da392bbf61b82a892c9e60025210574289c"
 "messenger_config/__init__.py" = "6bc3916cdcd1f082b3bd10e9feef7bf338023fdcf2335ff6fbf09c379988dde0"
 "web/routes.py" = "1acb6b98219e13745e619fb2da686c4268a7a52a0e39addbba8dfee4014ced3a"
-"web/templates/config_messenger.html" = "c7cfe45b763cc3bcad2bf511ffd0f3cd51dbf31f7302f53e61039d2aaa54fd10"
+"web/templates/config_messenger.html" = "1bed04ef76b58ad7ce419a56f70c06fd15418b1e312d95f79ab0faba18a714de"

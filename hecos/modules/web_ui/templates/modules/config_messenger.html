@@ -145,7 +145,7 @@
                     
                     // Fetch and populate templates
                     try {
-                        const tplRes = await fetch("/hecos/api/plugins/templates?channel=whatsapp");
+                        const tplRes = await fetch("/api/templates/?channel=whatsapp");
                         const tplData = await tplRes.json();
                         const sel = document.getElementById("whatsapp-template-id");
                         if (tplData.ok && tplData.templates) {

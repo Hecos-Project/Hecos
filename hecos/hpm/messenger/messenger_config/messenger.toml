@@ -6,7 +6,9 @@ default_chat_id = ""
 [messenger.whatsapp]
 enabled = true
 phone_country_code = "+39"
-send_as_single_block = false
+send_as_single_block = true
+use_template = false
+template_id = ""
 
 [messenger.discord]
 enabled = false

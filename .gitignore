@@ -325,17 +325,9 @@ workspace/flows/*
 # They are NOT part of the Hecos Core and MUST NOT be pushed to the core repo.
 # Build and release them separately from the Hecos-Packages repository.
 
-# Core Plugins (HPM)
-hecos/hpm/calendar/
-hecos/hpm/image_gen/
-hecos/hpm/lists/
-hecos/hpm/map/
-hecos/hpm/media_player/
-hecos/plugins/media_player/
-hecos/hpm/quick_links/
-hecos/hpm/reminder/
-hecos/hpm/weather_pro/
-hecos/hpm/webcam/
+# Core Plugins (HPM) - Block entire directory to prevent ANY package from being tracked
+hecos/hpm/*
+!hecos/hpm/.gitkeep
 
 # WebUI Extensions belonging to HPM packages
 hecos/modules/web_ui/extensions/calendar/
