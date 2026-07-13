@@ -263,6 +263,53 @@ window.hpmRemoveTab = function(pkg_id) {
   document.querySelectorAll(`.hpm-injected[data-panel="${pkg_id}"]`).forEach(el => el.remove());
 };
 
+window.hpmShowDocs = async function(pkg_id, pkg_name) {
+  try {
+    const res = await fetch(`/api/packages/${pkg_id}/readme`);
+    const data = await res.json();
+    if (!data.ok) {
+      if (window.showToast) window.showToast('Error: ' + data.error, 'error');
+      else alert('Error: ' + data.error);
+      return;
+    }
+    
+    let htmlContent = data.content;
+    try {
+      if (typeof marked !== 'undefined') {
+        htmlContent = marked.parse(data.content);
+      } else if (window.marked && typeof window.marked.parse === 'function') {
+        htmlContent = window.marked.parse(data.content);
+      } else {
+        htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
+      }
+    } catch(e) {
+      htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
+    }
+
+    let html = `
+      <div style="text-align:left; font-size:14px; line-height:1.6; max-height: 70vh; overflow-y: auto; padding-right: 10px;" class="markdown-body">
+        ${htmlContent}
+      </div>
+    `;
+
+    const modal = document.getElementById('hpm-info-modal');
+    const textEl = document.getElementById('hpm-info-modal-text');
+    const titleEl = document.getElementById('hpm-info-modal-title');
+    if (modal && textEl) {
+      if (titleEl) titleEl.innerHTML = `<i class="fas fa-book" style="color:#10b981; margin-right:8px;"></i>Documentation: ${pkg_name}`;
+      textEl.innerHTML = html;
+      modal.style.display = 'flex';
+    } else {
+      console.log(data.content);
+      alert("Manual loaded in console (modal not found)");
+    }
+  } catch (err) {
+    console.error(err);
+    if (window.showToast) window.showToast('Network error while fetching documentation.', 'error');
+  }
+};
+
+
 window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
   try {
     const res = await fetch(`/api/packages/${pkg_id}/capabilities`);

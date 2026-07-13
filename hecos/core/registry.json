@@ -1,36 +1,4 @@
 {
-    "AUTOMATION": {
-        "description": "Full PC control: mouse, keyboard, and window management. Use with WEBCAM.desktop_screenshot for a see-and-act loop.",
-        "commands": {
-            "get_screen_size": "Returns the screen resolution (width x height).",
-            "get_mouse_position": "Returns current cursor coordinates.",
-            "click_text": "Find text on screen using OCR and click it.",
-            "move_to": "Move cursor to (x, y).",
-            "click": "Click at (x, y) — left/right/middle, single/double.",
-            "scroll": "Scroll wheel at (x, y) — positive=up, negative=down.",
-            "drag": "Click-and-drag from one position to another.",
-            "type_text": "Simulate keyboard typing of a text string.",
-            "press_key": "Press and release a single key (enter, esc, f5...).",
-            "hotkey": "Execute a keyboard shortcut (ctrl+c, ctrl+shift+esc...).",
-            "type_and_enter": "Type text and press Enter.",
-            "list_windows": "List all visible window titles.",
-            "focus_window": "Bring a window to foreground by title.",
-            "minimize_window": "Minimize a window by title.",
-            "maximize_window": "Maximize a window by title.",
-            "get_browser_tabs": "List all open browser tabs via Windows Accessibility API. Use before focus_browser_tab.",
-            "focus_browser_tab": "Click a browser tab by title fragment (no coordinates needed).",
-            "read_window_controls": "Read the UI control tree of any application window."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something, FIRST call WEBCAM__desktop_screenshot to perceive the screen. THEN, instead of guessing (x, y) coordinates, use AUTOMATION__click_text to deterministically find and click labeled buttons, tabs, or menus. ATTENTION: For browser-specific tasks (searching, reading web content, or switching tabs in a browser), PREFER the BROWSER plugin if it's enabled in CDP Mode. Only use AUTOMATION for native desktop apps or if BROWSER tools fail.",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "🖱️",
-        "category": "PLUGINS",
-        "module_type": "core_module",
-        "slash_commands": []
-    },
     "BROWSER": {
         "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
         "commands": {
@@ -281,6 +249,49 @@
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS",
+        "slash_commands": []
+    },
+    "IMAGE_GEN": {
+        "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-image\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "img",
+                "manifest_version": "1",
+                "aliases": [
+                    "/img",
+                    "/image",
+                    "/photo",
+                    "/foto"
+                ],
+                "description": "Genera un'immagine AI da una descrizione testuale",
+                "usage": "/img <descrizione>",
+                "example": "/img foto fotorealistica di un gatto su Marte",
+                "icon": "🖼️",
+                "method": "generate_image",
+                "requires_args": true
+            }
+        ]
+    },
+    "PC_AUTOMATION": {
+        "description": "Full PC control: mouse movement, keyboard input, window management, and Windows Accessibility API for reading browser tabs and UI controls. Combine with WEBCAM desktop_screenshot for a full see-and-act loop. Requires Windows for UIAutomation features (browser tabs, window controls); mouse/keyboard works cross-platform.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-magic\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
         "slash_commands": []
     },
     "CONTACTS": {

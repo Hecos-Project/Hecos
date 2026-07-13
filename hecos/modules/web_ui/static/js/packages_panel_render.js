@@ -140,6 +140,17 @@ window.hpmRenderRow = function(pkg, meta) {
           <i class="fas fa-info-circle" style="font-size:11px;color:#3b82f6;"></i>
         </button>`;
 
+      if (!isCore) {
+        actions += `
+          <button type="button"
+                  class="btn btn-sm"
+                  style="font-size:10px;padding:4px 10px;margin-left:4px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);"
+                  onclick="hpmShowDocs('${pkg.id}','${window._hesc(pkg.name)}')"
+                  title="${window.HPM_I18N?.read_docs || 'Read Docs'}">
+            <i class="fas fa-book" style="font-size:11px;color:#10b981;"></i>
+          </button>`;
+      }
+
       actions += `
         <button type="button"
                 class="btn btn-sm"

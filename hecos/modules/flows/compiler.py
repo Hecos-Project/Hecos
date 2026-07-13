@@ -74,10 +74,6 @@ MESSENGER__send_message: params: {platform: "whatsapp", to: "+39...", text: "...
 CALENDAR__list_events: params: {}  — List upcoming events → output_as events
 CALENDAR__add_event: params: {title: "...", start: "YYYY-MM-DD HH:MM", end: "YYYY-MM-DD HH:MM"}  — Create an event
 
-# ── Web / Search ───────────────────────────────────────────────────────────────
-WEB__search_and_read: params: {query: "...", num_results: 3}  — Web search → output_as articles
-WEB__fetch_page_content: params: {url: "..."}  — Read a page → output_as page_text
-
 # ── Executor (system tools) ───────────────────────────────────────────────────
 EXECUTOR__get_time: params: {}  — Get current local time → output_as current_time
 EXECUTOR__get_date: params: {}  — Get current date → output_as current_date

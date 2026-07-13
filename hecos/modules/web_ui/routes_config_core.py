@@ -103,7 +103,6 @@ _PANEL_MAP = {
     'media':           'modules/config_media.html',
     'aesthetics':      'modules/config_styles.html',
     'webui':           'modules/config_utils.html',
-    'web':             'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
     'automation':      'modules/config_utils.html',
 

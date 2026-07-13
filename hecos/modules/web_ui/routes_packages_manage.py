@@ -81,6 +81,43 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             log.error(f"[HPM] GET /api/packages/{pkg_id}/capabilities error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/packages/<pkg_id>/readme", methods=["GET"])
+    @login_required
+    def api_get_package_readme(pkg_id):
+        """Retrieve the README.md content for a given HPM package."""
+        try:
+            registry, _, _ = _get_hpm_components(_hecos_src)
+            pkg = registry.get(pkg_id)
+            if not pkg:
+                return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+            
+            install_path = pkg.get("install_path")
+            if not install_path or not os.path.exists(install_path):
+                return jsonify({"ok": False, "error": "Install path not found"}), 404
+                
+            manifest = registry.get_manifest(pkg_id) or {}
+            readme_file = manifest.get("readme", "README.md")
+            
+            readme_path = os.path.join(install_path, readme_file)
+            if not os.path.exists(readme_path):
+                # Fallback to case-insensitive or different common names if not found
+                for fallback in ["README.md", "docs.md", "README.txt", "readme.md"]:
+                    fb_path = os.path.join(install_path, fallback)
+                    if os.path.exists(fb_path):
+                        readme_path = fb_path
+                        break
+
+            if not os.path.exists(readme_path):
+                return jsonify({"ok": False, "error": "No documentation file found for this package."}), 404
+                
+            with open(readme_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                
+            return jsonify({"ok": True, "content": content})
+        except Exception as e:
+            log.error(f"[HPM] GET /api/packages/{pkg_id}/readme error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
     @app.route("/api/packages/<pkg_id>/verify", methods=["GET"])
     @login_required
     def api_verify_package(pkg_id):

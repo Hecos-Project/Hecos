@@ -47,14 +47,6 @@ class PluginSysNet(BaseModel):
     proxy_url: str = "socks5://localhost:9150"
 
 
-class PluginWeb(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    llm_model: str = ""
-    search_engine: str = "google"
-    use_https: bool = True
-    open_in_new_tab: bool = False
-
 
 class PluginWebUI(BaseModel):
     enabled: bool = True
@@ -106,13 +98,6 @@ class PluginMCPBridge(BaseModel):
     lazy_load: bool = False
     servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
 
-
-class PluginAutomation(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    move_duration: float = 0.15
-    type_interval: float = 0.02
-    allow_window_control: bool = True
 
 
 class PluginBrowser(BaseModel):
@@ -174,12 +159,10 @@ class PluginsConfig(BaseModel):
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
-    WEB: PluginWeb = Field(default_factory=PluginWeb)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
-    AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
