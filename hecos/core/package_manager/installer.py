@@ -117,7 +117,7 @@ class PackageInstaller:
         target_dir_name = _resolve_target_dir(manifest) or manifest.target_dir
         install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
         
-        resolver = DependencyResolver(self._registry)
+        resolver = DependencyResolver(self._registry, event_callback=self._event_callback)
         dep_report = resolver.resolve(manifest, install_pip=not skip_dep_check, install_path=install_path)
         result.dep_report = dep_report
 

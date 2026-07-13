@@ -15,6 +15,14 @@ import sys
 import os
 import json
 
+# ── Process title for Task Manager identification ─────────────────────────────
+try:
+    import ctypes
+    ctypes.windll.kernel32.SetConsoleTitleW("hecos-rag-embedder")
+except Exception:
+    pass  # Non-Windows or ctypes unavailable
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── ONNX / Tokenizer thread safety ────────────────────────────────────────────
 # Devono essere impostati PRIMA di qualsiasi import di fastembed / onnxruntime.
 os.environ["TOKENIZERS_PARALLELISM"] = "false"

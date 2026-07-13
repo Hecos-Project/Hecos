@@ -26,6 +26,7 @@ Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Hec
 ---
 
 ## ✨ Características Principales (v0.40.0)
+* 🔒 **Hecos SDK (Aislamiento Total)** — Ejecuta los paquetes HPM en procesos aislados dedicados y entornos virtuales independientes (venv) para evitar conflictos de dependencias y bloqueos del hilo principal.
 * ⚡ **HDCS (Comandos Directos)** — Ejecuta instantáneamente más de 150 funciones nativas omitiendo el "cerebro" de la IA escribiendo `/` en el chat o con `Ctrl+Alt+Espacio` globalmente[cite: 1].
 * ⚙️ **Motor de Automatización Flows** — Editor visual de nodos (drag-and-drop) para la creación de automatizaciones complejas de múltiples pasos, activadores y acciones con integración completa de comandos de voz por NLP[cite: 1].
 * **📅 Calendario Integrado** — Módulo de calendario completo con seguimiento de días festivos y codificación de colores localizada para los eventos[cite: 1].

@@ -20,7 +20,7 @@ from __future__ import annotations
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from typing import List, TYPE_CHECKING
+from typing import List, Callable, Dict, Any, TYPE_CHECKING
 
 from hecos.core.logging import logger
 
@@ -62,8 +62,13 @@ class DependencyResolver:
             logger.warning(report.summary)
     """
 
-    def __init__(self, registry: "PackageRegistry"):
+    def __init__(self, registry: "PackageRegistry", event_callback: Callable[[str, Dict[str, Any]], None] = None):
         self._registry = registry
+        self._event_callback = event_callback
+
+    def _emit(self, event_name: str, payload: Dict[str, Any]) -> None:
+        if self._event_callback:
+            self._event_callback(event_name, payload)
 
     def resolve(self, manifest, install_pip: bool = True, install_path: str = None) -> DependencyReport:
         """
@@ -136,8 +141,7 @@ class DependencyResolver:
 
     # ── Private ──────────────────────────────────────────────────────────────
 
-    @staticmethod
-    def _install_pip_requirements(requirements: List[str], report: DependencyReport, isolation: str = "shared", install_path: str = None) -> None:
+    def _install_pip_requirements(self, requirements: List[str], report: DependencyReport, isolation: str = "shared", install_path: str = None) -> None:
         """Install pip packages either globally or in an isolated venv."""
         import os
         import subprocess
@@ -161,6 +165,7 @@ class DependencyResolver:
                     shutil.rmtree(venv_dir, ignore_errors=True)
 
                 logger.info(f"[HPM:Resolver] Creating virtual environment at {venv_dir}...")
+                self._emit("hpm:progress", {"step": "venv", "message": "Creating isolated virtual environment..."})
                 try:
                     # Use --copies to avoid Windows symlink permission issues.
                     # Do NOT use --without-pip: let venv bundle pip directly (reliable on all Python installs).
@@ -193,6 +198,7 @@ class DependencyResolver:
 
             # ── Bootstrap: ensure wheel + setuptools are in the new venv ──────
             logger.info("[HPM:Resolver] Bootstrapping wheel/setuptools in isolated venv...")
+            self._emit("hpm:progress", {"step": "venv_bootstrap", "message": "Bootstrapping pip/wheel/setuptools..."})
             try:
                 subprocess.run(
                     [python_exe, "-m", "pip", "install", "--upgrade", "pip", "wheel", "setuptools"],
@@ -208,6 +214,7 @@ class DependencyResolver:
             sdk_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "hecos_sdk"))
             if os.path.exists(sdk_path):
                 logger.info("[HPM:Resolver] Installing hecos_sdk into isolated venv...")
+                self._emit("hpm:progress", {"step": "venv_sdk", "message": "Installing Hecos SDK bridge..."})
                 try:
                     subprocess.run(
                         [python_exe, "-m", "pip", "install", "--no-deps", sdk_path],
@@ -232,6 +239,7 @@ class DependencyResolver:
             if not req or req.startswith("#"):
                 continue
             logger.info(f"[HPM:Resolver] pip install: {req}")
+            self._emit("hpmProgressUpdate", {"step": "pip", "message": f"pip install {req}..."})
             try:
                 result = subprocess.run(
                     [python_exe, "-m", "pip", "install", req, "--quiet", "--no-input"],
@@ -246,6 +254,7 @@ class DependencyResolver:
                     report.pip_failures.append(req)
                 else:
                     logger.info(f"[HPM:Resolver] pip: '{req}' installed successfully.")
+                    self._emit("hpmProgressUpdate", {"step": "pip", "message": f"pip: {req} installed"})
                     report.pip_installed.append(req)
             except subprocess.TimeoutExpired:
                 logger.error(f"[HPM:Resolver] pip timed out for '{req}'.")

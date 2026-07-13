@@ -103,6 +103,7 @@ class ModuleProxy:
         try:
             env = os.environ.copy()
             env["PYTHONIOENCODING"] = "utf-8"
+            env["HECOS_MODULE_TAG"] = self.tag  # for process title in Task Manager
             kwargs = {}
             if os.name == 'nt':
                 kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW

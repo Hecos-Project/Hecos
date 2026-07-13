@@ -125,6 +125,11 @@ def update_capability_registry(config=None, debug_log=True):
             is_isolated = module_type == "hpm" and (
                 os.path.exists(runner_file) or os.path.exists(venv_dir)
             )
+            # Respect the sdk_enabled config flag (default False)
+            sdk_globally_enabled = config.get('system', {}).get('sdk_enabled', False)
+            if is_isolated and not sdk_globally_enabled:
+                logger.info(f"LOADER: Skipping isolated subprocess for '{plugin_dir}' (sdk_enabled=False).")
+                is_isolated = False  # Fall through to legacy importlib loading
             if is_isolated:
                 if not os.path.exists(manifest_file):
                     logger.warning(f"LOADER: HPM module '{plugin_dir}' is isolated but has no manifest.json — skipping subprocess start.")

@@ -271,6 +271,7 @@ hecos/personality/Jun_my_little_princess.yaml
 # Config data: Ignore active configs, keep templates
 hecos/config/data/*
 !hecos/config/data/*.example
+!hecos/data/templates.json
 
 # API Keys - CRITICAL: never push these to git
 hecos/config/keys.yaml

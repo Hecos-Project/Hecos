@@ -19,6 +19,15 @@ import os
 import json
 import traceback
 
+# ── Process title for Task Manager identification ─────────────────────────────
+try:
+    import ctypes as _ctypes
+    _tag = os.environ.get("HECOS_MODULE_TAG", "")
+    _proc_name = f"hecos-sdk-{_tag}" if _tag else "hecos-sdk-worker"
+    _ctypes.windll.kernel32.SetConsoleTitleW(_proc_name)
+except Exception:
+    pass
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ─── Minimal IPC helpers (no hecos.core dependency) ──────────────────────────
 
