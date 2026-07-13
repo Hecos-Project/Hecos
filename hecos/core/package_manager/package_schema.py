@@ -216,6 +216,10 @@ class HpkgManifest(BaseModel):
         default_factory=list,
         description="List of pip requirements (same syntax as requirements.txt)"
     )
+    pip_isolation: str = Field(
+        "shared",
+        description="Isolation strategy for pip requirements: 'shared' (default) or 'isolated'"
+    )
     pip_requirements_locked: Dict[str, Dict[str, str]] = Field(
         default_factory=dict,
         description="Locked pip requirements mapping package name to version and sha256"

@@ -22,7 +22,7 @@ def play_beep(freq: int, duration_ms: int):
 
 def get_version():
     try:
-        with open(VERSION_FILE, "r") as f:
+        with open(VERSION_FILE, "r", encoding="utf-8-sig") as f:
             return f.read().strip()
     except Exception:
         return "0.19.2"

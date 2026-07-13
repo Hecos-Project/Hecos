@@ -112,8 +112,13 @@ class PackageInstaller:
 
         # ── Step 3: Dependency resolution ────────────────────────────────────
         self._emit("hpm:progress", {"step": "dependencies", "message": "Resolving dependencies..."})
-        resolver = DependencyResolver(self._registry)
-        dep_report = resolver.resolve(manifest, install_pip=True)
+        
+        # Calculate install path early to pass to the resolver (needed for venv creation)
+        target_dir_name = _resolve_target_dir(manifest) or manifest.target_dir
+        install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
+        
+        resolver = DependencyResolver(self._registry, event_callback=self._event_callback)
+        dep_report = resolver.resolve(manifest, install_pip=not skip_dep_check, install_path=install_path)
         result.dep_report = dep_report
 
         if dep_report.missing_packages:
@@ -192,8 +197,6 @@ class PackageInstaller:
 
             # ── Step 10: Register in DB ───────────────────────────────────────
             self._emit("hpm:progress", {"step": "register", "message": "Registering in database..."})
-            target_dir_name = _resolve_target_dir(manifest) or manifest.target_dir
-            install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
             manifest_dict = manifest.model_dump()
             ok = self._registry.register(manifest_dict, install_path, installed_files)
             if not ok:

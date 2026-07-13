@@ -1,20 +1,20 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-07-06T04:51:53Z",
+  "generated_at": "2026-07-12T14:34:26Z",
   "packages": [
     {
       "id": "calendar",
       "name": "Calendar",
-      "type": "plugin",
+      "type": "app",
       "level": 5,
       "version": "1.0.4",
       "author": "Antonio Meloni",
       "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.4.hpkg",
-      "size_bytes": 891716,
-      "sha256": "eaa276938f4ce8fc8258af60748cf9b515d18893282a35380d3c447af5bc69c7",
+      "size_bytes": 893651,
+      "sha256": "f9becf459d94b1b20160fadfc108a5cbb09071bc6d9d3ba776e6def1169ea0f3",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/preview.png"
       ],
@@ -44,7 +44,7 @@
         "reminder"
       ],
       "pip_requirements": [
-        "holidays"
+        "holidays==0.98"
       ]
     },
     {
@@ -57,8 +57,8 @@
       "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
-      "size_bytes": 535872,
-      "sha256": "ce99cf76b595723f6fc2ea7d2cae6f505a246af06336ab039f0dac1438834712",
+      "size_bytes": 539142,
+      "sha256": "2a4a74c92dc6dfd1efb9900ccfdd4bf425f81d63d255aaca02bacaece38c40ee",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/image_gen_src/preview.png"
       ],
@@ -78,29 +78,30 @@
         ],
         "has_widget": false,
         "has_config_panel": true,
-        "has_api_routes": false,
+        "has_api_routes": true,
         "has_system_calls": false,
         "notes": "Supports multiple AI providers: Pollinations (free, default), Gemini, OpenAI DALL-E, Stability AI, HuggingFace. Requires network access. Provider and model are configurable."
       },
       "dependencies": [],
       "pip_requirements": [
-        "requests",
-        "httpx",
-        "openai"
+        "requests==2.34.2",
+        "httpx==0.28.1",
+        "openai==2.41.0",
+        "tomli_w"
       ]
     },
     {
       "id": "lists",
       "name": "Lists Manager",
-      "type": "plugin",
+      "type": "app",
       "level": 5,
       "version": "2.0.1",
       "author": "Antonio Meloni",
       "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/lists-2.0.1.hpkg",
-      "size_bytes": 938088,
-      "sha256": "545016a0c08a0ad72475cdf8ba16c46e9618eb1c8232807ee1bedcd5152fb8ea",
+      "size_bytes": 942298,
+      "sha256": "d9af497d9d621a271ddd4506483540abda86144d340ac43060d810b08f9a7f18",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/lists_src/preview.png"
       ],
@@ -131,11 +132,49 @@
         ],
         "has_widget": true,
         "has_config_panel": true,
-        "has_api_routes": false,
+        "has_api_routes": true,
         "has_system_calls": false,
         "notes": "Universal list manager: shopping, to-do, blacklists, any type. Supports item priorities, labels, and archiving. Data stored in local SQLite DB. Export to desktop supported."
       },
       "dependencies": [],
+      "pip_requirements": []
+    },
+    {
+      "id": "mail",
+      "name": "Mail",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.0",
+      "author": "Hecos",
+      "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/mail-1.0.0.hpkg",
+      "size_bytes": 25257,
+      "sha256": "d2b7bc8f93651498c6d7b3a9603e0a5602b938eb6e35275644b30ef5ac5b3acf",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#mail",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "send_email",
+          "sync_emails",
+          "list_emails",
+          "get_email"
+        ],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": "Stores messages in local SQLite DB at hecos/memory/mail.db. Credentials stored in mail.toml (never in git)."
+      },
+      "dependencies": [
+        "templates"
+      ],
       "pip_requirements": []
     },
     {
@@ -148,8 +187,8 @@
       "description": "Simple Map Module based on Leaflet and Nominatim.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/map-1.0.1.hpkg",
-      "size_bytes": 447407,
-      "sha256": "38e83457277adfdfb7d171a511086944a7414e353769d8999d81ca1c84221836",
+      "size_bytes": 447607,
+      "sha256": "5eaea9c0f411b7c20a26f45ac81e9da64c317681fad5c97ef208906de17abd1c",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/map_src/preview.png"
       ],
@@ -171,7 +210,7 @@
       },
       "dependencies": [],
       "pip_requirements": [
-        "requests"
+        "requests==2.34.2"
       ]
     },
     {
@@ -184,8 +223,8 @@
       "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/media_player-1.1.0.hpkg",
-      "size_bytes": 1141124,
-      "sha256": "f632f6bc37f6bd0d8742588a5c68ba1d4163359d16854368c2d8a95e5c8dc2de",
+      "size_bytes": 1142578,
+      "sha256": "2c9764a81742211679511beaf7226f41600ddb6cab60f9f9a97ee1f3b831d8f0",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/media_player_src/preview.png"
       ],
@@ -228,6 +267,47 @@
       "pip_requirements": []
     },
     {
+      "id": "messenger",
+      "name": "Messenger",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.2",
+      "author": "Antonio Meloni",
+      "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/messenger-1.0.2.hpkg",
+      "size_bytes": 2264719,
+      "sha256": "f05d51701deacc6e7dd064028b9c01077b5dd685909cb387c9d798f80973dde1",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/messenger_src/preview_1.png"
+      ],
+      "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#messenger",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "send_message",
+          "list_accounts",
+          "check_connection",
+          "force_send"
+        ],
+        "slash_commands": [
+          "/msg",
+          "/send"
+        ],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": ""
+      },
+      "dependencies": [
+        "templates"
+      ],
+      "pip_requirements": []
+    },
+    {
       "id": "quick_links",
       "name": "Quick Links",
       "type": "widget",
@@ -237,8 +317,8 @@
       "description": "A user-managed sidebar widget to store and quickly access your favorite links.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
-      "size_bytes": 8105,
-      "sha256": "287d803a013ea7fb80fadab57e89594089bfa61d26b086e9135242f08de9dcd8",
+      "size_bytes": 8942,
+      "sha256": "c531779e7e0cceb632460ea823aa5863590c70e6b30b439e6486e792e790dfd7",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -261,15 +341,15 @@
     {
       "id": "reminder",
       "name": "Reminder",
-      "type": "plugin",
+      "type": "app",
       "level": 5,
       "version": "1.0.3",
       "author": "Antonio Meloni",
       "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.3.hpkg",
-      "size_bytes": 842746,
-      "sha256": "2e10b0503b85937978b7f150745d67cc2531eb33488e963f826227baa565a152",
+      "size_bytes": 845591,
+      "sha256": "6c040e9bb556f22655243b3c23b2a1f1ee6f3616f33be120ec55d541923ba303",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/reminder_src/preview.png"
       ],
@@ -293,14 +373,81 @@
         ],
         "has_widget": true,
         "has_config_panel": true,
-        "has_api_routes": false,
+        "has_api_routes": true,
         "has_system_calls": false,
         "notes": "Fires TTS voice alerts and WebUI browser notifications. Supports natural language times and CRON-style recurrence. Uses 'schedule' library for background scheduling."
       },
       "dependencies": [],
       "pip_requirements": [
-        "schedule"
+        "schedule==1.2.2"
       ]
+    },
+    {
+      "id": "remote_triggers",
+      "name": "Remote Triggers",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.0",
+      "author": "Antonio Meloni",
+      "description": "Experimental module to trigger Hecos Push-to-Talk from remote sources: smartwatch hardware button (F24), Bluetooth media keys, HTTP webhooks (Arduino, ESP32), and custom hotkeys.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/remote_triggers-1.0.0.hpkg",
+      "size_bytes": 10825,
+      "sha256": "293a45578a312174b41987ae821de6180a09c3141de4728efc75b26c743803aa",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#remote_triggers",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": "Experimental module. Enables PTT activation via smartwatch hardware button (F24 HID), BT media keys, HTTP webhooks, or a custom hotkey. All PTT signals are forwarded to the core ptt_bus \u2014 the audio pipeline is not modified. Not fully functional \u2014 work in progress."
+      },
+      "dependencies": [],
+      "pip_requirements": [
+        "pynput==1.8.2"
+      ]
+    },
+    {
+      "id": "templates",
+      "name": "Templates",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.2",
+      "author": "Hecos",
+      "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/templates-1.0.2.hpkg",
+      "size_bytes": 13544,
+      "sha256": "0aa4584faab1957014b5d83b7dbbdd64fd0dd6bf2689d99f62fb4a521691b26e",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Aggiornamento automatico generato dallo Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#templates",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "list_templates",
+          "render_template"
+        ],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": ""
+      },
+      "dependencies": [],
+      "pip_requirements": []
     },
     {
       "id": "voice_visualizer",
@@ -312,8 +459,8 @@
       "description": "Retro-80s voice animation. Shows KITT-style scanner or a pixelated talking mouth when Hecos speaks.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.2.hpkg",
-      "size_bytes": 1275498,
-      "sha256": "7c611789acc3f3e1141d098e323c459421e764d2727cd894a3bc73eb53d579b3",
+      "size_bytes": 1275683,
+      "sha256": "0c3b8d86e39687051761c1586d8a77add0d3df337cf856d61d5b44762023f049",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_1.png",
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_2.png",
@@ -345,8 +492,8 @@
       "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
-      "size_bytes": 15155,
-      "sha256": "d28c31b0e4a912e704f11b2f431d031ec80d60daa72bf69b64193cc8dee15d09",
+      "size_bytes": 14844,
+      "sha256": "9b137b3da163ebaeda9e0b1d5da628e9eee36b74f7800e0505e7ddeff66d3583",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -362,7 +509,7 @@
         "slash_commands": [],
         "has_widget": true,
         "has_config_panel": true,
-        "has_api_routes": false,
+        "has_api_routes": true,
         "has_system_calls": false,
         "notes": "Hybrid plugin+widget. Uses Open-Meteo API (free, no key needed). Shows current conditions and 7-day forecast. Widget available in sidebar and Control Room."
       },
@@ -379,8 +526,8 @@
       "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam-1.0.2.hpkg",
-      "size_bytes": 6356,
-      "sha256": "f1817a739604ae5544e5551f9a5f7b6b0f7b59ce6c5f219155e9bd8ecded7c99",
+      "size_bytes": 7815,
+      "sha256": "fe1729bd3cf3115782b5ac668dad63662d037d37f391bf6e7668e31bc035e631",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -402,9 +549,9 @@
       },
       "dependencies": [],
       "pip_requirements": [
-        "opencv-python",
-        "pillow",
-        "pyautogui"
+        "opencv-python==4.13.0.92",
+        "pillow==12.2.0",
+        "pyautogui==0.9.54"
       ]
     },
     {
@@ -417,8 +564,8 @@
       "description": "Displays a live webcam feed inside the Hecos Hub sidebar. Uses WebRTC for zero-latency streaming directly from the client device.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam_feed-1.0.1.hpkg",
-      "size_bytes": 859140,
-      "sha256": "f1f5df3ec96a4a8411ce7fe017e4a4e5d1b149676c4c16f3d8462a43fb722f93",
+      "size_bytes": 859318,
+      "sha256": "2b88278418ae17b6f108e43c57969f7176d04d7191b33b9a25054a48f412b46d",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/webcam_feed_src/preview.png"
       ],
@@ -439,5 +586,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1783485347.863751
+  "cached_at": 1783933392.3527973
 }

@@ -130,8 +130,13 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             piper_path = voice_cfg.get("piper_path") or os.path.join(default_piper_dir, piper_exe_name)
             onnx_model = voice_cfg.get("onnx_model") or ""
 
+            if not os.path.isfile(piper_path): 
+                piper_path = os.path.join(default_piper_dir, piper_exe_name)
+
             if onnx_model and not os.path.isabs(onnx_model):
                 onnx_model = os.path.join(default_piper_dir, onnx_model)
+            if not os.path.isfile(onnx_model): 
+                onnx_model = ""
 
             logger.info(f"[WebUI] TTS Test — piper: {piper_path}, model: {onnx_model}")
 

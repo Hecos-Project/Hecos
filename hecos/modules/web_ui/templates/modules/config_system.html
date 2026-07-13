@@ -82,4 +82,22 @@
       </select>
     </div>
   </div>
+
+  <div class="card" style="border-left: 4px solid #f59e0b;">
+    <div class="card-title"><i class="fas fa-microchip" style="color:#f59e0b;"></i> Performance &amp; Resources</div>
+    <p style="font-size:12px; color:#888; margin-bottom:16px;">
+      On low-spec machines, Hecos SDK processes can consume significant CPU and RAM.
+      Disabling the SDK will stop all <code>hecos-sdk-*</code> isolated subprocesses.
+      HPM modules that require an isolated environment (e.g. Image Gen, Maps) will be unavailable until re-enabled.
+      Shared-mode packages (Messenger, Templates, Mail) are not affected.
+    </p>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <strong>Enable Hecos SDK Isolated Processes</strong>
+        <small style="display:block; color:#888; margin-top:2px;">Requires restart to take effect.</small>
+      </div>
+      <label class="switch"><input type="checkbox" id="sys-sdk-enabled"><span class="slider"></span></label>
+    </div>
+  </div>
+
 </div>

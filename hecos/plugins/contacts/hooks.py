@@ -86,7 +86,7 @@ def send_email(contact_id: str, subject: str, body: str) -> str:
     if not email:
         return "⚠️ No email address found for this contact."
     try:
-        from hecos.plugins.mail.dispatcher import send_mail  # Future module
+        from hecos.hpm.mail.dispatcher import send_mail  # Future module
         send_mail(to=email, subject=subject, body=body)
         return f"✉️ Email sent to {email}."
     except ImportError:

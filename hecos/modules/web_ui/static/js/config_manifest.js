@@ -30,8 +30,6 @@ window.CONFIG_HUB = {
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
 
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
-        { id: 'mail',      label: 'hub_mod_mail',         icon: '<i class="fas fa-envelope"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MAIL' },
-        { id: 'templates', label: 'hub_mod_templates',    icon: '<i class="fas fa-file-alt"></i>', cat: 'CONNETTIVITÀ', isCore: true },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
@@ -123,7 +121,6 @@ window.CONFIG_HUB.tagMap = {
     'DRIVE_EDITOR': 'drive-editor',
 
     'CONTACTS': 'contacts',
-    'MAIL': 'mail',
     'AUTOMATION': 'automation',
     'BROWSER':    'browser',
     'USERS':      'users',
@@ -140,6 +137,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice', 'aesthetics', 'webui',
     'web', 'webcam', 'executor', 'automation',
     'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
-    'contacts', 'mail', 'templates', 'mcp', 'remote-triggers',
+    'contacts', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
 ]);

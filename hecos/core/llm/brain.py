@@ -59,11 +59,43 @@ class RoutingManager:
 
             # 4. Merge logic
             merged_instructions = []
+            
+            # --- FASE 6: HPM v2 Routing Support ---
+            from hecos.core.package_manager.registry import PackageRegistry
+            hpm_registry = PackageRegistry(os.path.join(_HECOS_DIR, "data"))
+            
             for tag in active_tags:
                 tag_upper = tag.upper()
-                # Priority: YAML Override > Registry (Manifest)
+                tag_lower = tag.lower()
+                # Priority: YAML Override > HPM routing_override.txt > HPM Manifest > Legacy Registry
                 instruction = overrides.get(tag_upper)
                 
+                # Check HPM package
+                if not instruction:
+                    pkg = hpm_registry.get(tag_lower)
+                    if pkg and pkg.get("install_path"):
+                        # Check dynamic override file in package root
+                        dyn_file = os.path.join(pkg["install_path"], "routing_override.yaml")
+                        if os.path.exists(dyn_file):
+                            try:
+                                import yaml
+                                with open(dyn_file, "r", encoding="utf-8") as df:
+                                    y_data = yaml.safe_load(df)
+                                    if y_data and isinstance(y_data, dict) and y_data.get("enabled", True):
+                                        instruction = y_data.get("instruction", "").strip()
+                            except Exception:
+                                pass
+                        
+                        # Fallback to manifest default
+                        if not instruction and pkg.get("manifest_snapshot"):
+                            try:
+                                snap = json.loads(pkg["manifest_snapshot"])
+                                if "routing" in snap and "instructions" in snap["routing"]:
+                                    instruction = snap["routing"]["instructions"]
+                            except Exception:
+                                pass
+                
+                # Fallback to legacy registry
                 if not instruction and tag_upper in registry_data:
                     instruction = registry_data[tag_upper].get("routing_instructions")
                 

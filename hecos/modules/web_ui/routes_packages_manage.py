@@ -302,6 +302,39 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                 try: snap = json.loads(snap)
                 except: snap = {}
             widget_ids_to_hide = [w.get("id") for w in snap.get("widgets", []) if w.get("id")]
+            
+            # ── Stop the module subprocess to release file locks ──
+            tag = snap.get("tag")
+            if tag:
+                try:
+                    from hecos.core.module_bus import get_bus
+                    get_bus().stop_plugin(tag.upper())
+                    log.info(f"[HPM] Stopped running module '{tag}' before uninstall.")
+                except Exception as _stop_e:
+                    log.warning(f"[HPM] Could not stop module '{tag}' before uninstall: {_stop_e}")
+                # Hard-kill any surviving runner processes for this package (Windows safety)
+                try:
+                    import psutil, time
+                    install_path = pkg.get("install_path", "")
+                    killed = 0
+                    for proc in psutil.process_iter(['pid', 'cmdline']):
+                        try:
+                            cmd = ' '.join(proc.info.get('cmdline') or [])
+                            if install_path and install_path in cmd:
+                                proc.kill()
+                                killed += 1
+                            elif 'hecos_sdk.runner' in cmd:
+                                proc.kill()
+                                killed += 1
+                        except Exception:
+                            pass
+                    if killed:
+                        log.info(f"[HPM] Hard-killed {killed} residual runner process(es) for '{pkg_id}'.")
+                    time.sleep(1.0)  # Give Windows time to release file handles
+                except ImportError:
+                    import time; time.sleep(1.0)
+                except Exception as _kill_e:
+                    log.warning(f"[HPM] Hard-kill sweep failed: {_kill_e}")
 
             result = uninstaller.uninstall(pkg_id)
 

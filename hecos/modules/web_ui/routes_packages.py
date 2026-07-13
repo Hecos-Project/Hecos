@@ -78,7 +78,7 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                     abs_route_path = os.path.join(install_path, api_routes_file)
                 else:
                     # Fallback if install_path is missing for some reason
-                    abs_route_path = os.path.join(hecos_root, "hpm", plugin_id, api_routes_file)
+                    abs_route_path = os.path.join(_hecos_src, "hpm", plugin_id, api_routes_file)
                 
                 if os.path.isfile(abs_route_path):
                     import importlib.util

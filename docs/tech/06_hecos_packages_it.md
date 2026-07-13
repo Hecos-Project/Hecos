@@ -423,6 +423,185 @@ has_room_view = true
 
 ---
 
+## Pacchetti v2 Isolated — Moduli con Processo Separato
+
+> **Questo capitolo descrive una funzionalità avanzata.** Per la grande maggioranza dei plugin, la struttura v1 descritta sopra è sufficiente e consigliata. Leggi la sezione [Quando usare v2](#quando-usare-v2-isolated) prima di procedere.
+
+### Che cosa cambia in v2?
+
+In un pacchetto **v1 (shared)**, il codice Python del plugin gira **all'interno del processo principale di Hecos**. Condivide lo stesso interprete Python, le stesse librerie e la stessa memoria.
+
+In un pacchetto **v2 (isolated)**, Hecos avvia un **subprocess Python separato** per quel modulo, con un proprio `venv` privato e una comunicazione via **IPC (socket)**. Il Core e il modulo si parlano inviando messaggi JSON, esattamente come un microservizio.
+
+| | **v1 — Shared** | **v2 — Isolated** |
+|---|---|---|
+| `pip_isolation` nel TOML | `"shared"` | `"isolated"` |
+| Processo di sistema | Stesso di Hecos | Subprocess dedicato |
+| Ambiente Python | Condiviso con il core | `venv` privato installato con il pacchetto |
+| Overhead RAM | ~0 MB extra | ~30–80 MB per subprocess |
+| Latenza per chiamata | ~0 ms | ~5–20 ms (IPC) |
+| Crash isolation | No | Sì — un crash nel modulo non abbatte il core |
+| Aggiornamento a caldo | No | Sì — riavvia solo il subprocess |
+| Dipendenze pip | Installate nel core | Completamente autonome nel `venv` locale |
+
+### Struttura della Cartella Sorgente (v2)
+
+```text
+mio_modulo_src/
+|-- hpkg_manifest.toml            # Come v1, ma con pip_isolation = "isolated"
+|-- manifest.json                 # Manifest runtime per Hecos (uguale a v1)
+|-- main.py                       # Entrypoint IPC (usa hecos_sdk, non classe diretta)
+|-- README.md
+|-- preview.png
+|-- routing_override.yaml         # [OPZIONALE] Override istruzioni AI per questo modulo
+|
+|-- plugin/                       # Logica di business
+|   |-- __init__.py
+|   |-- core_logic.py
+|
+|-- web/                          # Routes Flask montate da Hecos
+|   |-- routes.py                 # init_plugin_routes() — firma identica a v1
+|   |-- static/
+|   |   |-- js/
+|   |   |-- css/
+|   |-- templates/
+|       |-- config_panel.html
+|
+|-- mio_modulo_config/            # Config manager autonomo (identico a v1)
+|   |-- __init__.py
+|   |-- config_manager.py
+```
+
+> Dopo l'installazione, l'HPM crea automaticamente la cartella `venv/` all'interno della directory del pacchetto e vi installa le dipendenze dichiarate in `[dependencies_python]`.
+
+### main.py (v2) — Il Runner IPC
+
+In v2 il `main.py` non espone un oggetto `tools`. Invece, usa `hecos_sdk` per gestire un **loop di ricezione messaggi IPC** dal Core. Il Core chiama i metodi tramite il protocollo interno; il subprocess risponde con il risultato.
+
+```python
+"""
+Entrypoint per il subprocess isolato di MioModulo.
+Usa hecos_sdk.runner per gestire le chiamate IPC dal Hecos Core.
+"""
+from hecos_sdk import runner, logger
+from plugin.core_logic import MiaLogica
+
+def handle_call(method: str, params: dict) -> dict:
+    """Dispatcher: riceve una chiamata dal Core e ritorna il risultato."""
+    logic = MiaLogica()
+    if method == "fai_qualcosa":
+        return logic.fai_qualcosa(**params)
+    raise ValueError(f"Metodo sconosciuto: {method}")
+
+if __name__ == "__main__":
+    logger.info("[MioModulo] Subprocess avviato")
+    runner.run(handle_call)
+```
+
+> **Nota:** `hecos_sdk` è la libreria installata nel `venv` del modulo v2. Fornisce `runner.run()` per il loop IPC e `logger` per il logging unificato con il core.
+
+### hpkg_manifest.toml (v2) — Differenze chiave
+
+Le uniche differenze rispetto al manifest v1 sono:
+
+```toml
+# --- CHIAVE V2 ---
+pip_isolation = "isolated"    # ← Questo è tutto ciò che distingue v1 da v2
+
+# --- DIPENDENZE (installate nel venv privato del modulo) ---
+[dependencies_python]
+packages = [
+    "torch>=2.0",
+    "diffusers>=0.25",
+    "transformers>=4.35",
+    "Pillow>=10.0",
+    "hecos_sdk",              # Obbligatorio in v2
+]
+```
+
+> Tutte le altre sezioni (`[config_panel]`, `[tool_schema]`, `[[slash_commands]]`, ecc.) sono **identiche alla v1**.
+
+### web/routes.py (v2)
+
+La firma di `init_plugin_routes()` è **identica alla v1**. Hecos la monta sul server Flask principale, indipendentemente dall'isolamento del subprocess.
+
+```python
+from flask import request, jsonify
+
+def init_plugin_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
+    import os, sys
+    plugin_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if plugin_path not in sys.path:
+        sys.path.insert(0, plugin_path)
+
+    from mio_modulo_config.config_manager import get_config, save_config
+
+    @app.route("/hecos/api/plugins/mio_modulo/config", methods=["GET"])
+    def get_mio_modulo_config():
+        return jsonify(get_config())
+
+    @app.route("/hecos/api/plugins/mio_modulo/config", methods=["POST"])
+    def post_mio_modulo_config():
+        data = request.get_json(force=True)
+        ok = save_config(data)
+        return jsonify({"ok": ok})
+```
+
+### routing_override.yaml — Override AI Autonomo
+
+Un pacchetto v2 può includere un file `routing_override.yaml` nella sua directory principale per sovrascrivere le istruzioni AI **specifiche per quel modulo**, senza toccare la configurazione globale di Hecos (`routing_overrides.yaml`).
+
+```yaml
+# routing_override.yaml (nella root del pacchetto installato)
+enabled: true
+instruction: >
+  Genera immagini solo se esplicitamente richiesto. Per foto reali, suggerisci
+  di usare la webcam. Per richieste creative o anatomicamente complesse, adotta
+  uno stile come 'fotografia artistica', 'anatomia classica' o 'illuminazione
+  cinematografica' per garantire un output estetico professionale.
+```
+
+> **Nota per l'utente:** Questo file è modificabile direttamente dalla casella **"Brain Routing Override"** nel pannello di configurazione del plugin, senza dover aprire file YAML a mano.
+
+### Fast Reinstall (solo v2)
+
+I pacchetti v2 con dipendenze pesanti supportano il **Fast Reinstall**: trascina il `.hpkg` sul Package Manager e attiva il flag **Fast Reinstall**. Hecos reinstallerà i file del pacchetto saltando la fase `pip install`, usando le dipendenze già presenti nel `venv` locale.
+
+> **Importante:** Il Fast Reinstall funziona **solo se reinstalli senza disinstallare prima**. Se disinstalli, Hecos rimuove il `venv` e le dipendenze devono essere reinstallate da zero.
+
+### Quando usare v2 Isolated
+
+```
+Il tuo plugin ha dipendenze pip pesanti o potenzialmente
+conflittuali con altre librerie del core di Hecos?
+(es. torch, tensorflow, diffusers, opencv con CUDA, ecc.)
+         │
+         ├─ SÌ ──► Usa v2 Isolated
+         │          pip_isolation = "isolated"
+         │          Il tuo plugin avrà un subprocess e venv dedicati
+         │          Ideale per: Image Gen, modelli AI locali, ML
+         │
+         └─ NO ──► Usa v1 Shared  ← la scelta giusta nella maggior parte dei casi
+                    pip_isolation = "shared"
+                    Integrazione diretta, zero overhead
+                    Ideale per: Calendar, Reminder, Weather, Webcam,
+                    Quick Links, Voice Visualizer, Media Player, ecc.
+```
+
+**Esempi pratici:**
+
+| Modulo | Formato | Motivo |
+|---|---|---|
+| `image_gen` | **v2 Isolated** | torch, diffusers, huggingface — dipendenze enormi |
+| `calendar` | **v1 Shared** | Nessuna dipendenza pesante |
+| `reminder` | **v1 Shared** | Logica scheduler standard |
+| `weather_pro` | **v1 Shared** | Solo `requests` |
+| `voice_visualizer` | **v1 Shared** | Widget puro, zero dipendenze |
+| `media_player` | **v1 Shared** | Dipendenze audio gestibili nel core |
+| Plugin LLM locale | **v2 Isolated** | llama-cpp-python — ambiente separato necessario |
+
+---
+
 ## Ciclo di Vita del Pacchetto
 
 ```

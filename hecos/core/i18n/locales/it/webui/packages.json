@@ -54,6 +54,7 @@
     "hpm_drag_drop": "Trascina qui un file .hpkg",
     "hpm_or_browse": "oppure clicca per sfogliare",
     "hpm_allow_unsigned": "Consenti pacchetti non firmati (Solo per sviluppo locale)",
+    "hpm_skip_deps": "Salta installazione dipendenze (Reinstallazione veloce se già presenti)",
     "hpm_preparing": "Preparazione in corso...",
     "hpm_online_registry": "Registro Online",
     "hpm_coming_soon": "PROSSIMAMENTE",

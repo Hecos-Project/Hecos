@@ -15,7 +15,7 @@ from .system_schema import SystemConfig
 from .plugins_schema import (
     PluginsFileConfig, PluginsConfig, ExtensionsConfig,
     PluginFileManager, PluginHelp,
-    PluginMediaPlayer, PluginSystem, PluginSysNet, PluginWeb,
+    PluginSystem, PluginSysNet, PluginWeb,
     PluginWebUI, PluginExecutor, PluginDrive,
     PluginMCPBridge, PluginAutomation, PluginBrowser,
     PluginUsers,
@@ -28,7 +28,7 @@ __all__ = [
     "SystemConfig",
     "PluginsFileConfig", "PluginsConfig", "ExtensionsConfig",
     "PluginFileManager", "PluginHelp",
-    "PluginMediaPlayer", "PluginSystem", "PluginSysNet", "PluginWeb",
+    "PluginSystem", "PluginSysNet", "PluginWeb",
     "PluginWebUI", "PluginExecutor", "PluginDrive",
     "PluginMCPBridge",
     "PluginAutomation", "PluginBrowser", "PluginUsers",

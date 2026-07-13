@@ -30,11 +30,6 @@ class PluginHelp(BaseModel):
 
 
 
-class PluginMediaPlayer(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-
-
 class PluginSystem(BaseModel):
     enabled: bool = True
     lazy_load: bool = False
@@ -143,24 +138,6 @@ class PluginContacts(BaseModel):
     lazy_load: bool = True
 
 
-class PluginMail(BaseModel):
-    """Mail plugin config. Credentials are stored here to avoid github exposure.
-    Can also be read from .env: HECOS_MAIL_ADDRESS and HECOS_MAIL_APP_PASSWORD."""
-    enabled: bool = True
-    lazy_load: bool = True
-    mail_address: str = ""
-    mail_app_password: str = ""
-    smtp_host: str = ""
-    smtp_port: int = 587
-    smtp_security: str = "STARTTLS"
-    imap_host: str = ""
-    imap_port: int = 993
-    imap_security: str = "SSL"
-    max_messages: int = 100
-    sync_on_open: bool = True
-    auto_detect_provider: bool = True
-
-
 class PluginFlows(BaseModel):
     """Hecos Flows — visual orchestration engine."""
     enabled: bool = True
@@ -192,10 +169,9 @@ class PluginFlows(BaseModel):
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
-    model_config = ConfigDict(extra='allow')
+    model_config = ConfigDict(extra='ignore')  # HPM package keys are NOT stored here
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
-    MEDIA_PLAYER: PluginMediaPlayer = Field(default_factory=PluginMediaPlayer)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB: PluginWeb = Field(default_factory=PluginWeb)
@@ -207,7 +183,7 @@ class PluginsConfig(BaseModel):
     BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
-    MAIL: PluginMail = Field(default_factory=PluginMail)
+
     FLOWS: PluginFlows = Field(default_factory=PluginFlows)
     extra_dirs: List[str] = []
 

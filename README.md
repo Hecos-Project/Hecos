@@ -28,6 +28,7 @@ Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.40.0 offe
 ## ✨ Key Features (v0.40.0)
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
 * 🛡️ **HPM Integrity Verification** — New `/verify` API and Control Room UI to cryptographically validate installed package files against their Ed25519-signed manifest hashes.
+* 🔒 **Hecos SDK (Total Isolation)** — Run HPM packages in dedicated, isolated subprocesses and independent virtual environments (venv) to prevent dependency hell and main event loop blocking.
 * ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally[cite: 1].
 * ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands[cite: 1].
 * **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding[cite: 1].

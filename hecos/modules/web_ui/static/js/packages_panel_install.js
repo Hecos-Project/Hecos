@@ -42,7 +42,7 @@ window.hpmInstallFile = function(file, forceAllowUnsigned = false, skipDepCheck 
 window._hpmInstallQueue = [];
 window._hpmInstallRunning = false;
 
-window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, skipDepCheck = false) {
+window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, forceSkipDepCheck = false) {
   const files = Array.from(fileList).filter(f => f.name.endsWith('.hpkg') || f.name.endsWith('.zip'));
   if (files.length === 0) {
     if (window.showToast) window.showToast('No valid .hpkg packages selected', 'error');
@@ -50,6 +50,7 @@ window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, sk
   }
 
   const allowUnsigned = forceAllowUnsigned || (document.getElementById('hpm-allow-unsigned')?.checked || false);
+  const skipDepCheck = forceSkipDepCheck || (document.getElementById('hpm-skip-deps')?.checked || false);
 
   // Add files to the queue
   files.forEach(f => {

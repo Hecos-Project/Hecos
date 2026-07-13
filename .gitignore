@@ -271,6 +271,7 @@ hecos/personality/Jun_my_little_princess.yaml
 # Config data: Ignore active configs, keep templates
 hecos/config/data/*
 !hecos/config/data/*.example
+!hecos/data/templates.json
 
 # API Keys - CRITICAL: never push these to git
 hecos/config/keys.yaml
@@ -325,17 +326,9 @@ workspace/flows/*
 # They are NOT part of the Hecos Core and MUST NOT be pushed to the core repo.
 # Build and release them separately from the Hecos-Packages repository.
 
-# Core Plugins (HPM)
-hecos/hpm/calendar/
-hecos/hpm/image_gen/
-hecos/hpm/lists/
-hecos/hpm/map/
-hecos/hpm/media_player/
-hecos/plugins/media_player/
-hecos/hpm/quick_links/
-hecos/hpm/reminder/
-hecos/hpm/weather_pro/
-hecos/hpm/webcam/
+# Core Plugins (HPM) - Block entire directory to prevent ANY package from being tracked
+hecos/hpm/*
+!hecos/hpm/.gitkeep
 
 # WebUI Extensions belonging to HPM packages
 hecos/modules/web_ui/extensions/calendar/

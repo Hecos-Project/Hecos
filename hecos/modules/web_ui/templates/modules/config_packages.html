@@ -93,11 +93,19 @@
     </div>
 
     <!-- Security Options -->
-    <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" id="hpm-allow-unsigned" style="accent-color:var(--accent);">
-      <label for="hpm-allow-unsigned" style="font-size:0.85em;color:var(--text);cursor:pointer;">
-        {{ t('hpm_allow_unsigned') or 'Allow unsigned packages (For local development only)' }}
-      </label>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="hpm-allow-unsigned" style="accent-color:var(--accent);">
+        <label for="hpm-allow-unsigned" style="font-size:0.85em;color:var(--text);cursor:pointer;">
+          {{ t('hpm_allow_unsigned') or 'Allow unsigned packages (For local development only)' }}
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="hpm-skip-deps" style="accent-color:var(--accent);">
+        <label for="hpm-skip-deps" style="font-size:0.85em;color:var(--text);cursor:pointer;">
+          {{ t('hpm_skip_deps') or 'Skip dependency installation (Fast reinstall if already present)' }}
+        </label>
+      </div>
     </div>
 
     <!-- Progress bar (hidden by default) -->

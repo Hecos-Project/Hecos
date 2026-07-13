@@ -54,6 +54,7 @@
     "hpm_drag_drop": "Arrastra y suelta un archivo .hpkg aquí",
     "hpm_or_browse": "o haz clic para buscar",
     "hpm_allow_unsigned": "Permitir paquetes no firmados (Solo para desarrollo local)",
+    "hpm_skip_deps": "Omitir instalación de dependencias (Reinstalación rápida si ya existen)",
     "hpm_preparing": "Preparando...",
     "hpm_online_registry": "Registro en Línea",
     "hpm_coming_soon": "PRÓXIMAMENTE",

@@ -15,6 +15,7 @@ function populateSystemUI() {
     setCheck('sys-fastboot', sys.fast_boot ?? false);
     setCheck('sys-flask-debug', sys.flask_debug ?? false);
     setCheck('sys-check-local-backend', sys.check_local_backend_on_boot ?? false);
+    setCheck('sys-sdk-enabled', sys.sdk_enabled === true);  // default OFF
     setVal('sys-language', c.language || 'en');
     
     // HTTPS and WebUI config
@@ -87,7 +88,8 @@ function buildSystemPayload() {
         system: {
             fast_boot: getC('sys-fastboot', sys.fast_boot ?? false),
             flask_debug: getC('sys-flask-debug', sys.flask_debug ?? false),
-            check_local_backend_on_boot: getC('sys-check-local-backend', sys.check_local_backend_on_boot ?? false)
+            check_local_backend_on_boot: getC('sys-check-local-backend', sys.check_local_backend_on_boot ?? false),
+            sdk_enabled: getC('sys-sdk-enabled', sys.sdk_enabled === true)
         },
         language: getV('sys-language', sln),
         cognition: {
