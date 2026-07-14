@@ -1,36 +1,4 @@
 {
-    "BROWSER": {
-        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
-        "commands": {
-            "open_url": "Navigate the browser to a URL.",
-            "get_current_url": "Return the current page URL.",
-            "go_back": "Navigate back to the previous page.",
-            "get_page_text": "Read all visible text from the current page.",
-            "get_links": "List all hyperlinks on the page.",
-            "get_inputs": "List all interactive form elements.",
-            "get_title": "Return the page title.",
-            "click_element": "Click an element by visible text or aria-label.",
-            "type_in_field": "Fill a form field by label/placeholder and optionally press Enter.",
-            "scroll": "Scroll the page up or down.",
-            "press_key": "Press a keyboard key in the browser.",
-            "run_js": "Execute JavaScript code on the page.",
-            "screenshot": "Take a viewport screenshot for vision analysis.",
-            "list_tabs": "List all open tabs in the browser (useful for CDP mode).",
-            "switch_tab": "Switch focus to a specific tab by its ID.",
-            "new_tab": "Open a new tab and navigate to a URL.",
-            "close_tab": "Close the currently active tab.",
-            "close": "Close the browser window."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "BROWSER CONTROL DECISION TREE — Follow these steps in order: (1) ALWAYS start with BROWSER__list_tabs. (2) If it returns a list of tabs → you are in CDP mode. Use BROWSER__switch_tab(index) to go to the right tab, then use BROWSER page tools (get_page_text, click_element, type_in_field). (3) If list_tabs returns 'CDP connection is not active' → Chrome was NOT launched in AI-Ready mode. IMMEDIATELY fall back to: AUTOMATION__get_browser_tabs to find open tabs by title (this reads from Windows accessibility, real browser windows only), then AUTOMATION__focus_browser_tab with the matching title fragment. NEVER stop and ask the user — always attempt the fallback automatically.",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "🌐",
-        "category": "PLUGINS",
-        "module_type": "core_module",
-        "slash_commands": []
-    },
     "DASHBOARD": {
         "description": "Hardware monitoring and AI backend status.",
         "commands": {
@@ -251,6 +219,40 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "CALENDAR": {
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+        "commands": {
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"far fa-calendar-alt\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "calendar",
+                "manifest_version": "1",
+                "aliases": [
+                    "/calendar",
+                    "/calendario",
+                    "/appuntamenti"
+                ],
+                "description": "Elenca i prossimi eventi nel calendario",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "requires_args": false
+            }
+        ]
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
         "commands": {},
@@ -281,15 +283,96 @@
             }
         ]
     },
-    "PC_AUTOMATION": {
-        "description": "Full PC control: mouse movement, keyboard input, window management, and Windows Accessibility API for reading browser tabs and UI controls. Combine with WEBCAM desktop_screenshot for a full see-and-act loop. Requires Windows for UIAutomation features (browser tabs, window controls); mouse/keyboard works cross-platform.",
+    "MESSENGER": {
+        "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
+        "commands": {
+            "send_message": "Sends a text message to a contact or channel on the specified platform.",
+            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
+            "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
+            "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-paper-plane",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "msg",
+                "manifest_version": "1",
+                "aliases": [
+                    "/msg",
+                    "/send"
+                ],
+                "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
+                "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
+                "example": "/msg whatsapp:+393331234567 Ciao, questo è un test!",
+                "icon": "💬",
+                "method": "msg_command",
+                "requires_args": true
+            }
+        ]
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "method": "set_reminder",
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Elenca tutti i promemoria attivi",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "requires_args": false
+            }
+        ]
+    },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
         "commands": {},
         "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true,
-        "icon": "<i class=\"fas fa-magic\"></i>",
+        "icon": "fa-file-alt",
         "category": "PLUGINS",
         "module_type": "hpm",
         "slash_commands": []

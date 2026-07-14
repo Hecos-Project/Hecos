@@ -105,8 +105,7 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         _pkg_type = _mdict.get("type", "plugin")
                         _tag = _mdict.get("tag", "")
                         if _tag and _pkg_type in _PLUGIN_NS_TYPES:
-                            # Force enable — overwrite regardless of previous state
-                            cfg_mgr.set(True, "plugins", _tag, "enabled")
+                            pass # HPM plugins no longer write enabled state to plugins.yaml
                         for _w in _mdict.get("widgets", []):
                             _wid = _w.get("id", "")
                             if _wid:
@@ -114,16 +113,23 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                                 # XOR default: widgets start in Control Room, not sidebar
                                 cfg_mgr.set(False, "widgets", "per_widget", _wid, "visible")
                                 cfg_mgr.set(True, "widgets", "per_widget", _wid, "room_visible")
-                        if (_tag and _pkg_type in _PLUGIN_NS_TYPES) or _mdict.get("widgets"):
+                        if _mdict.get("widgets"):
                             cfg_mgr.save()
-                            log.info(f"[HPM] Force-enabled '{_tag}' in live cfg_mgr after install.")
                 except Exception as _ce:
                     log.warning(f"[HPM] Could not force-enable in live cfg_mgr: {_ce}")
 
                 _hpm_event_broadcast("hpm:package_installed", {"id": result.package_id})
                 _invalidate_all_caches()
 
-                # ── Reload command registry so new slash commands appear live ──
+                # ── Hot-reload capability registry with live config ──
+                try:
+                    from hecos.core.system import module_loader
+                    module_loader.update_capability_registry(cfg_mgr.config, debug_log=False)
+                    log.info(f"[HPM] Capability registry hot-reloaded after install of '{result.package_id}'")
+                except Exception as _reg_e:
+                    log.warning(f"[HPM] Capability registry reload failed: {_reg_e}")
+
+                # ── Reload slash command registry ──
                 try:
                     from hecos.core.commands.registry import get_registry
                     get_registry(reload=True)
@@ -262,14 +268,14 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                             _pkg_type = _mdict.get("type", "plugin")
                             _tag = _mdict.get("tag", "")
                             if _tag and _pkg_type in _PLUGIN_NS_TYPES:
-                                cfg_mgr.set(True, "plugins", _tag, "enabled")
+                                pass # HPM plugins no longer write enabled state to plugins.yaml
                             for _w in _mdict.get("widgets", []):
                                 _wid = _w.get("id", "")
                                 if _wid:
                                     cfg_mgr.set(True, "widgets", "per_widget", _wid, "enabled")
                                     cfg_mgr.set(False, "widgets", "per_widget", _wid, "visible")
                                     cfg_mgr.set(True, "widgets", "per_widget", _wid, "room_visible")
-                            if (_tag and _pkg_type in _PLUGIN_NS_TYPES) or _mdict.get("widgets"):
+                            if _mdict.get("widgets"):
                                 cfg_mgr.save()
                     except Exception as _ce:
                         log.warning(f"[HPM:Batch] Could not force-enable in live cfg_mgr for {filename}: {_ce}")

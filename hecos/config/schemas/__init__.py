@@ -17,7 +17,7 @@ from .plugins_schema import (
     PluginFileManager, PluginHelp,
     PluginSystem, PluginSysNet,
     PluginWebUI, PluginExecutor, PluginDrive,
-    PluginMCPBridge, PluginBrowser,
+    PluginMCPBridge,
     PluginUsers,
     MCPServerConfig,
 )

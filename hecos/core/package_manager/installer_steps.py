@@ -150,6 +150,7 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
     })
     if manifest.config_panel:
         runtime_manifest_data["icon"] = manifest.config_panel.tab_icon
+        runtime_manifest_data["config_panel"] = manifest.config_panel.model_dump()
 
     with open(runtime_manifest_path, "w", encoding="utf-8") as f:
         json.dump(runtime_manifest_data, f, indent=4, ensure_ascii=False)

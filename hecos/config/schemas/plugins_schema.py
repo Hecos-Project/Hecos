@@ -100,19 +100,6 @@ class PluginMCPBridge(BaseModel):
 
 
 
-class PluginBrowser(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    headless: bool = False
-    block_ads: bool = True
-    startup_url: str = "http://localhost:7070"
-    default_timeout: int = 10000
-    browser_type: str = "chromium"
-    browser_engine_mode: str = "app_mode"
-    cdp_port: int = 9222
-
-
-
 class PluginUsers(BaseModel):
     enabled: bool = True
     lazy_load: bool = True
@@ -154,7 +141,7 @@ class PluginFlows(BaseModel):
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
-    model_config = ConfigDict(extra='ignore')  # HPM package keys are NOT stored here
+    model_config = ConfigDict(extra='allow')  # HPM package keys ARE stored here
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
@@ -163,7 +150,6 @@ class PluginsConfig(BaseModel):
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
-    BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
 

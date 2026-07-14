@@ -155,7 +155,22 @@ async function _loadPanel(panelId) {
         delete window._panelHTMLCache[panelId];
     } else {
         const res = await fetchWithTimeout(`/hecos/config/fragment/${panelId}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) {
+            // Read error body — the server now returns detailed exception info
+            let errBody = '';
+            try { errBody = await res.text(); } catch(_) {}
+            console.error(`[LazyHub] Panel '${panelId}' server error ${res.status}:`, errBody);
+            container.insertAdjacentHTML('beforeend',
+              `<div class="panel active" id="tab-${panelId}" style="padding:30px; color:var(--red);">
+                ⚠️ Failed to load panel <strong>${panelId}</strong> (HTTP ${res.status}).<br>
+                <details style="margin-top:10px;font-size:12px;opacity:.7">
+                  <summary>Server error details</summary>
+                  <div style="margin-top:8px;padding:10px;background:rgba(255,0,0,.1);border-radius:6px">${errBody || 'No details available.'}</div>
+                </details>
+              </div>`
+            );
+            return;
+        }
         html = await res.text();
     }
 
@@ -210,7 +225,8 @@ async function _loadPanel(panelId) {
     console.error(`[LazyHub] Failed to load panel '${panelId}':`, e);
     container.insertAdjacentHTML('beforeend',
       `<div class="panel active" id="tab-${panelId}" style="padding:30px; color:var(--red);">
-        ⚠️ Failed to load panel. Please try again.
+        ⚠️ Failed to load panel <strong>${panelId}</strong>. Please try again.<br>
+        <small style="opacity:.6">${e.message || e}</small>
       </div>`
     );
   } finally {

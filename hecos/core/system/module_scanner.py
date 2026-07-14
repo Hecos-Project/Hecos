@@ -25,6 +25,21 @@ def update_capability_registry(config=None, debug_log=True):
     generates a centralized JSON file with all active abilities.
     If config is passed, it uses it to check the 'enabled' flag.
     """
+    
+    def _is_enabled(tag, config, module_type, manifest_id=None):
+        if module_type == "hpm":
+            try:
+                from hecos.core.package_manager.registry import PackageRegistry
+                import os
+                reg = PackageRegistry(os.path.join("hecos", "data", "packages.db"))
+                pkg_id = manifest_id if manifest_id else tag.lower()
+                pkg_info = reg.get(pkg_id)
+                if pkg_info:
+                    return pkg_info.get("status") == "installed"
+            except Exception:
+                pass
+        return config.get('plugins', {}).get(tag, {}).get('enabled', True)
+
     _plugin_config_schemas.clear()
     _loaded_plugins.clear()
     _loaded_legacy_plugins.clear()
@@ -141,7 +156,7 @@ def update_capability_registry(config=None, debug_log=True):
                             manifest_data = json.load(f)
 
                         tag = manifest_data.get("tag", plugin_dir.upper()).upper()
-                        plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                        plugin_enabled = _is_enabled(tag, config, module_type, manifest_data.get("id"))
                         if not plugin_enabled:
                             if debug_log: logger.debug("LOADER", f"HPM module {plugin_dir} disabled by config.")
                             continue
@@ -242,7 +257,7 @@ def update_capability_registry(config=None, debug_log=True):
                     # --- NEW CLASS-BASED SYSTEM (FUNCTION CALLING) ---
                     tools_instance = module.tools
                     tag = tools_instance.tag
-                    plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                    plugin_enabled = _is_enabled(tag, config, module_type)
                     if not plugin_enabled:
                         if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                         continue
@@ -293,7 +308,7 @@ def update_capability_registry(config=None, debug_log=True):
                     plugin_info = module.info()
                     tag = plugin_info['tag']
                     # Check enabled flag
-                    plugin_enabled = config.get('plugins', {}).get(tag, {}).get('enabled', True)
+                    plugin_enabled = _is_enabled(tag, config, module_type)
                     if not plugin_enabled:
                         if debug_log: logger.debug("LOADER", f"Plugin {plugin_dir} disabled by config.")
                         continue

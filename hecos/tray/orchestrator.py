@@ -12,6 +12,9 @@ _hecos_process = None
 
 def get_platform_python():
     """Returns the correct python executable depending on the environment."""
+    if sys.platform == "win32":
+        from hecos.core.system.process_naming import get_named_executable
+        return get_named_executable("hecos_main")
     # If running from a venv, sys.executable points to the venv python
     return sys.executable
 

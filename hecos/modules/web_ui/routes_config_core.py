@@ -54,16 +54,27 @@ def _build_options_dict(cfg_mgr, fast=False):
     except Exception:
         onnx_files = ["it_IT-aurora-medium.onnx"]
 
-    from hecos.app.model_manager import ModelManager
-    mm         = ModelManager(cfg_mgr)
-    # Always use fast_mode=True for WebUI fragment requests — the slow network
-    # fetch happens only via the background /hecos/options call from JS.
-    categorized = mm.get_available_models(fast_mode=True)
-    ollama_models = categorized.get("Ollama (Local)", [])
+    # Build model lists — fail gracefully if ModelManager has issues
+    categorized   = {}
+    ollama_models = []
+    try:
+        from hecos.app.model_manager import ModelManager
+        mm = ModelManager(cfg_mgr)
+        # Always use fast_mode=True for WebUI fragment requests — the slow network
+        # fetch happens only via the background /hecos/options call from JS.
+        categorized   = mm.get_available_models(fast_mode=True)
+        ollama_models = categorized.get("Ollama (Local)", [])
+    except Exception as _mm_e:
+        import traceback as _tb
+        logger.error(f"[WebUI] ModelManager failed in _build_options_dict: {_mm_e}\n{_tb.format_exc()}")
 
     # Sync personalities only if the cache is cold (avoid disk write per request)
-    cfg_mgr.sync_available_personalities()
-    personalita = list(cfg_mgr.config.get("ai", {}).get("available_personalities", {}).values())
+    try:
+        cfg_mgr.sync_available_personalities()
+        personalita = list(cfg_mgr.config.get("ai", {}).get("available_personalities", {}).values())
+    except Exception as _p_e:
+        logger.error(f"[WebUI] sync_available_personalities failed: {_p_e}")
+        personalita = []
 
     cloud_models_flat = []
     cloud_by_provider = {}
@@ -105,8 +116,6 @@ _PANEL_MAP = {
     'webui':           'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
     'automation':      'modules/config_utils.html',
-
-    'browser':         'modules/config_browser.html',
     'sysnet':          'modules/config_sysnet.html',
     'users':           'modules/config_users.html',
     'security':        'modules/config_security.html',
@@ -297,8 +306,9 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                 current_user=current_user,
             )
         except Exception as e:
-            logger.error(f"[WebUI] Fragment '{panel_id}' error: {e}")
-            return f"<p style='color:red'>Error loading panel: {e}</p>", 500
+            import traceback as _tb
+            logger.error(f"[WebUI] Fragment '{panel_id}' error: {e}\n{_tb.format_exc()}")
+            return f"<p style='color:red'>Error loading panel <strong>{panel_id}</strong>: {e}</p>", 500
 
     @app.route("/api/hub/panels", methods=["GET"])
     def hub_panels():

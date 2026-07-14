@@ -208,7 +208,7 @@ def intelligent_open_ai_browser(icon, item):
     _LAST_OPEN_TIME = now
     
     try:
-        from hecos.modules.browser import engine
+        from hecos.hpm.browser_automation.plugin import engine
         s = load_settings()
         headless    = s.get("browser_headless", False)
         startup_url = s.get("browser_startup_url", "")
@@ -246,7 +246,7 @@ def open_ai_browser(icon, item):
 
 def close_ai_browser(icon, item):
     try:
-        from hecos.modules.browser import engine
+        from hecos.hpm.browser_automation.plugin import engine
         engine.close()
     except Exception as e:
         print(f"[TRAY] AI Browser close error: {e}")

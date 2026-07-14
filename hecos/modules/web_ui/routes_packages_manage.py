@@ -27,6 +27,22 @@ def _invalidate_all_caches():
     except Exception:
         pass
 
+def _hot_reload_registry(cfg_mgr, log=None):
+    """Hot-reload the capability registry (tools, slash commands) using the live config manager."""
+    try:
+        from hecos.core.system import module_loader
+        module_loader.update_capability_registry(cfg_mgr.config, debug_log=False)
+        if log:
+            log.info("[HPM] Capability registry hot-reloaded.")
+    except Exception as e:
+        if log:
+            log.warning(f"[HPM] Capability registry reload failed (non-critical): {e}")
+    try:
+        from hecos.core.commands.registry import get_registry
+        get_registry(reload=True)
+    except Exception:
+        pass
+
 def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
 
     @app.route("/api/packages/<pkg_id>", methods=["GET"])
@@ -288,8 +304,6 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             if ok:
                 if status == "disabled":
                     widgets_modified = 0
-                    cfg_mgr.set(False, "plugins", pkg_tag, "enabled")
-                    widgets_modified += 1
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
@@ -301,8 +315,6 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                         cfg_mgr.save()
                 elif status == "installed":
                     widgets_modified = 0
-                    cfg_mgr.set(True, "plugins", pkg_tag, "enabled")
-                    widgets_modified += 1
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
@@ -317,6 +329,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                     "id": pkg_id, "status": status
                 })
                 _invalidate_all_caches()
+                _hot_reload_registry(cfg_mgr, log)
             return jsonify({"ok": ok, "id": pkg_id, "status": status, "tag": pkg_tag, "panel_id": panel_id})
         except Exception as e:
             log.error(f"[HPM] PATCH /api/packages/{pkg_id}/status error: {e}")
@@ -495,10 +508,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "visible")
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "room_visible")
-                        tag = snap.get("tag")
-                        if tag:
-                            cfg_mgr.set(False, "plugins", tag, "enabled")
-                        if widget_ids_to_hide or tag:
+                        if widget_ids_to_hide:
                             cfg_mgr.save()
                     except Exception as _purge_e:
                         log.warning(f"[HPM:Batch] Extension purge failed for {pkg_id}: {_purge_e}")
@@ -525,6 +535,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
 
         if any_cache_invalidate:
             _invalidate_all_caches()
+            _hot_reload_registry(cfg_mgr, log)
             try:
                 from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
                 clear_hpm_panel_cache()
@@ -538,3 +549,38 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             "failed": failed,
             "results": results,
         })
+
+
+    @app.route("/api/packages/hot_reload", methods=["POST"])
+    @login_required
+    def api_packages_hot_reload():
+        """
+        Manually trigger a hot-reload of the HPM capability registry.
+        Rescans hpm/, modules/, plugins/ and updates the LLM tool registry,
+        slash command registry and HPM panel cache — without a full restart.
+        """
+        try:
+            _hot_reload_registry(cfg_mgr, log)
+            try:
+                from hecos.core.system.extension_loader import discover_webui_extensions, load_eager_extensions
+                webui_ext_dir = os.path.join(_hecos_src, "modules", "web_ui")
+                discover_webui_extensions(webui_ext_dir)
+                load_eager_extensions(app, "WEB_UI")
+            except Exception as _ext_e:
+                log.warning(f"[HPM:HotReload] Extension re-discovery failed: {_ext_e}")
+
+            _refresh_jinja_loader(app)
+
+            try:
+                from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                clear_hpm_panel_cache()
+            except ImportError:
+                pass
+
+            _invalidate_all_caches()
+            _hpm_event_broadcast("hpm:registry_refreshed", {})
+            log.info("[HPM] Manual hot-reload completed.")
+            return jsonify({"ok": True, "message": "Capability registry reloaded."})
+        except Exception as e:
+            log.error(f"[HPM] Hot-reload error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
