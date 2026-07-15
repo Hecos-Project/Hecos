@@ -174,6 +174,22 @@ def install_webui_assets(staging: str, manifest: HpkgManifest, hecos_root: str) 
     templates_src = os.path.join(webui_src, "templates")
     if os.path.isdir(templates_src):
         templates_dst = os.path.join(webui_base, "templates", "modules")
+        os.makedirs(templates_dst, exist_ok=True)
+        # Collision check: warn if a template file is a generic name that
+        # could conflict with templates from other packages (e.g. config_panel.html).
+        for fname in os.listdir(templates_src):
+            dst_file = os.path.join(templates_dst, fname)
+            if os.path.isfile(dst_file):
+                # Check if the existing file looks like it belongs to another package
+                # by seeing if its content references a different tab id
+                generic_names = {"config_panel.html", "config.html", "panel.html", "settings.html"}
+                if fname in generic_names:
+                    logger.warning(
+                        f"[HPM:Installer] ⚠ Template collision risk: '{fname}' already exists in "
+                        f"templates/modules/ and may belong to another package. "
+                        f"Rename your template to a unique name (e.g. 'config_{manifest.id}.html') "
+                        f"to avoid overwriting it."
+                    )
         installed.extend(copy_tree(templates_src, templates_dst))
 
     static_src = os.path.join(webui_src, "static")

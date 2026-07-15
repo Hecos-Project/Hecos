@@ -613,9 +613,52 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                 _hot_reload_registry(cfg_mgr, log)
                 _invalidate_all_caches()
                 log.info(f"[HPM] Single module hot-reload completed for '{tag}'.")
-                return jsonify({"ok": True, "message": f"Module '{tag}' reloaded successfully."})
+                return jsonify({"ok": True, "message": f"Module '{tag}' reloaded successfully (subprocess restart)."})
             else:
-                return jsonify({"ok": False, "error": f"Module '{tag}' is not active or could not be restarted."}), 400
+                # Fallback: reload in-process lazy/native plugin
+                import sys, importlib.util
+                from hecos.core.system import module_state
+
+                reloaded = False
+                reloaded_info = ""
+
+                pkg = registry.get(pkg_id)
+                install_path = pkg.get("install_path", "") if pkg else ""
+                main_file = os.path.join(install_path, "plugin", "main.py") if install_path else None
+                
+                if main_file and os.path.exists(main_file):
+                    try:
+                        module_name = f"hecos.hpm.{pkg_id}.main"
+                        parent_name = module_name.rsplit('.', 1)[0]
+                        
+                        # 1. Purge all submodules of this plugin from sys.modules
+                        # This ensures multi-file plugins (like browser with engine.py, reader.py)
+                        # are fully re-evaluated from disk.
+                        modules_to_remove = [m for m in sys.modules.keys() if m.startswith(parent_name)]
+                        for m in modules_to_remove:
+                            del sys.modules[m]
+
+                        # 2. Re-import from scratch
+                        spec = importlib.util.spec_from_file_location(module_name, main_file)
+                        if spec:
+                            new_module = importlib.util.module_from_spec(spec)
+                            if parent_name not in sys.modules:
+                                sys.modules[parent_name] = type(sys)(parent_name)
+                                sys.modules[parent_name].__path__ = [os.path.dirname(main_file)]
+                            spec.loader.exec_module(new_module)
+                            module_state._loaded_plugins[tag] = new_module
+                            reloaded = True
+                            reloaded_info = "full package re-imported"
+                            log.info(f"[HPM] In-process plugin '{tag}' fully re-imported from disk.")
+                    except Exception as e:
+                        log.warning(f"[HPM] Full re-import failed for '{tag}': {e}")
+
+                if reloaded:
+                    _hot_reload_registry(cfg_mgr, log)
+                    _invalidate_all_caches()
+                    return jsonify({"ok": True, "message": f"Module '{tag}' reloaded ({reloaded_info})."})
+                else:
+                    return jsonify({"ok": False, "error": f"Module '{tag}' could not be reloaded — not found or main.py missing."}), 400
 
         except Exception as e:
             log.error(f"[HPM] Single module hot-reload error for {pkg_id}: {e}")

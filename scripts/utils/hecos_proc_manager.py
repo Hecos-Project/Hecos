@@ -20,8 +20,12 @@ def get_hecos_processes():
             
             p_type = None
             
-            # Solo Python o Piper
-            if not ("python" in name or "piper" in name):
+            # Ignore Antigravity IDE
+            if "pyrefly" in name:
+                continue
+
+            # Python, Piper, or renamed Hecos executables (hecos_module_*.exe, hecos_core.exe)
+            if not ("python" in name or "piper" in name or "hecos" in name):
                 continue
                 
             if "piper" in name:
@@ -31,22 +35,28 @@ def get_hecos_processes():
                     p_type = "Web Monitor"
                 else:
                     p_type = "Console Monitor"
-            elif "hecos.app.main" in cmd_str or "main.py" in cmd_str:
+            elif "hecos.app.main" in cmd_str or "hecos_core" in name or "main.py" in cmd_str:
                 p_type = "Hecos Core"
-            elif "web_ui.server" in cmd_str:
+            elif "web_ui.server" in cmd_str or "hecos_web" in name:
                 p_type = "Web Server"
-            elif "tray" in cmd_str:
+            elif "tray" in cmd_str or "hecos_tray" in name:
                 p_type = "Hecos Tray"
-            elif "hecos_sdk.runner" in cmd_str:
-                p_type = "HPM Subprocess"
-            elif "python" in name:
-                p_type = "Python (Generic)"
+            elif "hecos_sdk.runner" in cmd_str or "hecos_module_" in name:
+                # Extract module name if possible
+                mod_name = name.replace("hecos_module_", "").replace(".exe", "").upper()
+                p_type = f"HPM Subprocess ({mod_name})" if "hecos_module_" in name else "HPM Subprocess"
+            elif "python" in name or "hecos" in name:
+                # If we got here but it's a hecos executable or python running something hecos-related
+                if "hecos" in name or "hecos" in cmd_str:
+                    p_type = "Hecos (Generic)"
+                else:
+                    continue # Skip unrelated python processes
 
             if p_type:
                 hecos_procs.append({
                     "pid": proc.info['pid'],
                     "type": p_type,
-                    "cmd": " ".join(cmdline)
+                    "cmd": " ".join(cmdline) or name
                 })
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -70,7 +80,7 @@ def main():
         counts[p['cmd']] = counts.get(p['cmd'], 0) + 1
     
     print(f"\nProcessi trovati ({len(procs)}):")
-    print(f"{'PID':<8} | {'Tipo':<18} | {'Comando'}")
+    print(f"{'PID':<8} | {'Tipo':<25} | {'Comando'}")
     print("-" * 80)
     
     has_duplicates = False
@@ -82,10 +92,10 @@ def main():
         
         # Truncate cmd for display if too long
         display_cmd = p['cmd']
-        if len(display_cmd) > 60:
-            display_cmd = display_cmd[:57] + "..."
+        if len(display_cmd) > 50:
+            display_cmd = display_cmd[:47] + "..."
             
-        print(f"{p['pid']:<8} | {p['type']:<18} | {display_cmd}{warn}")
+        print(f"{p['pid']:<8} | {p['type']:<25} | {display_cmd}{warn}")
 
     if has_duplicates:
         print("\n" + "!"*80)
@@ -104,8 +114,8 @@ def main():
     if choice == '1':
         for p in procs:
             try:
-                psutil.Process(p['pid']).terminate()
-                print(f"Terminato PID {p['pid']} ({p['type']})")
+                psutil.Process(p['pid']).kill()  # Force kill instead of gentle terminate
+                print(f"Ucciso PID {p['pid']} ({p['type']})")
             except: pass
         print("\nPulizia completata.")
     
@@ -113,16 +123,16 @@ def main():
         for p in procs:
             if counts[p['cmd']] > 1:
                 try:
-                    psutil.Process(p['pid']).terminate()
-                    print(f"Terminato duplicato PID {p['pid']} ({p['type']})")
+                    psutil.Process(p['pid']).kill()
+                    print(f"Ucciso duplicato PID {p['pid']} ({p['type']})")
                     counts[p['cmd']] -= 1 # Keep at least one
                 except: pass
     
     elif choice.isdigit():
         pid_to_kill = int(choice)
         try:
-            psutil.Process(pid_to_kill).terminate()
-            print(f"Terminato PID {pid_to_kill}")
+            psutil.Process(pid_to_kill).kill()
+            print(f"Ucciso PID {pid_to_kill}")
         except Exception as e:
             print(f"Errore nel terminare il processo: {e}")
             

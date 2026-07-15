@@ -10,6 +10,10 @@
       const emCdp = document.getElementById('em-cdp');
       if(emCdp && mode === 'cdp_mode') emCdp.checked = true;
       
+      if(typeof window.updateModeUI === 'function') {
+          window.updateModeUI();
+      }
+      
       const aCfg = window.cfg?.plugins?.AUTOMATION || {};
       const autoEnabled = aCfg.enabled ?? false;
       const autoEl = document.getElementById('automation-enabled');
@@ -48,6 +52,22 @@
       // Call global saveConfig if available (silent mode)
       if (typeof saveConfig === 'function') {
           saveConfig(true); 
+      }
+  };
+
+  window.updateModeUI = function() {
+      const emApp = document.getElementById('em-app');
+      const emCdp = document.getElementById('em-cdp');
+      const boxApp = document.getElementById('mode-box-app');
+      const boxCdp = document.getElementById('mode-box-cdp');
+
+      if (boxApp) {
+          boxApp.style.borderColor = (emApp && emApp.checked) ? 'var(--accent)' : 'transparent';
+          boxApp.style.boxShadow = (emApp && emApp.checked) ? '0 0 0 2px var(--accent) inset, 0 4px 15px rgba(124,58,237,0.1)' : 'none';
+      }
+      if (boxCdp) {
+          boxCdp.style.borderColor = (emCdp && emCdp.checked) ? 'var(--accent)' : 'transparent';
+          boxCdp.style.boxShadow = (emCdp && emCdp.checked) ? '0 0 0 2px var(--accent) inset, 0 4px 15px rgba(124,58,237,0.1)' : 'none';
       }
   };
 
