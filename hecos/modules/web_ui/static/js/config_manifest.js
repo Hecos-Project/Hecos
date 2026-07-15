@@ -37,7 +37,6 @@ window.CONFIG_HUB = {
         { id: 'flows',            label: 'hub_mod_flows',        icon: '<i class="fas fa-project-diagram"></i>', cat: 'RISORSE', pluginTag: 'FLOWS', isCore: true },
         
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
-        { id: 'automation',label: 'hub_mod_automation',  icon: '<i class="fas fa-magic"></i>', cat: 'SISTEMA', pluginTag: 'AUTOMATION' },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
 
@@ -118,7 +117,6 @@ window.CONFIG_HUB.tagMap = {
     'DRIVE_EDITOR': 'drive-editor',
 
     'CONTACTS': 'contacts',
-    'AUTOMATION': 'automation',
     'BROWSER':    'browser',
     'USERS':      'users',
     'FLOWS':      'flows'

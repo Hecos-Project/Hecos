@@ -160,6 +160,17 @@ window.hpmRenderRow = function(pkg, meta) {
           <i class="fas fa-check-double" style="font-size:10px; opacity:0.8;"></i>
         </button>`;
 
+      if (pkg.tag && !isDisabled && !isBroken) {
+        actions += `
+          <button type="button"
+                  class="btn btn-sm"
+                  style="font-size:10px;padding:4px 10px;margin-left:4px; border:1px solid var(--border-color); color:var(--text-color); background:transparent;"
+                  onclick="window.hpmHotReloadModule('${pkg.id}', '${window._hesc(pkg.name)}')"
+                  title="${window.HPM_I18N?.hot_reload || 'Hot Reload Module'}">
+            <i class="fas fa-sync-alt" style="font-size:10px; opacity:0.8;"></i>
+          </button>`;
+      }
+
       if (isRemovable) {
         actions += `
           <button type="button"

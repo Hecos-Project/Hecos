@@ -1,292 +1,348 @@
-<!-- Image Gen Config Panel -->
-<div id="tab-igen" class="panel">
 
-<!-- Gallery & Quick Actions Card -->
-<div class="card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.08), var(--bg2));">
-  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-    <div style="display:flex; align-items:center; gap:10px;">
-      <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, var(--accent), #7c3aed); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-        <i class="fas fa-images" style="color:#fff; font-size:15px;"></i>
+<link rel="stylesheet" href="/hpm_plugin/browser_automation/web/static/css/browser_automation.css">
+<script src="/hpm_plugin/browser_automation/web/static/js/browser_panel.js"></script>
+<!-- BROWSER PANEL -->
+<div id="tab-browser" class="panel">
+  <div class="card">
+    <div class="card-title">Control Paradigm (PC & Browser)</div>
+    <div class="toggle-row" style="margin-bottom: 20px;">
+      <div class="toggle-info">
+        <strong>Enable BROWSER Module</strong><br>
+        <small style="color:var(--muted);">Completely toggle the AI's ability to use web browsers.</small>
       </div>
-      <div>
-        <div style="font-weight:700; color:var(--text); font-size:0.95em;">Image Generation</div>
-        <div style="font-size:0.72em; color:var(--muted);">AI-powered text-to-image</div>
+      <label class="switch"><input type="checkbox" id="browser-enabled" onchange="window.updateConfig('plugins.BROWSER.enabled', this.checked)"><span class="slider"></span></label>
+    </div>
+
+    <p style="font-size:13px; color:var(--muted); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+      Choose how deeply Hecos should interact with your system. You can use an isolated internal browser (discreet), hook into your personal Chrome (Takeover), or give Hecos "eyes" to control the entire Windows OS with your real mouse.
+    </p>
+
+    <!-- App Mode -->
+    <div class="field" style="border:1px solid var(--accent); border-radius:8px; padding:15px; margin-bottom:15px; background:var(--bg3);">
+      <div class="toggle-row" style="margin-bottom:0;">
+        <div class="toggle-info">
+          <strong style="color:var(--text-light); font-size:15px;">1. Isolated AI Browser (App Mode)</strong><br>
+          <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
+            Hecos uses its own dedicated Chromium browser. Great for quick background web searches without popping up windows that disturb you. <br>
+            <em>Does not use your saved passwords or browsing history.</em>
+          </small>
+        </div>
+        <input type="radio" name="engine_mode" value="app_mode" id="em-app" onchange="window.updateConfig('plugins.BROWSER.browser_engine_mode', 'app_mode')" style="width:20px; height:20px; accent-color:var(--accent);" {% if zconfig.get('plugins', {}).get('BROWSER', {}).get('browser_engine_mode', 'cdp_mode') == 'app_mode' %}checked{% endif %}>
       </div>
     </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button
-        id="igen-refresh-btn"
-        onclick="window.reloadIgenPanel()"
-        style="display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px;
-               border:1px solid var(--border); background:var(--bg3);
-               color:var(--muted); font-weight:600; font-size:13px; cursor:pointer;
-               transition:all .2s ease;"
-        onmouseover="this.style.color='var(--text)'"
-        onmouseout="this.style.color='var(--muted)'"
-        title="Refresh providers, models and presets">
-        <i class="fas fa-sync-alt" style="font-size:13px;"></i>
-        Refresh
-      </button>
-      <button
-        id="igen-gallery-btn"
-        onclick="window._openIgenGallery()"
-        style="display:flex; align-items:center; gap:8px; padding:8px 18px; border-radius:10px;
-               border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.12);
-               color:var(--accent); font-weight:700; font-size:13px; cursor:pointer;
-               transition:all .2s ease;"
-        onmouseover="this.style.background='rgba(var(--accent-rgb),0.22)'"
-        onmouseout="this.style.background='rgba(var(--accent-rgb),0.12)'"
-        title="Open generated images gallery">
-        <i class="fas fa-images" style="font-size:14px;"></i>
-        Gallery
-      </button>
+
+    <!-- CDP Mode -->
+    <div class="field" style="border:1px solid var(--accent); border-radius:8px; padding:15px; margin-bottom:15px; background:var(--bg3);">
+      <div class="toggle-row" style="margin-bottom:10px;">
+        <div class="toggle-info">
+          <strong style="color:var(--text-light); font-size:15px;">2. Your Real Browser (Takeover CDP)</strong><br>
+          <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
+            Hecos "undercover" uses your Google Chrome (or Edge). It sees your extensions, logins, and bookmarks. <br>
+            <span style="color:#ffcc00; display:block; margin-top:6px;"><i class="fas fa-exclamation-triangle"></i> <strong>CRITICAL REQUIREMENT:</strong> You must launch Chrome using this shortcut parameter: <code style="padding:2px 4px; border-radius:4px; font-size:12px; background:var(--bg0);">chrome.exe --remote-debugging-port=9222</code>. If Chrome is opened normally, the hook will fail for security reasons.</span>
+          </small>
+        </div>
+        <input type="radio" name="engine_mode" value="cdp_mode" id="em-cdp" onchange="window.updateConfig('plugins.BROWSER.browser_engine_mode', 'cdp_mode')" style="width:20px; height:20px; accent-color:var(--accent);" {% if zconfig.get('plugins', {}).get('BROWSER', {}).get('browser_engine_mode', 'cdp_mode') == 'cdp_mode' %}checked{% endif %}>
+      </div>
+      <div class="field" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 10px;">
+        <label>Debug Port (Default: 9222)</label>
+        <input type="number" id="browser-cdp-port" placeholder="9222" onchange="window.updateConfig('plugins.BROWSER.cdp_port', parseInt(this.value))">
+      </div>
+      <div style="margin-top:15px; text-align: right;">
+        <button class="btn btn-primary" onclick="launchCdpBrowser()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">
+          <i class="fas fa-rocket"></i> Launch Browser with Debug now
+        </button>
+      </div>
+    </div>
+
+    <!-- PC Vision Control -->
+    <div class="field" style="border:1px solid var(--accent); border-radius:8px; padding:15px; margin-bottom:15px; background:var(--bg3);">
+      <div class="toggle-row" style="margin-bottom:0;">
+        <div class="toggle-info">
+          <strong style="color:var(--text-light); font-size:15px;">3. Physical Mouse + Vision (PC Automation)</strong><br>
+          <small style="color:var(--muted); line-height:1.4; display:block; margin-top:5px;">
+            Hecos uses AI to see the screen (via periodic screenshots) and <strong>moves your real mouse pointer</strong> on the current page or in any desktop program. <br>
+            <em>Note: This is the ultimate human action. If enabled, you cannot use the PC while Hecos is "driving" because it will move the physical mouse.</em>
+          </small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="automation-enabled" data-plugin="AUTOMATION" onchange="window.updateConfig('plugins.AUTOMATION.enabled', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
   </div>
+
+  <div class="card">
+    <div class="card-title">"App Mode" Settings</div>
+    
+    <div class="toggle-row" style="margin-bottom:16px;">
+      <div class="toggle-info">
+        <strong>Headless Mode</strong><br>
+        <small style="color:var(--muted);">Completely hides the internal browser window (you won't see anything).</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="browser-headless" onchange="saveModuleKey('BROWSER','headless',this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-bottom:16px;">
+      <div class="toggle-info">
+        <strong>Ad Blocker</strong><br>
+        <small style="color:var(--muted);">Speeds up loading times by blocking known advertising networks.</small>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="browser-block-ads" onchange="saveModuleKey('BROWSER','block_ads',this.checked)">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field">
+      <label>Startup URL</label>
+      <input type="text" id="browser-startup-url" placeholder="http://localhost:7070" onchange="saveModuleKey('BROWSER','startup_url',this.value)">
+    </div>
+
+    <div class="field">
+      <label>Engine</label>
+      <select id="browser-engine" onchange="saveModuleKey('BROWSER','browser_type',this.value)">
+        <option value="chromium">Chromium</option>
+        <option value="firefox">Firefox</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ═══ GUIDE SECTION ═══════════════════════════════════════════════════════ -->
+
+  <!-- Slash Commands Card -->
+  <div class="card" style="border-left: 4px solid var(--accent);">
+    <div class="card-title"><i class="fas fa-terminal"></i> Slash Commands</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
+      Digita questi comandi direttamente nella chat per controllare il browser AI istantaneamente.
+    </p>
+
+    <!-- /browser -->
+    <div style="background:var(--bg3); border-radius:8px; padding:12px 14px; margin-bottom:10px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span style="font-size:18px;">🌐</span>
+        <code style="color:var(--accent); font-size:14px; font-weight:700;">/browser</code>
+        <span style="font-size:11px; color:var(--muted);">alias: /apri, /open</span>
+      </div>
+      <p style="font-size:12px; color:var(--text); margin-bottom:8px;">Apre un URL nel browser AI di Hecos.</p>
+      <div style="background:var(--bg0); border-radius:6px; padding:8px 10px; font-family:monospace; font-size:12px; color:var(--muted);">
+        /browser https://google.com<br>
+        /apri youtube.com<br>
+        /open wikipedia.org/wiki/Intelligenza_artificiale
+      </div>
+    </div>
+
+    <!-- /screen -->
+    <div style="background:var(--bg3); border-radius:8px; padding:12px 14px; margin-bottom:4px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+        <span style="font-size:18px;">📸</span>
+        <code style="color:var(--accent); font-size:14px; font-weight:700;">/screen</code>
+        <span style="font-size:11px; color:var(--muted);">alias: /screenshot, /vedi</span>
+      </div>
+      <p style="font-size:12px; color:var(--text); margin-bottom:8px;">Scatta un screenshot della pagina browser corrente e lo mostra in chat.</p>
+      <div style="background:var(--bg0); border-radius:6px; padding:8px 10px; font-family:monospace; font-size:12px; color:var(--muted);">
+        /screen<br>
+        /vedi<br>
+        /screenshot
+      </div>
+    </div>
+  </div>
+
+  <!-- LLM Tools Card -->
+  <div class="card" style="border-left: 4px solid #7c3aed;">
+    <div class="card-title"><i class="fas fa-robot"></i> LLM Tools (comandi AI)</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
+      Strumenti che l'AI utilizza automaticamente durante le conversazioni. Puoi anche chiederglieli esplicitamente in linguaggio naturale.
+    </p>
+
+    <!-- Tools grid -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+
+      <!-- open_url -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-globe"></i> BROWSER__open_url</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Apre un URL nel browser.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Apri Amazon.it"<br>
+          "Vai su github.com"
+        </div>
+      </div>
+
+      <!-- get_page_text -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-file-alt"></i> BROWSER__get_page_text</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Legge tutto il testo visibile della pagina corrente.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Leggi il contenuto di questa pagina"<br>
+          "Cosa c'è scritto qui?"
+        </div>
+      </div>
+
+      <!-- click_element -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-mouse-pointer"></i> BROWSER__click_element</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Clicca un elemento per testo o selettore CSS.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Clicca sul pulsante Accetta"<br>
+          "Premi su 'Login'"
+        </div>
+      </div>
+
+      <!-- type_in_field -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-keyboard"></i> BROWSER__type_in_field</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Scrive testo in un campo input.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Cerca 'Python tutorial' su Google"<br>
+          "Compila il campo email con test@test.it"
+        </div>
+      </div>
+
+      <!-- get_links -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-link"></i> BROWSER__get_links</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Elenca tutti i link presenti nella pagina.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Mostrami tutti i link di questa pagina"<br>
+          "Quali articoli ci sono nel blog?"
+        </div>
+      </div>
+
+      <!-- get_inputs -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-list-ul"></i> BROWSER__get_inputs</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Lista tutti i campi e i pulsanti del form.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Quali campi ha questo form?"<br>
+          "Analizza il modulo di login"
+        </div>
+      </div>
+
+      <!-- list_tabs / switch_tab -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-clone"></i> BROWSER__list_tabs / switch_tab</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Gestisce le tab aperte (solo CDP mode).</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Quante tab ho aperte?"<br>
+          "Passa alla tab di YouTube"
+        </div>
+      </div>
+
+      <!-- run_js -->
+      <div style="background:var(--bg3); border-radius:8px; padding:10px 12px;">
+        <div style="font-weight:700; font-size:12px; color:var(--accent); margin-bottom:4px;"><i class="fas fa-code"></i> BROWSER__run_js</div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:6px;">Esegue JavaScript nella pagina corrente.</p>
+        <div style="background:var(--bg0); border-radius:5px; padding:6px 8px; font-family:monospace; font-size:11px; color:var(--text-muted);">
+          "Esegui document.title in JS"<br>
+          "Fai scorrere la pagina fino in fondo con JS"
+        </div>
+      </div>
+
+    </div><!-- /grid -->
+  </div>
+
+  <!-- Practical Examples Card -->
+  <div class="card" style="border-left: 4px solid var(--green, #22c55e);">
+    <div class="card-title"><i class="fas fa-lightbulb"></i> Esempi Pratici</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
+      Flussi completi che puoi usare direttamente in chat.
+    </p>
+
+    <details style="margin-bottom:10px;">
+      <summary style="cursor:pointer; font-weight:600; font-size:13px; color:var(--text); padding:8px 0; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-search" style="color:var(--accent);"></i> Ricerca e lettura web
+      </summary>
+      <div style="background:var(--bg0); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--muted); line-height:1.7;">
+        <strong style="color:var(--text);">"Cerca su Google 'migliori ristoranti Roma 2024' e dimmi i primi risultati"</strong><br>
+        → Hecos apre Google, cerca il termine, legge i risultati e ti risponde.<br><br>
+        <strong style="color:var(--text);">"Apri Wikipedia e cercami la pagina sull'Intelligenza Artificiale. Riassumi l'intro."</strong><br>
+        → Navigazione + lettura + sintesi in un solo messaggio.
+      </div>
+    </details>
+
+    <details style="margin-bottom:10px;">
+      <summary style="cursor:pointer; font-weight:600; font-size:13px; color:var(--text); padding:8px 0; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-sign-in-alt" style="color:var(--accent);"></i> Compilazione form (CDP mode)
+      </summary>
+      <div style="background:var(--bg0); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--muted); line-height:1.7;">
+        <strong style="color:var(--text);">"Vai su mail.google.com, clicca su 'Scrivi' e compila il destinatario con mario@rossi.it, oggetto 'Ciao' e testo 'Come stai?'"</strong><br>
+        → Funziona in CDP mode perché Hecos usa il TUO Chrome con le tue credenziali già salvate.<br><br>
+        <strong style="color:var(--text);">"Apri LinkedIn e mandami la lista delle notifiche"</strong><br>
+        → Legge le notifiche dalla sessione già attiva nel tuo browser.
+      </div>
+    </details>
+
+    <details style="margin-bottom:10px;">
+      <summary style="cursor:pointer; font-weight:600; font-size:13px; color:var(--text); padding:8px 0; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-camera" style="color:var(--accent);"></i> Screenshot e analisi visiva
+      </summary>
+      <div style="background:var(--bg0); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--muted); line-height:1.7;">
+        <strong style="color:var(--text);">/browser amazon.it → /screen → "Cosa vedi? Ci sono offerte del giorno?"</strong><br>
+        → Apri, scatta lo screenshot, l'AI analizza l'immagine visivamente.<br><br>
+        <strong style="color:var(--text);">"Fai uno screenshot della pagina corrente e dimmi se c'è un pulsante 'Acquista'"</strong><br>
+        → Utile quando il testo della pagina non è sufficiente (layout grafico).
+      </div>
+    </details>
+
+    <details>
+      <summary style="cursor:pointer; font-weight:600; font-size:13px; color:var(--text); padding:8px 0; display:flex; align-items:center; gap:6px;">
+        <i class="fas fa-tabs" style="color:var(--accent);"></i> Gestione multi-tab (CDP mode)
+      </summary>
+      <div style="background:var(--bg0); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--muted); line-height:1.7;">
+        <strong style="color:var(--text);">"Quante tab ho aperte in Chrome? Mostrami i titoli"</strong><br>
+        → Hecos lista tutte le tab del tuo Chrome reale.<br><br>
+        <strong style="color:var(--text);">"Passa alla tab di YouTube e dimmi che video sta suonando"</strong><br>
+        → Switch_tab + get_page_text per leggere il titolo del video corrente.
+      </div>
+    </details>
+  </div>
+
+  <!-- Tips & Requirements -->
+  <div class="card" style="border-left: 4px solid var(--yellow, #f59e0b);">
+    <div class="card-title"><i class="fas fa-info-circle"></i> Requisiti & Note</div>
+    <div style="font-size:12px; color:var(--muted); line-height:1.8;">
+      <p style="margin-bottom:8px;">
+        <strong style="color:var(--text);">🎯 CDP Mode (consigliato):</strong> Lancia Chrome con<br>
+        <code style="display:inline-block; background:var(--bg0); padding:3px 8px; border-radius:4px; font-size:11px; margin-top:4px;">chrome.exe --remote-debugging-port=9222</code>
+      </p>
+      <p style="margin-bottom:8px;">
+        <strong style="color:var(--text);">🌐 App Mode:</strong> Richiede Playwright installato.<br>
+        Il browser Chromium viene scaricato automaticamente al primo avvio.
+      </p>
+      <p style="margin-bottom:8px;">
+        <strong style="color:var(--text);">⚡ Ordine di priorità:</strong> In CDP mode, Hecos tenta prima la connessione al tuo Chrome. Se fallisce, usa automaticamente AUTOMATION come fallback per trovare finestre aperte.
+      </p>
+      <p style="margin-bottom:0;">
+        <strong style="color:var(--text);">🔒 Privacy:</strong> In App Mode il browser è isolato — nessun accesso a password o sessioni salvate. In CDP Mode Hecos vede le tue sessioni attive.
+      </p>
+    </div>
+  </div>
+
 </div>
 
 <script>
-window._openIgenGallery = async function() {
-  // Use the shared HecosMediaPlayer gallery if available
-  if (typeof window.openChatGallery === 'function') {
-    window.openChatGallery(null);
-    return;
+// Auto-initialize panel state when fragment loads.
+// populateBrowserUI reads from window.cfg (populated by the main config shell).
+// The cdp_mode radio gets checked by default if no config value is stored yet.
+(function() {
+  function _initBrowserPanel() {
+    if (typeof window.populateBrowserUI === 'function') {
+      window.populateBrowserUI();
+    } else {
+      // Fallback: just mark cdp_mode checked if nothing is selected yet
+      const emCdp = document.getElementById('em-cdp');
+      const emApp = document.getElementById('em-app');
+      if (emCdp && !emCdp.checked && emApp && !emApp.checked) {
+        emCdp.checked = true;
+      }
+    }
   }
-  // Fallback: try to lazy-load the media player
-  try {
-    const res = await fetch('/api/images');
-    if (!res.ok) { if(window.showToast) window.showToast('No images found', 'info'); return; }
-    const images = await res.json();
-    if (!images || !images.length) {
-      if (window.showToast) window.showToast('No images generated yet', 'info');
-      return;
-    }
-    // Load chat_image_viewer.js on demand then open
-    if (!document.querySelector('script[src*="chat_image_viewer"]')) {
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = '/static/js/chat_image_viewer.js';
-        s.onload = res; s.onerror = rej;
-        document.head.appendChild(s);
-      });
-    }
-    if (typeof window.openChatGallery === 'function') {
-      window.openChatGallery(null);
-    }
-  } catch(e) {
-    if (window.showToast) window.showToast('Gallery error: ' + e.message, 'error');
-  }
-};
+  // Try immediately, and also after a tick (in case window.cfg loads async)
+  _initBrowserPanel();
+  setTimeout(_initBrowserPanel, 100);
+})();
 </script>
 
-<!-- Preset & Provider Card -->
-<div class="card">
-  <div class="card-title"><i class="fas fa-bolt"></i> Presets & Provider</div>
-
-  <!-- Preset Toolbar -->
-  <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; padding:12px 14px; background:var(--bg3); border:1px solid var(--border); border-radius:12px; flex-wrap:wrap;">
-    <select id="igen-preset" onchange="loadIgenPreset()" class="config-input" style="flex:1; min-width:180px; padding:6px 12px; font-size:13px;">
-      <option value="">— Select a preset —</option>
-    </select>
-    <button id="igen-preset-update-btn" onclick="updateIgenPreset()" title="Update selected user preset with current values" style="display:none; padding:7px 14px; border-radius:8px; border:1px solid var(--accent); background:rgba(var(--accent-rgb),0.1); color:var(--accent); cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap;"><i class="fas fa-sync"></i> Update</button>
-    <button onclick="saveIgenPreset()" title="Save current config as a new preset" class="btn btn-sm" style="white-space:nowrap;"><i class="fas fa-save"></i> Save As</button>
-    <button id="igen-preset-delete-btn" onclick="deleteIgenPreset()" title="Delete selected user preset" class="btn btn-sm btn-danger" style="white-space:nowrap; padding:6px 12px;"><i class="fas fa-trash"></i> Delete</button>
-  </div>
-
-  <!-- Provider & Model -->
-  <div class="grid-2" style="margin-top:12px;">
-    <div class="field">
-      <label>Provider</label>
-      <select id="igen-provider" onchange="onProviderChanged(true)" class="config-input" data-igen-managed>
-        <!-- Populated dynamically -->
-      </select>
-    </div>
-    <div class="field">
-      <label>Model
-        <button type="button" onclick="refreshImageModels()" style="margin-left:8px;padding:2px 10px;font-size:11px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:6px;cursor:pointer;"><i class="fas fa-sync-alt"></i> Refresh</button>
-        <button type="button" id="igen-model-remove-btn" onclick="removeSelectedHFModel()" style="display:none; margin-left:8px; padding:2px 6px; font-size:11px; border:1px solid #e74c3c; color:#e74c3c; border-radius:4px; background:rgba(231,231,231,0.1); cursor:pointer;" title="Remove this custom model"><i class="fas fa-times"></i> Delete</button>
-      </label>
-      <select id="igen-model" onchange="checkCustomModelSelect()" class="config-input" data-igen-managed><option>flux</option></select>
-      <span id="igen-model-status" style="font-size:11px;color:var(--muted);"></span>
-    </div>
-  </div>
-
-  <!-- API Key Injection Box -->
-  <div class="field" style="margin-top:10px; padding:10px; background:var(--bg3); border:1px solid var(--border); border-radius:8px;">
-    <label>API Key for selected provider (Optional)</label>
-    <div style="display:flex; gap:6px;">
-        <input type="password" id="igen-api-key" class="config-input" placeholder="Overrides Keys Manager. Leave empty to use system key..." style="flex:1;">
-        <button type="button" onclick="saveKeyToEnv()" style="padding:6px 10px; font-size:11px; border-radius:6px; border:1px solid var(--accent); background:rgba(var(--accent-rgb), 0.1); color:var(--accent); cursor:pointer;" title="Save this key globally to .env">Save globally</button>
-    </div>
-    <p style="color:var(--muted);font-size:11px;margin-top:4px;">If provided here, it overrides the global .env key. <br><b>Pollinations and Airforce are FREE and require NO key.</b></p>
-  </div>
-
-  <!-- HF Hub Explorer -->
-  <details id="igen-hf-explorer-wrapper" style="margin-top:10px; display:none; background:var(--glass-b); padding:10px; border-radius:12px; border:1px solid var(--border);">
-    <summary style="cursor:pointer; font-weight:600; color:var(--text); list-style:none; display:flex; align-items:center; gap:6px;">
-      <span style="font-size:13px;">Search Hugging Face Hub <small style="font-weight:400; color:var(--muted);">— find custom models</small></span>
-    </summary>
-    <div style="margin-top:10px; background:rgba(231,76,60,0.06); border-left:3px solid #e74c3c; padding:8px; font-size:11px; color:var(--text); line-height:1.4;">
-      <strong><i class="fas fa-exclamation-triangle"></i> Limitation:</strong> Free HF Inference API only supports a fraction of models.
-    </div>
-    <div style="margin-top:10px;">
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="igen-hf-search-q" class="config-input" placeholder="Model name, style, or tag..." style="flex:1;" onkeydown="if(event.key==='Enter') searchHFHub()">
-        <button type="button" onclick="searchHFHub()" style="padding:6px 15px; border-radius:7px; border:1px solid var(--border); background:var(--accent); color:#fff; cursor:pointer; font-weight:600;">Search</button>
-      </div>
-      <div id="igen-hf-results" style="margin-top:10px; max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:6px; background:var(--bg2);">
-         <div style="padding:10px; text-align:center; color:var(--muted); font-size:12px;">Enter a query to find text-to-image models.</div>
-      </div>
-    </div>
-  </details>
-</div>
-
-<!-- Image Parameters Card -->
-<div class="card">
-  <div class="card-title"><i class="fas fa-sliders-h"></i> Image Parameters</div>
-
-  <!-- Aspect Ratio -->
-  <div class="grid-2" style="margin-top:14px;">
-    <div class="field">
-      <label>Aspect Ratio</label>
-      <select id="igen-aspect-ratio" onchange="onAspectRatioChanged()" class="config-input" data-igen-managed>
-        <option value="1:1">1:1 — Square</option>
-        <option value="16:9">16:9 — Landscape (HD)</option>
-        <option value="9:16">9:16 — Portrait (Mobile)</option>
-        <option value="4:3">4:3 — Classic Landscape</option>
-        <option value="3:4">3:4 — Classic Portrait</option>
-        <option value="custom"><i class="fas fa-ruler-combined"></i> Custom (manual W × H)</option>
-      </select>
-    </div>
-    <div class="field" id="igen-custom-dims" style="display:none;">
-      <label>Custom Size (px)</label>
-      <div style="display:flex; gap:6px; align-items:center;">
-        <input type="number" id="igen-width" class="config-input" min="256" max="2048" step="64" placeholder="W" style="width:50%;">
-        <span style="color:var(--muted);">×</span>
-        <input type="number" id="igen-height" class="config-input" min="256" max="2048" step="64" placeholder="H" style="width:50%;">
-      </div>
-    </div>
-  </div>
-
-  <!-- Negative Prompt -->
-  <div class="field" style="margin-top:10px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <label style="margin:0;">Negative Prompt</label>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <small style="color:var(--muted);font-size:11px;">Enable</small>
-        <label class="switch"><input type="checkbox" id="igen-use-neg-prompt" data-igen-managed><span class="slider"></span></label>
-      </div>
-    </div>
-    <textarea id="igen-neg-prompt" class="config-input" rows="2" placeholder="distorted, extra fingers..." data-igen-managed></textarea>
-  </div>
-
-  <!-- CFG & Steps -->
-  <div class="grid-2" style="margin-top:10px;">
-    <div class="field">
-      <label>CFG Scale (Guidance)</label>
-      <div style="display:flex; align-items:center;">
-        <input type="range" id="igen-guidance" min="0" max="20" step="0.5" style="flex:1;" oninput="document.getElementById('igen-guidance-val').textContent=parseFloat(this.value).toFixed(1)">
-        <span id="igen-guidance-val" style="margin-left:10px; width:38px; font-weight:bold; text-align:right;">0.0</span>
-      </div>
-    </div>
-    <div class="field">
-      <label>Inference Steps</label>
-      <div style="display:flex; align-items:center;">
-        <input type="range" id="igen-steps" min="1" max="100" step="1" style="flex:1;" oninput="document.getElementById('igen-steps-val').textContent=this.value">
-        <span id="igen-steps-val" style="margin-left:10px; width:34px; font-weight:bold; text-align:right;">30</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Seed -->
-  <div class="field" style="margin-top:10px;">
-    <label>Seed <small style="color:var(--muted);font-weight:400;">(-1 = random)</small></label>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <input type="number" id="igen-seed" class="config-input" min="-1" max="2147483647" value="-1" style="flex:1;" data-igen-managed>
-      <button type="button" onclick="document.getElementById('igen-seed').value=-1; saveIgenConfig();" style="padding:6px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--text); cursor:pointer;"><i class="fas fa-dice"></i></button>
-    </div>
-  </div>
-</div>
-
-<!-- Advanced & Generation Options -->
-<div class="card">
-  <div class="card-title"><i class="fas fa-magic"></i> Advanced Options</div>
-
-  <!-- Advanced -->
-  <details style="margin-top:14px;">
-    <summary style="cursor:pointer; font-weight:600; color:var(--text); display:flex; gap:6px;"><span style="font-size:13px;">Advanced Sampling</span></summary>
-    <div class="grid-2" style="margin-top:10px;">
-      <div class="field">
-        <label>Sampler</label>
-        <select id="igen-sampler" class="config-input" data-igen-managed>
-          <option value="euler">Euler</option>
-          <option value="euler_a">Euler Ancestral</option>
-          <option value="heun">Heun</option>
-          <option value="dpm_2">DPM2</option>
-          <option value="dpm_2_a">DPM2 Ancestral</option>
-          <option value="lms">LMS</option>
-          <option value="dpm_fast">DPM Fast</option>
-          <option value="dpm_adaptive">DPM Adaptive</option>
-          <option value="dpm++_2s_a">DPM++ 2S a</option>
-          <option value="dpm++_2m">DPM++ 2M</option>
-          <option value="dpm++_sde">DPM++ SDE</option>
-          <option value="dpm++_2m_sde">DPM++ 2M SDE</option>
-          <option value="dpm++_3m_sde">DPM++ 3M SDE</option>
-          <option value="uni_pc">UniPC</option>
-          <option value="uni_pc_bh2">UniPC BH2</option>
-          <option value="ddim">DDIM</option>
-          <option value="plms">PLMS</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Scheduler</label>
-        <select id="igen-scheduler" class="config-input" data-igen-managed>
-          <option value="normal">Normal</option>
-          <option value="karras">Karras</option>
-          <option value="exponential">Exponential</option>
-          <option value="sgm_uniform">SGM Uniform</option>
-          <option value="simple">Simple</option>
-          <option value="ddim_uniform">DDIM Uniform</option>
-          <option value="euler">Euler</option>
-          <option value="dpm++">DPM++</option>
-          <option value="pndm">PNDM</option>
-          <option value="ddim">DDIM</option>
-          <option value="beta">Beta</option>
-        </select>
-      </div>
-    </div>
-  </details>
-
-  <!-- Style Options -->
-  <div class="toggle-row" style="margin-top:14px;">
-    <div class="toggle-info"><strong>Auto-Enrich Prompt</strong></div>
-    <label class="switch"><input type="checkbox" id="igen-auto-enrich" data-igen-managed><span class="slider"></span></label>
-  </div>
-  <div class="field" style="margin-top:5px;">
-    <label>Enrichment Keywords</label>
-    <input type="text" id="igen-enrich-keywords" class="config-input" placeholder="masterpiece, 8k..." data-igen-managed>
-  </div>
-  <div class="field" style="margin-top:10px;">
-    <label>Artistic Style</label>
-    <select id="igen-style" class="config-input" data-igen-managed>
-      <option value="none">None</option>
-      <option value="cinematic">Cinematic</option>
-      <option value="anime">Anime</option>
-      <option value="3d_render">3D Render</option>
-    </select>
-  </div>
-  <div class="toggle-row" style="margin-top:10px;">
-    <div class="toggle-info">Remove Logo (Pollinations)</div>
-    <label class="switch"><input type="checkbox" id="igen-nologo" data-igen-managed><span class="slider"></span></label>
-  </div>
-  <div class="toggle-row" style="margin-top:10px; background:var(--bg3); padding:8px; border-radius:8px;">
-    <div class="toggle-info"><strong>Show Config in Chat</strong></div>
-    <label class="switch"><input type="checkbox" id="igen-show-metadata" data-igen-managed><span class="slider"></span></label>
-  </div>
-
-  <!-- Save Button — replaced by auto-save; status shown here -->
-  <div style="margin-top:20px; display:flex; justify-content:flex-end; align-items:center;">
-    <span id="igen-save-status" style="font-size:12px; color:var(--muted); transition:color 0.3s;"></span>
-  </div>
-</div>
-
-</div>

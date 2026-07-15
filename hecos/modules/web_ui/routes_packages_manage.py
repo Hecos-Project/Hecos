@@ -584,3 +584,39 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
         except Exception as e:
             log.error(f"[HPM] Hot-reload error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/packages/<pkg_id>/hot_reload_module", methods=["POST"])
+    @login_required
+    def api_hot_reload_single_module(pkg_id):
+        """
+        Hot-reload a single SDK module subprocess and refresh capabilities.
+        """
+        try:
+            registry, _, _ = _get_hpm_components(_hecos_src)
+            pkg = registry.get(pkg_id)
+            if not pkg:
+                return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+
+            snap = pkg.get("manifest_snapshot", {})
+            if isinstance(snap, str):
+                import json
+                try: snap = json.loads(snap)
+                except: snap = {}
+
+            tag = snap.get("tag") or pkg_id.upper()
+
+            from hecos.core.module_bus import get_bus
+            bus = get_bus()
+            restarted = bus.restart_module(tag)
+
+            if restarted:
+                _hot_reload_registry(cfg_mgr, log)
+                _invalidate_all_caches()
+                log.info(f"[HPM] Single module hot-reload completed for '{tag}'.")
+                return jsonify({"ok": True, "message": f"Module '{tag}' reloaded successfully."})
+            else:
+                return jsonify({"ok": False, "error": f"Module '{tag}' is not active or could not be restarted."}), 400
+
+        except Exception as e:
+            log.error(f"[HPM] Single module hot-reload error for {pkg_id}: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500

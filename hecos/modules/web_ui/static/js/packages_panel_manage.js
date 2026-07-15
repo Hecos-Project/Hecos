@@ -601,3 +601,25 @@ window.hpmUninstallSelected = function() {
         }
     });
 };
+
+window.hpmHotReloadModule = async function(pkg_id, name) {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    if (typeof window.hpmSetProgress === 'function') {
+        window.hpmSetProgress(true, `<i class="fas fa-sync fa-spin" style="margin-right:6px; color:#3b82f6;"></i> ${_ti('Reloading module...', 'Ricaricamento modulo...', 'Recargando módulo...')}`, 50);
+    }
+    
+    try {
+        const resp = await fetch(`/api/packages/${pkg_id}/hot_reload_module`, { method: 'POST' });
+        const data = await resp.json();
+        if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+        
+        if (data.ok) {
+            if (window.showToast) window.showToast(`Module ${name} hot-reloaded!`, 'success');
+        } else {
+            if (window.showToast) window.showToast(`Reload failed: ${data.error}`, 'error');
+        }
+    } catch (err) {
+        if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+        if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+    }
+};
