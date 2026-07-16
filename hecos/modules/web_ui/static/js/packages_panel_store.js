@@ -684,6 +684,12 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
     window.hpmStoreLoad();
     if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
+
+    // ── Show Restart prompt if backend routes need a fresh boot ──────────────
+    if (payload.requires_restart && typeof window.hpmRestartRequired === 'function') {
+      setTimeout(() => window.hpmRestartRequired(pkgName || pkgId), 2000);
+    }
+    // ────────────────────────────────────────────────────────────────────────
   } else if (event === 'error') {
     if (payload.missing_deps && payload.missing_deps.length > 0) {
       bar.style.width      = '100%';

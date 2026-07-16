@@ -8,7 +8,7 @@ import time
 from flask import jsonify
 from flask_login import login_required
 
-from hecos.modules.web_ui.routes_packages_helpers import _get_hpm_components
+from hecos.modules.web_ui.routes_packages_helpers import _get_hpm_components, get_pending_restart_ids
 
 # ── In-memory cache ───────────────────────────────────────────────────────────
 _PKG_CACHE: dict = {}   # {"data": [...], "ts": float}
@@ -104,6 +104,12 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 p["tag"] = pkg_tag
                 p.setdefault("fa_icon", "fa-cube")
                 p.setdefault("cat", "Installed")
+
+            # ── Annotate packages with requires_restart flag ───────────────────
+            pending_ids = get_pending_restart_ids()
+            for p in hpm_packages:
+                p["requires_restart"] = p.get("id") in pending_ids
+            # ───────────────────────────────────────────────────────────────
 
             # ── Save to cache ─────────────────────────────────────────────────
             _PKG_CACHE["data"] = hpm_packages

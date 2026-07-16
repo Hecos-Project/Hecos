@@ -2,6 +2,16 @@
      HECOS PACKAGE MANAGER (HPM) — Config Panel Fragment
      Loaded lazily via /hecos/config/fragment/packages
      ════════════════════════════════════════════════════════════════════ -->
+<style>
+@keyframes hpmPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+}
+@keyframes hpmSpinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+</style>
 <div id="tab-packages" class="panel">
 
   <!-- ── Header ──────────────────────────────────────────────────────── -->
@@ -129,7 +139,12 @@
         {{ t('hpm_tab_all') or 'All Modules' }}
         <span id="hpm-total-count" style="margin-left:10px; background:rgba(255,255,255,0.08); color:var(--muted); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:700;">0</span>
       </div>
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <!-- Global Expand / Collapse -->
+        <div style="display:flex; gap: 4px; margin-right: 8px;">
+          <button class="switcher-btn btn-icon" onclick="window.hpmToggleAllCategories(true)" title="Expand All" style="padding:6px 10px;font-size:0.78em;"><i class="fas fa-plus-circle"></i></button>
+          <button class="switcher-btn btn-icon" onclick="window.hpmToggleAllCategories(false)" title="Collapse All" style="padding:6px 10px;font-size:0.78em;"><i class="fas fa-minus-circle"></i></button>
+        </div>
         <button id="hpm-btn-select-mode" class="btn-icon" onclick="hpmToggleSelectionMode()" title="Select multiple"
                 style="padding:6px 10px;font-size:0.78em;">
           <i class="fas fa-check-square"></i>
@@ -144,6 +159,16 @@
           <i class="fas fa-arrow-circle-up"></i>
         </button>
       </div>
+    </div>
+
+    <!-- Central Hub Style Search Bar -->
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0 16px;">
+        <div id="hpm-search-wrapper" style="display:flex;align-items:center;flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border-color, var(--border, #333));border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;">
+            <span style="padding:0 10px;font-size:14px;color:var(--muted);user-select:none;">🔍</span>
+            <input id="hpm-search-input" type="text" placeholder="Search packages... (Ctrl+F)" autocomplete="off"
+                style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:8px 4px;font-family:inherit;" oninput="hpmFilterPackages()" onfocus="this.parentElement.style.borderColor='var(--accent)'; this.parentElement.style.boxShadow='0 0 8px rgba(102,252,241,.2)';" onblur="this.parentElement.style.borderColor='var(--border-color, var(--border, #333))'; this.parentElement.style.boxShadow='none';">
+            <button id="hpm-search-clear" title="Clear (Esc)" style="display:none;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:14px;" onclick="document.getElementById('hpm-search-input').value=''; hpmFilterPackages();">✕</button>
+        </div>
     </div>
 
     <!-- Selezione Batch Toolbar -->
