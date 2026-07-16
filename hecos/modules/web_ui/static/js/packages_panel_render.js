@@ -240,7 +240,7 @@ window.hpmRenderRow = function(pkg, meta) {
         ${!isCore ? `
         <div style="font-size:0.68em;color:var(--muted);margin-top:2px;opacity:0.6;">
           ${pkg.author ? `by ${window._hesc(pkg.author)}` : ''}
-          ${pkg.installed_at ? ` · Installed ${pkg.installed_at.substring(0,10)}` : ''}
+          ${pkg.installed_at ? ` · Installed ${pkg.installed_at.substring(0,10)} ${pkg.installed_at.substring(11,16)}` : ''}
         </div>` : ''}
       </div>
 

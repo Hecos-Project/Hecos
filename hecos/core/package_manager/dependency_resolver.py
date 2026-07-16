@@ -312,7 +312,7 @@ class DependencyResolver:
 
         # 2. Get dependencies from other installed packages
         other_packages_deps = set()
-        all_packages = self._registry.get_all()
+        all_packages = self._registry.list_all()
         for pkg in all_packages:
             if pkg.get("id") == current_pkg_id:
                 continue

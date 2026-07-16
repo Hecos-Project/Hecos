@@ -88,23 +88,89 @@ class PackageUninstaller:
         # ── Step 3: Remove WebUI assets (templates, static, widgets) ─────────
         self._remove_webui_assets(manifest, result)
 
-        # ── Step 3b: Uninstall shared pip dependencies ───────────────────────
+        # ── Step 3b: Uninstall pip dependencies ──────────────────────────────
         pip_isolation = manifest.get("pip_isolation", "shared")
         pip_requirements = manifest.get("pip_requirements", [])
-        
-        if pip_isolation == "shared" and pip_requirements:
+
+        if pip_isolation == "isolated":
+            # Isolated packages have a self-contained venv inside install_path.
+            # It will be wiped entirely at Step 4 with shutil.rmtree — nothing to do here.
+            if pip_requirements:
+                logger.info(
+                    f"[HPM:Uninstaller] '{pkg_id}' uses isolated venv — "
+                    f"pip deps will be removed with the venv directory at Step 4."
+                )
+                self._emit("hpm:progress", {
+                    "step": "pip_remove",
+                    "message": "Isolated venv will be removed with package directory..."
+                })
+
+        elif pip_isolation == "shared" and pip_requirements:
+            import sys
+            import subprocess
+
+            self._emit("hpm:progress", {
+                "step": "pip_remove",
+                "message": "Checking shared pip dependencies to remove..."
+            })
             from .dependency_resolver import DependencyResolver
             resolver = DependencyResolver(self._registry)
             safe_to_remove = resolver.get_safe_to_uninstall_pip_deps(pip_requirements, pkg_id)
+
+            # Log what's being kept and why
+            kept = [
+                req for req in pip_requirements
+                if req.strip() and not req.strip().startswith("#")
+                and req not in safe_to_remove
+            ]
+            for req in kept:
+                logger.info(
+                    f"[HPM:Uninstaller] Keeping pip dep '{req}' "
+                    f"(still required by Hecos core or another installed package)."
+                )
+                self._emit("hpm:progress", {"step": "pip_log", "message": f"Keeping: {req} (in use)"})
+
             if safe_to_remove:
-                import sys
-                import subprocess
-                logger.info(f"[HPM:Uninstaller] Uninstalling safe pip dependencies: {safe_to_remove}")
+                logger.info(f"[HPM:Uninstaller] Removing pip dependencies: {safe_to_remove}")
+                self._emit("hpm:progress", {
+                    "step": "pip_remove",
+                    "message": f"Removing {len(safe_to_remove)} pip package(s)..."
+                })
                 cmd = [sys.executable, "-m", "pip", "uninstall", "-y"] + safe_to_remove
                 try:
-                    subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                    proc = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1
+                    )
+                    for line in iter(proc.stdout.readline, ""):
+                        if line:
+                            line_clean = line.strip()
+                            if line_clean:
+                                logger.debug(f"[HPM:Uninstaller] pip: {line_clean}")
+                                self._emit("hpm:progress", {"step": "pip_log", "message": line_clean})
+                    proc.stdout.close()
+                    retcode = proc.wait(timeout=120)
+                    if retcode == 0:
+                        logger.info(f"[HPM:Uninstaller] ✅ Removed pip deps: {safe_to_remove}")
+                    else:
+                        logger.warning(
+                            f"[HPM:Uninstaller] pip uninstall exited with code {retcode} for: {safe_to_remove}"
+                        )
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    logger.warning("[HPM:Uninstaller] pip uninstall timed out.")
                 except Exception as e:
                     logger.warning(f"[HPM:Uninstaller] Error uninstalling pip dependencies: {e}")
+            else:
+                logger.info(
+                    f"[HPM:Uninstaller] No pip deps to remove for '{pkg_id}' "
+                    f"(all are still required by Hecos core or other packages)."
+                )
+                self._emit("hpm:progress", {"step": "pip_log", "message": "No pip packages to remove (all in use)"})
+
 
         # ── Step 4: Remove empty leftover directories and wipe install_path ──
         install_path = record.get("install_path", "")

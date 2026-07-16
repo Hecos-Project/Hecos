@@ -531,7 +531,39 @@ window.hpmUninstallSelected = function() {
         const ids = Array.from(window._hpmSelectedPackages);
         window.hpmToggleSelectionMode(); // esci dalla modalità selezione e azzera il set
         
-        window.hpmSetProgress(true, `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${_ti(`Uninstalling (${ids.length} packages)...`, `Disinstallazione in corso (${ids.length} pacchetti)...`, `Desinstalando (${ids.length} paquetes)...`)}`, 30);
+        const baseMsg = `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${_ti(`Uninstalling (${ids.length} packages)...`, `Disinstallazione in corso (${ids.length} pacchetti)...`, `Desinstalando (${ids.length} paquetes)...`)}`;
+        let uninstallHtml = `
+            <div id="hpm-uninstall-header" style="font-size:1.05em; font-weight:600; color:var(--text);">${baseMsg}</div>
+            <div id="hpm-uninstall-logs" style="margin-top:12px; font-size:0.92em; color:var(--muted); font-family:monospace; text-align:left; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px; border-left:2px solid #ef4444; max-height:150px; overflow-y:auto; display:none; word-break:break-all;"></div>
+        `;
+        window.hpmSetProgress(true, uninstallHtml, 30);
+        
+        const logListener = (e) => {
+            const logsContainer = document.getElementById('hpm-uninstall-logs');
+            const header = document.getElementById('hpm-uninstall-header');
+            if (!logsContainer || !header) return;
+            
+            const step = e.detail.step || '';
+            const msg = e.detail.message || '';
+            
+            if (step === 'pip_log' || step === 'pip_remove') {
+                logsContainer.style.display = 'block';
+                const div = document.createElement('div');
+                div.textContent = msg;
+                if (step === 'pip_remove') {
+                    div.style.color = '#ef4444';
+                    div.style.fontWeight = 'bold';
+                    div.style.marginTop = '4px';
+                    div.style.marginBottom = '2px';
+                }
+                logsContainer.appendChild(div);
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            } else if (msg) {
+                header.innerHTML = `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${msg}`;
+            }
+        };
+        
+        document.addEventListener('hpmProgressUpdate', logListener);
         
         try {
             const resp = await fetch('/api/packages/uninstall/batch', {
@@ -598,6 +630,8 @@ window.hpmUninstallSelected = function() {
         } catch (err) {
             window.hpmSetProgress(false);
             if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+        } finally {
+            document.removeEventListener('hpmProgressUpdate', logListener);
         }
     });
 };
