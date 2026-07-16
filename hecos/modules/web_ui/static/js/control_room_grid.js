@@ -31,14 +31,8 @@
             _editBtn = editBtn || null;
             _context = (_grid && _grid.id === 'home-grid') ? 'standalone' : 'sidebar';
 
-            const initGS = (widthCheck = true) => {
-                const w = _grid.offsetWidth;
-                if (widthCheck && _context === 'sidebar' && w < 50) {
-                    console.log(`[RoomGrid] Waiting for width... (Current: ${w}px)`);
-                    setTimeout(() => initGS(), 250);
-                    return;
-                }
-
+            // Core GridStack initialization logic (extracted for reuse by ResizeObserver)
+            const doInitGS = () => {
                 const colCount = (_context === 'standalone' ? 6 : 2);
                 _grid.setAttribute('gs-column', colCount);
 
@@ -75,7 +69,26 @@
                 this.refresh();
             };
 
-            initGS();
+            // If the sidebar panel is closed (width < 50px), use ResizeObserver instead
+            // of a setTimeout busy-wait loop to avoid continuous forced browser reflows.
+            if (_context === 'sidebar' && _grid.offsetWidth < 50) {
+                let _roFallback;
+                const ro = new ResizeObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.contentRect.width >= 50) {
+                            ro.disconnect();
+                            clearTimeout(_roFallback);
+                            doInitGS();
+                        }
+                    }
+                });
+                ro.observe(_grid);
+                // Safety fallback: force init after 30s regardless (e.g. if panel is
+                // shown via CSS transition that ResizeObserver might miss)
+                _roFallback = setTimeout(() => { ro.disconnect(); doInitGS(); }, 30000);
+            } else {
+                doInitGS();
+            }
 
             if (_editBtn) {
                 _editBtn.addEventListener('click', () => this.toggleEditMode());

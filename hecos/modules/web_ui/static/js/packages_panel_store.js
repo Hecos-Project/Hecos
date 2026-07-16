@@ -556,8 +556,12 @@ function _hpmStoreBuildProgressModal() {
                       border-radius:6px;transition:width .4s ease;"></div>
         </div>
         <div id="hpm-store-progress-msg" style="font-size:0.82em;color:var(--muted);min-height:1.4em;"></div>
+        <div id="hpm-store-progress-log" style="font-size:0.84em;color:var(--accent);min-height:1.2em;margin-top:6px;font-family:monospace;white-space:normal;word-break:break-all;text-align:left;opacity:0.85;"></div>
         <div id="hpm-store-progress-hint" style="display:none;font-size:0.75em;color:var(--muted);margin-top:20px;opacity:0.6;">
           ${_t('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}
+        </div>
+        <div style="font-size:0.7em;color:var(--muted);margin-top:15px;opacity:0.5;">
+          ${_t('For more info consult Hecos logs.', 'Per maggiori info consultare i log di Hecos.', 'Para más información consulte los registros de Hecos.')}
         </div>
       </div>
     </div>`;
@@ -570,11 +574,12 @@ window.hpmStoreInstall = async function (pkgId, downloadUrl, pkgName, skipDepsCh
 };
 
 async function _doSingleInstall(pkgId, downloadUrl, pkgName, skipDepCheck = false) {
-  const modal = document.getElementById('hpm-store-progress-modal');
-  const bar   = document.getElementById('hpm-store-progress-bar');
-  const msg   = document.getElementById('hpm-store-progress-msg');
-  const title = document.getElementById('hpm-store-progress-title');
-  const icon  = document.getElementById('hpm-store-progress-icon');
+  const modal  = document.getElementById('hpm-store-progress-modal');
+  const bar    = document.getElementById('hpm-store-progress-bar');
+  const msg    = document.getElementById('hpm-store-progress-msg');
+  const logEl  = document.getElementById('hpm-store-progress-log');
+  const title  = document.getElementById('hpm-store-progress-title');
+  const icon   = document.getElementById('hpm-store-progress-icon');
   if (!modal) return;
 
   modal.style.display = 'flex';
@@ -583,6 +588,7 @@ async function _doSingleInstall(pkgId, downloadUrl, pkgName, skipDepCheck = fals
   bar.style.background = '';
   title.textContent = `Installing ${pkgName}…`;
   msg.textContent   = 'Connecting to store…';
+  if (logEl) logEl.textContent = '';
   icon.innerHTML    = '<i class="fas fa-download" style="color:var(--accent);"></i>';
 
   const allowUnsigned = document.getElementById('hpm-allow-unsigned')?.checked || false;
@@ -609,22 +615,31 @@ async function _doSingleInstall(pkgId, downloadUrl, pkgName, skipDepCheck = fals
         if (line.startsWith('event: ')) event   = line.slice(7).trim();
         if (line.startsWith('data: '))  dataStr = line.slice(6).trim();
         if (event && dataStr) {
-          try { _hpmStoreHandleSSE(event, JSON.parse(dataStr), bar, msg, title, icon, modal, pkgId, downloadUrl, pkgName); } catch {}
+          try { _hpmStoreHandleSSE(event, JSON.parse(dataStr), bar, msg, logEl, title, icon, modal, pkgId, downloadUrl, pkgName); } catch {}
           event = null; dataStr = null;
         }
       }
     }
   } catch (err) {
     msg.textContent = `Error: ${err.message}`;
+    if (logEl) logEl.textContent = '';
     icon.innerHTML  = '<i class="fas fa-times-circle" style="color:#ef4444;"></i>';
     setTimeout(() => { modal.style.display = 'none'; }, 3000);
   }
 };
 
-function _hpmStoreHandleSSE(event, payload, bar, msg, title, icon, modal, pkgId, downloadUrl, pkgName) {
+function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal, pkgId, downloadUrl, pkgName) {
   if (event === 'progress') {
-    msg.textContent    = payload.message || '';
-    bar.style.width    = payload.step === 'download' ? '40%' : '75%';
+    if (payload.step === 'pip_log') {
+        // Row 2 only — pip log lines scroll through without touching row 1
+        if (logEl) logEl.textContent = payload.message || '';
+    } else {
+        // Row 1 — step label (download, install, validating…)
+        msg.textContent = payload.message || '';
+        bar.style.width = payload.step === 'download' ? '40%' : '75%';
+        // Row 2 — clear pip log when a new major step begins
+        if (logEl) logEl.textContent = '';
+    }
   } else if (event === 'done') {
     bar.style.width    = '100%';
     msg.textContent    = payload.message || _t('Done!', 'Fatto!', '¡Hecho!');

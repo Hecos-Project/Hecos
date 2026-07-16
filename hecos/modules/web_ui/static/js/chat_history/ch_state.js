@@ -17,19 +17,19 @@ window.chatHistoryState = {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 async function _historyGet(url) {
-    console.log(`[HISTORY-DEBUG] GET Request to: ${url}`);
+    if (window.HECOS_DEBUG) console.log(`[HISTORY-DEBUG] GET Request to: ${url}`);
     try {
         const r = await fetch(url);
         const data = await r.json();
         return data;
     } catch (e) {
-        console.error(`[HISTORY-DEBUG] GET Error:`, e);
+        if (window.HECOS_DEBUG) console.error(`[HISTORY-DEBUG] GET Error:`, e);
         return { ok: false, error: e.message };
     }
 }
 
 async function _historyPost(url, body = {}, method = 'POST') {
-    console.log(`[HISTORY-DEBUG] ${method} Request to: ${url}`);
+    if (window.HECOS_DEBUG) console.log(`[HISTORY-DEBUG] ${method} Request to: ${url}`);
     try {
         const r = await fetch(url, {
             method,
@@ -39,7 +39,7 @@ async function _historyPost(url, body = {}, method = 'POST') {
         const data = await r.json();
         return data;
     } catch (e) {
-        console.error(`[HISTORY-DEBUG] ${method} Error:`, e);
+        if (window.HECOS_DEBUG) console.error(`[HISTORY-DEBUG] ${method} Error:`, e);
         return { ok: false, error: e.message };
     }
 }

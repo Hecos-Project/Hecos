@@ -105,10 +105,7 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         _pkg_type = _mdict.get("type", "plugin")
                         _tag = _mdict.get("tag", "")
                         if _tag and _pkg_type in _PLUGIN_NS_TYPES:
-                            # Force-enable the plugin in system.yaml so re-installations
-                            # don't inherit old disabled states from previous installs.
-                            cfg_mgr.set(True, "plugins", _tag, "enabled")
-                            cfg_mgr.save()
+                            pass # HPM packages manage their own status in the SQLite DB.
                         for _w in _mdict.get("widgets", []):
                             _wid = _w.get("id", "")
                             if _wid:
@@ -268,10 +265,6 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                                 break
                         if _raw_manifest:
                             _mdict = _toml.loads(_raw_manifest.decode("utf-8"))
-                            _pkg_type = _mdict.get("type", "plugin")
-                            _tag = _mdict.get("tag", "")
-                            if _tag and _pkg_type in _PLUGIN_NS_TYPES:
-                                cfg_mgr.set(True, "plugins", _tag, "enabled")
                             for _w in _mdict.get("widgets", []):
                                 _wid = _w.get("id", "")
                                 if _wid:

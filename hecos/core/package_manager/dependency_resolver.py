@@ -200,13 +200,23 @@ class DependencyResolver:
             logger.info("[HPM:Resolver] Bootstrapping wheel/setuptools in isolated venv...")
             self._emit("hpm:progress", {"step": "venv_bootstrap", "message": "Bootstrapping pip/wheel/setuptools..."})
             try:
-                subprocess.run(
+                proc = subprocess.Popen(
                     [python_exe, "-m", "pip", "install", "--upgrade", "pip", "wheel", "setuptools"],
-                    check=True,
-                    capture_output=True,
-                    timeout=120
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1
                 )
-                logger.info("[HPM:Resolver] pip/wheel/setuptools bootstrapped.")
+                for line in iter(proc.stdout.readline, ""):
+                    if line:
+                        line_clean = line.strip()
+                        self._emit("hpm:progress", {"step": "pip_log", "message": line_clean})
+                proc.stdout.close()
+                retcode = proc.wait(timeout=120)
+                if retcode != 0:
+                    logger.warning(f"[HPM:Resolver] Bootstrap step failed with code {retcode}.")
+                else:
+                    logger.info("[HPM:Resolver] pip/wheel/setuptools bootstrapped.")
             except Exception as _boot_e:
                 logger.warning(f"[HPM:Resolver] Bootstrap step failed (non-fatal): {_boot_e}")
 
@@ -239,26 +249,33 @@ class DependencyResolver:
             if not req or req.startswith("#"):
                 continue
             logger.info(f"[HPM:Resolver] pip install: {req}")
-            self._emit("hpmProgressUpdate", {"step": "pip", "message": f"pip install {req}..."})
+            self._emit("hpm:progress", {"step": "pip", "message": f"pip install {req}..."})
             try:
-                result = subprocess.run(
-                    [python_exe, "-m", "pip", "install", req, "--quiet", "--no-input"],
-                    capture_output=True,
+                proc = subprocess.Popen(
+                    [python_exe, "-m", "pip", "install", req, "--no-input"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
                     text=True,
-                    timeout=600,  # 10-minute timeout per package (openai and similar are large)
+                    bufsize=1
                 )
-                if result.returncode != 0:
-                    logger.error(
-                        f"[HPM:Resolver] pip failed for '{req}': {result.stderr.strip()}"
-                    )
+                for line in iter(proc.stdout.readline, ""):
+                    if line:
+                        line_clean = line.strip()
+                        # Also log to file if needed, but primarily emit to UI
+                        self._emit("hpm:progress", {"step": "pip_log", "message": line_clean})
+                proc.stdout.close()
+                retcode = proc.wait(timeout=600)
+                
+                if retcode != 0:
+                    logger.error(f"[HPM:Resolver] pip install failed for {req} with code {retcode}.")
                     report.pip_failures.append(req)
                 else:
                     logger.info(f"[HPM:Resolver] pip: '{req}' installed successfully.")
-                    self._emit("hpmProgressUpdate", {"step": "pip", "message": f"pip: {req} installed"})
                     report.pip_installed.append(req)
             except subprocess.TimeoutExpired:
-                logger.error(f"[HPM:Resolver] pip timed out for '{req}'.")
+                proc.kill()
+                logger.error(f"[HPM:Resolver] pip install timed out for {req}.")
                 report.pip_failures.append(req)
             except Exception as e:
-                logger.error(f"[HPM:Resolver] pip error for '{req}': {e}")
+                logger.error(f"[HPM:Resolver] pip install error for {req}: {e}")
                 report.pip_failures.append(req)

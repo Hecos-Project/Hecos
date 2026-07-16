@@ -72,7 +72,9 @@ window.processAiMedia = function(html) {
         card.className = 'chat-video-card';
         const extIcon = href.match(/\.mkv$/i) ? '🎬' : '🎥';
         const extName = (href.match(/\.([a-z0-9]+)$/i) || ['','?'])[1].toUpperCase();
-        const rawPath = href.startsWith('file://') ? href.replace(/^file:\\/\\/\\/?/, '') : href;
+        const rawPath = href.startsWith('file:///') ? href.slice(8)
+                      : href.startsWith('file://') ? href.slice(7)
+                      : href;
         const safeRawPath = rawPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const videoId = 'vid_' + Math.random().toString(36).slice(2, 9);
 

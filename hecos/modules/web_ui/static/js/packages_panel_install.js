@@ -60,7 +60,8 @@ window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, fo
           status: 'pending', // pending, installing, done, failed, canceled
           allowUnsigned,
           skipDepCheck,
-          progressMsg: '',
+          progressMsg: '',   // row 1: current step label
+          pipLogMsg: '',     // row 2: latest pip log line
           result: null
       });
   });
@@ -99,8 +100,14 @@ window.hpmRenderInstallQueue = function() {
             action = `<button onclick="window.hpmCancelQueueItem('${item.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 5px;" title="${_ti('Cancel', 'Annulla', 'Cancelar')}"><i class="fas fa-times"></i></button>`;
         } else if (item.status === 'installing') {
             icon = '<i class="fas fa-circle-notch fa-spin" style="color:var(--accent); margin-right:6px; width:14px;"></i>';
-            let txt = item.progressMsg ? item.progressMsg : _ti('Installing...', 'Installazione...', 'Instalando...');
-            msg = `<span style="color:var(--accent)">${txt}</span>`;
+            const stepTxt = item.progressMsg ? item.progressMsg : _ti('Installing...', 'Installazione...', 'Instalando...');
+            // Row 1: step label
+            const row1 = `<span style="color:var(--accent); font-family:monospace; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; max-width:calc(100% - 30px); vertical-align:middle;" title="${stepTxt}">${stepTxt}</span>`;
+            // Row 2: pip log (shown only when present)
+            const row2 = item.pipLogMsg
+                ? `<div style="font-size:0.84em; color:var(--muted); font-family:monospace; white-space:normal; word-break:break-all; max-width:100%; margin-top:3px; opacity:0.85;">${item.pipLogMsg}</div>`
+                : '';
+            msg = `<div>${row1}${row2}</div>`;
         } else if (item.status === 'done') {
             icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
             msg = `<span style="color:var(--muted)">${_ti('Installed', 'Installato', 'Instalado')}</span>`;
@@ -352,7 +359,15 @@ document.addEventListener('hpmProgressUpdate', (e) => {
     if (window._hpmInstallQueue) {
         const item = window._hpmInstallQueue.find(i => i.status === 'installing');
         if (item) {
-            item.progressMsg = e.detail.message || e.detail.step || '';
+            const step = e.detail.step || '';
+            if (step === 'pip_log') {
+                // Only update row 2 (pip log), leave row 1 (step label) intact
+                item.pipLogMsg = e.detail.message || '';
+            } else {
+                // Update row 1 (step label) and clear row 2
+                item.progressMsg = e.detail.message || e.detail.step || '';
+                item.pipLogMsg   = '';
+            }
             window.hpmRenderInstallQueue();
         }
     }

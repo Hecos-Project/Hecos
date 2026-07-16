@@ -20,7 +20,9 @@ import json
 import time
 import tempfile
 import threading
+import queue
 import urllib.request
+import urllib.error
 from flask import jsonify, request, Response, stream_with_context
 from flask_login import login_required
 
@@ -329,15 +331,63 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
 
                     yield _sse("progress", {"step": "install", "message": "Installing package..."})
 
-                    try:
-                        registry, installer, _ = _get_hpm_components(_hecos_src)
-                        result = installer.install_file(
-                            hpkg_path=hpkg_path,
-                            require_signature=not allow_unsigned,
-                            skip_dep_check=skip_dep_check,
-                        )
-                    except Exception as e:
-                        yield _sse("error", {"message": f"Installation failed: {e}"})
+                    registry, installer, _ = _get_hpm_components(_hecos_src)
+                    
+                    q = queue.Queue()
+                    
+                    original_cb = installer._event_callback
+                    def _hpm_event_cb(evt_name, payload):
+                        q.put((evt_name, payload))
+                        if original_cb:
+                            original_cb(evt_name, payload)
+
+                    # Inject our callback so the installer streams events to our queue
+                    installer._event_callback = _hpm_event_cb
+
+                    result_box = []
+                    def _worker():
+                        try:
+                            res = installer.install_file(
+                                hpkg_path=hpkg_path,
+                                require_signature=not allow_unsigned,
+                                skip_dep_check=skip_dep_check,
+                            )
+                            result_box.append(res)
+                        except Exception as e:
+                            result_box.append(e)
+                        finally:
+                            q.put(None)  # Sentinel to tell generator we are done
+
+                    t = threading.Thread(target=_worker)
+                    t.start()
+
+                    # Pump events from the queue and yield them to the frontend
+                    while True:
+                        msg = q.get()
+                        if msg is None:
+                            break
+                        
+                        evt_name, payload = msg
+                        if evt_name == "hpm:progress":
+                            yield _sse("progress", payload)
+                        elif evt_name == "hpm:error":
+                            yield _sse("error", payload)
+                        else:
+                            # Forward other events generically if needed
+                            yield _sse(evt_name.replace("hpm:", ""), payload)
+
+                    t.join()
+                    
+                    # Restore the original callback to not break the singleton
+                    installer._event_callback = original_cb
+                    
+                    if not result_box:
+                        yield _sse("error", {"message": "Installation thread crashed unexpectedly without a result."})
+                        return
+                        
+                    result = result_box[0]
+                    if isinstance(result, Exception):
+                        yield _sse("error", {"message": f"Installation failed: {result}"})
                         return
 
                     if not result.success:

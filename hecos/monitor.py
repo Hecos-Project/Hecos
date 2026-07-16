@@ -158,12 +158,13 @@ def start_and_monitor(script_to_run):
 
     exe = sys.executable
     if sys.platform == "win32":
-        try:
-            from hecos.core.system.process_naming import get_named_executable
-            exe_name = "hecos_main" if "main.py" in script_to_run else "hecos_web"
-            exe = get_named_executable(exe_name)
-        except Exception:
-            pass
+        pass
+        # try:
+        #     from hecos.core.system.process_naming import get_named_executable
+        #     exe_name = "hecos_main" if "main.py" in script_to_run else "hecos_web"
+        #     exe = get_named_executable(exe_name)
+        # except Exception:
+        #     pass
 
     if is_module:
         process = subprocess.Popen([exe, "-m", script_to_run], env=env)

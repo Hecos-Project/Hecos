@@ -1,18 +1,5 @@
 extensions: {}
 plugins:
-  BROWSER:
-    block_ads: true
-    browser_engine_mode: app_mode
-    browser_type: chromium
-    cdp_port: 9222
-    default_timeout: 10000
-    enabled: true
-    headless: false
-    lazy_load: true
-    startup_url: http://localhost:7070
-  CALENDAR:
-    enabled: true
-    lazy_load: false
   CONTACTS:
     enabled: true
     lazy_load: true
@@ -60,37 +47,10 @@ plugins:
     enabled: true
     lazy_load: true
     show_disabled: false
-  LISTS:
-    default_icon: "\xF0\u0178\u201C\u2039"
-    enabled: true
-    lazy_load: true
-    max_items_per_list: 500
-    max_lists: 50
-    show_completed: true
-  MAIL:
-    auto_detect_provider: true
-    enabled: true
-    imap_host: ''
-    imap_port: 993
-    imap_security: SSL
-    lazy_load: true
-    mail_address: ''
-    mail_app_password: ''
-    max_messages: 100
-    smtp_host: ''
-    smtp_port: 587
-    smtp_security: STARTTLS
-    sync_on_open: true
   MCP_BRIDGE:
     enabled: false
     lazy_load: false
     servers: {}
-  MEDIA_PLAYER:
-    enabled: true
-    lazy_load: true
-  REMINDER:
-    enabled: true
-    lazy_load: false
   SYSTEM:
     enable_config_set: true
     enabled: true
@@ -107,7 +67,6 @@ plugins:
   USERS:
     enabled: true
     lazy_load: true
-  
   WEB_UI:
     api_port: 5000
     auto_open_browser: false

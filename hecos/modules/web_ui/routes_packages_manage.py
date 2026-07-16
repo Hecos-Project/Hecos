@@ -414,10 +414,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "visible")
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "room_visible")
-                    tag = snap.get("tag")
-                    if tag:
-                        cfg_mgr.set(False, "plugins", tag, "enabled")
-                    if widget_ids_to_hide or tag:
+                    if widget_ids_to_hide:
                         cfg_mgr.save()
 
                 except Exception as _purge_e:

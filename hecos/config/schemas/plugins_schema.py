@@ -12,7 +12,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ─── PLUGIN CLASSES ───────────────────────────────────────────────────────────
 
-# --- Dashboard removed ---
+class PluginDashboard(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = False
+    console_telemetry_enabled: bool = True
+    console_telemetry_cpu: bool = False
+    console_telemetry_ram: bool = False
+    console_telemetry_vram: bool = False
 
 
 class PluginFileManager(BaseModel):
@@ -142,6 +148,7 @@ class PluginFlows(BaseModel):
 
 class PluginsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')  # HPM package keys ARE stored here
+    DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
