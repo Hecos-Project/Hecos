@@ -2,6 +2,11 @@
 <div id="tab-plugins" class="panel">
   <div class="card">
     <div class="card-title">{{ t('webui_conf_plugin_active_title') }}</div>
-    <div id="plugin-list"><p style="color:var(--muted);font-size:13px;">{{ t('webui_conf_msg_loading') }}</p></div>
+    <div id="plugin-list">
+        <div style="text-align:center;padding:40px 20px;color:var(--muted);">
+          <i class="fas fa-spinner fa-spin" style="font-size:1.6em;margin-bottom:12px;display:block;"></i>
+          <div style="font-size:0.85em;opacity:0.7;">{{ t('webui_conf_msg_loading') }}&hellip;</div>
+        </div>
+    </div>
   </div>
 </div>
