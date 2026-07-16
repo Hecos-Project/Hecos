@@ -6,10 +6,10 @@ echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HECOS_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-TRAY_RUNNER="$HECOS_ROOT/scripts/linux/run/HECOS_TRAY_LINUX.sh"
+TRAY_RUNNER="$HECOS_ROOT/START_HECOS_TRAY_LINUX.sh"
 
 if [ ! -f "$TRAY_RUNNER" ]; then
-    echo "[!] ERROR: Could not find HECOS_TRAY_LINUX.sh at:"
+    echo "[!] ERROR: Could not find START_HECOS_TRAY_LINUX.sh at:"
     echo "    $TRAY_RUNNER"
     exit 1
 fi
@@ -18,7 +18,7 @@ chmod +x "$TRAY_RUNNER"
 
 AUTOSTART_DIR="$HOME/.config/autostart"
 mkdir -p "$AUTOSTART_DIR"
-DESKTOP_FILE="$AUTOSTART_DIR/hecos-core-tray.desktop"
+DESKTOP_FILE="$AUTOSTART_DIR/hecos-tray.desktop"
 
 echo "[*] Writing XDG Desktop Entry..."
 cat <<EOF > "$DESKTOP_FILE"

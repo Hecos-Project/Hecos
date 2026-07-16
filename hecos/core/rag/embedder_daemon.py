@@ -65,7 +65,13 @@ class EmbedderDaemon:
 
             try:
                 self._ready_event.clear()
-                self._proc = subprocess.Popen([sys.executable, worker_path], **kwargs)
+                
+                exe = sys.executable
+                if sys.platform == "win32":
+                    from hecos.core.system.process_naming import get_named_executable
+                    exe = get_named_executable("hecos_rag_embedder")
+
+                self._proc = subprocess.Popen([exe, worker_path], **kwargs)
 
                 # Manda la configurazione (prima riga di stdin)
                 config = json.dumps({"model_name": self._model_name}) + "\n"

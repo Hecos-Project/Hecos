@@ -151,6 +151,14 @@ Se desideri che Hecos giri completamente in background senza alcuna finestra di 
 
 ---
 
+## 💻 Compatibilità di Piattaforma e Sistemi Operativi
+
+Nonostante molti pacchetti di estensione dell'ecosistema Hecos (come **Browser Automation**, **Messenger**, **Calendar**, **Weather Pro**, **Mail**, **Image Gen**, **Reminder**, **Lists**, **Maps** e **Quick Links**) siano totalmente multipiattaforma e progettati per funzionare su Linux e macOS, **il sistema core di Hecos, al momento, è stato testato unicamente su Windows 10 e 11**.
+
+Eseguire il sistema core su Linux o macOS è possibile, ma potrebbe richiedere aggiustamenti manuali, e alcune funzionalità native avanzate (come l'ispezione della UI nel pacchetto PC Automation) sono progettate specificamente per Windows.
+
+---
+
 ## 🛠️ Requisiti di Sistema Essenziali (Windows)
 Se hai appena reinstallato Windows o stai configurando Hecos per la prima volta, devi installare questi pacchetti di sistema **fondamentali** affinché tutti i moduli funzionino correttamente[cite: 1]:
 

@@ -27,6 +27,22 @@ def _invalidate_all_caches():
     except Exception:
         pass
 
+def _hot_reload_registry(cfg_mgr, log=None):
+    """Hot-reload the capability registry (tools, slash commands) using the live config manager."""
+    try:
+        from hecos.core.system import module_loader
+        module_loader.update_capability_registry(cfg_mgr.config, debug_log=False)
+        if log:
+            log.info("[HPM] Capability registry hot-reloaded.")
+    except Exception as e:
+        if log:
+            log.warning(f"[HPM] Capability registry reload failed (non-critical): {e}")
+    try:
+        from hecos.core.commands.registry import get_registry
+        get_registry(reload=True)
+    except Exception:
+        pass
+
 def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
 
     @app.route("/api/packages/<pkg_id>", methods=["GET"])
@@ -79,6 +95,43 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             return jsonify({"ok": True, "card": asdict(card)})
         except Exception as e:
             log.error(f"[HPM] GET /api/packages/{pkg_id}/capabilities error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/packages/<pkg_id>/readme", methods=["GET"])
+    @login_required
+    def api_get_package_readme(pkg_id):
+        """Retrieve the README.md content for a given HPM package."""
+        try:
+            registry, _, _ = _get_hpm_components(_hecos_src)
+            pkg = registry.get(pkg_id)
+            if not pkg:
+                return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+            
+            install_path = pkg.get("install_path")
+            if not install_path or not os.path.exists(install_path):
+                return jsonify({"ok": False, "error": "Install path not found"}), 404
+                
+            manifest = registry.get_manifest(pkg_id) or {}
+            readme_file = manifest.get("readme", "README.md")
+            
+            readme_path = os.path.join(install_path, readme_file)
+            if not os.path.exists(readme_path):
+                # Fallback to case-insensitive or different common names if not found
+                for fallback in ["README.md", "docs.md", "README.txt", "readme.md"]:
+                    fb_path = os.path.join(install_path, fallback)
+                    if os.path.exists(fb_path):
+                        readme_path = fb_path
+                        break
+
+            if not os.path.exists(readme_path):
+                return jsonify({"ok": False, "error": "No documentation file found for this package."}), 404
+                
+            with open(readme_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                
+            return jsonify({"ok": True, "content": content})
+        except Exception as e:
+            log.error(f"[HPM] GET /api/packages/{pkg_id}/readme error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
     @app.route("/api/packages/<pkg_id>/verify", methods=["GET"])
@@ -251,8 +304,6 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             if ok:
                 if status == "disabled":
                     widgets_modified = 0
-                    cfg_mgr.set(False, "plugins", pkg_tag, "enabled")
-                    widgets_modified += 1
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
@@ -264,8 +315,6 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                         cfg_mgr.save()
                 elif status == "installed":
                     widgets_modified = 0
-                    cfg_mgr.set(True, "plugins", pkg_tag, "enabled")
-                    widgets_modified += 1
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")
                         if ext_id:
@@ -280,6 +329,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                     "id": pkg_id, "status": status
                 })
                 _invalidate_all_caches()
+                _hot_reload_registry(cfg_mgr, log)
             return jsonify({"ok": ok, "id": pkg_id, "status": status, "tag": pkg_tag, "panel_id": panel_id})
         except Exception as e:
             log.error(f"[HPM] PATCH /api/packages/{pkg_id}/status error: {e}")
@@ -364,10 +414,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "visible")
                         cfg_mgr.set(False, "widgets", "per_widget", ext_id, "room_visible")
-                    tag = snap.get("tag")
-                    if tag:
-                        cfg_mgr.set(False, "plugins", tag, "enabled")
-                    if widget_ids_to_hide or tag:
+                    if widget_ids_to_hide:
                         cfg_mgr.save()
 
                 except Exception as _purge_e:
@@ -458,10 +505,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "enabled")
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "visible")
                             cfg_mgr.set(False, "widgets", "per_widget", ext_id, "room_visible")
-                        tag = snap.get("tag")
-                        if tag:
-                            cfg_mgr.set(False, "plugins", tag, "enabled")
-                        if widget_ids_to_hide or tag:
+                        if widget_ids_to_hide:
                             cfg_mgr.save()
                     except Exception as _purge_e:
                         log.warning(f"[HPM:Batch] Extension purge failed for {pkg_id}: {_purge_e}")
@@ -488,6 +532,7 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
 
         if any_cache_invalidate:
             _invalidate_all_caches()
+            _hot_reload_registry(cfg_mgr, log)
             try:
                 from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
                 clear_hpm_panel_cache()
@@ -501,3 +546,117 @@ def register_manage_routes(app, _hecos_src: str, cfg_mgr, log):
             "failed": failed,
             "results": results,
         })
+
+
+    @app.route("/api/packages/hot_reload", methods=["POST"])
+    @login_required
+    def api_packages_hot_reload():
+        """
+        Manually trigger a hot-reload of the HPM capability registry.
+        Rescans hpm/, modules/, plugins/ and updates the LLM tool registry,
+        slash command registry and HPM panel cache — without a full restart.
+        """
+        try:
+            _hot_reload_registry(cfg_mgr, log)
+            try:
+                from hecos.core.system.extension_loader import discover_webui_extensions, load_eager_extensions
+                webui_ext_dir = os.path.join(_hecos_src, "modules", "web_ui")
+                discover_webui_extensions(webui_ext_dir)
+                load_eager_extensions(app, "WEB_UI")
+            except Exception as _ext_e:
+                log.warning(f"[HPM:HotReload] Extension re-discovery failed: {_ext_e}")
+
+            _refresh_jinja_loader(app)
+
+            try:
+                from hecos.modules.web_ui.routes_config_core import clear_hpm_panel_cache
+                clear_hpm_panel_cache()
+            except ImportError:
+                pass
+
+            _invalidate_all_caches()
+            _hpm_event_broadcast("hpm:registry_refreshed", {})
+            log.info("[HPM] Manual hot-reload completed.")
+            return jsonify({"ok": True, "message": "Capability registry reloaded."})
+        except Exception as e:
+            log.error(f"[HPM] Hot-reload error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/packages/<pkg_id>/hot_reload_module", methods=["POST"])
+    @login_required
+    def api_hot_reload_single_module(pkg_id):
+        """
+        Hot-reload a single SDK module subprocess and refresh capabilities.
+        """
+        try:
+            registry, _, _ = _get_hpm_components(_hecos_src)
+            pkg = registry.get(pkg_id)
+            if not pkg:
+                return jsonify({"ok": False, "error": f"Package '{pkg_id}' not found"}), 404
+
+            snap = pkg.get("manifest_snapshot", {})
+            if isinstance(snap, str):
+                import json
+                try: snap = json.loads(snap)
+                except: snap = {}
+
+            tag = snap.get("tag") or pkg_id.upper()
+
+            from hecos.core.module_bus import get_bus
+            bus = get_bus()
+            restarted = bus.restart_module(tag)
+
+            if restarted:
+                _hot_reload_registry(cfg_mgr, log)
+                _invalidate_all_caches()
+                log.info(f"[HPM] Single module hot-reload completed for '{tag}'.")
+                return jsonify({"ok": True, "message": f"Module '{tag}' reloaded successfully (subprocess restart)."})
+            else:
+                # Fallback: reload in-process lazy/native plugin
+                import sys, importlib.util
+                from hecos.core.system import module_state
+
+                reloaded = False
+                reloaded_info = ""
+
+                pkg = registry.get(pkg_id)
+                install_path = pkg.get("install_path", "") if pkg else ""
+                main_file = os.path.join(install_path, "plugin", "main.py") if install_path else None
+                
+                if main_file and os.path.exists(main_file):
+                    try:
+                        module_name = f"hecos.hpm.{pkg_id}.main"
+                        parent_name = module_name.rsplit('.', 1)[0]
+                        
+                        # 1. Purge all submodules of this plugin from sys.modules
+                        # This ensures multi-file plugins (like browser with engine.py, reader.py)
+                        # are fully re-evaluated from disk.
+                        modules_to_remove = [m for m in sys.modules.keys() if m.startswith(parent_name)]
+                        for m in modules_to_remove:
+                            del sys.modules[m]
+
+                        # 2. Re-import from scratch
+                        spec = importlib.util.spec_from_file_location(module_name, main_file)
+                        if spec:
+                            new_module = importlib.util.module_from_spec(spec)
+                            if parent_name not in sys.modules:
+                                sys.modules[parent_name] = type(sys)(parent_name)
+                                sys.modules[parent_name].__path__ = [os.path.dirname(main_file)]
+                            spec.loader.exec_module(new_module)
+                            module_state._loaded_plugins[tag] = new_module
+                            reloaded = True
+                            reloaded_info = "full package re-imported"
+                            log.info(f"[HPM] In-process plugin '{tag}' fully re-imported from disk.")
+                    except Exception as e:
+                        log.warning(f"[HPM] Full re-import failed for '{tag}': {e}")
+
+                if reloaded:
+                    _hot_reload_registry(cfg_mgr, log)
+                    _invalidate_all_caches()
+                    return jsonify({"ok": True, "message": f"Module '{tag}' reloaded ({reloaded_info})."})
+                else:
+                    return jsonify({"ok": False, "error": f"Module '{tag}' could not be reloaded — not found or main.py missing."}), 400
+
+        except Exception as e:
+            log.error(f"[HPM] Single module hot-reload error for {pkg_id}: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500

@@ -55,19 +55,27 @@ window.hpmSwitchTab = async function(tabId) {
     const existingTab = document.getElementById('tab-plugins');
 
     if (existingTab && existingTab.parentElement !== builtinContainer) {
+      // Already loaded — just re-attach and re-populate
       builtinContainer.innerHTML = '';
       builtinContainer.appendChild(existingTab);
       existingTab.classList.remove('panel');
       existingTab.style.display = 'block';
       existingTab.classList.add('active');
       if (typeof window.populatePlugins === 'function') window.populatePlugins();
-      
+      else if (typeof populateUI === 'function') populateUI();
+
       setTimeout(() => {
         const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
         if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
       }, 500);
-      
+
     } else if (!existingTab && builtinContainer && builtinContainer.innerHTML.trim() === '') {
+      // First open — show spinner while loading
+      builtinContainer.innerHTML = `
+        <div id="hpm-builtin-loading" style="text-align:center;padding:40px 20px;color:var(--muted);">
+          <i class="fas fa-spinner fa-spin" style="font-size:1.6em;margin-bottom:12px;display:block;"></i>
+          <div style="font-size:0.85em;opacity:0.7;">Loading panel&hellip;</div>
+        </div>`;
       try {
         if (typeof window._loadPanel === 'function') {
           await window._loadPanel('plugins');
@@ -78,11 +86,29 @@ window.hpmSwitchTab = async function(tabId) {
             loadedTab.classList.remove('panel');
             loadedTab.style.display = 'block';
             loadedTab.classList.add('active');
-            
+
+            // Wait for Phase2 scripts (config_mapper_plugins.js) if not yet ready
+            const maxWait = 3000;
+            const poll = 60;
+            let elapsed = 0;
+            await new Promise(resolve => {
+              const check = () => {
+                if (typeof renderPlugins === 'function' || elapsed >= maxWait) {
+                  resolve();
+                } else {
+                  elapsed += poll;
+                  setTimeout(check, poll);
+                }
+              };
+              check();
+            });
+
+            if (typeof populateUI === 'function') populateUI();
+
             setTimeout(() => {
               const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
               if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
-            }, 500);
+            }, 600);
           }
         } else {
           throw new Error('_loadPanel function not found');

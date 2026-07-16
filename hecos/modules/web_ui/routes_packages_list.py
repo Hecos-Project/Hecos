@@ -38,6 +38,7 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 # Promote image fields to top-level BEFORE redacting snapshot
                 p.setdefault("icon_url", raw_snap.get("icon_url"))
                 p.setdefault("screenshots", raw_snap.get("screenshots") or [])
+                p["tag"] = raw_snap.get("tag", "") or p.get("id", "").upper()
                 if isinstance(p.get("manifest_snapshot"), dict) or isinstance(p.get("manifest_snapshot"), str):
                     p["manifest_snapshot"] = {
                         "id": raw_snap.get("id"),
@@ -100,6 +101,7 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 p["lazy_load"] = p_conf.get("lazy_load", False)
                 p["level"] = TYPE_TO_LEVEL.get(p.get("type", "plugin"), 2)
                 p["removable"] = True
+                p["tag"] = pkg_tag
                 p.setdefault("fa_icon", "fa-cube")
                 p.setdefault("cat", "Installed")
 

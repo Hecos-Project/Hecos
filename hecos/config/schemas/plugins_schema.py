@@ -12,7 +12,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # ─── PLUGIN CLASSES ───────────────────────────────────────────────────────────
 
-# --- Dashboard removed ---
+class PluginDashboard(BaseModel):
+    enabled: bool = True
+    lazy_load: bool = False
+    console_telemetry_enabled: bool = True
+    console_telemetry_cpu: bool = False
+    console_telemetry_ram: bool = False
+    console_telemetry_vram: bool = False
 
 
 class PluginFileManager(BaseModel):
@@ -46,14 +52,6 @@ class PluginSysNet(BaseModel):
     proxy_enabled: bool = False
     proxy_url: str = "socks5://localhost:9150"
 
-
-class PluginWeb(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    llm_model: str = ""
-    search_engine: str = "google"
-    use_https: bool = True
-    open_in_new_tab: bool = False
 
 
 class PluginWebUI(BaseModel):
@@ -107,26 +105,6 @@ class PluginMCPBridge(BaseModel):
     servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
 
 
-class PluginAutomation(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    move_duration: float = 0.15
-    type_interval: float = 0.02
-    allow_window_control: bool = True
-
-
-class PluginBrowser(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    headless: bool = False
-    block_ads: bool = True
-    startup_url: str = "http://localhost:7070"
-    default_timeout: int = 10000
-    browser_type: str = "chromium"
-    browser_engine_mode: str = "app_mode"
-    cdp_port: int = 9222
-
-
 
 class PluginUsers(BaseModel):
     enabled: bool = True
@@ -169,18 +147,16 @@ class PluginFlows(BaseModel):
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
-    model_config = ConfigDict(extra='ignore')  # HPM package keys are NOT stored here
+    model_config = ConfigDict(extra='allow')  # HPM package keys ARE stored here
+    DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
-    WEB: PluginWeb = Field(default_factory=PluginWeb)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
     MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
-    AUTOMATION: PluginAutomation = Field(default_factory=PluginAutomation)
-    BROWSER: PluginBrowser = Field(default_factory=PluginBrowser)
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
 

@@ -38,6 +38,15 @@ def _get_plugins_schema():
     return PluginsFileConfig
 
 
+# Keys that belong exclusively to the core schema (PluginsConfig fields).
+# Any OTHER key under `plugins:` is a leftover from pre-packagization era
+# and must be removed to avoid polluting plugins.yaml.
+_CORE_PLUGIN_KEYS = {
+    "DASHBOARD", "FILE_MANAGER", "HELP", "SYSTEM", "SYS_NET", "WEB_UI",
+    "EXECUTOR", "DRIVE", "MCP_BRIDGE", "USERS", "CONTACTS", "FLOWS",
+    "extra_dirs",
+}
+
 def _get_widgets_schema():
     from hecos.config.schemas.widgets_schema import WidgetsFileConfig
     return WidgetsFileConfig
@@ -141,7 +150,37 @@ class ConfigManager:
             self._widgets_model = WidgetsFileConfig()
 
         self._apply_volatility()
+        self._sanitize_plugins_yaml()
         self._sync_dict()
+
+    def _sanitize_plugins_yaml(self):
+        """Remove any non-core keys from plugins.yaml that were left by
+        pre-packagization modules (e.g. REMINDER, BROWSER, CALENDAR, MESSENGER).
+        These keys are not in the core PluginsConfig schema; they belong to
+        HPM packages which manage their own config files independently.
+        Writes the cleaned file to disk so the pollution disappears permanently.
+        """
+        if not _os.path.exists(self._plugins_path):
+            return
+        try:
+            import yaml as _yaml
+            with open(self._plugins_path, "r", encoding="utf-8") as f:
+                raw = _yaml.safe_load(f) or {}
+
+            plugins_section = raw.get("plugins", {})
+            non_core = [k for k in plugins_section if k not in _CORE_PLUGIN_KEYS]
+
+            if non_core:
+                for k in non_core:
+                    plugins_section.pop(k)
+                    logger.info(f"[CONFIG] Removed non-core plugin key from plugins.yaml: '{k}'")
+                raw["plugins"] = plugins_section
+                with open(self._plugins_path, "w", encoding="utf-8") as f:
+                    _yaml.dump(raw, f, default_flow_style=False, allow_unicode=True)
+                logger.info("[CONFIG] plugins.yaml sanitized — non-core keys removed.")
+        except Exception as e:
+            logger.warning(f"[CONFIG] Could not sanitize plugins.yaml: {e}")
+
 
     def _apply_volatility(self):
         """Clear volatile fields that should NOT persist across restarts.

@@ -70,6 +70,12 @@ class ModuleBus:
             self.stop_plugin(tag)
 
         venv_exe = venv_python_exe or self._resolve_venv_python(module_dir)
+        
+        if os.name == 'nt':
+            from hecos.core.system.process_naming import get_named_executable
+            safe_tag = tag.lower().replace(" ", "_")
+            venv_exe = get_named_executable(f"hecos_module_{safe_tag}", base_exe=venv_exe)
+            
         proxy = ModuleProxy(tag, module_dir, venv_exe)
         ok = proxy.start()
         if ok:

@@ -200,13 +200,23 @@ class DependencyResolver:
             logger.info("[HPM:Resolver] Bootstrapping wheel/setuptools in isolated venv...")
             self._emit("hpm:progress", {"step": "venv_bootstrap", "message": "Bootstrapping pip/wheel/setuptools..."})
             try:
-                subprocess.run(
+                proc = subprocess.Popen(
                     [python_exe, "-m", "pip", "install", "--upgrade", "pip", "wheel", "setuptools"],
-                    check=True,
-                    capture_output=True,
-                    timeout=120
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1
                 )
-                logger.info("[HPM:Resolver] pip/wheel/setuptools bootstrapped.")
+                for line in iter(proc.stdout.readline, ""):
+                    if line:
+                        line_clean = line.strip()
+                        self._emit("hpm:progress", {"step": "pip_log", "message": line_clean})
+                proc.stdout.close()
+                retcode = proc.wait(timeout=120)
+                if retcode != 0:
+                    logger.warning(f"[HPM:Resolver] Bootstrap step failed with code {retcode}.")
+                else:
+                    logger.info("[HPM:Resolver] pip/wheel/setuptools bootstrapped.")
             except Exception as _boot_e:
                 logger.warning(f"[HPM:Resolver] Bootstrap step failed (non-fatal): {_boot_e}")
 
@@ -239,26 +249,95 @@ class DependencyResolver:
             if not req or req.startswith("#"):
                 continue
             logger.info(f"[HPM:Resolver] pip install: {req}")
-            self._emit("hpmProgressUpdate", {"step": "pip", "message": f"pip install {req}..."})
+            self._emit("hpm:progress", {"step": "pip", "message": f"pip install {req}..."})
             try:
-                result = subprocess.run(
-                    [python_exe, "-m", "pip", "install", req, "--quiet", "--no-input"],
-                    capture_output=True,
+                proc = subprocess.Popen(
+                    [python_exe, "-m", "pip", "install", req, "--no-input"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
                     text=True,
-                    timeout=600,  # 10-minute timeout per package (openai and similar are large)
+                    bufsize=1
                 )
-                if result.returncode != 0:
-                    logger.error(
-                        f"[HPM:Resolver] pip failed for '{req}': {result.stderr.strip()}"
-                    )
+                for line in iter(proc.stdout.readline, ""):
+                    if line:
+                        line_clean = line.strip()
+                        # Also log to file if needed, but primarily emit to UI
+                        self._emit("hpm:progress", {"step": "pip_log", "message": line_clean})
+                proc.stdout.close()
+                retcode = proc.wait(timeout=600)
+                
+                if retcode != 0:
+                    logger.error(f"[HPM:Resolver] pip install failed for {req} with code {retcode}.")
                     report.pip_failures.append(req)
                 else:
                     logger.info(f"[HPM:Resolver] pip: '{req}' installed successfully.")
-                    self._emit("hpmProgressUpdate", {"step": "pip", "message": f"pip: {req} installed"})
                     report.pip_installed.append(req)
             except subprocess.TimeoutExpired:
-                logger.error(f"[HPM:Resolver] pip timed out for '{req}'.")
+                proc.kill()
+                logger.error(f"[HPM:Resolver] pip install timed out for {req}.")
                 report.pip_failures.append(req)
             except Exception as e:
-                logger.error(f"[HPM:Resolver] pip error for '{req}': {e}")
+                logger.error(f"[HPM:Resolver] pip install error for {req}: {e}")
                 report.pip_failures.append(req)
+
+    def get_safe_to_uninstall_pip_deps(self, pkg_requirements: List[str], current_pkg_id: str) -> List[str]:
+        """
+        Cross-checks pip_requirements against Hecos Core and other installed HPM packages.
+        Returns a list of pip dependencies that are safe to uninstall.
+        """
+        import os
+        import re
+
+        if not pkg_requirements:
+            return []
+
+        # 1. Get Hecos Core dependencies
+        core_deps = set()
+        hecos_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        toml_path = os.path.join(hecos_root, "pyproject.toml")
+        if os.path.exists(toml_path):
+            try:
+                with open(toml_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                deps_match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
+                if deps_match:
+                    for m in re.findall(r'"([^"]+)"', deps_match.group(1)):
+                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower())
+                service_match = re.search(r'service\s*=\s*\[(.*?)\]', content, re.DOTALL)
+                if service_match:
+                    for m in re.findall(r'"([^"]+)"', service_match.group(1)):
+                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower())
+            except Exception as e:
+                logger.error(f"[HPM:Resolver] Failed to parse core pyproject.toml: {e}")
+
+        # 2. Get dependencies from other installed packages
+        other_packages_deps = set()
+        all_packages = self._registry.get_all()
+        for pkg in all_packages:
+            if pkg.get("id") == current_pkg_id:
+                continue
+            manifest = pkg.get("manifest_snapshot") or {}
+            pip_reqs = manifest.get("pip_requirements") or []
+            for req in pip_reqs:
+                clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
+                if clean_req:
+                    other_packages_deps.add(clean_req)
+
+        # 3. Filter requirements
+        safe_to_remove = []
+        for req in pkg_requirements:
+            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
+            if not clean_req or clean_req.startswith("#"):
+                continue
+
+            if clean_req in core_deps:
+                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by Hecos Core.")
+                continue
+
+            if clean_req in other_packages_deps:
+                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by another installed HPM package.")
+                continue
+
+            safe_to_remove.append(req)
+
+        return safe_to_remove

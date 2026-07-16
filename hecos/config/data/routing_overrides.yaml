@@ -40,8 +40,6 @@ overrides:
   # 📁 FILE MANAGER: For a more organized or cautious AI
   # FILE_MANAGER: "Always save files in the 'Hecos_Downloads' folder. Do not delete anything without double confirmation."
   
-  # 🔍 WEB SEARCH: Filter sources or result style
-  # WEB: "Only use Wikipedia, official documentation, or scientific sites (.edu, .org). Ignore clickbait."
   
   # 💻 SYSTEM & TERMINAL: Control over command execution
   # SYSTEM: "Execute commands only if they do not modify system files. Prefer PowerShell commands."

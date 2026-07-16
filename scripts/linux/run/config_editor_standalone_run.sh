@@ -1,15 +1,15 @@
 #!/bin/bash
-# HECOS Config Editor (Standalone TUI)
-
-# Spostati nella cartella root del progetto
 cd "$(dirname "$0")/../../.."
 
-echo "Starting Configuration Editor..."
-if [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate
+if [ -d "venv" ] && [ -f "venv/bin/python" ]; then
+    PYTHON_CMD="venv/bin/python"
+elif [ -d "python_env" ] && [ -f "python_env/bin/python" ]; then
+    PYTHON_CMD="python_env/bin/python"
+elif command -v python3 &>/dev/null; then
+    PYTHON_CMD="python3"
+else
+    PYTHON_CMD="python"
 fi
 
-python3 -c "from hecos.ui.config_editor.core import ConfigEditor; ConfigEditor().run()"
-
-echo "Editor terminated. Press ENTER to exit..."
-read
+$PYTHON_CMD -m hecos.app.standalone_config_editor
+read -p "Press Enter to exit..."

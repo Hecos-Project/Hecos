@@ -11,6 +11,10 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+# Suppress PIL/Pillow internal debug logs (PNG chunk spam: IHDR, IDAT, STREAM, orNT…)
+logging.getLogger("PIL").setLevel(logging.WARNING)
+logging.getLogger("PIL.PngImagePlugin").setLevel(logging.WARNING)
+logging.getLogger("PIL.Image").setLevel(logging.WARNING)
 litellm_log = logging.getLogger("LiteLLM")
 litellm_log.setLevel(logging.WARNING)  # Default OFF; init_logger controls this
 litellm_log.propagate = False  # Never leak to root logger

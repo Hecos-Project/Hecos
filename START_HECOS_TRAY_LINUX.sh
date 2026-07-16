@@ -1,17 +1,22 @@
 #!/bin/bash
 # Hecos - Restart Tray Icon
 
+# Navigate to the script's directory
+cd "$(dirname "$0")"
+
 echo ""
 echo " [*] Restoring system tray icon..."
 echo ""
 
 # Detect Python
-if [ -d "venv" ]; then
-    PY_CMD="./venv/bin/python"
-elif [ -d "python_env" ]; then
-    PY_CMD="./python_env/bin/python"
-else
+if [ -d "venv" ] && [ -f "venv/bin/python" ]; then
+    PY_CMD="venv/bin/python"
+elif [ -d "python_env" ] && [ -f "python_env/bin/python" ]; then
+    PY_CMD="python_env/bin/python"
+elif command -v python3 &>/dev/null; then
     PY_CMD="python3"
+else
+    PY_CMD="python"
 fi
 
 # Run the tray app in background (quietly)

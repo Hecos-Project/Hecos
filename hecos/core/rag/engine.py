@@ -8,6 +8,7 @@ DESCRIPTION: Central orchestrator for the Hecos RAG system.
 
 from __future__ import annotations
 import os
+import threading
 from typing import List, Optional, Callable
 from hecos.core.logging import logger
 
@@ -41,6 +42,7 @@ class RAGEngine:
         self._retriever = None
         self._ingestor  = None
         self._initialized = False
+        self._init_lock = threading.Lock()  # Prevents concurrent initialization
 
     # ── Config ─────────────────────────────────────────────────────────────────
 
@@ -87,64 +89,72 @@ class RAGEngine:
 
     def _ensure_init(self) -> bool:
         """Initialize sub-systems. Returns True if fully operational."""
-        # Allow retry if previously DEGRADED (e.g. embedder was changed)
+        # Fast path (no lock needed for the happy path)
         if self._initialized and self._status == STATUS_ONLINE:
             return True
 
-        if not self._rag_cfg:
+        # Slow path: take lock so only one thread initializes at a time.
+        # Other threads wait here and exit via the fast path above.
+        with self._init_lock:
+            # Re-check after acquiring lock (another thread may have finished)
+            if self._initialized and self._status == STATUS_ONLINE:
+                return True
+
+            if not self._rag_cfg:
+                try:
+                    from hecos.app.config import ConfigManager
+                    cfg = ConfigManager().config
+                except Exception:
+                    cfg = {}
+                self._rag_cfg = cfg.get("cognition", {}).get("rag", {})
+
+            if not self.is_enabled():
+                self._status = STATUS_STANDBY
+                return False
+
             try:
-                from hecos.app.config import ConfigManager
-                cfg = ConfigManager().config
-            except Exception:
-                cfg = {}
-            self._rag_cfg = cfg.get("cognition", {}).get("rag", {})
+                from hecos.core.rag.embedder import get_embedder
+                from hecos.core.rag.store    import get_store
+                from hecos.core.rag.chunker  import get_chunker
+                from hecos.core.rag.retriever import HybridRetriever
+                from hecos.core.rag.ingestor  import Ingestor
 
-        if not self.is_enabled():
-            self._status = STATUS_STANDBY
-            return False
+                model_name    = self._rag_cfg.get("embedder_model", "BAAI/bge-small-en-v1.5")
+                embedder_type = self._rag_cfg.get("embedder", "fastembed")
+                chunk_size   = int(self._rag_cfg.get("chunk_size", 512))
+                chunk_overlap= int(self._rag_cfg.get("chunk_overlap", 64))
+                top_k        = int(self._rag_cfg.get("top_k", 5))
+                threshold    = float(self._rag_cfg.get("similarity_threshold", 0.3))
+                persist_path = self._rag_cfg.get("persist_path", "memory/vector_store")
+                if not os.path.isabs(persist_path):
+                    persist_path = os.path.join(_HECOS_DIR, persist_path)
 
-        try:
-            from hecos.core.rag.embedder import get_embedder
-            from hecos.core.rag.store    import get_store
-            from hecos.core.rag.chunker  import get_chunker
-            from hecos.core.rag.retriever import HybridRetriever
-            from hecos.core.rag.ingestor  import Ingestor
+                self._embedder  = get_embedder(embedder_type, model_name)
+                self._store     = get_store(persist_path, self._embedder.dimension)
+                self._chunker   = get_chunker("recursive", chunk_size, chunk_overlap)
+                self._retriever = HybridRetriever(
+                    store=self._store,
+                    embedder=self._embedder,
+                    top_k=top_k,
+                    similarity_threshold=threshold,
+                )
+                self._ingestor = Ingestor(
+                    chunker=self._chunker,
+                    embedder=self._embedder,
+                    store=self._store,
+                    namespace="knowledge",
+                )
 
-            model_name    = self._rag_cfg.get("embedder_model", "BAAI/bge-small-en-v1.5")
-            embedder_type = self._rag_cfg.get("embedder", "fastembed")
-            chunk_size   = int(self._rag_cfg.get("chunk_size", 512))
-            chunk_overlap= int(self._rag_cfg.get("chunk_overlap", 64))
-            top_k        = int(self._rag_cfg.get("top_k", 5))
-            threshold    = float(self._rag_cfg.get("similarity_threshold", 0.3))
-            persist_path = self._rag_cfg.get("persist_path", "memory/vector_store")
-            if not os.path.isabs(persist_path):
-                persist_path = os.path.join(_HECOS_DIR, persist_path)
+                self._initialized = True
+                self._status = STATUS_ONLINE
+                logger.info(f"[RAG][Engine] Initialized — model={model_name}, top_k={top_k}, threshold={threshold}")
+                return True
 
-            self._embedder  = get_embedder(embedder_type, model_name)
-            self._store     = get_store(persist_path, self._embedder.dimension)
-            self._chunker   = get_chunker("recursive", chunk_size, chunk_overlap)
-            self._retriever = HybridRetriever(
-                store=self._store,
-                embedder=self._embedder,
-                top_k=top_k,
-                similarity_threshold=threshold,
-            )
-            self._ingestor = Ingestor(
-                chunker=self._chunker,
-                embedder=self._embedder,
-                store=self._store,
-                namespace="knowledge",
-            )
+            except Exception as e:
+                self._status = STATUS_DEGRADED
+                logger.error(f"[RAG][Engine] Initialization failed: {e}")
+                return False
 
-            self._initialized = True
-            self._status = STATUS_ONLINE
-            logger.info(f"[RAG][Engine] Initialized — model={model_name}, top_k={top_k}, threshold={threshold}")
-            return True
-
-        except Exception as e:
-            self._status = STATUS_DEGRADED
-            logger.error(f"[RAG][Engine] Initialization failed: {e}")
-            return False
 
     # ── Ingest API ──────────────────────────────────────────────────────────────
 

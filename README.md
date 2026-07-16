@@ -153,6 +153,14 @@ If you want Hecos to run completely in the background without any visible termin
 
 ---
 
+## 💻 Platform Compatibility & OS Support
+
+While many extension packages in the Hecos ecosystem (such as **Browser Automation**, **Messenger**, **Calendar**, **Weather Pro**, **Mail**, **Image Gen**, **Reminder**, **Lists**, **Maps**, and **Quick Links**) are completely cross-platform and designed to run on Linux and macOS, **the core Hecos system itself is currently tested exclusively on Windows 10 and 11**.
+
+Running the core system on Linux or macOS is possible but may require manual adjustments, and certain native OS features (like advanced PC Automation UI inspection) are Windows-only by design.
+
+---
+
 ## 🛠️ Essential System Requirements (Windows)
 If you have just reinstalled Windows or are setting up Hecos for the first time, you must install these **fundamental** system packages for all modules to work correctly[cite: 1]:
 

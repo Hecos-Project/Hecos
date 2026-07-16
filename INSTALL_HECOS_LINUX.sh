@@ -12,7 +12,11 @@ echo ""
 echo " [*] Detecting Python..."
 PY_CMD=""
 
-if command -v python3 &>/dev/null; then
+if [ -d "venv" ] && [ -f "venv/bin/python" ]; then
+    PY_CMD="venv/bin/python"
+elif [ -d "python_env" ] && [ -f "python_env/bin/python" ]; then
+    PY_CMD="python_env/bin/python"
+elif command -v python3 &>/dev/null; then
     PY_CMD="python3"
 elif command -v python &>/dev/null; then
     PY_CMD="python"
@@ -26,7 +30,7 @@ if [ -z "$PY_CMD" ]; then
     echo " Hecos requires Python 3.10 or higher."
     echo ""
     echo " HOW TO FIX THIS:"
-    echo " - Ubuntu/Debian: sudo apt update && sudo apt install python3"
+    echo " - Ubuntu/Debian: sudo apt update && sudo apt install python3 python3-venv"
     echo " - macOS: brew install python"
     echo " - Others: Visit https://www.python.org/downloads/"
     echo ""
@@ -39,7 +43,7 @@ echo " [+] Python detected: $PY_CMD"
 echo " [*] Launching Hecos Setup Wizard..."
 echo ""
 
-$PY_CMD hecos/setup_wizard.py --web
+$PY_CMD hecos/setup/main.py --web
 
 if [ $? -ne 0 ]; then
     echo ""

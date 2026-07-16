@@ -156,10 +156,20 @@ def start_and_monitor(script_to_run):
     if "PYTHONIOENCODING" not in env:
         env["PYTHONIOENCODING"] = "utf-8"
 
+    exe = sys.executable
+    if sys.platform == "win32":
+        pass
+        # try:
+        #     from hecos.core.system.process_naming import get_named_executable
+        #     exe_name = "hecos_main" if "main.py" in script_to_run else "hecos_web"
+        #     exe = get_named_executable(exe_name)
+        # except Exception:
+        #     pass
+
     if is_module:
-        process = subprocess.Popen([sys.executable, "-m", script_to_run], env=env)
+        process = subprocess.Popen([exe, "-m", script_to_run], env=env)
     else:
-        process = subprocess.Popen([sys.executable, script_to_run], env=env)
+        process = subprocess.Popen([exe, script_to_run], env=env)
     
     _current_child_process = process
 

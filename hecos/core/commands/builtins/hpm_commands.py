@@ -251,7 +251,7 @@ def _cmd_hpm_install(raw_args_str="", **kwargs) -> str:
             data_dir = os.path.join(hecos_src, "data")
             reg2 = PackageRegistry(data_dir=data_dir)
             installer = PackageInstaller(
-                hecos_root=os.path.dirname(hecos_src),
+                hecos_root=hecos_src,
                 registry=reg2,
                 hecos_version=VERSION,
             )
@@ -287,7 +287,7 @@ def _cmd_hpm_uninstall(raw_args_str="", **kwargs) -> str:
             return f"🔒 `{pkg_id}` is a built-in module and cannot be removed."
 
         uninstaller = PackageUninstaller(
-            hecos_root=os.path.dirname(hecos_src),
+            hecos_root=hecos_src,
             registry=reg,
         )
         result = uninstaller.uninstall(pkg_id)

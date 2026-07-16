@@ -117,8 +117,15 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     @app.after_request
     def add_cache_headers(response):
         path = request.path
+        # HPM package resources must NEVER be cached — they change on install/update
+        if (path.startswith('/hpm_plugin/') or
+            path.startswith('/hpm/') or
+            path.startswith('/api/packages/')):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
         # Cache versioned static assets aggressively (JS, CSS, images, fonts)
-        if path.startswith('/static/') or path.startswith('/assets/'):
+        elif path.startswith('/static/') or path.startswith('/assets/'):
             # If the URL contains a version/cache-bust query param, cache 1 year
             if request.args.get('v') or request.args.get('t'):
                 response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'

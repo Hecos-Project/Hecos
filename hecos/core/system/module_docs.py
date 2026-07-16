@@ -215,9 +215,28 @@ def get_tools_schema():
                 logger.error(f"DOCS: Failed to fetch dynamic MCP schemas: {e}")
 
     # --- ADD LAZY PLUGINS SCHEMAS ---
+    def _sanitize_tool_schema(schema_list):
+        """
+        Ensures every array-type parameter has an 'items' key.
+        Gemini rejects tool declarations that have type=array without items.
+        """
+        sanitized = []
+        for tool in schema_list:
+            # Tools may be flat {name, description, parameters}
+            # or wrapped {type:"function", function:{...}}
+            func = tool.get("function", tool)
+            params = func.get("parameters", {})
+            props = params.get("properties", {})
+            for prop in props.values():
+                if prop.get("type") == "array" and "items" not in prop:
+                    prop["items"] = {"type": "string"}
+            sanitized.append(tool)
+        return sanitized
+
     for tag, schema_list in _lazy_tool_schemas.items():
         if tag not in _loaded_plugins: # Don't duplicate if already awakened
-            tools_list.extend(schema_list)
+            tools_list.extend(_sanitize_tool_schema(schema_list))
+
 
     # --- BUILT-IN SYSTEM TOOLS (always present) ---
     tools_list.append({
