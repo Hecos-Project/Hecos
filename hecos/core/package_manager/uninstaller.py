@@ -88,6 +88,24 @@ class PackageUninstaller:
         # ── Step 3: Remove WebUI assets (templates, static, widgets) ─────────
         self._remove_webui_assets(manifest, result)
 
+        # ── Step 3b: Uninstall shared pip dependencies ───────────────────────
+        pip_isolation = manifest.get("pip_isolation", "shared")
+        pip_requirements = manifest.get("pip_requirements", [])
+        
+        if pip_isolation == "shared" and pip_requirements:
+            from .dependency_resolver import DependencyResolver
+            resolver = DependencyResolver(self._registry)
+            safe_to_remove = resolver.get_safe_to_uninstall_pip_deps(pip_requirements, pkg_id)
+            if safe_to_remove:
+                import sys
+                import subprocess
+                logger.info(f"[HPM:Uninstaller] Uninstalling safe pip dependencies: {safe_to_remove}")
+                cmd = [sys.executable, "-m", "pip", "uninstall", "-y"] + safe_to_remove
+                try:
+                    subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                except Exception as e:
+                    logger.warning(f"[HPM:Uninstaller] Error uninstalling pip dependencies: {e}")
+
         # ── Step 4: Remove empty leftover directories and wipe install_path ──
         install_path = record.get("install_path", "")
         if install_path and os.path.isdir(install_path):

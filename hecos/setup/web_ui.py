@@ -17,9 +17,11 @@ from .engine import (
     auto_fix_piper_path, set_system_language, download_voice,
     unattended_onboarding, fetch_piper_voices
 )
+from .uninstaller import GlobalUninstaller
 
 LAST_RESULTS = []
 ONBOARDING_DONE = False
+UNINSTALL_DONE = False
 
 # Available Setup Languages
 SETUP_LANGS = {
@@ -48,6 +50,9 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             return
 
         if self.path == '/':
+            if UNINSTALL_DONE:
+                self.render_uninstall_done()
+                return
             if not i18n.SPLASH_DONE:
                 self.render_splash()
                 return
@@ -99,6 +104,11 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 check_python_version()
                 check_dependencies()
                 auto_fix_piper_path()
+            elif self.path == '/uninstall':
+                global UNINSTALL_DONE
+                uninstaller = GlobalUninstaller()
+                uninstaller.execute_full_uninstall()
+                UNINSTALL_DONE = True
 
         out_text = output.getvalue().strip()
         if out_text:
@@ -301,6 +311,12 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                                 <span class="diag-tip">{T('tip_fix_paths')}</span>
                                 <form action="/fix" method="POST"><button class="btn btn-secondary" style="width:100%">{T('btn_fix_paths')}</button></form>
                             </div>
+                            <div class="diag-item" style="grid-column: 1 / -1; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                                <span class="diag-tip" style="color: #ff4444;">Uninstall Hecos and remove all its python dependencies.</span>
+                                <form action="/uninstall" method="POST" onsubmit="return confirm('Are you sure you want to permanently uninstall Hecos? This will wipe all dependencies.');" style="margin-top: 5px;">
+                                    <button class="btn btn-danger" style="width:100%; font-size: 0.9rem;" onclick="this.innerHTML='⏳ UNINSTALLING...'; this.style.pointerEvents='none'; this.style.opacity='0.7';">🗑️ UNINSTALL HECOS</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -401,6 +417,46 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
                     <div class="close-note">
                         ✅ You can now close this window and the terminal. Hecos runs independently in the background.
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        self.send_html(html)
+
+    def render_uninstall_done(self):
+        res_html = f'<div class="console" style="max-height:300px;">{"<br>".join(LAST_RESULTS)}</div>' if LAST_RESULTS else ""
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="{i18n.UI_LANG}">
+        <head>
+            <meta charset="UTF-8">
+            <title>Hecos — Uninstall Complete</title>
+            <style>{self.get_css_vars()}{self.get_main_styles()}</style>
+            <style>
+                .done-card {{ background: linear-gradient(135deg, #1a0a0a 0%, #1f0d0d 100%); border: 2px solid #ff4444; border-radius: 20px; padding: 40px; text-align: center; margin-bottom: 30px; box-shadow: 0 0 60px rgba(255,68,68,0.15); }}
+                .done-icon {{ font-size: 60px; margin-bottom: 20px; filter: drop-shadow(0 0 15px rgba(255,68,68,0.5)); }}
+                .done-title {{ font-size: 1.8rem; font-weight: 900; color: #ff4444; letter-spacing: 2px; margin: 0 0 10px 0; }}
+                .done-sub {{ color: #888; font-size: 0.9rem; margin: 0 0 30px 0; }}
+                .close-note {{ margin-top: 30px; padding: 14px; background: #111; border-radius: 10px; color: #555; font-size: 0.75rem; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="/logo.png" class="logo-img" alt="Logo">
+                    <h1 class="title-text" style="color: #ff4444;">HECOS UNINSTALLER</h1>
+                </div>
+                <div class="done-card">
+                    <div class="done-icon">🗑️</div>
+                    <div class="done-title">UNINSTALLATION COMPLETE!</div>
+                    <div class="done-sub">Hecos dependencies and autostart shortcuts have been removed.</div>
+                </div>
+                {res_html}
+                <div class="card" style="border-color: #ff4444;">
+                    <div class="close-note" style="color: #ccc; border: 1px solid #ff4444;">
+                        ✅ You can now safely close this window and the terminal. You may also delete the Hecos folder from your computer.
                     </div>
                 </div>
             </div>

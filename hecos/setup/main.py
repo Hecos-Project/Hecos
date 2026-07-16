@@ -7,7 +7,18 @@ def main():
     set_ui_lang(initial_lang)
     
     import sys
-    if "--web" in sys.argv:
+    if "--uninstall" in sys.argv:
+        if "--web" in sys.argv:
+            from .web_ui import start_web_setup
+            # Start WebUI which will just display the default but let's just start it normally
+            # A query parameter like /?mode=uninstall will be handled by batch script opening the URL
+            start_web_setup()
+        else:
+            from .uninstaller import GlobalUninstaller
+            uninstaller = GlobalUninstaller()
+            uninstaller.execute_full_uninstall()
+            sys.exit(0)
+    elif "--web" in sys.argv:
         from .web_ui import start_web_setup
         start_web_setup()
     elif "--auto" in sys.argv:
