@@ -17,9 +17,9 @@ echo.
 :: We use the existing python environment if running from venv, or global otherwise.
 
 if exist "venv\Scripts\python.exe" (
-    "venv\Scripts\python.exe" -m hecos.setup.main --web
+    "venv\Scripts\python.exe" hecos\setup\main.py --uninstall --web
 ) else (
-    python -m hecos.setup.main --web
+    python hecos\setup\main.py --uninstall --web
 )
 
 pause

@@ -87,6 +87,33 @@ class GlobalUninstaller:
             except Exception as e:
                 print(f"[-] Warning: Error uninstalling batch {batch}: {e}")
 
+    def parse_plugin_dependencies(self):
+        """Parse HPM packages.db to extract pip requirements of all installed plugins."""
+        plugin_packages = []
+        db_path = os.path.join(CWD, "config", "data", "packages.db")
+        if os.path.exists(db_path):
+            try:
+                import sqlite3
+                import json
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                cursor.execute("SELECT manifest_snapshot FROM packages")
+                rows = cursor.fetchall()
+                for row in rows:
+                    try:
+                        manifest = json.loads(row[0])
+                        pip_reqs = manifest.get("pip_requirements") or []
+                        for req in pip_reqs:
+                            pkg_name = re.split(r'[;>=<~]', req)[0].strip()
+                            if pkg_name and not pkg_name.startswith("#"):
+                                plugin_packages.append(pkg_name)
+                    except Exception:
+                        pass
+                conn.close()
+            except Exception as e:
+                print(f"[-] Warning: Failed to parse packages.db for uninstall: {e}")
+        return plugin_packages
+
     def execute_full_uninstall(self):
         """Run the full uninstallation flow."""
         print("=" * 60)
@@ -96,16 +123,55 @@ class GlobalUninstaller:
         
         self.remove_autostart()
         
-        packages = self.parse_core_dependencies()
-        if packages:
-            self.uninstall_pip_packages(packages)
+        core_packages = self.parse_core_dependencies()
+        plugin_packages = self.parse_plugin_dependencies()
+        all_packages = list(set(core_packages + plugin_packages))
+        
+        if all_packages:
+            print(f"[*] Found {len(core_packages)} core dependencies and {len(plugin_packages)} plugin dependencies.")
+            self.uninstall_pip_packages(all_packages)
         else:
-            print("[-] No packages found in pyproject.toml to uninstall.")
+            print("[-] No packages found to uninstall.")
             
         print("\n" + "=" * 60)
         print("  UNINSTALL COMPLETE!")
         print("=" * 60)
         print("[*] Hecos core and its dependencies have been uninstalled from Python.")
         print("[*] You can now safely close this window and delete the Hecos folder.")
+        print("=" * 60 + "\n")
+        return True
+
+    def execute_wipe_all_packages(self):
+        """Wipe ALL packages installed in the Python environment, excluding core tools."""
+        print("=" * 60)
+        print("  PYTHON ENVIRONMENT WIPER")
+        print("=" * 60)
+        print()
+        
+        self.remove_autostart()
+        
+        print("[*] Scanning Python environment for all installed packages...")
+        try:
+            output = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
+            packages = []
+            for line in output.splitlines():
+                # Handling standard "pkg==1.0" or "pkg @ file://..."
+                pkg_name = re.split(r'[=<>~@]', line)[0].strip()
+                if pkg_name and pkg_name.lower() not in ["pip", "setuptools", "wheel"]:
+                    packages.append(pkg_name)
+                    
+            if packages:
+                print(f"[*] Found {len(packages)} packages to wipe.")
+                self.uninstall_pip_packages(packages)
+            else:
+                print("[-] Python environment is already clean.")
+        except Exception as e:
+            print(f"[-] Error scanning environment: {e}")
+
+        print("\n" + "=" * 60)
+        print("  WIPE COMPLETE!")
+        print("=" * 60)
+        print("[*] All Python packages have been completely removed.")
+        print("[*] You can now safely close this window.")
         print("=" * 60 + "\n")
         return True
