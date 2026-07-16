@@ -217,6 +217,106 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "BROWSER": {
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-globe",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "b",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b",
+                    "/browser"
+                ],
+                "description": "Apre il browser AI su un URL o effettua una ricerca.",
+                "usage": "/b <url_o_ricerca>",
+                "example": "/b youtube.com",
+                "icon": "??",
+                "method": "slash_b",
+                "requires_args": true
+            },
+            {
+                "id": "b_close",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_close"
+                ],
+                "description": "Chiude il browser AI.",
+                "usage": "/b_close",
+                "example": "/b_close",
+                "icon": "??",
+                "method": "slash_b_close",
+                "requires_args": false
+            },
+            {
+                "id": "b_tabs",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_tabs"
+                ],
+                "description": "Mostra la lista delle schede aperte nel browser AI.",
+                "usage": "/b_tabs",
+                "example": "/b_tabs",
+                "icon": "??",
+                "method": "slash_b_tabs",
+                "requires_args": false
+            }
+        ]
+    },
+    "MESSENGER": {
+        "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
+        "commands": {
+            "send_message": "Sends a text message to a contact or channel on the specified platform.",
+            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
+            "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
+            "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-paper-plane",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "msg",
+                "manifest_version": "1",
+                "aliases": [
+                    "/msg",
+                    "/send"
+                ],
+                "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
+                "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
+                "example": "/msg whatsapp:+393331234567 Ciao, questo è un test!",
+                "icon": "💬",
+                "method": "msg_command",
+                "requires_args": true
+            }
+        ]
+    },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-file-alt",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {

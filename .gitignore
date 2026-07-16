@@ -361,3 +361,30 @@ hecos/modules/web_ui/templates/calendar/
 hecos/modules/web_ui/templates/reminder/
 hecos/modules/web_ui/templates/lists/
 
+# Missing WebUI Extensions belonging to HPM packages
+hecos/modules/web_ui/extensions/quick_links/
+hecos/modules/web_ui/extensions/map_widget/
+hecos/modules/web_ui/extensions/lists_widget/
+hecos/modules/web_ui/extensions/browser_automation/
+hecos/modules/web_ui/extensions/mail/
+hecos/modules/web_ui/extensions/messenger/
+hecos/modules/web_ui/extensions/pc_automation/
+hecos/modules/web_ui/extensions/remote_triggers/
+hecos/modules/web_ui/extensions/templates/
+
+# Missing WebUI Templates belonging to HPM packages (config files)
+hecos/modules/web_ui/templates/modules/config_browser.html
+hecos/modules/web_ui/templates/modules/config_mail.html
+hecos/modules/web_ui/templates/modules/config_messenger.html
+hecos/modules/web_ui/templates/modules/config_remote_triggers.html
+hecos/modules/web_ui/templates/modules/config_templates.html
+hecos/modules/web_ui/templates/modules/config_pc_automation.html
+hecos/modules/web_ui/templates/modules/config_panel.html
+
+# WebUI Static Assets belonging to HPM packages
+hecos/modules/web_ui/static/css/browser_automation.css
+hecos/modules/web_ui/static/js/browser_automation.js
+hecos/modules/web_ui/static/css/image_gen.css
+hecos/modules/web_ui/static/js/image_gen.js
+hecos/modules/web_ui/static/js/pc_automation.js
+hecos/modules/web_ui/static/js/messenger.js
