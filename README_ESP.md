@@ -151,6 +151,14 @@ Si desea que Hecos se ejecute completamente en segundo plano sin ventanas de ter
 
 ---
 
+## 💻 Compatibilidad de Plataforma y Sistemas Operativos
+
+Aunque muchos paquetes de extensión en el ecosistema Hecos (como **Browser Automation**, **Messenger**, **Calendar**, **Weather Pro**, **Mail**, **Image Gen**, **Reminder**, **Lists**, **Maps** y **Quick Links**) son completamente multiplataforma y están diseñados para funcionar en Linux y macOS, **el sistema central de Hecos actualmente solo se ha probado de forma exclusiva en Windows 10 y 11**.
+
+Ejecutar el sistema central en Linux o macOS es posible, pero puede requerir ajustes manuales, y ciertas funciones nativas avanzadas (como la inspección de la interfaz de usuario en PC Automation) son exclusivas de Windows por diseño.
+
+---
+
 ## 🛠️ Requisitos del Sistema Esenciales (Windows)
 Si acabas de reinstalar Windows o estás configurando Hecos por primera vez, debes instalar estos paquetes de sistema **fundamentales** para que todos los módulos funcionen correctamente[cite: 1]:
 
