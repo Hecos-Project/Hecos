@@ -1,11 +1,14 @@
 #!/bin/bash
-# Hecos - Restart Tray Icon
 
 # Navigate to the script's directory
 cd "$(dirname "$0")"
 
+echo "====================================================================="
+echo "   HECOS SYSTEM UNINSTALLER"
+echo "====================================================================="
 echo ""
-echo " [*] Restoring system tray icon..."
+echo "Starting Hecos Setup Wizard..."
+echo "Please use the Web Interface to proceed with uninstallation."
 echo ""
 
 # Detect Python
@@ -19,10 +22,6 @@ else
     PY_CMD="python"
 fi
 
-# Run the tray app in background (quietly)
-nohup $PY_CMD -m hecos.tray.tray_app >/dev/null 2>&1 &
+$PY_CMD hecos/setup/main.py --uninstall --web
 
-echo " [+] Command sent. The icon will appear shortly."
-echo ""
-sleep 1
-exit 0
+read -p "Press Enter to exit..."
