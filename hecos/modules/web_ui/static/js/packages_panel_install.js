@@ -4,6 +4,32 @@
  * Install logic for Hecos Package Manager
  */
 
+// ── Inject persistent spinner keyframe once (avoids CSS reset on innerHTML update) ──
+(function _injectHpmSpinStyle() {
+  if (document.getElementById('hpm-spin-style')) return;
+  const s = document.createElement('style');
+  s.id = 'hpm-spin-style';
+  s.textContent = `
+    @keyframes hpm-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .hpm-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid transparent;
+      border-top-color: var(--accent, #6366f1);
+      border-right-color: var(--accent, #6366f1);
+      border-radius: 50%;
+      animation: hpm-spin 0.7s linear infinite;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(s);
+})();
+
 window.hpmDragOver = function (e) {
   e.preventDefault();
   const dz = document.getElementById('hpm-dropzone');
@@ -104,7 +130,7 @@ window.hpmRenderInstallQueue = function() {
                     <div style="display:flex; align-items:center; gap:8px;">${pendingLabel}${action}</div>
                 </div>`;
         } else if (item.status === 'installing') {
-            icon = '<i class="fas fa-circle-notch fa-spin" style="color:var(--accent); margin-right:8px; width:16px; flex-shrink:0;"></i>';
+            icon = '<span class="hpm-spinner" style="margin-right:8px;"></span>';
             const stepTxt = item.progressMsg ? item.progressMsg : _ti('Installing...', 'Installazione...', 'Instalando...');
             // Row 1: filename + spinner + step label
             const row1 = `

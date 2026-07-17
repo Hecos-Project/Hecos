@@ -267,23 +267,28 @@ window.hpmShowDocs = async function(pkg_id, pkg_name) {
   try {
     const res = await fetch(`/api/packages/${pkg_id}/readme`);
     const data = await res.json();
+    let htmlContent = '';
     if (!data.ok) {
-      if (window.showToast) window.showToast('Error: ' + data.error, 'error');
-      else alert('Error: ' + data.error);
-      return;
-    }
-    
-    let htmlContent = data.content;
-    try {
-      if (typeof marked !== 'undefined') {
-        htmlContent = marked.parse(data.content);
-      } else if (window.marked && typeof window.marked.parse === 'function') {
-        htmlContent = window.marked.parse(data.content);
-      } else {
+      htmlContent = `
+        <div style="text-align: center; padding: 40px 20px; background: var(--bg-card, #1e1e1e); border-radius: 8px; border: 1px dashed var(--border-color, #444); margin-top: 20px;">
+            <i class="fas fa-file-alt" style="font-size: 48px; color: var(--muted, #888); margin-bottom: 16px;"></i>
+            <h3 style="margin: 0 0 10px 0; color: var(--text-color, #fff);">No Documentation Available</h3>
+            <p style="margin: 0; color: var(--muted, #888);">This package does not include a README or documentation guide.</p>
+        </div>
+      `;
+    } else {
+      htmlContent = data.content;
+      try {
+        if (typeof marked !== 'undefined') {
+          htmlContent = marked.parse(data.content);
+        } else if (window.marked && typeof window.marked.parse === 'function') {
+          htmlContent = window.marked.parse(data.content);
+        } else {
+          htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
+        }
+      } catch(e) {
         htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
       }
-    } catch(e) {
-      htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
     }
 
     let html = `

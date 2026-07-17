@@ -177,18 +177,22 @@ function buildPluginsPayload(out) {
     // which directly mutates window.cfg, so out.plugins[tag] already has the correct boolean.
 
     // Browser engine mode (inline radio)
-    out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
-    const modeEl = document.querySelector('input[name="engine_mode"]:checked');
-    if (modeEl) {
-        out.plugins['BROWSER'].browser_engine_mode = modeEl.value;
-    } else {
-        out.plugins['BROWSER'].browser_engine_mode = out.plugins['BROWSER'].browser_engine_mode || 'playwright';
+    // Only inject BROWSER config if the package is installed (key exists in window.cfg).
+    // Without this guard, defaults are always sent → key re-created on disk every save.
+    if (window.cfg?.plugins?.BROWSER) {
+        out.plugins['BROWSER'] = out.plugins['BROWSER'] || {};
+        const modeEl = document.querySelector('input[name="engine_mode"]:checked');
+        if (modeEl) {
+            out.plugins['BROWSER'].browser_engine_mode = modeEl.value;
+        } else {
+            out.plugins['BROWSER'].browser_engine_mode = out.plugins['BROWSER'].browser_engine_mode || 'playwright';
+        }
+        out.plugins['BROWSER'].cdp_port    = parseInt(getV('browser-cdp-port',    out.plugins['BROWSER'].cdp_port))    || 9222;
+        out.plugins['BROWSER'].headless    = getC('browser-headless',    out.plugins['BROWSER'].headless);
+        out.plugins['BROWSER'].block_ads   = getC('browser-block-ads',   out.plugins['BROWSER'].block_ads);
+        out.plugins['BROWSER'].startup_url = getV('browser-startup-url', out.plugins['BROWSER'].startup_url);
+        out.plugins['BROWSER'].browser_type = getV('browser-engine',     out.plugins['BROWSER'].browser_type) || 'chromium';
     }
-    out.plugins['BROWSER'].cdp_port    = parseInt(getV('browser-cdp-port',    out.plugins['BROWSER'].cdp_port))    || 9222;
-    out.plugins['BROWSER'].headless    = getC('browser-headless',    out.plugins['BROWSER'].headless);
-    out.plugins['BROWSER'].block_ads   = getC('browser-block-ads',   out.plugins['BROWSER'].block_ads);
-    out.plugins['BROWSER'].startup_url = getV('browser-startup-url', out.plugins['BROWSER'].startup_url);
-    out.plugins['BROWSER'].browser_type = getV('browser-engine',     out.plugins['BROWSER'].browser_type) || 'chromium';
     
     // Automation, Browser and Executor toggles are natively linked via data-plugin in plugin-list 
     // and syncPluginStateToMemory. No need to parse their standalone DOM elements here.

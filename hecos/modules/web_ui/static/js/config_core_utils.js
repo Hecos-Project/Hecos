@@ -80,12 +80,12 @@ async function rebootSystem() {
     <div style="text-align:center;">
       <div style="position:relative;width:72px;height:72px;margin:0 auto 20px;">
         <svg viewBox="0 0 72 72" style="width:72px;height:72px;animation:sysSpinSlow 2s linear infinite;">
-          <circle cx="36" cy="36" r="32" fill="none" stroke="#f59e0b" stroke-width="4"
+          <circle cx="36" cy="36" r="32" fill="none" stroke="var(--accent)" stroke-width="4"
                   stroke-dasharray="150 52" stroke-linecap="round"/>
         </svg>
         <i class="fas fa-power-off" style="
           position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-          font-size:22px;color:#f59e0b;"></i>
+          font-size:22px;color:var(--accent);"></i>
       </div>
       <div style="font-size:1.25em;font-weight:700;color:#fff;letter-spacing:.5px;">
         ${_ti('Restarting Hecos…', 'Riavvio in corso…', 'Reiniciando Hecos…')}
@@ -94,7 +94,7 @@ async function rebootSystem() {
         ${_ti('Sending restart command…', 'Invio comando di riavvio…', 'Enviando comando de reinicio…')}
       </div>
       <div style="margin-top:24px;width:220px;height:3px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
-        <div id="sys-reboot-bar" style="height:100%;width:0%;background:#f59e0b;border-radius:3px;transition:width 0.4s ease;"></div>
+        <div id="sys-reboot-bar" style="height:100%;width:0%;background:var(--accent);border-radius:3px;transition:width 0.4s ease;"></div>
       </div>
     </div>`;
   document.body.appendChild(overlay);
