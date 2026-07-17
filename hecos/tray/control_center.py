@@ -171,13 +171,18 @@ splash.mainloop()
             else:
                 btn.configure(fg_color="transparent", text_color=TEXT)
 
-    def _switch_tab(key):
-        if _active_tab["key"] == key:
-            return
+    def _rebuild_tab(key):
+        """Force-rebuild the content of a tab, even if it is already the active tab.
+        Used by the Refresh button so it works when already on the status tab."""
         _active_tab["key"] = key
         _highlight(key)
         _clear_content()
         TAB_BUILDERS[key]()
+
+    def _switch_tab(key):
+        if _active_tab["key"] == key:
+            return  # already active — no visual change needed
+        _rebuild_tab(key)
 
     nav_area = ctk.CTkScrollableFrame(sidebar, fg_color="transparent", corner_radius=0)
     nav_area.pack(fill="both", expand=True, padx=4)
@@ -313,7 +318,9 @@ splash.mainloop()
             browser_lbl.configure(text="Not Detected", text_color=MUTED)
 
         def _refresh():
-            _switch_tab("status")
+            # Use _rebuild_tab so the refresh always works even when
+            # the status tab is already the active tab.
+            _rebuild_tab("status")
 
         ctk.CTkButton(sc, text="↻ Refresh", fg_color=SURFACE, text_color=TEXT,
                       hover_color=BORDER, corner_radius=8,

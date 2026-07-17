@@ -199,6 +199,87 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "LISTS": {
+        "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
+        "commands": {
+            "create_list": "Creates a new empty list.",
+            "list_lists": "Shows all active lists with the count of items.",
+            "show_list": "Shows all items of a specific list.",
+            "add_to_list": "Adds one or more items to a list. Creates the list if it doesn't exist.",
+            "check_item": "Marks an item as completed in a list.",
+            "uncheck_item": "Restores an item as to-do.",
+            "remove_from_list": "Permanently deletes an item from a list.",
+            "clear_done": "Removes all completed items from a list.",
+            "delete_list": "Deletes an entire list.",
+            "archive_list": "Archives a list (hides it from the main view)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-list-check",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "lists",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list",
+                    "/lists",
+                    "/liste"
+                ],
+                "description": "Shows all lists",
+                "usage": "/list",
+                "example": "/list",
+                "icon": "📋",
+                "method": "list_lists",
+                "requires_args": false
+            },
+            {
+                "id": "list_show",
+                "manifest_version": "1",
+                "aliases": [
+                    "/lista"
+                ],
+                "description": "Shows a list",
+                "usage": "/lista <nome>",
+                "example": "/lista Spesa",
+                "icon": "🔍",
+                "method": "show_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_add",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list add",
+                    "/lista aggiungi"
+                ],
+                "description": "Adds item",
+                "usage": "/list add <lista> <elemento>",
+                "example": "/list add Spesa Uova",
+                "icon": "➕",
+                "method": "add_to_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_done",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list done",
+                    "/lista spunta"
+                ],
+                "description": "Checks item",
+                "usage": "/list done <lista> <elemento>",
+                "example": "/list done Spesa Uova",
+                "icon": "✅",
+                "method": "check_item",
+                "requires_args": true
+            }
+        ]
+    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {
