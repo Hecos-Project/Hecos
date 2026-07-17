@@ -199,68 +199,6 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
-    "MAP": {
-        "description": "Simple Map Module based on Leaflet and Nominatim.",
-        "commands": {
-            "get_home_location": "Get the lat/lon coordinates of the user's home location",
-            "geocode": "Geocode an address or city into lat/lon coordinates"
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": []
-    },
-    "WEATHER_PRO": {
-        "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
-        "commands": {
-            "get_current_weather": "Get current weather for a city or user's location.",
-            "get_weather_forecast": "Get 7-day daily weather forecast for a city."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "fa-cloud-sun",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": [
-            {
-                "command": "/weather",
-                "description": "Show current weather (optionally for a city: /weather Rome)",
-                "method": "get_current_weather",
-                "args_schema": {
-                    "city": "str?"
-                }
-            },
-            {
-                "command": "/forecast",
-                "description": "Show 7-day forecast (optionally for a city: /forecast Milan)",
-                "method": "get_weather_forecast",
-                "args_schema": {
-                    "city": "str?"
-                }
-            }
-        ]
-    },
-    "WEBCAM": {
-        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": []
-    },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",
         "commands": {

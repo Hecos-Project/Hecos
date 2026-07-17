@@ -98,7 +98,14 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 if "enabled" in p_conf:
                     p["status"] = "installed" if p_conf["enabled"] else "disabled"
 
-                p["lazy_load"] = p_conf.get("lazy_load", False)
+                # lazy_load: prefer live system override (plugins.yaml), fall back to
+                # the package's own manifest declaration. Without the fallback, HPM packages
+                # always rendered lazy=False in the UI because they have no entry in
+                # plugins.yaml until the user explicitly toggles the checkbox.
+                if "lazy_load" in p_conf:
+                    p["lazy_load"] = p_conf["lazy_load"]
+                else:
+                    p["lazy_load"] = raw_snap.get("lazy_load", False)
                 p["level"] = TYPE_TO_LEVEL.get(p.get("type", "plugin"), 2)
                 p["removable"] = True
                 p["tag"] = pkg_tag
