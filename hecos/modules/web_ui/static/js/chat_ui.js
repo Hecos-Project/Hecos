@@ -73,9 +73,27 @@ function _initInputHistoryListener() {
         
         if (hist.length === 0) {
             console.log('[InputHistory:Web] No history in storage.');
-            // Feedback visivo: lampeggio rosso brevissimo del bordo
-            inp.style.outline = '2px solid #ff4a4a';
-            setTimeout(() => { inp.style.outline = ''; }, 300);
+            // Show a brief hint below the input box
+            let hint = document.getElementById('_ih_empty_hint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = '_ih_empty_hint';
+                hint.style.cssText = [
+                    'position:absolute', 'bottom:calc(100% + 6px)', 'left:50%',
+                    'transform:translateX(-50%)', 'background:rgba(30,30,40,0.92)',
+                    'color:#aaa', 'font-size:12px', 'padding:5px 14px',
+                    'border-radius:8px', 'pointer-events:none',
+                    'border:1px solid rgba(255,255,255,0.08)',
+                    'white-space:nowrap', 'opacity:0',
+                    'transition:opacity 0.2s ease', 'z-index:9999'
+                ].join(';');
+                hint.textContent = '⏱ No input history yet — type a message and press Enter';
+                (inp.parentElement || document.body).style.position = 'relative';
+                (inp.parentElement || document.body).appendChild(hint);
+            }
+            hint.style.opacity = '1';
+            clearTimeout(hint._hideTimer);
+            hint._hideTimer = setTimeout(() => { hint.style.opacity = '0'; }, 2000);
             e.preventDefault();
             return;
         }

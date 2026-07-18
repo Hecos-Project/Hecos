@@ -4,7 +4,7 @@
  */
 
 function populateSystemUI() {
-    const c = cfg;
+    const c = window.cfg || {};
     const slg = c.logging || {};
     setVal('log-level', slg.level || 'INFO');
     setVal('log-type', slg.message_types || 'both');

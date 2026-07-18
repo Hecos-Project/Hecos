@@ -758,9 +758,15 @@ def read_keyboard_input(prefix, current_input):
                         _ih_log.warning(f"[InputHistory:CLI] Failed to load from disk: {_e}")
 
                 if not _cli_history:
-                    # Nessun elemento in memoria — feedback visivo
                     _ih_log.info("[InputHistory:CLI] ArrowUp pressed but history is empty.")
-                    sys.stdout.write('\a')  # beep
+                    # Inline message: clear line, print hint, restore prompt+input
+                    _msg = " [No input history yet — start typing and press Enter]"
+                    sys.stdout.write('\r' + ' ' * (len(current_input) + len(prefix) + 5) + '\r')
+                    sys.stdout.write(f"\033[90m{_msg}\033[0m")
+                    sys.stdout.flush()
+                    import time as _time; _time.sleep(1.2)
+                    sys.stdout.write('\r' + ' ' * len(_msg) + '\r')
+                    sys.stdout.write(prefix + current_input)
                     sys.stdout.flush()
                     return None, current_input
                 
