@@ -136,7 +136,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         threading.Thread(
             target=_run_inference,
-            args=(sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id),
+            args=(sess, sid, user_msg, history, cfg_mgr, images, uid, urole, tab_id),
             daemon=True,
         ).start()
         return jsonify({"ok": True, "session_id": sid})

@@ -150,9 +150,9 @@ llm:
       - llama-3.1-8b-instant
       - qwen/qwen3.6-27b
 logging:
-  level: DEBUG
-  destination: console
-  message_types: both
+  level: INFO
+  destination: chat
+  message_types: info
   web_level: BOTH
   web_max_history: 100
   web_autoscroll: true
@@ -179,6 +179,6 @@ routing_engine:
   mode: auto
   legacy_models: ''
 system:
-  fast_boot: true
+  fast_boot: false
   flask_debug: false
   check_local_backend_on_boot: false

@@ -18,7 +18,7 @@ from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts
 
 _sessions      = {}
 _sessions_lock = threading.Lock()
-_chat_log = logging.getLogger("HecosChatRoutes")
+from hecos.core.logging import logger as _chat_log
 
 _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 
@@ -27,8 +27,7 @@ _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 _WEBUI_INFERENCE_TIMEOUT = 120  # seconds
 
 
-def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None):
-    sess = _sessions.get(session_id)
+def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None):
     if not sess:
         return
 
@@ -73,6 +72,27 @@ def _run_inference(session_id: str, user_message: str, history: list, cfg_mgr, i
         from hecos.modules.web_ui.server import get_state_manager
 
         sm = get_state_manager()
+
+        # ── Defensive cfg_mgr recovery ───────────────────────────────────────
+        # If cfg_mgr is None (timing gap between boot paths), try to recover it
+        # from the StateManager or from sys before crashing silently.
+        if cfg_mgr is None:
+            _chat_log.warning("[INFERENCE] cfg_mgr is None — attempting recovery from StateManager/sys...")
+            if sm and hasattr(sm, "config_manager") and sm.config_manager is not None:
+                cfg_mgr = sm.config_manager
+                _chat_log.info("[INFERENCE] cfg_mgr recovered from StateManager.")
+            elif sm and hasattr(sm, "_cfg_mgr") and sm._cfg_mgr is not None:
+                cfg_mgr = sm._cfg_mgr
+                _chat_log.info("[INFERENCE] cfg_mgr recovered from StateManager._cfg_mgr.")
+            else:
+                import sys as _sys
+                cfg_mgr = getattr(_sys, "hecos_config_manager", None)
+                if cfg_mgr:
+                    _chat_log.info("[INFERENCE] cfg_mgr recovered from sys.hecos_config_manager.")
+
+        if cfg_mgr is None:
+            raise RuntimeError("ConfigManager non disponibile. Riavviare Hecos.")
+        # ────────────────────────────────────────────────────────────────────
 
         # ── Session-Aware Trace Callback ─────────────────────────────────────
         # Inject agent traces directly into the session-specific SSE queue.

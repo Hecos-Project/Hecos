@@ -79,14 +79,11 @@ class WebUIPlugin:
         from .server import set_state_manager
         set_state_manager(sm)
         
-        # Contacts
-        from .routes_contacts import contacts_bp
-        from .server import app
-        app.register_blueprint(contacts_bp)
+        # Contacts (Migrated to plugins)
+        pass
         
-        # Input History
-        from hecos.modules.input_history.routes import input_history_bp
-        app.register_blueprint(input_history_bp)
+        # Input History (Migrated to server_flask.py)
+        pass
 
     def _ensure_server(self):
         """Lazy starts the server only when the plugin is actually interacted with."""

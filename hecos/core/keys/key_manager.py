@@ -26,6 +26,7 @@ DEFAULT_CLOUD_TIMEOUT = 30
 _KM_CLOUD_TIMEOUT: int = 30    # cloud API request timeout in seconds
 _KM_COOLDOWN:      int = 60    # cooldown for rate-limited/timed-out keys
 _KM_MAX_RETRIES:   int = 5     # max failover attempts per request
+_KM_WEBUI_INFERENCE_TIMEOUT: int = 120  # max seconds WebUI waits for AI response
 
 
 class KeyManager:

@@ -162,6 +162,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_history import history_bp
     app.register_blueprint(history_bp)
 
+
     # Contacts Plugin Route Integration
     try:
         from hecos.plugins.contacts.api import register_routes as init_contacts_api
