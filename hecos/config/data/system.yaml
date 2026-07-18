@@ -17,24 +17,24 @@ ai:
 backend:
   type: cloud
   cloud:
-    model: gemini/gemini-2.5-flash
+    model: ''
     temperature: 0.7
   kobold:
     url: http://localhost:5001
     model: ''
     max_length: 512
-    temperature: 0.8
-    top_p: 0.92
+    temperature: 0.7
+    top_p: 0.95
     rep_pen: 1.1
   ollama:
-    url: http://localhost:11434
+    url: admin
     model: ''
     available_models: {}
     num_ctx: 4096
-    num_gpu: 25
-    num_predict: 250
+    num_gpu: 33
+    num_predict: 1024
     temperature: 0.3
-    top_p: 0.9
+    top_p: 0.95
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
@@ -63,8 +63,8 @@ filters:
   custom_replacements: {}
 language: en
 llm:
-  allow_cloud: true
-  debug_llm: true
+  allow_cloud: false
+  debug_llm: false
   providers:
     gemini:
       api_key: ''
@@ -164,6 +164,12 @@ privacy:
   wipe_messages: true
   wipe_profile: false
   wipe_context: false
+input_history:
+  enabled: true
+  max_entries: 200
+  persist: true
+  deduplicate: true
+  scope: per_user
 processor:
   debug_mode: false
   log_level: INFO
@@ -174,9 +180,3 @@ system:
   fast_boot: true
   flask_debug: false
   check_local_backend_on_boot: false
-input_history:
-  enabled: true
-  max_entries: 200
-  persist: true
-  deduplicate: true
-  scope: per_user

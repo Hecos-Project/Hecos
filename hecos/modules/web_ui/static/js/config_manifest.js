@@ -39,11 +39,8 @@ window.CONFIG_HUB = {
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
-
-        { id: 'webui',     label: 'hub_mod_webui',        icon: '<i class="fas fa-desktop"></i>', cat: 'SISTEMA', pluginTag: 'WEB_UI', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '<i class="fas fa-users-cog"></i>', cat: 'SISTEMA', adminOnly: true, pluginTag: 'USERS' },
-        { id: 'security',  label: 'hub_mod_security',     icon: '<i class="fas fa-shield-alt"></i>', cat: 'SISTEMA', adminOnly: true },
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA' },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' },
@@ -129,9 +126,9 @@ window.CONFIG_HUB.tagMap = {
  */
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
-    'memory', 'voice', 'aesthetics', 'webui',
+    'memory', 'voice', 'aesthetics',
     'webcam', 'executor', 'automation',
-    'browser', 'sysnet', 'users', 'security', 'payload', 'plugins',
+    'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'mcp', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
 ]);

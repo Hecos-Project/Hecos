@@ -27,7 +27,7 @@ function populateSystemUI() {
     
     // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
-    setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
+    setCheck('webui-https-enabled', webUiPlug.https_enabled ?? false);
 
     // Dashboard config
     const dsb = (c.plugins || {}).DASHBOARD || {};
@@ -138,7 +138,7 @@ function buildSystemPayload() {
                 proxy_url: getV('sys-proxy-url', snet.proxy_url || "")
             },
             WEB_UI: {
-                https_enabled: getC('sys-https-enabled', wui.https_enabled ?? false),
+                https_enabled: getC('webui-https-enabled', wui.https_enabled ?? false),
                 control_room_panel: getC('wui-control-room-panel', wui.control_room_panel ?? true),
                 control_room_home: getC('wui-control-room-home', wui.control_room_home ?? true)
             }

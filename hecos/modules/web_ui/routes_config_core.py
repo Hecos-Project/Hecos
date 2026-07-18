@@ -118,7 +118,6 @@ _PANEL_MAP = {
     'automation':      'modules/config_utils.html',
     'sysnet':          'modules/config_sysnet.html',
     'users':           'modules/config_users.html',
-    'security':        'modules/config_security.html',
     'payload':         'modules/config_payload.html',
     'plugins':         'modules/config_plugins.html',
     'contacts':        'modules/config_contacts.html',
