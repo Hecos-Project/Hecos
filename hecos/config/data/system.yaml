@@ -168,7 +168,7 @@ privacy:
   wipe_context: false
 input_history:
   enabled: true
-  max_entries: 200
+  max_entries: 5
   persist: true
   deduplicate: true
   scope: per_user
