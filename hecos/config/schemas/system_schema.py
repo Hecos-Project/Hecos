@@ -11,6 +11,16 @@ from typing import Any, Dict, List
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+# ─── INPUT HISTORY ──────────────────────────────────────────────────────────────
+
+class InputHistoryConfig(BaseModel):
+    enabled: bool = True
+    max_entries: int = 200
+    persist: bool = True
+    deduplicate: bool = True
+    scope: str = "per_user"
+
+
 # ─── PRIVACY ──────────────────────────────────────────────────────────────────
 
 class PrivacyConfig(BaseModel):
@@ -215,6 +225,7 @@ class SystemConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     monitor: MonitorConfig = Field(default_factory=MonitorConfig)
     privacy: PrivacyConfig = Field(default_factory=PrivacyConfig)
+    input_history: InputHistoryConfig = Field(default_factory=InputHistoryConfig)
     processor: ProcessorConfig = Field(default_factory=ProcessorConfig)
     routing_engine: RoutingEngineConfig = Field(default_factory=RoutingEngineConfig)
     system: SystemFlagsConfig = Field(default_factory=SystemFlagsConfig)

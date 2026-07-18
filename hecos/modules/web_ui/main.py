@@ -78,6 +78,15 @@ class WebUIPlugin:
         """Injects the live StateManager from the main application."""
         from .server import set_state_manager
         set_state_manager(sm)
+        
+        # Contacts
+        from .routes_contacts import contacts_bp
+        from .server import app
+        app.register_blueprint(contacts_bp)
+        
+        # Input History
+        from hecos.modules.input_history.routes import input_history_bp
+        app.register_blueprint(input_history_bp)
 
     def _ensure_server(self):
         """Lazy starts the server only when the plugin is actually interacted with."""

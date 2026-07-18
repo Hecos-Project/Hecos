@@ -69,6 +69,13 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
         uid = current_user.username if current_user.is_authenticated else "admin"
         urole = current_user.role if current_user.is_authenticated else "admin"
+        
+        # Save to input history
+        try:
+            from hecos.modules.input_history import history_mgr
+            history_mgr.push(user_msg, user=uid)
+        except Exception as e:
+            _chat_log.warning(f"[Chat] Failed to push input history: {e}")
 
         # ── Flow input intercept ───────────────────────────────────────────────
         # If any flow is paused waiting for user input, route this message there

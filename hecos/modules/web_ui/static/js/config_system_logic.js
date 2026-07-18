@@ -17,6 +17,13 @@ function populateSystemUI() {
     setCheck('sys-check-local-backend', sys.check_local_backend_on_boot ?? false);
     setCheck('sys-sdk-enabled', sys.sdk_enabled === true);  // default OFF
     setVal('sys-language', c.language || 'en');
+
+    // Input History
+    const ihist = c.input_history || {};
+    setCheck('ihistory-enabled', ihist.enabled ?? true);
+    setCheck('ihistory-persist', ihist.persist ?? true);
+    setCheck('ihistory-deduplicate', ihist.deduplicate ?? true);
+    setVal('ihistory-max-entries', ihist.max_entries ?? 200);
     
     // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
@@ -75,6 +82,7 @@ function buildSystemPayload() {
     const sys = window.cfg.system || {};
     const sln = window.cfg.language || 'en';
     const cog = window.cfg.cognition || {};
+    const ihist = window.cfg.input_history || {};
     const snet = window.cfg.plugins?.SYS_NET || {};
     const wui = window.cfg.plugins?.WEB_UI || {};
 
@@ -110,6 +118,13 @@ function buildSystemPayload() {
                 similarity_threshold: parseFloat(getV('cog-rag-threshold', (cog.rag||{}).similarity_threshold)) || 0.3,
                 persist_path:         (cog.rag||{}).persist_path || 'memory/vector_store'
             }
+        },
+        input_history: {
+            enabled: getC('ihistory-enabled', ihist.enabled ?? true),
+            persist: getC('ihistory-persist', ihist.persist ?? true),
+            deduplicate: getC('ihistory-deduplicate', ihist.deduplicate ?? true),
+            max_entries: parseInt(getV('ihistory-max-entries', ihist.max_entries)) || 200,
+            scope: "per_user"
         },
         plugins: {
             DASHBOARD: {
@@ -201,6 +216,23 @@ function escapeHtml(text) {
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
   return (text || '').replace(/[&<>"']/g, m => map[m]);
 }
+
+window.clearInputHistory = async function() {
+  if (!confirm("Are you sure you want to clear your input history?")) return;
+  try {
+    const r = await fetch('/api/input-history/clear', {method: 'POST'});
+    const d = await r.json();
+    if (d.ok) {
+        alert("Input history cleared successfully.");
+        if (window._inputHistory) window._inputHistory = [];
+        if (window._inputHistoryCursor !== undefined) window._inputHistoryCursor = -1;
+    } else {
+        alert("Error clearing input history: " + (d.error || 'Unknown error'));
+    }
+  } catch(e) {
+    alert("Error: " + e.message);
+  }
+};
 
 // Exports for Global Scope
 window.populateSystemUI = populateSystemUI;

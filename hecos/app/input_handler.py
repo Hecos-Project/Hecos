@@ -89,6 +89,14 @@ class InputHandler:
                     return None, ""
             
         voice.stop_voice() # Stop any ongoing old speech
+        
+        # Add to history
+        try:
+            from hecos.modules.input_history import history_mgr
+            history_mgr.push(testo, user="admin")
+        except Exception as e:
+            pass
+            
         self._execute_exchange(testo, prefisso, is_voice=False)
         return "PROCESSED", ""
 

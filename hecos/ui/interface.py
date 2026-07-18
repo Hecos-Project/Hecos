@@ -713,9 +713,10 @@ def read_keyboard_input(prefix, current_input):
     
     if msvcrt.kbhit():
         ch_raw = msvcrt.getch()
-        # Function keys F1-F6
+        # Function keys F1-F6 and Arrows
         if ch_raw in [b'\x00', b'\xe0']:
             special_key = msvcrt.getch()
+            # F1-F9 keys
             if special_key == b';': return "F1", current_input
             if special_key == b'<': return "F2", current_input
             if special_key == b'=': return "F3", current_input
@@ -725,6 +726,25 @@ def read_keyboard_input(prefix, current_input):
             if special_key == b'A': return "F7", current_input
             if special_key == b'B': return "F8", current_input
             if special_key == b'C': return "F9", current_input
+            
+            # Up / Down Arrows for Input History
+            if special_key in [b'H', b'P']: # 0x48 (Up), 0x50 (Down)
+                try:
+                    from hecos.modules.input_history import history_mgr
+                    direction = "up" if special_key == b'H' else "down"
+                    new_input = history_mgr.navigate(direction, user="admin", current_draft=current_input)
+                    if new_input != current_input:
+                        # Clear current line
+                        sys.stdout.write('\b' * len(current_input) + ' ' * len(current_input) + '\b' * len(current_input))
+                        # Write new input
+                        current_input = new_input
+                        _active_input_buffer = current_input
+                        sys.stdout.write(current_input)
+                        sys.stdout.flush()
+                except Exception as e:
+                    pass
+                return None, current_input
+
             return None, current_input
 
         if ch_raw == b'\x1b':  # ESC
