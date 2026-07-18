@@ -23,7 +23,7 @@ function populateSystemUI() {
     setCheck('ihistory-enabled', ihist.enabled ?? true);
     setCheck('ihistory-persist', ihist.persist ?? true);
     setCheck('ihistory-deduplicate', ihist.deduplicate ?? true);
-    setVal('ihistory-max-entries', ihist.max_entries ?? 200);
+    setVal('ihistory-max-entries', ihist.max_entries ?? 5);
     
     // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
@@ -123,7 +123,7 @@ function buildSystemPayload() {
             enabled: getC('ihistory-enabled', ihist.enabled ?? true),
             persist: getC('ihistory-persist', ihist.persist ?? true),
             deduplicate: getC('ihistory-deduplicate', ihist.deduplicate ?? true),
-            max_entries: parseInt(getV('ihistory-max-entries', ihist.max_entries)) || 200,
+            max_entries: parseInt(getV('ihistory-max-entries', ihist.max_entries)) || 5,
             scope: "per_user"
         },
         plugins: {
@@ -219,18 +219,23 @@ function escapeHtml(text) {
 
 window.clearInputHistory = async function() {
   if (!confirm("Are you sure you want to clear your input history?")) return;
+  
+  // Clear WebUI storage
+  localStorage.removeItem('hecos_ih');
+  sessionStorage.removeItem('hecos_ih');
+  if (window._ihIndex !== undefined) window._ihIndex = -1;
+  
+  // Also clear CLI history via an API (TODO if we add a dedicated endpoint, else just silently ignore)
+  // For now we don't have the API, but we'll try to call a new lightweight one that we'll add
   try {
-    const r = await fetch('/api/input-history/clear', {method: 'POST'});
-    const d = await r.json();
-    if (d.ok) {
-        alert("Input history cleared successfully.");
-        if (window._inputHistory) window._inputHistory = [];
-        if (window._inputHistoryCursor !== undefined) window._inputHistoryCursor = -1;
+    const r = await fetch('/hecos/config/clear-cli-history', {method: 'POST'});
+    if (r.ok) {
+        showSaveMsg("History cleared successfully.", "success");
     } else {
-        alert("Error clearing input history: " + (d.error || 'Unknown error'));
+        showSaveMsg("Browser history cleared. (CLI sync failed)", "warning");
     }
   } catch(e) {
-    alert("Error: " + e.message);
+    showSaveMsg("Browser history cleared.", "success");
   }
 };
 

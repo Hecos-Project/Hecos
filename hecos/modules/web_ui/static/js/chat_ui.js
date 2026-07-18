@@ -16,6 +16,100 @@ window.sendBtn = sendBtn;
 
 window.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
+// --- Input History Logic ---
+window._ihIndex = -1;
+window._ihDraft = "";
+
+window.saveInputHistory = function(text) {
+    const cfg = (window.cfg && window.cfg.input_history) ? window.cfg.input_history : { enabled: true, persist: true, deduplicate: true, max_entries: 5 };
+    console.log('[InputHistory:Web] saveInputHistory called. enabled=', cfg.enabled, 'text=', text);
+    if (!cfg.enabled) { console.log('[InputHistory:Web] Disabled, skipping.'); return; }
+    
+    let hist = [];
+    const storage = cfg.persist ? localStorage : sessionStorage;
+    try { hist = JSON.parse(storage.getItem('hecos_ih') || '[]'); } catch(e){ console.warn('[InputHistory:Web] Parse error:', e); }
+    
+    if (cfg.deduplicate && hist.length > 0 && hist[hist.length - 1] === text) {
+        console.log('[InputHistory:Web] Deduplicate: same as last entry, skipping.');
+        window._ihIndex = -1;
+        return;
+    }
+    
+    hist.push(text);
+    if (hist.length > (cfg.max_entries || 5)) hist = hist.slice(-(cfg.max_entries || 5));
+    
+    storage.setItem('hecos_ih', JSON.stringify(hist));
+    window._ihIndex = -1;
+    window._ihDraft = "";
+    console.log('[InputHistory:Web] Saved. Total entries:', hist.length, '| Storage:', cfg.persist ? 'localStorage' : 'sessionStorage');
+};
+
+window.clearInputHistory = function() {
+    localStorage.removeItem('hecos_ih');
+    sessionStorage.removeItem('hecos_ih');
+    window._ihIndex = -1;
+    console.log('[InputHistory:Web] History cleared.');
+};
+
+function _initInputHistoryListener() {
+    const inp = document.getElementById('user-input');
+    if (!inp) {
+        console.warn('[InputHistory:Web] user-input element not found, will retry...');
+        setTimeout(_initInputHistoryListener, 500);
+        return;
+    }
+    console.log('[InputHistory:Web] Listener registered on #user-input');
+    inp.addEventListener('keydown', function(e) {
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        
+        const cfg = (window.cfg && window.cfg.input_history) ? window.cfg.input_history : { enabled: true, persist: true };
+        if (!cfg.enabled) { console.log('[InputHistory:Web] Disabled.'); return; }
+        
+        const storage = cfg.persist ? localStorage : sessionStorage;
+        let hist = [];
+        try { hist = JSON.parse(storage.getItem('hecos_ih') || '[]'); } catch(err){}
+        
+        console.log('[InputHistory:Web] ArrowKey pressed. History size:', hist.length, '| idx:', window._ihIndex);
+        
+        if (hist.length === 0) {
+            console.log('[InputHistory:Web] No history in storage.');
+            // Feedback visivo: lampeggio rosso brevissimo del bordo
+            inp.style.outline = '2px solid #ff4a4a';
+            setTimeout(() => { inp.style.outline = ''; }, 300);
+            e.preventDefault();
+            return;
+        }
+
+        if (window._ihIndex === -1) {
+            window._ihDraft = inp.value;
+            window._ihIndex = hist.length;
+        }
+
+        if (e.key === 'ArrowUp') {
+            if (window._ihIndex > 0) window._ihIndex--;
+        } else {
+            if (window._ihIndex < hist.length) window._ihIndex++;
+        }
+
+        if (window._ihIndex >= hist.length) {
+            inp.value = window._ihDraft;
+            window._ihIndex = -1;
+        } else {
+            inp.value = hist[window._ihIndex];
+        }
+        if (typeof window.autoResize === 'function') window.autoResize(inp);
+        console.log('[InputHistory:Web] Set input to:', inp.value, '| idx:', window._ihIndex);
+        e.preventDefault();
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initInputHistoryListener);
+} else {
+    _initInputHistoryListener();
+}
+// ---------------------------
+
 window.hideWelcome = function() {
   if (welcome) welcome.style.display = 'none';
 };

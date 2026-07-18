@@ -32,6 +32,12 @@ init(convert=True, autoreset=True)
 # Global variable for animation control
 animation_active = False
 
+# CLI History
+_cli_history = []
+_cli_history_idx = -1
+_cli_history_draft = ""
+_cli_history_loaded = False
+
 # Standard color palette
 GREEN = Fore.GREEN
 YELLOW = Fore.YELLOW
@@ -729,20 +735,57 @@ def read_keyboard_input(prefix, current_input):
             
             # Up / Down Arrows for Input History
             if special_key in [b'H', b'P']: # 0x48 (Up), 0x50 (Down)
-                try:
-                    from hecos.modules.input_history import history_mgr
-                    direction = "up" if special_key == b'H' else "down"
-                    new_input = history_mgr.navigate(direction, user="admin", current_draft=current_input)
-                    if new_input != current_input:
-                        # Clear current line
-                        sys.stdout.write('\b' * len(current_input) + ' ' * len(current_input) + '\b' * len(current_input))
-                        # Write new input
-                        current_input = new_input
-                        _active_input_buffer = current_input
-                        sys.stdout.write(current_input)
-                        sys.stdout.flush()
-                except Exception as e:
-                    pass
+                global _cli_history, _cli_history_idx, _cli_history_draft, _cli_history_loaded
+                import logging as _logging
+                _ih_log = _logging.getLogger("hecos.input_history")
+                if not _cli_history_loaded:
+                    _cli_history_loaded = True
+                    try:
+                        _cfg_mgr = getattr(sys, "hecos_config_manager", None)
+                        if _cfg_mgr:
+                            _ih_cfg = _cfg_mgr.config.get("input_history", {})
+                            if _ih_cfg.get("enabled", True) and _ih_cfg.get("persist", True):
+                                _hist_path = os.path.join(_cfg_mgr.data_dir, "cli_history.json")
+                                if os.path.exists(_hist_path):
+                                    with open(_hist_path, "r", encoding="utf-8") as _f:
+                                        _cli_history = json.load(_f)
+                                    _ih_log.info(f"[InputHistory:CLI] Loaded {len(_cli_history)} entries from disk.")
+                                else:
+                                    _ih_log.info("[InputHistory:CLI] No persisted history found on disk.")
+                        else:
+                            _ih_log.info("[InputHistory:CLI] hecos_config_manager not available yet, using RAM only.")
+                    except Exception as _e:
+                        _ih_log.warning(f"[InputHistory:CLI] Failed to load from disk: {_e}")
+
+                if not _cli_history:
+                    # Nessun elemento in memoria — feedback visivo
+                    _ih_log.info("[InputHistory:CLI] ArrowUp pressed but history is empty.")
+                    sys.stdout.write('\a')  # beep
+                    sys.stdout.flush()
+                    return None, current_input
+                
+                if _cli_history_idx == -1:
+                    _cli_history_draft = current_input
+                    _cli_history_idx = len(_cli_history)
+
+                if special_key == b'H': # Up
+                    if _cli_history_idx > 0: _cli_history_idx -= 1
+                else: # Down
+                    if _cli_history_idx < len(_cli_history): _cli_history_idx += 1
+
+                if _cli_history_idx >= len(_cli_history):
+                    new_input = _cli_history_draft
+                    _cli_history_idx = -1
+                else:
+                    new_input = _cli_history[_cli_history_idx]
+
+                if new_input != current_input:
+                    sys.stdout.write('\b' * len(current_input) + ' ' * len(current_input) + '\b' * len(current_input))
+                    current_input = new_input
+                    _active_input_buffer = current_input
+                    sys.stdout.write(current_input)
+                    sys.stdout.flush()
+                    _ih_log.debug(f"[InputHistory:CLI] Navigated to: {current_input!r}")
                 return None, current_input
 
             return None, current_input
@@ -773,6 +816,44 @@ def read_keyboard_input(prefix, current_input):
             return "CHAR", current_input
 
     return None, current_input
+
+def push_cli_history(text):
+    global _cli_history, _cli_history_idx, _cli_history_loaded
+    import logging as _logging
+    _log = _logging.getLogger("hecos.input_history")
+    # Mark as loaded so ArrowUp doesn't overwrite in-memory history with stale disk data
+    _cli_history_loaded = True
+    try:
+        cfg_mgr = getattr(sys, "hecos_config_manager", None)
+        cfg = cfg_mgr.config.get("input_history", {}) if cfg_mgr else {}
+        
+        if not cfg.get("enabled", True):
+            _log.debug("[InputHistory:CLI] push_cli_history: disabled, skipping.")
+            return
+        
+        deduplicate = cfg.get("deduplicate", True)
+        if deduplicate and _cli_history and _cli_history[-1] == text:
+            _log.debug("[InputHistory:CLI] push_cli_history: deduplicate match, skipping.")
+            _cli_history_idx = -1
+            return
+        
+        _cli_history.append(text)
+        max_entries = cfg.get("max_entries", 5)
+        if len(_cli_history) > max_entries:
+            _cli_history = _cli_history[-max_entries:]
+        _cli_history_idx = -1
+        _log.info(f"[InputHistory:CLI] Saved: {text!r} | Total: {len(_cli_history)}")
+        
+        if cfg.get("persist", True) and cfg_mgr:
+            try:
+                hist_path = os.path.join(cfg_mgr.data_dir, "cli_history.json")
+                with open(hist_path, "w", encoding="utf-8") as f:
+                    json.dump(_cli_history, f)
+                _log.debug(f"[InputHistory:CLI] Persisted to {hist_path}")
+            except Exception as _pe:
+                _log.warning(f"[InputHistory:CLI] Persist error: {_pe}")
+    except Exception as _e:
+        _log.warning(f"[InputHistory:CLI] push_cli_history error: {_e}")
 
 # --- DOTS ANIMATION LOGIC ---
 

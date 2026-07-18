@@ -25,6 +25,8 @@ class InputHandler:
         evento, input_utente = interface.read_keyboard_input(prefix, user_input)
         
         if evento == "ENTER":
+            if input_utente.strip():
+                interface.push_cli_history(input_utente)
             return self._process_text_input(input_utente, prefix)
         elif evento == "CLEAR":
             return "CLEAR", ""

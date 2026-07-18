@@ -35,6 +35,7 @@ window.sendMessage = async function() {
 
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
   if (window.hideWelcome) window.hideWelcome();
+  if (typeof window.saveInputHistory === 'function') window.saveInputHistory(text);
   if (window.userInput) { window.userInput.value = ''; window.autoResize(window.userInput); }
   
   let userHtml = text;

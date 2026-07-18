@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class InputHistoryConfig(BaseModel):
     enabled: bool = True
-    max_entries: int = 200
+    max_entries: int = 5
     persist: bool = True
     deduplicate: bool = True
     scope: str = "per_user"
