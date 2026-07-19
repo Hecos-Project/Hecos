@@ -74,7 +74,9 @@
 
     <!-- location bar -->
     <div id="location-bar">
-      <div class="loc-left">{{ t('webui_drive_current_pos') or 'Current position' }}: <span id="loc-path" class="loc-path">/</span></div>
+      <div class="loc-left">{{ t('webui_drive_current_pos') or 'Current position' }}: <span id="loc-path" class="loc-path">/</span>
+        <button id="btn-bookmark" class="btn btn-sm" onclick="toggleBookmark()" title="Preferito / Bookmark" style="background:transparent; border:none; color:var(--muted); margin-left:8px; font-size:14px; cursor:pointer;"><i class="far fa-star"></i></button>
+      </div>
       <div class="loc-right">
         <span id="loc-count" style="color:var(--muted)">—</span>
       </div>
@@ -142,7 +144,12 @@
     return text;
   };
 </script>
-<script src="/drive_static/js/drive.js"></script>
+<script src="/drive_static/js/drive_utils.js"></script>
+<script src="/drive_static/js/drive_state.js"></script>
+<script src="/drive_static/js/drive_ui.js"></script>
+<script src="/drive_static/js/drive_core.js"></script>
+<script src="/drive_static/js/drive_quicklinks.js"></script>
+<script src="/drive_static/js/drive_main.js"></script>
 <!-- Hecos Media Player — Standalone Plugin (submodules loaded first) -->
 <script src="/media_player_static/js/player_image.js"></script>
 <script src="/media_player_static/js/player_video.js"></script>
