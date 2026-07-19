@@ -17,5 +17,8 @@
     "webui_drive_folder_name_ph": "Nome cartella...",
     "webui_drive_create": "Crea",
     "webui_drive_drive_sel_hint": "Cambio disco / periferica",
-    "webui_drive_edit": "Modifica"
+    "webui_drive_edit": "Modifica",
+    "webui_drive_view_list": "Lista",
+    "webui_drive_view_grid_sm": "Griglia (Piccola)",
+    "webui_drive_view_grid_lg": "Griglia (Grande)"
 }

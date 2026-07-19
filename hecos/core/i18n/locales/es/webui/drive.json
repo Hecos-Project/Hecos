@@ -17,5 +17,8 @@
     "webui_drive_folder_name_ph": "Nombre de la carpeta...",
     "webui_drive_create": "Crear",
     "webui_drive_drive_sel_hint": "Cambiar unidad",
-    "webui_drive_edit": "Editar"
+    "webui_drive_edit": "Editar",
+    "webui_drive_view_list": "Lista",
+    "webui_drive_view_grid_sm": "Cuadrícula (Pequeña)",
+    "webui_drive_view_grid_lg": "Cuadrícula (Grande)"
 }

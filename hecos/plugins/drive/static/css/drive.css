@@ -455,3 +455,95 @@ td.actions-cell button:hover { background:rgba(255,75,75,.15); }
   font-style: italic;
   opacity: 0.6;
 }
+
+/* -- View Modes: Grid ------------------------------------- */
+.drive-grid-sm, .drive-grid-lg {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  align-content: start;
+}
+.drive-grid-sm { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+.drive-grid-lg { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+
+.grid-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.grid-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.grid-thumb {
+  height: 80px;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.drive-grid-lg .grid-thumb { height: 120px; }
+
+.grid-icon { font-size: 32px; }
+.drive-grid-lg .grid-icon { font-size: 48px; }
+
+.play-overlay {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.drive-grid-lg .play-overlay { width: 48px; height: 48px; font-size: 20px; }
+
+.grid-label {
+  padding: 6px;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top: 1px solid var(--border);
+}
+.drive-grid-lg .grid-label { font-size: 13px; padding: 8px; }
+
+.grid-actions {
+  position: absolute;
+  top: 4px; right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.grid-item:hover .grid-actions { opacity: 1; }
+
+.grid-actions button {
+  background: rgba(0,0,0,0.6);
+  border: none;
+  color: white;
+  border-radius: 4px;
+  width: 24px; height: 24px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+}
+.grid-actions button:hover { background: rgba(0,0,0,0.9); }
+
+#view-mode-toggles .btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+

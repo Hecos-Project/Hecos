@@ -53,6 +53,12 @@
   <button class="btn btn-primary" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> {{ t('webui_chat_upload') }}</button>
   <input type="file" id="file-input" multiple onchange="uploadFiles(this.files)">
   <button class="btn" onclick="showMkdirModal()"><i class="fas fa-folder-plus"></i> {{ t('webui_drive_new_folder') or 'New Folder' }}</button>
+  
+  <div id="view-mode-toggles" style="margin-left: auto; display: flex; gap: 4px;">
+    <button class="btn" id="vm-list" onclick="setViewMode('list')" title="{{ t('webui_drive_view_list') or 'List View' }}"><i class="fas fa-list"></i></button>
+    <button class="btn" id="vm-grid-sm" onclick="setViewMode('grid-sm')" title="{{ t('webui_drive_view_grid_sm') or 'Small Grid' }}"><i class="fas fa-th"></i></button>
+    <button class="btn" id="vm-grid-lg" onclick="setViewMode('grid-lg')" title="{{ t('webui_drive_view_grid_lg') or 'Large Grid' }}"><i class="fas fa-th-large"></i></button>
+  </div>
 </div>
 
 <div id="main-layout">
