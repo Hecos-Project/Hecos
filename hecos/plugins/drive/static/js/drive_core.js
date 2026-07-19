@@ -2,8 +2,10 @@
 
 async function loadDir(path) {
   currentPath = path;
+  // Show loading state that works in both list and grid modes
   const msgLoading = window.t ? window.t('webui_conf_msg_loading') : 'Loading...';
-  setTbody(`<tr class="empty-row"><td colspan="4">⏳ ${msgLoading}</td></tr>`);
+  document.getElementById('file-scroll').innerHTML =
+    `<table><tbody><tr class="empty-row"><td colspan="4">⏳ ${msgLoading}</td></tr></tbody></table>`;
 
   try {
     const res  = await fetch(`/drive/api/list?path=${encodeURIComponent(path)}`);
@@ -36,10 +38,27 @@ async function loadDir(path) {
 function navigateTo(path) { loadDir(path); }
 
 function goUp() {
-  if (!currentPath) return;
+  if (!currentPath) return; // already at default root
+  if (currentPath.match(/^[a-zA-Z]:\/?$/) || currentPath === "/") return; // already at absolute root
+
   const parts = currentPath.replace(/\\/g, "/").split("/").filter(Boolean);
-  parts.pop();
-  loadDir(parts.join("/"));
+  if (currentPath.includes(":/")) {
+    parts.pop();
+    loadDir(parts.length === 1 ? parts[0] + "/" : parts.join("/"));
+  } else {
+    parts.pop();
+    loadDir(parts.join("/"));
+  }
+}
+
+function goRoot() {
+  let base = "";
+  if (currentPath && currentPath.includes(":/")) {
+    base = currentPath.split("/")[0] + "/";
+  } else if (currentPath && currentPath.startsWith("/")) {
+    base = "/";
+  }
+  loadDir(base);
 }
 
 async function loadDrives() {
@@ -78,7 +97,8 @@ async function loadDrives() {
       sel.appendChild(opt);
     });
 
-    sel.addEventListener("change", async () => {
+    sel.addEventListener('change', async () => {
+      treeData = {};  // reset tree cache when switching drive
       window.location.href = `/drive?root=${encodeURIComponent(sel.value)}`;
     });
 

@@ -47,7 +47,7 @@
 
 <!-- ── Toolbar ────────────────────────────────────────────── -->
 <div id="toolbar">
-  <button class="btn" onclick="navigateTo('')" title="{{ t('webui_drive_root_hint') or 'Back to root' }}"><i class="fas fa-home"></i></button>
+  <button class="btn" onclick="goRoot()" title="{{ t('webui_drive_root_hint') or 'Back to root' }}"><i class="fas fa-home"></i></button>
   <button class="btn" onclick="goUp()" title="{{ t('webui_drive_up_hint') or 'Parent directory' }}"><i class="fas fa-arrow-up"></i></button>
   <div id="path-bar"><span class="crumb current"><i class="fas fa-home"></i> Drive</span></div>
   <button class="btn btn-primary" onclick="document.getElementById('file-input').click()"><i class="fas fa-upload"></i> {{ t('webui_chat_upload') }}</button>
@@ -156,12 +156,6 @@
 <script src="/drive_static/js/drive_core.js"></script>
 <script src="/drive_static/js/drive_quicklinks.js"></script>
 <script src="/drive_static/js/drive_main.js"></script>
-<!-- Hecos Media Player — Standalone Plugin (submodules loaded first) -->
-<script src="/media_player_static/js/player_image.js"></script>
-<script src="/media_player_static/js/player_video.js"></script>
-<script src="/media_player_static/js/player_audio.js"></script>
-<script src="/media_player_static/js/player_filmstrip.js"></script>
-<script src="/media_player_static/js/media_player.js"></script>
 
 <!-- Global Events (Reminders & Backend Sync) -->
 <script src="/static/js/chat_events.js?v={{ version }}"></script>
