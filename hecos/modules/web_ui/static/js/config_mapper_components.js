@@ -79,7 +79,12 @@ function populateReminderUI() {
 }
 
 function buildReminderPayload() {
-    const s = window.cfg?.plugins?.REMINDER || {};
+    // Only include REMINDER config in the payload if the package is installed.
+    // window.cfg.plugins.REMINDER is only populated by the server when the
+    // REMINDER package is present in plugins.yaml. If absent, sending defaults
+    // would recreate the key on disk on every save → infinite loop.
+    const s = window.cfg?.plugins?.REMINDER;
+    if (!s) return { plugins: {} };
     return {
         plugins: {
             REMINDER: {

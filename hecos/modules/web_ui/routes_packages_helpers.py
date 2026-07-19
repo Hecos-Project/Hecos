@@ -5,7 +5,83 @@ Helper functions for HPM Package Manager Routes.
 """
 from __future__ import annotations
 import os
+import json
 from hecos.core.logging import logger
+
+# ── Pending Restart Helpers ───────────────────────────────────────────────────
+# We use a volatile JSON file instead of a DB column so that:
+#   • No SQLite migration is required
+#   • The file is automatically cleared at each clean boot
+#   • The state is process-safe (written once, read many)
+
+_PENDING_RESTART_TYPES = {"core_module", "plugin", "module", "extension", "app"}
+
+
+def _get_pending_restart_path() -> str:
+    """Absolute path to the pending_restart.json file (hecos/data/)."""
+    import sys
+    hecos_src = getattr(sys, "_hecos_src_dir", None)
+    if not hecos_src:
+        import hecos as _hecos_mod
+        hecos_src = os.path.dirname(_hecos_mod.__file__)
+    return os.path.join(hecos_src, "data", "pending_restart.json")
+
+
+def _load_pending_restart() -> dict:
+    """Return the current pending_restart dict, e.g. {pkg_id: True}."""
+    path = _get_pending_restart_path()
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def add_to_pending_restart(pkg_id: str) -> None:
+    """Mark pkg_id as requiring a restart before it is fully functional."""
+    path = _get_pending_restart_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    data = _load_pending_restart()
+    data[pkg_id] = True
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        logger.info(f"[HPM] Package '{pkg_id}' marked as pending restart.")
+    except Exception as e:
+        logger.warning(f"[HPM] Could not write pending_restart.json: {e}")
+
+
+def clear_pending_restart() -> None:
+    """Delete the pending_restart.json file — called on clean server boot."""
+    path = _get_pending_restart_path()
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+            logger.info("[HPM] pending_restart.json cleared on boot.")
+    except Exception as e:
+        logger.warning(f"[HPM] Could not clear pending_restart.json: {e}")
+
+
+def get_pending_restart_ids() -> set:
+    """Return the set of package IDs that require a restart."""
+    return set(_load_pending_restart().keys())
+
+
+def remove_from_pending_restart(pkg_id: str) -> None:
+    """Remove a single pkg_id from the pending restart list."""
+    path = _get_pending_restart_path()
+    data = _load_pending_restart()
+    if pkg_id in data:
+        del data[pkg_id]
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+        except Exception as e:
+            logger.warning(f"[HPM] Could not update pending_restart.json: {e}")
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _get_hpm_components(hecos_root: str):
     """

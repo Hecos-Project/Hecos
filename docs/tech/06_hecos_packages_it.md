@@ -411,6 +411,10 @@ mio_widget/
     |-- mio_widget.html
 ```
 
+> [!NOTE]
+> **Hot Reloading e Percorso di Installazione**  
+> A differenza dei normali plugin backend (che vengono installati nella cartella `hpm/` e richiedono il riavvio del core), i widget sono a tutti gli effetti estensioni della Web UI. Per questo motivo, vengono installati direttamente nella cartella `modules/web_ui/extensions/`. Il server Flask di Hecos monitora automaticamente questa directory ricaricando "a caldo" i widget non appena rilevati. Non è necessario alcun riavvio di sistema per installare, aggiornare o modificare i pacchetti di tipo widget.
+
 Dichiarazione nel manifest TOML principale:
 ```toml
 [[widgets]]

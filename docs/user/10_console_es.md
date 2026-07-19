@@ -14,4 +14,4 @@ Mientras que la WebUI es la "cara" de Hecos, la Consola es el "cerebro". Garanti
 - **Telemetría en Tiempo Real:** Muestra el uso del hardware, el estado de carga del backend y los estados de los módulos activos.
 - **Auditoría de Seguridad:** Observa cómo el sistema ejecuta los comandos. Si un flujo o plugin desencadena un proceso local (como abrir un archivo o ejecutar un script de Python), el comando exacto se imprime aquí.
 - **Server Hub:** La Consola actúa como el servidor local para la WebUI. Cerrar esta ventana apaga todo el sistema Hecos.
-- **Entrada Rápida:** Puedes escribir texto directamente en la consola para chatear con la IA si prefieres una experiencia solo de terminal sin distracciones.
+- **Entrada Rápida e Historial (History):** Puedes escribir texto directamente en la consola para chatear con la IA si prefieres una experiencia solo de terminal sin distracciones. Presiona la **Flecha Arriba (↑)** y la **Flecha Abajo (↓)** para navegar por tus entradas anteriores (Historial de Entradas), como en una terminal Bash o Zsh. Este historial está sincronizado con la WebUI y se guarda localmente.

@@ -4,7 +4,7 @@
  */
 
 function populateSystemUI() {
-    const c = cfg;
+    const c = window.cfg || {};
     const slg = c.logging || {};
     setVal('log-level', slg.level || 'INFO');
     setVal('log-type', slg.message_types || 'both');
@@ -17,10 +17,17 @@ function populateSystemUI() {
     setCheck('sys-check-local-backend', sys.check_local_backend_on_boot ?? false);
     setCheck('sys-sdk-enabled', sys.sdk_enabled === true);  // default OFF
     setVal('sys-language', c.language || 'en');
+
+    // Input History
+    const ihist = c.input_history || {};
+    setCheck('ihistory-enabled', ihist.enabled ?? true);
+    setCheck('ihistory-persist', ihist.persist ?? true);
+    setCheck('ihistory-deduplicate', ihist.deduplicate ?? true);
+    setVal('ihistory-max-entries', ihist.max_entries ?? 5);
     
     // HTTPS and WebUI config
     const webUiPlug = (c.plugins || {}).WEB_UI || {};
-    setCheck('sys-https-enabled', webUiPlug.https_enabled ?? false);
+    setCheck('webui-https-enabled', webUiPlug.https_enabled ?? false);
 
     // Dashboard config
     const dsb = (c.plugins || {}).DASHBOARD || {};
@@ -75,6 +82,7 @@ function buildSystemPayload() {
     const sys = window.cfg.system || {};
     const sln = window.cfg.language || 'en';
     const cog = window.cfg.cognition || {};
+    const ihist = window.cfg.input_history || {};
     const snet = window.cfg.plugins?.SYS_NET || {};
     const wui = window.cfg.plugins?.WEB_UI || {};
 
@@ -111,6 +119,13 @@ function buildSystemPayload() {
                 persist_path:         (cog.rag||{}).persist_path || 'memory/vector_store'
             }
         },
+        input_history: {
+            enabled: getC('ihistory-enabled', ihist.enabled ?? true),
+            persist: getC('ihistory-persist', ihist.persist ?? true),
+            deduplicate: getC('ihistory-deduplicate', ihist.deduplicate ?? true),
+            max_entries: parseInt(getV('ihistory-max-entries', ihist.max_entries)) || 5,
+            scope: "per_user"
+        },
         plugins: {
             DASHBOARD: {
                 console_telemetry_enabled: getC('sys-console-telemetry', (window.cfg.plugins?.DASHBOARD?.console_telemetry_enabled ?? true)),
@@ -123,7 +138,7 @@ function buildSystemPayload() {
                 proxy_url: getV('sys-proxy-url', snet.proxy_url || "")
             },
             WEB_UI: {
-                https_enabled: getC('sys-https-enabled', wui.https_enabled ?? false),
+                https_enabled: getC('webui-https-enabled', wui.https_enabled ?? false),
                 control_room_panel: getC('wui-control-room-panel', wui.control_room_panel ?? true),
                 control_room_home: getC('wui-control-room-home', wui.control_room_home ?? true)
             }
@@ -201,6 +216,28 @@ function escapeHtml(text) {
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
   return (text || '').replace(/[&<>"']/g, m => map[m]);
 }
+
+window.clearInputHistory = async function() {
+  if (!confirm("Are you sure you want to clear your input history?")) return;
+  
+  // Clear WebUI storage
+  localStorage.removeItem('hecos_ih');
+  sessionStorage.removeItem('hecos_ih');
+  if (window._ihIndex !== undefined) window._ihIndex = -1;
+  
+  // Also clear CLI history via an API (TODO if we add a dedicated endpoint, else just silently ignore)
+  // For now we don't have the API, but we'll try to call a new lightweight one that we'll add
+  try {
+    const r = await fetch('/hecos/config/clear-cli-history', {method: 'POST'});
+    if (r.ok) {
+        showSaveMsg("History cleared successfully.", "success");
+    } else {
+        showSaveMsg("Browser history cleared. (CLI sync failed)", "warning");
+    }
+  } catch(e) {
+    showSaveMsg("Browser history cleared.", "success");
+  }
+};
 
 // Exports for Global Scope
 window.populateSystemUI = populateSystemUI;

@@ -36,7 +36,7 @@
     "hub_mod_webui": "WebUI Engine",
     "hub_mod_help": "Help & Support",
     "hub_mod_about": "About Hecos",
-    "hub_mod_system": "System & Logs",
+    "hub_mod_system": "Core System",
     "hub_mod_users": "Users",
     "hub_mod_security": "Security (CA)",
     "hub_mod_plugins": "Hecos Module Manager",

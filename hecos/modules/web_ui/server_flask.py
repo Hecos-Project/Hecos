@@ -162,6 +162,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_history import history_bp
     app.register_blueprint(history_bp)
 
+
     # Contacts Plugin Route Integration
     try:
         from hecos.plugins.contacts.api import register_routes as init_contacts_api
@@ -216,5 +217,16 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         logger.info("[WebUI] WEB_UI extensions loaded.")
     except Exception as _ext_e:
         logger.warning(f"[WebUI] WEB_UI extension discovery error: {_ext_e}")
+
+    # ── Clear pending_restart.json on every clean boot ────────────────────────
+    # At this point all routes have been registered properly by Flask.
+    # Any package that was "pending restart" is now fully active, so we clear
+    # the flag. The UI will show "Hot Reload" instead of "Restart Required".
+    try:
+        from hecos.modules.web_ui.routes_packages_helpers import clear_pending_restart
+        clear_pending_restart()
+    except Exception as _pr_e:
+        logger.warning(f"[WebUI] Could not clear pending_restart.json: {_pr_e}")
+    # ─────────────────────────────────────────────────────────────────────────
 
     return app, debug_on

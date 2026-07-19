@@ -6,5 +6,9 @@
     "description": "System hardware metrics, audio toggles, and model context status overview.",
     "sidebar_widget": true,
     "eager_load": true,
+    "visible": true,
+    "room_visible": true,
+    "room_span": 2,
+    "room_height": 320,
     "config_schema": {}
 }

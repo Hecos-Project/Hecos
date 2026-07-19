@@ -78,6 +78,12 @@ class WebUIPlugin:
         """Injects the live StateManager from the main application."""
         from .server import set_state_manager
         set_state_manager(sm)
+        
+        # Contacts (Migrated to plugins)
+        pass
+        
+        # Input History (Migrated to server_flask.py)
+        pass
 
     def _ensure_server(self):
         """Lazy starts the server only when the plugin is actually interacted with."""

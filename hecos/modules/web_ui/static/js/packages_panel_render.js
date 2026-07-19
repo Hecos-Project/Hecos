@@ -31,6 +31,42 @@ window.hpmToggleCategory = function(catLvl) {
   window.hpmRenderHierarchy();
 };
 
+window.hpmToggleAllCategories = function(expand) {
+  if (expand) {
+    window.HPM_UI_STATE.collapsedCategories = [];
+  } else {
+    window.HPM_UI_STATE.collapsedCategories = Object.keys(window.HPM_LEVELS).map(Number);
+  }
+  window.hpmRenderHierarchy();
+};
+
+window.hpmFilterPackages = function(q) {
+  if (q === undefined) {
+    const input = document.getElementById('hpm-search-input');
+    q = input ? input.value : '';
+  }
+  
+  const clearBtn = document.getElementById('hpm-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+  q = (q || '').trim().toLowerCase();
+  
+  const packages = window._packages || [];
+  if (!q) {
+    window.hpmRenderHierarchy(packages);
+    return;
+  }
+
+  const filtered = packages.filter(pkg => {
+    return (pkg.name || '').toLowerCase().includes(q) ||
+           (pkg.description || '').toLowerCase().includes(q) ||
+           (pkg.author || '').toLowerCase().includes(q) ||
+           (pkg.tag || '').toLowerCase().includes(q);
+  });
+  
+  window.hpmRenderHierarchy(filtered);
+};
+
 window.hpmRenderHierarchy = function(packages) {
   if (!packages) packages = window._packages; // fallback if called from toggle
   if (!packages) return '';
@@ -161,14 +197,30 @@ window.hpmRenderRow = function(pkg, meta) {
         </button>`;
 
       if (pkg.tag && !isDisabled && !isBroken) {
-        actions += `
-          <button type="button"
-                  class="btn btn-sm"
-                  style="font-size:10px;padding:4px 10px;margin-left:4px; border:1px solid var(--border-color); color:var(--text-color); background:transparent;"
-                  onclick="window.hpmHotReloadModule('${pkg.id}', '${window._hesc(pkg.name)}')"
-                  title="${window.HPM_I18N?.hot_reload || 'Hot Reload Module'}">
-            <i class="fas fa-sync-alt" style="font-size:10px; opacity:0.8;"></i>
-          </button>`;
+        if (pkg.requires_restart) {
+          // Package installed but needs a restart before API routes are active
+          actions += `
+            <button type="button"
+                    class="btn btn-sm hpm-restart-required-btn"
+                    style="font-size:10px;padding:4px 10px;margin-left:4px;
+                           background:linear-gradient(135deg,#f59e0b,#d97706);
+                           border:none;color:#fff;font-weight:700;
+                           border-radius:6px;cursor:pointer;
+                           animation:hpmPulse 2s ease-in-out infinite;"
+                    onclick="window.hpmRestartRequired('${window._hesc(pkg.name)}')"
+                    title="Restart required to activate this package">
+              <i class="fas fa-power-off" style="font-size:10px;margin-right:4px;"></i>Restart
+            </button>`;
+        } else {
+          actions += `
+            <button type="button"
+                    class="btn btn-sm"
+                    style="font-size:10px;padding:4px 10px;margin-left:4px; border:1px solid var(--border-color); color:var(--text-color); background:transparent;"
+                    onclick="window.hpmHotReloadModule('${pkg.id}', '${window._hesc(pkg.name)}')"
+                    title="${window.HPM_I18N?.hot_reload || 'Hot Reload Module'}">
+              <i class="fas fa-sync-alt" style="font-size:10px; opacity:0.8;"></i>
+            </button>`;
+        }
       }
 
       if (isRemovable) {
@@ -240,7 +292,7 @@ window.hpmRenderRow = function(pkg, meta) {
         ${!isCore ? `
         <div style="font-size:0.68em;color:var(--muted);margin-top:2px;opacity:0.6;">
           ${pkg.author ? `by ${window._hesc(pkg.author)}` : ''}
-          ${pkg.installed_at ? ` · Installed ${pkg.installed_at.substring(0,10)}` : ''}
+          ${pkg.installed_at ? ` · Installed ${pkg.installed_at.substring(0,10)} ${pkg.installed_at.substring(11,16)}` : ''}
         </div>` : ''}
       </div>
 

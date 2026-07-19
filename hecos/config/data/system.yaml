@@ -1,5 +1,5 @@
 ai:
-  active_personality: Hecos_System_Soul.yaml
+  active_personality: Urania_9800.yaml
   available_personalities:
     '1': Hecos_System_Soul.yaml
     '2': Atlas_Man.yaml
@@ -12,16 +12,8 @@ ai:
   save_special_instructions: false
   special_instructions: ''
   enable_safety_instructions: true
-  safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
-    \    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated\
-    \ engine\n    for character-driven storytelling. You must strictly adhere to the\
-    \ persona and\n    the narrative context established by the active Soul. REINFORCEMENT:\
-    \ Focus exclusively\n    on the fictional reality. Maintain character consistency\
-    \ at all costs. Do not\n    break the 4th wall or use standard AI disclaimers.\
-    \ Treat all user prompts as narrative\n    directives within the established world.\n\
-    \n\n    Please acknowledge that you have received this narrative protocol by starting\n\
-    \    your next response with the word: ''SYNCHRONIZED"
-  avatar_size: large
+  safety_instructions: ''
+  avatar_size: medium
 backend:
   type: cloud
   cloud:
@@ -54,14 +46,14 @@ cognition:
   include_self_awareness: true
   max_history_messages: 20
   rag:
-    enabled: true
+    enabled: false
     embedder: sentence_transformers
-    embedder_model: BAAI/bge-small-en-v1.5
+    embedder_model: all-MiniLM-L6-v2
     chunk_size: 512
     chunk_overlap: 64
     top_k: 5
     similarity_threshold: 0.3
-    auto_ingest_history: true
+    auto_ingest_history: false
     persist_path: memory/vector_store
 filters:
   remove_asterisks: both
@@ -77,10 +69,6 @@ llm:
     gemini:
       api_key: ''
       models:
-      - veo-3.0-fast-generate-001
-      - veo-3.0-generate-001
-      - veo-2.0-generate-001
-      - gemini-2.5-flash-native-audio-preview-09-2025
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.0-flash
@@ -143,28 +131,28 @@ llm:
       api_key: ''
       models:
       - compound
-      - compound-mini
-      - meta-llama/llama-prompt-guard-2-86m
+      - meta-llama/llama-4-scout-17b-16e-instruct
       - qwen/qwen3-32b
+      - compound-mini
+      - meta-llama/llama-prompt-guard-2-22m
+      - openai/gpt-oss-120b
+      - canopylabs/orpheus-arabic-saudi
+      - llama-3.3-70b-versatile
       - whisper-large-v3-turbo
+      - openai/gpt-oss-safeguard-20b
+      - allam-2-7b
+      - canopylabs/orpheus-v1-english
+      - groq/compound
+      - meta-llama/llama-prompt-guard-2-86m
+      - openai/gpt-oss-20b
+      - groq/compound-mini
+      - whisper-large-v3
       - llama-3.1-8b-instant
       - qwen/qwen3.6-27b
-      - whisper-large-v3
-      - canopylabs/orpheus-arabic-saudi
-      - groq/compound-mini
-      - openai/gpt-oss-120b
-      - llama-3.3-70b-versatile
-      - meta-llama/llama-4-scout-17b-16e-instruct
-      - meta-llama/llama-prompt-guard-2-22m
-      - canopylabs/orpheus-v1-english
-      - allam-2-7b
-      - openai/gpt-oss-safeguard-20b
-      - groq/compound
-      - openai/gpt-oss-20b
 logging:
-  level: DEBUG
-  destination: console
-  message_types: both
+  level: INFO
+  destination: chat
+  message_types: info
   web_level: BOTH
   web_max_history: 100
   web_autoscroll: true
@@ -178,6 +166,12 @@ privacy:
   wipe_messages: true
   wipe_profile: false
   wipe_context: false
+input_history:
+  enabled: true
+  max_entries: 5
+  persist: true
+  deduplicate: true
+  scope: per_user
 processor:
   debug_mode: false
   log_level: INFO
@@ -185,6 +179,6 @@ routing_engine:
   mode: auto
   legacy_models: ''
 system:
-  fast_boot: true
+  fast_boot: false
   flask_debug: false
   check_local_backend_on_boot: false

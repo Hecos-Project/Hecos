@@ -4,6 +4,40 @@
  * Install logic for Hecos Package Manager
  */
 
+window._isHpmInstalling = false;
+window.addEventListener('beforeunload', (e) => {
+  if (window._isHpmInstalling) {
+    e.preventDefault();
+    e.returnValue = ''; // Required for legacy browsers
+  }
+});
+
+// ── Inject persistent spinner keyframe once (avoids CSS reset on innerHTML update) ──
+(function _injectHpmSpinStyle() {
+  if (document.getElementById('hpm-spin-style')) return;
+  const s = document.createElement('style');
+  s.id = 'hpm-spin-style';
+  s.textContent = `
+    @keyframes hpm-spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    .hpm-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid transparent;
+      border-top-color: var(--accent, #6366f1);
+      border-right-color: var(--accent, #6366f1);
+      border-radius: 50%;
+      animation: hpm-spin 0.7s linear infinite;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+  `;
+  (document.head || document.documentElement).appendChild(s);
+})();
+
 window.hpmDragOver = function (e) {
   e.preventDefault();
   const dz = document.getElementById('hpm-dropzone');
@@ -70,6 +104,7 @@ window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, fo
 
   if (!window._hpmInstallRunning) {
       window._hpmInstallRunning = true;
+      window._isHpmInstalling = true;
       _hpmProcessQueue(); // non-blocking start
   }
 };
@@ -84,47 +119,68 @@ window.hpmCancelQueueItem = function(id) {
 
 window.hpmRenderInstallQueue = function() {
     const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-    let html = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:200px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
+    let html = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:260px; overflow-y:auto; font-size:0.92em; border:1px solid rgba(255,255,255,0.05);">`;
     
     let total = window._hpmInstallQueue.length;
     let completed = 0;
 
     window._hpmInstallQueue.forEach(item => {
         let icon = '';
-        let msg = '';
+        let rowContent = '';
         let action = '';
 
         if (item.status === 'pending') {
-            icon = '<i class="far fa-circle" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:var(--muted)">${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
+            icon = '<i class="far fa-circle" style="color:var(--muted); margin-right:8px; width:16px;"></i>';
+            const pendingLabel = `<span style="color:var(--muted); font-size:0.92em;">${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
             action = `<button onclick="window.hpmCancelQueueItem('${item.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 5px;" title="${_ti('Cancel', 'Annulla', 'Cancelar')}"><i class="fas fa-times"></i></button>`;
+            rowContent = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">${pendingLabel}${action}</div>
+                </div>`;
         } else if (item.status === 'installing') {
-            icon = '<i class="fas fa-circle-notch fa-spin" style="color:var(--accent); margin-right:6px; width:14px;"></i>';
+            icon = '<span class="hpm-spinner" style="margin-right:8px;"></span>';
             const stepTxt = item.progressMsg ? item.progressMsg : _ti('Installing...', 'Installazione...', 'Instalando...');
-            // Row 1: step label
-            const row1 = `<span style="color:var(--accent); font-family:monospace; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; max-width:calc(100% - 30px); vertical-align:middle;" title="${stepTxt}">${stepTxt}</span>`;
-            // Row 2: pip log (shown only when present)
+            // Row 1: filename + spinner + step label
+            const row1 = `
+                <div style="display:flex; align-items:center; width:100%;">
+                    ${icon}
+                    <span style="color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;" title="${item.file.name}">${item.file.name}</span>
+                    <span style="color:var(--accent); font-family:monospace; font-size:0.92em; white-space:nowrap; margin-left:10px; flex-shrink:0;" title="${stepTxt}">${stepTxt}</span>
+                </div>`;
+            // Row 2: HPM log (shown only when present, same font size as rest)
             const row2 = item.pipLogMsg
-                ? `<div style="font-size:0.84em; color:var(--muted); font-family:monospace; white-space:normal; word-break:break-all; max-width:100%; margin-top:3px; opacity:0.85;">${item.pipLogMsg}</div>`
+                ? `<div style="font-size:0.92em; color:var(--muted); font-family:monospace; white-space:normal; word-break:break-all; width:100%; margin-top:5px; padding:4px 8px; background:rgba(0,0,0,0.25); border-radius:4px; border-left:2px solid var(--accent); opacity:0.9;">${item.pipLogMsg}</div>`
                 : '';
-            msg = `<div>${row1}${row2}</div>`;
+            rowContent = `${row1}${row2}`;
         } else if (item.status === 'done') {
-            icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:var(--muted)">${_ti('Installed', 'Installato', 'Instalado')}</span>`;
+            icon = '<i class="fas fa-check" style="color:#10b981; margin-right:8px; width:16px;"></i>';
+            rowContent = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
+                    <span style="color:#10b981; font-size:0.92em;">${_ti('Installed', 'Installato', 'Instalado')}</span>
+                </div>`;
             completed++;
         } else if (item.status === 'failed') {
-            icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:#ef4444" title="${item.result?.error || ''}">${_ti('Error', 'Errore', 'Error')}</span>`;
+            icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:8px; width:16px;"></i>';
+            rowContent = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
+                    <span style="color:#ef4444; font-size:0.92em;" title="${item.result?.error || ''}">${_ti('Error', 'Errore', 'Error')}</span>
+                </div>`;
             completed++;
         } else if (item.status === 'canceled') {
-            icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:var(--muted)">${_ti('Canceled', 'Annullato', 'Cancelado')}</span>`;
+            icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:8px; width:16px;"></i>';
+            rowContent = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
+                    <span style="color:var(--muted); font-size:0.92em;">${_ti('Canceled', 'Annullato', 'Cancelado')}</span>
+                </div>`;
             completed++;
         }
 
-        html += `<div style="margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; padding: 4px; border-radius: 4px; ${item.status==='installing' ? 'background:rgba(255,255,255,0.05);' : ''}">
-            <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;" title="${item.file.name}">${icon}${item.file.name}</span>
-            <div style="display:flex; align-items:center; gap:8px;">${msg}${action}</div>
+        html += `<div style="margin-bottom:8px; padding:6px 8px; border-radius:6px; ${item.status==='installing' ? 'background:rgba(255,255,255,0.06); border:1px solid rgba(var(--accent-rgb,99,102,241),0.2);' : 'border:1px solid transparent;'}">
+            ${rowContent}
         </div>`;
     });
     
@@ -132,7 +188,7 @@ window.hpmRenderInstallQueue = function() {
     
     let pct = total > 0 ? Math.round((completed / total) * 100) : 0;
     
-    const header = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px;">${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')} (${completed}/${total})</div>`;
+    const header = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.95em;">${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')} (${completed}/${total})</div>`;
     
     window.hpmSetProgress(true, header + html, pct);
 };
@@ -175,6 +231,7 @@ async function _hpmProcessQueue() {
     }
 
     window._hpmInstallRunning = false;
+    window._isHpmInstalling = false;
     _hpmShowFinalSummary();
 }
 

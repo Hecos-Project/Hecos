@@ -151,6 +151,7 @@ class ConfigManager:
 
         self._apply_volatility()
         self._sanitize_plugins_yaml()
+        self._sanitize_widgets_yaml()
         self._sync_dict()
 
     def _sanitize_plugins_yaml(self):
@@ -178,9 +179,78 @@ class ConfigManager:
                 with open(self._plugins_path, "w", encoding="utf-8") as f:
                     _yaml.dump(raw, f, default_flow_style=False, allow_unicode=True)
                 logger.info("[CONFIG] plugins.yaml sanitized — non-core keys removed.")
+                
+                # Reload the model into memory so the keys don't get accidentally saved back later
+                from hecos.config.yaml_utils import load_yaml
+                PluginsFileConfig = _get_plugins_schema()
+                self._plugins_model = load_yaml(self._plugins_path, PluginsFileConfig)
         except Exception as e:
             logger.warning(f"[CONFIG] Could not sanitize plugins.yaml: {e}")
 
+    def _sanitize_widgets_yaml(self):
+        """Remove stale per_widget entries from widgets.yaml for widgets that are
+        no longer installed. Only truly built-in widgets (telemetry_widget,
+        media_player_widget, quick_links) are kept unconditionally; all others
+        must correspond to a discovered extension folder in web_ui/extensions/.
+
+        This prevents old widget configs (calendar, reminder, map_widget…) from
+        remaining in the YAML after the packages are uninstalled, which was
+        causing the UI to treat them as 'disabled' instead of 'not present'.
+        """
+        _BUILTIN_WIDGETS = {"telemetry_widget"}
+
+        if not _os.path.exists(self._widgets_path):
+            return
+        try:
+            import yaml as _yaml
+
+            # Discover widget IDs from the extensions directory
+            extensions_dir = _os.path.join(_HECOS_DIR, "modules", "web_ui", "extensions")
+            discovered_widget_ids = set()
+            if _os.path.isdir(extensions_dir):
+                for entry in _os.listdir(extensions_dir):
+                    manifest_path = _os.path.join(extensions_dir, entry, "manifest.json")
+                    if _os.path.isfile(manifest_path):
+                        try:
+                            import json as _json
+                            with open(manifest_path, "r", encoding="utf-8") as f:
+                                m = _json.load(f)
+                            discovered_widget_ids.add(m.get("id", entry))
+                        except Exception:
+                            discovered_widget_ids.add(entry)
+
+            allowed_ids = _BUILTIN_WIDGETS | discovered_widget_ids
+
+            with open(self._widgets_path, "r", encoding="utf-8") as f:
+                raw = _yaml.safe_load(f) or {}
+
+            per_widget = raw.get("widgets", {}).get("per_widget", {})
+            stale = [k for k in per_widget if k not in allowed_ids]
+
+            if stale:
+                for k in stale:
+                    per_widget.pop(k)
+                    logger.info(f"[CONFIG] Removed stale widget entry from widgets.yaml: '{k}'")
+                raw.setdefault("widgets", {})["per_widget"] = per_widget
+
+                # Also clean home_layout / room_layout lists
+                for layout_key in ("home_layout", "room_layout"):
+                    layout = raw.get("widgets", {}).get(layout_key, [])
+                    if isinstance(layout, list):
+                        cleaned = [w for w in layout if w in allowed_ids]
+                        if cleaned != layout:
+                            raw["widgets"][layout_key] = cleaned
+
+                with open(self._widgets_path, "w", encoding="utf-8") as f:
+                    _yaml.dump(raw, f, default_flow_style=False, allow_unicode=True)
+                logger.info("[CONFIG] widgets.yaml sanitized — stale widget entries removed.")
+
+                # Reload model to keep memory in sync
+                from hecos.config.yaml_utils import load_yaml
+                WidgetsFileConfig = _get_widgets_schema()
+                self._widgets_model = load_yaml(self._widgets_path, WidgetsFileConfig)
+        except Exception as e:
+            logger.warning(f"[CONFIG] Could not sanitize widgets.yaml: {e}")
 
     def _apply_volatility(self):
         """Clear volatile fields that should NOT persist across restarts.
@@ -359,6 +429,19 @@ class ConfigManager:
         import copy
         with self._lock:
           try:
+            # ── Strip non-core plugin keys from incoming payload ───────────────
+            # The JS frontend hardcodes BROWSER, REMINDER, CALENDAR etc. into
+            # every config save payload (legacy remnants). Stripping them here
+            # at the entry point prevents them from ever entering the in-memory
+            # config dict or being written to plugins.yaml, breaking the loop.
+            if "plugins" in new_data and isinstance(new_data["plugins"], dict):
+                incoming_plugins = new_data["plugins"]
+                stripped = [k for k in incoming_plugins if k not in _CORE_PLUGIN_KEYS]
+                for k in stripped:
+                    incoming_plugins.pop(k)
+                    logger.debug(f"[CONFIG] Stripped non-core key from incoming payload: '{k}'")
+            # ─────────────────────────────────────────────────────────────────
+
             temp_config = copy.deepcopy(self.config)
             self._deep_update(temp_config, new_data)
 

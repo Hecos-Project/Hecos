@@ -17,5 +17,8 @@
     "webui_drive_folder_name_ph": "Folder name...",
     "webui_drive_create": "Create",
     "webui_drive_drive_sel_hint": "Change drive",
-    "webui_drive_edit": "Edit"
+    "webui_drive_edit": "Edit",
+    "webui_drive_view_list": "List View",
+    "webui_drive_view_grid_sm": "Small Grid",
+    "webui_drive_view_grid_lg": "Large Grid"
 }
