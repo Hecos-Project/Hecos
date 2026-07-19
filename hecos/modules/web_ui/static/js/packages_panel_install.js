@@ -4,6 +4,14 @@
  * Install logic for Hecos Package Manager
  */
 
+window._isHpmInstalling = false;
+window.addEventListener('beforeunload', (e) => {
+  if (window._isHpmInstalling) {
+    e.preventDefault();
+    e.returnValue = ''; // Required for legacy browsers
+  }
+});
+
 // ── Inject persistent spinner keyframe once (avoids CSS reset on innerHTML update) ──
 (function _injectHpmSpinStyle() {
   if (document.getElementById('hpm-spin-style')) return;
@@ -96,6 +104,7 @@ window.hpmInstallBatch = async function(fileList, forceAllowUnsigned = false, fo
 
   if (!window._hpmInstallRunning) {
       window._hpmInstallRunning = true;
+      window._isHpmInstalling = true;
       _hpmProcessQueue(); // non-blocking start
   }
 };
@@ -222,6 +231,7 @@ async function _hpmProcessQueue() {
     }
 
     window._hpmInstallRunning = false;
+    window._isHpmInstalling = false;
     _hpmShowFinalSummary();
 }
 

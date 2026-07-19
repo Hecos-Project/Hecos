@@ -83,11 +83,20 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
 
                 _hpm_event_broadcast("hpm:package_updated", {"id": pkg_id})
                 _invalidate_all_caches()
+                
+                from hecos.modules.web_ui.routes_packages_helpers import _PENDING_RESTART_TYPES, add_to_pending_restart
+                pkg_type = mdict.get("type", "plugin")
+                has_api_routes = bool(mdict.get("api_routes_file") or (mdict.get("config_panel") or {}).get("api_routes_file"))
+                needs_restart = pkg_type in _PENDING_RESTART_TYPES or has_api_routes
+                if needs_restart:
+                    add_to_pending_restart(pkg_id)
+
                 response = {
                     "ok": True,
                     "id": pkg_id,
                     "version": mdict.get("version"),
                     "warnings": result.warnings,
+                    "requires_restart": needs_restart,
                 }
                 if result.dep_report and result.dep_report.missing_optional:
                     response["optional_missing"] = result.dep_report.missing_optional

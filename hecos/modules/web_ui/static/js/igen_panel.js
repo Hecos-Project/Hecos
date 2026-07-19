@@ -98,6 +98,9 @@ window.onProviderChanged = async function(userTriggered = false, _attempt = 0) {
         provSel.value = initialProv;
     }
 
+    const hfProviderWrap = document.getElementById('igen-hf-provider-wrapper');
+    if (hfProviderWrap) hfProviderWrap.style.display = (provSel.value === 'huggingface') ? 'block' : 'none';
+
     const hfWrap = document.getElementById('igen-hf-explorer-wrapper');
     if (hfWrap) hfWrap.style.display = (provSel.value === 'huggingface') ? 'block' : 'none';
 
@@ -293,6 +296,7 @@ window.collectIgenConfig = function() {
     const chk = (id, def) => { const el = document.getElementById(id); return el ? el.checked : def; };
     return {
         provider:               get('igen-provider', 'pollinations'),
+        hf_provider:            get('igen-hf-provider', 'hf-inference'),
         model:                  get('igen-model', 'flux'),
         aspect_ratio:           get('igen-aspect-ratio', '1:1'),
         width:                  parseInt(get('igen-width', 1024)),
@@ -321,6 +325,7 @@ window.applyIgenConfig = function(cfg) {
     const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
 
     set('igen-provider',    cfg.provider    || 'pollinations');
+    set('igen-hf-provider', cfg.hf_provider || 'hf-inference');
     set('igen-model',       cfg.model       || 'flux');
     set('igen-aspect-ratio',cfg.aspect_ratio|| '1:1');
     set('igen-width',       cfg.width       || 1024);

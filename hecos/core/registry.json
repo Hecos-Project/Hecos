@@ -387,6 +387,39 @@
             }
         ]
     },
+    "MESSENGER": {
+        "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
+        "commands": {
+            "send_message": "Sends a text message to a contact or channel on the specified platform.",
+            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
+            "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
+            "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-paper-plane",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "msg",
+                "manifest_version": "1",
+                "aliases": [
+                    "/msg",
+                    "/send"
+                ],
+                "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
+                "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
+                "example": "/msg whatsapp:+393331234567 Ciao, questo è un test!",
+                "icon": "💬",
+                "method": "msg_command",
+                "requires_args": true
+            }
+        ]
+    },
     "TEMPLATES": {
         "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
         "commands": {},

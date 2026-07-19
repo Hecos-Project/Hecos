@@ -211,4 +211,45 @@ def register_manage_uninstall_routes(app, _hecos_src: str, cfg_mgr, log):
             "results": results,
         })
 
-
+    @app.route("/api/packages/factory_reset", methods=["DELETE"])
+    @login_required
+    def api_factory_reset():
+        """Emergency wipe of all HPM packages, databases, and caches."""
+        import shutil
+        import os
+        try:
+            from hecos.modules.web_ui.routes_packages_helpers import clear_pending_restart
+            
+            data_dir = os.path.join(_hecos_src, "data")
+            hpm_dir = os.path.join(_hecos_src, "hpm")
+            
+            # 1. Delete packages.db
+            db_path = os.path.join(data_dir, "packages.db")
+            if os.path.exists(db_path):
+                try: os.remove(db_path)
+                except Exception as e: log.error(f"[HPM:FactoryReset] Could not delete DB: {e}")
+                
+            # 2. Delete store_cache.json
+            cache_path = os.path.join(data_dir, "store_cache.json")
+            if os.path.exists(cache_path):
+                try: os.remove(cache_path)
+                except Exception as e: log.error(f"[HPM:FactoryReset] Could not delete cache: {e}")
+                
+            # 3. Clear pending restart
+            clear_pending_restart()
+            
+            # 4. Wipe hpm/ directory
+            if os.path.exists(hpm_dir):
+                try: 
+                    shutil.rmtree(hpm_dir)
+                    os.makedirs(hpm_dir, exist_ok=True)
+                except Exception as e: 
+                    log.error(f"[HPM:FactoryReset] Could not delete hpm dir: {e}")
+            
+            _invalidate_all_caches()
+            _hpm_event_broadcast("hpm:factory_reset", {"ok": True})
+            
+            return jsonify({"ok": True})
+        except Exception as e:
+            log.error(f"[HPM:FactoryReset] Error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500

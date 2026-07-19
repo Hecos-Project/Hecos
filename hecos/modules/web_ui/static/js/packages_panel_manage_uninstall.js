@@ -258,3 +258,40 @@ window.hpmUninstallSelected = function() {
     });
 };
 
+window.hpmFactoryReset = function() {
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    const msg = _ti(
+        `Are you sure you want to perform a <b>Factory Reset</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">This will completely wipe all installed packages, databases, and caches. You will have a clean system, just like after a fresh download. This action cannot be undone.</span>`,
+        `Sei sicuro di voler eseguire un <b>Ripristino di Fabbrica</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questo eliminerà completamente tutti i pacchetti installati, i database e le cache. Avrai un sistema pulito, come appena scaricato. Questa azione non è annullabile.</span>`,
+        `¿Estás seguro de que deseas realizar un <b>Restablecimiento de fábrica</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Esto borrará por completo todos los paquetes instalados, las bases de datos y los cachés. Tendrás un sistema limpio, como recién descargado. Esta acción no se puede deshacer.</span>`
+    );
+
+    window.hpmShowConfirm(msg, _ti('Wipe Database', 'Svuota Database', 'Borrar Base de Datos'), async () => {
+        const lblWiping = _ti('Wiping database...', 'Cancellazione database in corso...', 'Borrando base de datos...');
+        if (typeof window.hpmSetProgress === 'function') {
+            window.hpmSetProgress(true, `<div style="text-align:center;"><i class="fas fa-biohazard fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${lblWiping}</div>`, 50);
+        }
+
+        try {
+            const resp = await fetch('/api/packages/factory_reset', { method: 'DELETE' });
+            const data = await resp.json();
+
+            if (data.ok) {
+                if (typeof window.hpmSetProgress === 'function') {
+                    window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${_ti('Factory Reset Completed!', 'Ripristino Completato!', '¡Restablecimiento Completado!')}</b><br><br><span style="font-size:0.85em;color:var(--muted);">${_ti('Please restart Hecos to complete the process.', 'Riavvia Hecos per completare il processo.', 'Reinicia Hecos para completar el proceso.')}</span></div>`, 100);
+                }
+                
+                // Aggiorna l'interfaccia
+                if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
+                if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
+                
+            } else {
+                if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+                if (window.showToast) window.showToast(`Factory Reset failed: ${data.error}`, 'error');
+            }
+        } catch (err) {
+            if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+            if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+        }
+    });
+};
