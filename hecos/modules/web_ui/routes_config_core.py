@@ -118,6 +118,7 @@ _PANEL_MAP = {
     'automation':      'modules/config_utils.html',
     'sysnet':          'modules/config_sysnet.html',
     'users':           'modules/config_users.html',
+    'security':        'modules/config_security.html',
     'payload':         'modules/config_payload.html',
     'plugins':         'modules/config_plugins.html',
     'contacts':        'modules/config_contacts.html',
@@ -477,18 +478,3 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
     @app.route("/hecos/options", methods=["GET"])
     def get_options():
         return jsonify(_build_options_dict(cfg_mgr, fast=True))
-
-    @app.route("/hecos/config/clear-cli-history", methods=["POST"])
-    def clear_cli_history():
-        try:
-            import os
-            from hecos.ui import interface
-            interface._cli_history = []
-            interface._cli_history_idx = -1
-            interface._cli_history_draft = ""
-            hist_path = os.path.join(cfg_mgr.data_dir, "cli_history.json")
-            if os.path.exists(hist_path):
-                os.remove(hist_path)
-            return jsonify({"ok": True})
-        except Exception as e:
-            return jsonify({"ok": False, "error": str(e)}), 500

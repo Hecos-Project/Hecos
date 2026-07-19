@@ -11,9 +11,7 @@ from flask_login import login_required
 from hecos.modules.web_ui.routes_packages_helpers import (
     _get_hpm_components,
     _refresh_jinja_loader,
-    _hpm_event_broadcast,
-    add_to_pending_restart,
-    _PENDING_RESTART_TYPES,
+    _hpm_event_broadcast
 )
 
 def _invalidate_all_caches():
@@ -170,15 +168,6 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
 
                 panel_id = (snap.get("config_panel") or {}).get("tab_id") or result.package_id
 
-                # ── Determine if this package requires a restart ──────────────────
-                pkg_type = pkg_meta.get("type", "plugin")
-                has_api_routes = bool((snap.get("config_panel") or {}).get("api_routes_file"))
-                needs_restart = pkg_type in _PENDING_RESTART_TYPES or has_api_routes
-                if needs_restart:
-                    add_to_pending_restart(result.package_id)
-                    _invalidate_all_caches()  # ensure requires_restart is reflected in fresh cache
-                # ─────────────────────────────────────────────────────────────────
-
                 response = {
                     "ok": True,
                     "id": result.package_id,
@@ -187,7 +176,6 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     "install_path": pkg_meta.get("install_path", ""),
                     "config_panel": panel_id if snap.get("config_panel") else "",
                     "warnings": result.warnings,
-                    "requires_restart": needs_restart,
                 }
                 if result.dep_report and result.dep_report.has_issues:
                     response["dep_issues"] = result.dep_report.summary

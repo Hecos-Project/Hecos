@@ -125,7 +125,7 @@ def execute_shell_command_tool(command: str, tag: str) -> str:
     try:
         output = subprocess.check_output(
             command, shell=True, text=True,
-            errors='replace', stderr=subprocess.STDOUT, timeout=300
+            errors='replace', stderr=subprocess.STDOUT, timeout=15
         )
         final_output = output if output.strip() else "Command executed successfully (no output)."
         AgentTracer.emit_action(tag, command, final_output)

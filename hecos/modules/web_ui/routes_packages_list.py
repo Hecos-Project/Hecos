@@ -8,7 +8,7 @@ import time
 from flask import jsonify
 from flask_login import login_required
 
-from hecos.modules.web_ui.routes_packages_helpers import _get_hpm_components, get_pending_restart_ids
+from hecos.modules.web_ui.routes_packages_helpers import _get_hpm_components
 
 # ── In-memory cache ───────────────────────────────────────────────────────────
 _PKG_CACHE: dict = {}   # {"data": [...], "ts": float}
@@ -98,25 +98,12 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
                 if "enabled" in p_conf:
                     p["status"] = "installed" if p_conf["enabled"] else "disabled"
 
-                # lazy_load: prefer live system override (plugins.yaml), fall back to
-                # the package's own manifest declaration. Without the fallback, HPM packages
-                # always rendered lazy=False in the UI because they have no entry in
-                # plugins.yaml until the user explicitly toggles the checkbox.
-                if "lazy_load" in p_conf:
-                    p["lazy_load"] = p_conf["lazy_load"]
-                else:
-                    p["lazy_load"] = raw_snap.get("lazy_load", False)
+                p["lazy_load"] = p_conf.get("lazy_load", False)
                 p["level"] = TYPE_TO_LEVEL.get(p.get("type", "plugin"), 2)
                 p["removable"] = True
                 p["tag"] = pkg_tag
                 p.setdefault("fa_icon", "fa-cube")
                 p.setdefault("cat", "Installed")
-
-            # ── Annotate packages with requires_restart flag ───────────────────
-            pending_ids = get_pending_restart_ids()
-            for p in hpm_packages:
-                p["requires_restart"] = p.get("id") in pending_ids
-            # ───────────────────────────────────────────────────────────────
 
             # ── Save to cache ─────────────────────────────────────────────────
             _PKG_CACHE["data"] = hpm_packages

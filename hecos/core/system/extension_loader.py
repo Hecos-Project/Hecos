@@ -90,7 +90,7 @@ def _get_widget_prefs(ext_id: str, config: dict) -> dict:
     Defaults: visible=True, room_visible=False, room_span=1, theme=default.
     """
     if not config:
-        return {"visible": True, "room_visible": True, "room_span": 1, "theme": "default"}
+        return {"visible": True, "room_visible": False, "room_span": 1, "theme": "default"}
     
     prefs = config.get("widgets", {}).get("per_widget", {}).get(ext_id, {})
     
@@ -103,7 +103,7 @@ def _get_widget_prefs(ext_id: str, config: dict) -> dict:
     return {
         "enabled":      prefs.get("enabled", True) if isinstance(prefs, dict) else getattr(prefs, 'enabled', True),
         "visible":      prefs.get("visible", True) if isinstance(prefs, dict) else getattr(prefs, 'visible', True),
-        "room_visible": prefs.get("room_visible", True) if isinstance(prefs, dict) else getattr(prefs, 'room_visible', True),
+        "room_visible": prefs.get("room_visible", False) if isinstance(prefs, dict) else getattr(prefs, 'room_visible', False),
         "room_span":    prefs.get("room_span", 1) if isinstance(prefs, dict) else getattr(prefs, 'room_span', 1),
         "room_height":  prefs.get("room_height", None) if isinstance(prefs, dict) else getattr(prefs, 'room_height', None),
         "theme":        prefs.get("theme", "default") if isinstance(prefs, dict) else getattr(prefs, 'theme', 'default'),

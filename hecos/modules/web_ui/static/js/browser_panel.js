@@ -47,24 +47,6 @@
       
       const engine = document.getElementById('browser-engine');
       if (engine) engine.value = bCfg.browser_type || 'chromium';
-
-      const navTimeout = document.getElementById('browser-nav-timeout');
-      if (navTimeout) navTimeout.value = bCfg.nav_timeout || 30;
-
-      const actionTimeout = document.getElementById('browser-action-timeout');
-      if (actionTimeout) actionTimeout.value = bCfg.action_timeout || 5;
-
-      const waitTimeout = document.getElementById('browser-wait-timeout');
-      if (waitTimeout) waitTimeout.value = bCfg.wait_timeout || 8;
-
-      const threadTimeout = document.getElementById('browser-thread-timeout');
-      if (threadTimeout) threadTimeout.value = bCfg.thread_timeout || 60;
-
-      const routingOverride = document.getElementById('browser-routing-override');
-      if (routingOverride) {
-          const overrides = window.cfg?.routing_overrides?.overrides || {};
-          routingOverride.value = overrides.BROWSER || '';
-      }
   };
 
   /**

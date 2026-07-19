@@ -83,6 +83,24 @@
         "module_type": "core_module",
         "slash_commands": []
     },
+    "MCP_BRIDGE": {
+        "description": "Bridge to Model Context Protocol (MCP) servers",
+        "commands": {
+            "call_tool": "Executes an MCP tool.",
+            "get_mcp_schemas": "Hook used by Hecos's module_docs.py to merge tools.",
+            "list": "Method",
+            "reload": "Method",
+            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
+            "status": "Method"
+        },
+        "status": "No MCP servers connected.",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
         "commands": {
@@ -200,7 +218,7 @@
         "slash_commands": []
     },
     "BROWSER": {
-        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing. Funziona sia in modo autonomo con l'IA che tramite comandi diretti (slash commands come /b, /b_close, /b_tabs).",
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing.",
         "commands": {},
         "status": "ONLINE (DORMANT)",
         "example": "",
@@ -218,7 +236,7 @@
                     "/b",
                     "/browser"
                 ],
-                "description": "Opens the AI browser on a URL or performs a search.",
+                "description": "Apre il browser AI su un URL o effettua una ricerca.",
                 "usage": "/b <url_o_ricerca>",
                 "example": "/b youtube.com",
                 "icon": "??",
@@ -231,7 +249,7 @@
                 "aliases": [
                     "/b_close"
                 ],
-                "description": "Closes the AI browser.",
+                "description": "Chiude il browser AI.",
                 "usage": "/b_close",
                 "example": "/b_close",
                 "icon": "??",
@@ -244,194 +262,14 @@
                 "aliases": [
                     "/b_tabs"
                 ],
-                "description": "Shows the list of open tabs in the AI browser.",
+                "description": "Mostra la lista delle schede aperte nel browser AI.",
                 "usage": "/b_tabs",
                 "example": "/b_tabs",
                 "icon": "??",
                 "method": "slash_b_tabs",
                 "requires_args": false
-            },
-            {
-                "id": "b_back",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_back"
-                ],
-                "description": "Naviga indietro nel browser.",
-                "usage": "/b_back",
-                "example": "/b_back",
-                "icon": "⬅️",
-                "method": "slash_b_back",
-                "requires_args": false
-            },
-            {
-                "id": "b_click",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_click"
-                ],
-                "description": "Clicca un elemento per testo o selettore.",
-                "usage": "/b_click <testo_o_selettore>",
-                "example": "/b_click Accedi",
-                "icon": "🖱️",
-                "method": "slash_b_click",
-                "requires_args": true
-            },
-            {
-                "id": "b_type",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_type"
-                ],
-                "description": "Scrive del testo in un campo.",
-                "usage": "/b_type <selettore> | <testo>",
-                "example": "/b_type Cerca | gatti divertenti",
-                "icon": "⌨️",
-                "method": "slash_b_type",
-                "requires_args": true
-            },
-            {
-                "id": "b_scroll",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_scroll"
-                ],
-                "description": "Scorre la pagina su o giù.",
-                "usage": "/b_scroll [up|down]",
-                "example": "/b_scroll down",
-                "icon": "↕️",
-                "method": "slash_b_scroll",
-                "requires_args": false
-            },
-            {
-                "id": "b_shot",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_shot"
-                ],
-                "description": "Scatta uno screenshot della pagina attuale.",
-                "usage": "/b_shot",
-                "example": "/b_shot",
-                "icon": "📸",
-                "method": "slash_b_shot",
-                "requires_args": false
-            },
-            {
-                "id": "b_new",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_new"
-                ],
-                "description": "Apre una nuova scheda.",
-                "usage": "/b_new [url]",
-                "example": "/b_new google.com",
-                "icon": "➕",
-                "method": "slash_b_new",
-                "requires_args": false
-            },
-            {
-                "id": "b_close_tab",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_close_tab"
-                ],
-                "description": "Chiude la scheda corrente.",
-                "usage": "/b_close_tab",
-                "example": "/b_close_tab",
-                "icon": "❌",
-                "method": "slash_b_close_tab",
-                "requires_args": false
-            },
-            {
-                "id": "b_switch",
-                "manifest_version": "1",
-                "aliases": [
-                    "/b_switch"
-                ],
-                "description": "Cambia scheda attiva specificando l'ID.",
-                "usage": "/b_switch <id>",
-                "example": "/b_switch 1",
-                "icon": "🔄",
-                "method": "slash_b_switch",
-                "requires_args": true
             }
         ]
-    },
-    "IMAGE_GEN": {
-        "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "<i class=\"fas fa-image\"></i>",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": [
-            {
-                "id": "img",
-                "manifest_version": "1",
-                "aliases": [
-                    "/img",
-                    "/image",
-                    "/photo",
-                    "/foto"
-                ],
-                "description": "Generates an AI image from a text description",
-                "usage": "/img <descrizione>",
-                "example": "/img foto fotorealistica di un gatto su Marte",
-                "icon": "🖼️",
-                "method": "generate_image",
-                "requires_args": true
-            }
-        ]
-    },
-    "MESSENGER": {
-        "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
-        "commands": {
-            "send_message": "Sends a text message to a contact or channel on the specified platform.",
-            "list_accounts": "Lists all connected and configured messaging accounts and their status.",
-            "check_connection": "Checks the connectivity status of one or all configured messaging providers.",
-            "force_send": "Forces sending a message by explicitly pressing 'Enter' on the host machine."
-        },
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "fa-paper-plane",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": [
-            {
-                "id": "msg",
-                "manifest_version": "1",
-                "aliases": [
-                    "/msg",
-                    "/send"
-                ],
-                "description": "Invia un messaggio tramite i provider configurati (Telegram, WhatsApp, Discord).",
-                "usage": "/msg <piattaforma:destinatario> <testo_del_messaggio>",
-                "example": "/msg whatsapp:+393331234567 Ciao, questo è un test!",
-                "icon": "💬",
-                "method": "msg_command",
-                "requires_args": true
-            }
-        ]
-    },
-    "TEMPLATES": {
-        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "is_lazy": true,
-        "icon": "fa-file-alt",
-        "category": "PLUGINS",
-        "module_type": "hpm",
-        "slash_commands": []
     },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",

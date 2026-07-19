@@ -6,25 +6,16 @@
 
 window.hpmInit = function () {
   window.hpmSwitchTab('packages');
-  // Fetch widget count from API so the badge is always accurate
+  // Attempt to update counts for loaded panels
   setTimeout(() => {
     if (document.getElementById('tab-plugins')) {
       const builtinCount = document.querySelectorAll('#tab-plugins .toggle-row, #tab-plugins .plugin-card, #tab-plugins [data-plugin]').length;
       if (builtinCount > 0) window.hpmUpdateCount('builtin', builtinCount);
     }
-    // Authoritative widget count from server, not DOM
-    fetch('/api/widgets').then(r => r.ok ? r.json() : null).then(data => {
-      if (data && Array.isArray(data.widgets)) {
-        const count = data.widgets.filter(w => w.sidebar_widget !== false).length;
-        window.hpmUpdateCount('widgets', count);
-      }
-    }).catch(() => {
-      // Fallback to DOM count
-      if (document.getElementById('tab-widgets')) {
-        const widgetCount = document.querySelectorAll('#tab-widgets .widget-card').length;
-        if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
-      }
-    });
+    if (document.getElementById('tab-widgets')) {
+      const widgetCount = document.querySelectorAll('#tab-widgets .toggle-row, #tab-widgets .widget-card, #tab-widgets [data-widget]').length;
+      if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
+    }
   }, 1000);
 };
 
@@ -156,19 +147,8 @@ window.hpmSwitchTab = async function(tabId) {
             loadedWidgetsTab.classList.add('active');
             
             setTimeout(() => {
-              // Use API count for accuracy; DOM may not be fully rendered yet
-              fetch('/api/widgets').then(r => r.ok ? r.json() : null).then(data => {
-                if (data && Array.isArray(data.widgets)) {
-                  const count = data.widgets.filter(w => w.sidebar_widget !== false).length;
-                  window.hpmUpdateCount('widgets', count);
-                } else {
-                  const widgetCount = document.querySelectorAll('#tab-widgets .widget-card').length;
-                  if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
-                }
-              }).catch(() => {
-                const widgetCount = document.querySelectorAll('#tab-widgets .widget-card').length;
-                if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
-              });
+              const widgetCount = document.querySelectorAll('#tab-widgets .toggle-row, #tab-widgets .widget-card, #tab-widgets [data-widget]').length;
+              if (widgetCount > 0) window.hpmUpdateCount('widgets', widgetCount);
             }, 500);
           }
         } else {

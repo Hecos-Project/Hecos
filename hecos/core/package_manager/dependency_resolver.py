@@ -282,30 +282,16 @@ class DependencyResolver:
 
     def get_safe_to_uninstall_pip_deps(self, pkg_requirements: List[str], current_pkg_id: str) -> List[str]:
         """
-        Cross-checks pip_requirements against Hecos Core, other installed HPM packages,
-        and all transitive dependencies via importlib.metadata.
+        Cross-checks pip_requirements against Hecos Core and other installed HPM packages.
         Returns a list of pip dependencies that are safe to uninstall.
         """
         import os
         import re
-        import importlib.metadata
 
         if not pkg_requirements:
             return []
 
-        # 1. Identify which pip packages the current package explicitly installed
-        candidate_packages = set()
-        for req in pkg_requirements:
-            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
-            if clean_req and not clean_req.startswith("#"):
-                candidate_packages.add(clean_req)
-
-        if not candidate_packages:
-            return []
-
-        safe_to_remove = set(candidate_packages)
-
-        # 2. Get Hecos Core direct dependencies
+        # 1. Get Hecos Core dependencies
         core_deps = set()
         hecos_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         toml_path = os.path.join(hecos_root, "pyproject.toml")
@@ -324,14 +310,9 @@ class DependencyResolver:
             except Exception as e:
                 logger.error(f"[HPM:Resolver] Failed to parse core pyproject.toml: {e}")
 
-        for req in list(safe_to_remove):
-            if req in core_deps:
-                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by Hecos Core.")
-                safe_to_remove.remove(req)
-
-        # 3. Get dependencies from other installed HPM packages
+        # 2. Get dependencies from other installed packages
         other_packages_deps = set()
-        all_packages = self._registry.list_all()
+        all_packages = self._registry.get_all()
         for pkg in all_packages:
             if pkg.get("id") == current_pkg_id:
                 continue
@@ -342,42 +323,21 @@ class DependencyResolver:
                 if clean_req:
                     other_packages_deps.add(clean_req)
 
-        for req in list(safe_to_remove):
-            if req in other_packages_deps:
-                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by another installed HPM package.")
-                safe_to_remove.remove(req)
-
-        # 4. Check transitive dependencies (via importlib.metadata)
-        if safe_to_remove:
-            try:
-                for dist in importlib.metadata.distributions():
-                    dist_name = dist.metadata.get('Name', '').lower()
-                    
-                    # If this installed package is one of the ones we are trying to remove, skip its requirements
-                    if dist_name in candidate_packages:
-                        continue
-                        
-                    requires = dist.requires
-                    if requires:
-                        for req in requires:
-                            req_base = re.split(r'[;>=<~\s\(]', req)[0].strip().lower()
-                            if req_base in safe_to_remove:
-                                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req_base}' because it is required by installed package '{dist_name}'.")
-                                safe_to_remove.remove(req_base)
-                                
-                            if not safe_to_remove:
-                                break
-                    if not safe_to_remove:
-                        break
-            except Exception as e:
-                logger.error(f"[HPM:Resolver] Error while cross-checking transitive pip dependencies: {e}")
-
-        # Return the original requested string for each safe base package
-        # (pip uninstall needs the exact string or at least the valid name)
-        final_safe = []
+        # 3. Filter requirements
+        safe_to_remove = []
         for req in pkg_requirements:
             clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
-            if clean_req in safe_to_remove:
-                final_safe.append(req.strip())
+            if not clean_req or clean_req.startswith("#"):
+                continue
 
-        return final_safe
+            if clean_req in core_deps:
+                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by Hecos Core.")
+                continue
+
+            if clean_req in other_packages_deps:
+                logger.info(f"[HPM:Resolver] Keeping pip dependency '{req}' because it is used by another installed HPM package.")
+                continue
+
+            safe_to_remove.append(req)
+
+        return safe_to_remove

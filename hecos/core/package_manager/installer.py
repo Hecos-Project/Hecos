@@ -113,23 +113,9 @@ class PackageInstaller:
         # ── Step 3: Dependency resolution ────────────────────────────────────
         self._emit("hpm:progress", {"step": "dependencies", "message": "Resolving dependencies..."})
         
-        # Calculate install path early to pass to the resolver (needed for venv creation).
-        # For widget-only packages (type='widget'), _resolve_target_dir returns None because
-        # they have no backend code. Their files land in modules/web_ui/extensions/<id>.
-        # Using 'hpm/<id>' (the fallback) would register a path that is never created.
-        target_dir_name = _resolve_target_dir(manifest)
-        if target_dir_name is None:
-            # Widget-only package: canonical install path is the extension directory
-            if manifest.widgets:
-                ext_id = os.path.basename(manifest.widgets[0].extension_path.rstrip("/"))
-                install_path = os.path.join(
-                    self._hecos_root, "modules", "web_ui", "extensions", ext_id
-                )
-            else:
-                # Fallback for widget packages with no declared widget entries
-                install_path = os.path.join(self._hecos_root, "modules", "web_ui", "extensions", manifest.id)
-        else:
-            install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
+        # Calculate install path early to pass to the resolver (needed for venv creation)
+        target_dir_name = _resolve_target_dir(manifest) or manifest.target_dir
+        install_path = os.path.join(self._hecos_root, target_dir_name, manifest.id)
         
         resolver = DependencyResolver(self._registry, event_callback=self._event_callback)
         dep_report = resolver.resolve(manifest, install_pip=not skip_dep_check, install_path=install_path)

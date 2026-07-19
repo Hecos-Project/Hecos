@@ -1,0 +1,267 @@
+<!-- MESSENGER CONFIG PANEL -->
+<div id="tab-messenger" class="panel">
+
+    <div style="margin-bottom: 20px;">
+        <h2><i class="fas fa-paper-plane" style="color:var(--accent); margin-right:10px;"></i> {{ t('ext_messenger_title', default='Messenger Configuration') }}</h2>
+    </div>
+
+    <!-- ── Info Templates ────────────────────────────────────────────────── -->
+    <div class="card" style="border-left: 4px solid var(--accent); background: rgba(var(--accent-rgb), 0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+            <div style="font-weight: 500; margin-bottom: 4px;"><i class="fas fa-file-alt" style="color:var(--accent); margin-right:6px;"></i> {{ t('ext_messenger_templates_title', default='Template Management') }}</div>
+            <p style="font-size: 12px; color: var(--muted); margin: 0;">
+                {{ t('ext_messenger_templates_desc_1', default='Create pre-defined messages for WhatsApp, Telegram, and Discord.') }}<br>
+                {{ t('ext_messenger_templates_desc_2', default='You can set a template as Default to automatically format Hecos responses.') }}
+            </p>
+        </div>
+        <button class="hc-cta-btn" onclick="hecos.switchTab('tab-templates'); if(typeof TemplateManager !== 'undefined') TemplateManager.init();">
+            <i class="fas fa-external-link-alt"></i> {{ t('ext_messenger_templates_btn', default='Open Templates') }}
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-telegram-plane"></i> {{ t('ext_messenger_telegram_title', default='Telegram (Recommended)') }}</div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            {{ t('ext_messenger_telegram_desc', default='Use the official Telegram API to send messages quickly and reliably. Create a bot via @BotFather.') }}
+        </p>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_telegram_enable', default='Enable Telegram Provider') }}</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="telegram-enabled" onchange="saveMessengerConfig()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_telegram_token', default='Telegram Bot Token') }}</label>
+            <input type="password" id="telegram-bot-token" placeholder="123456789:ABCDE..." autocomplete="off" onchange="saveMessengerConfig()">
+            <small style="color:#666; font-size:11px;">{{ t('ext_messenger_telegram_token_desc', default='The secret token issued by @BotFather.') }}</small>
+        </div>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_telegram_chat_id', default='Default Chat ID') }}</label>
+            <input type="text" id="telegram-default-chat-id" placeholder="@my_channel or 12345678" autocomplete="off" onchange="saveMessengerConfig()">
+            <small style="color:#666; font-size:11px;">{{ t('ext_messenger_telegram_chat_id_desc', default='Used as a fallback if the command does not specify a recipient.') }}</small>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-whatsapp"></i> WhatsApp <span class="p-tag" style="background: rgba(255,200,0,0.2); color: #ffcc00; font-size:9px; vertical-align:middle; margin-left:10px;">BETA</span></div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            {{ t('ext_messenger_whatsapp_desc_1', default='Hecos supports sending via both the official Desktop App and WhatsApp Web.') }}
+            <br><br>
+            <strong style="color:var(--text);">{{ t('ext_messenger_whatsapp_option1_label', default='Option 1 (Recommended):') }}</strong> {{ t('ext_messenger_whatsapp_option1', default='Install the official WhatsApp App for Windows and log in. Hecos will detect the app and send messages much faster without opening new tabs.') }}
+            <br>
+            <strong style="color:var(--text);">{{ t('ext_messenger_whatsapp_option2_label', default='Option 2:') }}</strong> {{ t('ext_messenger_whatsapp_option2', default='If the App is not installed, Hecos will automatically open a tab in your browser on WhatsApp Web. Make sure you have already scanned the QR code to keep the session active.') }}
+        </p>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_whatsapp_enable', default='Enable WhatsApp Provider') }}</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-enabled" onchange="saveMessengerConfig()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_whatsapp_use_template', default='Use specific template') }}</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-use-template" onchange="document.getElementById('whatsapp-template-container').style.display = this.checked ? 'block' : 'none'; saveMessengerConfig();">
+                <span class="slider"></span>
+            </label>
+            <small style="color:#666; font-size:11px; display:block; margin-top:4px;">{{ t('ext_messenger_whatsapp_use_template_desc', default='Forces the use of a specific template, ignoring the Default one.') }}</small>
+        </div>
+
+        <div class="field" id="whatsapp-template-container" style="display:none; margin-left:15px; padding-left:15px; border-left:2px solid var(--accent);">
+            <label>{{ t('ext_messenger_whatsapp_select_template', default='Select Template') }}</label>
+            <select id="whatsapp-template-id" class="config-input" onchange="saveMessengerConfig()">
+                <option value="">{{ t('ext_messenger_loading_templates', default='Loading templates...') }}</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_whatsapp_country_code', default='Default International Prefix') }}</label>
+            <input type="text" id="whatsapp-phone-country-code" placeholder="+39" autocomplete="off" onchange="saveMessengerConfig()">
+            <small style="color:#666; font-size:11px;">{{ t('ext_messenger_whatsapp_country_code_desc', default='Automatically added to numbers typed without a prefix (e.g., +39 for Italy).') }}</small>
+        </div>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_whatsapp_single_block', default='Send as single block (Recommended)') }}</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="whatsapp-send-as-single-block" onchange="saveMessengerConfig()">
+                <span class="slider"></span>
+            </label>
+            <small style="color:#666; font-size:11px; display:block; margin-top:4px;">{{ t('ext_messenger_whatsapp_single_block_desc', default='Send multi-line texts and templates in a single message (instead of splitting into multiple continuous messages).') }}</small>
+        </div>
+
+        <!-- TIMEOUTS for WhatsApp -->
+        <div style="margin-top:20px; padding-top:15px; border-top:1px dashed var(--border);">
+            <label style="display:block; margin-bottom:10px; font-weight:600;"><i class="fas fa-stopwatch"></i> {{ t('ext_messenger_whatsapp_timeouts_title', default='Timeouts (WhatsApp Web CDP)') }}</label>
+
+            <div class="field" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <div>
+                    <label style="margin-bottom:2px;">{{ t('ext_messenger_whatsapp_cdp_timeout', default='CDP Connect Timeout') }}</label>
+                    <div style="font-size:11px; color:var(--muted);">{{ t('ext_messenger_whatsapp_cdp_timeout_desc', default='Max time to connect to Chrome debug port.') }}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="number" id="whatsapp-cdp-timeout" placeholder="30" min="5" max="120" onchange="saveMessengerConfig()" style="width:70px;">
+                    <span style="font-size:12px; color:var(--muted); font-weight:bold;">s</span>
+                </div>
+            </div>
+
+            <div class="field" style="display:flex; align-items:center; justify-content:space-between;">
+                <div>
+                    <label style="margin-bottom:2px;">{{ t('ext_messenger_whatsapp_worker_timeout', default='Worker Execution Timeout') }}</label>
+                    <div style="font-size:11px; color:var(--muted);">{{ t('ext_messenger_whatsapp_worker_timeout_desc', default='Max total time to complete the sending process.') }}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="number" id="whatsapp-worker-timeout" placeholder="60" min="10" max="300" onchange="saveMessengerConfig()" style="width:70px;">
+                    <span style="font-size:12px; color:var(--muted); font-weight:bold;">s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i class="fab fa-discord"></i> Discord</div>
+        <p style="font-size:12px; color:#888; margin-bottom:16px;">
+            {{ t('ext_messenger_discord_desc', default='Send messages to a Discord server by configuring an Incoming Webhook. Does not require creating a Web Bot.') }}
+        </p>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_discord_enable', default='Enable Discord Provider') }}</label>
+            <label class="switch is-small">
+                <input type="checkbox" id="discord-enabled" onchange="saveMessengerConfig()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="field">
+            <label>{{ t('ext_messenger_discord_webhook', default='Discord Webhook URL') }}</label>
+            <input type="password" id="discord-webhook-url" placeholder="https://discord.com/api/webhooks/..." autocomplete="off" onchange="saveMessengerConfig()">
+            <small style="color:#666; font-size:11px;">{{ t('ext_messenger_discord_webhook_desc', default='Copy the URL from Server Settings → Integrations → Webhooks.') }}</small>
+        </div>
+    </div>
+
+    <!-- ═══ ROUTING OVERRIDE ══════════════════════════════════════════════════ -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-route"></i> {{ t('ext_messenger_routing_title', default='Routing Instructions (Override)') }}</div>
+        <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">
+            {{ t('ext_messenger_routing_desc', default='These system instructions tell the AI how to use the Messenger. Modify them to alter its behavior. Leave blank to use manifest defaults.') }}
+        </p>
+        <div class="field">
+            <textarea id="messenger-routing-override" rows="6" placeholder="..."
+                    onchange="window.updateConfig('routing_overrides.overrides.MESSENGER', this.value)"
+                    style="width:100%; font-family:monospace; font-size:12px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg0); color:var(--text); resize:vertical;"></textarea>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    async function loadMessengerConfig() {
+        try {
+            const res = await fetch("/hecos/api/plugins/messenger/config");
+            const data = await res.json();
+            if (data.ok && data.config) {
+                const cfg = data.config;
+                if (cfg.telegram) {
+                    document.getElementById("telegram-enabled").checked = cfg.telegram.enabled || false;
+                    document.getElementById("telegram-bot-token").value = cfg.telegram.bot_token || "";
+                    document.getElementById("telegram-default-chat-id").value = cfg.telegram.default_chat_id || "";
+                }
+                if (cfg.whatsapp) {
+                    document.getElementById("whatsapp-enabled").checked = cfg.whatsapp.enabled || false;
+                    document.getElementById("whatsapp-phone-country-code").value = cfg.whatsapp.phone_country_code || "+39";
+                    document.getElementById("whatsapp-send-as-single-block").checked = cfg.whatsapp.send_as_single_block !== false;
+                    document.getElementById("whatsapp-cdp-timeout").value = cfg.whatsapp.cdp_timeout || 30;
+                    document.getElementById("whatsapp-worker-timeout").value = cfg.whatsapp.worker_timeout || 60;
+                    
+                    const useTemplateCb = document.getElementById("whatsapp-use-template");
+                    useTemplateCb.checked = cfg.whatsapp.use_template || false;
+                    useTemplateCb.dispatchEvent(new Event('change'));
+                    
+                    // Fetch and populate templates
+                    try {
+                        const tplRes = await fetch("/api/templates/?channel=whatsapp");
+                        const tplData = await tplRes.json();
+                        const sel = document.getElementById("whatsapp-template-id");
+                        if (tplData.ok && tplData.templates) {
+                            sel.innerHTML = '<option value="">-- No template --</option>';
+                            for (let t of tplData.templates) {
+                                let opt = document.createElement("option");
+                                opt.value = t.id;
+                                opt.textContent = t.name + (t.is_default ? " (Default)" : "");
+                                if (cfg.whatsapp.template_id === t.id) opt.selected = true;
+                                sel.appendChild(opt);
+                            }
+                        } else {
+                            sel.innerHTML = '<option value="">Cannot load templates</option>';
+                        }
+                    } catch (e) {
+                        console.warn("Modulo templates non installato o API non raggiungibile", e);
+                        document.getElementById("whatsapp-template-id").innerHTML = '<option value="">Templates module not installed</option>';
+                    }
+                }
+                if (cfg.discord) {
+                    document.getElementById("discord-enabled").checked = cfg.discord.enabled || false;
+                    document.getElementById("discord-webhook-url").value = cfg.discord.webhook_url || "";
+                }
+            }
+
+            // Populate routing override
+            try {
+                const r = await fetch("/hecos/api/config");
+                const d = await r.json();
+                if (d.ok && d.config && d.config.routing_overrides && d.config.routing_overrides.overrides) {
+                    document.getElementById("messenger-routing-override").value = d.config.routing_overrides.overrides.MESSENGER || "";
+                }
+            } catch(e) {}
+
+        } catch (e) {
+            console.error("Errore caricamento config messenger", e);
+        }
+    }
+
+    async function saveMessengerConfig() {
+        const payload = {
+            telegram: {
+                enabled: document.getElementById("telegram-enabled").checked,
+                bot_token: document.getElementById("telegram-bot-token").value,
+                default_chat_id: document.getElementById("telegram-default-chat-id").value
+            },
+            whatsapp: {
+                enabled: document.getElementById("whatsapp-enabled").checked,
+                phone_country_code: document.getElementById("whatsapp-phone-country-code").value,
+                send_as_single_block: document.getElementById("whatsapp-send-as-single-block").checked,
+                use_template: document.getElementById("whatsapp-use-template").checked,
+                template_id: document.getElementById("whatsapp-template-id").value,
+                cdp_timeout: parseInt(document.getElementById("whatsapp-cdp-timeout").value) || 30,
+                worker_timeout: parseInt(document.getElementById("whatsapp-worker-timeout").value) || 60
+            },
+            discord: {
+                enabled: document.getElementById("discord-enabled").checked,
+                webhook_url: document.getElementById("discord-webhook-url").value
+            }
+        };
+
+        try {
+            const res = await fetch("/hecos/api/plugins/messenger/config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.ok) {
+                hecos.showToast("Errore nel salvataggio: " + data.error, "error");
+            }
+        } catch (e) {
+            console.error("Errore salvataggio", e);
+            hecos.showToast("Errore di rete durante il salvataggio", "error");
+        }
+    }
+
+    // Load config on mount
+    loadMessengerConfig();
+</script>

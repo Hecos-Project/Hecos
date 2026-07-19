@@ -75,22 +75,12 @@
 
         <div class="field">
           <label style="display:flex;align-items:center;gap:6px;">
-            {{ t('webui_km_adv_timeout') }} (Provider API)
+            {{ t('webui_km_adv_timeout') }}
             <span title="{{ t('webui_km_adv_timeout_tt') }}" style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
           </label>
           <input type="number" id="km-cloud-timeout" min="5" max="120" step="5" value="30"
                  style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
           <small style="color:var(--muted);font-size:10px;">{{ t('webui_km_adv_timeout_hint') }}</small>
-        </div>
-
-        <div class="field">
-          <label style="display:flex;align-items:center;gap:6px;">
-            WebUI Response Timeout
-            <span title="Max time the WebUI will wait for the entire AI response before canceling." style="color:var(--muted);cursor:help;font-size:11px;">ⓘ</span>
-          </label>
-          <input type="number" id="km-webui-timeout" min="10" max="600" step="10" value="120"
-                 style="width:100%;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--glass);color:var(--fg);">
-          <small style="color:var(--muted);font-size:10px;">Seconds before auto-canceling the chat request.</small>
         </div>
 
         <div class="field">
@@ -390,7 +380,6 @@ function kmLoadAdvanced() {
         if (s.cloud_timeout   !== undefined) el('km-cloud-timeout').value = s.cloud_timeout;
         if (s.cooldown        !== undefined) el('km-cooldown').value       = s.cooldown;
         if (s.max_retries     !== undefined) el('km-max-retries').value    = s.max_retries;
-        if (s.webui_timeout   !== undefined) el('km-webui-timeout').value  = s.webui_timeout;
       }
     })
     .catch(() => {});
@@ -400,8 +389,7 @@ function kmSaveAdvanced() {
   const payload = {
     cloud_timeout : parseInt(document.getElementById('km-cloud-timeout').value, 10) || 30,
     cooldown      : parseInt(document.getElementById('km-cooldown').value, 10)      || 60,
-    max_retries   : parseInt(document.getElementById('km-max-retries').value, 10)   || 5,
-    webui_timeout : parseInt(document.getElementById('km-webui-timeout').value, 10) || 120
+    max_retries   : parseInt(document.getElementById('km-max-retries').value, 10)   || 5
   };
   const fb = document.getElementById('km-adv-feedback');
   fetch('/hecos/api/keymanager/settings', {
@@ -427,7 +415,6 @@ function kmResetAdvanced() {
   document.getElementById('km-cloud-timeout').value = 30;
   document.getElementById('km-cooldown').value      = 60;
   document.getElementById('km-max-retries').value   = 5;
-  document.getElementById('km-webui-timeout').value = 120;
   kmSaveAdvanced();
 }
 </script>

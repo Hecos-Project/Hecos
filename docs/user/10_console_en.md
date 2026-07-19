@@ -14,4 +14,4 @@ While the WebUI is the "face" of Hecos, the Console is the "brain". It guarantee
 - **Real-time Telemetry:** Displays hardware usage, backend loading status, and active module states.
 - **Security Auditing:** Watch the system execute commands. If a flow or plugin triggers a local process (like opening a file or running a Python script), the exact command is printed here.
 - **Server Hub:** The Console acts as the local server host for the WebUI. Closing this window shuts down the entire Hecos system.
-- **Fast Input & History:** You can type text directly into the console to chat with the AI if you prefer a distraction-free, terminal-only experience. Press the **Up Arrow (↑)** and **Down Arrow (↓)** keys to navigate through your previous inputs (Input History), just like in a standard Bash or Zsh shell. This history is synchronized with the WebUI and saved locally.
+- **Fast Input:** You can type text directly into the console to chat with the AI if you prefer a distraction-free, terminal-only experience.

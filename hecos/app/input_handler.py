@@ -25,8 +25,6 @@ class InputHandler:
         evento, input_utente = interface.read_keyboard_input(prefix, user_input)
         
         if evento == "ENTER":
-            if input_utente.strip():
-                interface.push_cli_history(input_utente)
             return self._process_text_input(input_utente, prefix)
         elif evento == "CLEAR":
             return "CLEAR", ""
@@ -91,14 +89,6 @@ class InputHandler:
                     return None, ""
             
         voice.stop_voice() # Stop any ongoing old speech
-        
-        # Add to history
-        try:
-            from hecos.modules.input_history import history_mgr
-            history_mgr.push(testo, user="admin")
-        except Exception as e:
-            pass
-            
         self._execute_exchange(testo, prefisso, is_voice=False)
         return "PROCESSED", ""
 

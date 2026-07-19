@@ -159,14 +159,13 @@ def init_keys_routes(app, logger):
     # ── GET/POST /hecos/api/keymanager/settings ───────────────────────────────
     @app.route("/hecos/api/keymanager/settings", methods=["GET"])
     def km_settings_get():
-        """Return current key manager advanced settings (timeout, cooldown, max_retries, webui_timeout)."""
+        """Return current key manager advanced settings (timeout, cooldown, max_retries)."""
         try:
             import hecos.core.keys.key_manager as _km_mod
             settings = {
-                "cloud_timeout":  getattr(_km_mod, "_KM_CLOUD_TIMEOUT", 30),
-                "cooldown":       getattr(_km_mod, "_KM_COOLDOWN", 60),
-                "max_retries":    getattr(_km_mod, "_KM_MAX_RETRIES", 5),
-                "webui_timeout":  getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", 120),
+                "cloud_timeout": getattr(_km_mod, "_KM_CLOUD_TIMEOUT", 30),
+                "cooldown":      getattr(_km_mod, "_KM_COOLDOWN", 60),
+                "max_retries":   getattr(_km_mod, "_KM_MAX_RETRIES", 5),
             }
             return jsonify({"ok": True, "settings": settings})
         except Exception as e:
@@ -176,7 +175,7 @@ def init_keys_routes(app, logger):
     def km_settings_post():
         """
         Update key manager advanced settings at runtime.
-        Accepted fields: cloud_timeout (int), cooldown (int), max_retries (int), webui_timeout (int).
+        Accepted fields: cloud_timeout (int), cooldown (int), max_retries (int).
         Changes take effect immediately for subsequent LLM calls.
         """
         body = request.get_json(silent=True) or {}
@@ -184,30 +183,26 @@ def init_keys_routes(app, logger):
             import hecos.core.keys.key_manager as _km_mod
             import hecos.core.llm.client as _client_mod
 
-            cloud_timeout  = int(body.get("cloud_timeout", 30))
-            cooldown       = int(body.get("cooldown",       60))
-            max_retries    = int(body.get("max_retries",     5))
-            webui_timeout  = int(body.get("webui_timeout",  120))
+            cloud_timeout = int(body.get("cloud_timeout", 30))
+            cooldown      = int(body.get("cooldown",       60))
+            max_retries   = int(body.get("max_retries",     5))
 
             # Clamp to sane values
-            cloud_timeout  = max(5, min(300, cloud_timeout))
-            cooldown       = max(10, min(7200, cooldown))
-            max_retries    = max(1, min(20, max_retries))
-            webui_timeout  = max(10, min(600, webui_timeout))
+            cloud_timeout = max(5, min(300, cloud_timeout))
+            cooldown      = max(10, min(7200, cooldown))
+            max_retries   = max(1, min(20, max_retries))
 
-            # Apply runtime overrides (module-level globals read by client.py / inference.py)
-            _km_mod._KM_CLOUD_TIMEOUT             = cloud_timeout
-            _km_mod._KM_COOLDOWN                  = cooldown
-            _km_mod._KM_MAX_RETRIES               = max_retries
-            _km_mod.DEFAULT_COOLDOWN              = float(cooldown)
-            _km_mod._KM_WEBUI_INFERENCE_TIMEOUT   = webui_timeout
+            # Apply runtime overrides (module-level globals read by client.py)
+            _km_mod._KM_CLOUD_TIMEOUT = cloud_timeout
+            _km_mod._KM_COOLDOWN      = cooldown
+            _km_mod._KM_MAX_RETRIES   = max_retries
+            _km_mod.DEFAULT_COOLDOWN  = float(cooldown)
 
-            logger.info(f"[KeyManager] Settings updated: cloud_timeout={cloud_timeout}s, cooldown={cooldown}s, retries={max_retries}, webui_timeout={webui_timeout}s")
+            logger.info(f"[KeyManager] Settings updated: timeout={cloud_timeout}s, cooldown={cooldown}s, retries={max_retries}")
             return jsonify({"ok": True, "applied": {
-                "cloud_timeout":  cloud_timeout,
-                "cooldown":       cooldown,
-                "max_retries":    max_retries,
-                "webui_timeout":  webui_timeout
+                "cloud_timeout": cloud_timeout,
+                "cooldown":      cooldown,
+                "max_retries":   max_retries
             }})
         except Exception as e:
             logger.error(f"[KeyManager] settings_post error: {e}")

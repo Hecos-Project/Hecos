@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class WidgetPersistence(BaseModel):
     enabled: bool = True         # Master on/off switch (hides from sidebar AND room)
     visible: bool = True
-    room_visible: bool = True
+    room_visible: bool = False
     room_span: int = 1
     room_height: Optional[int] = None
     room_order: Optional[int] = None
