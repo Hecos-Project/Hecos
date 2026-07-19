@@ -14,6 +14,7 @@ window.hpmConfirmUninstall = function (id, name) {
 };
 
 window.hpmUninstall = async function(id, name) {
+  window._isHpmInstalling = true;
   const card = document.getElementById(`hpm-pkg-${id}`);
   if (card) { card.style.opacity = '0.4'; card.style.pointerEvents = 'none'; }
 
@@ -92,6 +93,7 @@ window.hpmUninstall = async function(id, name) {
     if (window.showToast) window.showToast(`${err.message}`, 'error');
     if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
   } finally {
+    window._isHpmInstalling = false;
     document.removeEventListener('hpmProgressUpdate', logListener);
   }
 };
@@ -128,6 +130,7 @@ window.hpmUninstallSelected = function() {
         };
 
         // ── Build log panel ───────────────────────────────────────────────────
+        window._isHpmInstalling = true;
         const uninstallHtml = `
             <div id="hpm-uninstall-header" style="font-size:1.05em; font-weight:600; color:var(--text);"></div>
             <div id="hpm-uninstall-logs" style="margin-top:12px; font-size:0.92em; color:var(--muted); font-family:monospace; text-align:left; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px; border-left:2px solid #ef4444; max-height:150px; overflow-y:auto; display:none; word-break:break-all;"></div>
@@ -253,6 +256,7 @@ window.hpmUninstallSelected = function() {
             window.hpmSetProgress(false);
             if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
         } finally {
+            window._isHpmInstalling = false;
             document.removeEventListener('hpmProgressUpdate', logListener);
         }
     });
