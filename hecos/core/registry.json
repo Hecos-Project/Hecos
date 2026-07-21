@@ -387,24 +387,6 @@
             }
         ]
     },
-    "MESSENGER": {
-        "description": "Send messages via Telegram, WhatsApp, and Discord.",
-        "commands": {
-            "check_connection": "Method",
-            "force_send": "Method",
-            "list_accounts": "Method",
-            "msg_command": "Direct command invoked via /msg <target> <text>",
-            "register_pre_callback": "Registra un pre-callback che intercetta i messaggi in ingresso.",
-            "send_message": "Send a message to a contact or channel."
-        },
-        "status": "ONLINE",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": []
-    },
     "TEMPLATES": {
         "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
         "commands": {},

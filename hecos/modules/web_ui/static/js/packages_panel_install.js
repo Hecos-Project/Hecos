@@ -155,10 +155,11 @@ window.hpmRenderInstallQueue = function() {
             rowContent = `${row1}${row2}`;
         } else if (item.status === 'done') {
             icon = '<i class="fas fa-check" style="color:#10b981; margin-right:8px; width:16px;"></i>';
+            const statusLabel = item.result?.is_update ? _ti('Updated', 'Aggiornato', 'Actualizado') : _ti('Installed', 'Installato', 'Instalado');
             rowContent = `
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                     <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:#10b981; font-size:0.92em;">${_ti('Installed', 'Installato', 'Instalado')}</span>
+                    <span style="color:#10b981; font-size:0.92em;">${statusLabel}</span>
                 </div>`;
             completed++;
         } else if (item.status === 'failed') {

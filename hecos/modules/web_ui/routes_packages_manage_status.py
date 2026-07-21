@@ -75,6 +75,17 @@ def register_manage_status_routes(app, _hecos_src: str, cfg_mgr, log):
             ok = registry.set_status(pkg_id, status)
             if ok:
                 if status == "disabled":
+                    # ── Call on_unload() on the plugin if it defines one ───────────
+                    try:
+                        from hecos.core.system import module_state
+                        loaded_mod = module_state._loaded_plugins.get(pkg_tag)
+                        if loaded_mod and hasattr(loaded_mod, "on_unload") and callable(loaded_mod.on_unload):
+                            loaded_mod.on_unload()
+                            log.info(f"[HPM] on_unload() called for '{pkg_tag}'.")
+                    except Exception as _ul_e:
+                        log.warning(f"[HPM] on_unload() error for '{pkg_tag}': {_ul_e}")
+                    # ─────────────────────────────────────────────────────────────
+
                     widgets_modified = 0
                     for w in snap.get("widgets", []):
                         ext_id = w.get("id")

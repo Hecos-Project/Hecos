@@ -168,8 +168,8 @@
     <div style="display:flex;align-items:center;gap:8px;padding:4px 0 16px;">
         <div id="hpm-search-wrapper" style="display:flex;align-items:center;flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border-color, var(--border, #333));border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;">
             <span style="padding:0 10px;font-size:14px;color:var(--muted);user-select:none;">🔍</span>
-            <input id="hpm-search-input" type="text" placeholder="Search packages... (Ctrl+F)" autocomplete="off"
-                style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:8px 4px;font-family:inherit;" oninput="hpmFilterPackages()" onfocus="this.parentElement.style.borderColor='var(--accent)'; this.parentElement.style.boxShadow='0 0 8px rgba(102,252,241,.2)';" onblur="this.parentElement.style.borderColor='var(--border-color, var(--border, #333))'; this.parentElement.style.boxShadow='none';">
+            <input id="hpm-search-input" type="search" placeholder="Search packages... (Ctrl+F)" autocomplete="new-password" readonly
+                style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:8px 4px;font-family:inherit;" oninput="hpmFilterPackages()" onfocus="this.removeAttribute('readonly'); this.parentElement.style.borderColor='var(--accent)'; this.parentElement.style.boxShadow='0 0 8px rgba(102,252,241,.2)';" onblur="this.parentElement.style.borderColor='var(--border-color, var(--border, #333))'; this.parentElement.style.boxShadow='none';">
             <button id="hpm-search-clear" title="Clear (Esc)" style="display:none;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:14px;" onclick="document.getElementById('hpm-search-input').value=''; hpmFilterPackages();">✕</button>
         </div>
     </div>

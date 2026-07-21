@@ -116,6 +116,7 @@ window.hpmRenderHierarchy = function(packages) {
 };
 
 window.hpmRenderRow = function(pkg, meta) {
+  const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
   const isDisabled  = pkg.status === 'disabled';
   const isBroken    = pkg.status === 'broken';
   const isRemovable = pkg.removable === true;
@@ -292,7 +293,7 @@ window.hpmRenderRow = function(pkg, meta) {
         ${!isCore ? `
         <div style="font-size:0.68em;color:var(--muted);margin-top:2px;opacity:0.6;">
           ${pkg.author ? `by ${window._hesc(pkg.author)}` : ''}
-          ${pkg.installed_at ? ` · Installed ${pkg.installed_at.substring(0,10)} ${pkg.installed_at.substring(11,16)}` : ''}
+          ${pkg.updated_at ? ` · ${_ti('Updated', 'Aggiornato', 'Actualizado')} ${pkg.updated_at.substring(0,10)} ${pkg.updated_at.substring(11,16)}` : (pkg.installed_at ? ` · ${_ti('Installed', 'Installato', 'Instalado')} ${pkg.installed_at.substring(0,10)} ${pkg.installed_at.substring(11,16)}` : '')}
         </div>` : ''}
       </div>
 

@@ -31,7 +31,10 @@ def update_capability_registry(config=None, debug_log=True):
             try:
                 from hecos.core.package_manager.registry import PackageRegistry
                 import os
-                reg = PackageRegistry(os.path.join("hecos", "data", "packages.db"))
+                # __file__ is hecos/core/system/module_scanner.py, so base is hecos/
+                base = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                data_dir = os.path.join(base, "data")
+                reg = PackageRegistry(data_dir)
                 pkg_id = manifest_id if manifest_id else tag.lower()
                 pkg_info = reg.get(pkg_id)
                 if pkg_info:
