@@ -4,23 +4,23 @@
  * Manage logic for Hecos Package Manager (Status, Uninstall)
  */
 
-window.hpmVerifyPackage = async function(id, name) {
+window.hpmVerifyPackage = async function (id, name) {
   try {
-    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
+    const _ti = (en, it, es) => { const l = (document.documentElement.lang || 'en').toLowerCase(); if (l.startsWith('it')) return it; if (l.startsWith('es')) return es; return en; };
     const lblVerifying = _ti('Verifying...', 'Verifica in corso...', 'Verificando...');
     if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(true, lblVerifying, 100);
-    
+
     const res = await fetch(`/api/packages/${id}/verify`);
     const data = await res.json();
-    
+
     if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
-    
+
     if (data.ok) {
       const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
       const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
-      
+
       let htmlContent = '';
-      
+
       if (data.status === 'valid') {
         const title = _ti('Verification Passed', 'Verifica Superata', 'Verificación Superada');
         const msg = _ti(`All files for package <b>${name}</b> are intact.`, `Tutti i file del pacchetto <b>${name}</b> sono integri.`, `Todos los archivos del paquete <b>${name}</b> están intactos.`);
@@ -43,13 +43,13 @@ window.hpmVerifyPackage = async function(id, name) {
         let msg = _ti(`Package <b>${name}</b> has missing or modified files:`, `Il pacchetto <b>${name}</b> ha file mancanti o modificati:`, `El paquete <b>${name}</b> tiene archivos faltantes o modificados:`);
         msg += `<div style="max-height:120px; overflow-y:auto; font-size:0.85em; text-align:left; background:rgba(0,0,0,0.2); padding:8px; border-radius:6px; margin-top:10px; border:1px solid rgba(255,255,255,0.05);">`;
         if (data.missing_files && data.missing_files.length) {
-            msg += `<strong style="color:#ef4444;">Missing:</strong><br>${data.missing_files.join('<br>')}<br><br>`;
+          msg += `<strong style="color:#ef4444;">Missing:</strong><br>${data.missing_files.join('<br>')}<br><br>`;
         }
         if (data.modified_files && data.modified_files.length) {
-            msg += `<strong style="color:#f59e0b;">Modified:</strong><br>${data.modified_files.join('<br>')}`;
+          msg += `<strong style="color:#f59e0b;">Modified:</strong><br>${data.modified_files.join('<br>')}`;
         }
         msg += `</div>`;
-        
+
         htmlContent = `<div style="text-align:center; padding: 10px 0;">
           <i class="fas fa-exclamation-triangle" style="margin-right:6px; color:#ef4444; font-size:1.5em; margin-bottom:8px; display:block;"></i>
           <b style="font-size:1.1em; color:var(--text)">${title}</b>
@@ -57,13 +57,13 @@ window.hpmVerifyPackage = async function(id, name) {
           ${hintHTML}
         </div>`;
       }
-      
+
       if (typeof window.hpmSetProgress === 'function') {
         window.hpmSetProgress(true, htmlContent, 100);
         const container = document.getElementById('hpm-install-progress');
         if (container) {
-            container.ondblclick = () => window.hpmSetProgress(false);
-            container.style.cursor = 'default';
+          container.ondblclick = () => window.hpmSetProgress(false);
+          container.style.cursor = 'default';
         }
       }
     } else {
@@ -75,7 +75,7 @@ window.hpmVerifyPackage = async function(id, name) {
   }
 };
 
-window.hpmInjectTab = function(installResult) {
+window.hpmInjectTab = function (installResult) {
   if (!installResult.config_panel) return;
   const { tab_id, tab_label, tab_icon } = installResult.config_panel;
   if (!tab_id) return;
@@ -93,11 +93,11 @@ window.hpmInjectTab = function(installResult) {
   nav.appendChild(li);
 };
 
-window.hpmRemoveTab = function(pkg_id) {
+window.hpmRemoveTab = function (pkg_id) {
   document.querySelectorAll(`.hpm-injected[data-panel="${pkg_id}"]`).forEach(el => el.remove());
 };
 
-window.hpmShowDocs = async function(pkg_id, pkg_name) {
+window.hpmShowDocs = async function (pkg_id, pkg_name) {
   try {
     const res = await fetch(`/api/packages/${pkg_id}/readme`);
     const data = await res.json();
@@ -120,7 +120,7 @@ window.hpmShowDocs = async function(pkg_id, pkg_name) {
         } else {
           htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
         }
-      } catch(e) {
+      } catch (e) {
         htmlContent = `<pre style="white-space: pre-wrap; font-family: monospace; font-size: 13px;">${window._hesc(data.content)}</pre>`;
       }
     }
@@ -148,7 +148,7 @@ window.hpmShowDocs = async function(pkg_id, pkg_name) {
   }
 };
 
-window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
+window.hpmShowCapabilities = async function (pkg_id, pkg_name) {
   try {
     const res = await fetch(`/api/packages/${pkg_id}/capabilities`);
     const data = await res.json();
@@ -157,7 +157,7 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
       return;
     }
     const c = data.card;
-    
+
     // Format card as HTML
     let html = `
       <div style="text-align:left; font-size:13px; line-height:1.5;">
@@ -230,9 +230,9 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
           <div style="font-weight:bold; margin-bottom:4px; color:#fbbf24;">Dependencies (PIP):</div>
           <div style="display:flex; flex-wrap:wrap; gap:5px;">
             ${c.pip_requirements.map(p => {
-              let clean = p.split('==')[0].split('>=')[0];
-              return `<span style="background:rgba(245,158,11,0.15); color:#fbbf24; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(245,158,11,0.3);">${window._hesc ? window._hesc(clean) : clean}</span>`;
-            }).join('')}
+        let clean = p.split('==')[0].split('>=')[0];
+        return `<span style="background:rgba(245,158,11,0.15); color:#fbbf24; padding:2px 6px; border-radius:4px; font-size:11px; border:1px solid rgba(245,158,11,0.3);">${window._hesc ? window._hesc(clean) : clean}</span>`;
+      }).join('')}
           </div>
         </div>
       `;
@@ -263,26 +263,26 @@ window.hpmShowCapabilities = async function(pkg_id, pkg_name) {
   }
 };
 
-window.hpmHotReloadModule = async function(pkg_id, name) {
+window.hpmHotReloadModule = async function (pkg_id, name) {
 
-    const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-    if (typeof window.hpmSetProgress === 'function') {
-        window.hpmSetProgress(true, `<i class="fas fa-sync fa-spin" style="margin-right:6px; color:#3b82f6;"></i> ${_ti('Reloading module...', 'Ricaricamento modulo...', 'Recargando módulo...')}`, 50);
+  const _ti = (en, it, es) => { const l = (document.documentElement.lang || 'en').toLowerCase(); if (l.startsWith('it')) return it; if (l.startsWith('es')) return es; return en; };
+  if (typeof window.hpmSetProgress === 'function') {
+    window.hpmSetProgress(true, `<i class="fas fa-sync fa-spin" style="margin-right:6px; color:#3b82f6;"></i> ${_ti('Reloading module...', 'Ricaricamento modulo...', 'Recargando módulo...')}`, 50);
+  }
+
+  try {
+    const resp = await fetch(`/api/packages/${pkg_id}/hot_reload_module`, { method: 'POST' });
+    const data = await resp.json();
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+
+    if (data.ok) {
+      if (window.showToast) window.showToast(`Module ${name} hot-reloaded!`, 'success');
+    } else {
+      if (window.showToast) window.showToast(`Reload failed: ${data.error}`, 'error');
     }
-    
-    try {
-        const resp = await fetch(`/api/packages/${pkg_id}/hot_reload_module`, { method: 'POST' });
-        const data = await resp.json();
-        if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
-        
-        if (data.ok) {
-            if (window.showToast) window.showToast(`Module ${name} hot-reloaded!`, 'success');
-        } else {
-            if (window.showToast) window.showToast(`Reload failed: ${data.error}`, 'error');
-        }
-    } catch (err) {
-        if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
-        if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
-    }
+  } catch (err) {
+    if (typeof window.hpmSetProgress === 'function') window.hpmSetProgress(false);
+    if (window.showToast) window.showToast(`Network error: ${err.message}`, 'error');
+  }
 };
 

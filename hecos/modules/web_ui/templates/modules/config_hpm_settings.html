@@ -93,6 +93,41 @@
     </script>
 
     <div class="card">
+        <div class="card-title"><i class="fas fa-desktop"></i> Interface</div>
+        
+        <div class="field mt-3">
+            <label>Items per Page</label>
+            <input type="number" id="hpm-page-size" class="config-input" data-cfg-layer="hpm" data-cfg-key="hpm_page_size" min="10" max="50" step="5" placeholder="50">
+            <p style="font-size:10px; color:var(--muted); margin-top:4px;">Maximum number of modules to display per page (max 50).</p>
+        </div>
+    </div>
+    
+    <script>
+    // Ensure we also save to localStorage so the UI can read it instantly without API fetch
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const pageSizeInput = document.getElementById('hpm-page-size');
+            if (pageSizeInput) {
+                pageSizeInput.addEventListener('change', (e) => {
+                    let val = parseInt(e.target.value);
+                    if (val > 50) val = 50;
+                    if (val < 10) val = 10;
+                    e.target.value = val;
+                    localStorage.setItem('hpm_page_size', val);
+                    
+                    // Live update if the panel is open
+                    if (window.HPM_STATE && typeof window.hpmApplyFilters === 'function') {
+                        window.HPM_STATE.pageSize = val;
+                        window.HPM_STATE.paginationEnabled = (window._packages || []).length > val;
+                        window.hpmApplyFilters();
+                    }
+                });
+            }
+        }, 800);
+    });
+    </script>
+
+    <div class="card">
         <div class="card-title"><i class="fas fa-volume-up"></i> Install Experience</div>
         
         <div class="field mt-3">

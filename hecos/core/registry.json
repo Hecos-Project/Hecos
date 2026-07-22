@@ -83,6 +83,24 @@
         "module_type": "core_module",
         "slash_commands": []
     },
+    "MCP_BRIDGE": {
+        "description": "Bridge to Model Context Protocol (MCP) servers",
+        "commands": {
+            "call_tool": "Executes an MCP tool.",
+            "get_mcp_schemas": "Hook used by Hecos's module_docs.py to merge tools.",
+            "list": "Method",
+            "reload": "Method",
+            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
+            "status": "Method"
+        },
+        "status": "No MCP servers connected.",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
         "commands": {
@@ -357,6 +375,40 @@
             }
         ]
     },
+    "CALENDAR": {
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+        "commands": {
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"far fa-calendar-alt\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "calendar",
+                "manifest_version": "1",
+                "aliases": [
+                    "/calendar",
+                    "/calendario",
+                    "/appuntamenti"
+                ],
+                "description": "Lists the upcoming events in the calendar",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "requires_args": false
+            }
+        ]
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
         "commands": {},
@@ -387,6 +439,340 @@
             }
         ]
     },
+    "LISTS": {
+        "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
+        "commands": {
+            "create_list": "Creates a new empty list.",
+            "list_lists": "Shows all active lists with the count of items.",
+            "show_list": "Shows all items of a specific list.",
+            "add_to_list": "Adds one or more items to a list. Creates the list if it doesn't exist.",
+            "check_item": "Marks an item as completed in a list.",
+            "uncheck_item": "Restores an item as to-do.",
+            "remove_from_list": "Permanently deletes an item from a list.",
+            "clear_done": "Removes all completed items from a list.",
+            "delete_list": "Deletes an entire list.",
+            "archive_list": "Archives a list (hides it from the main view)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-list-check",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "lists",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list",
+                    "/lists",
+                    "/liste"
+                ],
+                "description": "Shows all lists",
+                "usage": "/list",
+                "example": "/list",
+                "icon": "📋",
+                "method": "list_lists",
+                "requires_args": false
+            },
+            {
+                "id": "list_show",
+                "manifest_version": "1",
+                "aliases": [
+                    "/lista"
+                ],
+                "description": "Shows a list",
+                "usage": "/lista <nome>",
+                "example": "/lista Spesa",
+                "icon": "🔍",
+                "method": "show_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_add",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list add",
+                    "/lista aggiungi"
+                ],
+                "description": "Adds item",
+                "usage": "/list add <lista> <elemento>",
+                "example": "/list add Spesa Uova",
+                "icon": "➕",
+                "method": "add_to_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_done",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list done",
+                    "/lista spunta"
+                ],
+                "description": "Checks item",
+                "usage": "/list done <lista> <elemento>",
+                "example": "/list done Spesa Uova",
+                "icon": "✅",
+                "method": "check_item",
+                "requires_args": true
+            }
+        ]
+    },
+    "MAIL": {
+        "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
+        "commands": {
+            "sync_emails": "Synchronizes the mailbox by fetching new messages via IMAP.",
+            "send_email": "Sends an email using the SMTP client. Supports HTML, text, and attachments.",
+            "list_emails": "Lists emails from the inbox or a specified folder.",
+            "get_email": "Retrieves a single email by ID with full body and attachments."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-envelope",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "MAP": {
+        "description": "Simple Map Module based on Leaflet and Nominatim.",
+        "commands": {
+            "get_home_location": "Get the lat/lon coordinates of the user's home location",
+            "geocode": "Geocode an address or city into lat/lon coordinates"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "MEDIA_PLAYER": {
+        "description": "Universal media player for Hecos. OS-level playback (VLC/mpv), gallery for Drive and Chat, AI-driven playlist management.",
+        "commands": {
+            "play": "Play a media file or URL",
+            "pause": "Pause/resume playback",
+            "stop": "Stop playback",
+            "next_track": "Skip to next track",
+            "prev_track": "Go to previous track",
+            "set_volume": "Set volume (0–100)",
+            "get_status": "Get current playback status",
+            "create_playlist": "Create a named playlist",
+            "add_to_playlist": "Add a file to a playlist",
+            "remove_from_playlist": "Remove a track from a playlist",
+            "delete_playlist": "Delete a playlist",
+            "list_playlists": "List all saved playlists",
+            "get_playlist": "Show playlist contents",
+            "play_playlist": "Load and play a saved playlist",
+            "scan_folder": "Scan a folder for media files"
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-play-circle",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "play",
+                "manifest_version": "1",
+                "aliases": [
+                    "/play"
+                ],
+                "description": "Play a media file or URL",
+                "usage": "/play <path>",
+                "example": "/play C:\\music\\song.mp3",
+                "icon": "▶️",
+                "method": "play",
+                "requires_args": true
+            },
+            {
+                "id": "stop",
+                "manifest_version": "1",
+                "aliases": [
+                    "/stop"
+                ],
+                "description": "Stop playback",
+                "usage": "/stop",
+                "example": "/stop",
+                "icon": "⏹️",
+                "method": "stop",
+                "requires_args": false
+            },
+            {
+                "id": "pause",
+                "manifest_version": "1",
+                "aliases": [
+                    "/pause"
+                ],
+                "description": "Pause or resume playback",
+                "usage": "/pause",
+                "example": "/pause",
+                "icon": "⏸️",
+                "method": "pause",
+                "requires_args": false
+            },
+            {
+                "id": "playlist",
+                "manifest_version": "1",
+                "aliases": [
+                    "/playlist"
+                ],
+                "description": "List all saved playlists",
+                "usage": "/playlist",
+                "example": "/playlist",
+                "icon": "📋",
+                "method": "list_playlists",
+                "requires_args": false
+            }
+        ]
+    },
+    "MESSENGER": {
+        "description": "Send messages via Telegram, WhatsApp, and Discord.",
+        "commands": {
+            "check_connection": "Method",
+            "force_send": "Method",
+            "list_accounts": "Method",
+            "msg_command": "Direct command invoked via /msg <target> <text>",
+            "register_pre_callback": "Registra un pre-callback che intercetta i messaggi in ingresso.",
+            "send_message": "Send a message to a contact or channel.",
+            "send_photo": "Send a photo to a contact or channel (Telegram only for now)."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
+    "AUTOMATION": {
+        "description": "Full PC control: mouse movement, keyboard input, window management, and Windows Accessibility API for reading browser tabs and UI controls. Combine with WEBCAM desktop_screenshot for a full see-and-act loop. Requires Windows for UIAutomation features (browser tabs, window controls); mouse/keyboard works cross-platform.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-magic\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "type",
+                "manifest_version": "1",
+                "aliases": [
+                    "/type",
+                    "/write"
+                ],
+                "description": "Simulates typing text on the keyboard",
+                "usage": "/type <text>",
+                "example": "/type Hello world!",
+                "icon": "⌨️",
+                "method": "type_text",
+                "requires_args": true
+            },
+            {
+                "id": "click_text",
+                "manifest_version": "1",
+                "aliases": [
+                    "/click_text",
+                    "/click_word"
+                ],
+                "description": "Finds text on the screen (OCR) and clicks it",
+                "usage": "/click_text <text>",
+                "example": "/click_text Submit",
+                "icon": "🖱️",
+                "method": "click_text",
+                "requires_args": true
+            },
+            {
+                "id": "hotkey",
+                "manifest_version": "1",
+                "aliases": [
+                    "/hotkey",
+                    "/shortcut"
+                ],
+                "description": "Executes a combination of keys (separated by + or comma)",
+                "usage": "/hotkey <keys>",
+                "example": "/hotkey ctrl+c",
+                "icon": "⚡",
+                "method": "hotkey",
+                "requires_args": true
+            },
+            {
+                "id": "focus",
+                "manifest_version": "1",
+                "aliases": [
+                    "/focus",
+                    "/window"
+                ],
+                "description": "Brings a window to the foreground by its title",
+                "usage": "/focus <title>",
+                "example": "/focus chrome",
+                "icon": "🪟",
+                "method": "focus_window",
+                "requires_args": true
+            }
+        ]
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "method": "set_reminder",
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Lists all active reminders",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "requires_args": false
+            }
+        ]
+    },
     "TEMPLATES": {
         "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
         "commands": {},
@@ -396,6 +782,52 @@
         "is_class_based": true,
         "is_lazy": true,
         "icon": "fa-file-alt",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "WEATHER_PRO": {
+        "description": "Hybrid weather module: AI plugin (current weather + 7-day forecast via Open-Meteo) + sidebar/Control Room widget with live data and daily forecast cards. Fully autonomous package with its own TOML configuration.",
+        "commands": {
+            "get_current_weather": "Get current weather for a city or user's location.",
+            "get_weather_forecast": "Get 7-day daily weather forecast for a city."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-cloud-sun",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "command": "/weather",
+                "description": "Show current weather (optionally for a city: /weather Rome)",
+                "method": "get_current_weather",
+                "args_schema": {
+                    "city": "str?"
+                }
+            },
+            {
+                "command": "/forecast",
+                "description": "Show 7-day forecast (optionally for a city: /forecast Milan)",
+                "method": "get_weather_forecast",
+                "args_schema": {
+                    "city": "str?"
+                }
+            }
+        ]
+    },
+    "WEBCAM": {
+        "description": "Access to PC or Client optical vision to take snapshots. Can use the local server webcam OR trigger the user's own device camera (phone/browser).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
         "category": "PLUGINS",
         "module_type": "hpm",
         "slash_commands": []

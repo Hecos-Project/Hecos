@@ -187,6 +187,11 @@ function renderConfigHub(mode = 'tabs') {
     const catCounts = {};
     filteredModules.forEach(m => { catCounts[m.cat] = (catCounts[m.cat] || 0) + 1; });
 
+    let newPanels = [];
+    try {
+        newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]');
+    } catch(e) {}
+
     // 1. Render TABS bar
     let tabsHtml = '';
     let currentTabCat = null;
@@ -209,7 +214,9 @@ function renderConfigHub(mode = 'tabs') {
         }
         const activeClass = (activeTab === m.id) ? 'active' : '';
         const icon        = window.getIconForModule(m.id, m.label, m.icon);
-        tabsHtml += `<button class="tab ${activeClass}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label}</button>`;
+        const isNew       = newPanels.includes(m.id);
+        const badgeHtml   = isNew ? `<span class="new-badge" style="margin-left:6px; background:var(--accent); color:white; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite;">NEW</span>` : '';
+        tabsHtml += `<button class="tab ${activeClass}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label} ${badgeHtml}</button>`;
     });
     if (filteredModules.length > 0) tabsHtml += `</div></div>`;
     tabsBar.innerHTML = tabsHtml;
@@ -236,8 +243,11 @@ function renderConfigHub(mode = 'tabs') {
         }
         const activeClass = (activeTab === m.id) ? 'active' : '';
         const icon        = window.getIconForModule(m.id, m.label, m.icon);
+        const isNew       = newPanels.includes(m.id);
+        const badgeHtml   = isNew ? `<div class="new-badge" style="position:absolute; top:-6px; right:-6px; background:var(--accent); color:white; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite; box-shadow:0 0 5px var(--accent);">NEW</div>` : '';
         wallHtml += `
-            <div class="module-card ${activeClass}" onclick="showTab('${m.id}')">
+            <div class="module-card ${activeClass}" onclick="showTab('${m.id}')" style="position:relative;">
+                ${badgeHtml}
                 <div class="m-icon">${icon}</div>
                 <div class="m-label">${window.t ? window.t(m.label) : m.label}</div>
                 <div class="m-cat">${window.t ? window.t(currentCatData.label) : currentCat}</div>
