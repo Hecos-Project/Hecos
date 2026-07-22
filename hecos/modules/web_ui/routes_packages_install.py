@@ -185,9 +185,10 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                     "name": pkg_meta.get("name", result.package_id),
                     "type": pkg_meta.get("type", ""),
                     "install_path": pkg_meta.get("install_path", ""),
-                    "config_panel": panel_id if snap.get("config_panel") else "",
+                    "config_panel": snap.get("config_panel") or None,
                     "warnings": result.warnings,
                     "requires_restart": needs_restart,
+                    "is_update": getattr(result, "is_update", False)
                 }
                 if result.dep_report and result.dep_report.has_issues:
                     response["dep_issues"] = result.dep_report.summary
@@ -305,8 +306,9 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         "name": pkg_meta.get("name", result.package_id),
                         "type": pkg_meta.get("type", ""),
                         "install_path": pkg_meta.get("install_path", ""),
-                        "config_panel": panel_id if snap.get("config_panel") else "",
+                        "config_panel": snap.get("config_panel") or None,
                         "warnings": result.warnings or [],
+                        "is_update": getattr(result, "is_update", False),
                     }
                     if result.dep_report and result.dep_report.has_issues:
                         entry["dep_issues"] = result.dep_report.summary

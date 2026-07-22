@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.40.0 (Runtime Alpha)
+# Hecos - Version 0.44.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.40.0`[cite: 1]. This is a Helping Companion System that bridges high-level reasoning with root-level system execution[cite: 1].
+> **Runtime Alpha Status**: Hecos is currently in `v0.44.0`[cite: 1]. This is a Helping Companion System that bridges high-level reasoning with root-level system execution[cite: 1].
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution[cite: 1]. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool[cite: 1].
@@ -21,11 +21,11 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness[cite: 1].
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive[cite: 1].
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.40.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.44.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
 
 ---
 
-## ✨ Key Features (v0.40.0)
+## ✨ Key Features (v0.44.0)
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
 * 🛡️ **HPM Integrity Verification** — New `/verify` API and Control Room UI to cryptographically validate installed package files against their Ed25519-signed manifest hashes.
 * 🔒 **Hecos SDK (Total Isolation)** — Run HPM packages in dedicated, isolated subprocesses and independent virtual environments (venv) to prevent dependency hell and main event loop blocking.
@@ -275,7 +275,7 @@ Hecos uses a modular documentation system localized in EN, IT, and ES[cite: 1].
 
 ### Local Access (Modular)
 Detailed guides are located in the `docs/` folder[cite: 1]:
-- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.40.0[cite: 1].
+- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.44.0[cite: 1].
 - 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details[cite: 1].
 
 ### Online Access

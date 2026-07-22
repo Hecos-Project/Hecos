@@ -11,6 +11,43 @@
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+.hpm-wall-card {
+  background: var(--bg2);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.hpm-wall-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.hpm-wall-card.disabled {
+  opacity: 0.6;
+}
+.hpm-wall-card .m-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+.hpm-wall-card .m-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 </style>
 <div id="tab-packages" class="panel">
 
@@ -31,10 +68,10 @@
         </div>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="btn btn-sm btn-outline" onclick="window.hpmFactoryReset()" title="Factory Reset (Wipe Database)" style="color:#ef4444; border-color:rgba(239,68,68,0.3);">
+        <button type="button" class="btn btn-sm btn-outline" onclick="window.hpmFactoryReset()" title="Factory Reset (Wipe Database)" style="color:#ef4444; border-color:rgba(239,68,68,0.3);">
           <i class="fas fa-biohazard"></i> Wipe
         </button>
-        <button class="btn btn-sm btn-outline" onclick="showTab('hpm-settings')" title="HPM Settings">
+        <button type="button" class="btn btn-sm btn-outline" onclick="showTab('hpm-settings')" title="HPM Settings">
           <i class="fas fa-cog"></i>
         </button>
       </div>
@@ -143,35 +180,56 @@
         <span id="hpm-total-count" style="margin-left:10px; background:rgba(255,255,255,0.08); color:var(--muted); font-size:11px; padding:2px 8px; border-radius:10px; font-weight:700;">0</span>
       </div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <!-- Global Expand / Collapse -->
-        <div style="display:flex; gap: 4px; margin-right: 8px;">
-          <button class="switcher-btn btn-icon" onclick="window.hpmToggleAllCategories(true)" title="Expand All" style="padding:6px 10px;font-size:0.78em;"><i class="fas fa-plus-circle"></i></button>
-          <button class="switcher-btn btn-icon" onclick="window.hpmToggleAllCategories(false)" title="Collapse All" style="padding:6px 10px;font-size:0.78em;"><i class="fas fa-minus-circle"></i></button>
+        
+        <!-- Toolbar (Pill Style) -->
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border-color);">
+          <button class="switcher-btn btn-icon" onclick="window.hpmToggleAllCategories(true)" title="Expand All" style="padding:6px 10px;border-radius:6px;font-size:0.78em;"><i class="fas fa-plus-circle"></i></button>
+          <button class="switcher-btn btn-icon" onclick="window.hpmToggleAllCategories(false)" title="Collapse All" style="padding:6px 10px;border-radius:6px;font-size:0.78em;"><i class="fas fa-minus-circle"></i></button>
         </div>
-        <button id="hpm-btn-select-mode" class="btn-icon" onclick="hpmToggleSelectionMode()" title="Select multiple"
-                style="padding:6px 10px;font-size:0.78em;">
-          <i class="fas fa-check-square"></i>
-        </button>
-        <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
-                style="padding:6px 10px;font-size:0.78em;">
-          <i class="fas fa-sync-alt"></i>
-        </button>
-        <button class="btn-icon" onclick="window.hpmCheckUpdates()"
-                title="{{ t('hpm_btn_check_updates') or 'Check for updates' }}"
-                style="padding:6px 10px;font-size:0.78em;">
-          <i class="fas fa-arrow-circle-up"></i>
-        </button>
+
+        <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border-color);">
+          <button id="hpm-btn-select-mode" class="btn-icon" onclick="hpmToggleSelectionMode()" title="Select multiple"
+                  style="padding:6px 10px;border-radius:6px;font-size:0.78em;">
+            <i class="fas fa-check-square"></i>
+          </button>
+          <button class="btn-icon" onclick="hpmLoadPackages()" title="{{ t('hpm_btn_refresh') or 'Refresh List' }}"
+                  style="padding:6px 10px;border-radius:6px;font-size:0.78em;">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+          <button class="btn-icon" onclick="window.hpmCheckUpdates()"
+                  title="{{ t('hpm_btn_check_updates') or 'Check for updates' }}"
+                  style="padding:6px 10px;border-radius:6px;font-size:0.78em;">
+            <i class="fas fa-arrow-circle-up"></i>
+          </button>
+        </div>
+
       </div>
     </div>
 
-    <!-- Central Hub Style Search Bar -->
-    <div style="display:flex;align-items:center;gap:8px;padding:4px 0 16px;">
-        <div id="hpm-search-wrapper" style="display:flex;align-items:center;flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border-color, var(--border, #333));border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;">
+    <!-- Central Hub Style Search Bar & View Switcher -->
+    <div style="display:flex;align-items:center;gap:8px;padding:4px 0 16px;flex-wrap:wrap;">
+        <div id="hpm-search-wrapper" style="display:flex;align-items:center;flex:1;min-width:200px;background:rgba(255,255,255,0.05);border:1px solid var(--border-color, var(--border, #333));border-radius:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s;">
             <span style="padding:0 10px;font-size:14px;color:var(--muted);user-select:none;">🔍</span>
-            <input id="hpm-search-input" type="text" placeholder="Search packages... (Ctrl+F)" autocomplete="off"
-                style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:8px 4px;font-family:inherit;" oninput="hpmFilterPackages()" onfocus="this.parentElement.style.borderColor='var(--accent)'; this.parentElement.style.boxShadow='0 0 8px rgba(102,252,241,.2)';" onblur="this.parentElement.style.borderColor='var(--border-color, var(--border, #333))'; this.parentElement.style.boxShadow='none';">
+            <input id="hpm-search-input" type="search" placeholder="Search packages... (Ctrl+F)" autocomplete="new-password" readonly
+                style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;padding:8px 4px;font-family:inherit;" oninput="hpmFilterPackages()" onfocus="this.removeAttribute('readonly'); this.parentElement.style.borderColor='var(--accent)'; this.parentElement.style.boxShadow='0 0 8px rgba(102,252,241,.2)';" onblur="this.parentElement.style.borderColor='var(--border-color, var(--border, #333))'; this.parentElement.style.boxShadow='none';">
             <button id="hpm-search-clear" title="Clear (Esc)" style="display:none;background:none;border:none;cursor:pointer;padding:4px 10px;color:var(--muted);font-size:14px;" onclick="document.getElementById('hpm-search-input').value=''; hpmFilterPackages();">✕</button>
         </div>
+        
+        <!-- View Switcher -->
+        <div class="view-switcher" style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border-color);">
+            <button id="view-hpm-list" class="btn-icon active" onclick="window.hpmSetViewMode('list')" title="List View" style="padding:5px 10px;border-radius:6px;"><i class="fas fa-list"></i></button>
+            <button id="view-hpm-wall" class="btn-icon" onclick="window.hpmSetViewMode('wall')" title="Wall View" style="padding:5px 10px;border-radius:6px;"><i class="fas fa-th-large"></i></button>
+        </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div id="hpm-category-filters" class="filter-tabs" style="margin-bottom:12px; justify-content: flex-start; gap:6px; flex-wrap:wrap;">
+        <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Type Filters -->
+    <div id="hpm-type-filters" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+        <!-- Populated dynamically by JS -->
     </div>
 
     <!-- Selezione Batch Toolbar -->
@@ -189,7 +247,19 @@
       </div>
     </div>
 
+    <!-- List Container -->
     <div id="hpm-packages-grid" style="display:grid;gap:10px;">
+    </div>
+    
+    <!-- Wall Container -->
+    <div id="hpm-packages-wall" style="display:none; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px;">
+    </div>
+
+    <!-- Pagination Controls -->
+    <div id="hpm-pagination" style="display:none; align-items:center; justify-content:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border-color);">
+        <button id="hpm-page-prev" class="btn btn-sm btn-outline" onclick="window.hpmGoToPage(-1, true)" style="min-width:80px;"><i class="fas fa-chevron-left" style="margin-right:6px;"></i> Prev</button>
+        <span id="hpm-page-info" style="font-size:0.85em; color:var(--muted); font-weight:600;">Page 1 of 1</span>
+        <button id="hpm-page-next" class="btn btn-sm btn-outline" onclick="window.hpmGoToPage(1, true)" style="min-width:80px;">Next <i class="fas fa-chevron-right" style="margin-left:6px;"></i></button>
     </div>
   </div>
 
@@ -217,11 +287,37 @@
     <h2 style="margin-top:0; font-size:1.4em; color:var(--text);"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a; margin-right:8px;"></i>{{ t('flows_confirm_delete_title') or 'Conferma' }}</h2>
     <p id="hpm-confirm-modal-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>
     <div class="modal-actions" style="display:flex; justify-content:center; gap:15px; margin-top:24px;">
-      <button class="btn btn-secondary" onclick="document.getElementById('hpm-confirm-modal').style.display='none'">{{ t('flows_confirm_delete_cancel') or 'Annulla' }}</button>
-      <button class="btn btn-danger" style="background:#ff4a4a; color:white; border:none;" id="hpm-confirm-modal-yes">{{ t('flows_confirm_delete_yes') or 'Elimina' }}</button>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('hpm-confirm-modal').style.display='none'">{{ t('flows_confirm_delete_cancel') or 'Annulla' }}</button>
+      <button type="button" class="btn btn-danger" style="background:#ff4a4a; color:white; border:none;" id="hpm-confirm-modal-yes">{{ t('flows_confirm_delete_yes') or 'Elimina' }}</button>
     </div>
   </div>
 </div>
+<script>
+// Safety guard: prevent Enter key from accidentally confirming the Wipe/Confirm modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const modal = document.getElementById('hpm-confirm-modal');
+    // If the modal is NOT visible, prevent Enter from bubbling to any button inside it
+    if (modal && modal.style.display === 'none') {
+      // Check if the active element is NOT inside the modal itself
+      const yesBtn = document.getElementById('hpm-confirm-modal-yes');
+      if (document.activeElement === yesBtn) {
+        e.preventDefault();
+      }
+    }
+    // Also: if we're focused on an input/textarea that is NOT inside the modal, stop Enter from triggering buttons
+    const tag = document.activeElement ? document.activeElement.tagName : '';
+    if ((tag === 'INPUT' || tag === 'TEXTAREA') && modal && modal.style.display === 'none') {
+      // Prevent Enter from submitting or triggering random buttons
+      const inModal = modal.contains(document.activeElement);
+      if (!inModal) {
+        // Only stop propagation - don't prevent default so the field still works normally
+        e.stopPropagation();
+      }
+    }
+  }
+});
+</script>
 
 <!-- Info / Capabilities Modal -->
 <div id="hpm-info-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
@@ -260,7 +356,11 @@ window.HPM_I18N = {
   // Use a timestamp so JS changes are always picked up without restarting
   const _hpmTs = Date.now();
   const scripts = [
-    '/static/js/packages_panel_render.js',
+    '/static/js/packages_panel_render_meta.js',
+    '/static/js/packages_panel_render_toggles.js',
+    '/static/js/packages_panel_render_hierarchy.js',
+    '/static/js/packages_panel_render_row.js',
+    '/static/js/packages_panel_render_card.js',
     '/static/js/packages_panel_install.js',
     '/static/js/packages_panel_manage_status.js',
     '/static/js/packages_panel_manage_uninstall.js',
@@ -269,7 +369,11 @@ window.HPM_I18N = {
     '/static/js/packages_panel_store_api.js',
     '/static/js/packages_panel_store_ui.js',
     '/static/js/packages_panel_store_modal.js',
-    '/static/js/packages_panel.js'
+    '/static/js/packages_panel_state.js',
+    '/static/js/packages_panel_tabs.js',
+    '/static/js/packages_panel_loader.js',
+    '/static/js/packages_panel_updates.js',
+    '/static/js/packages_panel_init.js'
   ];
 
   // Remove old script tags from previous loads so we get fresh ones

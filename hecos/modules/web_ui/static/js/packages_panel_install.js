@@ -155,10 +155,11 @@ window.hpmRenderInstallQueue = function() {
             rowContent = `${row1}${row2}`;
         } else if (item.status === 'done') {
             icon = '<i class="fas fa-check" style="color:#10b981; margin-right:8px; width:16px;"></i>';
+            const statusLabel = item.result?.is_update ? _ti('Updated', 'Aggiornato', 'Actualizado') : _ti('Installed', 'Installato', 'Instalado');
             rowContent = `
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                     <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:#10b981; font-size:0.92em;">${_ti('Installed', 'Installato', 'Instalado')}</span>
+                    <span style="color:#10b981; font-size:0.92em;">${statusLabel}</span>
                 </div>`;
             completed++;
         } else if (item.status === 'failed') {
@@ -283,8 +284,27 @@ function _hpmShowFinalSummary() {
             extraHTML += `<div style="margin-top:12px; font-size: 0.95em; color: var(--text); font-weight:normal;">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${r.install_path}</code></div>`;
         }
         if (r && r.config_panel) {
-            const lblCfg = _ti('Available in the Configuration menu', 'Disponibile nel menu Configurazione', 'Disponible en el menú Configuración');
-            extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--muted); font-weight:normal;"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
+            const tabId = r.config_panel.tab_id || r.id.replace('_', '-');
+            const catLabel = r.config_panel.category || 'CONNETTIVITÀ';
+            const tabLabel = r.config_panel.tab_label || r.name;
+            const lblCfg = _ti('Configuration available in', 'Configurazione disponibile in', 'Configuración disponible en');
+            extraHTML += `<div style="margin-top:8px; font-size: 0.85em; font-weight:normal;">
+                <i class="fas fa-cogs" style="margin-right:4px; color:var(--muted);"></i>
+                <span style="color:var(--muted);">${lblCfg}</span> 
+                <a href="#${window._hesc(tabId)}" style="color:var(--accent); text-decoration:none; font-weight:600; margin-left:4px;" onclick="document.getElementById('packages-install-modal').style.display='none';">
+                    ${window._hesc(catLabel)} &rarr; ${window._hesc(tabLabel)}
+                </a>
+            </div>`;
+            
+            // Save as NEW for Central Hub badges
+            let newPanels = [];
+            try {
+                newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]');
+            } catch(e) {}
+            if (!newPanels.includes(tabId)) {
+                newPanels.push(tabId);
+                localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+            }
         }
     }
 

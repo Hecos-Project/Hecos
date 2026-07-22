@@ -38,6 +38,7 @@ class InstallResult:
     error: str = ""
     warnings: List[str] = field(default_factory=list)
     dep_report: Optional[DependencyReport] = None
+    is_update: bool = False
 
     @property
     def has_warnings(self) -> bool:
@@ -193,6 +194,8 @@ class PackageInstaller:
             self._emit("hpm:progress", {"step": "hooks", "message": "Running pre-install hook..."})
             run_hook(staging_dir, "pre_install", manifest)
 
+
+
             # ── Step 6: Copy plugin/module code ──────────────────────────────
             self._emit("hpm:progress", {"step": "copy_code", "message": "Installing core logic..."})
             installed_files.extend(install_plugin_code(staging_dir, manifest, self._hecos_root))
@@ -211,6 +214,7 @@ class PackageInstaller:
 
             # ── Step 10: Register in DB ───────────────────────────────────────
             self._emit("hpm:progress", {"step": "register", "message": "Registering in database..."})
+            is_update = self._registry.is_installed(manifest.id)
             manifest_dict = manifest.model_dump()
             ok = self._registry.register(manifest_dict, install_path, installed_files)
             if not ok:

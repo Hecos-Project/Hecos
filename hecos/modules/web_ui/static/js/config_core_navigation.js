@@ -56,6 +56,17 @@ async function showTab(name, skipScroll = false) {
     uiState.collapsedCategories = [];
   }
 
+  // Clear NEW badge if present
+  try {
+      let newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]');
+      if (newPanels.includes(targetId) || newPanels.includes(name)) {
+          newPanels = newPanels.filter(p => p !== targetId && p !== name);
+          localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+          // Remove badge from DOM immediately
+          document.querySelectorAll(`#tab-${name} .new-badge, button.tab[onclick="showTab('${name}')"] .new-badge, div.module-card[onclick="showTab('${name}')"] .new-badge`).forEach(el => el.remove());
+      }
+  } catch(e) {}
+
 
 
   // Lazy load: fetch panel HTML if not yet in DOM
