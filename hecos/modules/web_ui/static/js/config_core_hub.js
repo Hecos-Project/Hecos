@@ -38,9 +38,8 @@ function renderFilterTabs() {
         const inLazySet = !!(window.LAZY_PANEL_IDS && window.LAZY_PANEL_IDS.has(m.id));
         const hasPanel  = !!document.getElementById('tab-' + m.id);
         const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
-        const isMcp     = (m.cat === 'MCP');
         const isCore    = !!m.isCore;
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore);
+        return (inCache || inLazySet || hasPanel || isMapped || isCore);
     });
 
     const counts = { 'ALL': allVisible.length };
@@ -127,13 +126,7 @@ function renderConfigHub(mode = 'tabs') {
             return !p || p.enabled !== false;
         })());
         
-        if (m.id === 'calendar') {
-            console.log(`[DEBUG CALENDAR] inCache:${inCache} inLazySet:${inLazySet} hasPanel:${hasPanel} isMapped:${isMapped} isMcp:${isMcp} isCore:${isCore} isHpmEnabled:${isHpmEnabled}`);
-            console.log(`[DEBUG CALENDAR] isHpm:${m.isHpm} cfgReady:${cfgReady} pluginTag:${m.pluginTag}`);
-            console.log(`[DEBUG CALENDAR] window.cfg.plugins['CALENDAR'] =`, window.cfg.plugins && window.cfg.plugins['CALENDAR']);
-        }
-
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore || isHpmEnabled);
+        return (inCache || inLazySet || hasPanel || isMapped || isCore || isHpmEnabled);
     });
 
     // Category filter

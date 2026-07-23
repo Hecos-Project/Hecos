@@ -83,24 +83,6 @@
         "module_type": "core_module",
         "slash_commands": []
     },
-    "MCP_BRIDGE": {
-        "description": "Bridge to Model Context Protocol (MCP) servers",
-        "commands": {
-            "call_tool": "Method",
-            "get_mcp_schemas": "Method",
-            "list": "Method",
-            "reload": "Method",
-            "search": "Method",
-            "status": "Method"
-        },
-        "status": "No MCP servers configured.",
-        "example": "",
-        "routing_instructions": "",
-        "is_class_based": true,
-        "icon": "",
-        "category": "PLUGINS",
-        "slash_commands": []
-    },
     "MEMORY": {
         "description": "Access to the Vault of memories and Admin profile (Identity and History). Includes RAG vector memory for long-term semantic recall.",
         "commands": {
