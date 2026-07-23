@@ -13,6 +13,7 @@ window.CONFIG_HUB = {
         'SISTEMA':      { label: 'hub_cat_sistema',      icon: '<i class="fas fa-cogs"></i>', order: 5 }
     },
 
+
     // Core Modules (not discovered via plugin loader)
     modules: [
         { id: 'backend',   label: 'hub_mod_backend',      icon: '<i class="fas fa-server"></i>', cat: 'INTELLIGENZA', pluginTag: 'MODELS', isCore: true },
@@ -26,15 +27,11 @@ window.CONFIG_HUB = {
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA' },
 
-        { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
-
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
         
         { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
         { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
         { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE' },
-        { id: 'flows',            label: 'hub_mod_flows',        icon: '<i class="fas fa-project-diagram"></i>', cat: 'RISORSE', pluginTag: 'FLOWS', isCore: true },
-        
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
@@ -103,7 +100,6 @@ window.getIconForModule = function(id, name, metaIcon) {
 };
 
 window.CONFIG_HUB.tagMap = {
-    'MCP_BRIDGE': 'mcp',
     'DRIVE': 'drive',
     'EXECUTOR': 'executor',
     'WEBCAM': 'webcam',
@@ -129,6 +125,6 @@ window.LAZY_PANEL_IDS = new Set([
     'memory', 'voice',
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
-    'contacts', 'mcp', 'remote-triggers',
+    'contacts', 'remote-triggers',
     'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
 ]);

@@ -43,6 +43,8 @@ def info() -> dict:
     }
 
 
-def on_load(config: dict):
-    """Initialization hook called by Hecos bootstrapper on startup."""
-    bridge_instance.bootstrap(config)
+def on_load(config: dict = None):
+    """Initialization hook called by Hecos bootstrapper on startup.
+    The global config dict is accepted but not used — the bridge
+    reads from its own autonomous config file (mcp_bridge.json)."""
+    bridge_instance.bootstrap()

@@ -3,6 +3,9 @@ import json
 import subprocess
 from typing import Dict, List, Any
 
+from .constants import MCP_REMOTE_BASE_PORT, MCP_REMOTE_PORT_RANGE
+from .config_manager import get_config as _get_mcp_config
+
 try:
     from hecos.core.logging import logger
 except ImportError:
@@ -28,15 +31,23 @@ class MCPBridgePlugin:
         self.initialized = False
         self._last_config: Dict[str, Any] = {}
 
-    def bootstrap(self, config: Dict[str, Any]):
+    @staticmethod
+    def _assign_port(server_name: str) -> int:
+        """Assigns a stable unique port for an mcp-remote subprocess.
+        Uses a hash of the server name in the range [MCP_REMOTE_BASE_PORT, base+range)."""
+        slot = hash(server_name) % MCP_REMOTE_PORT_RANGE
+        return MCP_REMOTE_BASE_PORT + abs(slot)
+
+    def bootstrap(self, config: Dict[str, Any] = None):
+        """Called by Hecos bootstrapper on startup. `config` ignored — we read our own file."""
         if self.initialized:
             return
-        self._last_config = config
-        self.sync_from_config(config)
+        self.sync_from_config()
 
-    def sync_from_config(self, config: Dict[str, Any]):
-        self._last_config = config
-        mcp_cfg = config.get("plugins", {}).get("MCP_BRIDGE", {})
+    def sync_from_config(self, config: Dict[str, Any] = None):
+        """Reload server list from the package's own mcp_bridge.toml.
+        The `config` parameter is accepted for backwards-compat but ignored."""
+        mcp_cfg = _get_mcp_config()
 
         if not mcp_cfg.get("enabled", True):
             logger.info("[MCP_BRIDGE] Bridge is disabled in config -- skipping sync.")
@@ -56,24 +67,48 @@ class MCPBridgePlugin:
         for name, s_cfg in desired.items():
             if not s_cfg.get("enabled", True):
                 continue
-            if name in self.proxies and self.proxies[name].is_alive():
-                continue  # healthy, leave alone
-
             if name in self.proxies:
-                # crashed; clean up before restart
-                self.proxies[name].stop()
+                proxy = self.proxies[name]
+                if proxy.is_alive():
+                    continue  # healthy, leave alone
+                if proxy.status == "failed":
+                    logger.warning("MCP_BRIDGE",
+                        f"Server {name!r} is in 'failed' state (crash limit reached). "
+                        "Skipping restart. Restart Hecos to retry.")
+                    continue  # don't bypass the crash cap
+                # crashed but not given up; clean up before restart
+                proxy.stop()
                 del self.proxies[name]
 
+
             cmd = s_cfg.get("command")
-            if os.name == "nt" and cmd == "npx":
-                cmd = "npx.cmd"
+            args = s_cfg.get("args", [])
+            env = s_cfg.get("env", {})
+
+            # ── HTTP/remote server: wrap with mcp-remote ──────────────────────
+            if s_cfg.get("type") == "http":
+                url = s_cfg.get("url", "").strip()
+                if not url:
+                    logger.error("MCP_BRIDGE", f"Server {name!r} has type=http but no 'url' field. Skipping.")
+                    continue
+                port = self._assign_port(name)
+                npx = "npx.cmd" if os.name == "nt" else "npx"
+                cmd  = npx
+                args = ["-y", "mcp-remote@latest", url, str(port)]
+                env  = {**env, **s_cfg.get("env", {})}
+                logger.info("MCP_BRIDGE",
+                    f"[{name}] HTTP server → mcp-remote {url} on port {port}")
+            else:
+                # ── stdio server (default) ────────────────────────────────────
+                if os.name == "nt" and cmd == "npx":
+                    cmd = "npx.cmd"
 
             try:
                 proxy = MCPProxy(
                     name=name,
                     command=cmd,
-                    args=s_cfg.get("args", []),
-                    env=s_cfg.get("env", {}),
+                    args=args,
+                    env=env,
                 )
                 proxy.start()
                 self.proxies[name] = proxy
@@ -139,14 +174,16 @@ class MCPBridgePlugin:
         return "\n".join(lines) if len(lines) > 1 else "No tools discovered yet."
 
     def reload(self) -> str:
-        if not self._last_config:
-            return "Error: No config available for reload. Trigger a sync first via the UI."
         logger.info("MCP_BRIDGE", "Full reload requested.")
         for proxy in self.proxies.values():
             proxy.stop()
         self.proxies.clear()
         self.initialized = False
-        self.sync_from_config(self._last_config)
+        # Clear global crash counter so previously-failed servers get a fresh start
+        from .proxy import _GLOBAL_RESTART_COUNTS, _GLOBAL_RESTART_LOCK
+        with _GLOBAL_RESTART_LOCK:
+            _GLOBAL_RESTART_COUNTS.clear()
+        self.sync_from_config()
         return f"MCP Bridge reloaded -- {len(self.proxies)} server(s) starting."
 
     def get_tool_schemas(self) -> list:

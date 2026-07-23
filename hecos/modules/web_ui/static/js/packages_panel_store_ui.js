@@ -24,7 +24,7 @@ const TYPE_META = {
   persona:     { label: 'Persona',     icon: 'fa-user-astronaut',    color: '#ec4899' },
   theme:       { label: 'Theme',       icon: 'fa-palette',           color: '#10b981' },
   skill_pack:  { label: 'Skill Pack',  icon: 'fa-graduation-cap',    color: '#f97316' },
-  core_module: { label: 'Core',        icon: 'fa-microchip',         color: '#66fcf1' },
+  core_module: { label: 'Core',        icon: 'fa-microchip',         color: '#ff4444' },
 };
 
 // ── i18n helper ───────────────────────────────────────────────────────────────

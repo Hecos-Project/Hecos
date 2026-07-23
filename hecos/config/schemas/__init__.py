@@ -17,9 +17,7 @@ from .plugins_schema import (
     PluginFileManager, PluginHelp,
     PluginSystem, PluginSysNet,
     PluginWebUI, PluginExecutor, PluginDrive,
-    PluginMCPBridge,
     PluginUsers,
-    MCPServerConfig,
 )
 from .widgets_schema import WidgetsFileConfig, WidgetsConfig, WidgetPersistence
 from .agent_schema import AgentConfig
@@ -30,9 +28,7 @@ __all__ = [
     "PluginFileManager", "PluginHelp",
     "PluginSystem", "PluginSysNet",
     "PluginWebUI", "PluginExecutor", "PluginDrive",
-    "PluginMCPBridge",
     "PluginBrowser", "PluginUsers",
-    "MCPServerConfig",
     "WidgetsFileConfig", "WidgetsConfig", "WidgetPersistence",
     "AgentConfig",
 ]

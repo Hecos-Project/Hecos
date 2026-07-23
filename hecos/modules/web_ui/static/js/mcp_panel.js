@@ -19,34 +19,55 @@ let mcpLiveInventory = {};  // { serverName: { status, tools } }
 // ─────────────────────────────────────────────────────────────────────────────
 
 const mcpPresetsMap = {
-    'everything':         { name: 'everything',          cmd: 'npx', args: '-y @modelcontextprotocol/server-everything',         env: {} },
-    'sequentialthinking': { name: 'sequential_thinking', cmd: 'npx', args: '-y @modelcontextprotocol/server-sequential-thinking', env: {} },
-    'bravesearch':        { name: 'brave_search',        cmd: 'npx', args: '-y @modelcontextprotocol/server-brave-search',        env: { BRAVE_API_KEY: '' } },
-    'google-maps':        { name: 'google_maps',         cmd: 'npx', args: '-y @modelcontextprotocol/server-google-maps',         env: { GOOGLE_MAPS_API_KEY: '' } },
-    'github':             { name: 'github',              cmd: 'npx', args: '-y @modelcontextprotocol/server-github',              env: { GITHUB_PERSONAL_ACCESS_TOKEN: '' } },
-    'filesystem':         { name: 'filesystem',          cmd: 'npx', args: '-y @modelcontextprotocol/server-filesystem /path/to/expose', env: {} },
-    'wikipedia':          { name: 'wikipedia',           cmd: 'npx', args: '-y wikipedia-mcp',                                   env: {} },
-    'postgres':           { name: 'postgres',            cmd: 'npx', args: '-y @modelcontextprotocol/server-postgres postgresql://localhost/mydb', env: {} },
-    'weather':            { name: 'weather',             cmd: 'npx', args: '-y @modelcontextprotocol/server-weather',             env: { OPENWEATHER_API_KEY: '' } },
+    // ── stdio (local subprocess) ──────────────────────────────────────────────
+    'everything':         { name: 'everything',          type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-everything',         env: {} },
+    'sequentialthinking': { name: 'sequential_thinking', type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-sequential-thinking', env: {} },
+    'bravesearch':        { name: 'brave_search',        type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-brave-search',        env: { BRAVE_API_KEY: '' } },
+    'google-maps':        { name: 'google_maps',         type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-google-maps',         env: { GOOGLE_MAPS_API_KEY: '' } },
+    'github':             { name: 'github',              type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-github',              env: { GITHUB_PERSONAL_ACCESS_TOKEN: '' } },
+    'filesystem':         { name: 'filesystem',          type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-filesystem /path/to/expose', env: {} },
+    'wikipedia':          { name: 'wikipedia',           type: 'stdio', cmd: 'npx', args: '-y wikipedia-mcp',                                   env: {} },
+    'postgres':           { name: 'postgres',            type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-postgres postgresql://localhost/mydb', env: {} },
+    'weather':            { name: 'weather',             type: 'stdio', cmd: 'npx', args: '-y @modelcontextprotocol/server-weather',             env: { OPENWEATHER_API_KEY: '' } },
+    // ── HTTP remote (via mcp-remote) ──────────────────────────────────────────
+    'gemini-http':        { name: 'gemini',              type: 'http',  url: 'https://gemini.googleapis.com/mcp',                              env: {} },
+    'github-http':        { name: 'github_remote',       type: 'http',  url: 'https://api.githubcopilot.com/mcp/',                             env: {} },
+    'brave-http':         { name: 'brave_remote',        type: 'http',  url: 'https://api.search.brave.com/mcp',                               env: { BRAVE_API_KEY: '' } },
 };
 
 function applyMCPPreset(presetKey) {
     if (!presetKey || !mcpPresetsMap[presetKey]) return;
     const p = mcpPresetsMap[presetKey];
     document.getElementById('mcp-new-name').value  = p.name;
-    document.getElementById('mcp-new-cmd').value   = p.cmd;
-    document.getElementById('mcp-new-args').value  = p.args;
     document.getElementById('mcp-presets').value   = '';
+
+    const typeEl = document.getElementById('mcp-new-type');
+    if (typeEl) { typeEl.value = p.type || 'stdio'; _mcpToggleTypeFields(typeEl.value); }
+
+    if (p.type === 'http') {
+        const urlEl = document.getElementById('mcp-new-url');
+        if (urlEl) urlEl.value = p.url || '';
+    } else {
+        document.getElementById('mcp-new-cmd').value   = p.cmd  || '';
+        document.getElementById('mcp-new-args').value  = p.args || '';
+    }
 
     // Pre-populate env vars if the preset has any
     const rows = document.getElementById('mcp-env-rows');
     rows.innerHTML = '';
     if (p.env && Object.keys(p.env).length > 0) {
-        // Auto-open env editor
         const editor = document.getElementById('mcp-env-editor');
         if (editor.style.display === 'none') toggleMCPEnvEditor();
         Object.entries(p.env).forEach(([k, v]) => addEnvRow(k, v));
     }
+}
+
+function _mcpToggleTypeFields(type) {
+    const isHttp = type === 'http';
+    const stdioFields = document.getElementById('mcp-stdio-fields');
+    const httpFields  = document.getElementById('mcp-http-fields');
+    if (stdioFields) stdioFields.style.display = isHttp ? 'none' : 'block';
+    if (httpFields)  httpFields.style.display  = isHttp ? 'block' : 'none';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,20 +150,34 @@ function renderMCPServers() {
 
     let html = '';
     for (const [name, cfg] of Object.entries(servers)) {
-        const cmds      = Array.isArray(cfg.args) ? cfg.args.join(' ') : (cfg.args || '');
+        const isHttp    = cfg.type === 'http';
         const isEnabled = cfg.enabled !== false;
         const envCount  = cfg.env ? Object.keys(cfg.env).length : 0;
         const envHint   = envCount > 0 ? `<span style="font-size:9px; color:var(--muted); display:block;">${envCount} env var${envCount>1?'s':''}</span>` : '';
-        
-        const titleText = cfg.homepage 
+
+        // Type badge
+        const typeBadge = isHttp
+            ? `<span style="font-size:9px; font-weight:700; background:rgba(59,130,246,.15); color:#3b82f6; border:1px solid rgba(59,130,246,.3); border-radius:4px; padding:1px 5px; margin-left:4px;">HTTP</span>`
+            : `<span style="font-size:9px; font-weight:700; background:rgba(16,185,129,.1); color:#10b981; border:1px solid rgba(16,185,129,.3); border-radius:4px; padding:1px 5px; margin-left:4px;">stdio</span>`;
+
+        // Command/URL display
+        let cmdCell;
+        if (isHttp) {
+            cmdCell = `<span style="color:var(--text); font-size:11px;"><i class="fas fa-cloud" style="color:#3b82f6; margin-right:4px;"></i>${cfg.url || '(no url)'}</span>`;
+        } else {
+            const cmds = Array.isArray(cfg.args) ? cfg.args.join(' ') : (cfg.args || '');
+            cmdCell = `<span style="color:var(--text);">${cfg.command}</span> <span style="color:var(--muted); font-size:11px;">${cmds}</span>`;
+        }
+
+        const titleText = cfg.homepage
             ? `<a href="${cfg.homepage}" target="_blank" title="View Source / Documentation" style="color:var(--accent); text-decoration:none;"><i class="fas fa-external-link-alt" style="font-size:10px; margin-right:4px;"></i>${name}</a>`
             : name;
 
         html += `<tr>
             <td style="white-space:nowrap;">${_statusBadge(name)}</td>
-            <td style="color:var(--accent); font-weight:bold; font-family:'JetBrains Mono',monospace;">${titleText}${envHint}</td>
-            <td style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">
-                <span style="color:var(--text);">${cfg.command}</span> ${cmds}
+            <td style="color:var(--accent); font-weight:bold; font-family:'JetBrains Mono',monospace;">${titleText}${typeBadge}${envHint}</td>
+            <td style="font-family:'JetBrains Mono',monospace; font-size:11px;">
+                ${cmdCell}
             </td>
             <td>
                 <label class="switch is-small"><input type="checkbox" ${isEnabled ? 'checked' : ''}
@@ -186,18 +221,38 @@ async function toggleMCPServer(name, isEnabled) {
 
 async function addMCPServer() {
     const nameEl = document.getElementById('mcp-new-name');
+    const typeEl = document.getElementById('mcp-new-type');
     const cmdEl  = document.getElementById('mcp-new-cmd');
     const argsEl = document.getElementById('mcp-new-args');
+    const urlEl  = document.getElementById('mcp-new-url');
 
     const name    = nameEl.value.trim().replace(/\s+/g, '_');
-    const command = cmdEl.value.trim();
-    const argsStr = argsEl.value.trim();
+    const type    = typeEl ? typeEl.value : 'stdio';
     const env     = getEnvVars();
 
-    if (!name || !command) { 
-        if (window.showToast) window.showToast('Name and Command are required to bridge a server.', 'error');
-        else alert('Name and Command are required to bridge a server.'); 
-        return; 
+    if (!name) {
+        if (window.showToast) window.showToast('Server name is required.', 'error');
+        return;
+    }
+
+    let serverEntry;
+    if (type === 'http') {
+        const url = urlEl ? urlEl.value.trim() : '';
+        if (!url) {
+            if (window.showToast) window.showToast('URL is required for HTTP servers.', 'error');
+            return;
+        }
+        serverEntry = { type: 'http', url, enabled: true, env };
+    } else {
+        const command = cmdEl.value.trim();
+        const argsStr = argsEl.value.trim();
+        if (!command) {
+            if (window.showToast) window.showToast('Command is required for stdio servers.', 'error');
+            return;
+        }
+        const args = argsStr ? argsStr.split(' ').filter(a => a.trim() !== '') : [];
+        const homepage = nameEl.dataset.homepage || '';
+        serverEntry = { command, args, enabled: true, env, homepage };
     }
 
     if (!window.cfg.plugins)                     window.cfg.plugins                     = {};
@@ -210,15 +265,16 @@ async function addMCPServer() {
         window.cfg.plugins.MCP_BRIDGE.enabled = true;
     }
 
-    const args = argsStr ? argsStr.split(' ').filter(a => a.trim() !== '') : [];
-    const homepage = nameEl.dataset.homepage || '';
-    window.cfg.plugins.MCP_BRIDGE.servers[name] = { command, args, enabled: true, env, homepage };
+    window.cfg.plugins.MCP_BRIDGE.servers[name] = serverEntry;
 
     // Reset form
-    nameEl.value = ''; cmdEl.value = ''; argsEl.value = '';
+    nameEl.value = '';
+    if (cmdEl)  cmdEl.value  = '';
+    if (argsEl) argsEl.value = '';
+    if (urlEl)  urlEl.value  = '';
     document.getElementById('mcp-env-rows').innerHTML = '';
     const editor = document.getElementById('mcp-env-editor');
-    if (editor.style.display !== 'none') toggleMCPEnvEditor();
+    if (editor && editor.style.display !== 'none') toggleMCPEnvEditor();
 
     renderMCPServers();
     await saveMcpConfig();

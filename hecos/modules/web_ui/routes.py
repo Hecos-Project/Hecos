@@ -16,7 +16,6 @@ from .routes_users import init_users_routes
 from .routes_security import init_security_routes
 from .routes_keys import init_keys_routes
 from .routes_docs import init_docs_routes
-from .routes_mcp_explore import init_mcp_explore_routes
 from .routes_packages import init_package_routes
 
 def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
@@ -29,7 +28,6 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_security_routes(app, logger)
     init_keys_routes(app, logger)
     init_docs_routes(app, cfg_mgr, root_dir, logger)
-    init_mcp_explore_routes(app, cfg_mgr, logger)
     
     # Hecos Drive — HTTP File Manager
     drive_enabled = cfg_mgr.config.get('plugins', {}).get('DRIVE', {}).get('enabled', True)

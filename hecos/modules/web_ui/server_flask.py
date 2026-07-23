@@ -147,9 +147,6 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_auth import init_auth_routes
     init_auth_routes(app, config_manager, logger)
     
-    from .routes_mcp import init_mcp_routes
-    init_mcp_routes(app, config_manager, logger)
-
     from .routes_widgets import init_widget_routes
     init_widget_routes(app, config_manager, logger)
 

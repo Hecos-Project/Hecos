@@ -120,7 +120,6 @@ _PANEL_MAP = {
     'payload':         'modules/config_payload.html',
     'plugins':         'modules/config_plugins.html',
     'contacts':        'modules/config_contacts.html',
-    'mcp':             'modules/config_mcp.html',
 
     'drive':           'modules/config_drive.html',
     'drive-editor':    'modules/config_drive_editor.html',

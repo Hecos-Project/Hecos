@@ -394,3 +394,9 @@ hecos/themes/*
 hecos/modules/web_ui/static/css/themes.css
 hecos/modules/web_ui/templates/modules/config_themes.html
 
+# MCP Bridge module (HPM Package)
+hecos/modules/mcp_bridge/
+hecos/modules/web_ui/templates/modules/config_mcp.html
+hecos/modules/web_ui/templates/modules/mcp/
+hecos/modules/web_ui/static/js/mcp_panel.js
+hecos/config/data/mcp_bridge.toml

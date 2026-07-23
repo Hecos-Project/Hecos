@@ -8,7 +8,7 @@
       <tr>
         <th>Status</th>
         <th>Name</th>
-        <th>Command &amp; Arguments</th>
+        <th>Command / URL</th>
         <th>Active</th>
         <th>Remove</th>
       </tr>
@@ -26,15 +26,22 @@
       <label>Load a Preset</label>
       <select id="mcp-presets" onchange="applyMCPPreset(this.value)">
         <option value="">— Choose from Popular Presets —</option>
-        <option value="everything">Educational: Everything (Mock tools)</option>
-        <option value="sequentialthinking">Reasoning: Sequential Thinking</option>
-        <option value="bravesearch">Web Search: Brave Search (API Key required)</option>
-        <option value="wikipedia">Knowledge: Wikipedia</option>
-        <option value="google-maps">Maps: Google Maps (API Key required)</option>
-        <option value="github">Developer: GitHub (PAT required)</option>
-        <option value="filesystem">Utility: Local File System</option>
-        <option value="postgres">Database: PostgreSQL</option>
-        <option value="weather">Science: OpenWeather (API Key required)</option>
+        <optgroup label="📡 HTTP Remote (via mcp-remote + OAuth)">
+          <option value="gemini-http">Gemini (Google AI)</option>
+          <option value="github-http">GitHub Copilot (Remote)</option>
+          <option value="brave-http">Brave Search (Remote)</option>
+        </optgroup>
+        <optgroup label="🖥️ Local stdio (subprocess)">
+          <option value="everything">Educational: Everything (Mock tools)</option>
+          <option value="sequentialthinking">Reasoning: Sequential Thinking</option>
+          <option value="bravesearch">Web Search: Brave Search (API Key required)</option>
+          <option value="wikipedia">Knowledge: Wikipedia</option>
+          <option value="google-maps">Maps: Google Maps (API Key required)</option>
+          <option value="github">Developer: GitHub (PAT required)</option>
+          <option value="filesystem">Utility: Local File System</option>
+          <option value="postgres">Database: PostgreSQL</option>
+          <option value="weather">Science: OpenWeather (API Key required)</option>
+        </optgroup>
       </select>
     </div>
 
@@ -44,18 +51,43 @@
         <input type="text" id="mcp-new-name" placeholder="e.g. google_maps">
       </div>
       <div class="field">
-        <label>Command</label>
-        <input type="text" id="mcp-new-cmd" placeholder="e.g. npx">
+        <label>Type</label>
+        <select id="mcp-new-type" onchange="_mcpToggleTypeFields(this.value)" class="config-input">
+          <option value="stdio">🖥️ Local stdio (subprocess)</option>
+          <option value="http">📡 HTTP Remote (via mcp-remote)</option>
+        </select>
       </div>
     </div>
 
-    <div class="field">
-      <label>Arguments</label>
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="mcp-new-args" placeholder="e.g. -y @modelcontextprotocol/server-google-maps" style="flex:1;">
-        <button type="button" class="btn btn-secondary"
-                onclick="HecosFilePicker.open({title: 'Select Folder/Path', initialPath: 'C:\\Hecos-Core', onSelect: p => document.getElementById('mcp-new-args').value += ' ' + p})"
-                title="Browse Path"><i class="fas fa-folder-open"></i></button>
+    <!-- stdio fields -->
+    <div id="mcp-stdio-fields">
+      <div class="grid-2" style="margin-top: 8px;">
+        <div class="field">
+          <label>Command</label>
+          <input type="text" id="mcp-new-cmd" placeholder="e.g. npx">
+        </div>
+        <div class="field">
+          <label>Arguments</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="mcp-new-args" placeholder="e.g. -y @modelcontextprotocol/server-google-maps" style="flex:1;">
+            <button type="button" class="btn btn-secondary"
+                    onclick="HecosFilePicker.open({title: 'Select Folder/Path', initialPath: 'C:\\Hecos-Core', onSelect: p => document.getElementById('mcp-new-args').value += ' ' + p})"
+                    title="Browse Path"><i class="fas fa-folder-open"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- http fields -->
+    <div id="mcp-http-fields" style="display:none;">
+      <div class="field" style="margin-top: 8px;">
+        <label>Remote URL <span style="font-size:11px; color:var(--muted); font-weight:normal;">— the MCP server endpoint (OAuth handled automatically)</span></label>
+        <input type="url" id="mcp-new-url" placeholder="https://example.com/mcp" style="width:100%;">
+        <p style="font-size:11px; color:var(--muted); margin-top:5px; line-height:1.5;">
+          <i class="fas fa-info-circle" style="color:#3b82f6;"></i>
+          The bridge will automatically install and run <code>mcp-remote</code> to proxy this URL via stdio.
+          OAuth authentication will open in your browser on first use.
+        </p>
       </div>
     </div>
 
@@ -82,3 +114,4 @@
     </div>
   </div>
 </div>
+

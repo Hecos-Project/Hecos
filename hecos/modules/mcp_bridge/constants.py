@@ -6,3 +6,6 @@ MCP_TOOL_RETRY_SLEEP  = 3    # seconds between retries
 MCP_WATCHDOG_INTERVAL = 10   # seconds between watchdog health checks
 MCP_RECONNECT_DELAY   = 5    # seconds to wait before reconnecting
 
+# HTTP/remote server support (via mcp-remote)
+MCP_REMOTE_BASE_PORT  = 5100  # starting port for mcp-remote proxies
+MCP_REMOTE_PORT_RANGE = 400   # port space (5100-5499)

@@ -92,19 +92,6 @@ class PluginDrive(BaseModel):
 
 
 
-class MCPServerConfig(BaseModel):
-    command: str
-    args: List[str] = []
-    env: Dict[str, str] = {}
-    enabled: bool = True
-
-
-class PluginMCPBridge(BaseModel):
-    enabled: bool = False
-    lazy_load: bool = False
-    servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
-
-
 
 class PluginUsers(BaseModel):
     enabled: bool = True
@@ -156,7 +143,7 @@ class PluginsConfig(BaseModel):
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     DRIVE: PluginDrive = Field(default_factory=PluginDrive)
-    MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
+
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
 

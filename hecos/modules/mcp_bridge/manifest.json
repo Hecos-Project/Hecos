@@ -1,15 +1,24 @@
 {
     "tag": "MCP_BRIDGE",
-    "description": "Bridge for Model Context Protocol (MCP) servers. Allows Hecos to use external tools from the MCP ecosystem.",
-    "icon": "🔌",
-    "category": "MCP",
+    "name": "MCP Bridge",
     "version": "1.0.0",
-    "author": "Antigravity",
+    "description": "Bridge for Model Context Protocol (MCP) servers. Allows Hecos to use external tools from the MCP ecosystem. Supports both local stdio and remote HTTP servers via mcp-remote.",
     "lazy_load": false,
     "is_class_based": true,
-    "commands": {
-        "status": "Show status of connected MCP servers",
-        "reload": "Reload all MCP servers and tools",
-        "list": "List all available tools from MCP servers"
+    "commands": {},
+    "tool_schema": [],
+    "slash_commands": [],
+    "icon": "<i class=\"fas fa-plug\"></i>",
+    "config_panel": {
+        "tab_id": "mcp",
+        "tab_label": "MCP Bridge",
+        "tab_icon": "<i class=\"fas fa-plug\"></i>",
+        "template_file": "web/templates/config_mcp.html",
+        "js_file": "web/static/js/mcp_panel.js",
+        "css_file": null,
+        "category": "CONNETTIVITÀ",
+        "api_routes_file": "web/routes.py",
+        "config_api_get": "/api/mcp/config",
+        "config_api_post": "/api/mcp/config"
     }
 }

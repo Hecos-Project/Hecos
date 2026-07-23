@@ -119,15 +119,16 @@ window.hpmRenderWallCard = function (pkg, meta) {
   }
 
   let cfgBtn = '';
+  let cfgTabId = null;
   if (hasConfig) {
     const cfgCat   = window.hpmGetHubCategoryLabel(pkg.manifest_snapshot.config_panel.category);
     const cfgLabel = window._hesc(pkg.manifest_snapshot.config_panel.tab_label || pkg.name);
-    const cfgId    = window._hesc(pkg.manifest_snapshot.config_panel.tab_id || pkg.id.replace('_','-'));
-    cfgBtn = `<a href="#${cfgId}" onclick="event.stopPropagation()"
-      style="${btnActive}flex:none;text-decoration:none;"
+    cfgTabId       = window._hesc(pkg.manifest_snapshot.config_panel.tab_id || pkg.id.replace('_','-'));
+    cfgBtn = `<button type="button" onclick="event.stopPropagation();if(typeof showTab==='function'){showTab('${cfgTabId}');}else{window.location.hash='${cfgTabId}';}"
+      style="${btnActive}flex:none;"
       title="${_ti('Configuration','Configurazione','Configuración')}: ${window._hesc(cfgCat)} → ${cfgLabel}">
       <i class="fas fa-cogs" style="color:var(--accent);"></i>
-    </a>`;
+    </button>`;
   } else {
     cfgBtn = `<span style="${btnGhost};flex:none;" title="${_ti('No configuration panel for this module','Nessun pannello di configurazione','Sin panel de configuración')}">
       <i class="fas fa-cogs"></i>

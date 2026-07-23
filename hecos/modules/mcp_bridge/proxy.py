@@ -6,6 +6,10 @@ import threading
 import time
 from typing import Dict, List, Any, Optional
 
+# Global counter per server name (persists across manual reloads)
+_GLOBAL_RESTART_COUNTS: Dict[str, int] = {}
+_GLOBAL_RESTART_LOCK = threading.Lock()
+
 try:
     from hecos.core.logging import logger
 except ImportError:
@@ -209,8 +213,8 @@ class MCPProxy:
 
     def _watchdog_loop(self):
         """Checks process health. Restarts on crash with exponential backoff.
-        Gives up after MCP_MAX_RESTARTS consecutive failures."""
-        MAX_RESTARTS = 5
+        Gives up after MAX_RESTARTS consecutive failures (global, persists across reloads)."""
+        MAX_RESTARTS = 3  # hard limit — prevents process pile-up
 
         while not self._stop_event.is_set():
             time.sleep(MCP_WATCHDOG_INTERVAL)
@@ -225,30 +229,59 @@ class MCPProxy:
                 if self._stop_event.is_set():
                     break
 
-                self._restart_count += 1
+                # Use global counter so manual reloads don't reset it
+                with _GLOBAL_RESTART_LOCK:
+                    _GLOBAL_RESTART_COUNTS[self.name] = _GLOBAL_RESTART_COUNTS.get(self.name, 0) + 1
+                    global_count = _GLOBAL_RESTART_COUNTS[self.name]
 
-                if self._restart_count > MAX_RESTARTS:
-                    logger.error("MCP_BRIDGE", 
-                        f"[{self.name}] Crashed {MAX_RESTARTS} times in a row. "
-                        "Giving up. Remove and re-add the server to retry."
+                if global_count > MAX_RESTARTS:
+                    logger.error("MCP_BRIDGE",
+                        f"[{self.name}] Crashed {global_count} times total. "
+                        "Giving up to prevent process leak. Restart Hecos to retry."
                     )
                     self.status = "failed"
+                    self.process = None
                     return
 
-                # Exponential backoff: 5s, 10s, 20s, 40s, 80s
-                delay = MCP_RECONNECT_DELAY * (2 ** (self._restart_count - 1))
-                logger.warning("MCP_BRIDGE", 
+                # Exponential backoff: 10s, 20s, 40s
+                delay = 10 * (2 ** (global_count - 1))
+                logger.warning("MCP_BRIDGE",
                     f"[{self.name}] Process exited (code {self.process.returncode}). "
-                    f"Restart attempt {self._restart_count}/{MAX_RESTARTS} in {delay}s..."
+                    f"Restart attempt {global_count}/{MAX_RESTARTS} in {delay}s..."
                 )
                 self.status = "reconnecting"
-                time.sleep(delay)
+                self.process = None  # clear before sleep so is_alive() returns False
+
+                # Wait with stop-event check so we don't block shutdown
+                for _ in range(int(delay)):
+                    if self._stop_event.is_set():
+                        return
+                    time.sleep(1)
 
                 if not self._stop_event.is_set():
-                    self.start()
-                    return  # new start() spawns a fresh watchdog
+                    # Clean restart: stop old threads first, then re-spawn
+                    self._do_restart()
+                    return  # new watchdog thread launched by _do_restart
 
         logger.debug("MCP_BRIDGE", f"[{self.name}] Watchdog thread exited.")
+
+    def _do_restart(self):
+        """Clean restart: kills old process (if any) and spawns fresh threads.
+        Called only by the watchdog after cooldown delay."""
+        logger.info("MCP_BRIDGE", f"[{self.name}] Performing clean restart.")
+        # Kill any zombie process that might still be around
+        if self.process:
+            try:
+                if os.name == 'nt':
+                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(self.process.pid)],
+                                   capture_output=True, timeout=5)
+                else:
+                    self.process.kill()
+            except Exception:
+                pass
+            self.process = None
+        # Now do a fresh start (spawns new process + threads)
+        self.start()
 
     def _next_id(self) -> int:
         with self._id_lock:
