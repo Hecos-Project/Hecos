@@ -185,18 +185,6 @@ function mergeRegistry(registry) {
         if (existing) {
             if (!existing.icon)      existing.icon      = plug.icon;
             if (!existing.pluginTag) existing.pluginTag = tag;
-        } else {
-            // ── HPM-installed or dynamically discovered plugin ───────────────
-            // Flag as isHpm so the Module Manager can filter these out
-            // (HPM packages have their own section in the Package Manager)
-            hub.modules.push({
-                id:        resolvedId,
-                label:     plug.name || tag,
-                icon:      plug.icon || '<i class="fas fa-puzzle-piece"></i>',
-                cat:       plug.category || 'CONNETTIVITÀ',
-                pluginTag: tag,
-                isHpm:     true
-            });
         }
     });
 }

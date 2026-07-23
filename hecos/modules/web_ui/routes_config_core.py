@@ -112,7 +112,6 @@ _PANEL_MAP = {
     'voice':           'modules/config_voice.html',
     'system':          'modules/config_system.html',
     'media':           'modules/config_media.html',
-    'aesthetics':      'modules/config_styles.html',
     'webui':           'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
     'automation':      'modules/config_utils.html',

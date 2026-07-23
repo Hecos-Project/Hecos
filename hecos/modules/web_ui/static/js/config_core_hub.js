@@ -244,7 +244,7 @@ function renderConfigHub(mode = 'tabs') {
         const activeClass = (activeTab === m.id) ? 'active' : '';
         const icon        = window.getIconForModule(m.id, m.label, m.icon);
         const isNew       = newPanels.includes(m.id);
-        const badgeHtml   = isNew ? `<div class="new-badge" style="position:absolute; top:-6px; right:-6px; background:var(--accent); color:white; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite; box-shadow:0 0 5px var(--accent);">NEW</div>` : '';
+        const badgeHtml   = isNew ? `<div class="new-badge" style="position:absolute; top:8px; right:8px; background:var(--accent); color:white; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite; box-shadow:0 0 5px var(--accent);">NEW</div>` : '';
         wallHtml += `
             <div class="module-card ${activeClass}" onclick="showTab('${m.id}')" style="position:relative;">
                 ${badgeHtml}

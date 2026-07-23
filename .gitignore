@@ -388,3 +388,9 @@ hecos/modules/web_ui/static/css/image_gen.css
 hecos/modules/web_ui/static/js/image_gen.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
+
+# HPM Themes Pack
+hecos/themes/*
+hecos/modules/web_ui/static/css/themes.css
+hecos/modules/web_ui/templates/modules/config_themes.html
+

@@ -25,8 +25,7 @@ window.CONFIG_HUB = {
         { id: 'agent',     label: 'hub_mod_agent',        icon: '<i class="fas fa-robot"></i>', cat: 'INTELLIGENZA', isCore: true },
         
         { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA' },
-        { id: 'aesthetics',label: 'hub_mod_aesthetics',   icon: '<i class="fas fa-palette"></i>', cat: 'MULTIMEDIA', isCore: true },
-        
+
         { id: 'mcp',       label: 'hub_mod_mcp',          icon: '<i class="fas fa-plug"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'MCP_BRIDGE', isCore: true },
 
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
@@ -111,6 +110,7 @@ window.CONFIG_HUB.tagMap = {
     'MEMORY': 'memory',
     'SYS_NET': 'sysnet',
     'MODELS': 'backend',
+    'PERSONALITY': 'ia',
     'DRIVE_EDITOR': 'drive-editor',
 
     'CONTACTS': 'contacts',
@@ -126,7 +126,7 @@ window.CONFIG_HUB.tagMap = {
  */
 window.LAZY_PANEL_IDS = new Set([
     'backend', 'keymanager', 'routing', 'agent', 'ia', 'filters', 'bridge',
-    'memory', 'voice', 'aesthetics',
+    'memory', 'voice',
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'mcp', 'remote-triggers',
