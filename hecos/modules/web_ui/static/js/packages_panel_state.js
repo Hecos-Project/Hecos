@@ -6,7 +6,7 @@
 
 window.HPM_STATE = {
     viewMode: localStorage.getItem('hpm_view_mode') || 'list',
-    activeCategory: 'all',
+    activeCategory: 'none',
     activeType: 'all',
     currentPage: 1,
     pageSize: 50, // Will be overridden by settings later
