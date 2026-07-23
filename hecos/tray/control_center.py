@@ -833,6 +833,23 @@ splash.mainloop()
         for kw, col in SEV_COLORS.items():
             log_text.tag_configure(kw, foreground=col)
         log_text.tag_configure("MUTED", foreground=MUTED)
+        log_text.tag_configure("URL", foreground=ACCENT, underline=True)
+
+        def _open_url(event):
+            try:
+                idx = log_text.index(f"@{event.x},{event.y}")
+                tags = log_text.tag_names(idx)
+                if "URL" in tags:
+                    rng = log_text.tag_prevrange("URL", f"{idx}+1c")
+                    if rng:
+                        url = log_text.get(rng[0], rng[1])
+                        webbrowser.open(url)
+            except Exception:
+                pass
+
+        log_text.tag_bind("URL", "<Button-1>", _open_url)
+        log_text.tag_bind("URL", "<Enter>", lambda e: log_text.configure(cursor="hand2"))
+        log_text.tag_bind("URL", "<Leave>", lambda e: log_text.configure(cursor=""))
 
         _last_size = [0]
 
@@ -843,7 +860,7 @@ splash.mainloop()
             path = os.path.join(logs_dir, fname)
             try:
                 sz = os.path.getsize(path)
-                if auto and sz == _last_size[0]:
+                if auto and (sz == _last_size[0] or is_paused[0]):
                     return
                 _last_size[0] = sz
                 with open(path, "r", encoding="utf-8", errors="replace") as f:
@@ -854,6 +871,9 @@ splash.mainloop()
                 )
                 log_text.configure(state="normal")
                 log_text.delete("1.0", "end")
+                import re
+                url_pattern = re.compile(r'(https?://[^\s\'"<>]+)')
+
                 for line in tail:
                     stripped = line.rstrip()
                     col_tag = "MUTED"
@@ -862,7 +882,15 @@ splash.mainloop()
                         if kw in u:
                             col_tag = kw
                             break
-                    log_text.insert("end", stripped + "\n", col_tag)
+                    
+                    parts = url_pattern.split(stripped)
+                    for p in parts:
+                        if url_pattern.match(p):
+                            log_text.insert("end", p, ("URL", col_tag))
+                        else:
+                            log_text.insert("end", p, col_tag)
+                    log_text.insert("end", "\n", col_tag)
+                
                 log_text.configure(state="disabled")
                 log_text.see("end")
             except Exception as ex:
@@ -884,6 +912,21 @@ splash.mainloop()
 
         btn_row = ctk.CTkFrame(ctrl_row, fg_color="transparent")
         btn_row.pack(side="left", padx=8)
+        
+        is_paused = [False]
+
+        def _toggle_pause():
+            is_paused[0] = not is_paused[0]
+            if is_paused[0]:
+                btn_pause.configure(text="🔒", text_color=RED)
+            else:
+                btn_pause.configure(text="🔓", text_color=MUTED)
+
+        btn_pause = ctk.CTkButton(btn_row, text="🔓", width=34, fg_color=SURFACE, text_color=MUTED,
+                                  hover_color=BORDER, corner_radius=6,
+                                  command=_toggle_pause)
+        btn_pause.pack(side="left", padx=2)
+
         ctk.CTkButton(btn_row, text="A-", width=34, fg_color=SURFACE, text_color=TEXT,
                       hover_color=BORDER, corner_radius=6,
                       command=lambda: _zoom(-2)).pack(side="left", padx=2)
@@ -892,7 +935,7 @@ splash.mainloop()
                       command=lambda: _zoom(2)).pack(side="left", padx=2)
         ctk.CTkButton(btn_row, text="↻", width=34, fg_color=SURFACE, text_color=ACCENT,
                       hover_color=BORDER, corner_radius=6,
-                      command=_load).pack(side="left", padx=2)
+                      command=lambda: _load(auto=False)).pack(side="left", padx=2)
 
         # Initial load
         _load()

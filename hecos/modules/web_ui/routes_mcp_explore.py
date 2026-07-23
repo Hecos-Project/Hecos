@@ -30,8 +30,9 @@ def init_mcp_explore_routes(app, cfg_mgr, logger):
                 text=True,
                 check=False,
                 encoding='utf-8',
-                timeout=20
+                timeout=60   # 60s: npx first-run must download @smithery/cli
             )
+
 
             if result.returncode != 0:
                 logger.error(f"[MCP-EXPLORE] {registry} CLI error: {result.stderr}")
@@ -82,14 +83,17 @@ def init_mcp_explore_routes(app, cfg_mgr, logger):
                 except Exception as e:
                     logger.error(f"[MCP-EXPLORE] Hugging Face API error: {e}")
             else:
-                # Smithery returns NDJSON (one object per line)
+                # Smithery returns NDJSON (one JSON object per line)
                 for line in result.stdout.strip().split("\n"):
-                    if not line.strip() or line.startswith("-"): continue
+                    line = line.strip()
+                    if not line:
+                        continue
                     try:
                         data = json.loads(line)
                         results.append(data)
                     except json.JSONDecodeError:
                         continue
+
 
             logger.info(f"[MCP-EXPLORE] Found {len(results)} results in {registry} for '{query}'")
             return jsonify({"ok": True, "results": results})

@@ -6,6 +6,7 @@
   <table class="config-table" id="mcp-servers-table" style="margin-bottom: 20px; width: 100%;">
     <thead>
       <tr>
+        <th>Status</th>
         <th>Name</th>
         <th>Command &amp; Arguments</th>
         <th>Active</th>
@@ -58,7 +59,25 @@
       </div>
     </div>
 
-    <div style="text-align: right; margin-top: 8px;">
+    <!-- Env Vars Editor (collapsible) -->
+    <div style="margin-top: 8px;">
+      <button type="button" class="btn btn-secondary" style="font-size:11px; padding:4px 10px; width:100%; text-align:left;"
+              onclick="toggleMCPEnvEditor()">
+        <i class="fas fa-key"></i> Environment Variables (API Keys, Tokens...)
+        <i id="mcp-env-chevron" class="fas fa-chevron-down" style="float:right; margin-top:2px;"></i>
+      </button>
+      <div id="mcp-env-editor" style="display:none; margin-top:8px; background:var(--bg2); padding:12px; border-radius:8px; border:1px solid var(--glass-border);">
+        <p style="font-size:11px; color:var(--muted); margin:0 0 10px 0;">
+          Add key=value pairs for environment variables this server needs (e.g. <code>BRAVE_API_KEY=sk-...</code>).
+          These are stored in your config file.
+        </p>
+        <div id="mcp-env-rows"></div>
+        <button type="button" class="btn btn-secondary" style="font-size:11px; padding:3px 10px; margin-top:6px;"
+                onclick="addEnvRow()"><i class="fas fa-plus"></i> Add Variable</button>
+      </div>
+    </div>
+
+    <div style="text-align: right; margin-top: 12px;">
       <button type="button" class="btn btn-primary" onclick="addMCPServer()"><i class="fas fa-plus"></i> Add Server</button>
     </div>
   </div>

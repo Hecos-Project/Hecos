@@ -86,14 +86,14 @@
     "MCP_BRIDGE": {
         "description": "Bridge to Model Context Protocol (MCP) servers",
         "commands": {
-            "call_tool": "Executes an MCP tool.",
-            "get_mcp_schemas": "Hook used by Hecos's module_docs.py to merge tools.",
+            "call_tool": "Method",
+            "get_mcp_schemas": "Method",
             "list": "Method",
             "reload": "Method",
-            "search": "Search for MCP servers on Smithery or MCPSkills (mcp-get).",
+            "search": "Method",
             "status": "Method"
         },
-        "status": "No MCP servers connected.",
+        "status": "No MCP servers configured.",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
@@ -882,5 +882,41 @@
         "category": "PLUGINS",
         "module_type": "plugin",
         "slash_commands": []
+    },
+    "MCP_FILESYSTEM": {
+        "description": "External Tool Provider (filesystem) via Model Context Protocol.",
+        "commands": {
+            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
+        },
+        "status": "EXTERNAL",
+        "example": "",
+        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
+        "is_class_based": false,
+        "is_mcp": true,
+        "server_name": "filesystem"
+    },
+    "MCP_NANOBANANA": {
+        "description": "External Tool Provider (nanobanana) via Model Context Protocol.",
+        "commands": {
+            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
+        },
+        "status": "EXTERNAL",
+        "example": "",
+        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
+        "is_class_based": false,
+        "is_mcp": true,
+        "server_name": "nanobanana"
+    },
+    "MCP_GEMINI": {
+        "description": "External Tool Provider (gemini) via Model Context Protocol.",
+        "commands": {
+            "<dynamic_tools>": "Tools are dynamically discovered upon connection."
+        },
+        "status": "EXTERNAL",
+        "example": "",
+        "routing_instructions": "Native LLM Function Calling exposed seamlessly.",
+        "is_class_based": false,
+        "is_mcp": true,
+        "server_name": "gemini"
     }
 }
