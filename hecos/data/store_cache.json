@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-07-17T16:56:56Z",
+  "generated_at": "2026-07-23T12:44:09Z",
   "packages": [
     {
       "id": "browser_automation",
@@ -14,7 +14,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/browser_automation-1.0.2.hpkg",
       "size_bytes": 34127,
-      "sha256": "75e632ef293ea1ff437a631151c2e9d2ba5036dc62ecbf9fdc00478cf15286f7",
+      "sha256": "80eabf6d81cfaf85abb08332b497128416fda874c4fc06d4d3b3a4d7cd82193f",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -79,7 +79,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/calendar-1.0.4.hpkg",
       "size_bytes": 893638,
-      "sha256": "7b340db2de88e4df43dc495c0750c936156a52a97f9944f424b2e32269db90af",
+      "sha256": "16ff7453709d292eaecaceed28c386c54831ecdce5ffcd3d96630ff61825c09e",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/calendar_src/preview.png"
       ],
@@ -117,13 +117,13 @@
       "name": "Image Generation",
       "type": "plugin",
       "level": 5,
-      "version": "1.0.8",
+      "version": "1.2.0",
       "author": "Antonio Meloni",
       "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.0.8.hpkg",
-      "size_bytes": 539821,
-      "sha256": "85c1e784a1bcfe9fe81f8f81df5f4729ac1dfbea4a2e55f048e12069162090da",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/image_gen-1.2.0.hpkg",
+      "size_bytes": 548491,
+      "sha256": "2c6046c2ca7f019d5ea0bd178ad0b1bd81be2ef7c07626b1b28b8ffb8111a2a5",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/image_gen_src/preview.png"
       ],
@@ -133,7 +133,8 @@
       "featured": false,
       "capabilities": {
         "llm_tools": [
-          "IMAGE_GEN__generate_image"
+          "IMAGE_GEN__generate_image",
+          "IMAGE_GEN__probe_providers"
         ],
         "slash_commands": [
           "/img",
@@ -145,14 +146,16 @@
         "has_config_panel": true,
         "has_api_routes": true,
         "has_system_calls": false,
-        "notes": "Supports multiple AI providers: Pollinations (free, default), Gemini, OpenAI DALL-E, Stability AI, HuggingFace. Requires network access. Provider and model are configurable."
+        "notes": "Supports multiple AI providers: Pollinations (free, default), Gemini, OpenAI DALL-E, Stability AI, HuggingFace (hf-inference, fal-ai, together, replicate, nebius, black-forest-labs). Requires network access. Provider and model are configurable."
       },
       "dependencies": [],
       "pip_requirements": [
         "requests==2.34.2",
         "httpx==0.28.1",
         "openai==2.41.0",
-        "tomli_w"
+        "tomli_w",
+        "huggingface_hub>=0.23.0",
+        "Pillow>=10.0.0"
       ]
     },
     {
@@ -166,7 +169,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/lists-2.0.1.hpkg",
       "size_bytes": 942204,
-      "sha256": "9a4f22afe84ae7cb67a8b79b31b72152058536b5a936151b8eeb8becaf27ccb2",
+      "sha256": "a2e133afee782915c34ea2361f7ec1f8d45f220e01b58b84723659e607d5d5b9",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/lists_src/preview.png"
       ],
@@ -215,7 +218,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/mail-1.0.0.hpkg",
       "size_bytes": 25257,
-      "sha256": "fe372305cdc8c41de1f2694297de46b0e490a0179e9d9c656b9681b63b85cd0b",
+      "sha256": "d906e9f499a9a12070e7adc981bb191efb2d98b9348ae57f424284e594204bbd",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -253,7 +256,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/map-1.0.1.hpkg",
       "size_bytes": 447575,
-      "sha256": "2095bb0ab14a88c0ebfdf7ecc276ba69613f1debc2290629d08c8feae4cdfaed",
+      "sha256": "8300bd3413394cfa2c525bea3cad88123690f6faa6cbf54b3e6374849f6408c0",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/map_src/preview.png"
       ],
@@ -279,6 +282,39 @@
       ]
     },
     {
+      "id": "mcp_bridge",
+      "name": "MCP Bridge",
+      "type": "core_module",
+      "level": 5,
+      "version": "1.0.0",
+      "author": "Antigravity",
+      "description": "Bridge for Model Context Protocol (MCP) servers. Allows Hecos to use external tools from the MCP ecosystem. Supports both local stdio and remote HTTP servers via mcp-remote.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/mcp_bridge-1.0.0.hpkg",
+      "size_bytes": 28144,
+      "sha256": "0ba09fccd7ef7e553d5cf15f675f12696cb568c47e5bb2aef8fcb90b510190dc",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Automatic update generated by the Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#mcp_bridge",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": "Provides the /api/mcp endpoints and the MCP Bridge UI tab."
+      },
+      "dependencies": [],
+      "pip_requirements": [
+        "tomli_w"
+      ]
+    },
+    {
       "id": "media_player",
       "name": "Hecos Media Player",
       "type": "plugin",
@@ -289,7 +325,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/media_player-1.1.0.hpkg",
       "size_bytes": 1142578,
-      "sha256": "9f0f82b66fdaf2e2a58541243292d0b566ac7719ad0fe99227aa5b8a03168b6f",
+      "sha256": "93a28b8a55219671602a5d02ef095bc3118aa0975cc41fb384193cf91c48b202",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/media_player_src/preview.png"
       ],
@@ -341,8 +377,8 @@
       "description": "Send and receive messages via Telegram, WhatsApp, and Discord.\n\n**Guida ai Comandi Rapidi:**\n- `/msg <piattaforma>:<destinatario> <testo>`: Invia un messaggio diretto scavalcando l'IA. Es: `/msg whatsapp:+393331234567 Ciao!`\n- `/send`: Alias esatto di `/msg`.\n",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/messenger-1.0.2.hpkg",
-      "size_bytes": 2268707,
-      "sha256": "1890aa78051fdaeab071d5151d4f25b04effee78cc7daa8bd739c65f15ddef2d",
+      "size_bytes": 2277275,
+      "sha256": "ff0b284b12657c2f8837ebcdf6e45f35c6ce93c5c88d9d883580faf20f2acfac",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/messenger_src/preview_1.png"
       ],
@@ -355,7 +391,8 @@
           "send_message",
           "list_accounts",
           "check_connection",
-          "force_send"
+          "force_send",
+          "send_photo"
         ],
         "slash_commands": [
           "/msg",
@@ -384,7 +421,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/pc_automation-1.0.0.hpkg",
       "size_bytes": 20670,
-      "sha256": "609aea84978d3d70d92dcb75f35bf2925bcf471784668e75af99f20faf171a45",
+      "sha256": "e5e61a77cabadd0ccbe5f64a96feebe8b3247296c9372c2198b47af1b1b06cc9",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -452,7 +489,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/quick_links-1.0.0.hpkg",
       "size_bytes": 8949,
-      "sha256": "98b1328df0d439a764a265a841d832dc46f97cce119853da6c584c7e178f1782",
+      "sha256": "c4c9bb5cd130a6b764475f3c7e0c03159195355e53b8c0c20692f161720828d1",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -483,7 +520,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/reminder-1.0.3.hpkg",
       "size_bytes": 845576,
-      "sha256": "a09161512901ec6f548e85d80d393920a7d1c13c4607b6e1a577c759ceca8a4a",
+      "sha256": "d0e695d268a111a889d5b7ffb423a89efd64c4b49877326eb009251c6907394b",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/reminder_src/preview.png"
       ],
@@ -517,6 +554,39 @@
       ]
     },
     {
+      "id": "remote_access_pro",
+      "name": "Remote Access Pro",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.0",
+      "author": "Antonio Meloni",
+      "description": "Controllo e monitoraggio remoto del server Hecos via Telegram. Risponde a comandi rapidi (/status, /ip, /cpu, /ram, /disco, /uptime) direttamente in chat, scavalcando l'AI per risposte istantanee.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/remote_access_pro-1.0.0.hpkg",
+      "size_bytes": 4982,
+      "sha256": "3a3e007bd2345cde32c0afc40766a88431c01ed086632fd325dd2dcafbc995f8",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Automatic update generated by the Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#remote_access_pro",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": false,
+        "has_api_routes": false,
+        "has_system_calls": true,
+        "notes": "Richiede il plugin 'messenger' con Telegram configurato."
+      },
+      "dependencies": [
+        "messenger"
+      ],
+      "pip_requirements": []
+    },
+    {
       "id": "remote_triggers",
       "name": "Remote Triggers",
       "type": "plugin",
@@ -527,7 +597,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/remote_triggers-1.0.0.hpkg",
       "size_bytes": 10825,
-      "sha256": "2c96f8bfb432af8dea37835714306475c3f10c5b66d08bd9c67c86e33087ff49",
+      "sha256": "e9098cad8c9a3a248eb03dd2dda899e4f7f8bdbcd14f660889d4654a431adbc5",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -560,7 +630,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/templates-1.0.2.hpkg",
       "size_bytes": 13544,
-      "sha256": "b65ee0b44adcc4acefeb3b32a928f7d04eec37af30d41a496e4ced1874cfadbf",
+      "sha256": "fde517aa000056e42fee5057c2bf7794da2bc83765736eedc50fbad0da0ffe88",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -584,6 +654,37 @@
       "pip_requirements": []
     },
     {
+      "id": "themes_pack",
+      "name": "Themes Pack",
+      "type": "theme",
+      "level": 5,
+      "version": "1.0.0",
+      "author": "Hecos Project",
+      "description": "Gestisce i temi estetici e l'aspetto dell'interfaccia utente di Hecos.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/themes_pack-1.0.0.hpkg",
+      "size_bytes": 8411,
+      "sha256": "8d3746065f8a2dfa7d02c783eb49e6726b1e7f21842b117c559a26248432b46d",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Automatic update generated by the Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#themes_pack",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [],
+        "slash_commands": [],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": ""
+      },
+      "dependencies": [],
+      "pip_requirements": []
+    },
+    {
       "id": "voice_visualizer",
       "name": "Voice Visualizer",
       "type": "widget",
@@ -594,7 +695,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/voice_visualizer-1.0.2.hpkg",
       "size_bytes": 1275679,
-      "sha256": "66ec3f8d4053dc096d6dc6ad7747ff9d446e80168a18b0a9b9e98bcb1446a936",
+      "sha256": "be85f5ed71f3df50d08f6b8d79959fa7fa80011ceffa4d0079709379cd1c6121",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_1.png",
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/voice_visualizer_src/preview_2.png",
@@ -627,7 +728,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/weather_pro-1.0.1.hpkg",
       "size_bytes": 14887,
-      "sha256": "e383e07df55534a87e7544c7021c0dd6b390b97dddb99f48781fc1e70f2932fb",
+      "sha256": "e9fbf1ad6c9812332ab0296a7fb67229c4362912ea64fe7ffb8c71cec295c4d0",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -661,7 +762,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam-1.0.2.hpkg",
       "size_bytes": 7815,
-      "sha256": "54a04ffbfc7d992bf4fbb69381a46791aa210c297a06ba3801f37a8810c3dd4f",
+      "sha256": "4eebfadaca6bdfa027175cd06ed88206cf2377f8ddc40a1e5067bf5aca87eede",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -699,7 +800,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/webcam_feed-1.0.1.hpkg",
       "size_bytes": 859336,
-      "sha256": "d192d4250e2badd9714d1e485d5027bcd523cba56b74f81ecc0b4ff8652584b3",
+      "sha256": "b63c143d706077c68238436c0d7b6c264b7453863867ef918d261dd51fd03d55",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/webcam_feed_src/preview.png"
       ],
@@ -720,5 +821,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1784812861.8542593
+  "cached_at": 1784823251.735456
 }
