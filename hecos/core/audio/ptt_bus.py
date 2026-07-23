@@ -321,6 +321,10 @@ def start(state=None):
         hb_thread = threading.Thread(target=_heartbeat_loop, args=(_hb_stop_event,), daemon=True, name="ptt-heartbeat")
         hb_thread.start()
 
+    except ImportError as ie:
+        err_msg = "\n[WARNING] The 'pynput' module is not installed!\nThe PTT keyboard shortcut (Ctrl+Shift) will NOT work until it is installed.\nRun: pip install pynput\n"
+        print(err_msg)
+        info_log(f"Failed to start PTT Bus listeners: {ie}")
     except Exception as e:
         info_log(f"Failed to start PTT Bus listeners: {e}")
 
