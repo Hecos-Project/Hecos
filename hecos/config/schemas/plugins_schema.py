@@ -21,12 +21,7 @@ class PluginDashboard(BaseModel):
     console_telemetry_vram: bool = False
 
 
-class PluginFileManager(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    enable_path_mapping: bool = True
-    max_list_items: int = 5
-    max_read_lines: int = 50
+
 
 
 class PluginHelp(BaseModel):
@@ -82,6 +77,9 @@ class PluginDrive(BaseModel):
     root_dir: str = ""
     max_upload_mb: int = 100
     allowed_extensions: str = ""
+    enable_path_mapping: bool = True
+    max_list_items: int = 5
+    max_read_lines: int = 50
     editor: Dict[str, Any] = Field(default_factory=lambda: {
         "enabled": True,
         "theme": "vs-dark",
@@ -136,7 +134,6 @@ class PluginFlows(BaseModel):
 class PluginsConfig(BaseModel):
     model_config = ConfigDict(extra='allow')  # HPM package keys ARE stored here
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
-    FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)

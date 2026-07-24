@@ -345,7 +345,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"{translator.t('root_security_desc')}\n"
     )
     # Concisely inject folder mappings to guide the AI without using absolute paths in guidelines
-    desktop_map = external_config.get("plugins", {}).get("FILE_MANAGER", {}).get("mappings", {}).get("desktop", "desktop") if external_config else "desktop"
+    desktop_map = external_config.get("plugins", {}).get("DRIVE", {}).get("mappings", {}).get("desktop", "desktop") if external_config else "desktop"
 
 
 
@@ -356,7 +356,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         "- [SYSTEM: open:prog_name] - Open notepad, chrome, etc.\n"
         "- [SYSTEM: terminal] - Open Windows CMD prompt window\n"
         "- [SYSTEM: explore:folder] - Open folder graphically\n"
-        "- [FILE_MANAGER: list:folder] - List files for analysis\n"
+        "- [DRIVE: list:folder] - List files for analysis\n"
         "- [DASHBOARD: resources] - Get hardware telemetry\n"
         "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
     )

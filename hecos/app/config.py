@@ -42,7 +42,7 @@ def _get_plugins_schema():
 # Any OTHER key under `plugins:` is a leftover from pre-packagization era
 # and must be removed to avoid polluting plugins.yaml.
 _CORE_PLUGIN_KEYS = {
-    "DASHBOARD", "FILE_MANAGER", "HELP", "SYSTEM", "SYS_NET", "WEB_UI",
+    "DASHBOARD", "HELP", "SYSTEM", "SYS_NET", "WEB_UI",
     "EXECUTOR", "DRIVE", "USERS", "CONTACTS", "FLOWS",
     "extra_dirs",
 }

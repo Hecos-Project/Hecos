@@ -40,19 +40,19 @@ TAG_MAPPING = {
     "desktop": "system",
     "download": "system",
     "documents": "system",
-    "core": "file_manager",
+    "core": "drive",
 
-    "plugins": "file_manager",
-    "memory": "file_manager",
-    "personality": "file_manager",
-    "logs": "file_manager",
-    "config": "file_manager",
-    "main": "file_manager",
+    "plugins": "drive",
+    "memory": "drive",
+    "personality": "drive",
+    "logs": "drive",
+    "config": "drive",
+    "main": "drive",
     # Legacy fallbacks
     "terminale": "system",
     "istruzione": "system",
     "apri": "system",
-    "documenti": "file_manager",
+    "documenti": "drive",
 }
 
 def configure(new_config):
