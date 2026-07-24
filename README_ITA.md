@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.44.0 (Runtime Alpha)
+# Hecos - Versione 0.45.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato Runtime Alpha**: Hecos è attualmente in `v0.44.0`[cite: 1]. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root[cite: 1].
+> **Stato Runtime Alpha**: Hecos è attualmente in `v0.45.0`[cite: 1]. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root[cite: 1].
 
 ## 🚀 Panoramica
 **Hecos** è un **Helping Companion System**: un ecosistema locale progettato per unire fluidamente tecnologia e vita umana, combinando AI reasoning, automazione visiva ed esecuzione di sistema diretta[cite: 1]. Invece di inseguire concetti astratti come la sovranità digitale, Hecos si concentra su un'unica missione pragmatica: **migliorare la vita umana**, trasformando l'hardware locale in uno strumento pratico ed estremamente efficiente per tutti i giorni[cite: 1].
@@ -21,7 +21,7 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea[cite: 1].
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata[cite: 1].
 
-Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.44.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa[cite: 1]. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale[cite: 1].
+Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.45.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa[cite: 1]. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale[cite: 1].
 
 ---
 
@@ -160,7 +160,9 @@ Eseguire il sistema core su Linux o macOS è possibile, ma potrebbe richiedere a
 ---
 
 ## 🛠️ Requisiti di Sistema Essenziali (Windows)
-Se hai appena reinstallato Windows o stai configurando Hecos per la prima volta, devi installare questi pacchetti di sistema **fondamentali** affinché tutti i moduli funzionino correttamente[cite: 1]:
+Se hai appena reinstallato Windows o stai configurando Hecos per la prima volta, devi assicurarti che questi pacchetti di sistema **fondamentali** siano presenti affinché tutti i moduli funzionino correttamente.
+
+💡 **NOVITÀ (v0.45.0 - EDM)**: Hecos ora integra l'**External Dependency Manager (EDM)**! Se Tesseract, Node.js o VC++ Redistributable non sono installati, l'EDM li rileverà automaticamente e ti permetterà di scaricarli in background tramite un click dalla WebUI attingendo direttamente dal repository GitHub `Hecos-Dependencies`. In alternativa, puoi installarli manualmente:
 
 1. ⚙️ **Microsoft Visual C++ Redistributable (Obbligatorio)**
    - *A cosa serve*: Richiesto dal motore di Memoria RAG (ONNX/FastEmbed). Senza questo pacchetto riceverai errori relativi a DLL mancanti e la ricerca sui documenti non funzionerà[cite: 1].
