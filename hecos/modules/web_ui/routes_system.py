@@ -85,12 +85,9 @@ def get_vram_usage():
 
 
 def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
-    # Sync telemetry flag from DASHBOARD plugin config
+    # Enable CPU telemetry cache unconditionally
     global _cpu_cache
-    dsb_cfg         = cfg_mgr.config.get("plugins", {}).get("DASHBOARD", {})
-    global_enabled  = dsb_cfg.get("enabled", True)
-    webui_telemetry = dsb_cfg.get("webui_telemetry_enabled", True)
-    _cpu_cache["enabled"] = global_enabled and webui_telemetry
+    _cpu_cache["enabled"] = True
 
     def _sm():
         return get_sm() if callable(get_sm) else get_sm

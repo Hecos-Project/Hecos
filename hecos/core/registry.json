@@ -1,19 +1,161 @@
 {
-    "DASHBOARD": {
-        "description": "plugin_dashboard_desc",
-        "commands": {
-            "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
-            "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
-            "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
-            "get_system_resources": "Returns a summary of system CPU and RAM usage."
-        },
-        "status": "plugin_dashboard_status_online",
+    "BROWSER": {
+        "description": "Hecos AI-controlled Playwright browser. Navigate, read DOM, click elements and fill forms without vision or coordinate guessing. Funziona sia in modo autonomo con l'IA che tramite comandi diretti (slash commands come /b, /b_close, /b_tabs).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
         "example": "",
         "routing_instructions": "",
         "is_class_based": true,
-        "icon": "",
+        "is_lazy": true,
+        "icon": "fa-globe",
         "category": "PLUGINS",
-        "slash_commands": []
+        "module_type": "core_module",
+        "slash_commands": [
+            {
+                "id": "b",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b",
+                    "/browser"
+                ],
+                "description": "Opens the AI browser on a URL or performs a search.",
+                "usage": "/b <url_o_ricerca>",
+                "example": "/b youtube.com",
+                "icon": "??",
+                "method": "slash_b",
+                "requires_args": true
+            },
+            {
+                "id": "b_close",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_close"
+                ],
+                "description": "Closes the AI browser.",
+                "usage": "/b_close",
+                "example": "/b_close",
+                "icon": "??",
+                "method": "slash_b_close",
+                "requires_args": false
+            },
+            {
+                "id": "b_tabs",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_tabs"
+                ],
+                "description": "Shows the list of open tabs in the AI browser.",
+                "usage": "/b_tabs",
+                "example": "/b_tabs",
+                "icon": "??",
+                "method": "slash_b_tabs",
+                "requires_args": false
+            },
+            {
+                "id": "b_back",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_back"
+                ],
+                "description": "Naviga indietro nel browser.",
+                "usage": "/b_back",
+                "example": "/b_back",
+                "icon": "⬅️",
+                "method": "slash_b_back",
+                "requires_args": false
+            },
+            {
+                "id": "b_click",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_click"
+                ],
+                "description": "Clicca un elemento per testo o selettore.",
+                "usage": "/b_click <testo_o_selettore>",
+                "example": "/b_click Accedi",
+                "icon": "🖱️",
+                "method": "slash_b_click",
+                "requires_args": true
+            },
+            {
+                "id": "b_type",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_type"
+                ],
+                "description": "Scrive del testo in un campo.",
+                "usage": "/b_type <selettore> | <testo>",
+                "example": "/b_type Cerca | gatti divertenti",
+                "icon": "⌨️",
+                "method": "slash_b_type",
+                "requires_args": true
+            },
+            {
+                "id": "b_scroll",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_scroll"
+                ],
+                "description": "Scorre la pagina su o giù.",
+                "usage": "/b_scroll [up|down]",
+                "example": "/b_scroll down",
+                "icon": "↕️",
+                "method": "slash_b_scroll",
+                "requires_args": false
+            },
+            {
+                "id": "b_shot",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_shot"
+                ],
+                "description": "Scatta uno screenshot della pagina attuale.",
+                "usage": "/b_shot",
+                "example": "/b_shot",
+                "icon": "📸",
+                "method": "slash_b_shot",
+                "requires_args": false
+            },
+            {
+                "id": "b_new",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_new"
+                ],
+                "description": "Apre una nuova scheda.",
+                "usage": "/b_new [url]",
+                "example": "/b_new google.com",
+                "icon": "➕",
+                "method": "slash_b_new",
+                "requires_args": false
+            },
+            {
+                "id": "b_close_tab",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_close_tab"
+                ],
+                "description": "Chiude la scheda corrente.",
+                "usage": "/b_close_tab",
+                "example": "/b_close_tab",
+                "icon": "❌",
+                "method": "slash_b_close_tab",
+                "requires_args": false
+            },
+            {
+                "id": "b_switch",
+                "manifest_version": "1",
+                "aliases": [
+                    "/b_switch"
+                ],
+                "description": "Cambia scheda attiva specificando l'ID.",
+                "usage": "/b_switch <id>",
+                "example": "/b_switch 1",
+                "icon": "🔄",
+                "method": "slash_b_switch",
+                "requires_args": true
+            }
+        ]
     },
     "EXECUTOR": {
         "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
@@ -121,6 +263,76 @@
         "module_type": "core_module",
         "slash_commands": []
     },
+    "AUTOMATION": {
+        "description": "Full PC control: mouse movement, keyboard input, window management, and Windows Accessibility API for reading browser tabs and UI controls. Combine with WEBCAM desktop_screenshot for a full see-and-act loop. Requires Windows for UIAutomation features (browser tabs, window controls); mouse/keyboard works cross-platform.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-magic\"></i>",
+        "category": "PLUGINS",
+        "module_type": "core_module",
+        "slash_commands": [
+            {
+                "id": "type",
+                "manifest_version": "1",
+                "aliases": [
+                    "/type",
+                    "/write"
+                ],
+                "description": "Simulates typing text on the keyboard",
+                "usage": "/type <text>",
+                "example": "/type Hello world!",
+                "icon": "⌨️",
+                "method": "type_text",
+                "requires_args": true
+            },
+            {
+                "id": "click_text",
+                "manifest_version": "1",
+                "aliases": [
+                    "/click_text",
+                    "/click_word"
+                ],
+                "description": "Finds text on the screen (OCR) and clicks it",
+                "usage": "/click_text <text>",
+                "example": "/click_text Submit",
+                "icon": "🖱️",
+                "method": "click_text",
+                "requires_args": true
+            },
+            {
+                "id": "hotkey",
+                "manifest_version": "1",
+                "aliases": [
+                    "/hotkey",
+                    "/shortcut"
+                ],
+                "description": "Executes a combination of keys (separated by + or comma)",
+                "usage": "/hotkey <keys>",
+                "example": "/hotkey ctrl+c",
+                "icon": "⚡",
+                "method": "hotkey",
+                "requires_args": true
+            },
+            {
+                "id": "focus",
+                "manifest_version": "1",
+                "aliases": [
+                    "/focus",
+                    "/window"
+                ],
+                "description": "Brings a window to the foreground by its title",
+                "usage": "/focus <title>",
+                "example": "/focus chrome",
+                "icon": "🪟",
+                "method": "focus_window",
+                "requires_args": true
+            }
+        ]
+    },
     "PERSONALITY": {
         "description": "Manage and switch AI personalities (souls) dynamically.",
         "commands": {
@@ -198,6 +410,36 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "IMAGE_GEN": {
+        "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"fas fa-image\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "img",
+                "manifest_version": "1",
+                "aliases": [
+                    "/img",
+                    "/image",
+                    "/photo",
+                    "/foto"
+                ],
+                "description": "Generates an AI image from a text description",
+                "usage": "/img <descrizione>",
+                "example": "/img foto fotorealistica di un gatto su Marte",
+                "icon": "🖼️",
+                "method": "generate_image",
+                "requires_args": true
+            }
+        ]
     },
     "CONTACTS": {
         "description": "Full-featured Address Book plugin for Hecos. Stores contacts with rich metadata (multi-value phones/emails/socials, photo, birthday, tags, label color). Exposes LLM tools, REST API, vCard import/export, and WhatsApp integration.",

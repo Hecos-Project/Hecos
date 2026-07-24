@@ -197,7 +197,7 @@ class ConfigManager:
         remaining in the YAML after the packages are uninstalled, which was
         causing the UI to treat them as 'disabled' instead of 'not present'.
         """
-        _BUILTIN_WIDGETS = {"telemetry_widget"}
+        _BUILTIN_WIDGETS = set()
 
         if not _os.path.exists(self._widgets_path):
             return

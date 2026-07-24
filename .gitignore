@@ -389,6 +389,200 @@ hecos/modules/web_ui/static/js/image_gen.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
 
+# Media: Ignore generated content
+hecos/media/audio/*
+!hecos/media/audio/.gitkeep
+hecos/media/images/*
+!hecos/media/images/.gitkeep
+
+# Certs: Ignore generated certificates
+hecos/certs/*
+!hecos/certs/.gitkeep
+
+# Avatars: Ignore user avatar uploads
+hecos/media/avatars/*
+!hecos/media/avatars/.gitkeep
+
+# Screenshots: Ignore any captured screenshots
+hecos/media/screenshots/*
+hecos/media/snapshots/*
+hecos/core/snapshots/*
+snapshots/*
+
+# ── Image files: default BLOCK (privacy - user photos, generated content) ──────
+# All image formats are ignored by default...
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.bmp
+
+# ...EXCEPT official Hecos assets (logos, project photos)
+!hecos/assets/Tony_Admin.jpg
+!hecos/assets/Hecos_Logo_Banner.png
+!hecos/assets/Hecos_Logo_Banner.jpg
+!hecos/assets/Hecos_Logo_SQR_NBG_.png
+!hecos/assets/Hecos_Logo_SQR_NBG_LogoOnly.png
+!hecos/assets/Hecos_Logo_SQR_NBG_LogoOnly.ico
+!hecos/assets/Urania_9800_Logo.png
+
+# Website assets
+!docs/assets/images/*
+
+# ── PERSONA YAML: block all, whitelist only built-ins ─────────────────────
+# Block any NEW yaml added to hecos/personality/
+hecos/personality/*.yaml
+# ...but allow the 7 official built-in personas:
+!hecos/personality/Atlas_Man.yaml
+!hecos/personality/Hecos_System_Soul.yaml
+!hecos/personality/Motoko Kusanagi.yaml
+!hecos/personality/Nova_X-01.yaml
+!hecos/personality/Sebastian_Pro.yaml
+!hecos/personality/Urania_9800.yaml
+
+# ── PERSONA AVATARS: block custom, whitelist standard 7 ──────────────────
+# Block any new avatar folder added to hecos/assets/avatars/
+hecos/assets/avatars/*/
+# ...but allow the 7 built-in avatar folders and their images:
+!hecos/assets/avatars/Atlas_Man/
+!hecos/assets/avatars/Atlas_Man/*.png
+!hecos/assets/avatars/Hecos_System_Soul/
+!hecos/assets/avatars/Hecos_System_Soul/*.png
+!hecos/assets/avatars/Motoko_Kusanagi/
+!hecos/assets/avatars/Motoko_Kusanagi/*.png
+!hecos/assets/avatars/Nova_X-01/
+!hecos/assets/avatars/Nova_X-01/*.png
+!hecos/assets/avatars/Sebastian_Pro/
+!hecos/assets/avatars/Sebastian_Pro/*.png
+!hecos/assets/avatars/Urania_9800/
+!hecos/assets/avatars/Urania_9800/*.png
+
+# ── PRIVATE ASSETS: Always block these (Privacy / Copyright) ─────────────
+hecos/assets/avatars/Jun_my_little_princess/
+hecos/personality/Jun_my_little_princess.yaml
+
+# Config data: Ignore active configs, keep templates
+hecos/config/data/*
+!hecos/config/data/*.example
+!hecos/data/templates.json
+
+# API Keys - CRITICAL: never push these to git
+hecos/config/keys.yaml
+config/keys.yaml
+hecos/config/data/keys.yaml
+
+# Temporary and build files
+tmp/
+brain/
+*.log
+*debug*.txt
+*_debug.txt
+*.wav
+*.mp3
+*.db
+.env
+
+# WebUI session / export files (privacy data)
+hecos/memory/sessions/
+hecos/memory/exports/
+hecos/memory/chat_exports/
+
+# System YAML active config (runtime state, not source)
+# Uncomment if you don't want to share your personal system.yaml
+# hecos/config/data/system.yaml
+
+# Root Level Protection (prevent leakage outside hecos/)
+/snapshots/
+/logs/
+/data/
+/data/images/
+/hecos/core/snapshots/
+/hecos/core/logs/
+/memory/
+
+# Watchdog inhibitor temp file
+.config_saved_by_app
+
+# Portable standalone environments and binaries
+/bin/
+/python_env/
+
+# ── Hecos User Workspaces ──
+# Block user generated automations and flows
+workspace/flows/*
+!workspace/flows/morning_routine_01.yaml
+!workspace/flows/onboarding.yaml
+!workspace/flows/.gitkeep
+
+# ── HPM Packages: Distributed via Store only ──────────────────────────────
+# These plugins are standalone HPM packages, installable from the official store.
+# They are NOT part of the Hecos Core and MUST NOT be pushed to the core repo.
+# Build and release them separately from the Hecos-Packages repository.
+
+# Core Plugins (HPM) - Block entire directory to prevent ANY package from being tracked
+hecos/hpm/*
+!hecos/hpm/.gitkeep
+
+# WebUI Extensions belonging to HPM packages
+hecos/modules/web_ui/extensions/calendar/
+hecos/modules/web_ui/extensions/media_player_widget/
+hecos/modules/web_ui/extensions/reminder/
+hecos/modules/web_ui/extensions/voice_visualizer/
+hecos/modules/web_ui/extensions/weather_pro_widget/
+hecos/modules/web_ui/extensions/webcam_feed/
+
+# WebUI Templates belonging to HPM packages (config files)
+hecos/modules/web_ui/templates/modules/config_calendar.html
+hecos/modules/web_ui/templates/modules/config_image_gen.html
+hecos/modules/web_ui/templates/modules/config_lists.html
+hecos/modules/web_ui/templates/modules/config_map.html
+hecos/modules/web_ui/templates/modules/config_media_player.html
+hecos/modules/web_ui/templates/modules/config_quick_links.html
+hecos/modules/web_ui/templates/modules/config_reminder.html
+hecos/modules/web_ui/templates/modules/config_voice_visualizer.html
+hecos/modules/web_ui/templates/modules/config_weather_pro.html
+hecos/modules/web_ui/templates/modules/config_webcam.html
+hecos/modules/web_ui/templates/modules/config_webcam_feed.html
+hecos/modules/web_ui/templates/config_calendar.html
+hecos/modules/web_ui/templates/config_reminder.html
+hecos/modules/web_ui/templates/config_lists.html
+
+# WebUI Template Folders belonging to HPM packages
+hecos/modules/web_ui/templates/modules/media_player/
+hecos/modules/web_ui/templates/modules/media/_media_player.html
+hecos/modules/web_ui/templates/calendar/
+hecos/modules/web_ui/templates/reminder/
+hecos/modules/web_ui/templates/lists/
+
+# Missing WebUI Extensions belonging to HPM packages
+hecos/modules/web_ui/extensions/quick_links/
+hecos/modules/web_ui/extensions/map_widget/
+hecos/modules/web_ui/extensions/lists_widget/
+hecos/modules/web_ui/extensions/browser_automation/
+hecos/modules/web_ui/extensions/mail/
+hecos/modules/web_ui/extensions/messenger/
+hecos/modules/web_ui/extensions/pc_automation/
+hecos/modules/web_ui/extensions/remote_triggers/
+hecos/modules/web_ui/extensions/templates/
+
+# Missing WebUI Templates belonging to HPM packages (config files)
+hecos/modules/web_ui/templates/modules/config_browser.html
+hecos/modules/web_ui/templates/modules/config_mail.html
+hecos/modules/web_ui/templates/modules/config_messenger.html
+hecos/modules/web_ui/templates/modules/config_remote_triggers.html
+hecos/modules/web_ui/templates/modules/config_templates.html
+hecos/modules/web_ui/templates/modules/config_pc_automation.html
+hecos/modules/web_ui/templates/modules/config_panel.html
+
+# WebUI Static Assets belonging to HPM packages
+hecos/modules/web_ui/static/css/browser_automation.css
+hecos/modules/web_ui/static/js/browser_automation.js
+hecos/modules/web_ui/static/css/image_gen.css
+hecos/modules/web_ui/static/js/image_gen.js
+hecos/modules/web_ui/static/js/pc_automation.js
+hecos/modules/web_ui/static/js/messenger.js
+
 # HPM Themes Pack
 hecos/themes/*
 hecos/modules/web_ui/static/css/themes.css
@@ -400,3 +594,15 @@ hecos/modules/web_ui/templates/modules/config_mcp.html
 hecos/modules/web_ui/templates/modules/mcp/
 hecos/modules/web_ui/static/js/mcp_panel.js
 hecos/config/data/mcp_bridge.toml
+
+# PC Automation module (HPM Package)
+hecos/modules/pc_automation/
+hecos/config/data/pc_automation.toml
+
+# Browser Automation module (HPM Package)
+hecos/modules/browser_automation/
+hecos/config/data/browser_automation.toml
+
+# Telemetry Widget (HPM Package)
+hecos/modules/web_ui/extensions/telemetry_widget/
+hecos/config/data/telemetry_widget.toml
