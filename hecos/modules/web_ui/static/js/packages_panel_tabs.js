@@ -14,12 +14,13 @@ window.hpmUpdateCount = function(tabId, count) {
 
 window.hpmSwitchTab = async function(tabId) {
   // Update buttons
-  const btnPackages = document.getElementById('hpm-tab-btn-packages');
-  const btnBuiltin  = document.getElementById('hpm-tab-btn-builtin');
-  const btnWidgets  = document.getElementById('hpm-tab-btn-widgets');
-  const btnStore    = document.getElementById('hpm-tab-btn-store');
+  const btnPackages  = document.getElementById('hpm-tab-btn-packages');
+  const btnBuiltin   = document.getElementById('hpm-tab-btn-builtin');
+  const btnWidgets   = document.getElementById('hpm-tab-btn-widgets');
+  const btnStore     = document.getElementById('hpm-tab-btn-store');
+  const btnLibraries = document.getElementById('hpm-tab-btn-libraries');
 
-  [btnPackages, btnBuiltin, btnWidgets, btnStore].forEach(b => b && b.classList.remove('active'));
+  [btnPackages, btnBuiltin, btnWidgets, btnStore, btnLibraries].forEach(b => b && b.classList.remove('active'));
   const activeBtn = document.getElementById(`hpm-tab-btn-${tabId}`);
   if (activeBtn) activeBtn.classList.add('active');
 
@@ -30,6 +31,8 @@ window.hpmSwitchTab = async function(tabId) {
   if (widgetsPane) widgetsPane.style.display = tabId === 'widgets' ? 'block' : 'none';
   const storePane = document.getElementById('hpm-pane-store');
   if (storePane) storePane.style.display = tabId === 'store' ? 'block' : 'none';
+  const librariesPane = document.getElementById('hpm-pane-libraries');
+  if (librariesPane) librariesPane.style.display = tabId === 'libraries' ? 'block' : 'none';
 
   // ── Content loading per tab ────────────────────────────────────────────────
   if (tabId === 'packages') {
@@ -160,5 +163,35 @@ window.hpmSwitchTab = async function(tabId) {
         window.hpmStoreInit();
       }
     }
+  } else if (tabId === 'libraries') {
+    const listEl = document.getElementById('hpm-libraries-list');
+    if (!listEl) return;
+    fetch('/api/packages/all')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data || !data.packages) return;
+        const libs = data.packages.filter(p => p.type === 'library');
+        window.hpmUpdateCount('libraries', libs.length);
+        if (libs.length === 0) {
+          listEl.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted);"><i class="fas fa-book-open" style="font-size:1.6em;margin-bottom:10px;display:block;"></i>No libraries installed yet.</div>`;
+          return;
+        }
+        listEl.innerHTML = libs.map(p => `
+          <div style="background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+            <div style="width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-book" style="color:#fff;font-size:1em;"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;color:var(--text);font-size:0.95em;">${p.name || p.id}</div>
+              <div style="font-size:0.78em;color:var(--muted);margin-top:2px;">${p.description || ''}</div>
+            </div>
+            <div style="flex-shrink:0;">
+              <span style="font-size:0.75em;background:rgba(139,92,246,0.15);color:#8b5cf6;padding:3px 8px;border-radius:6px;font-weight:600;">v${p.version || '?'}</span>
+            </div>
+          </div>`).join('');
+      })
+      .catch(() => {
+        listEl.innerHTML = `<div style="color:var(--danger);padding:20px;">Failed to load libraries.</div>`;
+      });
   }
 };

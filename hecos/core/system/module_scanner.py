@@ -112,10 +112,26 @@ def update_capability_registry(config=None, debug_log=True):
             if hecos_root not in sys.path:
                 sys.path.insert(0, hecos_root)
             
-        plugin_dirs = [d for d in os.listdir(plugins_dir)
-                      if os.path.isdir(os.path.join(plugins_dir, d))
-                      and not d.startswith("__")
-                      and d != "plugins_disabled"]
+        plugin_dirs = []
+        for item in os.listdir(plugins_dir):
+            if item.startswith("__") or item == "plugins_disabled":
+                continue
+            item_path = os.path.join(plugins_dir, item)
+            if not os.path.isdir(item_path):
+                continue
+                
+            # Check if this folder is itself a plugin (has main.py or manifest.json)
+            if os.path.exists(os.path.join(item_path, "main.py")) or os.path.exists(os.path.join(item_path, "manifest.json")):
+                plugin_dirs.append(item)
+            else:
+                # Assume it's a category folder (e.g., core_modules, libraries) and scan its subdirectories
+                for subitem in os.listdir(item_path):
+                    if subitem.startswith("__"): continue
+                    sub_path = os.path.join(item_path, subitem)
+                    if os.path.isdir(sub_path):
+                        if os.path.exists(os.path.join(sub_path, "main.py")) or os.path.exists(os.path.join(sub_path, "manifest.json")):
+                            # Use forward slash to keep relative path structure
+                            plugin_dirs.append(f"{item}/{subitem}")
 
         for plugin_dir in plugin_dirs:
             main_file = os.path.join(plugins_dir, plugin_dir, "main.py")

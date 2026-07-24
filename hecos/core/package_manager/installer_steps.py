@@ -16,6 +16,7 @@ TYPE_DEFAULT_DIR = {
     "core_module": "hpm",
     "plugin":      "hpm",
     "module":      "hpm",
+    "library":     "hpm/libraries",
     "extension":   "hpm",
     "app":         "hpm",
     "widget":      None,          # widget-only: no backend, skip code install

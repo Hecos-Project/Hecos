@@ -96,11 +96,14 @@
                    color:#fff;font-size:0.55em;font-weight:800;padding:2px 5px;border-radius:6px;
                    letter-spacing:.5px;">NEW</span>
     </button>
+    <button id="hpm-tab-btn-libraries" class="filter-btn" onclick="hpmSwitchTab('libraries')">
+      <i class="fas fa-book" style="margin-right:6px;color:#8b5cf6;"></i> Libraries <span id="hpm-cnt-libraries" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
+    </button>
   </div>
 
   <script>
   (function(){
-    const counts = ['packages', 'builtin', 'widgets', 'store'];
+    const counts = ['packages', 'builtin', 'widgets', 'store', 'libraries'];
     counts.forEach(c => {
       const el = document.getElementById(`hpm-cnt-${c}`);
       if (el) {
@@ -277,6 +280,23 @@
 
   <!-- ── STORE PANE ────────────────────────────────────────────────── -->
   <div id="hpm-pane-store" style="display:none;">
+  </div>
+
+  <!-- ── LIBRARIES PANE ──────────────────────────────────────────────── -->
+  <div id="hpm-pane-libraries" style="display:none;">
+    <div style="padding:16px 0 10px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <i class="fas fa-book" style="font-size:1.3em;color:#8b5cf6;"></i>
+        <span style="font-size:1.05em;font-weight:600;color:var(--text);">Installed Libraries</span>
+        <span style="font-size:0.8em;color:var(--muted);margin-left:4px;">Resource packs, sound packs, template sets</span>
+      </div>
+      <div id="hpm-libraries-list" style="display:flex;flex-direction:column;gap:10px;">
+        <div style="text-align:center;padding:40px 20px;color:var(--muted);">
+          <i class="fas fa-spinner fa-spin" style="font-size:1.4em;margin-bottom:10px;display:block;"></i>
+          Loading libraries...
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
