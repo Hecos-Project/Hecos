@@ -475,6 +475,7 @@ hecos/config/data/keys.yaml
 # Temporary and build files
 tmp/
 brain/
+dependencies/
 *.log
 *debug*.txt
 *_debug.txt
