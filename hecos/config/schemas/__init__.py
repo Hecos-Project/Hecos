@@ -14,7 +14,7 @@ File → Schema mapping:
 from .system_schema import SystemConfig
 from .plugins_schema import (
     PluginsFileConfig, PluginsConfig, ExtensionsConfig,
-    PluginFileManager, PluginHelp,
+    PluginHelp,
     PluginSystem, PluginSysNet,
     PluginWebUI, PluginExecutor, PluginDrive,
     PluginUsers,
@@ -25,10 +25,10 @@ from .agent_schema import AgentConfig
 __all__ = [
     "SystemConfig",
     "PluginsFileConfig", "PluginsConfig", "ExtensionsConfig",
-    "PluginFileManager", "PluginHelp",
+    "PluginHelp",
     "PluginSystem", "PluginSysNet",
     "PluginWebUI", "PluginExecutor", "PluginDrive",
-    "PluginBrowser", "PluginUsers",
+    "PluginUsers",
     "WidgetsFileConfig", "WidgetsConfig", "WidgetPersistence",
     "AgentConfig",
 ]
