@@ -137,20 +137,19 @@ def _cmd_souls(raw_args_str="", config=None, config_manager=None, **kwargs) -> s
         from hecos.modules.personality.main import tools as personality_tools
         return personality_tools.list_souls(config_manager=config_manager)
     except Exception as e:
-        # Fallback: scan the personality directory directly
+        # Fallback: scan the personas directory directly
         try:
             import os
             hecos_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-            p_dir = os.path.join(hecos_dir, "personality")
-            files = sorted([f for f in os.listdir(p_dir) if f.endswith('.yaml')])
+            p_dir = os.path.join(hecos_dir, "personas")
+            files = sorted([d for d in os.listdir(p_dir) if os.path.isdir(os.path.join(p_dir, d))])
             if not files:
                 return "❌ Nessuna personalità trovata."
             cfg = config or (config_manager.config if config_manager else {})
-            active = cfg.get("ai", {}).get("active_personality", "")
+            active = cfg.get("ai", {}).get("active_personality", "").replace(".yaml", "")
             lines = ["## 🧠 Personalità Disponibili\n"]
-            for i, f in enumerate(files):
-                name = f.replace('.yaml', '')
-                marker = " ✦ *attiva*" if f == active else ""
+            for i, name in enumerate(files):
+                marker = " ✦ *attiva*" if name == active else ""
                 lines.append(f"{i+1}. **{name}**{marker}")
             lines.append("\n*Usa `/soul <nome>` per cambiare.*")
             return "\n".join(lines)

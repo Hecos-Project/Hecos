@@ -83,8 +83,8 @@ class AgentExecutor:
                         clean_target = clean_target.replace(unwanted, "")
                         
                     import re
-                    active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul.yaml')
-                    persona_name_raw = active_p.replace('.yaml', '').replace('_', ' ').lower()
+                    active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
+                    persona_name_raw = active_p.replace('_', ' ').lower()
                     persona_short = persona_name_raw.split(' ')[0]
                     
                     enrich_keywords = ["you", "yourself", "tua", "tuo", "tuoi", "tue", "te", "te stessa", "te stesso", persona_short, persona_name_raw]
@@ -348,28 +348,28 @@ class AgentExecutor:
         try:
             # 1. Identity the active personality file
             # Robust dict access for the plain dict 'self.config'
-            active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul.yaml')
+            active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
             
             # 2. Try to load the YAML file
             from hecos.config.yaml_utils import load_yaml
-            # root_dir from hecos/core/agent/loop.py:
-            # os.path.dirname(__file__) -> hecos/core/agent
-            # .. -> hecos/core
-            # .. -> hecos
             root_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-            p_path = os.path.join(root_dir, "personality", active_p)
+            p_path = os.path.join(root_dir, "personas", active_p, "persona.yaml")
             
             # If still not found, try one level up (workspace root) just in case
             if not os.path.exists(p_path):
-                p_path = os.path.join(root_dir, "..", "hecos", "personality", active_p)
+                p_path = os.path.join(root_dir, "..", "hecos", "personas", active_p, "persona.yaml")
             
             if os.path.exists(p_path):
                 import yaml
                 with open(p_path, 'r', encoding='utf-8') as f:
-                    p_data = yaml.safe_load(f)
+                    p_data = yaml.safe_load(f) or {}
                 
-                # Check for the new dynamic field
+                # Check for the new dynamic field or fallback to old
                 v_desc = p_data.get("visual_description")
+                if not v_desc and "anatomy" in p_data:
+                    anatomy = p_data["anatomy"]
+                    v_desc = f"{anatomy.get('sex', 'Person')}, {anatomy.get('body_type', 'average')} body, {anatomy.get('hair_color', 'dark')} hair, {anatomy.get('eye_color', 'dark')} eyes."
+                    
                 if v_desc:
                     return v_desc
 

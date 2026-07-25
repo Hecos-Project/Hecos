@@ -144,7 +144,10 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             time.sleep(0.02)
 
         # Signal the frontend to stop the ⚙️ spinner (before blocking TTS)
-        sess["queue"].put({"type": "trace_done"})
+        current_persona = cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
+        if current_persona.endswith(".yaml"):
+            current_persona = current_persona[:-5]
+        sess["queue"].put({"type": "trace_done", "persona_name": current_persona})
 
         if camera_request_pending:
             sess["queue"].put({"type": "camera_request"})

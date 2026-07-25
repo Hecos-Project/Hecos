@@ -25,7 +25,7 @@ from hecos.memory.user_vault_manager import get_vault_path
 _HECOS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CONFIG_PATH = os.path.join(_HECOS_DIR, "config", "data", "system.yaml")
 REGISTRY_PATH = os.path.join(_HECOS_DIR, "core", "registry.json")
-PERSONALITY_DIR = os.path.join(_HECOS_DIR, "personality")
+PERSONAS_DIR = os.path.join(_HECOS_DIR, "personas")
 CORE_DIR = os.path.join(_HECOS_DIR, "core")
 ROUTING_OVERRIDES_PATH = os.path.join(_HECOS_DIR, "config", "data", "routing_overrides.yaml")
 
@@ -148,7 +148,7 @@ def generate_self_awareness(personality_name):
         active_plugins = get_active_tags()
         
         # Simplified listing to save tokens
-        souls_count = len([f for f in os.listdir(PERSONALITY_DIR) if f.endswith('.yaml')])
+        souls_count = len([d for d in os.listdir(PERSONAS_DIR) if os.path.isdir(os.path.join(PERSONAS_DIR, d))])
         core_count  = len([f for f in os.listdir(CORE_DIR) if f.endswith('.py')])
         
         awareness = f"\n{translator.t('structural_self_awareness')}\n"
@@ -210,8 +210,8 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         # 2. AI SELF-PERCEPTION TRIGGER
         ai_id_keywords = r'\b(how do you look|describe yourself|describe your face|your photo|your picture|your avatar|che aspetto hai|descriviti|il tuo volto|la tua foto|come sei fatt[oa])\b'
         if re.search(ai_id_keywords, user_text, re.IGNORECASE):
-            personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul.yaml').replace(".yaml", "")
-            persona_avatar_dir = os.path.join(_HECOS_DIR, "assets", "avatars", personality_name)
+            personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace(".yaml", "")
+            persona_avatar_dir = os.path.join(_HECOS_DIR, "personas", personality_name, "avatars")
             if os.path.exists(persona_avatar_dir):
                 try:
                     # Find first image in the persona folder
@@ -234,30 +234,72 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
                     logger.error(f"[BRAIN] Failed to inject AI avatar: {e}")
     # --------------------------------------------------
     # 1. Retrieve personality
-    personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul.yaml')
+    personality_name = config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
     if not personality_name:
-        personality_name = "Hecos_System_Soul.yaml"
+        personality_name = "Hecos_System_Soul"
     logger.debug("BRAIN", f"Active personality: {personality_name}")
     
-    personality_path = os.path.join(PERSONALITY_DIR, personality_name)
+    personality_path = os.path.join(PERSONAS_DIR, personality_name, "persona.yaml")
     personality_prompt = "You are Hecos, an advanced AI."
     visual_identity_block = ""
     
     # --- ROBUST FALLBACK CHECK ---
     if not os.path.exists(personality_path):
-        logger.warning(f"BRAIN: Active personality '{personality_name}' missing! Falling back to 'Hecos_System_Soul.yaml'.")
-        personality_name = "Hecos_System_Soul.yaml"
-        personality_path = os.path.join(PERSONALITY_DIR, personality_name)
+        logger.warning(f"BRAIN: Active personality '{personality_name}' missing! Falling back to 'Hecos_System_Soul'.")
+        personality_name = "Hecos_System_Soul"
+        personality_path = os.path.join(PERSONAS_DIR, personality_name, "persona.yaml")
 
     if os.path.exists(personality_path):
         try:
             import yaml as pyyaml
             with open(personality_path, "r", encoding="utf-8") as f:
-                persona_data = pyyaml.safe_load(f)
+                persona_data = pyyaml.safe_load(f) or {}
                 personality_prompt = persona_data.get("system_prompt", "You are Hecos, an advanced AI.")
                 
-                # --- NEW: Visual Identity awareness ---
+                # --- NEW: Schema injection ---
+                blocks = []
+                anatomy = persona_data.get("anatomy")
+                if anatomy:
+                    blocks.append(f"### ANATOMY & PHYSICAL PROFILE ###\n"
+                                  f"Sex: {anatomy.get('sex', 'N/A')}\n"
+                                  f"Gender: {anatomy.get('gender', 'N/A')}\n"
+                                  f"Orientation: {anatomy.get('sexual_orientation', 'N/A')}\n"
+                                  f"Age: {anatomy.get('age', 'N/A')} (Birthdate: {anatomy.get('birthdate', 'N/A')})\n"
+                                  f"Height: {anatomy.get('height_cm', 'N/A')} cm, Weight: {anatomy.get('weight_kg', 'N/A')} kg\n"
+                                  f"Body Type: {anatomy.get('body_type', 'N/A')}\n"
+                                  f"Chest Size: {anatomy.get('chest_size', 'N/A')}\n"
+                                  f"Hair: {anatomy.get('hair_color', 'N/A')}, Eyes: {anatomy.get('eye_color', 'N/A')}\n"
+                                  f"Features: {anatomy.get('features', 'None')}")
+                                  
+                traits = persona_data.get("traits")
+                if traits:
+                    blocks.append(f"### PERSONALITY TRAITS (1-10 Scale) ###\n" +
+                                  "\n".join([f"{k.capitalize()}: {v}/10" for k, v in traits.items()]))
+                                  
+                lore = persona_data.get("lore")
+                if lore:
+                    blocks.append(f"### LORE & BACKGROUND ###\n{lore.get('backstory', '')}\n"
+                                  f"Likes: {', '.join(lore.get('likes', []))}\n"
+                                  f"Dislikes: {', '.join(lore.get('dislikes', []))}")
+                                  
+                rules = persona_data.get("rules")
+                if rules:
+                    blocks.append("### CORE BEHAVIORAL RULES ###\n" + 
+                                  "\n".join(f"- {r}" for r in rules.get("generic", [])) +
+                                  "\nMust Do: " + ", ".join(rules.get("must_do", [])) +
+                                  "\nMust Say: " + ", ".join(rules.get("must_say", [])) +
+                                  "\nNever Do: " + ", ".join(rules.get("never_do", [])) +
+                                  "\nNever Say: " + ", ".join(rules.get("never_say", [])))
+                
+                # Append blocks to personality prompt
+                if blocks:
+                    personality_prompt += "\n\n" + "\n\n".join(blocks)
+                
+                # Visual Identity awareness
                 v_desc = persona_data.get("visual_description")
+                if anatomy and not v_desc:
+                    v_desc = f"{anatomy.get('sex', 'Person')}, {anatomy.get('body_type', 'average')} body, {anatomy.get('hair_color', 'dark')} hair, {anatomy.get('eye_color', 'dark')} eyes."
+                
                 if v_desc:
                     visual_identity_block = (
                         "\n### YOUR PHYSICAL ASPECT / VISUAL IDENTITY ###\n"

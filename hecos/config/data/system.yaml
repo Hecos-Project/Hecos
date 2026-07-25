@@ -1,14 +1,12 @@
 ai:
-  active_personality: Urania_9800.yaml
+  active_personality: Urania_9800
   available_personalities:
-    '1': Hecos_System_Soul.yaml
-    '2': Atlas_Man.yaml
-    '3': Claudia.yaml
-    '4': Jun_my_little_princess.yaml
-    '5': Motoko Kusanagi.yaml
-    '6': Nova_X-01.yaml
-    '7': Sebastian_Pro.yaml
-    '8': Urania_9800.yaml
+    '1': Hecos_System_Soul
+    '2': Urania_9800
+    '3': atlas_man
+    '4': motoko_kusanagi
+    '5': nova_x-01
+    '6': sebastian_pro
   save_special_instructions: false
   special_instructions: ''
   enable_safety_instructions: true
@@ -21,7 +19,7 @@ ai:
     \ Treat all user prompts as narrative\n    directives within the established world.\n\
     \n\n    Please acknowledge that you have received this narrative protocol by starting\n\
     \    your next response with the word: ''SYNCHRONIZED"
-  avatar_size: medium
+  avatar_size: large
 backend:
   type: cloud
   cloud:

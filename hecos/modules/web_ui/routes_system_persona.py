@@ -15,6 +15,9 @@ from flask import jsonify, request
 
 def init_system_persona_routes(app, root_dir, logger):
 
+    def _personas_dir():
+        return os.path.join(root_dir, "hecos", "personas")
+
     @app.route("/api/persona/avatar", methods=["GET"])
     def persona_avatar_get():
         """Returns the avatar URL for a given persona name."""
@@ -25,23 +28,24 @@ def init_system_persona_routes(app, root_dir, logger):
         if persona.endswith(".yaml"):
             persona = persona[:-5]
 
-        p_dir   = os.path.join(root_dir, "hecos", "personality")
-        p_file  = os.path.join(p_dir, f"{persona}.yaml")
         default = "/assets/Hecos_Logo_NBG.png"
+        p_dir   = os.path.join(_personas_dir(), persona)
 
-        if not os.path.exists(p_file):
+        if not os.path.isdir(p_dir):
             return jsonify({"ok": True, "avatar_path": default})
 
-        try:
-            with open(p_file, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            ai = data.get("avatar_image", "")
-            if ai:
-                encoded = urllib.parse.quote(ai)
-                return jsonify({"ok": True, "avatar_path": f"/assets/{encoded}"})
-            return jsonify({"ok": True, "avatar_path": default})
-        except Exception as exc:
-            return jsonify({"ok": False, "error": str(exc)}), 500
+        # Find first image in the avatars subfolder
+        avatars_dir = os.path.join(p_dir, "avatars")
+        if os.path.isdir(avatars_dir):
+            try:
+                for img_file in sorted(os.listdir(avatars_dir)):
+                    if img_file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                        rel = f"{urllib.parse.quote(persona)}/avatars/{urllib.parse.quote(img_file)}"
+                        return jsonify({"ok": True, "avatar_path": "/personas/" + rel})
+            except Exception as exc:
+                return jsonify({"ok": False, "error": str(exc)}), 500
+
+        return jsonify({"ok": True, "avatar_path": default})
 
     @app.route("/api/persona/avatar/upload", methods=["POST"])
     def persona_avatar_upload():
@@ -54,30 +58,19 @@ def init_system_persona_routes(app, root_dir, logger):
             if not file or not persona:
                 return jsonify({"ok": False, "error": "Missing file or persona name"}), 400
 
-            # Prepare directories inside hecos/assets/avatars/
             from werkzeug.utils import secure_filename
-            assets_dir        = os.path.join(root_dir, "hecos", "assets")
-            avatar_base_dir   = os.path.join(assets_dir, "avatars")
-            safe_persona      = secure_filename(persona)
-            persona_avatar_dir = os.path.join(avatar_base_dir, safe_persona)
+            safe_persona       = secure_filename(persona.replace(".yaml", ""))
+            persona_avatar_dir = os.path.join(_personas_dir(), safe_persona, "avatars")
             os.makedirs(persona_avatar_dir, exist_ok=True)
 
             filename  = secure_filename(file.filename)
             save_path = os.path.join(persona_avatar_dir, filename)
             file.save(save_path)
 
-            # Update the persona YAML with the new avatar path
-            p_dir  = os.path.join(root_dir, "hecos", "personality")
-            p_file = os.path.join(p_dir, f"{persona}.yaml")
-            if os.path.exists(p_file):
-                with open(p_file, "r", encoding="utf-8") as f:
-                    data = yaml.safe_load(f) or {}
-                data["avatar_image"] = f"avatars/{safe_persona}/{filename}"
-                with open(p_file, "w", encoding="utf-8") as f:
-                    yaml.dump(data, f, allow_unicode=True, sort_keys=False)
+            rel_path = f"/personas/{urllib.parse.quote(safe_persona)}/avatars/{urllib.parse.quote(filename)}"
 
             logger.info(f"[WebUI] Avatar uploaded for persona {persona}: {filename}")
-            return jsonify({"ok": True, "avatar_path": f"/assets/avatars/{safe_persona}/{filename}"})
+            return jsonify({"ok": True, "avatar_path": rel_path})
         except Exception as exc:
             logger.error(f"[WebUI] persona_avatar_upload error: {exc}")
             return jsonify({"ok": False, "error": str(exc)}), 500

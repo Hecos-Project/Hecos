@@ -139,6 +139,21 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         resp.headers["Expires"] = "0"
         return resp
 
+    @app.route("/personas/<path:filename>")
+    def serve_personas(filename):
+        """Serve files from hecos/personas/ (avatars, media, etc.)"""
+        from flask import send_from_directory, make_response
+        import mimetypes
+        personas_dir = os.path.join(root_dir, "hecos", "personas")
+        resp       = make_response(send_from_directory(personas_dir, filename))
+        mtype, _   = mimetypes.guess_type(filename)
+        if mtype:
+            resp.headers["Content-Type"] = mtype
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"]  = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
+
     # ── Delegate to sub-route modules ──────────────────────────────────────
 
     from hecos.modules.web_ui.routes_system_status     import init_system_status_routes

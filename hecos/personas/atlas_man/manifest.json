@@ -1,0 +1,11 @@
+{
+    "tag": "ATLAS_MAN",
+    "name": "Atlas Man",
+    "version": "1.0.0",
+    "description": "Persona pack: Atlas Man",
+    "lazy_load": false,
+    "is_class_based": false,
+    "commands": {},
+    "tool_schema": [],
+    "slash_commands": []
+}

@@ -31,11 +31,11 @@ window.hpmRenderWallCard = function (pkg, meta) {
   const isLazy = pkg.lazy_load === true;
   const hasConfig = !!(pkg.manifest_snapshot && pkg.manifest_snapshot.config_panel);
 
-  // ── Shared button styles ────────────────────────────────────────────────────
-  const btnActive   = 'font-size:11px;padding:5px 8px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;flex:1;';
-  const btnGhost    = 'font-size:11px;padding:5px 8px;background:transparent;border:1px solid rgba(255,255,255,0.07);color:var(--muted);border-radius:6px;cursor:default;display:inline-flex;align-items:center;justify-content:center;opacity:0.35;flex:1;';
-  const btnDanger   = 'font-size:11px;padding:5px 8px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;flex:1;';
-  const btnRestart  = 'font-size:11px;padding:5px 8px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;animation:hpmPulse 2s ease-in-out infinite;flex:1;';
+  // ── Action Buttons Logic ──────────────────────────────────────────────────
+  const btnActive   = 'font-size:13px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border-color);color:var(--text);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;flex:1;';
+  const btnGhost    = 'font-size:13px;padding:6px 10px;background:transparent;border:1px solid rgba(255,255,255,0.07);color:var(--muted);border-radius:6px;cursor:default;display:inline-flex;align-items:center;justify-content:center;opacity:0.35;flex:1;';
+  const btnDanger   = 'font-size:13px;padding:6px 10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s;flex:1;';
+  const btnRestart  = 'font-size:13px;padding:6px 10px;background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:#fff;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;animation:hpmPulse 2s ease-in-out infinite;flex:1;';
 
   // ── ROW 1 – Always-present action buttons (top) ────────────────────────────
   let row1 = '';
@@ -108,13 +108,13 @@ window.hpmRenderWallCard = function (pkg, meta) {
   if (!disableLazy) {
     lazyBtn = `<label class="lazy-label no-autosave"
         title="${_ti('Lazy Load — start only when first needed','Lazy Load — avvia solo al primo utilizzo','Carga diferida — inicia solo cuando se necesita')}"
-        style="font-size:10px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;color:var(--muted);padding:5px 7px;background:var(--bg3);border:1px solid var(--border-color);border-radius:6px;" onclick="event.stopPropagation()">
+        style="font-size:12px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;color:var(--muted);padding:5px 7px;background:var(--bg3);border:1px solid var(--border-color);border-radius:6px;" onclick="event.stopPropagation()">
       <input type="checkbox" onchange="hpmToggleLazy('${pkg.id}', ${isBuiltin}, this.checked)" ${isLazy ? 'checked' : ''} onclick="event.stopPropagation()">
-      <i class="fas fa-feather" style="font-size:9px;"></i>
+      <i class="fas fa-feather" style="font-size:11px;"></i>
     </label>`;
   } else {
     lazyBtn = `<span style="${btnGhost};padding:5px 7px;flex:none;" title="${_ti('Lazy Load not available for this module type','Lazy Load non disponibile per questo tipo di modulo','Carga diferida no disponible para este tipo')}">
-      <i class="fas fa-feather" style="font-size:9px;margin-right:2px;"></i>
+      <i class="fas fa-feather" style="font-size:11px;margin-right:2px;"></i>
     </span>`;
   }
 
@@ -166,10 +166,10 @@ window.hpmRenderWallCard = function (pkg, meta) {
             ${window._hesc(pkg.name)}
           </div>
           <div style="display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap;">
-            <span style="font-size:0.66em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+            <span style="font-size:0.8em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
                          color:${typeMeta.color};background:${typeMeta.color}18;padding:2px 6px;
                          border-radius:4px;border:1px solid ${typeMeta.color}44;">${typeMeta.label}</span>
-            <span style="font-size:0.7em;color:var(--muted);">v${window._hesc(pkg.version || '—')}</span>
+            <span style="font-size:0.85em;color:var(--muted);">v${window._hesc(pkg.version || '—')}</span>
           </div>
         </div>
       </div>
@@ -183,11 +183,11 @@ window.hpmRenderWallCard = function (pkg, meta) {
              style="width:100%;height:100%;object-fit:contain;padding:6px;box-sizing:border-box;transition:transform .3s;"
              onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'"
              loading="lazy">
-        ${hasMultiple ? `<div style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.65);color:#fff;font-size:0.65em;padding:2px 7px;border-radius:10px;pointer-events:none;font-weight:600;">1 / ${screenshots.length}</div>` : ''}
+        ${hasMultiple ? `<div style="position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.65);color:#fff;font-size:0.8em;padding:2px 7px;border-radius:10px;pointer-events:none;font-weight:600;">1 / ${screenshots.length}</div>` : ''}
       </div>
 
       <!-- Description -->
-      ${pkg.description ? `<div style="font-size:0.76em;color:var(--muted);line-height:1.45;
+      ${pkg.description ? `<div style="font-size:0.85em;color:var(--muted);line-height:1.45;
           display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
         ${window._hesc(pkg.description)}
       </div>` : ''}

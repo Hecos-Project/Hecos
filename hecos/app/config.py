@@ -519,22 +519,22 @@ class ConfigManager:
 
     def sync_available_personalities(self):
         """
-        Scans the 'personality' folder for .yaml files and updates
+        Scans the 'personas' folder for directories containing persona.yaml and updates
         'ai.available_personalities' if the list has changed.
-        Returns the current list of personality files.
+        Returns the current list of personality names.
         """
-        import glob
-        folder = _os.path.join(_PROJECT_ROOT, "hecos", "personality")
+        import os
+        folder = _os.path.join(_PROJECT_ROOT, "hecos", "personas")
         if not _os.path.exists(folder):
             try:
                 _os.makedirs(folder)
             except Exception:
                 pass
 
-        files = sorted([_os.path.basename(f) for f in glob.glob(_os.path.join(folder, "*.yaml"))])
+        files = sorted([d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d))])
 
         if files:
-            primary = "Hecos_System_Soul.yaml"
+            primary = "Hecos_System_Soul"
             if primary in files:
                 files.remove(primary)
                 files.insert(0, primary)

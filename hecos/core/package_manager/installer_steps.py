@@ -82,7 +82,7 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
     plugin_src = os.path.join(staging, plugin_dir_in_zip.rstrip("/"))
 
     if not os.path.isdir(plugin_src):
-        for candidate in ["plugin", "module", "app", manifest.id]:
+        for candidate in ["plugin", "module", "app", "persona", "personas", manifest.id]:
             candidate_path = os.path.join(staging, candidate)
             if os.path.isdir(candidate_path):
                 plugin_src = candidate_path
