@@ -193,7 +193,7 @@ function _hpmStoreRenderCard(pkg) {
            onclick="window.hpmStoreShowReadMe('${pkg.id}')">
         <img src="${_hesc(screenshots[0])}" style="width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;
              transition:transform 0.3s ease;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'"
-             loading="lazy" onerror="this.parentElement.style.display='none'">
+             loading="lazy" onerror="this.src='https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png'">
         ${hasMultiple ? `<div style="position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.65);color:#fff;font-size:0.68em;padding:2px 8px;border-radius:10px;pointer-events:none;font-weight:600;">1 / ${screenshots.length}</div>` : ''}
       </div>
 

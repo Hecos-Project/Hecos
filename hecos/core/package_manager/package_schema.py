@@ -311,6 +311,7 @@ class HpkgManifest(BaseModel):
             "persona",      # Level 6 — installable AI personality
             "theme",        # Level 7 — CSS/UI theme
             "skill_pack",   # Level 8 — additional HDCS command pack
+            "library",      # Level 9 — resource library (templates, sounds)
         }
         if v not in valid:
             raise ValueError(f"Package type '{v}' not valid. Must be one of: {valid}")

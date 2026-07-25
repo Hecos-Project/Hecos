@@ -3,22 +3,13 @@
 async function loadQuickLinks() {
   const body = document.getElementById("quick-links-body");
   try {
-    const res  = await fetch("/drive/api/quick_links");
-    const data = await res.json();
-
-    if (!data.ok || !data.groups || !data.groups.length) {
-      const noLinksMsg = window.t ? window.t('webui_drive_no_links') : 'No links available.';
-      body.innerHTML = `<div class="sb-empty">${noLinksMsg}</div>`;
-      return;
-    }
-
     let html = "";
     
-    // -- My Bookmarks (from localStorage) --
+    // -- Bookmarks (from localStorage) --
     const bookmarks = getBookmarks();
     if (bookmarks.length > 0) {
       html += `<div class="ql-group">
-        <div class="ql-group-title" style="color:var(--accent);">⭐ Preferiti / Bookmarks</div>
+        <div class="ql-group-title" style="color:var(--accent);">⭐ Bookmarks / Shortcuts</div>
         ${bookmarks.map(item => `
           <div class="ql-item" onclick="openQuickLink('${esc(item.path)}', false)">
             <span class="ql-icon" style="color:var(--accent);">📌</span>
@@ -27,25 +18,14 @@ async function loadQuickLinks() {
           </div>
         `).join("")}
       </div>`;
+    } else {
+      const noLinksMsg = window.t ? window.t('webui_drive_no_links') : 'No bookmarks saved yet.';
+      html = `<div class="sb-empty">${noLinksMsg}</div>`;
     }
 
-    data.groups.forEach(grp => {
-      html += `<div class="ql-group">
-        <div class="ql-group-title">⭐ ${esc(grp.title)}</div>
-        ${grp.items.map(item => `
-          <div class="ql-item" onclick="openQuickLink('${esc(item.path)}', ${item.path.includes('.')})">
-            <span class="ql-icon">${esc(grp.icon || '📄')}</span>
-            <span class="ql-name" title="${esc(item.name)}">${esc(item.name)}</span>
-            ${item.path.includes('.') && isEditable(item.name) 
-              ? `<span class="ql-edit" title="Modifica" onclick="event.stopPropagation(); openEditor('${esc(item.path)}')">✏️</span>` 
-              : ''}
-          </div>
-        `).join("")}
-      </div>`;
-    });
     body.innerHTML = html;
   } catch (e) {
-    console.error("[Drive] Quick Links error:", e);
+    console.error("[Drive] Bookmarks error:", e);
     body.innerHTML = `<div class="sb-empty" style="color:var(--danger)">Errore caricamento.</div>`;
   }
 }
@@ -103,3 +83,42 @@ function removeBookmark(path) {
   saveBookmarks(newB);
   updateBookmarkIcon();
 }
+
+// ─── Sidebar Resizer Logic ───────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const resizer = document.getElementById('sidebar-resizer');
+  const quickLinksSection = document.getElementById('quick-links-section');
+  const sidebar = document.getElementById('sidebar');
+  let isResizing = false;
+
+  if (!resizer || !quickLinksSection || !sidebar) return;
+
+  resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    resizer.classList.add('resizing');
+    document.body.style.cursor = 'row-resize';
+    e.preventDefault(); // Prevent text selection
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    
+    // Calculate new height for quick links section based on mouse position
+    const sidebarRect = sidebar.getBoundingClientRect();
+    const newHeight = sidebarRect.bottom - e.clientY;
+    
+    // Constrain height
+    if (newHeight > 50 && newHeight < sidebarRect.height - 100) {
+      quickLinksSection.style.height = `${newHeight}px`;
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isResizing) {
+      isResizing = false;
+      resizer.classList.remove('resizing');
+      document.body.style.cursor = '';
+    }
+  });
+});
+
