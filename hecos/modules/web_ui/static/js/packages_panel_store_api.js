@@ -102,19 +102,19 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
     let extraHTML = '';
     if (payload.install_path) {
         const lblPath = _t('Installed in:', 'Installato in:', 'Instalado en:');
-        extraHTML += `<div style="margin-top:12px; font-size: 0.95em; color: var(--text);">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${payload.install_path}</code></div>`;
+        extraHTML += `<div style="margin-top:12px; font-size: 1.05em; color: var(--text);">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${payload.install_path}</code></div>`;
     }
     if (payload.config_panel) {
         const lblCfg = _t('Available in the Configuration menu', 'Disponibile nel menu Configurazione', 'Disponible en el menú Configuración');
-        extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--muted);"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
+        extraHTML += `<div style="margin-top:8px; font-size: 1em; color: var(--muted);"><i class="fas fa-cogs" style="margin-right:4px;"></i>${lblCfg}</div>`;
     }
     if (payload.pip_installed && payload.pip_installed.length > 0) {
         const lblPip = _t('Installed PIP dependencies:', 'Dipendenze PIP installate:', 'Dependencias PIP instaladas:');
-        extraHTML += `<div style="margin-top:8px; font-size: 0.85em; color: var(--text);"><i class="fab fa-python" style="margin-right:4px;color:#f59e0b;"></i>${lblPip} <span style="color:var(--muted);">${payload.pip_installed.join(', ')}</span></div>`;
+        extraHTML += `<div style="margin-top:8px; font-size: 1em; color: var(--text);"><i class="fab fa-python" style="margin-right:4px;color:#f59e0b;"></i>${lblPip} <span style="color:var(--muted);">${payload.pip_installed.join(', ')}</span></div>`;
     }
     if (payload.pip_failures && payload.pip_failures.length > 0) {
         const lblPipFail = _t('Failed PIP dependencies:', 'Dipendenze PIP non installate:', 'Dependencias PIP fallidas:');
-        extraHTML += `<div style="margin-top:4px; font-size: 0.85em; color: #ef4444;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>${lblPipFail} <span>${payload.pip_failures.join(', ')}</span></div>`;
+        extraHTML += `<div style="margin-top:4px; font-size: 1em; color: #ef4444;"><i class="fas fa-exclamation-triangle" style="margin-right:4px;"></i>${lblPipFail} <span>${payload.pip_failures.join(', ')}</span></div>`;
     }
     if (extraHTML) {
         msg.innerHTML = (payload.message || _t('Done!', 'Fatto!', '¡Hecho!')) + extraHTML;
@@ -129,6 +129,21 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
             new Audio(`/static/sounds/${sound}`).play().catch(() => {});
         }
     }
+
+    // ── Save NEW badge for Central Hub ──────────────────────────────────────
+    if (payload.config_panel) {
+        let newPanels = [];
+        try { newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]'); } catch(e) {}
+        
+        const tabId = payload.config_panel || payload.id;
+        const pkgId = payload.id || '';
+        for (const key of [tabId, pkgId]) {
+            if (key && !newPanels.includes(key)) newPanels.push(key);
+        }
+        
+        try { localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels)); } catch(e) {}
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     // Refresh store without closing modal automatically
     window.hpmStoreLoad();
@@ -152,7 +167,7 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
       
       msg.innerHTML = `
         <div style="font-size:1.05em; margin-bottom:12px; color:var(--text);">${question}</div>
-        <div style="font-size:0.9em; color:var(--muted); margin-bottom:20px;">
+        <div style="font-size:1em; color:var(--muted); margin-bottom:20px;">
           <i class="fas fa-box-open" style="margin-right:6px;"></i>${lblMissing} <b style="color:var(--text);">${payload.missing_deps.join(', ')}</b>
         </div>
         <div style="display:flex; gap:10px; justify-content:center;">
@@ -202,7 +217,7 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
     let errHTML = `<div>${_hesc(payload.message || 'Installation failed.')}</div>`;
     if (payload.missing_deps && payload.missing_deps.length > 0) {
         const lblMissing = _t('Missing modules:', 'Moduli mancanti:', 'Módulos faltantes:');
-        errHTML += `<div style="margin-top:8px;font-size:0.85em;"><i class="fas fa-box-open" style="margin-right:4px;"></i>${lblMissing} <span style="color:var(--text);">${payload.missing_deps.join(', ')}</span></div>`;
+        errHTML += `<div style="margin-top:8px;font-size:1em;"><i class="fas fa-box-open" style="margin-right:4px;"></i>${lblMissing} <span style="color:var(--text);">${payload.missing_deps.join(', ')}</span></div>`;
     }
     msg.innerHTML = errHTML;
     

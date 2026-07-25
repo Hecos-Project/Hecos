@@ -89,7 +89,7 @@ window.hpmRenderRow = function (pkg, meta) {
                            border:none;color:#fff;font-weight:700;
                            border-radius:6px;cursor:pointer;
                            animation:hpmPulse 2s ease-in-out infinite;"
-                    onclick="window.hpmRestartRequired('${window._hesc(pkg.name)}')"
+                    onclick="window._hpmDoRestart()"
                     title="${_ti('Restart required to activate this package', 'Riavvio richiesto per attivare il pacchetto', 'Reinicio requerido para activar el paquete')}">
               <i class="fas fa-power-off" style="font-size:10px;margin-right:4px;"></i>${_ti('Restart', 'Riavvia', 'Reiniciar')}
             </button>`;

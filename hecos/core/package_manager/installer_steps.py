@@ -255,3 +255,26 @@ def install_docs(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[
             installed.append(dst)
             
     return installed
+
+def install_assets(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
+    """
+    Copies global assets (like sounds, images, fonts) to the Hecos assets directory.
+    These files are tracked and will be cleanly removed on uninstall.
+    """
+    installed: List[str] = []
+    
+    # 1. Check for 'assets' directory
+    assets_src = os.path.join(staging, "assets")
+    if os.path.isdir(assets_src):
+        assets_dst = os.path.join(hecos_root, "assets")
+        os.makedirs(assets_dst, exist_ok=True)
+        installed.extend(copy_tree(assets_src, assets_dst))
+        
+    # 2. Check for 'sounds' directory (often used by sound packs directly at root)
+    sounds_src = os.path.join(staging, "sounds")
+    if os.path.isdir(sounds_src):
+        sounds_dst = os.path.join(hecos_root, "assets", "sounds")
+        os.makedirs(sounds_dst, exist_ok=True)
+        installed.extend(copy_tree(sounds_src, sounds_dst))
+        
+    return installed

@@ -552,9 +552,9 @@ hecos/modules/web_ui/templates/config_lists.html
 # WebUI Template Folders belonging to HPM packages
 hecos/modules/web_ui/templates/modules/media_player/
 hecos/modules/web_ui/templates/modules/media/_media_player.html
-hecos/modules/web_ui/templates/calendar/
-hecos/modules/web_ui/templates/reminder/
-hecos/modules/web_ui/templates/lists/
+hecos/modules/web_ui/templates/modules/calendar/
+hecos/modules/web_ui/templates/modules/reminder/
+hecos/modules/web_ui/templates/modules/lists/
 
 # Missing WebUI Extensions belonging to HPM packages
 hecos/modules/web_ui/extensions/quick_links/

@@ -71,7 +71,7 @@ window.hpmRenderWallCard = function (pkg, meta) {
   if (pkg.tag && !isDisabled && !isBroken) {
     if (pkg.requires_restart) {
       row1 += `<button type="button" style="${btnRestart}"
-        onclick="event.stopPropagation();window.hpmRestartRequired('${window._hesc(pkg.name)}')"
+        onclick="event.stopPropagation();window._hpmDoRestart()"
         title="${_ti('Restart required to activate','Riavvio richiesto per attivare','Reinicio requerido para activar')}">
         <i class="fas fa-power-off"></i>
       </button>`;

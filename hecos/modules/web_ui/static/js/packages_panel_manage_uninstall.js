@@ -25,7 +25,7 @@ window.hpmUninstall = async function(id, name) {
   const baseMsg = `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${lblUninst}`;
   const uninstallHtml = `
     <div id="hpm-uninstall-header" style="font-size:1.05em; font-weight:600; color:var(--text);">${baseMsg}</div>
-    <div id="hpm-uninstall-logs" style="margin-top:12px; font-size:0.92em; color:var(--muted); font-family:monospace; text-align:left; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px; border-left:2px solid #ef4444; max-height:150px; overflow-y:auto; display:none; word-break:break-all;"></div>
+    <div id="hpm-uninstall-logs" style="margin-top:12px; font-size:1em; color:var(--muted); font-family:monospace; text-align:left; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px; border-left:2px solid #ef4444; max-height:150px; overflow-y:auto; display:none; word-break:break-all;"></div>
   `;
   if (typeof window.hpmSetProgress === 'function') {
     window.hpmSetProgress(true, uninstallHtml, 30);
@@ -66,7 +66,7 @@ window.hpmUninstall = async function(id, name) {
     if (data.ok) {
       const lblSuccess = _ti('Uninstalled successfully!', 'Disinstallato con successo!', '¡Desinstalado con éxito!');
       const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
-      const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
+      const hintHTML = `<div style="font-size:1em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
 
       if (typeof window.hpmSetProgress === 'function') {
         window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>${hintHTML}</div>`, 100);
@@ -105,9 +105,9 @@ window.hpmUninstallSelected = function() {
     const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
     
     const msgTemplate = _ti(
-        `Are you sure you want to uninstall <b>{count} packages</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">This operation cannot be undone.</span>`,
-        `Sei sicuro di voler disinstallare <b>{count} pacchetti</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questa operazione non è annullabile.</span>`,
-        `¿Estás seguro de que deseas desinstalar <b>{count} paquetes</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Esta operación no se puede deshacer.</span>`
+        `Are you sure you want to uninstall <b>{count} packages</b>?<br><br><span style="font-size:1em;color:var(--muted);">This operation cannot be undone.</span>`,
+        `Sei sicuro di voler disinstallare <b>{count} pacchetti</b>?<br><br><span style="font-size:1em;color:var(--muted);">Questa operazione non è annullabile.</span>`,
+        `¿Estás seguro de que deseas desinstalar <b>{count} paquetes</b>?<br><br><span style="font-size:1em;color:var(--muted);">Esta operación no se puede deshacer.</span>`
     );
     const msg = msgTemplate.replace('{count}', count);
     const title = _ti(`Uninstall ${count}`, `Disinstalla ${count}`, `Desinstalar ${count}`);
@@ -124,8 +124,8 @@ window.hpmUninstallSelected = function() {
         const setHeader = (done, current) => {
             const header = document.getElementById('hpm-uninstall-header');
             if (!header) return;
-            const counterBadge = `<span style="background:rgba(239,68,68,0.2); color:#ef4444; border-radius:10px; padding:1px 8px; font-size:0.85em; margin-left:8px; font-weight:700;">${done}/${total}</span>`;
-            const pkgLabel = current ? ` <span style="color:var(--muted);font-weight:normal;font-size:0.9em;">${current}</span>` : '';
+            const counterBadge = `<span style="background:rgba(239,68,68,0.2); color:#ef4444; border-radius:10px; padding:1px 8px; font-size:1em; margin-left:8px; font-weight:700;">${done}/${total}</span>`;
+            const pkgLabel = current ? ` <span style="color:var(--muted);font-weight:normal;font-size:1em;">${current}</span>` : '';
             header.innerHTML = `<i class="fas fa-trash fa-spin" style="margin-right:6px; color:#ef4444;"></i> ${_ti('Uninstalling', 'Disinstallazione', 'Desinstalando')}${pkgLabel} ${counterBadge}`;
         };
 
@@ -133,7 +133,7 @@ window.hpmUninstallSelected = function() {
         window._isHpmInstalling = true;
         const uninstallHtml = `
             <div id="hpm-uninstall-header" style="font-size:1.05em; font-weight:600; color:var(--text);"></div>
-            <div id="hpm-uninstall-logs" style="margin-top:12px; font-size:0.92em; color:var(--muted); font-family:monospace; text-align:left; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px; border-left:2px solid #ef4444; max-height:150px; overflow-y:auto; display:none; word-break:break-all;"></div>
+            <div id="hpm-uninstall-logs" style="margin-top:12px; font-size:1em; color:var(--muted); font-family:monospace; text-align:left; background:rgba(0,0,0,0.25); border-radius:6px; padding:8px; border-left:2px solid #ef4444; max-height:150px; overflow-y:auto; display:none; word-break:break-all;"></div>
         `;
         window.hpmSetProgress(true, uninstallHtml, 5);
         setHeader(0, ids[0]);
@@ -205,7 +205,7 @@ window.hpmUninstallSelected = function() {
             // ── Summary screen ────────────────────────────────────────────────
             setHeader(total, null);
 
-            let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
+            let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:1em; border:1px solid rgba(255,255,255,0.05);">`;
             results.forEach(r => {
                 const icon = r.ok ? '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>' : '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
                 const removedMsg = r.ok
@@ -226,7 +226,7 @@ window.hpmUninstallSelected = function() {
                 }
             }
 
-            const lblHint = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${_ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}</div>`;
+            const lblHint = `<div style="font-size:1em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${_ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar')}</div>`;
             const lblSuccess = failed === 0
                 ? _ti('Batch uninstall completed!', 'Disinstallazione batch completata!', '¡Desinstalación por lotes completada!')
                 : _ti('Completed with some errors', 'Completato con alcuni errori', 'Completado con algunos errores');
@@ -237,7 +237,7 @@ window.hpmUninstallSelected = function() {
               <div style="text-align:center; padding: 10px 0;">
                   <i class="fas ${mainIcon}" style="margin-right:6px; color:${mainIconColor}; font-size:1.5em; margin-bottom:8px; display:block;"></i>
                   <b style="font-size:1.1em; color:var(--text)">${lblSuccess}</b>
-                  <div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('removed', 'rimossi', 'eliminados')} • ${failed} ${_ti('failed', 'falliti', 'fallidos')}</div>
+                  <div style="font-size:1em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('removed', 'rimossi', 'eliminados')} • ${failed} ${_ti('failed', 'falliti', 'fallidos')}</div>
                   ${extraHTML}
                   ${lblHint}
               </div>`, 100);
@@ -265,9 +265,9 @@ window.hpmUninstallSelected = function() {
 window.hpmFactoryReset = function() {
     const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
     const msg = _ti(
-        `Are you sure you want to perform a <b>Factory Reset</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">This will completely wipe all installed packages, databases, and caches. You will have a clean system, just like after a fresh download. This action cannot be undone.</span>`,
-        `Sei sicuro di voler eseguire un <b>Ripristino di Fabbrica</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Questo eliminerà completamente tutti i pacchetti installati, i database e le cache. Avrai un sistema pulito, come appena scaricato. Questa azione non è annullabile.</span>`,
-        `¿Estás seguro de que deseas realizar un <b>Restablecimiento de fábrica</b>?<br><br><span style="font-size:0.85em;color:var(--muted);">Esto borrará por completo todos los paquetes instalados, las bases de datos y los cachés. Tendrás un sistema limpio, como recién descargado. Esta acción no se puede deshacer.</span>`
+        `Are you sure you want to perform a <b>Factory Reset</b>?<br><br><span style="font-size:1em;color:var(--muted);">This will completely wipe all installed packages, databases, and caches. You will have a clean system, just like after a fresh download. This action cannot be undone.</span>`,
+        `Sei sicuro di voler eseguire un <b>Ripristino di Fabbrica</b>?<br><br><span style="font-size:1em;color:var(--muted);">Questo eliminerà completamente tutti i pacchetti installati, i database e le cache. Avrai un sistema pulito, come appena scaricato. Questa azione non è annullabile.</span>`,
+        `¿Estás seguro de que deseas realizar un <b>Restablecimiento de fábrica</b>?<br><br><span style="font-size:1em;color:var(--muted);">Esto borrará por completo todos los paquetes instalados, las bases de datos y los cachés. Tendrás un sistema limpio, como recién descargado. Esta acción no se puede deshacer.</span>`
     );
 
     window.hpmShowConfirm(msg, _ti('Wipe Database', 'Svuota Database', 'Borrar Base de Datos'), async () => {
@@ -282,7 +282,7 @@ window.hpmFactoryReset = function() {
 
             if (data.ok) {
                 if (typeof window.hpmSetProgress === 'function') {
-                    window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${_ti('Factory Reset Completed!', 'Ripristino Completato!', '¡Restablecimiento Completado!')}</b><br><br><span style="font-size:0.85em;color:var(--muted);">${_ti('Please restart Hecos to complete the process.', 'Riavvia Hecos per completare il processo.', 'Reinicia Hecos para completar el proceso.')}</span></div>`, 100);
+                    window.hpmSetProgress(true, `<div style="text-align:center; padding: 10px 0;"><i class="fas fa-check-circle" style="margin-right:6px; color:#10b981; font-size:1.5em; margin-bottom:8px; display:block;"></i> <b style="font-size:1.1em; color:var(--text)">${_ti('Factory Reset Completed!', 'Ripristino Completato!', '¡Restablecimiento Completado!')}</b><br><br><span style="font-size:1em;color:var(--muted);">${_ti('Please restart Hecos to complete the process.', 'Riavvia Hecos per completare il processo.', 'Reinicia Hecos para completar el proceso.')}</span></div>`, 100);
                 }
                 
                 // Aggiorna l'interfaccia
