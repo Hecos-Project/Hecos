@@ -29,18 +29,6 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_keys_routes(app, logger)
     init_docs_routes(app, cfg_mgr, root_dir, logger)
     
-    # Hecos Drive — HTTP File Manager
-    drive_enabled = cfg_mgr.config.get('plugins', {}).get('DRIVE', {}).get('enabled', True)
-    if drive_enabled:
-        try:
-            from . . drive.routes import init_drive_routes
-            init_drive_routes(app, logger)
-        except Exception as e:
-            try:
-                from hecos.plugins.drive.routes import init_drive_routes
-                init_drive_routes(app, logger)
-            except Exception:
-                logger.warning(f"[WebUI] Hecos Drive non disponibile: {e}")
 
     # Hecos Flows — Visual orchestration engine
     flows_enabled = cfg_mgr.config.get('plugins', {}).get('FLOWS', {}).get('enabled', True)

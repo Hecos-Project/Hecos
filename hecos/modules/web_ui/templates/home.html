@@ -65,10 +65,12 @@
       <span>Hub</span>
     </a>
     {% if current_user.is_authenticated %}
+    {% if is_hpm_installed('drive') %}
     <a href="/drive" target="_blank" rel="noopener" class="home-nav-link" title="Drive">
       <i class="fas fa-hdd"></i>
       <span>Drive</span>
     </a>
+    {% endif %}
     <a href="/flows" target="_blank" rel="noopener" class="home-nav-link" title="Flows">
       <i class="fas fa-project-diagram"></i>
       <span>Flows</span>

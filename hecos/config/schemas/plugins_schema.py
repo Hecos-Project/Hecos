@@ -71,23 +71,8 @@ class PluginExecutor(BaseModel):
     workspace_dir: str = "workspace/sandbox"
 
 
-class PluginDrive(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    root_dir: str = ""
-    max_upload_mb: int = 100
-    allowed_extensions: str = ""
-    enable_path_mapping: bool = True
-    max_list_items: int = 5
-    max_read_lines: int = 50
-    editor: Dict[str, Any] = Field(default_factory=lambda: {
-        "enabled": True,
-        "theme": "vs-dark",
-        "max_file_size_kb": 1024,
-        "word_wrap": True,
-        "spell_check": False
-    })
-
+# PluginDrive removed — Drive is now an HPM system_app (type='app').
+# It manages its own config independently and is NOT part of plugins.yaml.
 
 
 
@@ -132,18 +117,16 @@ class PluginFlows(BaseModel):
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
-    model_config = ConfigDict(extra='allow')  # HPM package keys ARE stored here
+    model_config = ConfigDict(extra='ignore')  # HPM package keys are NO LONGER stored here (they use their own .toml files)
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
     SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
-    DRIVE: PluginDrive = Field(default_factory=PluginDrive)
-
+    # DRIVE removed — it is now an HPM system_app package
     USERS: PluginUsers = Field(default_factory=PluginUsers)
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
-
     FLOWS: PluginFlows = Field(default_factory=PluginFlows)
     extra_dirs: List[str] = []
 

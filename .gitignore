@@ -525,6 +525,7 @@ hecos/modules/web_ui/extensions/remote_triggers/
 hecos/modules/web_ui/extensions/templates/
 
 # Missing WebUI Templates belonging to HPM packages (config files)
+hecos/modules/web_ui/templates/modules/config_drive.html
 hecos/modules/web_ui/templates/modules/config_browser.html
 hecos/modules/web_ui/templates/modules/config_mail.html
 hecos/modules/web_ui/templates/modules/config_messenger.html
@@ -534,6 +535,7 @@ hecos/modules/web_ui/templates/modules/config_pc_automation.html
 hecos/modules/web_ui/templates/modules/config_panel.html
 
 # WebUI Static Assets belonging to HPM packages
+hecos/modules/web_ui/static/js/config_mapper_drive.js
 hecos/modules/web_ui/static/css/browser_automation.css
 hecos/modules/web_ui/static/js/browser_automation.js
 hecos/modules/web_ui/static/css/image_gen.css

@@ -27,7 +27,6 @@
             `/static/js/config_mapper_utils.js${VER}`,
             `/static/js/config_mapper_llm.js${VER}`,
             `/static/js/config_mapper_plugins.js${VER}`,
-            `/static/js/config_mapper_drive.js${VER}`,
             `/static/js/config_mapper_components.js${VER}`,
             `/static/js/config_mapper_extras.js${VER}`,
             `/static/js/config_mapper.js${VER}`,

@@ -29,8 +29,6 @@ window.CONFIG_HUB = {
 
         { id: 'contacts',  label: 'hub_mod_contacts',     icon: '<i class="fas fa-address-book"></i>', cat: 'CONNETTIVITÀ', pluginTag: 'CONTACTS' },
         
-        { id: 'drive',             label: 'hub_mod_drive',        icon: '<i class="fas fa-hdd"></i>', cat: 'RISORSE', pluginTag: 'DRIVE' },
-        { id: 'drive-editor',     label: 'hub_mod_editor',       icon: '<i class="fas fa-edit"></i>', cat: 'RISORSE', pluginTag: 'DRIVE_EDITOR',      parentPluginTag: 'DRIVE', isExtension: true },
         { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE' },
         { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
@@ -126,5 +124,10 @@ window.LAZY_PANEL_IDS = new Set([
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'remote-triggers',
-    'drive', 'drive-editor', 'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
+    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
 ]);
+
+window.SYSTEM_PANELS = [
+    'plugins', 'system', 'users',
+    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
+];

@@ -43,7 +43,7 @@ def _get_plugins_schema():
 # and must be removed to avoid polluting plugins.yaml.
 _CORE_PLUGIN_KEYS = {
     "DASHBOARD", "HELP", "SYSTEM", "SYS_NET", "WEB_UI",
-    "EXECUTOR", "DRIVE", "USERS", "CONTACTS", "FLOWS",
+    "EXECUTOR", "USERS", "FLOWS",
     "extra_dirs",
 }
 

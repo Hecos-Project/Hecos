@@ -59,7 +59,9 @@
     <div class="sidebar-card-title">NAVIGATION</div>
     <div style="display:flex; flex-direction:column; gap:6px;">
       <a class="sidebar-btn" href="/hecos/config/ui" target="_blank"><span class="icon"><i class="fas fa-cog"></i></span> Hub</a>
+      {% if is_hpm_installed('drive') %}
       <a class="sidebar-btn" href="/drive" target="_blank"><span class="icon"><i class="fas fa-hdd"></i></span> Drive</a>
+      {% endif %}
       <a class="sidebar-btn" href="/flows" target="_blank"><span class="icon"><i class="fas fa-project-diagram"></i></span> Flows</a>
     </div>
   </div>

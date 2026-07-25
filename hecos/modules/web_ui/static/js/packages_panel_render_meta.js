@@ -27,16 +27,17 @@ window.hpmGetHubCategoryLabel = function(catKey) {
 };
 
 window.HPM_TYPE_META = {
-  plugin:      { label: window.hpm_ti('Plugins', 'Plugin', 'Plugins'),      icon: 'fa-plug',              color: '#3b82f6', order: 1 },
-  app:         { label: window.hpm_ti('Apps', 'App', 'Apps'),               icon: 'fa-th-large',          color: '#8b5cf6', order: 2 },
-  widget:      { label: window.hpm_ti('Widgets', 'Widget', 'Widgets'),      icon: 'fa-expand-arrows-alt', color: '#f59e0b', order: 3 },
-  library:     { label: window.hpm_ti('Libraries', 'Librerie', 'Librer\u00edas'),  icon: 'fa-book',              color: '#8b5cf6', order: 4 },
-  persona:     { label: window.hpm_ti('Personas', 'Persona', 'Personas'),   icon: 'fa-user-astronaut',    color: '#ec4899', order: 5 },
-  theme:       { label: window.hpm_ti('Themes', 'Temi', 'Temas'),           icon: 'fa-palette',           color: '#10b981', order: 6 },
-  extension:   { label: window.hpm_ti('Extensions', 'Estensioni', 'Extensiones'), icon: 'fa-puzzle-piece',      color: '#45a29e', order: 7 },
-  skill_pack:  { label: window.hpm_ti('Skill Packs', 'Pacchetti Skill', 'Paquetes de Skill'), icon: 'fa-graduation-cap',    color: '#f97316', order: 8 },
-  core_module: { label: window.hpm_ti('Core Modules', 'Moduli Core', 'M\u00f3dulos Core'), icon: 'fa-microchip',         color: '#ff4444', order: 9 },
-  other:       { label: window.hpm_ti('Other', 'Altro', 'Otros'),           icon: 'fa-cube',              color: '#6b7280', order: 10 }
+  plugin:      { label: window.hpm_ti('Plugins', 'Plugin', 'Plugins'),                       icon: 'fa-plug',              color: '#3b82f6', order: 1 },
+  app:         { label: window.hpm_ti('Apps', 'App', 'Apps'),                                icon: 'fa-th-large',          color: '#8b5cf6', order: 2 },
+  system_app:  { label: window.hpm_ti('System App', 'App di Sistema', 'App de Sistema'),     icon: 'fa-layer-group',       color: '#66fcf1', order: 3 },
+  widget:      { label: window.hpm_ti('Widgets', 'Widget', 'Widgets'),                       icon: 'fa-expand-arrows-alt', color: '#f59e0b', order: 4 },
+  library:     { label: window.hpm_ti('Libraries', 'Librerie', 'Librerías'),                 icon: 'fa-book',              color: '#8b5cf6', order: 5 },
+  persona:     { label: window.hpm_ti('Personas', 'Persona', 'Personas'),                    icon: 'fa-user-astronaut',    color: '#ec4899', order: 6 },
+  theme:       { label: window.hpm_ti('Themes', 'Temi', 'Temas'),                            icon: 'fa-palette',           color: '#10b981', order: 7 },
+  extension:   { label: window.hpm_ti('Extensions', 'Estensioni', 'Extensiones'),            icon: 'fa-puzzle-piece',      color: '#45a29e', order: 8 },
+  skill_pack:  { label: window.hpm_ti('Skill Packs', 'Pacchetti Skill', 'Paquetes de Skill'), icon: 'fa-graduation-cap',   color: '#f97316', order: 9 },
+  core_module: { label: window.hpm_ti('Core Modules', 'Moduli Core', 'Módulos Core'),        icon: 'fa-microchip',         color: '#ff4444', order: 10 },
+  other:       { label: window.hpm_ti('Other', 'Altro', 'Otros'),                            icon: 'fa-cube',              color: '#6b7280', order: 11 }
 };
 
 window.hpmGetCategory = function (pkg) {

@@ -19,7 +19,8 @@ TYPE_DEFAULT_DIR = {
     "library":     "hpm/libraries",
     "extension":   "hpm",
     "app":         "hpm",
-    "widget":      None,          # widget-only: no backend, skip code install
+    "system_app":  "hpm",           # WebUI pillar apps (Drive, Flows, etc.)
+    "widget":      None,            # widget-only: no backend, skip code install
     "persona":     "personas",
     "theme":       "themes",
     "skill_pack":  "hpm",

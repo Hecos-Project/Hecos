@@ -139,7 +139,7 @@ class HpkgManifest(BaseModel):
         "plugin",
         description=(
             "Package type: core_module | plugin | module | library | extension "
-            "| app | widget | persona | theme | skill_pack"
+            "| app | system_app | widget | persona | theme | skill_pack"
         )
     )
     author: str = Field("Unknown", description="Author name or organization")
@@ -307,6 +307,7 @@ class HpkgManifest(BaseModel):
             "core_module",  # Level 1 — built-in, not removable
             "extension",    # Level 3 — child of a plugin or core module
             "app",          # Level 4 — autonomous, has its own full UI
+            "system_app",   # Level 4b — WebUI pillar app (e.g. Drive, Flows)
             "widget",       # Level 5 — Control Room widget component
             "persona",      # Level 6 — installable AI personality
             "theme",        # Level 7 — CSS/UI theme

@@ -1,20 +1,5 @@
 extensions: {}
 plugins:
-  CONTACTS:
-    enabled: true
-    lazy_load: true
-  DRIVE:
-    allowed_extensions: ''
-    editor:
-      enabled: true
-      max_file_size_kb: 1024
-      spell_check: false
-      theme: vs-dark
-      word_wrap: true
-    enabled: true
-    lazy_load: true
-    max_upload_mb: 100
-    root_dir: ''
   EXECUTOR:
     enable_shell_commands: true
     enabled: true
@@ -23,12 +8,6 @@ plugins:
     shell_timeout: 15
     timeout_seconds: 10
     workspace_dir: workspace/sandbox
-  FILE_MANAGER:
-    enable_path_mapping: true
-    enabled: true
-    lazy_load: true
-    max_list_items: 5
-    max_read_lines: 50
   FLOWS:
     auto_save_compiled: false
     autosave_enabled: true
@@ -47,10 +26,6 @@ plugins:
     enabled: true
     lazy_load: true
     show_disabled: false
-  MCP_BRIDGE:
-    enabled: false
-    lazy_load: false
-    servers: {}
   SYSTEM:
     enable_config_set: true
     enabled: true

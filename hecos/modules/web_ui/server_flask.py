@@ -49,8 +49,19 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     mimetypes.add_type('text/css', '.css')
     mimetypes.add_type('application/javascript', '.js')
     
-    # Inject translation system and version into Jinja2 templates
-    app.jinja_env.globals.update(t=t, version=VERSION)
+    # Helper to check if an HPM package is installed (used for dynamically showing Drive/Flows buttons)
+    def _is_hpm_installed(plugin_id):
+        try:
+            from hecos.core.package_manager.registry import PackageRegistry
+            data_dir = os.path.join(root_dir, "hecos", "data")
+            reg = PackageRegistry(data_dir)
+            pkg = reg.get(plugin_id)
+            return pkg is not None and pkg.get("status") != "disabled"
+        except Exception as e:
+            return False
+
+    # Inject translation system, version, and HPM helper into Jinja2 templates
+    app.jinja_env.globals.update(t=t, version=VERSION, is_hpm_installed=_is_hpm_installed)
 
     # ── Extend Jinja loader to include WEB_UI extension template dirs ──
     try:

@@ -155,7 +155,15 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         plugin_id = result.package_id
                         install_path = pkg_meta.get("install_path")
                         if install_path:
-                            abs_route_path = os.path.join(install_path, api_routes_file)
+                            plugin_dir = snap.get("plugin_dir") or plugin_id
+                            prefix = plugin_dir.rstrip("/\\") + "/"
+                            api_stripped = api_routes_file
+                            if api_stripped.startswith(prefix):
+                                api_stripped = api_stripped[len(prefix):]
+                            abs_route_path = os.path.join(install_path, api_stripped)
+                            if not os.path.isfile(abs_route_path):
+                                abs_route_path = os.path.join(install_path, api_routes_file)
+                                
                             if os.path.isfile(abs_route_path):
                                 import importlib.util
                                 spec = importlib.util.spec_from_file_location(f"plugin_routes_{plugin_id}", abs_route_path)
