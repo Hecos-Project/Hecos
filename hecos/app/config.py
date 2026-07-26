@@ -38,14 +38,7 @@ def _get_plugins_schema():
     return PluginsFileConfig
 
 
-# Keys that belong exclusively to the core schema (PluginsConfig fields).
-# Any OTHER key under `plugins:` is a leftover from pre-packagization era
-# and must be removed to avoid polluting plugins.yaml.
-_CORE_PLUGIN_KEYS = {
-    "DASHBOARD", "HELP", "SYSTEM", "SYS_NET", "WEB_UI",
-    "EXECUTOR", "USERS", "FLOWS",
-    "extra_dirs",
-}
+
 
 def _get_widgets_schema():
     from hecos.config.schemas.widgets_schema import WidgetsFileConfig
@@ -150,42 +143,10 @@ class ConfigManager:
             self._widgets_model = WidgetsFileConfig()
 
         self._apply_volatility()
-        self._sanitize_plugins_yaml()
         self._sanitize_widgets_yaml()
         self._sync_dict()
 
-    def _sanitize_plugins_yaml(self):
-        """Remove any non-core keys from plugins.yaml that were left by
-        pre-packagization modules (e.g. REMINDER, BROWSER, CALENDAR, MESSENGER).
-        These keys are not in the core PluginsConfig schema; they belong to
-        HPM packages which manage their own config files independently.
-        Writes the cleaned file to disk so the pollution disappears permanently.
-        """
-        if not _os.path.exists(self._plugins_path):
-            return
-        try:
-            import yaml as _yaml
-            with open(self._plugins_path, "r", encoding="utf-8") as f:
-                raw = _yaml.safe_load(f) or {}
 
-            plugins_section = raw.get("plugins", {})
-            non_core = [k for k in plugins_section if k not in _CORE_PLUGIN_KEYS]
-
-            if non_core:
-                for k in non_core:
-                    plugins_section.pop(k)
-                    logger.info(f"[CONFIG] Removed non-core plugin key from plugins.yaml: '{k}'")
-                raw["plugins"] = plugins_section
-                with open(self._plugins_path, "w", encoding="utf-8") as f:
-                    _yaml.dump(raw, f, default_flow_style=False, allow_unicode=True)
-                logger.info("[CONFIG] plugins.yaml sanitized — non-core keys removed.")
-                
-                # Reload the model into memory so the keys don't get accidentally saved back later
-                from hecos.config.yaml_utils import load_yaml
-                PluginsFileConfig = _get_plugins_schema()
-                self._plugins_model = load_yaml(self._plugins_path, PluginsFileConfig)
-        except Exception as e:
-            logger.warning(f"[CONFIG] Could not sanitize plugins.yaml: {e}")
 
     def _sanitize_widgets_yaml(self):
         """Remove stale per_widget entries from widgets.yaml for widgets that are
@@ -429,19 +390,6 @@ class ConfigManager:
         import copy
         with self._lock:
           try:
-            # ── Strip non-core plugin keys from incoming payload ───────────────
-            # The JS frontend hardcodes BROWSER, REMINDER, CALENDAR etc. into
-            # every config save payload (legacy remnants). Stripping them here
-            # at the entry point prevents them from ever entering the in-memory
-            # config dict or being written to plugins.yaml, breaking the loop.
-            if "plugins" in new_data and isinstance(new_data["plugins"], dict):
-                incoming_plugins = new_data["plugins"]
-                stripped = [k for k in incoming_plugins if k not in _CORE_PLUGIN_KEYS]
-                for k in stripped:
-                    incoming_plugins.pop(k)
-                    logger.debug(f"[CONFIG] Stripped non-core key from incoming payload: '{k}'")
-            # ─────────────────────────────────────────────────────────────────
-
             temp_config = copy.deepcopy(self.config)
             self._deep_update(temp_config, new_data)
 

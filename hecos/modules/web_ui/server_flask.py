@@ -171,13 +171,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     app.register_blueprint(history_bp)
 
 
-    # Contacts Plugin Route Integration
-    try:
-        from hecos.plugins.contacts.api import register_routes as init_contacts_api
-        init_contacts_api(app)
-        logger.info("[WebUI] Hecos Contacts plugin loaded.")
-    except Exception as _ct_e:
-        logger.warning(f"[WebUI] Contacts plugin could not load: {_ct_e}")
+    # Contacts API registration removed (handled by HPM loader or conditionally)
 
     # Mail Plugin Route Integration
     try:

@@ -47,6 +47,9 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     register_search_routes(app, _hecos_src, cfg_mgr, log)
     register_store_routes(app, _hecos_src, cfg_mgr, log)
 
+    from hecos.modules.web_ui.routes_packages_helpers import _refresh_jinja_loader
+    _refresh_jinja_loader(app)
+
     # Automatically load standalone API routes for HPM packages
     try:
         from hecos.core.package_manager.registry import PackageRegistry
