@@ -39,9 +39,6 @@ plugins:
     lazy_load: true
     proxy_enabled: false
     proxy_url: socks5://localhost:9150
-  USERS:
-    enabled: true
-    lazy_load: true
   WEB_UI:
     api_port: 5000
     auto_open_browser: false

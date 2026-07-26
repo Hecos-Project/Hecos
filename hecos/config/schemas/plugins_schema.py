@@ -76,10 +76,6 @@ class PluginExecutor(BaseModel):
 
 
 
-class PluginUsers(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-
 
 class PluginContacts(BaseModel):
     enabled: bool = True
@@ -125,7 +121,7 @@ class PluginsConfig(BaseModel):
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     # DRIVE removed — it is now an HPM system_app package
-    USERS: PluginUsers = Field(default_factory=PluginUsers)
+    # USERS removed — it is now an HPM package
     CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
     FLOWS: PluginFlows = Field(default_factory=PluginFlows)
     extra_dirs: List[str] = []
