@@ -33,6 +33,17 @@ def _cmd_help(raw_args_str="", config=None, config_manager=None, **kwargs) -> st
     return "\n".join(lines)
 
 
+def _cmd_author(raw_args_str="", **kwargs) -> str:
+    """Return the authorship and copyright card."""
+    try:
+        from hecos.core.identity import get_author_card
+        return get_author_card(include_address=False)
+    except ImportError:
+        return "⚠️ Hecos identity module missing or tampered with."
+    except Exception as e:
+        return f"❌ Error retrieving authorship info: {e}"
+
+
 def _cmd_status(raw_args_str="", config=None, config_manager=None, **kwargs) -> str:
     """Return a system status summary."""
     cfg = config or (config_manager.config if config_manager else {})
@@ -218,6 +229,19 @@ SYSTEM_COMMANDS = [
         "requires_args": False,
         "save_to_memory": False,
         "_handler": _cmd_help,
+    },
+    {
+        "id": "zz_author",
+        "aliases": ["/copyright", "/author", "/credits"],
+        "description": "Mostra le informazioni sull'autore e licenza di Hecos",
+        "usage": "/copyright",
+        "example": "/copyright",
+        "icon": "🔏",
+        "category": "CORE",
+        "requires_auth": "any",
+        "requires_args": False,
+        "save_to_memory": False,
+        "_handler": _cmd_author,
     },
     {
         "id": "status",
