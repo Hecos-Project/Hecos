@@ -27,7 +27,7 @@ from .system_schema import SystemConfig
 from .plugins_schema import (
     PluginsFileConfig, PluginsConfig, ExtensionsConfig,
     PluginHelp,
-    PluginSystem, PluginSysNet,
+    PluginSystem,
     PluginWebUI, PluginExecutor,
 )
 from .widgets_schema import WidgetsFileConfig, WidgetsConfig, WidgetPersistence
@@ -37,7 +37,7 @@ __all__ = [
     "SystemConfig",
     "PluginsFileConfig", "PluginsConfig", "ExtensionsConfig",
     "PluginHelp",
-    "PluginSystem", "PluginSysNet",
+    "PluginSystem",
     "PluginWebUI", "PluginExecutor",
     "WidgetsFileConfig", "WidgetsConfig", "WidgetPersistence",
     "AgentConfig",

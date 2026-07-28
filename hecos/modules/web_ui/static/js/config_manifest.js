@@ -29,7 +29,7 @@ window.CONFIG_HUB = {
 
         
         { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE' },
-        { id: 'sysnet',    label: 'hub_mod_sysnet',       icon: '<i class="fas fa-globe-europe"></i>', cat: 'SISTEMA', pluginTag: 'SYS_NET', isCore: true },
+        { id: 'sysnet',    label: 'Web Server',           icon: '<i class="fas fa-server"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
@@ -101,7 +101,7 @@ window.CONFIG_HUB.tagMap = {
     'EXECUTOR': 'executor',
     'WEBCAM': 'webcam',
     'MEMORY': 'memory',
-    'SYS_NET': 'sysnet',
+    // SYS_NET removed — sys_net is now an HPM package with its own tab_id
     'MODELS': 'backend',
     'PERSONALITY': 'ia',
     'DRIVE_EDITOR': 'drive-editor',

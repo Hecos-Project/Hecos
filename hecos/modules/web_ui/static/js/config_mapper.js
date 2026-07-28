@@ -90,10 +90,7 @@ function buildPayload() {
         out.system    = sysPart.system;
         out.language  = sysPart.language;
         out.cognition = sysPart.cognition;
-        if (sysPart.plugins?.SYS_NET) {
-            out.plugins['SYS_NET'] = out.plugins['SYS_NET'] || {};
-            out.plugins['SYS_NET'].proxy_url = sysPart.plugins.SYS_NET.proxy_url;
-        }
+
         if (sysPart.plugins?.WEB_UI) {
             out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
             out.plugins['WEB_UI'].https_enabled = sysPart.plugins.WEB_UI.https_enabled;

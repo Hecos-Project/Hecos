@@ -589,3 +589,7 @@ hecos/assets/css/flows.css
 hecos/core/i18n/locales/*/webui/flows.json
 hecos/core/commands/builtins/flow_commands.py
 
+# Sys Net (HPM System App)
+hecos/modules/sys_net/
+hecos/modules/web_ui/routes_sysnet.py
+hecos/modules/web_ui/templates/modules/config_sysnet_panel.html

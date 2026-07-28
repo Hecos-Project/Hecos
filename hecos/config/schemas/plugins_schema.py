@@ -41,12 +41,6 @@ class PluginSystem(BaseModel):
     programs: Dict[str, str] = {}
 
 
-class PluginSysNet(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    proxy_enabled: bool = False
-    proxy_url: str = "socks5://localhost:9150"
-
 
 
 class PluginWebUI(BaseModel):
@@ -90,7 +84,7 @@ class PluginsConfig(BaseModel):
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
-    SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
+    # SYS_NET removed — it is now an HPM package
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
     # DRIVE removed — it is now an HPM system_app package

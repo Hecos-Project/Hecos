@@ -1,0 +1,99 @@
+<div class="card">
+  <div class="card-title">{{ t('webui_conf_sysnet_proxy_title') }}</div>
+  <p style="color:var(--muted); font-size:13px; margin-bottom:18px;">
+    {{ t('webui_sysnet_proxy_desc') }}
+  </p>
+
+  <div class="toggle-row" style="margin-bottom:16px;">
+    <div class="toggle-info">Attiva utilizzo del Proxy Globalmente</div>
+    <label class="switch"><input type="checkbox" id="sys-proxy-enabled"><span class="slider"></span></label>
+  </div>
+
+<!-- Proxy Builder -->
+<div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:16px;">
+  <div style="font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px;">{{ t('webui_sysnet_proxy_config') }}</div>
+
+  <div style="display:grid; grid-template-columns: 110px 1fr 80px; gap:10px; align-items:end; margin-bottom:12px;">
+    <div class="field" style="margin:0">
+      <label style="font-size:12px;">{{ t('webui_sysnet_proxy_proto') }}</label>
+      <select id="sysnet-proto" onchange="SysNetPanel.updateProxyUrl()">
+        <option value="">{{ t('webui_chat_none') }}</option>
+        <option value="http">HTTP</option>
+        <option value="https">HTTPS</option>
+        <option value="socks4">SOCKS4</option>
+        <option value="socks5">SOCKS5</option>
+      </select>
+    </div>
+    <div class="field" style="margin:0">
+      <label style="font-size:12px;">{{ t('webui_sysnet_proxy_host') }}</label>
+      <input type="text" id="sysnet-host" placeholder="es. 127.0.0.1 o proxy.example.com" oninput="SysNetPanel.updateProxyUrl()">
+    </div>
+    <div class="field" style="margin:0">
+      <label style="font-size:12px;">{{ t('webui_sysnet_proxy_port') }}</label>
+      <input type="number" id="sysnet-port" placeholder="8080" min="1" max="65535" oninput="SysNetPanel.updateProxyUrl()">
+    </div>
+  </div>
+
+  <!-- Optional auth -->
+  <div id="sysnet-auth-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+    <div class="field" style="margin:0">
+      <label style="font-size:12px;">{{ t('webui_sysnet_proxy_user') }}</label>
+      <input type="text" id="sysnet-user" placeholder="utente" oninput="SysNetPanel.updateProxyUrl()">
+    </div>
+    <div class="field" style="margin:0">
+      <label style="font-size:12px;">{{ t('webui_sysnet_proxy_pass') }}</label>
+      <input type="password" id="sysnet-pass" placeholder="password" oninput="SysNetPanel.updateProxyUrl()">
+    </div>
+  </div>
+
+  <!-- Resulting URL -->
+  <div class="field" style="margin:0 0 12px 0">
+    <label style="font-size:12px;">{{ t('webui_sysnet_proxy_gen') }} <small style="color:var(--muted)">{{ t('webui_sysnet_proxy_manual') }}</small></label>
+    <input type="text" id="sys-proxy-url" placeholder="Seleziona protocollo, host e porta sopra..." oninput="SysNetPanel.parseProxyUrl()">
+  </div>
+
+  <!-- Test Button & Status -->
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+    <button type="button" class="btn btn-primary" style="font-size:13px; padding:6px 18px;"
+      id="sysnet-test-btn" onclick="SysNetPanel.runProxyTest()">🧪 {{ t('webui_sysnet_proxy_test_btn') }}</button>
+    <span id="sysnet-test-spinner" style="display:none; color:var(--muted); font-size:13px;">⏳ {{ t('webui_sysnet_proxy_testing') }}</span>
+  </div>
+
+  <!-- Proxy Location Indicator -->
+  <div style="display:flex; align-items:center; gap:8px; font-size:13px; background:var(--bg3); padding:8px 12px; border-radius:6px; border:1px solid var(--border); width: fit-content;">
+    <div id="sysnet-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--red); box-shadow: 0 0 5px var(--red); transition: all 0.3s ease;"></div>
+    <div style="color:var(--text);">{{ t('webui_sysnet_proxy_status') }}: <strong id="sysnet-status-text" style="color:var(--red); transition: color 0.3s ease;">{{ t('webui_km_status_unknown') }}</strong></div>
+    <div style="color:var(--muted); margin-left:8px;" id="sysnet-status-loc"></div>
+  </div>
+</div>
+
+<!-- Live log panel -->
+<div id="sysnet-log-panel" style="display:none; margin-bottom:16px;">
+  <div style="font-size:12px; color:var(--accent); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;">{{ t('webui_sysnet_proxy_log_title') }}</div>
+  <div id="sysnet-log-output" style="
+    background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+    padding:10px 12px; font-family:'JetBrains Mono',monospace; font-size:12px;
+    max-height:220px; overflow-y:auto; line-height:1.7; color:var(--text);
+  "></div>
+</div>
+
+<!-- Quick preset buttons -->
+<div style="margin-bottom:16px;">
+  <div style="font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:.5px;">{{ t('webui_sysnet_proxy_presets') }}</div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
+      onclick="SysNetPanel.applyProxyPreset('socks5','127.0.0.1','2080')">🔒 SOCKS5 :2080</button>
+    <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
+      onclick="SysNetPanel.applyProxyPreset('socks5','127.0.0.1','1080')">🔒 SOCKS5 :1080</button>
+    <button type="button" class="btn btn-secondary" style="font-size:12px; padding:4px 12px;"
+      onclick="SysNetPanel.applyProxyPreset('http','127.0.0.1','8080')">🌐 HTTP :8080</button>
+    <button type="button" class="btn btn-danger btn-sm"
+      onclick="SysNetPanel.clearProxy()"><i class="fas fa-times"></i> {{ t('webui_sysnet_proxy_remove') }}</button>
+  </div>
+</div>
+
+<div style="font-size:12px; color:var(--muted); line-height:1.6;">
+  {{ t('webui_sysnet_proxy_note') | safe }}
+</div>
+</div>
+<script src="/hpm_plugin/sys_net/web_ui/assets/js/panel.js"></script>
