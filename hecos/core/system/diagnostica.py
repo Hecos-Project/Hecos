@@ -222,4 +222,4 @@ def start_wake_sequence(config):
     print(f"{CIANO}{'─' * 55}{RESET}")
 
     time.sleep(0.5)
-    return True
+    return True

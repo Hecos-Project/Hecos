@@ -296,7 +296,7 @@ class DependencyResolver:
         # 1. Identify which pip packages the current package explicitly installed
         candidate_packages = set()
         for req in pkg_requirements:
-            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
+            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower().replace('_', '-')
             if clean_req and not clean_req.startswith("#"):
                 candidate_packages.add(clean_req)
 
@@ -316,11 +316,11 @@ class DependencyResolver:
                 deps_match = re.search(r'dependencies\s*=\s*\[(.*?)\]', content, re.DOTALL)
                 if deps_match:
                     for m in re.findall(r'"([^"]+)"', deps_match.group(1)):
-                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower())
+                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower().replace('_', '-'))
                 service_match = re.search(r'service\s*=\s*\[(.*?)\]', content, re.DOTALL)
                 if service_match:
                     for m in re.findall(r'"([^"]+)"', service_match.group(1)):
-                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower())
+                        core_deps.add(re.split(r'[;>=<~]', m)[0].strip().lower().replace('_', '-'))
             except Exception as e:
                 logger.error(f"[HPM:Resolver] Failed to parse core pyproject.toml: {e}")
 
@@ -338,7 +338,7 @@ class DependencyResolver:
             manifest = pkg.get("manifest_snapshot") or {}
             pip_reqs = manifest.get("pip_requirements") or []
             for req in pip_reqs:
-                clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
+                clean_req = re.split(r'[;>=<~]', req)[0].strip().lower().replace('_', '-')
                 if clean_req:
                     other_packages_deps.add(clean_req)
 
@@ -351,7 +351,7 @@ class DependencyResolver:
         if safe_to_remove:
             try:
                 for dist in importlib.metadata.distributions():
-                    dist_name = dist.metadata.get('Name', '').lower()
+                    dist_name = dist.metadata.get('Name', '').lower().replace('_', '-')
                     
                     # If this installed package is one of the ones we are trying to remove, skip its requirements
                     if dist_name in candidate_packages:
@@ -360,7 +360,7 @@ class DependencyResolver:
                     requires = dist.requires
                     if requires:
                         for req in requires:
-                            req_base = re.split(r'[;>=<~\s\(]', req)[0].strip().lower()
+                            req_base = re.split(r'[;>=<~\s\(]', req)[0].strip().lower().replace('_', '-')
                             if req_base in safe_to_remove:
                                 logger.info(f"[HPM:Resolver] Keeping pip dependency '{req_base}' because it is required by installed package '{dist_name}'.")
                                 safe_to_remove.remove(req_base)
@@ -376,7 +376,7 @@ class DependencyResolver:
         # (pip uninstall needs the exact string or at least the valid name)
         final_safe = []
         for req in pkg_requirements:
-            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower()
+            clean_req = re.split(r'[;>=<~]', req)[0].strip().lower().replace('_', '-')
             if clean_req in safe_to_remove:
                 final_safe.append(req.strip())
 

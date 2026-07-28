@@ -62,7 +62,9 @@
       {% if is_hpm_installed('drive') %}
       <a class="sidebar-btn" href="/drive" target="_blank"><span class="icon"><i class="fas fa-hdd"></i></span> Drive</a>
       {% endif %}
+      {% if is_hpm_installed('flows') %}
       <a class="sidebar-btn" href="/flows" target="_blank"><span class="icon"><i class="fas fa-project-diagram"></i></span> Flows</a>
+      {% endif %}
     </div>
   </div>
 

@@ -54,13 +54,6 @@ class CommandRegistry:
             _log.error(f"[HDCS Registry] Error loading system builtins: {e}")
 
         try:
-            from .builtins.flow_commands import FLOW_COMMANDS
-            for cmd in FLOW_COMMANDS:
-                self._register(cmd)
-        except Exception as e:
-            _log.error(f"[HDCS Registry] Error loading flow builtins: {e}")
-
-        try:
             from .builtins.hpm_commands import HPM_COMMANDS
             for cmd in HPM_COMMANDS:
                 self._register(cmd)

@@ -32,7 +32,9 @@
       {% if is_hpm_installed('drive') %}
       <a href="/drive" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;"><i class="fas fa-hdd"></i> Drive</a>
       {% endif %}
+      {% if is_hpm_installed('flows') %}
       <a href="/flows" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;" title="Hecos Flows — Orchestrazione visuale"><i class="fas fa-project-diagram"></i> Flows</a>
+      {% endif %}
       {% endif %}
   
       <!-- AUTHENTICATION WIDGET -->

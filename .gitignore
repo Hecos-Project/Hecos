@@ -576,3 +576,16 @@ hecos/config/data/calendar.toml
 hecos/modules/web_ui/templates/modules/config_contacts.html
 hecos/modules/web_ui/templates/modules/contacts/
 
+# Flows (HPM System App)
+hecos/modules/flows/
+hecos/modules/web_ui/routes_flows.py
+hecos/modules/web_ui/templates/flows.html
+hecos/modules/web_ui/templates/modules/config_flows.html
+hecos/assets/js/flows_canvas_react/
+hecos/assets/js/dist/flows_canvas.bundle.js
+hecos/assets/js/dist/flows_canvas.css
+hecos/assets/js/flows_*.js
+hecos/assets/css/flows.css
+hecos/core/i18n/locales/*/webui/flows.json
+hecos/core/commands/builtins/flow_commands.py
+
