@@ -37,8 +37,7 @@ window.CONFIG_HUB = {
         { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA' },
         { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA' },
         { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' },
-        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true },
-        { id: 'backup',    label: 'hub_mod_backup',       icon: '<i class="fas fa-shield-halved"></i>', cat: 'SISTEMA', isCore: true }
+        { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
     // Fallback Icons based on keywords (for MCP or new plugins)

@@ -13,7 +13,7 @@ from .package_schema import HpkgManifest
 # Pure data types (persona, theme) keep their own semantic directories.
 # widget-only packages have no backend code to install.
 TYPE_DEFAULT_DIR = {
-    "core_module": "hpm",
+    "core_module": "modules",
     "plugin":      "hpm",
     "module":      "hpm",
     "library":     "hpm/libraries",

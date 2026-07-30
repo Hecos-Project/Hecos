@@ -127,7 +127,6 @@ _PANEL_MAP = {
     'widgets':         'modules/config_widgets.html',
     'help':            'modules/config_help.html',
     'flows':           'modules/config_flows.html',
-    'backup':          'modules/config_backup.html',
     'packages':        'modules/config_packages.html',
 }
 
@@ -395,8 +394,10 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         hecos_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         )
-        # Try hpm/ first (new location), fall back to plugins/ for legacy packages
+        # Try hpm/ first (new location), fall back to modules/ and plugins/
         plugin_base = os.path.join(hecos_root, "hecos", "hpm", plugin_id)
+        if not os.path.isdir(plugin_base):
+            plugin_base = os.path.join(hecos_root, "hecos", "modules", plugin_id)
         if not os.path.isdir(plugin_base):
             plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
         # Build the full path and ensure it stays within the plugin dir

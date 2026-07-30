@@ -593,3 +593,9 @@ hecos/core/commands/builtins/flow_commands.py
 hecos/modules/sys_net/
 hecos/modules/web_ui/routes_sysnet.py
 hecos/modules/web_ui/templates/modules/config_sysnet_panel.html
+
+# Global Backup (HPM Core Module)
+hecos/modules/backup/
+hecos/modules/web_ui/templates/modules/config_backup.html
+hecos/config/data/backup_config.json
+hecos/modules/global_backup/
