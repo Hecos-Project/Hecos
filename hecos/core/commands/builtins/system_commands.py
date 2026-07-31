@@ -33,6 +33,17 @@ def _cmd_help(raw_args_str="", config=None, config_manager=None, **kwargs) -> st
     return "\n".join(lines)
 
 
+def _cmd_author(raw_args_str="", **kwargs) -> str:
+    """Return the authorship and copyright card."""
+    try:
+        from hecos.core.identity import get_author_card
+        return get_author_card(include_address=False)
+    except ImportError:
+        return "⚠️ Hecos identity module missing or tampered with."
+    except Exception as e:
+        return f"❌ Error retrieving authorship info: {e}"
+
+
 def _cmd_status(raw_args_str="", config=None, config_manager=None, **kwargs) -> str:
     """Return a system status summary."""
     cfg = config or (config_manager.config if config_manager else {})
@@ -137,20 +148,19 @@ def _cmd_souls(raw_args_str="", config=None, config_manager=None, **kwargs) -> s
         from hecos.modules.personality.main import tools as personality_tools
         return personality_tools.list_souls(config_manager=config_manager)
     except Exception as e:
-        # Fallback: scan the personality directory directly
+        # Fallback: scan the personas directory directly
         try:
             import os
             hecos_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-            p_dir = os.path.join(hecos_dir, "personality")
-            files = sorted([f for f in os.listdir(p_dir) if f.endswith('.yaml')])
+            p_dir = os.path.join(hecos_dir, "personas")
+            files = sorted([d for d in os.listdir(p_dir) if os.path.isdir(os.path.join(p_dir, d))])
             if not files:
                 return "❌ Nessuna personalità trovata."
             cfg = config or (config_manager.config if config_manager else {})
-            active = cfg.get("ai", {}).get("active_personality", "")
+            active = cfg.get("ai", {}).get("active_personality", "").replace(".yaml", "")
             lines = ["## 🧠 Personalità Disponibili\n"]
-            for i, f in enumerate(files):
-                name = f.replace('.yaml', '')
-                marker = " ✦ *attiva*" if f == active else ""
+            for i, name in enumerate(files):
+                marker = " ✦ *attiva*" if name == active else ""
                 lines.append(f"{i+1}. **{name}**{marker}")
             lines.append("\n*Usa `/soul <nome>` per cambiare.*")
             return "\n".join(lines)
@@ -219,6 +229,19 @@ SYSTEM_COMMANDS = [
         "requires_args": False,
         "save_to_memory": False,
         "_handler": _cmd_help,
+    },
+    {
+        "id": "zz_author",
+        "aliases": ["/copyright", "/author", "/credits"],
+        "description": "Mostra le informazioni sull'autore e licenza di Hecos",
+        "usage": "/copyright",
+        "example": "/copyright",
+        "icon": "🔏",
+        "category": "CORE",
+        "requires_auth": "any",
+        "requires_args": False,
+        "save_to_memory": False,
+        "_handler": _cmd_author,
     },
     {
         "id": "status",

@@ -13,15 +13,17 @@ from .package_schema import HpkgManifest
 # Pure data types (persona, theme) keep their own semantic directories.
 # widget-only packages have no backend code to install.
 TYPE_DEFAULT_DIR = {
-    "core_module": "hpm",
-    "plugin":      "hpm",
-    "module":      "hpm",
-    "extension":   "hpm",
-    "app":         "hpm",
-    "widget":      None,          # widget-only: no backend, skip code install
-    "persona":     "personas",
-    "theme":       "themes",
-    "skill_pack":  "hpm",
+    "core_module":    "modules",
+    "system_app":     "modules",       # WebUI pillar apps (Drive, Flows, etc.)
+    "generic_module": "hpm/modules",
+    "plugin":         "hpm/plugins",
+    "library":        "hpm/libraries",
+    "extension":      "hpm/extensions",
+    "app":            "hpm/apps",
+    "widget":         None,            # widget-only: no backend, skip code install
+    "persona":        "personas",
+    "theme":          "themes",
+    "skill_pack":     "hpm/skill_packs",
 }
 
 def copy_tree(src: str, dst: str) -> List[str]:
@@ -58,12 +60,19 @@ def _resolve_target_dir(manifest: HpkgManifest) -> str | None:
     pkg_type = manifest.type
     default_for_type = TYPE_DEFAULT_DIR.get(pkg_type)
 
-    # If the developer explicitly overrode target_dir away from the default 'hpm',
-    # respect their choice — but only if this type normally HAS a target directory.
-    if default_for_type is not None and manifest.target_dir != "hpm":
+    # 1. Developer explicitly overrode target_dir
+    if manifest.target_dir:
+        # Exception: if it's a known type with NO backend (e.g. widget), still return None
+        if pkg_type in TYPE_DEFAULT_DIR and TYPE_DEFAULT_DIR[pkg_type] is None:
+            return None
         return manifest.target_dir
 
-    return default_for_type
+    # 2. Use system default if known
+    if pkg_type in TYPE_DEFAULT_DIR:
+        return default_for_type
+
+    # 3. Dynamic fallback for unknown types (e.g. "tony_app" -> "hpm/tony_apps")
+    return f"hpm/{pkg_type}s"
 
 
 def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
@@ -81,7 +90,7 @@ def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -
     plugin_src = os.path.join(staging, plugin_dir_in_zip.rstrip("/"))
 
     if not os.path.isdir(plugin_src):
-        for candidate in ["plugin", "module", "app", manifest.id]:
+        for candidate in ["plugin", "module", "app", "persona", "personas", manifest.id]:
             candidate_path = os.path.join(staging, candidate)
             if os.path.isdir(candidate_path):
                 plugin_src = candidate_path
@@ -253,4 +262,27 @@ def install_docs(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[
             shutil.copy2(src, dst)
             installed.append(dst)
             
+    return installed
+
+def install_assets(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
+    """
+    Copies global assets (like sounds, images, fonts) to the Hecos assets directory.
+    These files are tracked and will be cleanly removed on uninstall.
+    """
+    installed: List[str] = []
+    
+    # 1. Check for 'assets' directory
+    assets_src = os.path.join(staging, "assets")
+    if os.path.isdir(assets_src):
+        assets_dst = os.path.join(hecos_root, "assets")
+        os.makedirs(assets_dst, exist_ok=True)
+        installed.extend(copy_tree(assets_src, assets_dst))
+        
+    # 2. Check for 'sounds' directory (often used by sound packs directly at root)
+    sounds_src = os.path.join(staging, "sounds")
+    if os.path.isdir(sounds_src):
+        sounds_dst = os.path.join(hecos_root, "assets", "sounds")
+        os.makedirs(sounds_dst, exist_ok=True)
+        installed.extend(copy_tree(sounds_src, sounds_dst))
+        
     return installed

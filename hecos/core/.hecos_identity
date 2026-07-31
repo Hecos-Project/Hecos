@@ -1,0 +1,14 @@
+{
+  "identity": {
+    "product": "Hecos",
+    "author": "Antonio Meloni",
+    "born": "29/05/1980",
+    "birthplace": "Cagliari (CA), Italy",
+    "address": "Via Bachelet 7A, Serdiana (CA), Italy",
+    "copyright": "Copyright (C) 2024-2026 Antonio Meloni. All rights reserved.",
+    "license": "GPL-3.0",
+    "created_at": "2026-07-26T16:38:15.436725"
+  },
+  "signature": "zkl4L5Z/VAo8dYag+2uo2v7GUgSiFzgF4M4itL+Nh5ndE47/0gmh1GQoI/Kxuvu/g0dOnFX5Rq9CzORgmtzzCA==",
+  "algo": "Ed25519"
+}

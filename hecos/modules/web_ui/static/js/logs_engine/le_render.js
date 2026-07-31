@@ -1,5 +1,6 @@
 // --- DOM Manipulation & Element Renderers ---
 window.appendDataLine = function(win, data) {
+    if (win.isPaused) return;
     const line = document.createElement('div');
     const colorClass = data.level ? `lvl-${data.level}` : '';
     line.className = `log-line ${colorClass}`;
@@ -17,12 +18,16 @@ window.appendDataLine = function(win, data) {
         textOut = textOut.replace(regex, '<span style="background-color:rgba(var(--accent-rgb),0.35); color:var(--text); border-radius:2px; padding:0 2px; border:1px solid var(--accent);">$1</span>');
     }
 
+    // Linkify URLs
+    textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
+
     line.innerHTML = `<span class="log-time">${data.time}</span><span class="log-lvl ${colorClass}">${data.level}</span><span class="log-text">${textOut}</span>`;
     
     window.appendToBody(win, line);
 }
 
 window.appendRawLine = function(win, text) {
+    if (win.isPaused) return;
     const line = document.createElement('div');
     
     let lvlClass = '';
@@ -47,6 +52,9 @@ window.appendRawLine = function(win, text) {
         textOut = textOut.replace(regex, '<span style="background-color:rgba(var(--accent-rgb),0.35); color:var(--text); border-radius:2px; padding:0 2px; border:1px solid var(--accent);">$1</span>');
     }
     
+    // Linkify URLs
+    textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
+
     line.innerHTML = `<span class="log-text">${textOut}</span>`;
     window.appendToBody(win, line);
 }

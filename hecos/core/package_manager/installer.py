@@ -27,6 +27,7 @@ from .installer_steps import (
     install_widgets,
     install_i18n,
     install_docs,
+    install_assets,
     rollback,
     _resolve_target_dir
 )
@@ -211,6 +212,9 @@ class PackageInstaller:
 
             # ── Step 9.5: Copy documentation files ────────────────────────────
             installed_files.extend(install_docs(staging_dir, manifest, self._hecos_root))
+
+            # ── Step 9.6: Copy global assets ──────────────────────────────────
+            installed_files.extend(install_assets(staging_dir, manifest, self._hecos_root))
 
             # ── Step 10: Register in DB ───────────────────────────────────────
             self._emit("hpm:progress", {"step": "register", "message": "Registering in database..."})

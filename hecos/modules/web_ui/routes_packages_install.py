@@ -155,7 +155,15 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         plugin_id = result.package_id
                         install_path = pkg_meta.get("install_path")
                         if install_path:
-                            abs_route_path = os.path.join(install_path, api_routes_file)
+                            plugin_dir = snap.get("plugin_dir") or plugin_id
+                            prefix = plugin_dir.rstrip("/\\") + "/"
+                            api_stripped = api_routes_file
+                            if api_stripped.startswith(prefix):
+                                api_stripped = api_stripped[len(prefix):]
+                            abs_route_path = os.path.join(install_path, api_stripped)
+                            if not os.path.isfile(abs_route_path):
+                                abs_route_path = os.path.join(install_path, api_routes_file)
+                                
                             if os.path.isfile(abs_route_path):
                                 import importlib.util
                                 spec = importlib.util.spec_from_file_location(f"plugin_routes_{plugin_id}", abs_route_path)
@@ -299,6 +307,16 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                             snap = {}
                     panel_id = (snap.get("config_panel") or {}).get("tab_id") or result.package_id
 
+                    pkg_type = pkg_meta.get("type", "plugin")
+                    has_api_routes = bool((snap.get("config_panel") or {}).get("api_routes_file"))
+                    needs_restart = pkg_type in _PENDING_RESTART_TYPES or has_api_routes
+                    if needs_restart:
+                        add_to_pending_restart(result.package_id)
+                        try:
+                            from hecos.modules.web_ui.routes_packages_list import invalidate_packages_cache
+                            invalidate_packages_cache()
+                        except: pass
+
                     entry = {
                         "filename": filename,
                         "ok": True,
@@ -309,6 +327,7 @@ def register_install_routes(app, _hecos_src: str, cfg_mgr, log):
                         "config_panel": snap.get("config_panel") or None,
                         "warnings": result.warnings or [],
                         "is_update": getattr(result, "is_update", False),
+                        "requires_restart": needs_restart,
                     }
                     if result.dep_report and result.dep_report.has_issues:
                         entry["dep_issues"] = result.dep_report.summary

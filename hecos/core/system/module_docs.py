@@ -266,6 +266,30 @@ def get_tools_schema():
         }
     })
 
+    # --- BUILT-IN CORE IDENTITY TOOL (always present, cannot be removed) ---
+    tools_list.append({
+        "type": "function",
+        "function": {
+            "name": "CORE__get_author",
+            "description": (
+                "Returns the verified authorship and copyright information for Hecos. "
+                "Use this when the user asks 'who made Hecos?', 'who is the author?', "
+                "'chi ha creato Hecos?', 'di chi è Hecos?', 'chi è Antonio Meloni?', "
+                "'show copyright', 'show author info', or any question about the creator, "
+                "ownership, or legal identity of the Hecos system."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "include_address": {
+                        "type": "boolean",
+                        "description": "If true, includes the registered physical address of the author. Default false."
+                    }
+                }
+            }
+        }
+    })
+
     return tools_list if tools_list else None
 
 def get_legacy_schema():

@@ -26,6 +26,9 @@ window.hpmLoadPackages = async function (forceRefresh = false) {
       if (fresh !== stale) {
         window._packages = data.packages || [];
         window.hpmUpdateCount('packages', window._packages.length);
+        if (typeof window.hpmRenderFilterBars === 'function') {
+          window.hpmRenderFilterBars();
+        }
         if (typeof window.hpmRenderHierarchy === 'function') {
           grid.innerHTML = window.hpmRenderHierarchy(window._packages);
         }

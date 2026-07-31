@@ -70,8 +70,9 @@ def register_list_routes(app, _hecos_src: str, cfg_mgr, log):
 
             TYPE_TO_LEVEL = {
                 "core_module": 1, "plugin": 2, "module": 2,
-                "extension": 3, "app": 4, "widget": 5,
-                "persona": 6, "theme": 7, "skill_pack": 8,
+                "library": 3,
+                "extension": 4, "app": 5, "widget": 6,
+                "persona": 7, "theme": 8, "skill_pack": 9,
             }
 
             system_plugins = cfg_mgr.config.get("plugins", {})

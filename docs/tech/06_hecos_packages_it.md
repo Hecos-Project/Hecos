@@ -181,6 +181,18 @@ has_system_calls = false
 notes = "Note aggiuntive per gli utenti."
 ```
 
+### Integrazione col Global Backup
+
+Per fare in modo che il tuo pacchetto venga riconosciuto dinamicamente dal modulo `global_backup`, puoi aggiungere una sezione `[backup]` al manifest. L'orchestratore del backup globale leggerà automaticamente tutti i manifest e registrerà gli endpoint. Nessuna modifica al codice del Global Backup è necessaria.
+
+```toml
+[backup]
+enabled = true
+backup_endpoint = "/api/plugins/mio_pacchetto/backup"    # La tua rotta GET che restituisce un dump JSON
+restore_endpoint = "/api/plugins/mio_pacchetto/restore"  # La tua rotta POST che riceve il dump JSON
+icon = "fas fa-briefcase"                                # Opzionale: icona FontAwesome per l'interfaccia
+```
+
 ---
 
 ## Il Backend: plugin/main.py

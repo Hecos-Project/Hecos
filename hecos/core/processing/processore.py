@@ -40,19 +40,19 @@ TAG_MAPPING = {
     "desktop": "system",
     "download": "system",
     "documents": "system",
-    "core": "file_manager",
+    "core": "drive",
 
-    "plugins": "file_manager",
-    "memory": "file_manager",
-    "personality": "file_manager",
-    "logs": "file_manager",
-    "config": "file_manager",
-    "main": "file_manager",
+    "plugins": "drive",
+    "memory": "drive",
+    "personality": "drive",
+    "logs": "drive",
+    "config": "drive",
+    "main": "drive",
     # Legacy fallbacks
     "terminale": "system",
     "istruzione": "system",
     "apri": "system",
-    "documenti": "file_manager",
+    "documenti": "drive",
 }
 
 def configure(new_config):
@@ -104,6 +104,26 @@ def _handle_system_tool(method_name: str, args: dict, call_id: str) -> str | Non
 
     # Unknown SYSTEM tool
     logger.warning(f"[PROCESSOR] Unknown SYSTEM built-in tool: '{method_name}'")
+    return None
+
+def _handle_core_tool(method_name: str, args: dict, call_id: str) -> str | None:
+    """
+    Dispatcher for built-in CORE__ LLM tools.
+    Currently supported:
+      - get_author(include_address) → returns authorship card as text
+    """
+    if method_name == "get_author":
+        include_address = args.get("include_address", False) if isinstance(args, dict) else False
+        try:
+            from hecos.core.identity import get_author_card
+            return get_author_card(include_address=include_address)
+        except ImportError:
+            return "Error: core.identity module not found."
+        except Exception as e:
+            logger.error(f"[CORE__get_author] Error: {e}")
+            return f"Error retrieving authorship info: {e}"
+
+    logger.warning(f"[PROCESSOR] Unknown CORE built-in tool: '{method_name}'")
     return None
 
 
@@ -253,6 +273,14 @@ def extract_and_execute_tools(raw_response, config=None):
             result = _handle_system_tool(method_name, action_or_args, call_id)
             if result is not None:
                 tool_results.append({"id": call_id, "output": str(result), "tag": "SYSTEM"})
+            continue
+        # ----------------------------------------------------
+
+        # --- CORE BUILT-IN TOOLS (get_author, etc.) ---
+        if module_to_call.upper() == "CORE":
+            result = _handle_core_tool(method_name, action_or_args, call_id)
+            if result is not None:
+                tool_results.append({"id": call_id, "output": str(result), "tag": "CORE"})
             continue
         # ----------------------------------------------------
 

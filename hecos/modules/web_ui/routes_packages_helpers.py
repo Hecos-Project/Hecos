@@ -206,6 +206,36 @@ def _refresh_jinja_loader(app) -> None:
                 new_loaders.append(FileSystemLoader(tpl_dir))
                 logger.info(f"[HPM:Routes] Jinja loader hot-patched: +{tpl_dir}")
 
+        # Add HPM plugin template dirs (for packages with config_panel using {% include %})
+        try:
+            from hecos.core.package_manager.registry import PackageRegistry
+            import json as _json
+            data_dir = os.path.join(hecos_src, "data")
+            reg = PackageRegistry(data_dir)
+            for pkg in reg.list_all():
+                if pkg.get("status") == "disabled":
+                    continue
+                install_path = pkg.get("install_path")
+                if not install_path:
+                    continue
+                manifest = pkg.get("manifest_snapshot") or {}
+                if isinstance(manifest, str):
+                    try: manifest = _json.loads(manifest)
+                    except: manifest = {}
+                cp = manifest.get("config_panel")
+                if not cp:
+                    continue
+                # Register the plugin's templates dir (e.g. hpm/contacts/web_ui/templates)
+                plugin_tpl = os.path.join(install_path, "web_ui", "templates")
+                if os.path.isdir(plugin_tpl):
+                    norm = os.path.normcase(os.path.abspath(plugin_tpl))
+                    if norm not in seen_paths:
+                        new_loaders.append(FileSystemLoader(plugin_tpl))
+                        seen_paths.add(norm)
+                        logger.info(f"[HPM:Routes] Jinja loader: +HPM panel templates from {plugin_tpl}")
+        except Exception as _hpm_e:
+            logger.debug(f"[HPM:Routes] Could not add HPM plugin template dirs: {_hpm_e}")
+
         if len(new_loaders) == 1:
             app.jinja_loader = new_loaders[0]
         else:

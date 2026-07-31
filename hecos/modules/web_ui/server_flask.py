@@ -49,8 +49,19 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     mimetypes.add_type('text/css', '.css')
     mimetypes.add_type('application/javascript', '.js')
     
-    # Inject translation system and version into Jinja2 templates
-    app.jinja_env.globals.update(t=t, version=VERSION)
+    # Helper to check if an HPM package is installed (used for dynamically showing Drive/Flows buttons)
+    def _is_hpm_installed(plugin_id):
+        try:
+            from hecos.core.package_manager.registry import PackageRegistry
+            data_dir = os.path.join(root_dir, "hecos", "data")
+            reg = PackageRegistry(data_dir)
+            pkg = reg.get(plugin_id)
+            return pkg is not None and pkg.get("status") != "disabled"
+        except Exception as e:
+            return False
+
+    # Inject translation system, version, and HPM helper into Jinja2 templates
+    app.jinja_env.globals.update(t=t, version=VERSION, is_hpm_installed=_is_hpm_installed)
 
     # ── Extend Jinja loader to include WEB_UI extension template dirs ──
     try:
@@ -147,9 +158,6 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     from .routes_auth import init_auth_routes
     init_auth_routes(app, config_manager, logger)
     
-    from .routes_mcp import init_mcp_routes
-    init_mcp_routes(app, config_manager, logger)
-
     from .routes_widgets import init_widget_routes
     init_widget_routes(app, config_manager, logger)
 
@@ -163,13 +171,7 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     app.register_blueprint(history_bp)
 
 
-    # Contacts Plugin Route Integration
-    try:
-        from hecos.plugins.contacts.api import register_routes as init_contacts_api
-        init_contacts_api(app)
-        logger.info("[WebUI] Hecos Contacts plugin loaded.")
-    except Exception as _ct_e:
-        logger.warning(f"[WebUI] Contacts plugin could not load: {_ct_e}")
+    # Contacts API registration removed (handled by HPM loader or conditionally)
 
     # Mail Plugin Route Integration
     try:
@@ -184,29 +186,6 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
         logger.info("[WebUI] Hecos Templates plugin API loaded.")
     except Exception as _tpl_e:
         logger.warning(f"[WebUI] Templates plugin API could not load: {_tpl_e}")
-
-    # Global Backup Orchestrator
-    try:
-        from hecos.modules.backup.api import register_routes as init_backup_api
-        init_backup_api(app)
-        logger.info("[WebUI] Global Backup Orchestrator API loaded.")
-    except Exception as _bk_e:
-        logger.warning(f"[WebUI] Backup Orchestrator API could not load: {_bk_e}")
-
-    # Module-level Backup/Restore routes (calendar, reminders, history, memory, flows, users)
-    try:
-        from hecos.modules.backup.routes_modules import register_module_backup_routes
-        register_module_backup_routes(app)
-        logger.info("[WebUI] Module backup routes loaded.")
-    except Exception as _mbk_e:
-        logger.warning(f"[WebUI] Module backup routes could not load: {_mbk_e}")
-
-    # Start the Backup Scheduler (daemon thread — non-blocking)
-    try:
-        from hecos.modules.backup import scheduler as backup_scheduler
-        backup_scheduler.start(app)
-    except Exception as _bks_e:
-        logger.warning(f"[WebUI] Backup scheduler start error: {_bks_e}")
 
     # WEB_UI Shared Extensions
     try:

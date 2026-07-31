@@ -8,7 +8,7 @@
 > **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
 
 > [!WARNING]
-> **Dependencias del Sistema**: Antes de ejecutar la instalación o configuración, asegúrese de haber instalado los paquetes redistribuibles (como `VC_redist`) que se encuentran en la carpeta **`dependencies`** incluida en el paquete. Si faltan estos archivos, componentes críticos como la IA y el motor de voz (TTS) no se iniciarán.
+> **Dependencias del Sistema**: El ecosistema de Hecos ahora incluye un **External Dependency Manager (EDM)** automático. Durante o después de la instalación, si faltan componentes críticos (como `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI te notificará y te permitirá descargarlos e instalarlos en segundo plano con un solo clic. Asegúrate de estar conectado a internet para permitir la descarga.
 
 La forma más fácil de comenzar es utilizando los scripts de configuración automática en la carpeta raíz:
 - **Windows:** Haga doble clic en `START_SETUP_HERE_WIN.bat`

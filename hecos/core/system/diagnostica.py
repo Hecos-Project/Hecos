@@ -50,7 +50,7 @@ def check_folders():
     # Directories that should be inside the package
     package_folders = ["plugins", "core", "ui", "app"]
     # Directories that should be in the user workspace (inside hecos/)
-    user_folders = [LOGS_DIR, SNAPSHOTS_DIR, os.path.join(HECOS_DIR, "memory"), os.path.join(HECOS_DIR, "personality")]
+    user_folders = [LOGS_DIR, SNAPSHOTS_DIR, os.path.join(HECOS_DIR, "memory"), os.path.join(HECOS_DIR, "personas")]
     
     missing = []
     for f in package_folders:
@@ -222,4 +222,4 @@ def start_wake_sequence(config):
     print(f"{CIANO}{'─' * 55}{RESET}")
 
     time.sleep(0.5)
-    return True
+    return True

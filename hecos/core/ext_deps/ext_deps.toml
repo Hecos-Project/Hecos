@@ -1,0 +1,66 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ext_deps.toml
+# Hecos External Dependency Registry
+# ─────────────────────────────────────────────────────────────────────────────
+# Each [[dep]] entry describes a non-pip external dependency.
+# Fields:
+#   id              - unique identifier used in code: EDM.require("tesseract")
+#   name            - human-readable name
+#   description     - why Hecos needs it
+#   version         - minimum version required (informational)
+#   check_type      - how to verify if already installed:
+#                       "executable"    → found in system PATH
+#                       "registry_key"  → Windows registry key exists (win32 only)
+#                       "path"          → a specific file/dir path exists
+#   check_value     - the value to check (exe name, reg key, or path)
+#   platforms       - list of platforms where this dep is relevant
+#                     ["windows"] | ["linux"] | ["darwin"] | ["*"]
+#   download_url    - direct URL to the installer on GitHub Releases
+#   checksum_sha256 - SHA256 of the downloaded file (for integrity check)
+#   install_args    - silent installer arguments
+#   required_by     - list of Hecos component IDs that need this dep
+#   optional        - if true, Hecos degrades gracefully without it
+#                     if false, the feature is completely broken without it
+# ─────────────────────────────────────────────────────────────────────────────
+
+[[dep]]
+id = "tesseract"
+name = "Tesseract OCR"
+description = "OCR engine required by PC Automation for click-by-text and screen reading features."
+version = "5.5.0"
+check_type = "executable"
+check_value = "tesseract"
+platforms = ["windows"]
+download_url = "https://github.com/Hecos-Project/Hecos-Dependencies/releases/download/V0.1.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe"
+checksum_sha256 = ""
+install_args = ["/SILENT"]
+required_by = ["pc_automation"]
+optional = true
+
+[[dep]]
+id = "vc_redist"
+name = "Microsoft Visual C++ Redistributable"
+description = "MSVC runtime required by the Piper TTS engine and ONNX-based RAG models."
+version = "14.x"
+check_type = "registry_key"
+check_value = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64"
+platforms = ["windows"]
+download_url = "https://github.com/Hecos-Project/Hecos-Dependencies/releases/download/V0.1.0/VC_redist.x64.exe"
+checksum_sha256 = ""
+install_args = ["/install", "/quiet", "/norestart"]
+required_by = ["piper_tts", "onnx_rag"]
+optional = false
+
+[[dep]]
+id = "nodejs"
+name = "Node.js LTS"
+description = "JavaScript runtime required only for rebuilding the Flows visual canvas frontend (npm run build). Not needed for normal Hecos operation."
+version = "20.x"
+check_type = "executable"
+check_value = "node"
+platforms = ["*"]
+download_url = "https://github.com/Hecos-Project/Hecos-Dependencies/releases/download/V0.1.0/node-v24.16.0-x64.msi"
+checksum_sha256 = ""
+install_args = ["/qn", "/norestart"]
+required_by = ["flows_canvas_build"]
+optional = true

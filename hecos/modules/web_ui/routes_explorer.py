@@ -86,70 +86,63 @@ def init_explorer_routes(app, logger):
 
     @app.route("/api/system/explorer/pick-native", methods=["POST"])
     def explorer_pick_native():
-        """Opens a native OS file dialog and returns the selected path."""
+        """Opens a native OS file/folder dialog and returns the selected path.
+        Cross-platform: spawns a child Python process so tkinter always runs
+        in a proper main thread (Flask handlers run in worker threads)."""
         try:
-            import tkinter as tk
-            from tkinter import filedialog
-            import threading
-            from queue import Queue
+            import sys
+            import subprocess
 
-            data = request.get_json(force=True, silent=True) or {}
-            d_title = data.get("title", "Hecos — Select Background Image")
-            d_initdir = data.get("initialdir", None)
+            data      = request.get_json(force=True, silent=True) or {}
+            d_title   = data.get("title", "Hecos — Select")
+            d_initdir = data.get("initialdir", "") or ""
+            pick_dir  = data.get("pick_dir", False)
             d_filetypes = data.get("filetypes", [
                 ("Image Files", "*.jpg *.jpeg *.png *.gif *.webp"),
                 ("All Files", "*.*")
             ])
-            # Ensure filetypes is a list of tuples as expected by tkinter
-            if isinstance(d_filetypes, list):
-                d_filetypes = [tuple(ft) if isinstance(ft, list) else ft for ft in d_filetypes]
+            filetypes_repr = repr(d_filetypes)
 
-            res_q = Queue()
+            if pick_dir:
+                script = f"""
+import tkinter as tk
+from tkinter import filedialog
+root = tk.Tk()
+root.withdraw()
+root.attributes('-topmost', True)
+path = filedialog.askdirectory(title={d_title!r}, initialdir={d_initdir!r} if {bool(d_initdir)!r} else None)
+root.destroy()
+print(path or '', end='')
+"""
+            else:
+                script = f"""
+import tkinter as tk
+from tkinter import filedialog
+root = tk.Tk()
+root.withdraw()
+root.attributes('-topmost', True)
+ft = {filetypes_repr}
+ft = [tuple(x) for x in ft]
+path = filedialog.askopenfilename(title={d_title!r}, filetypes=ft, initialdir={d_initdir!r} if {bool(d_initdir)!r} else None)
+root.destroy()
+print(path or '', end='')
+"""
 
-            def _dialog_task(q):
-                try:
-                    root = tk.Tk()
-                    root.withdraw()
-                    root.attributes("-topmost", True)
-                    
-                    try:
-                        root.tk.call('wm', 'iconphoto', root._w, tk.PhotoImage(data=''))
-                    except Exception: pass
-                    
-                    kwargs = {
-                        "title": d_title
-                    }
-                    if not data.get("pick_dir", False):
-                        kwargs["filetypes"] = d_filetypes
-                        
-                    if d_initdir and os.path.exists(d_initdir):
-                        kwargs["initialdir"] = d_initdir
+            result = subprocess.run(
+                [sys.executable, "-c", script],
+                capture_output=True, text=True, timeout=300
+            )
+            path = result.stdout.strip()
+            return jsonify({"ok": True, "path": path})
 
-                    if data.get("pick_dir", False):
-                        path = filedialog.askdirectory(**kwargs)
-                    else:
-                        path = filedialog.askopenfilename(**kwargs)
-                        
-                    root.destroy()
-                    q.put(path)
-                except Exception as e:
-                    q.put(e)
-
-            t = threading.Thread(target=_dialog_task, args=(res_q,))
-            t.start()
-            # Wait for user (unlimited time for picker)
-            t.join()
-            
-            result = res_q.get()
-            if isinstance(result, Exception):
-                raise result
-                
-            return jsonify({"ok": True, "path": result if result else ""})
         except Exception as e:
             logger.error(f"[EXPLORER] Native Pick Error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+
+
     @app.route("/api/system/explorer/open-folder", methods=["POST"])
+
     def explorer_open_folder():
         """Opens a folder in the native OS explorer."""
         try:

@@ -112,7 +112,6 @@ _PANEL_MAP = {
     'voice':           'modules/config_voice.html',
     'system':          'modules/config_system.html',
     'media':           'modules/config_media.html',
-    'aesthetics':      'modules/config_styles.html',
     'webui':           'modules/config_utils.html',
     'executor':        'modules/config_utils.html',
     'automation':      'modules/config_utils.html',
@@ -121,17 +120,13 @@ _PANEL_MAP = {
     'payload':         'modules/config_payload.html',
     'plugins':         'modules/config_plugins.html',
     'contacts':        'modules/config_contacts.html',
-    'mcp':             'modules/config_mcp.html',
 
-    'drive':           'modules/config_drive.html',
-    'drive-editor':    'modules/config_drive_editor.html',
     'logs':            'modules/config_logs.html',
     'privacy':         'modules/config_privacy.html',
     'hpm-settings':    'modules/config_hpm_settings.html',
     'widgets':         'modules/config_widgets.html',
     'help':            'modules/config_help.html',
     'flows':           'modules/config_flows.html',
-    'backup':          'modules/config_backup.html',
     'packages':        'modules/config_packages.html',
 }
 
@@ -190,10 +185,20 @@ def _discover_hpm_panel(panel_id: str) -> str | None:
                             _HPM_PANEL_CACHE[panel_id] = result
                             return result
 
-                        # 2. Fallback to the raw file inside the package's actual install directory
+                        # 2. Fallback to the raw file inside the package's actual install directory.
+                        # The manifest stores template_file relative to the source root (e.g.
+                        # "drive/templates/config_drive.html"), but the installer only copies
+                        # the plugin_dir subfolder into install_path. Strip the leading
+                        # plugin_dir prefix so we resolve to the correct installed location.
                         install_path = pkg.get("install_path")
                         if install_path:
-                            abs_template = os.path.join(install_path, tf)
+                            plugin_dir = manifest.get("plugin_dir") or pkg["id"]
+                            tf_stripped = tf
+                            # Strip "plugin_dir/" or "plugin_dir\" prefix if present
+                            prefix = plugin_dir.rstrip("/\\") + "/"
+                            if tf_stripped.startswith(prefix):
+                                tf_stripped = tf_stripped[len(prefix):]
+                            abs_template = os.path.join(install_path, tf_stripped)
                             if os.path.isfile(abs_template):
                                 result = f"HPM_RAW:{abs_template}"
                                 _HPM_PANEL_CACHE[panel_id] = result
@@ -344,14 +349,22 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                     # No config panel declared → skip (don't add a tab)
                     continue
 
-                # Build HPM-specific static paths using the dedicated /hpm/static/ route
+                # Build HPM-specific static paths using the dedicated /hpm/static/ route.
+                # manifest stores paths relative to source root (e.g. "drive/static/file.js"),
+                # but hpm_plugin_static serves from hpm/<plugin_id>/, so strip the plugin_dir prefix.
                 plugin_id = pkg["id"]
                 tab_id = cp.get("tab_id") or plugin_id.replace("_", "-")
-                js_file_raw = cp.get("js_file")
+                plugin_dir_prefix = (manifest.get("plugin_dir") or plugin_id).rstrip("/\\") + "/"
+                js_file_raw  = cp.get("js_file")
                 css_file_raw = cp.get("css_file")
-                
-                js_url  = f"hpm_plugin/{plugin_id}/{js_file_raw}"  if js_file_raw  else None
-                css_url = f"hpm_plugin/{plugin_id}/{css_file_raw}" if css_file_raw else None
+
+                def _strip_prefix(raw):
+                    if raw and raw.startswith(plugin_dir_prefix):
+                        return raw[len(plugin_dir_prefix):]
+                    return raw
+
+                js_url  = f"hpm_plugin/{plugin_id}/{_strip_prefix(js_file_raw)}"  if js_file_raw  else None
+                css_url = f"hpm_plugin/{plugin_id}/{_strip_prefix(css_file_raw)}" if css_file_raw else None
 
                 panels.append({
                     "id":          tab_id,
@@ -381,8 +394,10 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         hecos_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         )
-        # Try hpm/ first (new location), fall back to plugins/ for legacy packages
+        # Try hpm/ first (new location), fall back to modules/ and plugins/
         plugin_base = os.path.join(hecos_root, "hecos", "hpm", plugin_id)
+        if not os.path.isdir(plugin_base):
+            plugin_base = os.path.join(hecos_root, "hecos", "modules", plugin_id)
         if not os.path.isdir(plugin_base):
             plugin_base = os.path.join(hecos_root, "hecos", "plugins", plugin_id)
         # Build the full path and ensure it stays within the plugin dir

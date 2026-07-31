@@ -89,6 +89,12 @@ class PiperDaemon:
                     self._proc = None
                     return
                     
+                from hecos.core.ext_deps import require
+                if not require("vc_redist"):
+                    logger.warning("PIPER_DAEMON", "VC Redist missing. Piper TTS daemon will not start.")
+                    self._proc = None
+                    return
+                    
                 self._sample_rate = _get_sample_rate(model_path)
                 speed = audio_cfg.get("speed", 1.0)
                 self._length_scale = round(1.0 / speed, 3) if speed > 0 else 1.0

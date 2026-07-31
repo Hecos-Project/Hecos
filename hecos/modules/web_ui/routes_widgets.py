@@ -11,7 +11,6 @@ from hecos.core.logging import logger
 from .routes_widgets_api import init_widget_api_routes
 from .routes_widgets_sidebar import init_widget_sidebar_routes
 from .routes_widgets_room import init_widget_room_routes
-from .routes_widgets_aesthetics import init_widget_aesthetics_routes
 
 def init_widget_routes(app, config_manager, logger_ref=None):
     """Registers all /api/widgets/* routes via sub-modules."""
@@ -42,8 +41,5 @@ def init_widget_routes(app, config_manager, logger_ref=None):
 
     # 3. Control Room Grid Layout
     init_widget_room_routes(app, config_manager, _log, _get_config, _save_config)
-
-    # 4. Themes and Aesthetics
-    init_widget_aesthetics_routes(app, config_manager, _log, _get_config, _save_config)
 
     _log.debug("[WebUI] Modular Widget routes fully registered.")

@@ -132,20 +132,20 @@ function _renderWidgetCards(container, widgets) {
                     </div>
                 </div>
                 ${w.extension_id === 'telemetry_widget' ? `
-                <!-- Telemetry Hardware Metrics -->
+                <!-- Telemetry Hardware Metrics — loaded from package's own TOML, not core plugins.yaml -->
                 <div class="telemetry-extras" style="flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 14px; margin-top:0px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.05);">
                     <div style="flex-basis:100%; font-size:10px; color:var(--text); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; opacity:0.9; margin-bottom:-5px;"><i class="fas fa-microchip"></i> Hardware Monitoring</div>
                     <div class="widget-toggle-row">
                         <span class="widget-toggle-lbl">CPU</span>
-                        <label class="switch no-autosave"><input type="checkbox" id="track-cpu-enabled" ${ (window.parent?.cfg?.plugins?.DASHBOARD?.track_cpu !== false) ? 'checked' : '' } onchange="toggleTelemetryMetric('track_cpu', this.checked)"><span class="slider"></span></label>
+                        <label class="switch no-autosave"><input type="checkbox" id="track-cpu-enabled" onchange="toggleTelemetryMetric('track_cpu', this.checked)"><span class="slider"></span></label>
                     </div>
                     <div class="widget-toggle-row">
                         <span class="widget-toggle-lbl">RAM</span>
-                        <label class="switch no-autosave"><input type="checkbox" id="track-ram-enabled" ${ (window.parent?.cfg?.plugins?.DASHBOARD?.track_ram !== false) ? 'checked' : '' } onchange="toggleTelemetryMetric('track_ram', this.checked)"><span class="slider"></span></label>
+                        <label class="switch no-autosave"><input type="checkbox" id="track-ram-enabled" onchange="toggleTelemetryMetric('track_ram', this.checked)"><span class="slider"></span></label>
                     </div>
                     <div class="widget-toggle-row">
                         <span class="widget-toggle-lbl">VRAM</span>
-                        <label class="switch no-autosave"><input type="checkbox" id="track-vram-enabled" ${ (window.parent?.cfg?.plugins?.DASHBOARD?.track_vram !== false) ? 'checked' : '' } onchange="toggleTelemetryMetric('track_vram', this.checked)"><span class="slider"></span></label>
+                        <label class="switch no-autosave"><input type="checkbox" id="track-vram-enabled" onchange="toggleTelemetryMetric('track_vram', this.checked)"><span class="slider"></span></label>
                     </div>
                     <div style="flex-basis: 100%; font-size:10.5px; color:var(--yellow); line-height:1.4; opacity:0.9; margin-top: 2px;">
                         <i class="fas fa-exclamation-triangle"></i> ${safeTranslate('webui_telemetry_warning')}
@@ -362,24 +362,47 @@ async function setRoomSpan(id, span, btnEl) {
     }
 }
 
-// ── Telemetry Extras ─────────────────────────────────────────────────────────
-function toggleTelemetryMetric(field, enabled) {
-    if (!window.parent || !window.parent.cfg) return;
-    const cfg = window.parent.cfg;
-    if (!cfg.plugins) cfg.plugins = {};
-    if (!cfg.plugins.DASHBOARD) cfg.plugins.DASHBOARD = {};
-    cfg.plugins.DASHBOARD[field] = enabled;
-
-    // Ensure the master gate is in sync: true if any track_* is on, false if all off
-    const dsb = cfg.plugins.DASHBOARD;
-    const anyActive = dsb.track_cpu || dsb.track_ram || dsb.track_vram;
-    dsb.webui_telemetry_enabled = !!anyActive;
-    
-    console.log(`[TELEMETRY-SYNC] ${field}=${enabled} | webui_telemetry_enabled=${dsb.webui_telemetry_enabled}`);
-    if (window.parent.saveConfig) {
-        window.parent.saveConfig(true);
+// ── Telemetry Extras — Autonomous Package Config (no core plugins.yaml involved) ──
+async function _loadTelemetryWidgetSwitches() {
+    try {
+        const r = await fetch('/api/telemetry_widget/config');
+        if (!r.ok) return;
+        const d = await r.json();
+        const cpu  = document.getElementById('track-cpu-enabled');
+        const ram  = document.getElementById('track-ram-enabled');
+        const vram = document.getElementById('track-vram-enabled');
+        if (cpu)  cpu.checked  = !!d.track_cpu;
+        if (ram)  ram.checked  = !!d.track_ram;
+        if (vram) vram.checked = !!d.track_vram;
+    } catch(e) {
+        console.warn('[TELEMETRY-WIDGET] Could not load config:', e);
     }
 }
+
+async function toggleTelemetryMetric(field, enabled) {
+    // Save directly to the package's own TOML via its autonomous API
+    try {
+        const r  = await fetch('/api/telemetry_widget/config');
+        const current = r.ok ? await r.json() : {};
+        const payload = {
+            track_cpu:  current.track_cpu  || false,
+            track_ram:  current.track_ram  || false,
+            track_vram: current.track_vram || false,
+        };
+        payload[field] = enabled;
+        await fetch('/api/telemetry_widget/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log(`[TELEMETRY-WIDGET] ${field}=${enabled} saved to package TOML.`);
+    } catch(e) {
+        console.warn('[TELEMETRY-WIDGET] Save failed:', e);
+    }
+}
+
+// Load initial switch states from package config after panel renders
+setTimeout(_loadTelemetryWidgetSwitches, 200);
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 // Add load event listener to execute when the scripts are ready.

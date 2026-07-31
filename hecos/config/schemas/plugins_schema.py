@@ -21,12 +21,7 @@ class PluginDashboard(BaseModel):
     console_telemetry_vram: bool = False
 
 
-class PluginFileManager(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    enable_path_mapping: bool = True
-    max_list_items: int = 5
-    max_read_lines: int = 50
+
 
 
 class PluginHelp(BaseModel):
@@ -45,12 +40,6 @@ class PluginSystem(BaseModel):
     explorer_mappings: Dict[str, str] = {}
     programs: Dict[str, str] = {}
 
-
-class PluginSysNet(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    proxy_enabled: bool = False
-    proxy_url: str = "socks5://localhost:9150"
 
 
 
@@ -76,91 +65,31 @@ class PluginExecutor(BaseModel):
     workspace_dir: str = "workspace/sandbox"
 
 
-class PluginDrive(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-    root_dir: str = ""
-    max_upload_mb: int = 100
-    allowed_extensions: str = ""
-    editor: Dict[str, Any] = Field(default_factory=lambda: {
-        "enabled": True,
-        "theme": "vs-dark",
-        "max_file_size_kb": 1024,
-        "word_wrap": True,
-        "spell_check": False
-    })
+# PluginDrive removed — Drive is now an HPM system_app (type='app').
+# It manages its own config independently and is NOT part of plugins.yaml.
 
 
 
-class MCPServerConfig(BaseModel):
-    command: str
-    args: List[str] = []
-    env: Dict[str, str] = {}
-    enabled: bool = True
-
-
-class PluginMCPBridge(BaseModel):
-    enabled: bool = False
-    lazy_load: bool = False
-    servers: Dict[str, MCPServerConfig] = Field(default_factory=dict)
 
 
 
-class PluginUsers(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
 
-
-class PluginContacts(BaseModel):
-    enabled: bool = True
-    lazy_load: bool = True
-
-
-class PluginFlows(BaseModel):
-    """Hecos Flows — visual orchestration engine."""
-    enabled: bool = True
-    lazy_load: bool = True
-    # Path (relative to Hecos root) where flow YAML files are stored
-    flows_dir: str = "workspace/flows"
-    # Enable/disable APScheduler-based cron and interval triggers
-    scheduler_enabled: bool = True
-    # Timezone for APScheduler (e.g. 'Europe/Rome', 'local', 'UTC')
-    scheduler_timezone: str = "local"
-    # Log retention: max SSE log entries kept per run
-    max_log_entries: int = 500
-    # LLM temperature used by the NLP compiler (0–1)
-    compiler_temperature: float = 0.1
-    # Max tokens the NLP compiler may generate
-    compiler_max_tokens: int = 2048
-    # If true, auto-save compiled flows immediately without preview
-    auto_save_compiled: bool = False
-    # Enable Jinja2 rendering in YAML params (set False to disable for security)
-    jinja2_rendering: bool = True
-    # Max parallel flows that can run concurrently
-    max_concurrent_runs: int = 5
-    # Enable automatic background saving of the flow canvas
-    autosave_enabled: bool = True
-    # Interval in minutes for the background auto-save
-    autosave_interval_minutes: int = 1
-
+# PluginFlows removed — Flows is now an HPM system_app (type='app').
+# It manages its own config independently in config/data/flows.toml.
 
 # ─── PLUGINS COLLECTION ───────────────────────────────────────────────────────
 
 class PluginsConfig(BaseModel):
-    model_config = ConfigDict(extra='allow')  # HPM package keys ARE stored here
+    model_config = ConfigDict(extra='ignore')  # HPM package keys are NO LONGER stored here (they use their own .toml files)
     DASHBOARD: PluginDashboard = Field(default_factory=PluginDashboard)
-    FILE_MANAGER: PluginFileManager = Field(default_factory=PluginFileManager)
     HELP: PluginHelp = Field(default_factory=PluginHelp)
     SYSTEM: PluginSystem = Field(default_factory=PluginSystem)
-    SYS_NET: PluginSysNet = Field(default_factory=PluginSysNet)
+    # SYS_NET removed — it is now an HPM package
     WEB_UI: PluginWebUI = Field(default_factory=PluginWebUI)
     EXECUTOR: PluginExecutor = Field(default_factory=PluginExecutor)
-    DRIVE: PluginDrive = Field(default_factory=PluginDrive)
-    MCP_BRIDGE: PluginMCPBridge = Field(default_factory=PluginMCPBridge)
-    USERS: PluginUsers = Field(default_factory=PluginUsers)
-    CONTACTS: PluginContacts = Field(default_factory=PluginContacts)
-
-    FLOWS: PluginFlows = Field(default_factory=PluginFlows)
+    # DRIVE removed — it is now an HPM system_app package
+    # USERS removed — it is now an HPM package
+    # FLOWS removed — it is now an HPM system_app package
     extra_dirs: List[str] = []
 
 

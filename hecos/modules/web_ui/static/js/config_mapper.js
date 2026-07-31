@@ -66,6 +66,7 @@ function populateUI() {
   if (typeof populateExecutorUI === 'function')   safeCall('Executor', () => populateExecutorUI());
   if (typeof populateAutomationUI === 'function') safeCall('Automation', () => populateAutomationUI());
   if (typeof populateBrowserUI === 'function')    safeCall('Browser', () => populateBrowserUI());
+  if (typeof populateDriveUI === 'function')      safeCall('Drive', () => populateDriveUI());
   if (typeof populateFlowsUI === 'function')      safeCall('Flows', () => populateFlowsUI());
 
   // 13. Restart indicator badges
@@ -89,10 +90,7 @@ function buildPayload() {
         out.system    = sysPart.system;
         out.language  = sysPart.language;
         out.cognition = sysPart.cognition;
-        if (sysPart.plugins?.SYS_NET) {
-            out.plugins['SYS_NET'] = out.plugins['SYS_NET'] || {};
-            out.plugins['SYS_NET'].proxy_url = sysPart.plugins.SYS_NET.proxy_url;
-        }
+
         if (sysPart.plugins?.WEB_UI) {
             out.plugins['WEB_UI'] = out.plugins['WEB_UI'] || {};
             out.plugins['WEB_UI'].https_enabled = sysPart.plugins.WEB_UI.https_enabled;
@@ -108,11 +106,13 @@ function buildPayload() {
         }
     }
 
-    // 3. Drive
-    const drivePart = buildDrivePayload();
-    if (drivePart?.plugins?.DRIVE) {
-        out.plugins['DRIVE'] = out.plugins['DRIVE'] || {};
-        Object.assign(out.plugins['DRIVE'], drivePart.plugins.DRIVE);
+    // 3. Drive (handled dynamically if plugin loaded)
+    if (typeof buildDrivePayload === 'function') {
+        const drivePart = buildDrivePayload();
+        if (drivePart?.plugins?.DRIVE) {
+            out.plugins['DRIVE'] = out.plugins['DRIVE'] || {};
+            Object.assign(out.plugins['DRIVE'], drivePart.plugins.DRIVE);
+        }
     }
 
     // 4. Plugin toggles, extensions, lazy, dashboard, browser, automation

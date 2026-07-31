@@ -8,7 +8,7 @@ Benvenuto in Hecos! Segui questi passaggi per configurare il sistema e iniziare 
 > **Percorso di Installazione**: Consigliamo vivamente di estrarre e installare Hecos in una cartella principale come `C:\Hecos`. Evita di installarlo in `Download`, sul `Desktop` o in percorsi troppo lunghi con spazi, poiché ciò potrebbe causare malfunzionamenti o problemi di avvio dei moduli.
 
 > [!WARNING]
-> **Dipendenze di Sistema**: Prima di avviare l'installazione o il setup, assicurati di aver installato i pacchetti redistribuibili (come `VC_redist`) presenti nella cartella **`dependencies`** inclusa nel pacchetto. Se questi file mancano, componenti critici come l'IA e il motore vocale (TTS) non si avvieranno.
+> **Dipendenze di Sistema**: L'ecosistema di Hecos ora include un **External Dependency Manager (EDM)** automatico. Durante o dopo l'installazione, se componenti critici (come `VC_redist`, `Tesseract OCR` o `Node.js`) risultano mancanti, l'interfaccia ti avviserà e potrai scaricarli e installarli in background con un clic. Assicurati di essere connesso a internet per consentire il download.
 
 Il modo più semplice per iniziare è utilizzare gli script di setup automatico nella cartella principale:
 - **Windows:** Fai doppio clic su `START_SETUP_HERE_WIN.bat`

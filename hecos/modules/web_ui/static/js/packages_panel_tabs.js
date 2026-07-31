@@ -14,10 +14,10 @@ window.hpmUpdateCount = function(tabId, count) {
 
 window.hpmSwitchTab = async function(tabId) {
   // Update buttons
-  const btnPackages = document.getElementById('hpm-tab-btn-packages');
-  const btnBuiltin  = document.getElementById('hpm-tab-btn-builtin');
-  const btnWidgets  = document.getElementById('hpm-tab-btn-widgets');
-  const btnStore    = document.getElementById('hpm-tab-btn-store');
+  const btnPackages  = document.getElementById('hpm-tab-btn-packages');
+  const btnBuiltin   = document.getElementById('hpm-tab-btn-builtin');
+  const btnWidgets   = document.getElementById('hpm-tab-btn-widgets');
+  const btnStore     = document.getElementById('hpm-tab-btn-store');
 
   [btnPackages, btnBuiltin, btnWidgets, btnStore].forEach(b => b && b.classList.remove('active'));
   const activeBtn = document.getElementById(`hpm-tab-btn-${tabId}`);

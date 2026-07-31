@@ -38,9 +38,8 @@ function renderFilterTabs() {
         const inLazySet = !!(window.LAZY_PANEL_IDS && window.LAZY_PANEL_IDS.has(m.id));
         const hasPanel  = !!document.getElementById('tab-' + m.id);
         const isMapped  = !!(hub.tagMap && hub.tagMap[m.pluginTag]);
-        const isMcp     = (m.cat === 'MCP');
         const isCore    = !!m.isCore;
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore);
+        return (inCache || inLazySet || hasPanel || isMapped || isCore);
     });
 
     const counts = { 'ALL': allVisible.length };
@@ -127,13 +126,7 @@ function renderConfigHub(mode = 'tabs') {
             return !p || p.enabled !== false;
         })());
         
-        if (m.id === 'calendar') {
-            console.log(`[DEBUG CALENDAR] inCache:${inCache} inLazySet:${inLazySet} hasPanel:${hasPanel} isMapped:${isMapped} isMcp:${isMcp} isCore:${isCore} isHpmEnabled:${isHpmEnabled}`);
-            console.log(`[DEBUG CALENDAR] isHpm:${m.isHpm} cfgReady:${cfgReady} pluginTag:${m.pluginTag}`);
-            console.log(`[DEBUG CALENDAR] window.cfg.plugins['CALENDAR'] =`, window.cfg.plugins && window.cfg.plugins['CALENDAR']);
-        }
-
-        return (inCache || inLazySet || hasPanel || isMapped || isMcp || isCore || isHpmEnabled);
+        return (inCache || inLazySet || hasPanel || isMapped || isCore || isHpmEnabled);
     });
 
     // Category filter
@@ -244,7 +237,7 @@ function renderConfigHub(mode = 'tabs') {
         const activeClass = (activeTab === m.id) ? 'active' : '';
         const icon        = window.getIconForModule(m.id, m.label, m.icon);
         const isNew       = newPanels.includes(m.id);
-        const badgeHtml   = isNew ? `<div class="new-badge" style="position:absolute; top:-6px; right:-6px; background:var(--accent); color:white; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite; box-shadow:0 0 5px var(--accent);">NEW</div>` : '';
+        const badgeHtml   = isNew ? `<div class="new-badge" style="position:absolute; top:8px; right:8px; background:var(--accent); color:white; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite; box-shadow:0 0 5px var(--accent);">NEW</div>` : '';
         wallHtml += `
             <div class="module-card ${activeClass}" onclick="showTab('${m.id}')" style="position:relative;">
                 ${badgeHtml}

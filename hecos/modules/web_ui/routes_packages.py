@@ -47,6 +47,9 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     register_search_routes(app, _hecos_src, cfg_mgr, log)
     register_store_routes(app, _hecos_src, cfg_mgr, log)
 
+    from hecos.modules.web_ui.routes_packages_helpers import _refresh_jinja_loader
+    _refresh_jinja_loader(app)
+
     # Automatically load standalone API routes for HPM packages
     try:
         from hecos.core.package_manager.registry import PackageRegistry
@@ -75,11 +78,20 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                 install_path = pkg.get("install_path")
                 
                 if install_path:
-                    abs_route_path = os.path.join(install_path, api_routes_file)
+                    plugin_dir = manifest.get("plugin_dir") or plugin_id
+                    prefix = plugin_dir.rstrip("/\\") + "/"
+                    api_stripped = api_routes_file
+                    if api_stripped.startswith(prefix):
+                        api_stripped = api_stripped[len(prefix):]
+                    abs_route_path = os.path.join(install_path, api_stripped)
                 else:
                     # Fallback if install_path is missing for some reason
                     abs_route_path = os.path.join(_hecos_src, "hpm", plugin_id, api_routes_file)
                 
+                if not os.path.isfile(abs_route_path) and install_path:
+                    # Try raw fallback
+                    abs_route_path = os.path.join(install_path, api_routes_file)
+
                 if os.path.isfile(abs_route_path):
                     import importlib.util
                     spec = importlib.util.spec_from_file_location(f"plugin_routes_{plugin_id}", abs_route_path)

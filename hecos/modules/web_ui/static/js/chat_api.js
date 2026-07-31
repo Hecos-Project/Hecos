@@ -111,6 +111,35 @@ window.sendMessage = async function() {
         if (window.chatHistory.length > 0) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
         }
+        
+        // Dynamically update the bubble's avatar and name if the persona changed during the run
+        if (ev.persona_name) {
+          const personaTitle = ev.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '');
+          const msgContainer = aiBubble.closest('.msg');
+          if (msgContainer) {
+            const nameEl = msgContainer.querySelector('.msg-name');
+            if (nameEl) nameEl.textContent = personaTitle;
+            
+            const avatarEl = msgContainer.querySelector('.msg-avatar');
+            if (avatarEl) {
+              fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
+                .then(r => r.json())
+                .then(d => {
+                  if (d.ok && d.avatar_path) {
+                    const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
+                      ? "object-fit:cover; border-radius:50%;"
+                      : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+                    avatarEl.innerHTML = `
+                      <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${d.avatar_path}')">
+                        <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
+                        <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                      </div>`;
+                  }
+                }).catch(() => {});
+            }
+          }
+        }
+
         window.isStreaming = false; 
         if (window.sendBtn) window.sendBtn.disabled = false;
         

@@ -67,5 +67,7 @@
     "hpm_update_avail_plural": "actualizaciones disponibles",
     "hpm_update_all_ok": "¡Todos los módulos están actualizados!",
     "hpm_update_offline": "No se puede contactar con la Tienda. Comprueba tu conexión.",
-    "hpm_update_no_modules": "Ningún módulo cargado. Actualiza la lista primero."
+    "hpm_update_no_modules": "Ningún módulo cargado. Actualiza la lista primero.",
+    "hpm_confirm_uninstall_title": "Confirmar Desinstalación",
+    "hpm_confirm_uninstall_cancel": "Cancelar"
 }

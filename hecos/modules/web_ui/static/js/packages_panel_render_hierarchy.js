@@ -118,9 +118,14 @@ window.hpmRenderHierarchy = function (packagesList) {
   const gridList = document.getElementById('hpm-packages-grid');
   const gridWall = document.getElementById('hpm-packages-wall');
 
+  const isNone = window.HPM_STATE && window.HPM_STATE.activeCategory === 'none';
+  const emptyText = isNone 
+      ? (window.HPM_I18N?.select_category || window.hpm_ti('Select a category to view modules.', 'Seleziona una categoria per visualizzare i moduli.', 'Seleccione una categoría para ver los módulos.'))
+      : (window.HPM_I18N?.no_modules || window.hpm_ti('No modules found.', 'Nessun modulo trovato.', 'No se encontraron módulos.'));
+
   const emptyMsg = `<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;width:100%;">
-                      <i class="fas fa-box-open" style="font-size:2em;margin-bottom:10px;display:block;opacity:0.4;"></i>
-                      <div style="font-size:0.9em;">${window.HPM_I18N?.no_modules || window.hpm_ti('No modules found.', 'Nessun modulo trovato.', 'No se encontraron módulos.')}</div>
+                      <i class="fas ${isNone ? 'fa-hand-pointer' : 'fa-box-open'}" style="font-size:2em;margin-bottom:10px;display:block;opacity:0.4;"></i>
+                      <div style="font-size:0.9em;">${emptyText}</div>
                     </div>`;
 
   if (gridList) gridList.innerHTML = listHtml || emptyMsg;

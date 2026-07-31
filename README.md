@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.44.0 (Runtime Alpha)
+# Hecos - Version 0.45.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.44.0`[cite: 1]. This is a Helping Companion System that bridges high-level reasoning with root-level system execution[cite: 1].
+> **Runtime Alpha Status**: Hecos is currently in `v0.45.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution[cite: 1]. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool[cite: 1].
@@ -21,12 +21,13 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness[cite: 1].
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive[cite: 1].
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.44.0 offers a dedicated Web Interface (Chat + Config) and complete Internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.45.0 brings a dedicated Web Interface (Chat + Config) and full internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
 
 ---
 
-## ✨ Key Features (v0.44.0)
+## ✨ Key Features (v0.45.0)
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
+* 🛠️ **External Dependency Manager (EDM)** — New system that auto-detects missing core dependencies (Node, Tesseract, VC++), enabling one-click downloads directly from the WebUI.
 * 🛡️ **HPM Integrity Verification** — New `/verify` API and Control Room UI to cryptographically validate installed package files against their Ed25519-signed manifest hashes.
 * 🔒 **Hecos SDK (Total Isolation)** — Run HPM packages in dedicated, isolated subprocesses and independent virtual environments (venv) to prevent dependency hell and main event loop blocking.
 * ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally[cite: 1].
@@ -162,7 +163,9 @@ Running the core system on Linux or macOS is possible but may require manual adj
 ---
 
 ## 🛠️ Essential System Requirements (Windows)
-If you have just reinstalled Windows or are setting up Hecos for the first time, you must install these **fundamental** system packages for all modules to work correctly[cite: 1]:
+If you have just reinstalled Windows or are setting up Hecos for the first time, you must ensure these **fundamental** system packages are present for all modules to work correctly.
+
+💡 **NEW (v0.45.0 - EDM)**: Hecos now integrates an **External Dependency Manager (EDM)**! If Tesseract, Node.js, or VC++ Redistributable are missing, the EDM will automatically detect them and allow you to download them in the background with a single click from the WebUI, directly from the `Hecos-Dependencies` GitHub repository. Alternatively, you can install them manually:
 
 1. ⚙️ **Microsoft Visual C++ Redistributable (Mandatory)**
    - *What it's for*: Required by the RAG Memory engine (ONNX/FastEmbed). Without this package, you will get missing DLL errors and document search will not work[cite: 1].

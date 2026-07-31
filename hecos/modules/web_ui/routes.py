@@ -12,11 +12,9 @@ from .routes_config import init_config_routes
 from .routes_audio import init_audio_routes
 from .routes_media import init_media_routes
 from .routes_system import init_system_routes
-from .routes_users import init_users_routes
 from .routes_security import init_security_routes
 from .routes_keys import init_keys_routes
 from .routes_docs import init_docs_routes
-from .routes_mcp_explore import init_mcp_explore_routes
 from .routes_packages import init_package_routes
 
 def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
@@ -25,33 +23,12 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_audio_routes(app, cfg_mgr, root_dir, logger, get_sm)
     init_media_routes(app, cfg_mgr, root_dir, logger, get_sm)
     init_system_routes(app, cfg_mgr, root_dir, logger, get_sm)
+    from .routes_users import init_users_routes
     init_users_routes(app, logger)
     init_security_routes(app, logger)
     init_keys_routes(app, logger)
     init_docs_routes(app, cfg_mgr, root_dir, logger)
-    init_mcp_explore_routes(app, cfg_mgr, logger)
     
-    # Hecos Drive — HTTP File Manager
-    drive_enabled = cfg_mgr.config.get('plugins', {}).get('DRIVE', {}).get('enabled', True)
-    if drive_enabled:
-        try:
-            from . . drive.routes import init_drive_routes
-            init_drive_routes(app, logger)
-        except Exception as e:
-            try:
-                from hecos.plugins.drive.routes import init_drive_routes
-                init_drive_routes(app, logger)
-            except Exception:
-                logger.warning(f"[WebUI] Hecos Drive non disponibile: {e}")
-
-    # Hecos Flows — Visual orchestration engine
-    flows_enabled = cfg_mgr.config.get('plugins', {}).get('FLOWS', {}).get('enabled', True)
-    if flows_enabled:
-        try:
-            from .routes_flows import init_flows_routes
-            init_flows_routes(app, cfg_mgr, logger)
-        except Exception as e:
-            logger.warning(f"[WebUI] Hecos Flows routes unavailable: {e}")
 
     # Hecos Package Manager (HPM)
     try:

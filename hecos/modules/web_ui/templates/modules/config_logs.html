@@ -62,6 +62,7 @@
         <div class="log-window-footer">
           <div style="display:flex; align-items:center; gap:12px;">
             <label><input type="checkbox" class="w-autoscroll" checked> Auto</label>
+            <label title="Pause incoming logs"><input type="checkbox" onchange="window.togglePauseWindow(this)"> <i class="fas fa-lock" style="font-size:10px;"></i> Lock</label>
             <label title="{{ t('webui_conf_logs_striped_title') }}"><input type="checkbox" class="w-striped-btn" onchange="window.toggleStripedRows(this)"> {{ t('webui_conf_logs_striped') }}</label>
           </div>
           <div style="display:flex; align-items:center; gap:5px;">

@@ -3,15 +3,15 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.44.0 (Runtime Alpha)
-Idiomas: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
+# Hecos - Versión 0.45.0 (Runtime Alpha)
+Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
 **Helping Companion System (Privado, Rápido, Simple)**[cite: 1]
 
 ---
 
-> **Estado Runtime Alpha**: Hecos se encuentra actualmente en `v0.44.0`[cite: 1]. Este es un Helping Companion System local que conecta el razonamiento de alto nivel con la ejecución del sistema a nivel root[cite: 1].
+> **Estado Runtime Alpha**: Hecos está actualmente en `v0.45.0`[cite: 1]. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root[cite: 1].
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local de primera línea diseñado para conectar de manera fluida la tecnología con la vida humana, combinando el razonamiento de IA, la automatización visual y la ejecución directa del sistema[cite: 1]. En lugar de perseguir conceptos abstractos como la soberanía digital, Hecos se enfoca en una única misión pragmática: **mejorar la vida humana**, transformando el hardware local en una herramienta práctica y altamente eficiente para el día a día[cite: 1].
@@ -21,11 +21,12 @@ Basado en tres pilares fundamentales:
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea[cite: 1].
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada[cite: 1].
 
-Ahora completamente migrado a una **arquitectura estable de Runtime Alpha**, Hecos 0.44.0 ofrece una interfaz Web dedicada (Chat + Config) e internacionalización completa[cite: 1]. Gracias a **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores de la nube con streaming en tiempo real y TTS local[cite: 1].
+Ahora completamente migrado a una **arquitectura estable Runtime Alpha**, Hecos 0.45.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa[cite: 1]. Desarrollado por **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local[cite: 1].
 
 ---
 
-## ✨ Características Principales (v0.44.0)
+## ✨ Características Principales (v0.45.0)
+* 📦 **External Dependency Manager (EDM)** — Nuevo sistema automático para la detección, descarga e instalación de dependencias externas (Tesseract, Node.js, VC++ Redistributable) directamente desde la WebUI.
 * 🔒 **Hecos SDK (Aislamiento Total)** — Ejecuta los paquetes HPM en procesos aislados dedicados y entornos virtuales independientes (venv) para evitar conflictos de dependencias y bloqueos del hilo principal.
 * ⚡ **HDCS (Comandos Directos)** — Ejecuta instantáneamente más de 150 funciones nativas omitiendo el "cerebro" de la IA escribiendo `/` en el chat o con `Ctrl+Alt+Espacio` globalmente[cite: 1].
 * ⚙️ **Motor de Automatización Flows** — Editor visual de nodos (drag-and-drop) para la creación de automatizaciones complejas de múltiples pasos, activadores y acciones con integración completa de comandos de voz por NLP[cite: 1].
@@ -160,7 +161,9 @@ Ejecutar el sistema central en Linux o macOS es posible, pero puede requerir aju
 ---
 
 ## 🛠️ Requisitos del Sistema Esenciales (Windows)
-Si acabas de reinstalar Windows o estás configurando Hecos por primera vez, debes instalar estos paquetes de sistema **fundamentales** para que todos los módulos funcionen correctamente[cite: 1]:
+Si acabas de reinstalar Windows o estás configurando Hecos por primera vez, debes asegurarte de que estos paquetes de sistema **fundamentales** estén presentes para que todos los módulos funcionen correctamente.
+
+💡 **NUEVO (v0.45.0 - EDM)**: ¡Hecos ahora integra un **External Dependency Manager (EDM)**! Si faltan Tesseract, Node.js o VC++ Redistributable, el EDM los detectará automáticamente y te permitirá descargarlos en segundo plano con un solo clic desde la WebUI, directamente desde el repositorio de GitHub `Hecos-Dependencies`. Alternativamente, puedes instalarlos manualmente:
 
 1. ⚙️ **Microsoft Visual C++ Redistributable (Obligatorio)**
    - *Para qué sirve*: Requerido por el motor de Memoria RAG (ONNX/FastEmbed). Sin este paquete recibirás errores de DLL faltantes y la búsqueda de documentos no funcionará[cite: 1].

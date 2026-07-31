@@ -72,35 +72,27 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
 
             avatar_path = "/assets/Hecos_Logo_NBG.png"
             try:
-                p_dir  = os.path.join(root_dir, "hecos", "personality")
-                p_file = os.path.join(p_dir, f"{persona}.yaml")
-                if not os.path.exists(p_file):
+                personas_dir = os.path.join(root_dir, "hecos", "personas")
+                persona_dir  = os.path.join(personas_dir, persona)
+                if not os.path.isdir(persona_dir):
                     persona = "Hecos_System_Soul"
-                    p_file  = os.path.join(p_dir, f"{persona}.yaml")
-                if os.path.exists(p_file):
-                    with open(p_file, "r", encoding="utf-8") as f:
-                        data = yaml.safe_load(f)
-                    if data and data.get("avatar_image"):
-                        encoded_path = urllib.parse.quote(data.get("avatar_image"))
-                        avatar_path  = "/assets/" + encoded_path
+                    persona_dir = os.path.join(personas_dir, persona)
+                # Look for the first image in the avatars subfolder
+                avatars_dir = os.path.join(persona_dir, "avatars")
+                if os.path.isdir(avatars_dir):
+                    for img_file in sorted(os.listdir(avatars_dir)):
+                        if img_file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                            rel = f"{urllib.parse.quote(persona)}/avatars/{urllib.parse.quote(img_file)}"
+                            avatar_path = "/personas/" + rel
+                            break
             except Exception:
                 pass
 
-            # Telemetry
-            dsb_cfg          = cfg.get("plugins", {}).get("DASHBOARD", {})
-            global_enabled   = dsb_cfg.get("enabled", True)
-            # webui_telemetry_enabled: default True — was previously a master switch
-            # in a now-deprecated panel. Individual track_* flags control each metric.
-            webui_telemetry  = dsb_cfg.get("webui_telemetry_enabled", True)
-            telemetry_active = global_enabled and webui_telemetry
-
-            cpu_cache["enabled"] = telemetry_active and dsb_cfg.get("track_cpu", False)
-
-            cpu_val = ram_val = vram_val = None
-            if telemetry_active:
-                if dsb_cfg.get("track_cpu",  False): cpu_val  = cpu_cache.get("value", 0)
-                if dsb_cfg.get("track_ram",  False): ram_val  = psutil.virtual_memory().percent
-                if dsb_cfg.get("track_vram", False): vram_val = get_vram_usage()
+            # Telemetry is now stateless - the endpoint provides the data,
+            # and the frontend widget decides what to display based on its autonomous config.
+            cpu_val = cpu_cache.get("value", 0)
+            ram_val = psutil.virtual_memory().percent
+            vram_val = get_vram_usage()
 
             return jsonify({
                 "backend":    backend.upper(),

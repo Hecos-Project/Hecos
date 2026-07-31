@@ -119,7 +119,7 @@ window.hpmCancelQueueItem = function(id) {
 
 window.hpmRenderInstallQueue = function() {
     const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
-    let html = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:260px; overflow-y:auto; font-size:0.92em; border:1px solid rgba(255,255,255,0.05);">`;
+    let html = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:260px; overflow-y:auto; font-size:13px; border:1px solid rgba(255,255,255,0.05);">`;
     
     let total = window._hpmInstallQueue.length;
     let completed = 0;
@@ -131,7 +131,7 @@ window.hpmRenderInstallQueue = function() {
 
         if (item.status === 'pending') {
             icon = '<i class="far fa-circle" style="color:var(--muted); margin-right:8px; width:16px;"></i>';
-            const pendingLabel = `<span style="color:var(--muted); font-size:0.92em;">${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
+            const pendingLabel = `<span style="color:var(--muted); font-size:13px;">${_ti('Waiting...', 'In attesa...', 'Esperando...')}</span>`;
             action = `<button onclick="window.hpmCancelQueueItem('${item.id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0 5px;" title="${_ti('Cancel', 'Annulla', 'Cancelar')}"><i class="fas fa-times"></i></button>`;
             rowContent = `
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -146,20 +146,24 @@ window.hpmRenderInstallQueue = function() {
                 <div style="display:flex; align-items:center; width:100%;">
                     ${icon}
                     <span style="color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; min-width:0;" title="${item.file.name}">${item.file.name}</span>
-                    <span style="color:var(--accent); font-family:monospace; font-size:0.92em; white-space:nowrap; margin-left:10px; flex-shrink:0;" title="${stepTxt}">${stepTxt}</span>
+                    <span style="color:var(--accent); font-family:monospace; font-size:13px; white-space:nowrap; margin-left:10px; flex-shrink:0;" title="${stepTxt}">${stepTxt}</span>
                 </div>`;
             // Row 2: HPM log (shown only when present, same font size as rest)
             const row2 = item.pipLogMsg
-                ? `<div style="font-size:0.92em; color:var(--muted); font-family:monospace; white-space:normal; word-break:break-all; width:100%; margin-top:5px; padding:4px 8px; background:rgba(0,0,0,0.25); border-radius:4px; border-left:2px solid var(--accent); opacity:0.9;">${item.pipLogMsg}</div>`
+                ? `<div style="font-size:13px; color:var(--muted); font-family:monospace; white-space:normal; word-break:break-all; width:100%; margin-top:5px; padding:4px 8px; background:rgba(0,0,0,0.25); border-radius:4px; border-left:2px solid var(--accent); opacity:0.9;">${item.pipLogMsg}</div>`
                 : '';
             rowContent = `${row1}${row2}`;
         } else if (item.status === 'done') {
             icon = '<i class="fas fa-check" style="color:#10b981; margin-right:8px; width:16px;"></i>';
             const statusLabel = item.result?.is_update ? _ti('Updated', 'Aggiornato', 'Actualizado') : _ti('Installed', 'Installato', 'Instalado');
+            const installPath = item.result?.install_path ? `<div style="margin-left:24px; font-size:11px; font-family:monospace; color:var(--accent); opacity:0.85; margin-top:3px;">${_ti('Installed in:', 'Installato in:', 'Instalado en:')} ${item.result.install_path}</div>` : '';
             rowContent = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:#10b981; font-size:0.92em;">${statusLabel}</span>
+                <div style="display:flex; flex-direction:column; width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
+                        <span style="color:#10b981; font-size:13px;">${statusLabel}</span>
+                    </div>
+                    ${installPath}
                 </div>`;
             completed++;
         } else if (item.status === 'failed') {
@@ -167,7 +171,7 @@ window.hpmRenderInstallQueue = function() {
             rowContent = `
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                     <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:#ef4444; font-size:0.92em;" title="${item.result?.error || ''}">${_ti('Error', 'Errore', 'Error')}</span>
+                    <span style="color:#ef4444; font-size:13px;" title="${item.result?.error || ''}">${_ti('Error', 'Errore', 'Error')}</span>
                 </div>`;
             completed++;
         } else if (item.status === 'canceled') {
@@ -175,7 +179,7 @@ window.hpmRenderInstallQueue = function() {
             rowContent = `
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                     <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;" title="${item.file.name}">${icon}${item.file.name}</span>
-                    <span style="color:var(--muted); font-size:0.92em;">${_ti('Canceled', 'Annullato', 'Cancelado')}</span>
+                    <span style="color:var(--muted); font-size:13px;">${_ti('Canceled', 'Annullato', 'Cancelado')}</span>
                 </div>`;
             completed++;
         }
@@ -189,7 +193,7 @@ window.hpmRenderInstallQueue = function() {
     
     let pct = total > 0 ? Math.round((completed / total) * 100) : 0;
     
-    const header = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:0.95em;">${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')} (${completed}/${total})</div>`;
+    const header = `<div style="font-weight:bold; color:var(--text); margin-bottom:8px; font-size:1.05em;">${_ti('Installation Queue', 'Coda di installazione', 'Cola de instalación')} (${completed}/${total})</div>`;
     
     window.hpmSetProgress(true, header + html, pct);
 };
@@ -255,57 +259,88 @@ function _hpmShowFinalSummary() {
         }
     }
 
-    let extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:150px; overflow-y:auto; font-size:0.85em; border:1px solid rgba(255,255,255,0.05);">`;
-    window._hpmInstallQueue.forEach(item => {
-        let icon = '', msg = '';
-        if (item.status === 'done') {
-            icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:var(--muted)">${_ti('installed', 'installato', 'instalado')}</span>`;
-        } else if (item.status === 'failed') {
-            icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:#ef4444">${item.result?.error || 'error'}</span>`;
-        } else if (item.status === 'canceled') {
-            icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
-            msg = `<span style="color:var(--muted)">${_ti('canceled', 'annullato', 'cancelado')}</span>`;
-        }
-        
-        extraHTML += `<div style="margin-bottom:4px; display:flex; justify-content:space-between;">
-            <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%;">${icon}${item.file.name}</span>
-            ${msg}
-        </div>`;
-    });
-    extraHTML += `</div>`;
+    // ── Process succeeded installs: NEW badge + install_path ────────────────
+    let needsRestartPkg = null; // Track first package requiring restart for popup
+    const lblPath = _ti('Installed in:', 'Installato in:', 'Instalado en:');
+    const lblCfg  = _ti('Configuration available in', 'Configurazione disponibile in', 'Configuración disponible en');
 
-    if (isSingle && succeeded === 1) {
-        extraHTML = '';
-        const r = window._hpmInstallQueue[0].result;
-        if (r && r.install_path) {
-            const lblPath = _ti('Installed in:', 'Installato in:', 'Instalado en:');
-            extraHTML += `<div style="margin-top:12px; font-size: 0.95em; color: var(--text); font-weight:normal;">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${r.install_path}</code></div>`;
-        }
-        if (r && r.config_panel) {
-            const tabId = r.config_panel.tab_id || r.id.replace('_', '-');
-            const catLabel = r.config_panel.category || 'CONNETTIVITÀ';
-            const tabLabel = r.config_panel.tab_label || r.name;
-            const lblCfg = _ti('Configuration available in', 'Configurazione disponibile in', 'Configuración disponible en');
-            extraHTML += `<div style="margin-top:8px; font-size: 0.85em; font-weight:normal;">
-                <i class="fas fa-cogs" style="margin-right:4px; color:var(--muted);"></i>
-                <span style="color:var(--muted);">${lblCfg}</span> 
-                <a href="#${window._hesc(tabId)}" style="color:var(--accent); text-decoration:none; font-weight:600; margin-left:4px;" onclick="document.getElementById('packages-install-modal').style.display='none';">
-                    ${window._hesc(catLabel)} &rarr; ${window._hesc(tabLabel)}
-                </a>
-            </div>`;
-            
-            // Save as NEW for Central Hub badges
-            let newPanels = [];
-            try {
-                newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]');
-            } catch(e) {}
-            if (!newPanels.includes(tabId)) {
-                newPanels.push(tabId);
-                localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels));
+    let newPanels = [];
+    try { newPanels = JSON.parse(localStorage.getItem('hpm_new_panels') || '[]'); } catch(e) {}
+
+    let singleExtraHTML = '';
+    window._hpmInstallQueue.forEach(item => {
+        if (item.status !== 'done' || !item.result?.ok) return;
+        const r = item.result;
+
+        // Save NEW badge: use BOTH tab_id AND pkg id for reliable matching
+        if (r.config_panel) {
+            const tabId = r.config_panel.tab_id || r.id;
+            const pkgId = r.id || '';
+            for (const key of [tabId, pkgId]) {
+                if (key && !newPanels.includes(key)) newPanels.push(key);
             }
         }
+
+        // Track first package requiring restart
+        if (r.requires_restart && !needsRestartPkg) {
+            needsRestartPkg = r.name || r.id;
+        }
+
+        // Build extra HTML for single installs
+        if (isSingle) {
+            if (r.install_path) {
+                singleExtraHTML += `<div style="margin-top:12px; font-size:1.05em; color:var(--text); font-weight:normal;">${lblPath}<br><code style="display:inline-block; margin-top:4px; color:var(--accent); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:4px 8px; border-radius:6px;">${r.install_path}</code></div>`;
+            }
+            if (r.config_panel) {
+                const tabId    = r.config_panel.tab_id || r.id;
+                const catLabel = r.config_panel.category || '';
+                const tabLabel = r.config_panel.tab_label || r.name || r.id;
+                singleExtraHTML += `<div style="margin-top:8px; font-size:1em; font-weight:normal;">
+                    <i class="fas fa-cogs" style="margin-right:4px; color:var(--muted);"></i>
+                    <span style="color:var(--muted);">${lblCfg}</span>
+                    <a href="#${window._hesc(tabId)}" style="color:var(--accent); text-decoration:none; font-weight:600; margin-left:4px;"
+                       onclick="document.getElementById('packages-install-modal').style.display='none';">
+                        ${window._hesc(catLabel)}${catLabel ? ' &rarr; ' : ''}${window._hesc(tabLabel)}
+                    </a>
+                </div>`;
+            }
+        }
+    });
+
+    // Persist updated NEW panels list
+    try { localStorage.setItem('hpm_new_panels', JSON.stringify(newPanels)); } catch(e) {}
+
+    // ── Build extraHTML ──────────────────────────────────────────────────────
+    let extraHTML = '';
+
+    if (isSingle && succeeded === 1) {
+        // Single install: show path + config panel link
+        extraHTML = singleExtraHTML;
+    } else {
+        // Batch: show per-item status list with install paths
+        extraHTML = `<div style="text-align:left; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; margin-top:12px; max-height:180px; overflow-y:auto; font-size:1.05em; border:1px solid rgba(255,255,255,0.05);">`;
+        window._hpmInstallQueue.forEach(item => {
+            let icon = '', msg = '';
+            if (item.status === 'done') {
+                icon = '<i class="fas fa-check" style="color:#10b981; margin-right:6px; width:14px;"></i>';
+                const rr = item.result;
+                const pathSnippet = (rr?.install_path)
+                    ? ` <code style="font-size:1em;color:var(--accent);opacity:0.8;">${rr.install_path}</code>`
+                    : `<span style="color:var(--muted)">${_ti('installed','installato','instalado')}</span>`;
+                msg = pathSnippet;
+            } else if (item.status === 'failed') {
+                icon = '<i class="fas fa-times" style="color:#ef4444; margin-right:6px; width:14px;"></i>';
+                msg = `<span style="color:#ef4444">${item.result?.error || 'error'}</span>`;
+            } else if (item.status === 'canceled') {
+                icon = '<i class="fas fa-ban" style="color:var(--muted); margin-right:6px; width:14px;"></i>';
+                msg = `<span style="color:var(--muted)">${_ti('canceled','annullato','cancelado')}</span>`;
+            }
+            extraHTML += `<div style="margin-bottom:5px; display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+                <span style="color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; max-width:45%;">${icon}${item.file.name}</span>
+                <span style="flex:1; text-align:right; overflow:hidden; text-overflow:ellipsis;">${msg}</span>
+            </div>`;
+        });
+        extraHTML += `</div>`;
     }
 
     if (succeeded > 0) {
@@ -321,7 +356,7 @@ function _hpmShowFinalSummary() {
     }
 
     const lblHint = _ti('Double click anywhere to close', 'Fai doppio clic per chiudere', 'Haz doble clic para cerrar');
-    const hintHTML = `<div style="font-size:0.75em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
+    const hintHTML = `<div style="font-size:1em;color:var(--muted);margin-top:15px;opacity:0.6;font-weight:normal;">${lblHint}</div>`;
     
     let lblSuccess = '';
     if (isSingle) {
@@ -336,7 +371,7 @@ function _hpmShowFinalSummary() {
     const mainIconColor = (failed === 0 && canceled === 0) ? '#10b981' : (succeeded > 0 ? '#f59e0b' : '#ef4444');
     const mainIcon = (failed === 0 && canceled === 0) ? 'fa-check-circle' : (succeeded > 0 ? 'fa-exclamation-circle' : 'fa-times-circle');
     
-    const batchStatsHtml = isSingle ? '' : `<div style="font-size:0.85em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('succeeded', 'installati', 'completados')} • ${failed} ${_ti('failed', 'falliti', 'fallidos')} • ${canceled} ${_ti('canceled', 'annullati', 'cancelados')}</div>`;
+    const batchStatsHtml = isSingle ? '' : `<div style="font-size:1em; color:var(--muted); margin-top:4px;">${succeeded} ${_ti('succeeded','installati','completados')} • ${failed} ${_ti('failed','falliti','fallidos')} • ${canceled} ${_ti('canceled','annullati','cancelados')}</div>`;
 
     window.hpmSetProgress(true, `
       <div style="text-align:center; padding: 10px 0;">
@@ -363,7 +398,13 @@ function _hpmShowFinalSummary() {
     if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
     if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
+
+    // ── Restart Required signal ──────────────────────────────────────────────
+    if (needsRestartPkg && typeof window.hpmSignalRestartPending === 'function') {
+        window.hpmSignalRestartPending();
+    }
 }
+
 
 function _handleMissingDepsDialogue(file, missing_deps, forceAllowUnsigned) {
     const _ti = (en, it, es) => { const l = (document.documentElement.lang||'en').toLowerCase(); if(l.startsWith('it')) return it; if(l.startsWith('es')) return es; return en; };
@@ -376,7 +417,7 @@ function _handleMissingDepsDialogue(file, missing_deps, forceAllowUnsigned) {
       <div style="text-align:center; padding:10px 0;">
         <i class="fas fa-exclamation-triangle" style="font-size:1.8em; color:#f59e0b; margin-bottom:12px;"></i>
         <div style="font-size:1.05em; margin-bottom:12px; color:var(--text);">${question}</div>
-        <div style="font-size:0.9em; color:var(--muted); margin-bottom:20px;">
+        <div style="font-size:1em; color:var(--muted); margin-bottom:20px;">
           <i class="fas fa-box-open" style="margin-right:6px;"></i>${lblMissing} <b style="color:var(--text);">${missing_deps.join(', ')}</b>
         </div>
         <div style="display:flex; gap:10px; justify-content:center;">

@@ -83,7 +83,7 @@ function buildSystemPayload() {
     const sln = window.cfg.language || 'en';
     const cog = window.cfg.cognition || {};
     const ihist = window.cfg.input_history || {};
-    const snet = window.cfg.plugins?.SYS_NET || {};
+
     const wui = window.cfg.plugins?.WEB_UI || {};
 
     return {
@@ -133,10 +133,7 @@ function buildSystemPayload() {
                 console_telemetry_ram: getC('sys-track-ram', (window.cfg.plugins?.DASHBOARD?.console_telemetry_ram ?? false)),
                 console_telemetry_vram: getC('sys-track-vram', (window.cfg.plugins?.DASHBOARD?.console_telemetry_vram ?? false))
             },
-            SYS_NET: {
-                proxy_enabled: getC('sys-proxy-enabled', snet.proxy_enabled ?? false),
-                proxy_url: getV('sys-proxy-url', snet.proxy_url || "")
-            },
+
             WEB_UI: {
                 https_enabled: getC('webui-https-enabled', wui.https_enabled ?? false),
                 control_room_panel: getC('wui-control-room-panel', wui.control_room_panel ?? true),
