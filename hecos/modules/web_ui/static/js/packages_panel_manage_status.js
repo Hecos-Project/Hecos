@@ -4,6 +4,26 @@
  * Manage logic for Hecos Package Manager (Status, Uninstall)
  */
 
+/**
+ * Marks the footer Reboot button as 'restart pending' — turns it into
+ * a yellow pulsing icon so the user can't miss it.
+ */
+window.hpmSignalRestartPending = function() {
+  const btn = document.getElementById('btn-reboot-system');
+  if (btn && !btn.classList.contains('restart-pending')) {
+    btn.classList.add('restart-pending');
+    // Update tooltip with a localized hint
+    const _ti = (en, it, es) => {
+      const l = (document.documentElement.lang || 'en').toLowerCase();
+      if (l.startsWith('it')) return it;
+      if (l.startsWith('es')) return es;
+      return en;
+    };
+    btn.title = _ti('Restart required to activate the installed package', 'Riavvio necessario per attivare il pacchetto installato', 'Reinicio necesario para activar el paquete instalado');
+  }
+};
+
+
 window.hpmSetStatus = async function (id, status, skipRender = false) {
   try {
     const res = await fetch(`/api/packages/${id}/status`, {
@@ -135,6 +155,9 @@ window.hpmRestartRequired = function(pkgName) {
   );
   const btnText = _ti('Restart Now', 'Riavvia Ora', 'Reiniciar Ahora');
   const laterText = _ti('Later', 'Più tardi', 'Más tarde');
+
+  // ── Signal the footer reboot button immediately ───────────────────────────
+  window.hpmSignalRestartPending();
 
   window.hpmShowConfirm(
     `<div style="text-align:center;">

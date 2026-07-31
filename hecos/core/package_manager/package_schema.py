@@ -10,7 +10,7 @@ messages are clear for third-party developers.
 Package types and their default install destinations:
   core_module → hecos/hpm/<id>/           (Level 1 — built-in, not removable)
   plugin      → hecos/hpm/<id>/           (Level 2 — single-responsibility, reactive)
-  module      → hecos/hpm/<id>/           (Level 2 — alias, kept for backwards compat)
+  generic_module → hecos/hpm/<id>/        (Level 2 — generic package without specific classification)
   library     → hecos/hpm/libraries/<id>/ (Level 3 — resource/asset pack, no direct user action)
   extension   → hecos/hpm/<id>/           (Level 4 — child of a plugin or core module)
   app         → hecos/hpm/<id>/           (Level 5 — autonomous, has its own full UI)
@@ -138,17 +138,17 @@ class HpkgManifest(BaseModel):
     type: str = Field(
         "plugin",
         description=(
-            "Package type: core_module | plugin | module | library | extension "
-            "| app | system_app | widget | persona | theme | skill_pack"
+            "Package type (e.g. core_module, plugin, generic_module, app, widget, etc.). "
+            "Can be any string; unknown types will be installed in hpm/<type>s."
         )
     )
     author: str = Field("Unknown", description="Author name or organization")
     description: str = Field("", description="Short description of what this package does")
 
     # Install targets
-    target_dir: str = Field(
-        "hpm",
-        description="Root dir to copy plugin/module code into: 'hpm' (default), 'personas', 'themes'"
+    target_dir: Optional[str] = Field(
+        None,
+        description="Root dir to copy plugin/module code into. If None, uses system defaults."
     )
     plugin_dir: Optional[str] = Field(
         None,
@@ -298,25 +298,6 @@ class HpkgManifest(BaseModel):
             raise ValueError(f"Package id '{v}' must be lowercase alphanumeric with underscores/hyphens only.")
         return v
 
-    @field_validator("type")
-    @classmethod
-    def type_must_be_valid(cls, v: str) -> str:
-        valid = {
-            "plugin",       # Level 2 — single-responsibility tool
-            "module",       # Level 2 — alias kept for backwards compat
-            "core_module",  # Level 1 — built-in, not removable
-            "extension",    # Level 3 — child of a plugin or core module
-            "app",          # Level 4 — autonomous, has its own full UI
-            "system_app",   # Level 4b — WebUI pillar app (e.g. Drive, Flows)
-            "widget",       # Level 5 — Control Room widget component
-            "persona",      # Level 6 — installable AI personality
-            "theme",        # Level 7 — CSS/UI theme
-            "skill_pack",   # Level 8 — additional HDCS command pack
-            "library",      # Level 9 — resource library (templates, sounds)
-        }
-        if v not in valid:
-            raise ValueError(f"Package type '{v}' not valid. Must be one of: {valid}")
-        return v
 
     @field_validator("version", "hecos_min_version")
     @classmethod

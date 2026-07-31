@@ -68,5 +68,7 @@
     "hpm_update_avail_plural": "updates available",
     "hpm_update_all_ok": "All modules are up to date!",
     "hpm_update_offline": "Cannot contact the Store. Check your connection.",
-    "hpm_update_no_modules": "No modules loaded. Refresh the list first."
+    "hpm_update_no_modules": "No modules loaded. Refresh the list first.",
+    "hpm_confirm_uninstall_title": "Confirm Uninstall",
+    "hpm_confirm_uninstall_cancel": "Cancel"
 }

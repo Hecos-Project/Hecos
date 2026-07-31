@@ -1,0 +1,367 @@
+<script>
+/* ── Templates Manager — Client Logic ────────────────────────────────── */
+(function () {
+  'use strict';
+
+  const API = '/api/templates';
+
+  /* ── helpers ─────────────────────────────────────────────────────── */
+  function _show(id)  { const el = document.getElementById(id); if (el) el.style.display = ''; }
+  function _hide(id)  { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+  function _val(id)   { const el = document.getElementById(id); return el ? el.value : ''; }
+  function _set(id,v) { const el = document.getElementById(id); if (el) el.value = v; }
+  function _text(id,v){ const el = document.getElementById(id); if (el) el.textContent = v; }
+  function _html(id,v){ const el = document.getElementById(id); if (el) el.innerHTML = v; }
+  async function api(method, path, body) {
+    const opts = { method, headers: {'Content-Type':'application/json'} };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(API + path, opts);
+    return res.json();
+  }
+
+  /* ── state ───────────────────────────────────────────────────────── */
+  let _templates = [];   // flat list from server
+  let _activeId  = null;
+  let _dirty     = false;
+  let _grapes    = null; // GrapeJS instance
+
+  /* ── public API ──────────────────────────────────────────────────── */
+  const TM = {
+    _activeId,
+    _dirty,
+
+    /* init — called after tab becomes visible */
+    init() {
+      this.loadAll();
+    },
+
+    /* ── LOAD ──────────────────────────────────────────────────────── */
+    async loadAll() {
+      const res = await api('GET', '/');
+      if (!res.ok) return;
+      _templates = res.templates || [];
+      this._renderSidebar();
+    },
+
+    _renderSidebar() {
+      const channels = ['email','whatsapp','telegram','discord'];
+      channels.forEach(ch => {
+        const list = document.getElementById('tpl-list-' + ch);
+        if (!list) return;
+        const items = _templates.filter(t => t.channel === ch);
+        if (!items.length) {
+          list.innerHTML = '<div class="tpl-sidebar-empty">No templates</div>';
+          return;
+        }
+        list.innerHTML = items.map(t => `
+          <div class="tpl-channel-item ${t.id === _activeId ? 'active' : ''}"
+               onclick="TemplateManager.openTemplate('${t.id}')">
+            <i class="fas fa-file-alt"></i>
+            <span>${t.name || 'Unnamed'}</span>
+          </div>`).join('');
+      });
+      // Populate single-export select
+      const sel = document.getElementById('tpl-single-export-select');
+      if (sel) {
+        sel.innerHTML = _templates.map(t =>
+          `<option value="${t.id}">[${t.channel}] ${t.name}</option>`
+        ).join('');
+      }
+    },
+
+    /* ── OPEN ──────────────────────────────────────────────────────── */
+    async openTemplate(id) {
+      if (_dirty && !confirm('You have unsaved changes. Discard?')) return;
+      _activeId = id;
+      _dirty = false;
+      const res = await api('GET', '/' + id);
+      if (!res.ok) { window.showToast && window.showToast('Could not load template', 'error'); return; }
+      const t = res.template;
+      this._renderEditor(t);
+      this._renderSidebar();
+    },
+
+    _renderEditor(t) {
+      _set('tpl-edit-name', t.name || '');
+      _set('tpl-edit-description', t.description || '');
+      const isDefaultEl = document.getElementById('tpl-edit-is-default');
+      if (isDefaultEl) isDefaultEl.checked = !!t.is_default;
+      const chSel = document.getElementById('tpl-edit-channel');
+      if (chSel) chSel.value = t.channel || 'email';
+      this.onChannelChange(t.channel || 'email', t);
+
+      const delBtn = document.getElementById('tpl-delete-btn');
+      if (delBtn) delBtn.style.display = '';
+
+      _hide('tpl-empty-section');
+      _show('tpl-editor-section');
+
+      // History tab
+      this._renderHistory(t.versions || []);
+    },
+
+    onChannelChange(ch, tpl) {
+      ['email','whatsapp','telegram','discord'].forEach(c => {
+        const el = document.getElementById('tpl-editor-' + c);
+        if (el) el.style.display = (c === ch) ? '' : 'none';
+      });
+      if (ch === 'email') {
+        this._initGrapes(tpl ? (tpl.body_html || '') : '');
+      } else {
+        const body = tpl ? (tpl.body || '') : '';
+        // find the active textarea (all share same id tpl-edit-body; last visible wins)
+        const ta = document.querySelector('#tpl-editor-' + ch + ' .tpl-body-textarea');
+        if (ta) { ta.value = body; tplUpdateCharCount(ta); }
+      }
+    },
+
+    _initGrapes(html) {
+      if (_grapes) { _grapes.setComponents(html); return; }
+      if (typeof grapesjs === 'undefined') return;
+      const loading = document.getElementById('tpl-grapes-loading');
+      if (loading) loading.style.display = 'none';
+      _grapes = grapesjs.init({
+        container: '#tpl-grapes-container',
+        fromElement: false,
+        components: html,
+        blockManager: { appendTo: '#tpl-grapes-blocks' },
+        styleManager: { appendTo: '#tpl-grapes-styles' },
+        traitManager:  { appendTo: '#tpl-grapes-traits' },
+        panels: { defaults: [] },
+        storageManager: false,
+      });
+      _grapes.on('change:changesCount', () => { _dirty = true; });
+    },
+
+    /* ── NEW ───────────────────────────────────────────────────────── */
+    newTemplate(ch) {
+      if (_dirty && !confirm('Discard unsaved changes?')) return;
+      _activeId = null;
+      _dirty = false;
+      this._renderEditor({ name:'', description:'', channel: ch||'email', body:'', body_html:'', is_default:false, versions:[] });
+      const delBtn = document.getElementById('tpl-delete-btn');
+      if (delBtn) delBtn.style.display = 'none';
+    },
+
+    /* ── SAVE ──────────────────────────────────────────────────────── */
+    async saveTemplate() {
+      const ch = _val('tpl-edit-channel');
+      let body = '';
+      let body_html = '';
+      if (ch === 'email') {
+        body_html = _grapes ? _grapes.getHtml() : '';
+        body = _grapes ? _grapes.getHtml() : '';
+      } else {
+        const ta = document.querySelector('#tpl-editor-' + ch + ' .tpl-body-textarea');
+        body = ta ? ta.value : '';
+      }
+      const isDefaultEl = document.getElementById('tpl-edit-is-default');
+      const payload = {
+        name: _val('tpl-edit-name'),
+        description: _val('tpl-edit-description'),
+        channel: ch,
+        body,
+        body_html,
+        is_default: isDefaultEl ? isDefaultEl.checked : false,
+      };
+      if (!payload.name) { window.showToast && window.showToast('Template name is required', 'warning'); return; }
+
+      let res;
+      if (_activeId) {
+        res = await api('PUT', '/' + _activeId, payload);
+      } else {
+        res = await api('POST', '/', payload);
+      }
+      if (res.ok) {
+        _dirty = false;
+        _activeId = res.id || _activeId;
+        window.showToast && window.showToast('Template saved', 'success');
+        await this.loadAll();
+        // Re-render history
+        const tRes = await api('GET', '/' + _activeId);
+        if (tRes.ok) this._renderHistory(tRes.template.versions || []);
+      } else {
+        window.showToast && window.showToast('Save failed: ' + (res.error||'unknown'), 'error');
+      }
+    },
+
+    /* ── DELETE ────────────────────────────────────────────────────── */
+    async deleteTemplate(id) {
+      if (!id) return;
+      if (!confirm('Delete this template?')) return;
+      const res = await api('DELETE', '/' + id);
+      if (res.ok) {
+        _activeId = null;
+        _dirty = false;
+        _hide('tpl-editor-section');
+        _show('tpl-empty-section');
+        window.showToast && window.showToast('Template deleted', 'success');
+        await this.loadAll();
+      } else {
+        window.showToast && window.showToast('Delete failed', 'error');
+      }
+    },
+
+    /* ── HISTORY ───────────────────────────────────────────────────── */
+    _renderHistory(versions) {
+      const list = document.getElementById('tpl-history-list');
+      if (!list) return;
+      if (!versions.length) {
+        list.innerHTML = '<div class="tpl-history-empty">No versions yet</div>';
+        return;
+      }
+      list.innerHTML = versions.map((v, i) => `
+        <div class="tpl-history-item">
+          <span>${v.saved_at || ('Version ' + (versions.length - i))}</span>
+          <button class="tpl-btn" onclick="TemplateManager.restoreVersion('${_activeId}',${i})">
+            <i class="fas fa-undo"></i> Restore
+          </button>
+        </div>`).join('');
+    },
+
+    async restoreVersion(id, idx) {
+      if (!confirm('Restore this version?')) return;
+      const res = await api('POST', '/' + id + '/restore/' + idx);
+      if (res.ok) {
+        window.showToast && window.showToast('Version restored', 'success');
+        await this.openTemplate(id);
+      }
+    },
+
+    /* ── VARIABLES ─────────────────────────────────────────────────── */
+    loadFlowVariables() {
+      // placeholder — can hook into Flows API if available
+      window.showToast && window.showToast('Flow variables import not available in this context', 'info');
+    },
+
+    /* ── EXPORT / IMPORT ───────────────────────────────────────────── */
+    async exportTemplates() {
+      const res = await api('GET', '/');
+      if (!res.ok) return;
+      const blob = new Blob([JSON.stringify(res.templates, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'hecos_templates_backup.json';
+      a.click();
+    },
+
+    async exportSingleTemplate() {
+      const id = document.getElementById('tpl-single-export-select')?.value;
+      if (!id) return;
+      const res = await api('GET', '/' + id);
+      if (!res.ok) return;
+      const blob = new Blob([JSON.stringify(res.template, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (res.template.name || id) + '.json';
+      a.click();
+    },
+
+    importTemplates(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async e => {
+        try {
+          const templates = JSON.parse(e.target.result);
+          const arr = Array.isArray(templates) ? templates : [templates];
+          for (const t of arr) {
+            await api('POST', '/', t);
+          }
+          window.showToast && window.showToast(`Imported ${arr.length} template(s)`, 'success');
+          await this.loadAll();
+        } catch(err) {
+          window.showToast && window.showToast('Import failed: invalid JSON', 'error');
+        }
+      };
+      reader.readAsText(file);
+    },
+
+    importSingleFile(event) { this.importTemplates(event); },
+
+    importSingleDrop(event) {
+      event.preventDefault();
+      const dt = event.dataTransfer;
+      if (!dt || !dt.files.length) return;
+      const fakeEvent = { target: { files: dt.files } };
+      this.importTemplates(fakeEvent);
+      event.currentTarget.classList.remove('drag-over');
+    },
+
+    /* ── PREVIEW ───────────────────────────────────────────────────── */
+    async previewRender() {
+      if (!_activeId) return;
+      let variables = {};
+      try { variables = JSON.parse(_val('tpl-preview-vars') || '{}'); } catch(e) {}
+      const res = await api('POST', '/' + _activeId + '/render', { variables });
+      if (!res.ok) { window.showToast && window.showToast('Preview failed', 'error'); return; }
+      _text('tpl-preview-subject', res.subject || '—');
+      const ch = _val('tpl-edit-channel');
+      if (ch === 'email' && res.body_html) {
+        const iframe = document.getElementById('tpl-preview-iframe');
+        iframe.style.display = '';
+        document.getElementById('tpl-preview-text').style.display = 'none';
+        iframe.srcdoc = res.body_html;
+      } else {
+        document.getElementById('tpl-preview-iframe').style.display = 'none';
+        const pre = document.getElementById('tpl-preview-text');
+        pre.style.display = '';
+        pre.textContent = res.body || '';
+      }
+    },
+  };
+
+  /* Expose globally */
+  window.TemplateManager = TM;
+
+  /* ── utility functions ───────────────────────────────────────────── */
+  window.tplSwitchTab = function(btn, targetId) {
+    const tabs = btn.closest('.tpl-tabs');
+    if (tabs) tabs.querySelectorAll('.tpl-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const editor = document.getElementById('tpl-editor-section');
+    if (editor) editor.querySelectorAll('.tpl-tab-pane').forEach(p => {
+      p.style.display = p.id === targetId ? '' : 'none';
+      p.classList.toggle('active', p.id === targetId);
+    });
+  };
+
+  window.tplUpdateCharCount = function(ta) {
+    const countEl = ta.closest('.tpl-textarea-wrap')?.querySelector('.tpl-char-count span');
+    if (countEl) countEl.textContent = ta.value.length;
+    // Auto-detect variables
+    const matches = ta.value.match(/\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g) || [];
+    const vars = [...new Set(matches.map(m => m.replace(/\{\{\s*|\s*\}\}/g, '')))];
+    const list = document.getElementById('tpl-variables-list');
+    if (list) {
+      list.innerHTML = vars.length
+        ? vars.map(v => `<span class="tpl-var-chip" onclick="tplInsertVar('${v}')"><i class="fas fa-code"></i>${v}</span>`).join('')
+        : '<span style="opacity:.5;font-size:.75rem">No variables detected</span>';
+    }
+  };
+
+  window.tplInsertVar = function(v) {
+    const active = document.activeElement;
+    const snippet = '{{ ' + v + ' }}';
+    if (active && active.tagName === 'TEXTAREA') {
+      const s = active.selectionStart, e = active.selectionEnd;
+      active.value = active.value.slice(0,s) + snippet + active.value.slice(e);
+      active.selectionStart = active.selectionEnd = s + snippet.length;
+    } else {
+      navigator.clipboard && navigator.clipboard.writeText(snippet);
+      window.showToast && window.showToast('Copied to clipboard: ' + snippet, 'info');
+    }
+  };
+
+  /* Auto-init when the templates tab becomes visible */
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabBtn = document.querySelector('[data-target="templates"], [href="#templates"]');
+    if (tabBtn) {
+      tabBtn.addEventListener('click', () => setTimeout(() => TM.init(), 100));
+    }
+    // Also init if the panel is already active on load
+    const panel = document.getElementById('tab-templates');
+    if (panel && panel.offsetParent !== null) TM.init();
+  });
+})();
+</script>

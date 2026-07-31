@@ -1,0 +1,10 @@
+<div class="tpl-field">
+  <label>Body</label>
+  <div class="tpl-textarea-wrap">
+    <textarea id="tpl-edit-body"
+              class="tpl-body-textarea"
+              placeholder="Template body… Hello {{ nome }}, your order is ready."
+              oninput="TemplateManager._dirty=true; tplUpdateCharCount(this)"></textarea>
+    <div class="tpl-char-count"><span id="tpl-char-count">0</span> characters</div>
+  </div>
+</div>

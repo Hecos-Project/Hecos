@@ -151,9 +151,9 @@ function _hpmStoreHandleSSE(event, payload, bar, msg, logEl, title, icon, modal,
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
 
     // ── Show Restart prompt if backend routes need a fresh boot (Removed) ────
-    // if (payload.requires_restart && typeof window.hpmRestartRequired === 'function') {
-    //   setTimeout(() => window.hpmRestartRequired(pkgName || pkgId), 2000);
-    // }
+    if (payload.requires_restart && typeof window.hpmSignalRestartPending === 'function') {
+      window.hpmSignalRestartPending();
+    }
     // ────────────────────────────────────────────────────────────────────────
   } else if (event === 'error') {
     if (payload.missing_deps && payload.missing_deps.length > 0) {

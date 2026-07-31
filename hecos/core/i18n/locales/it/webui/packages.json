@@ -67,5 +67,7 @@
     "hpm_update_avail_plural": "aggiornamenti disponibili",
     "hpm_update_all_ok": "Tutti i moduli sono aggiornati!",
     "hpm_update_offline": "Impossibile contattare lo Store. Verifica la connessione.",
-    "hpm_update_no_modules": "Nessun modulo caricato. Ricarica prima la lista."
+    "hpm_update_no_modules": "Nessun modulo caricato. Ricarica prima la lista.",
+    "hpm_confirm_uninstall_title": "Conferma Disinstallazione",
+    "hpm_confirm_uninstall_cancel": "Annulla"
 }

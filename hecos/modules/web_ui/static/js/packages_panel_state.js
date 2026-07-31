@@ -88,7 +88,14 @@ window.hpmApplyFilters = function() {
     window.HPM_STATE.filteredPackages = filtered;
     window.HPM_STATE.currentPage = 1; // reset to first page on filter change
     
-    window.hpmRenderHierarchy();
+    const chkAll = document.getElementById('hpm-select-all');
+    if (chkAll && chkAll.checked && typeof window.hpmToggleSelectAll === 'function') {
+        window.hpmToggleSelectAll();
+    } else {
+        // Also update selection UI to ensure hidden items don't keep the checkbox checked incorrectly
+        if (typeof window.hpmUpdateSelectionUI === 'function') window.hpmUpdateSelectionUI();
+        window.hpmRenderHierarchy();
+    }
 };
 
 window.hpmGoToPage = function(delta, relative = true) {

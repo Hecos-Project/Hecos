@@ -399,10 +399,10 @@ function _hpmShowFinalSummary() {
     if (typeof window.hpmRefreshConfigHub === 'function') window.hpmRefreshConfigHub();
     if (typeof window.loadWidgetsPanel === 'function') window.loadWidgetsPanel();
 
-    // ── Restart Required popup (Removed: Redundant as per user request) ──────
-    // if (needsRestartPkg && typeof window.hpmRestartRequired === 'function') {
-    //     setTimeout(() => window.hpmRestartRequired(needsRestartPkg), 2000);
-    // }
+    // ── Restart Required signal ──────────────────────────────────────────────
+    if (needsRestartPkg && typeof window.hpmSignalRestartPending === 'function') {
+        window.hpmSignalRestartPending();
+    }
 }
 
 

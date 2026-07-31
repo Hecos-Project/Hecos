@@ -13,17 +13,17 @@ from .package_schema import HpkgManifest
 # Pure data types (persona, theme) keep their own semantic directories.
 # widget-only packages have no backend code to install.
 TYPE_DEFAULT_DIR = {
-    "core_module": "modules",
-    "plugin":      "hpm",
-    "module":      "hpm",
-    "library":     "hpm/libraries",
-    "extension":   "hpm",
-    "app":         "hpm",
-    "system_app":  "hpm",           # WebUI pillar apps (Drive, Flows, etc.)
-    "widget":      None,            # widget-only: no backend, skip code install
-    "persona":     "personas",
-    "theme":       "themes",
-    "skill_pack":  "hpm",
+    "core_module":    "modules",
+    "system_app":     "modules",       # WebUI pillar apps (Drive, Flows, etc.)
+    "generic_module": "hpm/modules",
+    "plugin":         "hpm/plugins",
+    "library":        "hpm/libraries",
+    "extension":      "hpm/extensions",
+    "app":            "hpm/apps",
+    "widget":         None,            # widget-only: no backend, skip code install
+    "persona":        "personas",
+    "theme":          "themes",
+    "skill_pack":     "hpm/skill_packs",
 }
 
 def copy_tree(src: str, dst: str) -> List[str]:
@@ -60,12 +60,19 @@ def _resolve_target_dir(manifest: HpkgManifest) -> str | None:
     pkg_type = manifest.type
     default_for_type = TYPE_DEFAULT_DIR.get(pkg_type)
 
-    # If the developer explicitly overrode target_dir away from the default 'hpm',
-    # respect their choice — but only if this type normally HAS a target directory.
-    if default_for_type is not None and manifest.target_dir != "hpm":
+    # 1. Developer explicitly overrode target_dir
+    if manifest.target_dir:
+        # Exception: if it's a known type with NO backend (e.g. widget), still return None
+        if pkg_type in TYPE_DEFAULT_DIR and TYPE_DEFAULT_DIR[pkg_type] is None:
+            return None
         return manifest.target_dir
 
-    return default_for_type
+    # 2. Use system default if known
+    if pkg_type in TYPE_DEFAULT_DIR:
+        return default_for_type
+
+    # 3. Dynamic fallback for unknown types (e.g. "tony_app" -> "hpm/tony_apps")
+    return f"hpm/{pkg_type}s"
 
 
 def install_plugin_code(staging: str, manifest: HpkgManifest, hecos_root: str) -> List[str]:
