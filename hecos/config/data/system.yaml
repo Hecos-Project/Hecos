@@ -181,6 +181,5 @@ routing_engine:
   mode: auto
   legacy_models: ''
 system:
-  fast_boot: false
   flask_debug: false
   check_local_backend_on_boot: false

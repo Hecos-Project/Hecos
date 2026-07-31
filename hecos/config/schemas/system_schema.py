@@ -189,9 +189,9 @@ class RoutingEngineConfig(BaseModel):
 
 
 class SystemFlagsConfig(BaseModel):
-    fast_boot: bool = True
     flask_debug: bool = False
     check_local_backend_on_boot: bool = False
+
 
 
 # ─── AGENT (inline in system.yaml for legacy compatibility) ───────────────────

@@ -36,7 +36,7 @@ window.HPM_TYPE_META = {
   theme:       { label: window.hpm_ti('Themes', 'Temi', 'Temas'),                            icon: 'fa-palette',           color: '#10b981', order: 7 },
   extension:   { label: window.hpm_ti('Extensions', 'Estensioni', 'Extensiones'),            icon: 'fa-puzzle-piece',      color: '#45a29e', order: 8 },
   skill_pack:  { label: window.hpm_ti('Skill Packs', 'Pacchetti Skill', 'Paquetes de Skill'), icon: 'fa-graduation-cap',   color: '#f97316', order: 9 },
-  core_module: { label: window.hpm_ti('Core Modules', 'Moduli Core', 'Módulos Core'),        icon: 'fa-microchip',         color: '#ff4444', order: 10 },
+  core_module: { label: window.hpm_ti('Core Modules', 'Moduli Core', 'Módulos Core'), shortLabel: window.hpm_ti('Core', 'Core', 'Core'), icon: 'fa-microchip', color: '#ff4444', order: 10 },
   other:       { label: window.hpm_ti('Other', 'Altro', 'Otros'),                            icon: 'fa-cube',              color: '#6b7280', order: 11 }
 };
 

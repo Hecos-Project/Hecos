@@ -180,7 +180,7 @@ function _hpmStoreRenderCard(pkg) {
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;color:var(--text);font-size:0.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_hesc(pkg.name)}</div>
           <div style="display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap;">
-            <span style="font-size:0.7em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:${meta.color};background:${meta.color}18;padding:2px 7px;border-radius:5px;">${meta.label}</span>
+            <span style="font-size:0.7em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:${meta.color};background:${meta.color}18;padding:2px 7px;border-radius:5px;">${meta.shortLabel || meta.label}</span>
             <span style="font-size:0.72em;color:var(--muted);">v${_hesc(pkg.version)}</span>
             ${sizeFmt ? `<span style="font-size:0.7em;color:var(--muted);">${sizeFmt}</span>` : ''}
           </div>

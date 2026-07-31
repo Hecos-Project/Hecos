@@ -15,11 +15,11 @@ from .package_schema import HpkgManifest
 TYPE_DEFAULT_DIR = {
     "core_module":    "modules",
     "system_app":     "modules",       # WebUI pillar apps (Drive, Flows, etc.)
-    "generic_module": "hpm/modules",
-    "plugin":         "hpm/plugins",
-    "library":        "hpm/libraries",
-    "extension":      "hpm/extensions",
-    "app":            "hpm/apps",
+    "generic_module": "hpm",
+    "plugin":         "hpm",
+    "library":        "hpm",
+    "extension":      "hpm",
+    "app":            "hpm",
     "widget":         None,            # widget-only: no backend, skip code install
     "persona":        "personas",
     "theme":          "themes",

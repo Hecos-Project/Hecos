@@ -25,7 +25,7 @@ if exist "python_env\python.exe" (
 
 if not defined PYTHON_CMD set PYTHON_CMD=python
 :: Auto-check environment before starting
-!PYTHON_CMD! -c "import sys,msvcrt,time; print('[*] Press ESC to skip environment check (2s)...', end='\r', flush=True); end=time.time()+2; skip=False; exec('while time.time()<end:\n if msvcrt.kbhit() and ord(msvcrt.getch())==27: skip=True; break\n time.sleep(0.05)'); print('[*] Environment check SKIPPED!                       ' if skip else '[*] Running environment verification...              '); sys.exit(1 if skip else 0)"
+!PYTHON_CMD! -c "import sys,msvcrt,time; end=time.time()+0.12; run_check=False; exec('while time.time()<end:\n if msvcrt.kbhit() and ord(msvcrt.getch())==27: run_check=True; break\n time.sleep(0.01)'); print('\n[*] Running environment verification...' if run_check else '', end=''); sys.exit(0 if run_check else 1)"
 if %ERRORLEVEL% EQU 0 (
   !PYTHON_CMD! hecos\setup_wizard.py --auto
   if !ERRORLEVEL! NEQ 0 (
