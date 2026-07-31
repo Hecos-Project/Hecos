@@ -180,6 +180,16 @@ def _cmd_soul(raw_args_str="", config=None, config_manager=None, **kwargs) -> st
         return f"❌ Errore durante il cambio personalità: {e}"
 
 
+def _cmd_diagnostics(raw_args_str="", config=None, config_manager=None, **kwargs) -> str:
+    """Run a full system diagnostic report and return it as markdown."""
+    try:
+        cfg = config or (config_manager.config if config_manager else {})
+        from hecos.core.system.diagnostica import run_diagnostics_report
+        return run_diagnostics_report(cfg)
+    except Exception as e:
+        return f"❌ Error during diagnostics: {e}"
+
+
 # ── Command descriptors ───────────────────────────────────────────────────────
 
 
@@ -344,5 +354,18 @@ SYSTEM_COMMANDS = [
         "requires_args": True,
         "save_to_memory": False,
         "_handler": _cmd_info,
+    },
+    {
+        "id": "diagnostics",
+        "aliases": ["/diagnostics", "/diag", "/diagnosi"],
+        "description": "Runs full system diagnostics (CPU, RAM, plugins, backend)",
+        "usage": "/diagnostics",
+        "example": "/diagnostics",
+        "icon": "🔍",
+        "category": "CORE",
+        "requires_auth": "admin",
+        "requires_args": False,
+        "save_to_memory": False,
+        "_handler": _cmd_diagnostics,
     },
 ]

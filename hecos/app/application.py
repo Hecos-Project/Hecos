@@ -7,7 +7,7 @@ import time
 import atexit
 import msvcrt
 from hecos.core.logging import logger
-from hecos.core.system import module_loader, diagnostica
+from hecos.core.system import module_loader
 from hecos.core.i18n import translator
 from hecos.ui import interface, graphics, ui_updater
 from hecos.ui.config_editor.core import ConfigEditor
@@ -101,9 +101,6 @@ class HecosApplication:
         is_webui_mode = self.bootstrapper._is_webui_mode
 
         if not is_webui_mode:
-            if not config.get("system", {}).get("fast_boot", False):
-                self.bootstrapper.show_boot_animation()
-            
             self.state_manager.system_status = translator.t("ready")
             interface.show_complete_ui(
                 config,

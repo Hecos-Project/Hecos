@@ -35,6 +35,33 @@ def _is_ram_mode(privacy_mode: str) -> bool:
     return privacy_mode in ("auto_wipe", "incognito")
 
 
+def _purge_vault_sessions(session_ids: list):
+    """
+    Deletes all history rows for the given session_ids from every user vault DB.
+    This prevents orphaned messages after a session-table wipe.
+    """
+    if not session_ids:
+        return
+    try:
+        import glob
+        users_dir = os.path.join(BASE_DIR, "users")
+        if not os.path.exists(users_dir):
+            return
+        # Find all history.db files under users/*/
+        pattern = os.path.join(users_dir, "*", "history.db")
+        vault_dbs = glob.glob(pattern)
+        holders = ",".join("?" for _ in session_ids)
+        for db_path in vault_dbs:
+            try:
+                with sqlite3.connect(db_path, timeout=10) as conn:
+                    conn.execute(f"DELETE FROM history WHERE session_id IN ({holders})", session_ids)
+                    conn.commit()
+            except Exception as e:
+                logger.warning(f"[SESSION] _purge_vault_sessions error for {db_path}: {e}")
+    except Exception as e:
+        logger.warning(f"[SESSION] _purge_vault_sessions outer error: {e}")
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # SCHEMA MIGRATION
 # ──────────────────────────────────────────────────────────────────────────────
@@ -460,6 +487,8 @@ def delete_session(session_id: str) -> bool:
         cur.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
         conn.commit()
         conn.close()
+        # Also purge messages from all user vault DBs
+        _purge_vault_sessions([session_id])
         # optimize space
         conn2 = sqlite3.connect(PATH_DB)
         conn2.execute("VACUUM")
@@ -489,7 +518,11 @@ def delete_all_sessions() -> bool:
         
         conn.commit()
         conn.close()
-        
+
+        # Also clean up orphaned messages from all user vault DBs for these session IDs
+        if active_ids:
+            _purge_vault_sessions(active_ids)
+
         conn2 = sqlite3.connect(PATH_DB)
         conn2.execute("VACUUM")
         conn2.close()
@@ -528,7 +561,8 @@ def delete_all_archived_sessions() -> bool:
         cur.execute(f"DELETE FROM sessions WHERE id IN ({placeholders})", archived_ids)
         conn.commit()
         conn.close()
-        
+        # Also purge messages from all user vault DBs
+        _purge_vault_sessions(archived_ids)
         conn2 = sqlite3.connect(PATH_DB)
         conn2.execute("VACUUM")
         conn2.close()

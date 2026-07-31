@@ -90,7 +90,8 @@ class SystemBootstrapper:
         
         config = self.config_manager.config
         self.state_manager.system_status = translator.t("diagnostics")
-        diagnostica.run_initial_check(config)
+        # Silent by default; full diagnostics activate only if ESC is held at boot
+        diagnostica.run_if_requested(config)
 
         # Audio device auto-selection (Piper TTS output + Microphone input)
         try:

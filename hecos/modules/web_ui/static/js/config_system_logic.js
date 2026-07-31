@@ -12,7 +12,6 @@ function populateSystemUI() {
     setCheck('log-error-beeps', slg.ui_error_beeps ?? true);
 
     const sys = c.system || {};
-    setCheck('sys-fastboot', sys.fast_boot ?? false);
     setCheck('sys-flask-debug', sys.flask_debug ?? false);
     setCheck('sys-check-local-backend', sys.check_local_backend_on_boot ?? false);
     setCheck('sys-sdk-enabled', sys.sdk_enabled === true);  // default OFF
@@ -94,7 +93,6 @@ function buildSystemPayload() {
             ui_error_beeps: getC('log-error-beeps', slg.ui_error_beeps ?? true)
         },
         system: {
-            fast_boot: getC('sys-fastboot', sys.fast_boot ?? false),
             flask_debug: getC('sys-flask-debug', sys.flask_debug ?? false),
             check_local_backend_on_boot: getC('sys-check-local-backend', sys.check_local_backend_on_boot ?? false),
             sdk_enabled: getC('sys-sdk-enabled', sys.sdk_enabled === true)

@@ -133,7 +133,6 @@ def build_parameter_list(config):
     params.append(Parameter('cognition', 'clear_history', 'Clear History Now', 'command', command='clear_memory'))
 
     # --- Comando speciale RIAVVIA e opzioni di sistema ---
-    params.append(Parameter('system', 'fast_boot', translator.t("label_avvio_rapido"), 'bool'))
     params.append(Parameter('system', 'flask_debug', 'Flask Debug Mode', 'bool'))
     params.append(Parameter('system', 'language', translator.t("label_lingua_system"), 'str', options=['it', 'en']))
     params.append(Parameter('system', 'reboot', translator.t("label_reboot"), 'command', 
