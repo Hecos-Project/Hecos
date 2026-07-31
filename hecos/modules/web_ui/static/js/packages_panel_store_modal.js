@@ -154,7 +154,7 @@ window.hpmStoreShowReadMe = async function (pkgId) {
         <div style="display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap;">
           <span style="font-size:0.7em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
                        color:${meta.color};background:${meta.color}18;padding:2px 8px;border-radius:5px;">
-            <i class="fas ${meta.icon}" style="margin-right:4px;"></i>${meta.label}
+            <i class="fas ${meta.icon}" style="margin-right:4px;"></i>${meta.shortLabel || meta.label}
           </span>
           <span style="font-size:0.75em;color:var(--muted);">v${_hesc(pkg.version)}</span>
           ${sizeFmt ? `<span style="font-size:0.72em;color:var(--muted);"><i class="fas fa-weight-hanging" style="margin-right:3px;opacity:.4;"></i>${sizeFmt}</span>` : ''}

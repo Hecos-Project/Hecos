@@ -166,7 +166,7 @@ window.hpmRenderRow = function (pkg, meta) {
           ${statusDot}
           <span style="font-weight:600;color:var(--text);font-size:0.88em;">${window._hesc(pkg.name)}</span>
           <span style="font-size:9px;background:${typeMeta.color}15;color:${typeMeta.color};
-                       padding:1px 5px;border-radius:3px;letter-spacing:.5px;border:1px solid ${typeMeta.color}33;">${typeMeta.label}</span>
+                       padding:1px 5px;border-radius:3px;letter-spacing:.5px;border:1px solid ${typeMeta.color}33;">${typeMeta.shortLabel || typeMeta.label}</span>
           ${versionBadge}
         </div>
         ${pkg.description ? `

@@ -168,7 +168,7 @@ window.hpmRenderWallCard = function (pkg, meta) {
           <div style="display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap;">
             <span style="font-size:0.8em;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
                          color:${typeMeta.color};background:${typeMeta.color}18;padding:2px 6px;
-                         border-radius:4px;border:1px solid ${typeMeta.color}44;">${typeMeta.label}</span>
+                         border-radius:4px;border:1px solid ${typeMeta.color}44;">${typeMeta.shortLabel || typeMeta.label}</span>
             <span style="font-size:0.85em;color:var(--muted);">v${window._hesc(pkg.version || '—')}</span>
           </div>
         </div>

@@ -543,6 +543,10 @@ hecos/modules/web_ui/static/js/image_gen.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
 
+# Drive Module (HPM Package)
+hecos/modules/drive/
+hecos/config/data/drive.toml
+
 # HPM Themes Pack
 hecos/themes/*
 hecos/modules/web_ui/static/css/themes.css
@@ -581,11 +585,11 @@ hecos/modules/flows/
 hecos/modules/web_ui/routes_flows.py
 hecos/modules/web_ui/templates/flows.html
 hecos/modules/web_ui/templates/modules/config_flows.html
-hecos/assets/js/flows_canvas_react/
-hecos/assets/js/dist/flows_canvas.bundle.js
-hecos/assets/js/dist/flows_canvas.css
-hecos/assets/js/flows_*.js
-hecos/assets/css/flows.css
+hecos/modules/web_ui/static/js/flows_canvas_react/
+hecos/modules/web_ui/static/js/dist/flows_canvas.bundle.js
+hecos/modules/web_ui/static/js/dist/flows_canvas.css
+hecos/modules/web_ui/static/js/flows_*.js
+hecos/modules/web_ui/static/css/flows.css
 hecos/core/i18n/locales/*/webui/flows.json
 hecos/core/commands/builtins/flow_commands.py
 
@@ -597,5 +601,7 @@ hecos/modules/web_ui/templates/modules/config_sysnet_panel.html
 # Global Backup (HPM Core Module)
 hecos/modules/backup/
 hecos/modules/web_ui/templates/modules/config_backup.html
+hecos/modules/web_ui/templates/modules/config_global_backup.html
+hecos/modules/web_ui/static/js/config_mapper_global_backup.js
 hecos/config/data/backup_config.json
 hecos/modules/global_backup/
