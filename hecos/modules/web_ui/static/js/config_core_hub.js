@@ -35,11 +35,11 @@ window.hpmGetModuleTypeBadge = function(m, isTab = false) {
     const label = window.t ? (window.t(meta.shortLabel) || window.t(meta.label) || meta.label) : (meta.shortLabel || meta.label);
 
     if (isTab) {
-        return `<span class="type-badge" style="margin-left:4px; background:rgba(${_hexToRgb(meta.color)}, 0.15); color:${meta.color}; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:700; white-space:nowrap;" title="${label}"><i class="fas ${meta.icon}"></i> ${label}</span>`;
+        return `<span class="type-badge" style="margin-left:6px; background:rgba(${_hexToRgb(meta.color)}, 0.15); color:${meta.color}; font-size:10px; width:20px; height:20px; border-radius:50%; display:inline-flex; justify-content:center; align-items:center;" title="${label}"><i class="fas ${meta.icon}"></i></span>`;
     }
 
-    return `<div class="module-type-badge" style="position:absolute; top:8px; left:8px; background:rgba(${_hexToRgb(meta.color)}, 0.15); color:${meta.color}; font-size:9px; padding:2px 6px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:4px;" title="${label}">
-        <i class="fas ${meta.icon}"></i> ${label}
+    return `<div class="module-type-badge" style="position:absolute; top:8px; left:8px; background:rgba(${_hexToRgb(meta.color)}, 0.15); color:${meta.color}; font-size:10px; width:22px; height:22px; border-radius:50%; display:flex; justify-content:center; align-items:center;" title="${label}">
+        <i class="fas ${meta.icon}"></i>
     </div>`;
 };
 
@@ -202,8 +202,7 @@ function renderConfigHub(mode = 'tabs') {
                         cleanText = window.t ? window.t(m.label) : m.label;
                     }
                     
-                    const typeBadge = window.hpmGetModuleTypeBadge ? window.hpmGetModuleTypeBadge(m, true) : '';
-                    title.innerHTML = `${icon} ${cleanText} ${typeBadge}`;
+                    title.innerHTML = `${icon} ${cleanText}`;
                     title.setAttribute('data-icon-injected', 'true');
                 });
             });
