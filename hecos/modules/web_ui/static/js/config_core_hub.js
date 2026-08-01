@@ -10,6 +10,39 @@
 /**
  * Renders the category filter pill buttons above the hub.
  */
+function _hexToRgb(hex) {
+    if (!hex) return '100,100,100';
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '100,100,100';
+}
+
+window.hpmGetModuleTypeBadge = function(m, isTab = false) {
+    if (!window.HPM_TYPE_META) return '';
+    let type = (m.moduleType || '').toLowerCase().trim();
+    if (m.isCore) type = 'core_module';
+    if (!type && m.isHpm) type = 'plugin';
+    if (!type) return '';
+    
+    let meta = window.HPM_TYPE_META[type];
+    if (!meta && type === 'core_module') {
+        meta = { label: 'Core', shortLabel: 'Core', icon: 'fa-microchip', color: '#ff4444' };
+    } else if (!meta) {
+        meta = window.HPM_TYPE_META['other'];
+    }
+    
+    if (!meta) return '';
+
+    const label = window.t ? (window.t(meta.shortLabel) || window.t(meta.label) || meta.label) : (meta.shortLabel || meta.label);
+
+    if (isTab) {
+        return `<span class="type-badge" style="margin-left:4px; background:rgba(${_hexToRgb(meta.color)}, 0.15); color:${meta.color}; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:700; white-space:nowrap;" title="${label}"><i class="fas ${meta.icon}"></i> ${label}</span>`;
+    }
+
+    return `<div class="module-type-badge" style="position:absolute; top:8px; left:8px; background:rgba(${_hexToRgb(meta.color)}, 0.15); color:${meta.color}; font-size:9px; padding:2px 6px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:4px;" title="${label}">
+        <i class="fas ${meta.icon}"></i> ${label}
+    </div>`;
+};
+
 function renderFilterTabs() {
     const container = document.getElementById('config-filter-tabs');
     const hub       = window.CONFIG_HUB;
@@ -168,7 +201,9 @@ function renderConfigHub(mode = 'tabs') {
                     if (!cleanText || cleanText.length < 2) {
                         cleanText = window.t ? window.t(m.label) : m.label;
                     }
-                    title.innerHTML = `${icon} ${cleanText}`;
+                    
+                    const typeBadge = window.hpmGetModuleTypeBadge ? window.hpmGetModuleTypeBadge(m, true) : '';
+                    title.innerHTML = `${icon} ${cleanText} ${typeBadge}`;
                     title.setAttribute('data-icon-injected', 'true');
                 });
             });
@@ -209,7 +244,8 @@ function renderConfigHub(mode = 'tabs') {
         const icon        = window.getIconForModule(m.id, m.label, m.icon);
         const isNew       = newPanels.includes(m.id);
         const badgeHtml   = isNew ? `<span class="new-badge" style="margin-left:6px; background:var(--accent); color:white; font-size:9px; padding:2px 5px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite;">NEW</span>` : '';
-        tabsHtml += `<button class="tab ${activeClass}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label} ${badgeHtml}</button>`;
+        const typeBadge   = window.hpmGetModuleTypeBadge(m, true);
+        tabsHtml += `<button class="tab ${activeClass}" onclick="showTab('${m.id}')">${icon} ${window.t ? window.t(m.label) : m.label} ${typeBadge} ${badgeHtml}</button>`;
     });
     if (filteredModules.length > 0) tabsHtml += `</div></div>`;
     tabsBar.innerHTML = tabsHtml;
@@ -238,9 +274,11 @@ function renderConfigHub(mode = 'tabs') {
         const icon        = window.getIconForModule(m.id, m.label, m.icon);
         const isNew       = newPanels.includes(m.id);
         const badgeHtml   = isNew ? `<div class="new-badge" style="position:absolute; top:8px; right:8px; background:var(--accent); color:white; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:800; animation:hpmPulse 2s infinite; box-shadow:0 0 5px var(--accent);">NEW</div>` : '';
+        const typeBadge   = window.hpmGetModuleTypeBadge(m, false);
         wallHtml += `
             <div class="module-card ${activeClass}" onclick="showTab('${m.id}')" style="position:relative;">
                 ${badgeHtml}
+                ${typeBadge}
                 <div class="m-icon">${icon}</div>
                 <div class="m-label">${window.t ? window.t(m.label) : m.label}</div>
                 <div class="m-cat">${window.t ? window.t(currentCatData.label) : currentCat}</div>
