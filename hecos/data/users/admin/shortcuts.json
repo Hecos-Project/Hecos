@@ -1,6 +1,6 @@
 {
   "bindings": {
-    "nav.help": "f1",
+    "nav.packages": "f1",
     "nav.backend": "f2",
     "nav.ia": "f3",
     "ui.toggle_mic": "f4",
@@ -12,7 +12,6 @@
     "nav.home": "f11",
     "ui.open_hdcs": "f12",
     "ui.ptt_trigger": "ctrl+shift",
-    "nav.packages": "ctrl+shift+p",
     "nav.drive": "ctrl+shift+d",
     "nav.flows": "ctrl+shift+f",
     "ui.toggle_room": "ctrl+shift+r",
@@ -26,6 +25,7 @@
     "ui.focus_input": "ctrl+shift+i",
     "focus.next": "ctrl+tab",
     "focus.prev": "ctrl+shift+tab",
+    "nav.help": "f1",
     "ui.fullscreen": "f11"
   },
   "prefs": {

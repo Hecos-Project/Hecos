@@ -22,8 +22,10 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'hecos_hks_bindings';
-    const PREFS_KEY   = 'hecos_hks_prefs';
+    const STORAGE_KEY   = 'hecos_hks_bindings';
+    const PREFS_KEY     = 'hecos_hks_prefs';
+    const VERSION_KEY   = 'hecos_hks_version';
+    const BINDINGS_VER  = '3'; // ← increment this whenever DEFAULTS change
 
     // ── Default bindings ──────────────────────────────────────────────────────
     // Inspired by Linux terminal function key conventions.
@@ -78,11 +80,27 @@
      */
     function _loadFromStorage() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const saved = JSON.parse(raw);
-                // Merge with defaults (new defaults from updates are preserved)
-                _bindings = Object.assign({}, DEFAULTS, saved);
+            // ── Version guard: if DEFAULTS changed, wipe old bindings ──────────
+            const savedVer = localStorage.getItem(VERSION_KEY);
+            if (savedVer !== BINDINGS_VER) {
+                console.log('[HKS Bindings] Bindings version mismatch (saved:', savedVer, '→ current:', BINDINGS_VER, ') — resetting to defaults.');
+                _bindings = Object.assign({}, DEFAULTS);
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.setItem(VERSION_KEY, BINDINGS_VER);
+            } else {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const saved = JSON.parse(raw);
+                    // User-customized bindings take priority, but only for keys
+                    // that still exist in DEFAULTS (orphaned bindings are dropped)
+                    const clean = {};
+                    for (const id of Object.keys(DEFAULTS)) {
+                        clean[id] = (saved[id] !== undefined) ? saved[id] : DEFAULTS[id];
+                    }
+                    _bindings = clean;
+                } else {
+                    _bindings = Object.assign({}, DEFAULTS);
+                }
             }
         } catch (e) {
             console.warn('[HKS Bindings] Could not load from storage:', e);
@@ -106,6 +124,7 @@
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(_bindings));
             localStorage.setItem(PREFS_KEY, JSON.stringify(_prefs));
+            localStorage.setItem(VERSION_KEY, BINDINGS_VER);
         } catch (e) {
             console.warn('[HKS Bindings] Could not save to storage:', e);
         }
