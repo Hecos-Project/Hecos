@@ -145,8 +145,27 @@
     const loading = grid.querySelector('.room-loading');
     if (loading) loading.remove();
     controlRoomGrid.init(grid, editBtn);
+
+    // HKS — Set context for Control Room
+    if (window.HKS) {
+      window.HKS.setContext('home');
+      window.HKS.registerFocusZones([
+        '#home-header',
+        '#home-grid',
+        '#home-footer'
+      ]);
+    }
   });
 </script>
+
+<!-- HKS — Hecos Keyboard Shortcuts System -->
+<link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">
+<script src="/static/js/keyboard_shortcuts/hks_core.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_bindings.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_toast.js?v={{ version }}"></script>
 
 </body>
 </html>

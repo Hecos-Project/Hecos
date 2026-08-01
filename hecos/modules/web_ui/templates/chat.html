@@ -199,6 +199,29 @@
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
 <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
 
+<!-- HKS — Hecos Keyboard Shortcuts System -->
+<link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">
+<script src="/static/js/keyboard_shortcuts/hks_core.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_bindings.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
+<script src="/static/js/keyboard_shortcuts/hks_toast.js?v={{ version }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.HKS) {
+    window.HKS.setContext('chat');
+    // Register Tab cycling zones for the Chat page
+    window.HKS.registerFocusZones([
+      '#sidebar',
+      '#main',
+      '#user-input',
+      '#topbar'
+    ]);
+  }
+});
+</script>
+
 </body>
 </html>
 

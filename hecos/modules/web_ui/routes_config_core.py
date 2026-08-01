@@ -128,6 +128,7 @@ _PANEL_MAP = {
     'help':            'modules/config_help.html',
     'flows':           'modules/config_flows.html',
     'packages':        'modules/config_packages.html',
+    'shortcuts':       'modules/config_shortcuts.html',
 }
 
 # Panels that require zoptions (model lists, piper voices, personalities)
