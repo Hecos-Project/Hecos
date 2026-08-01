@@ -106,22 +106,6 @@
         },
 
         {
-            id: 'nav.help',
-            label: 'Open Help',
-            description: 'Navigate to Help/About panel',
-            icon: 'fas fa-question-circle',
-            category: 'navigation',
-            contexts: ['global', 'chat', 'hub', 'home'],
-            handler: () => {
-                if (window.HKS && window.HKS.getContext() === 'hub') {
-                    if (window.switchTab) window.switchTab('help');
-                } else {
-                    window.open('/hecos/config#help', '_blank');
-                }
-            }
-        },
-
-        {
             id: 'nav.packages',
             label: 'Package Manager (HPM)',
             icon: 'fas fa-box-open',

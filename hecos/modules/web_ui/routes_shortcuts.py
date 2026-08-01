@@ -21,7 +21,7 @@ log = logging.getLogger("hecos.web_ui.shortcuts")
 # ── Default bindings (mirrors hks_bindings.js DEFAULTS) ───────────────────────
 
 DEFAULT_BINDINGS = {
-    "nav.help":          "f1",
+    "nav.packages":      "f1",
     "nav.backend":       "f2",
     "nav.ia":            "f3",
     "ui.toggle_mic":     "f4",
@@ -35,7 +35,6 @@ DEFAULT_BINDINGS = {
     "ui.open_hdcs":      "f12",
     
     "ui.ptt_trigger":    "ctrl+shift",
-    "nav.packages":      "ctrl+shift+p",
     "nav.drive":         "ctrl+shift+d",
     "nav.flows":         "ctrl+shift+f",
     "ui.toggle_room":    "ctrl+shift+r",

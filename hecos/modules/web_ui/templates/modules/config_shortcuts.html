@@ -195,6 +195,19 @@
 
 </div><!-- /tab-shortcuts -->
 
+<!-- ── Custom Confirm Modal for Reset ───────────────────────────────────── -->
+<div id="hks-reset-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:24px; max-width:400px; width:90%; text-align:center; box-shadow:var(--shadow-glow);">
+    <i class="fas fa-exclamation-triangle" style="font-size:32px; color:var(--red); margin-bottom:16px;"></i>
+    <h3 style="margin:0 0 12px 0; color:var(--text);">Reset All Shortcuts?</h3>
+    <p style="color:var(--muted); font-size:13px; margin:0 0 24px 0;">This will revert all custom keyboard shortcuts to their default values. This action cannot be undone.</p>
+    <div style="display:flex; justify-content:center; gap:12px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('hks-reset-modal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger" onclick="document.getElementById('hks-reset-modal').style.display='none'; HKS_Panel.executeResetAll()">Yes, Reset All</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ── Panel JS ───────────────────────────────────────────────────────────── -->
 <script>
@@ -406,7 +419,10 @@
         },
 
         confirmResetAll() {
-            if (!confirm('Reset ALL keyboard shortcuts to default? This cannot be undone.')) return;
+            document.getElementById('hks-reset-modal').style.display = 'flex';
+        },
+
+        executeResetAll() {
             if (!window.HKS_BINDINGS) return;
             window.HKS_BINDINGS.resetAll();
             this._afterSave();
@@ -438,7 +454,7 @@
         // ── Helpers ───────────────────────────────────────────────────────────
 
         _afterSave() {
-            if (window.HKS_BINDINGS) window.HKS_BINDINGS.save();
+            if (window.HKS_BINDINGS) window.HKS_BINDINGS.triggerSync();
             this.renderQuickGrid();
             this.renderBindingsTable();
             this.updateConflictBanner();

@@ -29,7 +29,7 @@
     // Inspired by Linux terminal function key conventions.
 
     const DEFAULTS = {
-        'nav.help':          'f1',
+        'nav.packages':      'f1',
         'nav.backend':       'f2',
         'nav.ia':            'f3',
         'ui.toggle_mic':     'f4',
@@ -43,7 +43,6 @@
         'ui.open_hdcs':      'f12',
         
         'ui.ptt_trigger':    'ctrl+shift',
-        'nav.packages':      'ctrl+shift+p',
         'nav.drive':         'ctrl+shift+d',
         'nav.flows':         'ctrl+shift+f',
         'ui.toggle_room':    'ctrl+shift+r',
