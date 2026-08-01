@@ -1,4 +1,20 @@
 {
+    "DRIVE": {
+        "description": "HTTP File Manager (Hecos Drive)",
+        "commands": {
+            "count_items": "Counts the total number of files and folders in a given path.",
+            "get_root": "Returns the configured root directory for the drive.",
+            "list_files": "SCANS and lists files/folders in a path to return the names to the AI.",
+            "read_file": "Reads the textual content of a file."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "EXECUTOR": {
         "description": "Safe Python execution (AST Sandbox), system control, and file management. Absorbs AutoCoder.",
         "commands": {

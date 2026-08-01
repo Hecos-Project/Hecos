@@ -57,26 +57,35 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
         if not os.path.isdir(data_dir):
             data_dir = os.path.join(hecos_root, "data")
         reg = PackageRegistry(data_dir)
+    except Exception as e:
+        log.error(f"[HPM:Routes] Failed to initialize PackageRegistry: {e}")
+        reg = None
+
+    if reg is not None:
         import json as _json
         for pkg in reg.list_all():
             if not pkg:
                 continue
             if pkg.get("status") == "disabled":
                 continue
-            manifest = pkg.get("manifest_snapshot") or {}
-            if isinstance(manifest, str):
-                try: manifest = _json.loads(manifest)
-                except: manifest = {}
-            if not manifest:
-                manifest = {}
-            
-            cp = manifest.get("config_panel") or {}
-            api_routes_file = cp.get("api_routes_file")
-            
-            if api_routes_file:
-                plugin_id = pkg["id"]
+
+            plugin_id = pkg.get("id", "unknown")
+            try:
+                manifest = pkg.get("manifest_snapshot") or {}
+                if isinstance(manifest, str):
+                    try: manifest = _json.loads(manifest)
+                    except: manifest = {}
+                if not manifest:
+                    manifest = {}
+
+                cp = manifest.get("config_panel") or {}
+                api_routes_file = cp.get("api_routes_file")
+
+                if not api_routes_file:
+                    continue
+
                 install_path = pkg.get("install_path")
-                
+
                 if install_path:
                     plugin_dir = manifest.get("plugin_dir") or plugin_id
                     prefix = plugin_dir.rstrip("/\\") + "/"
@@ -87,7 +96,7 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                 else:
                     # Fallback if install_path is missing for some reason
                     abs_route_path = os.path.join(_hecos_src, "hpm", plugin_id, api_routes_file)
-                
+
                 if not os.path.isfile(abs_route_path) and install_path:
                     # Try raw fallback
                     abs_route_path = os.path.join(install_path, api_routes_file)
@@ -106,7 +115,7 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                             log.error(f"[HPM:Routes] Error initializing routes for '{plugin_id}': {e}")
                 else:
                     log.warning(f"[HPM:Routes] api_routes_file not found for '{plugin_id}': {abs_route_path}")
-    except Exception as e:
-        log.error(f"[HPM:Routes] Failed to auto-discover HPM API routes: {e}")
+            except Exception as e:
+                log.error(f"[HPM:Routes] Skipping package '{plugin_id}' due to error: {e}")
 
     log.info("[HPM] Package Manager routes registered.")

@@ -500,7 +500,7 @@ def delete_session(session_id: str) -> bool:
         return False
 
 
-def delete_all_sessions() -> bool:
+def delete_all_sessions(include_archived: bool = False) -> bool:
     """Deletes all ACTIVE sessions (archived are protected unless explicitly selected)."""
     # clear only active ram sessions
     _ram_sessions.clear()
@@ -509,7 +509,10 @@ def delete_all_sessions() -> bool:
         cur  = conn.cursor()
         
         # We need to know which ones to delete
-        cur.execute("SELECT id FROM sessions WHERE is_archived = 0")
+        if include_archived:
+            cur.execute("SELECT id FROM sessions")
+        else:
+            cur.execute("SELECT id FROM sessions WHERE is_archived = 0")
         active_ids = [r[0] for r in cur.fetchall()]
         if active_ids:
             holders = ",".join("?" for _ in active_ids)
