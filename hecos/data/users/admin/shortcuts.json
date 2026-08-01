@@ -1,0 +1,36 @@
+{
+  "bindings": {
+    "nav.packages": "f1",
+    "nav.backend": "f2",
+    "nav.ia": "f3",
+    "ui.toggle_mic": "f4",
+    "ui.toggle_voice": "f6",
+    "nav.hub": "f7",
+    "ui.toggle_ptt": "f8",
+    "sys.reboot": "f9",
+    "nav.chat": "f10",
+    "nav.home": "f11",
+    "ui.open_hdcs": "f12",
+    "ui.ptt_trigger": "ctrl+shift",
+    "nav.drive": "ctrl+shift+d",
+    "nav.flows": "ctrl+shift+f",
+    "ui.toggle_room": "ctrl+shift+r",
+    "ui.toggle_sidebar": "ctrl+b",
+    "ui.new_chat": "ctrl+enter",
+    "ui.show_cheatsheet": "?",
+    "nav.shortcuts": "ctrl+,",
+    "ui.close_modal": "escape",
+    "ui.copy_last": "ctrl+shift+c",
+    "ui.toggle_history": "ctrl+shift+h",
+    "ui.focus_input": "ctrl+shift+i",
+    "focus.next": "ctrl+tab",
+    "focus.prev": "ctrl+shift+tab",
+    "nav.help": "f1",
+    "ui.fullscreen": "f11"
+  },
+  "prefs": {
+    "toastEnabled": true,
+    "fKeysEnabled": true,
+    "tabCycleEnabled": false
+  }
+}

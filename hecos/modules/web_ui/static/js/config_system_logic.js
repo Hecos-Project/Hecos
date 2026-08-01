@@ -168,25 +168,30 @@ async function clearMemoryHistory() {
   const range = document.getElementById('clear-range').value;
   const label = range === 'all' ? 'ALL history' : `history older than ${range} day(s)`;
   
-  if (!confirm(`Warning: You are about to delete ${label}. This cannot be undone. Continue?`)) return;
+  const msgHtml = `Warning: You are about to delete <b>${label}</b>.<br><br>This cannot be undone. Continue?`;
   
-  try {
-    const r = await fetch('/api/memory/clear', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ days: range })
-    });
-    const d = await r.json();
-    if (d.ok) { 
-      alert('✅ ' + d.message); 
-      loadMemoryStatus(); 
+  window.showMemoryConfirm(msgHtml, async () => {
+    try {
+      const r = await fetch('/api/memory/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days: range })
+      });
+      const d = await r.json();
+      if (d.ok) { 
+        if (window.showToast) window.showToast(d.message, 'success');
+        else alert('✅ ' + d.message); 
+        loadMemoryStatus(); 
+      }
+      else {
+        if (window.showToast) window.showToast(d.error, 'error');
+        else alert('❌ Error: ' + d.error);
+      }
+    } catch(e) { 
+      if (window.showToast) window.showToast(e.message, 'error');
+      else alert('❌ Error: ' + e.message); 
     }
-    else {
-      alert('❌ Error: ' + d.error);
-    }
-  } catch(e) { 
-    alert('❌ Error: ' + e.message); 
-  }
+  });
 }
 
 async function refreshModels() {
@@ -238,6 +243,24 @@ window.clearInputHistory = async function() {
 window.populateSystemUI = populateSystemUI;
 window.buildSystemPayload = buildSystemPayload;
 window.loadMemoryStatus = loadMemoryStatus;
+window.showMemoryConfirm = function(msgHtml, onConfirm) {
+  const modal = document.getElementById('memory-confirm-modal');
+  const textEl = document.getElementById('memory-confirm-modal-text');
+  const yesBtn = document.getElementById('memory-confirm-modal-yes');
+  if (modal && textEl && yesBtn) {
+    textEl.innerHTML = msgHtml;
+    modal.style.display = 'flex';
+    yesBtn.onclick = function() {
+      modal.style.display = 'none';
+      onConfirm();
+    };
+  } else {
+    // Fallback if modal HTML isn't added
+    const plainMsg = msgHtml.replace(/<[^>]+>/g, '').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    if (confirm(plainMsg)) onConfirm();
+  }
+};
+
 window.clearMemoryHistory = clearMemoryHistory;
 window.refreshModels = refreshModels;
 // RAG functions (defined in config_memory.html script block)

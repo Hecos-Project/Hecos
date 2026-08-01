@@ -1,0 +1,484 @@
+<!-- ╔══════════════════════════════════════════════════════════════════╗
+     ║  config_shortcuts.html — Keyboard Shortcuts Control Panel      ║
+     ║  Loaded lazily by the Hub when the "shortcuts" tab is clicked. ║
+     ╚══════════════════════════════════════════════════════════════════╝ -->
+
+<div id="tab-shortcuts" class="panel">
+
+<!-- ── Header Card ─────────────────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:14px; padding:14px 18px;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.08), var(--bg2));
+    border: 1px solid rgba(var(--accent-rgb),0.15);">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:40px; height:40px; border-radius:11px;
+          background: linear-gradient(135deg, var(--accent), #7c3aed);
+          display:flex; align-items:center; justify-content:center; flex-shrink:0;
+          box-shadow: 0 4px 16px rgba(var(--accent-rgb),0.3);">
+        <i class="fas fa-keyboard" style="color:#fff; font-size:16px;"></i>
+      </div>
+      <div>
+        <div style="font-weight:700; color:var(--text); font-size:1em; letter-spacing:0.2px;">
+          Keyboard Shortcuts
+        </div>
+        <div style="font-size:0.72em; color:var(--muted); margin-top:1px;">
+          Linux-style function keys · Tab cycling · Fully customizable
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button id="hks-show-cheatsheet-btn"
+          onclick="window.HKS_OVERLAY && window.HKS_OVERLAY.show()"
+          style="display:flex; align-items:center; gap:6px; padding:8px 14px;
+                 border-radius:9px; border:1px solid rgba(var(--accent-rgb),0.3);
+                 background:rgba(var(--accent-rgb),0.08); color:var(--accent);
+                 font-weight:600; font-size:12px; cursor:pointer; transition:all .2s;">
+        <i class="fas fa-question-circle"></i>
+        Cheatsheet
+      </button>
+      <button id="hks-reset-all-btn"
+          onclick="HKS_Panel.confirmResetAll()"
+          style="display:flex; align-items:center; gap:6px; padding:8px 14px;
+                 border-radius:9px; border:1px solid rgba(255,100,50,0.3);
+                 background:rgba(255,100,50,0.06); color:#ff8060;
+                 font-weight:600; font-size:12px; cursor:pointer; transition:all .2s;">
+        <i class="fas fa-undo"></i>
+        Reset All
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Conflict Banner ─────────────────────────────────────────────────────── -->
+<div id="hks-conflict-banner" class="hks-conflict-banner hks-no-conflict" style="margin-bottom:14px; display:none;">
+  <i class="fas fa-exclamation-triangle"></i>
+  <span id="hks-conflict-text">No conflicts</span>
+</div>
+
+<!-- ── Quick Reference Card ───────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:14px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+    <i class="fas fa-bolt" style="color:var(--accent); font-size:13px;"></i>
+    <span style="font-weight:700; font-size:0.9em; color:var(--text);">Quick Reference</span>
+    <span style="font-size:0.7em; color:var(--muted); margin-left:4px;">F1–F12 at a glance</span>
+  </div>
+  <div class="hks-quick-grid" id="hks-quick-grid">
+    <!-- Populated by HKS_Panel.renderQuickGrid() -->
+    <div style="color:var(--muted); font-size:12px; padding:10px; grid-column:1/-1;">
+      <i class="fas fa-spinner fa-spin" style="font-size:10px; margin-right:6px;"></i>
+      Loading shortcuts…
+    </div>
+  </div>
+</div>
+
+<!-- ── Customize Bindings Card ────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:14px; padding:0; overflow:hidden;">
+  <div style="padding:14px 18px; border-bottom:1px solid rgba(255,255,255,0.07);
+              display:flex; align-items:center; justify-content:space-between; gap:8px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <i class="fas fa-sliders-h" style="color:var(--accent); font-size:13px;"></i>
+      <span style="font-weight:700; font-size:0.9em; color:var(--text);">Customize Bindings</span>
+    </div>
+    <div style="font-size:11px; color:var(--muted);">
+      <i class="fas fa-info-circle" style="margin-right:4px;"></i>
+      Click a key to reassign · Press Esc to cancel
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div style="padding:10px 18px; border-bottom:1px solid rgba(255,255,255,0.05);
+              display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="hks-filter-btn active" data-cat="all" onclick="HKS_Panel.filterCategory('all', this)"
+        style="padding:4px 12px; border-radius:6px; font-size:11px; cursor:pointer;
+               border:1px solid rgba(var(--accent-rgb),0.4); background:rgba(var(--accent-rgb),0.12);
+               color:var(--accent); font-weight:600; transition:all .15s;">
+      All
+    </button>
+    <button class="hks-filter-btn" data-cat="navigation" onclick="HKS_Panel.filterCategory('navigation', this)"
+        style="padding:4px 12px; border-radius:6px; font-size:11px; cursor:pointer;
+               border:1px solid rgba(255,255,255,0.1); background:transparent;
+               color:var(--muted); font-weight:500; transition:all .15s;">
+      <i class="fas fa-compass" style="margin-right:4px;"></i>Navigation
+    </button>
+    <button class="hks-filter-btn" data-cat="chat" onclick="HKS_Panel.filterCategory('chat', this)"
+        style="padding:4px 12px; border-radius:6px; font-size:11px; cursor:pointer;
+               border:1px solid rgba(255,255,255,0.1); background:transparent;
+               color:var(--muted); font-weight:500; transition:all .15s;">
+      <i class="fas fa-comments" style="margin-right:4px;"></i>Chat
+    </button>
+    <button class="hks-filter-btn" data-cat="system" onclick="HKS_Panel.filterCategory('system', this)"
+        style="padding:4px 12px; border-radius:6px; font-size:11px; cursor:pointer;
+               border:1px solid rgba(255,255,255,0.1); background:transparent;
+               color:var(--muted); font-weight:500; transition:all .15s;">
+      <i class="fas fa-cogs" style="margin-right:4px;"></i>System
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div style="overflow-x:auto;">
+    <table class="hks-table" id="hks-bindings-table">
+      <thead>
+        <tr>
+          <th style="width:40%;">Action</th>
+          <th style="width:15%;">Category</th>
+          <th style="width:20%;">Shortcut</th>
+          <th style="width:10%;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="hks-bindings-tbody">
+        <tr>
+          <td colspan="4" style="text-align:center; padding:24px; color:var(--muted); font-size:12px;">
+            <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i>Loading…
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Preferences Card ───────────────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:14px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px;">
+    <i class="fas fa-toggle-on" style="color:var(--accent); font-size:13px;"></i>
+    <span style="font-weight:700; font-size:0.9em; color:var(--text);">Preferences</span>
+  </div>
+
+  <div class="hks-pref-row">
+    <div class="hks-pref-info">
+      <div class="hks-pref-icon"><i class="fas fa-bell"></i></div>
+      <div>
+        <div class="hks-pref-label">Toast Feedback</div>
+        <div class="hks-pref-desc">Show a brief notification when a shortcut is triggered</div>
+      </div>
+    </div>
+    <label class="switch" style="flex-shrink:0;">
+      <input type="checkbox" id="hks-pref-toast" onchange="HKS_Panel.setPreference('toastEnabled', this.checked)">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="hks-pref-row">
+    <div class="hks-pref-info">
+      <div class="hks-pref-icon"><i class="fas fa-keyboard"></i></div>
+      <div>
+        <div class="hks-pref-label">Function Keys (F1–F12)</div>
+        <div class="hks-pref-desc">Enable F-key shortcuts for quick navigation</div>
+      </div>
+    </div>
+    <label class="switch" style="flex-shrink:0;">
+      <input type="checkbox" id="hks-pref-fkeys" onchange="HKS_Panel.setPreference('fKeysEnabled', this.checked)">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="hks-pref-row">
+    <div class="hks-pref-info">
+      <div class="hks-pref-icon"><i class="fas fa-exchange-alt"></i></div>
+      <div>
+        <div class="hks-pref-label">Tab Area Cycling</div>
+        <div class="hks-pref-desc">Use Ctrl+Tab to cycle between page UI sections</div>
+      </div>
+    </div>
+    <label class="switch" style="flex-shrink:0;">
+      <input type="checkbox" id="hks-pref-tabcycle" onchange="HKS_Panel.setPreference('tabCycleEnabled', this.checked)">
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<!-- ── Save Status ───────────────────────────────────────────────────────── -->
+<div id="hks-save-status" style="text-align:center; font-size:11px; color:var(--muted);
+    padding:8px; opacity:0; transition:opacity 0.3s;">
+  <i class="fas fa-check-circle" style="color:#7dcc9f; margin-right:4px;"></i>
+  Shortcuts saved successfully
+</div>
+
+</div><!-- /tab-shortcuts -->
+
+<!-- ── Custom Confirm Modal for Reset ───────────────────────────────────── -->
+<div id="hks-reset-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:24px; max-width:400px; width:90%; text-align:center; box-shadow:var(--shadow-glow);">
+    <i class="fas fa-exclamation-triangle" style="font-size:32px; color:var(--red); margin-bottom:16px;"></i>
+    <h3 style="margin:0 0 12px 0; color:var(--text);">Reset All Shortcuts?</h3>
+    <p style="color:var(--muted); font-size:13px; margin:0 0 24px 0;">This will revert all custom keyboard shortcuts to their default values. This action cannot be undone.</p>
+    <div style="display:flex; justify-content:center; gap:12px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('hks-reset-modal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger" onclick="document.getElementById('hks-reset-modal').style.display='none'; HKS_Panel.executeResetAll()">Yes, Reset All</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Panel JS ───────────────────────────────────────────────────────────── -->
+<script>
+(function() {
+    'use strict';
+
+    let _currentFilter = 'all';
+
+    const HKS_Panel = {
+
+        // ── Init ──────────────────────────────────────────────────────────────
+
+        init() {
+            if (!window.HKS_BINDINGS || !window.HKS_ACTIONS) {
+                // Retry after a short delay (scripts might still be loading)
+                setTimeout(() => this.init(), 300);
+                return;
+            }
+            this.renderQuickGrid();
+            this.renderBindingsTable();
+            this.renderPreferences();
+            this.updateConflictBanner();
+        },
+
+        // ── Quick Reference Grid ──────────────────────────────────────────────
+
+        renderQuickGrid() {
+            const grid = document.getElementById('hks-quick-grid');
+            if (!grid) return;
+
+            const bindings = window.HKS_BINDINGS.getAll();
+            const actions  = window.HKS_ACTIONS.getAll();
+
+            // Show only F-key and important shortcuts in quick grid
+            const quickActions = actions.filter(a => {
+                const combo = bindings[a.id];
+                return combo && (combo.startsWith('f') || combo === '?' || combo === 'ctrl+,');
+            });
+
+            if (quickActions.length === 0) {
+                grid.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px;grid-column:1/-1;">No shortcuts configured.</div>';
+                return;
+            }
+
+            grid.innerHTML = quickActions.map(action => {
+                const combo = bindings[action.id];
+                const formatted = window.HKS_BINDINGS.formatCombo(combo);
+                const keys = formatted.split('+').map(k => `<kbd>${k}</kbd>`).join('+');
+                return `
+                    <div class="hks-quick-chip" title="${action.description}">
+                        <span class="hks-chip-label">
+                            <i class="${action.icon}"></i>
+                            ${action.label}
+                        </span>
+                        <span class="hks-chip-key">${keys}</span>
+                    </div>
+                `;
+            }).join('');
+        },
+
+        // ── Bindings Table ────────────────────────────────────────────────────
+
+        renderBindingsTable() {
+            const tbody = document.getElementById('hks-bindings-tbody');
+            if (!tbody) return;
+
+            const bindings = window.HKS_BINDINGS.getAll();
+            const actions  = window.HKS_ACTIONS.getAll();
+            const cats     = window.HKS_ACTIONS.CATEGORIES;
+
+            const filtered = _currentFilter === 'all'
+                ? actions
+                : actions.filter(a => a.category === _currentFilter);
+
+            tbody.innerHTML = filtered.map(action => {
+                const combo    = bindings[action.id];
+                const formatted = combo ? window.HKS_BINDINGS.formatCombo(combo) : '—';
+                const isDefault = combo === window.HKS_BINDINGS.getDefault(action.id);
+                const catMeta  = cats[action.category] || { label: action.category, icon: 'fas fa-circle' };
+                const catClass = `hks-cat-${action.category}`;
+
+                // Build kbd display
+                const kbdDisplay = combo
+                    ? combo.split('+').map(k => `<kbd class="hks-key">${window.HKS_BINDINGS.formatCombo(k)}</kbd>`).join('<span class="hks-key-sep">+</span>')
+                    : '<span style="color:var(--muted);font-size:11px;">Unbound</span>';
+
+                return `
+                    <tr data-action-id="${action.id}" data-category="${action.category}">
+                        <td>
+                            <div class="hks-action-cell">
+                                <div class="hks-action-icon"><i class="${action.icon}"></i></div>
+                                <div>
+                                    <div class="hks-action-name">${action.label}</div>
+                                    <div class="hks-action-desc">${action.description}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="hks-cat-badge ${catClass}">
+                                <i class="${catMeta.icon}" style="font-size:9px;"></i>
+                                ${catMeta.label}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="hks-bind-btn"
+                                id="hks-bind-${action.id.replace('.', '-')}"
+                                onclick="HKS_Panel.startCapture('${action.id}', this)"
+                                title="Click to reassign shortcut">
+                                ${kbdDisplay}
+                            </button>
+                        </td>
+                        <td>
+                            <div class="hks-action-btns">
+                                <button class="hks-btn-reset" title="Reset to default"
+                                    onclick="HKS_Panel.resetOne('${action.id}')"
+                                    ${isDefault ? 'style="opacity:0.3;pointer-events:none;"' : ''}>
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="hks-btn-test" title="Test shortcut"
+                                    onclick="HKS_Panel.testAction('${action.id}')">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        },
+
+        // ── Key Capture ───────────────────────────────────────────────────────
+
+        startCapture(actionId, btnEl) {
+            if (!window.HKS_RECORDER) return;
+
+            window.HKS_RECORDER.capture(
+                btnEl,
+                (combo) => {
+                    // Try to set (check conflict)
+                    const result = window.HKS_BINDINGS.set(actionId, combo);
+                    if (!result.ok && result.conflict) {
+                        // Ask user if they want to overwrite the conflict
+                        const conflictAction = window.HKS_ACTIONS.find(result.conflict.conflictWith);
+                        const conflictName   = conflictAction ? conflictAction.label : result.conflict.conflictWith;
+                        if (confirm(`"${combo.toUpperCase()}" is already used by "${conflictName}".\nOverwrite it?`)) {
+                            window.HKS_BINDINGS.forceSet(actionId, combo);
+                            this._afterSave();
+                        }
+                    } else {
+                        this._afterSave();
+                    }
+                },
+                () => {
+                    // Cancelled — re-render just that button
+                    this.renderBindingsTable();
+                }
+            );
+        },
+
+        // ── Preferences ───────────────────────────────────────────────────────
+
+        renderPreferences() {
+            if (!window.HKS_BINDINGS) return;
+            const prefs = window.HKS_BINDINGS.getPrefs();
+            const toastEl    = document.getElementById('hks-pref-toast');
+            const fkeysEl    = document.getElementById('hks-pref-fkeys');
+            const tabcycleEl = document.getElementById('hks-pref-tabcycle');
+            if (toastEl)    toastEl.checked    = prefs.toastEnabled    !== false;
+            if (fkeysEl)    fkeysEl.checked    = prefs.fKeysEnabled    !== false;
+            if (tabcycleEl) tabcycleEl.checked = prefs.tabCycleEnabled !== false;
+        },
+
+        setPreference(key, value) {
+            if (!window.HKS_BINDINGS) return;
+            window.HKS_BINDINGS.setPref(key, value);
+            // Apply immediately
+            if (key === 'toastEnabled' && window.HKS_TOAST) {
+                window.HKS_TOAST.setEnabled(value);
+            }
+            if (key === 'fKeysEnabled' && window.HKS) {
+                window.HKS.setEnabled(value);
+            }
+            this._showSavedMsg();
+        },
+
+        // ── Actions ───────────────────────────────────────────────────────────
+
+        filterCategory(cat, btnEl) {
+            _currentFilter = cat;
+            // Update button styles
+            document.querySelectorAll('.hks-filter-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.background    = 'transparent';
+                b.style.borderColor   = 'rgba(255,255,255,0.1)';
+                b.style.color         = 'var(--muted)';
+            });
+            if (btnEl) {
+                btnEl.classList.add('active');
+                btnEl.style.background  = 'rgba(var(--accent-rgb),0.12)';
+                btnEl.style.borderColor = 'rgba(var(--accent-rgb),0.4)';
+                btnEl.style.color       = 'var(--accent)';
+            }
+            this.renderBindingsTable();
+        },
+
+        resetOne(actionId) {
+            if (!window.HKS_BINDINGS) return;
+            window.HKS_BINDINGS.reset(actionId);
+            this._afterSave();
+        },
+
+        confirmResetAll() {
+            document.getElementById('hks-reset-modal').style.display = 'flex';
+        },
+
+        executeResetAll() {
+            if (!window.HKS_BINDINGS) return;
+            window.HKS_BINDINGS.resetAll();
+            this._afterSave();
+        },
+
+        testAction(actionId) {
+            if (!window.HKS) return;
+            window.HKS.trigger(actionId);
+        },
+
+        // ── Conflict Banner ───────────────────────────────────────────────────
+
+        updateConflictBanner() {
+            const banner = document.getElementById('hks-conflict-banner');
+            const text   = document.getElementById('hks-conflict-text');
+            if (!banner || !window.HKS_BINDINGS) return;
+
+            const conflicts = window.HKS_BINDINGS.getConflicts();
+            if (conflicts.length === 0) {
+                banner.style.display = 'none';
+            } else {
+                banner.style.display = 'flex';
+                banner.classList.remove('hks-no-conflict');
+                banner.classList.add('hks-conflict-warning');
+                text.textContent = `${conflicts.length} conflict${conflicts.length > 1 ? 's' : ''} detected: ${conflicts.map(c => c.combo.toUpperCase()).join(', ')}`;
+            }
+        },
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+
+        _afterSave() {
+            if (window.HKS_BINDINGS) window.HKS_BINDINGS.triggerSync();
+            this.renderQuickGrid();
+            this.renderBindingsTable();
+            this.updateConflictBanner();
+            this._showSavedMsg();
+        },
+
+        _showSavedMsg() {
+            const el = document.getElementById('hks-save-status');
+            if (!el) return;
+            el.style.opacity = '1';
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => { el.style.opacity = '0'; }, 2000);
+        }
+    };
+
+    // Expose globally so onclick attrs work
+    window.HKS_Panel = HKS_Panel;
+
+    // Init when this panel HTML is loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => HKS_Panel.init());
+    } else {
+        HKS_Panel.init();
+    }
+
+})();
+</script>

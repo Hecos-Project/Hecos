@@ -16,6 +16,7 @@ from .routes_security import init_security_routes
 from .routes_keys import init_keys_routes
 from .routes_docs import init_docs_routes
 from .routes_packages import init_package_routes
+from .routes_shortcuts import init_shortcuts_routes
 
 def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     """Initializes all component routes for the Web UI."""
@@ -28,6 +29,7 @@ def init_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_security_routes(app, logger)
     init_keys_routes(app, logger)
     init_docs_routes(app, cfg_mgr, root_dir, logger)
+    init_shortcuts_routes(app, root_dir, logger)
     
 
     # Hecos Package Manager (HPM)

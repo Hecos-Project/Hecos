@@ -22,9 +22,23 @@ def init_system_memory_routes(app, cfg_mgr, logger):
                 try: days = int(days)
                 except: days = None
 
+            try:
+                from flask_login import current_user
+                uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+            except Exception:
+                uid = "admin"
+
             from hecos.memory.brain_interface import clear_history
-            cleared = clear_history(days=days)
+            cleared = clear_history(days=days, user_id=uid)
             if cleared:
+                if days is None:
+                    from hecos.memory import session_manager
+                    session_manager.delete_all_sessions(include_archived=True)
+                    try:
+                        from hecos.modules.web_ui.socket_server import socketio
+                        socketio.emit("hecos_history_cleared", {"range": "all"})
+                    except Exception as _e:
+                        pass
                 msg = f"History cleared (days={days if days else 'all'})."
                 logger.info(f"[WebUI] {msg}")
                 return jsonify({"ok": True, "message": msg})
@@ -37,8 +51,13 @@ def init_system_memory_routes(app, cfg_mgr, logger):
     def memory_status():
         """Returns memory row count and cognition config."""
         try:
+            try:
+                from flask_login import current_user
+                uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+            except Exception:
+                uid = "admin"
             from hecos.memory.brain_interface import get_memory_stats
-            stats = get_memory_stats()
+            stats = get_memory_stats(user_id=uid)
             cog   = cfg_mgr.config.get("cognition", {})
             return jsonify({
                 "ok": True,
@@ -60,14 +79,44 @@ def init_system_memory_routes(app, cfg_mgr, logger):
         from datetime import datetime, timezone
         try:
             # --- Chat history ---
+            import glob, sqlite3, os
             from hecos.memory import session_manager as sm
+            
+            # Scrape all user vaults for messages
+            session_msgs = {}
+            pattern = os.path.join(sm.BASE_DIR, "users", "*", "history.db")
+            for db_path in glob.glob(pattern):
+                uid = os.path.basename(os.path.dirname(db_path))
+                try:
+                    with sqlite3.connect(db_path) as conn:
+                        cur = conn.cursor()
+                        cur.execute("SELECT id, timestamp, role, message, persona_name, session_id FROM history ORDER BY id ASC")
+                        for r in cur.fetchall():
+                            sid = r[5]
+                            if sid not in session_msgs:
+                                session_msgs[sid] = {"messages": [], "user_id": uid}
+                            session_msgs[sid]["messages"].append({
+                                "id": r[0], "timestamp": r[1], "role": r[2], 
+                                "message": r[3], "persona_name": r[4]
+                            })
+                except Exception:
+                    pass
+
             active   = sm.get_sessions(include_archived=False)
             archived = sm.get_sessions(include_archived=True)
             all_sessions = {s["id"]: s for s in active + archived}.values()
             sessions_data = []
+            
             for s in all_sessions:
-                msgs = sm.get_session_messages(s["id"])
-                sessions_data.append({**s, "messages": msgs})
+                s_id = s["id"]
+                data = session_msgs.get(s_id, {"messages": [], "user_id": "unknown"})
+                
+                # Check RAM sessions fallback
+                if not data["messages"] and s_id in sm._ram_sessions:
+                    data["messages"] = list(sm._ram_sessions[s_id]["messages"])
+                    data["user_id"] = "ram"
+                
+                sessions_data.append({**s, "messages": data["messages"], "user_id": data["user_id"]})
 
             # --- RAG source registry ---
             from hecos.core.rag.store import get_all_sources
@@ -145,9 +194,9 @@ def init_system_memory_routes(app, cfg_mgr, logger):
                 try:
                     try:
                         from flask_login import current_user
-                        uid = current_user.username if current_user and current_user.is_authenticated else "admin"
+                        uid = current_user.username if current_user and current_user.is_authenticated else s.get("user_id", "admin")
                     except Exception:
-                        uid = "admin"
+                        uid = s.get("user_id", "admin")
 
                     from hecos.memory.brain_interface import _db_path
                     import os

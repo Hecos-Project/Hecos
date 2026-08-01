@@ -25,18 +25,19 @@ window.CONFIG_HUB = {
         { id: 'memory',    label: 'hub_mod_memory',       icon: '<i class="fas fa-memory"></i>', cat: 'INTELLIGENZA', pluginTag: 'MEMORY', isCore: true },
         { id: 'agent',     label: 'hub_mod_agent',        icon: '<i class="fas fa-robot"></i>', cat: 'INTELLIGENZA', isCore: true },
         
-        { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA' },
+        { id: 'voice',     label: 'hub_mod_voice',        icon: '<i class="fas fa-microphone-alt"></i>', cat: 'MULTIMEDIA', isCore: true },
 
         
-        { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE' },
+        { id: 'payload',          label: 'hub_mod_payload',      icon: '<i class="fas fa-box-open"></i>', cat: 'RISORSE', isCore: true },
         { id: 'sysnet',    label: 'Web Server',           icon: '<i class="fas fa-server"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'executor',  label: 'hub_mod_executor',     icon: '<i class="fas fa-bolt"></i>', cat: 'SISTEMA', pluginTag: 'EXECUTOR', isCore: true },
         { id: 'hdcs',      label: 'hub_mod_hdcs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', pluginTag: 'HDCS', isCore: true },
+        { id: 'shortcuts', label: 'Keyboard Shortcuts',   icon: '<i class="fas fa-keyboard"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'help',      label: 'webui_help_about_title', icon: '<i class="fas fa-question-circle"></i>', cat: 'SISTEMA', pluginTag: 'HELP', isCore: true },
         { id: 'users',     label: 'hub_mod_users',        icon: '<i class="fas fa-users-cog"></i>', cat: 'SISTEMA', adminOnly: true, isCore: true },
-        { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA' },
-        { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA' },
-        { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA' },
+        { id: 'system',    label: 'hub_mod_system',       icon: '<i class="fas fa-cog"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'logs',      label: 'hub_mod_logs',         icon: '<i class="fas fa-terminal"></i>', cat: 'SISTEMA', isCore: true },
+        { id: 'privacy',   label: 'hub_mod_privacy',      icon: '<i class="fas fa-user-secret"></i>', cat: 'SISTEMA', isCore: true },
         { id: 'hpm-settings',label: 'HPM Settings',       icon: '<i class="fas fa-box-open"></i>', cat: 'SISTEMA', isCore: true }
     ],
 
@@ -122,10 +123,10 @@ window.LAZY_PANEL_IDS = new Set([
     'webcam', 'executor', 'automation',
     'browser', 'system', 'sysnet', 'users', 'payload', 'plugins',
     'contacts', 'remote-triggers',
-    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
+    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts'
 ]);
 
 window.SYSTEM_PANELS = [
     'plugins', 'system', 'users',
-    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup'
+    'logs', 'privacy', 'hpm-settings', 'help', 'flows', 'backup', 'shortcuts'
 ];

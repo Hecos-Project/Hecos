@@ -236,6 +236,7 @@ function mergeHubPanels(panels) {
             existing.cat = p.category || existing.cat || 'CONNETTIVITÀ';
             existing.pluginTag = p.plugin_tag || panelId.toUpperCase();
             existing.isHpm = true;
+            existing.moduleType = p.type || 'plugin';
             added++;
         } else {
             hub.modules.push({
@@ -244,7 +245,8 @@ function mergeHubPanels(panels) {
                 icon:      iconHtml,
                 cat:       p.category || 'CONNETTIVITÀ',
                 pluginTag: p.plugin_tag || panelId.toUpperCase(),
-                isHpm:     true
+                isHpm:     true,
+                moduleType: p.type || 'plugin'
             });
             added++;
         }

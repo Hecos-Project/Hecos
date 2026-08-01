@@ -128,6 +128,7 @@ _PANEL_MAP = {
     'help':            'modules/config_help.html',
     'flows':           'modules/config_flows.html',
     'packages':        'modules/config_packages.html',
+    'shortcuts':       'modules/config_shortcuts.html',
 }
 
 # Panels that require zoptions (model lists, piper voices, personalities)
@@ -373,6 +374,7 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
                     "category":    cp.get("category", "CONNETTIV\u00c0"),
                     "plugin_tag":  manifest.get("tag", pkg["id"].upper()),
                     "version":     pkg.get("version", ""),
+                    "type":        pkg.get("type") or manifest.get("type", "plugin"),
                     "description": pkg.get("description", ""),
                     "js_file":     js_url,
                     "css_file":    css_url,

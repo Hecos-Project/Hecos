@@ -101,9 +101,34 @@
 <script defer src="/static/js/config_core_persistence.js?v={{ version }}"></script>
 <script defer src="/static/js/config_core_status.js?v={{ version }}"></script>
 <script defer src="/static/js/config_core.js?v={{ version }}"></script>
+<script defer src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 
 <!-- PHASE 2: Non-critical scripts — loaded dynamically after hub renders -->
 <script defer src="/static/js/config_core_phase2_loader.js?v={{ version }}"></script>
+
+<!-- HKS — Hecos Keyboard Shortcuts System -->
+<link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">
+<script defer src="/static/js/keyboard_shortcuts/hks_core.js?v={{ version }}"></script>
+<script defer src="/static/js/keyboard_shortcuts/hks_bindings.js?v={{ version }}"></script>
+<script defer src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
+<script defer src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
+<script defer src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
+<script defer src="/static/js/keyboard_shortcuts/hks_toast.js?v={{ version }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Set HKS context for the Central Hub
+  if (window.HKS) {
+    window.HKS.setContext('hub');
+    // Register Tab cycling zones for the Hub
+    window.HKS.registerFocusZones([
+      '#config-filter-tabs',
+      '#config-tabs-bar',
+      '#panel-container',
+      '.save-bar'
+    ]);
+  }
+});
+</script>
 
 </body>
 </html>

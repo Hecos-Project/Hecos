@@ -45,16 +45,17 @@
       </div>
     </div>
     <p id="mem-status-text" style="color:var(--muted); font-size:0.9em;">Loading...</p>
-    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-      <select id="clear-range" class="mode-selector config-input" style="width:140px; margin:0;">
+    <div style="margin-top:10px; display:flex; gap:8px; align-items:stretch;">
+      <select id="clear-range" class="mode-selector config-input" style="flex:1; margin:0; height:auto;">
         <option value="all">Full Wipe (Everything)</option>
         <option value="1">Older than 24h</option>
         <option value="7">Older than 7 days</option>
         <option value="30">Older than 30 days</option>
       </select>
-      <button class="btn btn-danger" style="flex:1;" onclick="clearMemoryHistory()"><i class="fas fa-trash-alt"></i> {{ t('webui_chat_btn_clear') or 'Clear Selected' }}</button>
-      <button class="btn btn-secondary" style="width:40px;" onclick="loadMemoryStatus()" title="Refresh"><i class="fas fa-sync"></i></button>
+      <button class="btn btn-danger" style="flex:1; white-space:nowrap; padding:0 10px; height:auto;" onclick="clearMemoryHistory()"><i class="fas fa-trash-alt"></i> {{ t('webui_chat_btn_clear') or 'Clear' }}</button>
+      <button class="btn btn-secondary" style="width:40px; flex-shrink:0;" onclick="loadMemoryStatus()" title="Refresh"><i class="fas fa-sync"></i></button>
     </div>
+
     <small style="color:var(--muted); font-size:11px; margin-top:8px; display:block;">
       Note: Identity and User Profile are NOT affected by this.
     </small>
@@ -639,3 +640,15 @@ async function ragRestoreSources(event) {
   }
 }
 </script>
+
+<!-- Modale custom Hecos per la conferma del Wipe Memory -->
+<div id="memory-confirm-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+  <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; padding:24px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+    <h2 style="margin-top:0; font-size:1.4em; color:var(--text);"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a; margin-right:8px;"></i>Warning</h2>
+    <p id="memory-confirm-modal-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>
+    <div class="modal-actions" style="display:flex; justify-content:center; gap:15px; margin-top:24px;">
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('memory-confirm-modal').style.display='none'">Cancel</button>
+      <button type="button" class="btn btn-danger" style="background:#ff4a4a; color:white; border:none;" id="memory-confirm-modal-yes">Continue</button>
+    </div>
+  </div>
+</div>

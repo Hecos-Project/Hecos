@@ -164,6 +164,9 @@ button:hover {
   {% endfor %}
 {% endif %}
 
+<!-- Shared Core Resources for Widgets -->
+<link rel="stylesheet" href="/static/css/hecos_wheel_picker.css?v={{ version }}">
+
 </head>
 {% set aes_style = "" %}
 {% if ext_manifest.bg_image %}
@@ -177,6 +180,9 @@ button:hover {
 <div id="main-wrapper">
   {% include ext_id ~ '_widget.html' %}
 </div>
+
+<!-- Core Shared JS for Widgets -->
+<script src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 
 <!-- Load widget-specific JS -->
 {% if ext_manifest and ext_manifest.scripts %}
