@@ -397,21 +397,21 @@
         {
             id: 'sys.reboot',
             label: 'Reboot System',
-            description: 'Ask for confirmation and reboot Hecos',
+            description: 'Reboot Hecos (shows animated overlay while restarting)',
             icon: 'fas fa-power-off',
             category: 'system',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: () => {
-                if (confirm('Reboot Hecos System?')) {
-                    fetch('/api/system/reboot', { method: 'POST' })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.ok) alert('System is rebooting...');
-                        else alert('Error: ' + (data.error || 'Unknown'));
-                    });
+                if (typeof window._hpmDoRestart === 'function') {
+                    // Use the full Hecos restart overlay (shows spinner, polls until server is back)
+                    window._hpmDoRestart();
+                } else {
+                    // Fallback: just fire the API if _hpmDoRestart isn't loaded yet
+                    fetch('/api/system/reboot', { method: 'POST' }).catch(() => {});
                 }
             }
         },
+
 
         {
             id: 'ui.show_cheatsheet',
