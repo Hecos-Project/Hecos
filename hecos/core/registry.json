@@ -153,6 +153,40 @@
         "category": "PLUGINS",
         "slash_commands": []
     },
+    "CALENDAR": {
+        "description": "Core calendar module for Hecos. Stores, displays, and manages time-based events. Provides a shared datetime picker UI component, LLM tools, and REST API for other modules.",
+        "commands": {
+            "add_event": "Adds an event to the calendar.",
+            "list_events": "Lists upcoming calendar events.",
+            "delete_event": "Deletes a calendar event by ID.",
+            "get_date_info": "Gets current date context, including localized formatting and upcoming holidays."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "<i class=\"far fa-calendar-alt\"></i>",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "calendar",
+                "manifest_version": "1",
+                "aliases": [
+                    "/calendar",
+                    "/calendario",
+                    "/appuntamenti"
+                ],
+                "description": "Lists the upcoming events in the calendar",
+                "usage": "/calendar",
+                "example": "/calendar",
+                "icon": "📅",
+                "method": "list_events",
+                "requires_args": false
+            }
+        ]
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
         "commands": {},
@@ -180,6 +214,54 @@
                 "icon": "🖼️",
                 "method": "generate_image",
                 "requires_args": true
+            }
+        ]
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "method": "set_reminder",
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Lists all active reminders",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "requires_args": false
             }
         ]
     }
