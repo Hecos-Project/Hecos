@@ -106,7 +106,7 @@ class ModuleAwarenessTools:
                         "required": ["module_id_or_url"]
                     }
                 }
-            }
+            },
             {
                 "type": "function",
                 "function": {

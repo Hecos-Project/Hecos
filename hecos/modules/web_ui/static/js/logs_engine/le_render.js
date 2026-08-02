@@ -52,8 +52,8 @@ window.appendDataLine = function(win, data) {
         textOut = textOut.replace(regex, '<span style="background-color:rgba(var(--accent-rgb),0.35); color:var(--text); border-radius:2px; padding:0 2px; border:1px solid var(--accent);">$1</span>');
     }
 
-    // Linkify URLs
-    textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
+    // Linkify URLs (excluding control chars like ANSI escapes)
+    textOut = textOut.replace(/(https?:\/\/[^\s<"'\x00-\x1F\x7F]+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline; pointer-events:auto; cursor:pointer; position:relative; z-index:10;">$1</a>');
 
     // Colorize source tags in text (in case any exist)
     if (window.logFullColorMode) {
@@ -108,8 +108,8 @@ window.appendRawLine = function(win, text) {
         textOut = textOut.replace(regex, '<span style="background-color:rgba(var(--accent-rgb),0.35); color:var(--text); border-radius:2px; padding:0 2px; border:1px solid var(--accent);">$1</span>');
     }
     
-    // Linkify URLs
-    textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
+    // Linkify URLs (excluding control chars like ANSI escapes)
+    textOut = textOut.replace(/(https?:\/\/[^\s<"'\x00-\x1F\x7F]+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline; pointer-events:auto; cursor:pointer; position:relative; z-index:10;">$1</a>');
 
     // Colorize source tags (only when Full Color mode is active)
     if (window.logFullColorMode) {

@@ -864,7 +864,7 @@ splash.mainloop()
         full_color = [load_settings().get("full_color_logs", True)]
         _last_size = [0]
         import re as _re
-        url_pattern = _re.compile(r'(https?://[^\s\'"<>]+ )')
+        url_pattern = _re.compile(r'(https?://[^\s\'"<>]+)')
         tag_pattern  = _re.compile(r'(\[(?:CORE|PLUGIN|WEBUI|DAEMON)[^\]]*\])', _re.IGNORECASE)
 
         def _get_source_tag(txt):

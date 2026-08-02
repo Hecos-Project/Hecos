@@ -89,7 +89,8 @@ class HecosWebUIServer:
 
                 self.logger.info(f"[CORE: Boot] {'=' * 54}")
                 self.logger.info(f"[CORE: Boot]   🚀 SERVER LIVE  →  {scheme}://{lan_ip}:{self.port}/chat")
-                self.logger.info(f"[CORE: Boot]   🔑 Central Hub  →  {scheme}://{lan_ip}:{self.port}/hecos/config/ui")
+                self.logger.info(f"[CORE: Boot] ")
+                self.logger.info(f"[CORE: Boot]   ⚙️ Central Hub  →  {scheme}://{lan_ip}:{self.port}/hecos/config/ui")
                 self.logger.info(f"[CORE: Boot] {'=' * 54}")
                 
                 try:
