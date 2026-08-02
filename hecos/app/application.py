@@ -125,22 +125,7 @@ class HecosApplication:
             if hasattr(web_ui_mod.tools, "_ensure_server"):
                 try:
                     web_ui_mod.tools._ensure_server()
-                    # ── Server Live Banner ─────────────────────────────────────────────
-                    import socket
-                    try:
-                        _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                        _s.connect(('10.254.254.254', 1))
-                        _lan = _s.getsockname()[0]
-                        _s.close()
-                    except Exception:
-                        _lan = "127.0.0.1"
-                    _port = config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
-                    _scheme = "https" if config.get("plugins", {}).get("WEB_UI", {}).get("https_enabled") else "http"
-                    logger.info(f"[CORE: Boot] {'=' * 54}")
-                    logger.info(f"[CORE: Boot]   🚀 SERVER LIVE  →  {_scheme}://{_lan}:{_port}/chat")
-                    logger.info(f"[CORE: Boot]   🔑 Pannello     →  {_scheme}://{_lan}:{_port}/hecos/config/ui")
-                    logger.info(f"[CORE: Boot] {'=' * 54}")
-                    # ──────────────────────────────────────────────────────────────────
+                    # Server Live Banner is now printed directly by server.py to avoid duplicates
                 except Exception as _ws_e:
                     logger.warning(f"[CORE: App] WebUI server startup error: {_ws_e}")
 

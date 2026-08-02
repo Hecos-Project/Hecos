@@ -26,6 +26,8 @@ window.addLogWindow = function(source = 'LIVE', level = 'BOTH') {
     
     winCard.querySelector('.w-level-selector').value = level;
     winCard.querySelector('.w-level-selector').setAttribute('onchange', `window.updateWindowLevel('${id}', this.value)`);
+    const colorCb = winCard.querySelector('.w-full-color-toggle');
+    if (colorCb) colorCb.checked = !!window.logFullColorMode;
     winCard.querySelector('.w-btn').setAttribute('onclick', `window.clearWindow('${id}')`);
     winCard.querySelector('.w-close').setAttribute('onclick', `window.removeLogWindow('${id}')`);
     

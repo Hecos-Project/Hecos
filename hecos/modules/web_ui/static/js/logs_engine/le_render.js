@@ -1,4 +1,38 @@
 // --- DOM Manipulation & Element Renderers ---
+
+// Full Color mode — tag coloring is OFF by default.
+window.logFullColorMode = localStorage.getItem('hecos_log_full_color') === 'true'; // Default false unless explicitly true
+
+window.toggleLogFullColor = function(forceVal) {
+    if (typeof forceVal === 'boolean') {
+        window.logFullColorMode = forceVal;
+    } else {
+        window.logFullColorMode = !window.logFullColorMode;
+    }
+    localStorage.setItem('hecos_log_full_color', window.logFullColorMode);
+    
+    // Update all checkboxes in DOM
+    document.querySelectorAll('.w-full-color-toggle').forEach(cb => { cb.checked = window.logFullColorMode; });
+    
+    // Clear & Re-fetch logs for all active windows so they reappear instantly
+    if (window.activeLogWindows) {
+        window.activeLogWindows.forEach(w => {
+            w.body.innerHTML = '';
+            w.lineCount = 0;
+            if (w.filterQ || w.filterT) {
+                if (window.loadLogSearchIntoWindow) window.loadLogSearchIntoWindow(w, w.source);
+            } else {
+                // For both LIVE and historical, fetch the tail
+                if (window.loadLogSearchIntoWindow && w.source === 'LIVE') {
+                    window.loadLogSearchIntoWindow(w, 'LIVE');
+                } else if (window.loadLogTailIntoWindow) {
+                    window.loadLogTailIntoWindow(w, w.source);
+                }
+            }
+        });
+    }
+}
+
 window.appendDataLine = function(win, data) {
     if (win.isPaused) return;
     const line = document.createElement('div');
@@ -21,13 +55,29 @@ window.appendDataLine = function(win, data) {
     // Linkify URLs
     textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
 
-    // Colorize specific process tags (Source Tagging)
-    textOut = textOut.replace(/\[CORE[^\]]*\]/gi, '<span style="color:#4dabf7; font-weight:bold;">$&</span>'); // Blue
-    textOut = textOut.replace(/\[DAEMON[^\]]*\]/gi, '<span style="color:#b197fc; font-weight:bold;">$&</span>'); // Purple
-    textOut = textOut.replace(/\[WEBUI[^\]]*\]/gi, '<span style="color:#69db7c; font-weight:bold;">$&</span>'); // Green
-    textOut = textOut.replace(/\[PLUGIN[^\]]*\]/gi, '<span style="color:#ffa94d; font-weight:bold;">$&</span>'); // Orange
+    // Colorize source tags in text (in case any exist)
+    if (window.logFullColorMode) {
+        textOut = textOut.replace(/\[CORE[^\]]*\]/gi, '<span style="color:#4dabf7; font-weight:bold;">$&</span>'); // Blue
+        textOut = textOut.replace(/\[DAEMON[^\]]*\]/gi, '<span style="color:#b197fc; font-weight:bold;">$&</span>'); // Purple
+        textOut = textOut.replace(/\[WEBUI[^\]]*\]/gi, '<span style="color:#69db7c; font-weight:bold;">$&</span>'); // Green
+        textOut = textOut.replace(/\[PLUGIN[^\]]*\]/gi, '<span style="color:#ffa94d; font-weight:bold;">$&</span>'); // Orange
+    }
 
-    line.innerHTML = `<span class="log-time">${data.time}</span><span class="log-lvl ${colorClass}">${data.level}</span><span class="log-text">${textOut}</span>`;
+    // Format module tag for LIVE logs
+    let modHtml = '';
+    if (data.module) {
+        let rawMod = `[${data.module}]`;
+        if (window.logFullColorMode) {
+            const upperMod = rawMod.toUpperCase();
+            if (upperMod.includes('[CORE')) rawMod = `<span style="color:#4dabf7; font-weight:bold;">${rawMod}</span>`;
+            else if (upperMod.includes('[DAEMON')) rawMod = `<span style="color:#b197fc; font-weight:bold;">${rawMod}</span>`;
+            else if (upperMod.includes('[WEBUI')) rawMod = `<span style="color:#69db7c; font-weight:bold;">${rawMod}</span>`;
+            else if (upperMod.includes('[PLUGIN')) rawMod = `<span style="color:#ffa94d; font-weight:bold;">${rawMod}</span>`;
+        }
+        modHtml = `<span class="log-module" style="margin-right:6px;">${rawMod}</span>`;
+    }
+
+    line.innerHTML = `<span class="log-time">${data.time}</span><span class="log-lvl ${colorClass}">${data.level}</span>${modHtml}<span class="log-text">${textOut}</span>`;
     
     window.appendToBody(win, line);
 }
@@ -61,11 +111,13 @@ window.appendRawLine = function(win, text) {
     // Linkify URLs
     textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
 
-    // Colorize specific process tags (Source Tagging)
-    textOut = textOut.replace(/\[CORE[^\]]*\]/gi, '<span style="color:#4dabf7; font-weight:bold;">$&</span>'); // Blue
-    textOut = textOut.replace(/\[DAEMON[^\]]*\]/gi, '<span style="color:#b197fc; font-weight:bold;">$&</span>'); // Purple
-    textOut = textOut.replace(/\[WEBUI[^\]]*\]/gi, '<span style="color:#69db7c; font-weight:bold;">$&</span>'); // Green
-    textOut = textOut.replace(/\[PLUGIN[^\]]*\]/gi, '<span style="color:#ffa94d; font-weight:bold;">$&</span>'); // Orange
+    // Colorize source tags (only when Full Color mode is active)
+    if (window.logFullColorMode) {
+        textOut = textOut.replace(/\[CORE[^\]]*\]/gi, '<span style="color:#4dabf7; font-weight:bold;">$&</span>'); // Blue
+        textOut = textOut.replace(/\[DAEMON[^\]]*\]/gi, '<span style="color:#b197fc; font-weight:bold;">$&</span>'); // Purple
+        textOut = textOut.replace(/\[WEBUI[^\]]*\]/gi, '<span style="color:#69db7c; font-weight:bold;">$&</span>'); // Green
+        textOut = textOut.replace(/\[PLUGIN[^\]]*\]/gi, '<span style="color:#ffa94d; font-weight:bold;">$&</span>'); // Orange
+    }
 
     line.innerHTML = `<span class="log-text">${textOut}</span>`;
     window.appendToBody(win, line);

@@ -34,7 +34,55 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 # File formatters
-file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+import re
+
+TAG_MAPPING = {
+    # Core systems
+    "BOOT": "CORE: Boot",
+    "APP": "CORE: App",
+    "SYSTEM": "CORE: System",
+    "MEMORY": "CORE: Memory",
+    "SESSION": "CORE: Memory",
+    "LOADER": "CORE: Loader",
+    "EXT_LOADER": "CORE: Loader",
+    "PROCESSOR": "CORE: Processor",
+    "CONFIG": "CORE: Config",
+    "DIAG": "CORE: Diag",
+    "KEYMANAGER": "CORE: KeyManager",
+    "PTT-BUS": "CORE: Audio",
+    "LISTEN": "CORE: Audio",
+    "LISTEN-DEBUG": "CORE: Audio",
+    "PIPER_DAEMON": "CORE: TTS",
+    "WEB": "CORE: Web",
+    
+    # WebUI variants
+    "WEBUI": "WEBUI",
+    "WEB_UI": "WEBUI",
+}
+
+class SourceTagFormatter(logging.Formatter):
+    def format(self, record):
+        # We modify the message directly before standard formatting
+        msg = record.getMessage()
+        if msg.startswith("["):
+            end_idx = msg.find("]")
+            if end_idx != -1:
+                raw_tag = msg[1:end_idx].strip()
+                tag_upper = raw_tag.upper()
+                
+                # Check if it's already perfectly compliant
+                if raw_tag.startswith("CORE:") or raw_tag.startswith("PLUGIN:") or raw_tag == "DAEMON" or raw_tag == "WEBUI":
+                    pass # Keep as is
+                elif tag_upper in TAG_MAPPING:
+                    new_tag = TAG_MAPPING[tag_upper]
+                    record.msg = f"[{new_tag}]" + msg[end_idx+1:]
+                else:
+                    clean_name = raw_tag.replace(":", " ").title()
+                    record.msg = f"[PLUGIN: {clean_name}]" + msg[end_idx+1:]
+                    
+        return super().format(record)
+
+file_formatter = SourceTagFormatter('%(asctime)s [%(levelname)s] %(message)s')
 
 # Handler for INFO/WARN/ERROR/DEBUG file
 info_file_handler = logging.FileHandler(info_filename, encoding='utf-8')
@@ -67,7 +115,7 @@ backup_file_handler.addFilter(BackupFilter())
 backup_file_handler.setFormatter(file_formatter)
 
 # Console Handler (the one that shows in the chat)
-class ColorFormatter(logging.Formatter):
+class ColorFormatter(SourceTagFormatter):
     COLORS = {
         logging.DEBUG: '\033[96m',    # Cyan
         logging.INFO: '\033[97m',     # White
@@ -75,12 +123,42 @@ class ColorFormatter(logging.Formatter):
         logging.ERROR: '\033[91m',    # Red
         logging.CRITICAL: '\033[95m'  # Magenta
     }
+    
+    TAG_COLORS = {
+        "CORE": "\033[94m",     # Bright Blue
+        "DAEMON": "\033[95m",   # Purple
+        "WEBUI": "\033[92m",    # Green
+        "PLUGIN": "\033[93m",   # Orange/Yellow
+    }
     RESET = '\033[0m'
 
     def format(self, record):
-        color = self.COLORS.get(record.levelno, self.RESET)
+        # Allow SourceTagFormatter to rewrite the message first
         message = super().format(record)
-        return f"{color}{message}{self.RESET}"
+        level_color = self.COLORS.get(record.levelno, self.RESET)
+        
+        # Per ERROR e WARNING coloriamo tutta la riga (devono saltare all'occhio)
+        if record.levelno >= logging.WARNING:
+            return f"{level_color}{message}{self.RESET}"
+            
+        # Per INFO e DEBUG, coloriamo solo il Tag
+        import re
+        match = re.search(r'\[([^\]]+)\]', message)
+        if match:
+            full_tag = match.group(0)
+            tag_content = match.group(1).upper()
+            
+            tag_color = level_color # Fallback al colore del livello
+            if tag_content.startswith("CORE"): tag_color = self.TAG_COLORS["CORE"]
+            elif tag_content.startswith("PLUGIN"): tag_color = self.TAG_COLORS["PLUGIN"]
+            elif "DAEMON" in tag_content: tag_color = self.TAG_COLORS["DAEMON"]
+            elif "WEBUI" in tag_content: tag_color = self.TAG_COLORS["WEBUI"]
+            
+            # Applica il colore speciale al tag, e torna al colore base (es. bianco o cyan) per il resto
+            colored_tag = f"{tag_color}{full_tag}{level_color}"
+            message = message.replace(full_tag, colored_tag, 1)
+            
+        return f"{level_color}{message}{self.RESET}"
 
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
@@ -144,7 +222,7 @@ class HubHandler(logging.Handler):
 hub_handler = HubHandler()
 hub_handler.setLevel(logging.DEBUG)
 # We use a simple formatter for the hub to avoid double-timestamps if possible
-hub_handler.setFormatter(logging.Formatter('%(message)s'))
+hub_handler.setFormatter(SourceTagFormatter('%(message)s'))
 # Initial setup: just files for now, until init_logger is called
 if not logger.hasHandlers():
     logger.addHandler(info_file_handler)

@@ -153,8 +153,8 @@ llm:
       - qwen/qwen3.6-27b
 logging:
   level: INFO
-  destination: chat
-  message_types: info
+  destination: console
+  message_types: both
   web_level: BOTH
   web_max_history: 100
   web_autoscroll: true

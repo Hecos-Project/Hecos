@@ -87,11 +87,10 @@ class HecosWebUIServer:
                 use_https = webui_cfg.get("https_enabled", False)
                 scheme = "https" if use_https and ssl_context else "http"
 
-                self.logger.info(
-                    f"[WebUI] 🚀 Server live (debug={debug_on}) → "
-                    f"{scheme}://{lan_ip}:{self.port}/chat  |  "
-                    f"{scheme}://{lan_ip}:{self.port}/hecos/config/ui"
-                )
+                self.logger.info(f"[CORE: Boot] {'=' * 54}")
+                self.logger.info(f"[CORE: Boot]   🚀 SERVER LIVE  →  {scheme}://{lan_ip}:{self.port}/chat")
+                self.logger.info(f"[CORE: Boot]   🔑 Central Hub  →  {scheme}://{lan_ip}:{self.port}/hecos/config/ui")
+                self.logger.info(f"[CORE: Boot] {'=' * 54}")
                 
                 try:
                     import flask.cli as _flask_cli

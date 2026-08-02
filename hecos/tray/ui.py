@@ -16,7 +16,7 @@ except ImportError:
 
 from hecos.tray.config import LOGO_PATH, HECOS_PORT, _ROOT, load_settings, save_settings
 from hecos.tray.network_utils import get_scheme, get_urls, get_lan_ip, is_hecos_online
-from hecos.tray.system_utils import play_beep, launch_console, terminate_consoles, get_version
+from hecos.tray.system_utils import play_beep, launch_console, terminate_consoles, get_version, kill_all_hecos_processes, kill_duplicate_hecos_processes
 from hecos.tray.browser_manager import (
     get_cdp_alive, discover_browsers, launch_browser,
     launch_ai_ready_browser, _get_cdp_port,
@@ -179,6 +179,24 @@ def build_menu(icon_ref: list):
             refresh_ui(icon)
         threading.Thread(target=_do, daemon=True).start()
 
+    def kill_all_btn(i, it):
+        def _do():
+            play_beep(400, 100)
+            killed = kill_all_hecos_processes()
+            print(f"[TRAY] Emergency Kill All triggered: Terminated {killed} processes.")
+            time.sleep(1)
+            refresh_ui(icon)
+        threading.Thread(target=_do, daemon=True).start()
+
+    def kill_dupes_btn(i, it):
+        def _do():
+            play_beep(400, 100)
+            killed = kill_duplicate_hecos_processes()
+            print(f"[TRAY] Kill Duplicates triggered: Terminated {killed} duplicate processes.")
+            time.sleep(1)
+            refresh_ui(icon)
+        threading.Thread(target=_do, daemon=True).start()
+
     technical_submenu = pystray.Menu(
         pystray.MenuItem("📟  Launch Console", open_console),
         pystray.MenuItem("📟  Launch Console (Headless)", open_console_headless),
@@ -188,6 +206,9 @@ def build_menu(icon_ref: list):
                          checked=lambda it: load_settings().get("use_daemon", False)),
         pystray.MenuItem("🛡️ Start Daemon Now", start_daemon_btn, enabled=not daemon_active),
         pystray.MenuItem("🛡️ Stop Daemon", stop_daemon_btn, enabled=daemon_active),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("💀 Kill All Hecos Processes", kill_all_btn),
+        pystray.MenuItem("💀 Kill Duplicate Processes", kill_dupes_btn),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Show Technical Menu", toggle_technical_menu,
                          checked=lambda it: load_settings().get("show_technical_menu", True)),

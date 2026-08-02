@@ -6,5 +6,7 @@
   "browser_startup_url": "http://localhost:7070",
   "browser_headless": false,
   "auto_launch_chrome_for_ai": true,
-  "show_technical_menu": true
+  "show_technical_menu": true,
+  "use_daemon": false,
+  "full_color_logs": true
 }

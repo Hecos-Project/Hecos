@@ -829,11 +829,21 @@ splash.mainloop()
         scroll_x.pack(side="bottom", fill="x")
         log_text.pack(side="left", fill="both", expand=True)
 
-        # Tags for coloring
+        # Tags for coloring — severity levels
         for kw, col in SEV_COLORS.items():
             log_text.tag_configure(kw, foreground=col)
         log_text.tag_configure("MUTED", foreground=MUTED)
         log_text.tag_configure("URL", foreground=ACCENT, underline=True)
+
+        # Tags for Source Tagging (Full Color mode)
+        TAG_COLORS_MAP = {
+            "CORE":   "#4dabf7",  # Bright Blue
+            "DAEMON": "#b197fc",  # Purple
+            "WEBUI":  "#69db7c",  # Green
+            "PLUGIN": "#ffa94d",  # Orange
+        }
+        for tag_key, tag_col in TAG_COLORS_MAP.items():
+            log_text.tag_configure(f"TAG_{tag_key}", foreground=tag_col, font=("Consolas", font_size[0], "bold"))
 
         def _open_url(event):
             try:
@@ -851,28 +861,34 @@ splash.mainloop()
         log_text.tag_bind("URL", "<Enter>", lambda e: log_text.configure(cursor="hand2"))
         log_text.tag_bind("URL", "<Leave>", lambda e: log_text.configure(cursor=""))
 
+        full_color = [load_settings().get("full_color_logs", True)]
         _last_size = [0]
+        import re as _re
+        url_pattern = _re.compile(r'(https?://[^\s\'"<>]+ )')
+        tag_pattern  = _re.compile(r'(\[(?:CORE|PLUGIN|WEBUI|DAEMON)[^\]]*\])', _re.IGNORECASE)
+
+        def _get_source_tag(txt):
+            t = txt.upper()
+            if t.startswith("[CORE"):   return "TAG_CORE"
+            if t.startswith("[PLUGIN"): return "TAG_PLUGIN"
+            if t.startswith("[WEBUI"):  return "TAG_WEBUI"
+            if t.startswith("[DAEMON"): return "TAG_DAEMON"
+            return None
 
         def _load(auto=False):
             fname = file_var.get()
-            if not fname or fname == "(no logs)":
-                return
+            if not fname or fname == "(no logs)": return
             path = os.path.join(logs_dir, fname)
             try:
                 sz = os.path.getsize(path)
-                if auto and (sz == _last_size[0] or is_paused[0]):
-                    return
+                if auto and (sz == _last_size[0] or is_paused[0]): return
                 _last_size[0] = sz
                 with open(path, "r", encoding="utf-8", errors="replace") as f:
                     all_lines = f.readlines()
                 tail = all_lines[-400:] if len(all_lines) > 400 else all_lines
-                lines_lbl.configure(
-                    text=f"{len(all_lines)} lines — showing last {len(tail)}"
-                )
+                lines_lbl.configure(text=f"{len(all_lines)} lines — showing last {len(tail)}")
                 log_text.configure(state="normal")
                 log_text.delete("1.0", "end")
-                import re
-                url_pattern = re.compile(r'(https?://[^\s\'"<>]+)')
 
                 for line in tail:
                     stripped = line.rstrip()
@@ -882,15 +898,32 @@ splash.mainloop()
                         if kw in u:
                             col_tag = kw
                             break
-                    
-                    parts = url_pattern.split(stripped)
-                    for p in parts:
-                        if url_pattern.match(p):
-                            log_text.insert("end", p, ("URL", col_tag))
-                        else:
-                            log_text.insert("end", p, col_tag)
+
+                    if full_color[0] and col_tag in ("INFO", "DEBUG", "MUTED"):
+                        # Split into URL / source-tag / plain segments
+                        segments = url_pattern.split(stripped)
+                        for seg in segments:
+                            if url_pattern.match(seg):
+                                log_text.insert("end", seg, ("URL", col_tag))
+                            else:
+                                # Further split by source tags
+                                sub_segments = tag_pattern.split(seg)
+                                for sub in sub_segments:
+                                    src_tag = _get_source_tag(sub)
+                                    if src_tag:
+                                        log_text.insert("end", sub, (src_tag, col_tag))
+                                    else:
+                                        log_text.insert("end", sub, col_tag)
+                    else:
+                        # Plain mode: just split URLs, no source tag coloring
+                        parts = url_pattern.split(stripped)
+                        for p in parts:
+                            if url_pattern.match(p):
+                                log_text.insert("end", p, ("URL", col_tag))
+                            else:
+                                log_text.insert("end", p, col_tag)
                     log_text.insert("end", "\n", col_tag)
-                
+
                 log_text.configure(state="disabled")
                 log_text.see("end")
             except Exception as ex:
@@ -926,6 +959,27 @@ splash.mainloop()
                                   hover_color=BORDER, corner_radius=6,
                                   command=_toggle_pause)
         btn_pause.pack(side="left", padx=2)
+
+        # Full Color toggle
+        def _toggle_full_color():
+            full_color[0] = not full_color[0]
+            s = load_settings()
+            s["full_color_logs"] = full_color[0]
+            save_settings(s)
+            btn_color.configure(
+                text="🎨" if full_color[0] else "⬜",
+                text_color=ACCENT if full_color[0] else MUTED
+            )
+            _load(auto=False)  # Reload to apply/remove colors
+
+        btn_color = ctk.CTkButton(
+            btn_row, text="🎨" if full_color[0] else "⬜",
+            width=34, fg_color=SURFACE,
+            text_color=ACCENT if full_color[0] else MUTED,
+            hover_color=BORDER, corner_radius=6,
+            command=_toggle_full_color
+        )
+        btn_color.pack(side="left", padx=2)
 
         ctk.CTkButton(btn_row, text="A-", width=34, fg_color=SURFACE, text_color=TEXT,
                       hover_color=BORDER, corner_radius=6,

@@ -17,7 +17,7 @@
     'use strict';
 
     const V = window.VERSION || '';
-    const VER = V ? `?v=${V}` : '';
+    const VER = V ? `?v=${V}&cb=fc6` : '?cb=fc6';
 
     // ── Phase 2 script list — loaded AFTER hub menu is visible ────────────────
     // Order matters within each batch (dependency chain).
