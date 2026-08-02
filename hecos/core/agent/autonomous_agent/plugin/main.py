@@ -127,6 +127,31 @@ class AutonomousAgentTools:
                         "required": ["name", "command", "args"]
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "AUTONOMOUS__update_consciousness",
+                    "description": "Writes a persistent note to your 'Subconscious' memory. Use this to track long-running tasks. If you set status='IN_PROGRESS', you will automatically resume this task if the system crashes or reboots.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "status": {
+                                "type": "string",
+                                "description": "The status of the task: 'IN_PROGRESS', 'PAUSED', 'COMPLETED', or 'IDLE'."
+                            },
+                            "goal": {
+                                "type": "string",
+                                "description": "A short summary of what you are trying to achieve (e.g. 'Analyze 1000 files in C:\\Hecos')."
+                            },
+                            "context": {
+                                "type": "string",
+                                "description": "Detailed context or progress (e.g. 'I am at file 400. Need to do 401 next.')."
+                            }
+                        },
+                        "required": ["status", "goal", "context"]
+                    }
+                }
             }
         ]
         
@@ -337,3 +362,20 @@ class AutonomousAgentTools:
         except Exception as e:
             logger.error(f"[AutonomousAgent] install_mcp_server error: {e}")
             return f"Failed to install MCP server: {e}"
+
+    def AUTONOMOUS__update_consciousness(self, status: str, goal: str, context: str, **kwargs) -> str:
+        """Writes to the subconscious file so the agent remembers what it was doing on reboot."""
+        logger.info(f"[AutonomousAgent] Updating consciousness: {status} | {goal}")
+        try:
+            from hecos.core.agent.subconscious import write_state
+            success = write_state(status, goal, context)
+            if success:
+                return f"Subconscious updated successfully. Status: {status}. This task will be remembered."
+            else:
+                return "Failed to update subconscious (write error)."
+        except ImportError:
+            return "Failed to update subconscious: 'subconscious' module not found in hecos.core.agent."
+        except Exception as e:
+            logger.error(f"[AutonomousAgent] update_consciousness error: {e}")
+            return f"Failed to update subconscious: {e}"
+

@@ -174,7 +174,29 @@ class HecosApplication:
                 sys.stdout.write("\n" + prefisso)
                 sys.stdout.flush()
 
+        # Check Subconscious for pending tasks (Auto-Wakeup)
+        try:
+            from hecos.core.agent.subconscious import get_pending_task
+            pending = get_pending_task()
+            if pending:
+                resume_msg = f"[SYSTEM AUTO-RESUME] Interrupted task recovered from subconscious. Goal: {pending['goal']}. Saved context: {pending['context']}"
+                logger.info(f"[APP] Pending task found, injecting auto-resume prompt: {pending['goal']}")
+                mode = config.get("ai", {}).get("auto_resume_mode", "chat")
+                
+                # We use a short delay so the UI fully settles before injection
+                import threading
+                def _inject_resume():
+                    # Clear status to IDLE so we don't resume it again if we crash immediately
+                    from hecos.core.agent.subconscious import write_state
+                    write_state("IDLE", "", "")
+                    self.input_handler._process_text_input(resume_msg, prefisso)
+                    
+                threading.Timer(2.0, _inject_resume).start()
+        except Exception as e:
+            logger.error(f"[APP] Error checking subconscious: {e}")
+
         # Main loop
+
         while self.running:
 
             # Voice input handling (Delegated to InputHandler)

@@ -5,3 +5,4 @@ action_console_enabled: true
 autonomy_trust_mode: ask
 autonomy_max_installs: 3
 autonomy_reflection: daily
+auto_resume_mode: chat
