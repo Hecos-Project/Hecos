@@ -19,7 +19,7 @@ import logging
 from flask import jsonify, request, Response, stream_with_context, render_template, redirect, make_response, send_file
 
 from hecos.modules.web_ui.routes_chat_inference import _sessions, _sessions_lock, _run_inference
-from hecos.modules.web_ui.routes_chat_tts import get_last_audio_path
+from hecos.modules.web_ui.routes_chat_tts import get_last_audio_path, consume_chunk
 import os
 
 _chat_log = logging.getLogger("HecosChatRoutes")
@@ -205,3 +205,23 @@ def init_chat_api_routes(app, cfg_mgr, logger):
             return send_file(path, mimetype="audio/wav", download_name="hecos_response.wav")
         _chat_log.warning(f"[Audio] GET /api/audio failed. Path not found or empty: {path}")
         return jsonify({"error": "No audio available"}), 404
+
+    @app.route("/api/audio/chunk/<chunk_id>")
+    def api_audio_chunk(chunk_id):
+        """Serves a single streaming TTS chunk WAV and removes it from the registry."""
+        path = consume_chunk(chunk_id)
+        if path and os.path.exists(path):
+            _chat_log.debug(f"[Audio] Serving chunk {chunk_id[:8]}")
+            # Use after_this_request to delete the temp file once served
+            from flask import after_this_request
+            @after_this_request
+            def _cleanup(response):
+                try:
+                    if os.path.exists(path):
+                        os.remove(path)
+                except Exception:
+                    pass
+                return response
+            return send_file(path, mimetype="audio/wav", download_name=f"chunk_{chunk_id[:8]}.wav")
+        _chat_log.warning(f"[Audio] Chunk {chunk_id[:8]} not found or already consumed.")
+        return jsonify({"error": "Chunk not found"}), 404

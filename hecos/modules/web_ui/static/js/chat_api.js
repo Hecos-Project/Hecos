@@ -145,6 +145,12 @@ window.sendMessage = async function() {
         
       } else if(ev.type === 'audio_ready') {
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
+      } else if(ev.type === 'audio_chunk') {
+        // Console-style streaming: play each chunk immediately as it arrives
+        if (window.HecosAudioQueue) window.HecosAudioQueue.enqueueChunk(ev.chunk_id, aiBubble);
+      } else if(ev.type === 'audio_stream_done') {
+        // All chunks have been enqueued — nothing extra to do, queue handles playback
+        console.log('[Audio] Stream done. Chunks in queue:', ev);
       } else if(ev.type === 'system_audio_playing') {
         if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
         if (window._stopTimeout) clearTimeout(window._stopTimeout);
@@ -249,6 +255,12 @@ window.sendInternalMessage = async function(text) {
 
       } else if(ev.type === 'audio_ready') {
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
+      } else if(ev.type === 'audio_chunk') {
+        // Console-style streaming: play each chunk immediately as it arrives
+        if (window.HecosAudioQueue) window.HecosAudioQueue.enqueueChunk(ev.chunk_id, aiBubble);
+      } else if(ev.type === 'audio_stream_done') {
+        // All chunks have been enqueued — nothing extra to do
+        console.log('[Audio] Stream done.');
       } else if(ev.type === 'system_audio_playing') {
         if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
         if (window._stopTimeout) clearTimeout(window._stopTimeout);

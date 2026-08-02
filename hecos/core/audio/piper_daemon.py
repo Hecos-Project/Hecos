@@ -186,6 +186,86 @@ class PiperDaemon:
         waited = self._synth_complete_event.wait(120.0)
         return waited and os.path.exists(filepath)
 
+    def generate_wav_streaming(self, text: str, temp_dir: str, chunk_ready_callback, stop_check=None) -> bool:
+        """
+        Console-style streaming synthesis for the WebUI.
+        Splits text into sentences, generates each chunk wav, and calls
+        chunk_ready_callback(chunk_path, index, total) immediately after each one
+        is synthesized — without waiting for all chunks to be done first.
+
+        This mirrors exactly how speak() works for the console, but instead of
+        playing via sounddevice it hands each file to the caller.
+
+        chunk_ready_callback(path: str, index: int, total: int) -> None
+        stop_check() -> bool  (optional, return True to abort)
+        """
+        if not text:
+            return False
+
+        self._ensure_running()
+        if self._proc is None or self._proc.poll() is not None:
+            logger.error("PIPER_DAEMON", "Piper IPC Daemon is dead.")
+            return False
+
+        if not self._ready_event.wait(timeout=30.0):
+            logger.error("PIPER_DAEMON", "Piper did not initialize within 30s.")
+            return False
+
+        import re
+        clean = text.replace('"', "").replace('\n', " ").strip()
+        if not clean:
+            return False
+
+        raw = re.split(r'(?<=[.!?…])\s+|(?<=[—\-]{2})\s*', clean)
+        sentences = [r.strip() for r in raw if r.strip()]
+        total = len(sentences)
+
+        os.makedirs(temp_dir, exist_ok=True)
+        self._stop_flag = False
+        success = True
+
+        try:
+            for i, s in enumerate(sentences):
+                if self._stop_flag or (stop_check and stop_check()):
+                    success = False
+                    break
+
+                uid = uuid.uuid4().hex[:8]
+                tmp_wav = os.path.join(temp_dir, f"stream_{uid}.wav")
+
+                req = {"text": s, "output_file": tmp_wav}
+                self._synth_complete_event.clear()
+
+                with self._lock:
+                    if self._proc and self._proc.poll() is None:
+                        try:
+                            self._proc.stdin.write((json.dumps(req) + "\n").encode('utf-8'))
+                            self._proc.stdin.flush()
+                        except Exception:
+                            success = False
+                            break
+
+                waited = self._synth_complete_event.wait(30.0)
+                if not waited or not os.path.exists(tmp_wav) or os.path.getsize(tmp_wav) <= 44:
+                    logger.error("PIPER_DAEMON", f"Streaming chunk timeout or failure: {s}")
+                    success = False
+                    break
+
+                # Fire callback immediately — caller can start serving this chunk right away
+                try:
+                    chunk_ready_callback(tmp_wav, i, total)
+                except Exception as cb_err:
+                    logger.error("PIPER_DAEMON", f"chunk_ready_callback error: {cb_err}")
+                    success = False
+                    break
+
+        except Exception as e:
+            logger.error("PIPER_DAEMON", f"generate_wav_streaming error: {e}")
+            success = False
+
+        return success
+
+
     def generate_wav_chunked(self, text: str, filepath: str, progress_callback=None) -> bool:
         """
         Splits text into sentences, generates temp wav files, and merges them.

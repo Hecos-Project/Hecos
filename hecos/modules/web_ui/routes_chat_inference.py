@@ -157,15 +157,23 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         _chat_log.info(f"[INFERENCE] Generating TTS...")
         t_tts_start = time.monotonic()
-        audio_status = _maybe_generate_tts(clean_voice, cfg_mgr)
+        # Pass the session queue so _maybe_generate_tts can push audio_chunk
+        # events inline as each sentence is synthesized (console-style streaming).
+        audio_status = _maybe_generate_tts(clean_voice, cfg_mgr, session_queue=sess["queue"])
         _chat_log.info(f"[INFERENCE] TTS done in {time.monotonic() - t_tts_start:.2f}s | status={audio_status}")
 
         if audio_status == "web":
+            # Legacy single-file mode: one event at the end
             sess["queue"].put({"type": "audio_ready",          "text": ""})
+        elif audio_status == "web_stream":
+            # Streaming mode: audio_chunk events were already pushed inline.
+            # Signal the frontend that all chunks are sent.
+            sess["queue"].put({"type": "audio_stream_done",    "text": ""})
         elif audio_status == "system":
             sess["queue"].put({"type": "system_audio_playing", "text": ""})
 
         sess["queue"].put({"type": "done", "text": ""})
+
 
     except Exception as exc:
         _timed_out.set()  # stop watchdog

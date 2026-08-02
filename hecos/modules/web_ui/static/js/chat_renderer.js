@@ -3,6 +3,90 @@
 
 window.currentAudio = null;
 
+// ── Streaming Audio Queue ────────────────────────────────────────────────
+// Console-style chunk-by-chunk playback for the WebUI.
+// When a 'audio_chunk' SSE event arrives, enqueueChunk(chunk_id) is called.
+// The queue fetches the WAV, plays it, and immediately plays the next one.
+window.HecosAudioQueue = (() => {
+  let _queue = [];          // Array of chunk_ids waiting to be played
+  let _playing = false;     // True while a chunk is currently playing
+  let _activeBubble = null; // The AI bubble to attach the audio badge to
+
+  function _playNext() {
+    if (_queue.length === 0) {
+      _playing = false;
+      showStopVoiceBtn(false);
+      fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+      return;
+    }
+    _playing = true;
+    const chunk_id = _queue.shift();
+    const url = `/api/audio/chunk/${chunk_id}?t=${Date.now()}`;
+
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const audio = new Audio(blobUrl);
+        window.currentAudio = audio;
+
+        audio.onplay = () => {
+          showStopVoiceBtn(true);
+          fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
+        };
+        audio.onended = () => {
+          URL.revokeObjectURL(blobUrl);
+          window.currentAudio = null;
+          _playNext();
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(blobUrl);
+          window.currentAudio = null;
+          _playNext();  // Skip bad chunk and continue
+        };
+
+        audio.play().catch(err => {
+          console.warn('[AudioQueue] Autoplay blocked:', err);
+          // Show a play hint on the bubble if autoplay is blocked
+          if (_activeBubble) {
+            const hint = document.createElement('span');
+            hint.style.cssText = 'font-size:11px; color:var(--accent); display:block; margin-top:4px;';
+            hint.textContent = '👆 Clicca Play per ascoltare (Blocco Autoplay Browser)';
+            _activeBubble.appendChild(hint);
+          }
+        });
+      })
+      .catch(err => {
+        console.error('[AudioQueue] Chunk fetch error:', err);
+        window.currentAudio = null;
+        _playNext();  // Skip and continue
+      });
+  }
+
+  return {
+    /** Call this when a new audio_chunk SSE event arrives */
+    enqueueChunk(chunk_id, bubble) {
+      if (bubble) _activeBubble = bubble;
+      _queue.push(chunk_id);
+      if (!_playing) _playNext();
+    },
+    /** Reset queue (e.g. on ESC / stop) */
+    reset() {
+      _queue = [];
+      _playing = false;
+      if (window.currentAudio) {
+        window.currentAudio.pause();
+        window.currentAudio = null;
+      }
+    }
+  };
+})();
+
+
+
 function addBubble(role, text, id, opts) {
   const isUser = role === 'user';
   const msg = document.createElement('div');

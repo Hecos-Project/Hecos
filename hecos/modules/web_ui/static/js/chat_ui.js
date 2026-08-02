@@ -195,6 +195,8 @@ window.stopVoice = async function() {
     window.currentAudio.src = '';
     window.currentAudio = null;
   }
+  // Also reset the streaming chunk queue
+  if (window.HecosAudioQueue) window.HecosAudioQueue.reset();
   try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
