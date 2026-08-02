@@ -9,6 +9,7 @@ from hecos.tray.utils import is_hecos_online
 
 # Hold a reference to the subprocess so we can terminate it later
 _hecos_process = None
+_daemon_process = None  # Separate reference when running under the Supervisor
 
 def get_platform_python():
     """Returns the correct python executable depending on the environment."""
@@ -163,4 +164,76 @@ def restart_hecos():
         time.sleep(1)
         
     start_hecos()
+
+
+def start_hecos_with_daemon():
+    """
+    Spawns the Hecos Supervisor (daemon.py) as a background subprocess.
+    The Supervisor will then launch and monitor main.py automatically.
+    """
+    global _daemon_process
+    if is_daemon_running():
+        print("[ORCHESTRATOR] Daemon is already running.")
+        return
+
+    python_exe = get_platform_python()
+    try:
+        boot_log_path = os.path.join(_ROOT, "hecos", "logs", "hecos_boot_trace.log")
+        boot_log = open(boot_log_path, "a", encoding="utf-8")
+        boot_log.write(f"\n{'='*50}\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] ORCHESTRATOR: Spawning Hecos via Daemon Supervisor...\n{'='*50}\n")
+        boot_log.flush()
+
+        env = os.environ.copy()
+        env["HECOS_MONITORED_PROCESS"] = "1"
+
+        if sys.platform == "win32":
+            _daemon_process = subprocess.Popen(
+                [python_exe, "-m", "hecos.core.daemon"],
+                cwd=_ROOT,
+                stdout=boot_log,
+                stderr=subprocess.STDOUT,
+                creationflags=0x08000000,
+                env=env
+            )
+        else:
+            _daemon_process = subprocess.Popen(
+                [python_exe, "-m", "hecos.core.daemon"],
+                cwd=_ROOT,
+                stdout=boot_log,
+                stderr=subprocess.STDOUT,
+                env=env
+            )
+
+        print("[ORCHESTRATOR] Hecos Supervisor (Daemon) spawned successfully.")
+    except Exception as e:
+        print(f"[ORCHESTRATOR] Failed to spawn Daemon: {e}")
+
+
+def stop_daemon():
+    """Terminates the Supervisor process (which will also kill its Hecos child)."""
+    global _daemon_process
+    if _daemon_process is not None:
+        try:
+            _daemon_process.terminate()
+            _daemon_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            _daemon_process.kill()
+        except Exception:
+            pass
+        _daemon_process = None
+        print("[ORCHESTRATOR] Daemon Supervisor stopped.")
+    else:
+        # If we lost the reference, fall back to killing by port
+        _kill_by_port()
+
+
+def is_daemon_running() -> bool:
+    """Returns True if the Daemon Supervisor subprocess is alive."""
+    global _daemon_process
+    if _daemon_process is not None:
+        if _daemon_process.poll() is None:
+            return True
+        _daemon_process = None
+    return False
+
 

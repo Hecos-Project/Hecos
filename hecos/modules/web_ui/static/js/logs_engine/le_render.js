@@ -21,6 +21,12 @@ window.appendDataLine = function(win, data) {
     // Linkify URLs
     textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
 
+    // Colorize specific process tags (Source Tagging)
+    textOut = textOut.replace(/\[CORE[^\]]*\]/gi, '<span style="color:#4dabf7; font-weight:bold;">$&</span>'); // Blue
+    textOut = textOut.replace(/\[DAEMON[^\]]*\]/gi, '<span style="color:#b197fc; font-weight:bold;">$&</span>'); // Purple
+    textOut = textOut.replace(/\[WEBUI[^\]]*\]/gi, '<span style="color:#69db7c; font-weight:bold;">$&</span>'); // Green
+    textOut = textOut.replace(/\[PLUGIN[^\]]*\]/gi, '<span style="color:#ffa94d; font-weight:bold;">$&</span>'); // Orange
+
     line.innerHTML = `<span class="log-time">${data.time}</span><span class="log-lvl ${colorClass}">${data.level}</span><span class="log-text">${textOut}</span>`;
     
     window.appendToBody(win, line);
@@ -54,6 +60,12 @@ window.appendRawLine = function(win, text) {
     
     // Linkify URLs
     textOut = textOut.replace(/(https?:\/\/[^\s<"']+)/gi, '<a href="$1" target="_blank" style="color:var(--accent); text-decoration:underline;">$1</a>');
+
+    // Colorize specific process tags (Source Tagging)
+    textOut = textOut.replace(/\[CORE[^\]]*\]/gi, '<span style="color:#4dabf7; font-weight:bold;">$&</span>'); // Blue
+    textOut = textOut.replace(/\[DAEMON[^\]]*\]/gi, '<span style="color:#b197fc; font-weight:bold;">$&</span>'); // Purple
+    textOut = textOut.replace(/\[WEBUI[^\]]*\]/gi, '<span style="color:#69db7c; font-weight:bold;">$&</span>'); // Green
+    textOut = textOut.replace(/\[PLUGIN[^\]]*\]/gi, '<span style="color:#ffa94d; font-weight:bold;">$&</span>'); // Orange
 
     line.innerHTML = `<span class="log-text">${textOut}</span>`;
     window.appendToBody(win, line);

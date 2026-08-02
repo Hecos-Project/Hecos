@@ -23,7 +23,7 @@ from hecos.tray.browser_manager import (
     intelligent_open_webui, intelligent_open_ai_browser,
     open_ai_browser, close_ai_browser
 )
-from hecos.tray.orchestrator import start_hecos, stop_hecos, restart_hecos
+from hecos.tray.orchestrator import start_hecos, stop_hecos, restart_hecos, start_hecos_with_daemon, stop_daemon, is_daemon_running
 from hecos.tray.control_center import show_control_center
 
 
@@ -89,7 +89,11 @@ def build_menu(icon_ref: list):
     def start_core_btn(i, it):
         def _do():
             play_beep(400, 100)
-            start_hecos()
+            # Respect the use_daemon setting
+            if load_settings().get("use_daemon", False):
+                start_hecos_with_daemon()
+            else:
+                start_hecos()
             time.sleep(2)
             refresh_ui(icon)
         threading.Thread(target=_do, daemon=True).start()
@@ -152,9 +156,38 @@ def build_menu(icon_ref: list):
         save_settings(s)
         icon.menu = build_menu([icon])
 
+    daemon_active = is_daemon_running()
+    daemon_status_label = "🛡️ Daemon: Active" if daemon_active else "🛡️ Daemon: Inactive"
+
+    def toggle_use_daemon(i, it):
+        s = load_settings()
+        s["use_daemon"] = not s.get("use_daemon", False)
+        save_settings(s)
+        icon.menu = build_menu([icon])
+
+    def start_daemon_btn(i, it):
+        def _do():
+            start_hecos_with_daemon()
+            time.sleep(2)
+            refresh_ui(icon)
+        threading.Thread(target=_do, daemon=True).start()
+
+    def stop_daemon_btn(i, it):
+        def _do():
+            stop_daemon()
+            time.sleep(1)
+            refresh_ui(icon)
+        threading.Thread(target=_do, daemon=True).start()
+
     technical_submenu = pystray.Menu(
         pystray.MenuItem("📟  Launch Console", open_console),
         pystray.MenuItem("📟  Launch Console (Headless)", open_console_headless),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem(daemon_status_label, None, enabled=False),
+        pystray.MenuItem("Use Watchdog Daemon on Start", toggle_use_daemon,
+                         checked=lambda it: load_settings().get("use_daemon", False)),
+        pystray.MenuItem("🛡️ Start Daemon Now", start_daemon_btn, enabled=not daemon_active),
+        pystray.MenuItem("🛡️ Stop Daemon", stop_daemon_btn, enabled=daemon_active),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Show Technical Menu", toggle_technical_menu,
                          checked=lambda it: load_settings().get("show_technical_menu", True)),

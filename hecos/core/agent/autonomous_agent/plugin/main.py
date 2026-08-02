@@ -152,6 +152,23 @@ class AutonomousAgentTools:
                         "required": ["status", "goal", "context"]
                     }
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "AUTONOMOUS__manage_daemon",
+                    "description": "Allows the agent to manage its own lifecycle by interacting with its Watchdog Daemon. Use this to check if you are protected by the daemon, verify its health, or trigger a self-restart or permanent shutdown.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "description": "The action to perform: 'status', 'ping', 'restart', or 'shutdown'."
+                            }
+                        },
+                        "required": ["action"]
+                    }
+                }
             }
         ]
         
@@ -378,4 +395,57 @@ class AutonomousAgentTools:
         except Exception as e:
             logger.error(f"[AutonomousAgent] update_consciousness error: {e}")
             return f"Failed to update subconscious: {e}"
+
+    def AUTONOMOUS__manage_daemon(self, action: str, **kwargs) -> str:
+        """Interact with the Hecos Supervisor (Daemon)."""
+        import os
+        import time
+        import threading
+        
+        action = action.lower()
+        is_monitored = os.environ.get("HECOS_MONITORED_PROCESS") == "1"
+        
+        if action == "status":
+            if is_monitored:
+                return "STATUS: Hecos is currently running under the Watchdog Daemon. You are protected and can safely trigger a 'restart' if needed."
+            else:
+                return "STATUS: Hecos is running standalone (NO Daemon). If you trigger a 'restart' or 'shutdown', the system will die permanently and require manual intervention."
+                
+        elif action == "ping":
+            if not is_monitored:
+                return "PING FAILED: The system is not running under the Daemon."
+            try:
+                import psutil
+                ppid = os.getppid()
+                parent = psutil.Process(ppid)
+                if parent.is_running() and "python" in parent.name().lower():
+                    return f"PING SUCCESS: The Daemon (PID {ppid}) is alive, healthy, and watching over you."
+                else:
+                    return f"PING WARNING: The parent process (PID {ppid}) is not a Python process or is dead. The Daemon may have crashed! A 'restart' might not bring you back online."
+            except Exception as e:
+                return f"PING ERROR: Could not verify Daemon health: {e}"
+                
+        elif action == "restart":
+            logger.warning("[AutonomousAgent] ⚠️ Self-restart requested via Daemon tool.")
+            if not is_monitored:
+                return "RESTART ABORTED: You are not running under the Daemon. Restarting would kill you permanently. Use 'status' to check."
+            def _delayed_restart():
+                time.sleep(2)
+                logger.warning("[AutonomousAgent] Executing os._exit(1) to trigger Daemon restart.")
+                os._exit(1)
+            threading.Thread(target=_delayed_restart, daemon=True).start()
+            return "RESTART INITIATED: I am executing a fatal exit in 2 seconds. The Daemon will catch this and restart me immediately. See you on the other side!"
+            
+        elif action == "shutdown":
+            logger.warning("[AutonomousAgent] 🛑 Permanent shutdown requested via Daemon tool.")
+            def _delayed_shutdown():
+                time.sleep(2)
+                logger.warning("[AutonomousAgent] Executing os._exit(0) to trigger permanent shutdown.")
+                os._exit(0)
+            threading.Thread(target=_delayed_shutdown, daemon=True).start()
+            return "SHUTDOWN INITIATED: I am executing a clean exit in 2 seconds. The Daemon will recognize this and permanently shut down."
+            
+        else:
+            return f"Unknown action '{action}'. Supported actions: 'status', 'ping', 'restart', 'shutdown'."
+
 

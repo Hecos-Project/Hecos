@@ -25,6 +25,7 @@ _DEFAULTS = {
     "browser_startup_url": "http://localhost:7070",  # URL to open automatically when AI browser launches
     "browser_headless": False,        # True = AI browser runs invisibly in background
     "show_technical_menu": True,      # show Advanced/Debug submenu in tray
+    "use_daemon": False,              # launch Hecos under the Supervisor watchdog (auto-restart on crash)
 }
 
 def load_settings() -> dict:

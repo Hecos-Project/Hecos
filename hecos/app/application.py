@@ -136,21 +136,21 @@ class HecosApplication:
                         _lan = "127.0.0.1"
                     _port = config.get("plugins", {}).get("WEB_UI", {}).get("port", 7070)
                     _scheme = "https" if config.get("plugins", {}).get("WEB_UI", {}).get("https_enabled") else "http"
-                    logger.info(f"[BOOT] {'=' * 54}")
-                    logger.info(f"[BOOT]   🚀 SERVER LIVE  →  {_scheme}://{_lan}:{_port}/chat")
-                    logger.info(f"[BOOT]   🔑 Pannello     →  {_scheme}://{_lan}:{_port}/hecos/config/ui")
-                    logger.info(f"[BOOT] {'=' * 54}")
+                    logger.info(f"[CORE: Boot] {'=' * 54}")
+                    logger.info(f"[CORE: Boot]   🚀 SERVER LIVE  →  {_scheme}://{_lan}:{_port}/chat")
+                    logger.info(f"[CORE: Boot]   🔑 Pannello     →  {_scheme}://{_lan}:{_port}/hecos/config/ui")
+                    logger.info(f"[CORE: Boot] {'=' * 54}")
                     # ──────────────────────────────────────────────────────────────────
                 except Exception as _ws_e:
-                    logger.warning(f"[APP] WebUI server startup error: {_ws_e}")
+                    logger.warning(f"[CORE: App] WebUI server startup error: {_ws_e}")
 
         # Pre-load Piper TTS model in the background to eliminate latency on first speak()
         try:
             from hecos.core.audio.piper_daemon import get_daemon
             get_daemon().preload(delay=3.0)  # starts loading 3s after this line, non-blocking
-            logger.info("[APP] Piper TTS model pre-loading scheduled (3s delay).")
+            logger.info("[CORE: App] Piper TTS model pre-loading scheduled (3s delay).")
         except Exception as _piper_e:
-            logger.debug(f"[APP] Piper preload skipped: {_piper_e}")
+            logger.debug(f"[CORE: App] Piper preload skipped: {_piper_e}")
 
         interface.move_to_body()
         self.bootstrapper.show_welcome()
@@ -160,9 +160,9 @@ class HecosApplication:
             try:
                 from hecos.core.audio import ptt_bus
                 ptt_bus.start(state=self.state_manager)
-                logger.info("[APP] PTT Bus started.")
+                logger.info("[CORE: App] PTT Bus started.")
             except Exception as e:
-                logger.warning(f"[APP] Could not start audio bus: {e}")
+                logger.warning(f"[CORE: App] Could not start audio bus: {e}")
 
             ascolto_thread = AscoltoThread(self.state_manager)
             ascolto_thread.start()
@@ -180,7 +180,7 @@ class HecosApplication:
             pending = get_pending_task()
             if pending:
                 resume_msg = f"[SYSTEM AUTO-RESUME] Interrupted task recovered from subconscious. Goal: {pending['goal']}. Saved context: {pending['context']}"
-                logger.info(f"[APP] Pending task found, injecting auto-resume prompt: {pending['goal']}")
+                logger.info(f"[CORE: App] Pending task found, injecting auto-resume prompt: {pending['goal']}")
                 mode = config.get("ai", {}).get("auto_resume_mode", "chat")
                 
                 # We use a short delay so the UI fully settles before injection
@@ -193,7 +193,7 @@ class HecosApplication:
                     
                 threading.Timer(2.0, _inject_resume).start()
         except Exception as e:
-            logger.error(f"[APP] Error checking subconscious: {e}")
+            logger.error(f"[CORE: App] Error checking subconscious: {e}")
 
         # Main loop
 
@@ -208,7 +208,7 @@ class HecosApplication:
             evento, input_utente = self.input_handler.handle_keyboard_input(prefisso, input_utente)
             
             if evento == "EXIT":
-                logger.info("[APP] User confirmed exit.")
+                logger.info("[CORE: App] User confirmed exit.")
                 self.running = False # Uscita pulita dal loop
             elif evento == "CANCELLED":
                 # L'input handler ha già ripristinato il prompt, non fare nulla
