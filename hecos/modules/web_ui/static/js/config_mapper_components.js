@@ -51,6 +51,9 @@ function populateAgentUI() {
     setVal('agent-max-iter',        a.max_iterations       ?? 10);
     setCheck('agent-verbose',       a.verbose_traces       ?? true);
     setCheck('agent-action-console',a.action_console_enabled ?? true);
+    setVal('agent-trust-mode',      a.autonomy_trust_mode  || 'ask');
+    setVal('agent-max-installs',    a.autonomy_max_installs ?? 3);
+    setVal('agent-reflection',      a.autonomy_reflection  || 'daily');
 }
 
 function buildAgentPayload() {
@@ -60,7 +63,10 @@ function buildAgentPayload() {
             enabled:                getC('agent-enabled',        a.enabled                 ?? true),
             max_iterations:         parseInt(getV('agent-max-iter', a.max_iterations))     || 10,
             verbose_traces:         getC('agent-verbose',        a.verbose_traces          ?? true),
-            action_console_enabled: getC('agent-action-console', a.action_console_enabled  ?? true)
+            action_console_enabled: getC('agent-action-console', a.action_console_enabled  ?? true),
+            autonomy_trust_mode:    getV('agent-trust-mode',     a.autonomy_trust_mode     || 'ask'),
+            autonomy_max_installs:  parseInt(getV('agent-max-installs', a.autonomy_max_installs)) || 3,
+            autonomy_reflection:    getV('agent-reflection',     a.autonomy_reflection     || 'daily')
         }
     };
 }

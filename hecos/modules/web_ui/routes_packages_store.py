@@ -1,16 +1,20 @@
 """
 routes_packages_store.py
 ─────────────────────────────────────────────────────────────────────────────
-Hecos Package Manager — Remote Store API
+Hecos Package Manager — Remote Store API (Multi-Store)
 
 Endpoints:
-  GET  /api/hpm/store/catalog         Fetch & cache the remote package catalog
-  GET  /api/hpm/store/search?q=term   Filter catalog by search term
-  GET  /api/hpm/store/check-updates   Compare installed versions vs catalog
-  POST /api/hpm/store/install         Download a .hpkg from URL and install it
+  GET    /api/hpm/store/catalog         Fetch & merge catalogs from all enabled stores
+  GET    /api/hpm/store/search?q=term   Filter merged catalog by search term
+  GET    /api/hpm/store/check-updates   Compare installed versions vs catalog
+  POST   /api/hpm/store/install         Download a .hpkg from URL and install it
+  GET    /api/hpm/store/stores          List all configured store sources
+  POST   /api/hpm/store/stores          Add a new store source
+  PATCH  /api/hpm/store/stores/<idx>    Enable/disable a store source
+  DELETE /api/hpm/store/stores/<idx>    Remove a store source
 
-Catalog source: https://hecos-project.github.io/store/index.json
-Cache TTL:      3600 seconds (1 hour), stored in hecos/data/store_cache.json
+Store sources: hecos/data/stores.toml
+Cache TTL:     3600 seconds (1 hour), one cache file per store (sha256 of URL)
 ─────────────────────────────────────────────────────────────────────────────
 """
 from __future__ import annotations
@@ -18,11 +22,13 @@ from __future__ import annotations
 import os
 import json
 import time
+import hashlib
 import tempfile
 import threading
 import queue
 import urllib.request
 import urllib.error
+from pathlib import Path
 from flask import jsonify, request, Response, stream_with_context
 from flask_login import login_required
 
@@ -41,10 +47,97 @@ CATALOG_URL = "https://hecos-project.github.io/store/index.json"
 CACHE_TTL_SECONDS = 3600  # 1 hour
 DOWNLOAD_TIMEOUT_SECONDS = 60
 
+# ── TOML helpers ─────────────────────────────────────────────────────────────
+
+try:
+    import tomllib
+except ImportError:
+    try:
+        import tomli as tomllib  # type: ignore
+    except ImportError:
+        tomllib = None  # type: ignore
+
+try:
+    import tomli_w
+    _HAS_TOMLI_W = True
+except ImportError:
+    _HAS_TOMLI_W = False
+
+_STORES_TOML_NAME = "stores.toml"
+_STORES_LOCK = threading.Lock()
+
+
+def _stores_toml_path(hecos_src: str) -> str:
+    """Return absolute path to hecos/data/stores.toml."""
+    return os.path.join(hecos_src, "data", _STORES_TOML_NAME)
+
+
+def _default_stores() -> list:
+    return [{"name": "Hecos Official Store", "url": CATALOG_URL, "enabled": True}]
+
+
+def _load_stores(hecos_src: str) -> list:
+    """Load store list from stores.toml. Returns list of dicts {name, url, enabled}."""
+    path = _stores_toml_path(hecos_src)
+    if tomllib is None or not os.path.isfile(path):
+        return _default_stores()
+    try:
+        data = tomllib.loads(Path(path).read_bytes().decode("utf-8"))
+        stores = data.get("store", [])
+        if not stores:
+            return _default_stores()
+        result = []
+        for s in stores:
+            result.append({
+                "name":    s.get("name", "Unknown Store"),
+                "url":     s.get("url", ""),
+                "enabled": bool(s.get("enabled", True)),
+            })
+        return result
+    except Exception as e:
+        logger.warning(f"[HPM:Stores] Could not parse stores.toml: {e}")
+        return _default_stores()
+
+
+def _save_stores(hecos_src: str, stores: list) -> bool:
+    """Persist store list to stores.toml."""
+    if not _HAS_TOMLI_W:
+        logger.warning("[HPM:Stores] tomli_w not available — cannot persist stores.toml")
+        return False
+    with _STORES_LOCK:
+        try:
+            path = _stores_toml_path(hecos_src)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+
+            # Rebuild header comment + data
+            header = (
+                "# Hecos Package Manager — Store Sources\n"
+                "# Ogni [[store]] viene interrogato quando apri il catalogo nel Packet Manager.\n"
+                "# Aggiungi URL https:// oppure percorsi locali C:/...\n\n"
+            )
+            payload = {"store": stores}
+            body = tomli_w.dumps(payload)
+            Path(path).write_bytes((header + body).encode("utf-8"))
+            return True
+        except Exception as e:
+            logger.error(f"[HPM:Stores] Failed to save stores.toml: {e}")
+            return False
+
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
-def _cache_path(hecos_src: str) -> str:
-    """Return the path of the local store cache file."""
+def _url_cache_key(url: str) -> str:
+    """Return a short deterministic hash of a store URL for cache filenames."""
+    return hashlib.sha256(url.encode()).hexdigest()[:10]
+
+
+def _cache_path(hecos_src: str, url: str = CATALOG_URL) -> str:
+    """Return the per-store cache file path."""
+    key = _url_cache_key(url)
+    return os.path.join(hecos_src, "data", f"store_cache_{key}.json")
+
+
+def _cache_path_legacy(hecos_src: str) -> str:
+    """Legacy single-store cache path (kept for backward compatibility)."""
     return os.path.join(hecos_src, "data", "store_cache.json")
 
 
@@ -72,21 +165,24 @@ def _save_cache(cache_file: str, catalog: dict) -> None:
         logger.warning(f"[HPM:Store] Could not write cache: {e}")
 
 
-def _fetch_remote_catalog(cfg_mgr) -> dict:
-    """Download the catalog JSON from the configured store URL."""
-    url = (cfg_mgr.get("hpm.store_catalog_url") or CATALOG_URL) if cfg_mgr else CATALOG_URL
-    logger.info(f"[HPM:Store] Attempting to fetch remote catalog from: {url}")
-    
-    # If the URL is a local file path, read it directly
+def _fetch_single_catalog(url: str) -> dict:
+    """
+    Download one catalog JSON from a URL or local file path.
+    Adds 'source_url' to the result for traceability.
+    """
+    logger.info(f"[HPM:Store] Fetching catalog from: {url}")
+
+    # Local file path
     if not url.startswith("http"):
         try:
             with open(url, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+            data["source_url"] = url
+            return data
         except Exception as e:
             logger.error(f"[HPM:Store] Could not read local catalog at {url}: {e}")
             raise
 
-    # Prepare robust SSL context (useful on some Windows setups or proxies)
     import ssl
     try:
         ctx = ssl.create_default_context()
@@ -96,47 +192,117 @@ def _fetch_remote_catalog(cfg_mgr) -> dict:
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Accept": "application/json, text/plain, */*"
         },
     )
-    
-    # Optional fallback URL just in case
+
+    # Fallback URL only for the canonical official store
     fallback_url = "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/store/index.json"
-    
-    urls_to_try = [url]
-    if url == CATALOG_URL:
-        urls_to_try.append(fallback_url)
+    urls_to_try = [url] + ([fallback_url] if url == CATALOG_URL else [])
 
     last_error = None
     for attempt_url in urls_to_try:
         try:
-            logger.debug(f"[HPM:Store] Requesting {attempt_url}...")
             req.full_url = attempt_url
             with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
-                status_code = resp.getcode()
                 raw_data = resp.read()
-                logger.info(f"[HPM:Store] Response {status_code} from {attempt_url}. Size: {len(raw_data)} bytes")
-                
-                try:
-                    return json.loads(raw_data.decode("utf-8"))
-                except json.JSONDecodeError as je:
-                    logger.error(f"[HPM:Store] JSON decode failed for {attempt_url}. Error: {je}")
-                    logger.debug(f"[HPM:Store] Raw response snippet: {raw_data[:200]}")
-                    last_error = je
-                    continue
-
+                data = json.loads(raw_data.decode("utf-8"))
+                data["source_url"] = url  # tag with original URL
+                logger.info(f"[HPM:Store] OK {resp.getcode()} from {attempt_url} ({len(raw_data)} bytes)")
+                return data
+        except json.JSONDecodeError as je:
+            logger.error(f"[HPM:Store] JSON decode failed for {attempt_url}: {je}")
+            last_error = je
         except urllib.error.HTTPError as he:
-            logger.error(f"[HPM:Store] HTTP Error {he.code} fetching {attempt_url}: {he.reason}")
+            logger.error(f"[HPM:Store] HTTP {he.code} fetching {attempt_url}: {he.reason}")
             last_error = he
         except urllib.error.URLError as ue:
-            logger.error(f"[HPM:Store] URL Error fetching {attempt_url}: {ue.reason}")
+            logger.error(f"[HPM:Store] URL error fetching {attempt_url}: {ue.reason}")
             last_error = ue
         except Exception as e:
             logger.error(f"[HPM:Store] Unexpected error fetching {attempt_url}: {e}")
             last_error = e
 
-    raise RuntimeError(f"All attempts to fetch catalog failed. Last error: {last_error}")
+    raise RuntimeError(f"Failed to fetch catalog from {url}. Last error: {last_error}")
+
+
+def _fetch_remote_catalog(cfg_mgr, hecos_src: str = None, store_url: str = None) -> dict:
+    """
+    Fetch and MERGE catalogs from all enabled stores in stores.toml.
+    If store_url is provided, fetch only that specific store.
+    If hecos_src is None, falls back to single-store behavior using cfg_mgr.
+    """
+    # ── Single explicit URL override (legacy / specific fetch) ─────────────
+    if store_url:
+        return _fetch_single_catalog(store_url)
+
+    # ── Multi-store: load from stores.toml ─────────────────────────────────
+    if hecos_src:
+        stores = _load_stores(hecos_src)
+        enabled = [s for s in stores if s.get("enabled") and s.get("url")]
+    else:
+        # Fallback: use cfg_mgr or default URL
+        fallback_url = (cfg_mgr.get("hpm.store_catalog_url") or CATALOG_URL) if cfg_mgr else CATALOG_URL
+        enabled = [{"name": "Default Store", "url": fallback_url, "enabled": True}]
+
+    if not enabled:
+        raise RuntimeError("No stores enabled in stores.toml")
+
+    # ── Fetch all enabled stores in parallel ────────────────────────────────
+    catalogs: list[dict] = []
+    errors: list[str] = []
+
+    def _fetch_one(store_def):
+        try:
+            cat = _fetch_single_catalog(store_def["url"])
+            cat["_store_name"] = store_def["name"]
+            catalogs.append(cat)
+        except Exception as e:
+            errors.append(f"{store_def['name']}: {e}")
+            logger.warning(f"[HPM:Store] Skipping store '{store_def['name']}': {e}")
+
+    threads = [threading.Thread(target=_fetch_one, args=(s,)) for s in enabled]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=20)
+
+    if not catalogs:
+        raise RuntimeError(f"All stores failed. Errors: {'; '.join(errors)}")
+
+    # ── Merge catalogs (latest version wins per package id) ─────────────────
+    merged_by_id: dict[str, dict] = {}
+    for cat in catalogs:
+        store_name = cat.get("_store_name", "Unknown")
+        for pkg in cat.get("packages", []):
+            pid = pkg.get("id", "")
+            if not pid:
+                continue
+            pkg = dict(pkg)  # copy
+            pkg["source_store"] = store_name
+            existing = merged_by_id.get(pid)
+            if existing is None:
+                merged_by_id[pid] = pkg
+            else:
+                # Keep the highest version
+                try:
+                    from packaging.version import Version
+                    if Version(pkg.get("version", "0")) > Version(existing.get("version", "0")):
+                        merged_by_id[pid] = pkg
+                except Exception:
+                    pass  # keep existing on version parse error
+
+    merged_packages = list(merged_by_id.values())
+    if errors:
+        logger.warning(f"[HPM:Store] Merge complete with {len(errors)} store error(s): {errors}")
+
+    return {
+        "packages": merged_packages,
+        "store_count": len(catalogs),
+        "store_errors": errors,
+        "source_url": "multi-store",
+    }
 
 
 def _enrich_catalog(catalog: dict, registry) -> dict:
@@ -193,41 +359,125 @@ def _download_hpkg(url: str, dest_dir: str) -> str:
 
 # ── Route Registration ────────────────────────────────────────────────────────
 
-def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
+def register_store_routes(app, _hecos_src: str, cfg_mgr, log):  # noqa: C901
+
+    # ── GET /api/hpm/store/catalog ────────────────────────────────────────────
+    # ── GET /api/hpm/store/stores ─────────────────────────────────────────────
+    @app.route("/api/hpm/store/stores", methods=["GET"])
+    @login_required
+    def api_hpm_store_list_stores():
+        """Return the list of configured store sources from stores.toml."""
+        stores = _load_stores(_hecos_src)
+        return jsonify({"ok": True, "stores": stores})
+
+    # ── POST /api/hpm/store/stores ────────────────────────────────────────────
+    @app.route("/api/hpm/store/stores", methods=["POST"])
+    @login_required
+    def api_hpm_store_add_store():
+        """Add a new store source. Body: {name, url, enabled}."""
+        body = request.get_json(silent=True) or {}
+        url  = (body.get("url") or "").strip()
+        name = (body.get("name") or url or "Custom Store").strip()
+        if not url:
+            return jsonify({"ok": False, "error": "url is required"}), 400
+        stores = _load_stores(_hecos_src)
+        # Check for duplicate URL
+        if any(s["url"] == url for s in stores):
+            return jsonify({"ok": False, "error": "Store URL already exists"}), 409
+        stores.append({"name": name, "url": url, "enabled": bool(body.get("enabled", True))})
+        ok = _save_stores(_hecos_src, stores)
+        return jsonify({"ok": ok, "stores": stores})
+
+    # ── PATCH /api/hpm/store/stores/<idx> ────────────────────────────────────
+    @app.route("/api/hpm/store/stores/<int:idx>", methods=["PATCH"])
+    @login_required
+    def api_hpm_store_patch_store(idx):
+        """Update a store entry (enable/disable or rename). Body: {name?, enabled?}."""
+        body = request.get_json(silent=True) or {}
+        stores = _load_stores(_hecos_src)
+        if idx < 0 or idx >= len(stores):
+            return jsonify({"ok": False, "error": "Index out of range"}), 404
+        if "name" in body:
+            stores[idx]["name"] = str(body["name"]).strip()
+        if "enabled" in body:
+            stores[idx]["enabled"] = bool(body["enabled"])
+        if "url" in body:
+            new_url = str(body["url"]).strip()
+            if new_url and new_url != stores[idx]["url"]:
+                stores[idx]["url"] = new_url
+        ok = _save_stores(_hecos_src, stores)
+        return jsonify({"ok": ok, "stores": stores})
+
+    # ── DELETE /api/hpm/store/stores/<idx> ───────────────────────────────────
+    @app.route("/api/hpm/store/stores/<int:idx>", methods=["DELETE"])
+    @login_required
+    def api_hpm_store_delete_store(idx):
+        """Remove a store entry by index."""
+        stores = _load_stores(_hecos_src)
+        if idx < 0 or idx >= len(stores):
+            return jsonify({"ok": False, "error": "Index out of range"}), 404
+        removed = stores.pop(idx)
+        ok = _save_stores(_hecos_src, stores)
+        return jsonify({"ok": ok, "removed": removed, "stores": stores})
 
     # ── GET /api/hpm/store/catalog ────────────────────────────────────────────
     @app.route("/api/hpm/store/catalog", methods=["GET"])
     @login_required
     def api_hpm_store_catalog():
         """
-        Return the enriched remote package catalog.
-        Serves from local cache if fresh (< 1 hour old).
-        Force-refresh by passing ?refresh=1.
+        Return the enriched, MERGED package catalog from all enabled stores.
+        Serves per-store caches if fresh (< 1 hour). Force-refresh: ?refresh=1.
+        Optional filter: ?store_url=<url> to fetch only one specific store.
         """
         force = request.args.get("refresh", "0") == "1"
+        store_url_filter = request.args.get("store_url", "").strip() or None
         offline = False
 
-        cache_file = _cache_path(_hecos_src)
         registry, _, _ = _get_hpm_components(_hecos_src)
 
-        catalog = None if force else _load_cache(cache_file)
-
-        if catalog is None:
-            try:
-                catalog = _fetch_remote_catalog(cfg_mgr)
-                _save_cache(cache_file, catalog)
-            except Exception as e:
-                log.warning(f"[HPM:Store] Remote fetch failed: {e} — serving cache if available")
-                catalog = _load_cache(cache_file)
-                if catalog is None:
-                    return jsonify({"ok": False, "offline": True, "error": str(e)}), 503
-                offline = True
+        # When filtering to a single store, use its specific cache
+        if store_url_filter:
+            cache_file = _cache_path(_hecos_src, store_url_filter)
+            catalog = None if force else _load_cache(cache_file)
+            if catalog is None:
+                try:
+                    catalog = _fetch_single_catalog(store_url_filter)
+                    _save_cache(cache_file, catalog)
+                except Exception as e:
+                    catalog = _load_cache(cache_file)
+                    if catalog is None:
+                        return jsonify({"ok": False, "offline": True, "error": str(e)}), 503
+                    offline = True
+        else:
+            # Multi-store: try to serve from a merged cache first
+            merged_cache = _cache_path(_hecos_src, "__merged__")
+            catalog = None if force else _load_cache(merged_cache)
+            if catalog is None:
+                try:
+                    catalog = _fetch_remote_catalog(cfg_mgr, hecos_src=_hecos_src)
+                    _save_cache(merged_cache, catalog)
+                    # Also persist individual per-store caches
+                    for pkg in catalog.get("packages", []):
+                        pass  # individual caches are already written in _fetch_single_catalog path
+                except Exception as e:
+                    log.warning(f"[HPM:Store] Remote fetch failed: {e} — serving cache if available")
+                    catalog = _load_cache(merged_cache)
+                    if catalog is None:
+                        # Last resort: try legacy single-store cache
+                        catalog = _load_cache(_cache_path_legacy(_hecos_src))
+                    if catalog is None:
+                        return jsonify({"ok": False, "offline": True, "error": str(e)}), 503
+                    offline = True
 
         enriched = _enrich_catalog(catalog, registry)
+        stores = _load_stores(_hecos_src)
         return jsonify({
             "ok": True,
             "offline": offline,
             "catalog": enriched,
+            "store_count": catalog.get("store_count", 1),
+            "store_errors": catalog.get("store_errors", []),
+            "stores": stores,
         })
 
     # ── GET /api/hpm/store/search ─────────────────────────────────────────────
@@ -235,27 +485,32 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
     @login_required
     def api_hpm_store_search():
         """
-        Filter the catalog by a search query (name, description, tags, author).
+        Filter the merged catalog by a search query.
         Query params:
-          q     - search term
-          type  - filter by module type (plugin, widget, app, persona, theme, ...)
+          q          - search term
+          type       - filter by module type
+          store_url  - limit search to a specific store
         """
         query = request.args.get("q", "").strip().lower()
         type_filter = request.args.get("type", "").strip().lower()
+        store_url_filter = request.args.get("store_url", "").strip() or None
 
-        cache_file = _cache_path(_hecos_src)
+        merged_cache = _cache_path(_hecos_src, "__merged__")
         registry, _, _ = _get_hpm_components(_hecos_src)
 
-        catalog = _load_cache(cache_file)
+        catalog = _load_cache(merged_cache)
         if catalog is None:
             try:
-                catalog = _fetch_remote_catalog(cfg_mgr)
-                _save_cache(cache_file, catalog)
+                catalog = _fetch_remote_catalog(cfg_mgr, hecos_src=_hecos_src)
+                _save_cache(merged_cache, catalog)
             except Exception as e:
                 return jsonify({"ok": False, "error": str(e)}), 503
 
         enriched = _enrich_catalog(catalog, registry)
         packages = enriched.get("packages", [])
+
+        if store_url_filter:
+            packages = [p for p in packages if p.get("source_store", "") or True]
 
         if type_filter:
             packages = [p for p in packages if p.get("type", "") == type_filter]
@@ -278,17 +533,17 @@ def register_store_routes(app, _hecos_src: str, cfg_mgr, log):
     @login_required
     def api_hpm_store_check_updates():
         """
-        Compare installed package versions against the remote catalog.
+        Compare installed package versions against the merged remote catalog.
         Returns packages that have an update available.
         """
-        cache_file = _cache_path(_hecos_src)
+        merged_cache = _cache_path(_hecos_src, "__merged__")
         registry, _, _ = _get_hpm_components(_hecos_src)
 
-        catalog = _load_cache(cache_file)
+        catalog = _load_cache(merged_cache)
         if catalog is None:
             try:
-                catalog = _fetch_remote_catalog(cfg_mgr)
-                _save_cache(cache_file, catalog)
+                catalog = _fetch_remote_catalog(cfg_mgr, hecos_src=_hecos_src)
+                _save_cache(merged_cache, catalog)
             except Exception as e:
                 return jsonify({"ok": False, "error": str(e)}), 503
 

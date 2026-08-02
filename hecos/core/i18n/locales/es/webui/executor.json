@@ -30,5 +30,10 @@
     "webui_executor_max_read_lines": "Líneas máximas para leer por solicitud",
     "webui_executor_max_read_hint": "Limita la cantidad de líneas que la herramienta read_file puede devolver en una sola llamada.",
     "webui_executor_workspace": "Directorio del espacio de trabajo Sandbox",
-    "webui_executor_workspace_hint": "Directorio donde los scripts de la zona de pruebas de Python se guardan temporalmente antes de su ejecución."
+    "webui_executor_workspace_hint": "Directorio donde los scripts de la zona de pruebas de Python se guardan temporalmente antes de su ejecución.",
+    "webui_agent_autonomy_title": "Capacidades Autónomas",
+    "webui_agent_autonomy_desc": "Configura cuán independientemente puede actuar Hecos, instalar módulos y programar tareas.",
+    "webui_agent_trust_mode": "Nivel de Autonomía (Modo de Confianza)",
+    "webui_agent_max_installs": "Máx. Instalaciones Automáticas por Sesión",
+    "webui_agent_reflection": "Programación de Auto-Reflexión"
 }

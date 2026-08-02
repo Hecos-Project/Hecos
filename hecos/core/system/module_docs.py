@@ -290,6 +290,29 @@ def get_tools_schema():
         }
     })
 
+    # --- BUILT-IN AGENT TOOLS (module_awareness & autonomous_agent) ---
+    try:
+        from hecos.core.agent.module_awareness.plugin.main import ModuleAwarenessTools
+        from hecos.core.agent.module_awareness.module_awareness_config.config_manager import ConfigManager as AwarenessConfig
+        aw_config = AwarenessConfig(os.path.join(os.path.dirname(REGISTRY_PATH), "..", "config", "data"))
+        aw_tools = ModuleAwarenessTools(config_manager=aw_config)
+        
+        from hecos.core.agent.autonomous_agent.plugin.main import AutonomousAgentTools
+        from hecos.core.agent.autonomous_agent.autonomous_agent_config.config_manager import ConfigManager as AutoConfig
+        auto_config = AutoConfig(os.path.join(os.path.dirname(REGISTRY_PATH), "..", "config", "data"))
+        auto_tools = AutonomousAgentTools(config_manager=auto_config)
+        
+        agent_schemas = []
+        agent_schemas.extend(aw_tools.get_tool_schema())
+        agent_schemas.extend(auto_tools.get_tool_schema())
+        
+        # We need to rename the tools to AGENT__ to follow our native routing convention, 
+        # but wait: their names are already MODULE_AWARENESS__ and AUTONOMOUS__ in their classes.
+        # Let's just append them as they are and handle them in processore.py!
+        tools_list.extend(agent_schemas)
+    except Exception as e:
+        logger.error(f"DOCS: Failed to load native AGENT tools: {e}")
+
     return tools_list if tools_list else None
 
 def get_legacy_schema():

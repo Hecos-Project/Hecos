@@ -47,5 +47,48 @@
                 </label>
             </div>
         </div>
+
+        <div class="field-group" style="margin-top:20px; border-top:1px solid var(--border-color); padding-top:20px;">
+            <div class="card-title-group" style="margin-bottom: 15px;">
+                <div class="card-title" style="font-size: 1.1em; color: var(--accent);">🤖 {{ t('webui_agent_autonomy_title') or 'Autonomous Capabilities' }}</div>
+                <div class="card-desc">{{ t('webui_agent_autonomy_desc') or 'Configure how independently Hecos can act, install modules, and schedule tasks.' }}</div>
+            </div>
+
+            <!-- TRUST MODE -->
+            <div class="field">
+                <label for="agent-trust-mode">
+                    {{ t('webui_agent_trust_mode') or 'Autonomy Level (Trust Mode)' }}
+                    <span class="restart-badge" id="badge-agent-trust-mode" style="display:none;">Restart Required</span>
+                </label>
+                <select id="agent-trust-mode" class="form-control">
+                    <option value="ask">Ask before every action</option>
+                    <option value="trusted_only">Auto-allow from trusted stores only</option>
+                    <option value="allow">Full autonomy (advanced users)</option>
+                </select>
+                <div class="field-help">Controls if Hecos can install packages autonomously when trying to achieve a goal.</div>
+            </div>
+
+            <!-- MAX AUTO INSTALLS -->
+            <div class="field">
+                <label for="agent-max-installs">
+                    {{ t('webui_agent_max_installs') or 'Max Auto-Installs per Session' }}
+                    <span class="restart-badge" id="badge-agent-max-installs" style="display:none;">Restart Required</span>
+                </label>
+                <input type="number" id="agent-max-installs" min="0" max="20" step="1">
+            </div>
+
+            <!-- REFLECTION SCHEDULE -->
+            <div class="field">
+                <label for="agent-reflection">
+                    {{ t('webui_agent_reflection') or 'Self-Reflection Schedule' }}
+                    <span class="restart-badge" id="badge-agent-reflection" style="display:none;">Restart Required</span>
+                </label>
+                <select id="agent-reflection" class="form-control">
+                    <option value="never">Never</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                </select>
+            </div>
+        </div>
     </div>
 </div>

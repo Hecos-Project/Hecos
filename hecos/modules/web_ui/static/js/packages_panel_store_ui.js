@@ -41,6 +41,11 @@ window.hpmStoreInit = async function () {
   if (!pane) return;
   pane.innerHTML = _hpmStoreBuildShell();
 
+  // Init store sources panel (load stores + populate dropdown)
+  if (typeof window.hpmStoresInit === 'function') {
+    await window.hpmStoresInit();
+  }
+
   const searchEl = document.getElementById('hpm-store-search');
   if (searchEl) {
     searchEl.addEventListener('input', (e) => {
@@ -64,6 +69,17 @@ function _hpmStoreApplyFilters() {
   const { catalog, activeType, searchQuery } = window.HPM_STORE_STATE;
   if (!catalog) return;
   let pkgs = catalog.packages || [];
+
+  // Source store filter (from dropdown in store sources panel)
+  const sourceFilter = window.HPM_STORE_STATE._sourceFilter || '';
+  if (sourceFilter) {
+    pkgs = pkgs.filter(p => {
+      const storeURL = (window._hpmStores || []).find(s => s.url === sourceFilter);
+      const storeName = storeURL ? storeURL.name : sourceFilter;
+      return (p.source_store || '') === storeName;
+    });
+  }
+
   if (activeType !== 'all') pkgs = pkgs.filter(p => p.type === activeType);
   if (searchQuery) {
     pkgs = pkgs.filter(p => {
@@ -77,8 +93,14 @@ function _hpmStoreApplyFilters() {
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
 function _hpmStoreBuildShell() {
+  // Inject store sources panel + filter dropdown + search bar
+  const storeSourcesHtml = (typeof window.hpmStoresBuildPanel === 'function')
+    ? window.hpmStoresBuildPanel()
+    : '';
+
   return `
     <div id="hpm-store-offline-banner" style="display:none;"></div>
+    ${storeSourcesHtml}
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
       <div style="position:relative;flex:1;min-width:220px;">
         <i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none;"></i>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="{{ zconfig.language or 'en' }}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hecos Flows &mdash; Orchestration Engine</title>
+<meta name="description" content="Hecos Flows &mdash; build and run automated pipelines visually.">
+<link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/base.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<!-- CodeMirror 6 (YAML editor) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/theme/material-darker.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/yaml/yaml.min.js"></script>
+<!-- js-yaml -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<!-- ReactFlow canvas bundle (built from flows_canvas_react/) -->
+<link rel="stylesheet" href="/hpm_plugin/flows/web_ui/assets/css/flows_canvas.css?v={{ version }}">
+<script src="/hpm_plugin/flows/web_ui/assets/js/dist/flows_canvas.bundle.js?v={{ version }}.5" charset="utf-8"></script>
+<script>
+(function(){
+  var saved = localStorage.getItem('hecos-ui-theme')||'cyberpunk';
+  if(saved && saved!=='default') document.documentElement.classList.add('theme-'+saved);
+})();
+</script>
+<link rel="stylesheet" href="/hpm_plugin/flows/web_ui/assets/css/flows.css?v={{ version }}">
+</head>
+<body>
+
+<!-- ── Header ───────────────────────────────────────────────────── -->
+<header id="flows-header">
+  <div class="logo-group">
+    <img src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}" alt="Hecos">
+    <span class="brand">HECOS</span>
+  </div>
+  <span class="page-title"><i class="fas fa-project-diagram" style="margin-right:.4rem;color:var(--flows-accent);"></i>FLOWS</span>
+
+  <nav>
+    <a href="/chat"><i class="fas fa-comment-dots"></i> Chat</a>
+    <a href="/home" class="desktop-only"><i class="fas fa-th-large"></i> Room</a>
+    <a href="/hecos/config/ui" target="_blank"><i class="fas fa-cog"></i> Hub</a>
+    <button class="btn-primary" onclick="newEmptyCanvas()" title="Create an empty canvas manually">
+      <i class="fas fa-plus"></i> New Canvas
+    </button>
+  </nav>
+</header>
+
+<!-- ── Body ─────────────────────────────────────────────────────── -->
+<div id="flows-body">
+
+  <!-- Sidebar -->
+  <aside id="flows-sidebar">
+    <div id="flows-sidebar-header">
+      <span>My Flows</span>
+      <button id="btn-new-flow" onclick="openNlpModal()"><i class="fas fa-plus"></i> New</button>
+    </div>
+    <div id="flows-list">
+      <div id="flows-sidebar-empty" style="display:none">
+        <i class="fas fa-project-diagram"></i>
+        <p>No flows yet.<br>Click <strong>New Flow</strong> to create your first automation.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div id="flows-main">
+    
+    <!-- Toolbar -->
+    <div id="flows-toolbar">
+      <input type="text" id="flow-title" class="flow-title-input" placeholder="Select or create a flow…" disabled>
+      <div class="sep"></div>
+      <button class="tb-btn run"    id="btn-run"    onclick="runCurrentFlow()" disabled><i class="fas fa-play"></i> Run</button>
+      <button class="tb-btn"       id="btn-save"   onclick="saveCurrentFlow()" disabled><i class="fas fa-save"></i> Save</button>
+      <button class="tb-btn danger" id="btn-delete" onclick="deleteCurrentFlow()" disabled title="{{ translations.get('flows_delete_selected_tooltip', 'Delete the selected flow') }}"><i class="fas fa-trash"></i></button>
+      <div class="sep"></div>
+      <button class="tb-btn" id="btn-palette" onclick="togglePalette()" title="Node Palette" disabled><i class="fas fa-toolbox"></i> Palette</button>
+      <button class="tb-btn" id="btn-delete-node" onclick="deleteSelectedNodes()" title="Delete Selected Nodes (Del)"><i class="fas fa-eraser"></i> Delete Node</button>
+      <div class="sep"></div>
+      <button class="tb-btn export" id="btn-export" onclick="exportCurrentFlow()" disabled title="{{ translations.get('flows_export_tooltip', 'Export the current flow as a .yaml file') }}"><i class="fas fa-file-export"></i> Export</button>
+      <button class="tb-btn import" id="btn-import" onclick="document.getElementById('flow-import-input').click()" title="{{ translations.get('flows_import_tooltip', 'Import a flow from a .yaml file') }}"><i class="fas fa-file-import"></i> Import</button>
+      <input type="file" id="flow-import-input" accept=".heflow,.yaml,.yml" style="display:none" onchange="importFlowFromFile(this)">
+    </div>
+
+    <!-- Tabs -->
+    <div id="flows-tabs">
+      <button class="tab-btn active" data-tab="canvas"><i class="fas fa-project-diagram"></i> Canvas</button>
+      <button class="tab-btn" data-tab="yaml"><i class="fas fa-code"></i> YAML</button>
+      <button class="tab-btn" data-tab="timeline"><i class="fas fa-stream"></i> Timeline</button>
+      <button class="tab-btn" data-tab="log"><i class="fas fa-terminal"></i> Log <span id="log-badge" style="display:none;background:var(--flows-success);color:#000;border-radius:999px;padding:0 5px;font-size:.65rem;margin-left:.2rem;"></span></button>
+    </div>
+
+    <!-- Canvas Tab -->
+    <div class="tab-pane active" id="tab-canvas">
+      <div id="canvas-wrap" style="width:100%;height:100%;position:relative;">
+        <!-- ReactFlow mounts here -->
+        <div id="rf-canvas-root" style="width:100%;height:100%;"></div>
+      </div>
+    </div>
+
+    <!-- YAML Tab -->
+    <div class="tab-pane" id="tab-yaml">
+      <div id="yaml-wrap">
+        <div id="yaml-toolbar">
+          <button class="tb-btn" onclick="applyYamlToCanvas()"><i class="fas fa-sync"></i> Sync to Canvas</button>
+          <button class="tb-btn" onclick="formatYaml()"><i class="fas fa-align-left"></i> Format</button>
+          <span id="yaml-validation"></span>
+        </div>
+        <textarea id="yaml-editor"></textarea>
+      </div>
+    </div>
+
+    <!-- Timeline Tab -->
+    <div class="tab-pane" id="tab-timeline">
+      <div id="timeline-wrap">
+        <div class="timeline-empty" id="timeline-empty">Select a flow to see its timeline.</div>
+        <div class="timeline-steps" id="timeline-steps" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Log Tab -->
+    <div class="tab-pane" id="tab-log">
+      <div id="log-wrap">
+        <div id="log-toolbar">
+          <button class="tb-btn" onclick="clearLog()"><i class="fas fa-eraser"></i> Clear</button>
+          <span id="log-status" style="font-size:.72rem;color:var(--flows-muted);margin-left:.5rem;"></span>
+        </div>
+        <div id="log-output">
+          <div class="log-empty">Run a flow to see execution logs here.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /flows-main -->
+</div><!-- /flows-body -->
+
+
+<!-- ── NLP Modal ─────────────────────────────────────────────────── -->
+<div id="nlp-modal-bg" class="modal-bg" onclick="if(event.target===this)closeNlpModal()">
+  <div id="nlp-modal" role="dialog" aria-modal="true" aria-label="Create new flow">
+    <h2><i class="fas fa-magic"></i> Create Flow with AI</h2>
+    <p>Describe your automation in natural language. Hecos will compile it into a visual flow automatically.</p>
+    <input type="text" id="nlp-name-input" placeholder="Flow name (optional, e.g. 🌅 Morning Routine)">
+    <textarea id="nlp-textarea" placeholder="Describe the flow… e.g. Every morning at 7 wake me up, read news, check weather and if it's cold tell me to wear a coat, then send a WhatsApp to my partner…"></textarea>
+    <button id="nlp-voice-btn" onclick="toggleVoiceInput()"><i class="fas fa-microphone"></i> Speak your flow</button>
+    <div id="nlp-compile-progress">
+      <i class="fas fa-cog spinner"></i> <span>Hecos AI is compiling your flow…</span>
+    </div>
+    <div id="nlp-summary-card"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeNlpModal()">Cancel</button>
+      <button class="tb-btn" id="btn-compile" onclick="compileFlow()"><i class="fas fa-cog"></i> Compile</button>
+      <button class="btn-save" id="btn-save-compiled" style="display:none" onclick="saveCompiledFlow()"><i class="fas fa-save"></i> Save & Open</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confirm Modal ───────────────────────────────────────────── -->
+<div id="confirm-modal-bg" class="modal-bg" style="z-index:9999;">
+  <div class="modal-content" style="max-width:400px; text-align:center;">
+    <h2 style="margin-top:0;"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a;"></i> {{ translations.get('flows_confirm_delete_title', 'Conferma') }}</h2>
+    <p id="confirm-modal-text" style="margin:20px 0;">{{ translations.get('flows_confirm_delete_title', 'Conferma') }}?</p>
+    <div class="modal-actions" style="justify-content:center; gap: 15px;">
+      <button class="btn-cancel" onclick="document.getElementById('confirm-modal-bg').style.display='none'">{{ translations.get('flows_confirm_delete_cancel', 'Annulla') }}</button>
+      <button class="btn-save" style="background:#ff4a4a; color:white; border:none;" id="confirm-modal-yes">{{ translations.get('flows_confirm_delete_yes', 'Elimina') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast container ───────────────────────────────────────────── -->
+<div id="flows-toast"></div>
+
+<script>
+window.I18N = {{ translations | tojson | safe }};
+window.t = k => window.I18N[k] || k;
+</script>
+
+<script src="/assets/js/aesthetic_picker/palettes.js?v={{ version }}"></script>
+<script src="/hpm_plugin/flows/web_ui/assets/js/flows_core.js?v={{ version }}"></script>
+<script src="/hpm_plugin/flows/web_ui/assets/js/flows_api.js?v={{ version }}.2"></script>
+<script src="/hpm_plugin/flows/web_ui/assets/js/flows_canvas_shim.js?v={{ version }}"></script>
+<script src="/hpm_plugin/flows/web_ui/assets/js/flows_editor.js?v={{ version }}.2"></script>
+<script src="/hpm_plugin/flows/web_ui/assets/js/flows_logs.js?v={{ version }}.2"></script>
+<script src="/hpm_plugin/flows/web_ui/assets/js/flows_nlp.js?v={{ version }}"></script>
+<!-- HDCS Command Palette (self-contained, no ES modules) -->
+<link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
+<script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
+
+</body>
+</html>

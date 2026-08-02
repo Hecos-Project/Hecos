@@ -12,3 +12,6 @@ class AgentConfig(BaseModel):
     max_iterations: int = 5
     verbose_traces: bool = True
     action_console_enabled: bool = True
+    autonomy_trust_mode: str = "ask"
+    autonomy_max_installs: int = 3
+    autonomy_reflection: str = "daily"

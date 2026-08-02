@@ -128,6 +128,49 @@ def _handle_core_tool(method_name: str, args: dict, call_id: str) -> str | None:
 
 
 
+def _handle_agent_tool(method_name: str, args: dict, call_id: str, module_type: str) -> str | None:
+    """
+    Dispatcher for built-in Agent tools (Module Awareness & Autonomous Agent).
+    module_type can be "MODULE_AWARENESS" or "AUTONOMOUS".
+    """
+    try:
+        import os
+        config_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", "config", "data"))
+        
+        if module_type == "MODULE_AWARENESS":
+            from hecos.core.agent.module_awareness.plugin.main import ModuleAwarenessTools
+            from hecos.core.agent.module_awareness.module_awareness_config.config_manager import ConfigManager as AwarenessConfig
+            aw_config = AwarenessConfig(config_dir)
+            tools = ModuleAwarenessTools(config_manager=aw_config)
+            
+        elif module_type == "AUTONOMOUS":
+            from hecos.core.agent.autonomous_agent.plugin.main import AutonomousAgentTools
+            from hecos.core.agent.autonomous_agent.autonomous_agent_config.config_manager import ConfigManager as AutoConfig
+            auto_config = AutoConfig(config_dir)
+            tools = AutonomousAgentTools(config_manager=auto_config)
+            
+        else:
+            return None
+            
+        if hasattr(tools, method_name):
+            method = getattr(tools, method_name)
+            args_dict = args if isinstance(args, dict) else {}
+            return method(**args_dict)
+        
+        # Also try fully-qualified name (e.g. MODULE_AWARENESS__list_installed)
+        full_method_name = f"{module_type}__{method_name}"
+        if hasattr(tools, full_method_name):
+            method = getattr(tools, full_method_name)
+            args_dict = args if isinstance(args, dict) else {}
+            return method(**args_dict)
+            
+    except Exception as e:
+        logger.error(f"[{module_type}__{method_name}] Error: {e}")
+        return f"Error executing native agent tool: {e}"
+        
+    logger.warning(f"[PROCESSOR] Unknown AGENT tool: '{method_name}' in {module_type}")
+    return None
+
 def process_exchange(user_text, voice_status, sm=None):
     """Manages the entire chain: AI -> Plugin -> Cleaning -> Response.
     NOW REFACTORED TO USE THE AGENTIC LOOP."""
@@ -284,6 +327,14 @@ def extract_and_execute_tools(raw_response, config=None):
             continue
         # ----------------------------------------------------
 
+        # --- NATIVE AGENT TOOLS (Awareness & Autonomy) ---
+        if module_to_call.upper() in ["MODULE_AWARENESS", "AUTONOMOUS"]:
+            result = _handle_agent_tool(method_name, action_or_args, call_id, module_to_call.upper())
+            if result is not None:
+                tool_results.append({"id": call_id, "output": str(result), "tag": module_to_call.upper()})
+            continue
+        # ----------------------------------------------------
+
         plugin_obj = module_loader.get_plugin_module(module_to_call.upper(), legacy=False)
         is_legacy_oop = False
         if not plugin_obj:
@@ -414,6 +465,11 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
         for r in tool_results:
             out = r.get('output', '')
             if not out:
+                continue
+            # Skip internal agent tools (MODULE_AWARENESS, AUTONOMOUS) — 
+            # the LLM already summarized them in natural language above.
+            tag = r.get('tag', '')
+            if tag.upper() in ['MODULE_AWARENESS', 'AUTONOMOUS']:
                 continue
             # If this is an image generation result, extract only the [[IMG:]] tag to show
             img_tags_in_out = _re.findall(r'\[\[IMG:[^\]]+\]\]', out)

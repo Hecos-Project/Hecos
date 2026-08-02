@@ -30,5 +30,10 @@
     "webui_executor_max_read_lines": "Max Lines to Read per Request",
     "webui_executor_max_read_hint": "Limits how many lines the read_file tool can return in a single call.",
     "webui_executor_workspace": "Sandbox Workspace Directory",
-    "webui_executor_workspace_hint": "Directory where Python sandbox scripts are temporarily saved before execution."
+    "webui_executor_workspace_hint": "Directory where Python sandbox scripts are temporarily saved before execution.",
+    "webui_agent_autonomy_title": "Autonomous Capabilities",
+    "webui_agent_autonomy_desc": "Configure how independently Hecos can act, install modules, and schedule tasks.",
+    "webui_agent_trust_mode": "Autonomy Level (Trust Mode)",
+    "webui_agent_max_installs": "Max Auto-Installs per Session",
+    "webui_agent_reflection": "Self-Reflection Schedule"
 }
