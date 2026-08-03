@@ -1,4 +1,4 @@
-﻿"""
+"""
 hecos/core/daemon/launcher.py
 ─────────────────────────────────────────────────────────────────────────────
 Responsible for spawning and terminating the Hecos main process subprocess.
@@ -15,25 +15,44 @@ import subprocess
 _THIS_DIR  = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.normpath(os.path.join(_THIS_DIR, "..", "..", ".."))
 
-
-def get_main_script() -> str:
-    """Returns the absolute path to the Hecos main entry point."""
-    return os.path.join(PROJECT_ROOT, "main.py")
+# Log where child stdout/stderr will be written
+_BOOT_TRACE = os.path.join(PROJECT_ROOT, "hecos", "logs", "hecos_boot_trace.log")
 
 
-def spawn_hecos() -> subprocess.Popen:
+def get_main_cmd(is_web: bool = False) -> list:
+    """Returns the command list to launch Hecos (CLI or WebUI)."""
+    if is_web:
+        # Use -m (module mode) so relative imports inside server.py work correctly.
+        # Running server.py as a direct script would break 'from .routes import ...' etc.
+        return [sys.executable, "-m", "hecos.modules.web_ui.server", "--no-gui"]
+    return [sys.executable, os.path.join(PROJECT_ROOT, "main.py")]
+
+
+def spawn_hecos(is_web: bool = False) -> subprocess.Popen:
     """
     Launches the Hecos main process as a subprocess.
-    Sets HECOS_MONITORED_PROCESS=1 so main.py knows it is running under a Supervisor.
+    Sets HECOS_MONITORED_PROCESS=1 so the child knows it is running under a Supervisor.
+    Redirects stdout+stderr to the boot trace log for visibility.
     Returns the Popen handle.
     """
     env = os.environ.copy()
     env["HECOS_MONITORED_PROCESS"] = "1"
 
+    # Add project root to PYTHONPATH so the child can resolve 'hecos'
+    env["PYTHONPATH"] = PROJECT_ROOT + os.pathsep + env.get("PYTHONPATH", "")
+
+    os.makedirs(os.path.dirname(_BOOT_TRACE), exist_ok=True)
+    boot_log = open(_BOOT_TRACE, "a", encoding="utf-8", errors="replace")
+
+    cmd = get_main_cmd(is_web)
+    print(f"[DAEMON LAUNCHER] Spawning: {' '.join(cmd)}", flush=True)
+
     return subprocess.Popen(
-        [sys.executable, get_main_script()],
+        cmd,
         cwd=PROJECT_ROOT,
-        env=env
+        env=env,
+        stdout=boot_log,
+        stderr=boot_log,
     )
 
 
@@ -47,3 +66,4 @@ def terminate_process(process: subprocess.Popen) -> None:
             process.kill()
         except Exception:
             pass
+

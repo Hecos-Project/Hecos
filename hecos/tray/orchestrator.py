@@ -57,16 +57,28 @@ def start_hecos():
     python_exe = get_platform_python()
     
     try:
+        from hecos.tray.config import load_settings
+        settings = load_settings()
+        use_daemon = settings.get("use_daemon", False)
+
         boot_log_path = os.path.join(_ROOT, "hecos", "logs", "hecos_boot_trace.log")
         boot_log = open(boot_log_path, "a", encoding="utf-8")
         # Add a visual separator for new boot attempts
         boot_log.write(f"\n{'='*50}\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] ORCHESTRATOR: Spawning Hecos backend...\n{'='*50}\n")
         boot_log.flush()
 
+        cmd = [python_exe]
+        if use_daemon:
+            cmd.extend(["-m", "hecos.core.daemon", "--web"])
+            print("[ORCHESTRATOR] Spawning under new Watchdog Daemon...")
+        else:
+            cmd.extend(["-m", "hecos.modules.web_ui.server", "--no-gui"])
+            print("[ORCHESTRATOR] Spawning standalone...")
+
         if sys.platform == "win32":
             # creationflags=0x08000000 means CREATE_NO_WINDOW (runs silently in background)
             _hecos_process = subprocess.Popen(
-                [python_exe, "-m", "hecos.modules.web_ui.server", "--no-gui"],
+                cmd,
                 cwd=_ROOT,
                 stdout=boot_log,
                 stderr=subprocess.STDOUT,
@@ -75,7 +87,7 @@ def start_hecos():
         else:
             # On Linux/Mac, just run it cleanly in the background
             _hecos_process = subprocess.Popen(
-                [python_exe, "-m", "hecos.modules.web_ui.server", "--no-gui"],
+                cmd,
                 cwd=_ROOT,
                 stdout=boot_log,
                 stderr=subprocess.STDOUT
@@ -150,6 +162,13 @@ def is_hecos_running() -> bool:
 
 def restart_hecos():
     """Stops the existing process and spawns a new one."""
+    try:
+        boot_log_path = os.path.join(_ROOT, "hecos", "logs", "hecos_boot_trace.log")
+        with open(boot_log_path, "a", encoding="utf-8") as f:
+            f.write(f"\n{'='*50}\n[{time.strftime('%Y-%m-%d %H:%M:%S')}] 🔄 ORCHESTRATOR: RESTART TRIGGERED FROM TRAY\n{'='*50}\n")
+    except Exception:
+        pass
+
     stop_hecos()
     
     # Wait up to 5 seconds for the port to release
@@ -168,13 +187,25 @@ def restart_hecos():
 
 def start_hecos_with_daemon():
     """
-    Spawns the Hecos Supervisor (daemon.py) as a background subprocess.
-    The Supervisor will then launch and monitor main.py automatically.
+    Spawns the Hecos Supervisor (hecos.core.daemon) as a background subprocess.
+    Stops any existing standalone Hecos first to avoid port/lock conflicts.
     """
     global _daemon_process
     if is_daemon_running():
         print("[ORCHESTRATOR] Daemon is already running.")
         return
+
+    # Stop the existing standalone Hecos before the daemon spawns a new one
+    if is_hecos_running():
+        print("[ORCHESTRATOR] Stopping standalone Hecos before starting Daemon...")
+        stop_hecos()
+        for _ in range(10):
+            if not is_hecos_online():
+                break
+            time.sleep(0.5)
+        if is_hecos_online():
+            _kill_by_port()
+            time.sleep(1)
 
     python_exe = get_platform_python()
     try:
@@ -186,9 +217,11 @@ def start_hecos_with_daemon():
         env = os.environ.copy()
         env["HECOS_MONITORED_PROCESS"] = "1"
 
+        cmd = [python_exe, "-m", "hecos.core.daemon", "--web"]
+
         if sys.platform == "win32":
             _daemon_process = subprocess.Popen(
-                [python_exe, "-m", "hecos.core.daemon"],
+                cmd,
                 cwd=_ROOT,
                 stdout=boot_log,
                 stderr=subprocess.STDOUT,
@@ -197,7 +230,7 @@ def start_hecos_with_daemon():
             )
         else:
             _daemon_process = subprocess.Popen(
-                [python_exe, "-m", "hecos.core.daemon"],
+                cmd,
                 cwd=_ROOT,
                 stdout=boot_log,
                 stderr=subprocess.STDOUT,

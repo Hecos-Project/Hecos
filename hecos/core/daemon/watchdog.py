@@ -1,4 +1,4 @@
-﻿"""
+"""
 hecos/core/daemon/watchdog.py
 ─────────────────────────────────────────────────────────────────────────────
 Core watchdog loop. Monitors the Hecos process, counts crash events, and
@@ -10,6 +10,14 @@ import sys
 import time
 
 from .launcher import spawn_hecos, terminate_process
+
+# Force UTF-8 on Windows to avoid cp1252 UnicodeEncodeError when stdout is redirected
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 
 # Watchdog policy constants
 MAX_FAST_RESTARTS   = 5   # max crashes allowed within FAST_WINDOW seconds
@@ -26,7 +34,8 @@ except ImportError:
     logger = _L()
 
 
-def run_watchdog() -> None:
+
+def run_watchdog(is_web: bool = False) -> None:
     """
     Main watchdog loop.
     Starts Hecos, waits for it to exit, and decides whether to restart or quit.
@@ -41,7 +50,7 @@ def run_watchdog() -> None:
         logger.info(f"[DAEMON] Starting Hecos process (Attempt #{restart_count + 1})...")
 
         try:
-            process = spawn_hecos()
+            process = spawn_hecos(is_web=is_web)
             process.wait()                  # blocks here — 0% CPU while Hecos runs
             exit_code = process.returncode
 
@@ -50,7 +59,7 @@ def run_watchdog() -> None:
                 sys.exit(0)
 
             # ── Crash detected ────────────────────────────────────────────────
-            logger.warning(f"[DAEMON] ⚠️ WARNING: Hecos crashed with exit code {exit_code}.")
+            logger.warning(f"[DAEMON] WARNING: Hecos crashed with exit code {exit_code}.")
 
             now = time.time()
             if now - last_restart_time < FAST_WINDOW_SECONDS:
@@ -62,7 +71,7 @@ def run_watchdog() -> None:
 
             if restart_count > MAX_FAST_RESTARTS:
                 logger.error(
-                    f"[DAEMON] 🚨 {restart_count} crashes in {FAST_WINDOW_SECONDS}s. "
+                    f"[DAEMON] CRITICAL: {restart_count} crashes in {FAST_WINDOW_SECONDS}s. "
                     "System is unstable. Forced shutdown."
                 )
                 sys.exit(1)

@@ -7,6 +7,6 @@
   "browser_headless": false,
   "auto_launch_chrome_for_ai": true,
   "show_technical_menu": true,
-  "use_daemon": false,
+  "use_daemon": true,
   "full_color_logs": true
 }

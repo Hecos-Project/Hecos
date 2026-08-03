@@ -132,6 +132,7 @@ def start_and_monitor(script_to_run):
     # Inietta la root nel PYTHONPATH del sottoprocesso per garantire la risoluzione di 'hecos'
     env = os.environ.copy()
     env["PYTHONPATH"] = _ROOT + os.pathsep + env.get("PYTHONPATH", "")
+    env["HECOS_MONITORED_PROCESS"] = "1"
 
     # Monitor .py files in hecos/ folder
     hecos_folder = os.path.join(_ROOT, "hecos")

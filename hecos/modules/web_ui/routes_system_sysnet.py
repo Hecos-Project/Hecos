@@ -25,6 +25,7 @@ def init_system_sysnet_routes(app, logger):
             def do_reboot():
                 import os, winsound
                 time.sleep(1.0)
+                logger.info("\n" + "="*50 + "\n 🔄 USER REQUESTED SYSTEM RESTART \n" + "="*50 + "\n")
                 print(f"\n\033[91m[WEB_UI] Riavvio del sistema in corso...\033[0m")
                 winsound.Beep(600, 150)
                 winsound.Beep(400, 150)
