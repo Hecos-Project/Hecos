@@ -227,14 +227,15 @@ def init_users_routes(app, logger):
             skipped  = 0
             for u in users:
                 username = u.get("username", "").strip()
-                if not username or username == "admin":
+                if not username:
                     skipped += 1
                     continue
 
                 existing = auth_mgr.get_user_by_username(username)
 
                 if existing:
-                    # Always update profile fields for existing users
+                    # Always update profile fields for existing users (including admin)
+                    # Passwords are NEVER in the export so no security risk
                     profile_fields = {k: v for k, v in u.items()
                                       if k not in ("id", "username", "password_hash", "avatar_path")}
                     auth_mgr.update_profile(username, profile_fields)

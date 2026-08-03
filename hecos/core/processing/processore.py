@@ -347,7 +347,12 @@ def extract_and_execute_tools(raw_response, config=None):
         
         if plugin_obj:
             logger.debug("PROCESSOR", f"Analyzing plugin {module_to_call}: legacy_oop={is_legacy_oop}, has_tools={hasattr(plugin_obj, 'tools')}, has_execute={hasattr(plugin_obj, 'execute')}")
-            
+        else:
+            logger.error(f"[PROCESSOR] Module '{module_to_call}' not found for tool execution. Check tag registration!")
+            tool_results.append({"id": call_id, "output": f"Error: Plugin module '{module_to_call}' not found or disabled.", "tag": module_to_call.upper()})
+            continue
+
+        if plugin_obj:
             if is_legacy_oop and (hasattr(plugin_obj, "process_tag") or hasattr(plugin_obj, "elabora_tag")):
                 method_to_call = "process_tag" if hasattr(plugin_obj, "process_tag") else "elabora_tag"
                 logger.info(f"[SYSTEM] {translator.t('executing_module', module=module_to_call.upper())}")

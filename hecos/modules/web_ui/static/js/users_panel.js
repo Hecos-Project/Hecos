@@ -349,38 +349,124 @@ async function usersRestoreFile(event) {
     if (!file) return;
     event.target.value = '';
 
-    // merge = update existing profiles only (safe)
-    // replace = also create missing users with temp password
-    let mode = 'merge';
-    const msg = 'Restore Users\n\nOK = Merge (update existing profiles, skip unknown users)\nCancel = Replace (also create missing users with temp password \'hecos\')';
-    if (!confirm(msg)) {
-        mode = 'replace';
-        if (!confirm('⚠️ New users will be created with temporary password "hecos". Continue?')) return;
-    }
+    // Create a beautiful Hecos-style modal on the fly
+    const modalHtml = `
+    <div id="users-restore-modal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(5px);z-index:99999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
+        <div style="background:var(--bg-secondary, #1e1e1e);border:1px solid var(--border-color, #333);border-radius:12px;padding:24px;width:400px;max-width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.5);transform:translateY(-20px);transition:transform 0.2s;font-family:inherit;">
+            <h3 style="margin-top:0;margin-bottom:12px;color:var(--text-primary, #fff);font-size:18px;display:flex;align-items:center;gap:8px;">
+                <span style="font-size:20px;">🔄</span> Ripristino Utenti
+            </h3>
+            <p style="color:var(--text-secondary, #aaa);font-size:14px;line-height:1.5;margin-bottom:20px;">
+                Come vuoi procedere con il ripristino dei dati utente?
+            </p>
+            
+            <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;background:var(--bg-tertiary, #2a2a2a);border-radius:8px;border:1px solid var(--border-color, #333);">
+                    <input type="radio" name="restore_mode" value="merge" checked style="margin-top:2px;">
+                    <div>
+                        <div style="color:var(--text-primary, #fff);font-weight:600;font-size:14px;margin-bottom:4px;">Unione (Merge)</div>
+                        <div style="color:var(--text-secondary, #aaa);font-size:12px;">Aggiorna solo i profili esistenti. Salta gli utenti sconosciuti o non presenti nel sistema. (Consigliato)</div>
+                    </div>
+                </label>
+                
+                <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;background:var(--bg-tertiary, #2a2a2a);border-radius:8px;border:1px solid var(--border-color, #333);">
+                    <input type="radio" name="restore_mode" value="replace" style="margin-top:2px;">
+                    <div>
+                        <div style="color:var(--text-primary, #fff);font-weight:600;font-size:14px;margin-bottom:4px;">Sostituzione (Replace)</div>
+                        <div style="color:var(--text-secondary, #aaa);font-size:12px;">Aggiorna gli esistenti E crea eventuali utenti mancanti (con password temporanea 'hecos').</div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="display:flex;justify-content:flex-end;gap:12px;">
+                <button id="urm-cancel" style="padding:8px 16px;background:transparent;color:var(--text-secondary, #aaa);border:1px solid var(--border-color, #333);border-radius:6px;cursor:pointer;font-weight:500;transition:0.2s;">Annulla</button>
+                <button id="urm-confirm" style="padding:8px 16px;background:var(--accent-color, #0078d4);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:0.2s;">Procedi</button>
+            </div>
+        </div>
+    </div>`;
 
-    try {
-        const text    = await file.text();
-        const payload = JSON.parse(text);
-        const users   = payload.users || payload;
-        if (!Array.isArray(users)) throw new Error('Invalid file: users list missing.');
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = document.getElementById('users-restore-modal');
+    const modalBox = modal.querySelector('div');
+    
+    // Animate in
+    requestAnimationFrame(() => {
+        modal.style.opacity = '1';
+        modalBox.style.transform = 'translateY(0)';
+    });
 
-        if (window.showToast) showToast(`Restoring ${users.length} users...`, 'info');
+    const cleanup = () => {
+        modal.style.opacity = '0';
+        modalBox.style.transform = 'translateY(-20px)';
+        setTimeout(() => modal.remove(), 200);
+    };
 
-        const res = await fetch('/hecos/api/users/restore', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ users, mode })
-        });
-        const result = await res.json();
-        if (!result.ok) throw new Error(result.error || 'Restore failed');
+    document.getElementById('urm-cancel').onclick = cleanup;
+    
+    document.getElementById('urm-confirm').onclick = async () => {
+        const mode = document.querySelector('input[name="restore_mode"]:checked').value;
+        cleanup();
 
-        const msg2 = `Restored ${result.imported} profiles` + (result.skipped ? ` (${result.skipped} skipped)` : '');
-        if (window.showToast) showToast(msg2, 'success');
-        loadUsersData();
-        loadMyProfile();
-    } catch(err) {
-        console.error('[USERS] Restore error:', err);
-        if (window.showToast) showToast(err.message, 'error');
-        else alert('Error: ' + err.message);
-    }
+        try {
+            const text    = await file.text();
+            
+            // Handle edge case if user picks a ZIP file by mistake
+            if (text.startsWith('PK')) {
+                throw new Error("Hai selezionato un pacchetto ZIP (Backup Globale). Per ripristinare il backup globale, usa il pannello 'Backups' nella Dashboard, non questa pagina.");
+            }
+
+            let payload;
+            try {
+                payload = JSON.parse(text);
+            } catch (e) {
+                throw new Error("Il file non è un file JSON valido per l'importazione degli utenti.");
+            }
+            
+            const users   = payload.users || payload;
+            if (!Array.isArray(users)) throw new Error('File JSON non valido: lista utenti mancante.');
+
+            if (window.showToast) showToast(`Ripristino di ${users.length} utenti in corso...`, 'info');
+
+            const res = await fetch('/hecos/api/users/restore', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ users, mode })
+            });
+            const result = await res.json();
+            if (!result.ok) throw new Error(result.error || 'Ripristino fallito');
+
+            const msg2 = `Ripristinati ${result.imported} profili` + (result.skipped ? ` (${result.skipped} saltati)` : '');
+            if (window.showToast) showToast(msg2, 'success');
+            loadUsersData();
+            loadMyProfile();
+        } catch(err) {
+            console.error('[USERS] Restore error:', err);
+            
+            // Create error modal
+            const errHtml = `
+            <div id="users-err-modal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(5px);z-index:99999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
+                <div style="background:var(--bg-secondary, #1e1e1e);border:1px solid #ff4444;border-radius:12px;padding:24px;width:400px;max-width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.5);transform:translateY(-20px);transition:transform 0.2s;">
+                    <h3 style="margin-top:0;margin-bottom:12px;color:#ff4444;font-size:18px;display:flex;align-items:center;gap:8px;">
+                        ⚠️ Errore di Ripristino
+                    </h3>
+                    <p style="color:var(--text-primary, #fff);font-size:14px;line-height:1.5;margin-bottom:20px;">
+                        ${err.message}
+                    </p>
+                    <div style="display:flex;justify-content:flex-end;">
+                        <button id="urm-err-close" style="padding:8px 16px;background:transparent;color:var(--text-secondary, #aaa);border:1px solid var(--border-color, #333);border-radius:6px;cursor:pointer;">Chiudi</button>
+                    </div>
+                </div>
+            </div>`;
+            document.body.insertAdjacentHTML('beforeend', errHtml);
+            const errModal = document.getElementById('users-err-modal');
+            requestAnimationFrame(() => {
+                errModal.style.opacity = '1';
+                errModal.querySelector('div').style.transform = 'translateY(0)';
+            });
+            document.getElementById('urm-err-close').onclick = () => {
+                errModal.style.opacity = '0';
+                setTimeout(() => errModal.remove(), 200);
+            };
+        }
+    };
 }

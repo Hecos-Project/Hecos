@@ -280,5 +280,18 @@
                 "requires_args": false
             }
         ]
+    },
+    "USERS": {
+        "description": "User information and preferences management (LLM Tools)",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
     }
 }
