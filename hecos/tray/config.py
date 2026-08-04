@@ -4,14 +4,26 @@ import json
 import sys
 
 # Determine the root directory of the project
+# NOTE: In Nuitka --onefile mode, sys.executable points to the TEMP extraction folder.
+# __file__ correctly points to the actual .exe location (e.g. C:\Hecos\bin\hecos_tray.exe).
+# We use __file__ to detect compiled mode and derive _ROOT from the exe location.
 _fallback_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-_exe_root = os.path.dirname(os.path.dirname(sys.executable))
 
-# If running as the Nuitka compiled binary (C:\Hecos\bin\hecos_tray.exe), _exe_root will be C:\Hecos
-if ("hecos_tray.exe" in sys.executable.lower() or "hecos_dashboard.exe" in sys.executable.lower()) and os.path.exists(os.path.join(_exe_root, "hecos", "assets")):
-    _ROOT = _exe_root
+_is_compiled = getattr(sys, 'frozen', False) or (
+    "__file__" in dir() and
+    (os.path.abspath(__file__).lower().endswith("hecos_tray.exe") or
+     os.path.abspath(__file__).lower().endswith("hecos_dashboard.exe"))
+)
+
+if _is_compiled:
+    # __file__ == C:\Hecos\bin\hecos_tray.exe → two levels up = C:\Hecos
+    _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # Validate: if hecos/assets doesn't exist there, fall back to Python path
+    if not os.path.exists(os.path.join(_ROOT, "hecos", "assets")):
+        _ROOT = _fallback_root
 else:
     _ROOT = _fallback_root
+
 
 # === Configuration ===
 HECOS_PORT = 7070

@@ -57,29 +57,37 @@ def run_dashboard():
         print("[Tray Dashboard] Already running.")
         sys.exit(0)
 
-    # ── Native Splash Screen (Isolated Process) ────────────────────────────────
-    logo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png"))
-    
-    splash_code = f"""
-import tkinter as tk
-splash = tk.Tk()
-splash.overrideredirect(True)
-splash.configure(bg='#111318')
-sw, sh = splash.winfo_screenwidth(), splash.winfo_screenheight()
-splash.geometry(f'280x280+{{(sw-280)//2}}+{{(sh-280)//2}}')
-try:
-    img = tk.PhotoImage(file=r'{logo_path}')
-    img = img.subsample(max(1, img.width() // 150))
-    lbl = tk.Label(splash, image=img, bg='#111318')
-    lbl.image = img
-    lbl.pack(expand=True, pady=(30, 0))
-except Exception:
-    pass
-tk.Label(splash, text='Loading Hecos Dashboard...', fg='#00b4d8', bg='#111318', font=('Helvetica', 11, 'bold')).pack(pady=20)
-splash.mainloop()
-"""
-    # Launch splash in a separate process to avoid tkinter dual-root freezing issues
-    splash_proc = subprocess.Popen([sys.executable, "-c", splash_code], creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
+    # ── Native Splash Screen (thread-based, safe for compiled binary) ──────────
+    from hecos.tray.config import _ROOT
+    logo_path = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png")
+
+    import tkinter as tk
+    _splash_root = [None]
+
+    def _show_splash():
+        try:
+            splash = tk.Tk()
+            splash.overrideredirect(True)
+            splash.configure(bg='#111318')
+            sw, sh = splash.winfo_screenwidth(), splash.winfo_screenheight()
+            splash.geometry(f'280x280+{(sw-280)//2}+{(sh-280)//2}')
+            try:
+                img = tk.PhotoImage(file=logo_path)
+                img = img.subsample(max(1, img.width() // 150))
+                lbl = tk.Label(splash, image=img, bg='#111318')
+                lbl.image = img
+                lbl.pack(expand=True, pady=(30, 0))
+            except Exception:
+                pass
+            tk.Label(splash, text='Loading Hecos Dashboard...', fg='#00b4d8',
+                     bg='#111318', font=('Helvetica', 11, 'bold')).pack(pady=20)
+            _splash_root[0] = splash
+            splash.mainloop()
+        except Exception:
+            pass
+
+    splash_thread = threading.Thread(target=_show_splash, daemon=True)
+    splash_thread.start()
 
     # ── Theme ──────────────────────────────────────────────────────────────────
     apply_theme()
@@ -107,8 +115,7 @@ splash.mainloop()
         pass
 
     try:
-        ico = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "assets",
-                                           "Hecos_Logo_SQR_NBG_LogoOnly.ico"))
+        ico = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.ico")
         if os.path.exists(ico):
             app.iconbitmap(ico)
     except Exception:
@@ -191,7 +198,29 @@ splash.mainloop()
         _active_tab["key"] = key
         _highlight(key)
         _clear_content()
-        TAB_BUILDERS[key]()
+        try:
+            TAB_BUILDERS[key]()
+        except Exception as _tab_err:
+            import traceback
+            _err_msg = traceback.format_exc()
+            # Log to file for debugging compiled binary
+            try:
+                _log_path = os.path.join(_ROOT, "hecos", "logs", "dashboard_tab_error.log")
+                with open(_log_path, "a", encoding="utf-8") as _f:
+                    _f.write(f"\n[TAB ERROR: {key}]\n{_err_msg}\n")
+            except Exception:
+                pass
+            # Show error in UI so it's visible
+            import customtkinter as _ctk
+            _err_frame = _ctk.CTkFrame(content_frame, fg_color="transparent")
+            _err_frame.pack(fill="both", expand=True, padx=30, pady=30)
+            _content_widgets.append(_err_frame)
+            _ctk.CTkLabel(_err_frame, text=f"⚠ Error loading tab '{key}':",
+                          font=_ctk.CTkFont(size=13, weight="bold"),
+                          text_color="#ef4444").pack(anchor="w", pady=(0, 8))
+            _ctk.CTkLabel(_err_frame, text=str(_tab_err),
+                          font=_ctk.CTkFont(size=11),
+                          text_color="#aaaaaa", wraplength=600, justify="left").pack(anchor="w")
 
     def _switch_tab(key):
         if _active_tab["key"] == key:
@@ -238,10 +267,13 @@ splash.mainloop()
     # ── Kill splash as soon as the window is ready ─────────────────────────────
     def _kill_splash():
         try:
-            splash_proc.terminate()
+            splash = _splash_root[0]
+            if splash:
+                splash.quit()
+                splash.destroy()
         except Exception:
             pass
-    app.after(200, _kill_splash)  # 200ms after mainloop starts — window is visible
+    app.after(300, _kill_splash)
 
     # ── Main Loop ──────────────────────────────────────────────────────────────
     try:
@@ -253,6 +285,8 @@ splash.mainloop()
     finally:
         # Ensure splash is dead even if mainloop exits unexpectedly
         try:
-            splash_proc.terminate()
+            splash = _splash_root[0]
+            if splash:
+                splash.quit()
         except Exception:
             pass
