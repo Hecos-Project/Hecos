@@ -1,12 +1,11 @@
 import os
-import json
-
 import sys
+import tomllib
+import tomli_w
 
-# Determine the root directory of the project
-# NOTE: In Nuitka --onefile mode, sys.executable points to the TEMP extraction folder.
-# __file__ correctly points to the actual .exe location (e.g. C:\Hecos\bin\hecos_tray.exe).
-# We use __file__ to detect compiled mode and derive _ROOT from the exe location.
+# ─────────────────────────────────────────────────────────────
+#  Root detection
+# ─────────────────────────────────────────────────────────────
 _fallback_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 _is_compiled = getattr(sys, 'frozen', False) or (
@@ -16,45 +15,91 @@ _is_compiled = getattr(sys, 'frozen', False) or (
 )
 
 if _is_compiled:
-    # __file__ == C:\Hecos\bin\hecos_tray.exe → two levels up = C:\Hecos
     _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # Validate: if hecos/assets doesn't exist there, fall back to Python path
     if not os.path.exists(os.path.join(_ROOT, "hecos", "assets")):
         _ROOT = _fallback_root
 else:
     _ROOT = _fallback_root
 
+# Tray config directory — all tray-specific config lives here
+_TRAY_DIR = os.path.join(_ROOT, "hecos", "tray")
 
-# === Configuration ===
-HECOS_PORT = 7070
-STATUS_POLL_INTERVAL = 3  # seconds (reduced for better responsiveness)
-LOGO_PATH = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly_Mask_001.ico")
-VERSION_FILE = os.path.join(_ROOT, "hecos", "core", "version")
-SYSTEM_YAML = os.path.join(_ROOT, "hecos", "config", "data", "system.yaml")
-PLUGINS_YAML = os.path.join(_ROOT, "hecos", "config", "data", "plugins.yaml")
-SETTINGS_FILE = os.path.join(_ROOT, "hecos_tray_settings.json")
+# ─────────────────────────────────────────────────────────────
+#  Path constants
+# ─────────────────────────────────────────────────────────────
+HECOS_PORT          = 7070
+STATUS_POLL_INTERVAL = 3  # seconds
+
+LOGO_PATH           = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly_Mask_001.ico")
+VERSION_FILE        = os.path.join(_ROOT, "hecos", "core", "version")
+SYSTEM_YAML         = os.path.join(_ROOT, "hecos", "config", "data", "system.yaml")
+PLUGINS_YAML        = os.path.join(_ROOT, "hecos", "config", "data", "plugins.yaml")
+
+# Settings and update sources now live alongside the tray source code
+SETTINGS_FILE       = os.path.join(_TRAY_DIR, "tray_settings.toml")
+UPDATE_SOURCES_FILE = os.path.join(_TRAY_DIR, "update_sources.toml")
 
 
 # ─────────────────────────────────────────────────────────────
-#  Settings persistence
+#  Settings — default values
 # ─────────────────────────────────────────────────────────────
-
-_DEFAULTS = {
-    "start_hecos_on_launch": True,    # launch Hecos python subprocess at tray startup
-    "autoopen_webui": True,           # open the browser automatically when service comes online
-    "autoopen_ai_browser": False,     # open Playwright Chromium browser when service comes online
-    "auto_launch_chrome_for_ai": False,  # auto-launch Chrome in AI-Ready (CDP) mode on startup
-    "browser_startup_url": "http://localhost:7070",  # URL to open automatically when AI browser launches
-    "browser_headless": False,        # True = AI browser runs invisibly in background
-    "show_technical_menu": True,      # show Advanced/Debug submenu in tray
-    "use_daemon": False,              # launch Hecos under the Supervisor watchdog (auto-restart on crash)
+_DEFAULTS: dict = {
+    "start_hecos_on_launch":    False,  # launch Hecos python subprocess at tray startup
+    "autoopen_webui":           False,  # open the browser automatically when service comes online
+    "autoopen_ai_browser":      False,  # open Playwright Chromium browser when service comes online
+    "auto_launch_chrome_for_ai": False, # auto-launch Chrome in AI-Ready (CDP) mode on startup
+    "browser_startup_url":      "http://localhost:7070",
+    "browser_headless":         False,  # True = AI browser runs invisibly in background
+    "show_technical_menu":      True,   # show Advanced/Debug submenu in tray
+    "use_daemon":               False,  # launch Hecos under the Supervisor watchdog
+    "full_color_logs":          False,
 }
+
+_TOML_HEADER = """\
+# Hecos Tray — Settings
+# ─────────────────────────────────────────────────────────────
+# This file is read on every tray startup.
+# You can edit it with any text editor while the tray is closed.
+# Boolean values: true / false   |   Strings must be in "quotes"
+# ─────────────────────────────────────────────────────────────
+
+"""
+
+_TOML_COMMENTS = {
+    "start_hecos_on_launch":    "# Launch the Hecos core service automatically when the tray starts",
+    "autoopen_webui":           "# Open the web browser to the Hecos UI when the service comes online",
+    "autoopen_ai_browser":      "# Open the built-in AI browser (Playwright) on service startup",
+    "auto_launch_chrome_for_ai":"# Launch Chrome in CDP/AI-ready mode on tray startup",
+    "browser_startup_url":      "# URL to open when the browser or WebUI auto-launch",
+    "browser_headless":         "# true = AI browser runs hidden in the background",
+    "show_technical_menu":      "# Show the Advanced / Debug submenu in the tray icon menu",
+    "use_daemon":               "# Run Hecos under the Supervisor watchdog (auto-restart on crash)",
+    "full_color_logs":          "# Enable full ANSI colour output in the live-log tab",
+}
+
+
+def _write_toml_settings(data: dict, path: str):
+    """Write settings to a TOML file, preserving human-readable comments."""
+    lines = [_TOML_HEADER]
+    for key, value in data.items():
+        comment = _TOML_COMMENTS.get(key, "")
+        if comment:
+            lines.append(comment)
+        if isinstance(value, bool):
+            lines.append(f"{key} = {str(value).lower()}")
+        elif isinstance(value, str):
+            lines.append(f'{key} = "{value}"')
+        else:
+            lines.append(f"{key} = {value}")
+        lines.append("")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+
 
 def load_settings() -> dict:
     try:
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        # Fill any missing keys with defaults
+        with open(SETTINGS_FILE, "rb") as f:
+            data = tomllib.load(f)
         for k, v in _DEFAULTS.items():
             data.setdefault(k, v)
         return data
@@ -64,28 +109,27 @@ def load_settings() -> dict:
 
 def save_settings(settings: dict):
     try:
-        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-            json.dump(settings, f, indent=2)
+        os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
+        _write_toml_settings(settings, SETTINGS_FILE)
     except Exception as e:
         print(f"[TRAY] Could not save settings: {e}")
 
 
 # ─────────────────────────────────────────────────────────────
-#  WebUI config (reads/writes plugins.yaml WEB_UI section)
+#  WebUI config  (reads / writes plugins.yaml  WEB_UI section)
 # ─────────────────────────────────────────────────────────────
-
 _WEBUI_DEFAULTS = {
-    "port": 7070,
-    "api_port": 5000,
-    "https_enabled": False,
-    "force_login": True,
+    "port":             7070,
+    "api_port":         5000,
+    "https_enabled":    False,
+    "force_login":      True,
     "auto_open_browser": False,
-    "cert_file": "",
-    "key_file": "",
+    "cert_file":        "",
+    "key_file":         "",
 }
 
+
 def get_webui_config() -> dict:
-    """Read the WEB_UI section from plugins.yaml."""
     try:
         import yaml
         with open(PLUGINS_YAML, "r", encoding="utf-8") as f:
@@ -100,19 +144,14 @@ def get_webui_config() -> dict:
 
 
 def save_webui_config(cfg: dict):
-    """Write the WEB_UI section back to plugins.yaml, preserving the rest."""
     try:
         import yaml
         with open(PLUGINS_YAML, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
-        if "plugins" not in data:
-            data["plugins"] = {}
-        if "WEB_UI" not in data["plugins"]:
-            data["plugins"]["WEB_UI"] = {}
+        data.setdefault("plugins", {}).setdefault("WEB_UI", {})
         for k, v in cfg.items():
             data["plugins"]["WEB_UI"][k] = v
         with open(PLUGINS_YAML, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
     except Exception as e:
         print(f"[TRAY] Could not save WebUI config: {e}")
-

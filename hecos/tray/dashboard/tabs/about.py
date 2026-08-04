@@ -32,7 +32,7 @@ def build_about(ctx):
     
     ctk.CTkFrame(card, height=1, fg_color=BORDER).pack(fill="x", padx=20, pady=14)
 
-    info_row(card, "Tray Version",      get_tray_version())
+    info_row(card, "Project Status",    "Runtime Alpha")
     info_row(card, "Creator",           "Antonio Meloni")
     info_row(card, "Port",              str(HECOS_PORT))
 

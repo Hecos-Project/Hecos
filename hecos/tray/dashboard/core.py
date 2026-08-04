@@ -19,6 +19,7 @@ from hecos.tray.dashboard.tabs.logs import build_logs
 from hecos.tray.dashboard.tabs.processes import build_processes
 from hecos.tray.dashboard.tabs.about import build_about
 from hecos.tray.dashboard.tabs.webui import build_webui
+from hecos.tray.dashboard.tabs.update import build_update
 
 _proc = None
 
@@ -57,7 +58,22 @@ def run_dashboard():
         print("[Tray Dashboard] Already running.")
         sys.exit(0)
 
-    # ── Native Splash Screen (thread-based, safe for compiled binary) ──────────
+    # ── App Window ─────────────────────────────────────────────────────────────
+    try:
+        _tray_ver_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "version")
+        _tray_ver = open(_tray_ver_file, encoding="utf-8").read().strip()
+    except Exception:
+        _tray_ver = "1.0.1"
+
+    app = ctk.CTk()
+    app.withdraw()  # Hide main window while loading
+    app.title(f"Hecos Tray Dashboard v{_tray_ver}")
+    app.geometry("780x540")
+    app.minsize(680, 480)
+    app.configure(fg_color=BG)
+    app.resizable(True, True)
+    
+    # ── Native Splash Screen (Toplevel, safe for Tkinter) ──────────
     from hecos.tray.config import _ROOT
     logo_path = os.path.join(_ROOT, "hecos", "assets", "Hecos_Logo_SQR_NBG_LogoOnly.png")
 
@@ -66,7 +82,7 @@ def run_dashboard():
 
     def _show_splash():
         try:
-            splash = tk.Tk()
+            splash = tk.Toplevel(app)
             splash.overrideredirect(True)
             splash.configure(bg='#111318')
             sw, sh = splash.winfo_screenwidth(), splash.winfo_screenheight()
@@ -82,29 +98,14 @@ def run_dashboard():
             tk.Label(splash, text='Loading Hecos Dashboard...', fg='#00b4d8',
                      bg='#111318', font=('Helvetica', 11, 'bold')).pack(pady=20)
             _splash_root[0] = splash
-            splash.mainloop()
+            app.update()
         except Exception:
             pass
 
-    splash_thread = threading.Thread(target=_show_splash, daemon=True)
-    splash_thread.start()
+    _show_splash()
 
     # ── Theme ──────────────────────────────────────────────────────────────────
     apply_theme()
-
-    # ── App Window ─────────────────────────────────────────────────────────────
-    try:
-        _tray_ver_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "version")
-        _tray_ver = open(_tray_ver_file, encoding="utf-8").read().strip()
-    except Exception:
-        _tray_ver = "1.0.1"
-
-    app = ctk.CTk()
-    app.title(f"Hecos Tray Dashboard v{_tray_ver}")
-    app.geometry("780x540")
-    app.minsize(680, 480)
-    app.configure(fg_color=BG)
-    app.resizable(True, True)
 
     # Icon and AppUserModelID for Taskbar
     try:
@@ -150,6 +151,7 @@ def run_dashboard():
         ("mobile",   "📱  Remote Access"),
         ("logs",     "📋  Live Logs"),
         ("processes","🛠  Processes"),
+        ("update",   "🔄  Updates"),
         ("about",    "ℹ  About"),
     ]
 
@@ -190,6 +192,7 @@ def run_dashboard():
         "mobile":    lambda: build_mobile(ctx),
         "logs":      lambda: build_logs(ctx),
         "processes": lambda: build_processes(ctx),
+        "update":    lambda: build_update(ctx),
         "about":     lambda: build_about(ctx),
     }
 
@@ -241,6 +244,10 @@ def run_dashboard():
         _btn.pack(fill="x", pady=2, ipady=4)
         _nav_btns[_key] = _btn
 
+    # ── Keyboard Navigation ────────────────────────────────────────────────────
+    from hecos.tray.dashboard.keyboard import KeyboardNavigator
+    _navigator = KeyboardNavigator(app, sidebar, content_frame)
+
     # ── Sidebar bottom buttons ─────────────────────────────────────────────────
     bottom = ctk.CTkFrame(sidebar, fg_color="transparent")
     bottom.pack(fill="x", padx=8, pady=(0, 12))
@@ -269,10 +276,11 @@ def run_dashboard():
         try:
             splash = _splash_root[0]
             if splash:
-                splash.quit()
                 splash.destroy()
         except Exception:
             pass
+        finally:
+            app.deiconify()
     app.after(300, _kill_splash)
 
     # ── Main Loop ──────────────────────────────────────────────────────────────
@@ -282,11 +290,10 @@ def run_dashboard():
         pass
     except Exception as e:
         print(f"[ControlCenter] UI crashed: {e}")
-    finally:
         # Ensure splash is dead even if mainloop exits unexpectedly
         try:
             splash = _splash_root[0]
             if splash:
-                splash.quit()
+                splash.destroy()
         except Exception:
             pass
