@@ -386,3 +386,57 @@ def build_update(ctx):
         fg_color=BORDER, text_color=TEXT, hover_color=ACCENT,
         command=run_install, **btn_cfg
     ).grid(row=0, column=2, padx=(6, 0), sticky="ew")
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # SECTION 4: Uninstall
+    # ══════════════════════════════════════════════════════════════════════════
+    uni_card = _card(container, "🗑  Uninstall & Cleanup")
+
+    ctk.CTkLabel(
+        uni_card,
+        text=(
+            "Use these tools to remove Hecos from your system."
+        ),
+        font=ctk.CTkFont(size=11), text_color=MUTED, justify="left"
+    ).pack(anchor="w", padx=16, pady=(0, 10))
+
+    uni_status = ctk.CTkLabel(uni_card, text="", text_color=MUTED, font=ctk.CTkFont(size=11))
+    uni_status.pack(anchor="w", padx=16)
+
+    def run_uninstall(mode):
+        uni_status.configure(text=f"Opening Uninstaller ({mode})…", text_color=MUTED)
+        uninstaller = os.path.join(_ROOT, "scripts", "windows", "setup", "UNINSTALL_HECOS_WIN.bat")
+        if not os.path.exists(uninstaller):
+            uni_status.configure(text="⚠ Uninstaller script not found.", text_color=RED)
+            return
+        try:
+            subprocess.Popen(
+                ["cmd.exe", "/c", uninstaller, mode],
+                creationflags=0x00000010,
+                cwd=_ROOT
+            )
+        except Exception as e:
+            uni_status.configure(text=f"⚠ {e}", text_color=RED)
+
+    uni_buttons = ctk.CTkFrame(uni_card, fg_color="transparent")
+    uni_buttons.pack(fill="x", padx=16, pady=(6, 14))
+    uni_buttons.columnconfigure((0, 1, 2), weight=1, uniform="ubtn")
+
+    ctk.CTkButton(
+        uni_buttons, text="Remove Core",
+        fg_color=BORDER, text_color=TEXT, hover_color="#8b5cf6",
+        command=lambda: run_uninstall("--core"), **btn_cfg
+    ).grid(row=0, column=0, padx=(0, 6), sticky="ew")
+
+    ctk.CTkButton(
+        uni_buttons, text="Remove Core + Deps",
+        fg_color=BORDER, text_color=TEXT, hover_color="#f97316",
+        command=lambda: run_uninstall("--deps"), **btn_cfg
+    ).grid(row=0, column=1, padx=6, sticky="ew")
+
+    ctk.CTkButton(
+        uni_buttons, text="🔴 Full Nuke",
+        fg_color="transparent", border_width=1, border_color=RED,
+        text_color=RED, hover_color="#3a1a1a",
+        command=lambda: run_uninstall("--full"), **btn_cfg
+    ).grid(row=0, column=2, padx=(6, 0), sticky="ew")
