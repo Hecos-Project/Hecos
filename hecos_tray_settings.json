@@ -1,12 +1,11 @@
 {
-  "service_enabled": true,
+  "start_hecos_on_launch": false,
   "autoopen_webui": false,
-  "start_hecos_on_launch": true,
   "autoopen_ai_browser": false,
+  "auto_launch_chrome_for_ai": false,
   "browser_startup_url": "http://localhost:7070",
   "browser_headless": false,
-  "auto_launch_chrome_for_ai": true,
   "show_technical_menu": true,
-  "use_daemon": true,
-  "full_color_logs": true
+  "use_daemon": false,
+  "full_color_logs": false
 }

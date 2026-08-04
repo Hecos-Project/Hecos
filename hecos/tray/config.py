@@ -1,7 +1,17 @@
 import os
 import json
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys
+
+# Determine the root directory of the project
+_fallback_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_exe_root = os.path.dirname(os.path.dirname(sys.executable))
+
+# If running as the Nuitka compiled binary (C:\Hecos\bin\hecos_tray.exe), _exe_root will be C:\Hecos
+if ("hecos_tray.exe" in sys.executable.lower() or "hecos_dashboard.exe" in sys.executable.lower()) and os.path.exists(os.path.join(_exe_root, "hecos", "assets")):
+    _ROOT = _exe_root
+else:
+    _ROOT = _fallback_root
 
 # === Configuration ===
 HECOS_PORT = 7070
@@ -46,3 +56,51 @@ def save_settings(settings: dict):
             json.dump(settings, f, indent=2)
     except Exception as e:
         print(f"[TRAY] Could not save settings: {e}")
+
+
+# ─────────────────────────────────────────────────────────────
+#  WebUI config (reads/writes plugins.yaml WEB_UI section)
+# ─────────────────────────────────────────────────────────────
+
+_WEBUI_DEFAULTS = {
+    "port": 7070,
+    "api_port": 5000,
+    "https_enabled": False,
+    "force_login": True,
+    "auto_open_browser": False,
+    "cert_file": "",
+    "key_file": "",
+}
+
+def get_webui_config() -> dict:
+    """Read the WEB_UI section from plugins.yaml."""
+    try:
+        import yaml
+        with open(PLUGINS_YAML, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        webui = data.get("plugins", {}).get("WEB_UI", {})
+        result = dict(_WEBUI_DEFAULTS)
+        result.update({k: v for k, v in webui.items() if k in _WEBUI_DEFAULTS})
+        return result
+    except Exception as e:
+        print(f"[TRAY] Could not read WebUI config: {e}")
+        return dict(_WEBUI_DEFAULTS)
+
+
+def save_webui_config(cfg: dict):
+    """Write the WEB_UI section back to plugins.yaml, preserving the rest."""
+    try:
+        import yaml
+        with open(PLUGINS_YAML, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if "plugins" not in data:
+            data["plugins"] = {}
+        if "WEB_UI" not in data["plugins"]:
+            data["plugins"]["WEB_UI"] = {}
+        for k, v in cfg.items():
+            data["plugins"]["WEB_UI"][k] = v
+        with open(PLUGINS_YAML, "w", encoding="utf-8") as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
+    except Exception as e:
+        print(f"[TRAY] Could not save WebUI config: {e}")
+

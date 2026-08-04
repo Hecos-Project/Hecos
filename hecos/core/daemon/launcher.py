@@ -21,11 +21,15 @@ _BOOT_TRACE = os.path.join(PROJECT_ROOT, "hecos", "logs", "hecos_boot_trace.log"
 
 def get_main_cmd(is_web: bool = False) -> list:
     """Returns the command list to launch Hecos (CLI or WebUI)."""
+    # Ensure the child runs as hecos_main.exe, not whatever the daemon was called
+    from hecos.core.system.process_naming import get_named_executable
+    exe = get_named_executable("hecos_main")
+    
     if is_web:
         # Use -m (module mode) so relative imports inside server.py work correctly.
         # Running server.py as a direct script would break 'from .routes import ...' etc.
-        return [sys.executable, "-m", "hecos.modules.web_ui.server", "--no-gui"]
-    return [sys.executable, os.path.join(PROJECT_ROOT, "main.py")]
+        return [exe, "-m", "hecos.modules.web_ui.server", "--no-gui"]
+    return [exe, os.path.join(PROJECT_ROOT, "main.py")]
 
 
 def spawn_hecos(is_web: bool = False) -> subprocess.Popen:

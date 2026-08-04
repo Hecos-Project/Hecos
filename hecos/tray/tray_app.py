@@ -13,6 +13,16 @@ import json
 import time
 import threading
 import webbrowser
+import subprocess
+
+# Relaunch as hecos_tray.exe if running generically
+if sys.platform == "win32" and not getattr(sys, 'compiled', False):
+    if not sys.executable.lower().endswith("hecos_tray.exe"):
+        from hecos.tray.system_utils import get_named_executable
+        tray_exe = get_named_executable("hecos_tray")
+        if tray_exe != sys.executable:
+            subprocess.Popen([tray_exe, "-m", "hecos.tray.tray_app"])
+            sys.exit(0)
 
 from hecos.tray.config import SETTINGS_FILE, _DEFAULTS, _ROOT, load_settings, save_settings
 from hecos.tray.browser_manager import launch_ai_ready_browser, is_ai_ready_browser_running, set_cdp_alive, _get_cdp_port
@@ -139,6 +149,12 @@ def run_tray():
     log_file = os.path.join(log_dir, "hecos_tray.log")
     try:
         sys.stdout = sys.stderr = open(log_file, "a", encoding="utf-8")
+        def handle_exception(exc_type, exc_value, exc_traceback):
+            import traceback
+            print("Uncaught exception:")
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
+            sys.stdout.flush()
+        sys.excepthook = handle_exception
     except Exception:
         pass
 
@@ -177,11 +193,15 @@ def run_tray():
 
     print("[TRAY] Hecos tray icon started.")
     try:
-        icon.run()
+        try:
+            icon.run()
+        except Exception as e:
+            import traceback
+            print(f"[CRASH] pystray icon.run() failed: {e}")
+            traceback.print_exc()
     finally:
         # Guarantee that if tray drops unexpectedly, we don't leave zombie subprocesses
         stop_hecos()
-        pass
 
 
 if __name__ == "__main__":

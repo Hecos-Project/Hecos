@@ -1,5 +1,7 @@
 import sys
 import subprocess
+import os
+import shutil
 from hecos.tray.config import VERSION_FILE, _ROOT
 
 # Global list of Popen objects for tracked console windows
@@ -21,11 +23,22 @@ def play_beep(freq: int, duration_ms: int):
             print('\a', end='', flush=True)
 
 def get_version():
+    # Try tray-specific version first (hecos/tray/version)
+    _this_dir = os.path.dirname(os.path.abspath(__file__))
+    _tray_ver_file = os.path.join(_this_dir, "version")
+    try:
+        with open(_tray_ver_file, "r", encoding="utf-8-sig") as f:
+            v = f.read().strip()
+            if v:
+                return v
+    except Exception:
+        pass
+    # Fallback: read from hecos/core/version
     try:
         with open(VERSION_FILE, "r", encoding="utf-8-sig") as f:
             return f.read().strip()
     except Exception:
-        return "0.19.2"
+        return "1.0.1"
 
 def launch_console(script_path: str):
     """Launches a script in a new tracked console window."""
@@ -153,3 +166,18 @@ def kill_duplicate_hecos_processes():
                 killed += 1
             except: pass
     return killed
+
+def get_named_executable(name: str, base_exe: str = None) -> str:
+    if base_exe is None:
+        base_exe = sys.executable
+    if not name.lower().endswith(".exe"):
+        name += ".exe"
+    base_dir = os.path.dirname(base_exe)
+    target_path = os.path.join(base_dir, name)
+    if os.path.exists(target_path):
+        return target_path
+    try:
+        shutil.copy2(base_exe, target_path)
+        return target_path
+    except Exception:
+        return base_exe

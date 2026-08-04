@@ -11,13 +11,19 @@ from hecos.tray.utils import is_hecos_online
 _hecos_process = None
 _daemon_process = None  # Separate reference when running under the Supervisor
 
-def get_platform_python():
+def get_platform_python(is_daemon=False):
     """Returns the correct python executable depending on the environment."""
+    import shutil
+    base_exe = sys.executable
+    if "hecos_tray.exe" in base_exe.lower() or "hecos_dashboard.exe" in base_exe.lower():
+        base_exe = shutil.which("python") or base_exe
+
     if sys.platform == "win32":
-        from hecos.core.system.process_naming import get_named_executable
-        return get_named_executable("hecos_main")
+        from hecos.tray.system_utils import get_named_executable
+        name = "hecos_daemon" if is_daemon else "hecos_main"
+        return get_named_executable(name, base_exe=base_exe)
     # If running from a venv, sys.executable points to the venv python
-    return sys.executable
+    return base_exe
 
 def _wait_and_respawn(proc):
     """Waits for the subprocess to finish. If exit code is 42, respawns it."""
@@ -54,13 +60,13 @@ def start_hecos():
         print(f"[ORCHESTRATOR] Error: Could not find {server_script}")
         return
 
-    python_exe = get_platform_python()
-    
     try:
         from hecos.tray.config import load_settings
         settings = load_settings()
         use_daemon = settings.get("use_daemon", False)
 
+        python_exe = get_platform_python(is_daemon=use_daemon)
+        
         boot_log_path = os.path.join(_ROOT, "hecos", "logs", "hecos_boot_trace.log")
         boot_log = open(boot_log_path, "a", encoding="utf-8")
         # Add a visual separator for new boot attempts

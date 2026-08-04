@@ -354,33 +354,33 @@ async function usersRestoreFile(event) {
     <div id="users-restore-modal" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(5px);z-index:99999;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;">
         <div style="background:var(--bg-secondary, #1e1e1e);border:1px solid var(--border-color, #333);border-radius:12px;padding:24px;width:400px;max-width:90%;box-shadow:0 10px 30px rgba(0,0,0,0.5);transform:translateY(-20px);transition:transform 0.2s;font-family:inherit;">
             <h3 style="margin-top:0;margin-bottom:12px;color:var(--text-primary, #fff);font-size:18px;display:flex;align-items:center;gap:8px;">
-                <span style="font-size:20px;">🔄</span> Ripristino Utenti
+                <span style="font-size:20px;">🔄</span> Restore Users
             </h3>
             <p style="color:var(--text-secondary, #aaa);font-size:14px;line-height:1.5;margin-bottom:20px;">
-                Come vuoi procedere con il ripristino dei dati utente?
+                How do you want to proceed with the user data restore?
             </p>
             
             <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
                 <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;background:var(--bg-tertiary, #2a2a2a);border-radius:8px;border:1px solid var(--border-color, #333);">
                     <input type="radio" name="restore_mode" value="merge" checked style="margin-top:2px;">
                     <div>
-                        <div style="color:var(--text-primary, #fff);font-weight:600;font-size:14px;margin-bottom:4px;">Unione (Merge)</div>
-                        <div style="color:var(--text-secondary, #aaa);font-size:12px;">Aggiorna solo i profili esistenti. Salta gli utenti sconosciuti o non presenti nel sistema. (Consigliato)</div>
+                        <div style="color:var(--text-primary, #fff);font-weight:600;font-size:14px;margin-bottom:4px;">Merge</div>
+                        <div style="color:var(--text-secondary, #aaa);font-size:12px;">Update existing profiles only. Skip unknown users not present in the system. (Recommended)</div>
                     </div>
                 </label>
                 
                 <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:12px;background:var(--bg-tertiary, #2a2a2a);border-radius:8px;border:1px solid var(--border-color, #333);">
                     <input type="radio" name="restore_mode" value="replace" style="margin-top:2px;">
                     <div>
-                        <div style="color:var(--text-primary, #fff);font-weight:600;font-size:14px;margin-bottom:4px;">Sostituzione (Replace)</div>
-                        <div style="color:var(--text-secondary, #aaa);font-size:12px;">Aggiorna gli esistenti E crea eventuali utenti mancanti (con password temporanea 'hecos').</div>
+                        <div style="color:var(--text-primary, #fff);font-weight:600;font-size:14px;margin-bottom:4px;">Replace</div>
+                        <div style="color:var(--text-secondary, #aaa);font-size:12px;">Update existing profiles AND create missing users (with temporary password 'hecos').</div>
                     </div>
                 </label>
             </div>
             
             <div style="display:flex;justify-content:flex-end;gap:12px;">
-                <button id="urm-cancel" style="padding:8px 16px;background:transparent;color:var(--text-secondary, #aaa);border:1px solid var(--border-color, #333);border-radius:6px;cursor:pointer;font-weight:500;transition:0.2s;">Annulla</button>
-                <button id="urm-confirm" style="padding:8px 16px;background:var(--accent-color, #0078d4);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:0.2s;">Procedi</button>
+                <button id="urm-cancel" style="padding:8px 16px;background:transparent;color:var(--text-secondary, #aaa);border:1px solid var(--border-color, #333);border-radius:6px;cursor:pointer;font-weight:500;transition:0.2s;">Cancel</button>
+                <button id="urm-confirm" style="padding:8px 16px;background:var(--accent-color, #0078d4);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:500;transition:0.2s;">Proceed</button>
             </div>
         </div>
     </div>`;
@@ -422,10 +422,10 @@ async function usersRestoreFile(event) {
                 throw new Error("Il file non è un file JSON valido per l'importazione degli utenti.");
             }
             
-            const users   = payload.users || payload;
-            if (!Array.isArray(users)) throw new Error('File JSON non valido: lista utenti mancante.');
+            const users = payload.users || payload.data || (Array.isArray(payload) ? payload : null);
+            if (!Array.isArray(users)) throw new Error(`Invalid JSON file: user list not found. Found keys: ${Object.keys(payload).join(', ')}`);
 
-            if (window.showToast) showToast(`Ripristino di ${users.length} utenti in corso...`, 'info');
+            if (window.showToast) showToast(`Restoring ${users.length} users...`, 'info');
 
             const res = await fetch('/hecos/api/users/restore', {
                 method:  'POST',
