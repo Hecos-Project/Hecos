@@ -46,14 +46,8 @@ taskkill /F /IM hecos_tray.exe >nul 2>&1
 taskkill /F /IM hecos_dashboard.exe >nul 2>&1
 taskkill /F /IM python.exe /FI "WINDOWTITLE eq Hecos*" >nul 2>&1
 
-echo [*] Rimozione autostart dal registro...
-reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "HecosTray" /f >nul 2>&1
-
 echo [*] Rimuovendo il Core Hecos...
 if exist "%ROOT_DIR%\hecos" rmdir /s /q "%ROOT_DIR%\hecos"
-if exist "%ROOT_DIR%\hecos_tray_settings.json" del /q "%ROOT_DIR%\hecos_tray_settings.json"
-if exist "%ROOT_DIR%\hecos_update_sources.json" del /q "%ROOT_DIR%\hecos_update_sources.json"
-if exist "%ROOT_DIR%\scripts\windows\run\HECOS_TRAY_WIN.bat" del /q "%ROOT_DIR%\scripts\windows\run\HECOS_TRAY_WIN.bat"
 
 if "%MODE%"=="--core" goto :DONE
 
