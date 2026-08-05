@@ -5,7 +5,7 @@
 
 > 💡 Hecos è il tuo compagno quotidiano. Puoi parlargli di quello che vuoi; può controllare il tuo computer, inviare messaggi e, grazie alla sua funzione nativa di cambio personalità, può fare da maggiordomo, da amico o persino da partner virtuale. Hai bisogno che funzioni senza l'IA? Nessun problema — Hecos esegue potenti flussi di automazione, risponde ai comandi diretti e gestisce il tuo calendario, i promemoria, le piattaforme di messaggistica, gli account email e le liste in completa autonomia.
 
-🛠️ **Sotto il cofano (Per sviluppatori e utenti avanzati):** Ora in fase di avanzamento verso la `v0.36.0 Alpha`, Hecos si è evoluto in una piattaforma modulare distribuita a tutti gli effetti. L'ecosistema presenta un'architettura **Client-Server disaccoppiata** composta da un Core CLI headless (il server backend) e un'interfaccia WebUI avanzata (il client). Il sistema sincronizza una vista Chat interattiva, una **Control Room** in tempo reale alimentata da widget di telemetria live e **Hecos Flows**—un motore di automazione visiva che esegue flussi di lavoro con o senza il carico computazionale degli LLM.
+🛠️ **Sotto il cofano (Per sviluppatori e utenti avanzati):** Hecos si è evoluto in una piattaforma modulare distribuita a tutti gli effetti. L'ecosistema presenta un'architettura **Client-Server disaccoppiata** composta da un Core CLI headless (il server backend) e un'interfaccia WebUI avanzata (il client). Il sistema sincronizza una vista Chat interattiva, una **Control Room** in tempo reale alimentata da widget di telemetria live e **Hecos Flows**—un motore di automazione visiva che esegue flussi di lavoro con o senza il carico computazionale degli LLM.
 
 Le utilità infrastrutturali includono un pannello di configurazione unificato (**Central Hub**), un file manager remoto sicuro, un sistema di routing proxy integrato, **Comandi Diretti** granulari, pipeline vocali dinamiche con VAD e un motore di backup centralizzato. Le estensioni sono gestite nativamente tramite l'**Hecos Package Manager (HPM)**, prelevando componenti `.hpkg` indipendenti direttamente dal nuovo **Hecos Store** integrato.
 
@@ -34,6 +34,19 @@ Hecos è un sistema moderno che offre due modi per interagire:
 2. **WebUI (Il Volto)**: Questa è l'interfaccia moderna che apri nel tuo browser. Qui puoi chattare visivamente, inviare immagini e configurare ogni dettaglio con una semplice e intuitiva interfaccia grafica.
 
 ![Hecos - Helping Companion System](https://github.com/Hecos-Project/Hecos-Assets/blob/main////001_HecosPortal_001.png?raw=true)
+
+3. **Hecos Tray (Il Telecomando) - Novità!**: Hecos può funzionare tranquillamente solo con la Console e la WebUI, ma la **Tray** è diventata quasi indispensabile per avere il pieno controllo del sistema.
+È un'icona leggerissima che risiede in basso a destra, accanto all'orologio del tuo computer.
+Facendo doppio clic sull'icona della Tray, si aprirà la fantastica **Tray Dashboard**, un pannello di controllo ultra-veloce (si apre in meno di un secondo) che ti permette di:
+- Verificare se Hecos è acceso o spento (e accenderlo con un clic)
+- **Installare e aggiornare il Core** direttamente dalla scheda Updates (puoi scaricare solo la Tray e lei farà tutto il resto: è il metodo più semplice e completo!)
+- Leggere i **Log in tempo reale** senza dover aprire la WebUI
+- Vedere i **Processi** di Hecos attivi in background
+- Avviare rapidamente il Browser o accedere da Mobile
+
+Pensa alla Tray come a un "telecomando universale": Hecos è la vera e propria "intelligenza" nel motore (Core), mentre la Tray è lo strumentino che tieni sempre a portata di mano per gestirlo comodamente!
+
+![Hecos Tray](https://github.com/Hecos-Project/Hecos-Assets/blob/main/Hecos_Tray_Dashboard_31.png?raw=true)
 
 ## 🏛️ I Cinque Pilastri della WebUI
 La WebUI di Hecos è elegantemente suddivisa in cinque aree principali, ciascuna con uno scopo specifico:

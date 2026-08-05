@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.45.0 (Runtime Alpha)
+# Hecos - Version 0.48.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.45.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
+> **Runtime Alpha Status**: Hecos is currently in `v0.48.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution[cite: 1]. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool[cite: 1].
@@ -20,8 +20,9 @@ Built on three core pillars:
 * 🛡️ **Privacy First** — 100% local operation, zero cloud dependency, and a 3-tier privacy architecture[cite: 1].
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness[cite: 1].
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive[cite: 1].
+* 🖱️ **Hecos Tray (New)** — A convenient system tray icon with a blazing-fast Dashboard to manage the engine and view live logs.
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.45.0 brings a dedicated Web Interface (Chat + Config) and full internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.48.0 brings a dedicated Web Interface (Chat + Config) and full internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
 
 ---
 

@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.45.0 (Runtime Alpha)
+# Hecos - Versión 0.48.0 (Runtime Alpha)
 Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Estado Runtime Alpha**: Hecos está actualmente en `v0.45.0`[cite: 1]. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root[cite: 1].
+> **Estado Runtime Alpha**: Hecos está actualmente en `v0.48.0`[cite: 1]. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root[cite: 1].
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local de primera línea diseñado para conectar de manera fluida la tecnología con la vida humana, combinando el razonamiento de IA, la automatización visual y la ejecución directa del sistema[cite: 1]. En lugar de perseguir conceptos abstractos como la soberanía digital, Hecos se enfoca en una única misión pragmática: **mejorar la vida humana**, transformando el hardware local en una herramienta práctica y altamente eficiente para el día a día[cite: 1].
@@ -20,8 +20,9 @@ Basado en tres pilares fundamentales:
 * 🛡️ **Privacidad Primero** — Funcionamiento 100% local, cero dependencia de la nube y arquitectura de privacidad de 3 niveles[cite: 1].
 * ⚡ **Velocidad Extrema** — Arquitectura nativa optimizada y sistema de complementos de alto rendimiento para una respuesta instantánea[cite: 1].
 * 🧊 **Simplicidad Total** — Tablero profesional y diseño modular que hace intuitiva la orquestación de IA avanzada[cite: 1].
+* 🖱️ **Hecos Tray (Novedad)** — Un práctico icono en la bandeja del sistema con un Dashboard ultrarrápido para gestionar el motor y ver logs en tiempo real.
 
-Ahora completamente migrado a una **arquitectura estable Runtime Alpha**, Hecos 0.45.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa[cite: 1]. Desarrollado por **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local[cite: 1].
+Ahora completamente migrado a una **arquitectura estable Runtime Alpha**, Hecos 0.48.0 ofrece una Interfaz Web dedicada (Chat + Configuración) y una Internacionalización completa[cite: 1]. Desarrollado por **LiteLLM**, soporta Ollama, KoboldCpp y los principales proveedores en la nube con streaming en tiempo real y TTS local[cite: 1].
 
 ---
 
