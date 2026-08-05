@@ -1,40 +1,40 @@
-# 🚀 3. Avvio e Controllo Iniziale
+# 🚀 2. Avvio e Controllo Iniziale
 
 All'avvio dell'eseguibile o dello script Python, Hecos inizia la sua sequenza di **Avvio Sincronizzato**.
 
-### Diagnostica Pre-Volo
-Per impostazione predefinita, il sistema controlla:
-- Integrità delle cartelle essenziali (`core/`, `plugins/`, `memory/`, ecc.).
+### Diagnostica Pre-Avvio
+Il sistema verifica di default:
+- Integrità delle cartelle vitali (`core/`, `plugins/`, `memory/`, ecc.).
 - Stato dell'hardware (CPU e RAM entro i limiti).
-- Stato di Audio e Voce.
-- Reattività del Backend IA.
-- Scansione dei Plugin Attivi/Disattivati.
+- Stato dei moduli Audio e Voce.
+- Risposta del server IA (Backend).
+- Scansione dei Plugin attivi/disattivati.
 
 ### ⚡ Bootstrap One-Click
 
 > [!TIP]
-> **Metodo Consigliato — Installa tramite la Tray!** Scarica solo **Hecos Tray** (il pacchetto leggero), avviala e apri la **Tray Dashboard**. Vai alla scheda **Updates** e clicca su *Download / Install Core*: il sistema scarica e configura tutto in automatico. È il metodo più semplice e completo.
+> **Metodo Consigliato — Installa tramite la Tray!** Scarica solo **Hecos Tray** (il pacchetto leggero), avvialo e apri la **Tray Dashboard**. Vai nella scheda **Updates** e clicca su *Manage Core*: il sistema scarica e configura tutto automaticamente. È il metodo più semplice e completo.
 
 > [!IMPORTANT]
-> **Percorso di Installazione**: Consigliamo vivamente di estrarre e installare Hecos in una cartella principale come `C:\Hecos`. Evita di installarlo in `Download`, sul `Desktop` o in percorsi troppo lunghi con spazi, poiché ciò potrebbe causare malfunzionamenti o problemi di avvio dei moduli.
+> **Percorso di Installazione**: Si consiglia vivamente di estrarre e installare Hecos in una cartella radice come `C:\Hecos`. Evita di installarlo in `Download`, `Desktop` o cartelle molto profonde, poiché percorsi lunghi o con caratteri speciali/spazi possono causare problemi di avvio o funzionalità non operative.
 
 > [!WARNING]
-> **Dipendenze di Sistema**: Prima di avviare l'installazione o il setup, assicurati di aver installato i pacchetti redistribuibili (come `VC_redist`) presenti nella cartella **`dependencies`** inclusa nel pacchetto. Se questi file mancano, componenti critici come l'IA e il motore vocale (TTS) non si avvieranno.
+> **Dipendenze di Sistema**: Prima di eseguire la configurazione, assicurarsi di aver installato i redistributable richiesti (come `VC_redist`) presenti nella cartella **`dependencies`**. Se mancano, i componenti principali come i modelli IA e il motore Text-To-Speech non si avvieranno.
 
-**Metodo alternativo (avanzato):** Se hai già scaricato il pacchetto Core, usa gli script di bootstrap universale nella cartella principale:
+**Metodo alternativo (avanzato):** Se hai già il pacchetto Core, usa gli script di avvio universali nella cartella radice:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
-Questi script gestiscono automaticamente il controllo dell'ambiente, le dipendenze e lanciano il **Wizard di Setup**.
+Questi script gestiscono automaticamente la verifica dell'ambiente, le dipendenze e avviano la **Procedura Guidata di Configurazione**.
 
 > [!TIP]
-> **Avvii successivi**: Dopo il setup iniziale, il modo più veloce e comodo per usare Hecos ogni giorno è avviare la **Hecos Tray**. Fai doppio clic sulla sua icona nella barra delle applicazioni per aprire la **Tray Dashboard** e gestire tutto il sistema da un unico pannello.
+> **Avvii Successivi**: Dopo la configurazione iniziale, il modo più veloce e comodo per usare Hecos ogni giorno è avviare la **Hecos Tray**. Fai doppio clic sulla sua icona nella tray di sistema per aprire la **Tray Dashboard** e gestire tutto il sistema da un unico pannello.
 
-### 🧩 Avvio Componenti Singoli
-Per utenti avanzati, i componenti possono essere avviati singolarmente:
+### 🧩 Avvio dei Singoli Componenti
+Per gli utenti avanzati, i componenti possono essere avviati singolarmente:
 - **Interfaccia Web:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)
 - **Console Terminale:** `HECOS_CONSOLE_RUN_WIN.bat` (Win) / `HECOS_CONSOLE_RUN.sh` (Linux)
-- **Bundle Completo:** `main.py` (Avvia Tray + Backend)
+- **Pacchetto Completo:** `main.py` (Avvia Tray + Backend)
 
-### 🏎️ Avvio Rapido
-Puoi attivare l'**Avvio Rapido** nel Pannello di Controllo (**F7**) sotto `SYSTEM` per saltare la diagnostica e ridurre il tempo di avvio a **~0.5 secondi**.
+### 🏎️ Avvio Rapido (Fast Boot)
+Puoi attivare il **Fast Boot** nel Pannello di Controllo (**F7**) sotto `SYSTEM` per saltare il controllo iniziale e ridurre il tempo di caricamento a **~0,5 secondi**.

@@ -1,19 +1,19 @@
-# 🚀 3. Boot & Initial Checks
+# 🚀 2. Boot & Initial Checks
 
-Upon launching the executable or Python script, Hecos begins its **Synchronized Boot** sequence.
+When you launch the executable or the Python script, Hecos begins its **Synchronized Boot** sequence.
 
-### Pre-Flight Diagnostics
+### Pre-Boot Diagnostics
 By default, the system checks:
-- Essential folder integrity (`core/`, `plugins/`, `memory/`, etc.).
+- Integrity of vital folders (`core/`, `plugins/`, `memory/`, etc.).
 - Hardware status (CPU and RAM within limits).
-- Audio and Voice status.
-- AI Backend responsiveness.
-- Active/Disabled Plugin scan.
+- Audio and Voice module status.
+- AI server (Backend) response.
+- Scan of active/inactive Plugins.
 
 ### ⚡ One-Click Bootstrap
 
 > [!TIP]
-> **Recommended Method — Install via the Tray!** Download only **Hecos Tray** (the lightweight package), launch it, and open the **Tray Dashboard**. Go to the **Updates** tab and click *Download / Install Core*: the system downloads and sets up everything automatically. It’s the simplest and most complete method.
+> **Recommended Method — Install via the Tray!** Download only **Hecos Tray** (the lightweight package), launch it, and open the **Tray Dashboard**. Go to the **Updates** tab and click *Manage Core*: the system downloads and sets up everything automatically. It's the simplest and most complete method.
 
 > [!IMPORTANT]
 > **Installation Path**: We strongly recommend extracting and installing Hecos in a root directory like `C:\Hecos`. Avoid installing it in `Downloads`, `Desktop`, or deep folders, as long paths or special characters/spaces in the path can cause startup issues or broken functionalities.
@@ -34,7 +34,7 @@ These scripts automatically handle environment checks, dependencies, and launch 
 For advanced users, components can be started individually:
 - **Web Interface:** `HECOS_WEB_RUN_WIN.bat` (Win) / `hecos_web_run.sh` (Linux)
 - **Terminal Console:** `HECOS_CONSOLE_RUN_WIN.bat` (Win) / `HECOS_CONSOLE_RUN.sh` (Linux)
-- **Full Bundle:** `main.py` (Launches Tray + Backend)
+- **Full Package:** `main.py` (Starts Tray + Backend)
 
 ### 🏎️ Fast Boot
-You can enable **Fast Boot** in the **F7** Control Panel under `SYSTEM` to skip diagnostics and reduce startup time to **~0.5 seconds**.
+You can enable **Fast Boot** in the Control Panel (**F7**) under `SYSTEM` to skip the initial check and reduce load time to **~0.5 seconds**.

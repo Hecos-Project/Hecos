@@ -1,17 +1,17 @@
-# ⚡ 2. Guía de Inicio Rápido
+# ⚡ 1. Guía de Inicio Rápido
 
 ¡Bienvenido a Hecos! Siga estos pasos para configurar el sistema y comenzar a usar la IA en su PC de inmediato.
 
 ## 1. Instalación
 
 > [!TIP]
-> **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Download / Install Core*: el sistema descarga e instala todo automáticamente. Es el método más sencillo, guiado y completo.
+> **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Manage Core*: el sistema descarga e instala todo automáticamente. Es el método más sencillo, guiado y completo.
 
 > [!IMPORTANT]
 > **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
 
 > [!WARNING]
-> **Dependencias del Sistema**: El ecosistema de Hecos ahora incluye un **External Dependency Manager (EDM)** automático. Durante o después de la instalación, si faltan componentes críticos (como `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI te notificará y te permitirá descargarlos e instalarlos en segundo plano con un solo clic. Asséguràte de estar conectado a internet para permitir la descarga.
+> **Dependencias del Sistema**: El ecosistema de Hecos ahora incluye un **External Dependency Manager (EDM)** automático. Durante o después de la instalación, si faltan componentes críticos (como `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI te notificará y te permitirá descargarlos e instalarlos en segundo plano con un solo clic. Asegúrate de estar conectado a internet para permitir la descarga.
 
 **Método alternativo (avanzado):** Si ya descargaste el paquete Core completo, usa los scripts de configuración automática en la carpeta raíz:
 - **Windows:** Haga doble clic en `START_SETUP_HERE_WIN.bat`
@@ -21,24 +21,18 @@ Estos scripts instalarán automáticamente las dependencias e iniciarán el **As
 
 ## 2. El Asistente de Configuración
 
-En el primer inicio, su navegador se abrirá en `http://localhost:7070`. Siga los pasos guiados:
-1. **Bienvenido**: Haga clic en "Comenzar".
-2. **Idioma**: Seleccione su idioma preferido.
-3. **Elija el Cerebro (Proveedor de IA)**: 
-   - **Cloud (En línea)**: Use modelos potentes como Gemini o GPT-4o. Deberá ingresar su **Clave API**.
-   - **Local (Sin conexión)**: Si tiene Ollama o KoboldCpp instalado en su PC, Hecos se conectará automáticamente. **En este caso, ¡NO necesita ninguna clave API!**, todo se ejecuta en su hardware.
-4. **Generación de Imágenes**: Actualmente, la creación de imágenes requiere un proveedor en línea. La forma mejor y más rápida es crear una cuenta gratuita en **HuggingFace**, generar un "Access Token" e ingresarlo en la configuración de Hecos para utilizar modelos avanzados como **FLUX.1-dev**.
-5. **Configurar Personalidad**: Elija el "alma" de su asistente (por ejemplo, Urania o Atlas).
-6. **Terminar**: Haga clic en "Guardar e Iniciar".
+El Asistente de Configuración se abrirá automáticamente en su navegador. Le guiará a través de:
+- La selección de su modelo de IA (local o basado en la nube).
+- La configuración de su idioma y preferencias.
+- La configuración de las claves API que tenga.
 
-## 3. Primer Uso
+## 3. Iniciando Hecos
 
-Ahora que Hecos está activo, así es como puede interactuar:
-- **Chat**: Escriba en la barra de texto en la parte inferior de la WebUI y presione Enter.
-- **Voz**: 
-  - Haga clic en el icono del micrófono en la WebUI.
-  - O use el acceso directo global **Ctrl+Shift+Z** (Windows) para hablar sin siquiera abrir el navegador.
-- **Visión**: Arrastre una imagen al chat para pedirle a Hecos que la describa o la analice.
+Después de la configuración inicial, el flujo de trabajo diario más rápido es:
+- Inicie **Hecos Tray** (doble clic en el `.exe` o ejecute el script de inicio).
+- Doble clic en el icono de la bandeja para abrir la **Tray Dashboard**.
+- Haga clic en **Iniciar Hecos** para poner el sistema en línea.
+- La **WebUI** se abre automáticamente en su navegador (o presione **F11** en cualquier momento).
 
 ## 4. Panel de Control (F7)
 

@@ -1,57 +1,51 @@
-# ⚡ 2. Guida Rapida di Avvio
+# ⚡ 1. Guida Rapida di Avvio
 
-Benvenuto in Hecos! Segui questi passaggi per configurare il sistema e iniziare subito a utilizzare l'IA sul tuo PC.
+Benvenuto in Hecos! Segui questi passi per configurare il sistema e iniziare subito a usare l'IA sul tuo PC.
 
 ## 1. Installazione
 
 > [!TIP]
-> **Metodo Consigliato — Installa tramite la Tray!** Scarica solo **Hecos Tray** (il pacchetto leggero), avviala e apri la **Tray Dashboard**. Vai alla scheda **Updates** e clicca su *Download / Install Core*: il sistema scarica e installa tutto in automatico. È il modo più semplice, guidato e completo.
+> **Metodo Consigliato — Installa tramite la Tray!** Scarica solo **Hecos Tray** (il pacchetto leggero), avvialo e apri la **Tray Dashboard**. Vai nella scheda **Updates** e clicca su *Manage Core*: il sistema scarica e configura tutto automaticamente. È il metodo più semplice, guidato e completo.
 
 > [!IMPORTANT]
-> **Percorso di Installazione**: Consigliamo vivamente di estrarre e installare Hecos in una cartella principale come `C:\Hecos`. Evita di installarlo in `Download`, sul `Desktop` o in percorsi troppo lunghi con spazi, poiché ciò potrebbe causare malfunzionamenti o problemi di avvio dei moduli.
+> **Percorso di Installazione**: Si consiglia vivamente di estrarre e installare Hecos in una cartella radice come `C:\Hecos`. Evita di installarlo in `Download`, `Desktop` o cartelle molto profonde, poiché percorsi lunghi o con caratteri speciali/spazi possono causare problemi di avvio o funzionalità non operative.
 
 > [!WARNING]
-> **Dipendenze di Sistema**: L'ecosistema di Hecos ora include un **External Dependency Manager (EDM)** automatico. Durante o dopo l'installazione, se componenti critici (come `VC_redist`, `Tesseract OCR` o `Node.js`) risultano mancanti, l'interfaccia ti avviserà e potrai scaricarli e installarli in background con un clic. Assicurati di essere connesso a internet per consentire il download.
+> **Dipendenze di Sistema**: L'ecosistema di Hecos include ora un **External Dependency Manager (EDM)** automatico. Durante o dopo l'installazione, se mancano componenti critici (come `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI ti notificherà e ti permetterà di scaricarli e installarli in background con un solo clic. Assicurati di essere connesso a internet per permettere i download.
 
-**Metodo alternativo (avanzato):** Se hai già scaricato il pacchetto Core completo, puoi usare gli script di setup automatico nella cartella principale:
+**Metodo alternativo (avanzato):** Se hai già scaricato il pacchetto Core completo, usa gli script di configurazione automatica nella cartella radice:
 - **Windows:** Fai doppio clic su `START_SETUP_HERE_WIN.bat`
 - **Linux:** Apri un terminale ed esegui `bash START_SETUP_HERE_LINUX.sh`
 
-Questi script installeranno automaticamente le dipendenze e avvieranno la **Procedura Guidata di Setup** nel tuo browser.
+Questi script installeranno automaticamente le dipendenze e avvieranno la **Procedura Guidata di Configurazione** nel browser.
 
-## 2. La Procedura Guidata di Setup
+## 2. La Procedura Guidata di Configurazione
 
-Al primo avvio, il tuo browser si aprirà su `http://localhost:7070`. Segui i passaggi guidati:
-1. **Benvenuto**: Clicca su "Inizia".
-2. **Lingua**: Seleziona la tua lingua preferita.
-3. **Scegli il Cervello (AI Provider)**: 
-   - **Cloud (Online)**: Usa modelli potenti come Gemini o GPT-4o. Dovrai inserire la tua **Chiave API**.
-   - **Locale (Offline)**: Se hai Ollama o KoboldCpp installati sul tuo PC, Hecos si connetterà automaticamente. **In questo caso, NON hai bisogno di alcuna chiave API**, tutto viene eseguito sul tuo hardware!
-4. **Generazione Immagini**: Attualmente, la creazione di immagini richiede un provider online. Il modo migliore e più rapido è creare un account gratuito su **HuggingFace**, generare un "Access Token" e inserirlo nelle impostazioni di Hecos per utilizzare modelli avanzati come **FLUX.1-dev**.
-5. **Configura la Personalità**: Scegli l'"anima" del tuo assistente (es. Urania o Atlas).
-6. **Fine**: Clicca su "Salva e Avvia".
+La Procedura Guidata si aprirà automaticamente nel browser. Ti guiderà attraverso:
+- La selezione del modello IA (locale o cloud).
+- L'impostazione della lingua e delle preferenze.
+- La configurazione delle chiavi API che possiedi.
 
-## 3. Primo Utilizzo
+## 3. Avvio di Hecos
 
-Ora che Hecos è attivo, ecco come interagire:
-- **Chat**: Digita nella barra di testo in fondo alla WebUI e premi Invio.
-- **Voce**: 
-  - Clicca sull'icona del microfono nella WebUI.
-  - Oppure usa la scorciatoia globale **Ctrl+Shift+Z** (Windows) per parlare senza nemmeno aprire il browser.
-- **Visione**: Trascina un'immagine nella chat per chiedere a Hecos di descriverla o analizzarla.
+Dopo la configurazione iniziale, il flusso di lavoro giornaliero più veloce è:
+- Avvia **Hecos Tray** (doppio clic sull'`.exe` o esegui lo script di avvio).
+- Doppio clic sull'icona nella tray per aprire la **Tray Dashboard**.
+- Clicca su **Avvia Hecos** per portare il sistema online.
+- La **WebUI** si apre automaticamente nel browser (o premi **F11** in qualsiasi momento).
 
 ## 4. Pannello di Controllo (F7)
 
-Per modificare i parametri, aggiungere nuove chiavi API o attivare plugin:
-- Premi **F7** sulla tastiera o fai clic sull'icona ingranaggio/logo nella WebUI per aprire l'**Hecos Hub**.
-- Le modifiche vengono salvate all'istante.
+Per modificare i parametri, aggiungere nuove chiavi API o attivare i plugin:
+- Premi **F7** sulla tastiera o clicca sull'icona ingranaggio/logo nella WebUI per aprire l'**Hecos Hub**.
+- Le modifiche vengono salvate istantaneamente.
 
-## 5. Tray — Il tuo telecomando universale
+## 5. Tray — Il Tuo Telecomando Universale
 
-Hecos Tray è molto di più di una semplice icona: è il centro di controllo rapido dell'intero sistema.
-- L'icona risiede accanto all'orologio di Windows: rimane sempre disponibile senza occupare spazio.
+Hecos Tray è molto più di una semplice icona: è il centro di controllo rapido di tutto il sistema.
+- L'icona si trova accanto all'orologio di Windows, sempre disponibile senza occupare spazio.
 - **Doppio clic** sull'icona per aprire la **Tray Dashboard**, da cui puoi avviare/fermare Hecos, leggere i log in tempo reale, vedere i processi attivi e installare aggiornamenti.
 - **Clic destro** per un menu rapido con le azioni più comuni.
 
 ---
-*È tutto pronto! Inizia a esplorare il potenziale del tuo nuovo sistema operativo agentico locale.*
+*Sei pronto! Inizia ad esplorare il potenziale del tuo nuovo livello operativo IA sovrano e locale.*

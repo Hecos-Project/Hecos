@@ -1,4 +1,4 @@
-# 🚀 3. Arranque y Controles Iniciales
+# 🚀 2. Arranque y Controles Iniciales
 
 Al iniciar el ejecutable o el script de Python, Hecos comienza su secuencia de **Arranque Sincronizado**.
 
@@ -13,7 +13,7 @@ Por defecto, el sistema verifica:
 ### ⚡ Bootstrap One-Click
 
 > [!TIP]
-> **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Download / Install Core*: el sistema descarga y configura todo automáticamente. Es el método más sencillo y completo.
+> **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Manage Core*: el sistema descarga y configura todo automáticamente. Es el método más sencillo y completo.
 
 > [!IMPORTANT]
 > **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
