@@ -5,7 +5,7 @@ import subprocess
 import customtkinter as ctk
 
 from hecos.tray.dashboard.theme import TEXT, MUTED, ACCENT, SURFACE, BORDER, RED
-from hecos.tray.update_sources import load_sources, set_active_source, add_source, remove_source, import_source_list
+from hecos.tray.update_sources import load_sources, set_active_source, add_source, remove_source, import_source_list, import_source_list_from_file
 from hecos.tray.updater import check_for_updates, download_asset, apply_update_and_restart, get_tray_version, get_current_version
 from hecos.tray.config import _ROOT
 
@@ -41,92 +41,110 @@ def build_update(ctx):
     # ══════════════════════════════════════════════════════════════════════════
     # SECTION 1: Update Sources
     # ══════════════════════════════════════════════════════════════════════════
-    src_card = _card(container, "🔗  Update Source")
+    src_card = _card(container, "🔗  Update Sources")
 
     sources_data = load_sources()
-    active_src = sources_data.get("active_source", "")
-    source_names = [s["name"] for s in sources_data.get("sources", [])]
-    if not source_names:
-        source_names = ["(No sources configured)"]
+    active_src  = sources_data.get("active_source", "")
+    all_sources  = sources_data.get("sources", [])
+    source_names = [s["name"] for s in all_sources] or ["(No sources configured)"]
 
     src_var = ctk.StringVar(value=active_src if active_src in source_names else source_names[0])
 
+    # ── Log box (shared output area) ──────────────────────────────────────────────
+    import datetime as _dt
+    from hecos.tray.dashboard.theme import BG
+
+    log_frame = ctk.CTkFrame(src_card, fg_color=BG, corner_radius=6)
+    log_frame.pack(fill="x", padx=16, pady=(4, 10))
+    src_log = ctk.CTkTextbox(
+        log_frame,
+        height=110,
+        fg_color=BG, text_color="#a3e4a3",
+        font=ctk.CTkFont(family="Consolas", size=11),
+        wrap="word", state="normal"
+    )
+    src_log.pack(fill="x", padx=4, pady=4)
+
+    _TOML_HINT = (
+        "# TOML source list format:\n"
+        "  [[sources]]\n"
+        '  name = \"Source Name\"\n'
+        '  url  = \"https://api.github.com/repos/.../releases/latest\"\n'
+        '  type = \"github_release\"   # or \"custom_json\"'
+    )
+
+    def _src_log(msg: str):
+        ts = _dt.datetime.now().strftime("%H:%M:%S")
+        src_log.configure(state="normal")
+        src_log.insert("end", f"[{ts}] {msg}\n")
+        src_log.see("end")
+        src_log.configure(state="disabled")
+
+    # Initial hints shown on load
+    active_url = next((s.get("url", "") for s in all_sources if s["name"] == src_var.get()), "")
+    _src_log(f"Active: {src_var.get()}")
+    _src_log(f"URL:    {active_url}")
+    _src_log("")
+    _src_log(_TOML_HINT)
+    src_log.configure(state="disabled")
+
+    # ── Active source dropdown ──────────────────────────────────────────────────
+    ctk.CTkLabel(src_card, text="Active source:", text_color=MUTED,
+                 font=ctk.CTkFont(size=11)).pack(anchor="w", padx=16)
+
     def on_source_change(val):
         set_active_source(val)
+        new_url = next((s.get("url", "") for s in all_sources if s["name"] == val), "")
+        _src_log(f"Switched to: {val}")
+        _src_log(f"URL: {new_url}")
 
     ctk.CTkOptionMenu(
         src_card, values=source_names, variable=src_var, command=on_source_change,
         fg_color=BORDER, button_color=BORDER, button_hover_color=ACCENT,
-        dropdown_fg_color=SURFACE, text_color=TEXT
-    ).pack(fill="x", padx=16, pady=(0, 10))
+        dropdown_fg_color=SURFACE, text_color=TEXT, height=32
+    ).pack(fill="x", padx=16, pady=(4, 8))
 
-    # Remove source button
+    # ── Row of uniform-width action buttons ─────────────────────────────────
+    src_btn_row = ctk.CTkFrame(src_card, fg_color="transparent")
+    src_btn_row.pack(fill="x", padx=16, pady=(0, 8))
+    src_btn_row.columnconfigure((0, 1), weight=1, uniform="sbtn")
+
     def remove_selected():
         name = src_var.get()
         remove_source(name)
+        _src_log(f"Removed source: {name}")
         ctx.switch_tab_fn("update")
 
-    ctk.CTkButton(
-        src_card, text="Remove Selected Source",
-        fg_color="transparent", border_width=1, border_color=RED,
-        text_color=RED, hover_color="#3a1a1a", height=28,
-        command=remove_selected
-    ).pack(anchor="w", padx=16, pady=(0, 4))
-
-    # ── Add custom source expander ──────────────────────────────────────────
     add_panel = ctk.CTkFrame(src_card, fg_color="transparent")
 
     def toggle_add_panel():
         if add_panel.winfo_ismapped():
             add_panel.pack_forget()
-            toggle_btn.configure(text="+ Add Custom Source")
+            add_btn.configure(text="+ Add Source")
         else:
-            add_panel.pack(fill="x", padx=16, pady=(6, 4))
-            toggle_btn.configure(text="▲ Hide")
+            add_panel.pack(fill="x", padx=16, pady=(4, 4))
+            add_btn.configure(text="▲ Hide")
 
-    toggle_btn = ctk.CTkButton(
-        src_card, text="+ Add Custom Source",
-        fg_color="transparent", border_width=1, border_color=BORDER,
-        text_color=MUTED, hover_color=BORDER, height=28,
+    remove_btn = ctk.CTkButton(
+        src_btn_row, text="✕  Remove Selected",
+        fg_color="transparent", border_width=1, border_color=RED,
+        text_color=RED, hover_color="#3a1a1a", height=32,
+        command=remove_selected
+    )
+    remove_btn.grid(row=0, column=0, padx=(0, 6), sticky="ew")
+
+    add_btn = ctk.CTkButton(
+        src_btn_row, text="+ Add Source",
+        fg_color=BORDER, text_color=TEXT, hover_color=ACCENT, height=32,
         command=toggle_add_panel
     )
-    toggle_btn.pack(anchor="w", padx=16, pady=(0, 4))
+    add_btn.grid(row=0, column=1, sticky="ew")
 
-    # ── Import source list from URL (eMule-style) ──────────────────────────
-    import_lbl = ctk.CTkLabel(src_card, text="", text_color=MUTED, font=ctk.CTkFont(size=11))
-
-    import_url_entry = ctk.CTkEntry(
-        src_card,
-        placeholder_text="Import list from URL — paste a .toml source list URL here"
-    )
-    import_url_entry.pack(fill="x", padx=16, pady=(0, 4))
-
-    def do_import():
-        url = import_url_entry.get().strip()
-        if not url:
-            import_lbl.configure(text="⚠ Enter a URL first.", text_color=RED)
-            return
-        import_lbl.configure(text="Downloading source list…", text_color=MUTED)
-        def _task():
-            added, err = import_source_list(url)
-            if err:
-                import_lbl.configure(text=f"⚠ {err}", text_color=RED)
-            else:
-                import_lbl.configure(text=f"✅ {added} new source(s) added.", text_color="#4ade80")
-                ctx.switch_tab_fn("update")
-        threading.Thread(target=_task, daemon=True).start()
-
-    ctk.CTkButton(
-        src_card, text="⬇  Import List",
-        fg_color=BORDER, text_color=TEXT, hover_color=ACCENT, height=28,
-        command=do_import
-    ).pack(anchor="w", padx=16, pady=(0, 4))
-    import_lbl.pack(anchor="w", padx=16, pady=(0, 12))
-
-    name_entry = ctk.CTkEntry(add_panel, placeholder_text="Source name (e.g. My Server)")
+    # ── Add source panel (hidden by default) ────────────────────────────────
+    name_entry = ctk.CTkEntry(add_panel, placeholder_text="Source name  (e.g. My Mirror)")
     name_entry.pack(fill="x", pady=3)
-    url_entry = ctk.CTkEntry(add_panel, placeholder_text="URL — GitHub release API or custom JSON endpoint")
-    url_entry.pack(fill="x", pady=3)
+    url_entry_add = ctk.CTkEntry(add_panel, placeholder_text="URL  (GitHub API or custom JSON)")
+    url_entry_add.pack(fill="x", pady=3)
     type_var = ctk.StringVar(value="github_release")
     ctk.CTkOptionMenu(
         add_panel, values=["github_release", "custom_json"], variable=type_var,
@@ -135,16 +153,85 @@ def build_update(ctx):
     ).pack(fill="x", pady=3)
 
     def save_new_source():
-        n, u, t = name_entry.get().strip(), url_entry.get().strip(), type_var.get()
+        n, u, t = name_entry.get().strip(), url_entry_add.get().strip(), type_var.get()
         if n and u:
             add_source(n, u, t)
+            _src_log(f"Added source: {n}  [{t}]")
+            _src_log(f"URL: {u}")
             ctx.switch_tab_fn("update")
+        else:
+            _src_log("⚠ Please fill in both name and URL.")
 
     ctk.CTkButton(
         add_panel, text="Save Source", fg_color=ACCENT,
-        text_color="#000", hover_color=ACCENT, height=30,
+        text_color="#000", hover_color=ACCENT, height=32,
         command=save_new_source
     ).pack(anchor="e", pady=(6, 0))
+
+    # ── Import row: URL field + Import button + Load File button ──────────────
+    ctk.CTkFrame(src_card, height=1, fg_color=BORDER).pack(fill="x", padx=16, pady=(4, 10))
+
+    ctk.CTkLabel(src_card, text="📥  Import source list:", text_color=MUTED,
+                 font=ctk.CTkFont(size=11)).pack(anchor="w", padx=16)
+
+    import_row = ctk.CTkFrame(src_card, fg_color="transparent")
+    import_row.pack(fill="x", padx=16, pady=(4, 14))
+    import_row.columnconfigure(0, weight=1)
+
+    import_url_entry = ctk.CTkEntry(
+        import_row,
+        placeholder_text="Paste URL (Pastebin, GitHub, etc.)  or  load from file →",
+        height=32
+    )
+    import_url_entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+
+    def do_import():
+        url = import_url_entry.get().strip()
+        if not url:
+            _src_log("⚠ Enter a URL or use the file button.")
+            return
+        _src_log(f"Fetching: {url}")
+        def _task():
+            added, err = import_source_list(url)
+            if err:
+                _src_log(f"⚠ {err}")
+            else:
+                _src_log(f"✅ {added} new source(s) added from URL.")
+                if added > 0:
+                    ctx.switch_tab_fn("update")
+        threading.Thread(target=_task, daemon=True).start()
+
+    ctk.CTkButton(
+        import_row, text="⬇ URL",
+        fg_color=BORDER, text_color=TEXT, hover_color=ACCENT, height=32, width=70,
+        command=do_import
+    ).grid(row=0, column=1, padx=(0, 6))
+
+    def do_import_file():
+        from tkinter import filedialog
+        path = filedialog.askopenfilename(
+            title="Select Hecos Sources List (.toml)",
+            filetypes=[("TOML files", "*.toml"), ("All files", "*.*")],
+            initialdir=os.path.join(_ROOT, "hecos", "tray")
+        )
+        if not path:
+            return
+        _src_log(f"Loading file: {os.path.basename(path)}")
+        def _task():
+            added, err = import_source_list_from_file(path)
+            if err:
+                _src_log(f"⚠ {err}")
+            else:
+                _src_log(f"✅ {added} new source(s) added from file.")
+                if added > 0:
+                    ctx.switch_tab_fn("update")
+        threading.Thread(target=_task, daemon=True).start()
+
+    ctk.CTkButton(
+        import_row, text="📂 File",
+        fg_color=BORDER, text_color=TEXT, hover_color=ACCENT, height=32, width=70,
+        command=do_import_file
+    ).grid(row=0, column=2)
 
     # ══════════════════════════════════════════════════════════════════════════
     # SECTION 2: Check & Download Updates

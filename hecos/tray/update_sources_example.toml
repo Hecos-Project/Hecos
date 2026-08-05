@@ -17,7 +17,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-active_source = "Hecos Community Mirror"
+active_source = "Hecos Official"
 
 [[sources]]
 name = "Hecos Official"

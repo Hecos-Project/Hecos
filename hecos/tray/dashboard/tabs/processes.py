@@ -23,31 +23,55 @@ def build_processes(ctx):
     status_lbl = ctk.CTkLabel(top_bar, text="Scanning processes...", fg_color="transparent", font=ctk.CTkFont(size=12, weight="bold"))
     status_lbl.pack(side="left")
 
-    def on_kill_all():
-        import tkinter as tk
-        from tkinter import messagebox
-        if tk.messagebox.askyesno("Confirm", "Kill all Hecos background processes?"):
-            killed = kill_all_hecos_processes()
-            tk.messagebox.showinfo("Result", f"Killed {killed} processes.")
-            ctx.rebuild_tab("processes")
-
-    def on_kill_dupes():
-        import tkinter as tk
-        from tkinter import messagebox
-        killed = kill_duplicate_hecos_processes()
-        tk.messagebox.showinfo("Result", f"Killed {killed} duplicate processes.")
-        ctx.rebuild_tab("processes")
-
-    btn_dupes = ctk.CTkButton(top_bar, text="Kill Duplicates", fg_color=AMBER, text_color="#000", hover_color="#d97706", width=110, command=on_kill_dupes)
+    btn_dupes = ctk.CTkButton(top_bar, text="Kill Duplicates", fg_color=AMBER, text_color="#000", hover_color="#d97706", width=110)
     btn_dupes.pack(side="right", padx=(10,0))
-    btn_all = ctk.CTkButton(top_bar, text="Kill All", fg_color=RED, text_color="#fff", hover_color="#b91c1c", width=100, command=on_kill_all)
+    btn_all = ctk.CTkButton(top_bar, text="Kill All", fg_color=RED, text_color="#fff", hover_color="#b91c1c", width=100)
     btn_all.pack(side="right")
 
     txt_frame = ctk.CTkFrame(card, fg_color="transparent", corner_radius=0)
-    txt_frame.pack(fill="both", expand=True, padx=10, pady=15)
+    txt_frame.pack(fill="both", expand=True, padx=10, pady=(15, 5))
     
     textbox = ctk.CTkTextbox(txt_frame, fg_color=BG, text_color=TEXT, font=ctk.CTkFont("Consolas", size=13), wrap="none")
     textbox.pack(fill="both", expand=True)
+
+    # ── Logs & Debug Box ──────────────────────────────────────────────────────
+    import datetime as _dt
+    log_frame = ctk.CTkFrame(card, fg_color=BG, corner_radius=6)
+    log_frame.pack(fill="x", padx=10, pady=(5, 15))
+    
+    log_box = ctk.CTkTextbox(
+        log_frame,
+        height=100,
+        fg_color=BG, text_color="#a3e4a3",
+        font=ctk.CTkFont(family="Consolas", size=11),
+        wrap="word", state="normal"
+    )
+    log_box.pack(fill="x", padx=4, pady=4)
+    
+    def _log(msg: str):
+        ts = _dt.datetime.now().strftime("%H:%M:%S")
+        log_box.configure(state="normal")
+        log_box.insert("end", f"[{ts}] {msg}\n")
+        log_box.see("end")
+        log_box.configure(state="disabled")
+
+    _log("Process Manager initialized. Scanning subsystem...")
+    log_box.configure(state="disabled")
+
+    def on_kill_all():
+        _log("Executing Kill All command...")
+        killed = kill_all_hecos_processes()
+        _log(f"Result: Killed {killed} processes.")
+        ctx.rebuild_tab("processes")
+
+    def on_kill_dupes():
+        _log("Scanning for duplicate processes...")
+        killed = kill_duplicate_hecos_processes()
+        _log(f"Result: Killed {killed} duplicate processes.")
+        ctx.rebuild_tab("processes")
+
+    btn_dupes.configure(command=on_kill_dupes)
+    btn_all.configure(command=on_kill_all)
 
     def _refresh_list():
         if ctx.active_tab["key"] != "processes":

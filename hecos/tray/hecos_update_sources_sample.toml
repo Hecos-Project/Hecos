@@ -1,23 +1,19 @@
-# Hecos — Update Sources
+# Hecos — Community Update Sources List
 # ─────────────────────────────────────────────────────────────────────────────
-# This file works like eMule's servers.met: you can edit it by hand, or
-# import a pre-built list from a URL (see the Dashboard → Updates tab).
+# This file can be imported from the Dashboard → Updates → Import source list.
 #
-# active_source  : name of the source to use when checking for updates
-# [[sources]]    : one entry per source
-#   name         : display name (must be unique)
-#   url          : GitHub releases API URL  OR  custom JSON endpoint
-#   type         : "github_release"  |  "custom_json"
+# FORMAT (per ogni sorgente):
+#   [[sources]]
+#   name = "Nome Leggibile"      <-- nome che apparirà nella dashboard
+#   url  = "https://..."         <-- GitHub API o endpoint JSON personalizzato
+#   type = "github_release"      <-- oppure "custom_json"
 #
 # GitHub API format:
 #   https://api.github.com/repos/<owner>/<repo>/releases/latest
 #
-# Custom JSON format — your server must return:
+# Custom JSON format — il server deve restituire:
 #   { "version": "1.2.3", "assets": [{"name": "file.exe", "url": "https://..."}] }
 # ─────────────────────────────────────────────────────────────────────────────
-
-
-active_source = "Hecos Community Mirror"
 
 [[sources]]
 name = "Hecos Official"

@@ -122,6 +122,32 @@ def set_active_source(name: str):
     save_sources(data)
 
 
+def _normalize_url(url: str) -> str:
+    """
+    Convert known paste/blob URLs to their raw equivalents so users
+    can paste the friendly URL without worrying about /raw/.
+
+    Supported conversions:
+    - pastebin.com/<id>          -> pastebin.com/raw/<id>
+    - github.com/.../blob/...    -> raw.githubusercontent.com/.../...
+    """
+    import re
+    # Pastebin: https://pastebin.com/XXXXXXX -> https://pastebin.com/raw/XXXXXXX
+    url = re.sub(
+        r'^https?://pastebin\.com/(?!raw/)([A-Za-z0-9]+)$',
+        r'https://pastebin.com/raw/\1',
+        url
+    )
+    # GitHub blob: https://github.com/u/r/blob/branch/file
+    #           -> https://raw.githubusercontent.com/u/r/branch/file
+    url = re.sub(
+        r'^https?://github\.com/([^/]+/[^/]+)/blob/(.+)$',
+        r'https://raw.githubusercontent.com/\1/\2',
+        url
+    )
+    return url
+
+
 def import_source_list(url: str) -> tuple[int, str]:
     """
     Download a remote TOML source-list and merge its [[sources]] entries
@@ -129,14 +155,47 @@ def import_source_list(url: str) -> tuple[int, str]:
 
     Returns (added_count, error_message).
     """
+    url = _normalize_url(url)
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "Hecos-Updater/1.0"})
         with urllib.request.urlopen(req, timeout=10) as r:
             raw = r.read()
-        remote = tomllib.loads(raw.decode("utf-8"))
+        # Guard against accidentally downloading HTML
+        decoded = raw.decode("utf-8").lstrip()
+        if decoded.startswith("<"):
+            return 0, "The URL returned an HTML page. Use the raw/plain-text URL."
+        remote = tomllib.loads(decoded)
         remote_sources = remote.get("sources", [])
         if not remote_sources:
             return 0, "No [[sources]] found in the remote file."
+
+        local = load_sources()
+        existing_names = {s["name"] for s in local.get("sources", [])}
+        added = 0
+        for src in remote_sources:
+            if src.get("name") and src["name"] not in existing_names:
+                local.setdefault("sources", []).append(src)
+                existing_names.add(src["name"])
+                added += 1
+        save_sources(local)
+        return added, ""
+    except Exception as e:
+        return 0, str(e)
+
+
+def import_source_list_from_file(path: str) -> tuple[int, str]:
+    """
+    Load a local TOML source-list and merge its [[sources]] entries
+    into the local config (skipping duplicates by name).
+
+    Returns (added_count, error_message).
+    """
+    try:
+        with open(path, "rb") as f:
+            remote = tomllib.load(f)
+        remote_sources = remote.get("sources", [])
+        if not remote_sources:
+            return 0, "No [[sources]] found in the file."
 
         local = load_sources()
         existing_names = {s["name"] for s in local.get("sources", [])}
