@@ -16,7 +16,7 @@ Por defecto, el sistema verifica:
 > **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Manage Core*: el sistema descarga y configura todo automáticamente. Es el método más sencillo y completo.
 
 > [!IMPORTANT]
-> **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
+> **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades. Si descargas **Hecos Tray** por separado, instálala también en una carpeta raíz: `C:\Hecos-Tray`.
 
 > [!WARNING]
 > **Dependencias del Sistema**: Antes de ejecutar la instalación o configuración, asegúrese de haber instalado los paquetes redistribuibles (como `VC_redist`) que se encuentran en la carpeta **`dependencies`** incluida en el paquete. Si faltan estos archivos, componentes críticos como la IA y el motor de voz (TTS) no se iniciarán.

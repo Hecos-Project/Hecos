@@ -8,7 +8,7 @@
 > **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Manage Core*: el sistema descarga e instala todo automáticamente. Es el método más sencillo, guiado y completo.
 
 > [!IMPORTANT]
-> **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
+> **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades. Si descargas **Hecos Tray** por separado, instálala también en una carpeta raíz: `C:\Hecos-Tray`.
 
 > [!WARNING]
 > **Dependencias del Sistema**: El ecosistema de Hecos ahora incluye un **External Dependency Manager (EDM)** automático. Durante o después de la instalación, si faltan componentes críticos (como `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI te notificará y te permitirá descargarlos e instalarlos en segundo plano con un solo clic. Asegúrate de estar conectado a internet para permitir la descarga.
