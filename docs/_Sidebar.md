@@ -8,8 +8,8 @@
 ### 🇺🇸 OPERATING
 **User Manual**
 - [[🪐 1. Welcome to Hecos|00_introduction_en]]
-- [[⚡ 2. Quick Start Guide|02_quick_start_en]]
-- [[🚀 3. Boot & Initial Checks|01_boot_en]]
+- [[⚡ 2. Quick Start Guide|01_quick_start_en]]
+- [[🚀 3. Boot & Initial Checks|02_boot_en]]
 - [[💬 4. Chat Interface & UI|03_chat_ui_en]]
 - [[⚙️ 5. Central Hub|04_central_hub_en]]
 - [[🎛️ 6. Control Room|05_control_room_en]]
@@ -44,8 +44,8 @@
 ### 🇮🇹 ITALIANO
 **Manuale Operativo**
 - [[🪐 1. Benvenuto in Hecos|00_introduction_it]]
-- [[⚡ 2. Guida Rapida|02_quick_start_it]]
-- [[🚀 3. Avvio e Diagnostica|01_boot_it]]
+- [[⚡ 2. Guida Rapida|01_quick_start_it]]
+- [[🚀 3. Avvio e Diagnostica|02_boot_it]]
 - [[💬 4. Interfaccia Chat & UI|03_chat_ui_it]]
 - [[⚙️ 5. Central Hub|04_central_hub_it]]
 - [[🎛️ 6. Control Room|05_control_room_it]]
@@ -77,8 +77,8 @@
 ### 🇪🇸 ESPAÑOL
 **Manual de Usuario**
 - [[🪐 1. Bienvenido a Hecos|00_introduction_es]]
-- [[⚡ 2. Guía Rápida|02_quick_start_es]]
-- [[🚀 3. Arranque y Diagnóstico|01_boot_es]]
+- [[⚡ 2. Guía Rápida|01_quick_start_es]]
+- [[🚀 3. Arranque y Diagnóstico|02_boot_es]]
 - [[💬 4. Interfaz de Chat & UI|03_chat_ui_es]]
 - [[⚙️ 5. Central Hub|04_central_hub_es]]
 - [[🎛️ 6. Control Room|05_control_room_es]]

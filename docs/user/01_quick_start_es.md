@@ -2,15 +2,18 @@
 
 ¡Bienvenido a Hecos! Siga estos pasos para configurar el sistema y comenzar a usar la IA en su PC de inmediato.
 
-## 1. Instalación (Bootstrap)
+## 1. Instalación
+
+> [!TIP]
+> **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Download / Install Core*: el sistema descarga e instala todo automáticamente. Es el método más sencillo, guiado y completo.
 
 > [!IMPORTANT]
 > **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
 
 > [!WARNING]
-> **Dependencias del Sistema**: El ecosistema de Hecos ahora incluye un **External Dependency Manager (EDM)** automático. Durante o después de la instalación, si faltan componentes críticos (como `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI te notificará y te permitirá descargarlos e instalarlos en segundo plano con un solo clic. Asegúrate de estar conectado a internet para permitir la descarga.
+> **Dependencias del Sistema**: El ecosistema de Hecos ahora incluye un **External Dependency Manager (EDM)** automático. Durante o después de la instalación, si faltan componentes críticos (como `VC_redist`, `Tesseract OCR` o `Node.js`), la WebUI te notificará y te permitirá descargarlos e instalarlos en segundo plano con un solo clic. Asséguràte de estar conectado a internet para permitir la descarga.
 
-La forma más fácil de comenzar es utilizando los scripts de configuración automática en la carpeta raíz:
+**Método alternativo (avanzado):** Si ya descargaste el paquete Core completo, usa los scripts de configuración automática en la carpeta raíz:
 - **Windows:** Haga doble clic en `START_SETUP_HERE_WIN.bat`
 - **Linux:** Abra una terminal y ejecute `bash START_SETUP_HERE_LINUX.sh`
 
@@ -43,11 +46,12 @@ Para cambiar los parámetros, agregar nuevas claves API o activar complementos:
 - Presione **F7** en su teclado o haga clic en el icono de engranaje/logotipo en la WebUI para abrir el **Hecos Hub**.
 - Los cambios se guardan instantáneamente.
 
-## 5. Icono de la Bandeja del Sistema (Segundo Plano)
+## 5. Tray — Tu Mando a Distancia Universal
 
-Hecos permanece activo en la bandeja del sistema (cerca del reloj de Windows). 
-- Puede cerrar la pestaña del navegador: el sistema seguirá ejecutándose en segundo plano para responder a las teclas de acceso rápido.
-- Haga clic derecho en el icono "Z" para volver a abrir la WebUI o salir de Hecos.
+Hecos Tray es mucho más que un simple icono: es el centro de control rápido de todo el sistema.
+- El icono se encuentra junto al reloj de Windows, siempre disponible sin ocupar espacio.
+- **Doble clic** en el icono para abrir la **Tray Dashboard**, desde donde puedes iniciar/detener Hecos, leer los logs en tiempo real, ver los procesos activos e instalar actualizaciones.
+- **Clic derecho** para un menú rápido con las acciones más comunes.
 
 ---
 *¡Todo listo! Comience a explorar el potencial de su nueva capa operativa de IA soberana local.*

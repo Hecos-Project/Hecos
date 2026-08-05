@@ -12,20 +12,23 @@ Por defecto, el sistema verifica:
 
 ### ⚡ Bootstrap One-Click
 
+> [!TIP]
+> **Método Recomendado — ¡Instala con la Tray!** Descarga solo **Hecos Tray** (el paquete ligero), ábrelo y accede a la **Tray Dashboard**. Ve a la pestaña **Updates** y haz clic en *Download / Install Core*: el sistema descarga y configura todo automáticamente. Es el método más sencillo y completo.
+
 > [!IMPORTANT]
 > **Ruta de Instalación**: Recomendamos encarecidamente extraer e instalar Hecos en un directorio raíz como `C:\Hecos`. Evite instalarlo en `Descargas`, en el `Escritorio` o en carpetas muy profundas, ya que las rutas largas o con espacios pueden causar problemas de inicio o fallos en las funcionalidades.
 
 > [!WARNING]
 > **Dependencias del Sistema**: Antes de ejecutar la instalación o configuración, asegúrese de haber instalado los paquetes redistribuibles (como `VC_redist`) que se encuentran en la carpeta **`dependencies`** incluida en el paquete. Si faltan estos archivos, componentes críticos como la IA y el motor de voz (TTS) no se iniciarán.
 
-La forma recomendada de iniciar Hecos es utilizar los scripts de inicio universales en la carpeta raíz:
+**Método alternativo (avanzado):** Si ya tienes el paquete Core, usa los scripts de inicio universales en la carpeta raíz:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
 Estos scripts gestionan automáticamente la comprobación del entorno, las dependencias e inician el **Asistente de Configuración**.
 
 > [!TIP]
-> **Inicios Posteriores**: Después de completar la configuración inicial, la forma más rápida y conveniente de iniciar Hecos en el uso diario es usar `START_HECOS_TRAY_WIN.bat` (Windows) o `START_HECOS_TRAY_LINUX.sh` (Linux). Esto iniciará el sistema silenciosamente en segundo plano con el icono en la bandeja del sistema (System Tray).
+> **Inicios Posteriores**: Después de la configuración inicial, la forma más rápida y cómoda de usar Hecos cada día es iniciar la **Hecos Tray**. Haz doble clic en su icono en la bandeja del sistema para abrir la **Tray Dashboard** y gestionar todo el sistema desde un único panel.
 
 ### 🧩 Inicio de Componentes Individuales
 Para usuarios avanzados, los componentes se pueden iniciar por separado:

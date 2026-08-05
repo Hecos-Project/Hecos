@@ -2,7 +2,10 @@
 
 Welcome to Hecos! Follow these steps to set up the system and start using AI on your PC immediately.
 
-## 1. Installation (Bootstrap)
+## 1. Installation
+
+> [!TIP]
+> **Recommended Method — Install via the Tray!** Download only **Hecos Tray** (the lightweight package), launch it, and open the **Tray Dashboard**. Go to the **Updates** tab and click *Download / Install Core*: the system downloads and installs everything automatically. It’s the simplest, most guided, and most complete way.
 
 > [!IMPORTANT]
 > **Installation Path**: We strongly recommend extracting and installing Hecos in a root directory like `C:\Hecos`. Avoid installing it in `Downloads`, `Desktop`, or deep folders, as long paths or special characters/spaces in the path can cause startup issues or broken functionalities.
@@ -10,7 +13,7 @@ Welcome to Hecos! Follow these steps to set up the system and start using AI on 
 > [!WARNING]
 > **System Dependencies**: The Hecos ecosystem now includes an automatic **External Dependency Manager (EDM)**. During or after installation, if critical components (like `VC_redist`, `Tesseract OCR`, or `Node.js`) are missing, the WebUI will notify you, allowing you to download and install them in the background with a single click. Ensure you are connected to the internet to allow the downloads.
 
-The easiest way to start is using the automatic setup scripts in the root folder:
+**Alternative method (advanced):** If you already downloaded the full Core package, you can use the automatic setup scripts in the root folder:
 - **Windows:** Double-click `START_SETUP_HERE_WIN.bat`
 - **Linux:** Open a terminal and run `bash START_SETUP_HERE_LINUX.sh`
 
@@ -40,10 +43,12 @@ To change parameters, add new API keys, or activate plugins:
 - Press **F7** on your keyboard or click the gear/logo icon in the WebUI to open the **Hecos Hub**.
 - Changes are saved instantly.
 
-## 5. Tray Icon (Background)
-Hecos stays active in your system tray (near the Windows clock). 
-- You can close the browser tab: the system will continue to run in the background to respond to hotkeys.
-- Right-click the "Z" icon to reopen the WebUI or exit Hecos.
+## 5. Tray — Your Universal Remote
+
+Hecos Tray is much more than a simple icon: it’s the quick control center for the entire system.
+- The icon sits next to the Windows clock, always available without taking up space.
+- **Double-click** the icon to open the **Tray Dashboard**, where you can start/stop Hecos, read live logs, monitor active processes, and install updates.
+- **Right-click** for a quick menu with the most common actions.
 
 ---
-*You're all set! Start exploring the potential of your new sovereign AI operating layer.*
+*You’re all set! Start exploring the potential of your new sovereign AI operating layer.*

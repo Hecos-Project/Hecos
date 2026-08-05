@@ -12,20 +12,23 @@ Per impostazione predefinita, il sistema controlla:
 
 ### ⚡ Bootstrap One-Click
 
+> [!TIP]
+> **Metodo Consigliato — Installa tramite la Tray!** Scarica solo **Hecos Tray** (il pacchetto leggero), avviala e apri la **Tray Dashboard**. Vai alla scheda **Updates** e clicca su *Download / Install Core*: il sistema scarica e configura tutto in automatico. È il metodo più semplice e completo.
+
 > [!IMPORTANT]
 > **Percorso di Installazione**: Consigliamo vivamente di estrarre e installare Hecos in una cartella principale come `C:\Hecos`. Evita di installarlo in `Download`, sul `Desktop` o in percorsi troppo lunghi con spazi, poiché ciò potrebbe causare malfunzionamenti o problemi di avvio dei moduli.
 
 > [!WARNING]
 > **Dipendenze di Sistema**: Prima di avviare l'installazione o il setup, assicurati di aver installato i pacchetti redistribuibili (come `VC_redist`) presenti nella cartella **`dependencies`** inclusa nel pacchetto. Se questi file mancano, componenti critici come l'IA e il motore vocale (TTS) non si avvieranno.
 
-Il modo consigliato per avviare Hecos è utilizzare gli script di bootstrap universale nella cartella principale:
+**Metodo alternativo (avanzato):** Se hai già scaricato il pacchetto Core, usa gli script di bootstrap universale nella cartella principale:
 - **Windows:** `START_SETUP_HERE_WIN.bat`
 - **Linux:** `START_SETUP_HERE_LINUX.sh`
 
 Questi script gestiscono automaticamente il controllo dell'ambiente, le dipendenze e lanciano il **Wizard di Setup**.
 
 > [!TIP]
-> **Avvii successivi**: Dopo aver completato il setup iniziale, il modo più comodo e veloce per avviare Hecos nell'uso quotidiano è usare `START_HECOS_TRAY_WIN.bat` (Windows) o `START_HECOS_TRAY_LINUX.sh` (Linux). Questo avvierà il sistema silenziosamente in background con l'icona nella barra delle applicazioni (System Tray).
+> **Avvii successivi**: Dopo il setup iniziale, il modo più veloce e comodo per usare Hecos ogni giorno è avviare la **Hecos Tray**. Fai doppio clic sulla sua icona nella barra delle applicazioni per aprire la **Tray Dashboard** e gestire tutto il sistema da un unico pannello.
 
 ### 🧩 Avvio Componenti Singoli
 Per utenti avanzati, i componenti possono essere avviati singolarmente:

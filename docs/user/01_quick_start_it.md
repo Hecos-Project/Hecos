@@ -2,7 +2,10 @@
 
 Benvenuto in Hecos! Segui questi passaggi per configurare il sistema e iniziare subito a utilizzare l'IA sul tuo PC.
 
-## 1. Installazione (Bootstrap)
+## 1. Installazione
+
+> [!TIP]
+> **Metodo Consigliato — Installa tramite la Tray!** Scarica solo **Hecos Tray** (il pacchetto leggero), avviala e apri la **Tray Dashboard**. Vai alla scheda **Updates** e clicca su *Download / Install Core*: il sistema scarica e installa tutto in automatico. È il modo più semplice, guidato e completo.
 
 > [!IMPORTANT]
 > **Percorso di Installazione**: Consigliamo vivamente di estrarre e installare Hecos in una cartella principale come `C:\Hecos`. Evita di installarlo in `Download`, sul `Desktop` o in percorsi troppo lunghi con spazi, poiché ciò potrebbe causare malfunzionamenti o problemi di avvio dei moduli.
@@ -10,7 +13,7 @@ Benvenuto in Hecos! Segui questi passaggi per configurare il sistema e iniziare 
 > [!WARNING]
 > **Dipendenze di Sistema**: L'ecosistema di Hecos ora include un **External Dependency Manager (EDM)** automatico. Durante o dopo l'installazione, se componenti critici (come `VC_redist`, `Tesseract OCR` o `Node.js`) risultano mancanti, l'interfaccia ti avviserà e potrai scaricarli e installarli in background con un clic. Assicurati di essere connesso a internet per consentire il download.
 
-Il modo più semplice per iniziare è utilizzare gli script di setup automatico nella cartella principale:
+**Metodo alternativo (avanzato):** Se hai già scaricato il pacchetto Core completo, puoi usare gli script di setup automatico nella cartella principale:
 - **Windows:** Fai doppio clic su `START_SETUP_HERE_WIN.bat`
 - **Linux:** Apri un terminale ed esegui `bash START_SETUP_HERE_LINUX.sh`
 
@@ -43,11 +46,12 @@ Per modificare i parametri, aggiungere nuove chiavi API o attivare plugin:
 - Premi **F7** sulla tastiera o fai clic sull'icona ingranaggio/logo nella WebUI per aprire l'**Hecos Hub**.
 - Le modifiche vengono salvate all'istante.
 
-## 5. Icona della barra delle applicazioni (Tray - Background)
+## 5. Tray — Il tuo telecomando universale
 
-Hecos rimane attivo nella barra delle applicazioni (vicino all'orologio di Windows). 
-- Puoi chiudere la scheda del browser: il sistema continuerà a funzionare in background per rispondere ai tasti di scelta pragmatica.
-- Fai clic con il tasto destro sull'icona "Z" per riaprire la WebUI o uscire da Hecos.
+Hecos Tray è molto di più di una semplice icona: è il centro di controllo rapido dell'intero sistema.
+- L'icona risiede accanto all'orologio di Windows: rimane sempre disponibile senza occupare spazio.
+- **Doppio clic** sull'icona per aprire la **Tray Dashboard**, da cui puoi avviare/fermare Hecos, leggere i log in tempo reale, vedere i processi attivi e installare aggiornamenti.
+- **Clic destro** per un menu rapido con le azioni più comuni.
 
 ---
 *È tutto pronto! Inizia a esplorare il potenziale del tuo nuovo sistema operativo agentico locale.*
