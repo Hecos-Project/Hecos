@@ -6,20 +6,33 @@ color 0B
 
 :: Determine ROOT directory dynamically
 set "ROOT_DIR=C:\Hecos"
-set "TRAY_DIR=C:\Hecos-Tray"
+set "TRAY_DIR="
+set "TRAY_WARN="
 
 if exist "%~dp0..\..\..\hecos\core\version" (
     :: Running from C:\Hecos\scripts\windows\setup\
     pushd "%~dp0..\..\.."
     set "ROOT_DIR=!CD!"
-    set "TRAY_DIR=!CD!-Tray"
     popd
 ) else if exist "%~dp0..\Hecos\hecos\core\version" (
-    :: Running from C:\Hecos-Tray\
+    :: Running from C:\Hecos-Tray variant folder
     pushd "%~dp0..\Hecos"
     set "ROOT_DIR=!CD!"
-    set "TRAY_DIR=!CD!-Tray"
     popd
+)
+
+:: Smart Tray detection: exact match first, then wildcard for versioned folders like Hecos-Tray-1.5.3
+if exist "C:\Hecos-Tray\tray\version" (
+    set "TRAY_DIR=C:\Hecos-Tray"
+) else (
+    for /d %%D in ("C:\Hecos-Tray-*") do (
+        if exist "%%D\tray\version" (
+            if "!TRAY_DIR!"=="" (
+                set "TRAY_DIR=%%D"
+                set "TRAY_WARN=1"
+            )
+        )
+    )
 )
 
 echo ==============================================================================
@@ -35,10 +48,19 @@ if exist "%ROOT_DIR%\hecos\core\version" (
     echo [!] Core NOT found at: %ROOT_DIR%
 )
 
-if exist "%TRAY_DIR%\tray\version" (
-    echo [OK] Tray found at: %TRAY_DIR%
+if not "!TRAY_DIR!"=="" (
+    echo [OK] Tray found at: !TRAY_DIR!
+    if "!TRAY_WARN!"=="1" (
+        echo.
+        echo  [!] WARNING: The Tray folder has a version suffix in its name.
+        echo  [!] For Hecos to work correctly, please rename the folder:
+        echo  [!]   FROM: !TRAY_DIR!
+        echo  [!]   TO:   C:\Hecos-Tray
+    )
 ) else (
-    echo [!] Tray NOT found at: %TRAY_DIR%
+    echo [!] Tray NOT found in C:\ drive.
+    echo  [!] Please make sure the Hecos-Tray folder is placed directly in C:\
+    echo  [!] It should be at:  C:\Hecos-Tray
 )
 echo.
 

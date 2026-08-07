@@ -6,24 +6,37 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # Determine ROOT directory dynamically
 ROOT_DIR="$SCRIPT_DIR"
 TRAY_DIR=""
+TRAY_WARN=""
 
 if [ -f "$SCRIPT_DIR/../../../hecos/core/version" ]; then
-    # Running from C:\Hecos\scripts\linux\setup\
+    # Running from Hecos/scripts/linux/setup/
     ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-    TRAY_DIR="${ROOT_DIR}-Tray"
 elif [ -f "$SCRIPT_DIR/../Hecos/hecos/core/version" ]; then
-    # Running from C:\Hecos-Tray\
+    # Running from a Hecos-Tray* folder sibling
     ROOT_DIR="$(cd "$SCRIPT_DIR/../Hecos" && pwd)"
-    TRAY_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 else
-    # Fallback assuming we are in Hecos or Hecos-Tray
-    if [[ "$SCRIPT_DIR" == *"-Tray" ]]; then
-        ROOT_DIR="${SCRIPT_DIR%-Tray}"
-        TRAY_DIR="$SCRIPT_DIR"
+    # Fallback: strip any -Tray suffix if present
+    if [[ "$SCRIPT_DIR" == *"-Tray"* ]]; then
+        ROOT_DIR="${SCRIPT_DIR%%-Tray*}"
     else
         ROOT_DIR="$SCRIPT_DIR"
-        TRAY_DIR="${ROOT_DIR}-Tray"
     fi
+fi
+
+# Smart Tray detection: exact canonical name first, then versioned glob
+TRAY_CANONICAL="$(dirname "$ROOT_DIR")/Hecos-Tray"
+
+if [ -f "$TRAY_CANONICAL/tray/version" ]; then
+    TRAY_DIR="$TRAY_CANONICAL"
+else
+    # Search for versioned folders like Hecos-Tray-1.5.3
+    for candidate in "$(dirname "$ROOT_DIR")"/Hecos-Tray-*; do
+        if [ -f "$candidate/tray/version" ]; then
+            TRAY_DIR="$candidate"
+            TRAY_WARN="1"
+            break
+        fi
+    done
 fi
 
 # Switch to ROOT_DIR
@@ -42,12 +55,22 @@ else
     echo "[!] Core NOT found at: $ROOT_DIR"
 fi
 
-if [ -f "$TRAY_DIR/tray/version" ]; then
+if [ -n "$TRAY_DIR" ]; then
     echo "[OK] Tray found at: $TRAY_DIR"
+    if [ "$TRAY_WARN" == "1" ]; then
+        echo ""
+        echo "  [!] WARNING: The Tray folder has a version suffix in its name."
+        echo "  [!] For Hecos to work correctly, please rename it:"
+        echo "  [!]   FROM: $TRAY_DIR"
+        echo "  [!]   TO:   $TRAY_CANONICAL"
+    fi
 else
-    echo "[!] Tray NOT found at: $TRAY_DIR"
+    echo "[!] Tray NOT found."
+    echo "  [!] Please make sure the Hecos-Tray folder is placed in: $(dirname "$ROOT_DIR")"
+    echo "  [!] It should be at: $TRAY_CANONICAL"
 fi
 echo ""
+
 
 # 2. Python Detection
 echo "[PYTHON DETECTION]"
