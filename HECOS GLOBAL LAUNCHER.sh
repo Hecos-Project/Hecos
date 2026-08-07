@@ -39,8 +39,8 @@ show_menu() {
         2)
             echo ""
             echo "[*] Starting Hecos Web UI..."
-            if [ -f "scripts/linux/run/HECOS_WEB_RUN_LINUX.sh" ]; then
-                bash "scripts/linux/run/HECOS_WEB_RUN_LINUX.sh"
+            if [ -f "scripts/linux/run/HECOS_WEBUI_RUN_LINUX.sh" ]; then
+                bash "scripts/linux/run/HECOS_WEBUI_RUN_LINUX.sh"
             else
                 echo "[!] Web run script not found."
                 read -p "Press Enter to continue..."

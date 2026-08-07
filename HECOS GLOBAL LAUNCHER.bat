@@ -32,8 +32,8 @@ goto MENU
 :START_WEB
 echo.
 echo [*] Starting Hecos Web UI...
-if exist "scripts\windows\run\HECOS_WEB_RUN_WIN.bat" (
-    call "scripts\windows\run\HECOS_WEB_RUN_WIN.bat"
+if exist "scripts\windows\run\HECOS_WEBUI_RUN_WIN.bat" (
+    call "scripts\windows\run\HECOS_WEBUI_RUN_WIN.bat"
 ) else (
     echo [!] Web run script not found.
     pause
