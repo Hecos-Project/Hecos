@@ -10,7 +10,8 @@ from . import i18n
 from .i18n import T
 from .utils import (
     CWD, PIPER_DIR, SYSTEM_CONFIG_PATH, AUDIO_CONFIG_PATH, 
-    LOGO_PATH, VOICE_MAP, safe_replace_yaml
+    LOGO_PATH, VOICE_MAP, safe_replace_yaml,
+    TRAY_DIR, TRAY_DIR_VERSIONED, TRAY_DIR_CANONICAL
 )
 from .engine import (
     check_python_version, check_dependencies, install_dependencies,
@@ -34,7 +35,40 @@ SETUP_LANGS = {
 }
 
 class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+
+    def _render_tray_banner(self):
+        """Returns an HTML banner if the Tray folder is missing or has a version suffix."""
+        if TRAY_DIR is None:
+            return f"""
+            <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.35);
+                        border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
+                <span style="font-size:1.1rem; flex-shrink:0;">⚠️</span>
+                <div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#ef4444; margin-bottom:4px;">Hecos Tray not found</div>
+                    <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
+                        The Hecos Tray folder was not found in <code style="color:#d1d5db;">C:\\</code>.<br>
+                        Make sure the folder is placed at: <code style="color:#d1d5db;">{TRAY_DIR_CANONICAL}</code>
+                    </div>
+                </div>
+            </div>"""
+        if TRAY_DIR_VERSIONED:
+            return f"""
+            <div style="background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.3);
+                        border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
+                <span style="font-size:1.1rem; flex-shrink:0;">📁</span>
+                <div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin-bottom:4px;">Rename the Tray folder</div>
+                    <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
+                        Found: <code style="color:#d1d5db;">{TRAY_DIR}</code><br>
+                        Please rename it to: <code style="color:#d1d5db;">{TRAY_DIR_CANONICAL}</code><br>
+                        <span style="opacity:0.6;">The folder was downloaded from GitHub with a version suffix. Hecos requires the exact name <strong style="color:#d1d5db;">Hecos-Tray</strong>.</span>
+                    </div>
+                </div>
+            </div>"""
+        return ""  # all good, no banner needed
+
     def do_GET(self):
+
         global LAST_RESULTS
         if self.path == '/logo.png':
             if os.path.exists(LOGO_PATH):
@@ -239,6 +273,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
                 <div class="card">
                     {res_html}
+                    {self._render_tray_banner()}
 
                     <div class="section">
                         <div class="section-label">01 — {T('step_lang').upper()}</div>

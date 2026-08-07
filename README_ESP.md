@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo de Hecos">
 </p>
 
-# Hecos - Versión 0.45.0 (Runtime Alpha)
+# Hecos - Versión 0.48.2 (Runtime Alpha)
 Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Idioma: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Estado Runtime Alpha**: Hecos está actualmente en `v0.45.0`[cite: 1]. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root[cite: 1].
+> **Estado Runtime Alpha**: Hecos está actualmente en `v0.48.2`[cite: 1]. Este es un Helping Companion System que actúa como puente entre el razonamiento de alto nivel y la ejecución del sistema root[cite: 1].
 
 ## 🚀 Resumen General
 **Hecos** es un **Helping Companion System**: un ecosistema local de primera línea diseñado para conectar de manera fluida la tecnología con la vida humana, combinando el razonamiento de IA, la automatización visual y la ejecución directa del sistema[cite: 1]. En lugar de perseguir conceptos abstractos como la soberanía digital, Hecos se enfoca en una única misión pragmática: **mejorar la vida humana**, transformando el hardware local en una herramienta práctica y altamente eficiente para el día a día[cite: 1].
