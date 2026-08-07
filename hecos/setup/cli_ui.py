@@ -109,30 +109,17 @@ def start_cli_wizard():
         print("=" * 60)
         print(f"  {T('header')}")
         print("=" * 60)
-        print(f"\n 1) {T('onboarding_header')} (RECOMMENDED)")
-        print(f" 2) {T('menu_opt_1')}")
-        print(f" 3) {T('menu_opt_2')}")
-        print(f" 4) {T('menu_opt_3')}")
-        print(f" 5) {T('menu_opt_4')}")
-        print(f" 6) {T('menu_opt_5')}")
-        print(f" 9) Start WEB Setup Wizard")
-        print(f" 10) Toggle Setup Language (Current: {i18n.UI_LANG.upper()})")
+        print(f"\n 1) Start WEB Setup Wizard (RECOMMENDED)")
+        print(f" 2) {T('onboarding_header')} (CLI)")
+        print(f" 3) Toggle Setup Language (Current: {i18n.UI_LANG.upper()})")
         print(f" 0) Exit")
         
         choice = input("\n--> ")
-        if choice == '1': guided_onboarding()
-        elif choice == '2': check_python_version()
-        elif choice == '3': auto_fix_piper_path()
-        elif choice == '4': 
-            check_python_version()
-            check_dependencies()
-            auto_fix_piper_path()
-        elif choice == '5': lang_selection_menu()
-        elif choice == '6': voice_selection_menu()
-        elif choice == '9': 
+        if choice == '1': 
             from .web_ui import start_web_setup
             start_web_setup()
-        elif choice == '10': 
+        elif choice == '2': guided_onboarding()
+        elif choice == '3': 
             i18n.set_ui_lang("it" if i18n.UI_LANG == "en" else "en")
         elif choice == '0':
             print(T("exit_msg"))

@@ -66,7 +66,12 @@ T_DATA = {
         "installing_dep": "[*] Installing external dependency: {filename}...",
         "dep_success": "[+] Successfully installed {filename}",
         "dep_err": "[-] Failed to install {filename}: {err}",
-        "dep_not_found": "[-] No external installers found in dependencies folder."
+        "dep_not_found": "[-] No external installers found in dependencies folder.",
+        "menu_opt_1": "Check Python Version",
+        "menu_opt_2": "Auto-Fix Piper Path",
+        "menu_opt_3": "Full System Check",
+        "menu_opt_4": "Select System Language",
+        "menu_opt_5": "Download AI Voices"
     },
     "it": {
         "header": "HECOS - SETUP WIZARD & ONBOARDING",
@@ -125,7 +130,12 @@ T_DATA = {
         "installing_dep": "[*] Installazione dipendenza esterna: {filename}...",
         "dep_success": "[+] {filename} installato con successo.",
         "dep_err": "[-] Errore durante l'installazione di {filename}: {err}",
-        "dep_not_found": "[-] Nessun installer esterno trovato nella cartella dependencies."
+        "dep_not_found": "[-] Nessun installer esterno trovato nella cartella dependencies.",
+        "menu_opt_1": "Controlla Versione Python",
+        "menu_opt_2": "Ripara Percorso Piper",
+        "menu_opt_3": "Check Completo del Sistema",
+        "menu_opt_4": "Seleziona Lingua di Sistema",
+        "menu_opt_5": "Scarica Voci IA"
     },
     "es": {
         "header": "HECOS - ASISTENTE DE CONFIGURACIÓN",
@@ -179,7 +189,12 @@ T_DATA = {
         "tip_full_check": "Verifica requisitos, Python y dependencias.",
         "tip_fix_paths": "Restaura las rutas de Piper y audio en audio.yaml.",
         "tip_install_svc": "Registra Hecos como un servicio del sistema.",
-        "tip_uninstall_svc": "Elimina el servicio Hecos del sistema."
+        "tip_uninstall_svc": "Elimina el servicio Hecos del sistema.",
+        "menu_opt_1": "Comprobar Versión de Python",
+        "menu_opt_2": "Arreglar Ruta de Piper",
+        "menu_opt_3": "Chequeo Completo del Sistema",
+        "menu_opt_4": "Seleccionar Idioma del Sistema",
+        "menu_opt_5": "Descargar Voces IA"
     },
     "fr": {
         "header": "HECOS CORE - ASSISTANT DE CONFIGURATION",
