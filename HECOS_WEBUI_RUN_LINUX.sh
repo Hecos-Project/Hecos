@@ -1,5 +1,13 @@
 #!/bin/bash
-cd "$(dirname "$0")/../../.."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+if [ -f "$SCRIPT_DIR/hecos/core/version" ]; then
+    ROOT_DIR="$SCRIPT_DIR"
+elif [ -f "$SCRIPT_DIR/../../../hecos/core/version" ]; then
+    ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+else
+    ROOT_DIR="/opt/hecos"
+fi
+cd "$ROOT_DIR" || exit 1
 
 if [ -d "venv" ] && [ -f "venv/bin/python" ]; then
     PYTHON_CMD="venv/bin/python"

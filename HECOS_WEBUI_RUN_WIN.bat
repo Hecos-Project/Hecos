@@ -11,13 +11,17 @@ echo   HECOS NATIVE WEB INTERFACE v%HECOS_VERSION%
 echo  ==============================================================
 echo.
 
-:: Activate virtual environment if it exists
-pushd "%~dp0"
-cd ..\..\..
-set ROOT_DIR=%CD%
-popd
+:: Determine ROOT directory dynamically
+if exist "%~dp0hecos\core\version" (
+    set "ROOT_DIR=%~dp0"
+) else if exist "%~dp0..\..\..\hecos\core\version" (
+    pushd "%~dp0..\..\.."
+    set "ROOT_DIR=!CD!"
+    popd
+) else (
+    set "ROOT_DIR=C:\Hecos"
+)
 cd /d "%ROOT_DIR%"
-
 if exist "venv\Scripts\activate.bat" (
   call venv\Scripts\activate.bat
 )
