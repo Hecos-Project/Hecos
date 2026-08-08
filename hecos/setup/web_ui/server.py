@@ -45,6 +45,9 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler, TemplateMixin)
             if state.UNINSTALL_DONE:
                 self.render_uninstall_done()
                 return
+            if state.SMART_UNINSTALL_DONE:
+                self.render_smart_uninstall_done()
+                return
             if state.WIPE_DONE:
                 self.render_wipe_done()
                 return
@@ -97,14 +100,16 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler, TemplateMixin)
                 check_python_version()
                 check_dependencies()
                 auto_fix_piper_path()
-            elif self.path == '/uninstall':
+            elif self.path == '/uninstall_hecos':
+                # Smart uninstall: remove only Hecos deps (safe for shared Python envs)
                 uninstaller = GlobalUninstaller()
                 uninstaller.execute_full_uninstall()
-                state.UNINSTALL_DONE = True
-            elif self.path == '/wipe_all':
+                state.SMART_UNINSTALL_DONE = True
+            elif self.path == '/uninstall':
+                # Full wipe: remove ALL pip packages (for dedicated Hecos environments)
                 uninstaller = GlobalUninstaller()
                 uninstaller.execute_wipe_all_packages()
-                state.WIPE_DONE = True
+                state.UNINSTALL_DONE = True
 
         out_text = output.getvalue().strip()
         if out_text:

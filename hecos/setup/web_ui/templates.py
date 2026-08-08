@@ -378,14 +378,51 @@ class TemplateMixin(StyleMixin):
                 <!-- 03 UNINSTALL -->
                 <div class="card" style="border-color: rgba(239,68,68,0.2);">
                     <div class="section-label" style="color:var(--red-muted); margin-bottom:8px;">03 — UNINSTALL</div>
-                    <p class="tip" style="margin-bottom:20px;">Remove all Hecos Python dependencies from your system. The Hecos folders will need to be deleted manually afterwards.</p>
-                    <form id="wipe-form" action="/uninstall" method="POST">
-                        <button type="button" class="btn-ghost btn-danger-ghost"
-                            onclick="document.getElementById('wipe-modal').classList.add('active');"
-                            title="Permanently uninstall all Hecos components and dependencies">
-                            🗑 Full Wipe — Remove All Dependencies
-                        </button>
-                    </form>
+                    <p class="tip" style="margin-bottom:20px;">Choose how to remove Hecos from your system. The Hecos folders will need to be deleted manually afterwards.</p>
+
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+
+                        <!-- Option A: Smart uninstall -->
+                        <div style="background:rgba(239,68,68,0.04); border:1px solid rgba(239,68,68,0.15); border-radius:10px; padding:20px;">
+                            <div style="display:flex; align-items:flex-start; gap:14px;">
+                                <span style="font-size:1.3rem; flex-shrink:0; margin-top:2px;">🧹</span>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.82rem; font-weight:700; color:var(--text); margin-bottom:4px;">Remove Hecos Only</div>
+                                    <div style="font-size:0.75rem; color:var(--muted); line-height:1.6; margin-bottom:14px;">
+                                        Removes only the packages that Hecos installed. <strong style="color:var(--text);">Safe if you use Python for other projects</strong> — your other libraries will not be touched.
+                                    </div>
+                                    <form id="smart-uninstall-form" action="/uninstall_hecos" method="POST">
+                                        <button type="button" class="btn-ghost btn-danger-ghost"
+                                            onclick="document.getElementById('smart-modal').classList.add('active');"
+                                            style="font-size:0.78rem;">
+                                            🧹 Remove Hecos Only
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option B: Full wipe -->
+                        <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:20px;">
+                            <div style="display:flex; align-items:flex-start; gap:14px;">
+                                <span style="font-size:1.3rem; flex-shrink:0; margin-top:2px;">🗑</span>
+                                <div style="flex:1;">
+                                    <div style="font-size:0.82rem; font-weight:700; color:var(--red-muted); margin-bottom:4px;">Full Environment Wipe</div>
+                                    <div style="font-size:0.75rem; color:var(--muted); line-height:1.6; margin-bottom:14px;">
+                                        Removes <strong style="color:var(--red-muted);">every package</strong> from the Python environment — not just Hecos. <strong style="color:var(--text);">Only use this if Python is dedicated to Hecos</strong> and you want to start with a completely clean slate.
+                                    </div>
+                                    <form id="wipe-form" action="/uninstall" method="POST">
+                                        <button type="button" class="btn-ghost btn-danger-ghost"
+                                            onclick="document.getElementById('wipe-modal').classList.add('active');"
+                                            style="font-size:0.78rem; border-color:rgba(239,68,68,0.6);">
+                                            🗑 Full Environment Wipe
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
 
                 <!-- 04 DIAGNOSTICS -->
@@ -397,25 +434,74 @@ class TemplateMixin(StyleMixin):
                 </div>
             </div>
 
-            <!-- Wipe Modal -->
+            <!-- Modal: Smart uninstall -->
+            <div id="smart-modal" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-icon">🧹</div>
+                    <div class="modal-title" style="color:var(--text);">REMOVE HECOS ONLY?</div>
+                    <div class="modal-desc">
+                        This will uninstall <strong>only the packages listed in Hecos' pyproject.toml</strong>.<br><br>
+                        Your other Python libraries will <strong>not be affected</strong>. Autostart will also be disabled.
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-ghost" onclick="document.getElementById('smart-modal').classList.remove('active');" style="border-color:var(--border);">Cancel</button>
+                        <button type="button" class="btn-solid-danger" style="background:#6b7280;" onclick="
+                            this.textContent='Removing... Check terminal (wait 30-60s)';
+                            this.disabled=true;
+                            document.getElementById('smart-uninstall-form').submit();
+                        ">Yes, Remove Hecos Only</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Full wipe -->
             <div id="wipe-modal" class="modal-overlay">
                 <div class="modal-box">
                     <div class="modal-icon">⚠️</div>
-                    <div class="modal-title">PERMANENTLY UNINSTALL HECOS?</div>
+                    <div class="modal-title">WIPE ENTIRE PYTHON ENVIRONMENT?</div>
                     <div class="modal-desc">
-                        This action will perform a <strong>FULL WIPE</strong>.<br><br>
-                        All Python dependencies (Piper, PyAudio, CustomTkinter, etc.) will be uninstalled via pip.
-                        The Hecos Core and Tray folders will need to be manually deleted afterwards.
+                        This will remove <strong>ALL packages</strong> from your Python environment — not just Hecos.<br><br>
+                        <strong style="color:var(--red-muted);">Only proceed if this Python installation is dedicated to Hecos</strong> and you don't use it for anything else.
                     </div>
                     <div class="modal-actions">
                         <button type="button" class="btn-ghost" onclick="document.getElementById('wipe-modal').classList.remove('active');" style="border-color:var(--border);">Cancel</button>
                         <button type="button" class="btn-solid-danger" onclick="
-                            this.textContent='Uninstalling... Check terminal (wait 1-2m)';
+                            this.textContent='Wiping... Check terminal (wait 1-2m)';
                             this.disabled=true;
                             document.getElementById('wipe-form').submit();
                         ">Yes, Full Wipe</button>
                     </div>
                 </div>
+            </div>
+        </body>
+        </html>
+        """
+        self.send_html(html)
+
+    def render_smart_uninstall_done(self):
+        res_html = f'<div class="console" style="max-height:300px;">{("<br>").join(LAST_RESULTS)}</div>' if LAST_RESULTS else ""
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="{i18n.UI_LANG}">
+        <head>
+            <meta charset="UTF-8">
+            <title>Hecos — Removed</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <style>{self.get_css_vars()}{self.get_main_styles()}</style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="/logo.png" class="logo-img" alt="Logo">
+                    <h1 class="title-text" style="color:var(--muted);">HECOS UNINSTALLER</h1>
+                </div>
+                <div class="done-banner" style="border-color:rgba(107,114,128,0.4); background:rgba(107,114,128,0.05);">
+                    <div class="done-label" style="color:var(--text);">🧹 Hecos Removed</div>
+                    <div class="done-sub">All Hecos packages have been uninstalled. Your other Python libraries were not affected.</div>
+                </div>
+                {res_html}
+                <div class="close-note">✓ You can safely close this window. You may also delete the Hecos folder from your computer.</div>
             </div>
         </body>
         </html>

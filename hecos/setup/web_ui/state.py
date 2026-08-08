@@ -4,6 +4,7 @@
 LAST_RESULTS = []
 ONBOARDING_DONE = False
 UNINSTALL_DONE = False
+SMART_UNINSTALL_DONE = False
 WIPE_DONE = False
 
 # Available Setup Languages (shown on the splash page)

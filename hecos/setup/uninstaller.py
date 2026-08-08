@@ -82,10 +82,16 @@ class GlobalUninstaller:
             batch = packages[i:i+batch_size]
             cmd = [sys.executable, "-m", "pip", "uninstall", "-y"] + batch
             try:
-                subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-                print(f"    - Uninstalled: {', '.join(batch)}")
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode == 0:
+                    print(f"    - Uninstalled: {', '.join(batch)}")
+                else:
+                    print(f"[-] Warning uninstalling batch {batch}:")
+                    if result.stderr:
+                        print(f"    {result.stderr.strip()}")
             except Exception as e:
-                print(f"[-] Warning: Error uninstalling batch {batch}: {e}")
+                print(f"[-] Error uninstalling batch {batch}: {e}")
+
 
     def parse_plugin_dependencies(self):
         """Parse HPM packages.db to extract pip requirements of all installed plugins."""
