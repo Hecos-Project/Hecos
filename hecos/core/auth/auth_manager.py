@@ -73,7 +73,7 @@ class AuthManager:
             # Crea l'admin predefinito se la tabella è vuota
             if not self.get_user_by_username("admin"):
                 self.create_user("admin", "hecos", "admin")
-                logger.info("[AuthManager] Nessun utente trovato. Creato utente di default 'admin' con password 'hecos'.")
+                logger.info("[AuthManager] No users found. Created default user 'admin' with password 'hecos'.")
                 
         except Exception as e:
             logger.error(f"[AuthManager] Errore inizializzazione DB: {e}")
