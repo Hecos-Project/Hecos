@@ -43,8 +43,6 @@ service = [
     "qrcode",
 ]
 
-[project.scripts]
-hecos-tray    = "hecos.tray.tray_app:run_tray"
 
 [tool.setuptools.packages.find]
 where = ["."]
