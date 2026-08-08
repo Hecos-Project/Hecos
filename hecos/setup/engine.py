@@ -172,7 +172,7 @@ def fetch_piper_voices():
     url = "https://huggingface.co/rhasspy/piper-voices/resolve/main/voices.json"
     print("[*] Fetching available voices from Piper repository...")
     try:
-        with urllib.request.urlopen(url) as response:
+        with urllib.request.urlopen(url, timeout=15) as response:
             VOICES_CACHE = json.loads(response.read().decode())
             return VOICES_CACHE
     except Exception as e:

@@ -297,8 +297,8 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                             <p class="tip" style="margin-bottom:20px;">{T('tip_onboarding')}</p>
                             <button id="launch-btn" class="btn-primary"
                                 onclick="
-                                    this.textContent='Installing… check the terminal window';
-                                    this.disabled=true;
+                                    setTimeout(() => this.disabled=true, 10);
+                                    this.textContent='Installing... Downloading AI Engine (100MB+). Please wait 1-2 minutes! DO NOT CLOSE!';
                                     document.getElementById('next-steps').style.display='block';
                                 ">▶ Launch Setup</button>
 
@@ -339,7 +339,7 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                                 <button class="btn-ghost">{T('btn_fix_paths')}</button>
                             </form>
                             <form action="/uninstall" method="POST" onsubmit="return confirm('Permanently uninstall Hecos? This will remove all its dependencies.');">
-                                <button class="btn-ghost btn-danger-ghost" onclick="this.textContent='Uninstalling…'; this.disabled=true;">{T('btn_uninstall_svc')} Hecos</button>
+                                <button class="btn-ghost btn-danger-ghost" onclick="setTimeout(() => this.disabled=true, 10); this.textContent='Uninstalling... Check terminal for logs. Please wait 1-2 mins!';">{T('btn_uninstall_svc')} Hecos</button>
                             </form>
                         </div>
                     </div>
