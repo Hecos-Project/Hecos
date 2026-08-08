@@ -392,14 +392,14 @@ class TemplateMixin(StyleMixin):
                                 <span class="step-num">1</span>
                                 <div>
                                     <div class="step-title">Find the Hecos Tray Icon</div>
-                                    <div class="step-desc">Look in the <strong>bottom-right corner of your taskbar</strong>. Click <strong>▲</strong> to expand hidden icons.</div>
+                                    <div class="step-desc">Look in the <strong>bottom-right corner of your taskbar</strong>. Click <strong>&#9650;</strong> to expand hidden icons.</div>
                                 </div>
                             </div>
                             <div class="step-item">
                                 <span class="step-num">2</span>
                                 <div>
-                                    <div class="step-title">Right-click → <span style="color:var(--accent);">Start Core</span></div>
-                                    <div class="step-desc">After setup completes, right-click the tray icon and click <strong>▶ Start Core</strong>.</div>
+                                    <div class="step-title">Right-click &rarr; <span style="color:var(--accent);">Start Core</span></div>
+                                    <div class="step-desc">After setup completes, right-click the tray icon and click <strong>&#9654; Start Core</strong>.</div>
                                 </div>
                             </div>
                             ''' if TRAY_DIR else '''
@@ -407,14 +407,14 @@ class TemplateMixin(StyleMixin):
                                 <span class="step-num">1</span>
                                 <div>
                                     <div class="step-title">Run Global Launcher</div>
-                                    <div class="step-desc">Open the <strong>C:\\Hecos</strong> folder and double-click <strong>HECOS_GLOBAL_LAUNCHER</strong>.</div>
+                                    <div class="step-desc">Open the <strong>C:/Hecos</strong> folder and double-click <strong>HECOS GLOBAL LAUNCHER</strong>.</div>
                                 </div>
                             </div>
                             <div class="step-item">
                                 <span class="step-num">2</span>
                                 <div>
-                                    <div class="step-title">Press 4 to Start WebUI</div>
-                                    <div class="step-desc">After setup completes, press 4 to launch the Web Interface.</div>
+                                    <div class="step-title">Press 1 then 2 to Start WebUI</div>
+                                    <div class="step-desc">After setup completes, choose option 2 to launch the Web Interface.</div>
                                 </div>
                             </div>
                             '''
@@ -592,13 +592,13 @@ class TemplateMixin(StyleMixin):
                         <span class="step-num">1</span>
                         <div>
                             <div class="step-title">Find the tray icon</div>
-                            <div class="step-desc">Look in the <strong>bottom-right taskbar</strong> near the clock. Expand hidden icons with <strong>▲</strong>.</div>
+                            <div class="step-desc">Look in the <strong>bottom-right taskbar</strong> near the clock. Expand hidden icons with <strong>&#9650;</strong>.</div>
                         </div>
                     </div>
                     <div class="step-item">
                         <span class="step-num">2</span>
                         <div>
-                            <div class="step-title">Right-click → <span style="color:var(--accent);">Start Core</span></div>
+                            <div class="step-title">Right-click &rarr; <span style="color:var(--accent);">Start Core</span></div>
                             <div class="step-desc">A beep confirms Hecos is online. Your browser will open automatically.</div>
                         </div>
                     </div>
@@ -606,16 +606,16 @@ class TemplateMixin(StyleMixin):
                         <span class="step-num">3</span>
                         <div>
                             <div class="step-title">Auto-start is enabled</div>
-                            <div class="step-desc">The tray launches automatically on every login — no action needed next time.</div>
+                            <div class="step-desc">The tray launches automatically on every login &mdash; no action needed next time.</div>
                         </div>
                     </div>
                     ''' if TRAY_DIR else '''
                     <div class="next-label" style="margin-top:10px; color:var(--text);">Via Hecos Core Standalone:</div>
                     <div class="step-item">
-                        <span class="step-num" style="border-color:var(--text); color:var(--text);">★</span>
+                        <span class="step-num" style="border-color:var(--text); color:var(--text);">&#9733;</span>
                         <div>
                             <div class="step-title">Use the Global Launcher</div>
-                            <div class="step-desc">Open the <strong>C:\\Hecos</strong> folder and double-click <strong>HECOS_GLOBAL_LAUNCHER</strong> to access all startup options (including WebUI).</div>
+                            <div class="step-desc">Open the <strong>C:/Hecos</strong> folder and double-click <strong>HECOS GLOBAL LAUNCHER</strong> to access all startup options (including WebUI).</div>
                         </div>
                     </div>
                     '''
