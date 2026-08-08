@@ -3,6 +3,28 @@ setlocal
 title Hecos Global Launcher
 color 0B
 
+:: 0. Folder Path Strict Check
+set "SCRIPT_DIR=%~dp0"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+set "EXPECTED_DIR=%SCRIPT_DIR:~0,3%Hecos"
+
+if /i not "%SCRIPT_DIR%"=="%EXPECTED_DIR%" (
+    color 0C
+    cls
+    echo [!] CRITICAL ERROR: Incorrect Folder Location or Name
+    echo.
+    echo The Hecos folder is currently located at:
+    echo %SCRIPT_DIR%
+    echo.
+    echo It MUST be placed directly in the root of your drive and named exactly "Hecos".
+    echo Example: %EXPECTED_DIR%
+    echo.
+    echo Please move and rename the folder to %EXPECTED_DIR% and run the launcher again.
+    echo.
+    pause
+    exit
+)
+
 :MENU
 cls
 echo ==============================================================================

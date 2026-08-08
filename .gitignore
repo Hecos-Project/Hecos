@@ -605,3 +605,7 @@ hecos/modules/web_ui/templates/modules/config_global_backup.html
 hecos/modules/web_ui/static/js/config_mapper_global_backup.js
 hecos/config/data/backup_config.json
 hecos/modules/global_backup/
+
+# Wiki Deployment Scripts
+scripts/*Wiki*.ps1
+scripts/*wiki*.py

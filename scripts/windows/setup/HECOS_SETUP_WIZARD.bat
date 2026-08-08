@@ -40,6 +40,24 @@ echo                          HECOS SETUP WIZARD
 echo ==============================================================================
 echo.
 
+:: 0. Folder Path Strict Check
+set "EXPECTED_DIR=%ROOT_DIR:~0,3%Hecos"
+if /i not "%ROOT_DIR%"=="%EXPECTED_DIR%" (
+    echo [!] CRITICAL ERROR: Incorrect Folder Location or Name
+    echo.
+    echo The Hecos folder is currently located at:
+    echo %ROOT_DIR%
+    echo.
+    echo It MUST be placed directly in the root of your drive and named exactly "Hecos".
+    echo Example: %EXPECTED_DIR%
+    echo.
+    echo Please move and rename the folder to %EXPECTED_DIR% and run the setup again.
+    echo If you install Python in this folder now, it will break when you move it later!
+    echo.
+    pause
+    exit
+)
+
 :: 1. Check Folders
 echo [SYSTEM CHECK]
 if exist "%ROOT_DIR%\hecos\core\version" (
@@ -154,10 +172,15 @@ echo.
 echo ==============================================================================
 echo                          STARTING INTERFACE
 echo ==============================================================================
-if exist "%ROOT_DIR%\hecos\setup_wizard.py" (
+if exist "%ROOT_DIR%\hecos\setup\main.py" (
     echo [*] Launching Core Setup Wizard...
     cd /d "%ROOT_DIR%"
-    %PYTHON_CMD% "hecos\setup_wizard.py"
+    %PYTHON_CMD% -c "import sys; sys.path.insert(0, r'%ROOT_DIR%'); import runpy; runpy.run_module('hecos.setup.main', run_name='__main__')"
+    if errorlevel 1 (
+        echo.
+        echo [!] ERROR: Setup Wizard crashed. See error above.
+        pause
+    )
 ) else if exist "%TRAY_DIR%\START_HECOS_TRAY_WIN.bat" (
     echo [!] Core Setup Wizard not found ^(Core is not downloaded yet^).
     echo [*] Launching Hecos Tray instead. You can download the Core from there.
