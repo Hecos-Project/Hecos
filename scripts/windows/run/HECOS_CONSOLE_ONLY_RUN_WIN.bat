@@ -23,7 +23,14 @@ if exist "python_env\python.exe" (
   set PYTHON_CMD=python
 )
 
-if not defined PYTHON_CMD set PYTHON_CMD=python
+if not defined PYTHON_CMD (
+  py -3 --version >nul 2>&1
+  if not errorlevel 1 (
+    set "PYTHON_CMD=py -3"
+  ) else (
+    set PYTHON_CMD=python
+  )
+)
 :: Auto-check environment before starting
 !PYTHON_CMD! -c "import sys,msvcrt,time; end=time.time()+0.12; run_check=False; exec('while time.time()<end:\n if msvcrt.kbhit() and ord(msvcrt.getch())==27: run_check=True; break\n time.sleep(0.01)'); print('\n[*] Running environment verification...' if run_check else '', end=''); sys.exit(0 if run_check else 1)"
 if %ERRORLEVEL% EQU 0 (

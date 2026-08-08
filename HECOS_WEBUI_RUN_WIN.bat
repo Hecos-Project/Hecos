@@ -67,10 +67,13 @@ echo.
 
 :: Priority to the isolated portable python runtime
 set PYTHON_CMD=python
-if exist "python_env\python.exe" (
+if exist "%ROOT_DIR%\python_env\python.exe" (
   set PYTHON_CMD="%ROOT_DIR%\python_env\python.exe"
-) else if exist "venv\Scripts\python.exe" (
+) else if exist "%ROOT_DIR%\venv\Scripts\python.exe" (
   set PYTHON_CMD="%ROOT_DIR%\venv\Scripts\python.exe"
+) else (
+  py -3 --version >nul 2>&1
+  if not errorlevel 1 set "PYTHON_CMD=py -3"
 )
 
 :: Starting the monitor
