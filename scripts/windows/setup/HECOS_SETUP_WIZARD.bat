@@ -40,6 +40,21 @@ echo                          HECOS SETUP WIZARD
 echo ==============================================================================
 echo.
 
+:: 0. Folder Name Strict Check
+for %%I in ("!ROOT_DIR!") do set "ROOT_NAME=%%~nxI"
+if /i not "!ROOT_NAME!"=="Hecos" (
+    echo [!] CRITICAL ERROR: Incorrect Folder Name
+    echo.
+    echo The main Hecos folder is currently named: !ROOT_NAME!
+    echo It must be named EXACTLY: Hecos
+    echo.
+    echo Please rename the folder to Hecos ^(e.g. C:\Hecos^) and run the setup again.
+    echo If you install Python in this folder now, it will break when you rename it later!
+    echo.
+    pause
+    exit
+)
+
 :: 1. Check Folders
 echo [SYSTEM CHECK]
 if exist "%ROOT_DIR%\hecos\core\version" (
@@ -154,10 +169,10 @@ echo.
 echo ==============================================================================
 echo                          STARTING INTERFACE
 echo ==============================================================================
-if exist "%ROOT_DIR%\hecos\setup_wizard.py" (
+if exist "%ROOT_DIR%\hecos\setup\main.py" (
     echo [*] Launching Core Setup Wizard...
     cd /d "%ROOT_DIR%"
-    %PYTHON_CMD% "hecos\setup_wizard.py"
+    %PYTHON_CMD% "hecos\setup\main.py"
 ) else if exist "%TRAY_DIR%\START_HECOS_TRAY_WIN.bat" (
     echo [!] Core Setup Wizard not found ^(Core is not downloaded yet^).
     echo [*] Launching Hecos Tray instead. You can download the Core from there.
