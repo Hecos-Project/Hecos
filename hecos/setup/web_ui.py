@@ -338,8 +338,11 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                             <form action="/fix" method="POST">
                                 <button class="btn-ghost">{T('btn_fix_paths')}</button>
                             </form>
-                            <form action="/uninstall" method="POST" onsubmit="return confirm('Permanently uninstall Hecos? This will remove all its dependencies.');">
-                                <button class="btn-ghost btn-danger-ghost" onclick="setTimeout(() => this.disabled=true, 10); this.textContent='Uninstalling... Check terminal for logs. Please wait 1-2 mins!';">{T('btn_uninstall_svc')} Hecos</button>
+                            <form id="wipe-form" action="/uninstall" method="POST">
+                                <button type="button" class="btn-ghost btn-danger-ghost" onclick="document.getElementById('wipe-modal').classList.add('active');" title="Permanently uninstall all Hecos components and dependencies">
+                                    {T('btn_uninstall_svc')} Hecos (Full Wipe)
+                                </button>
+                                <div style="font-size:0.65rem; color:var(--muted); margin-top:6px; text-align:center;">Removes pip packages & registry keys</div>
                             </form>
                         </div>
                     </div>
@@ -348,6 +351,26 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 <div class="footer">
                     <a href="/toggle_ui_lang" class="btn-ghost" style="font-size:0.7rem;">UI: {i18n.UI_LANG.upper()}</a>
                     <a href="/clear" class="btn-ghost" style="font-size:0.7rem;">Clear Logs</a>
+                </div>
+            </div>
+
+            <!-- Wipe Modal -->
+            <div id="wipe-modal" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-icon">⚠️</div>
+                    <div class="modal-title">PERMANENTLY UNINSTALL HECOS?</div>
+                    <div class="modal-desc">
+                        This action will perform a <strong>FULL WIPE</strong>.<br><br>
+                        All Python dependencies (Piper, PyAudio, CustomTkinter) will be uninstalled via pip. The Hecos Core and Tray folders will need to be manually deleted afterwards.
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-ghost" onclick="document.getElementById('wipe-modal').classList.remove('active');" style="border-color:var(--border);">Cancel</button>
+                        <button type="button" class="btn-solid-danger" onclick="
+                            this.textContent='Uninstalling... Check terminal (wait 1-2m)'; 
+                            this.disabled=true; 
+                            document.getElementById('wipe-form').submit();
+                        ">Yes, Full Wipe</button>
+                    </div>
                 </div>
             </div>
         </body>
@@ -383,6 +406,8 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
                 <div class="card">
                     <div class="section-label" style="margin-bottom:16px;">How to start Hecos</div>
+                    
+                    <div class="next-label" style="margin-top:10px; color:var(--text);">A. If you have the Hecos Tray Icon:</div>
                     <div class="step-item">
                         <span class="step-num">1</span>
                         <div>
@@ -397,14 +422,24 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                             <div class="step-desc">A beep confirms Hecos is online. Your browser will open automatically.</div>
                         </div>
                     </div>
-                    <div class="step-item">
+                    <div class="step-item" style="border-bottom:none;">
                         <span class="step-num">3</span>
                         <div>
                             <div class="step-title">Auto-start is enabled</div>
                             <div class="step-desc">The tray launches automatically on every login — no action needed next time.</div>
                         </div>
                     </div>
-                    <div class="close-note">✓ You can close this window and the terminal. Hecos runs independently in the background.</div>
+
+                    <div class="next-label" style="margin-top:20px; padding-top:15px; border-top:1px solid var(--border); color:var(--text);">B. If you are using Hecos Core standalone:</div>
+                    <div class="step-item" style="border-bottom:none;">
+                        <span class="step-num" style="border-color:var(--text); color:var(--text);">★</span>
+                        <div>
+                            <div class="step-title">Use the Global Launcher</div>
+                            <div class="step-desc">Open the main Hecos folder and run <strong>HECOS_GLOBAL_LAUNCHER</strong> to access all startup options.</div>
+                        </div>
+                    </div>
+
+                    <div class="close-note">✓ You can now close this window and the terminal.</div>
                 </div>
             </div>
         </body>
@@ -601,12 +636,38 @@ class SetupHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         .btn-ghost {
             padding: 7px 14px; border-radius: 7px; font-size: 0.75rem; font-weight: 500;
             border: 1px solid var(--border); background: transparent; color: var(--muted);
-            cursor: pointer; font-family: inherit; transition: border-color 0.15s, color 0.15s;
+            cursor: pointer; font-family: inherit; transition: border-color 0.15s, color 0.15s, background 0.15s;
             display: inline-block;
         }
         .btn-ghost:hover { border-color: var(--text); color: var(--text); }
-        .btn-danger-ghost { border-color: rgba(239,68,68,0.3); color: var(--red-muted); }
-        .btn-danger-ghost:hover { border-color: var(--red-muted); }
+        .btn-danger-ghost { border-color: rgba(239,68,68,0.4); color: var(--red-muted); }
+        .btn-danger-ghost:hover { border-color: var(--red-muted); background: rgba(239,68,68,0.1); }
+        
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; z-index: 100;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-box {
+            background: var(--bg2); border: 1px solid var(--red-muted);
+            border-radius: 12px; padding: 32px; width: 90%; max-width: 440px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(239,68,68,0.2) inset;
+            transform: scale(0.95); transition: transform 0.2s;
+            text-align: center;
+        }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-icon { font-size: 2rem; margin-bottom: 16px; }
+        .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--red-muted); margin-bottom: 12px; }
+        .modal-desc { font-size: 0.85rem; color: var(--text); line-height: 1.6; margin-bottom: 24px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .btn-solid-danger {
+            background: var(--red-muted); color: #fff; padding: 9px 18px; border-radius: 7px;
+            font-weight: 600; border: none; cursor: pointer; transition: opacity 0.15s;
+        }
+        .btn-solid-danger:hover { opacity: 0.9; }
 
         /* Console */
         .console {
