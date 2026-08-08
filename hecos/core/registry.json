@@ -1,4 +1,20 @@
 {
+    "DASHBOARD": {
+        "description": "plugin_dashboard_desc",
+        "commands": {
+            "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
+            "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
+            "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
+            "get_system_resources": "Returns a summary of system CPU and RAM usage."
+        },
+        "status": "plugin_dashboard_status_online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "DRIVE": {
         "description": "HTTP File Manager (Hecos Drive)",
         "commands": {
@@ -264,5 +280,18 @@
                 "requires_args": false
             }
         ]
+    },
+    "USERS": {
+        "description": "User information and preferences management (LLM Tools)",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
     }
 }
