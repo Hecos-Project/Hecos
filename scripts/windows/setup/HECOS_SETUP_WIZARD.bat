@@ -40,16 +40,19 @@ echo                          HECOS SETUP WIZARD
 echo ==============================================================================
 echo.
 
-:: 0. Folder Name Strict Check
-for %%I in ("!ROOT_DIR!") do set "ROOT_NAME=%%~nxI"
-if /i not "!ROOT_NAME!"=="Hecos" (
-    echo [!] CRITICAL ERROR: Incorrect Folder Name
+:: 0. Folder Path Strict Check
+set "EXPECTED_DIR=%ROOT_DIR:~0,3%Hecos"
+if /i not "%ROOT_DIR%"=="%EXPECTED_DIR%" (
+    echo [!] CRITICAL ERROR: Incorrect Folder Location or Name
     echo.
-    echo The main Hecos folder is currently named: !ROOT_NAME!
-    echo It must be named EXACTLY: Hecos
+    echo The Hecos folder is currently located at:
+    echo %ROOT_DIR%
     echo.
-    echo Please rename the folder to Hecos ^(e.g. C:\Hecos^) and run the setup again.
-    echo If you install Python in this folder now, it will break when you rename it later!
+    echo It MUST be placed directly in the root of your drive and named exactly "Hecos".
+    echo Example: %EXPECTED_DIR%
+    echo.
+    echo Please move and rename the folder to %EXPECTED_DIR% and run the setup again.
+    echo If you install Python in this folder now, it will break when you move it later!
     echo.
     pause
     exit
