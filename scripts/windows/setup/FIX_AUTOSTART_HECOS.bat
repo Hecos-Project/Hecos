@@ -9,10 +9,10 @@ set SCRIPT_DIR=%~dp0
 cd /d "%SCRIPT_DIR%\..\..\.."
 set HECOS_ROOT=%CD%
 
-set TRAY_RUNNER=%HECOS_ROOT%\scripts\windows\run\HECOS_TRAY_WIN.bat
+set TRAY_RUNNER=%HECOS_ROOT%\..\Hecos-Tray\START_HECOS_TRAY_WIN.bat
 
 if not exist "%TRAY_RUNNER%" (
-    echo [!] ERROR: Could not find HECOS_TRAY_WIN.bat at:
+    echo [!] ERROR: Could not find START_HECOS_TRAY_WIN.bat at:
     echo     %TRAY_RUNNER%
     echo.
     echo Please make sure you are running this from the Hecos/scripts/windows/setup folder.

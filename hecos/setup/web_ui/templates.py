@@ -65,7 +65,27 @@ class TemplateMixin(StyleMixin):
             </div>"""
         return ""  # all good, no banner needed
 
+    def _render_core_banner(self) -> str:
+        """Returns an HTML banner if the Hecos core folder is named incorrectly (e.g. Hecos-main)."""
+        basename = os.path.basename(CWD)
+        if basename.lower() != "hecos":
+            return f"""
+            <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.35);
+                        border-radius:10px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
+                <span style="font-size:1.1rem; flex-shrink:0;">⚠️</span>
+                <div>
+                    <div style="font-size:0.8rem; font-weight:700; color:#ef4444; margin-bottom:4px;">Core Folder Name is Incorrect</div>
+                    <div style="font-size:0.77rem; color:#9ca3af; line-height:1.6;">
+                        Current path: <code style="color:#d1d5db;">{CWD}</code><br>
+                        The core folder must be named exactly <strong style="color:#d1d5db;">Hecos</strong> (e.g. <code style="color:#d1d5db;">C:\\Hecos</code>).<br>
+                        Please rename it now, otherwise setup and launch scripts will fail!
+                    </div>
+                </div>
+            </div>"""
+        return ""
+
     # ── Diagnostics helpers ────────────────────────────────────────────────────
+
 
     @staticmethod
     def _diag_python():
@@ -284,6 +304,21 @@ class TemplateMixin(StyleMixin):
 
         v_options = '<div class="voice-list">'
         if voices:
+            v_options = f"""
+            <input type="text" onkeyup="filterVoices(this.value)" placeholder="Search language or voice..." 
+                   style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); 
+                          background:var(--bg3); color:var(--text); margin-bottom:8px; font-family:inherit; font-size:0.8rem;">
+            <script>
+            function filterVoices(query) {{
+                query = query.toLowerCase();
+                document.querySelectorAll('.voice-row').forEach(r => {{
+                    if(r.textContent.toLowerCase().includes(query)) r.style.display = 'flex';
+                    else r.style.display = 'none';
+                }});
+            }}
+            </script>
+            <div class="voice-list">
+            """
             for lang_name in sorted(grouped.keys()):
                 v_options += f'<div class="voice-lang-label">{lang_name}</div>'
                 for vk, vn, vq in sorted(grouped[lang_name], key=lambda x: x[1]):
@@ -317,6 +352,7 @@ class TemplateMixin(StyleMixin):
                 </div>
 
                 {res_html}
+                {self._render_core_banner()}
                 {self._render_tray_banner()}
 
                 <!-- 01 LANGUAGE -->
@@ -350,6 +386,8 @@ class TemplateMixin(StyleMixin):
                             ">▶ Start Installation</button>
                         <div id="next-steps" style="display:none; margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
                             <div class="next-label">What to do while you wait</div>
+                            {
+                            f'''
                             <div class="step-item">
                                 <span class="step-num">1</span>
                                 <div>
@@ -364,13 +402,23 @@ class TemplateMixin(StyleMixin):
                                     <div class="step-desc">After setup completes, right-click the tray icon and click <strong>▶ Start Core</strong>.</div>
                                 </div>
                             </div>
-                            <div class="step-item" style="border-bottom:none;">
-                                <span class="step-num">3</span>
+                            ''' if TRAY_DIR else '''
+                            <div class="step-item">
+                                <span class="step-num">1</span>
                                 <div>
-                                    <div class="step-title">Auto-start is enabled</div>
-                                    <div class="step-desc">The tray launches automatically on every Windows login.</div>
+                                    <div class="step-title">Run Global Launcher</div>
+                                    <div class="step-desc">Open the <strong>C:\\Hecos</strong> folder and double-click <strong>HECOS_GLOBAL_LAUNCHER</strong>.</div>
                                 </div>
                             </div>
+                            <div class="step-item">
+                                <span class="step-num">2</span>
+                                <div>
+                                    <div class="step-title">Press 4 to Start WebUI</div>
+                                    <div class="step-desc">After setup completes, press 4 to launch the Web Interface.</div>
+                                </div>
+                            </div>
+                            '''
+                            }
                         </div>
                     </form>
                 </div>
@@ -537,7 +585,9 @@ class TemplateMixin(StyleMixin):
                 <div class="card">
                     <div class="section-label" style="margin-bottom:16px;">How to start Hecos</div>
 
-                    <div class="next-label" style="margin-top:10px; color:var(--text);">A. If you have the Hecos Tray Icon:</div>
+                    {
+                    f'''
+                    <div class="next-label" style="margin-top:10px; color:var(--text);">Via Hecos Tray Icon (Recommended):</div>
                     <div class="step-item">
                         <span class="step-num">1</span>
                         <div>
@@ -559,17 +609,22 @@ class TemplateMixin(StyleMixin):
                             <div class="step-desc">The tray launches automatically on every login — no action needed next time.</div>
                         </div>
                     </div>
-
-                    <div class="next-label" style="margin-top:20px; padding-top:15px; border-top:1px solid var(--border); color:var(--text);">B. If you are using Hecos Core standalone:</div>
-                    <div class="step-item" style="border-bottom:none;">
+                    ''' if TRAY_DIR else '''
+                    <div class="next-label" style="margin-top:10px; color:var(--text);">Via Hecos Core Standalone:</div>
+                    <div class="step-item">
                         <span class="step-num" style="border-color:var(--text); color:var(--text);">★</span>
                         <div>
                             <div class="step-title">Use the Global Launcher</div>
-                            <div class="step-desc">Open the main Hecos folder and run <strong>HECOS_GLOBAL_LAUNCHER</strong> to access all startup options.</div>
+                            <div class="step-desc">Open the <strong>C:\\Hecos</strong> folder and double-click <strong>HECOS_GLOBAL_LAUNCHER</strong> to access all startup options (including WebUI).</div>
                         </div>
                     </div>
+                    '''
+                    }
 
-                    <div class="close-note">✓ You can now close this window and the terminal.</div>
+                    <div class="close-note">
+                        <strong style="color:var(--text); font-size:0.85rem;">✓ You can now close this window and the setup terminal.</strong><br>
+                        Hecos is ready to be launched.
+                    </div>
                 </div>
             </div>
         </body>

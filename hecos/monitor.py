@@ -167,7 +167,10 @@ def start_and_monitor(script_to_run):
         #     pass
 
     if is_module:
-        process = subprocess.Popen([exe, "-m", script_to_run], env=env)
+        # Isolated portable Python ignores PYTHONPATH if a ._pth file exists.
+        # We bypass this by manually injecting _ROOT into sys.path before execution.
+        injection = f"import sys; sys.path.insert(0, r'{_ROOT}'); import runpy; runpy.run_module('{script_to_run}', run_name='__main__')"
+        process = subprocess.Popen([exe, "-c", injection], env=env)
     else:
         process = subprocess.Popen([exe, script_to_run], env=env)
     

@@ -122,15 +122,15 @@ def enable_autostart():
 
 def start_tray():
     if os.name == 'nt':
-        script = os.path.join("scripts", "windows", "run", "HECOS_TRAY_WIN.bat")
-        script_path = os.path.join(CWD, script)
+        tray_root = os.path.join(os.path.splitdrive(CWD)[0] or "C:", os.sep, "Hecos-Tray")
+        script_path = os.path.join(tray_root, "START_HECOS_TRAY_WIN.bat")
         if os.path.exists(script_path):
-            subprocess.Popen(["cmd", "/c", "start", "", script_path], cwd=CWD)
+            subprocess.Popen(["cmd", "/c", "start", "", script_path], cwd=tray_root)
     else:
-        script = os.path.join("scripts", "linux", "run", "HECOS_TRAY_LINUX.sh")
-        script_path = os.path.join(CWD, script)
+        tray_root = os.path.join(os.path.expanduser("~"), "Hecos-Tray")
+        script_path = os.path.join(tray_root, "START_HECOS_TRAY_LINUX.sh")
         if os.path.exists(script_path):
-            subprocess.Popen(["bash", script_path], cwd=CWD, start_new_session=True)
+            subprocess.Popen(["bash", script_path], cwd=tray_root, start_new_session=True)
 
 def auto_fix_piper_path():
     print(T("piper_check"))
