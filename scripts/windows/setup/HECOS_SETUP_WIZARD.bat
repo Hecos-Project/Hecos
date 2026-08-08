@@ -175,7 +175,12 @@ echo ===========================================================================
 if exist "%ROOT_DIR%\hecos\setup\main.py" (
     echo [*] Launching Core Setup Wizard...
     cd /d "%ROOT_DIR%"
-    %PYTHON_CMD% "hecos\setup\main.py"
+    %PYTHON_CMD% -c "import sys; sys.path.insert(0, r'%ROOT_DIR%'); import runpy; runpy.run_module('hecos.setup.main', run_name='__main__')"
+    if errorlevel 1 (
+        echo.
+        echo [!] ERROR: Setup Wizard crashed. See error above.
+        pause
+    )
 ) else if exist "%TRAY_DIR%\START_HECOS_TRAY_WIN.bat" (
     echo [!] Core Setup Wizard not found ^(Core is not downloaded yet^).
     echo [*] Launching Hecos Tray instead. You can download the Core from there.
