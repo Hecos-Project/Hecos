@@ -3,6 +3,24 @@ setlocal
 title Hecos Global Launcher
 color 0B
 
+:: 0. Folder Name Strict Check
+set "SCRIPT_DIR=%~dp0"
+if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
+for %%I in ("%SCRIPT_DIR%") do set "ROOT_NAME=%%~nxI"
+if /i not "%ROOT_NAME%"=="Hecos" (
+    color 0C
+    cls
+    echo [!] CRITICAL ERROR: Incorrect Folder Name
+    echo.
+    echo The main Hecos folder is currently named: %ROOT_NAME%
+    echo It must be named EXACTLY: Hecos
+    echo.
+    echo Please rename the folder to Hecos ^(e.g. C:\Hecos^) and run the launcher again.
+    echo.
+    pause
+    exit
+)
+
 :MENU
 cls
 echo ==============================================================================
