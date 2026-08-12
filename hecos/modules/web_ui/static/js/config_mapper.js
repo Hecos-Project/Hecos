@@ -67,7 +67,6 @@ function populateUI() {
   if (typeof populateAutomationUI === 'function') safeCall('Automation', () => populateAutomationUI());
   if (typeof populateBrowserUI === 'function')    safeCall('Browser', () => populateBrowserUI());
   if (typeof populateDriveUI === 'function')      safeCall('Drive', () => populateDriveUI());
-  if (typeof populateFlowsUI === 'function')      safeCall('Flows', () => populateFlowsUI());
 
   // 13. Restart indicator badges
   if (typeof initRestartIndicators === 'function') safeCall('RestartIndicators', () => initRestartIndicators());
@@ -117,7 +116,6 @@ function buildPayload() {
 
     // 4. Plugin toggles, extensions, lazy, dashboard, browser, automation
     buildPluginsPayload(out);
-    if (window.buildFlowsPayload) window.buildFlowsPayload(out);
 
     // 6. Reminder
     if (typeof buildReminderPayload === 'function') {

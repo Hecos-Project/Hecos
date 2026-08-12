@@ -1,4 +1,20 @@
 {
+    "DASHBOARD": {
+        "description": "plugin_dashboard_desc",
+        "commands": {
+            "get_backend_status": "Verifies if the AI backend (Ollama, Kobold, or Cloud) is online and ready.",
+            "get_full_dashboard": "Returns a complete report of all hardware resources and AI backend status.",
+            "get_gpu_status": "Returns the video card (GPU) status, including VRAM usage and thermal/computational load.",
+            "get_system_resources": "Returns a summary of system CPU and RAM usage."
+        },
+        "status": "plugin_dashboard_status_online",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
+    },
     "DRIVE": {
         "description": "HTTP File Manager (Hecos Drive)",
         "commands": {
@@ -217,6 +233,87 @@
             }
         ]
     },
+    "LISTS": {
+        "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
+        "commands": {
+            "create_list": "Creates a new empty list.",
+            "list_lists": "Shows all active lists with the count of items.",
+            "show_list": "Shows all items of a specific list.",
+            "add_to_list": "Adds one or more items to a list. Creates the list if it doesn't exist.",
+            "check_item": "Marks an item as completed in a list.",
+            "uncheck_item": "Restores an item as to-do.",
+            "remove_from_list": "Permanently deletes an item from a list.",
+            "clear_done": "Removes all completed items from a list.",
+            "delete_list": "Deletes an entire list.",
+            "archive_list": "Archives a list (hides it from the main view)."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-list-check",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "lists",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list",
+                    "/lists",
+                    "/liste"
+                ],
+                "description": "Shows all lists",
+                "usage": "/list",
+                "example": "/list",
+                "icon": "📋",
+                "method": "list_lists",
+                "requires_args": false
+            },
+            {
+                "id": "list_show",
+                "manifest_version": "1",
+                "aliases": [
+                    "/lista"
+                ],
+                "description": "Shows a list",
+                "usage": "/lista <nome>",
+                "example": "/lista Spesa",
+                "icon": "🔍",
+                "method": "show_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_add",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list add",
+                    "/lista aggiungi"
+                ],
+                "description": "Adds item",
+                "usage": "/list add <lista> <elemento>",
+                "example": "/list add Spesa Uova",
+                "icon": "➕",
+                "method": "add_to_list",
+                "requires_args": true
+            },
+            {
+                "id": "list_done",
+                "manifest_version": "1",
+                "aliases": [
+                    "/list done",
+                    "/lista spunta"
+                ],
+                "description": "Checks item",
+                "usage": "/list done <lista> <elemento>",
+                "example": "/list done Spesa Uova",
+                "icon": "✅",
+                "method": "check_item",
+                "requires_args": true
+            }
+        ]
+    },
     "REMINDER": {
         "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
         "commands": {
@@ -264,5 +361,18 @@
                 "requires_args": false
             }
         ]
+    },
+    "USERS": {
+        "description": "User information and preferences management (LLM Tools)",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
     }
 }

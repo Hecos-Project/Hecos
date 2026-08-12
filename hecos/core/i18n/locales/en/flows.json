@@ -1,0 +1,23 @@
+{
+    "flows_drag_to_reorder": "Drag to reorder",
+    "flows_delete_flow": "Delete flow",
+    "flows_select_first": "Please select a flow first.",
+    "flows_confirm_delete_title": "Confirm",
+    "flows_confirm_delete_text": "Delete flow \"{name}\"?",
+    "flows_confirm_delete_cancel": "Cancel",
+    "flows_confirm_delete_yes": "Delete",
+    "flows_deleted_toast": "Flow deleted.",
+    "flows_delete_failed_toast": "Delete failed: {error}",
+    "flows_export_select_first": "Please select a flow to export first.",
+    "flows_export_empty": "No YAML content to export.",
+    "flows_export_saved": "↓ Saved: {name}",
+    "flows_export_done": "↓ Flow exported: {name}",
+    "flows_import_empty_file": "The file is empty or unreadable.",
+    "flows_import_yaml_invalid": "❌ Invalid YAML: {error}",
+    "flows_import_invalid_file": "❌ File not recognized as Hecos Flow.\nUse .heflow files exported from Hecos, or YAML with a pipeline field.",
+    "flows_import_done": "↑ Imported: \"{name}\" ({count} steps) — press Save to save.",
+    "flows_import_read_error": "Error reading file.",
+    "flows_delete_selected_tooltip": "Delete the selected flow",
+    "flows_export_tooltip": "Export the current flow as a .yaml file",
+    "flows_import_tooltip": "Import a flow from a .yaml file"
+}
