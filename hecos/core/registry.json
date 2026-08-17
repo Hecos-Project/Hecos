@@ -203,6 +203,19 @@
             }
         ]
     },
+    "CONTACTS": {
+        "description": "Address Book plugin for Hecos with rich metadata and WhatsApp integration.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fas fa-address-book",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
         "commands": {},
@@ -232,6 +245,19 @@
                 "requires_args": true
             }
         ]
+    },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-file-alt",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
     },
     "LISTS": {
         "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
@@ -313,6 +339,37 @@
                 "requires_args": true
             }
         ]
+    },
+    "MAIL": {
+        "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
+        "commands": {
+            "sync_emails": "Synchronizes the mailbox by fetching new messages via IMAP.",
+            "send_email": "Sends an email using the SMTP client. Supports HTML, text, and attachments.",
+            "list_emails": "Lists emails from the inbox or a specified folder.",
+            "get_email": "Retrieves a single email by ID with full body and attachments."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-envelope",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "NOTIFICATIONS": {
+        "description": "Sistema di notifiche per eventi Hecos. Nessun tool LLM esposto.",
+        "commands": {
+            "get_status": "Returns the current status of the Notifications Center."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": []
     },
     "REMINDER": {
         "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",

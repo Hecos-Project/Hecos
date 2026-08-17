@@ -7,6 +7,12 @@ import os
 from flask import Flask, request, redirect, url_for, jsonify
 from flask_login import LoginManager, current_user
 
+def get_app():
+    """Return the live Flask app instance, or None if not yet created."""
+    import sys
+    return getattr(sys, "hecos_flask_app", None)
+
+
 def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     """
     Create, configure, and return the Flask application object.
@@ -207,5 +213,9 @@ def create_flask_app(config_manager, root_dir, logger, get_state_manager):
     except Exception as _pr_e:
         logger.warning(f"[WebUI] Could not clear pending_restart.json: {_pr_e}")
     # ─────────────────────────────────────────────────────────────────────────
+
+    # Store as singleton so plugins can retrieve it via get_app()
+    import sys
+    sys.hecos_flask_app = app
 
     return app, debug_on

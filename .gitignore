@@ -523,6 +523,15 @@ hecos/modules/web_ui/extensions/messenger/
 hecos/modules/web_ui/extensions/pc_automation/
 hecos/modules/web_ui/extensions/remote_triggers/
 hecos/modules/web_ui/extensions/templates/
+hecos/modules/web_ui/extensions/notifications/
+hecos/modules/web_ui/extensions/contacts/
+
+# WebUI Template Folders belonging to HPM packages
+hecos/modules/web_ui/templates/modules/mail/
+hecos/modules/web_ui/templates/modules/contacts/
+hecos/modules/web_ui/templates/modules/templates/
+hecos/modules/web_ui/templates/modules/modules/
+hecos/modules/web_ui/templates/modules/notifications/
 
 # Missing WebUI Templates belonging to HPM packages (config files)
 hecos/modules/web_ui/templates/modules/config_drive.html
@@ -533,6 +542,7 @@ hecos/modules/web_ui/templates/modules/config_remote_triggers.html
 hecos/modules/web_ui/templates/modules/config_templates.html
 hecos/modules/web_ui/templates/modules/config_pc_automation.html
 hecos/modules/web_ui/templates/modules/config_panel.html
+hecos/modules/web_ui/templates/modules/hpm_notifications.html
 
 # WebUI Static Assets belonging to HPM packages
 hecos/modules/web_ui/static/js/config_mapper_drive.js
@@ -542,6 +552,12 @@ hecos/modules/web_ui/static/css/image_gen.css
 hecos/modules/web_ui/static/js/image_gen.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
+hecos/modules/web_ui/static/js/mail.js
+
+# Frontend build tools
+node_modules/
+package-lock.json
+package.json
 
 # Drive Module (HPM Package)
 hecos/modules/drive/
