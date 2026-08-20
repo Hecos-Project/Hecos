@@ -176,3 +176,20 @@ class SystemBootstrapper:
             self.state_manager.system_status,
             ptt_status=self.state_manager.push_to_talk
         )
+        
+        # ── Notifications: Fire system_boot event ─────────────────────────────
+        # sys.hecos_notify is registered by the Notifications plugin on_load().
+        # If the plugin is not installed/active, this block is silently skipped.
+        try:
+            notify_fn = getattr(sys, "hecos_notify", None)
+            ev_cls    = getattr(sys, "hecos_system_event", None)
+            if notify_fn and ev_cls:
+                notify_fn(
+                    ev_cls.SYSTEM_BOOT,
+                    subject="Hecos avviato",
+                    message="Il sistema Hecos è stato avviato correttamente."
+                )
+                logger.info("[NOTIFICATIONS] system_boot event fired.")
+        except Exception as _ntf_e:
+            logger.warning(f"[NOTIFICATIONS] system_boot fire error (non-fatal): {_ntf_e}")
+        # ─────────────────────────────────────────────────────────────────────

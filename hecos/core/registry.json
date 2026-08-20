@@ -359,9 +359,17 @@
         "slash_commands": []
     },
     "NOTIFICATIONS": {
-        "description": "Sistema di notifiche per eventi Hecos. Nessun tool LLM esposto.",
+        "description": "Sistema di notifiche per eventi Hecos.",
         "commands": {
-            "get_status": "Returns the current status of the Notifications Center."
+            "add_destination": "Adds a new notification destination.",
+            "bind_event_destination": "Binds a destination to a system event, so notifications for that event are sent there.",
+            "get_status": "Returns the current status of the Notifications Center.",
+            "list_destinations": "Lists all currently configured notification destinations.",
+            "list_rules": "Lists all system events and which destinations are bound to each.",
+            "remove_destination": "Removes a notification destination by name.",
+            "send_notification": "Sends an ad-hoc notification immediately.",
+            "set_event_template": "Configures an HTML template and its variables for a given event.",
+            "unbind_event_destination": "Removes a destination from a system event."
         },
         "status": "ONLINE",
         "example": "",
@@ -369,7 +377,37 @@
         "is_class_based": true,
         "icon": "",
         "category": "PLUGINS",
-        "slash_commands": []
+        "slash_commands": [
+            {
+                "id": "notify",
+                "aliases": [
+                    "/notify"
+                ],
+                "description": "Manage notifications: list rules, add/remove destinations, bind events, or send ad-hoc alerts.",
+                "usage": "/notify [list rules | bind <event> to <dest> | add <name> <uri> | send <subject>]",
+                "example": "/notify list rules",
+                "icon": "🔔",
+                "method": "get_status",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "alert",
+                "aliases": [
+                    "/alert"
+                ],
+                "description": "Send an immediate notification to all configured destinations.",
+                "usage": "/alert <message>",
+                "example": "/alert System backup completed!",
+                "icon": "🔔",
+                "method": "send_notification",
+                "args_schema": {
+                    "subject": "str",
+                    "message": "str"
+                },
+                "requires_args": true
+            }
+        ]
     },
     "REMINDER": {
         "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
