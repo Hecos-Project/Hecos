@@ -203,6 +203,19 @@
             }
         ]
     },
+    "CONTACTS": {
+        "description": "Address Book plugin for Hecos with rich metadata and WhatsApp integration.",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fas fa-address-book",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
     "IMAGE_GEN": {
         "description": "AI Image Generation - Generates images from text prompts using multiple providers (Pollinations, Gemini, OpenAI DALL-E, Stability AI, HuggingFace). Fully autonomous package with its own TOML configuration. The easiest way to get started is to select Hugging Face as the provider and use one or more API keys, which you can obtain by logging in with an account.",
         "commands": {},
@@ -232,6 +245,19 @@
                 "requires_args": true
             }
         ]
+    },
+    "TEMPLATES": {
+        "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
+        "commands": {},
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-file-alt",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
     },
     "LISTS": {
         "description": "Create and manage multiple lists (e.g. groceries, todos) with Hecos. Supports custom colors, archived lists, item states, and LLM autonomous management.",
@@ -310,6 +336,75 @@
                 "example": "/list done Spesa Uova",
                 "icon": "✅",
                 "method": "check_item",
+                "requires_args": true
+            }
+        ]
+    },
+    "MAIL": {
+        "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
+        "commands": {
+            "sync_emails": "Synchronizes the mailbox by fetching new messages via IMAP.",
+            "send_email": "Sends an email using the SMTP client. Supports HTML, text, and attachments.",
+            "list_emails": "Lists emails from the inbox or a specified folder.",
+            "get_email": "Retrieves a single email by ID with full body and attachments."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-envelope",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": []
+    },
+    "NOTIFICATIONS": {
+        "description": "Sistema di notifiche per eventi Hecos.",
+        "commands": {
+            "add_destination": "Adds a new notification destination.",
+            "bind_event_destination": "Binds a destination to a system event, so notifications for that event are sent there.",
+            "get_status": "Returns the current status of the Notifications Center.",
+            "list_destinations": "Lists all currently configured notification destinations.",
+            "list_rules": "Lists all system events and which destinations are bound to each.",
+            "remove_destination": "Removes a notification destination by name.",
+            "send_notification": "Sends an ad-hoc notification immediately.",
+            "set_event_template": "Configures an HTML template and its variables for a given event.",
+            "unbind_event_destination": "Removes a destination from a system event."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": [
+            {
+                "id": "notify",
+                "aliases": [
+                    "/notify"
+                ],
+                "description": "Manage notifications: list rules, add/remove destinations, bind events, or send ad-hoc alerts.",
+                "usage": "/notify [list rules | bind <event> to <dest> | add <name> <uri> | send <subject>]",
+                "example": "/notify list rules",
+                "icon": "🔔",
+                "method": "get_status",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "alert",
+                "aliases": [
+                    "/alert"
+                ],
+                "description": "Send an immediate notification to all configured destinations.",
+                "usage": "/alert <message>",
+                "example": "/alert System backup completed!",
+                "icon": "🔔",
+                "method": "send_notification",
+                "args_schema": {
+                    "subject": "str",
+                    "message": "str"
+                },
                 "requires_args": true
             }
         ]

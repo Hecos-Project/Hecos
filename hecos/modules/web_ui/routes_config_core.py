@@ -396,8 +396,12 @@ def init_config_core_routes(app, cfg_mgr, logger, get_sm=None):
         hecos_root = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         )
-        # Try hpm/ first (new location), fall back to modules/ and plugins/
+        # Try hpm/ first (new location), fall back to hpm/libraries/, hpm/plugins/, modules/ and plugins/
         plugin_base = os.path.join(hecos_root, "hecos", "hpm", plugin_id)
+        if not os.path.isdir(plugin_base):
+            plugin_base = os.path.join(hecos_root, "hecos", "hpm", "libraries", plugin_id)
+        if not os.path.isdir(plugin_base):
+            plugin_base = os.path.join(hecos_root, "hecos", "hpm", "plugins", plugin_id)
         if not os.path.isdir(plugin_base):
             plugin_base = os.path.join(hecos_root, "hecos", "modules", plugin_id)
         if not os.path.isdir(plugin_base):

@@ -40,11 +40,15 @@ def get_plugin_module(tag, legacy=False):
 
     # 2. Just-In-Time (JIT) Import logic for dormant plugins
     if tag in _lazy_plugins_paths:
+        main_file = _lazy_plugins_paths.get(tag)
+        if not main_file:
+            # Another thread already started loading it or deleted it. Fall back to returning what's in loaded.
+            return _loaded_legacy_plugins.get(tag) if legacy else _loaded_plugins.get(tag)
+            
         import importlib.util
         import os
         from hecos.core.logging import logger
-        
-        main_file = _lazy_plugins_paths[tag]
+
         # Forced warning level for Yellow color in terminal as requested by user
         logger.warning(f"[LAZY LOAD] Awakening dormant plugin '{tag}' from {main_file}")
         
@@ -104,7 +108,7 @@ def get_plugin_module(tag, legacy=False):
                 # ─────────────────────────────────────────────────────────────────
 
                 # Clean up lazy path reference
-                del _lazy_plugins_paths[tag]
+                _lazy_plugins_paths.pop(tag, None)
                 
                 # Return the correct one based on what was requested
                 return _loaded_legacy_plugins.get(tag) if legacy else _loaded_plugins.get(tag)
