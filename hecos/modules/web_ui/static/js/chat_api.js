@@ -78,6 +78,11 @@ window.sendMessage = async function() {
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
 
+    if (data.session_id && window.chatHistoryState && !window.chatHistoryState.activeSessionId) {
+        window.chatHistoryState.activeSessionId = data.session_id;
+        localStorage.setItem('hecos_active_session_id', data.session_id);
+    }
+
     if (data.intercepted) {
       cursor.remove();
       const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
@@ -210,6 +215,11 @@ window.sendInternalMessage = async function(text) {
     });
     const data = await res.json();
     if(!data.ok) throw new Error(data.error||'Server error');
+
+    if (data.session_id && window.chatHistoryState && !window.chatHistoryState.activeSessionId) {
+        window.chatHistoryState.activeSessionId = data.session_id;
+        localStorage.setItem('hecos_active_session_id', data.session_id);
+    }
 
     if (data.intercepted) {
       cursor.remove();
