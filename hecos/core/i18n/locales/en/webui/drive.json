@@ -20,5 +20,5 @@
     "webui_drive_edit": "Edit",
     "webui_drive_view_list": "List View",
     "webui_drive_view_grid_sm": "Small Grid",
-    "webui_drive_view_grid_lg": "Large Grid"
+    "webui_drive_view_grid_lg": "Large Grid", "webui_drive_search_placeholder": "Search files and folders..."
 }

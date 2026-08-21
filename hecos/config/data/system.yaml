@@ -40,14 +40,14 @@ cognition:
   include_self_awareness: true
   max_history_messages: 20
   rag:
-    enabled: false
+    enabled: true
     embedder: sentence_transformers
     embedder_model: all-MiniLM-L6-v2
     chunk_size: 512
     chunk_overlap: 64
     top_k: 5
     similarity_threshold: 0.3
-    auto_ingest_history: false
+    auto_ingest_history: true
     persist_path: memory/vector_store
 filters:
   remove_asterisks: both
