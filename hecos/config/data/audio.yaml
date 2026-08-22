@@ -19,3 +19,4 @@ ptt_sources:
   webhook: false
   custom_key: false
 custom_ptt_key: ''
+tts_history_max_files: 100

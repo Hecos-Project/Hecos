@@ -94,7 +94,16 @@ function addBubble(role, text, id, opts) {
   }
   
   // Track last real AI bubble for audio_ready (don't use :last-child which breaks when action-log divs follow)
-  if (!isUser) window._lastAiBubble = bubble;
+  if (!isUser) {
+      window._lastAiBubble = bubble;
+      if (opts && opts.audio_file) {
+          bubble.dataset.audioId = opts.audio_file;
+          // Pre-load the audio badge for historical messages (without autoplay)
+          if (typeof tryLoadAudio === 'function') {
+              tryLoadAudio(bubble, false);
+          }
+      }
+  }
   
   const hIdx = (opts && opts.historyIndex !== undefined) ? opts.historyIndex : 
                ((window.chatHistory) ? window.chatHistory.length - 1 : -1);
@@ -170,6 +179,16 @@ document.addEventListener('DOMContentLoaded', () => {
   container.style.display = 'none';
   document.body.appendChild(container);
   container.appendChild(window.HecosTTSPlayer);
+
+  // Prevent <audio> elements from trapping keyboard focus inside browser Shadow DOM.
+  // When an <audio controls> element has focus, the browser's internal shadow root
+  // consumes ESC (and other keys) before they reach our document-level listeners.
+  // By immediately blurring any audio that gains focus, ESC always propagates to our handlers.
+  document.addEventListener('focusin', (e) => {
+      if (e.target && e.target.tagName === 'AUDIO') {
+          e.target.blur();
+      }
+  });
 });
 
 // Helper to unlock autoplay on mobile during user interaction (called from sendMessage/bindWebPTT)
@@ -180,9 +199,13 @@ window.unlockAudioContext = function() {
   }
 };
 
-async function tryLoadAudio(bubble) {
-  const url = '/api/audio?t=' + Date.now();
-  console.log("[Audio] Attempting to load audio from:", url);
+async function tryLoadAudio(bubble, autoplay = true) {
+  // Prefer the persistent audio_id stored on the bubble (survives page refresh)
+  const audioId = bubble.dataset?.audioId || null;
+  const url = audioId
+    ? `/api/audio?id=${encodeURIComponent(audioId)}`
+    : `/api/audio?t=${Date.now()}`;
+  console.log("[Audio] Attempting to load audio from:", url, "autoplay:", autoplay);
   
   // Remove existing audio badges to prevent duplicates
   const existingBadges = bubble.querySelectorAll('.audio-badge');
@@ -192,17 +215,6 @@ async function tryLoadAudio(bubble) {
   badge.className='audio-badge';
   badge.innerHTML = '<i class="fas fa-volume-up"></i> ';
   
-  // If the global player is already in another bubble, clone it there so the user keeps a play button for history
-  if (window.HecosTTSPlayer.parentNode) {
-      const oldSrc = window.HecosTTSPlayer.src;
-      const clone = document.createElement('audio');
-      clone.controls = true;
-      clone.style.display = 'block';
-      clone.style.marginTop = '10px';
-      clone.src = oldSrc;
-      window.HecosTTSPlayer.parentNode.replaceChild(clone, window.HecosTTSPlayer);
-  }
-
   // Under HTTPS, sometimes the browser blocks direct src assignment for self-signed
   // Let's try to fetch it as a blob to see if it's a network/security error
   let blobUrl = "";
@@ -216,9 +228,50 @@ async function tryLoadAudio(bubble) {
     console.error("[Audio] Fetch failed (possibly SSL/CORS):", e);
     badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Audio Error (Click to retry)';
     badge.style.cursor = 'pointer';
-    badge.onclick = () => tryLoadAudio(bubble);
+    badge.onclick = () => tryLoadAudio(bubble, autoplay);
     bubble.appendChild(badge);
     return;
+  }
+
+  // If this is a historical message (no autoplay), we don't need the global singleton player.
+  // Using the singleton causes race conditions when loading multiple historical messages concurrently.
+  if (!autoplay) {
+      const historicalPlayer = document.createElement('audio');
+      historicalPlayer.controls = true;
+      historicalPlayer.style.display = 'block';
+      historicalPlayer.style.marginTop = '10px';
+      historicalPlayer.src = blobUrl;
+      
+      historicalPlayer.onplay = () => {
+          window.currentAudio = historicalPlayer;
+          showStopVoiceBtn(true);
+      };
+      
+      historicalPlayer.onpause = () => {
+          showStopVoiceBtn(false);
+          fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+      };
+      
+      historicalPlayer.onended = () => {
+          showStopVoiceBtn(false);
+          fetch('/api/audio/speaking/stop', { method: 'POST' }).catch(() => {});
+      };
+      
+      badge.appendChild(historicalPlayer);
+      bubble.appendChild(badge);
+      return;
+  }
+
+  // ── Live Audio (Autoplay = true) ──
+  // If the global player is already in another bubble, clone it there so the user keeps a play button for history
+  if (window.HecosTTSPlayer.parentNode) {
+      const oldSrc = window.HecosTTSPlayer.src;
+      const clone = document.createElement('audio');
+      clone.controls = true;
+      clone.style.display = 'block';
+      clone.style.marginTop = '10px';
+      clone.src = oldSrc;
+      window.HecosTTSPlayer.parentNode.replaceChild(clone, window.HecosTTSPlayer);
   }
 
   window.HecosTTSPlayer.src = blobUrl;
@@ -227,7 +280,8 @@ async function tryLoadAudio(bubble) {
   bubble.appendChild(badge);
   
   window.HecosTTSPlayer.oncanplaythrough = () => {
-    console.log("[Audio] Can play through, attempting autoplay...");
+    console.log("[Audio] Can play through...");
+    console.log("[Audio] Attempting autoplay...");
     window.HecosTTSPlayer.play().then(() => {
         console.log("[Audio] Autoplay success");
     }).catch(err => {

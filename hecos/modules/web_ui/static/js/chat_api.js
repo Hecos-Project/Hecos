@@ -149,6 +149,7 @@ window.sendMessage = async function() {
         if (window.sendBtn) window.sendBtn.disabled = false;
         
       } else if(ev.type === 'audio_ready') {
+        if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
       } else if(ev.type === 'system_audio_playing') {
         if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);
@@ -258,6 +259,7 @@ window.sendInternalMessage = async function(text) {
         if (window.sendBtn) window.sendBtn.disabled = false;
 
       } else if(ev.type === 'audio_ready') {
+        if (ev.audio_id) aiBubble.dataset.audioId = ev.audio_id;
         if (window.tryLoadAudio) window.tryLoadAudio(aiBubble);
       } else if(ev.type === 'system_audio_playing') {
         if (window.showStopVoiceBtn) window.showStopVoiceBtn(true);

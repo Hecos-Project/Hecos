@@ -14,7 +14,7 @@ import threading
 import queue
 import logging
 
-from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts
+from hecos.modules.web_ui.routes_chat_tts import _maybe_generate_tts, set_last_audio_path
 
 _sessions      = {}
 _sessions_lock = threading.Lock()
@@ -157,11 +157,29 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         _chat_log.info(f"[INFERENCE] Generating TTS...")
         t_tts_start = time.monotonic()
-        audio_status = _maybe_generate_tts(clean_voice, cfg_mgr)
-        _chat_log.info(f"[INFERENCE] TTS done in {time.monotonic() - t_tts_start:.2f}s | status={audio_status}")
+        audio_status, audio_id = _maybe_generate_tts(clean_voice, cfg_mgr)
+        _chat_log.info(f"[INFERENCE] TTS done in {time.monotonic() - t_tts_start:.2f}s | status={audio_status} id={audio_id}")
 
         if audio_status == "web":
-            sess["queue"].put({"type": "audio_ready",          "text": ""})
+            sess["queue"].put({"type": "audio_ready", "text": "", "audio_id": audio_id or ""})
+            # Persist audio_id to the last assistant message in the DB
+            if audio_id:
+                try:
+                    from hecos.memory.brain_interface import _db_path
+                    uid = sess.get("user_id", "admin")
+                    db  = _db_path(uid)
+                    import sqlite3
+                    with sqlite3.connect(db, timeout=10) as _conn:
+                        _conn.execute(
+                            "UPDATE history SET audio_file = ? WHERE id = ("
+                            "  SELECT MAX(id) FROM history WHERE session_id = ? AND role = 'assistant'"
+                            ")",
+                            (audio_id, session_id)
+                        )
+                        _conn.commit()
+                    _chat_log.info(f"[INFERENCE] audio_file={audio_id} saved to history.")
+                except Exception as _ae:
+                    _chat_log.warning(f"[INFERENCE] Could not save audio_id to DB: {_ae}")
         elif audio_status == "system":
             sess["queue"].put({"type": "system_audio_playing", "text": ""})
 

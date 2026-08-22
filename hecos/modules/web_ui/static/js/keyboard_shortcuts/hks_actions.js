@@ -435,6 +435,11 @@
             description: 'Close the currently active panel, modal, or overlay',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
+                // Try to stop voice playback explicitly when ESC is pressed globally
+                if (typeof window.stopVoice === 'function') {
+                    window.stopVoice();
+                }
+
                 // Try to close HKS overlay first
                 if (window.HKS_OVERLAY && window.HKS_OVERLAY.isVisible()) {
                     window.HKS_OVERLAY.hide();

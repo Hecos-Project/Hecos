@@ -187,7 +187,10 @@ window.clearInput = function() {
 window.stopAudioPlayback = function() {
   if (window.currentAudio) {
     window.currentAudio.pause();
-    window.currentAudio.src = '';
+    // Only clear src for the global singleton player. Historical players must retain their src to be re-playable.
+    if (window.currentAudio === window.HecosTTSPlayer) {
+        window.currentAudio.src = '';
+    }
     window.currentAudio = null;
   }
   try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
@@ -217,6 +220,22 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     window.stopVoice();
   }
+  
+  // Toggle audio with Spacebar, but not if user is typing in an input
+  if (e.key === ' ' || e.code === 'Space') {
+    const active = document.activeElement;
+    if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && !active.isContentEditable)) {
+      if (window.currentAudio) {
+        e.preventDefault();
+        if (window.currentAudio.paused) {
+          window.currentAudio.play().catch(err => console.warn('[Audio] Spacebar play blocked:', err));
+        } else {
+          window.currentAudio.pause();
+        }
+      }
+    }
+  }
+
   if (e.key === 'F4') { e.preventDefault(); if(window.toggleMic) window.toggleMic(); }
   if (e.key === 'F6') { e.preventDefault(); if(window.toggleTTS) window.toggleTTS(); }
   if (e.key === 'F7') { 
