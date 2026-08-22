@@ -245,6 +245,17 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'F8') { e.preventDefault(); if(window.togglePTT) window.togglePTT(); }
 });
 
+window.updateGlobalVolume = function(val) {
+  const vol = Math.max(0, Math.min(100, parseInt(val))) / 100;
+  window.globalTTSVolume = vol;
+  if (window.HecosTTSPlayer) window.HecosTTSPlayer.volume = vol;
+  
+  // Update all other historical players currently in the DOM
+  document.querySelectorAll('.audio-badge audio').forEach(player => {
+      player.volume = vol;
+  });
+};
+
 window.refreshStatus = async function() {
   try {
     const d = await (await fetch('/hecos/status')).json();
@@ -292,6 +303,9 @@ window.refreshStatus = async function() {
     const micIsOn = (d.mic === 'ON');
     const pttIsOn = (d.ptt === 'ON');
     if (window._applyMicState) window._applyMicState(micIsOn);
+    if (micIsOn && typeof window.initWebAudio === 'function') {
+        window.initWebAudio().catch(() => {});
+    }
     if (window._applyTTSState) window._applyTTSState(d.tts === 'ON');
     // PTT can only be ON if MIC is also ON — enforce this dependency client-side
     if (window._applyPTTState) window._applyPTTState(micIsOn && pttIsOn);

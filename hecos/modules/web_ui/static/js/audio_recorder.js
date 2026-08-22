@@ -12,6 +12,40 @@ window.initWebAudio = async function() {
   if (window.webAudioStream) return true;
   try {
     window.webAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    
+    if (!window.micAudioContext) {
+        window.micAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        window.micAnalyser = window.micAudioContext.createAnalyser();
+        window.micAnalyser.fftSize = 256;
+        window.micSource = window.micAudioContext.createMediaStreamSource(window.webAudioStream);
+        window.micSource.connect(window.micAnalyser);
+        window.micDataArray = new Uint8Array(window.micAnalyser.frequencyBinCount);
+        
+        function drawVu() {
+            requestAnimationFrame(drawVu);
+            if (!window.micAnalyser) return;
+            const meter = document.getElementById('mic-vu-meter');
+            const pctText = document.getElementById('mic-pct');
+            if (!meter) return;
+            
+            // Only flow the meter if Mic is ON, and if PTT is ON it must be actively recording
+            if (!window.currentMicOn || (window.currentPTTOn && !window.isWebAudioRecording)) {
+                meter.style.width = '0%';
+                if (pctText) pctText.textContent = '0%';
+                return;
+            }
+            
+            window.micAnalyser.getByteFrequencyData(window.micDataArray);
+            let sum = 0;
+            for(let i=0; i<window.micDataArray.length; i++) sum += window.micDataArray[i];
+            let avg = sum / window.micDataArray.length;
+            let percent = Math.min(100, (avg / 64) * 100); // boosted sensitivity for visual feedback
+            meter.style.width = percent + '%';
+            if (pctText) pctText.textContent = Math.round(percent) + '%';
+        }
+        drawVu();
+    }
+    
     return true;
   } catch (err) {
     console.error('[WebAudio] Failed to acquire microphone:', err);

@@ -98,6 +98,9 @@ window.toggleMic = async function() {
     const data = await r.json();
     if (data.ok) {
         _applyMicState(data.listening_status);
+        if (data.listening_status && window.initWebAudio) {
+            window.initWebAudio();
+        }
         if (data.ptt_forced_off) {
             _applyPTTState(false);
         }

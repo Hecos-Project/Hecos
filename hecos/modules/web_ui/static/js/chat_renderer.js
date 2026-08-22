@@ -197,6 +197,11 @@ window.unlockAudioContext = function() {
     window.HecosTTSPlayer.src = SILENT_WAV;
     window.HecosTTSPlayer.play().catch(e => { console.warn("[Audio] Silent unlock failed:", e); });
   }
+  
+  // Also unlock the VU meter AudioContext if suspended
+  if (window.micAudioContext && window.micAudioContext.state === 'suspended') {
+      window.micAudioContext.resume().catch(e => { console.warn("[Audio] Mic unlock failed:", e); });
+  }
 };
 
 async function tryLoadAudio(bubble, autoplay = true) {
@@ -241,6 +246,9 @@ async function tryLoadAudio(bubble, autoplay = true) {
       historicalPlayer.style.display = 'block';
       historicalPlayer.style.marginTop = '10px';
       historicalPlayer.src = blobUrl;
+      if (window.globalTTSVolume !== undefined) {
+          historicalPlayer.volume = window.globalTTSVolume;
+      }
       
       historicalPlayer.onplay = () => {
           window.currentAudio = historicalPlayer;
@@ -275,6 +283,9 @@ async function tryLoadAudio(bubble, autoplay = true) {
   }
 
   window.HecosTTSPlayer.src = blobUrl;
+  if (window.globalTTSVolume !== undefined) {
+      window.HecosTTSPlayer.volume = window.globalTTSVolume;
+  }
   window.currentAudio = window.HecosTTSPlayer;
   badge.appendChild(window.HecosTTSPlayer);
   bubble.appendChild(badge);
