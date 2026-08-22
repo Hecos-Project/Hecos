@@ -50,10 +50,10 @@
     </div>
   </div>
 
-  <!-- FILE MANAGER -->
+  <!-- FILE MANAGER (EXECUTOR) -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-bolt"></i> File Manager Limits</div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_fm_desc') or 'Configure safety boundaries for file read/write operations.' }}</p>
+    <div class="card-title"><i class="fas fa-bolt"></i> Executor (AI File Manager)</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">{{ t('webui_executor_fm_desc') or 'Configure safety boundaries for internal AI file read/write operations (this is not the Drive UI).' }}</p>
     <div class="field">
       <label>{{ t('webui_executor_max_read_lines') or 'Max Lines to Read per Request' }}</label>
       <input type="number" id="executor-max-read-lines" min="10" max="5000" placeholder="200"
@@ -62,11 +62,64 @@
     </div>
     <div class="field">
       <label>{{ t('webui_executor_workspace') or 'Sandbox Workspace Directory' }}</label>
-      <input type="text" id="executor-workspace-dir" placeholder="workspace/sandbox"
+      <input type="text" id="executor-workspace-dir" placeholder="./workspace/sandbox"
              onchange="savePluginKey('EXECUTOR','workspace_dir',this.value)">
       <small style="color:var(--muted); font-size:11px;">{{ t('webui_executor_workspace_hint') or 'Directory where Python sandbox scripts are temporarily saved before execution.' }}</small>
     </div>
   </div>
+
+  <!-- IMPORTANT PATHS (EXECUTOR) -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-folder-open"></i> Default User Paths</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Set important paths so Urania knows exactly where to save and look for your files without guessing.</p>
+    
+    <div class="field">
+      <label>User Profile (Home) Path</label>
+      <input type="text" id="executor-path-userprofile" placeholder="e.g. C:\Users\Tony or /home/tony"
+             onchange="saveExecutorImportantPath('user_profile', this.value)">
+      <small style="color:var(--muted); font-size:11px;">The main user directory for personal files.</small>
+    </div>
+    
+    <div class="field">
+      <label>Downloads Path</label>
+      <input type="text" id="executor-path-downloads" placeholder="e.g. C:\Users\Tony\Downloads"
+             onchange="saveExecutorImportantPath('downloads', this.value)">
+    </div>
+    
+    <div class="field">
+      <label>Projects / Workspace Path</label>
+      <input type="text" id="executor-path-projects" value="./workspace"
+             onchange="saveExecutorImportantPath('projects', this.value)">
+      <small style="color:var(--muted); font-size:11px;">Directory used by Urania to save and look for project files.</small>
+    </div>
+    
+    <div class="field">
+      <label>Generated Files (Documents) Path</label>
+      <input type="text" id="executor-path-generated" value="./hecos/media/documents"
+             onchange="saveExecutorImportantPath('generated_files', this.value)">
+      <small style="color:var(--muted); font-size:11px;">Centralized directory where Urania saves generated files (HTML, text, etc) for easy cleanup.</small>
+    </div>
+  </div>
+
+  <script>
+    function saveExecutorImportantPath(name, value) {
+        // Fetch current paths
+        const currentPaths = window.hecos_config?.plugins?.EXECUTOR?.important_paths || {};
+        currentPaths[name] = value;
+        savePluginKey('EXECUTOR', 'important_paths', currentPaths);
+    }
+    
+    // Add initialization logic to populate the fields on load
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            const paths = window.hecos_config?.plugins?.EXECUTOR?.important_paths || {};
+            if (paths.user_profile) document.getElementById('executor-path-userprofile').value = paths.user_profile;
+            if (paths.downloads) document.getElementById('executor-path-downloads').value = paths.downloads;
+            if (paths.projects) document.getElementById('executor-path-projects').value = paths.projects;
+            if (paths.generated_files) document.getElementById('executor-path-generated').value = paths.generated_files;
+        }, 500);
+    });
+  </script>
 
 </div>
 

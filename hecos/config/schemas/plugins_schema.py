@@ -63,6 +63,7 @@ class PluginExecutor(BaseModel):
     shell_timeout: int = 15
     max_read_lines: int = 200
     workspace_dir: str = "workspace/sandbox"
+    important_paths: Dict[str, str] = {}
 
 
 # PluginDrive removed — Drive is now an HPM system_app (type='app').

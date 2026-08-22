@@ -382,6 +382,22 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
         f"- {translator.t('rule_list_files')}\n"
         f"- {translator.t('rule_read_file')}\n"
     )
+
+    # Inject important paths dynamically so the AI knows where to save files
+    try:
+        import sys
+        cfg_mgr = getattr(sys, "hecos_config_manager", None)
+        if cfg_mgr:
+            paths = cfg_mgr.get_plugin_config("EXECUTOR", "important_paths", {})
+            if paths:
+                paths_str = "\n".join([f"  - {k.replace('_', ' ').title()}: {v}" for k, v in paths.items()])
+                file_manager_rules += (
+                    "\n### DEFAULT USER PATHS ###\n"
+                    "When generating, creating, or saving new files, you MUST respect these user-configured default paths unless explicitly asked otherwise:\n"
+                    f"{paths_str}\n"
+                )
+    except Exception as e:
+        logger.debug(f"BRAIN: Could not inject important paths: {e}")
     force_clause = (
         f"\n{translator.t('root_security_instruction')}\n"
         f"{translator.t('root_security_desc')}\n"

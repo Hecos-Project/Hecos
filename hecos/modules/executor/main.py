@@ -46,11 +46,31 @@ class ExecutorTools:
                 "type": "bool",
                 "default": True,
                 "description": "Permits direct shell command execution (use with caution)."
+            },
+            "important_paths": {
+                "type": "dict",
+                "default": {},
+                "description": "Dictionary of important paths for the AI to use."
             }
         }
 
-        self.workspace_dir = os.path.abspath(os.path.join(os.getcwd(), "workspace", "sandbox"))
+        self.workspace_dir = self._resolve_workspace_dir()
         os.makedirs(self.workspace_dir, exist_ok=True)
+
+    def _resolve_workspace_dir(self) -> str:
+        """Resolves workspace dir from config (important_paths.projects), falling back to ./workspace."""
+        try:
+            import sys
+            cfg_mgr = getattr(sys, "hecos_config_manager", None)
+            if cfg_mgr:
+                paths = cfg_mgr.get_plugin_config("EXECUTOR", "important_paths", {})
+                projects = paths.get("projects", "").strip() if isinstance(paths, dict) else ""
+                if projects:
+                    return os.path.abspath(projects)
+        except Exception:
+            pass
+        # Default: ./workspace relative to Hecos root
+        return os.path.abspath(os.path.join(os.getcwd(), "workspace"))
 
     # ── System Tools ──────────────────────────────────────────────────────────
 
@@ -132,6 +152,50 @@ class ExecutorTools:
     def list_dir(self, directory_path: str) -> str:
         return list_dir_tool(directory_path)
 
+    def set_important_path(self, name: str, path: str) -> str:
+        """
+        Memorizes an important directory path for the user (e.g. user_profile, downloads, projects).
+        This path is permanently saved in Hecos configuration. Use this when the user asks you to remember a default path.
+        """
+        try:
+            import sys
+            cfg_mgr = getattr(sys, "hecos_config_manager", None)
+            if not cfg_mgr:
+                return "ConfigManager not available to save path permanently."
+            
+            paths = cfg_mgr.get_plugin_config("EXECUTOR", "important_paths", {})
+            if not isinstance(paths, dict):
+                paths = {}
+            
+            paths[name] = path
+            cfg_mgr.set_plugin_config("EXECUTOR", "important_paths", paths)
+            return f"Path '{name}' permanently set to '{path}'."
+        except Exception as e:
+            return f"Error setting path: {e}"
+
+    def get_important_paths(self) -> str:
+        """
+        Returns all the important paths memorized by the user, plus the default sandbox workspace.
+        Call this tool if you need to know where to save or look for user files.
+        """
+        try:
+            import sys
+            cfg_mgr = getattr(sys, "hecos_config_manager", None)
+            paths = {}
+            if cfg_mgr:
+                paths = cfg_mgr.get_plugin_config("EXECUTOR", "important_paths", {})
+            
+            if not paths:
+                return "No important paths memorized yet. Default workspace: " + self.workspace_dir
+            
+            res = "Memorized Important Paths:\n"
+            for k, v in paths.items():
+                res += f"- {k}: {v}\n"
+            res += f"\nDefault Workspace: {self.workspace_dir}\n"
+            return res
+        except Exception as e:
+            return f"Error reading paths: {e}"
+
 
 # ── Singleton ──────────────────────────────────────────────────────────────────
 tools = ExecutorTools()
@@ -157,6 +221,8 @@ def info():
             "delete_file": "Delete a file.",
             "create_dir": "Create a directory tree.",
             "list_dir": "List a directory's contents.",
+            "set_important_path": "Memorize an important directory path for the user (e.g., user_profile, downloads).",
+            "get_important_paths": "Get all important paths memorized by the user, and the default workspace.",
         }
     }
 

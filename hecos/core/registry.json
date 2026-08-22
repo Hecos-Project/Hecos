@@ -207,7 +207,9 @@
             "patch_file": "Surgically replace a text block inside a file.",
             "delete_file": "Delete a file.",
             "create_dir": "Create a directory tree.",
-            "list_dir": "List a directory contents."
+            "list_dir": "List a directory contents.",
+            "set_important_path": "Memorize an important directory path for the user (e.g., user_profile, downloads).",
+            "get_important_paths": "Get all important paths memorized by the user, and the default workspace."
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
