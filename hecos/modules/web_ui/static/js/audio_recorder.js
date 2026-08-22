@@ -28,8 +28,9 @@ window.initWebAudio = async function() {
             const pctText = document.getElementById('mic-pct');
             if (!meter) return;
             
-            // Only flow the meter if Mic is ON, and if PTT is ON it must be actively recording
-            if (!window.currentMicOn || (window.currentPTTOn && !window.isWebAudioRecording)) {
+            // Only flow the meter if Mic is ON, and if PTT is ON it must be actively recording (via Web or Backend)
+            const isRecording = window.isWebAudioRecording || window.isBackendPTTActive;
+            if (!window.currentMicOn || (window.currentPTTOn && !isRecording)) {
                 meter.style.width = '0%';
                 if (pctText) pctText.textContent = '0%';
                 return;

@@ -585,7 +585,7 @@ def generate_response(user_text, external_config=None, tag=None, images=None, ag
             # It's a Message object (used a tool)
             logger.debug("BRAIN", "Response is a tool call object.")
             tool_names = [call.function.name for call in getattr(response, 'tool_calls', [])]
-            brain_interface.save_message("assistant", f"*(Tool call: {', '.join(tool_names)})*", config=config, user_id=user_id, session_id=session_id, persona_name=clean_persona)
+            logger.debug("BRAIN", f"Tool calls generated: {', '.join(tool_names)} (NOT saving to DB to avoid UI clutter)")
     elif not save_history:
         logger.debug("BRAIN", "save_history is False; skipping history persistence for this Agentic Loop turn.")
     else:

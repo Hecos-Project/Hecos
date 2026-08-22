@@ -386,7 +386,7 @@
         "routing_instructions": "",
         "is_class_based": true,
         "is_lazy": true,
-        "icon": "fa-file-pdf",
+        "icon": "<i class=\"fas fa-file-pdf\"></i>",
         "category": "PLUGINS",
         "module_type": "hpm",
         "slash_commands": [
