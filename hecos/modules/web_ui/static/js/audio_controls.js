@@ -113,7 +113,10 @@ window.toggleTTS = async function() {
     const data = await r.json();
     if (data.ok) {
         _applyTTSState(data.voice_status);
-        if (!data.voice_status && window.stopVoice) window.stopVoice();
+        if (!data.voice_status) {
+            if (window.stopAudioPlayback) window.stopAudioPlayback();
+            else if (window.stopVoice) window.stopVoice();
+        }
     }
   } catch(e) { console.error('[DEBUG-UI] toggleTTS exception:', e); }
 };

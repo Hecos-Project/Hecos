@@ -184,17 +184,22 @@ window.clearInput = function() {
   }
 };
 
+window.stopAudioPlayback = function() {
+  if (window.currentAudio) {
+    window.currentAudio.pause();
+    window.currentAudio.src = '';
+    window.currentAudio = null;
+  }
+  try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
+};
+
 window.stopVoice = async function() {
   console.log("[Audio] stopVoice triggered");
   if (window._stopVoiceTimeout) return;
   window._stopVoiceTimeout = true;
   setTimeout(() => { window._stopVoiceTimeout = false; }, 1000);
 
-  if (window.currentAudio) {
-    window.currentAudio.pause();
-    window.currentAudio.src = '';
-    window.currentAudio = null;
-  }
+  window.stopAudioPlayback();
   try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
