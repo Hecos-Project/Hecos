@@ -1,7 +1,7 @@
 {
   "version": "1",
   "catalog_url": "https://hecos-project.github.io/store/index.json",
-  "generated_at": "2026-08-15T04:20:25Z",
+  "generated_at": "2026-08-23T04:06:42Z",
   "packages": [
     {
       "id": "calendar",
@@ -14,7 +14,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/calendar-1.0.4.hpkg",
       "size_bytes": 889564,
-      "sha256": "f073be62b8f954831ab9d614fc159aeb74d60878d1ed14ffaa4f88601ec77500",
+      "sha256": "660eb53b97dd4a23b89e321bab8888b1ed95558275c90ebba087b190bf7386b1",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/apps/calendar_src/preview.png"
       ],
@@ -52,13 +52,13 @@
       "name": "Hecos Drive",
       "type": "system_app",
       "level": 5,
-      "version": "1.0.0",
+      "version": "1.4.2",
       "author": "Hecos Community",
       "description": "Native file manager and editor for Hecos. Provides Web UI interface to browse, upload, download, and edit files on the server.",
       "tags": [],
-      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/drive-1.0.0.hpkg",
-      "size_bytes": 47920,
-      "sha256": "abe13caefbf7f9a4b5676a7a26b6c97a8da1bc41f90f4a2b5df45e17e6b32513",
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/drive-1.4.2.hpkg",
+      "size_bytes": 52351,
+      "sha256": "1a4b9493133c55c05b9547619000a25072be1f14fd5e61963fb86fbb55c49757",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -88,8 +88,8 @@
       "description": "Visual automation engine for Hecos. Build, schedule and run multi-step flows from a node-based canvas.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/flows-1.5.1.hpkg",
-      "size_bytes": 1551702,
-      "sha256": "ef978b3713296255e944a8bf3c5784c3bd508859d51ea97c978468b98ec78a76",
+      "size_bytes": 1551741,
+      "sha256": "c579a1d2f087048890696a7b5e637e3eda53c994141f47bc170e65a2f131fbea",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/apps/flows_src/preview.png"
       ],
@@ -124,7 +124,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/lists-2.0.1.hpkg",
       "size_bytes": 942174,
-      "sha256": "0f35dd3cdb9e25fea3d0d968f61ba0278c764222f2772dd68cb5cabb30082128",
+      "sha256": "87bd09054b2300335e66dd495a8003b20485d264d4c2c4501a8fb983885f2f4e",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/apps/lists_src/preview.png"
       ],
@@ -173,7 +173,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/apps/reminder-1.0.3.hpkg",
       "size_bytes": 845553,
-      "sha256": "88187faaa67de9c0c1fa8c2cca0a455561626b1692111d0806c37bdd9dfe441d",
+      "sha256": "69282dc0eca70c19d4e00b9d47e82c959451a039c64ffb4b431307a9280d8e9c",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/apps/reminder_src/preview.png"
       ],
@@ -217,7 +217,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/browser_automation-1.0.2.hpkg",
       "size_bytes": 34149,
-      "sha256": "4097e9a34b54a956e098a1bcf95ab28a8423a70ed70cfaf0681c4dc02d869619",
+      "sha256": "8eb014eaf158133393c2ad34cd966b23ba613b58c7036cda4b9a8fbbd60e3199",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -281,8 +281,8 @@
       "description": "Global Backup Orchestrator per Hecos.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/global_backup-1.3.1.hpkg",
-      "size_bytes": 31251,
-      "sha256": "9649954bf112cef98434c0c19875b7590a16f106dc538ca718ecedab72af11c7",
+      "size_bytes": 31250,
+      "sha256": "d05d45dda1e8a60f86e0c407f68af7cd81d0d0a25d85c22d039f7d8d9fe02c36",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -313,7 +313,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/mcp_bridge-1.0.0.hpkg",
       "size_bytes": 31331,
-      "sha256": "82957e90df07d1b2ab092fe5a359aa6360b118150e233b0fe5afa092131963db",
+      "sha256": "87eb247aff3d47ef34894064e65995948a13146c704defec8d72be8e1e76eac8",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -346,7 +346,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/pc_automation-1.0.0.hpkg",
       "size_bytes": 20769,
-      "sha256": "c881a050cd01c358c1e095d969775d63d5dd8ce748ff4759354357fd5d170b35",
+      "sha256": "a7d02303b294b35022516b29d3109d6f700f84b12f925798e9c58f7a32ef671f",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -414,7 +414,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/core_modules/sys_net-2.0.0.hpkg",
       "size_bytes": 14644,
-      "sha256": "fa18c31e6d7e7916f837bb037fe7de2aa3f6412fb1a3175565f6c9cd60bd7dff",
+      "sha256": "e8429913420de878e6f0fcd772a37ea181392baf676ff0a780dd7729ed6195ba",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -445,7 +445,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/libraries/sounds_pack-1.0.0.hpkg",
       "size_bytes": 8269001,
-      "sha256": "7b2a7923d694fb7f00942942f66825c7f1f35cb05b417a2b5e49893cc33433f9",
+      "sha256": "99871fb89ca7533b10b4b4fc4621d2ca5f47915207b9eb3f863ee643f5901966",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -475,8 +475,8 @@
       "description": "Centralized template manager for communications (Mail, WhatsApp, Telegram).",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/libraries/templates-1.0.2.hpkg",
-      "size_bytes": 270074,
-      "sha256": "f0e52b9ab38858236dfbbefc8f1a7527db8079d5a5bddc90248ae55be07ce9b2",
+      "size_bytes": 41129,
+      "sha256": "66d6b62cba31543490c189eb2850e719b516ab01fd906c39d30e265d0a79b851",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -487,7 +487,9 @@
       "capabilities": {
         "llm_tools": [
           "list_templates",
-          "render_template"
+          "render_template",
+          "create_template",
+          "update_template"
         ],
         "slash_commands": [],
         "has_widget": false,
@@ -512,7 +514,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/personas/Atlas_Man-1.0.0.hpkg",
       "size_bytes": 1686816,
-      "sha256": "1fc4683f7d254fca2e0d3dc125996d1bfc18069c29ecb87d9869187a7bcc2597",
+      "sha256": "10e97e9acf11d2a5f99c904147768ec4f42b9a2f16d7ff96cb1736f5742db755",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -543,7 +545,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/personas/Motoko_Kusanagi-1.0.0.hpkg",
       "size_bytes": 2999,
-      "sha256": "23b22de498b6648940cec6c6469627d6909d53dbe2590c7bce2123a7aee645d0",
+      "sha256": "25039572b76ccfc15f23013f8b05dfb7580898e02310bffc96773e9d0fe91c20",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -574,7 +576,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/personas/Nova_X-01-1.0.0.hpkg",
       "size_bytes": 1618648,
-      "sha256": "ed93ab5d81528e211de4c5bf02dc83f0ff2b502aa07007d26b6827f3115e57ef",
+      "sha256": "390961518c8ee8273b7bb292abdaa14b3d2573bca7d0ebca4f4d793312fc4313",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -605,7 +607,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/personas/Sebastian_Pro-1.0.0.hpkg",
       "size_bytes": 1164839,
-      "sha256": "0997e306d44cf6441b02360f720f0171d9716cd05062c91db51463231b44d83f",
+      "sha256": "af828f87d90dcd6519c608ee46a047fea4ff618700d6962c98020a21ce303358",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -636,7 +638,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/contacts-1.0.0.hpkg",
       "size_bytes": 30109,
-      "sha256": "a5329341904aca1ae065b5dd5625aa44c0159ba66c57c59e240b14976474407f",
+      "sha256": "7fc795b5acc87bda2bf22e1ee8a269ea7ecec3c323f5f7751f3f83b4515f2244",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -664,6 +666,45 @@
       "pip_requirements": []
     },
     {
+      "id": "document_maker",
+      "name": "Document Maker",
+      "type": "plugin",
+      "level": 5,
+      "version": "1.0.0",
+      "author": "Hecos Team / Antonio Meloni",
+      "description": "Generates PDF documents from HTML templates using Playwright.",
+      "tags": [],
+      "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/document_maker-1.0.0.hpkg",
+      "size_bytes": 9536,
+      "sha256": "049199f4c6b6138d801031e1b7305988d196d6696a887fb9aed6d50bc5175c13",
+      "screenshots": [
+        "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
+      ],
+      "changelog": "Automatic update generated by the Store Catalog Builder.",
+      "homepage": "https://hecos-project.github.io/store/#document_maker",
+      "fa_icon": "fa-box",
+      "featured": false,
+      "capabilities": {
+        "llm_tools": [
+          "generate_pdf"
+        ],
+        "slash_commands": [
+          "/pdf",
+          "/makepdf",
+          "/documento"
+        ],
+        "has_widget": false,
+        "has_config_panel": true,
+        "has_api_routes": true,
+        "has_system_calls": false,
+        "notes": "Uses Playwright via the browser_automation core module."
+      },
+      "dependencies": [
+        "templates"
+      ],
+      "pip_requirements": []
+    },
+    {
       "id": "image_gen",
       "name": "Image Generation",
       "type": "plugin",
@@ -674,7 +715,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/image_gen-1.5.1.hpkg",
       "size_bytes": 554834,
-      "sha256": "6b53165855dfa07a0ef3d22dc328b78fb3dccef2b51e157f5b532da26792d052",
+      "sha256": "8e9377af93a34fa1d0828eae749f1e6d61b282cf474f1e6726b6823253395abf",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/plugins/image_gen_src/preview.png"
       ],
@@ -719,8 +760,8 @@
       "description": "Integrated mail client for Hecos. Reads SMTP/IMAP profiles, manages drafts, sending, and syncing with automatic provider support and Address Book integration.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/mail-1.4.3.hpkg",
-      "size_bytes": 48359,
-      "sha256": "0852dab893e1b3f060d1aac394026e0d0cb57d5c2833c45267d471c3934aed68",
+      "size_bytes": 52711,
+      "sha256": "ed5ae1febcbe7faf40d14b87e61daa6f1acf434a3c20aa0881a37b81449a1239",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -758,7 +799,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/map-1.0.1.hpkg",
       "size_bytes": 447575,
-      "sha256": "0713461b20106e19f202bcea900ca3c5483f5ef55688f557c374621a982d41e9",
+      "sha256": "faac5ea5fb79d9df63f9af797b50388a690725cf351a26e56b7a40f59b469369",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/plugins/map_src/preview.png"
       ],
@@ -794,7 +835,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/media_player-1.1.0.hpkg",
       "size_bytes": 1142578,
-      "sha256": "7367290932a5cff74f4286e81775f10b37b2647fca7246f91c4734c5c97c1294",
+      "sha256": "3f9f3b0f6d233f16905214b9fe6ed8f73a5db89692893912234a568807bb6360",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/plugins/media_player_src/preview.png"
       ],
@@ -847,7 +888,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/messenger-1.0.2.hpkg",
       "size_bytes": 2277275,
-      "sha256": "7f2686fe055885e2781f379a32156120c869599ef1b089fdf944e805f98c46f1",
+      "sha256": "7674cbfc7e0a9d8088b7a6d72f396e6f6c7f19c00e9b88e90204d684d823a8b6",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/plugins/messenger_src/preview_1.png"
       ],
@@ -889,8 +930,8 @@
       "description": "Event notification system for Hecos. Sends notifications via MAIL or MESSENGER when system events occur (boot, errors, Flow completion, etc.). Requires at least one of the MAIL or MESSENGER plugins installed.",
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/notifications-1.0.0.hpkg",
-      "size_bytes": 12869,
-      "sha256": "4e5bc138fc6168cef43f9667c36bdbaa28c460ccbbd8643496bc58ddbc219f7e",
+      "size_bytes": 35256,
+      "sha256": "6daaa5cd78c69919b672a668e316e55f3022cb31dced05e0f019ce3f879335bc",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -899,7 +940,16 @@
       "fa_icon": "fa-box",
       "featured": false,
       "capabilities": {
-        "llm_tools": [],
+        "llm_tools": [
+          "list_destinations",
+          "add_destination",
+          "remove_destination",
+          "list_rules",
+          "bind_event_destination",
+          "unbind_event_destination",
+          "set_event_template",
+          "send_notification"
+        ],
         "slash_commands": [],
         "has_widget": false,
         "has_config_panel": true,
@@ -921,7 +971,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/remote_access_pro-1.0.0.hpkg",
       "size_bytes": 4982,
-      "sha256": "e8107f1f4e2e6f3ca0beab76ac2d36e31beba06e7033ed6de28df3222b5f9a97",
+      "sha256": "fb634dec1c9273a9294b52e55557ea69f3b509e046a7c9451be6849366974c86",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -954,7 +1004,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/remote_triggers-1.0.0.hpkg",
       "size_bytes": 10825,
-      "sha256": "7afde1a7eeefc22c0d3280ab99554b9bffcd4444ea5651d06fede1caf87fb16b",
+      "sha256": "8d84a2d3469f6af2a4265e5537fe10ab694ca6b0fb722e5819597d810b139e19",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -987,7 +1037,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/users-1.0.0.hpkg",
       "size_bytes": 3098,
-      "sha256": "119e538a7f435b8cf0ad1f349c84c5987f34a8658a7004d9cbe3be088610c259",
+      "sha256": "3f2c8734436d3191474f5125a62b4a1b2c3fa5e837c8ab7b63a952940b2b1fe6",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1021,7 +1071,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/weather_pro-1.0.1.hpkg",
       "size_bytes": 14887,
-      "sha256": "eb84987e0dea223ee4949044e035f8a1d9b2e2fdc2517e29b779371abfd88bb2",
+      "sha256": "333f026c174e6130cbd31fed8261cf24bee4ea565bba756e6d51ed7fa624f660",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1055,7 +1105,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/plugins/webcam-1.0.2.hpkg",
       "size_bytes": 7815,
-      "sha256": "b03ab49c21d1ba35eb8ca37ac8209cb30e1a72d46d3296df860fbae4fe769616",
+      "sha256": "0b8f3cc6272423f602f8728a908b654c6c42e0d543ed05c0522d5b564f4e077b",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1093,7 +1143,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/themes/themes_pack-1.0.0.hpkg",
       "size_bytes": 8411,
-      "sha256": "da2cc8e58586343a92325ce3649c9593339f34eb5cf260f54ff3f36b7ce292ec",
+      "sha256": "78ac6c62e7768370b1e926fea9004d27aad11ad7b304b7376a2bfa309f024ea7",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1124,7 +1174,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/widgets/quick_links-1.0.0.hpkg",
       "size_bytes": 8949,
-      "sha256": "e0c70e2aef2d55f3f346ecb477efdbc005bafb408cfcadbe96647af292fac48a",
+      "sha256": "74a6cad1d3adcedf697f0225ba04daf23c81325ae4f229bcda2a4ef9f829bfcf",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1155,7 +1205,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/widgets/telemetry_widget-1.0.0.hpkg",
       "size_bytes": 5173,
-      "sha256": "9b993b95b63a026d4968cb4a99aef8bc8d0d6a1238401328a70ca5ca28e358ad",
+      "sha256": "bd0cc0a3797be962a64fc5cbd7e4d7e0a3db2248dd366b3b61acd63e827fdf24",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/Hecos_module_Image_preview.png"
       ],
@@ -1186,7 +1236,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/widgets/voice_visualizer-1.0.2.hpkg",
       "size_bytes": 1275679,
-      "sha256": "8eb88d5ed8aea7cccce104c40f0fb01620a010432a69cc30677392cafea6f04a",
+      "sha256": "10a669459f719b6a94a5b5c79f03f7cb43f2d0b08251e2a5827d24f92025e87c",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/widgets/voice_visualizer_src/preview_1.png",
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/widgets/voice_visualizer_src/preview_2.png",
@@ -1219,7 +1269,7 @@
       "tags": [],
       "download_url": "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/packages/widgets/webcam_feed-1.0.1.hpkg",
       "size_bytes": 859336,
-      "sha256": "89aca418ddc0740720e3847135a8c9d3ca2af3896010938d199498ffae63adba",
+      "sha256": "dc8a62858ffa10f121b464797d54065059afb5c206b035b864cad1d7ff410120",
       "screenshots": [
         "https://raw.githubusercontent.com/Hecos-Project/Hecos-Packages/main/sources/widgets/webcam_feed_src/preview.png"
       ],
@@ -1240,5 +1290,5 @@
       "pip_requirements": []
     }
   ],
-  "cached_at": 1787451462.3843384
+  "cached_at": 1787473684.0536308
 }

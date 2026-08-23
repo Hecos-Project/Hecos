@@ -227,6 +227,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   width: fit-content; 
   max-width: 100%; 
   backdrop-filter: blur(10px); 
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 .msg.user .msg-bubble { background:rgba(var(--accent-rgb),.12); border-color:rgba(var(--accent-rgb),.25); border-radius:var(--radius) 4px var(--radius) var(--radius); margin-left: auto; }
 .msg.ai   .msg-bubble { border-radius:4px var(--radius) var(--radius) var(--radius); }
