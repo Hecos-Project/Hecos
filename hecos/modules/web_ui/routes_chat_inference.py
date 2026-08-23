@@ -42,7 +42,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         sess["done"] = True
         return
 
-    # ── Watchdog: kills the session if inference takes too long ──────────────
+    # ── Watchdog: kills the session if inference hangs ──────────────
     try:
         import hecos.core.keys.key_manager as _km_mod
         webui_timeout = getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", _WEBUI_INFERENCE_TIMEOUT)
@@ -50,14 +50,14 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         webui_timeout = _WEBUI_INFERENCE_TIMEOUT
 
     _timed_out = threading.Event()
+    _last_activity = [time.monotonic()]
 
     def _watchdog():
-        deadline = time.monotonic() + webui_timeout
         while not _timed_out.is_set():
-            if time.monotonic() >= deadline:
+            if time.monotonic() - _last_activity[0] > webui_timeout:
                 elapsed = time.monotonic() - t_start
                 _chat_log.warning(f"[INFERENCE] ⚠️ WATCHDOG TIMEOUT after {elapsed:.1f}s (limit={webui_timeout}s) sid={session_id[:8]}")
-                sess["queue"].put({"type": "error", "text": f"⏰ Timeout: nessuna risposta dall'AI entro {webui_timeout}s. Il provider potrebbe essere lento o irraggiungibile."})
+                sess["queue"].put({"type": "error", "text": f"⏰ Timeout: no response from AI within {webui_timeout}s. The provider might be slow or unreachable."})
                 sess["done"] = True
                 return
             time.sleep(0.5)
@@ -97,6 +97,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ── Session-Aware Trace Callback ─────────────────────────────────────
         # Inject agent traces directly into the session-specific SSE queue.
         def _session_trace(msg: str, level: str = "info"):
+            _last_activity[0] = time.monotonic()  # Reset watchdog on activity
             sess["queue"].put({"type": "agent_trace", "level": level, "message": msg})
         # ────────────────────────────────────────────────────────────────────
 

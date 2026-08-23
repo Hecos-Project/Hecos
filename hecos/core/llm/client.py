@@ -257,6 +257,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     try:
         import hecos.core.keys.key_manager as _km_settings
         _max_key_retries = getattr(_km_settings, "_KM_MAX_RETRIES", 5)
+        # IMPORTANT: also use the actual pool size as the upper bound, so we never give up
+        # before trying all available keys (e.g. if user has 9 keys but max_retries=5).
+        try:
+            _pool_size = len(_get_km()._pools.get(provider.lower(), [])) if provider else 0
+            _max_key_retries = max(_max_key_retries, _pool_size)
+        except Exception:
+            pass
     except Exception:
         _max_key_retries = 5
     _tried_keys: list = []

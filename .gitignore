@@ -627,3 +627,12 @@ hecos/modules/global_backup/
 # Wiki Deployment Scripts
 scripts/*Wiki*.ps1
 scripts/*wiki*.py
+
+# Media Documents
+hecos/media/documents/*
+!hecos/media/documents/.gitkeep
+
+# Entire Workspace
+workspace/*
+!workspace/.gitkeep
+!workspace/flows/

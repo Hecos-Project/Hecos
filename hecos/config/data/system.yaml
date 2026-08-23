@@ -11,7 +11,7 @@ ai:
 backend:
   type: cloud
   cloud:
-    model: gemini/gemini-2.5-flash
+    model: gemini/gemini-3.6-flash
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -22,7 +22,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: qwen2.5:1.5b
+    model: ''
     available_models: {}
     num_ctx: 4096
     num_gpu: 25
@@ -63,19 +63,84 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini/gemini-2.0-flash
+      - gemini-2.0-flash
+      - gemini-2.5-flash
+      - gemini-2.5-pro
+      - gemini-2.5-flash-preview-tts
+      - gemini-2.5-pro-preview-tts
+      - gemma-4-26b-a4b-it
+      - gemma-4-31b-it
+      - gemini-flash-latest
+      - gemini-flash-lite-latest
+      - gemini-pro-latest
+      - gemini-2.5-flash-lite
+      - gemini-2.5-flash-image
+      - gemini-3-flash-preview
+      - gemini-3.1-pro-preview
+      - gemini-3.1-pro-preview-customtools
+      - gemini-3.1-flash-lite-preview
+      - gemini-3.1-flash-lite
+      - gemini-3-pro-image-preview
+      - gemini-3-pro-image
+      - nano-banana-pro-preview
+      - gemini-3.1-flash-image-preview
+      - gemini-3.1-flash-image
+      - gemini-3.1-flash-lite-image
+      - gemini-3.5-flash
+      - gemini-3.5-flash-lite
+      - gemini-omni-flash-preview
+      - gemini-3.6-flash
+      - gemini-3.7-flash
+      - lyria-3-clip-preview
+      - lyria-3-pro-preview
+      - gemini-3.1-flash-tts-preview
+      - gemini-robotics-er-1.6-preview
+      - gemini-robotics-er-2-preview
+      - gemini-2.5-computer-use-preview-10-2025
+      - antigravity-preview-05-2026
+      - deep-research-max-preview-04-2026
+      - deep-research-preview-04-2026
+      - deep-research-pro-preview-12-2025
+      - gemini-embedding-001
+      - gemini-embedding-2-preview
+      - gemini-embedding-2
+      - aqa
+      - veo-3.1-generate-preview
+      - veo-3.1-fast-generate-preview
+      - veo-3.1-lite-generate-preview
+      - gemini-2.5-flash-native-audio-latest
+      - gemini-2.5-flash-native-audio-preview-09-2025
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-3.1-flash-live-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.5-live-translate-preview
     openai:
       api_key: ''
       models:
-      - openai/gpt-4o
+      - gpt-4o
     anthropic:
       api_key: ''
       models:
-      - anthropic/claude-3-5-sonnet-20240620
+      - claude-3-5-sonnet-20240620
     groq:
       api_key: ''
       models:
-      - groq/llama-3.3-70b-versatile
+      - compound-mini
+      - compound
+      - llama-3.3-70b-versatile
+      - openai/gpt-oss-safeguard-20b
+      - whisper-large-v3-turbo
+      - canopylabs/orpheus-arabic-saudi
+      - allam-2-7b
+      - canopylabs/orpheus-v1-english
+      - openai/gpt-oss-120b
+      - meta-llama/llama-prompt-guard-2-86m
+      - meta-llama/llama-prompt-guard-2-22m
+      - qwen/qwen3.6-27b
+      - groq/compound-mini
+      - openai/gpt-oss-20b
+      - whisper-large-v3
+      - groq/compound
 logging:
   level: DEBUG
   destination: console
