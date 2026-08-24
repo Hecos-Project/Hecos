@@ -310,7 +310,16 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                     if img_tag not in video_response:
                         video_response += f"\n\n{img_tag}"
             else:
-                # Append the raw output for non-image tools (e.g. system commands)
+                # --- FIX: Avoid appending raw tool output if it's already visually covered ---
+                # 1. Skip [EXECUTOR] write_file / read_file confirmations — path already in AI text.
+                if isinstance(out, str) and out.strip().startswith("[EXECUTOR]"):
+                    continue
+                # 2. Skip outputs that are a single bare Windows path already in the response.
+                out_stripped = out.strip()
+                if _re.fullmatch(r'[A-Za-z]:[\\/][^\n]+', out_stripped):
+                    if out_stripped.replace('\\', '/') in video_response.replace('\\', '/'):
+                        continue
+                # 3. Append the raw output for other non-image tools (e.g. system commands, API results)
                 video_response += f"\n\n{out}"
                 
     # DEBUG: trace what REACHES the browser exactly at the exit point

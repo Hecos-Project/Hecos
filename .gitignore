@@ -543,13 +543,18 @@ hecos/modules/web_ui/templates/modules/config_templates.html
 hecos/modules/web_ui/templates/modules/config_pc_automation.html
 hecos/modules/web_ui/templates/modules/config_panel.html
 hecos/modules/web_ui/templates/modules/hpm_notifications.html
+hecos/modules/web_ui/templates/modules/config_document_maker.html
+hecos/modules/web_ui/templates/modules/config_hpm_settings.html
 
 # WebUI Static Assets belonging to HPM packages
 hecos/modules/web_ui/static/js/config_mapper_drive.js
+hecos/modules/web_ui/static/js/config_mapper_plugins.js
 hecos/modules/web_ui/static/css/browser_automation.css
 hecos/modules/web_ui/static/js/browser_automation.js
 hecos/modules/web_ui/static/css/image_gen.css
 hecos/modules/web_ui/static/js/image_gen.js
+hecos/modules/web_ui/static/js/igen_panel.js
+hecos/modules/web_ui/static/js/document_maker_panel.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
 hecos/modules/web_ui/static/js/mail.js

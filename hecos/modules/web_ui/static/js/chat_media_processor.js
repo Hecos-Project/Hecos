@@ -177,8 +177,11 @@ window.processAiMedia = function(html) {
   const IMG_EXTS = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
   const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv)$/i;
   // Matches absolute Windows paths: C:\path\to\file.ext or C:/path/to/file.ext
-  // Stops at whitespace, quotes, angle brackets, closing parens/brackets
-  const PATH_RE = /([A-Za-z]:[\\/][^\s'"<>\)\]]+)/g;
+  // Stops at whitespace, quotes, angle brackets
+  // Group 1: Optional opening wrapper: "(", "( ", "[[IMG:"
+  // Group 2: The actual path
+  // Group 3: Optional closing wrapper: ")", " )", "]]"
+  const PATH_RE = /(?:(\(\s*|\[\[IMG:\s*)([A-Za-z]:[\\/][^\s'"<>\)\]]+)(\s*\)|\s*\]\])?|([A-Za-z]:[\\/][^\s'"<>\)\]]+))/g;
 
   function _makeBareFileCard(rawPath) {
     const cleanPath = rawPath.replace(/\\/g, '/').replace(/\/+$/, '');
@@ -188,11 +191,19 @@ window.processAiMedia = function(html) {
 
     if (IMG_EXTS.test(fileName)) {
       // Inline image
-      return `<div class="chat-img-wrap" data-img-url="${apiUrl}" data-img-name="${fileName}">
-        <img src="${apiUrl}" alt="${fileName}" loading="lazy"
-             onerror="this.parentElement.style.display='none'"
-             onclick="if(window.openLightbox) window.openLightbox('${apiUrl}')">
-      </div>`;
+      return `
+<div class="chat-img-wrap" draggable="true" data-img-url="${apiUrl}" data-img-name="${fileName}">
+  <img src="${apiUrl}" alt="${fileName}" loading="lazy"
+       onerror="this.parentElement.style.display='none'"
+       onclick="if(window.openLightbox) window.openLightbox('${apiUrl}')"
+       ondblclick="if(window.openChatGallery) window.openChatGallery('${apiUrl}'); return false;">
+  <div class="chat-img-overlay">
+    <button class="img-action-btn" onclick="downloadChatImage('${apiUrl}','${fileName}')">⬇ Scarica</button>
+    <button class="img-action-btn" onclick="openLightbox('${apiUrl}')">🔍 Zoom</button>
+    <button class="img-action-btn" onclick="openChatGallery('${apiUrl}')">🖼 Gallery</button>
+    <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>
+  </div>
+</div>`;
     }
 
     if (VIDEO_EXTS.test(fileName)) {
@@ -256,18 +267,22 @@ window.processAiMedia = function(html) {
       PATH_RE.lastIndex = 0; // Reset regex state
       const parts = [];
       let lastIdx = 0;
-      let m;
       while ((m = PATH_RE.exec(text)) !== null) {
-        const rawPath = m[1] || m[0];
+        // m[2] is the path if there were wrappers, m[4] is the path if there were no wrappers.
+        const rawPath = m[2] || m[4];
+        
         // Skip if path doesn't have a file extension (likely just a directory reference)
         if (!/\.[a-z0-9]{2,5}$/i.test(rawPath)) {
           // Still keep text up to here as-is by NOT updating lastIdx
           continue;
         }
+        
         if (lastIdx < m.index) parts.push(document.createTextNode(text.slice(lastIdx, m.index)));
+        
         const span = document.createElement('span');
         span.innerHTML = _makeBareFileCard(rawPath);
         parts.push(span);
+        
         lastIdx = m.index + m[0].length;
       }
       PATH_RE.lastIndex = 0;
@@ -279,7 +294,7 @@ window.processAiMedia = function(html) {
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       // Don't process inside <a>, <pre>, <code>, or elements we already transformed
       if (['A','PRE','CODE','SCRIPT','STYLE'].includes(node.tagName)) return;
-      if (node.classList && (node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card'))) return;
+      if (node.classList && (node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card') || node.classList.contains('action-console-block'))) return;
       // Must snapshot childNodes before iteration since we may mutate the list
       Array.from(node.childNodes).forEach(_processTextNodes);
     }

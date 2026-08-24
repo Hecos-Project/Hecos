@@ -430,8 +430,9 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                     if img_tag not in video_response:
                         video_response += f"\n\n{img_tag}"
             else:
-                # Append the raw output for non-image tools (e.g. system commands)
-                video_response += f"\n\n{out}"
+                # The raw tool output appending logic has been moved to loop.py
+                # so that the appended outputs are saved to the chat history database.
+                pass
                 
     return video_response, clean_voice_text
 

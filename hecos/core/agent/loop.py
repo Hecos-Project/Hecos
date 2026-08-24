@@ -227,6 +227,29 @@ class AgentExecutor:
                             img_url = f"/snapshots/{fname}"
                             if img_url not in extracted_text:
                                 extracted_text += f"\n\n![Snapshot]({img_url})"
+
+                        # --- Append other raw tool outputs so they are saved to history ---
+                        # 1. Skip if it is an image tag (already handled above)
+                        if img_tags:
+                            continue
+                        # 2. Skip [EXECUTOR] confirmations that just echo a path
+                        if isinstance(out, str) and out.strip().startswith("[EXECUTOR]"):
+                            continue
+                        # 3. Skip if the output is just a bare path already present in the AI's response
+                        out_stripped = out.strip()
+                        if re.fullmatch(r'[A-Za-z]:[\\/][^\n]+', out_stripped):
+                            if out_stripped.replace('\\', '/') in extracted_text.replace('\\', '/'):
+                                continue
+                        
+                        # Check if it's the specific Document Maker output string we just added
+                        # We don't want to skip it if it's HTML/PDF multi-line string, we WANT to append it if it's not present.
+                        if "HTML:" in out_stripped or "PDF:" in out_stripped:
+                            if "HTML:" in extracted_text and "PDF:" in extracted_text:
+                                continue
+                                
+                        # Only append if it's not already somewhere in the text to avoid duplication
+                        if out_stripped not in extracted_text:
+                            extracted_text += f"\n\n{out}"
                 # ────────────────────────────────────────────────────────────────────
 
                 # IMPORTANT: If it took loops, we must save the FINAL response to history manually.
