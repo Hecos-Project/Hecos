@@ -364,7 +364,7 @@
         ]
     },
     "CONTACTS": {
-        "description": "Address Book plugin for Hecos with rich metadata and WhatsApp integration.",
+        "description": "Optimized Address Book plugin for Hecos with rich metadata, WhatsApp integration, and modular structure.",
         "commands": {},
         "status": "ONLINE (DORMANT)",
         "example": "",
@@ -551,6 +551,7 @@
             "list_accounts": "Method",
             "msg_command": "Direct command invoked via /msg <target> <text>",
             "register_pre_callback": "Registra un pre-callback che intercetta i messaggi in ingresso.",
+            "resolve_contact_address": "Looks up a contact in the address book and returns their platform-specific address (e.g., chat ID).",
             "send_message": "Send a message to a contact or channel.",
             "send_photo": "Send a photo to a contact or channel (Telegram only for now)."
         },
