@@ -150,6 +150,71 @@ def init_chat_media_routes(app, logger):
             return jsonify({"ok": True})
         except Exception as e:
             return jsonify({"ok": False, "error": str(e)}), 500
+    @app.route("/api/serve_html", methods=["GET"])
+    def api_serve_html():
+        """
+        Serves a local HTML file with all internal file:// and absolute-path references
+        rewritten to use /api/local_file, so the browser can load images/assets without
+        hitting same-origin or mixed-content restrictions.
+        """
+        import re
+        from flask import Response
+
+        path = request.args.get("path", "")
+        if not path or not os.path.exists(path):
+            return jsonify({"error": "File not found"}), 404
+
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in (".html", ".htm"):
+            return jsonify({"error": "Not an HTML file"}), 400
+
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                html = f.read()
+
+            def _rewrite_path(raw):
+                """Convert a file:// or absolute Windows path to /api/local_file?path="""
+                p = raw
+                if p.startswith("file:///"):
+                    p = p[8:]          # strip file:///
+                elif p.startswith("file://"):
+                    p = p[7:]
+                # Re-encode backslashes for Windows paths
+                p = p.replace("/", os.sep)
+                if os.path.exists(p):
+                    from urllib.parse import quote
+                    return f"/api/local_file?path={quote(p)}"
+                return raw  # leave unchanged if we can't resolve it
+
+            def _rewrite_attr(m):
+                """Regex replacer for src="..." href="..." url(...)"""
+                prefix = m.group(1)
+                value  = m.group(2)
+                suffix = m.group(3)
+                # Only rewrite local paths
+                if value.startswith("file://") or (len(value) > 2 and value[1] == ":"):
+                    value = _rewrite_path(value)
+                return prefix + value + suffix
+
+            # Rewrite src="..." and href="..."
+            html = re.sub(
+                r'((?:src|href)=["\'])([^"\']+)(["\'])',
+                _rewrite_attr,
+                html
+            )
+            # Rewrite url('...') and url("...")
+            html = re.sub(
+                r'(url\(["\']?)([^"\')\s]+)(["\']?\))',
+                _rewrite_attr,
+                html
+            )
+
+            return Response(html, status=200, mimetype="text/html; charset=utf-8")
+
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] Failed to serve HTML {path}: {e}")
+            return jsonify({"error": "Failed to serve HTML"}), 500
+
     @app.route("/api/local_file", methods=["GET"])
     def api_local_file():
         """

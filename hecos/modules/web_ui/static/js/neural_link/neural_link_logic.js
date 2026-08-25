@@ -28,6 +28,9 @@
 
         // 1. UNLOCK AUDIO (Attempt)
         try {
+            if (window.unlockAudioContext) {
+                window.unlockAudioContext();
+            }
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (AudioContext) {
                 const ctx = new AudioContext();

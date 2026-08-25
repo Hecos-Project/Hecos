@@ -13,6 +13,8 @@ function populateAudioUI() {
     setVal('v-noisew', v.noise_w ?? 0.9);
     setVal('v-silence', v.sentence_silence ?? 0.1);
     setVal('v-timeout', v.piper_timeout ?? 180);
+    setVal('v-tts-history-max', v.tts_history_max_files ?? 100);
+    refreshAudioHistoryCount();
 
     const a = audioConfig || {};
     setVal('a-threshold', a.energy_threshold ?? 450);
@@ -65,6 +67,7 @@ function buildAudioPayload() {
         noise_w:          parseFloat(getV('v-noisew', v.noise_w)) || 1.0,
         sentence_silence: parseFloat(getV('v-silence', v.sentence_silence)) || 0.2,
         piper_timeout:    parseInt(getV('v-timeout', v.piper_timeout)) || 180,
+        tts_history_max_files: parseInt(getV('v-tts-history-max', v.tts_history_max_files)) || 100,
         energy_threshold: parseInt(getV('a-threshold', v.energy_threshold)) || 450,
         silence_timeout:  parseInt(getV('a-timeout', v.silence_timeout)) || 5,
         phrase_limit:     parseInt(getV('a-limit', v.phrase_limit)) || 15
@@ -168,12 +171,46 @@ async function browsePiperPath() {
     });
 }
 
+// ── Audio History Helpers ──────────────────────────────────────────────────────
+async function refreshAudioHistoryCount() {
+    const lbl = document.getElementById('v-history-count');
+    if (lbl) lbl.textContent = 'Caricamento...';
+    try {
+        const r = await fetch('/api/audio/history/info');
+        const d = await r.json();
+        if (d.ok) {
+            const max = parseInt(document.getElementById('v-tts-history-max')?.value || 100);
+            if (lbl) lbl.textContent = `📂 ${d.count} file presenti (${d.size_mb} MB) — limite: ${max}`;
+        } else {
+            if (lbl) lbl.textContent = '❌ Errore nel caricamento.';
+        }
+    } catch (e) {
+        if (lbl) lbl.textContent = '❌ Richiesta fallita.';
+    }
+}
+
+async function clearAudioHistory() {
+    if (!confirm('Eliminare tutti i file audio dello storico?')) return;
+    const lbl = document.getElementById('v-history-count');
+    try {
+        const r = await fetch('/api/audio/history/clear', { method: 'POST' });
+        const d = await r.json();
+        if (d.ok) {
+            if (lbl) lbl.textContent = `✅ Storico svuotato (${d.deleted} file eliminati).`;
+        } else {
+            if (lbl) lbl.textContent = '❌ ' + (d.error || 'Errore sconosciuto.');
+        }
+    } catch (e) {
+        if (lbl) lbl.textContent = '❌ Richiesta fallita.';
+    }
+}
+
 // Exports for Global Scope
-window.populateAudioUI  = populateAudioUI;
-window.buildAudioPayload = buildAudioPayload;
-window.testVoice        = testVoice;
-window.stopVoice        = stopVoice;
-window.autoFixPiperPath = autoFixPiperPath;
-
-window.browsePiperPath  = browsePiperPath;
-
+window.populateAudioUI       = populateAudioUI;
+window.buildAudioPayload     = buildAudioPayload;
+window.testVoice             = testVoice;
+window.stopVoice             = stopVoice;
+window.autoFixPiperPath      = autoFixPiperPath;
+window.browsePiperPath       = browsePiperPath;
+window.refreshAudioHistoryCount = refreshAudioHistoryCount;
+window.clearAudioHistory     = clearAudioHistory;

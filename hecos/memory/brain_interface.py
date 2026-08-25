@@ -108,6 +108,11 @@ def initialize_user_vault(user_id: str = "admin"):
         cursor.execute("ALTER TABLE history ADD COLUMN persona_name TEXT")
     except sqlite3.OperationalError:
         pass  # column already exists
+    # Add audio_file column to persist per-message TTS WAV filename
+    try:
+        cursor.execute("ALTER TABLE history ADD COLUMN audio_file TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ────────────────────────────────────────────────────────────────────────────
     
     conn.commit()

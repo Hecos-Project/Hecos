@@ -19,7 +19,7 @@ import logging
 from flask import jsonify, request, Response, stream_with_context, render_template, redirect, make_response, send_file
 
 from hecos.modules.web_ui.routes_chat_inference import _sessions, _sessions_lock, _run_inference
-from hecos.modules.web_ui.routes_chat_tts import get_last_audio_path
+from hecos.modules.web_ui.routes_chat_tts import get_last_audio_path, get_audio_history_path
 import os
 
 _chat_log = logging.getLogger("HecosChatRoutes")
@@ -199,9 +199,21 @@ def init_chat_api_routes(app, cfg_mgr, logger):
 
     @app.route("/api/audio")
     def api_audio():
+        # Serve a specific history audio by UUID
+        audio_id = request.args.get("id", "").strip()
+        if audio_id:
+            path = get_audio_history_path(audio_id)
+            if path:
+                _chat_log.debug(f"[Audio] GET /api/audio?id={audio_id} → {path}")
+                return send_file(path, mimetype="audio/wav", download_name=f"{audio_id}.wav")
+            _chat_log.warning(f"[Audio] GET /api/audio?id={audio_id} — file not found in history.")
+            return jsonify({"error": "Audio file not found in history"}), 404
+
+        # Fallback: last generated audio (current session)
         path = get_last_audio_path()
         _chat_log.debug(f"[Audio] GET /api/audio requested. Last path: {path}")
         if path and os.path.exists(path):
             return send_file(path, mimetype="audio/wav", download_name="hecos_response.wav")
         _chat_log.warning(f"[Audio] GET /api/audio failed. Path not found or empty: {path}")
         return jsonify({"error": "No audio available"}), 404
+

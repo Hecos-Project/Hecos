@@ -167,14 +167,14 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 job_id = str(uuid.uuid4())
                 
                 def _generate_web():
-                    wav_path = generate_voice_file(text, voice_cfg, job_id=job_id)
+                    wav_path, wav_id = generate_voice_file(text, voice_cfg, job_id=job_id)
                     if wav_path:
-                        set_last_audio_path(wav_path)
+                        set_last_audio_path(wav_path, wav_id)
                         
                 threading.Thread(target=_generate_web, daemon=True).start()
                 return jsonify({"ok": True, "job_id": job_id})
             else:
-                wav_path = generate_voice_file(text, voice_cfg)
+                wav_path, wav_id = generate_voice_file(text, voice_cfg)
                 if not wav_path:
                     return jsonify({
                         "ok": False,
@@ -183,8 +183,13 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                     
                 def _play_server_side():
                     try:
-                        from hecos.core.audio.voice import _play_wav
-                        _play_wav(wav_path)
+                        import wave
+                        import sounddevice as sd
+                        import numpy as np
+                        with wave.open(wav_path, 'rb') as wf:
+                            data = wf.readframes(wf.getnframes())
+                            pcm = np.frombuffer(data, dtype=np.int16)
+                            sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
                     except Exception as play_e:
                         logger.error(f"[WebUI] Console TTS play error: {play_e}")
 

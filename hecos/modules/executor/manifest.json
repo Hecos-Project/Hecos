@@ -23,7 +23,9 @@
         "patch_file": "Surgically replace a text block inside a file.",
         "delete_file": "Delete a file.",
         "create_dir": "Create a directory tree.",
-        "list_dir": "List a directory contents."
+        "list_dir": "List a directory contents.",
+        "set_important_path": "Memorize an important directory path for the user (e.g., user_profile, downloads).",
+        "get_important_paths": "Get all important paths memorized by the user, and the default workspace."
     },
     "tool_schema": [
         {
@@ -224,6 +226,29 @@
                     },
                     "required": ["directory_path"]
                 }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__set_important_path",
+                "description": "Memorizes an important directory path for the user (e.g. user_profile, downloads, projects). This path is permanently saved in Hecos configuration. Use this when the user asks you to remember a default path.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "name": { "type": "string", "description": "The logical name of the path (e.g., 'user_profile', 'downloads', 'projects', 'generated_files')." },
+                        "path": { "type": "string", "description": "The absolute or relative path to memorize." }
+                    },
+                    "required": ["name", "path"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "EXECUTOR__get_important_paths",
+                "description": "Returns all the important paths memorized by the user, plus the default sandbox workspace. Call this tool if you need to know where to save or look for user files.",
+                "parameters": { "type": "object", "properties": {} }
             }
         }
     ]

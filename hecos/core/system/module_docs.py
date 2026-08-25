@@ -237,6 +237,35 @@ def get_tools_schema():
         if tag not in _loaded_plugins: # Don't duplicate if already awakened
             tools_list.extend(_sanitize_tool_schema(schema_list))
 
+    # --- RUNTIME AI BEHAVIOR OVERRIDES (from Document Maker config) ---
+    # Reads override_directive and override_enabled from docs_config.json and appends
+    # the directive to the description of targeted tools. This allows the user to
+    # edit/toggle the directive from the Document Maker config panel without touching code.
+    try:
+        import json as _json
+        _dm_cfg_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            "hpm", "document_maker", "docs_config.json"
+        )
+        if os.path.exists(_dm_cfg_path):
+            with open(_dm_cfg_path, "r", encoding="utf-8") as _f:
+                _dm_cfg = _json.load(_f)
+            _override_enabled = _dm_cfg.get("override_enabled", True)
+            _override_directive = _dm_cfg.get("override_directive", "").strip()
+            if _override_enabled and _override_directive:
+                # Tool names that receive the directive injection
+                _override_targets = {
+                    "DOCS__generate_pdf",
+                    "EXECUTOR__write_file",
+                }
+                for _tool in tools_list:
+                    _func = _tool.get("function", _tool)
+                    _tname = _func.get("name", "")
+                    if _tname in _override_targets:
+                        _func["description"] = _func.get("description", "") + " " + _override_directive
+    except Exception as _e:
+        pass  # Never crash tool assembly due to override issues
+
 
     # --- BUILT-IN SYSTEM TOOLS (always present) ---
     tools_list.append({

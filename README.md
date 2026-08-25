@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.48.5 (Runtime Alpha)
+# Hecos - Version 0.49.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,9 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.48.5`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
+> **Runtime Alpha Status**: Hecos is currently in `v0.49.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
+>
+> ⚠️ **Important Notice**: Version 0.49.0 marks the final release of Hecos developed and tested natively on Windows 10. Starting from the next major release (0.50.0+), the primary development and target environment will officially migrate to **Windows 11**.
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution[cite: 1]. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool[cite: 1].

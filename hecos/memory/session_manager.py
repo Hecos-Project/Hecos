@@ -299,7 +299,8 @@ def get_session_messages(session_id: str) -> list:
         except Exception:
             uid = "admin"
             
-        from hecos.memory.brain_interface import _db_path
+        from hecos.memory.brain_interface import _db_path, initialize_user_vault
+        initialize_user_vault(uid)
         db = _db_path(uid)
         import os
         if not os.path.exists(db):
@@ -308,12 +309,12 @@ def get_session_messages(session_id: str) -> list:
         conn = sqlite3.connect(db)
         cur  = conn.cursor()
         cur.execute(
-            "SELECT id, timestamp, role, message, persona_name FROM history WHERE session_id = ? ORDER BY id ASC",
+            "SELECT id, timestamp, role, message, persona_name, audio_file FROM history WHERE session_id = ? ORDER BY id ASC",
             (session_id,)
         )
         rows = cur.fetchall()
         conn.close()
-        return [{"id": r[0], "timestamp": r[1], "role": r[2], "message": r[3], "persona_name": r[4]} for r in rows]
+        return [{"id": r[0], "timestamp": r[1], "role": r[2], "message": r[3], "persona_name": r[4], "audio_file": r[5]} for r in rows]
     except Exception as e:
         logger.error(f"[SESSION] get_session_messages error: {e}")
         return []

@@ -73,6 +73,8 @@ window.initEvents = function() {
       const sttSource = document.getElementById('stt-source');
       const isWebMic = sttSource && sttSource.value === 'web';
       
+      window.isBackendPTTActive = ev.active;
+      
       if (ev.active) {
           if (pttInd) pttInd.classList.add('active');
           // Bypassing browser beep and auto-recording on backend PTT hardware events

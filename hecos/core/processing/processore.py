@@ -218,6 +218,14 @@ def extract_and_execute_tools(raw_response, config=None):
         # tag_info is (tag, args, type, method, optional_call_id)
         original_tag, action_or_args, call_type, method_name = tag_info[:4]
         call_id = tag_info[4] if len(tag_info) > 4 else f"call_{int(time.time())}"
+        
+        if method_name:
+            friendly_name = method_name.replace("_", " ").title()
+            try:
+                from hecos.core.agent.traces import AgentTracer
+                AgentTracer.emit(None, f"Executing tool: {friendly_name}...", level="tool")
+            except Exception:
+                pass
 
         module_to_call = original_tag
         
@@ -422,8 +430,9 @@ def clean_final_output(base_text, tool_results, raw_response_obj, voice_status=F
                     if img_tag not in video_response:
                         video_response += f"\n\n{img_tag}"
             else:
-                # Append the raw output for non-image tools (e.g. system commands)
-                video_response += f"\n\n{out}"
+                # The raw tool output appending logic has been moved to loop.py
+                # so that the appended outputs are saved to the chat history database.
+                pass
                 
     return video_response, clean_voice_text
 

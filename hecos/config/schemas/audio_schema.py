@@ -38,3 +38,6 @@ class AudioConfig(BaseModel):
     # --- PTT Sources ---
     ptt_sources:    PttSources = PttSources()
     custom_ptt_key: str = ""           # e.g. "f8" or "ctrl+alt+space"
+
+    # --- TTS Audio History ---
+    tts_history_max_files: int = 100   # Max WAV files to keep in media/audio/history/

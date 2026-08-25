@@ -184,17 +184,25 @@ window.clearInput = function() {
   }
 };
 
+window.stopAudioPlayback = function() {
+  if (window.currentAudio) {
+    window.currentAudio.pause();
+    // Only clear src for the global singleton player. Historical players must retain their src to be re-playable.
+    if (window.currentAudio === window.HecosTTSPlayer) {
+        window.currentAudio.src = '';
+    }
+    window.currentAudio = null;
+  }
+  try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
+};
+
 window.stopVoice = async function() {
   console.log("[Audio] stopVoice triggered");
   if (window._stopVoiceTimeout) return;
   window._stopVoiceTimeout = true;
   setTimeout(() => { window._stopVoiceTimeout = false; }, 1000);
 
-  if (window.currentAudio) {
-    window.currentAudio.pause();
-    window.currentAudio.src = '';
-    window.currentAudio = null;
-  }
+  window.stopAudioPlayback();
   try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
@@ -212,6 +220,22 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     window.stopVoice();
   }
+  
+  // Toggle audio with Spacebar, but not if user is typing in an input
+  if (e.key === ' ' || e.code === 'Space') {
+    const active = document.activeElement;
+    if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && !active.isContentEditable)) {
+      if (window.currentAudio) {
+        e.preventDefault();
+        if (window.currentAudio.paused) {
+          window.currentAudio.play().catch(err => console.warn('[Audio] Spacebar play blocked:', err));
+        } else {
+          window.currentAudio.pause();
+        }
+      }
+    }
+  }
+
   if (e.key === 'F4') { e.preventDefault(); if(window.toggleMic) window.toggleMic(); }
   if (e.key === 'F6') { e.preventDefault(); if(window.toggleTTS) window.toggleTTS(); }
   if (e.key === 'F7') { 
@@ -220,6 +244,17 @@ document.addEventListener('keydown', function(e) {
   }
   if (e.key === 'F8') { e.preventDefault(); if(window.togglePTT) window.togglePTT(); }
 });
+
+window.updateGlobalVolume = function(val) {
+  const vol = Math.max(0, Math.min(100, parseInt(val))) / 100;
+  window.globalTTSVolume = vol;
+  if (window.HecosTTSPlayer) window.HecosTTSPlayer.volume = vol;
+  
+  // Update all other historical players currently in the DOM
+  document.querySelectorAll('.audio-badge audio').forEach(player => {
+      player.volume = vol;
+  });
+};
 
 window.refreshStatus = async function() {
   try {
@@ -268,6 +303,9 @@ window.refreshStatus = async function() {
     const micIsOn = (d.mic === 'ON');
     const pttIsOn = (d.ptt === 'ON');
     if (window._applyMicState) window._applyMicState(micIsOn);
+    if (micIsOn && typeof window.initWebAudio === 'function') {
+        window.initWebAudio().catch(() => {});
+    }
     if (window._applyTTSState) window._applyTTSState(d.tts === 'ON');
     // PTT can only be ON if MIC is also ON — enforce this dependency client-side
     if (window._applyPTTState) window._applyPTTState(micIsOn && pttIsOn);

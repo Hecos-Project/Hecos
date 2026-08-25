@@ -257,6 +257,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     try:
         import hecos.core.keys.key_manager as _km_settings
         _max_key_retries = getattr(_km_settings, "_KM_MAX_RETRIES", 5)
+        # IMPORTANT: also use the actual pool size as the upper bound, so we never give up
+        # before trying all available keys (e.g. if user has 9 keys but max_retries=5).
+        try:
+            _pool_size = len(_get_km()._pools.get(provider.lower(), [])) if provider else 0
+            _max_key_retries = max(_max_key_retries, _pool_size)
+        except Exception:
+            pass
     except Exception:
         _max_key_retries = 5
     _tried_keys: list = []
@@ -329,7 +336,7 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             # Detailed logging so we can see EXACTLY why a call failed
             zlog_error(f"LiteLLM: [{error_type}] Error (attempt {_attempt + 1}/{_max_key_retries}) with model '{model_name}': {error_msg}")
             
-            # Timeout: mark key as temporarily cooling, return immediately (don't retry all keys)
+            # Timeout: mark key as temporarily cooling and retry with next key
             if "Timeout" in error_type or "timeout" in error_msg.lower():
                 zlog_error(f"LiteLLM: TIMEOUT on attempt {_attempt + 1}! Provider='{provider}', Model='{model_name}'.")
                 # Mark the timed-out key as temporarily rate-limited (60s) so next request skips it
@@ -338,10 +345,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                     try:
                         _km_err = _get_km()
                         _km_err.mark_exhausted(provider, _timed_out_key, "rate_limited", cooldown=60.0)
-                        zlog_info("LiteLLM", f"[KeyManager] Timed-out key marked for 60s cooldown — will try next key on next request.")
+                        zlog_info("LiteLLM", f"[KeyManager] Timed-out key marked for 60s cooldown — trying next key.")
                     except Exception:
                         pass
-                return f"⚠️ Timeout: il provider '{provider}' non ha risposto in {params.get('timeout', 30)}s. Hecos proverà un'altra chiave alla prossima richiesta."
+                
+                if _attempt == _max_key_retries - 1:
+                    return f"⚠️ Timeout: The provider '{provider}' did not respond in {params.get('timeout', 30)}s after multiple attempts. Please try again later."
+                continue
 
             # ── KeyManager: notify failure and attempt failover ──────────
             _failed_key = params.get("api_key", None)
@@ -366,12 +376,12 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
 
             # ── Non-retryable errors: return immediately ──────────────────
             if "400" in error_msg:
-                return f"⚠️ Errore 400: Parametri non validi per '{model_name}'. Dettagli: {error_msg[:200]}"
+                return f"⚠️ Error 400: Invalid parameters for '{model_name}'. Details: {error_msg[:200]}"
             if "404" in error_msg:
-                return f"⚠️ Errore 404: Il modello '{model_name}' non è stato trovato o l'endpoint è errato."
+                return f"⚠️ Error 404: The model '{model_name}' was not found or the endpoint is incorrect."
             if "503" in error_msg or "ServiceUnavailableError" in error_msg:
-                return f"⚠️ Server AI Sovraccarico (Errore 503). Il provider {provider} è momentaneamente non disponibile. Dettagli: {error_msg[:100]}"
-            return f"⚠️ Errore LLM imprevisto [{error_type}]: {error_msg[:250]}"
+                return f"⚠️ AI Server Overloaded (Error 503). Provider {provider} is temporarily unavailable. Details: {error_msg[:100]}"
+            return f"⚠️ Unexpected LLM Error [{error_type}]: {error_msg[:250]}"
 
     # All keys exhausted
-    return f"⚠️ Tutte le chiavi API per '{provider}' sono esaurite o non valide. Aggiungi nuove chiavi nel Key Manager."
+    return f"⚠️ All API keys for '{provider}' are exhausted or invalid. Please add new keys in the Key Manager."

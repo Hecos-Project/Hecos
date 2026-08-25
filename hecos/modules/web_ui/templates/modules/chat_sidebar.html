@@ -113,12 +113,39 @@
         <i class="fas fa-keyboard"></i> <span id="ptt-label">PTT</span>
       </button>
     </div>
+    
+    <div style="margin-bottom: 12px; margin-top: 4px; border-top: 1px solid var(--border); padding-top: 6px;">
+        <div onclick="const adv = document.getElementById('advanced-audio-panel'); const icon = document.getElementById('adv-audio-icon'); if (adv.style.display==='none') { adv.style.display='block'; icon.style.transform='rotate(0deg)'; } else { adv.style.display='none'; icon.style.transform='rotate(-90deg)'; }" style="font-size: 10px; font-weight: 700; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+            <span>ADVANCED</span>
+            <i id="adv-audio-icon" class="fas fa-chevron-down" style="font-size: 9px; transition: transform 0.2s; transform: rotate(-90deg);"></i>
+        </div>
+        
+        <div id="advanced-audio-panel" style="display: none; padding-top: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <span style="font-size: 11px; color: var(--text); display:flex; align-items:center; gap:4px;"><i class="fas fa-volume-down" style="width:14px; color:var(--muted);"></i> Vol:</span>
+                <div style="display:flex; align-items:center; gap: 8px;">
+                    <input type="range" id="global-volume-slider" min="0" max="100" value="100" style="width: 75px; accent-color: var(--accent); cursor: pointer;" oninput="updateGlobalVolume(this.value); document.getElementById('vol-pct').textContent = this.value + '%';">
+                    <span id="vol-pct" style="font-size:10px; font-family:var(--font-mono); color:var(--accent); width: 28px; text-align:right;">100%</span>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 11px; color: var(--text); display:flex; align-items:center; gap:4px;"><i class="fas fa-microphone-alt" style="width:14px; color:var(--muted);"></i> Mic:</span>
+                <div style="display:flex; align-items:center; gap: 8px;">
+                    <div style="width: 75px; height: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative;">
+                        <div id="mic-vu-meter" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent) 0%, #00ffcc 100%); transition: width 0.05s linear;"></div>
+                    </div>
+                    <span id="mic-pct" style="font-size:10px; font-family:var(--font-mono); color:var(--accent); width: 28px; text-align:right; opacity:0.8;">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
       <button id="sidebar-stop-voice-btn" onclick="stopVoice()" title="Stop Voice (ESC)" style="
         display:none; margin:0 0 8px; width:100%; padding:6px 10px;
         background:rgba(var(--red-rgb),.15); border:1px solid rgba(var(--red-rgb),.4);
         border-radius:8px; color:var(--red); font-size:12px; cursor:pointer;
         transition:opacity .2s;">
-      <i class="fas fa-stop"></i> Stop Voice
+      <i class="fas fa-stop" style="margin-right:6px;"></i> Stop Voice
     </button>
   </div>
   <!-- Control Room Expand Button -->

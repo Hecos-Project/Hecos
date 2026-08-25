@@ -99,4 +99,33 @@
       {{ t('webui_voice_preview_tip') | safe }}
     </p>
   </div>
+
+  <!-- Audio History Card -->
+  <div class="card">
+    <div class="card-title"><i class="fas fa-history"></i> Storico Audio TTS</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
+      Hecos salva ogni risposta vocale come file WAV in <code>media/audio/history/</code>, in modo da poterla riascoltare dalla chat anche dopo un riavvio.
+      Imposta quanti file tenere prima che i più vecchi vengano eliminati automaticamente.
+    </p>
+    <div class="grid-2">
+      <div class="field">
+        <label>File audio massimi da conservare</label>
+        <input type="number" id="v-tts-history-max" min="10" max="1000" step="10" style="width:100%;">
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">Default: 100 — ogni file dura circa 10-30 secondi.</p>
+      </div>
+      <div class="field" style="display:flex; flex-direction:column; justify-content:flex-end;">
+        <label style="opacity:0;">Azioni</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="refreshAudioHistoryCount()">
+            <i class="fas fa-sync-alt"></i> Aggiorna conteggio
+          </button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="clearAudioHistory()">
+            <i class="fas fa-trash-alt"></i> Svuota storico
+          </button>
+        </div>
+        <span id="v-history-count" style="font-size:11px; color:var(--muted); margin-top:8px;"></span>
+      </div>
+    </div>
+  </div>
+
 </div>

@@ -169,3 +169,40 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             except Exception as exc:
                 logger.error(f"[WebUI] manage_audio_config POST error: {exc}")
                 return jsonify({"ok": False, "error": str(exc)}), 500
+
+    # ── Audio History Management ──────────────────────────────────────────────────
+
+    @app.route("/api/audio/history/info", methods=["GET"])
+    def audio_history_info():
+        """Returns count and total size of WAV files in media/audio/history/."""
+        try:
+            import os, glob
+            from hecos.modules.web_ui.routes_chat_tts import HISTORY_DIR
+            files = glob.glob(os.path.join(HISTORY_DIR, "*.wav"))
+            total_bytes = sum(os.path.getsize(f) for f in files if os.path.exists(f))
+            size_mb = round(total_bytes / (1024 * 1024), 2)
+            return jsonify({"ok": True, "count": len(files), "size_mb": size_mb})
+        except Exception as e:
+            logger.error(f"[WebUI] audio_history_info error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/audio/history/clear", methods=["POST"])
+    def audio_history_clear():
+        """Deletes all WAV files in media/audio/history/."""
+        try:
+            import os, glob
+            from hecos.modules.web_ui.routes_chat_tts import HISTORY_DIR
+            files = glob.glob(os.path.join(HISTORY_DIR, "*.wav"))
+            deleted = 0
+            for f in files:
+                try:
+                    os.remove(f)
+                    deleted += 1
+                except Exception:
+                    pass
+            logger.info(f"[WebUI] audio_history_clear: deleted {deleted} file(s).")
+            return jsonify({"ok": True, "deleted": deleted})
+        except Exception as e:
+            logger.error(f"[WebUI] audio_history_clear error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+

@@ -171,6 +171,136 @@ window.processAiMedia = function(html) {
     }
   });
 
+  // ── 3. Scan text nodes for bare absolute Windows/Unix paths not wrapped in <a> ──
+  // The AI often outputs paths like "(C:\Hecos\...\file.pdf)" that marked.js won't linkify.
+  // We walk all text nodes, find these bare paths, and replace them with rich file cards.
+  const IMG_EXTS = /\.(png|jpe?g|gif|webp|bmp|svg)$/i;
+  const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv)$/i;
+  // Matches absolute Windows paths: C:\path\to\file.ext or C:/path/to/file.ext
+  // Stops at whitespace, quotes, angle brackets
+  // Group 1: Optional opening wrapper: "(", "( ", "[[IMG:"
+  // Group 2: The actual path
+  // Group 3: Optional closing wrapper: ")", " )", "]]"
+  const PATH_RE = /(?:(\(\s*|\[\[IMG:\s*)([A-Za-z]:[\\/][^\s'"<>\)\]]+)(\s*\)|\s*\]\])?|([A-Za-z]:[\\/][^\s'"<>\)\]]+))/g;
+
+  function _makeBareFileCard(rawPath) {
+    const cleanPath = rawPath.replace(/\\/g, '/').replace(/\/+$/, '');
+    const fileName = cleanPath.split('/').pop() || rawPath;
+    const ext = (fileName.match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
+    const apiUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}`;
+
+    if (IMG_EXTS.test(fileName)) {
+      // Inline image
+      return `
+<div class="chat-img-wrap" draggable="true" data-img-url="${apiUrl}" data-img-name="${fileName}">
+  <img src="${apiUrl}" alt="${fileName}" loading="lazy"
+       onerror="this.parentElement.style.display='none'"
+       onclick="if(window.openLightbox) window.openLightbox('${apiUrl}')"
+       ondblclick="if(window.openChatGallery) window.openChatGallery('${apiUrl}'); return false;">
+  <div class="chat-img-overlay">
+    <button class="img-action-btn" onclick="downloadChatImage('${apiUrl}','${fileName}')">⬇ Scarica</button>
+    <button class="img-action-btn" onclick="openLightbox('${apiUrl}')">🔍 Zoom</button>
+    <button class="img-action-btn" onclick="openChatGallery('${apiUrl}')">🖼 Gallery</button>
+    <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>
+  </div>
+</div>`;
+    }
+
+    if (VIDEO_EXTS.test(fileName)) {
+      // Inline video
+      return `<video controls style="max-width:100%;border-radius:8px;margin-top:8px;" src="${apiUrl}"></video>`;
+    }
+
+    // Determine icon by extension
+    const iconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+                      doc: 'fa-file-word', docx: 'fa-file-word', xls: 'fa-file-excel',
+                      xlsx: 'fa-file-excel', ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint',
+                      txt: 'fa-file-alt', csv: 'fa-file-csv', json: 'fa-file-code',
+                      md: 'fa-file-alt' };
+    const iconClass = iconMap[ext] || 'fa-file-alt';
+    const colorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+                       doc: '#2980b9', docx: '#2980b9', xls: '#27ae60',
+                       xlsx: '#27ae60', ppt: '#e67e22', pptx: '#e67e22' };
+    const iconColor = colorMap[ext] || 'var(--accent)';
+
+    // For PDF/HTML, offer an "Open" button linking to the API serve endpoint
+    const serveUrl = (ext === 'html' || ext === 'htm') ? `/api/serve_html?path=${encodeURIComponent(rawPath)}` : apiUrl;
+    
+    const openBtn = (ext === 'pdf' || ext === 'html' || ext === 'htm')
+      ? `<a href="${serveUrl}" target="_blank" style="margin-left:8px; padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.18); border:1px solid rgba(108,140,255,0.35); color:var(--accent); font-size:0.8em; text-decoration:none; font-weight:600;">
+          <i class="fas fa-external-link-alt"></i> Open
+        </a>`
+      : '';
+    const dlBtn = `<a href="${apiUrl}" download="${fileName}" style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;">
+        <i class="fas fa-download"></i> Download
+      </a>`;
+
+    let cardHtml = `<div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
+      <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
+      <div class="chat-file-details" style="flex:1;min-width:0;">
+        <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${rawPath}">${fileName}</div>
+        <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;">${openBtn}${dlBtn}</div>
+      </div>
+    </div>`;
+
+    // Add inline iframe preview for HTML
+    if (ext === 'html' || ext === 'htm') {
+      const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+      cardHtml += `
+      <div class="chat-html-preview" style="margin-top: 8px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: #fff;">
+        <div style="background: var(--bg3); padding: 4px 8px; font-size: 0.75em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+          <span>Preview: ${fileName}</span>
+          <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <iframe id="${iframeId}" src="${serveUrl}" style="width: 100%; height: 350px; border: none; display: block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+      </div>`;
+    }
+
+    return cardHtml;
+  }
+
+  // Walk the parsed DOM's text nodes and replace bare paths
+  function _processTextNodes(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent;
+      if (!PATH_RE.test(text)) return;
+      PATH_RE.lastIndex = 0; // Reset regex state
+      const parts = [];
+      let lastIdx = 0;
+      while ((m = PATH_RE.exec(text)) !== null) {
+        // m[2] is the path if there were wrappers, m[4] is the path if there were no wrappers.
+        const rawPath = m[2] || m[4];
+        
+        // Skip if path doesn't have a file extension (likely just a directory reference)
+        if (!/\.[a-z0-9]{2,5}$/i.test(rawPath)) {
+          // Still keep text up to here as-is by NOT updating lastIdx
+          continue;
+        }
+        
+        if (lastIdx < m.index) parts.push(document.createTextNode(text.slice(lastIdx, m.index)));
+        
+        const span = document.createElement('span');
+        span.innerHTML = _makeBareFileCard(rawPath);
+        parts.push(span);
+        
+        lastIdx = m.index + m[0].length;
+      }
+      PATH_RE.lastIndex = 0;
+      if (parts.length === 0) return; // No matches found, leave as-is
+      if (lastIdx < text.length) parts.push(document.createTextNode(text.slice(lastIdx)));
+      const frag = document.createDocumentFragment();
+      parts.forEach(p => frag.appendChild(p));
+      node.parentNode.replaceChild(frag, node);
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      // Don't process inside <a>, <pre>, <code>, or elements we already transformed
+      if (['A','PRE','CODE','SCRIPT','STYLE'].includes(node.tagName)) return;
+      if (node.classList && (node.classList.contains('chat-file-card') || node.classList.contains('chat-img-wrap') || node.classList.contains('chat-video-card') || node.classList.contains('action-console-block'))) return;
+      // Must snapshot childNodes before iteration since we may mutate the list
+      Array.from(node.childNodes).forEach(_processTextNodes);
+    }
+  }
+  _processTextNodes(doc.body);
+
   // Maintain the legacy [[IMG:...]] support for backwards compatibility
   let finalHtml = doc.body.innerHTML;
   if (typeof window.processAiImages === 'function') {

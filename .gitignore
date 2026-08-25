@@ -543,16 +543,25 @@ hecos/modules/web_ui/templates/modules/config_templates.html
 hecos/modules/web_ui/templates/modules/config_pc_automation.html
 hecos/modules/web_ui/templates/modules/config_panel.html
 hecos/modules/web_ui/templates/modules/hpm_notifications.html
+hecos/modules/web_ui/templates/modules/config_document_maker.html
+hecos/modules/web_ui/templates/modules/config_hpm_settings.html
 
 # WebUI Static Assets belonging to HPM packages
 hecos/modules/web_ui/static/js/config_mapper_drive.js
+hecos/modules/web_ui/static/js/config_mapper_plugins.js
 hecos/modules/web_ui/static/css/browser_automation.css
 hecos/modules/web_ui/static/js/browser_automation.js
 hecos/modules/web_ui/static/css/image_gen.css
 hecos/modules/web_ui/static/js/image_gen.js
+hecos/modules/web_ui/static/js/igen_panel.js
+hecos/modules/web_ui/static/js/document_maker_panel.js
 hecos/modules/web_ui/static/js/pc_automation.js
 hecos/modules/web_ui/static/js/messenger.js
 hecos/modules/web_ui/static/js/mail.js
+hecos/modules/web_ui/static/js/contacts_*.js
+hecos/modules/web_ui/static/css/contacts_*.css
+hecos/modules/web_ui/static/js/contacts.js
+hecos/modules/web_ui/static/css/contacts.css
 
 # Frontend build tools
 node_modules/
@@ -627,3 +636,12 @@ hecos/modules/global_backup/
 # Wiki Deployment Scripts
 scripts/*Wiki*.ps1
 scripts/*wiki*.py
+
+# Media Documents
+hecos/media/documents/*
+!hecos/media/documents/.gitkeep
+
+# Entire Workspace
+workspace/*
+!workspace/.gitkeep
+!workspace/flows/

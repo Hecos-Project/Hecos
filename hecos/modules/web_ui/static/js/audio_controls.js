@@ -98,6 +98,9 @@ window.toggleMic = async function() {
     const data = await r.json();
     if (data.ok) {
         _applyMicState(data.listening_status);
+        if (data.listening_status && window.initWebAudio) {
+            window.initWebAudio();
+        }
         if (data.ptt_forced_off) {
             _applyPTTState(false);
         }
@@ -113,7 +116,10 @@ window.toggleTTS = async function() {
     const data = await r.json();
     if (data.ok) {
         _applyTTSState(data.voice_status);
-        if (!data.voice_status && window.stopVoice) window.stopVoice();
+        if (!data.voice_status) {
+            if (window.stopAudioPlayback) window.stopAudioPlayback();
+            else if (window.stopVoice) window.stopVoice();
+        }
     }
   } catch(e) { console.error('[DEBUG-UI] toggleTTS exception:', e); }
 };
