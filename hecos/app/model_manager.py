@@ -30,7 +30,7 @@ class ModelManager:
         else:
             try:
                 ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
-                response = requests.get(f"{ollama_base}/api/tags", timeout=1)
+                response = requests.get(f"{ollama_base}/api/tags", timeout=5)
                 if response.status_code == 200:
                     models_ollama = [m['name'] for m in response.json().get('models', [])]
                     self.config_manager.set({str(i+1): name for i, name in enumerate(models_ollama)}, 'backend', 'ollama', 'available_models')
@@ -49,7 +49,7 @@ class ModelManager:
         else:
             try:
                 url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
-                r = requests.get(url, timeout=1)
+                r = requests.get(url, timeout=5)
                 if r.status_code == 200:
                     model_name = r.json().get('result', 'kobold_model')
                     categorized_models["Kobold (Local)"].append(model_name)

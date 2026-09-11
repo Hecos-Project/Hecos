@@ -97,20 +97,22 @@ document.addEventListener('change', (e) => {
   }
 });
 
-// Backend type card visibility switcher
-document.addEventListener('DOMContentLoaded', () => {
-    const backendTypeEl = document.getElementById('backend-type');
-    if (backendTypeEl) {
-        backendTypeEl.addEventListener('change', function() {
-          const v = this.value;
-          const cardCloud  = document.getElementById('card-cloud');
-          const cardOllama = document.getElementById('card-ollama');
-          const cardKobold = document.getElementById('card-kobold');
-          if (cardCloud)  cardCloud.style.display  = v === 'cloud'  ? '' : 'none';
-          if (cardOllama) cardOllama.style.display = v === 'ollama' ? '' : 'none';
-          if (cardKobold) cardKobold.style.display = v === 'kobold' ? '' : 'none';
-        });
-    }
+// Backend type card visibility switcher (event delegation — works with lazy-loaded panels)
+function _applyBackendCardVisibility(type) {
+  const v = type || (document.getElementById('backend-type') || {}).value || 'ollama';
+  const cardCloud  = document.getElementById('card-cloud-settings');
+  const cardOllama = document.getElementById('card-ollama');
+  const cardKobold = document.getElementById('card-kobold');
+  if (cardCloud)  cardCloud.style.display  = v === 'cloud'  ? '' : 'none';
+  if (cardOllama) cardOllama.style.display = v === 'ollama' ? '' : 'none';
+  if (cardKobold) cardKobold.style.display = v === 'kobold' ? '' : 'none';
+}
+window._applyBackendCardVisibility = _applyBackendCardVisibility;
+
+document.addEventListener('change', (e) => {
+  if (e.target.id === 'backend-type') {
+    _applyBackendCardVisibility(e.target.value);
+  }
 });
 
 // Deep-linking via URL hash changes (e.g. from dashboard widgets)

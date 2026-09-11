@@ -149,6 +149,11 @@ async function initAll(attempt = 1) {
                 if (data) {
                     window.sysOptions = data;
                     console.log('[Init] Options loaded (models available for backend panel).');
+                    // Re-populate backend dropdowns now that model list is ready.
+                    // populateBackendUI lives in config_mapper_llm.js (Phase 2 script).
+                    if (typeof populateBackendUI === 'function') {
+                        try { populateBackendUI(); } catch(e) { console.warn('[Init] populateBackendUI after options:', e); }
+                    }
                 }
             })
             .catch(() => { console.log('[Init] /hecos/options unavailable (Ollama offline?). Using cache.'); });

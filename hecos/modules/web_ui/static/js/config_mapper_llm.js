@@ -14,7 +14,10 @@ function populateBackendUI() {
     const btEl = document.getElementById('backend-type');
     if (btEl) {
         btEl.value = bt;
-        btEl.dispatchEvent(new Event('change'));
+        // Apply card visibility directly — avoids triggering the universal auto-save listener
+        if (typeof _applyBackendCardVisibility === 'function') {
+            _applyBackendCardVisibility(bt);
+        }
     }
 
     // 2. Cloud / Ollama / Kobold model selectors
@@ -88,7 +91,7 @@ function buildBackendPayload(out) {
     out.backend.ollama = out.backend.ollama || {};
     out.backend.kobold = out.backend.kobold || {};
 
-    out.backend.type                  = getV('backend-type',   out.backend.type || 'cloud');
+    out.backend.type                  = getV('backend-type',   out.backend.type || 'ollama');
     out.backend.cloud.model           = getV('cloud-model',    out.backend.cloud.model);
     out.backend.cloud.temperature     = parseFloat(getV('cloud-temp',    out.backend.cloud.temperature))     || 0.7;
     out.backend.ollama.model          = getV('ollama-model',   out.backend.ollama.model);

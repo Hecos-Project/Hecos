@@ -9,26 +9,29 @@ ai:
   safety_instructions: ''
   avatar_size: medium
 backend:
-  type: cloud
+  type: ollama
   cloud:
-    model: gemini/gemini-3.6-flash
+    model: ''
     temperature: 0.7
   kobold:
     url: http://localhost:5001
     model: ''
     max_length: 512
-    temperature: 0.8
-    top_p: 0.92
+    temperature: 0.7
+    top_p: 0.95
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: ''
-    available_models: {}
+    model: srchmnmichael/qwen3.5-9B-uncensored:latest
+    available_models:
+      '1': huihui_ai/qwen3.5-abliterated:9b
+      '2': lukey03/qwen3.5-9b-abliterated:latest
+      '3': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 4096
-    num_gpu: 25
-    num_predict: 250
+    num_gpu: 33
+    num_predict: 1024
     temperature: 0.3
-    top_p: 0.9
+    top_p: 0.95
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
@@ -57,8 +60,8 @@ filters:
   custom_replacements: {}
 language: en
 llm:
-  allow_cloud: true
-  debug_llm: true
+  allow_cloud: false
+  debug_llm: false
   providers:
     gemini:
       api_key: ''
@@ -172,4 +175,4 @@ routing_engine:
   legacy_models: ''
 system:
   flask_debug: false
-  check_local_backend_on_boot: false
+  check_local_backend_on_boot: true

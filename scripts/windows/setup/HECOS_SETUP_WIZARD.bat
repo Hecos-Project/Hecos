@@ -102,13 +102,42 @@ if exist "%ROOT_DIR%\python_env\python.exe" (
     )
 )
 
-if not "%PYTHON_CMD%"=="" (
+if not "!PYTHON_CMD!"=="" (
     echo [OK] Python found: !PYTHON_LOC!
     !PYTHON_CMD! --version
     echo.
-    echo [*] Python is already installed. Proceeding to Setup...
-    timeout /t 2 >nul
-    goto LAUNCH
+
+    :: Check Python version compatibility (3.11.x recommended for binary wheels)
+    :: Use a stripped (unquoted) copy of PYTHON_CMD for the for /f shell call
+    set PYTHON_CMD_RAW=!PYTHON_CMD:"=!
+    for /f "tokens=2 delims= " %%v in ('"!PYTHON_CMD_RAW!" --version 2^>^&1') do set PY_VER=%%v
+    for /f "tokens=1,2 delims=." %%a in ("!PY_VER!") do (
+        set PY_MAJOR=%%a
+        set PY_MINOR=%%b
+    )
+    if not "!PY_MAJOR!"=="3" (
+        echo [!] WARNING: Hecos requires Python 3.x. Found: !PY_VER!
+        echo [!] Please install Python 3.11.9 and re-run the wizard.
+        pause
+        exit
+    )
+    if not "!PY_MINOR!"=="11" (
+        echo [!] WARNING: Python !PY_VER! detected.
+        echo [!] Hecos is tested with Python 3.11.x. Some packages ^(PyAudio, pygame^)
+        echo [!] may fail to install on other versions due to missing binary wheels.
+        echo [!] It is strongly recommended to use Python 3.11.9.
+        echo.
+        echo  1. Continue anyway ^(may fail^)
+        echo  2. Download and install Portable Python 3.11.9 ^(Recommended^)
+        echo  3. Exit
+        echo.
+        set /p PY_CH="Select an option (1-3): "
+        if "!PY_CH!"=="2" goto INSTALL_PYTHON
+        if "!PY_CH!"=="3" exit
+    )
+
+    echo [*] Installing / updating Hecos dependencies...
+    goto INSTALL_DEPS
 ) else (
     echo [!] Python is NOT installed or not found.
     echo.
@@ -151,18 +180,54 @@ powershell -Command "Invoke-WebRequest -Uri 'https://bootstrap.pypa.io/get-pip.p
 echo [*] Installing PIP...
 "%PYTHON_DIR%\python.exe" "%PYTHON_DIR%\get-pip.py"
 
-echo.
-echo [*] Installing Hecos dependencies...
-if exist "%ROOT_DIR%\requirements.txt" (
-    "%PYTHON_DIR%\Scripts\pip.exe" install --upgrade pip
-    "%PYTHON_DIR%\Scripts\pip.exe" install -r "%ROOT_DIR%\requirements.txt"
-) else (
-    echo [!] requirements.txt not found! Skipping dependencies.
-)
-
 set PYTHON_CMD="%PYTHON_DIR%\python.exe"
 echo.
-echo [SUCCESS] Portable Python Installed!
+echo [SUCCESS] Portable Python 3.11.9 installed!
+timeout /t 2 >nul
+goto INSTALL_DEPS
+
+
+:INSTALL_DEPS
+echo.
+echo ==============================================================================
+echo                     INSTALLING HECOS DEPENDENCIES
+echo ==============================================================================
+echo [*] Upgrading pip...
+!PYTHON_CMD! -m pip install --upgrade pip --quiet
+
+echo [*] Installing all required packages...
+if exist "%ROOT_DIR%\pyproject.toml" (
+    :: Try installing from pyproject.toml [service] extras
+    !PYTHON_CMD! -m pip install "%ROOT_DIR%[service]" --quiet
+    if errorlevel 1 (
+        echo [!] pyproject.toml install failed, falling back to explicit list...
+        goto INSTALL_DEPS_FALLBACK
+    )
+) else (
+    goto INSTALL_DEPS_FALLBACK
+)
+goto INSTALL_DEPS_DONE
+
+:INSTALL_DEPS_FALLBACK
+echo [*] Installing packages explicitly...
+!PYTHON_CMD! -m pip install --quiet ^
+    flask flask-login flask-compress ^
+    pydantic pyyaml tomli-w litellm tenacity ^
+    babel holidays requests psutil cryptography ^
+    numpy pynput pywin32 pystray pillow customtkinter qrcode ^
+    SpeechRecognition PyAudio sounddevice soundfile GPUtil pygame ^
+    fastembed "lancedb>=0.33.0" sentence-transformers
+if errorlevel 1 (
+    echo.
+    echo [!] WARNING: Some packages failed to install.
+    echo [!] Hecos may work partially. Check the errors above.
+    echo.
+    pause
+)
+
+:INSTALL_DEPS_DONE
+echo.
+echo [+] Dependencies installed successfully!
 timeout /t 2 >nul
 goto LAUNCH
 

@@ -68,8 +68,15 @@ def init_media_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/api/models/refresh", methods=["POST"])
     def refresh_models():
         from hecos.app.model_manager import ModelManager
+        from hecos.modules.web_ui.routes_config_core import _invalidate_options_cache
         mm = ModelManager(cfg_mgr)
-        mm.get_available_models() # This updates the cache in config
-        return jsonify({"ok": True})
+        categorized = mm.get_available_models()  # Live fetch → updates config YAML cache
+        _invalidate_options_cache()              # Force next /hecos/options to rebuild
+        # Return the fresh list directly so the JS can update without a second round-trip
+        ollama = categorized.get("Ollama (Local)", [])
+        cloud  = {k.replace("Cloud (","").replace(")","").lower(): v
+                  for k, v in categorized.items() if "Cloud" in k}
+        return jsonify({"ok": True, "ollama_models": ollama, "cloud_models": cloud})
+
 
 
