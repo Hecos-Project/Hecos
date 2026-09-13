@@ -248,6 +248,7 @@ document.addEventListener('keydown', function(e) {
 window.updateGlobalVolume = function(val) {
   const vol = Math.max(0, Math.min(100, parseInt(val))) / 100;
   window.globalTTSVolume = vol;
+  localStorage.setItem('hecos_global_volume', val);
   if (window.HecosTTSPlayer) window.HecosTTSPlayer.volume = vol;
   
   // Update all other historical players currently in the DOM
@@ -255,6 +256,20 @@ window.updateGlobalVolume = function(val) {
       player.volume = vol;
   });
 };
+
+// Initialize volume from localStorage
+document.addEventListener('DOMContentLoaded', () => {
+    const savedVol = localStorage.getItem('hecos_global_volume');
+    if (savedVol !== null) {
+        const slider = document.getElementById('global-volume-slider');
+        const pct = document.getElementById('vol-pct');
+        if (slider) slider.value = savedVol;
+        if (pct) pct.textContent = savedVol + '%';
+        window.updateGlobalVolume(savedVol);
+    } else {
+        window.updateGlobalVolume(100);
+    }
+});
 
 window.refreshStatus = async function() {
   try {
@@ -297,6 +312,9 @@ window.refreshStatus = async function() {
             chatArea.classList.add('size-' + d.avatar_size);
         }
     }
+    // Reasoning display settings (default: show=true, collapsed=true)
+    window.HecosShowReasoning      = d.show_reasoning      ?? true;
+    window.HecosReasoningCollapsed = d.reasoning_collapsed ?? true;
 
 
 

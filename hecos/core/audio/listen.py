@@ -71,9 +71,9 @@ def listen(state=None):
 
     try:
         if _persistent_source is None:
-            logger.debug("[LISTEN-DEBUG] Creating NEW microphone source!")
             _persistent_source = sr.Microphone()
             _persistent_source.__enter__()
+            logger.debug("[LISTEN-DEBUG] Successfully created NEW microphone source.")
         
         source = _persistent_source
         
@@ -195,5 +195,8 @@ def listen(state=None):
             logger.error(f"[LISTEN] Recognition error: {e}")
             logger.warning("[LISTEN-DEBUG] Destroying mic due to outer exception!")
             _persistent_source = None
+        elif "device" in str(e).lower():
+            # Throttle the loop if no microphone is connected to prevent CPU spam
+            time.sleep(2.0)
         return ""
 

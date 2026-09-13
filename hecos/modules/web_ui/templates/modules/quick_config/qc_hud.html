@@ -1,0 +1,42 @@
+<!-- ── Quick Config HUD Overlay ── -->
+<style>
+  /* Base hidden state injected immediately at boot to prevent unstyled flash */
+  #qc-hud-overlay.qc-hud-hidden { opacity: 0; visibility: hidden; pointer-events: none; position: fixed; top:0; left:0; width:100%; height:100%; z-index:9999; }
+</style>
+<div id="qc-hud-overlay" class="qc-hud-hidden">
+  <div class="qc-hud-panel">
+    <div class="qc-hud-header">
+      <div class="qc-hud-title"><i class="fas fa-sliders-h"></i> QUICK CONFIG</div>
+      <button class="qc-hud-close" onclick="window.closeQuickConfig()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="qc-hud-body">
+      <div class="qc-hud-field">
+        <label><i class="fas fa-server"></i> {{ t('webui_chat_backend') }}</label>
+        <select id="qc-backend-type" onchange="window.qcBackendChanged()">
+          <option value="ollama">Local (Ollama)</option>
+          <option value="cloud">Cloud APIs</option>
+          <option value="kobold">KoboldCPP</option>
+        </select>
+      </div>
+      
+      <div class="qc-hud-field">
+        <label><i class="fas fa-microchip"></i> {{ t('webui_chat_model') }}</label>
+        <select id="qc-model" onchange="window.qcSaveConfig()">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      
+      <div class="qc-hud-field">
+        <label><i class="fas fa-ghost"></i> {{ t('header_soul') }}</label>
+        <select id="qc-persona" onchange="window.qcSaveConfig()">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="qc-hud-footer">
+      <div id="qc-sync-status" class="qc-sync-status"></div>
+    </div>
+  </div>
+</div>

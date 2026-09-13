@@ -10,6 +10,52 @@
         <option value="kobold">{{ t('webui_conf_backend_kobold_opt') }}</option>
       </select>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">{{ t('webui_conf_routing_title') }}</div>
+
+    <div class="field" style="margin-bottom: 18px;">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <div class="toggle-wrapper">
+          <input type="checkbox" id="reasoning-show" class="toggle-input">
+          <span class="toggle-slider"></span>
+        </div>
+        <div>
+          <span style="font-weight:600;">{{ t('webui_conf_reasoning_show') }}</span>
+          <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">{{ t('webui_conf_reasoning_show_desc') }}</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="field">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <div class="toggle-wrapper">
+          <input type="checkbox" id="reasoning-collapsed" class="toggle-input">
+          <span class="toggle-slider"></span>
+        </div>
+        <div>
+          <span style="font-weight:600;">{{ t('webui_conf_reasoning_collapsed') }}</span>
+          <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">{{ t('webui_conf_reasoning_collapsed_desc') }}</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Global Debug Setting -->
+    <div class="field" style="margin-top: 18px; border-top: 1px solid var(--border); padding-top: 18px;">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <div class="toggle-wrapper">
+          <input type="checkbox" id="llm-debug" class="toggle-input">
+          <span class="toggle-slider"></span>
+        </div>
+        <div>
+          <span style="font-weight:600;">LiteLLM Verbose Debug</span>
+          <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">Print detailed logs for every AI request (very verbose). Applies to ALL backends.</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
 
   <div class="card" id="card-cloud-settings">
     <div class="card-title">{{ t('webui_conf_llm_providers') }}</div>
@@ -17,13 +63,8 @@
       <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }}</div></div>
       <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
     </div>
-    <div class="toggle-row">
-      <div class="toggle-info">LiteLLM Verbose Debug<div class="toggle-sub">Print detailed logs for every AI request (very verbose)</div></div>
-      <label class="switch"><input type="checkbox" id="llm-debug"><span class="slider"></span></label>
-    </div>
-  </div>
 
-    <div class="card-title">{{ t('webui_conf_cloud_title') }}</div>
+    <div class="card-title" style="margin-top: 16px;">{{ t('webui_conf_cloud_title') }}</div>
     <div class="field">
       <label>{{ t('webui_conf_model_active') }}</label>
       <div style="display:flex; gap:8px;">
@@ -97,3 +138,15 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Merge the dynamically loaded zoptions into the global sysOptions
+  // so that dropdowns (models, personalities, etc.) can populate correctly.
+  (function() {
+    var newOpts = {{ zoptions | tojson | safe }};
+    if (newOpts && Object.keys(newOpts).length > 0) {
+      window.sysOptions = window.sysOptions || {};
+      Object.assign(window.sysOptions, newOpts);
+    }
+  })();
+</script>

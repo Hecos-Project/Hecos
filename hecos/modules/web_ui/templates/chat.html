@@ -151,6 +151,11 @@
   window.cfg = {{ zconfig | tojson }};
   window.HECOS_VERSION = "{{ version }}";
 </script>
+<!-- Quick Config HUD Lazy Loader -->
+<script src="/static/js/quick_config/qc_loader.js?v={{ version }}"></script>
+{% include 'modules/quick_config/qc_hud.html' %}
+
+<script src="/static/js/chat_audio_player.js?v={{ version }}"></script>
 <script src="/static/js/chat_renderer.js?v={{ version }}"></script>
 <script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
 <!-- Refactored Chat Logic Modules -->

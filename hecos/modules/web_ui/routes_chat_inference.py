@@ -96,9 +96,12 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         # ── Session-Aware Trace Callback ─────────────────────────────────────
         # Inject agent traces directly into the session-specific SSE queue.
-        def _session_trace(msg: str, level: str = "info"):
+        def _session_trace(msg, level: str = "info"):
             _last_activity[0] = time.monotonic()  # Reset watchdog on activity
-            sess["queue"].put({"type": "agent_trace", "level": level, "message": msg})
+            if isinstance(msg, dict):
+                sess["queue"].put(msg)
+            else:
+                sess["queue"].put({"type": "agent_trace", "level": level, "message": str(msg)})
         # ────────────────────────────────────────────────────────────────────
 
         agent = AgentExecutor(
@@ -139,6 +142,34 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             full_text = full_text.replace(_CAMERA_TOKEN, "").strip()
         # ────────────────────────────────────────────────────────────────────
 
+        # ── Extract Thinking Block for dedicated SSE event ────────────────
+        # Reasoning models (like Qwen3.5) often output thinking WITHOUT the opening
+        # <think> tag — they write: "[reasoning...]\n</think>\n\n[visible response]"
+        # We need to handle ALL these patterns:
+        #   1. <think>...</think>  (properly tagged, e.g. from loop.py re-injection)
+        #   2. [reasoning...]</think>  (model forgot opening tag — MOST COMMON CASE)
+        import re as _re
+        _think_text = None
+        
+        # Pattern 1: properly tagged <think>...</think>
+        _m1 = _re.search(r'<think>([\s\S]*?)</think>', full_text or '', _re.IGNORECASE)
+        if _m1:
+            _think_text = _m1.group(1).strip()
+            full_text = _re.sub(r'<think>[\s\S]*?</think>', '', full_text, flags=_re.IGNORECASE).strip()
+            full_text = _re.sub(r'<think>[\s\S]*$', '', full_text, flags=_re.IGNORECASE).strip()
+        
+        # Pattern 2: bare </think> — everything BEFORE it is reasoning, everything AFTER is the response
+        elif '</think>' in (full_text or ''):
+            _parts = (full_text or '').split('</think>', 1)
+            _think_text = _parts[0].strip()
+            full_text = _parts[1].strip() if len(_parts) > 1 else ''
+            _chat_log.debug(f"[INFERENCE] Detected bare </think> tag (no opening tag) — extracted thinking block")
+        
+        if _think_text:
+            sess["queue"].put({"type": "think", "text": _think_text})
+            _chat_log.debug(f"[INFERENCE] Extracted thinking block ({len(_think_text)} chars) → SSE 'think' event")
+        # ────────────────────────────────────────────────────────────────────
+
         _chat_log.info(f"[INFERENCE] Streaming {len(full_text)} chars to client...")
         for i in range(0, len(full_text), 40):
             sess["queue"].put({"type": "token", "text": full_text[i:i+40]})
@@ -148,7 +179,14 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         current_persona = cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
         if current_persona.endswith(".yaml"):
             current_persona = current_persona[:-5]
-        sess["queue"].put({"type": "trace_done", "persona_name": current_persona})
+            
+        try:
+            from hecos.core.llm.client import LAST_PAYLOAD_INFO
+            _m_info = LAST_PAYLOAD_INFO.get("model_info")
+        except Exception:
+            _m_info = None
+            
+        sess["queue"].put({"type": "trace_done", "persona_name": current_persona, "model_info": _m_info})
 
         if camera_request_pending:
             sess["queue"].put({"type": "camera_request"})

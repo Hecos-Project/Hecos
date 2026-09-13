@@ -120,8 +120,17 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     }
     
     # Aggiungi i tools se presenti e se il backend lo supporta
-    if tools and backend_type in ["cloud", "ollama", "kobold"]:
+    # CRITICAL FIX: Do NOT send `tools` natively to Ollama. Many local/uncensored models 
+    # (like Qwen3.5) break or return empty strings when Ollama forces its native tool parser.
+    # Hecos handles Ollama tools robustly via JSON prompt engineering.
+    if tools and backend_type in ["cloud", "kobold"]:
         params["tools"] = tools
+        
+    if backend_type == "ollama" and tools and messages and messages[0].get("role") == "system":
+        tool_hint = "\n### AVAILABLE TOOLS ###\n"
+        tool_hint += "You have function calling available. Call tools by returning a proper JSON function call, NOT by writing JSON in your response text.\n"
+        tool_hint += "Tools: " + ", ".join(t.get("function", {}).get("name", "unknown") for t in tools) + "\n"
+        messages[0]["content"] += tool_hint
 
     # 4. Configurazione Provider
     if backend_type == "ollama":
@@ -291,6 +300,85 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             _tried_keys.append(_used_key)
 
         try:
+            # ── OLLAMA DIRECT PATH: bypass LiteLLM to capture reasoning field ──
+            # LiteLLM silently discards the `reasoning` field from Ollama's
+            # /v1/chat/completions endpoint, losing all thinking content from
+            # reasoning models (Qwen3.5, etc.). We call Ollama directly instead.
+            if backend_type == "ollama" and not stream:
+                import requests as _requests
+                _ollama_base = params.get("api_base", "http://localhost:11434").rstrip("/")
+                _ollama_url = f"{_ollama_base}/v1/chat/completions"
+                
+                # Build the request body — translate LiteLLM params to OpenAI format
+                _ollama_body = {
+                    "model": params["model"].replace("ollama/", "", 1),
+                    "messages": params["messages"],
+                    "temperature": params.get("temperature", 0.7),
+                    "top_p": params.get("top_p", 0.9),
+                    "stream": False,
+                }
+                # Forward Ollama-specific options (num_gpu, num_ctx, etc.)
+                _extra_body = params.get("extra_body")
+                if _extra_body and "options" in _extra_body:
+                    _ollama_body["options"] = _extra_body["options"]
+                
+                zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] POST {_ollama_url} model={_ollama_body['model']}")
+                
+                _ollama_resp = _requests.post(
+                    _ollama_url,
+                    json=_ollama_body,
+                    timeout=params.get("timeout", 300)
+                )
+                _ollama_resp.raise_for_status()
+                _ollama_data = _ollama_resp.json()
+                
+                _ollama_msg = _ollama_data.get("choices", [{}])[0].get("message", {})
+                _ollama_content = (_ollama_msg.get("content") or "").strip()
+                _ollama_reasoning = _ollama_msg.get("reasoning") or _ollama_msg.get("reasoning_content") or ""
+                
+                # Update telemetry
+                try:
+                    _ollama_usage = _ollama_data.get("usage", {})
+                    if _ollama_usage:
+                        LAST_PAYLOAD_INFO["prompt_tokens"] = _ollama_usage.get("prompt_tokens", 0)
+                        LAST_PAYLOAD_INFO["completion_tokens"] = _ollama_usage.get("completion_tokens", 0)
+                        LAST_PAYLOAD_INFO["approx_tokens"] = _ollama_usage.get("total_tokens", LAST_PAYLOAD_INFO["approx_tokens"])
+                except Exception:
+                    pass
+                
+                # Check for tool calls in the Ollama response
+                _ollama_tool_calls = _ollama_msg.get("tool_calls")
+                if _ollama_tool_calls:
+                    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] Tool calls detected: {_ollama_tool_calls}")
+                    # Fall through to LiteLLM path for proper tool call object parsing
+                    response = litellm.completion(**params)
+                    choice = response.choices[0]
+                    msg = choice.message
+                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
+                        return msg
+                
+                zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] content={len(_ollama_content)} chars | reasoning={len(_ollama_reasoning)} chars")
+                
+                if _ollama_reasoning:
+                    zlog_info("LiteLLM", f"[REASONING] Captured {len(_ollama_reasoning)} chars of thinking from Ollama reasoning field")
+                    # Re-inject as <think> tags so downstream ReasoningParser can extract them
+                    import re
+                    _ollama_content = re.sub(r'^(HECOS|Hecos|hecos)\s*:\s*', '', _ollama_content, flags=re.IGNORECASE)
+                    return f"<think>\n{_ollama_reasoning}\n</think>\n\n{_ollama_content}"
+                
+                if not _ollama_content:
+                    # Detect safety filter blocks
+                    _finish = _ollama_data.get("choices", [{}])[0].get("finish_reason")
+                    if _finish == "content_filter":
+                        zlog_error("LiteLLM: Response BLOCKED by safety filter.")
+                        return "!!!BLOCK_SAFETY!!!"
+                    return ""
+                
+                import re
+                _ollama_content = re.sub(r'^(HECOS|Hecos|hecos)\s*:\s*', '', _ollama_content, flags=re.IGNORECASE)
+                return _ollama_content
+            
+            # ── STANDARD PATH: LiteLLM for cloud/kobold backends ──────────────
             response = litellm.completion(**params)
 
             if stream:
@@ -317,7 +405,31 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             if debug_enabled:
                 zlog_debug("LiteLLM", f"RESPONSE_OBJECT: {str(response)[:2000]}")
 
+            # ── DIAGNOSTIC: log raw message fields to trace empty-content issues ──
+            _raw_content = getattr(msg, 'content', None)
+            _raw_reasoning = getattr(msg, 'reasoning_content', None)
+            _raw_thinking = getattr(msg, 'thinking', None)
+            _raw_reasoning2 = getattr(msg, 'reasoning', None)
+            _provider_fields = {k: type(v).__name__ for k, v in vars(msg).items() if v} if hasattr(msg, '__dict__') else {}
+            zlog_debug("LiteLLM", f"[DIAG] content={repr(_raw_content)[:200]} | reasoning_content={repr(_raw_reasoning)[:200]} | thinking={repr(_raw_thinking)[:200]} | reasoning={repr(_raw_reasoning2)[:200]}")
+            zlog_debug("LiteLLM", f"[DIAG] msg non-null fields: {_provider_fields}")
+            # Also check provider_specific_fields (litellm sometimes puts thinking data here)
+            _prov_specific = getattr(msg, 'provider_specific_fields', None)
+            if _prov_specific:
+                zlog_debug("LiteLLM", f"[DIAG] provider_specific_fields: {repr(_prov_specific)[:500]}")
+
             if not msg.content:
+                # For thinking models, reasoning content may be in a separate field
+                _thinking = (
+                    getattr(msg, 'reasoning_content', None) or
+                    getattr(msg, 'thinking', None) or
+                    getattr(msg, 'reasoning', None) or
+                    ""
+                )
+                if _thinking:
+                    zlog_debug("LiteLLM", f"Thinking model detected: content empty but reasoning found ({len(_thinking)} chars)")
+                    return f"<think>{_thinking}</think>"
+                
                 # Detect if the response was blocked by a safety filter
                 if getattr(choice, 'finish_reason', None) == 'content_filter' or getattr(response, 'prompt_feedback', {}).get('blockReason'):
                     zlog_error("LiteLLM: Response BLOCKED by safety filter.")
@@ -375,6 +487,11 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 continue  # Retry with next key
 
             # ── Non-retryable errors: return immediately ──────────────────
+            # Detect Ollama connection failures
+            if backend_type == "ollama" and ("Connection" in error_type or "ConnectError" in error_type or "connection refused" in error_msg.lower() or "target machine actively refused it" in error_msg.lower()):
+                _url = params.get("api_base", "http://localhost:11434")
+                return f"⚠️ **Ollama Connection Failed**\nHecos cannot connect to the Ollama service at `{_url}`.\n\n**Please verify that:**\n1. Ollama is installed on your system.\n2. The Ollama application is currently open and running.\n3. You have pulled at least one model (e.g., run `ollama run qwen3.5` in your terminal)."
+
             if "400" in error_msg:
                 return f"⚠️ Error 400: Invalid parameters for '{model_name}'. Details: {error_msg[:200]}"
             if "404" in error_msg:

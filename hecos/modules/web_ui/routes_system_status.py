@@ -110,6 +110,8 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
                 "last_tool":  last_tool,
                 "tokens_p":   tokens_p,
                 "tokens_c":   tokens_c,
+                "show_reasoning":      cfg.get("routing_engine", {}).get("show_reasoning", True),
+                "reasoning_collapsed": cfg.get("routing_engine", {}).get("reasoning_collapsed", True),
             })
         except Exception as exc:
             return jsonify({"error": str(exc)}), 500

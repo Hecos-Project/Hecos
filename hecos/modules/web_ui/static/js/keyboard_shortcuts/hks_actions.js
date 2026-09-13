@@ -58,33 +58,39 @@
         },
 
         {
-            id: 'nav.backend',
-            label: 'Open Models/Backend',
-            description: 'Navigate to Backend Settings',
-            icon: 'fas fa-server',
-            category: 'navigation',
-            contexts: ['global', 'chat', 'hub', 'home'],
+            id: 'chat.toggle_thinking',
+            label: 'Toggle AI Thinking Box',
+            description: 'Open or close all AI reasoning blocks',
+            icon: 'fas fa-lightbulb',
+            category: 'chat',
+            contexts: ['chat'],
             handler: () => {
-                if (window.HKS && window.HKS.getContext() === 'hub') {
-                    if (window.switchTab) window.switchTab('backend');
+                // Find all think buttons and click the first one we find to trigger the global sync logic
+                const thinkBtns = document.querySelectorAll('.think-btn');
+                if (thinkBtns.length > 0) {
+                    thinkBtns[0].click();
                 } else {
-                    window.open('/hecos/config#backend', '_blank');
+                    // Fallback if no buttons exist but we want to toggle the default state for future messages
+                    const isDefaultCollapsed = window.HecosReasoningCollapsed !== undefined ? window.HecosReasoningCollapsed : true;
+                    const isExpandedState = window._sessionThinkExpanded !== undefined ? window._sessionThinkExpanded : !isDefaultCollapsed;
+                    window._sessionThinkExpanded = !isExpandedState;
+                    if (window.showToast) window.showToast(window._sessionThinkExpanded ? '💡 AI Thinking: Auto-Expand' : '💡 AI Thinking: Auto-Collapse');
                 }
             }
         },
 
         {
-            id: 'nav.ia',
-            label: 'Open Personalities (Soul)',
-            description: 'Navigate to IA/Soul Settings',
-            icon: 'fas fa-brain',
+            id: 'nav.quick_config',
+            label: 'Quick Config',
+            description: 'Open the Quick Config HUD',
+            icon: 'fas fa-sliders-h',
             category: 'navigation',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: () => {
-                if (window.HKS && window.HKS.getContext() === 'hub') {
-                    if (window.switchTab) window.switchTab('ia');
+                if (window.openQuickConfig) {
+                    window.openQuickConfig();
                 } else {
-                    window.open('/hecos/config#ia', '_blank');
+                    console.log("Quick Config not available in this context.");
                 }
             }
         },
@@ -435,6 +441,13 @@
             description: 'Close the currently active panel, modal, or overlay',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
+                // ── 0. Close Quick Config HUD first (highest priority) ──────────
+                const qcOverlay = document.getElementById('qc-hud-overlay');
+                if (qcOverlay && !qcOverlay.classList.contains('qc-hud-hidden')) {
+                    if (window.closeQuickConfig) window.closeQuickConfig();
+                    return;
+                }
+
                 // Try to stop voice playback explicitly when ESC is pressed globally
                 if (typeof window.stopVoice === 'function') {
                     window.stopVoice();

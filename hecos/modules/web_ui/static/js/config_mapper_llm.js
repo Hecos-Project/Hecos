@@ -50,10 +50,10 @@ function populateBackendUI() {
         setVal('models-' + p, (prov[p]?.models || []).join('\n'));
     });
 
-    // 4. Routing engine
+    // 4. Routing engine — reasoning settings
     const rm = c.routing_engine || {};
-    setVal('route-mode',   rm.mode          || 'auto');
-    setVal('route-models', rm.legacy_models || '');
+    setCheck('reasoning-show',      rm.show_reasoning      ?? true);
+    setCheck('reasoning-collapsed', rm.reasoning_collapsed ?? true);
 
     // 5. AI / Persona
     populateSelect('ia-personality-main', sysOptions.personalities || [], c.ai?.active_personality, true);
@@ -92,9 +92,17 @@ function buildBackendPayload(out) {
     out.backend.kobold = out.backend.kobold || {};
 
     out.backend.type                  = getV('backend-type',   out.backend.type || 'ollama');
-    out.backend.cloud.model           = getV('cloud-model',    out.backend.cloud.model);
+
+    // Safe retrieval for dynamically populated dropdowns (prevents overwriting with '' if options aren't loaded yet)
+    const getSelectV = (id, cfgFallback) => {
+        const el = document.getElementById(id);
+        if (el && el.options && el.options.length > 0 && el.value !== 'Loading...') return el.value;
+        return cfgFallback || '';
+    };
+
+    out.backend.cloud.model           = getSelectV('cloud-model', window.cfg.backend?.cloud?.model);
     out.backend.cloud.temperature     = parseFloat(getV('cloud-temp',    out.backend.cloud.temperature))     || 0.7;
-    out.backend.ollama.model          = getV('ollama-model',   out.backend.ollama.model);
+    out.backend.ollama.model          = getSelectV('ollama-model', window.cfg.backend?.ollama?.model);
     out.backend.ollama.temperature    = parseFloat(getV('ollama-temp',    out.backend.ollama.temperature))    || 0.3;
     out.backend.ollama.num_gpu        = parseInt(getV('ollama-gpu',        out.backend.ollama.num_gpu))        || 33;
     out.backend.ollama.num_predict    = parseInt(getV('ollama-predict',    out.backend.ollama.num_predict))    || 1024;
@@ -104,7 +112,7 @@ function buildBackendPayload(out) {
     out.backend.ollama.probe_timeout_sec = parseInt(getV('ollama-probe-timeout', out.backend.ollama.probe_timeout_sec)) || 3;
     out.backend.ollama.url            = getV('ollama-url', out.backend.ollama.url || 'http://localhost:11434');
     out.backend.kobold.url            = getV('kobold-url',   out.backend.kobold.url);
-    out.backend.kobold.model          = getV('kobold-model', out.backend.kobold.model);
+    out.backend.kobold.model          = getSelectV('kobold-model', window.cfg.backend?.kobold?.model);
     out.backend.kobold.temperature    = parseFloat(getV('kobold-temp',  out.backend.kobold.temperature))    || 0.7;
     out.backend.kobold.max_length     = parseInt(getV('kobold-max',     out.backend.kobold.max_length))     || 512;
     out.backend.kobold.top_p          = parseFloat(getV('kobold-top-p', out.backend.kobold.top_p))          || 0.95;
@@ -122,8 +130,8 @@ function buildBackendPayload(out) {
     });
 
     out.routing_engine = out.routing_engine || {};
-    out.routing_engine.mode          = getV('route-mode',   out.routing_engine.mode || 'auto');
-    out.routing_engine.legacy_models = getV('route-models', out.routing_engine.legacy_models);
+    out.routing_engine.show_reasoning      = getC('reasoning-show',      out.routing_engine.show_reasoning      ?? true);
+    out.routing_engine.reasoning_collapsed = getC('reasoning-collapsed', out.routing_engine.reasoning_collapsed ?? true);
 
     out.ai = out.ai || {};
     const personaEl = document.getElementById('ia-personality-main');

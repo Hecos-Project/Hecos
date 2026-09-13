@@ -4,11 +4,6 @@ DESCRIPTION: Loads, validates and saves Hecos configuration from multiple YAML f
 
 Layer architecture:
   L0  config/data/system.yaml      → SystemConfig
-  L0b config/data/agent.yaml       → AgentConfig       (via AgentConfig routes, not here)
-  L0c config/data/audio.yaml       → AudioConfig       (via audio_config module)
-  L0d config/data/media.yaml       → MediaConfig       (via media_config module)
-  L0e config/data/keys.yaml        → KeysConfig        (via key_manager module)
-  L0f config/data/routing_overrides.yaml → RoutingOverrides  (via routes_config)
   L1  config/data/plugins.yaml     → PluginsFileConfig (plugins + extensions)
   L2  config/data/widgets.yaml     → WidgetsFileConfig (widgets)
 
@@ -16,224 +11,69 @@ The `self.config` dict is a UNIFIED flat view of L0 + L1 + L2 for backward compa
 All saves correctly split data back to the appropriate files.
 """
 
-import os as _os
-import json
-import time
+import os
 import threading
 from hecos.core.logging import logger
 
+_PROJECT_ROOT = os.path.abspath(os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..")))
+_HECOS_DIR = os.path.abspath(os.path.normpath(os.path.join(_PROJECT_ROOT, "hecos")))
 
-def _get_yaml_utils():
-    from hecos.config.yaml_utils import load_yaml, save_yaml, save_dict_to_yaml, load_dict_from_yaml, _deep_merge
-    return load_yaml, save_yaml, save_dict_to_yaml, load_dict_from_yaml, _deep_merge
-
-
-def _get_system_schema():
-    from hecos.config.schemas.system_schema import SystemConfig
-    return SystemConfig
-
-
-def _get_plugins_schema():
-    from hecos.config.schemas.plugins_schema import PluginsFileConfig
-    return PluginsFileConfig
-
-
-
-
-def _get_widgets_schema():
-    from hecos.config.schemas.widgets_schema import WidgetsFileConfig
-    return WidgetsFileConfig
-
-
-_PROJECT_ROOT = _os.path.abspath(_os.path.normpath(_os.path.join(_os.path.dirname(__file__), "..", "..")))
-_HECOS_DIR = _os.path.abspath(_os.path.normpath(_os.path.join(_PROJECT_ROOT, "hecos")))
-
-_CONFIG_YAML_PATH    = _os.path.join(_HECOS_DIR, "config", "data", "system.yaml")
-_CONFIG_JSON_PATH    = _os.path.join(_HECOS_DIR, "config", "data", "system.json")
-_PLUGINS_YAML_PATH   = _os.path.join(_HECOS_DIR, "config", "data", "plugins.yaml")
-_WIDGETS_YAML_PATH   = _os.path.join(_HECOS_DIR, "config", "data", "widgets.yaml")
+_CONFIG_YAML_PATH    = os.path.join(_HECOS_DIR, "config", "data", "system.yaml")
+_CONFIG_JSON_PATH    = os.path.join(_HECOS_DIR, "config", "data", "system.json")
+_PLUGINS_YAML_PATH   = os.path.join(_HECOS_DIR, "config", "data", "plugins.yaml")
+_WIDGETS_YAML_PATH   = os.path.join(_HECOS_DIR, "config", "data", "widgets.yaml")
 
 
 class ConfigManager:
     def __init__(self, config_path=None):
-        # config_path kept for backward compat
         if config_path is not None:
-            base = _os.path.splitext(config_path)[0]
+            base = os.path.splitext(config_path)[0]
             self._yaml_path = base + ".yaml"
             self._json_path = config_path
         else:
             self._yaml_path = _CONFIG_YAML_PATH
             self._json_path = _CONFIG_JSON_PATH
 
-        data_dir = _os.path.dirname(self._yaml_path)
-        self._plugins_path = _os.path.join(data_dir, "plugins.yaml")
-        self._widgets_path = _os.path.join(data_dir, "widgets.yaml")
+        data_dir = os.path.dirname(self._yaml_path)
+        self._plugins_path = os.path.join(data_dir, "plugins.yaml")
+        self._widgets_path = os.path.join(data_dir, "widgets.yaml")
 
-        self._lock = threading.RLock()  # Reentrant: update_config holds lock, then calls save() which also acquires it
+        self._lock = threading.RLock()
         self._ensure_files_exist()
         self._load_all()
 
     def _ensure_files_exist(self):
-        """Auto-generate config files from templates if missing."""
-        import shutil
-        data_dir = _os.path.dirname(self._yaml_path)
-
-        files_to_check = [
-            "system.yaml",
-            "plugins.yaml",
-            "widgets.yaml",
-            "routing_overrides.yaml",
-            "audio.yaml",
-            "agent.yaml",
-            "media.yaml",
-            "keys.yaml"
-        ]
-
-        for filename in files_to_check:
-            yaml_file = _os.path.join(data_dir, filename)
-            example_file = yaml_file + ".example"
-            if not _os.path.exists(yaml_file) and _os.path.exists(example_file):
-                try:
-                    shutil.copy2(example_file, yaml_file)
-                    logger.info(f"[CONFIG] Auto-generated {filename} from template.")
-                except Exception as e:
-                    logger.error(f"[CONFIG] Failed to auto-generate {filename}: {e}")
-
-        env_file = _os.path.join(_HECOS_DIR, ".env")
-        env_example = env_file + ".example"
-        if not _os.path.exists(env_file) and _os.path.exists(env_example):
-            try:
-                import shutil
-                shutil.copy2(env_example, env_file)
-                logger.info("[CONFIG] Auto-generated .env from template.")
-            except Exception as e:
-                logger.error(f"[CONFIG] Failed to auto-generate .env: {e}")
-
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # INTERNAL LOAD / SAVE
-    # ──────────────────────────────────────────────────────────────────────────
+        from hecos.app.config_utils import ensure_files_exist
+        ensure_files_exist(self._yaml_path, _HECOS_DIR)
 
     def _load_all(self):
-        """Load all config layers and build the unified self.config dict."""
-        load_yaml, _, _, _, _ = _get_yaml_utils()
-        SystemConfig     = _get_system_schema()
-        PluginsFileConfig = _get_plugins_schema()
-        WidgetsFileConfig = _get_widgets_schema()
-
-        # --- L0: system.yaml ---
-        try:
-            self._system_model = load_yaml(self._yaml_path, SystemConfig)
-        except Exception as e:
-            logger.error(f"[CONFIG] Failed to load system.yaml: {e}. Using defaults.")
-            self._system_model = SystemConfig()
-
-        # --- L1: plugins.yaml ---
-        try:
-            self._plugins_model = load_yaml(self._plugins_path, PluginsFileConfig)
-        except Exception as e:
-            logger.error(f"[CONFIG] Failed to load plugins.yaml: {e}. Using defaults.")
-            self._plugins_model = PluginsFileConfig()
-
-        # --- L2: widgets.yaml ---
-        try:
-            self._widgets_model = load_yaml(self._widgets_path, WidgetsFileConfig)
-        except Exception as e:
-            logger.error(f"[CONFIG] Failed to load widgets.yaml: {e}. Using defaults.")
-            self._widgets_model = WidgetsFileConfig()
-
+        from hecos.app.config_io import load_config_models
+        from hecos.app.config_utils import sanitize_widgets_yaml
+        
+        self._system_model, self._plugins_model, self._widgets_model = load_config_models(
+            self._yaml_path, self._plugins_path, self._widgets_path
+        )
+        
         self._apply_volatility()
-        self._sanitize_widgets_yaml()
+
+        # Try to sanitize widgets
+        if sanitize_widgets_yaml(self._widgets_path, _HECOS_DIR):
+            # Reload if modified
+            self._system_model, self._plugins_model, self._widgets_model = load_config_models(
+                self._yaml_path, self._plugins_path, self._widgets_path
+            )
+
         self._sync_dict()
 
-
-
-    def _sanitize_widgets_yaml(self):
-        """Remove stale per_widget entries from widgets.yaml for widgets that are
-        no longer installed. Only truly built-in widgets (telemetry_widget,
-        media_player_widget, quick_links) are kept unconditionally; all others
-        must correspond to a discovered extension folder in web_ui/extensions/.
-
-        This prevents old widget configs (calendar, reminder, map_widget…) from
-        remaining in the YAML after the packages are uninstalled, which was
-        causing the UI to treat them as 'disabled' instead of 'not present'.
-        """
-        _BUILTIN_WIDGETS = set()
-
-        if not _os.path.exists(self._widgets_path):
-            return
-        try:
-            import yaml as _yaml
-
-            # Discover widget IDs from the extensions directory
-            extensions_dir = _os.path.join(_HECOS_DIR, "modules", "web_ui", "extensions")
-            discovered_widget_ids = set()
-            if _os.path.isdir(extensions_dir):
-                for entry in _os.listdir(extensions_dir):
-                    manifest_path = _os.path.join(extensions_dir, entry, "manifest.json")
-                    if _os.path.isfile(manifest_path):
-                        try:
-                            import json as _json
-                            with open(manifest_path, "r", encoding="utf-8") as f:
-                                m = _json.load(f)
-                            discovered_widget_ids.add(m.get("id", entry))
-                        except Exception:
-                            discovered_widget_ids.add(entry)
-
-            allowed_ids = _BUILTIN_WIDGETS | discovered_widget_ids
-
-            with open(self._widgets_path, "r", encoding="utf-8") as f:
-                raw = _yaml.safe_load(f) or {}
-
-            per_widget = raw.get("widgets", {}).get("per_widget", {})
-            stale = [k for k in per_widget if k not in allowed_ids]
-
-            if stale:
-                for k in stale:
-                    per_widget.pop(k)
-                    logger.info(f"[CONFIG] Removed stale widget entry from widgets.yaml: '{k}'")
-                raw.setdefault("widgets", {})["per_widget"] = per_widget
-
-                # Also clean home_layout / room_layout lists
-                for layout_key in ("home_layout", "room_layout"):
-                    layout = raw.get("widgets", {}).get(layout_key, [])
-                    if isinstance(layout, list):
-                        cleaned = [w for w in layout if w in allowed_ids]
-                        if cleaned != layout:
-                            raw["widgets"][layout_key] = cleaned
-
-                with open(self._widgets_path, "w", encoding="utf-8") as f:
-                    _yaml.dump(raw, f, default_flow_style=False, allow_unicode=True)
-                logger.info("[CONFIG] widgets.yaml sanitized — stale widget entries removed.")
-
-                # Reload model to keep memory in sync
-                from hecos.config.yaml_utils import load_yaml
-                WidgetsFileConfig = _get_widgets_schema()
-                self._widgets_model = load_yaml(self._widgets_path, WidgetsFileConfig)
-        except Exception as e:
-            logger.warning(f"[CONFIG] Could not sanitize widgets.yaml: {e}")
-
     def _apply_volatility(self):
-        """Clear volatile fields that should NOT persist across restarts.
-
-        Rules:
-          - `special_instructions` (custom prompt append): volatile. Cleared on
-            restart unless `save_special_instructions` is True.
-          - `safety_instructions` (persistent safety/context disclaimer): NEVER
-            cleared automatically — always persisted from YAML.
-        """
-        if not self._system_model.ai.save_special_instructions:
+        if hasattr(self._system_model, 'ai') and not getattr(self._system_model.ai, 'save_special_instructions', False):
             self._system_model.ai.special_instructions = ""
-        # safety_instructions is intentionally NOT cleared here — it is a
-        # persistent configuration value, not a session-scoped field.
 
     def _sync_dict(self):
-        """Rebuild the unified self.config dict from the three typed models."""
         system_dict  = self._system_model.model_dump()
         plugins_dict = self._plugins_model.model_dump()
         widgets_dict = self._widgets_model.model_dump()
 
-        # Remove the legacy `agent:` absorption key — it's NOT part of the saved system config
         system_dict.pop("agent", None)
 
         self.config = {
@@ -247,107 +87,29 @@ class ConfigManager:
     def yaml_path(self):
         return self._yaml_path
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # PUBLIC API
-    # ──────────────────────────────────────────────────────────────────────────
-
     def save(self):
-        """Persist the current in-memory config to all three YAML files.
-        Thread-safe: uses self._lock to prevent concurrent writes.
-        """
         with self._lock:
-          try:
-            # Write app-flag so monitor.py doesn't trigger a restart
             try:
-                flag_path = _os.path.join(_PROJECT_ROOT, ".config_saved_by_app")
-                with open(flag_path, "w") as f:
-                    f.write("1")
-                time.sleep(0.05)
-            except Exception:
-                pass
-
-            SystemConfig      = _get_system_schema()
-            PluginsFileConfig = _get_plugins_schema()
-            WidgetsFileConfig = _get_widgets_schema()
-
-            # --- Rebuild models from unified self.config (source of truth) ---
-            # Extract the three domains from the flat dict
-            system_dict  = {k: v for k, v in self.config.items()
-                            if k not in ("plugins", "extensions", "widgets")}
-            plugins_dict = {
-                "plugins":    self.config.get("plugins", {}),
-                "extensions": self.config.get("extensions", {}),
-            }
-            widgets_dict = {
-                "widgets": self.config.get("widgets", {}),
-            }
-
-            # Validate each domain
-            try:
-                self._system_model  = SystemConfig.model_validate(system_dict)
-            except Exception as e:
-                logger.error(f"[CONFIG] system.yaml validation failed: {e}")
+                from hecos.app.config_io import save_config
+                success, s_model, p_model, w_model = save_config(
+                    self._yaml_path, self._plugins_path, self._widgets_path,
+                    self.config, _PROJECT_ROOT
+                )
+                
+                if success:
+                    self._system_model = s_model
+                    self._plugins_model = p_model
+                    self._widgets_model = w_model
+                    self._sync_dict()
+                    return True
                 return False
-
-            try:
-                self._plugins_model = PluginsFileConfig.model_validate(plugins_dict)
             except Exception as e:
-                logger.error(f"[CONFIG] plugins.yaml validation failed: {e}")
+                import traceback
+                logger.error(f"[CONFIG] Save error: {e}")
+                logger.error(traceback.format_exc())
                 return False
-
-            try:
-                self._widgets_model = WidgetsFileConfig.model_validate(widgets_dict)
-            except Exception as e:
-                logger.error(f"[CONFIG] widgets.yaml validation failed: {e}")
-                return False
-
-            from hecos.config.yaml_utils import save_yaml
-
-            # --- Save L0 (system only — no agent/plugins/widgets) ---
-            system_save_dict = self._system_model.model_dump()
-            system_save_dict.pop("agent", None)  # never write agent block to system.yaml
-            from hecos.config.yaml_utils import save_dict_to_yaml
-            save_dict_to_yaml(self._yaml_path, system_save_dict)
-
-            # --- Save L1 ---
-            # TRACE: log calendar state just before writing to disk
-            try:
-                _cal_locale = self._plugins_model.extensions.calendar.calendar_locale
-                _cal_country = self._plugins_model.extensions.calendar.calendar_country
-                logger.debug(f"[CAL-TRACE] About to write plugins.yaml — calendar_locale={_cal_locale!r} calendar_country={_cal_country!r}")
-            except Exception:
-                pass
-            save_yaml(self._plugins_path, self._plugins_model)
-
-            # --- Save L2 ---
-            save_yaml(self._widgets_path, self._widgets_model)
-
-            # Keep unified dict in sync
-            self._sync_dict()
-
-            # Runtime language update
-            new_lang = self._system_model.language
-            if new_lang:
-                try:
-                    from hecos.core.i18n import translator
-                    t_inst = translator.get_translator()
-                    if t_inst.language != new_lang:
-                        t_inst.set_language(new_lang)
-                        logger.info(f"[CONFIG] Language runtime updated to: {new_lang}")
-                except Exception:
-                    pass
-
-            logger.info("[CONFIG] Configuration saved successfully.")
-            return True
-
-          except Exception as e:
-            import traceback
-            logger.error(f"[CONFIG] Save error: {e}")
-            logger.error(traceback.format_exc())
-            return False
 
     def get(self, *keys, default=None):
-        """Get a nested value, e.g. config.get('backend', 'type')"""
         value = self.config
         for key in keys:
             if isinstance(value, dict):
@@ -359,9 +121,6 @@ class ConfigManager:
         return value
 
     def set(self, value, *keys):
-        """Set a nested value in the unified config dict.
-        e.g. config.set('ollama', 'backend', 'type')
-        """
         if len(keys) == 0:
             return False
         target = self.config
@@ -373,71 +132,45 @@ class ConfigManager:
         return True
 
     def reload(self):
-        """Reload ALL config files from disk.
-        Thread-safe: waits for any in-progress save to complete before reloading.
-        """
         with self._lock:
             self._load_all()
         return self.config
 
     def update_config(self, new_data: dict):
-        """Deep merge new_data into the in-memory config, validate, then save.
-
-        Thread-safe: holds RLock for the full operation (copy → merge → validate
-        → commit → save) to prevent concurrent writes from corrupting self.config.
-        RLock is reentrant so save() can acquire it again without deadlocking.
-        """
-        import copy
         with self._lock:
-          try:
-            temp_config = copy.deepcopy(self.config)
-            self._deep_update(temp_config, new_data)
+            try:
+                from hecos.app.config_io import update_config_logic
+                
+                temp_config, new_system, new_plugins, new_widgets = update_config_logic(self.config, new_data)
+                
+                self._system_model  = new_system
+                self._plugins_model = new_plugins
+                self._widgets_model = new_widgets
+                
+                # Update config with the modified temp config 
+                # (save() will build it back up, but let's sync first to be safe)
+                self.config = temp_config
+                self._sync_dict()
 
-            SystemConfig      = _get_system_schema()
-            PluginsFileConfig = _get_plugins_schema()
-            WidgetsFileConfig = _get_widgets_schema()
+                return self.save()
+            except Exception as e:
+                import traceback
+                logger.error(f"[CONFIG] CRITICAL ERROR during update_config (aborted): {e}")
+                logger.error(traceback.format_exc())
+                return False
 
-            system_dict = {k: v for k, v in temp_config.items()
-                           if k not in ("plugins", "extensions", "widgets")}
-            plugins_dict = {
-                "plugins":    temp_config.get("plugins", {}),
-                "extensions": temp_config.get("extensions", {}),
-            }
-            widgets_dict = {"widgets": temp_config.get("widgets", {})}
-
-            new_system  = SystemConfig.model_validate(system_dict)
-            new_plugins = PluginsFileConfig.model_validate(plugins_dict)
-            new_widgets = WidgetsFileConfig.model_validate(widgets_dict)
-
-            if hasattr(new_system, 'ai') and 'ai' in new_data and 'active_personality' in new_data['ai']:
-                new_system.ai.active_personality = new_data['ai']['active_personality']
-
-            self._system_model  = new_system
-            self._plugins_model = new_plugins
-            self._widgets_model = new_widgets
-            self._sync_dict()
-
-            return self.save()
-
-          except Exception as e:
-            import traceback
-            logger.error(f"[CONFIG] CRITICAL ERROR during update_config (aborted): {e}")
-            logger.error(traceback.format_exc())
-            return False
+    def update_from_webui(self, new_data: dict):
+        """Alias of update_config — called by web UI REST endpoints.
+        Deep merges new_data into the in-memory config, validates, then saves.
+        """
+        return self.update_config(new_data)
 
     def _deep_update(self, base: dict, patch: dict):
-        for k, v in patch.items():
-            if isinstance(v, dict) and k in base and isinstance(base[k], dict):
-                self._deep_update(base[k], v)
-            else:
-                base[k] = v
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # PLUGIN HELPERS
-    # ──────────────────────────────────────────────────────────────────────────
+        """Deep merge helper — kept for backward compatibility."""
+        from hecos.app.config_io import deep_update
+        deep_update(base, patch)
 
     def get_plugin_config(self, plugin_tag: str, key=None, default=None):
-        """Returns the config dict (or a key) for a given plugin."""
         plugins = self.config.get("plugins", {})
         plugin_cfg = plugins.get(plugin_tag, {})
         if key is None:
@@ -445,7 +178,6 @@ class ConfigManager:
         return plugin_cfg.get(key, default)
 
     def set_plugin_config(self, plugin_tag: str, key: str, value):
-        """Sets a plugin config value and saves."""
         if "plugins" not in self.config:
             self.config["plugins"] = {}
         if plugin_tag not in self.config["plugins"]:
@@ -454,54 +186,12 @@ class ConfigManager:
         self.save()
 
     def get_extension_config(self, ext_name: str, key=None, default=None):
-        """Returns the extensions config dict (or a key) for a given extension."""
         extensions = self.config.get("extensions", {})
         ext_cfg = extensions.get(ext_name, {})
         if key is None:
             return ext_cfg
         return ext_cfg.get(key, default)
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # PERSONALITY SYNC
-    # ──────────────────────────────────────────────────────────────────────────
-
     def sync_available_personalities(self):
-        """
-        Scans the 'personas' folder for directories containing persona.yaml and updates
-        'ai.available_personalities' if the list has changed.
-        Returns the current list of personality names.
-        """
-        import os
-        folder = _os.path.join(_PROJECT_ROOT, "hecos", "personas")
-        if not _os.path.exists(folder):
-            try:
-                _os.makedirs(folder)
-            except Exception:
-                pass
-
-        files = sorted([d for d in os.listdir(folder) if os.path.isdir(os.path.join(folder, d))])
-
-        if files:
-            primary = "Hecos_System_Soul"
-            if primary in files:
-                files.remove(primary)
-                files.insert(0, primary)
-
-            personality_dict = {str(i + 1): name for i, name in enumerate(files)}
-            current_dict = self.config.get("ai", {}).get("available_personalities", {})
-            current_dict_str = {str(k): v for k, v in current_dict.items()} if isinstance(current_dict, dict) else {}
-
-            active = self.config.get("ai", {}).get("active_personality")
-            files_lower = [f.lower() for f in files]
-            needs_revert = active and active.lower() not in files_lower
-
-            if needs_revert:
-                logger.warning(f"[CONFIG] Active personality '{active}' not found. Reverting to {primary}.")
-                self.set(primary, "ai", "active_personality")
-
-            if personality_dict != current_dict_str or needs_revert:
-                self.set(personality_dict, "ai", "available_personalities")
-                self.save()
-                logger.info("[CONFIG] Personality list synchronized with filesystem.")
-
-        return files
+        from hecos.app.config_utils import sync_available_personalities
+        return sync_available_personalities(self.config, _PROJECT_ROOT, self.set, self.save)

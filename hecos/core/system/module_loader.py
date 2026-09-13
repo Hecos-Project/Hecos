@@ -22,6 +22,5 @@ from .module_config_sync import sync_plugin_config
 from .module_docs import (
     get_formatted_capabilities, 
     generate_dynamic_guide,
-    get_tools_schema, 
-    get_legacy_schema
+    get_tools_schema
 )

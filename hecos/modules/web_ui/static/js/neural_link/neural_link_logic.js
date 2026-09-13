@@ -61,6 +61,16 @@
 
     connectBtn.addEventListener('click', establishConnection);
 
+    // Enter key support
+    const handleEnter = (e) => {
+        if (e.key === 'Enter' && !connectBtn.disabled && !overlay.classList.contains('connected')) {
+            e.preventDefault();
+            establishConnection();
+            document.removeEventListener('keydown', handleEnter);
+        }
+    };
+    document.addEventListener('keydown', handleEnter);
+
     // Emergency Bypass if user is stuck
     overlay.addEventListener('dblclick', () => {
         console.log("[NeuralLink] Emergency bypass triggered.");

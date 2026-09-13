@@ -1,11 +1,15 @@
 import os
-import time
 import json
+import re
 from hecos.core.logging import logger
 from hecos.core.llm import brain
 from hecos.core.agent.traces import AgentTracer
 from hecos.core.processing import processore
 from hecos.core.i18n import translator
+
+# --- NEW HELPERS ---
+from hecos.core.agent.direct_commands import CommandInterceptor
+from hecos.core.agent.media_interceptor import MediaInterceptor
 
 class AgentExecutor:
     """
@@ -22,7 +26,6 @@ class AgentExecutor:
         self.session_id = session_id
         self.sender_tab_id = sender_tab_id
         # Optional direct callback for WebUI session traces.
-        # Signature: trace_callback(msg: str, level: str) -> None
         self.trace_callback = trace_callback
         
         # Load dedicated agent configuration
@@ -41,12 +44,10 @@ class AgentExecutor:
         self.max_iterations = max_iterations if max_iterations is not None else self.agent_config.get("max_iterations", 5)
         self.is_enabled = self.agent_config.get("enabled", True)
         
-    def _emit(self, msg: str, level: str = "info"):
+    def _emit(self, msg, level: str = "info"):
         """Routes a trace to both the terminal tracer and the optional session callback."""
-        # If trace_callback is present, we are in a /api/stream session.
-        # Sending it to state_manager too would duplicate the trace via /api/events.
         sm_for_trace = self.state_manager if not self.trace_callback else None
-        AgentTracer.emit(sm_for_trace, msg, level=level)
+        AgentTracer.emit(sm_for_trace, msg if isinstance(msg, str) else str(msg), level=level)
         
         if self.trace_callback:
             try:
@@ -60,80 +61,21 @@ class AgentExecutor:
         Calls the LLM, checks if tools are requested, executes them, feeds the result back.
         Repeats until the LLM returns plain text without tools or hits max iterations.
         """
-        # Privacy-oriented log: avoid echoing private user text on the server physical console.
         self._emit(f"Analyzing incoming user request...", level="info")
-        
-        # Bind the global state manager so that decentralized tools (like Executor) can emit action logs to the UI
         AgentTracer.bind(self.state_manager)
         
-        # --- GLOBAL DIRECT COMMANDS INTERCEPTOR (HDCS - Bypasses LLM) ---
-        testo_pulito = user_text.strip()
-        if testo_pulito.startswith("/"):
-            try:
-                self._emit(f"Intercetto comando diretto: {testo_pulito.split()[0]}...", level="info")
-                from hecos.core.commands.executor import get_executor
-                executor = get_executor()
-                
-                # Check for persona image generation overrides (legacy support for /img)
-                # If the user targets the bot visually, we enrich the prompt
-                if testo_pulito.lower().startswith(("/img ", "/image ", "/photo ", "/foto ")):
-                    raw_prompt = testo_pulito.split(" ", 1)[1].strip() if " " in testo_pulito else ""
-                    clean_target = raw_prompt.lower()
-                    for unwanted in ["a photo of ", "a picture of ", "una foto di ", "un'immagine di ", "photo of ", "picture of "]:
-                        clean_target = clean_target.replace(unwanted, "")
-                        
-                    import re
-                    active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
-                    persona_name_raw = active_p.replace('_', ' ').lower()
-                    persona_short = persona_name_raw.split(' ')[0]
-                    
-                    enrich_keywords = ["you", "yourself", "tua", "tuo", "tuoi", "tue", "te", "te stessa", "te stesso", persona_short, persona_name_raw]
-                    enrich_keywords = [k for k in enrich_keywords if k.strip()]
-                    pattern = r'\b(?:' + '|'.join(map(re.escape, enrich_keywords)) + r')\b'
-                    
-                    if re.search(pattern, raw_prompt.lower()):
-                        visual_desc = self._get_persona_visual_description()
-                        if visual_desc:
-                            self._emit(f"Enriching prompt with persona YAML context: {persona_short}...", level="info")
-                            target_action = re.sub(pattern, '', clean_target, flags=re.IGNORECASE)
-                            target_action = re.sub(r'^\s*[,.]\s*', '', target_action).strip()
-                            prompt_bypass = f"A photo of {visual_desc}, {target_action}" if target_action else f"A photo of {visual_desc}"
-                            # Re-write the command string
-                            cmd_part = testo_pulito.split()[0]
-                            testo_pulito = f"{cmd_part} {prompt_bypass}"
-
-                res = executor.execute(
-                    raw_input=testo_pulito,
-                    config=self.config,
-                    config_manager=self.config_manager,
-                    current_user_role=self.current_user_role,
-                    current_user_id=self.current_user_id,
-                    session_id=self.session_id,
-                    sender_tab_id=self.sender_tab_id,
-                    page_context="chat"
-                )
-                
-                if not res.get("ok"):
-                    self._emit(f"Command Error: {res.get('error')}", level="error")
-                else:
-                    self._emit(f"Direct command executed successfully.", level="success")
-                    
-                # Format for output (video/voice)
-                return processore.clean_final_output(res["output"], [], res["output"], voice_status)
-            except Exception as e:
-                logger.error(f"[AGENT] Direct Command Bypass Error: {e}", exc_info=True)
-                err_msg = f"❌ Error: {e}"
-                return processore.clean_final_output(err_msg, [], err_msg, voice_status)
-        # -------------------------------------------------------
+        # --- GLOBAL DIRECT COMMANDS INTERCEPTOR ---
+        intercepted, response_output = CommandInterceptor.intercept(user_text, self)
+        if intercepted:
+            return processore.clean_final_output(response_output, [], response_output, voice_status)
+        # ------------------------------------------
 
         if not self.is_enabled:
             logger.info("[AGENT] Agentic Loop is disabled in config. Running single iteration.")
             self.max_iterations = 1
             
         iteration = 0
-        # agent_context accumulates assistant and tool messages for the current chat session
         agent_context = []
-        # Accumulate ALL tool results across iterations so the final response can reference them
         accumulated_tool_results = []
         
         while iteration < self.max_iterations:
@@ -144,14 +86,10 @@ class AgentExecutor:
             iteration += 1
             logger.info(f"[AGENT] --- Iteration {iteration}/{self.max_iterations} ---")
             
-            # The first call must save the initial user prompt. Subsequent loops do not.
             save_hist = (iteration == 1)
-            
-            # 1. Call the Brain
-            # Ensure we use the latest config from the manager if available
             current_cfg = self.config_manager.config if getattr(self, 'config_manager', None) else processore.current_config
             
-            self._emit(f"Thinking (Loop {iteration})...", level="info")
+            self._emit(f"Working (Step {iteration})...", level="info")
             raw_response = brain.generate_response(
                 user_text, 
                 external_config=current_cfg, 
@@ -163,15 +101,16 @@ class AgentExecutor:
                 sender_tab_id=self.sender_tab_id
             )
             
-            # Immediately halt if stopped during long generation wait
             if self.state_manager and getattr(self.state_manager, "webui_stop_requested", False):
                 self._emit("Operation aborted by user.", level="error")
                 break
             
-            # 2. Extract tools using the processor utility
-            tools_called, tool_results, extracted_text = processore.extract_and_execute_tools(raw_response, self.config)
+            tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(raw_response, self.config)
             
-            # --- TELEMETRY SYNC ---
+            if think_block:
+                self._emit({"type": "think", "text": think_block}, level="think")
+            
+            # Telemetry sync
             if self.state_manager:
                 try:
                     from hecos.core.llm.client import LAST_PAYLOAD_INFO
@@ -180,111 +119,42 @@ class AgentExecutor:
                     self.state_manager.last_tokens_completion = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
                 except Exception as e:
                     logger.debug(f"[AGENT] Telemetry sync error: {e}")
-            # ----------------------
             
             if not tools_called:
-                # BREAK CONDITION: The LLM didn't call any tools, so it produced the final response.
                 self._emit("Response formulated.", level="success")
                 
-                # If the AI produces NO text (common for some models after tool calls),
-                # provide a friendly fallback instead of showing an error.
                 if not extracted_text or not extracted_text.strip():
                     if tool_results:
                         extracted_text = f"I have executed the requested actions: {', '.join([r.get('tag') for r in tool_results])}."
+                    elif think_block:
+                        extracted_text = "I've analyzed your request but couldn't formulate a final response. Please try rephrasing or using a different model."
                     else:
                         extracted_text = "I'm thinking, but I don't have a specific text response yet. How can I help further?"
                 
-                # Check for explicit safety blocks from client.py
                 if "!!!BLOCK_SAFETY!!!" in str(extracted_text):
                     if translator.get_translator().language == 'it':
                         extracted_text = "Spiacente, questa richiesta è stata bloccata dai filtri di sicurezza del provider AI (Content Filter). Prova a riformulare con termini meno sensibili."
                     else:
                         extracted_text = "I'm sorry, but this request was blocked by the AI provider's safety filters (Content Filter). Please try rephrasing with less sensitive terms."
 
-                # ── Server Image Rendering ──────────────────────────────────────────
-                # If any tool returned an image path (e.g. WEBCAM target='server'),
-                # append it as a markdown image so the user can actually see it.
-                # We use the new /snapshots/ route for this.
-                import re
-                for res in accumulated_tool_results:
-                    out = res.get("output", "")
-                    if out and isinstance(out, str):
-                        # 1. Check for explicit [[IMG:...]] from ImageGen
-                        img_tags = re.findall(r'\[\[IMG:([^\]]+)\]\]', out)
-                        for idx, tag in enumerate(img_tags):
-                            # Append directly as expected by chat UI
-                            if f"[[IMG:{tag}]]" not in extracted_text:
-                                extracted_text += f"\n\n[[IMG:{tag}]]"
-                                
-                        # Check for raw paths (e.g. from WEBCAM module which saves to /snapshots)
-                        potential_paths = re.findall(r'((?:[A-Za-z]:[\\/])?[\w\.\-\\\/]+\.(?:jpg|jpeg|png))', out, re.IGNORECASE)
-                        for path in potential_paths:
-                            fname = os.path.basename(path)
-                            if fname in img_tags:
-                                continue  # Covered above
-                            
-                            # Convert local path to web URL for WEBCAM
-                            img_url = f"/snapshots/{fname}"
-                            if img_url not in extracted_text:
-                                extracted_text += f"\n\n![Snapshot]({img_url})"
+                if think_block:
+                    extracted_text = f"<think>\n{think_block}\n</think>\n\n{extracted_text}"
 
-                        # --- Append other raw tool outputs so they are saved to history ---
-                        # 1. Skip if it is an image tag (already handled above)
-                        if img_tags:
-                            continue
-                        # 2. Skip [EXECUTOR] confirmations that just echo a path
-                        if isinstance(out, str) and out.strip().startswith("[EXECUTOR]"):
-                            continue
-                        # 3. Skip if the output is just a bare path already present in the AI's response
-                        out_stripped = out.strip()
-                        if re.fullmatch(r'[A-Za-z]:[\\/][^\n]+', out_stripped):
-                            if out_stripped.replace('\\', '/') in extracted_text.replace('\\', '/'):
-                                continue
-                        
-                        # Check if it's the specific Document Maker output string we just added
-                        # We don't want to skip it if it's HTML/PDF multi-line string, we WANT to append it if it's not present.
-                        if "HTML:" in out_stripped or "PDF:" in out_stripped:
-                            if "HTML:" in extracted_text and "PDF:" in extracted_text:
-                                continue
-                                
-                        # Only append if it's not already somewhere in the text to avoid duplication
-                        if out_stripped not in extracted_text:
-                            extracted_text += f"\n\n{out}"
-                # ────────────────────────────────────────────────────────────────────
+                # Append UI images and rich media using the helper
+                extracted_text = MediaInterceptor.append_ui_media_to_text(extracted_text, accumulated_tool_results)
 
-                # IMPORTANT: If it took loops, we must save the FINAL response to history manually.
                 if iteration > 1:
                     from hecos.memory import brain_interface
-                    brain_interface.save_message("assistant", extracted_text, config=self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
+                    _clean_for_hist = re.sub(r'<think>[\s\S]*?</think>\s*', '', extracted_text, flags=re.IGNORECASE).strip()
+                    if '</think>' in _clean_for_hist:
+                        _clean_for_hist = _clean_for_hist.split('</think>', 1)[-1].strip()
+                    brain_interface.save_message("assistant", _clean_for_hist, config=self.config, user_id=self.current_user_id, session_id=self.session_id, sender_tab_id=self.sender_tab_id)
                 
-                # Proceed to voice/video cleaning
-                # DEBUG: log what we pass to clean_final_output
-                try:
-                    import datetime
-                    _img_p = r'\[\[IMG:'
-                    _has_i = bool(re.search(_img_p, extracted_text))
-                    _hecos_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-                    _log_path = os.path.join(_hecos_dir, "logs", "image_gen_debug.txt")
-                    os.makedirs(os.path.dirname(_log_path), exist_ok=True)
-                    with open(_log_path, "a", encoding="utf-8") as _dbg:
-                        _now = datetime.datetime.now().strftime("%H:%M:%S")
-                        _dbg.write(f"[{_now}] [LoopDebug] tool_results count={len(tool_results)}, extracted_text_has_img={_has_i}\n")
-                        _dbg.write(f"[{_now}] [LoopDebug] extracted_text={extracted_text[:300]}\n")
-                        for ri, rr in enumerate(tool_results):
-                            _out = str(rr.get('output', ''))[:200]
-                            _dbg.write(f"[{_now}] [LoopDebug] tool_result[{ri}] tag={rr.get('tag')} output={_out}\n")
-                except Exception:
-                    pass
                 video_response, clean_voice = processore.clean_final_output(extracted_text, accumulated_tool_results, raw_response, voice_status)
                 return video_response, clean_voice
                 
             else:
-                # LOOP CONDITION: The LLM used a tool.
-                
-                # A) Add the assistant's tool call to context (required by many APIs for chaining)
-                # raw_response is expected to be a LiteLLM Message object here if tools_called is True
                 if hasattr(raw_response, 'role'):
-                    # Convert LiteLLM/OpenAI object to serializable dict
                     if hasattr(raw_response, 'model_dump'):
                         agent_context.append(raw_response.model_dump())
                     elif hasattr(raw_response, 'dict'):
@@ -292,39 +162,22 @@ class AgentExecutor:
                     else:
                         agent_context.append(json.loads(json.dumps(raw_response, default=lambda o: o.__dict__)))
                 else:
-                    # Fallback for non-object responses (tags)
                     agent_context.append({"role": "assistant", "content": str(raw_response)})
 
-                # B) Execute tool and add 'tool' results to context
-                # Also accumulate for final response rendering (e.g. [[IMG:...]] tags)
                 accumulated_tool_results.extend(tool_results)
                 for res in tool_results:
                     if self.state_manager:
                         self.state_manager.last_tool = res.get("tag")
                         
                     self._emit(f"Tool execution result: {res.get('tag')}", level="tool")
-                    
                     output_text = res.get("output")
                     
-                    # ── Client Camera Short-Circuit ───────────────────────────────────────
-                    # When WEBCAM is called with target='client', it returns a signal 
-                    # asking the AI to output [CAMERA_SNAPSHOT_REQUEST]. Instead of relying
-                    # on the LLM to do this (it gets confused), we intercept it here and
-                    # construct the final response directly — guaranteeing the token reaches
-                    # the Javascript interceptor in the browser.
-                    CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
-                    if output_text and CAMERA_TOKEN in str(output_text).strip():
+                    if MediaInterceptor.check_webcam_short_circuit(output_text):
                         self._emit("Client camera request intercepted — forwarding directly to browser.", level="info")
-                        # Use the user's personality or a polite default
-                        final_response = f"Sure! {CAMERA_TOKEN} Please take the photo when prompted by your browser."
+                        final_response = f"Sure! [CAMERA_SNAPSHOT_REQUEST] Please take the photo when prompted by your browser."
                         video_response, clean_voice = processore.clean_final_output(final_response, tool_results, final_response, voice_status)
                         return video_response, clean_voice
                     
-                    if res.get("tag") == "WEBCAM":
-                        logger.debug(f"[AGENT] WEBCAM result did NOT trigger short-circuit. Output: '{str(output_text)[:50]}...'")
-                    # ─────────────────────────────────────────────────────────────────────
-                    
-                    # Native Tool Message
                     agent_context.append({
                         "role": "tool",
                         "tool_call_id": res.get("id"),
@@ -332,31 +185,7 @@ class AgentExecutor:
                         "content": output_text
                     })
                     
-                    # Intercept Image Paths for Vision-AI
-                    if output_text and isinstance(output_text, str):
-                        import re
-                        import mimetypes
-                        import base64
-                        # Identify file paths ending with typical image extensions
-                        potential_paths = re.findall(r'((?:[A-Za-z]:[\\/])?[\w\.\-\\\/]+\.(?:jpg|jpeg|png))', output_text, re.IGNORECASE)
-                        for path in potential_paths:
-                            if os.path.exists(path):
-                                try:
-                                    with open(path, "rb") as f:
-                                        img_bytes = f.read()
-                                    if images is None:
-                                        images = []
-                                    mime, _ = mimetypes.guess_type(path)
-                                    # Pre-encode as base64 to avoid double-encoding in adapters
-                                    images.append({
-                                        "data_b64": base64.b64encode(img_bytes).decode("utf-8"),
-                                        "mime_type": mime or "image/jpeg",
-                                        "name": os.path.basename(path)
-                                    })
-                                    self._emit(f"Intercepted image for Vision-AI: {os.path.basename(path)}", level="info")
-                                    logger.info(f"[AGENT] Vision-AI: loaded {os.path.basename(path)} ({len(img_bytes)} bytes)")
-                                except Exception as e:
-                                    logger.debug(f"[AGENT] Failed to load intercepted image path {path}: {e}")
+                    images = MediaInterceptor.load_vision_images(output_text, images, self._emit)
                     
                 self._emit("Analyzing tool results...", level="info")
                 
@@ -365,53 +194,3 @@ class AgentExecutor:
                     self._emit("Thought limit reached — returning response.", level="info")
                     video_response, clean_voice = processore.clean_final_output(extracted_text, tool_results, raw_response, voice_status)
                     return video_response, clean_voice
-
-    def _get_persona_visual_description(self):
-        """Attempts to extract a visual description of the current AI identity from YAML or fallback."""
-        try:
-            # 1. Identity the active personality file
-            # Robust dict access for the plain dict 'self.config'
-            active_p = self.config.get('ai', {}).get('active_personality', 'Hecos_System_Soul').replace('.yaml', '')
-            
-            # 2. Try to load the YAML file
-            from hecos.config.yaml_utils import load_yaml
-            root_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-            p_path = os.path.join(root_dir, "personas", active_p, "persona.yaml")
-            
-            # If still not found, try one level up (workspace root) just in case
-            if not os.path.exists(p_path):
-                p_path = os.path.join(root_dir, "..", "hecos", "personas", active_p, "persona.yaml")
-            
-            if os.path.exists(p_path):
-                import yaml
-                with open(p_path, 'r', encoding='utf-8') as f:
-                    p_data = yaml.safe_load(f) or {}
-                
-                # Check for the new dynamic field or fallback to old
-                v_desc = p_data.get("visual_description")
-                if not v_desc and "anatomy" in p_data:
-                    anatomy = p_data["anatomy"]
-                    v_desc = f"{anatomy.get('sex', 'Person')}, {anatomy.get('body_type', 'average')} body, {anatomy.get('hair_color', 'dark')} hair, {anatomy.get('eye_color', 'dark')} eyes."
-                    
-                if v_desc:
-                    return v_desc
-
-            # 3. Hard-coded fallback for legacy or missing fields
-            name = active_p.lower()
-            if "urania" in name:
-                return "a beautiful female cybernetic android with bright turquoise neon-blue hair, bright blue eyes, wearing white and pink-glowing circuitry armor"
-            elif "motoko" in name:
-                return "Major Motoko Kusanagi from Ghost in the Shell, purple hair, tactical suit"
-            elif "atlas" in name:
-                return "a handsome, professional and futuristic man with a sharp jawline"
-            
-            # Generic fallbacks
-            if "woman" in name or "femmina" in name:
-                return "a beautiful woman"
-            elif "man" in name or "maschio" in name:
-                return "a handsome man"
-                
-            return "a futuristic person"
-        except Exception as e:
-            logger.debug(f"[AGENT] Failed to load dynamic visual description: {e}")
-            return "a digital entity"

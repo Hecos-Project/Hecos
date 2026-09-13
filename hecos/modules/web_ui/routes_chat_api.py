@@ -194,7 +194,8 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         for row in hist:
             role, msg = row[0], row[1]
             persona = row[2] if len(row) > 2 else None
-            out.append({"role": role, "content": msg, "persona_name": persona})
+            m_info = row[3] if len(row) > 3 else None
+            out.append({"role": role, "content": msg, "persona_name": persona, "model_info": m_info})
         return jsonify(out)
 
     @app.route("/api/audio")

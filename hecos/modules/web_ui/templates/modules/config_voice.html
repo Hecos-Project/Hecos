@@ -128,4 +128,18 @@
     </div>
   </div>
 
+  </div>
+
 </div>
+
+<script>
+  // Merge the dynamically loaded zoptions into the global sysOptions
+  // so that dropdowns (models, personalities, etc.) can populate correctly.
+  (function() {
+    var newOpts = {{ zoptions | tojson | safe }};
+    if (newOpts && Object.keys(newOpts).length > 0) {
+      window.sysOptions = window.sysOptions || {};
+      Object.assign(window.sysOptions, newOpts);
+    }
+  })();
+</script>

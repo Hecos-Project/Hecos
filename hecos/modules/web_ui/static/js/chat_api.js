@@ -103,6 +103,8 @@ window.sendMessage = async function() {
       const ev = JSON.parse(e.data);
       if(ev.type === 'agent_trace') {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
+      } else if(ev.type === 'think') {
+        if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
       } else if(ev.type === 'token') {
         aiText += ev.text;
         aiBubble.innerHTML = window.renderMarkdown(aiText);
@@ -115,6 +117,11 @@ window.sendMessage = async function() {
         // Prompt unlock as soon as TEXT is fully rendered (does not wait for Piper audio generation)
         if (window.chatHistory.length > 0) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
+        }
+        
+        if (ev.model_info) {
+          aiBubble.setAttribute('title', ev.model_info);
+          aiBubble.style.cursor = 'help';
         }
         
         // Dynamically update the bubble's avatar and name if the persona changed during the run
@@ -242,6 +249,8 @@ window.sendInternalMessage = async function(text) {
       const ev = JSON.parse(e.data);
       if(ev.type === 'agent_trace') {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
+      } else if(ev.type === 'think') {
+        if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
       } else if(ev.type === 'token') {
         aiText += ev.text;
         aiBubble.innerHTML = window.renderMarkdown(aiText);
@@ -254,6 +263,11 @@ window.sendInternalMessage = async function(text) {
         // Synchronize and unlock as soon as TEXT finishes
         if (window.chatHistory.length > 0) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
+        }
+        
+        if (ev.model_info) {
+          aiBubble.setAttribute('title', ev.model_info);
+          aiBubble.style.cursor = 'help';
         }
         window.isStreaming = false; 
         if (window.sendBtn) window.sendBtn.disabled = false;
