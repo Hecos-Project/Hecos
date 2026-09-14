@@ -56,16 +56,98 @@ function buildMessageActions(msgEl, role, historyIndex) {
     };
     bar.appendChild(regenBtn);
 
+    // Thinking Block button
+    const thinkTextRaw = msgEl.getAttribute('data-think-text');
+    if (thinkTextRaw) {
+        const thinkText = decodeURIComponent(thinkTextRaw);
+        const thinkBtn = document.createElement('button');
+        thinkBtn.className = 'msg-action-btn think-btn';
+        thinkBtn.title = 'Toggle Reasoning';
+        
+        const isStreaming = msgEl.querySelector('.chat-spinner');
+        
+        // Ensure the thinking box content exists in the DOM
+        let thinkBox = msgEl.querySelector('.think-content-expanded');
+        let isExpandedState = false;
+        
+        if (!thinkBox) {
+            thinkBox = document.createElement('div');
+            thinkBox.className = 'think-content-expanded';
+            thinkBox.textContent = thinkText;
+            
+            // Resolve initial display state: check session override first, then fallback to default setting
+            const isDefaultCollapsed = window.HecosReasoningCollapsed !== undefined ? window.HecosReasoningCollapsed : true;
+            isExpandedState = window._sessionThinkExpanded !== undefined ? window._sessionThinkExpanded : !isDefaultCollapsed;
+            thinkBox.style.display = isExpandedState ? 'block' : 'none';
+            
+            // Append it right inside the bubble wrapper, BEFORE the bubble
+            const wrapper = msgEl.querySelector('.msg-content-wrapper');
+            const bubbleNode = msgEl.querySelector('.msg-bubble');
+            if (wrapper && bubbleNode) {
+                wrapper.insertBefore(thinkBox, bubbleNode);
+            } else if (wrapper) {
+                wrapper.appendChild(thinkBox);
+            }
+        } else {
+            // Update text in case it's streaming
+            thinkBox.textContent = thinkText;
+            isExpandedState = thinkBox.style.display !== 'none';
+        }
+
+        thinkBtn.innerHTML = isStreaming ? `🧠 Thinking...` : (isExpandedState ? `💡 Hide Thinking` : `💡 Show Thinking`);
+
+        thinkBtn.onclick = () => {
+            const isCurrentlyHidden = thinkBox.style.display === 'none' || !thinkBox.style.display;
+            const newState = isCurrentlyHidden ? 'block' : 'none';
+            
+            // Set the session override so future messages remember this choice
+            window._sessionThinkExpanded = isCurrentlyHidden;
+            
+            // Apply to ALL thinking boxes in the chat to sync the state
+            document.querySelectorAll('.think-content-expanded').forEach(box => {
+                box.style.display = newState;
+            });
+            
+            // Update button texts for all non-streaming think buttons
+            document.querySelectorAll('.think-btn').forEach(btn => {
+                const btnMsg = btn.closest('.msg');
+                if (btnMsg && !btnMsg.querySelector('.chat-spinner')) {
+                    btn.innerHTML = isCurrentlyHidden ? '💡 Hide Thinking' : '💡 Show Thinking';
+                }
+            });
+        };
+        bar.appendChild(thinkBtn);
+    }
+
     // Listen (TTS) button
     const listenBtn = document.createElement('button');
     listenBtn.className = 'msg-action-btn';
     const listenLabel = t('chat_btn_listen') === 'chat_btn_listen' ? 'Listen' : t('chat_btn_listen');
     listenBtn.innerHTML = `🔊 ${listenLabel}`;
     listenBtn.title = listenLabel;
+    
+    // Capture selected text before the click clears the selection
+    let _capturedSelection = null;
+    listenBtn.addEventListener('pointerdown', (e) => {
+      // Prevent focus steal which clears the selection on most browsers
+      if (e.pointerType === 'mouse') {
+          e.preventDefault(); 
+      }
+      const sel = window.getSelection();
+      if (sel && sel.toString().trim()) {
+        _capturedSelection = sel.toString().trim();
+      } else {
+        _capturedSelection = null;
+      }
+    });
+    
     listenBtn.onclick = async () => {
       if (window.isStreaming) return;
       const bubble = msgEl.querySelector('.msg-bubble');
-      const textToSpeak = bubble.innerText || bubble.textContent;
+      // Use captured selection if available, otherwise speak the full bubble
+      const textToSpeak = _capturedSelection || bubble.innerText || bubble.textContent;
+      _capturedSelection = null; // reset for next click
+      
       if (!textToSpeak || !bubble) return;
       
       const generatingLabel = t('chat_toast_tts_gen') === 'chat_toast_tts_gen' ? 'Generating audio...' : t('chat_toast_tts_gen');
@@ -142,7 +224,8 @@ function buildMessageActions(msgEl, role, historyIndex) {
                       listenBtn.style.opacity = '1';
                       if (typeof window.tryLoadAudio === 'function') {
                           window._lastAiBubble = bubble;
-                          window.tryLoadAudio(bubble);
+                          // Force the player to fetch the newly generated test audio, bypassing any cached audioId
+                          window.tryLoadAudio(bubble, true, `/api/audio?t=${Date.now()}`);
                       }
                   }
               };

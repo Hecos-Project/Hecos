@@ -103,6 +103,8 @@ window.sendMessage = async function() {
       const ev = JSON.parse(e.data);
       if(ev.type === 'agent_trace') {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
+      } else if(ev.type === 'think') {
+        if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
       } else if(ev.type === 'token') {
         aiText += ev.text;
         aiBubble.innerHTML = window.renderMarkdown(aiText);
@@ -117,14 +119,22 @@ window.sendMessage = async function() {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
         }
         
+        if (ev.model_info) {
+          aiBubble.setAttribute('title', ev.model_info);
+          aiBubble.style.cursor = 'help';
+        }
+        
         // Dynamically update the bubble's avatar and name if the persona changed during the run
         if (ev.persona_name) {
           const personaTitle = ev.persona_name.replace(/_/g, ' ').replace(/\.yaml$/i, '');
           const msgContainer = aiBubble.closest('.msg');
           if (msgContainer) {
             const nameEl = msgContainer.querySelector('.msg-name');
-            if (nameEl) nameEl.textContent = personaTitle;
-            
+            if (nameEl) {
+              const existingBadge = nameEl.querySelector('.think-badge');
+              nameEl.textContent = personaTitle;
+              if (existingBadge) nameEl.appendChild(existingBadge);
+            }
             const avatarEl = msgContainer.querySelector('.msg-avatar');
             if (avatarEl) {
               fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
@@ -242,6 +252,8 @@ window.sendInternalMessage = async function(text) {
       const ev = JSON.parse(e.data);
       if(ev.type === 'agent_trace') {
         if (window.AgentUI) window.AgentUI.handleEvent(ev, aiBubble.closest('.msg') || aiBubble.parentElement);
+      } else if(ev.type === 'think') {
+        if (window.renderThinkBlock) window.renderThinkBlock(ev.text, aiBubble);
       } else if(ev.type === 'token') {
         aiText += ev.text;
         aiBubble.innerHTML = window.renderMarkdown(aiText);
@@ -254,6 +266,11 @@ window.sendInternalMessage = async function(text) {
         // Synchronize and unlock as soon as TEXT finishes
         if (window.chatHistory.length > 0) {
           window.chatHistory[window.chatHistory.length - 1].content = aiText;
+        }
+        
+        if (ev.model_info) {
+          aiBubble.setAttribute('title', ev.model_info);
+          aiBubble.style.cursor = 'help';
         }
         window.isStreaming = false; 
         if (window.sendBtn) window.sendBtn.disabled = false;

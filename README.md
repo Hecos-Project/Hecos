@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.49.0 (Runtime Alpha)
+# Hecos - Version 0.50.0 (Runtime Alpha)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,9 +11,9 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.49.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
+> **Runtime Alpha Status**: Hecos is currently in `v0.50.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
 >
-> ⚠️ **Important Notice**: Version 0.49.0 marks the final release of Hecos developed and tested natively on Windows 10. Starting from the next major release (0.50.0+), the primary development and target environment will officially migrate to **Windows 11**.
+> ⚠️ **Important Notice**: Starting from this major release (0.50.0+), the primary development and target environment is officially **Windows 11**.
 
 ## 🚀 Overview
 **Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution[cite: 1]. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool[cite: 1].
@@ -23,11 +23,12 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness[cite: 1].
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive[cite: 1].
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.45.0 brings a dedicated Web Interface (Chat + Config) and full internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
+Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.50.0 brings a dedicated Web Interface (Chat + Config) and full internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
 
 ---
 
-## ✨ Key Features (v0.45.0)
+## ✨ Key Features (v0.50.0)
+* 🎭 **Per-Chat Overrides** — Assign different LLM models and Personas to individual chat sessions. Create a highly capable coding workspace with Claude 3.5 Sonnet and a casual chat with Llama 3 side-by-side.
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
 * 🛠️ **External Dependency Manager (EDM)** — New system that auto-detects missing core dependencies (Node, Tesseract, VC++), enabling one-click downloads directly from the WebUI.
 * 🛡️ **HPM Integrity Verification** — New `/verify` API and Control Room UI to cryptographically validate installed package files against their Ed25519-signed manifest hashes.

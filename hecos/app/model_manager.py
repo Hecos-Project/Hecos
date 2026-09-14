@@ -30,7 +30,7 @@ class ModelManager:
         else:
             try:
                 ollama_base = config.get('backend', {}).get('ollama', {}).get('url', 'http://localhost:11434').rstrip('/')
-                response = requests.get(f"{ollama_base}/api/tags", timeout=1)
+                response = requests.get(f"{ollama_base}/api/tags", timeout=5)
                 if response.status_code == 200:
                     models_ollama = [m['name'] for m in response.json().get('models', [])]
                     self.config_manager.set({str(i+1): name for i, name in enumerate(models_ollama)}, 'backend', 'ollama', 'available_models')
@@ -49,7 +49,7 @@ class ModelManager:
         else:
             try:
                 url = config.get('backend', {}).get('kobold', {}).get('url', 'http://localhost:5001').rstrip('/') + '/api/v1/model'
-                r = requests.get(url, timeout=1)
+                r = requests.get(url, timeout=5)
                 if r.status_code == 200:
                     model_name = r.json().get('result', 'kobold_model')
                     categorized_models["Kobold (Local)"].append(model_name)
@@ -249,7 +249,15 @@ class ModelManager:
         if backend_type == 'cloud' and not allow_cloud:
             backend_type = 'ollama'
             
-        model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
+        if backend_type == 'hybrid':
+            # In hybrid mode, prefer cloud model if set, otherwise fallback to ollama
+            cloud_m = config_dict.get('backend', {}).get('cloud', {}).get('model', '')
+            ollama_m = config_dict.get('backend', {}).get('ollama', {}).get('model', '')
+            model = cloud_m or ollama_m or 'N/D'
+            # Also resolve the effective backend type for the client based on which model we picked
+            backend_type = 'cloud' if cloud_m else 'ollama'
+        else:
+            model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
         
         # Robust dynamic fallback if the model is empty (synchronizes with frontend UI dropdown auto-selection)
         if not model or model == 'N/D':

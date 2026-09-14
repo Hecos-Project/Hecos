@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.49.0 (Runtime Alpha)
+# Hecos - Versione 0.50.0 (Runtime Alpha)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,9 +11,9 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato Runtime Alpha**: Hecos è attualmente in `v0.49.0`[cite: 1]. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root[cite: 1].
+> **Stato Runtime Alpha**: Hecos è attualmente in `v0.50.0`[cite: 1]. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root[cite: 1].
 >
-> ⚠️ **Avviso Importante**: La versione 0.49.0 segna l'ultima release di Hecos sviluppata e testata nativamente su Windows 10. A partire dalla prossima major release (0.50.0+), lo sviluppo primario e l'ambiente target migreranno ufficialmente a **Windows 11**.
+> ⚠️ **Avviso Importante**: A partire da questa major release (0.50.0+), lo sviluppo primario e l'ambiente target migrano ufficialmente a **Windows 11**.
 
 ## 🚀 Panoramica
 **Hecos** è un **Helping Companion System**: un ecosistema locale progettato per unire fluidamente tecnologia e vita umana, combinando AI reasoning, automazione visiva ed esecuzione di sistema diretta[cite: 1]. Invece di inseguire concetti astratti come la sovranità digitale, Hecos si concentra su un'unica missione pragmatica: **migliorare la vita umana**, trasformando l'hardware locale in uno strumento pratico ed estremamente efficiente per tutti i giorni[cite: 1].
@@ -23,11 +23,15 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea[cite: 1].
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata[cite: 1].
 
-Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.45.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa[cite: 1]. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale[cite: 1].
+Ora completamente migrato a una **architettura stabile a Runtime Alpha**, Hecos 0.50.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa[cite: 1]. Grazie a **LiteLLM**, supporta Ollama, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale[cite: 1].
 
 ---
 
-## ✨ Caratteristiche Principali (v0.44.0)
+## ✨ Caratteristiche Principali (v0.50.0)
+* 🎭 **Override per Singola Chat** — Assegna modelli LLM e Personas diversi a singole sessioni di chat. Crea uno spazio di lavoro altamente capace per la programmazione con Claude 3.5 Sonnet e una chat informale con Llama 3 fianco a fianco.
+* 📦 **Architettura HPM 0.40** — Migrazione completa a configurazioni Pydantic+TOML, introducendo vincoli di versione per le dipendenze e `pip_requirements` bloccati.
+* 🛠️ **External Dependency Manager (EDM)** — Nuovo sistema che rileva automaticamente le dipendenze principali mancanti (Node, Tesseract, VC++), consentendo download con un clic direttamente dalla WebUI.
+* 🛡️ **HPM Integrity Verification** — Nuova API `/verify` e UI della Control Room per convalidare crittograficamente i file dei pacchetti installati rispetto ai loro hash manifest firmati Ed25519.
 * 🔒 **Hecos SDK (Isolamento Totale)** — Esegui i pacchetti HPM in processi isolati dedicati e ambienti virtuali indipendenti (venv) per evitare conflitti di dipendenze e blocchi del thread principale.
 * ⚡ **HDCS (Comandi Diretti)** — Esegui istantaneamente oltre 150 funzioni native saltando il "cervello" dell'IA digitando `/` nella chat o con `Ctrl+Alt+Spazio` ovunque[cite: 1].
 * ⚙️ **Motore di Automazione Flows** — Editor visuale a nodi (drag-and-drop) per la creazione di automazioni complesse multi-step, trigger e azioni con integrazione NLP vocale[cite: 1].

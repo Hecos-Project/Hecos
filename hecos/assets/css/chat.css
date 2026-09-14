@@ -520,3 +520,42 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
  } 
   
  
+/* ── Reasoning / Think Block ─────────────────────────────────────── */
+.think-block {
+  margin-bottom: 6px;
+  border: 1px solid rgba(108, 140, 255, 0.25);
+  border-radius: 8px;
+  background: rgba(108, 140, 255, 0.05);
+  overflow: hidden;
+  font-size: 12px;
+  max-width: 820px;
+}
+.think-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  user-select: none;
+  transition: background 0.15s;
+}
+.think-block-header:hover { background: rgba(108, 140, 255, 0.08); }
+.think-toggle-icon { font-size: 10px; transition: transform 0.2s ease; display: inline-block; }
+.think-block.expanded .think-toggle-icon { transform: rotate(90deg); }
+.think-block-body {
+  display: none;
+  padding: 8px 12px 10px;
+  color: var(--muted);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  border-top: 1px solid rgba(108, 140, 255, 0.15);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.think-block.expanded .think-block-body { display: block; }
+/* ─────────────────────────────────────────────────────────────────── */

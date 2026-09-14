@@ -1,28 +1,69 @@
 <!-- BACKEND PANEL -->
 <div id="tab-backend" class="panel">
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_backend_title') }}</div>
+    <div class="card-title" style="display:flex; align-items:center;">{{ t('webui_conf_backend_title') }} <span style="font-size:9px; padding: 2px 6px; background: rgba(255,255,255,0.07); color: var(--muted); border-radius: 4px; margin-left: 8px; font-weight: normal; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.05);"><i class="fas fa-globe" style="margin-right:4px;"></i>GLOBAL DEFAULTS</span></div>
     <div class="field">
       <label>{{ t('webui_conf_backend_type') }}</label>
       <select id="backend-type">
         <option value="cloud">{{ t('webui_conf_backend_cloud_opt') }}</option>
         <option value="ollama">{{ t('webui_conf_backend_ollama_opt') }}</option>
         <option value="kobold">{{ t('webui_conf_backend_kobold_opt') }}</option>
+        <option value="hybrid">Hybrid (Local + Cloud)</option>
       </select>
     </div>
-
-  <div class="card" id="card-cloud-settings">
-    <div class="card-title">{{ t('webui_conf_llm_providers') }}</div>
-    <div class="toggle-row">
-      <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }}</div></div>
+    
+    <div class="toggle-row" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+      <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }} (Makes cloud models available in chat overrides)</div></div>
       <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
-    </div>
-    <div class="toggle-row">
-      <div class="toggle-info">LiteLLM Verbose Debug<div class="toggle-sub">Print detailed logs for every AI request (very verbose)</div></div>
-      <label class="switch"><input type="checkbox" id="llm-debug"><span class="slider"></span></label>
     </div>
   </div>
 
+  <div class="card">
+    <div class="card-title">{{ t('webui_conf_routing_title') }}</div>
+
+    <div class="field" style="margin-bottom: 18px;">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <div class="toggle-wrapper">
+          <input type="checkbox" id="reasoning-show" class="toggle-input">
+          <span class="toggle-slider"></span>
+        </div>
+        <div>
+          <span style="font-weight:600;">{{ t('webui_conf_reasoning_show') }}</span>
+          <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">{{ t('webui_conf_reasoning_show_desc') }}</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="field">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <div class="toggle-wrapper">
+          <input type="checkbox" id="reasoning-collapsed" class="toggle-input">
+          <span class="toggle-slider"></span>
+        </div>
+        <div>
+          <span style="font-weight:600;">{{ t('webui_conf_reasoning_collapsed') }}</span>
+          <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">{{ t('webui_conf_reasoning_collapsed_desc') }}</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Global Debug Setting -->
+    <div class="field" style="margin-top: 18px; border-top: 1px solid var(--border); padding-top: 18px;">
+      <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+        <div class="toggle-wrapper">
+          <input type="checkbox" id="llm-debug" class="toggle-input">
+          <span class="toggle-slider"></span>
+        </div>
+        <div>
+          <span style="font-weight:600;">LiteLLM Verbose Debug</span>
+          <div style="font-size:var(--font-size-sm); color:var(--muted); margin-top:2px;">Print detailed logs for every AI request (very verbose). Applies to ALL backends.</div>
+        </div>
+      </label>
+    </div>
+  </div>
+
+
+  <div class="card" id="card-cloud-settings">
     <div class="card-title">{{ t('webui_conf_cloud_title') }}</div>
     <div class="field">
       <label>{{ t('webui_conf_model_active') }}</label>
@@ -97,3 +138,15 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Merge the dynamically loaded zoptions into the global sysOptions
+  // so that dropdowns (models, personalities, etc.) can populate correctly.
+  (function() {
+    var newOpts = {{ zoptions | tojson | safe }};
+    if (newOpts && Object.keys(newOpts).length > 0) {
+      window.sysOptions = window.sysOptions || {};
+      Object.assign(window.sysOptions, newOpts);
+    }
+  })();
+</script>

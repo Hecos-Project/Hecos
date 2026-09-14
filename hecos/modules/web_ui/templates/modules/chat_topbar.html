@@ -4,7 +4,169 @@
     <div id="model-badge" style="display:flex; align-items:center; gap:8px;">
       <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
       <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
+      <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
+          <option value="">&#127381; Persona...</option>
+      </select>
+      <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
+          <option value="">&#x1F916; Model...</option>
+      </select>
     </div>
+    <script>
+      /* ── Chat Session Select Styles ── */
+      (function() {
+        const style = document.createElement('style');
+        style.textContent = `
+          .chat-session-select {
+            background: #141726;
+            color: #e2e8f0;
+            border: 1px solid #252b46;
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+            max-width: 155px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .chat-session-select:hover, .chat-session-select:focus {
+            border-color: #6c8cff;
+            background: #1c2033;
+          }
+          .chat-session-select option {
+            background: #141726;
+            color: #e2e8f0;
+          }
+        `;
+        document.head.appendChild(style);
+      })();
+
+      window.sessionConfigOptionsLoaded = false;
+      
+      async function loadChatConfigOptions() {
+          if (window.sessionConfigOptionsLoaded) return;
+          try {
+              const res = await fetch('/api/chat/options');
+              const data = await res.json();
+              if (data.ok) {
+                  const mSel = document.getElementById('chat-model-select');
+                  const pSel = document.getElementById('chat-persona-select');
+                  
+                  // Keep default options
+                  mSel.innerHTML = '<option value="">Default Model</option>';
+                  pSel.innerHTML = '<option value="">Default Persona</option>';
+                  
+                  data.models.forEach(m => {
+                      const opt = document.createElement('option');
+                      opt.value = m.id;
+                      opt.textContent = m.type === 'cloud' ? '☁️ ' + m.name : '🖥️ ' + m.name;
+                      mSel.appendChild(opt);
+                  });
+                  
+                  data.personas.forEach(p => {
+                      const opt = document.createElement('option');
+                      opt.value = p;
+                      opt.textContent = '🎭 ' + p.replace('.yaml', '');
+                      pSel.appendChild(opt);
+                  });
+                  window.sessionConfigOptionsLoaded = true;
+              }
+          } catch(e) { console.warn("Failed to load chat options", e); }
+      }
+
+      window.saveSessionConfig = async function() {
+          const sessionId = window.chatHistoryState?.activeSessionId;
+          if (!sessionId) return;
+          
+          const pVal = document.getElementById('chat-persona-select').value;
+          const mVal = document.getElementById('chat-model-select').value;
+          
+          const overrides = {};
+          if (pVal) overrides.ai = { active_personality: pVal };
+          if (mVal) {
+              // Detect cloud by checking if model contains a slash and a known provider prefix.
+              // Cloud models from hybrid list are stored as e.g. "openai/gpt-4o", "anthropic/..."
+              // Local models are plain names like "llama3", "qwen2.5:7b"
+              const knownCloudProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'groq', 'cohere', 'together', 'deepseek', 'xai'];
+              const firstSegment = mVal.split('/')[0].toLowerCase();
+              const isCloud = mVal.includes('/') && knownCloudProviders.includes(firstSegment);
+              if (isCloud) {
+                  overrides.backend = { type: 'cloud', cloud: { model: mVal } };
+              } else {
+                  overrides.backend = { type: 'ollama', ollama: { model: mVal } };
+              }
+          }
+          
+          try {
+              await fetch('/api/chat/session/config', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ session_id: sessionId, config: overrides })
+              });
+          } catch(e) { console.warn("Failed to save session config", e); }
+      };
+      
+      window.updateSessionDropdownTitles = function() {
+          const selects = [document.getElementById('chat-model-select'), document.getElementById('chat-persona-select')];
+          selects.forEach(sel => {
+              if (sel && sel.selectedIndex >= 0) {
+                  sel.title = sel.options[sel.selectedIndex].text;
+              }
+          });
+      };
+
+      window.resetSessionDropdowns = function() {
+          // Called when a new blank chat is created — reset both selects to "Default"
+          const mSel = document.getElementById('chat-model-select');
+          const pSel = document.getElementById('chat-persona-select');
+          if (mSel) mSel.value = '';
+          if (pSel) pSel.value = '';
+          window.updateSessionDropdownTitles();
+      };
+
+      window.loadSessionConfig = async function(sessionId) {
+          if (!sessionId) {
+              window.resetSessionDropdowns();
+              return;
+          }
+          await loadChatConfigOptions();
+          try {
+              const res = await fetch('/api/chat/session/config?session_id=' + sessionId);
+              const data = await res.json();
+              
+              const mSel = document.getElementById('chat-model-select');
+              const pSel = document.getElementById('chat-persona-select');
+              
+              // Always reset first so new chats show "Default"
+              if (mSel) mSel.value = '';
+              if (pSel) pSel.value = '';
+              
+              if (data.ok && data.config) {
+                  if (data.config.ai?.active_personality) {
+                      if (pSel) pSel.value = data.config.ai.active_personality;
+                  }
+                  if (data.config.backend) {
+                      const bType = data.config.backend.type;
+                      const subConf = data.config.backend[bType];
+                      if (subConf?.model && mSel) {
+                          mSel.value = subConf.model;
+                      }
+                  }
+              }
+              window.updateSessionDropdownTitles();
+          } catch(e) { console.warn("Failed to load session config", e); }
+      };
+      
+      // Auto-load options once DOM is ready
+      document.addEventListener("DOMContentLoaded", () => {
+          loadChatConfigOptions().then(() => {
+              window.updateSessionDropdownTitles();
+          });
+      });
+    </script>
     <style>@keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } } #tb-status-dot.pulsing { animation: pulseDot 2s infinite; } .mode-chip-autowipe { border-color: rgba(var(--yellow-rgb),0.5) !important; color: var(--yellow) !important; background: rgba(var(--yellow-rgb),0.1) !important; } .mode-chip-incognito { border-color: rgba(var(--accent2-rgb),0.5) !important; color: var(--accent2) !important; background: rgba(var(--accent2-rgb),0.1) !important; }</style>
   </div>
   <div class="topbar-chips">
@@ -13,12 +175,12 @@
     <div class="topbar-chip" id="chip-tts"><i class="fas fa-volume-up"></i> TTS: —</div>
     <div class="topbar-chip" id="chip-ptt"><i class="fas fa-keyboard"></i> PTT: —</div>
     <button id="topbar-stop-voice-btn" class="topbar-chip on" style="display:none; cursor:pointer; background:rgba(var(--red-rgb),0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()"><i class="fas fa-stop" style="margin-right:6px;"></i> Stop Voice</button>
-    <a href="/hecos/config/ui" target="_blank" class="topbar-link"><i class="fas fa-cog"></i> <span>Hub</span></a>
+    <a id="topbar-hub-link" href="/hecos/config/ui" target="_blank" class="topbar-link"><i class="fas fa-cog"></i> <span>Hub</span></a>
     {% if is_hpm_installed('drive') %}
-    <a href="/drive" target="_blank" class="topbar-link"><i class="fas fa-hdd"></i> <span>Drive</span></a>
+    <a id="topbar-drive-link" href="/drive" target="_blank" class="topbar-link"><i class="fas fa-hdd"></i> <span>Drive</span></a>
     {% endif %}
     {% if is_hpm_installed('flows') %}
-    <a href="/flows" target="_blank" class="topbar-link"><i class="fas fa-project-diagram"></i> <span>Flows</span></a>
+    <a id="topbar-flows-link" href="/flows" target="_blank" class="topbar-link"><i class="fas fa-project-diagram"></i> <span>Flows</span></a>
     {% endif %}
   </div>
 </div>

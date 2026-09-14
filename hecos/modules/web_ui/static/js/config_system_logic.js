@@ -199,18 +199,41 @@ async function refreshModels() {
   const oldTxt = btn ? btn.textContent : '';
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
   try {
-    await fetch('/api/models/refresh', {method:'POST'});
-    
-    // Clear front-end cache to force a real re-fetch from the updated backend
-    window.sysOptions = {};
-    
-    if (typeof initAll === 'function') await initAll();
+    const res  = await fetch('/api/models/refresh', {method:'POST'});
+    const data = await res.json();
+
+    if (data.ok) {
+      const ollamaModels = data.ollama_models || [];
+
+      // Pre-populate sysOptions BEFORE initAll runs, so populateBackendUI()
+      // (called by populateUI inside initAll) sees the correct model list.
+      window.sysOptions = window.sysOptions || {};
+      window.sysOptions.ollama_models = ollamaModels;
+      if (data.cloud_models) {
+        window.sysOptions.cloud_models = data.cloud_models;
+        window.sysOptions.all_cloud = Object.values(data.cloud_models).flat();
+      }
+
+      // Show feedback
+      if (ollamaModels.length > 0) {
+        if (window.showToast) window.showToast(`✅ ${ollamaModels.length} models loaded`, 'success');
+      } else {
+        if (window.showToast) window.showToast('⚠️ No Ollama models found. Is Ollama running?', 'warning');
+      }
+
+      // Now run initAll — populateBackendUI will use the sysOptions we just set
+      if (typeof initAll === 'function') await initAll();
+
+    } else {
+      if (window.showToast) window.showToast('Refresh failed', 'error');
+    }
   } catch(e) {
     alert("Refresh failed: " + e);
   } finally {
     if (btn) { btn.textContent = oldTxt; btn.disabled = false; }
   }
 }
+
 
 function escapeHtml(text) {
   const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };

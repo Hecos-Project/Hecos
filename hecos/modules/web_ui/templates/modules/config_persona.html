@@ -1,7 +1,7 @@
 <!-- PERSONA PANEL -->
 <div id="tab-ia" class="panel" data-search="intelligence persona avatar personality soul instructions custom ai">
   <div class="card">
-    <div class="card-title">{{ t('webui_conf_persona_ai_title') }}</div>
+    <div class="card-title" style="display:flex; align-items:center;">{{ t('webui_conf_persona_ai_title') }} <span style="font-size:9px; padding: 2px 6px; background: rgba(255,255,255,0.07); color: var(--muted); border-radius: 4px; margin-left: 8px; font-weight: normal; letter-spacing: 0.5px; border: 1px solid rgba(255,255,255,0.05);"><i class="fas fa-globe" style="margin-right:4px;"></i>GLOBAL DEFAULTS</span></div>
     <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 16px;">
         <div id="ia-avatar-wrapper" style="position: relative; width: 64px; height: 64px;">
             <img id="ia-avatar-preview" src="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid var(--border); background: var(--bg3);">
@@ -64,3 +64,15 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Merge the dynamically loaded zoptions into the global sysOptions
+  // so that dropdowns (models, personalities, etc.) can populate correctly.
+  (function() {
+    var newOpts = {{ zoptions | tojson | safe }};
+    if (newOpts && Object.keys(newOpts).length > 0) {
+      window.sysOptions = window.sysOptions || {};
+      Object.assign(window.sysOptions, newOpts);
+    }
+  })();
+</script>

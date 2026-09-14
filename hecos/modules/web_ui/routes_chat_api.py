@@ -141,6 +141,42 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         ).start()
         return jsonify({"ok": True, "session_id": sid})
 
+    @app.route("/api/chat/session/config", methods=["GET", "POST"])
+    def api_session_config():
+        from hecos.memory.session_config_db import get_session_config, set_session_config
+        
+        session_id = request.args.get("session_id")
+        if not session_id and request.method == "POST":
+            data = request.get_json(force=True) or {}
+            session_id = data.get("session_id")
+            
+        if not session_id:
+            return jsonify({"ok": False, "error": "Missing session_id"}), 400
+            
+        if request.method == "GET":
+            conf = get_session_config(session_id)
+            return jsonify({"ok": True, "config": conf})
+            
+        if request.method == "POST":
+            data = request.get_json(force=True) or {}
+            overrides = data.get("config", {})
+            set_session_config(session_id, overrides)
+            return jsonify({"ok": True})
+            
+    @app.route("/api/chat/options")
+    def api_chat_options():
+        from hecos.core.llm.hybrid_model_manager import get_hybrid_models
+        
+        # Personas: reuse the config_manager's sync which scans the filesystem
+        personas = []
+        try:
+            personas = cfg_mgr.sync_available_personalities()
+        except Exception as e:
+            logger.warning(f"[chat/options] Failed to load personas: {e}")
+        
+        models = get_hybrid_models(cfg_mgr.config, config_manager=cfg_mgr)
+        return jsonify({"ok": True, "models": models, "personas": personas})
+
     @app.route("/api/stream/<session_id>")
     def api_stream(session_id):
         sess = _sessions.get(session_id)
@@ -194,7 +230,8 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         for row in hist:
             role, msg = row[0], row[1]
             persona = row[2] if len(row) > 2 else None
-            out.append({"role": role, "content": msg, "persona_name": persona})
+            m_info = row[3] if len(row) > 3 else None
+            out.append({"role": role, "content": msg, "persona_name": persona, "model_info": m_info})
         return jsonify(out)
 
     @app.route("/api/audio")

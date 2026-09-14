@@ -109,7 +109,8 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
                     if hasattr(mod, 'init_plugin_routes'):
                         try:
                             # HPM plugins routes must accept (app, cfg_mgr, hecos_root, logger)
-                            mod.init_plugin_routes(app, cfg_mgr, hecos_root, log)
+                            import hecos.core.logging.logger as hecos_logger
+                            mod.init_plugin_routes(app, cfg_mgr, hecos_root, hecos_logger)
                             log.info(f"[HPM:Routes] Registered standalone API routes for '{plugin_id}'")
                         except Exception as e:
                             log.error(f"[HPM:Routes] Error initializing routes for '{plugin_id}': {e}")

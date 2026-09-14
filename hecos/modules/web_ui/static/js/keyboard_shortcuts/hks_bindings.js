@@ -25,15 +25,15 @@
     const STORAGE_KEY   = 'hecos_hks_bindings';
     const PREFS_KEY     = 'hecos_hks_prefs';
     const VERSION_KEY   = 'hecos_hks_version';
-    const BINDINGS_VER  = '3'; // ← increment this whenever DEFAULTS change
+    const BINDINGS_VER  = '5'; // ← increment this whenever DEFAULTS change
 
     // ── Default bindings ──────────────────────────────────────────────────────
     // Inspired by Linux terminal function key conventions.
 
     const DEFAULTS = {
         'nav.packages':      'f1',
-        'nav.backend':       'f2',
-        'nav.ia':            'f3',
+        'chat.toggle_thinking':'f2',
+        'nav.quick_config':  'f3',
         'ui.toggle_mic':     'f4',
         'ui.toggle_voice':   'f6',
         'nav.hub':           'f7',

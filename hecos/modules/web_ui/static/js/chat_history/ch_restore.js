@@ -23,7 +23,7 @@ window.renderHistoryMessages = function (messages) {
             window.appendMessage(
                 msg.role, 
                 msg.message || msg.content, 
-                { timestamp: msg.timestamp, noSave: true, historyIndex: idx, persona_name: msg.persona_name || null, audio_file: msg.audio_file || null }
+                { timestamp: msg.timestamp, noSave: true, historyIndex: idx, persona_name: msg.persona_name || null, audio_file: msg.audio_file || null, model_info: msg.model_info || null }
             );
         }
     });

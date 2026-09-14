@@ -113,6 +113,11 @@ def initialize_user_vault(user_id: str = "admin"):
         cursor.execute("ALTER TABLE history ADD COLUMN audio_file TEXT")
     except sqlite3.OperationalError:
         pass  # column already exists
+    # Add model_info column to persist generation parameters and model name
+    try:
+        cursor.execute("ALTER TABLE history ADD COLUMN model_info TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
     # ────────────────────────────────────────────────────────────────────────────
     
     conn.commit()
@@ -218,7 +223,8 @@ def update_profile(key, value, user_id: str = "admin"):
 
 def save_message(role, message, config: dict = None, user_id: str = "admin",
                  session_id: str = None, persona_name: str = None,
-                 broadcast_sse: bool = False, sender_tab_id: str = None):
+                 broadcast_sse: bool = False, sender_tab_id: str = None,
+                 model_info: str = None):
     """Stores an exchange in episodic memory, respecting config flags and privacy mode.
     - incognito → discard entirely (no storage anywhere)
     - auto_wipe → store in RAM only (vanishes on restart)
@@ -254,8 +260,8 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
         with sqlite3.connect(db_path, timeout=20) as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO history (timestamp, role, message, session_id, persona_name) VALUES (?, ?, ?, ?, ?)",
-                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message, session_id, persona_name)
+                "INSERT INTO history (timestamp, role, message, session_id, persona_name, model_info) VALUES (?, ?, ?, ?, ?, ?)",
+                (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), role, message, session_id, persona_name, model_info)
             )
             conn.commit()
 
@@ -269,7 +275,8 @@ def save_message(role, message, config: dict = None, user_id: str = "admin",
                     "message": message,
                     "session_id": session_id,
                     "tab_id": sender_tab_id,
-                    "persona_name": persona_name
+                    "persona_name": persona_name,
+                    "model_info": model_info
                 })
         except Exception as e:
             logger.debug(f"[MEMORY] Could not broadcast background message: {e}")
@@ -321,12 +328,12 @@ def get_history(limit: int = None, config: dict = None, user_id: str = "admin", 
             cursor = conn.cursor()
             if session_id:
                 cursor.execute(
-                    "SELECT role, message, persona_name FROM history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
+                    "SELECT role, message, persona_name, model_info FROM history WHERE session_id = ? ORDER BY id DESC LIMIT ?",
                     (session_id, limit)
                 )
             else:
                 cursor.execute(
-                    "SELECT role, message, persona_name FROM history ORDER BY id DESC LIMIT ?",
+                    "SELECT role, message, persona_name, model_info FROM history ORDER BY id DESC LIMIT ?",
                     (limit,)
                 )
             rows = cursor.fetchall()
