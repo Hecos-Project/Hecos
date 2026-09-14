@@ -66,15 +66,46 @@ function _qcUpdateModelSelect(backendType, cfg) {
     let options = [];
     let activeModel = '';
     
-    if (backendType === 'ollama') {
+    if (backendType === 'hybrid') {
+        // Combine all local + cloud models, grouped with optgroups
+        const localModels  = sysOpts.ollama_models || [];
+        const cloudModels  = sysOpts.all_cloud || [];
+        
+        if (localModels.length) {
+            const grp = document.createElement('optgroup');
+            grp.label = '🖥 Local (Ollama)';
+            localModels.forEach(m => {
+                const o = document.createElement('option');
+                o.value = `ollama::${m}`;
+                o.textContent = m;
+                grp.appendChild(o);
+            });
+            modelEl.appendChild(grp);
+        }
+        if (cloudModels.length) {
+            const grp = document.createElement('optgroup');
+            grp.label = '☁ Cloud';
+            cloudModels.forEach(m => {
+                const o = document.createElement('option');
+                o.value = `cloud::${m}`;
+                o.textContent = m;
+                grp.appendChild(o);
+            });
+            modelEl.appendChild(grp);
+        }
+        // Try to restore previous selection
+        const prevOllama = cfg?.backend?.ollama?.model;
+        const prevCloud  = cfg?.backend?.cloud?.model;
+        if (prevCloud) modelEl.value = `cloud::${prevCloud}`;
+        else if (prevOllama) modelEl.value = `ollama::${prevOllama}`;
+        return;
+    } else if (backendType === 'ollama') {
         options = sysOpts.ollama_models || [];
         activeModel = cfg?.backend?.ollama?.model || '';
     } else if (backendType === 'cloud') {
         options = sysOpts.all_cloud || [];
         activeModel = cfg?.backend?.cloud?.model || '';
     } else if (backendType === 'kobold') {
-        // Kobold doesn't usually list options this way, but we'll try or allow text input
-        // For simplicity, we just add the active one
         options = [cfg?.backend?.kobold?.model || 'Kobold Model'];
         activeModel = cfg?.backend?.kobold?.model || '';
     }
@@ -98,24 +129,29 @@ window.qcBackendChanged = function() {
 };
 
 window.qcSaveConfig = function() {
+    const bType = document.getElementById('qc-backend-type').value;
+    const modelRaw = document.getElementById('qc-model').value;
+    
     const payload = {
-        backend: {
-            type: document.getElementById('qc-backend-type').value
-        },
-        ai: {
-            active_personality: document.getElementById('qc-persona').value
-        }
+        backend: { type: bType },
+        ai: { active_personality: document.getElementById('qc-persona').value }
     };
     
-    const bType = payload.backend.type;
-    const modelValue = document.getElementById('qc-model').value;
-    
-    if (bType === 'ollama') {
-        payload.backend.ollama = { model: modelValue };
+    if (bType === 'hybrid') {
+        // modelRaw is prefixed: e.g. "ollama::llama3" or "cloud::openai/gpt-4o"
+        const [provider, ...rest] = modelRaw.split('::');
+        const modelName = rest.join('::');
+        if (provider === 'cloud') {
+            payload.backend.cloud = { model: modelName };
+        } else {
+            payload.backend.ollama = { model: modelName };
+        }
+    } else if (bType === 'ollama') {
+        payload.backend.ollama = { model: modelRaw };
     } else if (bType === 'cloud') {
-        payload.backend.cloud = { model: modelValue };
+        payload.backend.cloud = { model: modelRaw };
     } else if (bType === 'kobold') {
-        payload.backend.kobold = { model: modelValue };
+        payload.backend.kobold = { model: modelRaw };
     }
     
     if (window.qcSaveConfigAPI) {

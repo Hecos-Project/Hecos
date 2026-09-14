@@ -35,9 +35,13 @@ window.openQuickConfig = function() {
             loadScript('/static/js/quick_config/qc_main.js')
         ]).then(() => {
             window.qcIsLoaded = true;
+            const overlay = document.getElementById('qc-hud-overlay');
+            if (overlay) overlay.removeAttribute('style'); // Strip inline fail-safes
             if (window._qcInitAndShow) window._qcInitAndShow();
         });
     } else {
+        const overlay = document.getElementById('qc-hud-overlay');
+        if (overlay) overlay.removeAttribute('style'); // Strip inline fail-safes
         if (window._qcInitAndShow) window._qcInitAndShow();
     }
 };

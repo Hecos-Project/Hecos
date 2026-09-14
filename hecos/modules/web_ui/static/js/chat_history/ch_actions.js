@@ -24,10 +24,12 @@ window.newChatSession = async function (mode = null) {
         window._clearChatDOM = window.clearChat;
         window.chatArea && (window.chatArea.innerHTML = '');
     }
+    if (window.resetSessionDropdowns) window.resetSessionDropdowns();
     window.chatHistoryState.isUIRendered = true;
 
     await window.loadChatSessions();
 };
+
 
 window.activateChatSession = async function (sessionId) {
     if (sessionId === window.chatHistoryState.activeSessionId && window.chatHistoryState.isUIRendered) return;
@@ -47,6 +49,7 @@ window.activateChatSession = async function (sessionId) {
     window.chatHistoryState.activeMode          = mode;
     window.chatHistoryState.chatModeHasMessages = (res.messages || []).length > 0;
     localStorage.setItem('hecos_active_session_id', sessionId);
+    if (window.loadSessionConfig) window.loadSessionConfig(sessionId);
 
     if (window._clearChatDOM) window._clearChatDOM();
     else if (window.chatArea) window.chatArea.innerHTML = '';

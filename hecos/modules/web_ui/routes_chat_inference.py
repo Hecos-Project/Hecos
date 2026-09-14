@@ -94,6 +94,22 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             raise RuntimeError("ConfigManager non disponibile. Riavviare Hecos.")
         # ────────────────────────────────────────────────────────────────────
 
+        # ── PER-SESSION CONFIGURATION OVERRIDE ──────────────────────────────
+        from hecos.config.session_config_manager import merge_session_config
+        merged_config_dict = merge_session_config(cfg_mgr.config, session_id)
+        
+        class MergedConfigManager:
+            def __init__(self, base_mgr, merged_dict):
+                self._base = base_mgr
+                self.config = merged_dict
+            def save_config(self):
+                pass
+            def __getattr__(self, name):
+                return getattr(self._base, name)
+                
+        active_cfg_mgr = MergedConfigManager(cfg_mgr, merged_config_dict)
+        # ────────────────────────────────────────────────────────────────────
+
         # ── Session-Aware Trace Callback ─────────────────────────────────────
         # Inject agent traces directly into the session-specific SSE queue.
         def _session_trace(msg, level: str = "info"):
@@ -105,8 +121,8 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         # ────────────────────────────────────────────────────────────────────
 
         agent = AgentExecutor(
-            config=cfg_mgr.config,
-            config_manager=cfg_mgr,
+            config=active_cfg_mgr.config,
+            config_manager=active_cfg_mgr,
             state_manager=sm,
             trace_callback=_session_trace,
             current_user_id=user_id,
@@ -176,7 +192,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
             time.sleep(0.02)
 
         # Signal the frontend to stop the ⚙️ spinner (before blocking TTS)
-        current_persona = cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
+        current_persona = active_cfg_mgr.config.get("ai", {}).get("active_personality", "Hecos_System_Soul")
         if current_persona.endswith(".yaml"):
             current_persona = current_persona[:-5]
             
@@ -196,7 +212,7 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
 
         _chat_log.info(f"[INFERENCE] Generating TTS...")
         t_tts_start = time.monotonic()
-        audio_status, audio_id = _maybe_generate_tts(clean_voice, cfg_mgr)
+        audio_status, audio_id = _maybe_generate_tts(clean_voice, active_cfg_mgr)
         _chat_log.info(f"[INFERENCE] TTS done in {time.monotonic() - t_tts_start:.2f}s | status={audio_status} id={audio_id}")
 
         if audio_status == "web":

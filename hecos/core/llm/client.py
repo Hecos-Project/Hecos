@@ -53,6 +53,17 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         backend_info = config_or_subconfig.get('backend', {})
         backend_type = backend_info.get('type', 'ollama')
         specific_config = backend_info.get(backend_type, {})
+        
+        # Fallback for 'hybrid' mode if no explicit override is provided
+        if backend_type == 'hybrid':
+            cloud_conf = backend_info.get('cloud', {})
+            ollama_conf = backend_info.get('ollama', {})
+            if cloud_conf.get('model'):
+                specific_config = cloud_conf
+                backend_type = 'cloud'
+            else:
+                specific_config = ollama_conf
+                backend_type = 'ollama'
     else:
         specific_config = config_or_subconfig
         backend_type = specific_config.get('backend_type', 'ollama')

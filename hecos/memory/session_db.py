@@ -106,4 +106,12 @@ def migrate_schema():
 
     conn.commit()
     conn.close()
+    
+    # Run the new session config db init
+    try:
+        from hecos.memory.session_config_db import init_session_config_db
+        init_session_config_db()
+    except Exception as e:
+        logger.warning(f"[SESSION] session_config_db init skipped: {e}")
+
     logger.info("[SESSION] Schema migration complete.")

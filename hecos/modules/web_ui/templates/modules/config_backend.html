@@ -8,7 +8,13 @@
         <option value="cloud">{{ t('webui_conf_backend_cloud_opt') }}</option>
         <option value="ollama">{{ t('webui_conf_backend_ollama_opt') }}</option>
         <option value="kobold">{{ t('webui_conf_backend_kobold_opt') }}</option>
+        <option value="hybrid">Hybrid (Local + Cloud)</option>
       </select>
+    </div>
+    
+    <div class="toggle-row" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+      <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }} (Makes cloud models available in chat overrides)</div></div>
+      <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
     </div>
   </div>
 
@@ -58,13 +64,7 @@
 
 
   <div class="card" id="card-cloud-settings">
-    <div class="card-title">{{ t('webui_conf_llm_providers') }}</div>
-    <div class="toggle-row">
-      <div class="toggle-info">{{ t('webui_conf_llm_enable') }}<div class="toggle-sub">{{ t('webui_conf_llm_enable_sub') }}</div></div>
-      <label class="switch"><input type="checkbox" id="llm-allow-cloud"><span class="slider"></span></label>
-    </div>
-
-    <div class="card-title" style="margin-top: 16px;">{{ t('webui_conf_cloud_title') }}</div>
+    <div class="card-title">{{ t('webui_conf_cloud_title') }}</div>
     <div class="field">
       <label>{{ t('webui_conf_model_active') }}</label>
       <div style="display:flex; gap:8px;">

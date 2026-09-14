@@ -7,7 +7,6 @@
 class AgentTraceUI {
   constructor() {
     this.activeBubble = null;
-    this.activeCursor = null;
     this._injectStyles();
   }
 
@@ -86,13 +85,8 @@ class AgentTraceUI {
       textNode.className = 'agent-trace-text';
       textNode.textContent = msg;
       
-      this.activeCursor = document.createElement('span');
-      this.activeCursor.className = 'cursor';
-      this.activeCursor.style.cssText = 'animation: blink 1s step-end infinite; border-right: 2px solid var(--accent); margin-left: 2px;';
-      
       wrap.appendChild(icon);
       wrap.appendChild(textNode);
-      wrap.appendChild(this.activeCursor);
       
       this.activeBubble = wrap;
       
@@ -126,9 +120,7 @@ class AgentTraceUI {
   finalize() {
     if (this.activeBubble) {
       this.activeBubble.classList.add('finished');
-      if (this.activeCursor) this.activeCursor.remove();
       this.activeBubble = null;
-      this.activeCursor = null;
     }
   }
 }

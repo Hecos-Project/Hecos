@@ -103,9 +103,9 @@ function _applyBackendCardVisibility(type) {
   const cardCloud  = document.getElementById('card-cloud-settings');
   const cardOllama = document.getElementById('card-ollama');
   const cardKobold = document.getElementById('card-kobold');
-  if (cardCloud)  cardCloud.style.display  = v === 'cloud'  ? '' : 'none';
-  if (cardOllama) cardOllama.style.display = v === 'ollama' ? '' : 'none';
-  if (cardKobold) cardKobold.style.display = v === 'kobold' ? '' : 'none';
+  if (cardCloud)  cardCloud.style.display  = (v === 'cloud' || v === 'hybrid') ? '' : 'none';
+  if (cardOllama) cardOllama.style.display = (v === 'ollama' || v === 'hybrid') ? '' : 'none';
+  if (cardKobold) cardKobold.style.display = (v === 'kobold' || v === 'hybrid') ? '' : 'none';
 }
 window._applyBackendCardVisibility = _applyBackendCardVisibility;
 

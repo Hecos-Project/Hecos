@@ -17,9 +17,9 @@ ai:
     \    your next response with the word: ''SYNCHRONIZED"
   avatar_size: medium
 backend:
-  type: ollama
+  type: hybrid
   cloud:
-    model: ''
+    model: gemini/gemini-2.5-flash
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -71,7 +71,7 @@ filters:
   custom_replacements: {}
 language: en
 llm:
-  allow_cloud: false
+  allow_cloud: true
   debug_llm: true
   providers:
     gemini:
@@ -147,20 +147,20 @@ llm:
       - llama-3.3-70b-versatile
       - compound
       - compound-mini
-      - openai/gpt-oss-safeguard-20b
-      - qwen/qwen3.8-27b
-      - meta-llama/llama-prompt-guard-2-22m
-      - groq/compound
       - whisper-large-v3
       - openai/gpt-oss-20b
-      - qwen/qwen3.6-27b
+      - groq/compound
       - canopylabs/orpheus-v1-english
       - groq/compound-mini
-      - whisper-large-v3-turbo
-      - openai/gpt-oss-120b
-      - allam-2-7b
-      - canopylabs/orpheus-arabic-saudi
       - meta-llama/llama-prompt-guard-2-86m
+      - openai/gpt-oss-120b
+      - qwen/qwen3.6-27b
+      - canopylabs/orpheus-arabic-saudi
+      - qwen/qwen3.8-27b
+      - openai/gpt-oss-safeguard-20b
+      - whisper-large-v3-turbo
+      - meta-llama/llama-prompt-guard-2-22m
+      - allam-2-7b
 logging:
   level: DEBUG
   destination: console

@@ -249,7 +249,15 @@ class ModelManager:
         if backend_type == 'cloud' and not allow_cloud:
             backend_type = 'ollama'
             
-        model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
+        if backend_type == 'hybrid':
+            # In hybrid mode, prefer cloud model if set, otherwise fallback to ollama
+            cloud_m = config_dict.get('backend', {}).get('cloud', {}).get('model', '')
+            ollama_m = config_dict.get('backend', {}).get('ollama', {}).get('model', '')
+            model = cloud_m or ollama_m or 'N/D'
+            # Also resolve the effective backend type for the client based on which model we picked
+            backend_type = 'cloud' if cloud_m else 'ollama'
+        else:
+            model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
         
         # Robust dynamic fallback if the model is empty (synchronizes with frontend UI dropdown auto-selection)
         if not model or model == 'N/D':

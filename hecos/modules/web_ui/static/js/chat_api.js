@@ -130,8 +130,11 @@ window.sendMessage = async function() {
           const msgContainer = aiBubble.closest('.msg');
           if (msgContainer) {
             const nameEl = msgContainer.querySelector('.msg-name');
-            if (nameEl) nameEl.textContent = personaTitle;
-            
+            if (nameEl) {
+              const existingBadge = nameEl.querySelector('.think-badge');
+              nameEl.textContent = personaTitle;
+              if (existingBadge) nameEl.appendChild(existingBadge);
+            }
             const avatarEl = msgContainer.querySelector('.msg-avatar');
             if (avatarEl) {
               fetch(`/api/persona/avatar?persona=${encodeURIComponent(ev.persona_name)}`)
