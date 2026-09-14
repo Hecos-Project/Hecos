@@ -58,12 +58,12 @@
   <div class="sidebar-card mobile-only" style="padding-bottom:12px;">
     <div class="sidebar-card-title">NAVIGATION</div>
     <div style="display:flex; flex-direction:column; gap:6px;">
-      <a class="sidebar-btn" href="/hecos/config/ui" target="_blank"><span class="icon"><i class="fas fa-cog"></i></span> Hub</a>
+      <a id="sidebar-hub-link" class="sidebar-btn" href="/hecos/config/ui" target="_blank"><span class="icon"><i class="fas fa-cog"></i></span> Hub</a>
       {% if is_hpm_installed('drive') %}
-      <a class="sidebar-btn" href="/drive" target="_blank"><span class="icon"><i class="fas fa-hdd"></i></span> Drive</a>
+      <a id="sidebar-drive-link" class="sidebar-btn" href="/drive" target="_blank"><span class="icon"><i class="fas fa-hdd"></i></span> Drive</a>
       {% endif %}
       {% if is_hpm_installed('flows') %}
-      <a class="sidebar-btn" href="/flows" target="_blank"><span class="icon"><i class="fas fa-project-diagram"></i></span> Flows</a>
+      <a id="sidebar-flows-link" class="sidebar-btn" href="/flows" target="_blank"><span class="icon"><i class="fas fa-project-diagram"></i></span> Flows</a>
       {% endif %}
     </div>
   </div>
@@ -103,13 +103,13 @@
       <i class="fas fa-chevron-down audio-chevron"></i>
     </div>
     <div class="audio-toggle-row">
-      <button class="audio-toggle-btn" id="mic-btn" onclick="toggleMic()" title="Toggle Microphone (F4)">
+      <button class="audio-toggle-btn" id="mic-btn" onclick="toggleMic()" title="Toggle Microphone">
         <i class="fas fa-microphone"></i> <span id="mic-label">MIC</span>
       </button>
-      <button class="audio-toggle-btn" id="tts-btn" onclick="toggleTTS()" title="Toggle Voice Output (F6)">
+      <button class="audio-toggle-btn" id="tts-btn" onclick="toggleTTS()" title="Toggle Voice Output">
         <i class="fas fa-volume-up"></i> <span id="tts-label">TTS</span>
       </button>
-      <button class="audio-toggle-btn" id="ptt-btn" onclick="togglePTT()" title="Toggle Push-To-Talk (F8)">
+      <button class="audio-toggle-btn" id="ptt-btn" onclick="togglePTT()" title="Toggle Push-To-Talk">
         <i class="fas fa-keyboard"></i> <span id="ptt-label">PTT</span>
       </button>
     </div>
@@ -140,7 +140,7 @@
             </div>
         </div>
     </div>
-      <button id="sidebar-stop-voice-btn" onclick="stopVoice()" title="Stop Voice (ESC)" style="
+      <button id="sidebar-stop-voice-btn" onclick="stopVoice()" title="Stop Voice Output" style="
         display:none; margin:0 0 8px; width:100%; padding:6px 10px;
         background:rgba(var(--red-rgb),.15); border:1px solid rgba(var(--red-rgb),.4);
         border-radius:8px; color:var(--red); font-size:12px; cursor:pointer;

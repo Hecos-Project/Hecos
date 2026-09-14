@@ -274,6 +274,13 @@ document.addEventListener('DOMContentLoaded', () => {
 window.refreshStatus = async function() {
   try {
     const d = await (await fetch('/hecos/status')).json();
+    
+    // Clear offline countdown if restored
+    if (window._offlineCount !== undefined && window._offlineCount > 0) {
+        window._offlineCount = 0;
+        if (window._originalTitle) document.title = window._originalTitle;
+    }
+    
     const sbB = document.getElementById('sb-backend');
     const sbM = document.getElementById('sb-model');
     const sbS = document.getElementById('sb-soul');
@@ -331,6 +338,11 @@ window.refreshStatus = async function() {
 
 
   } catch(e) {
+    // Increment offline counter and update document title for background visibility
+    window._offlineCount = (window._offlineCount || 0) + 1;
+    if (!window._originalTitle) window._originalTitle = document.title;
+    document.title = `(${window._offlineCount}) Restarting... | ${window._originalTitle.replace(/^\(\d+\) Restarting\.\.\. \| /, '')}`;
+
     const tbM = document.getElementById('tb-model');
     const tbDot = document.getElementById('tb-status-dot');
     if (tbM) {

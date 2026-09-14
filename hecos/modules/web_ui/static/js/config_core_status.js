@@ -8,6 +8,13 @@ async function refreshStatus() {
   try {
     const r = await fetch('/hecos/status');
     const d = await r.json();
+    
+    // Clear offline countdown if restored
+    if (window._offlineCount !== undefined && window._offlineCount > 0) {
+        window._offlineCount = 0;
+        if (window._originalTitle) document.title = window._originalTitle;
+    }
+
     setSpanText('s-backend', d.backend || '—');
 
     // System Metrics with threshold coloring
@@ -94,6 +101,11 @@ async function refreshStatus() {
         if (eVram?.parentElement) eVram.parentElement.style.display = trackVram ? '' : 'none';
     }
   } catch(e) {
+    // Increment offline counter and update document title for background visibility
+    window._offlineCount = (window._offlineCount || 0) + 1;
+    if (!window._originalTitle) window._originalTitle = document.title;
+    document.title = `(${window._offlineCount}) Restarting... | ${window._originalTitle.replace(/^\(\d+\) Restarting\.\.\. \| /, '')}`;
+
     // On error: force pill to Offline
     const hdrModel = document.getElementById('hdr-model');
     if (hdrModel) {
