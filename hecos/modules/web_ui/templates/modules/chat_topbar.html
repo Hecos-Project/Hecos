@@ -4,10 +4,10 @@
     <div id="model-badge" style="display:flex; align-items:center; gap:8px;">
       <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
       <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
-      <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig()">
+      <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
           <option value="">&#127381; Persona...</option>
       </select>
-      <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig()">
+      <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
           <option value="">&#x1F916; Model...</option>
       </select>
     </div>
@@ -28,6 +28,9 @@
             max-width: 155px;
             cursor: pointer;
             transition: border-color 0.2s, background 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
           .chat-session-select:hover, .chat-session-select:focus {
             border-color: #6c8cff;
@@ -105,6 +108,15 @@
               });
           } catch(e) { console.warn("Failed to save session config", e); }
       };
+      
+      window.updateSessionDropdownTitles = function() {
+          const selects = [document.getElementById('chat-model-select'), document.getElementById('chat-persona-select')];
+          selects.forEach(sel => {
+              if (sel && sel.selectedIndex >= 0) {
+                  sel.title = sel.options[sel.selectedIndex].text;
+              }
+          });
+      };
 
       window.resetSessionDropdowns = function() {
           // Called when a new blank chat is created — reset both selects to "Default"
@@ -112,6 +124,7 @@
           const pSel = document.getElementById('chat-persona-select');
           if (mSel) mSel.value = '';
           if (pSel) pSel.value = '';
+          window.updateSessionDropdownTitles();
       };
 
       window.loadSessionConfig = async function(sessionId) {
@@ -143,12 +156,15 @@
                       }
                   }
               }
+              window.updateSessionDropdownTitles();
           } catch(e) { console.warn("Failed to load session config", e); }
       };
       
       // Auto-load options once DOM is ready
       document.addEventListener("DOMContentLoaded", () => {
-          loadChatConfigOptions();
+          loadChatConfigOptions().then(() => {
+              window.updateSessionDropdownTitles();
+          });
       });
     </script>
     <style>@keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } } #tb-status-dot.pulsing { animation: pulseDot 2s infinite; } .mode-chip-autowipe { border-color: rgba(var(--yellow-rgb),0.5) !important; color: var(--yellow) !important; background: rgba(var(--yellow-rgb),0.1) !important; } .mode-chip-incognito { border-color: rgba(var(--accent2-rgb),0.5) !important; color: var(--accent2) !important; background: rgba(var(--accent2-rgb),0.1) !important; }</style>

@@ -40,12 +40,12 @@ window.unlockAudioContext = function() {
   }
 };
 
-async function tryLoadAudio(bubble, autoplay = true) {
+async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
   // Prefer the persistent audio_id stored on the bubble (survives page refresh)
   const audioId = bubble.dataset?.audioId || null;
-  const url = audioId
+  const url = forceUrl ? forceUrl : (audioId
     ? `/api/audio?id=${encodeURIComponent(audioId)}`
-    : `/api/audio?t=${Date.now()}`;
+    : `/api/audio?t=${Date.now()}`);
   console.log("[Audio] Attempting to load audio from:", url, "autoplay:", autoplay);
   
   // Remove existing audio badges to prevent duplicates

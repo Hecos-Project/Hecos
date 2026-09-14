@@ -19,7 +19,7 @@ ai:
 backend:
   type: hybrid
   cloud:
-    model: gemini/gemini-2.5-flash
+    model: gemini/gemini-2.5-flash-native-audio-preview-12-2025
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -77,12 +77,12 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-3.5-live-translate-preview
-      - gemini-robotics-er-2-streaming-preview
-      - gemini-3.1-flash-live-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-robotics-er-1.6-preview
       - gemini-2.0-flash
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-3.1-flash-live-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.5-live-translate-preview
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -144,23 +144,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - llama-3.3-70b-versatile
-      - compound
       - compound-mini
-      - whisper-large-v3
-      - openai/gpt-oss-20b
-      - groq/compound
-      - canopylabs/orpheus-v1-english
+      - compound
+      - llama-3.3-70b-versatile
       - groq/compound-mini
       - meta-llama/llama-prompt-guard-2-86m
-      - openai/gpt-oss-120b
-      - qwen/qwen3.6-27b
       - canopylabs/orpheus-arabic-saudi
-      - qwen/qwen3.8-27b
-      - openai/gpt-oss-safeguard-20b
-      - whisper-large-v3-turbo
       - meta-llama/llama-prompt-guard-2-22m
+      - qwen/qwen3.8-27b
+      - qwen/qwen3.6-27b
+      - openai/gpt-oss-20b
+      - canopylabs/orpheus-v1-english
+      - openai/gpt-oss-safeguard-20b
+      - openai/gpt-oss-120b
       - allam-2-7b
+      - whisper-large-v3-turbo
+      - whisper-large-v3
+      - groq/compound
 logging:
   level: DEBUG
   destination: console

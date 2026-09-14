@@ -125,10 +125,29 @@ function buildMessageActions(msgEl, role, historyIndex) {
     const listenLabel = t('chat_btn_listen') === 'chat_btn_listen' ? 'Listen' : t('chat_btn_listen');
     listenBtn.innerHTML = `🔊 ${listenLabel}`;
     listenBtn.title = listenLabel;
+    
+    // Capture selected text before the click clears the selection
+    let _capturedSelection = null;
+    listenBtn.addEventListener('pointerdown', (e) => {
+      // Prevent focus steal which clears the selection on most browsers
+      if (e.pointerType === 'mouse') {
+          e.preventDefault(); 
+      }
+      const sel = window.getSelection();
+      if (sel && sel.toString().trim()) {
+        _capturedSelection = sel.toString().trim();
+      } else {
+        _capturedSelection = null;
+      }
+    });
+    
     listenBtn.onclick = async () => {
       if (window.isStreaming) return;
       const bubble = msgEl.querySelector('.msg-bubble');
-      const textToSpeak = bubble.innerText || bubble.textContent;
+      // Use captured selection if available, otherwise speak the full bubble
+      const textToSpeak = _capturedSelection || bubble.innerText || bubble.textContent;
+      _capturedSelection = null; // reset for next click
+      
       if (!textToSpeak || !bubble) return;
       
       const generatingLabel = t('chat_toast_tts_gen') === 'chat_toast_tts_gen' ? 'Generating audio...' : t('chat_toast_tts_gen');
@@ -205,7 +224,8 @@ function buildMessageActions(msgEl, role, historyIndex) {
                       listenBtn.style.opacity = '1';
                       if (typeof window.tryLoadAudio === 'function') {
                           window._lastAiBubble = bubble;
-                          window.tryLoadAudio(bubble);
+                          // Force the player to fetch the newly generated test audio, bypassing any cached audioId
+                          window.tryLoadAudio(bubble, true, `/api/audio?t=${Date.now()}`);
                       }
                   }
               };
