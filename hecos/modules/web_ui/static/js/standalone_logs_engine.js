@@ -198,9 +198,14 @@ function startConnectionMonitor() {
 }
 
 let isReconnecting = false;
+let _offlineCount = 0;
+let _originalTitle = document.title;
+
 function handleDisconnect() {
     if (isReconnecting) return;
     isReconnecting = true;
+    _offlineCount++;
+    document.title = `(${_offlineCount}) Restarting... | ${_originalTitle.replace(/^\(\d+\) Restarting\.\.\. \| /, '')}`;
 
     document.getElementById('connection-lost-banner').style.display = 'block';
     let countdown  = 5;
@@ -219,6 +224,8 @@ function handleDisconnect() {
                 window.location.reload();
             }
         } catch (e) {
+            _offlineCount++;
+            document.title = `(${_offlineCount}) Restarting... | ${_originalTitle.replace(/^\(\d+\) Restarting\.\.\. \| /, '')}`;
             countdown = 5;
             if (timerElem) timerElem.textContent = countdown;
         }

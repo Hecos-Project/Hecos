@@ -5,7 +5,8 @@
 
 window._qcState = {
     sysOptions: null,
-    currentConfig: null
+    currentConfig: null,
+    audioConfig: null
 };
 
 window._qcInitAndShow = async function() {
@@ -16,15 +17,20 @@ window._qcInitAndShow = async function() {
     const statusEl = document.getElementById('qc-sync-status');
     if (statusEl) statusEl.classList.remove('visible');
 
-    // Fetch options and current config in parallel
+    // Fetch options, current config, and audio config in parallel
     try {
-        const [optRes, cfgRes] = await Promise.all([
+        const [optRes, cfgRes, audRes] = await Promise.all([
             fetch('/hecos/options'),
-            fetch('/hecos/config')
+            fetch('/hecos/config'),
+            fetch('/api/audio/config')
         ]);
         
         if (optRes.ok) window._qcState.sysOptions = await optRes.json();
         if (cfgRes.ok) window._qcState.currentConfig = await cfgRes.json();
+        if (audRes.ok) {
+            const audJson = await audRes.json();
+            window._qcState.audioConfig = audJson.config || {};
+        }
         
         _qcPopulateUI();
     } catch(e) {
@@ -38,7 +44,12 @@ function _qcPopulateUI() {
     
     // Backend Type
     const bTypeEl = document.getElementById('qc-backend-type');
-    const activeType = cfg.backend?.type || 'ollama';
+    let activeType = cfg.backend?.type || 'ollama';
+    
+    if (activeType === 'hybrid') {
+        activeType = cfg.backend?.active_model_source || 'cloud';
+    }
+    
     if (bTypeEl) bTypeEl.value = activeType;
     
     _qcUpdateModelSelect(activeType, cfg);
@@ -55,6 +66,24 @@ function _qcPopulateUI() {
         });
         personaEl.value = cfg.ai?.active_personality || '';
     }
+
+    // TTS Engine
+    const audCfg = window._qcState.audioConfig || {};
+    const ttsEngineEl = document.getElementById('qc-tts-engine');
+    if (ttsEngineEl) {
+        ttsEngineEl.value = audCfg.active_engine || 'piper';
+        
+        let activeVoice = null;
+        if (audCfg.active_engine === 'piper') {
+            activeVoice = audCfg.onnx_model ? audCfg.onnx_model.replace('.onnx', '').split(/[\\/]/).pop() : null;
+        } else if (audCfg.active_engine === 'kokoro') {
+            activeVoice = audCfg.kokoro?.voice;
+        } else if (audCfg.active_engine === 'xtts2') {
+            activeVoice = audCfg.xtts?.speaker;
+        }
+        
+        window.qcTTSChanged(activeVoice); // populate voices
+    }
 }
 
 function _qcUpdateModelSelect(backendType, cfg) {
@@ -66,40 +95,7 @@ function _qcUpdateModelSelect(backendType, cfg) {
     let options = [];
     let activeModel = '';
     
-    if (backendType === 'hybrid') {
-        // Combine all local + cloud models, grouped with optgroups
-        const localModels  = sysOpts.ollama_models || [];
-        const cloudModels  = sysOpts.all_cloud || [];
-        
-        if (localModels.length) {
-            const grp = document.createElement('optgroup');
-            grp.label = '🖥 Local (Ollama)';
-            localModels.forEach(m => {
-                const o = document.createElement('option');
-                o.value = `ollama::${m}`;
-                o.textContent = m;
-                grp.appendChild(o);
-            });
-            modelEl.appendChild(grp);
-        }
-        if (cloudModels.length) {
-            const grp = document.createElement('optgroup');
-            grp.label = '☁ Cloud';
-            cloudModels.forEach(m => {
-                const o = document.createElement('option');
-                o.value = `cloud::${m}`;
-                o.textContent = m;
-                grp.appendChild(o);
-            });
-            modelEl.appendChild(grp);
-        }
-        // Try to restore previous selection
-        const prevOllama = cfg?.backend?.ollama?.model;
-        const prevCloud  = cfg?.backend?.cloud?.model;
-        if (prevCloud) modelEl.value = `cloud::${prevCloud}`;
-        else if (prevOllama) modelEl.value = `ollama::${prevOllama}`;
-        return;
-    } else if (backendType === 'ollama') {
+    if (backendType === 'ollama') {
         options = sysOpts.ollama_models || [];
         activeModel = cfg?.backend?.ollama?.model || '';
     } else if (backendType === 'cloud') {
@@ -128,33 +124,105 @@ window.qcBackendChanged = function() {
     window.qcSaveConfig();
 };
 
+window.qcTTSChanged = async function(selectedVoice = null) {
+    const engine = document.getElementById('qc-tts-engine').value;
+    const voiceEl = document.getElementById('qc-tts-voice');
+    if (!voiceEl) return;
+    
+    voiceEl.innerHTML = '';
+    
+    try {
+        const res = await fetch(`/api/audio/voices?engine=${engine}`);
+        if (res.ok) {
+            const voices = await res.json();
+            const voiceList = Array.isArray(voices) ? voices : (voices[engine] || Object.keys(voices));
+            
+            // if it's an object of objects (like Piper json), we need keys
+            const iter = Array.isArray(voiceList) ? voiceList : Object.keys(voiceList);
+            
+            iter.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                
+                let text = v;
+                if (!Array.isArray(voices)) {
+                    if (voices[engine] && typeof voices[engine] === 'object' && !Array.isArray(voices[engine])) {
+                        text = voices[engine][v];
+                    } else if (voices[v] && typeof voices[v] === 'string') {
+                        text = voices[v];
+                    }
+                }
+                
+                opt.textContent = text;
+                voiceEl.appendChild(opt);
+            });
+            if (selectedVoice) {
+                voiceEl.value = selectedVoice;
+            }
+        }
+    } catch(e) {
+        console.error("Failed to fetch TTS voices", e);
+    }
+    window.qcSaveConfig();
+};
+
 window.qcSaveConfig = function() {
     const bType = document.getElementById('qc-backend-type').value;
     const modelRaw = document.getElementById('qc-model').value;
+    const ttsEngine = document.getElementById('qc-tts-engine')?.value;
+    const ttsVoice = document.getElementById('qc-tts-voice')?.value;
     
+    const wasHybrid = window._qcState.currentConfig?.backend?.type === 'hybrid';
+    
+    // 1. Update System Config
     const payload = {
-        backend: { type: bType },
-        ai: { active_personality: document.getElementById('qc-persona').value }
+        backend: { type: wasHybrid ? 'hybrid' : bType },
+        ai: { 
+            active_personality: document.getElementById('qc-persona').value,
+            tts_engine: ttsEngine,
+            tts_voice: ttsVoice
+        }
     };
     
-    if (bType === 'hybrid') {
-        // modelRaw is prefixed: e.g. "ollama::llama3" or "cloud::openai/gpt-4o"
-        const [provider, ...rest] = modelRaw.split('::');
-        const modelName = rest.join('::');
-        if (provider === 'cloud') {
-            payload.backend.cloud = { model: modelName };
-        } else {
-            payload.backend.ollama = { model: modelName };
-        }
-    } else if (bType === 'ollama') {
-        payload.backend.ollama = { model: modelRaw };
-    } else if (bType === 'cloud') {
-        payload.backend.cloud = { model: modelRaw };
-    } else if (bType === 'kobold') {
-        payload.backend.kobold = { model: modelRaw };
+    if (wasHybrid) {
+        payload.backend.active_model_source = bType;
+        if (bType === 'cloud') payload.backend.cloud = { model: modelRaw };
+        else if (bType === 'ollama') payload.backend.ollama = { model: modelRaw };
+        else if (bType === 'kobold') payload.backend.kobold = { model: modelRaw };
+    } else {
+        if (bType === 'ollama') payload.backend.ollama = { model: modelRaw };
+        else if (bType === 'cloud') payload.backend.cloud = { model: modelRaw };
+        else if (bType === 'kobold') payload.backend.kobold = { model: modelRaw };
     }
     
     if (window.qcSaveConfigAPI) {
         window.qcSaveConfigAPI(payload);
+    }
+    
+    // 2. Update Audio Config globally
+    if (ttsEngine && ttsVoice && window._qcState.audioConfig) {
+        const audPayload = { active_engine: ttsEngine };
+        const baseAud = window._qcState.audioConfig;
+        
+        if (ttsEngine === 'piper') {
+            // retain path prefix if any in base config, else just filename
+            const prefix = baseAud.piper_path ? baseAud.piper_path.replace('piper.exe', '') : '';
+            audPayload.onnx_model = prefix + ttsVoice + '.onnx';
+        } else if (ttsEngine === 'kokoro') {
+            audPayload.kokoro = Object.assign({}, baseAud.kokoro || {}, { voice: ttsVoice });
+        } else if (ttsEngine === 'xtts2') {
+            audPayload.xtts = Object.assign({}, baseAud.xtts || {}, { speaker: ttsVoice });
+        }
+        
+        fetch('/api/audio/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(audPayload)
+        }).then(async r => {
+            if(r.ok) {
+                const updated = await r.json();
+                if(updated.config) window._qcState.audioConfig = updated.config;
+            }
+        }).catch(e => console.error("Failed to sync audio config:", e));
     }
 };

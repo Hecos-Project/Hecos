@@ -51,12 +51,37 @@ def ensure_ssl_context(webui_cfg, lan_ip, config_manager, logger=None):
             pass
         return False
 
-    certs_ok = (
+    logger.info("[PKI] Current LAN IP: %s", lan_ip)
+
+    certs_exist = (
         cert_file_abs and key_file_abs
         and os.path.exists(cert_file_abs)
         and os.path.exists(key_file_abs)
-        and _cert_covers_ip(cert_file_abs, lan_ip)
     )
+    ip_covered = certs_exist and _cert_covers_ip(cert_file_abs, lan_ip)
+    certs_ok = certs_exist and ip_covered
+
+    if certs_exist and not ip_covered:
+        logger.warning(
+            "[PKI] Certificate found but does NOT cover current IP %s — "
+            "IP may have changed since last boot. A new certificate will be generated.", lan_ip
+        )
+        logger.warning(
+            "[PKI] ACTION REQUIRED: After restart, your browser will show a 'Not Secure' or "
+            "'Certificate Not Trusted' warning because the certificate has been replaced. "
+            "You must re-download and re-install the Hecos Root CA from: "
+            "https://%s:7070/hecos/ca.crt", lan_ip
+        )
+    elif not certs_exist:
+        logger.warning(
+            "[PKI] Certificate files not found. Generating for %s...", lan_ip
+        )
+        logger.warning(
+            "[PKI] ACTION REQUIRED: After server starts, install the Hecos Root CA in your "
+            "browser/OS to avoid 'Not Secure' warnings: https://%s:7070/hecos/ca.crt", lan_ip
+        )
+    else:
+        logger.info("[PKI] Certificate OK — covers IP %s. HTTPS ready.", lan_ip)
 
     # Auto-generate only when truly missing or IP has changed
     if not certs_ok:
@@ -78,7 +103,16 @@ def ensure_ssl_context(webui_cfg, lan_ip, config_manager, logger=None):
 
             cert_file_abs = c_path
             key_file_abs  = k_path
+            ca_cert_path  = os.path.join(os.path.dirname(c_path), "ca", "rootCA.pem")
             logger.info("[PKI] New certificates saved for %s.", lan_ip)
+            logger.warning(
+                "[PKI] *** BROWSER TRUST ACTION REQUIRED *** "
+                "The SSL certificate has been regenerated for the new IP %s. "
+                "Your browser will show 'Not Secure' until you re-install the Root CA. "
+                "Download it at: https://%s:7070/hecos/ca.crt  "
+                "(or find it locally at: %s)",
+                lan_ip, lan_ip, ca_cert_path
+            )
         except Exception as pki_e:
             logger.error("[PKI] Automation failed: %s", pki_e)
 

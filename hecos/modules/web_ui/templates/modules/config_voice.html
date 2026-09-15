@@ -17,7 +17,22 @@
 
 
   <div class="card">
-    <div class="card-title"><i class="fas fa-volume-up"></i> {{ t('webui_conf_voice_tts_title') }}</div>
+    <div class="card-title">
+      <i class="fas fa-globe"></i> GLOBAL DEFAULTS
+      <span class="badge" style="float:right; font-size:10px; opacity:0.8;">TTS Routing</span>
+    </div>
+    <div class="field">
+      <label>Active TTS Engine</label>
+      <select id="v-active-engine">
+        <option value="piper">Piper (Default - Fast)</option>
+        <option value="kokoro">Kokoro (Balanced)</option>
+        <option value="xtts2">XTTSv2 (High Quality)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-volume-up"></i> Piper Engine (Default)</div>
     <div class="field">
       <label>{{ t('webui_conf_voice_path') }}</label>
       <div style="display:flex; gap:6px; width:100%;">
@@ -59,6 +74,105 @@
       </div>
     </div>
   </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-wave-square"></i> Kokoro Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">Balanced</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+      Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
+      <span id="kokoro-status-badge" style="font-size:11px;"></span>
+    </p>
+    <div class="grid-2">
+      <div class="field">
+        <label>Speed</label>
+        <input type="number" id="v-kokoro-speed" min="0.5" max="3" step="0.05">
+      </div>
+      <div class="field">
+        <label>Default Voice</label>
+        <select id="v-kokoro-voice">
+          <option value="af_heart">Heart (Female, US)</option>
+          <option value="af_alloy">Alloy (Female, US)</option>
+          <option value="af_bella">Bella (Female, US)</option>
+          <option value="af_jessica">Jessica (Female, US)</option>
+          <option value="af_nicole">Nicole (Female, US)</option>
+          <option value="af_sarah">Sarah (Female, US)</option>
+          <option value="af_sky">Sky (Female, US)</option>
+          <option value="am_adam">Adam (Male, US)</option>
+          <option value="am_echo">Echo (Male, US)</option>
+          <option value="am_michael">Michael (Male, US)</option>
+          <option value="bf_emma">Emma (Female, GB)</option>
+          <option value="bf_isabella">Isabella (Female, GB)</option>
+          <option value="bm_george">George (Male, GB)</option>
+          <option value="bm_lewis">Lewis (Male, GB)</option>
+          <option value="if_sara">Sara (Female, IT)</option>
+          <option value="im_nicola">Nicola (Male, IT)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+      <button class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
+        <i class="fas fa-download"></i> Install / Update Kokoro
+      </button>
+      <span id="kokoro-install-status" style="font-size:12px; color:var(--muted);"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-microchip"></i> XTTSv2 Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">High Quality</span></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+      XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
+      <span id="xtts2-status-badge" style="font-size:11px;"></span>
+    </p>
+    <div class="grid-2">
+      <div class="field">
+        <label>Speed</label>
+        <input type="number" id="v-xtts-speed" min="0.5" max="3" step="0.05">
+      </div>
+      <div class="field">
+        <label>Language</label>
+        <select id="v-xtts-lang">
+          <option value="it">Italiano</option>
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="pt">Português</option>
+          <option value="pl">Polski</option>
+          <option value="tr">Türkçe</option>
+          <option value="ru">Русский</option>
+          <option value="nl">Nederlands</option>
+          <option value="cs">Čeština</option>
+          <option value="ar">العربية</option>
+          <option value="zh-cn">中文</option>
+          <option value="ja">日本語</option>
+          <option value="hu">Magyar</option>
+          <option value="ko">한국어</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Default Speaker</label>
+        <select id="v-xtts-speaker">
+          <option value="Claribel Dervla">Claribel Dervla</option>
+          <option value="Daisy Studious">Daisy Studious</option>
+          <option value="Gracie Wise">Gracie Wise</option>
+          <option value="Andrew Chipper">Andrew Chipper</option>
+          <option value="Badr Odhiambo">Badr Odhiambo</option>
+          <option value="Dionisio Schuyler">Dionisio Schuyler</option>
+          <option value="Craig Gutsy">Craig Gutsy</option>
+          <option value="Viktor Menelaos">Viktor Menelaos</option>
+          <option value="Nova Hogarth">Nova Hogarth</option>
+          <option value="Colette Olivier">Colette Olivier</option>
+          <option value="Wulfric Alan">Wulfric Alan</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+      <button class="btn btn-secondary btn-sm" onclick="installTTSEngine('xtts2')">
+        <i class="fas fa-download"></i> Install / Update XTTSv2
+      </button>
+      <span id="xtts2-install-status" style="font-size:12px; color:var(--muted);"></span>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title"><i class="fas fa-volume-up"></i> {{ t('webui_conf_voice_mic_title') }}</div>
     <div class="grid-2">
@@ -102,25 +216,25 @@
 
   <!-- Audio History Card -->
   <div class="card">
-    <div class="card-title"><i class="fas fa-history"></i> Storico Audio TTS</div>
+    <div class="card-title"><i class="fas fa-history"></i> TTS Audio History</div>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
-      Hecos salva ogni risposta vocale come file WAV in <code>media/audio/history/</code>, in modo da poterla riascoltare dalla chat anche dopo un riavvio.
-      Imposta quanti file tenere prima che i più vecchi vengano eliminati automaticamente.
+      Hecos saves every vocal response as a WAV file in <code>media/audio/history/</code>, so you can listen to it again from the chat even after a restart.
+      Set how many files to keep before the oldest ones are automatically deleted.
     </p>
     <div class="grid-2">
       <div class="field">
-        <label>File audio massimi da conservare</label>
+        <label>Maximum audio files to keep</label>
         <input type="number" id="v-tts-history-max" min="10" max="1000" step="10" style="width:100%;">
-        <p style="font-size:11px; color:var(--muted); margin-top:4px;">Default: 100 — ogni file dura circa 10-30 secondi.</p>
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">Default: 100 — each file lasts about 10-30 seconds.</p>
       </div>
       <div class="field" style="display:flex; flex-direction:column; justify-content:flex-end;">
-        <label style="opacity:0;">Azioni</label>
+        <label style="opacity:0;">Actions</label>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-secondary btn-sm" onclick="refreshAudioHistoryCount()">
-            <i class="fas fa-sync-alt"></i> Aggiorna conteggio
+            <i class="fas fa-sync-alt"></i> Refresh count
           </button>
           <button type="button" class="btn btn-danger btn-sm" onclick="clearAudioHistory()">
-            <i class="fas fa-trash-alt"></i> Svuota storico
+            <i class="fas fa-trash-alt"></i> Clear history
           </button>
         </div>
         <span id="v-history-count" style="font-size:11px; color:var(--muted); margin-top:8px;"></span>

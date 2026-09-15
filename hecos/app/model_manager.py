@@ -250,12 +250,22 @@ class ModelManager:
             backend_type = 'ollama'
             
         if backend_type == 'hybrid':
-            # In hybrid mode, prefer cloud model if set, otherwise fallback to ollama
-            cloud_m = config_dict.get('backend', {}).get('cloud', {}).get('model', '')
+            # In hybrid mode, use active_model_source to know which branch the user last selected.
+            # This avoids cloud.model always winning just because it's non-empty.
+            source = config_dict.get('backend', {}).get('active_model_source', 'cloud')
+            cloud_m  = config_dict.get('backend', {}).get('cloud',  {}).get('model', '')
             ollama_m = config_dict.get('backend', {}).get('ollama', {}).get('model', '')
-            model = cloud_m or ollama_m or 'N/D'
+            if source == 'ollama' and ollama_m:
+                model = ollama_m
+                backend_type = 'ollama'
+            elif cloud_m:
+                model = cloud_m
+                backend_type = 'cloud'
+            else:
+                model = ollama_m or 'N/D'
+                backend_type = 'ollama'
             # Also resolve the effective backend type for the client based on which model we picked
-            backend_type = 'cloud' if cloud_m else 'ollama'
+            # (already set above)
         else:
             model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
         

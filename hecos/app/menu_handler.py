@@ -157,6 +157,7 @@ class MenuHandler:
             time.sleep(0.5)
 
         elif key == "F9": # System Reboot
+            logger.info("[Tray/Keyboard] User requested system reboot from tray dashboard.")
             print(f"\n\033[91m[SYSTEM] {translator.t('rebooting_msg')}\033[0m")
             logger.close_all_consoles()
             time.sleep(1)

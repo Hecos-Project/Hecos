@@ -95,8 +95,7 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/api/audio/toggle/ptt", methods=["POST"])
     def toggle_ptt():
         """Toggle push_to_talk flag.
-        PTT can only be ENABLED if listening_status (continuous MIC) is also ON.
-        PTT is a sub-mode of mic input, not an independent feature."""
+        PTT can only be ENABLED if listening_status (continuous MIC) is also ON."""
         try:
             sm = _sm()
             from hecos.core.audio.device_manager import get_audio_config, _save_audio_config
@@ -139,9 +138,10 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             try:
                 data = request.get_json(force=True) or {}
                 cfg = get_audio_config()
-                for k in ["voice_status", "listening_status", "piper_path", "onnx_model",
-                          "speed", "noise_scale", "noise_w", "sentence_silence",
-                          "energy_threshold", "silence_timeout", "phrase_limit"]:
+                for k in ["active_engine", "kokoro", "xtts", "voice_status", "listening_status",
+                          "piper_path", "onnx_model", "speed", "noise_scale", "noise_w",
+                          "sentence_silence", "piper_timeout", "energy_threshold",
+                          "silence_timeout", "phrase_limit", "tts_history_max_files"]:
                     if k in data:
                         cfg[k] = data[k]
 
@@ -169,6 +169,46 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             except Exception as exc:
                 logger.error(f"[WebUI] manage_audio_config POST error: {exc}")
                 return jsonify({"ok": False, "error": str(exc)}), 500
+
+    # ── Audio Test ────────────────────────────────────────────────────────────────
+
+    @app.route("/api/audio/test", methods=["POST"])
+    def audio_test():
+        """Test TTS generation (web or console mode)."""
+        try:
+            data = request.get_json(force=True) or {}
+            text = data.get("text", "Hecos TTS test.")
+            mode = data.get("mode", "web")
+
+            from hecos.core.audio.tts_manager import TTSManager
+            import uuid, os
+            from hecos.core.constants import AUDIO_DIR
+
+            if mode == "console":
+                TTSManager.speak(text)
+                return jsonify({"ok": True, "msg": "Playing on server speakers."})
+            else:
+                audio_id = uuid.uuid4().hex
+                out = os.path.join(AUDIO_DIR, "history", f"{audio_id}.wav")
+                os.makedirs(os.path.dirname(out), exist_ok=True)
+                success = TTSManager.generate_wav(text, out)
+                if success:
+                    return jsonify({"ok": True, "url": f"/api/audio/history/{audio_id}", "audio_id": audio_id})
+                else:
+                    return jsonify({"ok": False, "error": "TTS generation failed."})
+        except Exception as e:
+            logger.error(f"[WebUI] audio_test error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/api/audio/stop", methods=["POST"])
+    def audio_stop():
+        """Stop any active TTS playback."""
+        try:
+            from hecos.core.audio.tts_manager import TTSManager
+            TTSManager.stop()
+            return jsonify({"ok": True})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     # ── Audio History Management ──────────────────────────────────────────────────
 
@@ -206,3 +246,64 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             logger.error(f"[WebUI] audio_history_clear error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    # ── TTS Voices API ────────────────────────────────────────────────────────────
+
+    @app.route('/api/audio/voices', methods=['GET'])
+    def get_audio_voices():
+        """Returns available voices for all or a specific TTS engine."""
+        engine = request.args.get('engine', 'all')
+        try:
+            from hecos.core.audio.tts_manager import TTSManager
+            if engine == 'all':
+                return jsonify({
+                    "piper": TTSManager.get_available_voices("piper"),
+                    "kokoro": TTSManager.get_available_voices("kokoro"),
+                    "xtts2": TTSManager.get_available_voices("xtts2")
+                })
+            else:
+                return jsonify(TTSManager.get_available_voices(engine))
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # ── On-Demand TTS Engine Installer ───────────────────────────────────────────
+
+    @app.route('/api/audio/install-engine', methods=['POST'])
+    def install_tts_engine():
+        """On-demand installation of a TTS engine (kokoro or xtts2)."""
+        data = request.get_json(force=True) or {}
+        engine = data.get("engine", "").lower()
+        if engine not in ("kokoro", "xtts2"):
+            return jsonify({"ok": False, "error": f"Unknown engine: {engine}"}), 400
+        try:
+            from hecos.setup.engine import download_kokoro_engine, download_xtts_engine
+            import threading
+
+            def _install():
+                if engine == "kokoro":
+                    download_kokoro_engine()
+                else:
+                    download_xtts_engine()
+
+            t = threading.Thread(target=_install, daemon=True)
+            t.start()
+            t.join(timeout=300)  # Max 5 min wait (XTTS is large)
+
+            if t.is_alive():
+                return jsonify({"ok": False, "error": "Installation timed out after 5 minutes. It may still be running in the background."}), 500
+
+            # Verify it's now importable
+            if engine == "kokoro":
+                from hecos.core.audio.tts.kokoro_engine import KokoroEngine
+                ok = KokoroEngine.is_available()
+            else:
+                from hecos.core.audio.tts.xtts_engine import XttsEngine
+                ok = XttsEngine.is_available()
+
+            if ok:
+                logger.info(f"[WebUI] TTS engine '{engine}' installed successfully.")
+                return jsonify({"ok": True, "engine": engine})
+            else:
+                return jsonify({"ok": False, "error": "Installation completed but engine is still not importable. Check logs."})
+        except Exception as e:
+            logger.error(f"[WebUI] install_tts_engine error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500

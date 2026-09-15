@@ -6,6 +6,7 @@ DESCRIPTION: Unified client for text generation via LiteLLM with re-routed logs.
 import litellm
 import os
 import json
+import time
 import logging
 # Importiamo correttamente le funzioni dal modulo logger
 from hecos.core.logging import logger as log_mod
@@ -131,17 +132,25 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
     }
     
     # Aggiungi i tools se presenti e se il backend lo supporta
-    # CRITICAL FIX: Do NOT send `tools` natively to Ollama. Many local/uncensored models 
-    # (like Qwen3.5) break or return empty strings when Ollama forces its native tool parser.
-    # Hecos handles Ollama tools robustly via JSON prompt engineering.
     if tools and backend_type in ["cloud", "kobold"]:
         params["tools"] = tools
-        
-    if backend_type == "ollama" and tools and messages and messages[0].get("role") == "system":
-        tool_hint = "\n### AVAILABLE TOOLS ###\n"
-        tool_hint += "You have function calling available. Call tools by returning a proper JSON function call, NOT by writing JSON in your response text.\n"
-        tool_hint += "Tools: " + ", ".join(t.get("function", {}).get("name", "unknown") for t in tools) + "\n"
-        messages[0]["content"] += tool_hint
+    
+    # Per Ollama: passa i tool nativamente (supportati da Ollama >= 0.1.9)
+    # E inietta anche uno schema completo nel system prompt come fallback
+    if backend_type == "ollama" and tools:
+        params["tools"] = tools  # FIX #1: passa i tool alla chiamata diretta Ollama
+        if messages and messages[0].get("role") == "system":
+            tool_hint = "\n### AVAILABLE TOOLS ###\n"
+            tool_hint += "You have native function calling. To use a tool, output ONLY a JSON object with this format and nothing else:\n"
+            tool_hint += '{"tool_calls": [{"function": {"name": "TOOL__method", "arguments": {"param": "value"}}}]}\n'
+            tool_hint += "Available tools with full schemas:\n"
+            for t in tools:
+                fn = t.get("function", {})
+                tool_hint += f"  - {fn.get('name', 'unknown')}: {fn.get('description', '')}\n"
+                params_schema = fn.get("parameters", {}).get("properties", {})
+                if params_schema:
+                    tool_hint += f"    Parameters: {json.dumps(params_schema)}\n"
+            messages[0]["content"] += tool_hint
 
     # 4. Configurazione Provider
     if backend_type == "ollama":
@@ -328,6 +337,11 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                     "top_p": params.get("top_p", 0.9),
                     "stream": False,
                 }
+                # FIX #1: Forward tools to Ollama native tool calling (supported since Ollama 0.1.9)
+                if params.get("tools"):
+                    _ollama_body["tools"] = params["tools"]
+                    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] Sending {len(params['tools'])} tools to Ollama")
+                
                 # Forward Ollama-specific options (num_gpu, num_ctx, etc.)
                 _extra_body = params.get("extra_body")
                 if _extra_body and "options" in _extra_body:
@@ -357,16 +371,40 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                 except Exception:
                     pass
                 
-                # Check for tool calls in the Ollama response
+                # FIX #2: Handle tool_calls from Ollama response directly (no second LiteLLM call)
                 _ollama_tool_calls = _ollama_msg.get("tool_calls")
                 if _ollama_tool_calls:
-                    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] Tool calls detected: {_ollama_tool_calls}")
-                    # Fall through to LiteLLM path for proper tool call object parsing
-                    response = litellm.completion(**params)
-                    choice = response.choices[0]
-                    msg = choice.message
-                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
-                        return msg
+                    zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] Tool calls detected ({len(_ollama_tool_calls)}): {_ollama_tool_calls}")
+                    # Build a synthetic message object that tool_dispatcher can parse
+                    class _SyntheticMsg:
+                        def __init__(self, tool_calls_raw, content):
+                            self.role = "assistant"
+                            self.content = content or ""
+                            self.tool_calls = []
+                            for tc in tool_calls_raw:
+                                class _Call:
+                                    pass
+                                c = _Call()
+                                c.id = tc.get("id", f"call_{int(time.time())}")
+                                class _Fn:
+                                    pass
+                                fn = _Fn()
+                                fn.name = tc.get("function", {}).get("name", "")
+                                raw_args = tc.get("function", {}).get("arguments", {})
+                                fn.arguments = json.dumps(raw_args) if isinstance(raw_args, dict) else (raw_args or "{}")
+                                c.function = fn
+                                self.tool_calls.append(c)
+                        def model_dump(self):
+                            return {
+                                "role": self.role,
+                                "content": self.content,
+                                "tool_calls": [
+                                    {"id": c.id, "type": "function",
+                                     "function": {"name": c.function.name, "arguments": c.function.arguments}}
+                                    for c in self.tool_calls
+                                ]
+                            }
+                    return _SyntheticMsg(_ollama_tool_calls, _ollama_content)
                 
                 zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] content={len(_ollama_content)} chars | reasoning={len(_ollama_reasoning)} chars")
                 

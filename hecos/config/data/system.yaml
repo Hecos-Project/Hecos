@@ -17,9 +17,9 @@ ai:
     \    your next response with the word: ''SYNCHRONIZED"
   avatar_size: medium
 backend:
-  type: hybrid
+  type: ollama
   cloud:
-    model: gemini/gemini-2.5-flash-native-audio-preview-12-2025
+    model: gemini/gemini-2.5-flash
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -30,7 +30,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: srchmnmichael/qwen3.5-9B-uncensored:latest
+    model: sorc/qwen3.5-instruct-heretic:9b
     available_models:
       '1': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
       '2': qwen3.5:latest
@@ -77,12 +77,13 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-2.0-flash
-      - gemini-robotics-er-1.6-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-3.1-flash-live-preview
-      - gemini-robotics-er-2-streaming-preview
       - gemini-3.5-live-translate-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.1-flash-live-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.0-flash
+      - gemini-2.5-flash-native-audio-preview-09-2025
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -120,6 +121,7 @@ llm:
       - gemini-robotics-er-2-preview
       - gemini-2.5-computer-use-preview-10-2025
       - antigravity-preview-05-2026
+      - antigravity-preview-09-2026
       - deep-research-max-preview-04-2026
       - deep-research-preview-04-2026
       - deep-research-pro-preview-12-2025
@@ -132,7 +134,6 @@ llm:
       - veo-3.1-lite-generate-preview
       - gemini-3.5-transcribe-live
       - gemini-2.5-flash-native-audio-latest
-      - gemini-2.5-flash-native-audio-preview-09-2025
     openai:
       api_key: ''
       models:
@@ -144,23 +145,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - compound-mini
-      - compound
+      - qwen/qwen3.6-27b
       - llama-3.3-70b-versatile
+      - compound
+      - compound-mini
+      - groq/compound
       - openai/gpt-oss-20b
-      - whisper-large-v3
+      - meta-llama/llama-prompt-guard-2-22m
       - openai/gpt-oss-120b
-      - whisper-large-v3-turbo
+      - canopylabs/orpheus-v1-english
+      - meta-llama/llama-prompt-guard-2-86m
       - canopylabs/orpheus-arabic-saudi
       - qwen/qwen3.8-27b
-      - canopylabs/orpheus-v1-english
-      - allam-2-7b
-      - openai/gpt-oss-safeguard-20b
       - groq/compound-mini
-      - meta-llama/llama-prompt-guard-2-22m
-      - qwen/qwen3.6-27b
-      - meta-llama/llama-prompt-guard-2-86m
-      - groq/compound
+      - openai/gpt-oss-safeguard-20b
+      - allam-2-7b
+      - whisper-large-v3-turbo
+      - whisper-large-v3
 logging:
   level: DEBUG
   destination: console

@@ -14,9 +14,21 @@ class PttSources(BaseModel):
     webhook:          bool = False   # HTTP /api/remote-triggers/ptt/*
     custom_key:       bool = False   # Arbitrary key defined by custom_ptt_key
 
+class KokoroConfig(BaseModel):
+    speed: float = 1.0
+    voice: str = "af_heart"   # Default kokoro voice ID
+
+class XttsConfig(BaseModel):
+    speed: float = 1.0
+    language: str = "it"
+    speaker: str = "Claribel Dervla"  # Default XTTS speaker name
+
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""
 
+    # --- TTS Engine Routing ---
+    active_engine: str = "piper"  # 'piper', 'kokoro', 'xtts2'
+    
     # --- TTS (Piper) ---
     voice_status: bool = True
     piper_path: str = "C:/piper/piper.exe"
@@ -26,6 +38,12 @@ class AudioConfig(BaseModel):
     noise_w: float = 0.9
     sentence_silence: float = 0.1
     piper_timeout: int = 180
+
+    # --- TTS (Kokoro) ---
+    kokoro: KokoroConfig = KokoroConfig()
+    
+    # --- TTS (XTTS2) ---
+    xtts: XttsConfig = XttsConfig()
 
     # --- STT / Listening ---
     listening_status: bool = False

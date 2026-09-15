@@ -23,7 +23,7 @@ Package types and their default install destinations:
 from __future__ import annotations
 
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ── Config Panel Descriptor ─────────────────────────────────────────────────
@@ -42,12 +42,33 @@ class ConfigPanelDescriptor(BaseModel):
     )
     js_file: Optional[str] = Field(
         None,
-        description="Path inside the zip to the JS file, e.g. 'web_ui/static/js/myplugin_panel.js'"
+        description="Path inside the zip to the JS file (legacy, single-file). Use js_files for multi-module panels."
+    )
+    js_files: Optional[List[str]] = Field(
+        None,
+        description=(
+            "Ordered list of JS file paths inside the zip. "
+            "Loaded sequentially by the Central Hub. "
+            "Takes priority over js_file when present."
+        )
     )
     css_file: Optional[str] = Field(
         None,
         description="Optional path to a CSS file inside the zip"
     )
+
+    @model_validator(mode="after")
+    def _normalise_js_files(self) -> "ConfigPanelDescriptor":
+        """
+        Backward-compat normalisation:
+        - If js_files is not set but js_file is, wrap js_file in a list.
+        - If both are set, js_files takes priority (js_file is ignored).
+        - Consumers should always read js_files; js_file is kept for legacy.
+        """
+        if not self.js_files:
+            if self.js_file:
+                self.js_files = [self.js_file]
+        return self
     
     category: Optional[str] = Field(
         "CONNETTIVITÀ",
