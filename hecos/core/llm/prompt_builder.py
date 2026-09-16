@@ -328,8 +328,12 @@ class PromptBuilder:
         effective_backend_type = backend_config.get("backend_type", "cloud") if backend_config else "cloud"
         if effective_backend_type in ("ollama", "kobold", "local"):
             local_model_rules = (
-                "3. TOOL CALLING: You have access to tools (functions). If you need to perform an action, use the correct function_call format. Do NOT write out the JSON tool call within your conversational response text.\n"
-                "4. REASONING: If you need to think or plan your actions, use <think> tags. Do NOT output your thought process as part of the conversational response text.\n"
+                "3. TOOL CALLING (CRITICAL): You have access to tools via native function calling. "
+                "When the user requests an action (generate image, take photo, play music, search web, etc.), "
+                "you MUST invoke the corresponding tool. NEVER just describe or narrate the action in text. "
+                "If you write 'here is your photo' without calling generate_image, you have FAILED.\n"
+                "4. REASONING: If you need to think or plan your actions, use <think> tags. "
+                "Do NOT output your thought process as part of the conversational response text.\n"
             )
 
         return {

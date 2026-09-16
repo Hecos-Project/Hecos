@@ -136,20 +136,20 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         params["tools"] = tools
     
     # Per Ollama: passa i tool nativamente (supportati da Ollama >= 0.1.9)
-    # E inietta anche uno schema completo nel system prompt come fallback
+    # Inietta istruzioni IMPERATIVE nel system prompt per forzare il tool calling
     if backend_type == "ollama" and tools:
-        params["tools"] = tools  # FIX #1: passa i tool alla chiamata diretta Ollama
+        params["tools"] = tools
         if messages and messages[0].get("role") == "system":
-            tool_hint = "\n### AVAILABLE TOOLS ###\n"
-            tool_hint += "You have native function calling. To use a tool, output ONLY a JSON object with this format and nothing else:\n"
-            tool_hint += '{"tool_calls": [{"function": {"name": "TOOL__method", "arguments": {"param": "value"}}}]}\n'
-            tool_hint += "Available tools with full schemas:\n"
+            tool_hint = "\n### CRITICAL: TOOL CALLING RULES ###\n"
+            tool_hint += "You MUST use function calls to perform actions. NEVER describe or simulate performing an action in text.\n"
+            tool_hint += "WRONG: 'Here is the photo I generated for you...' (NO tool was called!)\n"
+            tool_hint += "WRONG: 'Ecco la foto che ho generato...' (NO tool was called!)\n"
+            tool_hint += "RIGHT: Call the appropriate tool function with the correct parameters.\n\n"
+            tool_hint += "If the user asks you to generate an image, take a photo, search the web, play music, or perform ANY action that has a matching tool, you MUST invoke that tool via function calling. Do NOT narrate the action in words.\n\n"
+            tool_hint += "Available tools:\n"
             for t in tools:
                 fn = t.get("function", {})
                 tool_hint += f"  - {fn.get('name', 'unknown')}: {fn.get('description', '')}\n"
-                params_schema = fn.get("parameters", {}).get("properties", {})
-                if params_schema:
-                    tool_hint += f"    Parameters: {json.dumps(params_schema)}\n"
             messages[0]["content"] += tool_hint
 
     # 4. Configurazione Provider
@@ -405,6 +405,67 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                                 ]
                             }
                     return _SyntheticMsg(_ollama_tool_calls, _ollama_content)
+                
+                # ── FALLBACK A: Intercetta tool_calls JSON scritti nel testo ──
+                if not _ollama_tool_calls and _ollama_content:
+                    import re as _re_tc
+                    _tc_match = _re_tc.search(r'\{[^{}]*"tool_calls"\s*:\s*\[.*?\]\s*\}', _ollama_content, _re_tc.DOTALL)
+                    if _tc_match:
+                        try:
+                            _parsed_tc = json.loads(_tc_match.group())
+                            if _parsed_tc.get("tool_calls"):
+                                zlog_info("LiteLLM", "[OLLAMA-DIRECT] Recovered tool_calls from text output (fallback JSON parser)")
+                                return _SyntheticMsg(_parsed_tc["tool_calls"], "")
+                        except json.JSONDecodeError:
+                            pass
+                
+                # ── FALLBACK B: Retry con reinforcement se il modello aveva tools ma non li ha usati ──
+                if not _ollama_tool_calls and _ollama_content and params.get("tools") and not params.get("_tool_retry_done"):
+                    # Il modello ha risposto con testo invece di chiamare un tool.
+                    # Facciamo UN solo retry con un prompt di rinforzo.
+                    params["_tool_retry_done"] = True  # Evita loop infiniti
+                    zlog_info("LiteLLM", f"[OLLAMA-RETRY] Model responded with text instead of tool call. Attempting reinforcement retry...")
+                    
+                    _retry_messages = list(_ollama_body["messages"])  # Copia
+                    _retry_messages.append({"role": "assistant", "content": _ollama_content})
+                    _retry_messages.append({
+                        "role": "user",
+                        "content": (
+                            "You did NOT call any tool. Your previous response was just text. "
+                            "The user's request REQUIRES a tool call. "
+                            "Please use the appropriate function call NOW. Do not respond with text."
+                        )
+                    })
+                    
+                    _retry_body = dict(_ollama_body)
+                    _retry_body["messages"] = _retry_messages
+                    
+                    try:
+                        _retry_resp = _requests.post(_ollama_url, json=_retry_body, timeout=params.get("timeout", 300))
+                        _retry_resp.raise_for_status()
+                        _retry_data = _retry_resp.json()
+                        _retry_msg = _retry_data.get("choices", [{}])[0].get("message", {})
+                        _retry_tool_calls = _retry_msg.get("tool_calls")
+                        
+                        if _retry_tool_calls:
+                            zlog_info("LiteLLM", f"[OLLAMA-RETRY] SUCCESS! Tool call recovered on retry ({len(_retry_tool_calls)} calls)")
+                            return _SyntheticMsg(_retry_tool_calls, _retry_msg.get("content", ""))
+                        else:
+                            # Anche il retry ha fallito — controlla JSON nel testo del retry
+                            _retry_content = (_retry_msg.get("content") or "").strip()
+                            if _retry_content:
+                                _tc_match2 = _re_tc.search(r'\{[^{}]*"tool_calls"\s*:\s*\[.*?\]\s*\}', _retry_content, _re_tc.DOTALL)
+                                if _tc_match2:
+                                    try:
+                                        _parsed_tc2 = json.loads(_tc_match2.group())
+                                        if _parsed_tc2.get("tool_calls"):
+                                            zlog_info("LiteLLM", "[OLLAMA-RETRY] Recovered tool_calls from retry text (fallback JSON parser)")
+                                            return _SyntheticMsg(_parsed_tc2["tool_calls"], "")
+                                    except json.JSONDecodeError:
+                                        pass
+                            zlog_info("LiteLLM", "[OLLAMA-RETRY] Retry also failed to produce tool call. Returning original response.")
+                    except Exception as _retry_err:
+                        zlog_error(f"LiteLLM: [OLLAMA-RETRY] Retry failed with error: {_retry_err}")
                 
                 zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] content={len(_ollama_content)} chars | reasoning={len(_ollama_reasoning)} chars")
                 

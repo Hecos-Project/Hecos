@@ -13,6 +13,12 @@ window.populateExecutorUI = function() {
     setVal('executor-shell-timeout',  p.shell_timeout         ?? 15);
     setVal('executor-max-read-lines', p.max_read_lines        ?? 200);
     setVal('executor-workspace-dir',  p.workspace_dir         ?? 'workspace/sandbox');
+    
+    const paths = p.important_paths || {};
+    if (document.getElementById('executor-path-userprofile')) document.getElementById('executor-path-userprofile').value = paths.user_profile || 'C:\\Hecos\\hecos\\media';
+    if (document.getElementById('executor-path-downloads')) document.getElementById('executor-path-downloads').value = paths.downloads || 'C:\\Hecos\\hecos\\media\\downloads';
+    if (document.getElementById('executor-path-projects')) document.getElementById('executor-path-projects').value = paths.projects || 'C:\\Hecos\\hecos\\media\\workspace';
+    if (document.getElementById('executor-path-generated')) document.getElementById('executor-path-generated').value = paths.generated_files || 'C:\\Hecos\\hecos\\media\\documents';
 };
 
 window.populateAutomationUI = function() {

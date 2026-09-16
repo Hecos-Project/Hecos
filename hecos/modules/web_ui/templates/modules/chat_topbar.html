@@ -71,7 +71,37 @@
                   data.models.forEach(m => {
                       const opt = document.createElement('option');
                       opt.value = m.id;
-                      opt.textContent = m.type === 'cloud' ? '☁️ ' + m.name : '🖥️ ' + m.name;
+                      let prefix = m.type === 'cloud' ? '☁️ ' : '🖥️ ';
+                      let suffix = '';
+                      let sizeTag = '';
+                      if (m.parameter_size || m.size_bytes) {
+                          sizeTag = ' [';
+                          let parts = [];
+                          if (m.parameter_size) {
+                              let p = m.parameter_size;
+                              if (m.quantization_level) p += ' ' + m.quantization_level;
+                              parts.push(p);
+                          }
+                          if (m.size_bytes) {
+                              let gb = (m.size_bytes / (1024*1024*1024)).toFixed(1);
+                              parts.push(gb + 'GB');
+                          }
+                          sizeTag += parts.join(' | ') + ']';
+                      }
+                      let tooltipText = m.name + sizeTag;
+                      
+                      if (m.capabilities && m.capabilities.length > 0) {
+                          const iconMap = { 'tools': '⚙️', 'vision': '👁️', 'thinking': '💭' };
+                          const descMap = { 'tools': 'Tools/Function Calling', 'vision': 'Vision/Multimodal', 'thinking': 'Thinking/Reasoning' };
+                          
+                          const icons = m.capabilities.map(c => iconMap[c]).filter(Boolean).join('');
+                          if (icons) suffix = ' ' + icons;
+                          
+                          const descs = m.capabilities.map(c => descMap[c]).filter(Boolean).join(', ');
+                          if (descs) tooltipText += '\nCapabilities: ' + descs;
+                      }
+                      opt.textContent = prefix + m.name + sizeTag + suffix;
+                      opt.title = tooltipText; // Mostrato come tooltip nativo dal browser al mouse over
                       mSel.appendChild(opt);
                   });
                   
