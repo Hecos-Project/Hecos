@@ -68,13 +68,13 @@ function buildAudioPayload() {
     return {
         active_engine:    getV('v-active-engine', v.active_engine || 'piper'),
         kokoro:           { 
-            speed: parseFloat(getV('v-kokoro-speed', 1.0)),
-            voice: getV('v-kokoro-voice', 'af_heart')
+            speed: parseFloat(getV('v-kokoro-speed', v.kokoro?.speed ?? 1.0)),
+            voice: getV('v-kokoro-voice', v.kokoro?.voice || 'af_heart')
         },
         xtts:             { 
-            speed: parseFloat(getV('v-xtts-speed', 1.0)), 
-            language: getV('v-xtts-lang', 'it'),
-            speaker: getV('v-xtts-speaker', 'Claribel Dervla')
+            speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)), 
+            language: getV('v-xtts-lang', v.xtts?.language || 'it'),
+            speaker: getV('v-xtts-speaker', v.xtts?.speaker || 'Claribel Dervla')
         },
         listening_status: getC('sys-mic-status', v.listening_status ?? false),
         voice_status:     getC('sys-voice-status', v.voice_status ?? false),

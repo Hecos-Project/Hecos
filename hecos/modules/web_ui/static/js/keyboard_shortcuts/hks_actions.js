@@ -466,6 +466,23 @@
                         return;
                     }
                 }
+
+                // Try to close Chat Image Lightbox
+                const lightbox = document.getElementById('img-lightbox');
+                if (lightbox && lightbox.classList.contains('open')) {
+                    lightbox.classList.remove('open');
+                    return;
+                }
+
+                // Try to close Chat Image Gallery
+                const gallery = document.getElementById('hg-gallery-modal');
+                if (gallery && gallery.classList.contains('open')) {
+                    gallery.classList.remove('open');
+                    const vid = document.getElementById('hg-gallery-vid');
+                    if (vid) vid.pause();
+                    return;
+                }
+
                 // Click any visible close button
                 const closeBtn = document.querySelector(
                     '.modal.active .btn-close, .overlay.active .close-btn, ' +

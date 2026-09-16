@@ -1,0 +1,11 @@
+{
+    "tag": "MOTOKO_KUSANAGI",
+    "name": "Motoko Kusanagi",
+    "version": "1.0.0",
+    "description": "Persona pack: Motoko Kusanagi",
+    "lazy_load": false,
+    "is_class_based": false,
+    "commands": {},
+    "tool_schema": [],
+    "slash_commands": []
+}

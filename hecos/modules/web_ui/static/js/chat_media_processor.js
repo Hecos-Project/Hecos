@@ -94,7 +94,7 @@ window.processAiMedia = function(html) {
             </video>
             <div class="chat-video-card-hint" style="margin-top:4px;">
               <i class="fas fa-info-circle"></i>
-              Se il video non parte, usa <strong>Apri con VLC</strong> oppure <strong>Scarica</strong>.
+              Se il video non parte, usa <strong>Apri con VLC</strong> oppure <strong>Download</strong>.
             </div>
           </div>
           <div class="chat-video-card-actions">
@@ -110,7 +110,7 @@ window.processAiMedia = function(html) {
               <i class="fas fa-external-link-alt"></i> Apri con VLC
             </button>
             <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
-              <i class="fas fa-download"></i> Scarica
+              <i class="fas fa-download"></i> Download
             </a>
           </div>
         `;
@@ -161,7 +161,7 @@ window.processAiMedia = function(html) {
              onclick="if(window.openLightbox) window.openLightbox('${safeSrc}')"
              ondblclick="if(window.openChatGallery) window.openChatGallery('${safeSrc}'); return false;">
         <div class="chat-img-overlay">
-          <button class="img-action-btn" onclick="downloadChatImage('${safeSrc}','${alt}')">⬇ Scarica</button>
+          <button class="img-action-btn" onclick="downloadChatImage('${safeSrc}','${alt}')">⬇ Download</button>
           <button class="img-action-btn" onclick="openLightbox('${safeSrc}')">🔍 Zoom</button>
           <button class="img-action-btn" onclick="openChatGallery('${safeSrc}')">🖼 Gallery</button>
           <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>
@@ -198,7 +198,7 @@ window.processAiMedia = function(html) {
        onclick="if(window.openLightbox) window.openLightbox('${apiUrl}')"
        ondblclick="if(window.openChatGallery) window.openChatGallery('${apiUrl}'); return false;">
   <div class="chat-img-overlay">
-    <button class="img-action-btn" onclick="downloadChatImage('${apiUrl}','${fileName}')">⬇ Scarica</button>
+    <button class="img-action-btn" onclick="downloadChatImage('${apiUrl}','${fileName}')">⬇ Download</button>
     <button class="img-action-btn" onclick="openLightbox('${apiUrl}')">🔍 Zoom</button>
     <button class="img-action-btn" onclick="openChatGallery('${apiUrl}')">🖼 Gallery</button>
     <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>

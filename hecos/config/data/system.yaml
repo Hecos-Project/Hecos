@@ -1,9 +1,12 @@
 ai:
-  active_personality: Urania_9800
+  active_personality: jun_my_little_princess
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
-  save_special_instructions: false
+    '3': claudia
+    '4': jun_my_little_princess
+    '5': motoko_kusanagi
+  save_special_instructions: true
   special_instructions: ''
   enable_safety_instructions: true
   safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
@@ -30,7 +33,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: sorc/qwen3.5-instruct-heretic:9b
+    model: huihui_ai/qwen3.5-abliterated:9b
     available_models:
       '1': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
       '2': qwen3.5:latest
@@ -150,18 +153,18 @@ llm:
       - compound
       - compound-mini
       - groq/compound
-      - openai/gpt-oss-20b
-      - meta-llama/llama-prompt-guard-2-22m
-      - openai/gpt-oss-120b
-      - canopylabs/orpheus-v1-english
-      - meta-llama/llama-prompt-guard-2-86m
-      - canopylabs/orpheus-arabic-saudi
-      - qwen/qwen3.8-27b
-      - groq/compound-mini
       - openai/gpt-oss-safeguard-20b
-      - allam-2-7b
-      - whisper-large-v3-turbo
+      - canopylabs/orpheus-v1-english
       - whisper-large-v3
+      - groq/compound-mini
+      - openai/gpt-oss-20b
+      - canopylabs/orpheus-arabic-saudi
+      - openai/gpt-oss-120b
+      - meta-llama/llama-prompt-guard-2-22m
+      - meta-llama/llama-prompt-guard-2-86m
+      - whisper-large-v3-turbo
+      - qwen/qwen3.8-27b
+      - allam-2-7b
 logging:
   level: DEBUG
   destination: console

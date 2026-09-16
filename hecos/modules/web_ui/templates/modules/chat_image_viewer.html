@@ -14,10 +14,12 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
   cursor: default;
   max-width: 420px;
+  min-width: max-content;
 }
 
 .chat-img-wrap img {
   display: block;
+  margin: 0 auto;
   max-width: 100%;
   max-height: 360px;
   object-fit: contain;
@@ -28,16 +30,19 @@
 /* ── Hover overlay with actions ─────────────────────────────────── */
 .chat-img-overlay {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.75) 100%);
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.75) 100%);
   opacity: 0;
   transition: opacity .2s;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 6px;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 12px 12px 8px 12px;
+  border-radius: 0 0 10px 10px;
 }
 
 .chat-img-wrap:hover .chat-img-overlay { opacity: 1; }
@@ -53,6 +58,7 @@
   cursor: pointer;
   transition: background .15s;
   font-family: inherit;
+  white-space: nowrap;
 }
 .img-action-btn:hover { background: rgba(255,255,255,0.3); }
 
