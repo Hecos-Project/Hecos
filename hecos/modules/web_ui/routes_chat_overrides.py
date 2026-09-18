@@ -2,9 +2,10 @@ import os
 import yaml
 from flask import request, jsonify
 from hecos.core.logging import logger
+from hecos.core.constants import CONFIG_DATA_DIR
 
 def init_chat_overrides_routes(app, root_dir, logger):
-    OVERRIDES_FILE = os.path.join(root_dir, "config", "data", "chat_overrides.yaml")
+    OVERRIDES_FILE = os.path.join(CONFIG_DATA_DIR, "chat_overrides.yaml")
 
     @app.route("/hecos/api/chat/overrides", methods=["GET"])
     def get_chat_overrides():

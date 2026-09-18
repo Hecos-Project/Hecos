@@ -8,6 +8,7 @@ from hecos.core.auth.auth_manager import auth_mgr
 from hecos.memory.user_vault_manager import get_vault_path
 from hecos.memory import brain_interface
 from hecos.core.llm.routing_manager import RoutingManager
+from hecos.core.constants import CONFIG_DATA_DIR
 
 _HECOS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 REGISTRY_PATH = os.path.join(_HECOS_DIR, "core", "registry.json")
@@ -39,7 +40,7 @@ class PromptBuilder:
         vision_note = PromptBuilder._build_vision_note(images)
         
         chat_overrides_block = ""
-        chat_overrides_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config", "data", "chat_overrides.yaml")
+        chat_overrides_path = os.path.join(CONFIG_DATA_DIR, "chat_overrides.yaml")
         try:
             if os.path.exists(chat_overrides_path):
                 import yaml as pyyaml
