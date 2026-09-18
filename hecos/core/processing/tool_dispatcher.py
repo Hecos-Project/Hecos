@@ -179,6 +179,28 @@ def extract_and_execute_tools(raw_response, current_config: dict):
 
         module_to_call = original_tag
         
+        if original_tag == "direct_command":
+            from hecos.core.commands.executor import get_executor
+            executor = get_executor()
+            try:
+                # We do not have direct access to current_user_role/id here easily, so we fallback
+                res = executor.execute(
+                    raw_input=action_or_args,
+                    config=current_config,
+                    config_manager=None,
+                    current_user_role="admin",
+                    current_user_id="admin",
+                    page_context="agent_internal"
+                )
+                if res.get("ok"):
+                    tool_results.append({"id": call_id, "output": res.get("output", ""), "tag": "SLASH_COMMAND"})
+                else:
+                    tool_results.append({"id": call_id, "output": f"Error: {res.get('error')}", "tag": "SLASH_COMMAND"})
+            except Exception as e:
+                logger.error(f"[PROCESSOR] Error executing slash command: {e}")
+                tool_results.append({"id": call_id, "output": f"Error: {e}", "tag": "SLASH_COMMAND"})
+            continue
+        
         if original_tag == "tag" and not method_name and isinstance(action_or_args, str):
             clean_action = action_or_args.strip().lower()
             for keyword, module in TAG_MAPPING.items():

@@ -27,6 +27,19 @@ LAST_PAYLOAD_INFO = {
     "plugins_cost": {}
 }
 
+def get_active_model(cfg=None):
+    """Returns the name of the last actively used model, falling back to config."""
+    if LAST_PAYLOAD_INFO["model"] != "None":
+        return LAST_PAYLOAD_INFO["model"]
+    if cfg:
+        btype = cfg.get("backend", {}).get("type", "ollama")
+        if btype == "hybrid":
+            cloud_m = cfg.get("backend", {}).get("cloud", {}).get("model", "")
+            if cloud_m: return cloud_m
+            btype = "ollama"
+        return cfg.get("backend", {}).get(btype, {}).get("model", "?")
+    return "?"
+
 # Pre-configure LiteLLM (no print to chat)
 litellm.telemetry = False
 
@@ -128,29 +141,53 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         "top_p": specific_config.get('top_p', 0.9),
         "num_retries": 0,  # We handle retries manually with key failover
         "stream": stream,
-        "timeout": 300 if backend_type in ("ollama", "kobold") else _cloud_timeout,  # Cloud: configurable, Local: 5min
+        "timeout": 300 if backend_type in ("ollama", "kobold", "llama_cpp") else _cloud_timeout,  # Cloud: configurable, Local: 5min
     }
+    
+    # Leggi preferenze per llama_cpp
+    llama_native_tools = specific_config.get('native_tool_calling', True) if backend_type == "llama_cpp" else False
+    llama_text_cmds = specific_config.get('text_commands_enabled', True) if backend_type == "llama_cpp" else False
     
     # Aggiungi i tools se presenti e se il backend lo supporta
     if tools and backend_type in ["cloud", "kobold"]:
         params["tools"] = tools
     
-    # Per Ollama: passa i tool nativamente (supportati da Ollama >= 0.1.9)
-    # Inietta istruzioni IMPERATIVE nel system prompt per forzare il tool calling
-    if backend_type == "ollama" and tools:
-        params["tools"] = tools
-        if messages and messages[0].get("role") == "system":
-            tool_hint = "\n### CRITICAL: TOOL CALLING RULES ###\n"
-            tool_hint += "You MUST use function calls to perform actions. NEVER describe or simulate performing an action in text.\n"
-            tool_hint += "WRONG: 'Here is the photo I generated for you...' (NO tool was called!)\n"
-            tool_hint += "WRONG: 'Ecco la foto che ho generato...' (NO tool was called!)\n"
-            tool_hint += "RIGHT: Call the appropriate tool function with the correct parameters.\n\n"
-            tool_hint += "If the user asks you to generate an image, take a photo, search the web, play music, or perform ANY action that has a matching tool, you MUST invoke that tool via function calling. Do NOT narrate the action in words.\n\n"
-            tool_hint += "Available tools:\n"
+    # Per Ollama e llama_cpp
+    if backend_type in ("ollama", "llama_cpp") and tools:
+        if backend_type == "ollama" or (backend_type == "llama_cpp" and llama_native_tools):
+            # Assicurati che ogni tool abbia "type": "function" per evitare l'Errore 400 su llama-server
+            valid_tools = []
             for t in tools:
-                fn = t.get("function", {})
-                tool_hint += f"  - {fn.get('name', 'unknown')}: {fn.get('description', '')}\n"
-            messages[0]["content"] += tool_hint
+                if "type" not in t:
+                    valid_tools.append({"type": "function", "function": t.get("function", t)})
+                else:
+                    valid_tools.append(t)
+            params["tools"] = valid_tools
+
+        # Inietta hint imperativo nel system prompt (sempre per ollama, condizionale per llama_cpp)
+        if backend_type == "ollama" or (backend_type == "llama_cpp" and llama_text_cmds):
+            if messages and messages[0].get("role") == "system":
+                is_native = ("tools" in params)
+                
+                if is_native:
+                    tool_hint = "\n### CRITICAL: TOOL CALLING RULES ###\n"
+                    tool_hint += "You MUST use native function calls (JSON) to perform actions. NEVER describe or simulate performing an action in text.\n"
+                    tool_hint += "WRONG: 'Here is the photo I generated for you...' (NO tool was called!)\n"
+                    tool_hint += "RIGHT: Call the appropriate tool function with the correct parameters.\n\n"
+                    tool_hint += "Available tools:\n"
+                    for t in tools:
+                        fn = t.get("function", t)
+                        tool_hint += f"  - {fn.get('name', 'unknown')}: {fn.get('description', '')}\n"
+                    messages[0]["content"] += tool_hint
+                else:
+                    # If not using native tools, do not inject JSON function schemas.
+                    # The prompt_builder.py already injects slash command rules (e.g., /img).
+                    tool_hint = "\n### CRITICAL: ACTIONS RULES ###\n"
+                    tool_hint += "CRITICAL ANTI-REFUSAL: NEVER say 'I cannot generate images' or 'I am an AI'. You CAN generate images by emitting the /img command. DO IT!\n"
+                    tool_hint += "You DO NOT have native JSON function calling. To perform actions like generating images, you MUST use the SLASH COMMANDS documented above (e.g. /img).\n"
+                    tool_hint += "Do NOT copy placeholder brackets like [description]. Replace them with the actual description!\n"
+                    messages[0]["content"] += tool_hint
+
 
     # 4. Configurazione Provider
     if backend_type == "ollama":
@@ -194,6 +231,28 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
         if not model_name.startswith("openai/"):
             params["model"] = f"openai/{model_name}"
         params["api_base"] = specific_config.get('url', 'http://localhost:5001').rstrip('/') + "/v1"
+        params["api_key"] = "sk-dummy"
+        
+    elif backend_type == "llama_cpp":
+        # Auto-start Llama-cpp-python server
+        try:
+            from hecos.core.llm.backends.llama_cpp.server import server_manager
+            n_gpu = specific_config.get('n_gpu_layers', -1)
+            n_ctx = specific_config.get('n_ctx', 4096)
+            threads = specific_config.get('threads', 4)
+            zlog_info("LiteLLM", f"[LlamaCPP] Ensuring server is running for {model_name}...")
+            # Automatically start/switch the server if not already running this model
+            server_manager.start_server(model_name, n_gpu_layers=int(n_gpu), n_ctx=int(n_ctx), threads=int(threads))
+            port = server_manager.port
+        except Exception as e:
+            zlog_error(f"LiteLLM: Error auto-starting LlamaCPP server: {e}")
+            port = 8080
+
+        if not model_name.startswith("openai/"):
+            params["model"] = f"openai/{model_name}"
+        # Point to the local openai-compatible server
+        params["api_base"] = f"http://127.0.0.1:{port}/v1"
+        params["api_key"] = "sk-dummy"
 
     elif backend_type == "cloud":
         # Assicurati che il modello includa il prefisso

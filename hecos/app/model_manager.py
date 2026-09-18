@@ -57,7 +57,16 @@ class ModelManager:
                 cache = config.get('backend', {}).get('kobold', {}).get('available_models', {})
                 categorized_models["Kobold (Local)"].extend(list(cache.values()))
 
-        # 3. CLOUD Models
+        # 3. LlamaCPP Models (Local GGUF)
+        categorized_models["LlamaCPP (Local)"] = {}
+        try:
+            from hecos.core.llm.backends.llama_cpp.discovery import get_available_gguf_models
+            gguf_models = get_available_gguf_models()
+            categorized_models["LlamaCPP (Local)"].update(gguf_models)
+        except Exception as e:
+            logger.debug(f"[ModelManager] Failed to discover LlamaCPP models: {e}")
+
+        # 4. CLOUD Models
         if config.get('llm', {}).get('allow_cloud', False):
             providers = config.get('llm', {}).get('providers', {})
             backend_type = config.get('backend', {}).get('type', 'ollama')
@@ -124,8 +133,15 @@ class ModelManager:
                 self.config_manager.save()
 
         
-        # Clean empty categories
-        return {k: list(dict.fromkeys(v)) for k, v in categorized_models.items() if v}
+        # Clean empty categories and deduplicate lists
+        res = {}
+        for k, v in categorized_models.items():
+            if not v: continue
+            if isinstance(v, list):
+                res[k] = list(dict.fromkeys(v))
+            else:
+                res[k] = v
+        return res
 
     def get_effective_model(self, config_dict):
         """Returns the currently active model name."""

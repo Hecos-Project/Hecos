@@ -109,8 +109,10 @@ window.onProviderChanged = async function(userTriggered, _attempt) {
     var cloudWrapper   = document.getElementById('igen-cloud-wrapper');
     var apiKeyWrapper  = document.getElementById('igen-api-key-wrapper');
     var cloudProbeWrap = document.getElementById('igen-cloud-probe-wrapper');
+    var nologoWrap     = document.getElementById('igen-nologo-wrapper');
     if (cloudWrapper) cloudWrapper.style.display = isLocal ? 'none' : 'block';
     if (cloudProbeWrap) cloudProbeWrap.style.display = isLocal ? 'none' : 'block';
+    if (nologoWrap) nologoWrap.style.display = isLocal ? 'none' : 'flex';
     // For Horde: API key section is inside the horde block, so hide generic one
     if (apiKeyWrapper) apiKeyWrapper.style.display = isHorde ? 'none' : 'block';
 

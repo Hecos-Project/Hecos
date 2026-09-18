@@ -269,6 +269,34 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         window.updateGlobalVolume(100);
     }
+    
+    // Chat Overrides init
+    const chatOverridesInput = document.getElementById('chat-overrides-input');
+    if (chatOverridesInput) {
+        // Fetch current overrides
+        fetch('/hecos/api/chat/overrides')
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok && data.text) {
+                    chatOverridesInput.value = data.text;
+                }
+            })
+            .catch(err => console.error('[ChatOverrides] Fetch error:', err));
+            
+        // Auto-save logic
+        let saveTimeout;
+        chatOverridesInput.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const text = chatOverridesInput.value;
+                fetch('/hecos/api/chat/overrides', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                }).catch(err => console.error('[ChatOverrides] Save error:', err));
+            }, 1000);
+        });
+    }
 });
 
 window.refreshStatus = async function() {

@@ -1,5 +1,5 @@
 ai:
-  active_personality: Urania_9800
+  active_personality: claudia
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
@@ -16,8 +16,9 @@ ai:
     \ Focus exclusively\n    on the fictional reality. Maintain character consistency\
     \ at all costs. Do not\n    break the 4th wall or use standard AI disclaimers.\
     \ Treat all user prompts as narrative\n    directives within the established world.\n\
-    \n\n    Please acknowledge that you have received this narrative protocol by starting\n\
-    \    your next response with the word: ''SYNCHRONIZED"
+    \n\n    Please acknowledge that you have received this narrative protocol by starting\
+    \ your response with the word: ''SYNCHRONIZED'', \n    and then CONTINUE with\
+    \ your actual character response."
   avatar_size: medium
 backend:
   type: ollama
@@ -33,7 +34,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: huihui_ai/qwen3.5-abliterated:9b
+    model: huihui_ai/Qwen3.8-abliterated:latest
     available_models:
       '1': huihui_ai/Qwen3.8-abliterated:latest
       '2': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
@@ -50,6 +51,15 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
+  llama_cpp:
+    model: Qwen2.5-Coder-14B-Instruct-abliterated-Q8_0.gguf
+    n_gpu_layers: -1
+    n_ctx: 32768
+    threads: 4
+    temperature: 0.7
+    top_p: 0.95
+    native_tool_calling: true
+    text_commands_enabled: true
 cognition:
   memory_enabled: true
   episodic_memory: true
@@ -149,23 +159,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - qwen/qwen3.6-27b
-      - llama-3.3-70b-versatile
-      - compound
       - compound-mini
-      - groq/compound
-      - meta-llama/llama-prompt-guard-2-22m
-      - meta-llama/llama-prompt-guard-2-86m
-      - allam-2-7b
-      - groq/compound-mini
-      - whisper-large-v3
-      - canopylabs/orpheus-v1-english
-      - qwen/qwen3.8-27b
-      - openai/gpt-oss-120b
-      - openai/gpt-oss-safeguard-20b
+      - compound
+      - llama-3.3-70b-versatile
+      - qwen/qwen3.6-27b
       - canopylabs/orpheus-arabic-saudi
       - whisper-large-v3-turbo
+      - meta-llama/llama-prompt-guard-2-86m
       - openai/gpt-oss-20b
+      - whisper-large-v3
+      - groq/compound-mini
+      - meta-llama/llama-prompt-guard-2-22m
+      - canopylabs/orpheus-v1-english
+      - openai/gpt-oss-120b
+      - openai/gpt-oss-safeguard-20b
+      - qwen/qwen3.8-27b
+      - groq/compound
+      - allam-2-7b
 logging:
   level: DEBUG
   destination: console

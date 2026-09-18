@@ -74,6 +74,7 @@ def _build_options_dict(cfg_mgr, fast=False):
         "piper_voices":  onnx_files,
         "piper_dir":     piper_path_dir,
         "ollama_models": ollama_models,
+        "llamacpp_models": categorized.get("LlamaCPP (Local)", []),
         "personalities": personalita,
         "cloud_models":  cloud_by_provider,
         "all_cloud":     cloud_models_flat,

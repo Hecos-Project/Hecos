@@ -100,12 +100,14 @@ document.addEventListener('change', (e) => {
 // Backend type card visibility switcher (event delegation — works with lazy-loaded panels)
 function _applyBackendCardVisibility(type) {
   const v = type || (document.getElementById('backend-type') || {}).value || 'ollama';
-  const cardCloud  = document.getElementById('card-cloud-settings');
-  const cardOllama = document.getElementById('card-ollama');
-  const cardKobold = document.getElementById('card-kobold');
-  if (cardCloud)  cardCloud.style.display  = (v === 'cloud' || v === 'hybrid') ? '' : 'none';
-  if (cardOllama) cardOllama.style.display = (v === 'ollama' || v === 'hybrid') ? '' : 'none';
-  if (cardKobold) cardKobold.style.display = (v === 'kobold' || v === 'hybrid') ? '' : 'none';
+  const cardCloud    = document.getElementById('card-cloud-settings');
+  const cardOllama   = document.getElementById('card-ollama');
+  const cardKobold   = document.getElementById('card-kobold');
+  const cardLlamaCpp = document.getElementById('card-llama-cpp');
+  if (cardCloud)    cardCloud.style.display    = (v === 'cloud' || v === 'hybrid') ? '' : 'none';
+  if (cardOllama)   cardOllama.style.display   = (v === 'ollama' || v === 'hybrid') ? '' : 'none';
+  if (cardKobold)   cardKobold.style.display   = (v === 'kobold') ? '' : 'none';
+  if (cardLlamaCpp) cardLlamaCpp.style.display = (v === 'llama_cpp') ? '' : 'none';
 }
 window._applyBackendCardVisibility = _applyBackendCardVisibility;
 

@@ -24,7 +24,7 @@ _CAMERA_TOKEN = "[CAMERA_SNAPSHOT_REQUEST]"
 
 # ── Default WebUI inference timeout (seconds) ────────────────────────────────
 # Overridden at runtime by /hecos/api/keymanager/settings (webui_timeout field)
-_WEBUI_INFERENCE_TIMEOUT = 120  # seconds
+_WEBUI_INFERENCE_TIMEOUT = 300  # seconds
 
 
 def _run_inference(sess: dict, session_id: str, user_message: str, history: list, cfg_mgr, images=None, user_id="admin", user_role="admin", sender_tab_id=None):

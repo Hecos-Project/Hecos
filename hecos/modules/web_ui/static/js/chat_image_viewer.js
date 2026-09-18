@@ -207,6 +207,9 @@ function _ensureGalleryModal() {
       modal.classList.remove('open');
       const vid = document.getElementById('hg-gallery-vid');
       if (vid) vid.pause();
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
     }
   });
 }
@@ -334,7 +337,15 @@ function setupImageDragToFolder() {
 
 // ── Keyboard shortcuts ─────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' || e.keyCode === 27) closeLightbox();
+  if (e.key === 'Escape' || e.keyCode === 27) {
+    const lb = document.getElementById('img-lightbox');
+    if (lb && lb.classList.contains('open')) {
+      closeLightbox();
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+    }
+  }
 });
 
 // ── Init ──────────────────────────────────────────────────────────

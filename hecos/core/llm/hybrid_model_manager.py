@@ -45,7 +45,6 @@ def get_hybrid_models(config: dict, config_manager=None) -> list:
         except Exception as e:
             logger.debug(f"[HYBRID] Failed to fetch Ollama metadata: {e}")
         
-        # 1. Local Models
         for m in categorized.get("Ollama (Local)", []):
             meta = ollama_meta.get(m, {})
             models.append({
@@ -57,6 +56,12 @@ def get_hybrid_models(config: dict, config_manager=None) -> list:
             })
         for m in categorized.get("Kobold (Local)", []):
             models.append({"id": m, "name": m, "type": "local", "provider": "kobold"})
+            
+        for m in categorized.get("LlamaCPP (Local)", []):
+            # Parse size from file if possible, or just append
+            models.append({
+                "id": m, "name": m, "type": "local", "provider": "llama_cpp"
+            })
             
         # 2. Cloud Models — always shown if providers are configured
         # (allow_cloud controls global default, but per-chat override should always show all options)

@@ -5,8 +5,10 @@
 
 // -- Auto-save debouncer --
 let _igenSaveTimer = null;
+let _igenLoadingConfig = false;  // Guard: skip auto-save during initial config apply
 
 function _igenDebounceSave() {
+    if (_igenLoadingConfig) return;  // Don't save while loading config
     clearTimeout(_igenSaveTimer);
     _igenSaveTimer = setTimeout(function() { window.saveIgenConfig(true); }, 500);
 }
@@ -63,6 +65,8 @@ function _igenPrompt(msg, onSave) {
 
 function _igenAttachAutoSave() {
     var fields = [
+        'igen-provider', 'igen-model', 'igen-enabled', 'igen-cloud-enabled',
+        'igen-hf-provider', 'igen-routing-override', 'horde-nsfw', 'horde-worker-blacklist',
         'igen-aspect-ratio', 'igen-width', 'igen-height', 'igen-seed',
         'igen-sampler', 'igen-scheduler', 'igen-guidance', 'igen-steps',
         'igen-use-neg-prompt', 'igen-neg-prompt',
@@ -139,9 +143,13 @@ var initImageGenPanel = async function() {
         
         var provSel = document.getElementById('igen-provider');
         if (provSel && cfg.provider) provSel.setAttribute('data-initial-val', cfg.provider);
+        var modelSel = document.getElementById('igen-model');
+        if (modelSel && cfg.model) modelSel.setAttribute('data-initial-val', cfg.model);
         
+        _igenLoadingConfig = true;  // Guard: prevent auto-save during initial load
         await window.onProviderChanged(false);
         window.applyIgenConfig(cfg);
+        _igenLoadingConfig = false;
         
         _igenAttachAutoSave();
         _igenHookGlobalSave();

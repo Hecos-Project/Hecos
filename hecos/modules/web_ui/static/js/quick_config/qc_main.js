@@ -104,6 +104,9 @@ function _qcUpdateModelSelect(backendType, cfg) {
     } else if (backendType === 'kobold') {
         options = [cfg?.backend?.kobold?.model || 'Kobold Model'];
         activeModel = cfg?.backend?.kobold?.model || '';
+    } else if (backendType === 'llama_cpp') {
+        options = sysOpts.llamacpp_models || [];
+        activeModel = cfg?.backend?.llama_cpp?.model || '';
     }
     
     options.forEach(m => {
@@ -189,10 +192,12 @@ window.qcSaveConfig = function() {
         if (bType === 'cloud') payload.backend.cloud = { model: modelRaw };
         else if (bType === 'ollama') payload.backend.ollama = { model: modelRaw };
         else if (bType === 'kobold') payload.backend.kobold = { model: modelRaw };
+        else if (bType === 'llama_cpp') payload.backend.llama_cpp = { model: modelRaw };
     } else {
         if (bType === 'ollama') payload.backend.ollama = { model: modelRaw };
         else if (bType === 'cloud') payload.backend.cloud = { model: modelRaw };
         else if (bType === 'kobold') payload.backend.kobold = { model: modelRaw };
+        else if (bType === 'llama_cpp') payload.backend.llama_cpp = { model: modelRaw };
     }
     
     if (window.qcSaveConfigAPI) {

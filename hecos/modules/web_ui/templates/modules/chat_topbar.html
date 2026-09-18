@@ -134,6 +134,8 @@
               const isCloud = mVal.includes('/') && knownCloudProviders.includes(firstSegment);
               if (isCloud) {
                   overrides.backend = { type: 'cloud', cloud: { model: mVal } };
+              } else if (mVal.toLowerCase().endsWith('.gguf')) {
+                  overrides.backend = { type: 'llama_cpp', llama_cpp: { model: mVal } };
               } else {
                   overrides.backend = { type: 'ollama', ollama: { model: mVal } };
               }

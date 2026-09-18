@@ -5,8 +5,9 @@
     <div class="field">
       <label>{{ t('webui_conf_backend_type') }}</label>
       <select id="backend-type">
-        <option value="cloud">{{ t('webui_conf_backend_cloud_opt') }}</option>
+        <option value="llama_cpp">Llama CPP (Local GGUF)</option>
         <option value="ollama">{{ t('webui_conf_backend_ollama_opt') }}</option>
+        <option value="cloud">{{ t('webui_conf_backend_cloud_opt') }}</option>
         <option value="kobold">{{ t('webui_conf_backend_kobold_opt') }}</option>
         <option value="hybrid">Hybrid (Local + Cloud)</option>
       </select>
@@ -137,6 +138,70 @@
       <div class="field"><label>{{ t('webui_conf_rep_pen') }}</label><input type="number" id="kobold-rep" min="0.5" max="2" step="0.05"></div>
     </div>
   </div>
+
+  <div class="card" id="card-llama-cpp" style="display:none">
+    <div class="card-title">Llama CPP (Local GGUF)</div>
+    <div class="field">
+      <label>{{ t('webui_conf_model_active') }}</label>
+      <div style="display:flex; gap:8px;">
+        <select id="llama-cpp-model" style="flex:1"></select>
+        <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="refreshModels()">{{ t('webui_conf_btn_sync') or 'Sync Models' }} <i class="fas fa-sync"></i></button>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>{{ t('webui_conf_temp') }} <span class="tooltip-icon" title="Creatività del testo. Bassa (0.1-0.4) = risposte precise, Alta (0.8-1.5) = risposte creative. Default: 0.7">ⓘ</span></label>
+        <input type="number" id="llama-cpp-temp" min="0" max="2" step="0.05">
+      </div>
+      <div class="field">
+        <label>GPU Layers <span class="tooltip-icon" title="Quanti layer del modello caricare nella VRAM della GPU. -1 = Tutti in GPU (massima velocità). 0 = Solo CPU. Riduci se esaurisci la VRAM.">ⓘ</span></label>
+        <div class="slider-field">
+          <input type="range" id="llama-cpp-gpu-slider" min="-1" max="200" step="1" oninput="document.getElementById('llama-cpp-gpu').value=this.value">
+          <input type="number" id="llama-cpp-gpu" min="-1" max="200" step="1" oninput="document.getElementById('llama-cpp-gpu-slider').value=this.value">
+        </div>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>Context Size (n_ctx) <span class="tooltip-icon" title="Memoria di lavoro del modello in token. 4096 = ~3000 parole. 32768 = ~24000 parole. Aumenta se ricevi errori 'Context Window Exceeded'. Richiede più RAM/VRAM.">ⓘ</span></label>
+        <div class="slider-field">
+          <input type="range" id="llama-cpp-ctx-slider" min="512" max="131072" step="512" oninput="document.getElementById('llama-cpp-ctx').value=this.value">
+          <input type="number" id="llama-cpp-ctx" min="512" max="131072" step="512" style="width:100px" oninput="document.getElementById('llama-cpp-ctx-slider').value=this.value">
+          <span id="llama-cpp-ctx-label" style="font-size:11px; color:var(--text-muted); white-space:nowrap; align-self:center;"></span>
+        </div>
+      </div>
+      <div class="field">
+        <label>CPU Threads <span class="tooltip-icon" title="Thread CPU per la parte di inferenza non sulla GPU. Solitamente uguale al numero di core fisici della CPU. Default: 4.">ⓘ</span></label>
+        <input type="number" id="llama-cpp-threads" min="1" max="64" step="1">
+      </div>
+      <div class="field">
+        <label>{{ t('webui_conf_top_p') }} <span class="tooltip-icon" title="Nucleus Sampling: filtra i token più improbabili. 0.95 = standard. Abbassare rende le risposte più prevedibili.">ⓘ</span></label>
+        <input type="number" id="llama-cpp-top-p" min="0" max="1" step="0.05">
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border); margin-top: 12px; padding-top: 14px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">
+        Tool Calling Mode
+      </div>
+      <div class="grid-2">
+        <div class="field" style="margin-bottom: 8px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="llama-cpp-native-tools" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span>Native Tool Calling (JSON)
+              <span class="tooltip-icon" title="Passes tools as a JSON schema to llama-server. Requires a capable model (e.g., 13B+, fine-tuned for tool calling). Disable if you get 400 errors or malformed responses with small models.">ⓘ</span>
+            </span>
+          </label>
+        </div>
+        <div class="field" style="margin-bottom: 8px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="llama-cpp-text-commands" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+            <span>Text Commands (/img, /cmd…)
+              <span class="tooltip-icon" title="Injects text-based rules (/img, /system, etc.) into the system prompt to guide the model. Recommended for small/medium models that do not reliably support native JSON tool calling.">ⓘ</span>
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -149,4 +214,50 @@
       Object.assign(window.sysOptions, newOpts);
     }
   })();
+
+  // ── Slider sync for LlamaCPP fields ──────────────────────────────────────
+  function syncLlamaCppSliders() {
+    var ctxVal = document.getElementById('llama-cpp-ctx');
+    var ctxSlider = document.getElementById('llama-cpp-ctx-slider');
+    var ctxLabel = document.getElementById('llama-cpp-ctx-label');
+    var gpuVal = document.getElementById('llama-cpp-gpu');
+    var gpuSlider = document.getElementById('llama-cpp-gpu-slider');
+
+    function updateCtxLabel(v) {
+      var words = Math.round(v * 0.75);
+      var label = words >= 1000 ? '≈ ' + (words / 1000).toFixed(0) + 'K parole' : '≈ ' + words + ' parole';
+      if (ctxLabel) ctxLabel.textContent = label;
+    }
+
+    if (ctxVal && ctxSlider) {
+      ctxSlider.value = ctxVal.value;
+      updateCtxLabel(ctxVal.value);
+      ctxVal.addEventListener('input', function() { ctxSlider.value = this.value; updateCtxLabel(this.value); });
+      ctxSlider.addEventListener('input', function() { ctxVal.value = this.value; updateCtxLabel(this.value); });
+    }
+    if (gpuVal && gpuSlider) {
+      gpuSlider.value = gpuVal.value;
+      gpuVal.addEventListener('input', function() { gpuSlider.value = this.value; });
+      gpuSlider.addEventListener('input', function() { gpuVal.value = this.value; });
+    }
+  }
+
+  // Run on load and when the llama-cpp card becomes visible
+  document.addEventListener('DOMContentLoaded', syncLlamaCppSliders);
+  // Also hook into the config save/load cycle
+  if (typeof window.onConfigSectionLoaded === 'function') {
+    var _orig = window.onConfigSectionLoaded;
+    window.onConfigSectionLoaded = function() { _orig.apply(this, arguments); syncLlamaCppSliders(); };
+  }
+  // Observe visibility in case the card is shown later
+  var _llamaCard = document.getElementById('card-llama-cpp');
+  if (_llamaCard && window.MutationObserver) {
+    new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        if (m.attributeName === 'style' && _llamaCard.style.display !== 'none') {
+          syncLlamaCppSliders();
+        }
+      });
+    }).observe(_llamaCard, { attributes: true });
+  }
 </script>

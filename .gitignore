@@ -645,3 +645,8 @@ hecos/media/documents/*
 workspace/*
 !workspace/.gitkeep
 !workspace/flows/
+
+# GGUF Local LLM Models
+*.gguf
+hecos/models/gguf/*
+models/gguf/*
