@@ -495,53 +495,12 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                         except json.JSONDecodeError:
                             pass
                 
-                # ── FALLBACK B: Retry con reinforcement se il modello aveva tools ma non li ha usati ──
-                if not _ollama_tool_calls and _ollama_content and params.get("tools") and not params.get("_tool_retry_done"):
-                    # Il modello ha risposto con testo invece di chiamare un tool.
-                    # Facciamo UN solo retry con un prompt di rinforzo.
-                    params["_tool_retry_done"] = True  # Evita loop infiniti
-                    zlog_info("LiteLLM", f"[OLLAMA-RETRY] Model responded with text instead of tool call. Attempting reinforcement retry...")
-                    
-                    _retry_messages = list(_ollama_body["messages"])  # Copia
-                    _retry_messages.append({"role": "assistant", "content": _ollama_content})
-                    _retry_messages.append({
-                        "role": "user",
-                        "content": (
-                            "You did NOT call any tool. Your previous response was just text. "
-                            "The user's request REQUIRES a tool call. "
-                            "Please use the appropriate function call NOW. Do not respond with text."
-                        )
-                    })
-                    
-                    _retry_body = dict(_ollama_body)
-                    _retry_body["messages"] = _retry_messages
-                    
-                    try:
-                        _retry_resp = _requests.post(_ollama_url, json=_retry_body, timeout=params.get("timeout", 300))
-                        _retry_resp.raise_for_status()
-                        _retry_data = _retry_resp.json()
-                        _retry_msg = _retry_data.get("choices", [{}])[0].get("message", {})
-                        _retry_tool_calls = _retry_msg.get("tool_calls")
-                        
-                        if _retry_tool_calls:
-                            zlog_info("LiteLLM", f"[OLLAMA-RETRY] SUCCESS! Tool call recovered on retry ({len(_retry_tool_calls)} calls)")
-                            return _SyntheticMsg(_retry_tool_calls, _retry_msg.get("content", ""))
-                        else:
-                            # Anche il retry ha fallito — controlla JSON nel testo del retry
-                            _retry_content = (_retry_msg.get("content") or "").strip()
-                            if _retry_content:
-                                _tc_match2 = _re_tc.search(r'\{[^{}]*"tool_calls"\s*:\s*\[.*?\]\s*\}', _retry_content, _re_tc.DOTALL)
-                                if _tc_match2:
-                                    try:
-                                        _parsed_tc2 = json.loads(_tc_match2.group())
-                                        if _parsed_tc2.get("tool_calls"):
-                                            zlog_info("LiteLLM", "[OLLAMA-RETRY] Recovered tool_calls from retry text (fallback JSON parser)")
-                                            return _SyntheticMsg(_parsed_tc2["tool_calls"], "")
-                                    except json.JSONDecodeError:
-                                        pass
-                            zlog_info("LiteLLM", "[OLLAMA-RETRY] Retry also failed to produce tool call. Returning original response.")
-                    except Exception as _retry_err:
-                        zlog_error(f"LiteLLM: [OLLAMA-RETRY] Retry failed with error: {_retry_err}")
+                
+                # NOTE: FALLBACK B (reinforcement retry) was removed.
+                # It caused false positives on every conversational response,
+                # forcing a pointless 2nd inference that doubled latency and often timed out.
+                # Fallback A (JSON parser) above is sufficient for edge cases.
+                
                 
                 zlog_debug("LiteLLM", f"[OLLAMA-DIRECT] content={len(_ollama_content)} chars | reasoning={len(_ollama_reasoning)} chars")
                 
