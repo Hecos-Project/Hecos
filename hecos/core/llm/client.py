@@ -335,6 +335,23 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
             # We log only non-sensitive and small metadata here
             safe_params = {k:v for k,v in params.items() if k not in ['api_key', 'tools', 'messages']}
             zlog_debug("LiteLLM", f"REQUEST_PARAMS (Metadata): {json.dumps(safe_params, indent=2)}")
+            
+            # --- Dedicated Payload Dump ---
+            try:
+                import datetime
+                from hecos.core.constants import LOGS_DIR
+                payload_log_path = os.path.join(LOGS_DIR, "payloads.log")
+                dump_data = {
+                    "timestamp": datetime.datetime.now().isoformat(),
+                    "model": model_name,
+                    "messages": params.get("messages", []),
+                    "tools": params.get("tools", [])
+                }
+                with open(payload_log_path, "a", encoding="utf-8") as pf:
+                    pf.write(json.dumps(dump_data, indent=2) + "\n\n" + "="*80 + "\n\n")
+            except Exception as e:
+                zlog_debug("LiteLLM", f"Could not dump payload to log: {e}")
+                
         except Exception as sle:
             zlog_debug("LiteLLM", f"REQUEST_PARAMS: [Debug Log Error: {sle}]")
 
