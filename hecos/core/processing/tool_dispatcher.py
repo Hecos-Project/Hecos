@@ -95,7 +95,7 @@ def _handle_core_tool(method_name: str, args: dict, call_id: str) -> str | None:
     return None
 
 
-def extract_and_execute_tools(raw_response, current_config: dict):
+def extract_and_execute_tools(raw_response, current_config: dict, sm=None):
     """
     Analyzes raw response, detects tools/tags, executes them, and returns results.
     Returns: (tools_called: bool, tool_results: list, base_text: str, think_block: str | None)
@@ -166,6 +166,10 @@ def extract_and_execute_tools(raw_response, current_config: dict):
     # 5. Execution
     tool_results = []
     for tag_info in tags_found:
+        if sm and getattr(sm, "webui_stop_requested", False):
+            logger.warning("[PROCESSOR] Tool execution aborted by user via ESC.")
+            break
+            
         original_tag, action_or_args, call_type, method_name = tag_info[:4]
         call_id = tag_info[4] if len(tag_info) > 4 else f"call_{int(time.time())}"
         

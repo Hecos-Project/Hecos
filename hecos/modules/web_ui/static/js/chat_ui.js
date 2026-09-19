@@ -217,10 +217,7 @@ window.stopVoice = async function() {
 
 // Hotkeys
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    window.stopVoice();
-  }
-  
+
   // Toggle audio with Spacebar, but not if user is typing in an input
   if (e.key === ' ' || e.code === 'Space') {
     const active = document.activeElement;

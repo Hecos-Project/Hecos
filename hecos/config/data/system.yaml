@@ -34,17 +34,18 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: huihui_ai/Qwen3.8-abliterated:latest
+    model: ''
     available_models:
-      '1': sorc/qwen3.5-claude-4.6-opus:latest
-      '2': nandhank/qwen3.5-abliterated-truthful:9b
-      '3': huihui_ai/Qwen3.8-abliterated:latest
-      '4': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
-      '5': qwen3.5:latest
-      '6': sorc/qwen3.5-instruct-heretic:9b
-      '7': huihui_ai/qwen3.5-abliterated:9b
-      '8': lukey03/qwen3.5-9b-abliterated:latest
-      '9': srchmnmichael/qwen3.5-9B-uncensored:latest
+      '1': sorc/qwen3.5-claude-4.6-opus:4b
+      '2': sorc/qwen3.5-claude-4.6-opus:latest
+      '3': nandhank/qwen3.5-abliterated-truthful:9b
+      '4': huihui_ai/Qwen3.8-abliterated:latest
+      '5': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
+      '6': qwen3.5:latest
+      '7': sorc/qwen3.5-instruct-heretic:9b
+      '8': huihui_ai/qwen3.5-abliterated:9b
+      '9': lukey03/qwen3.5-9b-abliterated:latest
+      '10': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 4096
     num_gpu: 33
     num_predict: 4096
@@ -165,19 +166,19 @@ llm:
       - llama-3.3-70b-versatile
       - compound
       - compound-mini
-      - whisper-large-v3-turbo
-      - allam-2-7b
-      - groq/compound-mini
+      - qwen/qwen3.8-27b
       - openai/gpt-oss-safeguard-20b
-      - openai/gpt-oss-120b
-      - whisper-large-v3
-      - meta-llama/llama-prompt-guard-2-86m
-      - groq/compound
-      - canopylabs/orpheus-arabic-saudi
-      - openai/gpt-oss-20b
       - meta-llama/llama-prompt-guard-2-22m
       - canopylabs/orpheus-v1-english
-      - qwen/qwen3.8-27b
+      - groq/compound-mini
+      - whisper-large-v3-turbo
+      - groq/compound
+      - meta-llama/llama-prompt-guard-2-86m
+      - openai/gpt-oss-20b
+      - canopylabs/orpheus-arabic-saudi
+      - whisper-large-v3
+      - openai/gpt-oss-120b
+      - allam-2-7b
 logging:
   level: DEBUG
   destination: console

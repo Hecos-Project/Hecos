@@ -105,7 +105,7 @@ class AgentExecutor:
                 self._emit("Operation aborted by user.", level="error")
                 break
             
-            tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(raw_response, self.config)
+            tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(raw_response, self.config, sm=self.state_manager)
             
             if think_block:
                 self._emit({"type": "think", "text": think_block}, level="think")

@@ -448,10 +448,7 @@
                     return;
                 }
 
-                // Try to stop voice playback explicitly when ESC is pressed globally
-                if (typeof window.stopVoice === 'function') {
-                    window.stopVoice();
-                }
+                // --- stopVoice is moved to the bottom ---
 
                 // Try to close HKS overlay first
                 if (window.HKS_OVERLAY && window.HKS_OVERLAY.isVisible()) {
@@ -492,6 +489,13 @@
                     closeBtn.click();
                     return;
                 }
+                
+                // ── LAST RESORT: If no UI was closed, then stop the AI / Audio ──────────
+                if (typeof window.stopVoice === 'function') {
+                    window.stopVoice();
+                    return;
+                }
+
                 // Dispatch generic Escape event to the DOM
                 document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
             }
