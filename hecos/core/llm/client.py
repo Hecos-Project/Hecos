@@ -348,7 +348,13 @@ def generate(system_prompt, user_message, config_or_subconfig, llm_config=None, 
                     "tools": params.get("tools", [])
                 }
                 with open(payload_log_path, "a", encoding="utf-8") as pf:
-                    pf.write(json.dumps(dump_data, indent=2) + "\n\n" + "="*80 + "\n\n")
+                    pf.write("\n" + "=" * 80 + "\n")
+                    pf.write(f"=== PAYLOAD START | {dump_data['timestamp']} | model: {model_name} ===\n")
+                    pf.write("=" * 80 + "\n\n")
+                    pf.write(json.dumps(dump_data, indent=2))
+                    pf.write("\n\n" + "=" * 80 + "\n")
+                    pf.write(f"=== PAYLOAD END | {dump_data['timestamp']} ===\n")
+                    pf.write("=" * 80 + "\n")
             except Exception as e:
                 zlog_debug("LiteLLM", f"Could not dump payload to log: {e}")
                 

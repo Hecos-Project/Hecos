@@ -384,9 +384,11 @@
         "slash_commands": []
     },
     "DOCS": {
-        "description": "Generates PDF documents from HTML templates using Playwright.",
+        "description": "Generates and modifies PDF/HTML documents from templates or raw HTML using Playwright.",
         "commands": {
-            "generate_pdf": "Converts HTML content to a PDF file and returns the file path."
+            "generate_pdf": "Converts HTML content to a PDF file and returns the file path.",
+            "list_documents": "Lists all documents in the documents folder.",
+            "modify_document": "Modifies an existing HTML document (add images, replace sections, change layout)."
         },
         "status": "ONLINE (DORMANT)",
         "example": "",

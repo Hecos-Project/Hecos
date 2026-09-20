@@ -105,7 +105,23 @@ class AgentExecutor:
                 self._emit("Operation aborted by user.", level="error")
                 break
             
-            tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(raw_response, self.config, sm=self.state_manager)
+            import threading
+            import time
+            stop_hb = threading.Event()
+            def _heartbeat():
+                start = time.time()
+                while not stop_hb.wait(15.0):
+                    elapsed = int(time.time() - start)
+                    self._emit(f"Working (Step {iteration})... [{elapsed}s]", level="tool")
+            
+            hb_thread = threading.Thread(target=_heartbeat, daemon=True)
+            hb_thread.start()
+            
+            try:
+                tools_called, tool_results, extracted_text, think_block = processore.extract_and_execute_tools(raw_response, self.config, sm=self.state_manager)
+            finally:
+                stop_hb.set()
+                hb_thread.join(0.5)
             
             if think_block:
                 self._emit({"type": "think", "text": think_block}, level="think")

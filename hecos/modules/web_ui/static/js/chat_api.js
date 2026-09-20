@@ -175,6 +175,7 @@ window.sendMessage = async function() {
       }
     };
     evtSrc.onerror = () => {
+      if (window.AgentUI) window.AgentUI.finalize();
       cursor.remove();
       if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
       else aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Hecos to restart...</span>';
