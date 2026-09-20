@@ -407,6 +407,36 @@
                     "/documento"
                 ],
                 "description": "Genera un documento PDF da un testo HTML o da un template Hecos"
+            },
+            {
+                "id": "generate_pdf",
+                "aliases": [
+                    "/DOCS__generate_pdf",
+                    "/pdf",
+                    "/generate_pdf"
+                ],
+                "description": "Generate a PDF document from a template ID or raw HTML.",
+                "requires_args": true
+            },
+            {
+                "id": "modify_document",
+                "aliases": [
+                    "/DOCS__modify_document",
+                    "/doc_edit",
+                    "/modify_document"
+                ],
+                "description": "Modify an existing document and regenerate its PDF.",
+                "requires_args": true
+            },
+            {
+                "id": "list_documents",
+                "aliases": [
+                    "/DOCS__list_documents",
+                    "/docs_list",
+                    "/list_documents"
+                ],
+                "description": "List all saved HTML and PDF documents.",
+                "requires_args": true
             }
         ]
     },

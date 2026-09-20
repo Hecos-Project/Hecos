@@ -159,12 +159,7 @@ function renderMarkdown(text) {
   if (typeof marked !== 'undefined') {
     // Optionally configure marked (e.g. breaks: true)
     html = marked.parse(text, { breaks: true });
-    
-    // Inject "Visual Editor" button for any .html links
-    html = html.replace(/<a([^>]*)href="([^"]+\.html)"([^>]*)>(.*?)<\/a>/gi, function(match, p1, p2, p3, p4) {
-      const editBtn = `<button class="hecos-btn sm" style="margin-left:8px; font-size:0.75em; padding:3px 8px; vertical-align:middle;" onclick="window.open('/docs/editor?file=' + encodeURIComponent('${p2}'), '_blank')"><i class="fas fa-magic"></i> Visual Editor</button>`;
-      return match + editBtn;
-    });
+
   } else {
     html = text
       .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
