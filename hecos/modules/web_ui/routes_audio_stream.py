@@ -109,92 +109,48 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
     @app.route("/api/audio/test", methods=["POST"])
     def test_audio():
-        """Test Piper TTS with a custom text.
-        mode='web': generates WAV and returns a URL for browser playback.
-        mode='console': generates WAV and plays it server-side.
+        """Test TTS with a custom text using the active engine (Piper, Kokoro, XTTS2).
+        mode='web':     generates WAV async, returns job_id for SSE progress polling.
+        mode='console': speaks server-side (blocking).
         """
         try:
             data = request.get_json(force=True) or {}
             text = data.get("text", "Test di Hecos, sistema vocale operativo.").strip()
             mode = data.get("mode", "web")
 
-            from hecos.core.audio.device_manager import get_audio_config
-            voice_cfg = get_audio_config()
+            from hecos.core.audio.tts_manager import TTSManager
+            from hecos.modules.web_ui.routes_chat_tts import generate_voice_file, set_last_audio_path
 
-            # Dynamic root resolution
-            this_file = os.path.abspath(__file__)
-            hecos_root = os.path.normpath(os.path.join(os.path.dirname(this_file), "..", "..", ".."))
-            default_piper_dir = os.path.join(hecos_root, "bin", "piper")
-            piper_exe_name = "piper.exe" if os.name == "nt" else "piper"
+            logger.info(f"[WebUI] TTS Test — engine: active, mode: {mode}, text: {text[:60]!r}")
 
-            piper_path = voice_cfg.get("piper_path") or os.path.join(default_piper_dir, piper_exe_name)
-            onnx_model = voice_cfg.get("onnx_model") or ""
+            if mode == "console":
+                # Speak on server speakers (non-blocking for Flask, runs in thread)
+                def _speak():
+                    try:
+                        TTSManager.speak(text)
+                    except Exception as e:
+                        logger.error(f"[WebUI] Console TTS speak error: {e}")
+                threading.Thread(target=_speak, daemon=True).start()
+                return jsonify({"ok": True, "msg": "Playing on server speakers..."})
 
-            if not os.path.isfile(piper_path): 
-                piper_path = os.path.join(default_piper_dir, piper_exe_name)
-
-            if onnx_model and not os.path.isabs(onnx_model):
-                onnx_model = os.path.join(default_piper_dir, onnx_model)
-            if not os.path.isfile(onnx_model): 
-                onnx_model = ""
-
-            logger.info(f"[WebUI] TTS Test — piper: {piper_path}, model: {onnx_model}")
-
-            if not os.path.exists(piper_path):
-                return jsonify({
-                    "ok": False,
-                    "error": f"Piper executable not found at: {piper_path}. Please use the Auto button or check the path."
-                }), 400
-
-            if not onnx_model or not os.path.exists(onnx_model):
-                import glob as _glob
-                found_onnx = _glob.glob(os.path.join(default_piper_dir, "*.onnx"))
-                if found_onnx:
-                    onnx_model = found_onnx[0]
-                    logger.info(f"[WebUI] TTS Test — using fallback ONNX model: {onnx_model}")
-                else:
-                    return jsonify({
-                        "ok": False,
-                        "error": f"ONNX model not found at: {onnx_model}. Please select a valid voice in configuration."
-                    }), 400
-
-            voice_cfg["piper_path"] = piper_path
-            voice_cfg["onnx_model"] = onnx_model
-
-            from hecos.modules.web_ui.routes_chat import generate_voice_file, set_last_audio_path
-            
-            if mode == "web":
+            else:
+                # Web mode: async generation + SSE progress
                 job_id = str(uuid.uuid4())
-                
+
                 def _generate_web():
-                    wav_path, wav_id = generate_voice_file(text, voice_cfg, job_id=job_id)
-                    if wav_path:
-                        set_last_audio_path(wav_path, wav_id)
-                        
+                    try:
+                        wav_path, wav_id = generate_voice_file(text, {}, job_id=job_id)
+                        if wav_path:
+                            set_last_audio_path(wav_path, wav_id)
+                            logger.info(f"[WebUI] TTS Test done — id={wav_id}")
+                        else:
+                            logger.error("[WebUI] TTS Test generation returned no path.")
+                    except Exception as e:
+                        import traceback
+                        logger.error(f"[WebUI] TTS Test _generate_web error: {e}\n{traceback.format_exc()}")
+
                 threading.Thread(target=_generate_web, daemon=True).start()
                 return jsonify({"ok": True, "job_id": job_id})
-            else:
-                wav_path, wav_id = generate_voice_file(text, voice_cfg)
-                if not wav_path:
-                    return jsonify({
-                        "ok": False,
-                        "error": "Piper synthesis failed. Check Hecos logs for details."
-                    }), 500
-                    
-                def _play_server_side():
-                    try:
-                        import wave
-                        import sounddevice as sd
-                        import numpy as np
-                        with wave.open(wav_path, 'rb') as wf:
-                            data = wf.readframes(wf.getnframes())
-                            pcm = np.frombuffer(data, dtype=np.int16)
-                            sd.play(pcm.astype("float32") / 32768.0, samplerate=wf.getframerate(), blocking=True)
-                    except Exception as play_e:
-                        logger.error(f"[WebUI] Console TTS play error: {play_e}")
-
-                threading.Thread(target=_play_server_side, daemon=True).start()
-                return jsonify({"ok": True, "msg": "Playing on server speakers..."})
 
         except Exception as exc:
             import traceback

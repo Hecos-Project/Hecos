@@ -126,16 +126,27 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
 
         if job_id:
             _tts_jobs[job_id] = {"current": 0, "total": 1, "status": "generating"}
+
             def progress_callback(current, total):
                 _tts_jobs[job_id]["current"] = current
-                _tts_jobs[job_id]["total"]   = total
-                if current == total:
-                    _tts_jobs[job_id]["status"] = "done"
-            # In WebUI we usually pass session_overrides down. For now voice_cfg carries it, 
-            # but ideally we pass a dedicated session_overrides parameter. We'll pass voice_cfg for now.
-            success = TTSManager.generate_wav_chunked(text, out, progress_callback, session_overrides=voice_cfg.get('session_overrides'))
+                _tts_jobs[job_id]["total"]   = max(total, 1)
+
+            success = TTSManager.generate_wav_chunked(
+                text, out, progress_callback,
+                session_overrides=voice_cfg.get('session_overrides')
+            )
+
+            # Explicitly mark done/error regardless of whether the engine
+            # called progress_callback internally (e.g. Kokoro doesn't).
+            if success:
+                _tts_jobs[job_id].update({"current": 1, "total": 1, "status": "done", "audio_id": audio_id})
+            else:
+                _tts_jobs[job_id]["status"] = "error"
         else:
-            success = TTSManager.generate_wav_chunked(text, out, session_overrides=voice_cfg.get('session_overrides'))
+            success = TTSManager.generate_wav_chunked(
+                text, out,
+                session_overrides=voice_cfg.get('session_overrides')
+            )
 
         if success:
             _chat_log.info(f"[Audio] WAV generation successful: {out}")
@@ -150,8 +161,6 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
             return out, audio_id
         else:
             _chat_log.error("[Audio] WAV generation failed.")
-            if job_id and job_id in _tts_jobs:
-                _tts_jobs[job_id]["status"] = "error"
             # Remove empty/partial file if created
             try:
                 if os.path.exists(out):

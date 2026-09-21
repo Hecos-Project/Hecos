@@ -21,7 +21,7 @@ ai:
     \ your actual character response."
   avatar_size: medium
 backend:
-  type: ollama
+  type: llama_cpp
   cloud:
     model: gemini/gemini-2.5-flash
     temperature: 0.7
@@ -55,7 +55,7 @@ backend:
     keep_alive: 120m
     probe_timeout_sec: 3
   llama_cpp:
-    model: Qwen2.5-Coder-14B-Instruct-abliterated-Q8_0.gguf
+    model: hermes-3-llama-3.1-8b-lorablated.bf16.gguf
     n_gpu_layers: -1
     n_ctx: 32768
     threads: 4
@@ -94,13 +94,13 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-3.5-live-translate-preview
-      - gemini-robotics-er-2-streaming-preview
-      - gemini-3.1-flash-live-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-robotics-er-1.6-preview
-      - gemini-2.0-flash
       - gemini-2.5-flash-native-audio-preview-09-2025
+      - gemini-2.0-flash
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-3.1-flash-live-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.5-live-translate-preview
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -162,23 +162,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - compound-mini
-      - compound
-      - llama-3.3-70b-versatile
       - qwen/qwen3.6-27b
-      - canopylabs/orpheus-v1-english
-      - groq/compound-mini
-      - openai/gpt-oss-20b
-      - whisper-large-v3-turbo
-      - groq/compound
-      - canopylabs/orpheus-arabic-saudi
-      - qwen/qwen3.8-27b
-      - allam-2-7b
-      - openai/gpt-oss-120b
-      - whisper-large-v3
+      - llama-3.3-70b-versatile
+      - compound
+      - compound-mini
       - meta-llama/llama-prompt-guard-2-86m
-      - meta-llama/llama-prompt-guard-2-22m
+      - canopylabs/orpheus-v1-english
+      - canopylabs/orpheus-arabic-saudi
+      - openai/gpt-oss-20b
+      - allam-2-7b
+      - whisper-large-v3-turbo
       - openai/gpt-oss-safeguard-20b
+      - groq/compound
+      - whisper-large-v3
+      - openai/gpt-oss-120b
+      - meta-llama/llama-prompt-guard-2-22m
+      - groq/compound-mini
+      - qwen/qwen3.8-27b
 logging:
   level: DEBUG
   destination: console

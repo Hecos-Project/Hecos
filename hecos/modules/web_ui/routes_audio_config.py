@@ -170,35 +170,7 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
                 logger.error(f"[WebUI] manage_audio_config POST error: {exc}")
                 return jsonify({"ok": False, "error": str(exc)}), 500
 
-    # ── Audio Test ────────────────────────────────────────────────────────────────
-
-    @app.route("/api/audio/test", methods=["POST"])
-    def audio_test():
-        """Test TTS generation (web or console mode)."""
-        try:
-            data = request.get_json(force=True) or {}
-            text = data.get("text", "Hecos TTS test.")
-            mode = data.get("mode", "web")
-
-            from hecos.core.audio.tts_manager import TTSManager
-            import uuid, os
-            from hecos.core.constants import AUDIO_DIR
-
-            if mode == "console":
-                TTSManager.speak(text)
-                return jsonify({"ok": True, "msg": "Playing on server speakers."})
-            else:
-                audio_id = uuid.uuid4().hex
-                out = os.path.join(AUDIO_DIR, "history", f"{audio_id}.wav")
-                os.makedirs(os.path.dirname(out), exist_ok=True)
-                success = TTSManager.generate_wav(text, out)
-                if success:
-                    return jsonify({"ok": True, "url": f"/api/audio/history/{audio_id}", "audio_id": audio_id})
-                else:
-                    return jsonify({"ok": False, "error": "TTS generation failed."})
-        except Exception as e:
-            logger.error(f"[WebUI] audio_test error: {e}")
-            return jsonify({"ok": False, "error": str(e)}), 500
+    # ── Audio Stop ────────────────────────────────────────────────────────────────
 
     @app.route("/api/audio/stop", methods=["POST"])
     def audio_stop():

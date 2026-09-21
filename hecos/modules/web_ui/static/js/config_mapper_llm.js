@@ -5,7 +5,96 @@
  * Depends on: config_mapper_utils.js
  */
 
-function populateBackendUI() {
+// ── Rich Models Cache (fetched from /api/chat/options) ─────────────────────
+let _richModelsCache = null;
+async function _ensureRichModels() {
+    if (_richModelsCache) return _richModelsCache;
+    try {
+        const res = await fetch('/api/chat/options');
+        if (res.ok) {
+            const data = await res.json();
+            _richModelsCache = data.models || [];
+        }
+    } catch (e) {
+        console.warn('[Config] Could not fetch rich model list:', e);
+        _richModelsCache = [];
+    }
+    return _richModelsCache;
+}
+
+/**
+ * Populate a <select> element with rich model formatting:
+ * prefix icons (☁️/🖥️), size tags [7B Q4_0 | 4.7GB], capability badges (⚙️👁️💭).
+ * @param {string} id - Element ID
+ * @param {string[]} plainList - Plain model names from sysOptions
+ * @param {string} currentValue - The currently selected model value
+ * @param {string} backendType - 'ollama' | 'cloud' | 'llama_cpp'
+ * @param {object[]} richModels - Array of rich model objects from /api/chat/options
+ */
+function populateRichSelect(id, plainList, currentValue, backendType, richModels) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    if (!plainList || (Array.isArray(plainList) && plainList.length === 0)) return;
+
+    let items = plainList;
+    if (plainList && typeof plainList === 'object' && !Array.isArray(plainList)) {
+        items = Object.values(plainList);
+    }
+
+    const iconMap = { 'tools': '⚙️', 'vision': '👁️', 'thinking': '💭' };
+    const descMap = { 'tools': 'Tools/Function Calling', 'vision': 'Vision/Multimodal', 'thinking': 'Thinking/Reasoning' };
+
+    items.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+
+        const richModel = (richModels || []).find(rm => {
+            if (backendType === 'cloud') return rm.type === 'cloud' && rm.id === m;
+            return rm.provider === backendType && rm.id === m;
+        });
+
+        if (richModel) {
+            const prefix = richModel.type === 'cloud' ? '☁️ ' : '🖥️ ';
+            let suffix = '';
+            let sizeTag = '';
+
+            if (richModel.parameter_size || richModel.size_bytes) {
+                const parts = [];
+                if (richModel.parameter_size) {
+                    let p = richModel.parameter_size;
+                    if (richModel.quantization_level) p += ' ' + richModel.quantization_level;
+                    parts.push(p);
+                }
+                if (richModel.size_bytes) {
+                    parts.push((richModel.size_bytes / (1024*1024*1024)).toFixed(1) + 'GB');
+                }
+                sizeTag = ' [' + parts.join(' | ') + ']';
+            }
+
+            let tooltipText = richModel.name + sizeTag;
+
+            if (richModel.capabilities && richModel.capabilities.length > 0) {
+                const icons = richModel.capabilities.map(c => iconMap[c]).filter(Boolean).join('');
+                if (icons) suffix = ' ' + icons;
+                const descs = richModel.capabilities.map(c => descMap[c]).filter(Boolean).join(', ');
+                if (descs) tooltipText += '\nCapabilities: ' + descs;
+            }
+
+            opt.textContent = prefix + richModel.name + sizeTag + suffix;
+            opt.title = tooltipText;
+        } else {
+            opt.textContent = m;
+            opt.title = m;
+        }
+
+        el.appendChild(opt);
+    });
+
+    if (currentValue) el.value = currentValue;
+}
+
+async function populateBackendUI() {
     const c = window.cfg;
     const sysOptions = window.sysOptions || {};
 
@@ -20,9 +109,10 @@ function populateBackendUI() {
         }
     }
 
-    // 2. Cloud / Ollama / Kobold model selectors
-    populateSelect('cloud-model',  sysOptions.all_cloud       || [], c.backend?.cloud?.model);
-    populateSelect('ollama-model', sysOptions.ollama_models   || [], c.backend?.ollama?.model);
+    // 2. Cloud / Ollama / Kobold model selectors — rich formatting
+    const richModels = await _ensureRichModels();
+    populateRichSelect('cloud-model',  sysOptions.all_cloud     || [], c.backend?.cloud?.model,  'cloud',     richModels);
+    populateRichSelect('ollama-model', sysOptions.ollama_models || [], c.backend?.ollama?.model, 'ollama',    richModels);
 
     setVal('cloud-temp',     c.backend?.cloud?.temperature   ?? 0.7);
     setVal('ollama-temp',         c.backend?.ollama?.temperature    ?? 0.3);
@@ -41,7 +131,7 @@ function populateBackendUI() {
     setVal('kobold-top-p', c.backend?.kobold?.top_p       ?? 0.92);
     setVal('kobold-rep',   c.backend?.kobold?.rep_pen     ?? 1.1);
 
-    populateSelect('llama-cpp-model', sysOptions.llamacpp_models || [], c.backend?.llama_cpp?.model);
+    populateRichSelect('llama-cpp-model', sysOptions.llamacpp_models || [], c.backend?.llama_cpp?.model, 'llama_cpp', richModels);
     setVal('llama-cpp-temp',    c.backend?.llama_cpp?.temperature  ?? 0.7);
     setVal('llama-cpp-gpu',     c.backend?.llama_cpp?.n_gpu_layers ?? -1);
     setVal('llama-cpp-ctx',     c.backend?.llama_cpp?.n_ctx        ?? 32768);

@@ -6,7 +6,8 @@
 window._qcState = {
     sysOptions: null,
     currentConfig: null,
-    audioConfig: null
+    audioConfig: null,
+    richModels: null
 };
 
 window._qcInitAndShow = async function() {
@@ -17,12 +18,13 @@ window._qcInitAndShow = async function() {
     const statusEl = document.getElementById('qc-sync-status');
     if (statusEl) statusEl.classList.remove('visible');
 
-    // Fetch options, current config, and audio config in parallel
+    // Fetch options, current config, audio config, and rich models in parallel
     try {
-        const [optRes, cfgRes, audRes] = await Promise.all([
+        const [optRes, cfgRes, audRes, richRes] = await Promise.all([
             fetch('/hecos/options'),
             fetch('/hecos/config'),
-            fetch('/api/audio/config')
+            fetch('/api/audio/config'),
+            fetch('/api/chat/options')
         ]);
         
         if (optRes.ok) window._qcState.sysOptions = await optRes.json();
@@ -30,6 +32,10 @@ window._qcInitAndShow = async function() {
         if (audRes.ok) {
             const audJson = await audRes.json();
             window._qcState.audioConfig = audJson.config || {};
+        }
+        if (richRes.ok) {
+            const richJson = await richRes.json();
+            window._qcState.richModels = richJson.models || [];
         }
         
         _qcPopulateUI();
@@ -109,10 +115,64 @@ function _qcUpdateModelSelect(backendType, cfg) {
         activeModel = cfg?.backend?.llama_cpp?.model || '';
     }
     
-    options.forEach(m => {
+    let items = options;
+    if (options && typeof options === 'object' && !Array.isArray(options)) {
+        items = Object.values(options);
+    }
+    
+    const richModels = window._qcState.richModels || [];
+    
+    items.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m;
-        opt.textContent = m;
+        
+        let textContent = m;
+        let tooltipText = m;
+        
+        // Find matching rich model — local models match by provider, cloud by type
+        const richModel = richModels.find(rm => {
+            if (backendType === 'cloud') return rm.type === 'cloud' && rm.id === m;
+            return rm.provider === backendType && rm.id === m;
+        });
+        
+        if (richModel) {
+            let prefix = richModel.type === 'cloud' ? '☁️ ' : '🖥️ ';
+            let suffix = '';
+            let sizeTag = '';
+            
+            if (richModel.parameter_size || richModel.size_bytes) {
+                sizeTag = ' [';
+                let parts = [];
+                if (richModel.parameter_size) {
+                    let p = richModel.parameter_size;
+                    if (richModel.quantization_level) p += ' ' + richModel.quantization_level;
+                    parts.push(p);
+                }
+                if (richModel.size_bytes) {
+                    let gb = (richModel.size_bytes / (1024*1024*1024)).toFixed(1);
+                    parts.push(gb + 'GB');
+                }
+                sizeTag += parts.join(' | ') + ']';
+            }
+            
+            tooltipText = richModel.name + sizeTag;
+            
+            if (richModel.capabilities && richModel.capabilities.length > 0) {
+                const iconMap = { 'tools': '⚙️', 'vision': '👁️', 'thinking': '💭' };
+                const descMap = { 'tools': 'Tools/Function Calling', 'vision': 'Vision/Multimodal', 'thinking': 'Thinking/Reasoning' };
+                
+                const icons = richModel.capabilities.map(c => iconMap[c]).filter(Boolean).join('');
+                if (icons) suffix = ' ' + icons;
+                
+                const descs = richModel.capabilities.map(c => descMap[c]).filter(Boolean).join(', ');
+                if (descs) tooltipText += '\nCapabilities: ' + descs;
+            }
+            
+            textContent = prefix + richModel.name + sizeTag + suffix;
+        }
+        
+        opt.textContent = textContent;
+        opt.title = tooltipText;
         modelEl.appendChild(opt);
     });
     

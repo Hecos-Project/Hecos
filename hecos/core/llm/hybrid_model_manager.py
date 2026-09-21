@@ -2,6 +2,7 @@
 hecos/core/llm/hybrid_model_manager.py
 Provides a unified list of models across local and cloud backends.
 """
+import os
 from hecos.core.logging import logger
 
 def get_hybrid_models(config: dict, config_manager=None) -> list:
@@ -57,11 +58,26 @@ def get_hybrid_models(config: dict, config_manager=None) -> list:
         for m in categorized.get("Kobold (Local)", []):
             models.append({"id": m, "name": m, "type": "local", "provider": "kobold"})
             
-        for m in categorized.get("LlamaCPP (Local)", []):
-            # Parse size from file if possible, or just append
-            models.append({
-                "id": m, "name": m, "type": "local", "provider": "llama_cpp"
-            })
+        llama_cpp_models = categorized.get("LlamaCPP (Local)") or {}
+        if isinstance(llama_cpp_models, dict):
+            for display_name, filename in llama_cpp_models.items():
+                size_bytes = 0
+                try:
+                    from hecos.core.llm.backends.llama_cpp.discovery import get_model_path
+                    filepath = get_model_path(filename)
+                    if filepath and os.path.isfile(filepath):
+                        size_bytes = os.path.getsize(filepath)
+                except Exception:
+                    pass
+                models.append({
+                    "id": filename, "name": filename, "type": "local", "provider": "llama_cpp",
+                    "size_bytes": size_bytes
+                })
+        else:
+            for m in llama_cpp_models:
+                models.append({
+                    "id": m, "name": m, "type": "local", "provider": "llama_cpp"
+                })
             
         # 2. Cloud Models — always shown if providers are configured
         # (allow_cloud controls global default, but per-chat override should always show all options)
