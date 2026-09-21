@@ -172,6 +172,7 @@ function showStopVoiceBtn(visible) {
   const display = visible ? 'inline-flex' : 'none';
   if (btn1) btn1.style.display = display;
   if (btn2) btn2.style.display = display;
+  if (window.updateStopAllBtn) window.updateStopAllBtn();
 }
 
 // Global Exports

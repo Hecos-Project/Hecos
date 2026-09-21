@@ -60,7 +60,7 @@ window.sendMessage = async function() {
   aiBubble.appendChild(cursor);
   
   if (window.sendBtn) window.sendBtn.disabled = true; 
-  window.isStreaming = true;
+  window.isStreaming = true; if (window.updateStopAllBtn) window.updateStopAllBtn();
   let aiText = '';
 
   try {
@@ -87,7 +87,7 @@ window.sendMessage = async function() {
       cursor.remove();
       const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
       aiBubble.innerHTML = window.renderMarkdown(`✅ *${msg}*`);
-      window.isStreaming = false; 
+      window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
       if (window.sendBtn) window.sendBtn.disabled = false;
       return;
     }
@@ -154,8 +154,8 @@ window.sendMessage = async function() {
             }
           }
         }
-
-        window.isStreaming = false; 
+        
+        window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
         if (window.sendBtn) window.sendBtn.disabled = false;
         
       } else if(ev.type === 'audio_ready') {
@@ -179,7 +179,7 @@ window.sendMessage = async function() {
       cursor.remove();
       if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
       else aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Hecos to restart...</span>';
-      evtSrc.close(); window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+      evtSrc.close(); window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
 
       if (!window.isReconnectingAuto) {
         window.isReconnectingAuto = true;
@@ -194,7 +194,7 @@ window.sendMessage = async function() {
   } catch(err) {
     cursor.remove();
     aiBubble.textContent = '❌ ' + (window.I18N?.err_general || 'Error') + ': ' + err.message;
-    window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+    window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
   }
 };
 
@@ -210,7 +210,7 @@ window.sendInternalMessage = async function(text) {
   aiBubble.appendChild(cursor);
   
   if (window.sendBtn) window.sendBtn.disabled = true; 
-  window.isStreaming = true;
+  window.isStreaming = true; if (window.updateStopAllBtn) window.updateStopAllBtn();
   let aiText = '';
 
   try {
@@ -237,7 +237,7 @@ window.sendInternalMessage = async function(text) {
       cursor.remove();
       const msg = window.I18N?.flows_input_sent || "Response sent to flow.";
       aiBubble.innerHTML = window.renderMarkdown(`✅ *${msg}*`);
-      window.isStreaming = false; 
+      window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
       if (window.sendBtn) window.sendBtn.disabled = false;
       return;
     }
@@ -273,7 +273,7 @@ window.sendInternalMessage = async function(text) {
           aiBubble.setAttribute('title', ev.model_info);
           aiBubble.style.cursor = 'help';
         }
-        window.isStreaming = false; 
+        window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();
         if (window.sendBtn) window.sendBtn.disabled = false;
 
       } else if(ev.type === 'audio_ready') {
@@ -296,7 +296,7 @@ window.sendInternalMessage = async function(text) {
       cursor.remove();
       if(!aiText) aiBubble.textContent='❌ ' + (window.I18N?.err_connected || 'Connection error') + ' - Reconnecting...';
       else aiBubble.innerHTML = window.renderMarkdown(aiText) + '<br><br><span style="color:#f39c12;font-size:0.9em;opacity:0.8;">⚠️ Connection lost. Waiting for Hecos to restart...</span>';
-      evtSrc.close(); window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+      evtSrc.close(); window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
 
       if (!window.isReconnectingAuto) {
         window.isReconnectingAuto = true;
@@ -311,6 +311,6 @@ window.sendInternalMessage = async function(text) {
   } catch(err) {
     cursor.remove();
     aiBubble.textContent = '❌ ' + (window.I18N?.err_general || 'Error') + ': ' + err.message;
-    window.isStreaming = false; if (window.sendBtn) window.sendBtn.disabled = false;
+    window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn(); if (window.sendBtn) window.sendBtn.disabled = false;
   }
 };

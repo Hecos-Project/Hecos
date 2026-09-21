@@ -34,7 +34,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: sorc/qwen3.5-claude-4.6-opus:latest
+    model: nandhank/qwen3.5-abliterated-truthful:9b
     available_models:
       '1': sorc/qwen3.5-claude-4.6-opus:4b
       '2': sorc/qwen3.5-claude-4.6-opus:latest
@@ -94,13 +94,13 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-2.5-flash-native-audio-preview-09-2025
-      - gemini-2.0-flash
-      - gemini-robotics-er-1.6-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-3.1-flash-live-preview
-      - gemini-robotics-er-2-streaming-preview
       - gemini-3.5-live-translate-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.1-flash-live-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.0-flash
+      - gemini-2.5-flash-native-audio-preview-09-2025
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -162,23 +162,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - qwen/qwen3.6-27b
-      - llama-3.3-70b-versatile
-      - compound
       - compound-mini
-      - openai/gpt-oss-120b
-      - qwen/qwen3.8-27b
-      - whisper-large-v3-turbo
+      - compound
+      - llama-3.3-70b-versatile
+      - qwen/qwen3.6-27b
+      - openai/gpt-oss-safeguard-20b
       - canopylabs/orpheus-arabic-saudi
       - groq/compound
-      - meta-llama/llama-prompt-guard-2-86m
-      - whisper-large-v3
-      - canopylabs/orpheus-v1-english
       - groq/compound-mini
-      - meta-llama/llama-prompt-guard-2-22m
-      - openai/gpt-oss-20b
-      - openai/gpt-oss-safeguard-20b
       - allam-2-7b
+      - canopylabs/orpheus-v1-english
+      - openai/gpt-oss-120b
+      - whisper-large-v3
+      - whisper-large-v3-turbo
+      - meta-llama/llama-prompt-guard-2-22m
+      - meta-llama/llama-prompt-guard-2-86m
+      - qwen/qwen3.8-27b
+      - openai/gpt-oss-20b
 logging:
   level: DEBUG
   destination: console

@@ -114,16 +114,7 @@ window.confirmPaste = function() {
   if (window.showToast) showToast('✅ Testo incollato nel messaggio');
 };
 
-// ESC to close paste modal
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const modal = document.getElementById('paste-modal');
-    if (modal && modal.classList.contains('open')) {
-      closePasteModal();
-      e.stopPropagation();
-    }
-  }
-});
+// (Escape to close paste modal is handled globally by HKS in hks_actions.js)
 
 // ── Modal Dragging ──────────────────────────────────────────────
 function setupModalDrag() {

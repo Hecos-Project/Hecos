@@ -203,14 +203,6 @@ function _ensureGalleryModal() {
     if (!modal.classList.contains('open')) return;
     if (e.key === 'ArrowLeft')  _show(_idx - 1);
     if (e.key === 'ArrowRight') _show(_idx + 1);
-    if (e.key === 'Escape' || e.keyCode === 27) {
-      modal.classList.remove('open');
-      const vid = document.getElementById('hg-gallery-vid');
-      if (vid) vid.pause();
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    }
   });
 }
 
@@ -336,17 +328,7 @@ function setupImageDragToFolder() {
 }
 
 // ── Keyboard shortcuts ─────────────────────────────────────────────
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' || e.keyCode === 27) {
-    const lb = document.getElementById('img-lightbox');
-    if (lb && lb.classList.contains('open')) {
-      closeLightbox();
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-    }
-  }
-});
+// (Escape is handled globally by HKS in hks_actions.js)
 
 // ── Init ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
