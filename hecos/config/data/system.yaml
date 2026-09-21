@@ -94,13 +94,13 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-3.5-live-translate-preview
-      - gemini-robotics-er-2-streaming-preview
-      - gemini-3.1-flash-live-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-robotics-er-1.6-preview
-      - gemini-2.0-flash
       - gemini-2.5-flash-native-audio-preview-09-2025
+      - gemini-2.0-flash
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-3.1-flash-live-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.5-live-translate-preview
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -162,23 +162,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - compound-mini
-      - compound
-      - llama-3.3-70b-versatile
       - qwen/qwen3.6-27b
-      - whisper-large-v3-turbo
-      - canopylabs/orpheus-v1-english
-      - canopylabs/orpheus-arabic-saudi
-      - whisper-large-v3
-      - groq/compound-mini
-      - groq/compound
+      - llama-3.3-70b-versatile
+      - compound
+      - compound-mini
       - openai/gpt-oss-20b
+      - canopylabs/orpheus-v1-english
       - openai/gpt-oss-safeguard-20b
-      - meta-llama/llama-prompt-guard-2-86m
-      - qwen/qwen3.8-27b
-      - allam-2-7b
-      - openai/gpt-oss-120b
       - meta-llama/llama-prompt-guard-2-22m
+      - whisper-large-v3-turbo
+      - whisper-large-v3
+      - meta-llama/llama-prompt-guard-2-86m
+      - groq/compound-mini
+      - canopylabs/orpheus-arabic-saudi
+      - allam-2-7b
+      - qwen/qwen3.8-27b
+      - groq/compound
+      - openai/gpt-oss-120b
 logging:
   level: DEBUG
   destination: console
