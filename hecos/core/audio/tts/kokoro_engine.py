@@ -111,6 +111,14 @@ class KokoroEngine(BaseTTSEngine):
         self._is_speaking = False
         self._stop_flag = False
 
+        if not _espeak_available():
+            logger.warning(
+                "KOKORO",
+                "⚠️ eSpeak-NG non è installato o non è nel PATH! "
+                "Le voci italiane (es. Nicola, Sara) e altre lingue non-inglesi NON funzioneranno. "
+                "Per risolvere, installalo scaricando il .msi da: https://github.com/espeak-ng/espeak-ng/releases"
+            )
+
     # ── Availability ──────────────────────────────────────────────────────────
 
     @staticmethod
@@ -203,7 +211,13 @@ class KokoroEngine(BaseTTSEngine):
 
     def _get_voice(self, kwargs: dict) -> str:
         """Resolve voice ID from kwargs or global audio config."""
+        # 1. Direct kwarg
         voice = kwargs.get("tts_voice") or kwargs.get("voice")
+        # 2. session_overrides dict (passed by TTSManager from quick panel / chat)
+        if not voice or voice == "default":
+            overrides = kwargs.get("session_overrides") or {}
+            voice = overrides.get("tts_voice")
+        # 3. Global audio config fallback
         if not voice or voice == "default":
             try:
                 from hecos.core.audio.device_manager import get_audio_config
@@ -211,7 +225,9 @@ class KokoroEngine(BaseTTSEngine):
                 voice = cfg.get("kokoro", {}).get("voice", "af_heart")
             except Exception:
                 voice = "af_heart"
-        return voice if voice in KOKORO_VOICES else "af_heart"
+        resolved = voice if voice in KOKORO_VOICES else "af_heart"
+        logger.info("KOKORO", f"Voice resolved: '{resolved}' (requested: '{voice}')")
+        return resolved
 
     def _get_speed(self, kwargs: dict) -> float:
         """Resolve speech speed from kwargs or global audio config."""
@@ -237,6 +253,20 @@ class KokoroEngine(BaseTTSEngine):
         voice = self._get_voice(kwargs)
         speed = self._get_speed(kwargs)
         lang_code = voice[0] if voice else "a"
+        lang_name = _LANG_NAMES.get(lang_code, lang_code)
+
+        logger.info("KOKORO", f"generate_wav: voice='{voice}', lang='{lang_name}', speed={speed}")
+
+        # Italian (and other non-native langs) require espeak-ng
+        if lang_code not in _MISAKI_NATIVE_LANGS and not _espeak_available():
+            logger.error(
+                "KOKORO",
+                f"Voice '{voice}' ({lang_name}) requires espeak-ng, which was NOT found on PATH. "
+                f"Download it from https://github.com/espeak-ng/espeak-ng/releases , "
+                f"install it and make sure it is in the system PATH, then restart Hecos."
+            )
+            return False
+
         pipeline = self._get_pipeline(lang_code)
 
         if not pipeline:
@@ -285,6 +315,18 @@ class KokoroEngine(BaseTTSEngine):
         voice = self._get_voice(kwargs)
         speed = self._get_speed(kwargs)
         lang_code = voice[0] if voice else "a"
+        lang_name = _LANG_NAMES.get(lang_code, lang_code)
+
+        logger.info("KOKORO", f"speak: voice='{voice}', lang='{lang_name}'")
+
+        if lang_code not in _MISAKI_NATIVE_LANGS and not _espeak_available():
+            logger.error(
+                "KOKORO",
+                f"Voice '{voice}' ({lang_name}) requires espeak-ng, which was NOT found on PATH. "
+                f"Install it from https://github.com/espeak-ng/espeak-ng/releases and restart Hecos."
+            )
+            return
+
         pipeline = self._get_pipeline(lang_code)
 
         if not pipeline:

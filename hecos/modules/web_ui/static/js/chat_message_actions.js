@@ -207,7 +207,8 @@ function buildMessageActions(msgEl, role, historyIndex) {
                       progressContainer.remove();
                       listenBtn.disabled = false;
                       listenBtn.style.opacity = '1';
-                      showToast(`❌ TTS Error`);
+                      const errMsg = prog.error || 'TTS Error';
+                      showToast(`❌ ${errMsg}`, 5000);
                       return;
                   }
                   

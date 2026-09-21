@@ -122,7 +122,20 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
 
         from hecos.core.audio.tts_manager import TTSManager
 
-        _chat_log.info(f"[Audio] WebUI generating WAV id={audio_id} via TTSManager...")
+        # Log the active engine and voice at time of generation for easier debugging
+        try:
+            from hecos.core.audio.device_manager import get_audio_config
+            _acfg = get_audio_config()
+            _engine = _acfg.get('active_engine', 'unknown')
+            if _engine == 'kokoro':
+                _voice = _acfg.get('kokoro', {}).get('voice', '?')
+            elif _engine == 'piper':
+                _voice = _acfg.get('onnx_model', '?')
+            else:
+                _voice = '?'
+            _chat_log.info(f"[Audio] Engine='{_engine}', Voice='{_voice}', job_id={job_id}")
+        except Exception:
+            pass
 
         if job_id:
             _tts_jobs[job_id] = {"current": 0, "total": 1, "status": "generating"}
@@ -141,7 +154,10 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
             if success:
                 _tts_jobs[job_id].update({"current": 1, "total": 1, "status": "done", "audio_id": audio_id})
             else:
-                _tts_jobs[job_id]["status"] = "error"
+                _tts_jobs[job_id].update({
+                    "status": "error",
+                    "error": "TTS generation failed. Check Hecos logs — Italian/non-English voices require eSpeak-NG."
+                })
         else:
             success = TTSManager.generate_wav_chunked(
                 text, out,
@@ -160,7 +176,7 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
             cleanup_audio_history(max_f)
             return out, audio_id
         else:
-            _chat_log.error("[Audio] WAV generation failed.")
+            _chat_log.error("[Audio] WAV generation failed. Check engine logs above for details.")
             # Remove empty/partial file if created
             try:
                 if os.path.exists(out):
@@ -172,7 +188,7 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
     except Exception as e:
         _chat_log.error(f"[Audio] generate_voice_file error: {e}")
         if job_id and job_id in _tts_jobs:
-            _tts_jobs[job_id]["status"] = "error"
+            _tts_jobs[job_id].update({"status": "error", "error": str(e)})
         return None, None
 
 

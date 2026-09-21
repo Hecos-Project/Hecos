@@ -30,6 +30,8 @@ dependencies = [
     "GPUtil",
     "numpy",
     "soundfile",
+    "kokoro",
+    "misaki[en]",
     "pynput",
     "playwright>=1.40.0",
     "beautifulsoup4",

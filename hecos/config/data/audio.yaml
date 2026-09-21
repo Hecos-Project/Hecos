@@ -9,7 +9,7 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: if_sara
+  voice: im_nicola
 xtts:
   speed: 1.0
   language: it
