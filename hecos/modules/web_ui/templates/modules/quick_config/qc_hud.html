@@ -13,7 +13,7 @@
           <option value="ollama">Local (Ollama)</option>
           <option value="cloud">Cloud APIs</option>
           <option value="kobold">KoboldCPP</option>
-          <option value="hybrid">Hybrid (Local + Cloud)</option>
+          <option value="llama_cpp">Llama CPP</option>
         </select>
       </div>
       
@@ -28,6 +28,21 @@
         <label><i class="fas fa-ghost"></i> {{ t('header_soul') }}</label>
         <select id="qc-persona" onchange="window.qcSaveConfig()">
           <option value="">Loading...</option>
+        </select>
+      </div>
+
+      <div class="qc-hud-field" style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 5px;">
+        <label><i class="fas fa-volume-up"></i> TTS Engine</label>
+        <select id="qc-tts-engine" onchange="window.qcTTSChanged()">
+          <option value="piper">Piper (Fast)</option>
+          <option value="kokoro">Kokoro (Balanced)</option>
+          <option value="xtts2">XTTSv2 (Quality)</option>
+        </select>
+      </div>
+
+      <div class="qc-hud-field">
+        <label><i class="fas fa-microphone-alt"></i> TTS Voice</label>
+        <select id="qc-tts-voice" onchange="window.qcSaveConfig()">
         </select>
       </div>
     </div>

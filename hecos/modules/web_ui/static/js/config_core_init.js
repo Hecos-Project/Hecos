@@ -265,11 +265,10 @@ function mergeHubPanels(panels) {
         }
 
         // Dynamic Asset Loader (CSS/JS)
-        // HPM plugin assets are served via /hpm/static/<plugin_id>/<path>
+        // HPM plugin assets are served via /hpm_plugin/<plugin_id>/<path>
         // core assets remain under /static/<path>
         const cssPrefix = p.css_file && p.css_file.startsWith('hpm_plugin/') ? '/' : '/static/';
-        const jsPrefix  = p.js_file  && p.js_file.startsWith('hpm_plugin/')  ? '/' : '/static/';
-        
+
         if (p.css_file && !document.querySelector(`link[href^="${cssPrefix}${p.css_file}"]`)) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -277,12 +276,39 @@ function mergeHubPanels(panels) {
             document.head.appendChild(link);
             console.log(`[HPM AssetLoader] Injected CSS: ${p.css_file}`);
         }
-        if (p.js_file && !document.querySelector(`script[src^="${jsPrefix}${p.js_file}"]`)) {
+
+        // ── Multi-file JS loader ──────────────────────────────────────────────
+        // Prefer p.js_files (ordered array); fall back to legacy p.js_file string.
+        const jsFilesToLoad = (p.js_files && p.js_files.length > 0)
+            ? p.js_files
+            : (p.js_file ? [p.js_file] : []);
+
+        const _loadScriptSequential = (files, index) => {
+            if (index >= files.length) return;
+            const jsPath = files[index];
+            const jsPrefix = jsPath.startsWith('hpm_plugin/') ? '/' : '/static/';
+            const fullSrc  = `${jsPrefix}${jsPath}?v=${window.VERSION || Date.now()}`;
+
+            // Skip if already injected
+            if (document.querySelector(`script[src^="${jsPrefix}${jsPath}"]`)) {
+                _loadScriptSequential(files, index + 1);
+                return;
+            }
+
             const script = document.createElement('script');
-            script.src = `${jsPrefix}${p.js_file}?v=${window.VERSION || Date.now()}`;
+            script.src = fullSrc;
             script.defer = true;
+            script.onload  = () => _loadScriptSequential(files, index + 1);
+            script.onerror = () => {
+                console.error(`[HPM AssetLoader] Failed to load JS: ${jsPath}`);
+                _loadScriptSequential(files, index + 1);
+            };
             document.head.appendChild(script);
-            console.log(`[HPM AssetLoader] Injected JS: ${p.js_file}`);
+            console.log(`[HPM AssetLoader] Injected JS [${index + 1}/${files.length}]: ${jsPath}`);
+        };
+
+        if (jsFilesToLoad.length > 0) {
+            _loadScriptSequential(jsFilesToLoad, 0);
         }
     });
     if (added > 0) {

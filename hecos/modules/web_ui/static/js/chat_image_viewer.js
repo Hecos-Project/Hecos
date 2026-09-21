@@ -116,7 +116,7 @@ function _ensureGalleryModal() {
     </div>
     <div id="hg-gallery-name"></div>
     <div id="hg-gallery-actions">
-      <button class="hg-act-btn" id="hg-act-download">⬇ Scarica</button>
+      <button class="hg-act-btn" id="hg-act-download">⬇ Download</button>
       <button class="hg-act-btn" id="hg-act-folder">📁 Apri cartella</button>
     </div>
     <div id="hg-gallery-filmstrip"></div>
@@ -203,10 +203,6 @@ function _ensureGalleryModal() {
     if (!modal.classList.contains('open')) return;
     if (e.key === 'ArrowLeft')  _show(_idx - 1);
     if (e.key === 'ArrowRight') _show(_idx + 1);
-    if (e.key === 'Escape') {
-      modal.classList.remove('open');
-      document.getElementById('hg-gallery-vid').pause();
-    }
   });
 }
 
@@ -276,7 +272,7 @@ window.processAiImages = function(html) {
        onclick="if(window.openLightbox) window.openLightbox('${url}')"
        ondblclick="if(window.openChatGallery) window.openChatGallery('${url}'); return false;">
   <div class="chat-img-overlay">
-    <button class="img-action-btn" onclick="downloadChatImage('${url}','${displayTitle}')">⬇ Scarica</button>
+    <button class="img-action-btn" onclick="downloadChatImage('${url}','${displayTitle}')">⬇ Download</button>
     <button class="img-action-btn" onclick="openLightbox('${url}')">🔍 Zoom</button>
     <button class="img-action-btn" onclick="openChatGallery('${url}')">🖼 Gallery</button>
     <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>
@@ -332,9 +328,7 @@ function setupImageDragToFolder() {
 }
 
 // ── Keyboard shortcuts ─────────────────────────────────────────────
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeLightbox();
-});
+// (Escape is handled globally by HKS in hks_actions.js)
 
 // ── Init ──────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

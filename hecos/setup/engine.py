@@ -293,6 +293,110 @@ def download_piper_engine():
         print(f"\n[-] Failed to download/install Piper: {e}")
         return False
 
+def _run_pip_install(engine_name, packages):
+    try:
+        from hecos.core.logging import logger
+    except ImportError:
+        import logging
+        logger = logging.getLogger("SETUP")
+
+    logger.info(f"[SETUP] Starting {engine_name} dependencies installation: {packages}")
+    try:
+        import subprocess, sys
+        cmd = [sys.executable, "-m", "pip", "install"] + packages
+        process = subprocess.Popen(
+            cmd, 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.STDOUT, 
+            text=True, 
+            encoding='utf-8', 
+            errors='replace'
+        )
+        
+        for line in process.stdout:
+            line = line.strip()
+            if line:
+                logger.debug(f"[{engine_name.upper()}_INSTALL] {line}")
+                
+        process.wait()
+        if process.returncode == 0:
+            logger.info(f"[SETUP] {engine_name} installed successfully.")
+            return True
+        else:
+            logger.error(f"[SETUP] Failed to install {engine_name}. Exit code: {process.returncode}")
+            return False
+    except Exception as e:
+        logger.error(f"[SETUP] Exception during {engine_name} installation: {e}")
+        return False
+
+def _install_espeak_ng():
+    """
+    Install eSpeak NG via winget (Windows only).
+    Adds its install directory to the current process PATH so kokoro
+    can use it immediately without requiring a full restart.
+    """
+    try:
+        from hecos.core.logging import logger
+    except ImportError:
+        import logging
+        logger = logging.getLogger("SETUP")
+
+    import shutil, subprocess, sys
+
+    # Already on PATH?
+    if shutil.which("espeak-ng"):
+        logger.info("[SETUP] espeak-ng is already available on PATH.")
+        _patch_espeak_path()
+        return True
+
+    if sys.platform != "win32":
+        logger.warning("[SETUP] Non-Windows: please install espeak-ng manually.")
+        return False
+
+    logger.info("[SETUP] Installing eSpeak NG via winget…")
+    try:
+        result = subprocess.run(
+            [
+                "winget", "install",
+                "--id", "eSpeak-NG.eSpeak-NG",
+                "--silent",
+                "--accept-source-agreements",
+                "--accept-package-agreements",
+            ],
+            capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
+        if result.returncode == 0 or "Successfully installed" in result.stdout:
+            logger.info("[SETUP] eSpeak NG installed successfully.")
+            _patch_espeak_path()
+            return True
+        else:
+            logger.error(f"[SETUP] winget espeak-ng failed (code {result.returncode}): {result.stdout.strip()}")
+            return False
+    except FileNotFoundError:
+        logger.error("[SETUP] winget not found. Install eSpeak NG manually from https://github.com/espeak-ng/espeak-ng/releases")
+        return False
+    except Exception as e:
+        logger.error(f"[SETUP] espeak-ng installation error: {e}")
+        return False
+
+
+def _patch_espeak_path():
+    """Add the default eSpeak NG install directory to the current process PATH."""
+    import os
+    espeak_dir = r"C:\Program Files\eSpeak NG"
+    if os.path.isdir(espeak_dir) and espeak_dir not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = espeak_dir + os.pathsep + os.environ.get("PATH", "")
+
+
+def download_kokoro_engine():
+    _patch_espeak_path()   # Ensure espeak-ng is usable even before re-install
+    pip_ok = _run_pip_install("Kokoro", ["kokoro", "misaki[en]", "soundfile"])
+    esp_ok = _install_espeak_ng()
+    return pip_ok and esp_ok
+
+def download_xtts_engine():
+    return _run_pip_install("XTTSv2", ["TTS"])
+
 def unattended_onboarding(target_voices=None):
     print("=" * 60)
     print(f"  {T('onboarding_header')}")

@@ -3,8 +3,8 @@ routes_chat_tts.py
 ────────────────────────────────────────────────────────────────────────────
 Hecos WebUI — TTS (Piper) Engine for Chat
 Provides:
-  generate_voice_file()        → runs PiperDaemon, returns (path, audio_id)
-  stop_voice_generation()      → kills active Piper process (delegated)
+  generate_voice_file()        → runs TTSManager, returns (path, audio_id)
+  stop_voice_generation()      → kills active TTS generation (delegated)
   set_last_audio_path()        → updates the global path consumed by /api/audio
   get_audio_history_path()     → returns path inside media/audio/history/
   cleanup_audio_history()      → prunes oldest WAVs beyond max_files limit
@@ -111,7 +111,7 @@ def get_tts_progress(job_id: str) -> dict:
 
 def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple[str | None, str | None]:
     """
-    Runs PiperDaemon in-memory synthesis and stores the WAV in media/audio/history/.
+    Runs TTSManager in-memory synthesis and stores the WAV in media/audio/history/.
     Returns (absolute_path, audio_id) on success, or (None, None) on failure.
     audio_id is a UUID string usable as a persistent file reference.
     """
@@ -120,21 +120,49 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
         audio_id = uuid.uuid4().hex
         out = os.path.join(HISTORY_DIR, f"{audio_id}.wav")
 
-        from hecos.core.audio.piper_daemon import get_daemon
-        daemon = get_daemon()
+        from hecos.core.audio.tts_manager import TTSManager
 
-        _chat_log.info(f"[Audio] WebUI generating WAV id={audio_id} via PiperDaemon...")
+        # Log the active engine and voice at time of generation for easier debugging
+        try:
+            from hecos.core.audio.device_manager import get_audio_config
+            _acfg = get_audio_config()
+            _engine = _acfg.get('active_engine', 'unknown')
+            if _engine == 'kokoro':
+                _voice = _acfg.get('kokoro', {}).get('voice', '?')
+            elif _engine == 'piper':
+                _voice = _acfg.get('onnx_model', '?')
+            else:
+                _voice = '?'
+            _chat_log.info(f"[Audio] Engine='{_engine}', Voice='{_voice}', job_id={job_id}")
+        except Exception:
+            pass
 
         if job_id:
             _tts_jobs[job_id] = {"current": 0, "total": 1, "status": "generating"}
+
             def progress_callback(current, total):
                 _tts_jobs[job_id]["current"] = current
-                _tts_jobs[job_id]["total"]   = total
-                if current == total:
-                    _tts_jobs[job_id]["status"] = "done"
-            success = daemon.generate_wav_chunked(text, out, progress_callback)
+                _tts_jobs[job_id]["total"]   = max(total, 1)
+
+            success = TTSManager.generate_wav_chunked(
+                text, out, progress_callback,
+                session_overrides=voice_cfg.get('session_overrides')
+            )
+
+            # Explicitly mark done/error regardless of whether the engine
+            # called progress_callback internally (e.g. Kokoro doesn't).
+            if success:
+                _tts_jobs[job_id].update({"current": 1, "total": 1, "status": "done", "audio_id": audio_id})
+            else:
+                _tts_jobs[job_id].update({
+                    "status": "error",
+                    "error": "TTS generation failed. Check Hecos logs — Italian/non-English voices require eSpeak-NG."
+                })
         else:
-            success = daemon.generate_wav_chunked(text, out)
+            success = TTSManager.generate_wav_chunked(
+                text, out,
+                session_overrides=voice_cfg.get('session_overrides')
+            )
 
         if success:
             _chat_log.info(f"[Audio] WAV generation successful: {out}")
@@ -148,9 +176,7 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
             cleanup_audio_history(max_f)
             return out, audio_id
         else:
-            _chat_log.error("[Audio] WAV generation failed.")
-            if job_id and job_id in _tts_jobs:
-                _tts_jobs[job_id]["status"] = "error"
+            _chat_log.error("[Audio] WAV generation failed. Check engine logs above for details.")
             # Remove empty/partial file if created
             try:
                 if os.path.exists(out):
@@ -162,21 +188,21 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
     except Exception as e:
         _chat_log.error(f"[Audio] generate_voice_file error: {e}")
         if job_id and job_id in _tts_jobs:
-            _tts_jobs[job_id]["status"] = "error"
+            _tts_jobs[job_id].update({"status": "error", "error": str(e)})
         return None, None
 
 
 def stop_voice_generation():
-    """Immediately kills any active Piper generation for the browser output."""
+    """Immediately kills any active TTS generation for the browser output."""
     try:
-        from hecos.core.audio.piper_daemon import get_daemon
-        get_daemon().stop()
-        _chat_log.info("[Audio] Called PiperDaemon.stop() from WebUI.")
+        from hecos.core.audio.tts_manager import TTSManager
+        TTSManager.stop()
+        _chat_log.info("[Audio] Called TTSManager.stop() from WebUI.")
     except Exception as e:
-        _chat_log.error(f"[Audio] Failed to terminate web Piper: {e}")
+        _chat_log.error(f"[Audio] Failed to terminate web TTS: {e}")
 
 
-def _maybe_generate_tts(text: str, cfg_mgr) -> tuple[str | None, str | None]:
+def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> tuple[str | None, str | None]:
     """
     Generate TTS audio for the WebUI.
     Returns ("web", audio_id) if the WAV was generated, (None, None) otherwise.
@@ -185,6 +211,17 @@ def _maybe_generate_tts(text: str, cfg_mgr) -> tuple[str | None, str | None]:
     try:
         from hecos.core.audio.device_manager import get_audio_config
         voice_cfg = get_audio_config()
+        
+        # Extract TTS overrides from the active ConfigManager (merged session overrides) if no overrides passed
+        if session_overrides is None:
+            ai_cfg = cfg_mgr.config.get("ai", {})
+            session_overrides = {
+                "tts_engine": ai_cfg.get("tts_engine"),
+                "tts_voice": ai_cfg.get("tts_voice")
+            }
+            
+        voice_cfg['session_overrides'] = session_overrides
+
         if not voice_cfg.get("voice_status", True):
             _chat_log.debug("[Chat] TTS skipped: voice_status=False.")
             return None, None

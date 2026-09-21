@@ -3,122 +3,122 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.50.0 (Runtime Alpha)
+# Hecos - Version 0.50.0 (Phase II: Ghost Fire)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
-**Helping Companion System (Private, Fast, Simple)**[cite: 1]
+**Helping Companion System (Private, Fast, Simple)**
 
 ---
 
-> **Runtime Alpha Status**: Hecos is currently in `v0.50.0`[cite: 1]. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution[cite: 1].
+> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.50.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
 >
 > ⚠️ **Important Notice**: Starting from this major release (0.50.0+), the primary development and target environment is officially **Windows 11**.
 
 ## 🚀 Overview
-**Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution[cite: 1]. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool[cite: 1].
+**Hecos** is a **Helping Companion System**: a private, local-first ecosystem designed to seamlessly bridge technology and human life by combining AI reasoning, visual automation, and direct system execution. Rather than chasing abstract concepts like digital sovereignty, Hecos focuses on a single, pragmatic mission: **improving human life** by turning local hardware into a highly efficient, practical everyday tool.
 
 Built on three core pillars:
-* 🛡️ **Privacy First** — 100% local operation, zero cloud dependency, and a 3-tier privacy architecture[cite: 1].
-* ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness[cite: 1].
-* 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive[cite: 1].
+* 🛡️ **Privacy First** — 100% local operation, zero cloud dependency, and a 3-tier privacy architecture.
+* ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
+* 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive.
 
-Now fully migrated to a **stable Runtime Alpha architecture**, Hecos 0.50.0 brings a dedicated Web Interface (Chat + Config) and full internationalization[cite: 1]. Powered by **LiteLLM**, it supports Ollama, KoboldCpp, and major cloud providers with real-time streaming and local TTS[cite: 1].
+Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.50.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro & Piper).
 
 ---
 
 ## ✨ Key Features (v0.50.0)
-* 🎭 **Per-Chat Overrides** — Assign different LLM models and Personas to individual chat sessions. Create a highly capable coding workspace with Claude 3.5 Sonnet and a casual chat with Llama 3 side-by-side.
+* 🎭 **Inline Chat Overrides & Infinite Personalities** — Override the AI Model, Persona, and Voice directly within the chat interface on the fly. Create infinite personalities instantly for each conversation session.
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
 * 🛠️ **External Dependency Manager (EDM)** — New system that auto-detects missing core dependencies (Node, Tesseract, VC++), enabling one-click downloads directly from the WebUI.
 * 🛡️ **HPM Integrity Verification** — New `/verify` API and Control Room UI to cryptographically validate installed package files against their Ed25519-signed manifest hashes.
 * 🔒 **Hecos SDK (Total Isolation)** — Run HPM packages in dedicated, isolated subprocesses and independent virtual environments (venv) to prevent dependency hell and main event loop blocking.
-* ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally[cite: 1].
-* ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands[cite: 1].
-* **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding[cite: 1].
-* **⏰ Reminder Module** — NLP-powered task scheduler with snooze capabilities and active OS notifications[cite: 1].
-* **💻 Action Window** — Clean, terminal-style console directly inside the chat UI for monitoring native system execution and background processes[cite: 1].
-* **🎵 New Media Player** — Advanced audio backend (VLC 64-bit + FFplay fallback) supporting resilient resume/pause state, dynamic playlist calculations, and global volume control[cite: 1].
-* 🎨 **Flux Prompt Studio** — Real-time prompt engineering for Flux.1 with automatic sidecar metadata persistence[cite: 1].
-* 🖼️ **Image Metadata Injection** — Generative AI results now include hidden JSON sidecars (.txt) containing prompt, seed, and sampler info for professional workflows[cite: 1].
-* 🎭 **Enhanced Chat UI** — New Chat headers with visible User/Persona names, timestamps, and improved message action positioning (Copy/Edit/Regenerate)[cite: 1].
-* 🔄 **Fixed Regeneration** — Resolved critical history duplication and session-mismatch issues during message regeneration[cite: 1].
-* 🗃️ **Dual-Mode Chat Archive** — Context-aware archiving system with individual chat restore and bulk-delete capabilities[cite: 1].
-* 🧠 **High-Performance RAG (FastEmbed)** — CPU-native, multi-tenant vector memory utilizing ONNX and LanceDB for blazing-fast document ingestion[cite: 1].
-* 🔐 **Per-User Vault Isolation** — Consolidated memory architecture ensuring absolute privacy separation for semantic data and chat history per profile[cite: 1].
-* 🛡️ **3-Tier Privacy Architecture** — Unified session management with **Normal**, **Auto-Wipe** (RAM-only store, cleared on exit), and **Incognito** (Zero-trace) modes[cite: 1].
-* 📦 **Hecos Package Manager (HPM)** — The ultimate piece for universal extensibility. A centralized, dynamic installer that supports standalone `.hpkg` bundles. Easily install third-party plugins, widgets, and config panels with drag-and-drop, isolated configurations, and Ed25519 digital signatures[cite: 1].
-* 🔌 **Universal Tool Hub (MCP Bridge)** — Native support for the **Model Context Protocol**. Connect to thousands of external AI tools with a single click[cite: 1].
-* 🔭 **Deep MCP Discovery** — Advanced explorer with multi-registry search (Smithery, MCPSkills, GitHub) and one-click installation[cite: 1].
-* 🔒 **Professional Hecos PKI (HTTPS)** — Self-signing Root CA for a full "Green Lock" experience on all devices[cite: 1].
-* 🏗️ **Native WebUI Plugin** — High-performance, low-latency interface for desktop and mobile[cite: 1].
-* 🎛️ **Control Room & Widgets** — A customizable, masonry-style dashboard for real-time widgets and OS telemetry[cite: 1].
-* 🌐 **Browser Automation** — Native plugin for semantic web interaction and scraping[cite: 1].
-* ⌨️ **OS Automation** — Native plugin for programmatic mouse and keyboard control[cite: 1].
-* 💾 **Hecos Drive (File Manager)** — Integrated dual-panel file management and editor[cite: 1].
+* ⚡ **HDCS (Direct Commands)** — Instantly execute 150+ native functions bypassing the AI brain via `/` in chat or `Ctrl+Alt+Space` globally.
+* ⚙️ **Flows Automation Engine** — Visual drag-and-drop node editor for creating complex, multi-step triggers and actions, fully integrated with NLP voice commands.
+* **📅 Integrated Calendar** — Full calendar module with holiday tracking and localized event color coding.
+* **⏰ Reminder Module** — NLP-powered task scheduler with snooze capabilities and active OS notifications.
+* **💻 Action Window** — Clean, terminal-style console directly inside the chat UI for monitoring native system execution and background processes.
+* **🎵 New Media Player** — Advanced audio backend (VLC 64-bit + FFplay fallback) supporting resilient resume/pause state, dynamic playlist calculations, and global volume control.
+* 🎨 **Flux Prompt Studio** — Real-time prompt engineering for Flux.1 with automatic sidecar metadata persistence.
+* 🖼️ **Image Metadata Injection** — Generative AI results now include hidden JSON sidecars (.txt) containing prompt, seed, and sampler info for professional workflows.
+* 🎭 **Enhanced Chat UI** — New Chat headers with visible User/Persona names, timestamps, and improved message action positioning (Copy/Edit/Regenerate).
+* 🔄 **Fixed Regeneration** — Resolved critical history duplication and session-mismatch issues during message regeneration.
+* 🗃️ **Dual-Mode Chat Archive** — Context-aware archiving system with individual chat restore and bulk-delete capabilities.
+* 🧠 **High-Performance RAG (FastEmbed)** — CPU-native, multi-tenant vector memory utilizing ONNX and LanceDB for blazing-fast document ingestion.
+* 🔐 **Per-User Vault Isolation** — Consolidated memory architecture ensuring absolute privacy separation for semantic data and chat history per profile.
+* 🛡️ **3-Tier Privacy Architecture** — Unified session management with **Normal**, **Auto-Wipe** (RAM-only store, cleared on exit), and **Incognito** (Zero-trace) modes.
+* 📦 **Hecos Package Manager (HPM)** — The ultimate piece for universal extensibility. A centralized, dynamic installer that supports standalone `.hpkg` bundles. Easily install third-party plugins, widgets, and config panels with drag-and-drop, isolated configurations, and Ed25519 digital signatures.
+* 🔌 **Universal Tool Hub (MCP Bridge)** — Native support for the **Model Context Protocol**. Connect to thousands of external AI tools with a single click.
+* 🔭 **Deep MCP Discovery** — Advanced explorer with multi-registry search (Smithery, MCPSkills, GitHub) and one-click installation.
+* 🔒 **Professional Hecos PKI (HTTPS)** — Self-signing Root CA for a full "Green Lock" experience on all devices.
+* 🏗️ **Native WebUI Plugin** — High-performance, low-latency interface for desktop and mobile.
+* 🎛️ **Control Room & Widgets** — A customizable, masonry-style dashboard for real-time widgets and OS telemetry.
+* 🌐 **Browser Automation** — Native plugin for semantic web interaction and scraping.
+* ⌨️ **OS Automation** — Native plugin for programmatic mouse and keyboard control.
+* 💾 **Hecos Drive (File Manager)** — Integrated dual-panel file management and editor.
 
 ---
 
 ## 🧠 How It Works
-Hecos is built around a highly modular, 8-layer architecture. Everything is a **module**[cite: 1]:
-* **Core Modules** → Built-in, non-removable OS/system functions[cite: 1]
-* **Plugins** → Reactive tools and capabilities called by the AI (system, web, media, etc.)[cite: 1]
-* **Apps** → Autonomous mini-applications with their own standalone UI and lifecycle[cite: 1]
-* **Personas** → Installable AI personalities and behavioral profiles[cite: 1]
-* **Widgets** → Interactive frontend components for the Control Room dashboard[cite: 1]
-* **Themes** → Custom CSS and styling packages for the UI[cite: 1]
-* **Skill Packs** → Additional slash-command packs for the chat interface[cite: 1]
-* **MCP Servers** → Universal external tool bridges via the Model Context Protocol[cite: 1]
+Hecos is built around a highly modular, 8-layer architecture. Everything is a **module**:
+* **Core Modules** → Built-in, non-removable OS/system functions
+* **Plugins** → Reactive tools and capabilities called by the AI (system, web, media, etc.)
+* **Apps** → Autonomous mini-applications with their own standalone UI and lifecycle
+* **Personas** → Installable AI personalities and behavioral profiles
+* **Widgets** → Interactive frontend components for the Control Room dashboard
+* **Themes** → Custom CSS and styling packages for the UI
+* **Skill Packs** → Additional slash-command packs for the chat interface
+* **MCP Servers** → Universal external tool bridges via the Model Context Protocol
 
-The AI generates structured commands that are interpreted and executed through the plugin system[cite: 1].
+The AI generates structured commands that are interpreted and executed through the plugin system.
 
 ---
 
 ### 🎭 The Soul of the Machine: Native Personas
 
-A fundamental capability of Hecos is its native **Personality Switching**. Hecos isn't just a cold, rigid assistant — it adapts its behavior, tone, and character based on the persona you load. Each persona is programmed to act differently and fulfill a unique role in your daily life[cite: 1].
+A fundamental capability of Hecos is its native **Personality Switching**. Hecos isn't just a cold, rigid assistant — it adapts its behavior, tone, and character based on the persona you load. Each persona is programmed to act differently and fulfill a unique role in your daily life.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Hecos-Project/hecos/main/hecos/assets/Urania_9800_Logo.png" width="400">
   <br>
-  <em>Urania 9800, the official Hecos Mascot and your everyday friendly companion.</em>[cite: 1]
+  <em>Urania 9800, the official Hecos Mascot and your everyday friendly companion.</em>
 </p>
 
 Out of the box, Hecos includes several pre-configured personalities:
-* **Hecos System Soul** — The neutral, rigid, and detached core system. Perfect for raw automation and precise tasks[cite: 1].
-* **Urania 9800** — The lively mascot. A true, everyday friend designed for casual, empathetic, and cheerful interaction[cite: 1].
-* **Sebastian Pro** — The perfect, highly professional butler. Polite, efficient, and eager to serve[cite: 1].
-* **Atlas** — The imposing, authoritative digital guardian[cite: 1].
-* **Nova X-01** — A precise, analytical robotic entity for those who prefer purely logical interactions[cite: 1].
+* **Hecos System Soul** — The neutral, rigid, and detached core system. Perfect for raw automation and precise tasks.
+* **Urania 9800** — The lively mascot. A true, everyday friend designed for casual, empathetic, and cheerful interaction.
+* **Sebastian Pro** — The perfect, highly professional butler. Polite, efficient, and eager to serve.
+* **Atlas** — The imposing, authoritative digital guardian.
+* **Nova X-01** — A precise, analytical robotic entity for those who prefer purely logical interactions.
 
-You can hot-swap these personas at any time, changing not just the voice and tone, but the very "soul" of the system[cite: 1].
+You can hot-swap these personas at any time, changing not just the voice and tone, but the very "soul" of the system.
 
 ---
 
 ## ⚡ Quick Start (One-Click Installation)
-The easiest way to install and configure Hecos from scratch is using the **Universal Setup Wizard**[cite: 1].
+The easiest way to install and configure Hecos from scratch is using the **Universal Setup Wizard**.
 
 ### 1. Clone the repository
 ```bash
 git clone [https://github.com/Hecos-Project/Hecos.git](https://github.com/Hecos-Project/Hecos.git)
 cd Hecos
-```[cite: 1]
+```
 
 ### 2. Launch the Setup Wizard
-Run the bootstrap script for your platform. This will automatically check for Python, install dependencies, and launch the configuration wizard in your browser[cite: 1].
+Run the bootstrap script for your platform. This will automatically check for Python, install dependencies, and launch the configuration wizard in your browser.
 
 **Windows:**
 ```powershell
 .\START_SETUP_HERE_WIN.bat
-```[cite: 1]
+```
 
 **Linux:**
 ```bash
 bash START_SETUP_HERE_LINUX.sh
-```[cite: 1]
+```
 
 ### 3. Manual Components & Utility Scripts
-If you prefer to run specific components or perform maintenance manually, use these dedicated scripts[cite: 1]:
+If you prefer to run specific components or perform maintenance manually, use these dedicated scripts:
 
 | Platform | Script | Description |
 | :--- | :--- | :--- |
@@ -130,30 +130,30 @@ If you prefer to run specific components or perform maintenance manually, use th
 | **Windows** | `scripts\windows\run\HECOS_CONSOLE_RUN_WIN.bat` | Launches ONLY the Terminal Console (TUI) |
 | **Linux** | `scripts/linux/run/HECOS_CONSOLE_RUN.sh` | Launches ONLY the Terminal Console (TUI) |
 | **Windows** | `scripts\windows\setup\INSTALL_HECOS_WIN.bat` | Manual dependency install & Piper setup |
-| **Linux** | `scripts/linux/setup/INSTALL_HECOS_LINUX.sh` | Manual dependency install & Piper setup |[cite: 1]
+| **Linux** | `scripts/linux/setup/INSTALL_HECOS_LINUX.sh` | Manual dependency install & Piper setup |
 
 ### 4. Configuration & First Run
-Hecos is designed for a professional "download-and-play" experience[cite: 1].
-- On your first run, the system will detect that `system.yaml` and `routing_overrides.yaml` are missing[cite: 1].
-- It will **automatically generate** these files by copying the templates from `hecos/config/data/*.example`[cite: 1].
-- You can find your personal configuration in `hecos/config/data/system.yaml` (main settings) and `routing_overrides.yaml` (AI routing rules)[cite: 1].
-- **Pro Tip**: Use the built-in [In-WebUI Routing Editor] to safely modify these rules without touching code[cite: 1].
+Hecos is designed for a professional "download-and-play" experience.
+- On your first run, the system will detect that `system.yaml` and `routing_overrides.yaml` are missing.
+- It will **automatically generate** these files by copying the templates from `hecos/config/data/*.example`.
+- You can find your personal configuration in `hecos/config/data/system.yaml` (main settings) and `routing_overrides.yaml` (AI routing rules).
+- **Pro Tip**: Use the built-in [In-WebUI Routing Editor] to safely modify these rules without touching code.
 
 ### 🔐 Login & Authentication
-Hecos requires mandatory Auth[cite: 1]. The default first-time login is:
+Hecos requires mandatory Auth. The default first-time login is:
 - **Username:** `admin`
-- **Password:** `hecos`[cite: 1]
+- **Password:** `hecos`
 
-We strongly recommend changing the password immediately from the **Users Tab** inside the Configuration Panel[cite: 1].
+We strongly recommend changing the password immediately from the **Users Tab** inside the Configuration Panel.
 
 **Password Recovery:**
-If you get locked out, run `python scripts/reset_admin.py` from the terminal to force a new password, or manually delete the `memory/users.db` file to reset the system defaults[cite: 1].
+If you get locked out, run `python scripts/reset_admin.py` from the terminal to force a new password, or manually delete the `memory/users.db` file to reset the system defaults.
 
 ### 🛡️ Stealth Mode (Windowless)
-If you want Hecos to run completely in the background without any visible terminal windows[cite: 1]:
-1. **Use the Tray Icon**: Start Hecos using the system tray icon. It will manage the system components invisibly in the background[cite: 1].
-2. **Silent Boot**: Use `START_HECOS_SILENT_WIN.vbs` for a 100% invisible start (no console windows)[cite: 1].
-3. **Manual Recovery**: If you close the icon by mistake, use `START_HECOS_TRAY_WIN.bat`[cite: 1].
+If you want Hecos to run completely in the background without any visible terminal windows:
+1. **Use the Tray Icon**: Start Hecos using the system tray icon. It will manage the system components invisibly in the background.
+2. **Silent Boot**: Use `START_HECOS_SILENT_WIN.vbs` for a 100% invisible start (no console windows).
+3. **Manual Recovery**: If you close the icon by mistake, use `START_HECOS_TRAY_WIN.bat`.
 
 ---
 
@@ -171,71 +171,75 @@ If you have just reinstalled Windows or are setting up Hecos for the first time,
 💡 **NEW (v0.45.0 - EDM)**: Hecos now integrates an **External Dependency Manager (EDM)**! If Tesseract, Node.js, or VC++ Redistributable are missing, the EDM will automatically detect them and allow you to download them in the background with a single click from the WebUI, directly from the `Hecos-Dependencies` GitHub repository. Alternatively, you can install them manually:
 
 1. ⚙️ **Microsoft Visual C++ Redistributable (Mandatory)**
-   - *What it's for*: Required by the RAG Memory engine (ONNX/FastEmbed). Without this package, you will get missing DLL errors and document search will not work[cite: 1].
-   - *Download*: 👉 [Download VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)[cite: 1]
+   - *What it's for*: Required by the RAG Memory engine (ONNX/FastEmbed). Without this package, you will get missing DLL errors and document search will not work.
+   - *Download*: 👉 [Download VC++ Redist x64](https://aka.ms/vs/17/release/vc_redist.x64.exe)
 
 2. 🎵 **VLC Media Player 64-bit (Mandatory)**
-   - *What it's for*: The Audio engine and integrated Media Player of Hecos use VLC libraries in the background to play music, alarms, and TTS voice output[cite: 1].
-   - *Download*: 👉 [Download VLC 64-bit](https://www.videolan.org/vlc/download-windows.html)[cite: 1]
+   - *What it's for*: The Audio engine and integrated Media Player of Hecos use VLC libraries in the background to play music, alarms, and TTS voice output.
+   - *Download*: 👉 [Download VLC 64-bit](https://www.videolan.org/vlc/download-windows.html)
 
 3. 👁️ **Tesseract OCR (Recommended for Vision)**
-   - *What it's for*: Necessary for advanced visual capabilities and to read text on the screen via OCR (`pytesseract`)[cite: 1]. 
-   - *Download*: 👉 [Download Tesseract OCR for Windows](https://github.com/UB-Mannheim/tesseract/wiki)[cite: 1]
+   - *What it's for*: Necessary for advanced visual capabilities and to read text on the screen via OCR (`pytesseract`). 
+   - *Download*: 👉 [Download Tesseract OCR for Windows](https://github.com/UB-Mannheim/tesseract/wiki)
 
 4. 🟢 **Node.js (Recommended / Required for Canvas & UI Development)**
-   - *What it's for*: Required to compile, build, and manage dependencies for the Flows Visual Node Editor module (ReactFlow/Vite). If you need to rebuild the canvas frontend (`npm run build`), Node.js is required[cite: 1].
-   - *Download*: 👉 [Download Node.js LTS](https://nodejs.org/)[cite: 1]
+   - *What it's for*: Required to compile, build, and manage dependencies for the Flows Visual Node Editor module (ReactFlow/Vite). If you need to rebuild the canvas frontend (`npm run build`), Node.js is required.
+   - *Download*: 👉 [Download Node.js LTS](https://nodejs.org/)
 
 ---
 
 ### 📦 Offline Installation (The `dependencies` Folder)
-For your convenience, all required installation packages are included offline directly inside the `dependencies/` folder at the root of the project[cite: 1]:
-* `dependencies/VC_redist.x64.exe` -> Microsoft Visual C++ Redistributable (ONNX/RAG)[cite: 1]
-* `dependencies/node-v24.16.0-x64.msi` -> Node.js LTS (Canvas / Frontend Build)[cite: 1]
-* `dependencies/tesseract-ocr-w64-setup-5.5.0.20241111.exe` -> Tesseract OCR (Vision)[cite: 1]
+For your convenience, all required installation packages are included offline directly inside the `dependencies/` folder at the root of the project:
+* `dependencies/VC_redist.x64.exe` -> Microsoft Visual C++ Redistributable (ONNX/RAG)
+* `dependencies/node-v24.16.0-x64.msi` -> Node.js LTS (Canvas / Frontend Build)
+* `dependencies/tesseract-ocr-w64-setup-5.5.0.20241111.exe` -> Tesseract OCR (Vision)
 
-*Note: We highly recommend installing these components before launching the automatic Hecos setup.*[cite: 1]
+*Note: We highly recommend installing these components before launching the automatic Hecos setup.*
 
 ---
 
 ## 🧠 Supported AI Backends (LLM Engines)
 
-Hecos is completely offline by default and requires a local AI engine to process logic and conversation[cite: 1]. During setup, you must install one of the independent backends below[cite: 1]. Hecos will automatically detect them[cite: 1].
+Hecos is completely offline by default and requires a local AI engine to process logic and conversation. During setup, you must install one of the independent backends below. Hecos will automatically detect them.
 
 ### 🔹 1. Ollama (Recommended)
-Fast, optimized, and easy to run locally as a background service[cite: 1].
-- **Download**: 👉 https://ollama.com/download[cite: 1]
-- **Setup**: Once installed, open your terminal/command prompt and run `ollama run llama3.2` to download and test a lightweight fast model[cite: 1]. Hecos will instantly detect it[cite: 1].
+Fast, optimized, and easy to run locally as a background service.
+- **Download**: 👉 https://ollama.com/download
+- **Setup**: Once installed, open your terminal/command prompt and run `ollama run llama3.2` to download and test a lightweight fast model. Hecos will instantly detect it.
 
-### 🔹 2. KoboldCpp (Alternative)
-Perfect for GGUF manual models and older hardware without heavy installation[cite: 1].
-- **Download**: 👉 https://github.com/LostRuins/koboldcpp/releases[cite: 1]
-- **Setup**: Download the `.exe` (or Linux binary), double-click it, select any GGUF instruction model downloaded from HuggingFace, and launch[cite: 1]. Hecos will connect via port `5001`[cite: 1].
+### 🔹 2. Llama.cpp (Alternative)
+The gold standard for running raw local models with maximum efficiency and customization.
+- **Setup**: Launch your `llama.cpp` server on its default port. Hecos is fully compatible and will route requests via its internal proxy.
+
+### 🔹 3. KoboldCpp (Alternative)
+Perfect for GGUF manual models and older hardware without heavy installation.
+- **Download**: 👉 https://github.com/LostRuins/koboldcpp/releases
+- **Setup**: Download the `.exe` (or Linux binary), double-click it, select any GGUF instruction model downloaded from HuggingFace, and launch. Hecos will connect via port `5001`.
 
 ---
 
 ## 🔌 Plugin System
-Hecos uses a dynamic plugin architecture[cite: 1]. Each plugin can register commands, execute system actions, and extend AI capabilities[cite: 1].
+Hecos uses a dynamic plugin architecture. Each plugin can register commands, execute system actions, and extend AI capabilities.
 
 Included plugins:
-* **System control & File manager**[cite: 1]
-* **Web automation & Hardware dashboard**[cite: 1]
-* **Media control & Model switching**[cite: 1]
-* **Memory management**[cite: 1]
+* **System control & File manager**
+* **Web automation & Hardware dashboard**
+* **Media control & Model switching**
+* **Memory management**
 
-You can install new packages dynamically by dragging and dropping `.hpkg` bundles into the **Package Manager** inside the WebUI[cite: 1]. These standalone bundles contain their own logic, UI panels, and configuration schemas, making Hecos infinitely and universally extensible[cite: 1]. All packages are verified via Ed25519 digital signatures for absolute security[cite: 1].
+You can install new packages dynamically by dragging and dropping `.hpkg` bundles into the **Package Manager** inside the WebUI. These standalone bundles contain their own logic, UI panels, and configuration schemas, making Hecos infinitely and universally extensible. All packages are verified via Ed25519 digital signatures for absolute security.
 
 ---
 
 ## 💾 Memory & Voice Systems
 
 ### 🗄️ Memory System
-Hecos includes a persistent memory layer powered by SQLite for lightweight local storage[cite: 1]. It stores conversations, maintains identity, and saves user preferences[cite: 1].
+Hecos includes a persistent memory layer powered by SQLite for lightweight local storage. It stores conversations, maintains identity, and saves user preferences.
 
 ### 🎙️ Voice System
-* **Speech-to-text input**[cite: 1]
-* **Text-to-speech output**[cite: 1]
-* **Real-time interaction**[cite: 1]
+* **Speech-to-text input**
+* **Advanced Text-to-Speech output** (Featuring both Kokoro TTS and Piper TTS for natural, high-fidelity local voice generation)
+* **Real-time interaction**
 
 ---
 
@@ -243,51 +247,51 @@ Hecos includes a persistent memory layer powered by SQLite for lightweight local
 
 ### 🤝 Integrations
 Hecos can integrate with:
-* **Open WebUI** (chat + streaming)[cite: 1]
-* **Home Assistant** (via bridge)[cite: 1]
+* **Open WebUI** (chat + streaming)
+* **Home Assistant** (via bridge)
 
 ### 🔐 Privacy First
-Hecos is designed with a strict focus on utility and discretion: Runs 100% locally, features no mandatory cloud services, and provides full control over data[cite: 1].
+Hecos is designed with a strict focus on utility and discretion: Runs 100% locally, features no mandatory cloud services, and provides full control over data.
 
 ---
 
 ## 🛣️ Roadmap
-- [ ] 📱 Telegram integration (remote control)[cite: 1]
-- [ ] 🧠 Advanced memory system[cite: 1]
-- [ ] 🤖 Multi-agent architecture[cite: 1]
-- [ ] 🛒 Plugin marketplace[cite: 1]
-- [ ] 🎨 Improved UI/UX[cite: 1]
+- [ ] 📱 Telegram integration (remote control)
+- [ ] 🧠 Advanced memory system
+- [ ] 🤖 Multi-agent architecture
+- [ ] 🛒 Plugin marketplace
+- [ ] 🎨 Improved UI/UX
 
 ---
 
 ## ⚠️ Disclaimer
-Hecos can execute system-level commands and control your environment[cite: 1]. Use responsibly[cite: 1]. The author is not responsible for misuse or damage[cite: 1].
+Hecos can execute system-level commands and control your environment. Use responsibly. The author is not responsible for misuse or damage.
 
 ---
 
 ## 📜 License
-GPL-3.0 License[cite: 1]
+GPL-3.0 License
 
 ---
 
 ## 👥 Credits & Contact
-Lead Developer: Antonio Meloni (Tony)[cite: 1]
-Official Email: hecos.project@gmail.com[cite: 1]
+Lead Developer: Antonio Meloni (Tony)
+Official Email: hecos.project@gmail.com
 
 ---
 
 ## 📚 Documentation
-Hecos uses a modular documentation system localized in EN, IT, and ES[cite: 1].
+Hecos uses a modular documentation system localized in EN, IT, and ES.
 
 ### Local Access (Modular)
-Detailed guides are located in the `docs/` folder[cite: 1]:
-- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.44.0[cite: 1].
-- 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details[cite: 1].
+Detailed guides are located in the `docs/` folder:
+- 📖 **[Unified Guide](docs/UNIFIED_GUIDE_EN.md)**: Everything you need to know about v0.44.0.
+- 🏗️ **[Technical Guide](docs/tech/)**: (Admin/Dev) System architecture and OOP details.
 
 ### Online Access
-The documentation is also synchronized with the **[GitHub Wiki](https://github.com/Hecos-Project/Hecos/wiki)**[cite: 1].
+The documentation is also synchronized with the **[GitHub Wiki](https://github.com/Hecos-Project/Hecos/wiki)**.
 
 ---
 
 ## 💡 Vision
-Hecos aims to become a fully autonomous, local AI assistant platform — a private, extensible alternative to cloud-based AI systems, focused exclusively on serving and improving human life[cite: 1].
+Hecos aims to become a fully autonomous, local AI assistant platform — a private, extensible alternative to cloud-based AI systems, focused exclusively on serving and improving human life.

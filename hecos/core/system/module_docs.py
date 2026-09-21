@@ -256,6 +256,8 @@ def get_tools_schema():
                 # Tool names that receive the directive injection
                 _override_targets = {
                     "DOCS__generate_pdf",
+                    "DOCS__modify_document",
+                    "DOCS__list_documents",
                     "EXECUTOR__write_file",
                 }
                 for _tool in tools_list:

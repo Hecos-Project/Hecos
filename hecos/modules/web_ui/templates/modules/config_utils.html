@@ -75,27 +75,27 @@
     
     <div class="field">
       <label>User Profile (Home) Path</label>
-      <input type="text" id="executor-path-userprofile" placeholder="e.g. C:\Users\Tony or /home/tony"
+      <input type="text" id="executor-path-userprofile" placeholder="C:\Hecos\hecos\media"
              onchange="saveExecutorImportantPath('user_profile', this.value)">
       <small style="color:var(--muted); font-size:11px;">The main user directory for personal files.</small>
     </div>
     
     <div class="field">
       <label>Downloads Path</label>
-      <input type="text" id="executor-path-downloads" placeholder="e.g. C:\Users\Tony\Downloads"
+      <input type="text" id="executor-path-downloads" placeholder="C:\Hecos\hecos\media\downloads"
              onchange="saveExecutorImportantPath('downloads', this.value)">
     </div>
     
     <div class="field">
       <label>Projects / Workspace Path</label>
-      <input type="text" id="executor-path-projects" value="./workspace"
+      <input type="text" id="executor-path-projects" value="C:\Hecos\hecos\media\workspace"
              onchange="saveExecutorImportantPath('projects', this.value)">
       <small style="color:var(--muted); font-size:11px;">Directory used by Urania to save and look for project files.</small>
     </div>
     
     <div class="field">
       <label>Generated Files (Documents) Path</label>
-      <input type="text" id="executor-path-generated" value="./hecos/media/documents"
+      <input type="text" id="executor-path-generated" value="C:\Hecos\hecos\media\documents"
              onchange="saveExecutorImportantPath('generated_files', this.value)">
       <small style="color:var(--muted); font-size:11px;">Centralized directory where Urania saves generated files (HTML, text, etc) for easy cleanup.</small>
     </div>
@@ -104,21 +104,12 @@
   <script>
     function saveExecutorImportantPath(name, value) {
         // Fetch current paths
-        const currentPaths = window.hecos_config?.plugins?.EXECUTOR?.important_paths || {};
+        const currentPaths = window.cfg?.plugins?.EXECUTOR?.important_paths || {};
         currentPaths[name] = value;
         savePluginKey('EXECUTOR', 'important_paths', currentPaths);
     }
     
-    // Add initialization logic to populate the fields on load
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            const paths = window.hecos_config?.plugins?.EXECUTOR?.important_paths || {};
-            if (paths.user_profile) document.getElementById('executor-path-userprofile').value = paths.user_profile;
-            if (paths.downloads) document.getElementById('executor-path-downloads').value = paths.downloads;
-            if (paths.projects) document.getElementById('executor-path-projects').value = paths.projects;
-            if (paths.generated_files) document.getElementById('executor-path-generated').value = paths.generated_files;
-        }, 500);
-    });
+
   </script>
 
 </div>

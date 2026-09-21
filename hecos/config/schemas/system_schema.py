@@ -74,12 +74,23 @@ class OllamaBackendConfig(BaseModel):
     keep_alive: str = "120m"
     probe_timeout_sec: int = 3
 
+class LlamaCPPBackendConfig(BaseModel):
+    model: str = ""
+    n_gpu_layers: int = -1
+    n_ctx: int = 32768
+    threads: int = 4
+    temperature: float = 0.7
+    top_p: float = 0.95
+    native_tool_calling: bool = True   # Pass tools as JSON to llama-server (requires a capable model)
+    text_commands_enabled: bool = True  # Inject /img and text-command hints into the system prompt
+
 
 class BackendConfig(BaseModel):
     type: str = "cloud"
     cloud: CloudBackendConfig = Field(default_factory=CloudBackendConfig)
     kobold: KoboldBackendConfig = Field(default_factory=KoboldBackendConfig)
     ollama: OllamaBackendConfig = Field(default_factory=OllamaBackendConfig)
+    llama_cpp: LlamaCPPBackendConfig = Field(default_factory=LlamaCPPBackendConfig)
 
 
 # ─── COGNITION ────────────────────────────────────────────────────────────────

@@ -207,7 +207,8 @@ function buildMessageActions(msgEl, role, historyIndex) {
                       progressContainer.remove();
                       listenBtn.disabled = false;
                       listenBtn.style.opacity = '1';
-                      showToast(`❌ TTS Error`);
+                      const errMsg = prog.error || 'TTS Error';
+                      showToast(`❌ ${errMsg}`, 5000);
                       return;
                   }
                   
@@ -224,8 +225,15 @@ function buildMessageActions(msgEl, role, historyIndex) {
                       listenBtn.style.opacity = '1';
                       if (typeof window.tryLoadAudio === 'function') {
                           window._lastAiBubble = bubble;
-                          // Force the player to fetch the newly generated test audio, bypassing any cached audioId
-                          window.tryLoadAudio(bubble, true, `/api/audio?t=${Date.now()}`);
+                          // Use the precise audio_id from the SSE event for reliable retrieval.
+                          // Fall back to the timestamp trick if audio_id is somehow missing.
+                          const audioUrl = prog.audio_id
+                              ? `/api/audio?id=${encodeURIComponent(prog.audio_id)}`
+                              : `/api/audio?t=${Date.now()}`;
+                          if (prog.audio_id) {
+                              bubble.dataset.audioId = prog.audio_id;
+                          }
+                          window.tryLoadAudio(bubble, true, audioUrl);
                       }
                   }
               };

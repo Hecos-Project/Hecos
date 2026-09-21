@@ -16,6 +16,7 @@ import wave
 import uuid
 
 from hecos.core.logging import logger
+from hecos.core.audio.tts.base_engine import BaseTTSEngine
 
 try:
     import sounddevice as sd
@@ -26,7 +27,7 @@ except ImportError:
 
 def _get_project_root():
     current_file = os.path.abspath(__file__)
-    return os.path.normpath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file)))))
+    return os.path.normpath(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file))))))
 
 
 def _get_sample_rate(model_path: str) -> int:
@@ -39,7 +40,7 @@ def _get_sample_rate(model_path: str) -> int:
         return 22050
 
 
-class PiperDaemon:
+class PiperEngine(BaseTTSEngine):
     def __init__(self):
         self._proc = None
         self._sample_rate = 22050
@@ -147,7 +148,7 @@ class PiperDaemon:
             except Exception:
                 break
 
-    def generate_wav(self, text: str, filepath: str) -> bool:
+    def generate_wav(self, text: str, filepath: str, **kwargs) -> bool:
         """
         Requests Piper to generate a WAV via JSON IPC and waits for completion.
         Used by WebUI to get instant responses instead of subprocess lag.
@@ -186,7 +187,7 @@ class PiperDaemon:
         waited = self._synth_complete_event.wait(120.0)
         return waited and os.path.exists(filepath)
 
-    def generate_wav_chunked(self, text: str, filepath: str, progress_callback=None) -> bool:
+    def generate_wav_chunked(self, text: str, filepath: str, progress_callback=None, **kwargs) -> bool:
         """
         Splits text into sentences, generates temp wav files, and merges them.
         Prevents IPC timeouts on very long texts.
@@ -403,13 +404,32 @@ class PiperDaemon:
         except: pass
 
 
-_daemon_instance: PiperDaemon | None = None
-_daemon_lock = threading.Lock()
+    def get_available_voices(self) -> dict:
+        """
+        Returns available Piper voices based on downloaded .onnx models.
+        """
+        root = _get_project_root()
+        piper_dir = os.path.join(root, "bin", "piper")
+        if not os.path.exists(piper_dir):
+            return {}
+        
+        import glob
+        models = glob.glob(os.path.join(piper_dir, "*.onnx"))
+        voices = {}
+        for m in models:
+            basename = os.path.basename(m)
+            voice_id = basename.replace('.onnx', '')
+            voices[voice_id] = voice_id  # Piper doesn't have a built-in friendly name registry easily accessible here
+        return voices
 
-def get_daemon() -> PiperDaemon:
-    global _daemon_instance
-    if _daemon_instance is None:
-        with _daemon_lock:
-            if _daemon_instance is None:
-                _daemon_instance = PiperDaemon()
-    return _daemon_instance
+
+_engine_instance: PiperEngine | None = None
+_engine_lock = threading.Lock()
+
+def get_engine() -> PiperEngine:
+    global _engine_instance
+    if _engine_instance is None:
+        with _engine_lock:
+            if _engine_instance is None:
+                _engine_instance = PiperEngine()
+    return _engine_instance

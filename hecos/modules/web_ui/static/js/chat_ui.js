@@ -196,14 +196,30 @@ window.stopAudioPlayback = function() {
   try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
 };
 
-window.stopVoice = async function() {
-  console.log("[Audio] stopVoice triggered");
-  if (window._stopVoiceTimeout) return;
-  window._stopVoiceTimeout = true;
-  setTimeout(() => { window._stopVoiceTimeout = false; }, 1000);
+// ── Granular Stop Functions (Phase 2: Ghost Fire) ────────────────────────────
 
+/**
+ * Stop ONLY TTS audio playback. Does not affect LLM generation.
+ * Returns true if there was audio to stop, false otherwise.
+ */
+window.stopTTS = function() {
+  const hadAudio = !!(window.currentAudio && !window.currentAudio.paused);
+  console.log("[Audio] stopTTS triggered, hadAudio:", hadAudio);
   window.stopAudioPlayback();
-  try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
+  if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
+  if (window.updateStopAllBtn) window.updateStopAllBtn();
+  return hadAudio;
+};
+
+/**
+ * Stop ONLY LLM generation + reset chat state so new commands can be sent.
+ * Returns true if there was an active generation, false otherwise.
+ */
+window.stopGeneration = function() {
+  const wasStreaming = !!window.isStreaming;
+  console.log("[Chat] stopGeneration triggered, wasStreaming:", wasStreaming);
+  if (!wasStreaming) return false;
+
   try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
   
   window.isStreaming = false;
@@ -212,15 +228,61 @@ window.stopVoice = async function() {
     window._liveBackendAiBubble.innerHTML = `<em style="color:var(--muted)"><i class="fas fa-ban"></i> ${window.I18N?.webui_chat_interrupted || 'Stopped'}</em>`;
     window._liveBackendAiBubble = null;
   }
+  if (window.updateStopAllBtn) window.updateStopAllBtn();
+  return true;
+};
+
+/**
+ * Emergency: stop EVERYTHING (TTS + LLM) and fully reset chat state.
+ * Used by the Stop All button and as the nuclear option.
+ */
+window.stopAll = function() {
+  console.log("[System] stopAll triggered — stopping TTS + LLM");
+
+  // Stop audio
+  window.stopAudioPlayback();
   if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
+
+  // Stop backend generation
+  try { fetch('/api/audio/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
+  try { fetch('/api/system/stop', {method: 'POST'}).catch(()=>{}); } catch(e) {}
+
+  // Reset chat state unconditionally to recover from any stuck state
+  window.isStreaming = false;
+  if (sendBtn) sendBtn.disabled = false;
+  if (window._liveBackendAiBubble) {
+    window._liveBackendAiBubble.innerHTML = `<em style="color:var(--muted)"><i class="fas fa-ban"></i> ${window.I18N?.webui_chat_interrupted || 'Stopped'}</em>`;
+    window._liveBackendAiBubble = null;
+  }
+  if (window.updateStopAllBtn) window.updateStopAllBtn();
+  if (window.showToast) window.showToast('⛔ All stopped', 'info');
+};
+
+/**
+ * Backward-compatible alias: stopVoice → stopAll
+ */
+window.stopVoice = async function() {
+  console.log("[Audio] stopVoice triggered (→ stopAll)");
+  window.stopAll();
+};
+
+/**
+ * Update the Stop All button state based on current TTS/LLM activity.
+ * Called whenever streaming or audio state changes.
+ */
+window.updateStopAllBtn = function() {
+  const btn = document.getElementById('stop-all-btn');
+  if (!btn) return;
+  const isTTSActive = !!(window.currentAudio && !window.currentAudio.paused);
+  const isLLMActive = !!window.isStreaming;
+  const isActive = isTTSActive || isLLMActive;
+  btn.disabled = !isActive;
+  btn.classList.toggle('active', isActive);
 };
 
 // Hotkeys
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    window.stopVoice();
-  }
-  
+
   // Toggle audio with Spacebar, but not if user is typing in an input
   if (e.key === ' ' || e.code === 'Space') {
     const active = document.activeElement;
@@ -268,6 +330,34 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateGlobalVolume(savedVol);
     } else {
         window.updateGlobalVolume(100);
+    }
+    
+    // Chat Overrides init
+    const chatOverridesInput = document.getElementById('chat-overrides-input');
+    if (chatOverridesInput) {
+        // Fetch current overrides
+        fetch('/hecos/api/chat/overrides')
+            .then(res => res.json())
+            .then(data => {
+                if (data.ok && data.text) {
+                    chatOverridesInput.value = data.text;
+                }
+            })
+            .catch(err => console.error('[ChatOverrides] Fetch error:', err));
+            
+        // Auto-save logic
+        let saveTimeout;
+        chatOverridesInput.addEventListener('input', () => {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const text = chatOverridesInput.value;
+                fetch('/hecos/api/chat/overrides', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                }).catch(err => console.error('[ChatOverrides] Save error:', err));
+            }, 1000);
+        });
     }
 });
 

@@ -435,30 +435,26 @@
 
         {
             id: 'ui.close_modal',
-            label: 'Close Panel / Modal',
+            label: 'Close Panel / Modal / Stop',
             icon: 'fas fa-times',
             category: 'system',
-            description: 'Close the currently active panel, modal, or overlay',
+            description: 'Close active panels/modals, or stop TTS/generation sequentially',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: function() {
-                // ── 0. Close Quick Config HUD first (highest priority) ──────────
+                // ── PRIORITY 1: Quick Config HUD ─────────────────────────────
                 const qcOverlay = document.getElementById('qc-hud-overlay');
                 if (qcOverlay && !qcOverlay.classList.contains('qc-hud-hidden')) {
                     if (window.closeQuickConfig) window.closeQuickConfig();
                     return;
                 }
 
-                // Try to stop voice playback explicitly when ESC is pressed globally
-                if (typeof window.stopVoice === 'function') {
-                    window.stopVoice();
-                }
-
-                // Try to close HKS overlay first
+                // ── PRIORITY 2: HKS Overlay (Cheatsheet) ─────────────────────
                 if (window.HKS_OVERLAY && window.HKS_OVERLAY.isVisible()) {
                     window.HKS_OVERLAY.hide();
                     return;
                 }
-                // Try to close HDCS spotlight
+
+                // ── PRIORITY 3: HDCS Spotlight (Command Palette) ─────────────
                 if (window.HecosCmd && typeof window.HecosCmd.close === 'function') {
                     const overlay = document.getElementById('hdcs-overlay');
                     if (overlay && overlay.style.display !== 'none') {
@@ -466,16 +462,69 @@
                         return;
                     }
                 }
-                // Click any visible close button
-                const closeBtn = document.querySelector(
-                    '.modal.active .btn-close, .overlay.active .close-btn, ' +
-                    '.panel.open .close-btn, [aria-label="Close"]:not([hidden])'
-                );
-                if (closeBtn) {
-                    closeBtn.click();
+
+                // ── PRIORITY 4: Paste Modal ──────────────────────────────────
+                const pasteModal = document.getElementById('paste-modal');
+                if (pasteModal && pasteModal.classList.contains('open')) {
+                    if (window.closePasteModal) window.closePasteModal();
                     return;
                 }
-                // Dispatch generic Escape event to the DOM
+
+                // ── PRIORITY 5: Doc Preview ──────────────────────────────────
+                const docModal = document.getElementById('doc-preview-modal');
+                if (docModal && docModal.classList.contains('active')) {
+                    if (window.closeDocPreview) window.closeDocPreview();
+                    return;
+                }
+
+                // ── PRIORITY 6: Chat Image Lightbox ──────────────────────────
+                const lightbox = document.getElementById('img-lightbox');
+                if (lightbox && lightbox.classList.contains('open')) {
+                    lightbox.classList.remove('open');
+                    return;
+                }
+
+                // ── PRIORITY 7: Chat Image Gallery ───────────────────────────
+                const gallery = document.getElementById('hg-gallery-modal');
+                if (gallery && gallery.classList.contains('open')) {
+                    gallery.classList.remove('open');
+                    const vid = document.getElementById('hg-gallery-vid');
+                    if (vid) vid.pause();
+                    return;
+                }
+
+                // ── PRIORITY 8: Generic Modals / Panels ──────────────────────
+                const closeBtns = document.querySelectorAll(
+                    '.modal.active .btn-close, .overlay.active .close-btn, ' +
+                    '.panel.open .close-btn'
+                );
+                
+                for (let i = 0; i < closeBtns.length; i++) {
+                    const btn = closeBtns[i];
+                    const rect = btn.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        btn.click();
+                        return;
+                    }
+                }
+                
+                // ── PRIORITY 9: Stop TTS Audio (if playing) ──────────────────
+                if (typeof window.stopTTS === 'function') {
+                    if (window.stopTTS()) {
+                        if (window.showToast) window.showToast('🔇 TTS stopped', 'info');
+                        return;
+                    }
+                }
+
+                // ── PRIORITY 10: Stop LLM Generation (if active) ─────────────
+                if (typeof window.stopGeneration === 'function') {
+                    if (window.stopGeneration()) {
+                        if (window.showToast) window.showToast('⛔ Generation stopped', 'info');
+                        return;
+                    }
+                }
+
+                // LAST RESORT: Dispatch generic Escape event if nothing was handled
                 document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
             }
         },

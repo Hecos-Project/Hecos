@@ -27,6 +27,48 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// ── Output VU Meter Hook ──
+function initOutVuMeter(audioElement) {
+    if (!window.outAudioContext) {
+        window.outAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        window.outAnalyser = window.outAudioContext.createAnalyser();
+        window.outAnalyser.fftSize = 256;
+        window.outAnalyser.connect(window.outAudioContext.destination);
+        window.outDataArray = new Uint8Array(window.outAnalyser.frequencyBinCount);
+        
+        function drawOutVu() {
+            requestAnimationFrame(drawOutVu);
+            if (!window.outAnalyser) return;
+            const meter = document.getElementById('out-vu-meter');
+            const pctText = document.getElementById('out-pct');
+            if (!meter) return;
+            
+            window.outAnalyser.getByteFrequencyData(window.outDataArray);
+            let sum = 0;
+            for(let i=0; i<window.outDataArray.length; i++) sum += window.outDataArray[i];
+            let avg = sum / window.outDataArray.length;
+            let percent = Math.min(100, (avg / 64) * 100);
+            meter.style.width = percent + '%';
+            if (pctText) pctText.textContent = Math.round(percent) + '%';
+        }
+        drawOutVu();
+    }
+    
+    if (window.outAudioContext.state === 'suspended') {
+        window.outAudioContext.resume().catch(()=>{});
+    }
+    
+    if (!audioElement.dataset.vuHooked) {
+        audioElement.dataset.vuHooked = "true";
+        try {
+            const source = window.outAudioContext.createMediaElementSource(audioElement);
+            source.connect(window.outAnalyser);
+        } catch (e) {
+            console.warn("[OutVu] Could not hook audio element:", e);
+        }
+    }
+}
+
 // Helper to unlock autoplay on mobile during user interaction (called from sendMessage/bindWebPTT)
 window.unlockAudioContext = function() {
   if (window.HecosTTSPlayer.src !== SILENT_WAV && !window.HecosTTSPlayer.src.includes('blob:')) {
@@ -34,9 +76,12 @@ window.unlockAudioContext = function() {
     window.HecosTTSPlayer.play().catch(e => { console.warn("[Audio] Silent unlock failed:", e); });
   }
   
-  // Also unlock the VU meter AudioContext if suspended
+  // Also unlock the VU meter AudioContexts if suspended
   if (window.micAudioContext && window.micAudioContext.state === 'suspended') {
       window.micAudioContext.resume().catch(e => { console.warn("[Audio] Mic unlock failed:", e); });
+  }
+  if (window.outAudioContext && window.outAudioContext.state === 'suspended') {
+      window.outAudioContext.resume().catch(e => { console.warn("[Audio] Out unlock failed:", e); });
   }
 };
 
@@ -89,6 +134,7 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
       historicalPlayer.onplay = () => {
           window.currentAudio = historicalPlayer;
           window.showStopVoiceBtn(true);
+          if (typeof initOutVuMeter === 'function') initOutVuMeter(historicalPlayer);
       };
       
       historicalPlayer.onpause = () => {
@@ -145,6 +191,7 @@ async function tryLoadAudio(bubble, autoplay = true, forceUrl = null) {
 
   window.HecosTTSPlayer.onplay = () => {
       window.showStopVoiceBtn(true);
+      if (typeof initOutVuMeter === 'function') initOutVuMeter(window.HecosTTSPlayer);
       fetch('/api/audio/speaking/start', { method: 'POST' }).catch(() => {});
   };
 
@@ -172,6 +219,7 @@ function showStopVoiceBtn(visible) {
   const display = visible ? 'inline-flex' : 'none';
   if (btn1) btn1.style.display = display;
   if (btn2) btn2.style.display = display;
+  if (window.updateStopAllBtn) window.updateStopAllBtn();
 }
 
 // Global Exports

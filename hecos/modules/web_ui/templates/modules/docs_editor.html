@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hecos — Visual Document Editor</title>
+    
+    <!-- GrapeJS -->
+    <link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/grapesjs"></script>
+    <script src="https://unpkg.com/grapesjs-blocks-basic"></script>
+    <script src="https://unpkg.com/grapesjs-plugin-forms"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .hecos-topbar {
+            height: 50px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .hecos-brand {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-info {
+            font-size: 13px;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .hecos-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hecos-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .hecos-btn:disabled {
+            background: var(--border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #gjs {
+            height: calc(100vh - 50px);
+            border: none;
+        }
+
+        /* GrapeJS Dark Theme Overrides */
+        .gjs-cv-canvas {
+            background-color: #e2e8f0; /* Light background for document preview */
+        }
+        .gjs-pn-panel {
+            background: var(--panel-bg);
+            border-color: var(--border);
+        }
+        .gjs-sm-sector .gjs-sm-title, .gjs-clm-tags .gjs-sm-title {
+            background-color: rgba(0,0,0,0.1);
+        }
+        .gjs-block {
+            box-shadow: none;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.2);
+            color: var(--text-muted);
+        }
+        .gjs-block:hover {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 50px; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+        .loading-overlay i {
+            font-size: 40px;
+            margin-bottom: 16px;
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hecos-topbar">
+        <div class="hecos-brand">
+            <i class="fas fa-layer-group" style="color:var(--accent)"></i>
+            Visual Editor
+            <div class="file-info" id="file-label">Loading...</div>
+        </div>
+        <div>
+            <button id="btn-save-pdf" class="hecos-btn" onclick="generatePdf()">
+                <i class="fas fa-file-pdf"></i> Save & Generate PDF
+            </button>
+        </div>
+    </div>
+
+    <div id="gjs"></div>
+    
+    <div id="loading" class="loading-overlay">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <div id="loading-text">Loading Document...</div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const filePath = urlParams.get('file');
+
+        if (!filePath) {
+            document.getElementById('loading').innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i><div>Error: No file specified</div>';
+            document.getElementById('file-label').textContent = 'Error';
+        } else {
+            document.getElementById('file-label').textContent = filePath.split(/[\\/]/).pop();
+            initEditor();
+        }
+
+        let editor;
+
+        async function initEditor() {
+            try {
+                // Fetch document HTML
+                const resp = await fetch('/hecos/api/plugins/document_maker/file?path=' + encodeURIComponent(filePath));
+                if (!resp.ok) throw new Error('Could not load file');
+                const data = await resp.json();
+                
+                if (!data.ok) throw new Error(data.error || 'Failed to read file');
+
+                // Init GrapeJS
+                editor = grapesjs.init({
+                    container: '#gjs',
+                    height: '100%',
+                    width: 'auto',
+                    storageManager: false, // We handle saving manually
+                    plugins: ['gjs-blocks-basic', 'grapesjs-plugin-forms'],
+                    pluginsOpts: {
+                        'gjs-blocks-basic': {},
+                        'grapesjs-plugin-forms': {}
+                    },
+                    components: data.html,
+                    style: '',
+                    canvas: {
+                        styles: [
+                            'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap'
+                        ]
+                    }
+                });
+
+                editor.on('load', () => {
+                    document.getElementById('loading').style.display = 'none';
+                    // Switch to desktop view by default
+                    editor.setDevice('Desktop');
+                });
+
+            } catch (err) {
+                document.getElementById('loading').innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#ef4444"></i><div>${err.message}</div>`;
+                console.error(err);
+            }
+        }
+
+        async function generatePdf() {
+            if (!editor) return;
+
+            const btn = document.getElementById('btn-save-pdf');
+            const overlay = document.getElementById('loading');
+            const overlayText = document.getElementById('loading-text');
+
+            try {
+                btn.disabled = true;
+                overlay.style.display = 'flex';
+                overlayText.textContent = 'Generating PDF with Playwright...';
+                
+                // Get full HTML including CSS
+                const htmlContent = editor.getHtml();
+                const cssContent = editor.getCss();
+                
+                // Combine them properly
+                const finalHtml = `<!DOCTYPE html>\\n<html>\\n<head>\\n<style>\\n${cssContent}\\n</style>\\n</head>\\n<body>\\n${htmlContent}\\n</body>\\n</html>`;
+
+                const resp = await fetch('/hecos/api/plugins/document_maker/generate_pdf_from_html', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filepath: filePath,
+                        html: finalHtml
+                    })
+                });
+
+                const data = await resp.json();
+                
+                if (data.ok && data.pdf_url) {
+                    overlayText.innerHTML = `PDF Generated Successfully!<br><br><a href="${data.pdf_url}" target="_blank" class="hecos-btn" style="text-decoration:none">Download PDF</a> <button class="hecos-btn" style="background:#475569" onclick="document.getElementById('loading').style.display='none'">Close</button>`;
+                    overlay.querySelector('i').className = 'fas fa-check-circle';
+                    overlay.querySelector('i').style.color = '#10b981';
+                } else {
+                    throw new Error(data.error || 'Generation failed');
+                }
+            } catch (err) {
+                overlayText.innerHTML = `Error: ${err.message}<br><br><button class="hecos-btn" style="background:#475569" onclick="document.getElementById('loading').style.display='none'; document.getElementById('loading').querySelector('i').className='fas fa-circle-notch fa-spin'; document.getElementById('loading').querySelector('i').style.color='var(--accent)';">Close</button>`;
+                overlay.querySelector('i').className = 'fas fa-exclamation-triangle';
+                overlay.querySelector('i').style.color = '#ef4444';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

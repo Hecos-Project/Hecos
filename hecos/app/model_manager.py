@@ -57,7 +57,16 @@ class ModelManager:
                 cache = config.get('backend', {}).get('kobold', {}).get('available_models', {})
                 categorized_models["Kobold (Local)"].extend(list(cache.values()))
 
-        # 3. CLOUD Models
+        # 3. LlamaCPP Models (Local GGUF)
+        categorized_models["LlamaCPP (Local)"] = {}
+        try:
+            from hecos.core.llm.backends.llama_cpp.discovery import get_available_gguf_models
+            gguf_models = get_available_gguf_models()
+            categorized_models["LlamaCPP (Local)"].update(gguf_models)
+        except Exception as e:
+            logger.debug(f"[ModelManager] Failed to discover LlamaCPP models: {e}")
+
+        # 4. CLOUD Models
         if config.get('llm', {}).get('allow_cloud', False):
             providers = config.get('llm', {}).get('providers', {})
             backend_type = config.get('backend', {}).get('type', 'ollama')
@@ -124,8 +133,15 @@ class ModelManager:
                 self.config_manager.save()
 
         
-        # Clean empty categories
-        return {k: list(dict.fromkeys(v)) for k, v in categorized_models.items() if v}
+        # Clean empty categories and deduplicate lists
+        res = {}
+        for k, v in categorized_models.items():
+            if not v: continue
+            if isinstance(v, list):
+                res[k] = list(dict.fromkeys(v))
+            else:
+                res[k] = v
+        return res
 
     def get_effective_model(self, config_dict):
         """Returns the currently active model name."""
@@ -250,12 +266,22 @@ class ModelManager:
             backend_type = 'ollama'
             
         if backend_type == 'hybrid':
-            # In hybrid mode, prefer cloud model if set, otherwise fallback to ollama
-            cloud_m = config_dict.get('backend', {}).get('cloud', {}).get('model', '')
+            # In hybrid mode, use active_model_source to know which branch the user last selected.
+            # This avoids cloud.model always winning just because it's non-empty.
+            source = config_dict.get('backend', {}).get('active_model_source', 'cloud')
+            cloud_m  = config_dict.get('backend', {}).get('cloud',  {}).get('model', '')
             ollama_m = config_dict.get('backend', {}).get('ollama', {}).get('model', '')
-            model = cloud_m or ollama_m or 'N/D'
+            if source == 'ollama' and ollama_m:
+                model = ollama_m
+                backend_type = 'ollama'
+            elif cloud_m:
+                model = cloud_m
+                backend_type = 'cloud'
+            else:
+                model = ollama_m or 'N/D'
+                backend_type = 'ollama'
             # Also resolve the effective backend type for the client based on which model we picked
-            backend_type = 'cloud' if cloud_m else 'ollama'
+            # (already set above)
         else:
             model = config_dict.get('backend', {}).get(backend_type, {}).get('model', 'N/D')
         

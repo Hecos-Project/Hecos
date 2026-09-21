@@ -159,6 +159,7 @@ function renderMarkdown(text) {
   if (typeof marked !== 'undefined') {
     // Optionally configure marked (e.g. breaks: true)
     html = marked.parse(text, { breaks: true });
+
   } else {
     html = text
       .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')

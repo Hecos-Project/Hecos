@@ -1,11 +1,39 @@
+<style>
+.stop-all-btn {
+  opacity: 0.3;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+.stop-all-btn.active {
+  opacity: 1;
+  color: var(--red) !important;
+  pointer-events: auto;
+  animation: pulse-stop 2s infinite;
+}
+.stop-all-btn.active:hover {
+  filter: brightness(1.2);
+}
+@keyframes pulse-stop {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 85, 85, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(255, 85, 85, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 85, 85, 0); }
+}
+</style>
 <div id="ptt-indicator"><div class="rec-dot"></div> [ <i class="fas fa-microphone"></i> RECORDING ]</div>
 <div id="input-bar">
   {% include 'modules/chat_input_toolbar.html' %}
+  
+  <details class="chat-overrides-container" style="margin-bottom: 5px; font-size: 12px; color: var(--muted);">
+    <summary style="cursor: pointer; user-select: none; margin-bottom: 5px;"><i class="fas fa-magic"></i> Chat Overrides (Persistent Roles/Instructions)</summary>
+    <textarea id="chat-overrides-input" rows="3" placeholder="e.g. You are a pirate. End every sentence with 'Arrr!'..." style="width: 100%; resize: vertical; background: var(--surface-2); border: 1px solid var(--surface-3); color: var(--text-color); border-radius: 4px; padding: 6px; font-family: inherit; font-size: 12px;"></textarea>
+  </details>
+
   <div class="input-wrap">
     <textarea id="user-input" rows="1" placeholder="{{ t('webui_chat_placeholder') }}" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <div class="input-actions">
       <button class="action-btn" title="{{ t('webui_chat_btn_clear_input') }}" onclick="clearInput()"><i class="fas fa-trash-alt"></i></button>
       <button class="action-btn" id="web-ptt-btn" title="MIC: Hold to talk · Tap to lock (Toggle)" aria-label="Microfono WebRTC"><i class="fas fa-microphone"></i></button>
+      <button class="action-btn stop-all-btn" id="stop-all-btn" title="Stop All (ESC)" onclick="window.stopAll()" disabled><i class="fas fa-stop-circle"></i></button>
       <button class="action-btn" id="send-btn" title="{{ t('webui_chat_btn_send') }}" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
     </div>
   </div>

@@ -166,7 +166,7 @@ def init_keys_routes(app, logger):
                 "cloud_timeout":  getattr(_km_mod, "_KM_CLOUD_TIMEOUT", 30),
                 "cooldown":       getattr(_km_mod, "_KM_COOLDOWN", 60),
                 "max_retries":    getattr(_km_mod, "_KM_MAX_RETRIES", 5),
-                "webui_timeout":  getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", 120),
+                "webui_timeout":  getattr(_km_mod, "_KM_WEBUI_INFERENCE_TIMEOUT", 300),
             }
             return jsonify({"ok": True, "settings": settings})
         except Exception as e:

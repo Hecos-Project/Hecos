@@ -138,6 +138,16 @@
                     <span id="mic-pct" style="font-size:10px; font-family:var(--font-mono); color:var(--accent); width: 28px; text-align:right; opacity:0.8;">0%</span>
                 </div>
             </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
+                <span style="font-size: 11px; color: var(--text); display:flex; align-items:center; gap:4px;"><i class="fas fa-volume-up" style="width:14px; color:var(--muted);"></i> Out:</span>
+                <div style="display:flex; align-items:center; gap: 8px;">
+                    <div style="width: 75px; height: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative;">
+                        <div id="out-vu-meter" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff00cc 0%, #3333ff 100%); transition: width 0.05s linear;"></div>
+                    </div>
+                    <span id="out-pct" style="font-size:10px; font-family:var(--font-mono); color:var(--accent); width: 28px; text-align:right; opacity:0.8;">0%</span>
+                </div>
+            </div>
         </div>
     </div>
       <button id="sidebar-stop-voice-btn" onclick="stopVoice()" title="Stop Voice Output" style="
@@ -173,7 +183,7 @@
   </button>
 
   <div class="sidebar-footer">
-    <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos &mdash; <strong>Runtime Alpha</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;">Hecos &mdash; <strong>Ghost Fire</strong><br><span style="color:var(--accent)">{{ t('webui_chat_local_port') }}</span></div>
   </div>
 
   <script>

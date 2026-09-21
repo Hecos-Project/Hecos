@@ -27,6 +27,7 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             if   backend == "cloud":  model = cfg.get("backend", {}).get("cloud",  {}).get("model", "?")
             elif backend == "ollama": model = cfg.get("backend", {}).get("ollama", {}).get("model", "?")
             elif backend == "kobold": model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
+            elif backend == "llama_cpp": model = cfg.get("backend", {}).get("llama_cpp", {}).get("model", "?")
             elif backend == "hybrid":
                 # Prefer cloud if set, otherwise fall back to ollama
                 cloud_m  = cfg.get("backend", {}).get("cloud",  {}).get("model", "")
@@ -62,7 +63,7 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             if not mic_on:
                 ptt_on = False
 
-            active_model = model
+            active_model = last_model_live or model
             mic_status   = "ON" if mic_on else "OFF"
             tts_status   = "ON" if tts_on else "OFF"
             ptt_status   = "ON" if ptt_on else "OFF"

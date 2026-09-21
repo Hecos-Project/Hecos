@@ -18,7 +18,7 @@ VERSION = _get_version()
 
 # Nome del progetto
 PROJECT_NAME = "Hecos"
-PROJECT_CODENAME = "Runtime Alpha"
+PROJECT_CODENAME = "Ghost Fire"
 
 # Data di rilascio
 RELEASE_DATE = "2026-04-21"

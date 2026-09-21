@@ -241,13 +241,20 @@ class PackageUninstaller:
 
         config_panel = manifest.get("config_panel") or {}
         template_file = config_panel.get("template_file", "")
-        js_file = config_panel.get("js_file", "")
         css_file = config_panel.get("css_file", "")
+
+        # Multi-file JS support: read js_files (array) first, fallback to legacy js_file string
+        js_files_raw = config_panel.get("js_files") or []
+        if not js_files_raw and config_panel.get("js_file"):
+            js_files_raw = [config_panel["js_file"]]
+
+        # Collect all asset paths to clean up
+        asset_paths = [template_file, css_file] + list(js_files_raw)
 
         # The template_file in the manifest is relative to the zip root
         # (e.g. "web_ui/templates/config_myplugin.html").
         # On disk it maps to modules/web_ui/templates/modules/<filename>
-        for asset_path in [template_file, js_file, css_file]:
+        for asset_path in asset_paths:
             if not asset_path:
                 continue
             # Extract just the filename — it was copied flat into the target dir

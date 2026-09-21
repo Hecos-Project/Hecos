@@ -8,6 +8,7 @@ from hecos.core.auth.auth_manager import auth_mgr
 from hecos.memory.user_vault_manager import get_vault_path
 from hecos.memory import brain_interface
 from hecos.core.llm.routing_manager import RoutingManager
+from hecos.core.constants import CONFIG_DATA_DIR
 
 _HECOS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 REGISTRY_PATH = os.path.join(_HECOS_DIR, "core", "registry.json")
@@ -38,6 +39,19 @@ class PromptBuilder:
         rules = PromptBuilder._build_rules(config, user_id, backend_config)
         vision_note = PromptBuilder._build_vision_note(images)
         
+        chat_overrides_block = ""
+        chat_overrides_path = os.path.join(CONFIG_DATA_DIR, "chat_overrides.yaml")
+        try:
+            if os.path.exists(chat_overrides_path):
+                import yaml as pyyaml
+                with open(chat_overrides_path, "r", encoding="utf-8") as f:
+                    co_data = pyyaml.safe_load(f) or {}
+                    co_text = co_data.get("overrides", "").strip()
+                    if co_text:
+                        chat_overrides_block = f"\n### DYNAMIC CHAT OVERRIDES ###\n{co_text}\n"
+        except Exception as e:
+            logger.debug(f"PromptBuilder: Could not load chat overrides: {e}")
+        
         system_prompt = (
             f"{personality_prompt}\n"
             f"{visual_identity_block}"
@@ -60,6 +74,7 @@ class PromptBuilder:
             f"{rules['user_profile_block']}"
             f"{rules['special_instructions_block']}"
             f"{vision_note}"
+            f"{chat_overrides_block}"
         )
         
         logger.debug("PromptBuilder", f"System prompt created: {len(system_prompt)} characters")
@@ -287,6 +302,18 @@ class PromptBuilder:
             "- [DRIVE: list:folder] - List files for analysis\n"
             "- [DASHBOARD: resources] - Get hardware telemetry\n"
             "- MEDIA PLAYBACK: When the user asks to 'play', 'open', 'riproduce', 'manda in play', or 'avvia' a video or audio file, ALWAYS use EXECUTOR__open_media_file(file_path) with the EXACT absolute path. NEVER use execute_shell_command for media playback.\n"
+            "\n### IMAGE GENERATION PROTOCOL ###\n"
+            "When the user asks you to generate, create, draw, or show an image or photo of ANYTHING:\n"
+            "CRITICAL ANTI-REFUSAL: NEVER claim you cannot generate images. You ARE equipped with a visual generator module! If asked for an image, YOU MUST generate it using the /img command immediately.\n"
+            "STEP 1: You MUST output the command on its own line in this EXACT format:\n"
+            "  /img YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH\n"
+            "STEP 2: Do NOT use HTML tags like <img>. Replace 'YOUR_VISUAL_DESCRIPTION_HERE_IN_ENGLISH' with your actual creative prompt!\n"
+            "STEP 3: Do NOT add any other text before or after the /img line.\n"
+            "WRONG (FORBIDDEN): 'Ecco la foto che ho generato...'\n"
+            "WRONG (FORBIDDEN): /img [descrizione dettagliata della scena]\n"
+            "WRONG (FORBIDDEN): <img real photo of Motoko...>\n"
+            "CORRECT: /img photorealistic portrait of a female cyborg with black hair and brown eyes, athletic build\n"
+            "The /img command is the ONLY way to generate images. If IMAGE_GEN is listed in ACTIVE PROTOCOLS, you HAVE this ability. USE IT.\n"
         )
         
         media_formatting_rules = (
@@ -326,10 +353,14 @@ class PromptBuilder:
             
         local_model_rules = ""
         effective_backend_type = backend_config.get("backend_type", "cloud") if backend_config else "cloud"
-        if effective_backend_type in ("ollama", "kobold", "local"):
+        if effective_backend_type in ("ollama", "kobold", "local", "llama_cpp"):
             local_model_rules = (
-                "3. TOOL CALLING: You have access to tools (functions). If you need to perform an action, use the correct function_call format. Do NOT write out the JSON tool call within your conversational response text.\n"
-                "4. REASONING: If you need to think or plan your actions, use <think> tags. Do NOT output your thought process as part of the conversational response text.\n"
+                "3. TOOL CALLING (CRITICAL): You have access to tools via native function calling. "
+                "When the user requests an action (generate image, take photo, play music, search web, etc.), "
+                "you MUST invoke the corresponding tool. NEVER just describe or narrate the action in text. "
+                "If you write 'here is your photo' without calling generate_image, you have FAILED.\n"
+                "4. REASONING: If you need to think or plan your actions, use <think> tags. "
+                "Do NOT output your thought process as part of the conversational response text.\n"
             )
 
         return {

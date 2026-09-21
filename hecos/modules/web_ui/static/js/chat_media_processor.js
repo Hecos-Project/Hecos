@@ -8,10 +8,9 @@ window.processAiMedia = function(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
-  // Helper to check if URL is a local file link
   function isLocalLink(url) {
     if (!url) return false;
-    return url.startsWith('file://') || /^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('http://localhost') || url.startsWith('https://localhost');
+    return url.startsWith('file://') || url.startsWith('/api/local_file') || /^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('http://localhost') || url.startsWith('https://localhost');
   }
   
   function getSafeLocalUrl(rawUrl) {
@@ -94,7 +93,7 @@ window.processAiMedia = function(html) {
             </video>
             <div class="chat-video-card-hint" style="margin-top:4px;">
               <i class="fas fa-info-circle"></i>
-              Se il video non parte, usa <strong>Apri con VLC</strong> oppure <strong>Scarica</strong>.
+              Se il video non parte, usa <strong>Apri con VLC</strong> oppure <strong>Download</strong>.
             </div>
           </div>
           <div class="chat-video-card-actions">
@@ -110,7 +109,7 @@ window.processAiMedia = function(html) {
               <i class="fas fa-external-link-alt"></i> Apri con VLC
             </button>
             <a href="${src}" download="${fileName}" class="chat-video-btn chat-video-btn-dl">
-              <i class="fas fa-download"></i> Scarica
+              <i class="fas fa-download"></i> Download
             </a>
           </div>
         `;
@@ -124,13 +123,32 @@ window.processAiMedia = function(html) {
       const src = getSafeLocalUrl(href);
       const fileName = href.split(/[\\/]/).pop() || 'Local File';
       
+      let docPath = href;
+      try {
+        if (href.includes('?path=')) {
+          const urlObj = new URL(href, window.location.origin);
+          docPath = urlObj.searchParams.get('path') || href;
+        } else if (href.startsWith('file:///')) {
+          docPath = href.replace('file:///', '');
+        }
+      } catch(e) {}
+      
+      let extraActions = "";
+      if (fileName.toLowerCase().endsWith(".html")) {
+        const safeDocPath = encodeURIComponent(docPath);
+        extraActions = `<a href="javascript:void(0)" onclick="if(window.openDocPreview){ window.openDocPreview(decodeURIComponent('${safeDocPath}')); } else { window.open('/docs/editor?file=${safeDocPath}', '_blank'); }" style="margin-left: 10px; color: var(--accent);"><i class="fas fa-magic"></i> Visual Editor</a>`;
+      }
+
       const card = document.createElement('div');
       card.className = 'chat-file-card';
       card.innerHTML = `
         <div class="chat-file-icon"><i class="fas fa-file-alt"></i></div>
         <div class="chat-file-details">
           <div class="chat-file-name">${fileName}</div>
-          <div class="chat-file-action"><a href="${src}" target="_blank" download>Open / Download</a></div>
+          <div class="chat-file-action">
+             <a href="${src}" target="_blank" download>Open / Download</a>
+             ${extraActions}
+          </div>
         </div>
       `;
       a.replaceWith(card);
@@ -161,7 +179,7 @@ window.processAiMedia = function(html) {
              onclick="if(window.openLightbox) window.openLightbox('${safeSrc}')"
              ondblclick="if(window.openChatGallery) window.openChatGallery('${safeSrc}'); return false;">
         <div class="chat-img-overlay">
-          <button class="img-action-btn" onclick="downloadChatImage('${safeSrc}','${alt}')">⬇ Scarica</button>
+          <button class="img-action-btn" onclick="downloadChatImage('${safeSrc}','${alt}')">⬇ Download</button>
           <button class="img-action-btn" onclick="openLightbox('${safeSrc}')">🔍 Zoom</button>
           <button class="img-action-btn" onclick="openChatGallery('${safeSrc}')">🖼 Gallery</button>
           <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>
@@ -198,7 +216,7 @@ window.processAiMedia = function(html) {
        onclick="if(window.openLightbox) window.openLightbox('${apiUrl}')"
        ondblclick="if(window.openChatGallery) window.openChatGallery('${apiUrl}'); return false;">
   <div class="chat-img-overlay">
-    <button class="img-action-btn" onclick="downloadChatImage('${apiUrl}','${fileName}')">⬇ Scarica</button>
+    <button class="img-action-btn" onclick="downloadChatImage('${apiUrl}','${fileName}')">⬇ Download</button>
     <button class="img-action-btn" onclick="openLightbox('${apiUrl}')">🔍 Zoom</button>
     <button class="img-action-btn" onclick="openChatGallery('${apiUrl}')">🖼 Gallery</button>
     <button class="img-action-btn" onclick="openMediaFolder()" title="Open local media folder">📁 Folder</button>

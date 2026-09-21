@@ -220,7 +220,6 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                 plugin_id = pkg["id"]
                 tab_id = cp.get("tab_id") or plugin_id.replace("_", "-")
                 plugin_dir_prefix = (manifest.get("plugin_dir") or plugin_id).rstrip("/\\") + "/"
-                js_file_raw  = cp.get("js_file")
                 css_file_raw = cp.get("css_file")
 
                 def _strip_prefix(raw):
@@ -228,8 +227,18 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                         return raw[len(plugin_dir_prefix):]
                     return raw
 
-                js_url  = f"hpm_plugin/{plugin_id}/{_strip_prefix(js_file_raw)}"  if js_file_raw  else None
-                css_url = f"hpm_plugin/{plugin_id}/{_strip_prefix(css_file_raw)}" if css_file_raw else None
+                def _to_url(raw_path):
+                    return f"hpm_plugin/{plugin_id}/{_strip_prefix(raw_path)}" if raw_path else None
+
+                # Multi-file JS support: prefer js_files list, fallback to single js_file
+                js_files_raw = cp.get("js_files") or []
+                if not js_files_raw and cp.get("js_file"):
+                    js_files_raw = [cp["js_file"]]
+                js_urls = [_to_url(p) for p in js_files_raw if p]
+
+                # Legacy single js_file for backward-compat with older consumers
+                js_url_legacy = js_urls[0] if js_urls else None
+                css_url = _to_url(css_file_raw)
 
                 panels.append({
                     "id":          tab_id,
@@ -240,7 +249,8 @@ def register_config_ui_routes(app, cfg_mgr, get_sm=None):
                     "version":     pkg.get("version", ""),
                     "type":        pkg.get("type") or manifest.get("type", "plugin"),
                     "description": pkg.get("description", ""),
-                    "js_file":     js_url,
+                    "js_file":     js_url_legacy,   # legacy — kept for compat
+                    "js_files":    js_urls,          # NEW: full ordered list
                     "css_file":    css_url,
                 })
 

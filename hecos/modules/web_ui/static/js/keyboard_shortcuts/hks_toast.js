@@ -86,7 +86,7 @@
         if (!window.HKS) return;
         window.HKS.on('action', ({ actionId, combo }) => {
             // Don't show toast for cheatsheet/toast-related actions to avoid recursion
-            if (actionId === 'ui.show_cheatsheet') return;
+            if (actionId === 'ui.show_cheatsheet' || actionId === 'ui.close_modal') return;
             _show(actionId, combo);
         });
     }

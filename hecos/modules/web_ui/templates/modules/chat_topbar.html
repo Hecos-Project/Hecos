@@ -10,6 +10,15 @@
       <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
           <option value="">&#x1F916; Model...</option>
       </select>
+      <select id="chat-tts-engine-select" class="chat-session-select" onchange="window.updateSessionTTSVoices();">
+          <option value="">&#x1F50A; TTS Engine...</option>
+          <option value="piper">Piper</option>
+          <option value="kokoro">Kokoro</option>
+          <option value="xtts2">XTTSv2</option>
+      </select>
+      <select id="chat-tts-voice-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
+          <option value="">&#127908; TTS Voice...</option>
+      </select>
     </div>
     <script>
       /* ── Chat Session Select Styles ── */
@@ -62,7 +71,37 @@
                   data.models.forEach(m => {
                       const opt = document.createElement('option');
                       opt.value = m.id;
-                      opt.textContent = m.type === 'cloud' ? '☁️ ' + m.name : '🖥️ ' + m.name;
+                      let prefix = m.type === 'cloud' ? '☁️ ' : '🖥️ ';
+                      let suffix = '';
+                      let sizeTag = '';
+                      if (m.parameter_size || m.size_bytes) {
+                          sizeTag = ' [';
+                          let parts = [];
+                          if (m.parameter_size) {
+                              let p = m.parameter_size;
+                              if (m.quantization_level) p += ' ' + m.quantization_level;
+                              parts.push(p);
+                          }
+                          if (m.size_bytes) {
+                              let gb = (m.size_bytes / (1024*1024*1024)).toFixed(1);
+                              parts.push(gb + 'GB');
+                          }
+                          sizeTag += parts.join(' | ') + ']';
+                      }
+                      let tooltipText = m.name + sizeTag;
+                      
+                      if (m.capabilities && m.capabilities.length > 0) {
+                          const iconMap = { 'tools': '⚙️', 'vision': '👁️', 'thinking': '💭' };
+                          const descMap = { 'tools': 'Tools/Function Calling', 'vision': 'Vision/Multimodal', 'thinking': 'Thinking/Reasoning' };
+                          
+                          const icons = m.capabilities.map(c => iconMap[c]).filter(Boolean).join('');
+                          if (icons) suffix = ' ' + icons;
+                          
+                          const descs = m.capabilities.map(c => descMap[c]).filter(Boolean).join(', ');
+                          if (descs) tooltipText += '\nCapabilities: ' + descs;
+                      }
+                      opt.textContent = prefix + m.name + sizeTag + suffix;
+                      opt.title = tooltipText; // Mostrato come tooltip nativo dal browser al mouse over
                       mSel.appendChild(opt);
                   });
                   
@@ -95,9 +134,20 @@
               const isCloud = mVal.includes('/') && knownCloudProviders.includes(firstSegment);
               if (isCloud) {
                   overrides.backend = { type: 'cloud', cloud: { model: mVal } };
+              } else if (mVal.toLowerCase().endsWith('.gguf')) {
+                  overrides.backend = { type: 'llama_cpp', llama_cpp: { model: mVal } };
               } else {
                   overrides.backend = { type: 'ollama', ollama: { model: mVal } };
               }
+          }
+          
+          const tEng = document.getElementById('chat-tts-engine-select').value;
+          const tVoice = document.getElementById('chat-tts-voice-select').value;
+          
+          if (tEng || tVoice) {
+              if (!overrides.ai) overrides.ai = {};
+              if (tEng) overrides.ai.tts_engine = tEng;
+              if (tVoice) overrides.ai.tts_voice = tVoice;
           }
           
           try {
@@ -110,20 +160,75 @@
       };
       
       window.updateSessionDropdownTitles = function() {
-          const selects = [document.getElementById('chat-model-select'), document.getElementById('chat-persona-select')];
-          selects.forEach(sel => {
+          const selects = [
+              { el: document.getElementById('chat-model-select'), defaultTitle: 'Default Model' },
+              { el: document.getElementById('chat-persona-select'), defaultTitle: 'Default Persona' },
+              { el: document.getElementById('chat-tts-engine-select'), defaultTitle: 'Default TTS Engine' },
+              { el: document.getElementById('chat-tts-voice-select'), defaultTitle: 'Default TTS Voice' }
+          ];
+          selects.forEach(obj => {
+              const sel = obj.el;
               if (sel && sel.selectedIndex >= 0) {
-                  sel.title = sel.options[sel.selectedIndex].text;
+                  if (sel.value === "") {
+                      sel.title = obj.defaultTitle;
+                  } else {
+                      sel.title = sel.options[sel.selectedIndex].text;
+                  }
               }
           });
+      };
+      
+      window.updateSessionTTSVoices = async function(selectedVoice = null) {
+          const engine = document.getElementById('chat-tts-engine-select').value;
+          const voiceSel = document.getElementById('chat-tts-voice-select');
+          if (!voiceSel) return;
+          
+          voiceSel.innerHTML = '<option value="">\uD83C\uDF99\uFE0F TTS Voice...</option>';
+          if (!engine) {
+              window.saveSessionConfig();
+              return;
+          }
+          
+          try {
+              const res = await fetch(`/api/audio/voices?engine=${engine}`);
+              if (res.ok) {
+                  const voices = await res.json();
+                  const voiceList = Array.isArray(voices) ? voices : (voices[engine] || Object.keys(voices));
+                  const iter = Array.isArray(voiceList) ? voiceList : Object.keys(voiceList);
+                  iter.forEach(v => {
+                      const opt = document.createElement('option');
+                      opt.value = v;
+                      
+                      let text = v;
+                      if (!Array.isArray(voices)) {
+                          if (voices[engine] && typeof voices[engine] === 'object' && !Array.isArray(voices[engine])) {
+                              text = voices[engine][v];
+                          } else if (voices[v] && typeof voices[v] === 'string') {
+                              text = voices[v];
+                          }
+                      }
+                      
+                      opt.textContent = text;
+                      voiceSel.appendChild(opt);
+                  });
+                  if (selectedVoice) {
+                      voiceSel.value = selectedVoice;
+                  }
+              }
+          } catch(e) { console.warn("Failed to load TTS voices", e); }
+          window.saveSessionConfig();
       };
 
       window.resetSessionDropdowns = function() {
           // Called when a new blank chat is created — reset both selects to "Default"
           const mSel = document.getElementById('chat-model-select');
           const pSel = document.getElementById('chat-persona-select');
+          const tEngSel = document.getElementById('chat-tts-engine-select');
+          const tVoiceSel = document.getElementById('chat-tts-voice-select');
           if (mSel) mSel.value = '';
           if (pSel) pSel.value = '';
+          if (tEngSel) tEngSel.value = '';
+          if (tVoiceSel) tVoiceSel.innerHTML = '<option value="">\uD83C\uDF99\uFE0F TTS Voice...</option>';
           window.updateSessionDropdownTitles();
       };
 
@@ -139,14 +244,24 @@
               
               const mSel = document.getElementById('chat-model-select');
               const pSel = document.getElementById('chat-persona-select');
+              const tEngSel = document.getElementById('chat-tts-engine-select');
+              const tVoiceSel = document.getElementById('chat-tts-voice-select');
               
               // Always reset first so new chats show "Default"
               if (mSel) mSel.value = '';
               if (pSel) pSel.value = '';
+              if (tEngSel) tEngSel.value = '';
+              if (tVoiceSel) tVoiceSel.innerHTML = '<option value="">\uD83C\uDF99\uFE0F TTS Voice...</option>';
               
               if (data.ok && data.config) {
                   if (data.config.ai?.active_personality) {
                       if (pSel) pSel.value = data.config.ai.active_personality;
+                  }
+                  if (data.config.ai?.tts_engine) {
+                      if (tEngSel) {
+                          tEngSel.value = data.config.ai.tts_engine;
+                          window.updateSessionTTSVoices(data.config.ai?.tts_voice);
+                      }
                   }
                   if (data.config.backend) {
                       const bType = data.config.backend.type;

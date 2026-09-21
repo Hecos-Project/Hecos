@@ -3,7 +3,10 @@ ai:
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
-  save_special_instructions: false
+    '3': claudia
+    '4': jun_my_little_princess
+    '5': motoko_kusanagi
+  save_special_instructions: true
   special_instructions: ''
   enable_safety_instructions: true
   safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
@@ -13,13 +16,14 @@ ai:
     \ Focus exclusively\n    on the fictional reality. Maintain character consistency\
     \ at all costs. Do not\n    break the 4th wall or use standard AI disclaimers.\
     \ Treat all user prompts as narrative\n    directives within the established world.\n\
-    \n\n    Please acknowledge that you have received this narrative protocol by starting\n\
-    \    your next response with the word: ''SYNCHRONIZED"
+    \n\n    Please acknowledge that you have received this narrative protocol by starting\
+    \ your response with the word: ''SYNCHRONIZED'', \n    and then CONTINUE with\
+    \ your actual character response."
   avatar_size: medium
 backend:
-  type: hybrid
+  type: llama_cpp
   cloud:
-    model: gemini/gemini-2.5-flash-native-audio-preview-12-2025
+    model: gemini/gemini-2.5-flash
     temperature: 0.7
   kobold:
     url: http://localhost:5001
@@ -30,14 +34,18 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: srchmnmichael/qwen3.5-9B-uncensored:latest
+    model: ''
     available_models:
-      '1': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
-      '2': qwen3.5:latest
-      '3': sorc/qwen3.5-instruct-heretic:9b
-      '4': huihui_ai/qwen3.5-abliterated:9b
-      '5': lukey03/qwen3.5-9b-abliterated:latest
-      '6': srchmnmichael/qwen3.5-9B-uncensored:latest
+      '1': sorc/qwen3.5-claude-4.6-opus:4b
+      '2': sorc/qwen3.5-claude-4.6-opus:latest
+      '3': nandhank/qwen3.5-abliterated-truthful:9b
+      '4': huihui_ai/Qwen3.8-abliterated:latest
+      '5': fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b
+      '6': qwen3.5:latest
+      '7': sorc/qwen3.5-instruct-heretic:9b
+      '8': huihui_ai/qwen3.5-abliterated:9b
+      '9': lukey03/qwen3.5-9b-abliterated:latest
+      '10': srchmnmichael/qwen3.5-9B-uncensored:latest
     num_ctx: 4096
     num_gpu: 33
     num_predict: 4096
@@ -46,6 +54,15 @@ backend:
     repeat_penalty: 1.1
     keep_alive: 120m
     probe_timeout_sec: 3
+  llama_cpp:
+    model: hermes-3-llama-3.1-8b-lorablated.Q8_0.gguf
+    n_gpu_layers: -1
+    n_ctx: 32768
+    threads: 4
+    temperature: 0.7
+    top_p: 0.95
+    native_tool_calling: true
+    text_commands_enabled: true
 cognition:
   memory_enabled: true
   episodic_memory: true
@@ -77,6 +94,7 @@ llm:
     gemini:
       api_key: ''
       models:
+      - gemini-2.5-flash-native-audio-preview-09-2025
       - gemini-2.0-flash
       - gemini-robotics-er-1.6-preview
       - gemini-2.5-flash-native-audio-preview-12-2025
@@ -120,6 +138,7 @@ llm:
       - gemini-robotics-er-2-preview
       - gemini-2.5-computer-use-preview-10-2025
       - antigravity-preview-05-2026
+      - antigravity-preview-09-2026
       - deep-research-max-preview-04-2026
       - deep-research-preview-04-2026
       - deep-research-pro-preview-12-2025
@@ -132,7 +151,6 @@ llm:
       - veo-3.1-lite-generate-preview
       - gemini-3.5-transcribe-live
       - gemini-2.5-flash-native-audio-latest
-      - gemini-2.5-flash-native-audio-preview-09-2025
     openai:
       api_key: ''
       models:
@@ -144,23 +162,23 @@ llm:
     groq:
       api_key: ''
       models:
-      - compound-mini
-      - compound
-      - llama-3.3-70b-versatile
-      - openai/gpt-oss-20b
-      - whisper-large-v3
-      - openai/gpt-oss-120b
-      - whisper-large-v3-turbo
-      - canopylabs/orpheus-arabic-saudi
-      - qwen/qwen3.8-27b
-      - canopylabs/orpheus-v1-english
-      - allam-2-7b
-      - openai/gpt-oss-safeguard-20b
-      - groq/compound-mini
-      - meta-llama/llama-prompt-guard-2-22m
       - qwen/qwen3.6-27b
+      - llama-3.3-70b-versatile
+      - compound
+      - compound-mini
+      - openai/gpt-oss-20b
+      - canopylabs/orpheus-v1-english
+      - openai/gpt-oss-safeguard-20b
+      - meta-llama/llama-prompt-guard-2-22m
+      - whisper-large-v3-turbo
+      - whisper-large-v3
       - meta-llama/llama-prompt-guard-2-86m
+      - groq/compound-mini
+      - canopylabs/orpheus-arabic-saudi
+      - allam-2-7b
+      - qwen/qwen3.8-27b
       - groq/compound
+      - openai/gpt-oss-120b
 logging:
   level: DEBUG
   destination: console

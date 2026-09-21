@@ -21,3 +21,14 @@ class LegacyTagParser:
             for tag in matches_simple:
                 if not any(t[0] == tag.lower() for t in tags_found):
                     tags_found.append((tag.lower(), "", "simple", None))
+
+        # Match Slash Commands (e.g., /img, /cmd) emitted by the LLM
+        if isinstance(base_text, str):
+            slash_matches = re.findall(r'^\s*(/[a-zA-Z0-9_]+.*?)(?:\n|$)', base_text, flags=re.MULTILINE)
+            for cmd in slash_matches:
+                tags_found.append(("direct_command", cmd.strip(), "slash", None))
+                
+            # Fallback: some LLMs might hallucinate HTML tags like <img description>
+            html_img_matches = re.findall(r'<img\s+([^>]+)>', base_text, flags=re.IGNORECASE)
+            for img_desc in html_img_matches:
+                tags_found.append(("direct_command", f"/img {img_desc.strip()}", "slash", None))

@@ -74,6 +74,55 @@
   box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
 }
 
+/* Slider + Number combo */
+.slider-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.slider-field input[type=range] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 6px;
+  cursor: pointer;
+  background: var(--bg3);
+  border-radius: 4px;
+  border: none;
+  padding: 0;
+  outline: none;
+}
+.slider-field input[type=number] {
+  width: 90px !important;
+  flex: none;
+  padding: 6px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Tooltip info icon */
+.tooltip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.7;
+  position: relative;
+  font-style: normal;
+  margin-left: 4px;
+  transition: opacity .2s, color .2s;
+}
+.tooltip-icon:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+
 /* Buttons */
 .btn {
   padding: 10px 24px;

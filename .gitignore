@@ -234,7 +234,7 @@ snapshots/*
 # Config data: Ignore active configs, keep templates
 hecos/config/data/*
 !hecos/config/data/*.example
-!hecos/data/templates.json
+hecos/data/templates.json
 
 # API Keys - CRITICAL: never push these to git
 hecos/config/keys.yaml
@@ -422,7 +422,7 @@ hecos/personas/Jun_my_little_princess/
 # Config data: Ignore active configs, keep templates
 hecos/config/data/*
 !hecos/config/data/*.example
-!hecos/data/templates.json
+hecos/data/templates.json
 
 # API Keys - CRITICAL: never push these to git
 hecos/config/keys.yaml
@@ -645,3 +645,8 @@ hecos/media/documents/*
 workspace/*
 !workspace/.gitkeep
 !workspace/flows/
+
+# GGUF Local LLM Models
+*.gguf
+hecos/models/gguf/*
+models/gguf/*

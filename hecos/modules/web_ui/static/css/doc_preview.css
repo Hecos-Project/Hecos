@@ -1,0 +1,68 @@
+/* 
+ * doc_preview.css
+ * Styles for the Document Preview modal and GrapeJS visual editor
+ */
+
+.doc-preview-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.doc-preview-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.doc-preview-container {
+    width: 95vw;
+    height: 95vh;
+    background: var(--bg2, #1a1a2e);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.doc-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.doc-preview-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text, #fff);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-preview-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.doc-preview-body {
+    flex: 1;
+    display: flex;
+    background: #000;
+    overflow: hidden;
+}
+
+#doc-preview-grapes-container {
+    width: 100%;
+    height: 100%;
+}

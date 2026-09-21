@@ -14,6 +14,14 @@ function populateAudioUI() {
     setVal('v-silence', v.sentence_silence ?? 0.1);
     setVal('v-timeout', v.piper_timeout ?? 180);
     setVal('v-tts-history-max', v.tts_history_max_files ?? 100);
+    setVal('v-active-engine', v.active_engine ?? 'piper');
+    // Kokoro
+    setVal('v-kokoro-speed', (v.kokoro && v.kokoro.speed) ? v.kokoro.speed : 1.0);
+    setVal('v-kokoro-voice', (v.kokoro && v.kokoro.voice) ? v.kokoro.voice : 'af_heart');
+    // XTTS
+    setVal('v-xtts-speed', (v.xtts && v.xtts.speed) ? v.xtts.speed : 1.0);
+    setVal('v-xtts-lang', (v.xtts && v.xtts.language) ? v.xtts.language : 'it');
+    setVal('v-xtts-speaker', (v.xtts && v.xtts.speaker) ? v.xtts.speaker : 'Claribel Dervla');
     refreshAudioHistoryCount();
 
     const a = audioConfig || {};
@@ -58,6 +66,16 @@ function buildAudioPayload() {
     const modelFile = (sel && sel.trim() && sel !== 'null') ? sel : 'it_IT-paola-medium.onnx';
     
     return {
+        active_engine:    getV('v-active-engine', v.active_engine || 'piper'),
+        kokoro:           { 
+            speed: parseFloat(getV('v-kokoro-speed', v.kokoro?.speed ?? 1.0)),
+            voice: getV('v-kokoro-voice', v.kokoro?.voice || 'af_heart')
+        },
+        xtts:             { 
+            speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)), 
+            language: getV('v-xtts-lang', v.xtts?.language || 'it'),
+            speaker: getV('v-xtts-speaker', v.xtts?.speaker || 'Claribel Dervla')
+        },
         listening_status: getC('sys-mic-status', v.listening_status ?? false),
         voice_status:     getC('sys-voice-status', v.voice_status ?? false),
         piper_path:       getV('v-piper', v.piper_path || ''),
@@ -205,6 +223,29 @@ async function clearAudioHistory() {
     }
 }
 
+// ── On-Demand TTS Engine Installer ───────────────────────────────────────────
+async function installTTSEngine(engine) {
+    const statusEl = document.getElementById(`${engine}-install-status`);
+    if (statusEl) statusEl.textContent = '⏳ Installazione in corso...';
+    try {
+        const r = await fetch('/api/audio/install-engine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ engine })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            if (statusEl) statusEl.textContent = '✅ Installed successfully!';
+            const badge = document.getElementById(`${engine}-status-badge`);
+            if (badge) badge.textContent = '✅ Available';
+        } else {
+            if (statusEl) statusEl.textContent = '❌ ' + (d.error || 'Installation failed.');
+        }
+    } catch (e) {
+        if (statusEl) statusEl.textContent = '❌ Request failed: ' + e.message;
+    }
+}
+
 // Exports for Global Scope
 window.populateAudioUI       = populateAudioUI;
 window.buildAudioPayload     = buildAudioPayload;
@@ -214,3 +255,4 @@ window.autoFixPiperPath      = autoFixPiperPath;
 window.browsePiperPath       = browsePiperPath;
 window.refreshAudioHistoryCount = refreshAudioHistoryCount;
 window.clearAudioHistory     = clearAudioHistory;
+window.installTTSEngine      = installTTSEngine;
