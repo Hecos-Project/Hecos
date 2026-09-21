@@ -9,6 +9,7 @@
 #control-room-panel {
   display: flex;
   flex-direction: column;
+  position: relative;
   width: 0;
   min-width: 0;
   overflow: hidden;
@@ -21,8 +22,29 @@
     min-width 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 #control-room-panel.open {
-  width: 50vw;
-  min-width: 400px;
+  width: 50vw; /* Default, overridden by JS inline styles */
+  min-width: 280px;
+}
+#control-room-panel.dragging {
+  transition: none !important;
+}
+
+/* ── Resizer Handle ────────────────────────────────────────────────────────── */
+#room-resizer {
+  position: absolute;
+  right: -2px; /* Hang slightly over the edge to make grabbing easier */
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  z-index: 100;
+  background: transparent;
+  transition: background 0.2s;
+}
+#room-resizer:hover,
+#control-room-panel.dragging #room-resizer {
+  background: var(--accent);
+  opacity: 0.6;
 }
 
 /* ── Room Header Bar ───────────────────────────────────────────────────────── */
@@ -106,6 +128,14 @@
 .grid-stack[gs-column="2"] > .grid-stack-item { width: 50% !important; left: 0 !important; }
 .grid-stack[gs-column="2"] > .grid-stack-item[gs-x="1"] { left: 50% !important; }
 .grid-stack[gs-column="2"] > .grid-stack-item[gs-w="2"] { width: 100% !important; left: 0 !important; }
+
+/* Single-column mode — every widget is full width */
+.grid-stack[gs-column="1"] > .grid-stack-item { width: 100% !important; left: 0 !important; }
+.grid-stack[gs-column="1"] > .grid-stack-item[gs-w="1"] { width: 100% !important; left: 0 !important; }
+.grid-stack[gs-column="1"] > .grid-stack-item[gs-w="2"] { width: 100% !important; left: 0 !important; }
+
+/* mode-1col fallback: CSS-only single-column that works regardless of gs-column attr */
+#control-room-panel.mode-1col .grid-stack > .grid-stack-item { width: 100% !important; left: 0 !important; }
 
 .grid-stack[gs-column="6"] > .grid-stack-item { width: 16.66% !important; }
 .grid-stack[gs-column="6"] > .grid-stack-item[gs-x="1"] { left: 16.66% !important; }

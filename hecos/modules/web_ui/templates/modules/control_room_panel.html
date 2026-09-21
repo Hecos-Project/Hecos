@@ -9,6 +9,11 @@
   <div id="room-header">
     <span><i class="fas fa-th-large" style="margin-right:6px;"></i>CONTROL ROOM</span>
     <div id="room-header-actions">
+      <!-- Width toggle (1x / 2x) -->
+      <button class="room-header-btn" id="room-width-btn" onclick="window.controlRoom.toggleWidth()"
+              title="Toggle Size (1x / 2x)" aria-label="Toggle Size">
+        <span style="font-weight:700; font-family:var(--font-mono); font-size:10px;">2x</span>
+      </button>
       <!-- Edit layout toggle -->
       <button class="room-header-btn" id="room-edit-btn"
               title="{{ t('room_edit_layout') or 'Edit layout' }}" aria-label="{{ t('room_edit_layout') or 'Edit layout' }}">
@@ -46,6 +51,9 @@
       {{ t('room_add_widget') or 'Add / Manage Widgets' }}
     </button>
   </div>
+
+  <!-- Draggable Resizer -->
+  <div id="room-resizer"></div>
 
 </div>
 
