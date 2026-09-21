@@ -166,19 +166,19 @@ llm:
       - compound
       - llama-3.3-70b-versatile
       - qwen/qwen3.6-27b
-      - openai/gpt-oss-safeguard-20b
-      - canopylabs/orpheus-arabic-saudi
-      - groq/compound
-      - groq/compound-mini
-      - allam-2-7b
       - canopylabs/orpheus-v1-english
+      - groq/compound-mini
+      - openai/gpt-oss-20b
+      - whisper-large-v3-turbo
+      - groq/compound
+      - canopylabs/orpheus-arabic-saudi
+      - qwen/qwen3.8-27b
+      - allam-2-7b
       - openai/gpt-oss-120b
       - whisper-large-v3
-      - whisper-large-v3-turbo
-      - meta-llama/llama-prompt-guard-2-22m
       - meta-llama/llama-prompt-guard-2-86m
-      - qwen/qwen3.8-27b
-      - openai/gpt-oss-20b
+      - meta-llama/llama-prompt-guard-2-22m
+      - openai/gpt-oss-safeguard-20b
 logging:
   level: DEBUG
   destination: console
