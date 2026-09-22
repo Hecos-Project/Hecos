@@ -63,7 +63,7 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             if not mic_on:
                 ptt_on = False
 
-            active_model = last_model_live or model
+            active_model = model
             mic_status   = "ON" if mic_on else "OFF"
             tts_status   = "ON" if tts_on else "OFF"
             ptt_status   = "ON" if ptt_on else "OFF"
