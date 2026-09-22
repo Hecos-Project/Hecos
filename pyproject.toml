@@ -35,6 +35,8 @@ dependencies = [
     "pynput",
     "playwright>=1.40.0",
     "beautifulsoup4",
+    "pypdf",
+    "python-docx",
 ]
 
 [project.optional-dependencies]

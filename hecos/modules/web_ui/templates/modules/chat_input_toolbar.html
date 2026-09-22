@@ -50,32 +50,77 @@
 
 .upload-chip {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: rgba(var(--accent-rgb),.1);
-  border: 1px solid rgba(var(--accent-rgb),.25);
-  border-radius: 20px;
-  font-size: 12px;
-  color: var(--accent);
-  max-width: 200px;
+  flex-direction: column;
+  position: relative;
+  width: 180px;
+  height: 180px;
+  background: var(--bg2);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
-.upload-chip span {
+.upload-chip-preview {
+  flex: 1;
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.upload-chip-preview img,
+.upload-chip-preview iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: none;
+  pointer-events: none; /* Prevent iframe interaction in the tiny chip */
+}
+
+.upload-chip-info {
+  height: 30px;
+  background: rgba(var(--accent-rgb), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  font-size: 10px;
+  color: var(--text);
+}
+
+.upload-chip-info span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .upload-chip-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
   cursor: pointer;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1;
-  flex-shrink: 0;
+  z-index: 5;
+  transition: transform 0.2s;
 }
-.upload-chip-remove:hover { color: var(--red); }
+
+.upload-chip-remove:hover {
+  transform: scale(1.1);
+  background: #e74c3c;
+}
 
 /* ─── Paste Modal (draggable, z-index above everything) ──────── */
 #paste-modal {

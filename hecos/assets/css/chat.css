@@ -518,7 +518,8 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
          t e x t - d e c o r a t i o n :   u n d e r l i n e ; 
          c o l o r :   v a r ( - - a c c e n t ) ; 
  } 
-  
+ 
+ 
  
 /* ── Reasoning / Think Block ─────────────────────────────────────── */
 .think-block {
@@ -559,3 +560,44 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
 }
 .think-block.expanded .think-block-body { display: block; }
 /* ─────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Chat Inline Document Previews (HTML, PDF) & Visual Editor Hover Overlay
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+.chat-html-preview, .chat-pdf-preview {
+    margin-top: 8px;
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.chat-html-preview-bar, .chat-pdf-preview-bar {
+    background: var(--bg3, #1f2233);
+    padding: 6px 12px;
+    font-size: 0.8em;
+    color: var(--muted, #8b92a5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+}
+
+.chat-html-preview-body, .chat-pdf-preview-body {
+    position: relative;
+    width: 100%;
+}
+
+.chat-html-preview-body iframe, .chat-pdf-preview-body iframe {
+    transition: filter 0.3s ease;
+    width: 100%;
+    height: 350px;
+    border: none;
+    display: block;
+}
+
+.chat-pdf-preview-body iframe {
+    height: 450px;
+}

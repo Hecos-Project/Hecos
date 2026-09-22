@@ -64,45 +64,76 @@ def init_chat_media_routes(app, logger):
 
         context_parts = []
         image_parts   = []
+        saved_files   = []
+
+        docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "media", "documents")
+        os.makedirs(docs_dir, exist_ok=True)
+        os.makedirs(IMAGES_DIR, exist_ok=True)
 
         for f in files:
             name = f.filename or "unknown"
             ext  = os.path.splitext(name)[1].lower()
+            raw_data = f.read()
+
             try:
-                if ext in (".txt", ".md", ".csv"):
-                    text = f.read().decode("utf-8", errors="replace")
+                if ext in (".txt", ".md", ".csv", ".html"):
+                    text = raw_data.decode("utf-8", errors="replace")
                     context_parts.append(f"--- {name} ---\n{text}")
+                    # Save to disk
+                    save_path = os.path.join(docs_dir, name)
+                    with open(save_path, "wb") as out:
+                        out.write(raw_data)
+                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
 
                 elif ext == ".pdf":
                     try:
                         import pypdf
                         from io import BytesIO
-                        reader = pypdf.PdfReader(BytesIO(f.read()))
+                        reader = pypdf.PdfReader(BytesIO(raw_data))
                         text   = "\n".join(p.extract_text() or "" for p in reader.pages)
                         context_parts.append(f"--- {name} (PDF) ---\n{text}")
                     except ImportError:
                         context_parts.append(f"--- {name} ---\n[pypdf non installato, impossibile leggere il PDF]")
+                    # Save to disk
+                    save_path = os.path.join(docs_dir, name)
+                    with open(save_path, "wb") as out:
+                        out.write(raw_data)
+                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
 
                 elif ext == ".docx":
                     try:
                         import docx
                         from io import BytesIO
-                        doc  = docx.Document(BytesIO(f.read()))
+                        doc  = docx.Document(BytesIO(raw_data))
                         text = "\n".join(p.text for p in doc.paragraphs)
                         context_parts.append(f"--- {name} (DOCX) ---\n{text}")
                     except ImportError:
                         context_parts.append(f"--- {name} ---\n[python-docx non installato, impossibile leggere il DOCX]")
+                    # Save to disk
+                    save_path = os.path.join(docs_dir, name)
+                    with open(save_path, "wb") as out:
+                        out.write(raw_data)
+                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
 
                 elif ext in (".png", ".jpg", ".jpeg", ".webp"):
-                    raw      = f.read()
-                    b64      = base64.b64encode(raw).decode("utf-8")
+                    b64      = base64.b64encode(raw_data).decode("utf-8")
                     mime_map = {".png": "image/png", ".jpg": "image/jpeg",
                                 ".jpeg": "image/jpeg", ".webp": "image/webp"}
                     mime = mime_map.get(ext, "image/jpeg")
                     image_parts.append({"name": name, "mime_type": mime, "data_b64": b64})
+                    # Save to disk
+                    save_path = os.path.join(IMAGES_DIR, name)
+                    with open(save_path, "wb") as out:
+                        out.write(raw_data)
+                    saved_files.append({"name": name, "path": save_path, "url": f"/api/images/{name}"})
 
                 else:
                     context_parts.append(f"--- {name} ---\n[Tipo file non supportato: {ext}]")
+                    # Save unknown files anyway
+                    save_path = os.path.join(docs_dir, name)
+                    with open(save_path, "wb") as out:
+                        out.write(raw_data)
+                    saved_files.append({"name": name, "path": save_path, "url": f"/api/local_file?path={save_path}"})
 
             except Exception as e:
                 context_parts.append(f"--- {name} ---\n[Errore durante la lettura: {e}]")
@@ -111,6 +142,7 @@ def init_chat_media_routes(app, logger):
             "ok":         True,
             "context":    "\n\n".join(context_parts),
             "images":     image_parts,
+            "saved_files": saved_files,
             "file_count": len(files),
         })
 
@@ -313,5 +345,78 @@ def init_chat_media_routes(app, logger):
             return jsonify({"ok": True})
         except Exception as e:
             _chat_log.error(f"[ChatMedia] Failed to launch VLC: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    # ── Fallback Document Maker routes ─────────────────────────────────────────
+    # These mirror the plugin routes so the Visual Editor works even when
+    # the HPM plugin route registration hasn't fired (e.g. after a rebuild).
+
+    @app.route("/hecos/api/plugins/document_maker/preview", methods=["GET"])
+    def doc_preview_get_fallback():
+        """Read a document file and return its HTML content for the Visual Editor."""
+        path = request.args.get("path")
+        if not path or not os.path.exists(path):
+            return jsonify({"ok": False, "error": "File not found"}), 404
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+            return jsonify({"ok": True, "html": content})
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/preview", methods=["POST"])
+    def doc_preview_post_fallback():
+        """Save edited HTML and regenerate PDF from the Visual Editor."""
+        try:
+            data = request.get_json(force=True)
+            path = data.get("path")
+            html = data.get("html")
+            if not path or not html:
+                return jsonify({"ok": False, "error": "Missing path or html"}), 400
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(html)
+            if path.endswith(".html"):
+                pdf_path = path[:-5] + ".pdf"
+                try:
+                    from hecos.hpm.document_maker.main import DocsTools
+                    dt = DocsTools()
+                    processed = dt._resolve_image_paths(html)
+                    processed = dt._inject_pagination_css(processed)
+                    res = dt._generate_pdf_from_html(processed, pdf_path)
+                    if not res:
+                        return jsonify({"ok": False, "error": "PDF regeneration failed"}), 500
+                except Exception as e:
+                    return jsonify({"ok": False, "error": str(e)}), 500
+            return jsonify({"ok": True})
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_preview POST error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route("/hecos/api/plugins/document_maker/generate_pdf_from_html", methods=["POST"])
+    def doc_generate_pdf_from_editor_fallback():
+        """Save edited HTML from editor and regenerate PDF."""
+        try:
+            data = request.get_json(force=True)
+            filepath = data.get("filepath")
+            html = data.get("html")
+            if not filepath or not html:
+                return jsonify({"ok": False, "error": "Missing filepath or html"}), 400
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(html)
+            pdf_path = filepath.rsplit(".", 1)[0] + ".pdf"
+            try:
+                from hecos.hpm.document_maker.main import DocsTools
+                dt = DocsTools()
+                resolved = dt._resolve_image_paths(html)
+                resolved = dt._inject_pagination_css(resolved)
+                result = dt._generate_pdf_from_html(resolved, pdf_path)
+                if result and os.path.exists(result):
+                    pdf_url = f"/api/local_file?path={os.path.normpath(result).replace(os.sep, '/')}"
+                    return jsonify({"ok": True, "pdf_url": pdf_url})
+                return jsonify({"ok": False, "error": "PDF generation failed"}), 500
+            except Exception as e:
+                return jsonify({"ok": False, "error": str(e)}), 500
+        except Exception as e:
+            _chat_log.error(f"[ChatMedia] doc_generate_pdf_from_editor error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 

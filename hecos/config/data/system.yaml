@@ -21,7 +21,7 @@ ai:
     \ your actual character response."
   avatar_size: medium
 backend:
-  type: ollama
+  type: cloud
   cloud:
     model: gemini/gemini-2.5-flash
     temperature: 0.7
@@ -34,7 +34,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: sorc/qwen3.5-claude-4.6-opus:latest
+    model: nandhank/qwen3.5-abliterated-truthful:9b
     available_models:
       '1': sorc/qwen3.5-claude-4.6-opus:4b
       '2': sorc/qwen3.5-claude-4.6-opus:latest
@@ -94,14 +94,14 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-2.5-flash-native-audio-preview-09-2025
-      - gemini-2.0-flash
-      - gemini-robotics-er-1.6-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-3.1-flash-live-preview
-      - gemini-robotics-er-2-streaming-preview
-      - gemini-3.5-live-translate-preview
       - gemini-2.5-flash-native-audio-latest
+      - gemini-3.5-live-translate-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.1-flash-live-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.0-flash
+      - gemini-2.5-flash-native-audio-preview-09-2025
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -163,23 +163,21 @@ llm:
     groq:
       api_key: ''
       models:
-      - compound-mini
-      - compound
-      - llama-3.3-70b-versatile
       - qwen/qwen3.6-27b
-      - openai/gpt-oss-safeguard-20b
+      - llama-3.3-70b-versatile
+      - compound
+      - compound-mini
+      - qwen/qwen3.8-27b
+      - meta-llama/llama-prompt-guard-2-22m
+      - allam-2-7b
+      - whisper-large-v3
       - canopylabs/orpheus-arabic-saudi
+      - meta-llama/llama-prompt-guard-2-86m
+      - whisper-large-v3-turbo
       - canopylabs/orpheus-v1-english
       - openai/gpt-oss-120b
-      - qwen/qwen3.8-27b
-      - meta-llama/llama-prompt-guard-2-86m
-      - groq/compound
-      - whisper-large-v3-turbo
-      - allam-2-7b
-      - meta-llama/llama-prompt-guard-2-22m
       - openai/gpt-oss-20b
-      - groq/compound-mini
-      - whisper-large-v3
+      - openai/gpt-oss-safeguard-20b
 logging:
   level: DEBUG
   destination: console

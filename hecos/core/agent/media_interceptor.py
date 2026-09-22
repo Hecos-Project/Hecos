@@ -40,26 +40,10 @@ class MediaInterceptor:
                     if img_url not in extracted_text:
                         extracted_text += f"\n\n![Snapshot]({img_url})"
 
-                # 3. Append other raw tool outputs so they are saved to history
-                if img_tags:
-                    continue
-                # Skip [EXECUTOR] confirmations that just echo a path
-                if isinstance(out, str) and out.strip().startswith("[EXECUTOR]"):
-                    continue
-                # Skip if the output is just a bare path already present in the AI's response
-                out_stripped = out.strip()
-                if re.fullmatch(r'[A-Za-z]:[\\/][^\n]+', out_stripped):
-                    if out_stripped.replace('\\', '/') in extracted_text.replace('\\', '/'):
-                        continue
-                
-                # Check for Document Maker specific outputs
-                if "HTML:" in out_stripped or "PDF:" in out_stripped:
-                    if "HTML:" in extracted_text and "PDF:" in extracted_text:
-                        continue
-                        
-                # Only append if it's not already somewhere in the text to avoid duplication
-                if out_stripped not in extracted_text:
-                    extracted_text += f"\n\n{out}"
+                # 3. Handle Document Maker specific outputs if not already mentioned
+                if isinstance(out, str) and ("HTML:" in out or "PDF:" in out):
+                    if "HTML:" not in extracted_text or "PDF:" not in extracted_text:
+                        extracted_text += f"\n\n{out}"
                     
         return extracted_text
 

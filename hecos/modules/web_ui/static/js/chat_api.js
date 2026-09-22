@@ -26,10 +26,12 @@ window.sendMessage = async function() {
 
   let attachCtx = '';
   let attachImgs = [];
+  let savedFiles = [];
   if (typeof window.getAttachmentContext === 'function') {
     const attachData = await window.getAttachmentContext();
     attachCtx = attachData.context || '';
     attachImgs = attachData.images || [];
+    savedFiles = attachData.saved_files || [];
   }
   const fullMessage = text + attachCtx;
 
@@ -39,6 +41,7 @@ window.sendMessage = async function() {
   if (window.userInput) { window.userInput.value = ''; window.autoResize(window.userInput); }
   
   let userHtml = text;
+  // Render uploaded images as inline thumbnails
   if (attachImgs.length > 0) {
     let imgHtml = '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">';
     attachImgs.forEach(img => {
@@ -47,8 +50,67 @@ window.sendMessage = async function() {
     imgHtml += '</div>';
     userHtml = imgHtml + userHtml;
   }
+  // Render uploaded files as interactive file cards immediately (no refresh needed)
+  if (savedFiles.length > 0) {
+    const iconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+                      doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
+                      md: 'fa-file-alt', csv: 'fa-file-csv' };
+    const colorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+                       doc: '#2980b9', docx: '#2980b9' };
+    let cardsHtml = '';
+    savedFiles.forEach(f => {
+      const ext = (f.name.match(/\.([a-z0-9]+)$/i) || ['',''])[1].toLowerCase();
+      const icon = iconMap[ext] || 'fa-file-alt';
+      const color = colorMap[ext] || 'var(--accent)';
+      const apiUrl = f.url || `/api/local_file?path=${encodeURIComponent(f.path)}`;
+      let cardHtml = `<div class="chat-file-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;">
+        <div class="chat-file-icon" style="font-size:1.6em;color:${color};"><i class="fas ${icon}"></i></div>
+        <div class="chat-file-details" style="flex:1;min-width:0;">
+          <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.path}">${f.name}</div>
+          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;">
+            <a href="${apiUrl}" target="_blank" download style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>
+          </div>
+        </div>
+      </div>`;
+      
+      if (ext === 'html' || ext === 'htm') {
+        const serveUrl = `/api/serve_html?path=${encodeURIComponent(f.path)}`;
+        const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+        const safeDocPath = f.path.replace(/\\/g, '/');
+        cardHtml += `
+        <div class="chat-html-preview">
+          <div class="chat-html-preview-bar">
+            <span>Preview: ${f.name}</span>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Modifica Documento</button>
+              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="chat-html-preview-body">
+            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:350px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+          </div>
+        </div>`;
+      } else if (ext === 'pdf') {
+        const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+        cardHtml += `
+        <div class="chat-pdf-preview">
+          <div class="chat-pdf-preview-bar">
+            <span>Preview: ${f.name}</span>
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+          <div class="chat-pdf-preview-body">
+            <iframe id="${iframeId}" src="${apiUrl}" style="width:100%;height:450px;border:none;display:block;"></iframe>
+          </div>
+        </div>`;
+      }
+      
+      cardsHtml += cardHtml;
+    });
+    userHtml = cardsHtml + userHtml;
+  }
   
-  window.chatHistory.push({role:'user', content:text});
+  // Store the full message (with attachment markdown links) so history restore works correctly
+  window.chatHistory.push({role:'user', content:fullMessage});
   const { bubble: userBubble } = window.addBubble('user', userHtml);
   userBubble.innerHTML = userHtml;
   if (typeof window.attachActionsToBubble === 'function') window.attachActionsToBubble(userBubble);

@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <title>Hecos — {{ t('webui_chat_title') }}</title>
 <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
-<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}">
-<link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}">
+<link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}&t=20260922">
+<link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}&t=20260922b">
 <!-- GridStack.js — Widget Grid Library -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
 <!-- Control Room Module A -->
@@ -142,7 +142,7 @@
 <script src="/static/js/config_manifest.js?v={{ version }}"></script>
 <script src="/static/js/chat_extensions.js"></script>
 <script src="/static/vendor/marked.min.js"></script>
-<script src="/static/js/chat_media_processor.js?v={{ version }}"></script>
+<script src="/static/js/chat_media_processor.js?v={{ version }}&t=20260922b"></script>
 <script>
   // Expose the global history to window so the renderer can read it
   window.chatHistory = [];
@@ -157,8 +157,8 @@
 
 <script src="/static/js/chat_audio_player.js?v={{ version }}"></script>
 <script src="/static/js/chat_renderer.js?v={{ version }}"></script>
-<link rel="stylesheet" href="/hecos/api/plugins/document_maker/static/css/doc_preview.css">
-<script src="/hecos/api/plugins/document_maker/static/js/doc_preview.js"></script>
+<link rel="stylesheet" href="/static/css/doc_preview.css?v={{ version }}">
+<script src="/static/js/doc_preview.js?v={{ version }}"></script>
 <script src="/static/js/agent/agent_traces.js?v={{ version }}"></script>
 <!-- Refactored Chat Logic Modules -->
 <script src="/static/js/chat_ui.js?v={{ version }}"></script>
@@ -167,7 +167,7 @@
 <script src="/static/js/hecos_wheel_picker.js?v={{ version }}"></script>
 <script src="/static/js/audio_controls.js?v={{ version }}"></script>
 <script src="/static/js/chat_message_actions.js?v={{ version }}"></script>
-<script src="/static/js/chat_input_toolbar.js?v={{ version }}"></script>
+<script src="/static/js/chat_input_toolbar.js?v={{ version }}&t=20260922b"></script>
 <script src="/static/js/chat_image_viewer.js?v={{ version }}"></script>
 <script src="/static/js/client_camera.js?v={{ version }}"></script>
 <!-- Refactored Audio UI Modules -->

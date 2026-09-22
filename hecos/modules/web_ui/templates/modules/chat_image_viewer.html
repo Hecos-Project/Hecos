@@ -5,6 +5,28 @@
 #}
 <style>
 /* ── Chat Images (sent by AI) ─────────────────────────────────── */
+.chat-photo-wall {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.chat-photo-wall .chat-img-wrap {
+  margin: 0;
+  flex: 1 1 calc(33.333% - 6px);
+  min-width: 140px;
+  max-width: 320px;
+}
+.chat-photo-wall .chat-img-wrap img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+.chat-photo-wall .img-action-btn {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
 .chat-img-wrap {
   position: relative;
   display: inline-block;

@@ -25,7 +25,7 @@
     const STORAGE_KEY   = 'hecos_hks_bindings';
     const PREFS_KEY     = 'hecos_hks_prefs';
     const VERSION_KEY   = 'hecos_hks_version';
-    const BINDINGS_VER  = '5'; // ← increment this whenever DEFAULTS change
+    const BINDINGS_VER  = '6'; // ← increment this whenever DEFAULTS change
 
     // ── Default bindings ──────────────────────────────────────────────────────
     // Inspired by Linux terminal function key conventions.
@@ -47,7 +47,7 @@
         'ui.ptt_trigger':    'ctrl+shift',
         'nav.drive':         'ctrl+shift+d',
         'nav.flows':         'ctrl+shift+f',
-        'ui.toggle_room':    'ctrl+shift+r',
+        'ui.toggle_room':    'ctrl+shift+m',
         'ui.toggle_sidebar': 'ctrl+b',
         'ui.new_chat':       'ctrl+enter',
         

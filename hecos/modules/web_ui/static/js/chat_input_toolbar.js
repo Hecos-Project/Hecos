@@ -43,13 +43,35 @@ function addUploadChip(entry) {
   const chip = document.createElement('div');
   chip.className = 'upload-chip';
   chip.dataset.name = entry.name;
-  const icon = entry.type === 'img' ? '🖼' : '📎';
-  const sizeKB = Math.round(entry.size / 1024);
+  
+  const ext = entry.name.split('.').pop().toLowerCase();
+  let previewHtml = '';
+  
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) {
+    const url = URL.createObjectURL(entry.file);
+    previewHtml = `<img src="${url}" alt="Preview" onload="URL.revokeObjectURL(this.src)">`;
+  } else if (['html', 'htm'].includes(ext)) {
+    const url = URL.createObjectURL(entry.file);
+    // Scale down the iframe so the full page fits inside the small thumbnail
+    previewHtml = `<iframe src="${url}" sandbox="allow-same-origin" style="width:800px;height:600px;transform:scale(0.22);transform-origin:top left;pointer-events:none;border:none;"></iframe>`;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } else if (ext === 'pdf') {
+    // PDF can't render in a sandboxed blob iframe — show a rich icon instead
+    previewHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><i class="fas fa-file-pdf" style="font-size:40px; color:#e74c3c;"></i><span style="font-size:10px;color:var(--muted);">PDF</span></div>`;
+  } else {
+    // Fallback for docs/txt etc
+    previewHtml = `<div style="font-size:24px; color:var(--muted);"><i class="fas fa-file-alt"></i></div>`;
+  }
+
+  const safeName = CSS.escape(entry.name);
   chip.innerHTML = `
-    <span>${icon}</span>
-    <span title="${entry.name}">${entry.name}</span>
-    <span style="color:var(--muted);font-size:10px;">(${sizeKB}KB)</span>
-    <span class="upload-chip-remove" title="Rimuovi" onclick="removeAttachment('${CSS.escape(entry.name)}', this.parentElement)">✕</span>
+    <div class="upload-chip-preview">
+      ${previewHtml}
+    </div>
+    <div class="upload-chip-info">
+      <span title="${entry.name}">${entry.name}</span>
+    </div>
+    <div class="upload-chip-remove" title="Rimuovi" onclick="removeAttachment('${safeName}', this.parentElement)">✕</div>
   `;
   preview.appendChild(chip);
 }
@@ -70,8 +92,17 @@ async function uploadAndGetContext() {
     if (data.ok) {
       window.pendingAttachments = [];
       document.getElementById('upload-preview').innerHTML = '';
-      const ctx = data.context ? '\n\n[CONTESTO ALLEGATO]:\n' + data.context : '';
-      return { context: ctx, images: data.images || [] };
+      
+      let fileLinks = '';
+      if (data.saved_files && data.saved_files.length > 0) {
+        fileLinks = data.saved_files.map(f => `[${f.name}](file:///${f.path.replace(/\\/g, '/')})`).join('\n');
+      }
+      
+      let ctx = '';
+      if (fileLinks) ctx += '\n\n' + fileLinks;
+      if (data.context) ctx += '\n\n[CONTESTO ALLEGATO]:\n' + data.context;
+      
+      return { context: ctx, images: data.images || [], saved_files: data.saved_files || [] };
     }
   } catch (e) {
     if (window.showToast) showToast('❌ Upload fallito: ' + e.message);

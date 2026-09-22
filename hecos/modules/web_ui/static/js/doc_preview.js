@@ -185,7 +185,7 @@ window.openDocPreview = async function(filePath) {
                     'gjs-blocks-basic': { flexGrid: true }
                 },
                 canvasCss: `
-                    body { margin: 0 auto !important; padding: 20mm !important; width: 210mm !important; min-height: 297mm; font-family: sans-serif; background: #ffffff; color: #000; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                    body { margin: 0 auto !important; padding: 20mm !important; width: 210mm !important; min-height: 297mm; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.15); }
                     [data-gjs-type] { outline: 1px dashed transparent; transition: outline .15s; }
                     [data-gjs-type]:hover { outline: 1px dashed rgba(0,212,255,0.5); }
                     .gjs-page-break-line {
@@ -217,8 +217,7 @@ window.openDocPreview = async function(filePath) {
 
             window._docPreviewGrapeEditor.on('load', () => {
                 window._docPreviewGrapeEditor.setComponents(parsed.body);
-                const wrapper = window._docPreviewGrapeEditor.getWrapper();
-                if (wrapper) wrapper.setStyle({ "background-color": "#ffffff" });
+                // Do NOT force background: the document's own CSS (in parsed.styles) controls it
                 if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Save & Regenerate PDF';
                 // Inject page break indicator lines after a short delay (let content render)
                 setTimeout(() => _injectPageBreakLines(window._docPreviewGrapeEditor), 800);

@@ -10,7 +10,7 @@ window.processAiMedia = function(html) {
 
   function isLocalLink(url) {
     if (!url) return false;
-    return url.startsWith('file://') || url.startsWith('/api/local_file') || /^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('http://localhost') || url.startsWith('https://localhost');
+    return url.startsWith('file://') || url.startsWith('/api/local_file') || url.startsWith('/api/serve_html') || /^[a-zA-Z]:[\\/]/.test(url) || url.startsWith('http://localhost') || url.startsWith('https://localhost');
   }
   
   function getSafeLocalUrl(rawUrl) {
@@ -121,7 +121,6 @@ window.processAiMedia = function(html) {
     // Is it a generic local file?
     if (isLocalLink(href)) {
       const src = getSafeLocalUrl(href);
-      const fileName = href.split(/[\\/]/).pop() || 'Local File';
       
       let docPath = href;
       try {
@@ -129,30 +128,84 @@ window.processAiMedia = function(html) {
           const urlObj = new URL(href, window.location.origin);
           docPath = urlObj.searchParams.get('path') || href;
         } else if (href.startsWith('file:///')) {
-          docPath = href.replace('file:///', '');
+          docPath = decodeURIComponent(href.replace('file:///', ''));
         }
       } catch(e) {}
       
-      let extraActions = "";
-      if (fileName.toLowerCase().endsWith(".html")) {
-        const safeDocPath = encodeURIComponent(docPath);
-        extraActions = `<a href="javascript:void(0)" onclick="if(window.openDocPreview){ window.openDocPreview(decodeURIComponent('${safeDocPath}')); } else { window.open('/docs/editor?file=${safeDocPath}', '_blank'); }" style="margin-left: 10px; color: var(--accent);"><i class="fas fa-magic"></i> Visual Editor</a>`;
-      }
+      // Extract clean filename from the actual document path rather than the messy URL
+      const fileName = docPath.split(/[\\\/]/).pop() || 'Local File';
+      const ext = (fileName.match(/\.([a-z0-9]+)$/i) || ['', ''])[1].toLowerCase();
+
+      // Determine icon and color by file extension
+      const fileIconMap = { pdf: 'fa-file-pdf', html: 'fa-file-code', htm: 'fa-file-code',
+                            doc: 'fa-file-word', docx: 'fa-file-word', txt: 'fa-file-alt',
+                            md: 'fa-file-alt', csv: 'fa-file-csv' };
+      const fileColorMap = { pdf: '#e74c3c', html: '#3498db', htm: '#3498db',
+                             doc: '#2980b9', docx: '#2980b9' };
+      const iconClass = fileIconMap[ext] || 'fa-file-alt';
+      const iconColor = fileColorMap[ext] || 'var(--accent)';
 
       const card = document.createElement('div');
       card.className = 'chat-file-card';
+      card.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border-color);border-radius:10px;margin:6px 0;';
       card.innerHTML = `
-        <div class="chat-file-icon"><i class="fas fa-file-alt"></i></div>
-        <div class="chat-file-details">
-          <div class="chat-file-name">${fileName}</div>
-          <div class="chat-file-action">
-             <a href="${src}" target="_blank" download>Open / Download</a>
-             ${extraActions}
+        <div class="chat-file-icon" style="font-size:1.6em;color:${iconColor};"><i class="fas ${iconClass}"></i></div>
+        <div class="chat-file-details" style="flex:1;min-width:0;">
+          <div class="chat-file-name" style="font-weight:600;font-size:0.9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${docPath}">${fileName}</div>
+          <div class="chat-file-action" style="display:flex;gap:6px;margin-top:5px;">
+            <a href="${src}" target="_blank" download style="padding:4px 10px; border-radius:5px; background:rgba(108,140,255,0.12); border:1px solid rgba(108,140,255,0.25); color:var(--muted); font-size:0.8em; text-decoration:none;"><i class="fas fa-download"></i> Download</a>
           </div>
         </div>
       `;
-      a.replaceWith(card);
+
+      // For HTML files, add inline preview iframe with Visual Editor hover overlay
+      if (ext === 'html' || ext === 'htm') {
+        const serveUrl = `/api/serve_html?path=${encodeURIComponent(docPath)}`;
+        const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+        const safeDocPath = docPath.replace(/\\/g, '/');
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'chat-html-preview';
+        previewDiv.innerHTML = `
+          <div class="chat-html-preview-bar">
+            <span>Preview: ${fileName}</span>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
+              <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="chat-html-preview-body">
+            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:350px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+          </div>
+        `;
+        // Wrap card and preview together
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(card);
+        wrapper.appendChild(previewDiv);
+        a.replaceWith(wrapper);
+      } else if (ext === 'pdf') {
+        // For PDF files, add an iframe preview without the edit overlay
+        const serveUrl = `/api/local_file?path=${encodeURIComponent(docPath)}`;
+        const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'chat-pdf-preview';
+        previewDiv.innerHTML = `
+          <div class="chat-pdf-preview-bar">
+            <span>Preview: ${fileName}</span>
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+          <div class="chat-pdf-preview-body">
+            <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:450px;border:none;display:block;"></iframe>
+          </div>
+        `;
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(card);
+        wrapper.appendChild(previewDiv);
+        a.replaceWith(wrapper);
+      } else {
+        a.replaceWith(card);
+      }
     }
+
   });
 
   // 2. Process <img> tags (Images)
@@ -264,13 +317,32 @@ window.processAiMedia = function(html) {
     // Add inline iframe preview for HTML
     if (ext === 'html' || ext === 'htm') {
       const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+      const safeDocPath = rawPath.replace(/\\/g, '/');
       cardHtml += `
-      <div class="chat-html-preview" style="margin-top: 8px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: #fff;">
-        <div style="background: var(--bg3); padding: 4px 8px; font-size: 0.75em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+      <div class="chat-html-preview">
+        <div class="chat-html-preview-bar">
+          <span>Preview: ${fileName}</span>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button onclick="if(window.openDocPreview) window.openDocPreview('${safeDocPath.replace(/'/g, "\\'")}');" style="background:rgba(108,140,255,0.2);border:1px solid var(--accent);color:var(--accent);border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.9em;"><i class="fas fa-magic"></i> Visual Editor</button>
+            <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div class="chat-html-preview-body">
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:350px;border:none;display:block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+        </div>
+      </div>`;
+    } else if (ext === 'pdf') {
+      const serveUrl = `/api/local_file?path=${encodeURIComponent(rawPath)}`;
+      const iframeId = 'preview_' + Math.random().toString(36).substring(2, 10);
+      cardHtml += `
+      <div class="chat-pdf-preview">
+        <div class="chat-pdf-preview-bar">
           <span>Preview: ${fileName}</span>
           <button onclick="document.getElementById('${iframeId}').src=document.getElementById('${iframeId}').src" style="background:none;border:none;color:var(--accent);cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
         </div>
-        <iframe id="${iframeId}" src="${serveUrl}" style="width: 100%; height: 350px; border: none; display: block;" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>
+        <div class="chat-pdf-preview-body">
+          <iframe id="${iframeId}" src="${serveUrl}" style="width:100%;height:450px;border:none;display:block;"></iframe>
+        </div>
       </div>`;
     }
 
@@ -323,6 +395,71 @@ window.processAiMedia = function(html) {
   let finalHtml = doc.body.innerHTML;
   if (typeof window.processAiImages === 'function') {
       finalHtml = window.processAiImages(finalHtml);
+  }
+
+  // --- Photo Wall Feature ---
+  // Group consecutive .chat-img-wrap elements into a grid gallery
+  try {
+    const wallDoc = new DOMParser().parseFromString(finalHtml, 'text/html');
+    let wraps = Array.from(wallDoc.querySelectorAll('.chat-img-wrap'));
+    if (wraps.length >= 2) {
+      let currentGroup = [];
+      const groups = [];
+      
+      for (let i = 0; i < wraps.length; i++) {
+        const wrap = wraps[i];
+        if (currentGroup.length === 0) {
+          currentGroup.push(wrap);
+        } else {
+          // Check if wrap is a sibling of the last one and only whitespace/br/p between them
+          const prev = currentGroup[currentGroup.length - 1];
+          let valid = true;
+          let node = prev.nextSibling;
+          while (node && node !== wrap) {
+            if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) {
+              // whitespace is ok
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BR') {
+              // br is ok
+            } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'P' && node.innerHTML.trim() === '') {
+              // empty p is ok
+            } else {
+              valid = false;
+              break;
+            }
+            node = node.nextSibling;
+          }
+          if (valid && node === wrap) {
+            currentGroup.push(wrap);
+          } else {
+            groups.push(currentGroup);
+            currentGroup = [wrap];
+          }
+        }
+      }
+      if (currentGroup.length > 0) groups.push(currentGroup);
+
+      groups.forEach(group => {
+        if (group.length >= 2) { // Only create wall if 2 or more consecutive images
+          const wall = wallDoc.createElement('div');
+          wall.className = 'chat-photo-wall';
+          const parent = group[0].parentNode;
+          parent.insertBefore(wall, group[0]);
+          group.forEach(w => {
+            // Remove any BRs immediately preceding
+            let p = w.previousSibling;
+            while(p && (p.nodeType === Node.TEXT_NODE || p.tagName === 'BR')) {
+              let toRemove = p;
+              p = p.previousSibling;
+              if (toRemove.parentNode === parent) parent.removeChild(toRemove);
+            }
+            wall.appendChild(w);
+          });
+        }
+      });
+      finalHtml = wallDoc.body.innerHTML;
+    }
+  } catch (e) {
+    console.warn("Photo Wall grouping failed", e);
   }
 
   return finalHtml;
