@@ -388,7 +388,8 @@
         "commands": {
             "generate_pdf": "Converts HTML content to a PDF file and returns the file path.",
             "list_documents": "Lists all documents in the documents folder.",
-            "modify_document": "Modifies an existing HTML document (add images, replace sections, change layout)."
+            "modify_document": "Modifies an existing HTML document (add images, replace sections, change layout).",
+            "optimize_layout": "Calculates page breaks for a document and returns a report of elements split across pages."
         },
         "status": "ONLINE (DORMANT)",
         "example": "",
@@ -436,6 +437,16 @@
                     "/list_documents"
                 ],
                 "description": "List all saved HTML and PDF documents.",
+                "requires_args": true
+            },
+            {
+                "id": "optimize_layout",
+                "aliases": [
+                    "/DOCS__optimize_layout",
+                    "/doc_layout",
+                    "/optimize_layout"
+                ],
+                "description": "Analyze an HTML document to find pagination errors (cut-off elements) and get suggestions for page breaks.",
                 "requires_args": true
             }
         ]

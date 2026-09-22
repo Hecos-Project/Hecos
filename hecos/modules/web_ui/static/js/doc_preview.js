@@ -32,48 +32,7 @@ function _loadGrapeJS(callback) {
     document.head.appendChild(script);
 }
 
-// A4 at 96dpi: 210mm = ~794px wide, 297mm = ~1122px tall
-const A4_HEIGHT_PX = 1122;
-
-function _injectPageBreakLines(editor) {
-    try {
-        const canvas = editor.Canvas;
-        const frame = canvas.getFrameEl ? canvas.getFrameEl() : null;
-        if (!frame) return;
-        const iframeDoc = frame.contentDocument || frame.contentWindow.document;
-        if (!iframeDoc) return;
-
-        // Remove any previously injected lines
-        iframeDoc.querySelectorAll('.gjs-page-break-line').forEach(el => el.remove());
-
-        const body = iframeDoc.body;
-        const totalHeight = body.scrollHeight;
-        const numBreaks = Math.floor(totalHeight / A4_HEIGHT_PX);
-
-        // Inject a positioned parent if body isn't already positioned
-        if (getComputedStyle(body).position === 'static') {
-            body.style.position = 'relative';
-        }
-
-        for (let i = 1; i <= numBreaks; i++) {
-            const topPx = i * A4_HEIGHT_PX;
-            const line = iframeDoc.createElement('div');
-            line.className = 'gjs-page-break-line';
-            line.style.top = topPx + 'px';
-            line.style.left = '0';
-            line.style.right = '0';
-
-            const label = iframeDoc.createElement('span');
-            label.className = 'gjs-page-break-label';
-            label.textContent = `── Pag ${i} / Pag ${i + 1} ──`;
-            line.appendChild(label);
-
-            body.appendChild(line);
-        }
-    } catch(e) {
-        console.warn('[DocPreview] Could not inject page break lines:', e);
-    }
-}
+// Removed fake page break logic as requested.
 
 function _parseHtmlForPreview(html) {
     if (!html) return { styles: '', body: '' };
@@ -188,29 +147,7 @@ window.openDocPreview = async function(filePath) {
                     body { margin: 0 auto !important; padding: 20mm !important; width: 210mm !important; min-height: 297mm; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.15); }
                     [data-gjs-type] { outline: 1px dashed transparent; transition: outline .15s; }
                     [data-gjs-type]:hover { outline: 1px dashed rgba(0,212,255,0.5); }
-                    .gjs-page-break-line {
-                        position: absolute;
-                        left: 0; right: 0;
-                        height: 0;
-                        border-top: 2px dashed rgba(255, 80, 80, 0.75);
-                        z-index: 9999;
-                        pointer-events: none;
-                        box-sizing: border-box;
-                    }
-                    .gjs-page-break-label {
-                        position: absolute;
-                        left: 50%;
-                        transform: translateX(-50%) translateY(-14px);
-                        background: rgba(255, 80, 80, 0.85);
-                        color: #fff;
-                        font-size: 11px;
-                        font-family: monospace;
-                        font-weight: bold;
-                        padding: 1px 10px;
-                        border-radius: 3px;
-                        white-space: nowrap;
-                        pointer-events: none;
-                    }
+
                     ${parsed.styles}
                 `
             });
@@ -219,8 +156,6 @@ window.openDocPreview = async function(filePath) {
                 window._docPreviewGrapeEditor.setComponents(parsed.body);
                 // Do NOT force background: the document's own CSS (in parsed.styles) controls it
                 if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Save & Regenerate PDF';
-                // Inject page break indicator lines after a short delay (let content render)
-                setTimeout(() => _injectPageBreakLines(window._docPreviewGrapeEditor), 800);
             });
         });
     } catch(e) {
@@ -266,7 +201,6 @@ window.restoreDocPreview = function() {
     window._docPreviewGrapeEditor.UndoManager.clear();
     window._docPreviewGrapeEditor.setComponents(parsed.body);
     if (window.showToast) window.showToast('Documento ripristinato alla versione originale.', 'success');
-    setTimeout(() => _injectPageBreakLines(window._docPreviewGrapeEditor), 500);
 };
 
 window.closeDocPreview = function() {
