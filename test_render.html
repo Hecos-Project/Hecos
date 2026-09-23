@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ report_title }}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  :root {
+    --bg: #070b14;
+    --bg2: #0d1421;
+    --bg3: #111827;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --border: rgba(99,102,241,0.18);
+    --card: rgba(255,255,255,0.04);
+    --font: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { font-size:16px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+  }
+  .topbar-logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent2) 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .topbar-meta {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    text-align: right;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 70px 60px 50px;
+    background: linear-gradient(180deg, #0d1421 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    color: var(--accent2);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 100px;
+    margin-bottom: 24px;
+  }
+  .hero-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+    max-width: 700px;
+  }
+  .hero-subtitle {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 600px;
+    font-weight: 400;
+  }
+  .hero-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 32px;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .hero-divider span { color: var(--accent2); font-weight: 600; }
+  .hero-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 50px 60px; max-width: 1100px; margin: 0 auto; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(99,102,241,0.15);
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .kpi-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--text);
+    line-height: 1;
+  }
+
+  /* ── SECTION ── */
+  .section { margin-bottom: 48px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-num {
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .section-content {
+    font-size: 0.95rem;
+    color: rgba(241,245,249,0.75);
+    line-height: 1.85;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+
+  /* ── SUMMARY BOX ── */
+  .summary-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(129,140,248,0.05) 100%);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .summary-box::before {
+    content: '▎';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border-radius: 4px 0 0 4px;
+  }
+  .summary-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 10px;
+  }
+  .summary-text {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: rgba(241,245,249,0.85);
+  }
+
+  /* ── FOOTER ── */
+  .doc-footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    background: var(--bg2);
+    margin-top: 40px;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #070b14 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .kpi-card, .section-content, .summary-box { break-inside: avoid; }
+    @page { margin: 0; size: A4; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">{{ company }}</div>
+  <div class="topbar-meta">CONFIDENTIAL &nbsp;·&nbsp; {{ report_date }}<br>Author: {{ author }}</div>
+</div>
+
+<div class="hero">
+  <div class="hero-tag">📊 Executive Report</div>
+  <h1 class="hero-title">{{ report_title }}</h1>
+  <p class="hero-subtitle">Strategic overview and performance summary for the reporting period.</p>
+  <div class="hero-divider">
+    <span>{{ report_date }}</span>
+    Prepared by {{ author }}
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">{{ kpi1_label }}</div>
+      <div class="kpi-value">{{ kpi1_value }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">{{ kpi2_label }}</div>
+      <div class="kpi-value">{{ kpi2_value }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">{{ kpi3_label }}</div>
+      <div class="kpi-value">{{ kpi3_value }}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">{{ kpi4_label }}</div>
+      <div class="kpi-value">{{ kpi4_value }}</div>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <div class="summary-box">
+    <div class="summary-label">Executive Summary</div>
+    <div class="summary-text">{{ executive_summary }}</div>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">{{ section1_title }}</div>
+    </div>
+    <div class="section-content">{{ section1_content }}</div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">{{ section2_title }}</div>
+    </div>
+    <div class="section-content">{{ section2_content }}</div>
+  </div>
+
+</div>
+
+<div class="doc-footer">
+  <span>{{ company }} &nbsp;·&nbsp; {{ report_title }}</span>
+  <span>{{ footer_text }}</span>
+</div>
+
+</body>
+</html>

@@ -388,6 +388,7 @@
         "commands": {
             "generate_pdf": "Converts HTML content to a PDF file and returns the file path.",
             "list_documents": "Lists all documents in the documents folder.",
+            "list_images": "Lists available images in media/images and media/generated_photos that can be reused in documents.",
             "modify_document": "Modifies an existing HTML document (add images, replace sections, change layout).",
             "optimize_layout": "Calculates page breaks for a document and returns a report of elements split across pages."
         },

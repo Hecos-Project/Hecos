@@ -5,6 +5,7 @@
 
 window._docPreviewGrapeEditor = null;
 window._docPreviewCurrentPath = null;
+window._docPreviewIsDirty = false;
 
 function _loadGrapeJS(callback) {
     if (typeof grapesjs !== 'undefined') {
@@ -94,7 +95,7 @@ window.openDocPreview = async function(filePath) {
                         <button onclick="window.restoreDocPreview()" title="Ripristina la versione originale del documento" style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.9em; transition: background 0.2s;"><i class="fas fa-history"></i> Ripristina</button>
                         <button onclick="window.closeDocPreview()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.9em; transition: background 0.2s;">Annulla</button>
                         <button onclick="window.saveAndRegenerateDoc()" id="doc-preview-save-btn" style="background: #3b82f6; border: 1px solid #2563eb; color: #fff; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.9em; font-weight: bold; transition: background 0.2s;">
-                            <i class="fas fa-save"></i> Salva & Rigenera PDF
+                            <i class="fas fa-save"></i> Salva &amp; Rigenera PDF
                         </button>
                     </div>
                 </div>
@@ -102,8 +103,33 @@ window.openDocPreview = async function(filePath) {
                     <div id="doc-preview-grapes-container"></div>
                 </div>
             </div>
+
+            <!-- Confirm close dialog -->
+            <div class="doc-preview-confirm-overlay" id="doc-preview-confirm-overlay" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.65); z-index:10000; display:none; align-items:center; justify-content:center;">
+                <div class="doc-preview-confirm-box" style="background:#1e1e2e; border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:32px 36px; max-width:420px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+                    <div style="font-size:2.5em; margin-bottom:12px;">⚠️</div>
+                    <div style="font-size:1.15em; font-weight:700; color:#fff; margin-bottom:10px;">Unsaved changes</div>
+                    <div style="font-size:0.9em; color:rgba(255,255,255,0.65); margin-bottom:24px; line-height:1.6;">You have unsaved changes. If you close now, all your edits will be lost.</div>
+                    <div style="display:flex; gap:12px; justify-content:center;">
+                        <button onclick="document.getElementById('doc-preview-confirm-overlay').style.display='none'" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:8px 20px; border-radius:6px; cursor:pointer; font-size:0.9em;">Stay</button>
+                        <button onclick="window._docPreviewForceClose()" style="background:#ef4444; border:1px solid #dc2626; color:#fff; padding:8px 20px; border-radius:6px; cursor:pointer; font-size:0.9em; font-weight:bold;">Close without saving</button>
+                    </div>
+                </div>
+            </div>
         `;
         document.body.appendChild(modal);
+
+        // ESC key handler — registered only once, checks dirty state
+        document.addEventListener('keydown', function _docEscHandler(e) {
+            if (e.key === 'Escape') {
+                const m = document.getElementById('doc-preview-modal');
+                if (m && m.classList.contains('active')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.closeDocPreview();
+                }
+            }
+        });
     }
 
     // --- BACKUP: store the original HTML in sessionStorage as a safety net ---
@@ -124,6 +150,8 @@ window.openDocPreview = async function(filePath) {
 
         // Store original HTML as backup in sessionStorage so user can always restore
         sessionStorage.setItem('doc_backup_' + filePath, data.html);
+
+        window._docPreviewIsDirty = false;
 
         _loadGrapeJS(() => {
             const parsed = _parseHtmlForPreview(data.html);
@@ -154,6 +182,13 @@ window.openDocPreview = async function(filePath) {
 
             window._docPreviewGrapeEditor.on('load', () => {
                 window._docPreviewGrapeEditor.setComponents(parsed.body);
+                // Reset dirty state on load
+                window._docPreviewIsDirty = false;
+                window._docPreviewGrapeEditor.UndoManager.clear();
+                // Track changes to set dirty flag
+                window._docPreviewGrapeEditor.on('change:changesCount', () => {
+                    window._docPreviewIsDirty = true;
+                });
                 // Do NOT force background: the document's own CSS (in parsed.styles) controls it
                 if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Save & Regenerate PDF';
             });
@@ -204,8 +239,22 @@ window.restoreDocPreview = function() {
 };
 
 window.closeDocPreview = function() {
+    if (window._docPreviewIsDirty) {
+        const overlay = document.getElementById('doc-preview-confirm-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+            return;
+        }
+    }
+    window._docPreviewForceClose();
+};
+
+window._docPreviewForceClose = function() {
     const modal = document.getElementById('doc-preview-modal');
     if (modal) modal.classList.remove('active');
+    const overlay = document.getElementById('doc-preview-confirm-overlay');
+    if (overlay) overlay.style.display = 'none';
+    window._docPreviewIsDirty = false;
 };
 
 window.saveAndRegenerateDoc = async function() {
@@ -258,7 +307,8 @@ ${html}
         
         if (data.ok) {
             if (window.showToast) window.showToast("Document saved and PDF regenerated!", "success");
-            window.closeDocPreview();
+            window._docPreviewIsDirty = false;
+            window._docPreviewForceClose();
         } else {
             throw new Error(data.error);
         }
