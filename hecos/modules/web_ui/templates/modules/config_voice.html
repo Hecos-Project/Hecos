@@ -87,6 +87,10 @@
         <input type="number" id="v-kokoro-speed" min="0.5" max="3" step="0.05">
       </div>
       <div class="field">
+        <label>Sentence Silence (s)</label>
+        <input type="number" id="v-kokoro-silence" min="0" max="2" step="0.05">
+      </div>
+      <div class="field">
         <label>Default Voice</label>
         <select id="v-kokoro-voice">
           <option value="af_heart">Heart (Female, US)</option>
@@ -108,11 +112,35 @@
         </select>
       </div>
     </div>
+    <div class="field" style="margin-top: 10px;">
+      <label>Offline Model Path (Optional)</label>
+      <input type="text" id="v-kokoro-model" placeholder="Leave empty to use HuggingFace cache">
+    </div>
     <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-      <button class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
         <i class="fas fa-download"></i> Install / Update Kokoro
       </button>
       <span id="kokoro-install-status" style="font-size:12px; color:var(--muted);"></span>
+    </div>
+
+    <!-- Test Voice Section (Kokoro) -->
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <div class="card-title" style="font-size:14px; margin-bottom:12px;">{{ t('webui_voice_test_title') }}</div>
+      <div class="field" style="margin-bottom:8px;">
+        <input type="text" id="v-kokoro-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Hecos system test, voice generation is operational.">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'kokoro')">
+          <i class="fas fa-play"></i> {{ t('webui_voice_test_web') }}
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'kokoro')">
+          <i class="fas fa-desktop"></i> {{ t('webui_voice_test_pc') }}
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" id="v-kokoro-test-stop" style="display:none;" onclick="stopVoice('kokoro')">
+          <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+        </button>
+        <span id="v-kokoro-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+      </div>
     </div>
   </div>
 
@@ -122,10 +150,27 @@
       XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
       <span id="xtts2-status-badge" style="font-size:11px;"></span>
     </p>
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="field" style="grid-column: span 2;">
+        <label>Configuration Preset</label>
+        <div style="display:flex; gap:8px;">
+          <select id="v-xtts-preset" onchange="loadXTTSPreset()" style="flex:1;">
+            <option value="default">Default</option>
+          </select>
+          <button class="btn btn-primary" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-save"></i> Save</button>
+          <button class="btn btn-danger" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+    
     <div class="grid-2">
       <div class="field">
-        <label>Speed</label>
-        <input type="number" id="v-xtts-speed" min="0.5" max="3" step="0.05">
+        <label>GPU Acceleration</label>
+        <select id="v-xtts-gpu">
+          <option value="auto">Auto (Default)</option>
+          <option value="gpu">Force GPU</option>
+          <option value="cpu">Force CPU</option>
+        </select>
       </div>
       <div class="field">
         <label>Language</label>
@@ -165,11 +210,79 @@
         </select>
       </div>
     </div>
+    
+    <div class="grid-3" style="margin-top:12px;">
+      <div class="field">
+        <label>Speed</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-speed" min="0.5" max="2.0" step="0.1" value="1.0" style="flex:1;" oninput="document.getElementById('v-xtts-speed-val').textContent = this.value">
+          <span id="v-xtts-speed-val" style="font-size:12px; min-width:24px;">1.0</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Temperature</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-temperature" min="0.1" max="1.5" step="0.05" value="0.75" style="flex:1;" oninput="document.getElementById('v-xtts-temperature-val').textContent = this.value">
+          <span id="v-xtts-temperature-val" style="font-size:12px; min-width:24px;">0.75</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Repetition Penalty</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-repetition_penalty" min="1.0" max="10.0" step="0.5" value="5.0" style="flex:1;" oninput="document.getElementById('v-xtts-repetition-val').textContent = this.value">
+          <span id="v-xtts-repetition-val" style="font-size:12px; min-width:24px;">5.0</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="toggle-row" style="margin-top: 10px;">
+      <div class="toggle-info">
+        <strong>Chunk Sentences</strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Split long paragraphs into chunks for faster response time</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-xtts-chunk">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+      <label>Voice Clone Reference (WAV Path)</label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="v-xtts-speaker-wav" placeholder="C:\path\to\reference_voice.wav (overrides Default Speaker)" style="flex:1;">
+        <button type="button" class="btn btn-secondary" onclick="pickXTTSVoiceWav()" title="Browse file">
+          <i class="fas fa-folder-open"></i>
+        </button>
+      </div>
+      <p style="font-size:11px; color:var(--muted); margin-top:4px;">Must be a clean, 10-30s WAV file with a single speaker.</p>
+    </div>
+    
+
     <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-      <button class="btn btn-secondary btn-sm" onclick="installTTSEngine('xtts2')">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('xtts2')">
         <i class="fas fa-download"></i> Install / Update XTTSv2
       </button>
       <span id="xtts2-install-status" style="font-size:12px; color:var(--muted);"></span>
+    </div>
+
+    <!-- Laboratory Section (XTTSv2) -->
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <div class="card-title" style="font-size:14px; margin-bottom:12px;">Laboratory (Test Voice)</div>
+      <div class="field" style="margin-bottom:8px;">
+        <input type="text" id="v-xtts-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Ciao, sono Urania. Test del sistema vocale completato con successo.">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'xtts2')">
+          <i class="fas fa-play"></i> Generate & Play
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'xtts2')">
+          <i class="fas fa-desktop"></i> Server Speakers
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" id="v-xtts-test-stop" style="display:none;" onclick="stopVoice('xtts2')">
+          <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+        </button>
+        <span id="v-xtts-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+      </div>
     </div>
   </div>
 

@@ -87,6 +87,7 @@ class LlamaCPPBackendConfig(BaseModel):
 
 class BackendConfig(BaseModel):
     type: str = "cloud"
+    active_model_source: str = "cloud"
     cloud: CloudBackendConfig = Field(default_factory=CloudBackendConfig)
     kobold: KoboldBackendConfig = Field(default_factory=KoboldBackendConfig)
     ollama: OllamaBackendConfig = Field(default_factory=OllamaBackendConfig)

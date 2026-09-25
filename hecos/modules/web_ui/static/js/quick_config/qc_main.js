@@ -7,7 +7,8 @@ window._qcState = {
     sysOptions: null,
     currentConfig: null,
     audioConfig: null,
-    richModels: null
+    richModels: null,
+    ttsStatus: null
 };
 
 window._qcInitAndShow = async function() {
@@ -18,13 +19,14 @@ window._qcInitAndShow = async function() {
     const statusEl = document.getElementById('qc-sync-status');
     if (statusEl) statusEl.classList.remove('visible');
 
-    // Fetch options, current config, audio config, and rich models in parallel
+    // Fetch options, current config, audio config, rich models and TTS status in parallel
     try {
-        const [optRes, cfgRes, audRes, richRes] = await Promise.all([
+        const [optRes, cfgRes, audRes, richRes, ttsRes] = await Promise.all([
             fetch('/hecos/options'),
             fetch('/hecos/config'),
             fetch('/api/audio/config'),
-            fetch('/api/chat/options')
+            fetch('/api/chat/options'),
+            fetch('/api/audio/tts-status')
         ]);
         
         if (optRes.ok) window._qcState.sysOptions = await optRes.json();
@@ -36,6 +38,9 @@ window._qcInitAndShow = async function() {
         if (richRes.ok) {
             const richJson = await richRes.json();
             window._qcState.richModels = richJson.models || [];
+        }
+        if (ttsRes.ok) {
+            window._qcState.ttsStatus = await ttsRes.json();
         }
         
         _qcPopulateUI();
@@ -73,10 +78,21 @@ function _qcPopulateUI() {
         personaEl.value = cfg.ai?.active_personality || '';
     }
 
-    // TTS Engine
+    // TTS Engine — mark unavailable engines with ⚠️
     const audCfg = window._qcState.audioConfig || {};
+    const ttsStatus = window._qcState.ttsStatus || {};
     const ttsEngineEl = document.getElementById('qc-tts-engine');
     if (ttsEngineEl) {
+        // Update option labels with availability info
+        for (const opt of ttsEngineEl.options) {
+            const base = opt.textContent.replace(/ [⚠️✅].*/, '').trim();
+            if (opt.value === 'kokoro') {
+                opt.textContent = base + (ttsStatus.kokoro === false ? ' ⚠️' : '');
+            } else if (opt.value === 'xtts2') {
+                opt.textContent = base + (ttsStatus.xtts2 === false ? ' ⚠️' : '');
+            }
+        }
+
         ttsEngineEl.value = audCfg.active_engine || 'piper';
         
         let activeVoice = null;
@@ -88,7 +104,7 @@ function _qcPopulateUI() {
             activeVoice = audCfg.xtts?.speaker;
         }
         
-        window.qcTTSChanged(activeVoice); // populate voices
+        window.qcTTSChanged(activeVoice, false); // populate voices — NOT a user action, do not save
     }
 }
 
@@ -184,16 +200,26 @@ function _qcUpdateModelSelect(backendType, cfg) {
 window.qcBackendChanged = function() {
     const type = document.getElementById('qc-backend-type').value;
     _qcUpdateModelSelect(type, window._qcState.currentConfig);
-    window.qcSaveConfig();
+    window.qcSaveConfig(); // user changed backend — always save
 };
 
-window.qcTTSChanged = async function(selectedVoice = null) {
+/**
+ * Populate TTS voice dropdown.
+ * @param {string|null} selectedVoice  - pre-select this voice value after loading
+ * @param {boolean}     fromUser       - true when triggered by a user interaction (saves config);
+ *                                       false when called programmatically during init (does NOT save).
+ */
+window.qcTTSChanged = async function(selectedVoice = null, fromUser = true) {
     const engine = document.getElementById('qc-tts-engine').value;
     const voiceEl = document.getElementById('qc-tts-voice');
     if (!voiceEl) return;
     
     voiceEl.innerHTML = '';
     
+    // Determine if the engine is installed (for cloud badge)
+    const ttsStatus = window._qcState.ttsStatus || {};
+    const engineInstalled = engine === 'piper' ? true : (ttsStatus[engine] !== false);
+
     try {
         const res = await fetch(`/api/audio/voices?engine=${engine}`);
         if (res.ok) {
@@ -216,6 +242,9 @@ window.qcTTSChanged = async function(selectedVoice = null) {
                     }
                 }
                 
+                // Add ☁️ cloud badge if engine is not installed (model needs download)
+                if (!engineInstalled) text += ' ☁️';
+
                 opt.textContent = text;
                 voiceEl.appendChild(opt);
             });
@@ -226,7 +255,10 @@ window.qcTTSChanged = async function(selectedVoice = null) {
     } catch(e) {
         console.error("Failed to fetch TTS voices", e);
     }
-    window.qcSaveConfig();
+    // Only save when the user explicitly changed a field — not during programmatic init
+    if (fromUser) {
+        window.qcSaveConfig();
+    }
 };
 
 window.qcSaveConfig = function() {

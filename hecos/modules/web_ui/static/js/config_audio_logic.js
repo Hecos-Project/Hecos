@@ -18,11 +18,43 @@ function populateAudioUI() {
     // Kokoro
     setVal('v-kokoro-speed', (v.kokoro && v.kokoro.speed) ? v.kokoro.speed : 1.0);
     setVal('v-kokoro-voice', (v.kokoro && v.kokoro.voice) ? v.kokoro.voice : 'af_heart');
+    setVal('v-kokoro-silence', (v.kokoro && v.kokoro.sentence_silence) ? v.kokoro.sentence_silence : 0.0);
+    setVal('v-kokoro-model', (v.kokoro && v.kokoro.model_path) ? v.kokoro.model_path : '');
     // XTTS
     setVal('v-xtts-speed', (v.xtts && v.xtts.speed) ? v.xtts.speed : 1.0);
     setVal('v-xtts-lang', (v.xtts && v.xtts.language) ? v.xtts.language : 'it');
     setVal('v-xtts-speaker', (v.xtts && v.xtts.speaker) ? v.xtts.speaker : 'Claribel Dervla');
+    setVal('v-xtts-gpu', (v.xtts && v.xtts.gpu_acceleration) ? v.xtts.gpu_acceleration : 'auto');
+    setCheck('v-xtts-chunk', (v.xtts && v.xtts.chunk_sentences !== undefined) ? v.xtts.chunk_sentences : true);
+    setVal('v-xtts-speaker-wav', (v.xtts && v.xtts.speaker_wav) ? v.xtts.speaker_wav : '');
+    setVal('v-xtts-temperature', (v.xtts && v.xtts.temperature !== undefined) ? v.xtts.temperature : 0.75);
+    setVal('v-xtts-repetition_penalty', (v.xtts && v.xtts.repetition_penalty !== undefined) ? v.xtts.repetition_penalty : 5.0);
+    // Update value displays
+    const spVal = document.getElementById('v-xtts-speed-val'); if(spVal) spVal.textContent = getV('v-xtts-speed');
+    const tpVal = document.getElementById('v-xtts-temperature-val'); if(tpVal) tpVal.textContent = getV('v-xtts-temperature');
+    const rpVal = document.getElementById('v-xtts-repetition-val'); if(rpVal) rpVal.textContent = getV('v-xtts-repetition_penalty');
+    
+    // Populate XTTS Presets
+    const presetSel = document.getElementById('v-xtts-preset');
+    if (presetSel) {
+        presetSel.innerHTML = '<option value="default">Default (Built-in)</option>';
+        if (v.xtts_presets) {
+            for (const pName in v.xtts_presets) {
+                const opt = document.createElement('option');
+                opt.value = pName;
+                opt.textContent = pName;
+                presetSel.appendChild(opt);
+            }
+        }
+        if (v.xtts && v.xtts.current_preset && v.xtts_presets && v.xtts_presets[v.xtts.current_preset]) {
+            presetSel.value = v.xtts.current_preset;
+        } else {
+            presetSel.value = 'default';
+        }
+    }
+
     refreshAudioHistoryCount();
+    checkTTSEngineStatus();
 
     const a = audioConfig || {};
     setVal('a-threshold', a.energy_threshold ?? 450);
@@ -69,13 +101,22 @@ function buildAudioPayload() {
         active_engine:    getV('v-active-engine', v.active_engine || 'piper'),
         kokoro:           { 
             speed: parseFloat(getV('v-kokoro-speed', v.kokoro?.speed ?? 1.0)),
-            voice: getV('v-kokoro-voice', v.kokoro?.voice || 'af_heart')
+            voice: getV('v-kokoro-voice', v.kokoro?.voice || 'af_heart'),
+            sentence_silence: parseFloat(getV('v-kokoro-silence', v.kokoro?.sentence_silence ?? 0.0)),
+            model_path: getV('v-kokoro-model', v.kokoro?.model_path || '')
         },
         xtts:             { 
             speed: parseFloat(getV('v-xtts-speed', v.xtts?.speed ?? 1.0)), 
             language: getV('v-xtts-lang', v.xtts?.language || 'it'),
-            speaker: getV('v-xtts-speaker', v.xtts?.speaker || 'Claribel Dervla')
+            speaker: getV('v-xtts-speaker', v.xtts?.speaker || 'Claribel Dervla'),
+            gpu_acceleration: getV('v-xtts-gpu', v.xtts?.gpu_acceleration || 'auto'),
+            chunk_sentences: getC('v-xtts-chunk', v.xtts?.chunk_sentences ?? true),
+            speaker_wav: getV('v-xtts-speaker-wav', v.xtts?.speaker_wav || ''),
+            temperature: parseFloat(getV('v-xtts-temperature', v.xtts?.temperature ?? 0.75)),
+            repetition_penalty: parseFloat(getV('v-xtts-repetition_penalty', v.xtts?.repetition_penalty ?? 5.0)),
+            current_preset: getV('v-xtts-preset', 'default')
         },
+        xtts_presets:     v.xtts_presets || {},
         listening_status: getC('sys-mic-status', v.listening_status ?? false),
         voice_status:     getC('sys-voice-status', v.voice_status ?? false),
         piper_path:       getV('v-piper', v.piper_path || ''),
@@ -94,11 +135,12 @@ function buildAudioPayload() {
 
 let currentTestAudio = null;
 
-async function testVoice(mode) {
-    const vTextEl = document.getElementById('v-test-text');
+async function testVoice(mode, engine = null) {
+    const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : 'v');
+    const vTextEl = document.getElementById(prefix + '-test-text');
     const text = (vTextEl ? vTextEl.value : '') || 'Hecos test, everything is working correctly.';
-    const sts = document.getElementById('v-test-status');
-    const stopBtn = document.getElementById('v-test-stop');
+    const sts = document.getElementById(prefix + '-test-status');
+    const stopBtn = document.getElementById(prefix + '-test-stop');
     if (sts) sts.textContent = mode === 'web' ? 'Generating audio...' : 'Playing on server...';
     if (stopBtn) stopBtn.style.display = 'inline-block';
 
@@ -106,7 +148,7 @@ async function testVoice(mode) {
         const r = await fetch('/api/audio/test', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, mode: mode })
+            body: JSON.stringify({ text: text, mode: mode, engine: engine })
         });
         const data = await r.json();
         if (data.ok) {
@@ -136,16 +178,17 @@ async function testVoice(mode) {
     }
 }
 
-async function stopVoice() {
+async function stopVoice(engine = null) {
     if (currentTestAudio) {
         currentTestAudio.pause();
         currentTestAudio.src = '';
         currentTestAudio = null;
     }
     try { await fetch('/api/audio/stop', { method: 'POST' }); } catch (e) {}
-    const stopBtn = document.getElementById('v-test-stop');
+    const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : 'v');
+    const stopBtn = document.getElementById(prefix + '-test-stop');
     if (stopBtn) stopBtn.style.display = 'none';
-    const sts = document.getElementById('v-test-status');
+    const sts = document.getElementById(prefix + '-test-status');
     if (sts) sts.textContent = 'Stopped.';
 }
 
@@ -246,6 +289,94 @@ async function installTTSEngine(engine) {
     }
 }
 
+// ── TTS Engine Availability Check & Dynamic Voice Population ──────────────────
+async function checkTTSEngineStatus() {
+    try {
+        // 1. Dynamically populate voices for Kokoro and XTTSv2
+        const kokoroVoiceSel = document.getElementById('v-kokoro-voice');
+        const xttsSpeakerSel = document.getElementById('v-xtts-speaker');
+        const v = typeof audioConfig !== 'undefined' ? (audioConfig || {}) : {};
+        const selKokoro = (v.kokoro && v.kokoro.voice) ? v.kokoro.voice : 'af_heart';
+        const selXtts = (v.xtts && v.xtts.speaker) ? v.xtts.speaker : 'Claribel Dervla';
+
+        if (kokoroVoiceSel) {
+            try {
+                const res = await fetch(`/api/audio/voices?engine=kokoro`);
+                if (res.ok) {
+                    const voices = await res.json();
+                    const list = Array.isArray(voices) ? voices : (voices.kokoro || Object.keys(voices));
+                    const iter = Array.isArray(list) ? list : Object.keys(list);
+                    if (iter.length > 0) {
+                        kokoroVoiceSel.innerHTML = '';
+                        iter.forEach(voice => {
+                            const opt = document.createElement('option');
+                            opt.value = voice;
+                            let text = voice;
+                            if (!Array.isArray(list) && typeof list[voice] === 'string') text = list[voice];
+                            opt.textContent = text;
+                            kokoroVoiceSel.appendChild(opt);
+                        });
+                        kokoroVoiceSel.value = selKokoro;
+                    }
+                }
+            } catch(e) { console.warn("Failed to fetch Kokoro voices"); }
+        }
+        
+        if (xttsSpeakerSel) {
+            try {
+                const res = await fetch(`/api/audio/voices?engine=xtts2`);
+                if (res.ok) {
+                    const voices = await res.json();
+                    const list = Array.isArray(voices) ? voices : (voices.xtts2 || Object.keys(voices));
+                    const iter = Array.isArray(list) ? list : Object.keys(list);
+                    if (iter.length > 0) {
+                        xttsSpeakerSel.innerHTML = '';
+                        iter.forEach(voice => {
+                            const opt = document.createElement('option');
+                            opt.value = voice;
+                            let text = voice;
+                            if (!Array.isArray(list) && typeof list[voice] === 'string') text = list[voice];
+                            opt.textContent = text;
+                            xttsSpeakerSel.appendChild(opt);
+                        });
+                        xttsSpeakerSel.value = selXtts;
+                    }
+                }
+            } catch(e) { console.warn("Failed to fetch XTTS voices"); }
+        }
+
+        // 2. Fetch status and update badges
+        const r = await fetch('/api/audio/tts-status');
+        const d = await r.json();
+        if (!d.ok) return;
+
+        // Kokoro badge
+        const kokoroBadge = document.getElementById('kokoro-status-badge');
+        if (kokoroBadge) {
+            kokoroBadge.textContent = d.kokoro ? '✅ Installed' : '⚠️ Not installed';
+            kokoroBadge.style.color = d.kokoro ? 'var(--green, #2ecc71)' : 'var(--yellow, #f1c40f)';
+        }
+
+        // XTTSv2 badge — show ✅ if library is installed, even if model not yet downloaded
+        const xttsBadge = document.getElementById('xtts2-status-badge');
+        if (xttsBadge) {
+            if (d.xtts2) {
+                xttsBadge.textContent = '✅ Installed & Ready (All voices are built-in)';
+                xttsBadge.style.color = 'var(--green, #2ecc71)';
+            } else if (d.xtts2_lib) {
+                xttsBadge.textContent = '⏳ Library installed — model will download on first use (~1.8 GB)';
+                xttsBadge.style.color = 'var(--yellow, #f1c40f)';
+            } else {
+                xttsBadge.textContent = '⚠️ Not installed';
+                xttsBadge.style.color = 'var(--yellow, #f1c40f)';
+            }
+        }
+
+        // XTTS and Kokoro download their voices automatically or they are built-in.
+        // No per-voice download indicators are needed here.
+    } catch(e) {}
+}
+
 // Exports for Global Scope
 window.populateAudioUI       = populateAudioUI;
 window.buildAudioPayload     = buildAudioPayload;
@@ -256,3 +387,118 @@ window.browsePiperPath       = browsePiperPath;
 window.refreshAudioHistoryCount = refreshAudioHistoryCount;
 window.clearAudioHistory     = clearAudioHistory;
 window.installTTSEngine      = installTTSEngine;
+window.checkTTSEngineStatus  = checkTTSEngineStatus;
+// saveAudioConfig is a lazy wrapper: resolves saveConfig at call-time, not at load-time
+// (saveConfig lives in config_core_persistence.js which may load after this file)
+window.saveAudioConfig = function() {
+    if (typeof window.saveConfig === 'function') return window.saveConfig(true);
+    console.warn('[AudioConfig] saveConfig not yet available');
+    return Promise.resolve();
+};
+
+window.pickXTTSVoiceWav = function() {
+    fetch('/api/system/explorer/pick-native', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title: "Select Voice Clone WAV",
+            filetypes: [["WAV Audio", "*.wav"], ["All Files", "*.*"]]
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.ok && data.path) {
+            const input = document.getElementById('v-xtts-speaker-wav');
+            if (input) {
+                input.value = data.path;
+                saveAudioConfig(); // Automatically save and sync across UIs
+            }
+        }
+    })
+    .catch(err => console.error("Native pick error:", err));
+};
+
+// ── XTTS Presets Logic ───────────────────────────────────────────────────────
+
+window.saveXTTSPreset = function() {
+    const name = prompt("Nome del preset (es. 'Voce veloce', 'Voce clonata'):");
+    if (!name) return;
+    
+    if (!audioConfig.xtts_presets) audioConfig.xtts_presets = {};
+    
+    audioConfig.xtts_presets[name] = {
+        speed: parseFloat(document.getElementById('v-xtts-speed')?.value || 1.0),
+        language: document.getElementById('v-xtts-lang')?.value || 'it',
+        speaker: document.getElementById('v-xtts-speaker')?.value || 'Claribel Dervla',
+        gpu_acceleration: document.getElementById('v-xtts-gpu')?.value || 'auto',
+        chunk_sentences: document.getElementById('v-xtts-chunk')?.checked ?? true,
+        speaker_wav: document.getElementById('v-xtts-speaker-wav')?.value || '',
+        temperature: parseFloat(document.getElementById('v-xtts-temperature')?.value || 0.75),
+        repetition_penalty: parseFloat(document.getElementById('v-xtts-repetition_penalty')?.value || 5.0)
+    };
+    
+    if (!audioConfig.xtts) audioConfig.xtts = {};
+    audioConfig.xtts.current_preset = name;
+    
+    saveAudioConfig().then(() => {
+        populateAudioUI();
+        alert("Preset salvato con successo!");
+    });
+};
+
+window.loadXTTSPreset = function() {
+    const name = document.getElementById('v-xtts-preset')?.value;
+    if (!name) return;
+
+    if (name === 'default' || !audioConfig.xtts_presets || !audioConfig.xtts_presets[name]) {
+        if (name === 'default') {
+            if (document.getElementById('v-xtts-speed')) document.getElementById('v-xtts-speed').value = 1.0;
+            if (document.getElementById('v-xtts-temperature')) document.getElementById('v-xtts-temperature').value = 0.75;
+            if (document.getElementById('v-xtts-repetition_penalty')) document.getElementById('v-xtts-repetition_penalty').value = 5.0;
+            if (document.getElementById('v-xtts-speaker')) document.getElementById('v-xtts-speaker').value = 'Claribel Dervla';
+            if (document.getElementById('v-xtts-speaker-wav')) document.getElementById('v-xtts-speaker-wav').value = '';
+            
+            document.getElementById('v-xtts-speed')?.dispatchEvent(new Event('input'));
+            document.getElementById('v-xtts-temperature')?.dispatchEvent(new Event('input'));
+            document.getElementById('v-xtts-repetition_penalty')?.dispatchEvent(new Event('input'));
+            
+            audioConfig.xtts.current_preset = 'default';
+            saveAudioConfig();
+        }
+        return;
+    }
+    
+    const p = audioConfig.xtts_presets[name];
+    if (document.getElementById('v-xtts-speed')) document.getElementById('v-xtts-speed').value = p.speed || 1.0;
+    if (document.getElementById('v-xtts-lang')) document.getElementById('v-xtts-lang').value = p.language || 'it';
+    if (document.getElementById('v-xtts-speaker')) document.getElementById('v-xtts-speaker').value = p.speaker || 'Claribel Dervla';
+    if (document.getElementById('v-xtts-gpu')) document.getElementById('v-xtts-gpu').value = p.gpu_acceleration || 'auto';
+    if (document.getElementById('v-xtts-chunk')) document.getElementById('v-xtts-chunk').checked = p.chunk_sentences ?? true;
+    if (document.getElementById('v-xtts-speaker-wav')) document.getElementById('v-xtts-speaker-wav').value = p.speaker_wav || '';
+    if (document.getElementById('v-xtts-temperature')) document.getElementById('v-xtts-temperature').value = p.temperature || 0.75;
+    if (document.getElementById('v-xtts-repetition_penalty')) document.getElementById('v-xtts-repetition_penalty').value = p.repetition_penalty || 5.0;
+    
+    document.getElementById('v-xtts-speed')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-temperature')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-repetition_penalty')?.dispatchEvent(new Event('input'));
+    
+    audioConfig.xtts.current_preset = name;
+    saveAudioConfig();
+};
+
+window.deleteXTTSPreset = function() {
+    const name = document.getElementById('v-xtts-preset').value;
+    if (name === 'default') {
+        alert("Impossibile eliminare il preset predefinito.");
+        return;
+    }
+    if (!confirm(`Sei sicuro di voler eliminare il preset '${name}'?`)) return;
+    
+    if (audioConfig.xtts_presets && audioConfig.xtts_presets[name]) {
+        delete audioConfig.xtts_presets[name];
+        audioConfig.xtts.current_preset = 'default';
+        saveAudioConfig().then(() => {
+            populateAudioUI();
+        });
+    }
+};

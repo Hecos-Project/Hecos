@@ -29,10 +29,18 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             elif backend == "kobold": model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
             elif backend == "llama_cpp": model = cfg.get("backend", {}).get("llama_cpp", {}).get("model", "?")
             elif backend == "hybrid":
-                # Prefer cloud if set, otherwise fall back to ollama
-                cloud_m  = cfg.get("backend", {}).get("cloud",  {}).get("model", "")
-                ollama_m = cfg.get("backend", {}).get("ollama", {}).get("model", "")
-                model = cloud_m or ollama_m or "?"
+                # Show the currently-active source, not just "hybrid"
+                active_source = cfg.get("backend", {}).get("active_model_source", "cloud")
+                backend = active_source  # override so sidebar shows "CLOUD" or "OLLAMA"
+                if   active_source == "cloud":     model = cfg.get("backend", {}).get("cloud",  {}).get("model", "?")
+                elif active_source == "ollama":    model = cfg.get("backend", {}).get("ollama", {}).get("model", "?")
+                elif active_source == "kobold":    model = cfg.get("backend", {}).get("kobold", {}).get("model", "?")
+                elif active_source == "llama_cpp": model = cfg.get("backend", {}).get("llama_cpp", {}).get("model", "?")
+                else:
+                    # Fallback: prefer cloud then ollama
+                    cloud_m  = cfg.get("backend", {}).get("cloud",  {}).get("model", "")
+                    ollama_m = cfg.get("backend", {}).get("ollama", {}).get("model", "")
+                    model = cloud_m or ollama_m or "?"
             else: model = "?"
 
 

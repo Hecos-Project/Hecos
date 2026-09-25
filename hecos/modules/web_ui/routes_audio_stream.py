@@ -117,17 +117,20 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             data = request.get_json(force=True) or {}
             text = data.get("text", "Test di Hecos, sistema vocale operativo.").strip()
             mode = data.get("mode", "web")
+            engine = data.get("engine", None)
 
             from hecos.core.audio.tts_manager import TTSManager
             from hecos.modules.web_ui.routes_chat_tts import generate_voice_file, set_last_audio_path
 
-            logger.info(f"[WebUI] TTS Test — engine: active, mode: {mode}, text: {text[:60]!r}")
+            logger.info(f"[WebUI] TTS Test — engine: {engine or 'active'}, mode: {mode}, text: {text[:60]!r}")
+            
+            session_overrides = {"tts_engine": engine} if engine else {}
 
             if mode == "console":
                 # Speak on server speakers (non-blocking for Flask, runs in thread)
                 def _speak():
                     try:
-                        TTSManager.speak(text)
+                        TTSManager.speak(text, session_overrides=session_overrides)
                     except Exception as e:
                         logger.error(f"[WebUI] Console TTS speak error: {e}")
                 threading.Thread(target=_speak, daemon=True).start()
@@ -139,7 +142,11 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
                 def _generate_web():
                     try:
-                        wav_path, wav_id = generate_voice_file(text, {}, job_id=job_id)
+                        wav_path, wav_id = generate_voice_file(
+                            text, 
+                            {"session_overrides": session_overrides} if session_overrides else {}, 
+                            job_id=job_id
+                        )
                         if wav_path:
                             set_last_audio_path(wav_path, wav_id)
                             logger.info(f"[WebUI] TTS Test done — id={wav_id}")

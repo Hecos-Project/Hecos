@@ -87,24 +87,65 @@ def init_explorer_routes(app, logger):
     @app.route("/api/system/explorer/pick-native", methods=["POST"])
     def explorer_pick_native():
         """Opens a native OS file/folder dialog and returns the selected path.
-        Cross-platform: spawns a child Python process so tkinter always runs
-        in a proper main thread (Flask handlers run in worker threads)."""
+        - Windows: uses PowerShell System.Windows.Forms dialog (works from headless servers).
+        - Linux/Mac: spawns a subprocess with tkinter (requires display).
+        """
         try:
-            import sys
             import subprocess
 
-            data      = request.get_json(force=True, silent=True) or {}
-            d_title   = data.get("title", "Hecos — Select")
-            d_initdir = data.get("initialdir", "") or ""
-            pick_dir  = data.get("pick_dir", False)
+            data        = request.get_json(force=True, silent=True) or {}
+            d_title     = data.get("title", "Hecos — Select")
+            d_initdir   = data.get("initialdir", "") or ""
+            pick_dir    = data.get("pick_dir", False)
             d_filetypes = data.get("filetypes", [
-                ("Image Files", "*.jpg *.jpeg *.png *.gif *.webp"),
-                ("All Files", "*.*")
+                ["Image Files", "*.jpg *.jpeg *.png *.gif *.webp"],
+                ["All Files",   "*.*"]
             ])
-            filetypes_repr = repr(d_filetypes)
 
-            if pick_dir:
-                script = f"""
+            if sys.platform == "win32":
+                # ── Windows: PowerShell native dialog ─────────────────────────
+                # Build the filter string: "WAV Audio (*.wav)|*.wav|All Files (*.*)|*.*"
+                filter_parts = []
+                for ft in d_filetypes:
+                    label = ft[0] if len(ft) > 0 else "Files"
+                    pattern = ft[1] if len(ft) > 1 else "*.*"
+                    filter_parts.append(f"{label} ({pattern})|{pattern}")
+                filter_str = "|".join(filter_parts) if filter_parts else "All Files (*.*)|*.*"
+
+                if pick_dir:
+                    ps_script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = '{d_title.replace("'", "`'")}'
+$dialog.ShowNewFolderButton = $true
+if ('{d_initdir}') {{ $dialog.SelectedPath = '{d_initdir.replace("'", "`'")}' }}
+$dialog.TopMost = $true
+$result = $dialog.ShowDialog()
+if ($result -eq 'OK') {{ Write-Host $dialog.SelectedPath -NoNewline }}
+"""
+                else:
+                    ps_script = f"""
+Add-Type -AssemblyName System.Windows.Forms
+$dialog = New-Object System.Windows.Forms.OpenFileDialog
+$dialog.Title = '{d_title.replace("'", "`'")}'
+$dialog.Filter = '{filter_str}'
+$dialog.Multiselect = $false
+if ('{d_initdir}') {{ $dialog.InitialDirectory = '{d_initdir.replace("'", "`'")}' }}
+[System.Windows.Forms.Application]::EnableVisualStyles()
+$result = $dialog.ShowDialog()
+if ($result -eq 'OK') {{ Write-Host $dialog.FileName -NoNewline }}
+"""
+                result = subprocess.run(
+                    ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+                    capture_output=True, text=True, timeout=300
+                )
+                path = result.stdout.strip()
+
+            else:
+                # ── Linux / Mac: tkinter subprocess ───────────────────────────
+                filetypes_repr = repr([tuple(x) for x in d_filetypes])
+                if pick_dir:
+                    script = f"""
 import tkinter as tk
 from tkinter import filedialog
 root = tk.Tk()
@@ -114,30 +155,31 @@ path = filedialog.askdirectory(title={d_title!r}, initialdir={d_initdir!r} if {b
 root.destroy()
 print(path or '', end='')
 """
-            else:
-                script = f"""
+                else:
+                    script = f"""
 import tkinter as tk
 from tkinter import filedialog
 root = tk.Tk()
 root.withdraw()
 root.attributes('-topmost', True)
 ft = {filetypes_repr}
-ft = [tuple(x) for x in ft]
 path = filedialog.askopenfilename(title={d_title!r}, filetypes=ft, initialdir={d_initdir!r} if {bool(d_initdir)!r} else None)
 root.destroy()
 print(path or '', end='')
 """
+                result = subprocess.run(
+                    [sys.executable, "-c", script],
+                    capture_output=True, text=True, timeout=300
+                )
+                path = result.stdout.strip()
 
-            result = subprocess.run(
-                [sys.executable, "-c", script],
-                capture_output=True, text=True, timeout=300
-            )
-            path = result.stdout.strip()
+            logger.info(f"[EXPLORER] Native pick result: {path!r}")
             return jsonify({"ok": True, "path": path})
 
         except Exception as e:
             logger.error(f"[EXPLORER] Native Pick Error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
 
 
 

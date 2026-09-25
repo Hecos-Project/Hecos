@@ -46,6 +46,8 @@ def _build_options_dict(cfg_mgr, fast=False):
 
     categorized   = {}
     ollama_models = []
+    categorized = {}
+    ollama_models = []
     try:
         from hecos.app.model_manager import ModelManager
         mm = ModelManager(cfg_mgr)

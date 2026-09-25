@@ -1,4 +1,4 @@
-active_engine: kokoro
+active_engine: xtts2
 voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
@@ -10,10 +10,15 @@ piper_timeout: 180
 kokoro:
   speed: 1.0
   voice: if_sara
+  sentence_silence: 0.0
+  model_path: ''
 xtts:
-  speed: 1.0
+  speed: 1.1
   language: it
-  speaker: Claribel Dervla
+  speaker: Annmarie Nele
+  gpu_acceleration: gpu
+  chunk_sentences: true
+  speaker_wav: C:\Users\melon\Desktop\Registrazione in corso.wav
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5

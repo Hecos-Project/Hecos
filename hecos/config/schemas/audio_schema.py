@@ -17,11 +17,16 @@ class PttSources(BaseModel):
 class KokoroConfig(BaseModel):
     speed: float = 1.0
     voice: str = "af_heart"   # Default kokoro voice ID
+    sentence_silence: float = 0.0 # Pause in seconds between chunks
+    model_path: str = ""      # Optional offline model path
 
 class XttsConfig(BaseModel):
     speed: float = 1.0
     language: str = "it"
     speaker: str = "Claribel Dervla"  # Default XTTS speaker name
+    gpu_acceleration: str = "auto"    # 'auto', 'cpu', 'gpu'
+    chunk_sentences: bool = True
+    speaker_wav: str = ""             # Optional WAV path for voice cloning
 
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""

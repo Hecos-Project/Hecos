@@ -54,12 +54,17 @@
       })();
 
       window.sessionConfigOptionsLoaded = false;
+      window.chatTtsStatus = null;
       
       async function loadChatConfigOptions() {
           if (window.sessionConfigOptionsLoaded) return;
           try {
-              const res = await fetch('/api/chat/options');
-              const data = await res.json();
+              const [optRes, ttsRes] = await Promise.all([
+                  fetch('/api/chat/options'),
+                  fetch('/api/audio/tts-status')
+              ]);
+              const data = await optRes.json();
+              if (ttsRes.ok) window.chatTtsStatus = await ttsRes.json();
               if (data.ok) {
                   const mSel = document.getElementById('chat-model-select');
                   const pSel = document.getElementById('chat-persona-select');
@@ -206,6 +211,12 @@
                           } else if (voices[v] && typeof voices[v] === 'string') {
                               text = voices[v];
                           }
+                      }
+                      
+                      const ttsStatus = window.chatTtsStatus || {};
+                      const engineInstalled = engine === 'piper' ? true : (ttsStatus[engine] !== false);
+                      if (!engineInstalled) {
+                          text += ' ☁️';
                       }
                       
                       opt.textContent = text;

@@ -258,10 +258,10 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
 
             t = threading.Thread(target=_install, daemon=True)
             t.start()
-            t.join(timeout=300)  # Max 5 min wait (XTTS is large)
+            t.join(timeout=1800)  # Max 30 min wait (XTTS + MSVC are huge)
 
             if t.is_alive():
-                return jsonify({"ok": False, "error": "Installation timed out after 5 minutes. It may still be running in the background."}), 500
+                return jsonify({"ok": False, "error": "Installation timed out after 30 minutes. It may still be running in the background."}), 500
 
             # Verify it's now importable
             if engine == "kokoro":
@@ -279,3 +279,33 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
         except Exception as e:
             logger.error(f"[WebUI] install_tts_engine error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
+
+    @app.route('/api/audio/tts-status', methods=['GET'])
+    def tts_engine_status():
+        """Returns availability status for each TTS engine so the UI can show badges.
+        - piper: always true if path is configured
+        - kokoro: True if kokoro-onnx library is importable
+        - xtts2: True only if TTS is installed AND the model files are cached on disk
+        """
+        status = {"piper": False, "kokoro": False, "xtts2": False}
+        try:
+            import shutil
+            status["piper"] = bool(shutil.which("piper") or cfg_mgr.config.get("audio", {}).get("piper_path"))
+        except Exception:
+            pass
+        try:
+            from hecos.core.audio.tts.kokoro_engine import KokoroEngine
+            status["kokoro"] = KokoroEngine.is_available()
+        except Exception:
+            pass
+        try:
+            from hecos.core.audio.tts.xtts_engine import XttsEngine
+            # is_available = library importable; model_ready = model files on disk
+            lib_ok = XttsEngine.is_available()
+            model_ok = XttsEngine.model_ready() if lib_ok else False
+            status["xtts2"] = lib_ok and model_ok
+            status["xtts2_lib"] = lib_ok   # library installed (but model may not be downloaded)
+        except Exception:
+            pass
+        return jsonify({"ok": True, **status})
+
