@@ -151,7 +151,7 @@ window.applyIgenConfig = function(cfg) {
     set('igen-style',           cfg.style               || 'none');
     chk('igen-nologo',          cfg.nologo              ?? true);
     chk('igen-optimize-flux',   cfg.optimize_for_flux   ?? true);
-    chk('igen-show-metadata',   cfg.show_metadata_in_chat ?? false);
+    chk('igen-show-metadata',   cfg.show_metadata_in_chat ?? true);
     set('igen-routing-override', cfg.routing_override   || '');
     chk('igen-enabled',         cfg.enabled             ?? true);
     chk('igen-cloud-enabled',   cfg.cloud_enabled       ?? false);

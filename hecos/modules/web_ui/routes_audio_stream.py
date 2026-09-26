@@ -140,52 +140,33 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             
             session_overrides = {"tts_engine": engine} if engine else {}
 
-            if mode == "console":
-                def _speak():
-                    try:
-                        if engine in ['xtts2', 'xtts']:
-                            import tempfile
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                                tmp_path = tmp.name
-                            if _run_xtts2_bypass(text, tmp_path, {"session_overrides": session_overrides}):
-                                try:
-                                    _play_wav_file(tmp_path)
-                                except Exception as play_err:
-                                    logger.error(f"[WebUI] Console playback error: {play_err}")
-                                finally:
-                                    if os.path.exists(tmp_path):
-                                        os.remove(tmp_path)
-                            else:
-                                logger.error("[WebUI] Console XTTS2 bypass failed.")
-                        else:
-                            from hecos.core.audio.tts_manager import TTSManager
-                            TTSManager.speak(text, session_overrides=session_overrides)
-                    except Exception as e:
-                        logger.error(f"[WebUI] Console TTS speak error: {e}")
-                threading.Thread(target=_speak, daemon=True).start()
-                return jsonify({"ok": True, "msg": "Playing on server speakers..."})
+            job_id = str(uuid.uuid4())
 
-            else:
-                job_id = str(uuid.uuid4())
+            def _generate_and_maybe_play():
+                try:
+                    wav_path, wav_id = generate_voice_file(
+                        text, 
+                        {"session_overrides": session_overrides} if session_overrides else {}, 
+                        job_id=job_id
+                    )
+                    if wav_path:
+                        set_last_audio_path(wav_path, wav_id)
+                        logger.info(f"[WebUI] TTS Test done — id={wav_id}")
+                        if mode == "console":
+                            try:
+                                # For console mode, generate_voice_file marked it done,
+                                # but we can play it here.
+                                _play_wav_file(wav_path)
+                            except Exception as play_err:
+                                logger.error(f"[WebUI] Console playback error: {play_err}")
+                    else:
+                        logger.error("[WebUI] TTS Test generation returned no path.")
+                except Exception as e:
+                    import traceback
+                    logger.error(f"[WebUI] TTS Test worker error: {e}\n{traceback.format_exc()}")
 
-                def _generate_web():
-                    try:
-                        wav_path, wav_id = generate_voice_file(
-                            text, 
-                            {"session_overrides": session_overrides} if session_overrides else {}, 
-                            job_id=job_id
-                        )
-                        if wav_path:
-                            set_last_audio_path(wav_path, wav_id)
-                            logger.info(f"[WebUI] TTS Test done — id={wav_id}")
-                        else:
-                            logger.error("[WebUI] TTS Test generation returned no path.")
-                    except Exception as e:
-                        import traceback
-                        logger.error(f"[WebUI] TTS Test _generate_web error: {e}\n{traceback.format_exc()}")
-
-                threading.Thread(target=_generate_web, daemon=True).start()
-                return jsonify({"ok": True, "job_id": job_id})
+            threading.Thread(target=_generate_and_maybe_play, daemon=True).start()
+            return jsonify({"ok": True, "job_id": job_id})
 
         except Exception as exc:
             import traceback

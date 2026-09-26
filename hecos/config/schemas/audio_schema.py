@@ -29,6 +29,9 @@ class XttsConfig(BaseModel):
     speaker_wav: str = ""             # Optional WAV path for voice cloning
     temperature: float = 0.75
     repetition_penalty: float = 5.0
+    top_k: int = 50
+    top_p: float = 0.85
+    length_penalty: float = 1.0
     current_preset: str = "default"
 
 class AudioConfig(BaseModel):

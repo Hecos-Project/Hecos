@@ -29,10 +29,17 @@ function populateAudioUI() {
     setVal('v-xtts-speaker-wav', (v.xtts && v.xtts.speaker_wav) ? v.xtts.speaker_wav : '');
     setVal('v-xtts-temperature', (v.xtts && v.xtts.temperature !== undefined) ? v.xtts.temperature : 0.75);
     setVal('v-xtts-repetition_penalty', (v.xtts && v.xtts.repetition_penalty !== undefined) ? v.xtts.repetition_penalty : 5.0);
+    setVal('v-xtts-topk', (v.xtts && v.xtts.top_k !== undefined) ? v.xtts.top_k : 50);
+    setVal('v-xtts-topp', (v.xtts && v.xtts.top_p !== undefined) ? v.xtts.top_p : 0.85);
+    setVal('v-xtts-length-penalty', (v.xtts && v.xtts.length_penalty !== undefined) ? v.xtts.length_penalty : 1.0);
+    
     // Update value displays
     const spVal = document.getElementById('v-xtts-speed-val'); if(spVal) spVal.textContent = getV('v-xtts-speed');
     const tpVal = document.getElementById('v-xtts-temperature-val'); if(tpVal) tpVal.textContent = getV('v-xtts-temperature');
     const rpVal = document.getElementById('v-xtts-repetition-val'); if(rpVal) rpVal.textContent = getV('v-xtts-repetition_penalty');
+    const tkVal = document.getElementById('v-xtts-topk-val'); if(tkVal) tkVal.textContent = getV('v-xtts-topk');
+    const tppVal = document.getElementById('v-xtts-topp-val'); if(tppVal) tppVal.textContent = getV('v-xtts-topp');
+    const lpVal = document.getElementById('v-xtts-length-penalty-val'); if(lpVal) lpVal.textContent = getV('v-xtts-length-penalty');
     
     // Populate XTTS Presets
     const presetSel = document.getElementById('v-xtts-preset');
@@ -151,6 +158,9 @@ function buildAudioPayload() {
             speaker_wav: getV('v-xtts-speaker-wav', v.xtts?.speaker_wav || ''),
             temperature: parseFloat(getV('v-xtts-temperature', v.xtts?.temperature ?? 0.75)),
             repetition_penalty: parseFloat(getV('v-xtts-repetition_penalty', v.xtts?.repetition_penalty ?? 5.0)),
+            top_k: parseInt(getV('v-xtts-topk', v.xtts?.top_k ?? 50)),
+            top_p: parseFloat(getV('v-xtts-topp', v.xtts?.top_p ?? 0.85)),
+            length_penalty: parseFloat(getV('v-xtts-length-penalty', v.xtts?.length_penalty ?? 1.0)),
             current_preset: getV('v-xtts-preset', 'default')
         },
         xtts_presets:     v.xtts_presets || {},
@@ -171,6 +181,20 @@ function buildAudioPayload() {
 }
 
 let currentTestAudio = null;
+let currentTestTimer = null;
+let testStartTime = 0;
+
+function _clearTestUI(prefix) {
+    if (currentTestTimer) { clearInterval(currentTestTimer); currentTestTimer = null; }
+    const pbarCont = document.getElementById(prefix + '-progress-container');
+    const pbar = document.getElementById(prefix + '-progress-bar');
+    const ptext = document.getElementById(prefix + '-progress-text');
+    if (pbar) pbar.style.width = '100%';
+    setTimeout(() => {
+        if (pbarCont) pbarCont.style.display = 'none';
+        if (ptext) ptext.style.display = 'none';
+    }, 1000);
+}
 
 async function testVoice(mode, engine = null) {
     const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : 'v');
@@ -178,8 +202,25 @@ async function testVoice(mode, engine = null) {
     const text = (vTextEl ? vTextEl.value : '') || 'Hecos test, everything is working correctly.';
     const sts = document.getElementById(prefix + '-test-status');
     const stopBtn = document.getElementById(prefix + '-test-stop');
+    const timerEl = document.getElementById(prefix + '-timer');
+    const pbarCont = document.getElementById(prefix + '-progress-container');
+    const pbar = document.getElementById(prefix + '-progress-bar');
+    const ptext = document.getElementById(prefix + '-progress-text');
+
     if (sts) sts.textContent = mode === 'web' ? 'Generating audio...' : 'Playing on server...';
     if (stopBtn) stopBtn.style.display = 'inline-block';
+
+    // Reset Console UI
+    if (timerEl) { timerEl.style.display = 'inline'; timerEl.textContent = '0.0s'; }
+    if (pbarCont) pbarCont.style.display = 'block';
+    if (pbar) pbar.style.width = '0%';
+    if (ptext) { ptext.style.display = 'block'; ptext.textContent = '0%'; }
+
+    if (currentTestTimer) clearInterval(currentTestTimer);
+    testStartTime = Date.now();
+    currentTestTimer = setInterval(() => {
+        if (timerEl) timerEl.textContent = ((Date.now() - testStartTime) / 1000).toFixed(1) + 's';
+    }, 100);
 
     try {
         const r = await fetch('/api/audio/test', {
@@ -188,28 +229,87 @@ async function testVoice(mode, engine = null) {
             body: JSON.stringify({ text: text, mode: mode, engine: engine })
         });
         const data = await r.json();
-        if (data.ok) {
-            if (mode === 'web' && data.url) {
-                if (sts) sts.textContent = 'Playing...';
-                if (currentTestAudio) currentTestAudio.pause();
-                currentTestAudio = new Audio(data.url);
-                currentTestAudio.play();
-                currentTestAudio.onended = () => {
-                    if (sts) sts.textContent = 'Completed.';
-                    if (stopBtn) stopBtn.style.display = 'none';
-                    currentTestAudio = null;
-                };
-            } else {
-                if (sts) sts.textContent = data.msg || 'Completed.';
-                if (mode === 'console') {
-                    setTimeout(() => { if (stopBtn) stopBtn.style.display = 'none'; }, 8000);
-                }
-            }
-        } else {
+        if (!data.ok) {
+            _clearTestUI(prefix);
             if (sts) sts.textContent = '❌ ' + (data.error || 'Unknown error.');
             if (stopBtn) stopBtn.style.display = 'none';
+            return;
         }
+
+        // both web and console modes now poll progress via SSE
+
+
+        // web mode — poll progress via SSE then play when done
+        if (!data.job_id) {
+            _clearTestUI(prefix);
+            if (sts) sts.textContent = '❌ No job_id returned.';
+            if (stopBtn) stopBtn.style.display = 'none';
+            return;
+        }
+
+        if (sts) sts.textContent = 'Generating... ⏳';
+        const es = new EventSource(`/api/audio/test/progress/${data.job_id}`);
+        es.onmessage = (evt) => {
+            try {
+                const prog = JSON.parse(evt.data);
+                if (prog.status === 'done' && prog.audio_id) {
+                    es.close();
+                    _clearTestUI(prefix);
+                    
+                    if (mode === 'console') {
+                        if (sts) sts.textContent = 'Playing on server speakers...';
+                        setTimeout(() => {
+                            if (sts) sts.textContent = 'Completed.';
+                            if (stopBtn) stopBtn.style.display = 'none';
+                        }, 8000); // Give it some time to play before hiding stop
+                    } else {
+                        const audioUrl = `/api/audio?id=${encodeURIComponent(prog.audio_id)}&t=${Date.now()}`;
+                        if (currentTestAudio) currentTestAudio.pause();
+                        currentTestAudio = new Audio(audioUrl);
+                        currentTestAudio.play().catch(err => {
+                            if (sts) sts.textContent = '❌ Playback error: ' + err.message;
+                        });
+                        if (sts) sts.textContent = 'Playing...';
+                        currentTestAudio.onended = () => {
+                            if (sts) sts.textContent = 'Completed.';
+                            if (stopBtn) stopBtn.style.display = 'none';
+                            currentTestAudio = null;
+                        };
+                    }
+                } else if (prog.status === 'error') {
+                    es.close();
+                    _clearTestUI(prefix);
+                    if (sts) sts.textContent = '❌ ' + (prog.error || 'Generation failed.');
+                    if (stopBtn) stopBtn.style.display = 'none';
+                } else if (prog.status === 'not_found') {
+                    es.close();
+                    _clearTestUI(prefix);
+                    if (sts) sts.textContent = '❌ Job not found.';
+                    if (stopBtn) stopBtn.style.display = 'none';
+                } else if (prog.total > 0) {
+                    const pct = Math.round((prog.current / prog.total) * 100);
+                    if (sts) sts.textContent = `Generating... ${pct}%`;
+                    if (pbar) pbar.style.width = pct + '%';
+                    if (ptext) ptext.textContent = pct + '%';
+                }
+            } catch (e) {
+                es.close();
+                _clearTestUI(prefix);
+                if (sts) sts.textContent = '❌ SSE parse error.';
+                if (stopBtn) stopBtn.style.display = 'none';
+            }
+        };
+        es.onerror = () => {
+            es.close();
+            _clearTestUI(prefix);
+            if (sts && sts.textContent.includes('Generating')) {
+                if (sts) sts.textContent = '❌ Connection lost during generation.';
+                if (stopBtn) stopBtn.style.display = 'none';
+            }
+        };
+
     } catch (e) {
+        _clearTestUI(prefix);
         if (sts) sts.textContent = '❌ Request failed: ' + e.message;
         if (stopBtn) stopBtn.style.display = 'none';
     }
@@ -221,8 +321,10 @@ async function stopVoice(engine = null) {
         currentTestAudio.src = '';
         currentTestAudio = null;
     }
-    try { await fetch('/api/audio/stop', { method: 'POST' }); } catch (e) {}
     const prefix = engine === 'xtts2' ? 'v-xtts' : (engine === 'kokoro' ? 'v-kokoro' : 'v');
+    _clearTestUI(prefix);
+    try { await fetch('/api/audio/stop', { method: 'POST' }); } catch (e) {}
+    
     const stopBtn = document.getElementById(prefix + '-test-stop');
     if (stopBtn) stopBtn.style.display = 'none';
     const sts = document.getElementById(prefix + '-test-status');
@@ -272,34 +374,34 @@ async function browsePiperPath() {
 // ── Audio History Helpers ──────────────────────────────────────────────────────
 async function refreshAudioHistoryCount() {
     const lbl = document.getElementById('v-history-count');
-    if (lbl) lbl.textContent = 'Caricamento...';
+    if (lbl) lbl.textContent = 'Loading...';
     try {
         const r = await fetch('/api/audio/history/info');
         const d = await r.json();
         if (d.ok) {
             const max = parseInt(document.getElementById('v-tts-history-max')?.value || 100);
-            if (lbl) lbl.textContent = `📂 ${d.count} file presenti (${d.size_mb} MB) — limite: ${max}`;
+            if (lbl) lbl.textContent = `📂 ${d.count} files present (${d.size_mb} MB) — limit: ${max}`;
         } else {
-            if (lbl) lbl.textContent = '❌ Errore nel caricamento.';
+            if (lbl) lbl.textContent = '❌ Error loading.';
         }
     } catch (e) {
-        if (lbl) lbl.textContent = '❌ Richiesta fallita.';
+        if (lbl) lbl.textContent = '❌ Request failed.';
     }
 }
 
 async function clearAudioHistory() {
-    if (!confirm('Eliminare tutti i file audio dello storico?')) return;
+    if (!confirm('Delete all audio files from history?')) return;
     const lbl = document.getElementById('v-history-count');
     try {
         const r = await fetch('/api/audio/history/clear', { method: 'POST' });
         const d = await r.json();
         if (d.ok) {
-            if (lbl) lbl.textContent = `✅ Storico svuotato (${d.deleted} file eliminati).`;
+            if (lbl) lbl.textContent = `✅ History cleared (${d.deleted} files deleted).`;
         } else {
-            if (lbl) lbl.textContent = '❌ ' + (d.error || 'Errore sconosciuto.');
+            if (lbl) lbl.textContent = '❌ ' + (d.error || 'Unknown error.');
         }
     } catch (e) {
-        if (lbl) lbl.textContent = '❌ Richiesta fallita.';
+        if (lbl) lbl.textContent = '❌ Request failed.';
     }
 }
 
@@ -648,7 +750,10 @@ window.updateXTTSPreset = function() {
         chunk_sentences: document.getElementById('v-xtts-chunk')?.checked ?? true,
         speaker_wav: document.getElementById('v-xtts-speaker-wav')?.value || '',
         temperature: parseFloat(document.getElementById('v-xtts-temperature')?.value || 0.75),
-        repetition_penalty: parseFloat(document.getElementById('v-xtts-repetition_penalty')?.value || 5.0)
+        repetition_penalty: parseFloat(document.getElementById('v-xtts-repetition_penalty')?.value || 5.0),
+        top_k: parseInt(document.getElementById('v-xtts-topk')?.value || 50),
+        top_p: parseFloat(document.getElementById('v-xtts-topp')?.value || 0.85),
+        length_penalty: parseFloat(document.getElementById('v-xtts-length-penalty')?.value || 1.0)
     };
     
     if (!audioConfig.xtts) audioConfig.xtts = {};
@@ -676,12 +781,18 @@ window.loadXTTSPreset = function() {
             if (document.getElementById('v-xtts-speed')) document.getElementById('v-xtts-speed').value = 1.0;
             if (document.getElementById('v-xtts-temperature')) document.getElementById('v-xtts-temperature').value = 0.75;
             if (document.getElementById('v-xtts-repetition_penalty')) document.getElementById('v-xtts-repetition_penalty').value = 5.0;
+            if (document.getElementById('v-xtts-topk')) document.getElementById('v-xtts-topk').value = 50;
+            if (document.getElementById('v-xtts-topp')) document.getElementById('v-xtts-topp').value = 0.85;
+            if (document.getElementById('v-xtts-length-penalty')) document.getElementById('v-xtts-length-penalty').value = 1.0;
             if (document.getElementById('v-xtts-speaker')) document.getElementById('v-xtts-speaker').value = 'Claribel Dervla';
             if (document.getElementById('v-xtts-speaker-wav')) document.getElementById('v-xtts-speaker-wav').value = '';
             
             document.getElementById('v-xtts-speed')?.dispatchEvent(new Event('input'));
             document.getElementById('v-xtts-temperature')?.dispatchEvent(new Event('input'));
             document.getElementById('v-xtts-repetition_penalty')?.dispatchEvent(new Event('input'));
+            document.getElementById('v-xtts-topk')?.dispatchEvent(new Event('input'));
+            document.getElementById('v-xtts-topp')?.dispatchEvent(new Event('input'));
+            document.getElementById('v-xtts-length-penalty')?.dispatchEvent(new Event('input'));
             
             audioConfig.xtts.current_preset = 'default';
             saveAudioConfig();
@@ -698,10 +809,16 @@ window.loadXTTSPreset = function() {
     if (document.getElementById('v-xtts-speaker-wav')) document.getElementById('v-xtts-speaker-wav').value = p.speaker_wav || '';
     if (document.getElementById('v-xtts-temperature')) document.getElementById('v-xtts-temperature').value = p.temperature || 0.75;
     if (document.getElementById('v-xtts-repetition_penalty')) document.getElementById('v-xtts-repetition_penalty').value = p.repetition_penalty || 5.0;
+    if (document.getElementById('v-xtts-topk')) document.getElementById('v-xtts-topk').value = p.top_k || 50;
+    if (document.getElementById('v-xtts-topp')) document.getElementById('v-xtts-topp').value = p.top_p || 0.85;
+    if (document.getElementById('v-xtts-length-penalty')) document.getElementById('v-xtts-length-penalty').value = p.length_penalty || 1.0;
     
     document.getElementById('v-xtts-speed')?.dispatchEvent(new Event('input'));
     document.getElementById('v-xtts-temperature')?.dispatchEvent(new Event('input'));
     document.getElementById('v-xtts-repetition_penalty')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-topk')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-topp')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-length-penalty')?.dispatchEvent(new Event('input'));
     
     audioConfig.xtts.current_preset = name;
     saveAudioConfig();

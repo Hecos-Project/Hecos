@@ -13,14 +13,17 @@ kokoro:
   sentence_silence: 0.0
   model_path: ''
 xtts:
-  speed: 1.0
+  speed: 1.9
   language: it
   speaker: Claribel Dervla
   gpu_acceleration: gpu
   chunk_sentences: true
-  speaker_wav: C:\Hecos\assets\voice_clones\Rowena voce 001.wav
-  temperature: 0.75
-  repetition_penalty: 5.0
+  speaker_wav: C:\Hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
+  temperature: 1.5
+  repetition_penalty: 1.5
+  top_k: 50
+  top_p: 0.85
+  length_penalty: 1.0
   current_preset: default
 xtts_presets: {}
 listening_status: true

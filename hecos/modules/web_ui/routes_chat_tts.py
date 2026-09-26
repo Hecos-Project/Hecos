@@ -165,7 +165,7 @@ def get_tts_progress(job_id: str) -> dict:
 
 # ── XTTS2 Isolated Bypass Helper ───────────────────────────────────────────────
 
-def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict) -> bool:
+def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = None) -> bool:
     """
     Executes XTTS2 voice generation in an isolated subprocess with CUDA GPU acceleration,
     monkey-patching torchaudio to load reference WAVs via soundfile (bypassing torchcodec).
@@ -180,6 +180,9 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict) -> bool:
         speed = str(xtts_cfg.get('speed', 1.0))
         temperature = str(xtts_cfg.get('temperature', 0.75))
         repetition_penalty = str(xtts_cfg.get('repetition_penalty', 5.0))
+        top_k = str(xtts_cfg.get('top_k', 50))
+        top_p = str(xtts_cfg.get('top_p', 0.85))
+        length_penalty = str(xtts_cfg.get('length_penalty', 1.0))
         gpu_acceleration = xtts_cfg.get('gpu_acceleration', 'auto')  # 'auto', 'gpu', 'cpu'
 
         _chat_log.info(f"[XTTS2 Bypass] Starting isolated generation. GPU mode: {gpu_acceleration}, Wav target: {out_path}")
@@ -218,6 +221,9 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict) -> bool:
             "temperature = float(sys.argv[7]) if len(sys.argv) > 7 else 0.75\n"
             "rep_pen = float(sys.argv[8]) if len(sys.argv) > 8 else 5.0\n"
             "gpu_mode = sys.argv[9] if len(sys.argv) > 9 else 'auto'\n"
+            "top_k = int(sys.argv[10]) if len(sys.argv) > 10 else 50\n"
+            "top_p = float(sys.argv[11]) if len(sys.argv) > 11 else 0.85\n"
+            "length_penalty = float(sys.argv[12]) if len(sys.argv) > 12 else 1.0\n"
             "try:\n"
             "    cuda_available = torch.cuda.is_available()\n"
             "    if gpu_mode == 'gpu':\n"
@@ -227,13 +233,17 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict) -> bool:
             "    else:  # auto\n"
             "        use_cuda = cuda_available\n"
             "    print(f'[XTTS2 Subprocess] gpu_mode={gpu_mode}, CUDA available={cuda_available}, using_gpu={use_cuda}', file=sys.stderr)\n"
+            "    print('PROGRESS: 10', flush=True)\n"
             "    tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2', gpu=use_cuda)\n"
-            "    kwargs = {'text': text, 'file_path': out_path, 'language': lang, 'speed': speed, 'temperature': temperature, 'repetition_penalty': rep_pen}\n"
+            "    print('PROGRESS: 50', flush=True)\n"
+            "    kwargs = {'text': text, 'file_path': out_path, 'language': lang, 'speed': speed, 'temperature': temperature, 'repetition_penalty': rep_pen, 'top_k': top_k, 'top_p': top_p, 'length_penalty': length_penalty}\n"
             "    if speaker_wav and os.path.exists(speaker_wav):\n"
             "        kwargs['speaker_wav'] = speaker_wav\n"
             "    else:\n"
             "        kwargs['speaker'] = speaker\n"
+            "    print('PROGRESS: 60', flush=True)\n"
             "    tts.tts_to_file(**kwargs)\n"
+            "    print('PROGRESS: 95', flush=True)\n"
             "    sys.exit(0)\n"
             "except Exception as e:\n"
             "    print('XTTS Error:', e, file=sys.stderr)\n"
@@ -242,15 +252,28 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict) -> bool:
 
         args = [
             sys.executable, "-c", inline_code, 
-            text, out_path, speaker_wav or "", language, speaker, speed, temperature, repetition_penalty, gpu_acceleration
+            text, out_path, speaker_wav or "", language, speaker, speed, temperature, repetition_penalty, gpu_acceleration, top_k, top_p, length_penalty
         ]
-        res = subprocess.run(args, capture_output=True, text=True, timeout=180)
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        
+        output_log = []
+        for line in proc.stdout:
+            output_log.append(line)
+            if "PROGRESS:" in line and job_id:
+                try:
+                    pct = int(line.split("PROGRESS:")[1].strip())
+                    if job_id in _tts_jobs:
+                        _tts_jobs[job_id]["current"] = pct
+                        _tts_jobs[job_id]["total"] = 100
+                except Exception:
+                    pass
+        proc.wait(timeout=180)
 
-        if res.returncode == 0 and os.path.exists(out_path):
+        if proc.returncode == 0 and os.path.exists(out_path):
             _chat_log.info("[XTTS2 Bypass] Generation completed successfully.")
             return True
         else:
-            _chat_log.error(f"[XTTS2 Bypass] Subprocess error: {res.stderr}")
+            _chat_log.error(f"[XTTS2 Bypass] Subprocess error:\n{''.join(output_log)}")
             return False
 
     except Exception as e:
@@ -292,7 +315,9 @@ def generate_voice_file(text: str, voice_cfg: dict, job_id: str = None) -> tuple
 
         if _engine in ['xtts2', 'xtts']:
             _chat_log.info("[Audio] Intercepted XTTS2 request. Using isolated bypass...")
-            success = _run_xtts2_bypass(text, out, voice_cfg)
+            if job_id and job_id in _tts_jobs:
+                _tts_jobs[job_id]["total"] = 100  # set scale for XTTS
+            success = _run_xtts2_bypass(text, out, voice_cfg, job_id=job_id)
         else:
             from hecos.core.audio.tts_manager import TTSManager
 

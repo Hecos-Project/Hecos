@@ -98,7 +98,8 @@ var _igenInitDone = false;
 
 var _IGEN_REQUIRED_FNS = [
     'loadIgenPresets', 'applyIgenConfig', 'onProviderChanged',
-    'saveIgenConfig', 'collectIgenConfig', 'checkIgenPresetUI'
+    'saveIgenConfig', 'collectIgenConfig', 'checkIgenPresetUI',
+    'loadIgenProfiles'
 ];
 
 function _igenAllModulesReady() {
@@ -135,25 +136,13 @@ var initImageGenPanel = async function() {
 
     console.log('[ImageGen] All modules loaded - initializing...');
     try {
-        var res  = await fetch('/hecos/api/plugins/image_gen/config');
-        var data = await res.json();
-        var cfg  = data.image_gen || {};
-
-        await window.loadIgenPresets(cfg.active_preset);
-        
-        var provSel = document.getElementById('igen-provider');
-        if (provSel && cfg.provider) provSel.setAttribute('data-initial-val', cfg.provider);
-        var modelSel = document.getElementById('igen-model');
-        if (modelSel && cfg.model) modelSel.setAttribute('data-initial-val', cfg.model);
-        
-        _igenLoadingConfig = true;  // Guard: prevent auto-save during initial load
-        await window.onProviderChanged(false);
-        window.applyIgenConfig(cfg);
-        _igenLoadingConfig = false;
-        
         _igenAttachAutoSave();
         _igenHookGlobalSave();
 
+        if (typeof window.reloadIgenPanel === 'function') {
+            await window.reloadIgenPanel();
+        }
+        
         console.log('[ImageGen] Panel ready.');
     } catch (e) {
         console.error('[ImageGen] Bootstrap error:', e);
@@ -164,11 +153,9 @@ _waitForIgenReady(initImageGenPanel);
 
 document.addEventListener('visibilitychange', function() {
     if (document.visibilityState === 'visible' && _igenInitDone) {
-        var provSel  = document.getElementById('igen-provider');
-        var modelSel = document.getElementById('igen-model');
-        if (provSel && modelSel && modelSel.options.length === 0) {
-            console.log('[ImageGen] Tab visible with empty models - auto-refreshing...');
-            window.onProviderChanged(false, 0);
+        console.log('[ImageGen] Tab visible - auto-refreshing panel...');
+        if (typeof window.reloadIgenPanel === 'function') {
+            window.reloadIgenPanel();
         }
     }
 });

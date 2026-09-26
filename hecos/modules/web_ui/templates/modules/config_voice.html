@@ -90,10 +90,19 @@
 
   <div class="card" id="card-kokoro" style="border-top-left-radius:0; margin-top:-20px; display:none;">
     <div class="card-title"><i class="fas fa-wave-square"></i> Kokoro Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">Balanced</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-      Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
-      <span id="kokoro-status-badge" style="font-size:11px;"></span>
-    </p>
+    <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
+      <div style="margin-bottom: 8px;">
+        Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="kokoro-status-badge">✅ Installed</span>
+        <span id="v-kokoro-timer" style="color: var(--accent); display: none;">0.0s</span>
+      </div>
+      <div id="v-kokoro-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
+        <div id="v-kokoro-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+      </div>
+      <div id="v-kokoro-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right;">0%</div>
+    </div>
     <div class="grid-2">
       <div class="field">
         <label>Speed</label>
@@ -159,10 +168,19 @@
 
   <div class="card" id="card-xtts2" style="border-top-left-radius:0; margin-top:-20px; display:none;">
     <div class="card-title"><i class="fas fa-microchip"></i> XTTSv2 Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">High Quality</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-      XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
-      <span id="xtts2-status-badge" style="font-size:11px;"></span>
-    </p>
+    <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
+      <div style="margin-bottom: 8px;">
+        XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="xtts2-status-badge">✅ Installed & Ready (All voices are built-in)</span>
+        <span id="v-xtts-timer" style="color: var(--accent); display: none;">0.0s</span>
+      </div>
+      <div id="v-xtts-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
+        <div id="v-xtts-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+      </div>
+      <div id="v-xtts-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right;">0%</div>
+    </div>
     <div class="grid-2" style="margin-bottom:12px;">
       <div class="field" style="grid-column: span 2;">
         <label>Configuration Preset</label>
@@ -228,32 +246,77 @@
     
     <div class="grid-3" style="margin-top:12px;">
       <div class="field">
-        <label>Speed</label>
+        <label>
+          Speed
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Adjusts the speaking rate. Keep close to 1.0 to avoid artifacts. Range: 0.1 to 3.0"></i>
+        </label>
         <div style="display:flex; gap:8px; align-items:center;">
-          <input type="range" id="v-xtts-speed" min="0.5" max="2.0" step="0.1" value="1.0" style="flex:1;" oninput="document.getElementById('v-xtts-speed-val').textContent = this.value">
-          <span id="v-xtts-speed-val" style="font-size:12px; min-width:24px;">1.0</span>
+          <input type="range" id="v-xtts-speed-range" min="0.1" max="3.0" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-xtts-speed').value = this.value">
+          <input type="number" id="v-xtts-speed" min="0.1" max="3.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-speed-range').value = this.value">
         </div>
       </div>
       <div class="field">
-        <label>Temperature</label>
+        <label>
+          Temperature
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Softmax temperature. Controls creativity vs stability. Higher values = more expressive but less stable. Range: 0.01 to 2.0"></i>
+        </label>
         <div style="display:flex; gap:8px; align-items:center;">
-          <input type="range" id="v-xtts-temperature" min="0.1" max="1.5" step="0.05" value="0.75" style="flex:1;" oninput="document.getElementById('v-xtts-temperature-val').textContent = this.value">
-          <span id="v-xtts-temperature-val" style="font-size:12px; min-width:24px;">0.75</span>
+          <input type="range" id="v-xtts-temperature-range" min="0.01" max="2.0" step="0.01" value="0.75" style="flex:1;" oninput="document.getElementById('v-xtts-temperature').value = this.value">
+          <input type="number" id="v-xtts-temperature" min="0.01" max="2.0" step="0.01" value="0.75" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-temperature-range').value = this.value">
         </div>
       </div>
       <div class="field">
-        <label>Repetition Penalty</label>
+        <label>
+          Repetition Penalty
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Prevents the model from repeating tokens or looping. Increase if the voice gets stuck. Range: 1.0 to 10.0"></i>
+        </label>
         <div style="display:flex; gap:8px; align-items:center;">
-          <input type="range" id="v-xtts-repetition_penalty" min="1.0" max="10.0" step="0.5" value="5.0" style="flex:1;" oninput="document.getElementById('v-xtts-repetition-val').textContent = this.value">
-          <span id="v-xtts-repetition-val" style="font-size:12px; min-width:24px;">5.0</span>
+          <input type="range" id="v-xtts-repetition-range" min="1.0" max="10.0" step="0.1" value="5.0" style="flex:1;" oninput="document.getElementById('v-xtts-repetition_penalty').value = this.value">
+          <input type="number" id="v-xtts-repetition_penalty" min="1.0" max="10.0" step="0.1" value="5.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-repetition-range').value = this.value">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:12px;">
+      <div class="field">
+        <label>
+          Top K
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Limits token sampling to the top K most likely next tokens. Range: 1 to 100"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-topk-range" min="1" max="100" step="1" value="50" style="flex:1;" oninput="document.getElementById('v-xtts-topk').value = this.value">
+          <input type="number" id="v-xtts-topk" min="1" max="100" step="1" value="50" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-topk-range').value = this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Top P
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Nucleus sampling. Lower values make the output more focused and predictable. Range: 0.0 to 1.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-topp-range" min="0.0" max="1.0" step="0.01" value="0.85" style="flex:1;" oninput="document.getElementById('v-xtts-topp').value = this.value">
+          <input type="number" id="v-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-topp-range').value = this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Length Penalty
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Penalty applied to sequence length. Higher values make the speech more terse. Range: 0.1 to 5.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-length-range" min="0.1" max="5.0" step="0.1" value="1.0" style="flex:1;" oninput="document.getElementById('v-xtts-length-penalty').value = this.value">
+          <input type="number" id="v-xtts-length-penalty" min="0.1" max="5.0" step="0.1" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-length-range').value = this.value">
         </div>
       </div>
     </div>
     
     <div class="toggle-row" style="margin-top: 10px;">
       <div class="toggle-info">
-        <strong>Chunk Sentences</strong>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Split long paragraphs into chunks for faster response time</div>
+        <strong>
+          Chunk Sentences
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="If enabled, long paragraphs are automatically split into shorter sentences before processing. This dramatically reduces memory usage and timeout errors for very long texts, but may cause slight pauses between sentences."></i>
+        </strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Split long paragraphs into chunks for stability</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="v-xtts-chunk">
