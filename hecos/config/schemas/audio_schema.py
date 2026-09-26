@@ -27,6 +27,9 @@ class XttsConfig(BaseModel):
     gpu_acceleration: str = "auto"    # 'auto', 'cpu', 'gpu'
     chunk_sentences: bool = True
     speaker_wav: str = ""             # Optional WAV path for voice cloning
+    temperature: float = 0.75
+    repetition_penalty: float = 5.0
+    current_preset: str = "default"
 
 class AudioConfig(BaseModel):
     """Root schema for config/audio.yaml"""
@@ -49,6 +52,7 @@ class AudioConfig(BaseModel):
     
     # --- TTS (XTTS2) ---
     xtts: XttsConfig = XttsConfig()
+    xtts_presets: dict = {}
 
     # --- STT / Listening ---
     listening_status: bool = False

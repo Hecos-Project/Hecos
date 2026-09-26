@@ -170,17 +170,17 @@ llm:
       - llama-3.3-70b-versatile
       - compound
       - compound-mini
-      - openai/gpt-oss-120b
-      - whisper-large-v3-turbo
-      - whisper-large-v3
       - openai/gpt-oss-20b
-      - allam-2-7b
-      - openai/gpt-oss-safeguard-20b
-      - meta-llama/llama-prompt-guard-2-22m
+      - meta-llama/llama-prompt-guard-2-86m
       - qwen/qwen3.8-27b
       - canopylabs/orpheus-arabic-saudi
-      - meta-llama/llama-prompt-guard-2-86m
+      - meta-llama/llama-prompt-guard-2-22m
+      - allam-2-7b
+      - whisper-large-v3-turbo
       - canopylabs/orpheus-v1-english
+      - whisper-large-v3
+      - openai/gpt-oss-safeguard-20b
+      - openai/gpt-oss-120b
 logging:
   level: DEBUG
   destination: console

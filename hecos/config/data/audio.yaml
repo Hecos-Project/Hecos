@@ -13,12 +13,16 @@ kokoro:
   sentence_silence: 0.0
   model_path: ''
 xtts:
-  speed: 1.1
+  speed: 1.0
   language: it
-  speaker: Annmarie Nele
+  speaker: Claribel Dervla
   gpu_acceleration: gpu
   chunk_sentences: true
-  speaker_wav: C:\Users\melon\Desktop\Registrazione in corso.wav
+  speaker_wav: C:\Hecos\assets\voice_clones\Rowena voce 001.wav
+  temperature: 0.75
+  repetition_penalty: 5.0
+  current_preset: default
+xtts_presets: {}
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5

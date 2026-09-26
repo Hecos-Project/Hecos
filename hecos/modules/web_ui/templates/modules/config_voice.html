@@ -23,15 +23,28 @@
     </div>
     <div class="field">
       <label>Active TTS Engine</label>
-      <select id="v-active-engine">
+      <select id="v-active-engine" onchange="if(window.switchAudioEngineTab) window.switchAudioEngineTab(this.value); if(window.saveAudioConfig) window.saveAudioConfig();">
         <option value="piper">Piper (Default - Fast)</option>
         <option value="kokoro">Kokoro (Balanced)</option>
         <option value="xtts2">XTTSv2 (High Quality)</option>
       </select>
     </div>
+
+    <!-- TABS -->
+    <div style="display:flex; border-bottom:1px solid var(--border); margin-top:20px; gap:4px;">
+      <button id="btn-tab-piper" class="btn btn-secondary active" onclick="switchAudioEngineTab('piper')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:var(--bg3);">
+        <i class="fas fa-volume-up"></i> Piper (Fast)
+      </button>
+      <button id="btn-tab-kokoro" class="btn btn-secondary" onclick="switchAudioEngineTab('kokoro')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+        <i class="fas fa-wave-square"></i> Kokoro (Balanced)
+      </button>
+      <button id="btn-tab-xtts2" class="btn btn-secondary" onclick="switchAudioEngineTab('xtts2')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+        <i class="fas fa-microchip"></i> XTTSv2 (High Quality)
+      </button>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-piper" style="border-top-left-radius:0; margin-top:-20px;">
     <div class="card-title"><i class="fas fa-volume-up"></i> Piper Engine (Default)</div>
     <div class="field">
       <label>{{ t('webui_conf_voice_path') }}</label>
@@ -75,7 +88,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-kokoro" style="border-top-left-radius:0; margin-top:-20px; display:none;">
     <div class="card-title"><i class="fas fa-wave-square"></i> Kokoro Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">Balanced</span></div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
       Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
@@ -144,7 +157,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-xtts2" style="border-top-left-radius:0; margin-top:-20px; display:none;">
     <div class="card-title"><i class="fas fa-microchip"></i> XTTSv2 Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">High Quality</span></div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
       XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
@@ -157,7 +170,9 @@
           <select id="v-xtts-preset" onchange="loadXTTSPreset()" style="flex:1;">
             <option value="default">Default</option>
           </select>
-          <button class="btn btn-primary" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-save"></i> Save</button>
+          <button class="btn btn-primary" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+          <button class="btn btn-secondary" onclick="updateXTTSPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+          <button class="btn btn-secondary" onclick="resetXTTSConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
           <button class="btn btn-danger" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
         </div>
       </div>
@@ -247,15 +262,34 @@
     </div>
 
     <div class="field" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
-      <label>Voice Clone Reference (WAV Path)</label>
+      <label>Voice Clone Reference</label>
+      <p style="font-size:11px; color:var(--muted); margin:4px 0 10px;">
+        Select a WAV from your library or browse for any file. Must be 10–30s, single speaker, minimal noise.
+      </p>
+
+      <!-- Library dropdown -->
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <select id="v-xtts-clone-select" onchange="onVoiceCloneSelect()" style="flex:1;">
+          <option value="">— None (use Default Speaker) —</option>
+        </select>
+        <button type="button" class="btn btn-secondary" onclick="loadVoiceCloneList()" title="Refresh voice clone list">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <label class="btn btn-secondary" title="Upload WAV to voice clone library" style="cursor:pointer; margin:0;">
+          <i class="fas fa-upload"></i>
+          <input type="file" accept=".wav" style="display:none;" onchange="uploadVoiceClone(this)">
+        </label>
+      </div>
+
+      <!-- Manual path override + file system browse -->
       <div style="display:flex; gap:8px;">
-        <input type="text" id="v-xtts-speaker-wav" placeholder="C:\path\to\reference_voice.wav (overrides Default Speaker)" style="flex:1;">
-        <button type="button" class="btn btn-secondary" onclick="pickXTTSVoiceWav()" title="Browse file">
+        <input type="text" id="v-xtts-speaker-wav" placeholder="Or type / browse any path (overrides dropdown)" style="flex:1;" oninput="onVoiceClonePathInput()">
+        <button type="button" class="btn btn-secondary" onclick="pickXTTSVoiceWav()" title="Browse filesystem">
           <i class="fas fa-folder-open"></i>
         </button>
       </div>
-      <p style="font-size:11px; color:var(--muted); margin-top:4px;">Must be a clean, 10-30s WAV file with a single speaker.</p>
     </div>
+
     
 
     <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">

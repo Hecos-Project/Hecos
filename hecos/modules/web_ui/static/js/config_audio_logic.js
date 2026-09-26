@@ -55,6 +55,11 @@ function populateAudioUI() {
 
     refreshAudioHistoryCount();
     checkTTSEngineStatus();
+    if (typeof loadVoiceCloneList === 'function') loadVoiceCloneList();
+    // Activate the tab matching the current engine
+    const activeEngine = (v.active_engine || 'piper');
+    if (typeof switchAudioEngineTab === 'function') switchAudioEngineTab(activeEngine, false);
+
 
     const a = audioConfig || {};
     setVal('a-threshold', a.energy_threshold ?? 450);
@@ -89,6 +94,38 @@ function populateAudioUI() {
         }
     }
 }
+
+// ── Engine Tab Switcher ──────────────────────────────────────────────────────
+
+window.switchAudioEngineTab = function(engine, saveEngine = true) {
+    const engines = ['piper', 'kokoro', 'xtts2'];
+
+    // Show/hide engine cards
+    engines.forEach(e => {
+        const card = document.getElementById(`card-${e}`);
+        if (card) card.style.display = (e === engine) ? '' : 'none';
+    });
+
+    // Style tab buttons: active = var(--bg3), inactive = transparent
+    engines.forEach(e => {
+        const btn = document.getElementById(`btn-tab-${e}`);
+        if (!btn) return;
+        if (e === engine) {
+            btn.style.background = 'var(--bg3)';
+            btn.style.color = 'var(--accent)';
+            btn.style.borderBottom = '2px solid var(--accent)';
+            btn.style.marginBottom = '-1px';
+        } else {
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--muted)';
+            btn.style.borderBottom = 'none';
+            btn.style.marginBottom = '0';
+        }
+    });
+
+    // removed active engine syncing
+};
+
 
 function buildAudioPayload() {
     const v = (typeof audioConfig !== 'undefined' ? audioConfig : {}) || {};
@@ -411,18 +448,195 @@ window.pickXTTSVoiceWav = function() {
             const input = document.getElementById('v-xtts-speaker-wav');
             if (input) {
                 input.value = data.path;
-                saveAudioConfig(); // Automatically save and sync across UIs
+                // Reset dropdown to show it's a custom path
+                const sel = document.getElementById('v-xtts-clone-select');
+                if (sel) sel.value = '';
+                saveAudioConfig();
             }
         }
     })
     .catch(err => console.error("Native pick error:", err));
 };
 
+// ── Voice Clone Library ──────────────────────────────────────────────────────
+
+window.loadVoiceCloneList = async function() {
+    try {
+        const r = await fetch('/api/audio/voice-clones');
+        const data = await r.json();
+        if (!data.ok) return;
+        const sel = document.getElementById('v-xtts-clone-select');
+        if (!sel) return;
+        const currentPath = document.getElementById('v-xtts-speaker-wav')?.value || '';
+        sel.innerHTML = '<option value="">— None (use Default Speaker) —</option>';
+        for (const f of data.files) {
+            const opt = document.createElement('option');
+            opt.value = f.path;
+            opt.textContent = f.name;
+            if (f.path === currentPath) opt.selected = true;
+            sel.appendChild(opt);
+        }
+        // If no library option matched but there's a path typed, leave dropdown at "None"
+    } catch(e) {
+        console.error('[AudioConfig] loadVoiceCloneList error:', e);
+    }
+};
+
+window.onVoiceCloneSelect = function() {
+    const sel = document.getElementById('v-xtts-clone-select');
+    const input = document.getElementById('v-xtts-speaker-wav');
+    if (!sel || !input) return;
+    input.value = sel.value; // '' for None, path for a file
+    saveAudioConfig();
+};
+
+window.onVoiceClonePathInput = function() {
+    // If user types manually, deselect dropdown so it stays in sync
+    const input = document.getElementById('v-xtts-speaker-wav');
+    const sel = document.getElementById('v-xtts-clone-select');
+    if (!sel || !input) return;
+    const typed = input.value.trim();
+    // Try to find a matching option
+    const matched = Array.from(sel.options).find(o => o.value === typed);
+    sel.value = matched ? matched.value : '';
+};
+
+window.uploadVoiceClone = async function(fileInput) {
+    if (!fileInput.files.length) return;
+    const file = fileInput.files[0];
+    if (!file.name.toLowerCase().endsWith('.wav')) {
+        if (window.showToast) window.showToast('Only WAV files are accepted.', 'error');
+        return;
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+        if (window.showToast) window.showToast('Uploading...', 'info');
+        const r = await fetch('/api/audio/voice-clones/upload', { method: 'POST', body: fd });
+        const data = await r.json();
+        if (data.ok) {
+            await loadVoiceCloneList();
+            // Auto-select the just-uploaded file
+            const sel = document.getElementById('v-xtts-clone-select');
+            const input = document.getElementById('v-xtts-speaker-wav');
+            if (sel && data.path) {
+                sel.value = data.path;
+                if (input) input.value = data.path;
+                saveAudioConfig();
+            }
+            if (window.showToast) window.showToast(`Uploaded: ${data.filename}`, 'success');
+        } else {
+            if (window.showToast) window.showToast('Upload failed: ' + data.error, 'error');
+        }
+    } catch(e) {
+        if (window.showToast) window.showToast('Upload error: ' + e.message, 'error');
+    }
+    fileInput.value = ''; // reset so same file can be re-uploaded
+};
+
+
+
+// ── Custom Modals for Audio Panel ───────────────────────────────────────────
+window.hecosPrompt = function(msg, onSave) {
+    var modalId = 'audio-custom-prompt-modal';
+    var modal = document.getElementById(modalId);
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:9999;';
+        modal.innerHTML = '<div style="background:var(--bg2); border:1px solid var(--border); padding:24px; border-radius:12px; max-width:400px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.5);">' +
+            '<h3 style="margin-top:0; color:var(--text);"><i class="fas fa-keyboard" style="margin-right:8px; color:var(--accent);"></i> Input Required</h3>' +
+            '<p id="' + modalId + '-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>' +
+            '<input type="text" id="' + modalId + '-input" class="config-input" style="width:100%; margin-bottom:20px; border:1px solid var(--border); background:var(--bg3); color:var(--text); padding:8px 12px; border-radius:6px;">' +
+            '<div style="display:flex; justify-content:flex-end; gap:10px;">' +
+            '<button class="btn" id="' + modalId + '-cancel" style="border:1px solid var(--border); background:var(--bg3); color:var(--text); padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>' +
+            '<button class="btn" style="background:var(--accent); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;" id="' + modalId + '-save">Save</button>' +
+            '</div></div>';
+        document.body.appendChild(modal);
+    }
+    document.getElementById(modalId + '-text').textContent = msg;
+    var input = document.getElementById(modalId + '-input');
+    input.value = '';
+
+    var cleanup = function() { modal.style.display = 'none'; };
+
+    document.getElementById(modalId + '-cancel').onclick = cleanup;
+    document.getElementById(modalId + '-save').onclick = function() {
+        cleanup();
+        var val = input.value.trim();
+        if (val) onSave(val);
+    };
+
+    modal.style.display = 'flex';
+    setTimeout(function() { input.focus(); }, 100);
+};
+
+window.hecosConfirm = function(msg, onYes) {
+    if (window.hpmShowConfirm) {
+        window.hpmShowConfirm(msg, 'Confirm', onYes);
+    } else {
+        var modalId = 'audio-custom-confirm-modal';
+        var modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:9999;';
+            modal.innerHTML = '<div style="background:var(--bg2); border:1px solid var(--border); padding:24px; border-radius:12px; max-width:400px; width:90%; box-shadow:0 10px 30px rgba(0,0,0,0.5);">' +
+                '<h3 style="margin-top:0; color:var(--text);"><i class="fas fa-question-circle" style="margin-right:8px; color:var(--accent);"></i> Confirmation</h3>' +
+                '<p id="' + modalId + '-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>' +
+                '<div style="display:flex; justify-content:flex-end; gap:10px;">' +
+                '<button class="btn" id="' + modalId + '-cancel" style="border:1px solid var(--border); background:var(--bg3); color:var(--text); padding:8px 16px; border-radius:6px; cursor:pointer;">Cancel</button>' +
+                '<button class="btn" style="background:var(--accent); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;" id="' + modalId + '-yes">Confirm</button>' +
+                '</div></div>';
+            document.body.appendChild(modal);
+        }
+        document.getElementById(modalId + '-text').textContent = msg;
+
+        var cleanup = function() { modal.style.display = 'none'; };
+
+        document.getElementById(modalId + '-cancel').onclick = cleanup;
+        document.getElementById(modalId + '-yes').onclick = function() {
+            cleanup();
+            onYes();
+        };
+
+        modal.style.display = 'flex';
+    }
+};
+
 // ── XTTS Presets Logic ───────────────────────────────────────────────────────
 
 window.saveXTTSPreset = function() {
-    const name = prompt("Nome del preset (es. 'Voce veloce', 'Voce clonata'):");
-    if (!name) return;
+    window.hecosPrompt("Preset name (e.g. 'Fast voice', 'Cloned voice'):", function(name) {
+        if (!audioConfig.xtts_presets) audioConfig.xtts_presets = {};
+        
+        audioConfig.xtts_presets[name] = {
+            speed: parseFloat(document.getElementById('v-xtts-speed')?.value || 1.0),
+            language: document.getElementById('v-xtts-lang')?.value || 'it',
+            speaker: document.getElementById('v-xtts-speaker')?.value || 'Claribel Dervla',
+            gpu_acceleration: document.getElementById('v-xtts-gpu')?.value || 'auto',
+            chunk_sentences: document.getElementById('v-xtts-chunk')?.checked ?? true,
+            speaker_wav: document.getElementById('v-xtts-speaker-wav')?.value || '',
+            temperature: parseFloat(document.getElementById('v-xtts-temperature')?.value || 0.75),
+            repetition_penalty: parseFloat(document.getElementById('v-xtts-repetition_penalty')?.value || 5.0)
+        };
+        
+        if (!audioConfig.xtts) audioConfig.xtts = {};
+        audioConfig.xtts.current_preset = name;
+        
+        saveAudioConfig().then(() => {
+            populateAudioUI();
+            if (window.showToast) window.showToast("Preset saved successfully!", "success");
+        });
+    });
+};
+
+window.updateXTTSPreset = function() {
+    const name = document.getElementById('v-xtts-preset')?.value;
+    if (!name || name === 'default') {
+        if (window.showToast) window.showToast("Select a custom preset to update first.", "error");
+        return;
+    }
     
     if (!audioConfig.xtts_presets) audioConfig.xtts_presets = {};
     
@@ -441,8 +655,15 @@ window.saveXTTSPreset = function() {
     audioConfig.xtts.current_preset = name;
     
     saveAudioConfig().then(() => {
-        populateAudioUI();
-        alert("Preset salvato con successo!");
+        if (window.showToast) window.showToast("Preset configuration updated!", "success");
+    });
+};
+
+window.resetXTTSConfig = function() {
+    window.hecosConfirm("Reset all XTTS parameters to their default values?", function() {
+        const presetSelect = document.getElementById('v-xtts-preset');
+        if (presetSelect) presetSelect.value = 'default';
+        loadXTTSPreset();
     });
 };
 
@@ -489,16 +710,18 @@ window.loadXTTSPreset = function() {
 window.deleteXTTSPreset = function() {
     const name = document.getElementById('v-xtts-preset').value;
     if (name === 'default') {
-        alert("Impossibile eliminare il preset predefinito.");
+        if (window.showToast) window.showToast("Cannot delete the default preset.", "error");
         return;
     }
-    if (!confirm(`Sei sicuro di voler eliminare il preset '${name}'?`)) return;
     
-    if (audioConfig.xtts_presets && audioConfig.xtts_presets[name]) {
-        delete audioConfig.xtts_presets[name];
-        audioConfig.xtts.current_preset = 'default';
-        saveAudioConfig().then(() => {
-            populateAudioUI();
-        });
-    }
+    window.hecosConfirm(`Are you sure you want to delete the preset '${name}'?`, function() {
+        if (audioConfig.xtts_presets && audioConfig.xtts_presets[name]) {
+            delete audioConfig.xtts_presets[name];
+            audioConfig.xtts.current_preset = 'default';
+            saveAudioConfig().then(() => {
+                populateAudioUI();
+                if (window.showToast) window.showToast("Preset deleted.", "info");
+            });
+        }
+    });
 };
