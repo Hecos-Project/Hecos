@@ -100,7 +100,7 @@ window.collectIgenConfig = function() {
         horde_nsfw:             chk('horde-nsfw', true),
         horde_worker_blacklist: get('horde-worker-blacklist', ''),
         vae:                    get('igen-vae', ''),
-        loras:                  Array.from(document.getElementById('igen-loras')?.selectedOptions || []).map(o => o.value),
+        loras:                  Array.from((document.getElementById('igen-loras') || {}).selectedOptions || []).map(o => o.value),
         cloud_enabled:          chk('igen-cloud-enabled', false),
     };
 };
@@ -158,4 +158,4 @@ window.applyIgenConfig = function(cfg) {
 
     onAspectRatioChanged();
     if (window._applyCloudToggleState) window._applyCloudToggleState();
-};
+    };

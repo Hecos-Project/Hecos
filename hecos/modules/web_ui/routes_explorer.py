@@ -102,7 +102,7 @@ def init_explorer_routes(app, logger):
                 ["All Files",   "*.*"]
             ])
 
-            if sys.platform == "win32":
+            if sys.platform == "win32" and not pick_dir:
                 # ── Windows: PowerShell native dialog ─────────────────────────
                 # Build the filter string: "WAV Audio (*.wav)|*.wav|All Files (*.*)|*.*"
                 filter_parts = []
@@ -148,9 +148,16 @@ if ($result -eq 'OK') {{ Write-Host $dialog.FileName -NoNewline }}
                     script = f"""
 import tkinter as tk
 from tkinter import filedialog
+import ctypes
 root = tk.Tk()
 root.withdraw()
 root.attributes('-topmost', True)
+root.lift()
+root.focus_force()
+try:
+    hwnd = root.winfo_id()
+    ctypes.windll.user32.SetForegroundWindow(hwnd)
+except: pass
 path = filedialog.askdirectory(title={d_title!r}, initialdir={d_initdir!r} if {bool(d_initdir)!r} else None)
 root.destroy()
 print(path or '', end='')

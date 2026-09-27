@@ -1,0 +1,76 @@
+[image_gen]
+enabled = true
+provider = "swarmui"
+model = "ZI Orn master Turbo/pornmasterZImage_turboV35Bf16.safetensors"
+nologo = true
+api_key = "hecos"
+api_key_comment = ""
+hf_provider = "hf-inference"
+aspect_ratio = "3:4"
+width = 896
+height = 1152
+seed = -1
+last_seed = 1073008723
+sampler = "euler"
+scheduler = "simple"
+guidance_scale = 2.5
+num_inference_steps = 12
+enable_negative_prompt = false
+negative_prompt = ""
+auto_enrich = true
+enrich_keywords = ""
+style = "none"
+optimize_for_flux = true
+vae = ""
+loras = []
+flux_refiner_instructions = "Convert keywords into a descriptive natural language paragraph for Flux. Output ONLY the optimised prompt, no preamble."
+show_metadata_in_chat = true
+active_preset = "🍑 PornMaster ZImage Turbo"
+default_preset = "🍑 PornMaster ZImage Turbo"
+default_profile = ""
+custom_hf_models = []
+horde_api_key = "hecos"
+horde_nsfw = true
+horde_worker_blacklist = "admin"
+cloud_enabled = false
+routing_override = ""
+
+[image_gen.presets.weeww]
+provider = "swarmui"
+hf_provider = "hf-inference"
+model = "FLUX.1-Dev BNB NF4/flux1_v40Fp8.safetensors"
+aspect_ratio = "1:1"
+width = 1024
+height = 1024
+seed = -1
+sampler = "lcm"
+scheduler = "karras"
+guidance_scale = 7.5
+num_inference_steps = 30
+enable_negative_prompt = true
+negative_prompt = "distorted, extra fingers, malformed limbs, missing limbs, ugly, blurry, low quality, bad anatomy, bad proportions, watermark, text, signature"
+auto_enrich = true
+enrich_keywords = ""
+style = "none"
+nologo = true
+optimize_for_flux = true
+show_metadata_in_chat = true
+routing_override = ""
+api_key = ""
+horde_api_key = ""
+horde_nsfw = true
+horde_worker_blacklist = ""
+vae = ""
+loras = []
+cloud_enabled = false
+
+[image_gen.profiles]
+
+[image_gen.local]
+enabled = true
+backend = "swarmui"
+url = "http://localhost:7801"
+timeout = 120
+auto_discover_models = true
+default_model = ""
+auth_token = ""

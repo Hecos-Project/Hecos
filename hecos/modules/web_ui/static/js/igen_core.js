@@ -98,8 +98,7 @@ var _igenInitDone = false;
 
 var _IGEN_REQUIRED_FNS = [
     'loadIgenPresets', 'applyIgenConfig', 'onProviderChanged',
-    'saveIgenConfig', 'collectIgenConfig', 'checkIgenPresetUI',
-    'loadIgenProfiles'
+    'saveIgenConfig', 'collectIgenConfig', 'checkIgenPresetUI'
 ];
 
 function _igenAllModulesReady() {

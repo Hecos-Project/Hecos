@@ -25,6 +25,7 @@ from hecos.modules.web_ui.routes_packages_install import register_install_routes
 from hecos.modules.web_ui.routes_packages_manage import register_manage_routes
 from hecos.modules.web_ui.routes_packages_search import register_search_routes
 from hecos.modules.web_ui.routes_packages_store import register_store_routes
+from hecos.modules.web_ui.routes_packages_builder import register_builder_routes
 
 def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     """Register all HPM REST routes on the Flask app."""
@@ -46,6 +47,7 @@ def init_package_routes(app, hecos_root: str, cfg_mgr, _log=None):
     register_manage_routes(app, _hecos_src, cfg_mgr, log)
     register_search_routes(app, _hecos_src, cfg_mgr, log)
     register_store_routes(app, _hecos_src, cfg_mgr, log)
+    register_builder_routes(app, _hecos_src, cfg_mgr, log)
 
     from hecos.modules.web_ui.routes_packages_helpers import _refresh_jinja_loader
     _refresh_jinja_loader(app)

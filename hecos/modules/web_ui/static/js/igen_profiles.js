@@ -151,7 +151,8 @@ window.updateIgenProfile = async function() {
 // ── Delete a profile ─────────────────────────────────────────────────────────
 
 window.deleteIgenProfile = function() {
-    const name = document.getElementById('igen-profile-select')?.value || '';
+    var _sel = document.getElementById('igen-profile-select');
+    const name = _sel ? _sel.value : '';
     if (!name) return;
 
     _igenConfirm('Delete profile "' + name + '"? This cannot be undone.', async function() {

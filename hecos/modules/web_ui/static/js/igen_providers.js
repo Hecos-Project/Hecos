@@ -79,8 +79,9 @@ window.onProviderChanged = async function(userTriggered, _attempt) {
     // ── Show/hide VAE + LoRA tabs ────────────────────────────────────────────
     var vaeTabBtn   = document.getElementById('igen-tab-btn-vae');
     var lorasTabBtn = document.getElementById('igen-tab-btn-loras');
-    if (vaeTabBtn)   vaeTabBtn.style.display   = isLocal ? 'inline-flex' : 'none';
-    if (lorasTabBtn) lorasTabBtn.style.display = isLocal ? 'inline-flex' : 'none';
+    // We intentionally do NOT hide these tabs anymore as per user request
+    if (vaeTabBtn)   vaeTabBtn.style.display   = 'inline-flex';
+    if (lorasTabBtn) lorasTabBtn.style.display = 'inline-flex';
 
     // If switching away from local while VAE/LoRA tab is active, reset to Model
     if (!isLocal) {
@@ -138,13 +139,20 @@ window.onProviderChanged = async function(userTriggered, _attempt) {
                 opt.value = opt.textContent = m;
                 modelSel.appendChild(opt);
             });
-            if (currentSelection && data.models.includes(currentSelection)) {
-                modelSel.value = currentSelection;
+            if (currentSelection) {
+                if (data.models.includes(currentSelection)) {
+                    modelSel.value = currentSelection;
+                } else {
+                    var matched = data.models.find(function(m) { return m.includes(currentSelection); });
+                    if (matched) {
+                        modelSel.value = matched;
+                    }
+                }
             }
         }
 
         // ── Fetch VAEs and LoRAs for SwarmUI ─────────────────────────────────
-        if (isLocal && _attempt === 0) {
+        if (_attempt === 0) {
             try {
                 var vSel = document.getElementById('igen-vae');
                 var lSel = document.getElementById('igen-loras');
@@ -377,11 +385,9 @@ window.reloadIgenPanel = async function() {
         var data = await res.json();
         var cfg  = data.image_gen || {};
 
-        // 2. Load presets and profiles (dropdowns)
+        // 2. Load presets and profiles
         await window.loadIgenPresets(cfg.active_preset);
-        if (typeof window.loadIgenProfiles === 'function') {
-            await window.loadIgenProfiles();
-        }
+        
 
         // 3. Set initial values BEFORE rebuilding provider dropdown
         var provSel = document.getElementById('igen-provider');
@@ -394,7 +400,6 @@ window.reloadIgenPanel = async function() {
         await window.onProviderChanged(false, 0);
 
         // 5. Apply all config values (sliders, checkboxes, etc.)
-        //    _igenLoadingConfig is still true so _onCloudToggle won't fire onProviderChanged again
         window.applyIgenConfig(cfg);
 
         _igenLoadingConfig = false;

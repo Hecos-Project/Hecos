@@ -13,7 +13,7 @@ kokoro:
   sentence_silence: 0.0
   model_path: ''
 xtts:
-  speed: 1.9
+  speed: 2.0
   language: it
   speaker: Claribel Dervla
   gpu_acceleration: gpu
