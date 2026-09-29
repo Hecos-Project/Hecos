@@ -177,7 +177,7 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     def list_voice_clones():
         """List all WAV files in the assets/voice_clones directory."""
         try:
-            clones_dir = os.path.join(root_dir, "assets", "voice_clones")
+            clones_dir = os.path.join(root_dir, "hecos", "assets", "voice_clones")
             os.makedirs(clones_dir, exist_ok=True)
             files = []
             for fname in sorted(os.listdir(clones_dir)):
@@ -202,7 +202,7 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             f = request.files["file"]
             if not f.filename.lower().endswith(".wav"):
                 return jsonify({"ok": False, "error": "Only WAV files are accepted"}), 400
-            clones_dir = os.path.join(root_dir, "assets", "voice_clones")
+            clones_dir = os.path.join(root_dir, "hecos", "assets", "voice_clones")
             os.makedirs(clones_dir, exist_ok=True)
             safe_name = os.path.basename(f.filename)
             dest = os.path.join(clones_dir, safe_name)
@@ -211,4 +211,4 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             return jsonify({"ok": True, "path": dest, "filename": safe_name})
         except Exception as exc:
             logger.error(f"[WebUI] upload_voice_clone error: {exc}")
-            return jsonify({"ok": False, "error": str(exc)}), 500
+            return jsonify({"ok": False, "error": str(exc)}), 500

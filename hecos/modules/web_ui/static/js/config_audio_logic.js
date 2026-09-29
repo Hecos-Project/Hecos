@@ -60,6 +60,20 @@ function populateAudioUI() {
         }
     }
 
+    // Populate XTTS Inference Presets
+    const infPresetSel = document.getElementById('v-xtts-inference-preset');
+    if (infPresetSel) {
+        infPresetSel.innerHTML = '<option value="">-- Nessun Preset --</option>';
+        if (v.xtts_inference_presets) {
+            for (const pName in v.xtts_inference_presets) {
+                const opt = document.createElement('option');
+                opt.value = pName;
+                opt.textContent = pName;
+                infPresetSel.appendChild(opt);
+            }
+        }
+    }
+
     refreshAudioHistoryCount();
     checkTTSEngineStatus();
     if (typeof loadVoiceCloneList === 'function') loadVoiceCloneList();
@@ -535,29 +549,30 @@ window.saveAudioConfig = function() {
     return Promise.resolve();
 };
 
-window.pickXTTSVoiceWav = function() {
-    fetch('/api/system/explorer/pick-native', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            title: "Select Voice Clone WAV",
-            filetypes: [["WAV Audio", "*.wav"], ["All Files", "*.*"]]
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.ok && data.path) {
-            const input = document.getElementById('v-xtts-speaker-wav');
-            if (input) {
-                input.value = data.path;
-                // Reset dropdown to show it's a custom path
-                const sel = document.getElementById('v-xtts-clone-select');
-                if (sel) sel.value = '';
-                saveAudioConfig();
+window.openVoiceClonePicker = function() {
+    const current = document.getElementById('v-xtts-speaker-wav')?.value || 'C:\\';
+    let initDir = current;
+    if (current.includes('\\') || current.includes('/')) {
+        const lastSlash = Math.max(current.lastIndexOf('\\'), current.lastIndexOf('/'));
+        initDir = lastSlash > 0 ? current.substring(0, lastSlash) : current;
+    }
+    
+    if (typeof HecosFilePicker !== 'undefined') {
+        HecosFilePicker.open({
+            title: 'Select Voice Clone WAV',
+            initialPath: initDir,
+            mode: 'file',
+            onSelect: function(p) {
+                const inp = document.getElementById('v-xtts-speaker-wav');
+                if(inp) inp.value = p;
+                if (typeof window.onVoiceClonePathInput === 'function') {
+                    window.onVoiceClonePathInput();
+                }
             }
-        }
-    })
-    .catch(err => console.error("Native pick error:", err));
+        });
+    } else {
+        console.error("HecosFilePicker is not defined!");
+    }
 };
 
 // ── Voice Clone Library ──────────────────────────────────────────────────────
@@ -774,7 +789,10 @@ window.resetXTTSConfig = function() {
 
 window.loadXTTSPreset = function() {
     const name = document.getElementById('v-xtts-preset')?.value;
-    if (!name) return;
+    if (!name) {
+        if (document.getElementById('v-xtts-speaker-wav')) document.getElementById('v-xtts-speaker-wav').value = '';
+        return;
+    }
 
     if (name === 'default' || !audioConfig.xtts_presets || !audioConfig.xtts_presets[name]) {
         if (name === 'default') {
@@ -841,4 +859,88 @@ window.deleteXTTSPreset = function() {
             });
         }
     });
+};
+
+window.saveXTTSInferencePreset = function() {
+    window.hecosPrompt("Inference Preset Name (e.g., 'Fast', 'Expressive'):", function(name) {
+        if (!audioConfig.xtts_inference_presets) audioConfig.xtts_inference_presets = {};
+        
+        audioConfig.xtts_inference_presets[name] = {
+            speed: parseFloat(document.getElementById('v-xtts-speed')?.value || 1.0),
+            temperature: parseFloat(document.getElementById('v-xtts-temperature')?.value || 0.75),
+            repetition_penalty: parseFloat(document.getElementById('v-xtts-repetition_penalty')?.value || 5.0),
+            top_k: parseInt(document.getElementById('v-xtts-topk')?.value || 50),
+            top_p: parseFloat(document.getElementById('v-xtts-topp')?.value || 0.85),
+            length_penalty: parseFloat(document.getElementById('v-xtts-length-penalty')?.value || 1.0)
+        };
+        
+        saveAudioConfig().then(() => {
+            populateAudioUI();
+            if (document.getElementById('v-xtts-inference-preset')) {
+                document.getElementById('v-xtts-inference-preset').value = name;
+            }
+            if (window.showToast) window.showToast("Inference Preset saved!", "success");
+        });
+    });
+};
+
+window.updateXTTSInferencePreset = function() {
+    const name = document.getElementById('v-xtts-inference-preset')?.value;
+    if (!name) {
+        if (window.showToast) window.showToast("Select an Inference Preset first.", "error");
+        return;
+    }
+    
+    if (!audioConfig.xtts_inference_presets) audioConfig.xtts_inference_presets = {};
+    
+    audioConfig.xtts_inference_presets[name] = {
+        speed: parseFloat(document.getElementById('v-xtts-speed')?.value || 1.0),
+        temperature: parseFloat(document.getElementById('v-xtts-temperature')?.value || 0.75),
+        repetition_penalty: parseFloat(document.getElementById('v-xtts-repetition_penalty')?.value || 5.0),
+        top_k: parseInt(document.getElementById('v-xtts-topk')?.value || 50),
+        top_p: parseFloat(document.getElementById('v-xtts-topp')?.value || 0.85),
+        length_penalty: parseFloat(document.getElementById('v-xtts-length-penalty')?.value || 1.0)
+    };
+    
+    saveAudioConfig().then(() => {
+        if (window.showToast) window.showToast("Inference Preset updated!", "success");
+    });
+};
+
+window.deleteXTTSInferencePreset = function() {
+    const name = document.getElementById('v-xtts-inference-preset')?.value;
+    if (!name) {
+        if (window.showToast) window.showToast("No preset selected.", "error");
+        return;
+    }
+    
+    window.hecosConfirm(`Do you want to delete the Inference Preset '${name}'?`, function() {
+        if (audioConfig.xtts_inference_presets && audioConfig.xtts_inference_presets[name]) {
+            delete audioConfig.xtts_inference_presets[name];
+            saveAudioConfig().then(() => {
+                populateAudioUI();
+                if (window.showToast) window.showToast("Preset deleted.", "info");
+            });
+        }
+    });
+};
+
+window.loadXTTSInferencePreset = function() {
+    const name = document.getElementById('v-xtts-inference-preset')?.value;
+    if (!name || !audioConfig.xtts_inference_presets || !audioConfig.xtts_inference_presets[name]) return;
+    
+    const p = audioConfig.xtts_inference_presets[name];
+    if (document.getElementById('v-xtts-speed')) document.getElementById('v-xtts-speed').value = p.speed || 1.0;
+    if (document.getElementById('v-xtts-temperature')) document.getElementById('v-xtts-temperature').value = p.temperature || 0.75;
+    if (document.getElementById('v-xtts-repetition_penalty')) document.getElementById('v-xtts-repetition_penalty').value = p.repetition_penalty || 5.0;
+    if (document.getElementById('v-xtts-topk')) document.getElementById('v-xtts-topk').value = p.top_k || 50;
+    if (document.getElementById('v-xtts-topp')) document.getElementById('v-xtts-topp').value = p.top_p || 0.85;
+    if (document.getElementById('v-xtts-length-penalty')) document.getElementById('v-xtts-length-penalty').value = p.length_penalty || 1.0;
+    
+    document.getElementById('v-xtts-speed')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-temperature')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-repetition_penalty')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-topk')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-topp')?.dispatchEvent(new Event('input'));
+    document.getElementById('v-xtts-length-penalty')?.dispatchEvent(new Event('input'));
 };

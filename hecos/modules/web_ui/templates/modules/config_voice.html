@@ -244,6 +244,20 @@
       </div>
     </div>
     
+    <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+      <div class="field" style="grid-column: span 2;">
+        <label>Inference Parameters Preset</label>
+        <div style="display:flex; gap:8px;">
+          <select id="v-xtts-inference-preset" onchange="loadXTTSInferencePreset()" style="flex:1;">
+            <option value="">-- Nessun Preset Selezionato --</option>
+          </select>
+          <button class="btn btn-primary" onclick="saveXTTSInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+          <button class="btn btn-secondary" onclick="updateXTTSInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+          <button class="btn btn-danger" onclick="deleteXTTSInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+    
     <div class="grid-3" style="margin-top:12px;">
       <div class="field">
         <label>
@@ -347,7 +361,7 @@
       <!-- Manual path override + file system browse -->
       <div style="display:flex; gap:8px;">
         <input type="text" id="v-xtts-speaker-wav" placeholder="Or type / browse any path (overrides dropdown)" style="flex:1;" oninput="onVoiceClonePathInput()">
-        <button type="button" class="btn btn-secondary" onclick="pickXTTSVoiceWav()" title="Browse filesystem">
+        <button type="button" class="btn btn-secondary" title="Browse filesystem" style="margin:0;" onclick="window.openVoiceClonePicker()">
           <i class="fas fa-folder-open"></i>
         </button>
       </div>

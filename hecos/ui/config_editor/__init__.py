@@ -1,4 +1,4 @@
-﻿"""
+"""
 Utility generiche per l'editor.
 """
 
@@ -24,8 +24,8 @@ def flush_input():
 def get_key(timeout=None):
     """
     Legge un tasto dalla tastiera.
-    Se timeout Ã¨ None, aspetta per sempre.
-    Se timeout Ã¨ un numero, aspetta al massimo quei secondi.
+    Se timeout è None, aspetta per sempre.
+    Se timeout è un numero, aspetta al massimo quei secondi.
     Restituisce il codice ASCII o None se scaduto il timeout.
     """
     start = time.time()

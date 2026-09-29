@@ -1,5 +1,5 @@
-﻿/**
- * hks_tooltips.js — Hecos Dynamic Shortcut Tooltips
+/**
+ * hks_tooltips.js � Hecos Dynamic Shortcut Tooltips
  * -----------------------------------------------------------------------------
  * Reads current keyboard bindings from HKS_BINDINGS and applies them as
  * descriptive 	itle attributes on all relevant UI buttons and links.
@@ -78,7 +78,7 @@
         // Quick Config status pills (no stable IDs, use selector)
         _setTitleAll('.status-pill.clickable', 'Open Quick Config',              'nav.quick_config');
 
-        // ── CENTRAL HUB (config_panel & core_header) ─────────────────────────
+        // -- CENTRAL HUB (config_panel & core_header) -------------------------
         _setTitle('hdr-nav-chat',      'Open Chat',             'nav.chat');
         _setTitle('hdr-nav-room',      'Open Control Room',     'nav.home');
         _setTitle('hdr-nav-drive',     'Open Drive',            'nav.drive');

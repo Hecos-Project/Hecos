@@ -72,11 +72,11 @@ def load_yaml(path: str, schema_cls: Type[T], *, auto_migrate_json: bool = True)
     if os.path.exists(path):
         try:
             with open(path, "r", encoding="utf-8") as f:
-                if HAS_RUAMEL:
-                    ryaml = YAML()
-                    raw: dict = ryaml.load(f) or {}
-                else:
-                    raw: dict = yaml.safe_load(f) or {}
+                try:
+                    from yaml import CSafeLoader as Loader
+                except ImportError:
+                    from yaml import SafeLoader as Loader
+                raw: dict = yaml.load(f, Loader=Loader) or {}
 
             # Start from schema defaults, then overlay with what's in the file
             defaults = schema_cls().model_dump()

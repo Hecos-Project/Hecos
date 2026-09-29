@@ -203,9 +203,13 @@ class XttsEngine(BaseTTSEngine):
         
         speaker_wav = cfg.get("speaker_wav", "").strip()
         import os
-        if speaker_wav and os.path.exists(speaker_wav):
-            # If cloning voice is active and valid, don't use default speaker name
-            speaker = None
+        if speaker_wav:
+            if not os.path.isabs(speaker_wav):
+                speaker_wav = os.path.join(_get_project_root(), "assets", "voice_clones", speaker_wav)
+            if os.path.exists(speaker_wav):
+                speaker = None
+            else:
+                speaker_wav = None
         else:
             speaker_wav = None
 

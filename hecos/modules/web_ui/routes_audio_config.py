@@ -138,7 +138,7 @@ def init_audio_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             try:
                 data = request.get_json(force=True) or {}
                 cfg = get_audio_config()
-                for k in ["active_engine", "kokoro", "xtts", "voice_status", "listening_status",
+                for k in ["active_engine", "kokoro", "xtts", "xtts_presets", "xtts_inference_presets", "voice_status", "listening_status",
                           "piper_path", "onnx_model", "speed", "noise_scale", "noise_w",
                           "sentence_silence", "piper_timeout", "energy_threshold",
                           "silence_timeout", "phrase_limit", "tts_history_max_files"]:

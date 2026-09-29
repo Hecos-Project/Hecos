@@ -21,8 +21,9 @@ class HistoryManager:
             clean_persona = personality_name.replace(".yaml", "") if personality_name else "Hecos_System_Soul"
             brain_interface.save_message("user", user_text, config=config, user_id=user_id, session_id=session_id, sender_tab_id=sender_tab_id)
             
-            # Build generation parameters string for UI Tooltip and History
-            _model_info_str = HistoryManager._build_model_info(backend_config)
+            # Build generation parameters JSON string for UI Tooltip and History
+            llm_config = config.get("llm", {})
+            _model_info_str = HistoryManager._build_model_info(backend_config, llm_config)
             
             # Structured response management (String or Message with tool_calls)
             if isinstance(response, str):
@@ -59,18 +60,36 @@ class HistoryManager:
             logger.debug("HistoryManager", "AI response is an error; skipping history persistence.")
             
     @staticmethod
-    def _build_model_info(backend_config):
+    def _build_model_info(backend_config, llm_config):
         _model_info_str = None
-        if backend_config:
-            _m_name = backend_config.get("model", "unknown")
-            _m_temp = backend_config.get("temperature", 0.7)
-            _m_ctx = backend_config.get("num_ctx", 4096)
-            _m_top_p = backend_config.get("top_p", 0.9)
-            _m_rep_pen = backend_config.get("repeat_penalty", 1.1)
-            _m_predict = backend_config.get("num_predict", 1024)
-            _m_gpu = backend_config.get("num_gpu", backend_config.get("gpu_layers", 0))
+        if backend_config or llm_config:
+            b_cfg = backend_config or {}
+            l_cfg = llm_config or {}
             
-            _model_info_str = f"Model: {_m_name}\nTemp: {_m_temp} | Ctx: {_m_ctx} | GPU: {_m_gpu}\nTop P: {_m_top_p} | Predict: {_m_predict} | Rep Pen: {_m_rep_pen}"
+            _m_name = b_cfg.get("model", "unknown")
+            
+            # Global Presets write to backend_config (b_cfg). Default settings live in llm_config (l_cfg).
+            # We must check b_cfg first, then l_cfg, then the hardcoded fallback.
+            _m_temp = b_cfg.get("temperature", l_cfg.get("temperature", 0.7))
+            _m_ctx = b_cfg.get("num_ctx", l_cfg.get("num_ctx", 4096))
+            _m_top_p = b_cfg.get("top_p", l_cfg.get("top_p", 0.9))
+            _m_rep_pen = b_cfg.get("repeat_penalty", l_cfg.get("repeat_penalty", 1.1))
+            _m_predict = b_cfg.get("num_predict", l_cfg.get("num_predict", 1024))
+            _m_gpu = b_cfg.get("num_gpu", b_cfg.get("gpu_layers", 0))
+            
+            # Create a structured dictionary
+            info_dict = {
+                "model": _m_name,
+                "temperature": _m_temp,
+                "num_ctx": _m_ctx,
+                "top_p": _m_top_p,
+                "repeat_penalty": _m_rep_pen,
+                "num_predict": _m_predict,
+                "num_gpu": _m_gpu
+            }
+            
+            # Serialize to JSON string for database storage
+            _model_info_str = json.dumps(info_dict)
             
             # Inject into LAST_PAYLOAD_INFO for the SSE trace_done event
             try:

@@ -185,7 +185,21 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
         length_penalty = str(xtts_cfg.get('length_penalty', 1.0))
         gpu_acceleration = xtts_cfg.get('gpu_acceleration', 'auto')  # 'auto', 'gpu', 'cpu'
 
-        _chat_log.info(f"[XTTS2 Bypass] Starting isolated generation. GPU mode: {gpu_acceleration}, Wav target: {out_path}")
+        session = voice_cfg.get('session_overrides', {})
+        if session:
+            if 'xtts_speaker_wav' in session and session['xtts_speaker_wav']: speaker_wav = session['xtts_speaker_wav'].strip()
+            if 'tts_voice' in session and session['tts_voice'] and session['tts_voice'] != 'default': speaker = session['tts_voice']
+            if 'xtts_speed' in session and session['xtts_speed'] is not None: speed = str(session['xtts_speed'])
+            if 'xtts_temperature' in session and session['xtts_temperature'] is not None: temperature = str(session['xtts_temperature'])
+            if 'xtts_repetition_penalty' in session and session['xtts_repetition_penalty'] is not None: repetition_penalty = str(session['xtts_repetition_penalty'])
+            if 'xtts_top_k' in session and session['xtts_top_k'] is not None: top_k = str(session['xtts_top_k'])
+            if 'xtts_top_p' in session and session['xtts_top_p'] is not None: top_p = str(session['xtts_top_p'])
+        if 'xtts_length_penalty' in session and session['xtts_length_penalty'] is not None: length_penalty = str(session['xtts_length_penalty'])
+
+        if speaker_wav and not os.path.isabs(speaker_wav):
+            speaker_wav = os.path.join(root_dir, "hecos", "assets", "voice_clones", speaker_wav)
+
+        _chat_log.info(f"[XTTS2 Bypass] Starting isolated generation. GPU mode: {gpu_acceleration}, Wav target: {out_path}, Speaker Wav: {speaker_wav}")
 
         inline_code = (
             "import sys, os\n"
@@ -396,6 +410,9 @@ def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> t
                 "tts_engine": ai_cfg.get("tts_engine"),
                 "tts_voice": ai_cfg.get("tts_voice")
             }
+            # Add Soul Forge voice overrides
+            voice_overrides = ai_cfg.get("voice_overrides", {})
+            session_overrides.update(voice_overrides)
             
         voice_cfg['session_overrides'] = session_overrides
 

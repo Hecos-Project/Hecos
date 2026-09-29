@@ -650,3 +650,7 @@ workspace/*
 *.gguf
 hecos/models/gguf/*
 models/gguf/*
+
+# Builder Studio (HPM Package)
+hecos/modules/builder_studio/
+hecos/_builder_backup/

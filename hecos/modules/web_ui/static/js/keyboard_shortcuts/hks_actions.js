@@ -494,6 +494,12 @@
                 }
 
                 // ── PRIORITY 8: Generic Modals / Panels ──────────────────────
+                const sfPanel = document.getElementById('soul-forge-panel');
+                if (sfPanel && sfPanel.classList.contains('open')) {
+                    if (window.sfTogglePanel) window.sfTogglePanel(false);
+                    return;
+                }
+
                 const closeBtns = document.querySelectorAll(
                     '.modal.active .btn-close, .overlay.active .close-btn, ' +
                     '.panel.open .close-btn'

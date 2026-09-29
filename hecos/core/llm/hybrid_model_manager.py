@@ -5,7 +5,7 @@ Provides a unified list of models across local and cloud backends.
 import os
 from hecos.core.logging import logger
 
-def get_hybrid_models(config: dict, config_manager=None) -> list:
+def get_hybrid_models(config: dict, config_manager=None, fast_mode=True) -> list:
     """
     Returns a combined list of local and cloud models.
     Cloud models are included only if llm.allow_cloud is True.
@@ -22,7 +22,7 @@ def get_hybrid_models(config: dict, config_manager=None) -> list:
     try:
         from hecos.app.model_manager import ModelManager
         mm = ModelManager(config_manager)
-        categorized = mm.get_available_models(fast_mode=False)
+        categorized = mm.get_available_models(fast_mode=fast_mode)
         
         # Pre-fetch capabilities and sizes from Ollama API
         ollama_meta = {}

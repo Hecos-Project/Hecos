@@ -56,6 +56,13 @@ class AudioConfig(BaseModel):
     # --- TTS (XTTS2) ---
     xtts: XttsConfig = XttsConfig()
     xtts_presets: dict = {}
+    xtts_inference_presets: dict = {
+        "Fast & Direct": {"speed": 1.4, "temperature": 0.6, "repetition_penalty": 4.0, "top_k": 40, "top_p": 0.8, "length_penalty": 0.9},
+        "Expressive & Dynamic": {"speed": 1.0, "temperature": 0.9, "repetition_penalty": 6.0, "top_k": 70, "top_p": 0.9, "length_penalty": 1.2},
+        "Slow & Clear": {"speed": 0.8, "temperature": 0.4, "repetition_penalty": 3.0, "top_k": 30, "top_p": 0.7, "length_penalty": 0.8},
+        "Creative & Wild": {"speed": 1.1, "temperature": 1.2, "repetition_penalty": 8.0, "top_k": 90, "top_p": 0.95, "length_penalty": 1.5},
+        "Stable & Monotone": {"speed": 1.0, "temperature": 0.1, "repetition_penalty": 10.0, "top_k": 10, "top_p": 0.5, "length_penalty": 1.0}
+    }
 
     # --- STT / Listening ---
     listening_status: bool = False

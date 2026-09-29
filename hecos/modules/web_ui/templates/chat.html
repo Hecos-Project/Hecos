@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" href="/assets/Hecos_Logo_SQR_NBG_LogoOnly.png?v={{ version }}">
 <link rel="stylesheet" href="/assets/css/core/variables.css?v={{ version }}&t=20260922">
 <link rel="stylesheet" href="/assets/css/chat.css?v={{ version }}&t=20260922b">
+<link rel="stylesheet" href="/assets/css/core/components.css?v={{ version }}">
 <!-- GridStack.js — Widget Grid Library -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css">
 <!-- Control Room Module A -->
@@ -151,9 +152,6 @@
   window.cfg = {{ zconfig | tojson }};
   window.HECOS_VERSION = "{{ version }}";
 </script>
-<!-- Quick Config HUD Lazy Loader -->
-<script src="/static/js/quick_config/qc_loader.js?v={{ version }}"></script>
-{% include 'modules/quick_config/qc_hud.html' %}
 
 <script src="/static/js/chat_audio_player.js?v={{ version }}"></script>
 <script src="/static/js/chat_renderer.js?v={{ version }}"></script>
@@ -205,6 +203,21 @@
 <!-- HDCS Command Palette (self-contained, no ES modules) -->
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
 <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
+
+<!-- ⚡ Soul Forge -->
+<link rel="stylesheet" href="/static/css/global_presets.css?v={{ version }}">
+{% include 'modules/chat_global_presets.html' %}
+<script src="/static/js/global_presets/gp_state.js?v={{ version }}"></script>
+<script src="/static/js/global_presets/gp_ui.js?v={{ version }}"></script>
+<script src="/static/js/global_presets/gp_actions.js?v={{ version }}"></script>
+<script src="/static/js/global_presets/gp_xtts.js?v={{ version }}"></script>
+
+<!-- ⚡ Session Overrides -->
+{% include 'modules/chat_session_overrides.html' %}
+<script src="/static/js/session_overrides/so_state.js?v={{ version }}"></script>
+<script src="/static/js/session_overrides/so_ui.js?v={{ version }}"></script>
+<script src="/static/js/session_overrides/so_actions.js?v={{ version }}"></script>
+<script src="/static/js/session_overrides/so_xtts.js?v={{ version }}"></script>
 
 <!-- HKS — Hecos Keyboard Shortcuts System -->
 <link rel="stylesheet" href="/static/css/keyboard_shortcuts.css?v={{ version }}">

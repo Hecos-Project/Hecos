@@ -93,13 +93,6 @@
             style="position:relative;">
       <i class="fas fa-store" style="margin-right:6px;"></i> Store <span id="hpm-cnt-store" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
     </button>
-    <button id="hpm-tab-btn-builder" class="filter-btn" onclick="hpmSwitchTab('builder')"
-            style="position:relative;">
-      <i class="fas fa-hammer" style="margin-right:6px;"></i> Builder
-      <span style="position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,var(--accent),#7c3aed);
-                   color:#fff;font-size:0.55em;font-weight:800;padding:2px 5px;border-radius:6px;
-                   letter-spacing:.5px;">DEV</span>
-    </button>
   </div>
 
   <script>
@@ -283,291 +276,6 @@
   <div id="hpm-pane-store" style="display:none;">
   </div>
 
-  <!-- ── BUILDER PANE ──────────────────────────────────────────────── -->
-  <div id="hpm-pane-builder" style="display:none; margin: -16px; padding: 16px; display:flex; flex-direction:column; height:calc(100vh - 120px);">
-    
-    <!-- Top Row: Build Console -->
-    <div style="flex-shrink:0; display:flex; flex-direction:column; height:180px; min-height:80px; margin-bottom:16px; resize:vertical; overflow:hidden; border:1px solid rgba(255,255,255,0.08); border-radius:8px; background:#09090b; padding:8px;">
-        <div style="font-size:10px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-            <span><i class="fas fa-terminal"></i> Hecos Build Console</span>
-            <button type="button" class="btn btn-sm btn-outline" style="padding:2px 8px; font-size:10px; border-color:transparent;" onclick="document.getElementById('builder-terminal').innerHTML=''"><i class="fas fa-eraser"></i> Clear</button>
-        </div>
-        <div id="builder-terminal" class="custom-scrollbar" style="font-family:'Consolas', 'Courier New', monospace; font-size:11.5px; color:#a3a3a3; flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px; padding:4px;">
-            <div style="color:#10b981;"><i class="fas fa-check"></i> Hecos Builder Studio initialized and ready.</div>
-        </div>
-    </div>
-
-    <!-- Double Pane Layout -->
-    <div style="display:flex; flex-direction:row; gap:16px; flex:1; overflow:hidden;">
-        
-        <!-- LEFT PANE: Library & Global Actions -->
-        <div style="flex: 6; display:flex; flex-direction:column; gap:12px; height:100%; overflow-y:auto; padding-right:8px;" class="custom-scrollbar">
-          
-          <div class="card" style="margin-bottom:0; min-height:min-content; padding: 16px;">
-            <div style="display:flex; flex-direction:column; gap:12px;">
-              <!-- Row 1: Title -->
-              <div style="font-size:1.2em; font-weight:700; color:var(--text); border-bottom:1px solid var(--border-color); padding-bottom:8px;">
-                <i class="fas fa-hammer" style="color:var(--accent);margin-right:8px;"></i> Hecos Builder Studio
-              </div>
-              
-              <!-- Row 2: Secondary Tools -->
-              <div style="display:flex; gap:8px; justify-content:flex-end;">
-                <button class="btn btn-sm btn-outline" title="Generate Keys" onclick="window.builderGenerateKeys()" style="padding:4px 10px; font-size:0.8em;"><i class="fas fa-key"></i> Keys</button>
-                <button class="btn btn-sm btn-outline" title="Build Store Catalog" onclick="window.builderGenerateCatalog()" style="padding:4px 10px; font-size:0.8em;"><i class="fas fa-globe"></i> Catalog</button>
-                <button class="btn btn-sm btn-outline" title="Settings" onclick="window.builderOpenSetup()" style="padding:4px 10px; font-size:0.8em;"><i class="fas fa-cog"></i> Setup</button>
-              </div>
-            </div>
-            
-            <!-- Global Toolbar -->
-            <div style="display:flex; gap:8px; margin-top:16px; margin-bottom:16px; justify-content:center;">
-              <button class="btn btn-sm btn-primary" style="background:var(--accent); border:none;"><i class="fas fa-plus"></i> New Package</button>
-              <button class="btn btn-sm btn-secondary"><i class="fas fa-layer-group"></i> Build All</button>
-              <button class="btn btn-sm btn-secondary" id="builder-btn-auto-caps-global" onclick="window.builderAutoCapabilities()" title="Regenerate capabilities for ALL packages"><i class="fas fa-bolt"></i> Auto-Capabilities</button>
-            </div>
-
-            <!-- Dropzone -->
-            <input type="file" id="builder-folder-input" webkitdirectory directory style="display:none;" onchange="window.builderHandleFolderInput(event)">
-            <div id="builder-dropzone"
-                 style="border:1px dashed var(--border-color);border-radius:8px;
-                        padding:12px;text-align:center;cursor:pointer;
-                        transition:border-color .2s,background .2s;position:relative;
-                        background:rgba(0,0,0,0.15); margin-bottom: 16px;"
-                 ondragover="event.preventDefault(); this.style.borderColor='var(--accent)';"
-                 ondragleave="event.preventDefault(); this.style.borderColor='';"
-                 ondrop="window.builderHandleFolderDrop(event, this)"
-                 onclick="document.getElementById('builder-folder-input').click()">
-              <div style="color:var(--text);font-weight:600; font-size:0.9em; display:flex; align-items:center; justify-content:center; gap:8px;">
-                <i class="fas fa-folder-open" style="color:var(--accent); font-size:1.2em;"></i> Click or Drag & Drop Source Folder
-              </div>
-            </div>
-
-            <!-- Search and Filters -->
-            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <div style="flex:1; display:flex; align-items:center; background:var(--bg3); border:1px solid var(--border-color); border-radius:6px; padding:0 8px; min-width:200px;">
-                        <i class="fas fa-search" style="color:var(--muted); font-size:0.85em;"></i>
-                        <input type="text" id="builder-search-input" placeholder="Search by name or path..." style="width:100%; background:transparent; border:none; color:var(--text); padding:6px; font-size:0.85em; outline:none;" oninput="window.builderRenderGrid()">
-                    </div>
-                    
-                    <!-- Toolbar (Pills) -->
-                    <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border-color);">
-                        <button type="button" class="switcher-btn btn-icon" onclick="window.builderToggleAllCategories(true)" title="Expand All" style="padding:6px 10px;border-radius:6px;font-size:0.78em;"><i class="fas fa-plus-circle"></i></button>
-                        <button type="button" class="switcher-btn btn-icon" onclick="window.builderToggleAllCategories(false)" title="Collapse All" style="padding:6px 10px;border-radius:6px;font-size:0.78em;"><i class="fas fa-minus-circle"></i></button>
-                    </div>
-                    
-                    <div style="display:flex;background:var(--bg3);border-radius:8px;padding:3px;border:1px solid var(--border-color);">
-                        <button type="button" class="switcher-btn btn-icon builder-view-btn" id="builder-view-btn-wall" onclick="window.builderSetView('wall')" title="Wall View" style="padding:6px 10px;border-radius:6px;font-size:0.78em; background:rgba(255,255,255,0.1);"><i class="fas fa-th"></i></button>
-                        <button type="button" class="switcher-btn btn-icon builder-view-btn" id="builder-view-btn-list" onclick="window.builderSetView('list')" title="List View" style="padding:6px 10px;border-radius:6px;font-size:0.78em;"><i class="fas fa-list"></i></button>
-                    </div>
-                    
-                    <button type="button" class="btn btn-secondary btn-sm" id="builder-btn-multiselect" onclick="window.builderToggleSelectMode()" style="padding:6px 12px; font-size:0.8em; border-radius:8px;" title="Select multiple packages for batch actions"><i class="fas fa-check-square"></i> Multi</button>
-                    <button type="button" class="btn btn-primary btn-sm builder-batch-action" id="builder-btn-batch" style="display:none; padding:6px 12px; font-size:0.8em; border-radius:8px;" onclick="window.builderExecuteBatchActions()"><i class="fas fa-hammer"></i> Batch (<span id="builder-batch-count">0</span>)</button>
-
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderRefreshSources()" style="padding:6px 12px; font-size:0.8em;" title="Refresh list"><i class="fas fa-sync-alt"></i></button>
-                </div>
-                <div id="builder-category-filters" style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.8em;">
-                    <!-- Filter checkboxes injected via JS -->
-                </div>
-            </div>
-            
-            <div id="builder-sources-grid">
-                <div style="color:var(--muted);"><i class="fas fa-circle-notch fa-spin"></i> Scanning local sources...</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RIGHT PANE: Workbench -->
-        <div style="flex: 4; display:flex; flex-direction:column; height:100%; overflow-y:auto;" class="card custom-scrollbar">
-            <div class="card-title" style="margin-bottom:16px; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
-                <i class="fas fa-laptop-code" style="color:var(--accent);margin-right:6px;"></i> Workbench
-            </div>
-            
-            <input type="hidden" id="builder-source-dir" value="">
-            <input type="hidden" id="builder-sources-root" value="C:\Hecos-Packages\sources">
-            <input type="hidden" id="builder-dest-root" value="C:\Hecos-Packages\packages">
-
-            <div id="builder-editor-area" style="display:none; flex-direction:column; gap:20px; height:100%;">
-                
-                <!-- Single Package Actions Toolbar -->
-                <div style="display:flex; gap:8px; flex-wrap:wrap; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; border:1px solid var(--border-color); justify-content:flex-start;">
-                    <button type="button" id="builder-btn-sync" class="btn btn-sm btn-outline" onclick="window.builderDevSync()" title="Sync source to live Hecos installation"><i class="fas fa-sync"></i> Dev Sync</button>
-                    <button type="button" id="builder-btn-inspect" class="btn btn-sm btn-outline" onclick="window.builderInspect()" title="Verify the COMPILED binary archive (.hpkg file). Checks if the build succeeded, file sizes, and cryptographic signature."><i class="fas fa-file-archive"></i> Inspect .hpkg <i class="fas fa-question-circle" style="opacity:0.6; margin-left:4px;" title="Verifies the final compiled .hpkg archive (sizes, files, and signature) exactly as the end user will receive it."></i></button>
-                    <button type="button" id="builder-btn-unpack" class="btn btn-sm btn-outline" onclick="window.builderUnpack()" title="Unpack the built .hpkg"><i class="fas fa-box-open"></i> Unpack</button>
-                      <button type="button" class="btn btn-sm btn-outline" onclick="window.builderRegenCapabilities()" title="Regenerate capabilities in your SOURCE code based on the actual scripts."><i class="fas fa-sync-alt"></i> Regen Caps <i class="fas fa-question-circle" style="opacity:0.6; margin-left:4px;" title="Scans your python source files and automatically rewrites the [capabilities] section in your source manifest."></i></button>
-                      <button type="button" class="btn btn-sm btn-outline" onclick="window.builderViewCapabilities()" title="View the capabilities currently in your SOURCE code manifest."><i class="fas fa-clipboard-list"></i> View Caps <i class="fas fa-question-circle" style="opacity:0.6; margin-left:4px;" title="Reads the manifest in your source folder. Shows the current state of what you are developing, before building."></i></button>
-                      
-                </div>
-
-                <!-- Form -->
-                <div style="display:flex; flex-direction:column; gap:14px;">
-                    <div style="display:flex; gap:16px;">
-                        <div style="display:flex; flex-direction:column; gap:8px;">
-                            <input type="file" id="builder-image-input" accept=".png" style="display:none;" onchange="window.builderUploadImage(event)">
-                            <div id="builder-image-preview" onclick="document.getElementById('builder-image-input').click()" style="width:100px; height:100px; background:var(--bg3); border-radius:12px; border:2px dashed var(--border-color); display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; position:relative;" title="Click to add preview_1.png">
-                                <i class="fas fa-image" style="font-size:24px; color:var(--muted);"></i>
-                            </div>
-                        </div>
-                        <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
-                            <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Package ID</label>
-                            <input type="text" id="builder-id" class="config-input">
-                            <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Version</label>
-                            
-<div style="display:flex; align-items:center; gap:4px;">
-    <input type="number" id="builder-version-major" min="0" value="1" class="config-input" style="text-align:center; padding-right:0;" onchange="window.builderSyncVersion()">
-    <span style="color:var(--muted); font-weight:bold; font-size:16px;">.</span>
-    <input type="number" id="builder-version-minor" min="0" value="0" class="config-input" style="text-align:center; padding-right:0;" onchange="window.builderSyncVersion()">
-    <span style="color:var(--muted); font-weight:bold; font-size:16px;">.</span>
-    <input type="number" id="builder-version-patch" min="0" value="0" class="config-input" style="text-align:center; padding-right:0;" onchange="window.builderSyncVersion()">
-    <input type="hidden" id="builder-version" value="1.0.0">
-</div>
-
-                        </div>
-                    </div>
-                    
-                    <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Display Name</label>
-                    <input type="text" id="builder-name" class="config-input">
-                    
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Author</label>
-                            <input type="text" id="builder-author" class="config-input">
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Type</label>
-                            <input type="text" id="builder-type" class="config-input" placeholder="plugin">
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">License</label>
-                            <input type="text" id="builder-license" class="config-input" placeholder="GPL-3.0">
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:4px;">
-                            <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Date</label>
-                            <input type="date" id="builder-date" class="config-input">
-                        </div>
-                    </div>
-                    
-                    <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Description</label>
-                    <textarea id="builder-desc" class="config-input" style="min-height:60px; height:auto; overflow:hidden; resize:vertical;" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
-                </div>
-                
-                <div style="flex:1;"></div>
-                
-                <div style="display:flex; margin-top:10px; flex-shrink:0;">
-    <button type="button" id="builder-btn-build" class="btn btn-sm btn-primary" style="background:var(--accent); border:none; flex:1; border-top-right-radius:0; border-bottom-right-radius:0;" onclick="window.builderRunBuild(false)"><i class="fas fa-hammer"></i> Build</button>
-    <button type="button" id="builder-btn-build-install" class="btn btn-sm btn-primary" style="background:var(--accent); border:none; border-left:1px solid rgba(255,255,255,0.2); border-top-left-radius:0; border-bottom-left-radius:0; padding:0 12px;" onclick="window.builderRunBuild(true)" title="Build & Install"><i class="fas fa-download"></i> Build & Install</button>
-</div>
-                
-                
-            </div>
-            
-            <div id="builder-editor-empty" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--muted); opacity:0.5; padding-top:40px;">
-                <i class="fas fa-mouse-pointer" style="font-size:3em; margin-bottom:16px;"></i>
-                <p>Select a package from the library</p>
-            </div>
-        </div>
-    </div>
-  </div>
-</div>
-
-<!-- Uninstall Confirmation Modal -->
-<div id="hpm-confirm-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-  <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; padding:24px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-    <h2 style="margin-top:0; font-size:1.4em; color:var(--text);"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a; margin-right:8px;"></i>{{ t('hpm_confirm_uninstall_title') or 'Confirm Uninstall' }}</h2>
-    <p id="hpm-confirm-modal-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>
-    <div class="modal-actions" style="display:flex; justify-content:center; gap:15px; margin-top:24px;">
-      <button type="button" class="btn btn-secondary" onclick="document.getElementById('hpm-confirm-modal').style.display='none'">{{ t('hpm_confirm_uninstall_cancel') or 'Cancel' }}</button>
-      <button type="button" class="btn btn-danger" style="background:#ff4a4a; color:white; border:none;" id="hpm-confirm-modal-yes">{{ t('hpm_confirm_uninstall_yes') or 'Uninstall' }}</button>
-    </div>
-  </div>
-</div>
-<script>
-// Safety guard: prevent Enter key from accidentally confirming the Wipe/Confirm modal
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    const modal = document.getElementById('hpm-confirm-modal');
-    // If the modal is NOT visible, prevent Enter from bubbling to any button inside it
-    if (modal && modal.style.display === 'none') {
-      // Check if the active element is NOT inside the modal itself
-      const yesBtn = document.getElementById('hpm-confirm-modal-yes');
-      if (document.activeElement === yesBtn) {
-        e.preventDefault();
-      }
-    }
-    // Also: if we're focused on an input/textarea that is NOT inside the modal, stop Enter from triggering buttons
-    const tag = document.activeElement ? document.activeElement.tagName : '';
-    if ((tag === 'INPUT' || tag === 'TEXTAREA') && modal && modal.style.display === 'none') {
-      // Prevent Enter from submitting or triggering random buttons
-      const inModal = modal.contains(document.activeElement);
-      if (!inModal) {
-        // Only stop propagation - don't prevent default so the field still works normally
-        e.stopPropagation();
-      }
-    }
-  }
-});
-</script>
-
-
-<!-- Builder Setup Modal -->
-<div id="hpm-builder-setup-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-    <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; width:500px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-        <h2 style="margin-top:0; color:var(--text); font-size:1.4em; border-bottom:1px solid var(--border-color); padding-bottom:12px;"><i class="fas fa-cog" style="color:var(--accent); margin-right:8px;"></i> Builder Setup</h2>
-        
-        <div style="display:flex; flex-direction:column; gap:16px; margin-top:16px;">
-            <div>
-                <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Sources Root Directory (Workspace)</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="setup-sources-root" class="config-input" style="flex:1;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderShowCustomPicker('setup-sources-root')"><i class="fas fa-folder-open"></i></button>
-                </div>
-            </div>
-            <div>
-                <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Packages Output Directory (Dest)</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="setup-dest-root" class="config-input" style="flex:1;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderShowCustomPicker('setup-dest-root')"><i class="fas fa-folder-open"></i></button>
-                </div>
-            </div>
-            <div>
-                <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">HPM CLI Builder Directory</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="setup-cli-root" class="config-input" style="flex:1;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderShowCustomPicker('setup-cli-root')"><i class="fas fa-folder-open"></i></button>
-                </div>
-            </div>
-            
-            <div>
-                <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Private Key (hpm_private.pem)</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="setup-private-key" class="config-input" style="flex:1;" placeholder="C:\Hecos\data\trusted_keys\hpm_private.pem">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderShowCustomPicker('setup-private-key')"><i class="fas fa-folder-open"></i></button>
-                </div>
-            </div>
-            
-            <div>
-                <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Trusted Keys Directory</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="setup-public-keys" class="config-input" style="flex:1;" placeholder="C:\Hecos\data\trusted_keys">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderShowCustomPicker('setup-public-keys')"><i class="fas fa-folder-open"></i></button>
-                </div>
-            </div>
-            
-            <div>
-                <label style="font-size:11px; color:var(--muted); text-transform:uppercase;">Unpack Destination Root</label>
-                <div style="display:flex; gap:6px; margin-top:4px;">
-                    <input type="text" id="setup-unpack-dest" class="config-input" style="flex:1;" placeholder="C:\Hecos-Packages\sources">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderShowCustomPicker('setup-unpack-dest')"><i class="fas fa-folder-open"></i></button>
-                </div>
-            </div>
-        </div>
-        
-        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:24px;">
-            <button type="button" class="btn btn-secondary" onclick="document.getElementById('hpm-builder-setup-modal').style.display='none'">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="window.builderSaveSetup()">Save Settings</button>
-        </div>
-    </div>
-</div>
-
 <!-- Info / Capabilities Modal -->
 <div id="hpm-info-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
   <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; padding:24px; max-width:500px; width:100%; text-align:left; box-shadow:0 10px 30px rgba(0,0,0,0.5); display:flex; flex-direction:column; max-height:85vh;">
@@ -640,10 +348,6 @@ window.HPM_I18N = {
     '/static/js/packages_panel_loader.js',
     '/static/js/packages_panel_updates.js',
     '/static/js/packages_panel_init.js',
-    '/static/js/packages_panel_builder_core.js',
-    '/static/js/packages_panel_builder_ui.js',
-    '/static/js/packages_panel_builder_io.js',
-    '/static/js/packages_panel_builder_compiler.js'
   ];
 
   // Remove old script tags from previous loads so we get fresh ones
@@ -669,3 +373,15 @@ window.HPM_I18N = {
   });
 })();
 </script>
+
+<!-- Generic Confirm Modal for HPM -->
+<div id="hpm-confirm-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+  <div style="background:var(--bg-secondary); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:25px; width:400px; max-width:90%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+    <i class="fas fa-exclamation-triangle" style="font-size:3em; color:#f59e0b; margin-bottom:15px;"></i>
+    <div id="hpm-confirm-modal-text" style="font-size:1.1em; color:var(--text); margin-bottom:25px;"></div>
+    <div style="display:flex; justify-content:space-between; gap:10px;">
+      <button type="button" class="btn btn-secondary" style="flex:1; padding:10px;" onclick="document.getElementById('hpm-confirm-modal').style.display='none'">{{ t('cancel') or 'Cancel' }}</button>
+      <button type="button" id="hpm-confirm-modal-yes" class="btn btn-danger" style="flex:1; padding:10px; background:#ef4444; border:none; color:white;">{{ t('confirm') or 'Confirm' }}</button>
+    </div>
+  </div>
+</div>

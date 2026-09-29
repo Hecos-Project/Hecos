@@ -182,7 +182,14 @@ window.sendMessage = async function() {
         }
         
         if (ev.model_info) {
-          aiBubble.setAttribute('title', ev.model_info);
+          let tooltipText = ev.model_info;
+          try {
+              const parsed = JSON.parse(ev.model_info);
+              if (parsed.model) {
+                  tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
+              }
+          } catch (e) {}
+          aiBubble.setAttribute('title', tooltipText);
           aiBubble.style.cursor = 'help';
         }
         
@@ -332,7 +339,14 @@ window.sendInternalMessage = async function(text) {
         }
         
         if (ev.model_info) {
-          aiBubble.setAttribute('title', ev.model_info);
+          let tooltipText = ev.model_info;
+          try {
+              const parsed = JSON.parse(ev.model_info);
+              if (parsed.model) {
+                  tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
+              }
+          } catch (e) {}
+          aiBubble.setAttribute('title', tooltipText);
           aiBubble.style.cursor = 'help';
         }
         window.isStreaming = false; if (window.updateStopAllBtn) window.updateStopAllBtn();

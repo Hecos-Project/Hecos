@@ -183,4 +183,4 @@ class StateManager:
 
     @last_tokens_completion.setter
     def last_tokens_completion(self, value):
-        with self._lock: self._last_tokens_completion = value
+        with self._lock: self._last_tokens_completion = value

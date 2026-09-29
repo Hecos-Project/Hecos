@@ -1,11 +1,14 @@
-<div id="topbar">
-  <div style="display:flex; align-items:center; gap:15px;">
+<div id="topbar" style="flex-wrap: wrap;">
+  <div style="display:flex; align-items:center; gap:15px; flex-wrap: wrap; max-width: 100%;">
     <button id="sidebar-toggle-btn" class="desktop-only" onclick="toggleSidebarDesktop()" title="Toggle Sidebar" style="background:none; border:none; color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; transition: color .2s;"><i class="fas fa-bars"></i></button>
-    <div id="model-badge" style="display:flex; align-items:center; gap:8px;">
+    <div id="model-badge" style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
       <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
       <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
+      <select id="sf-quick-preset-select" class="chat-session-select" style="border-color: var(--accent1); color: var(--accent1);" onchange="if(this.value) window.sfActivateSoul(this.value)">
+          <option value="">⚡ Preset...</option>
+      </select>
       <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
-          <option value="">&#127381; Persona...</option>
+          <option value="">&#127381; Soul...</option>
       </select>
       <select id="chat-model-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
           <option value="">&#x1F916; Model...</option>
@@ -19,6 +22,9 @@
       <select id="chat-tts-voice-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
           <option value="">&#127908; TTS Voice...</option>
       </select>
+      <button id="soul-forge-toggle-btn" class="chat-session-select" style="background:var(--bg3); color:var(--accent1); border-color:var(--accent1); display:flex; align-items:center; gap:5px;" onclick="window.soTogglePanel(true)">
+          <i class="fas fa-sliders-h"></i> Chat Overrides
+      </button>
     </div>
     <script>
       /* ── Chat Session Select Styles ── */
@@ -71,7 +77,7 @@
                   
                   // Keep default options
                   mSel.innerHTML = '<option value="">Default Model</option>';
-                  pSel.innerHTML = '<option value="">Default Persona</option>';
+                  pSel.innerHTML = '<option value="">Default Soul</option>';
                   
                   data.models.forEach(m => {
                       const opt = document.createElement('option');
@@ -167,7 +173,7 @@
       window.updateSessionDropdownTitles = function() {
           const selects = [
               { el: document.getElementById('chat-model-select'), defaultTitle: 'Default Model' },
-              { el: document.getElementById('chat-persona-select'), defaultTitle: 'Default Persona' },
+              { el: document.getElementById('chat-persona-select'), defaultTitle: 'Default Soul' },
               { el: document.getElementById('chat-tts-engine-select'), defaultTitle: 'Default TTS Engine' },
               { el: document.getElementById('chat-tts-voice-select'), defaultTitle: 'Default TTS Voice' }
           ];
@@ -295,11 +301,8 @@
     </script>
     <style>@keyframes pulseDot { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); box-shadow: 0 0 12px currentColor; } 100% { opacity: 1; transform: scale(1); } } #tb-status-dot.pulsing { animation: pulseDot 2s infinite; } .mode-chip-autowipe { border-color: rgba(var(--yellow-rgb),0.5) !important; color: var(--yellow) !important; background: rgba(var(--yellow-rgb),0.1) !important; } .mode-chip-incognito { border-color: rgba(var(--accent2-rgb),0.5) !important; color: var(--accent2) !important; background: rgba(var(--accent2-rgb),0.1) !important; }</style>
   </div>
-  <div class="topbar-chips">
+  <div class="topbar-chips" style="flex-wrap: wrap;">
     <div id="topbar-mode-chip" style="display:none;"></div>
-    <div class="topbar-chip" id="chip-mic"><i class="fas fa-microphone"></i> MIC: —</div>
-    <div class="topbar-chip" id="chip-tts"><i class="fas fa-volume-up"></i> TTS: —</div>
-    <div class="topbar-chip" id="chip-ptt"><i class="fas fa-keyboard"></i> PTT: —</div>
     <button id="topbar-stop-voice-btn" class="topbar-chip on" style="display:none; cursor:pointer; background:rgba(var(--red-rgb),0.2); border-color:var(--red); color:var(--red);" onclick="stopVoice()"><i class="fas fa-stop" style="margin-right:6px;"></i> Stop Voice</button>
     <a id="topbar-hub-link" href="/hecos/config/ui" target="_blank" class="topbar-link"><i class="fas fa-cog"></i> <span>Hub</span></a>
     {% if is_hpm_installed('drive') %}
