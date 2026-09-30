@@ -93,7 +93,7 @@ window.soLoadActiveSessionState = async function() {
     
     try {
         // Read directly from session_config endpoint
-        const res = await fetch(`/api/chat/session/config?session_id=${sessionId}`);
+        const res = await fetch(`/api/chat/session/config?session_id=${sessionId}`, { cache: 'no-store' });
         const data = await res.json();
         
         let activeSoulId = null;
@@ -108,15 +108,64 @@ window.soLoadActiveSessionState = async function() {
         
         if (activeSoulId) {
             // Load the full soul profile data into the UI
-            const soulRes = await fetch(`/api/souls/${activeSoulId}`);
+            const soulRes = await fetch(`/api/souls/${activeSoulId}`, { cache: 'no-store' });
             const soulData = await soulRes.json();
             if (soulData.ok) {
-                window.soApplySoulToUI(soulData.soul);
+                await window.soApplySoulToUI(soulData.soul);
+            }
+        } else {
+            await window.soApplySoulToUI(null);
+        }
+        
+        // Apply individual overrides from session config
+        if (data.ok && data.config) {
+            const cfg = data.config;
+            if (cfg.ai?.active_personality) document.getElementById('so-persona-select').value = cfg.ai.active_personality;
+            if (cfg.backend?.type) {
+                document.getElementById('so-backend-select').value = cfg.backend.type;
+                window.soUpdateModelsDropdown();
+                const bType = cfg.backend.type;
+                if (cfg.backend[bType]?.model) {
+                    document.getElementById('so-model-select').value = cfg.backend[bType].model;
+                }
+            }
+            if (cfg.ai?.tts_engine) {
+                document.getElementById('so-tts-engine-select').value = cfg.ai.tts_engine;
+                await window.soUpdateVoicesDropdown();
+            }
+            if (cfg.ai?.tts_voice) {
+                document.getElementById('so-tts-voice-select').value = cfg.ai.tts_voice;
+            }
+            
+            if (cfg.inference?.preset_name) document.getElementById('so-inference-preset-select').value = cfg.inference.preset_name;
+            const setVal = (id, val) => {
+                if (val !== undefined && val !== null) {
+                    const el = document.getElementById(id);
+                    if (el) { el.value = val; window.soUpdateSliderVal(el, id.replace('so-', 'so-val-')); }
+                }
+            };
+            if (cfg.inference) {
+                setVal('so-temp', cfg.inference.temperature);
+                setVal('so-topp', cfg.inference.top_p);
+                setVal('so-reppen', cfg.inference.repeat_penalty);
+                setVal('so-predict', cfg.inference.num_predict);
+            }
+            if (cfg.voice?.xtts_preset) document.getElementById('so-xtts-preset-select').value = cfg.voice.xtts_preset;
+            if (cfg.voice?.xtts_inference_preset) document.getElementById('so-xtts-inference-preset-select').value = cfg.voice.xtts_inference_preset;
+            if (cfg.voice?.xtts_speaker_wav) document.getElementById('so-xtts-speaker-wav').value = cfg.voice.xtts_speaker_wav;
+            if (cfg.voice) {
+                setVal('so-xtts-temp', cfg.voice.xtts_temperature);
+                setVal('so-xtts-speed', cfg.voice.xtts_speed);
+                setVal('so-xtts-topk', cfg.voice.xtts_top_k);
+                setVal('so-xtts-reppen', cfg.voice.xtts_repetition_penalty);
+                setVal('so-xtts-topp', cfg.voice.xtts_top_p);
+                setVal('so-xtts-length-penalty', cfg.voice.xtts_length_penalty);
             }
         }
         
         window.soState.isDirty = false;
-        document.getElementById('so-save-inline-btn').style.display = 'none';
+        const inlineBtn = document.getElementById('so-save-inline-btn');
+        if (inlineBtn) inlineBtn.style.display = 'none';
         
     } catch(e) {}
 };

@@ -34,13 +34,13 @@
                 <button class="btn btn-danger btn-sm" onclick="window.sfDeleteSoul()" title="Delete current Global Default">
                     <i class="fas fa-trash"></i>
                 </button>
-                <button class="btn btn-secondary btn-sm" onclick="window.sfExportSoul()" title="Export .global_preset.yaml file">
+                <button class="btn btn-secondary btn-sm" onclick="window.sfExportSoul()" title="Export .global_preset.json file">
                     <i class="fas fa-file-export"></i>
                 </button>
-                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sf-import-input').click()" title="Import .global_preset.yaml file">
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sf-import-input').click()" title="Import .global_preset.json file">
                     <i class="fas fa-file-import"></i>
                 </button>
-                <input type="file" id="sf-import-input" accept=".yaml,.yml" style="display:none;" onchange="window.sfImportSoul(event)">
+                <input type="file" id="sf-import-input" accept=".json" style="display:none;" onchange="window.sfImportSoul(event)">
             </div>
         </div>
 

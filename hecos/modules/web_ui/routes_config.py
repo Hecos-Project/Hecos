@@ -40,6 +40,6 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_chat_overrides_routes(app, root_dir, logger)
     
     # 7. Soul Forge (Global Presets)
-    init_global_presets_routes(app, root_dir, logger)
+    init_global_presets_routes(app, root_dir, logger, cfg_mgr)
 
     logger.debug("[WebUI] Modular configuration routes fully registered.")

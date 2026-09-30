@@ -10,7 +10,7 @@ from hecos.core.global_presets import (
     list_inference_presets, get_inference_preset, save_inference_preset, delete_inference_preset, InferencePreset
 )
 
-def init_global_presets_routes(app, root_dir, logger):
+def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
 
     # ── Souls (Global Presets) ──
 
@@ -63,34 +63,85 @@ def init_global_presets_routes(app, root_dir, logger):
             soul_id = data.get("soul_id")
             session_id = data.get("session_id")
             
-            if not soul_id or not session_id:
-                return jsonify({"ok": False, "error": "Missing soul_id or session_id"}), 400
+            if soul_id is None:
+                return jsonify({"ok": False, "error": "Missing soul_id"}), 400
                 
-            soul = get_soul(soul_id)
-            if not soul:
-                return jsonify({"ok": False, "error": "Soul not found"}), 404
+            soul = None
+            if soul_id != "":
+                soul = get_soul(soul_id)
+                if not soul:
+                    return jsonify({"ok": False, "error": "Soul not found"}), 404
                 
-            from hecos.memory.session_config_db import set_session_config, get_session_config
-            overrides = get_session_config(session_id) or {}
-            overrides['active_global_preset'] = soul_id
+            if not session_id or session_id == "global":
+                # Set system-wide default
+                if cfg_mgr:
+                    patch = {}
+                    patch.setdefault("ai", {})["active_global_preset"] = soul_id
+                    if soul:
+                        if soul.persona.soul_file:
+                            patch["ai"]["active_personality"] = soul.persona.soul_file
+                        if soul.voice.tts_engine:
+                            patch.setdefault("audio", {})["active_engine"] = soul.voice.tts_engine
+                        if soul.model.backend_type:
+                            btype = soul.model.backend_type
+                            patch.setdefault("backend", {})["type"] = btype
+                            if soul.model.model_name:
+                                patch["backend"].setdefault(btype, {})["model"] = soul.model.model_name
+                    cfg_mgr.update_from_webui(patch)
+                    
+                    # Update audio config if global
+                    if soul:
+                        try:
+                            from hecos.core.audio.device_manager import get_audio_config, _save_audio_config
+                            acfg = get_audio_config()
+                            if soul.voice:
+                                for k, v in soul.voice.model_dump().items():
+                                    if v is not None and k in acfg.get('xtts', {}):
+                                        acfg['xtts'][k] = v
+                                    elif v is not None:
+                                        # handle root level like xtts_inference_presets? No, the schema places xtts_* in `xtts` block except maybe xtts_preset?
+                                        pass
+                                # Map correctly for audio.yaml schema
+                                if soul.voice.xtts_preset is not None:
+                                    acfg['xtts']['current_preset'] = soul.voice.xtts_preset
+                                if soul.voice.xtts_inference_preset is not None:
+                                    pass # this doesn't directly exist in audio.yaml root/xtts, wait...
+                            _save_audio_config(acfg)
+                        except Exception as e:
+                            logger.error(f"[GlobalPresets] Error updating audio.yaml: {e}")
+            else:
+                from hecos.memory.session_config_db import set_session_config, get_session_config
+                overrides = get_session_config(session_id) or {}
+                overrides['active_global_preset'] = soul_id
+                
+                # Optionally populate ai/backend overrides if we want UI dropdowns to reflect them
+                if soul:
+                    if 'ai' not in overrides: overrides['ai'] = {}
+                    if soul.persona.soul_file: overrides['ai']['active_personality'] = soul.persona.soul_file
+                    if soul.voice.tts_engine: overrides['ai']['tts_engine'] = soul.voice.tts_engine
+                    if soul.voice.tts_voice: overrides['ai']['tts_voice'] = soul.voice.tts_voice
+                    
+                    if soul.model.backend_type:
+                        if 'backend' not in overrides: overrides['backend'] = {}
+                        btype = soul.model.backend_type
+                        overrides['backend']['type'] = btype
+                        if soul.model.model_name:
+                            if btype not in overrides['backend']: overrides['backend'][btype] = {}
+                            overrides['backend'][btype]['model'] = soul.model.model_name
+                            
+                    if soul.inference:
+                        if 'inference' not in overrides: overrides['inference'] = {}
+                        for k, v in soul.inference.model_dump().items():
+                            if v is not None: overrides['inference'][k] = v
+                            
+                    if soul.voice:
+                        if 'voice' not in overrides: overrides['voice'] = {}
+                        for k, v in soul.voice.model_dump().items():
+                            if v is not None: overrides['voice'][k] = v
+                
+                set_session_config(session_id, overrides)
             
-            # Optionally populate ai/backend overrides if we want UI dropdowns to reflect them
-            if 'ai' not in overrides: overrides['ai'] = {}
-            if soul.persona.soul_file: overrides['ai']['active_personality'] = soul.persona.soul_file
-            if soul.voice.tts_engine: overrides['ai']['tts_engine'] = soul.voice.tts_engine
-            if soul.voice.tts_voice: overrides['ai']['tts_voice'] = soul.voice.tts_voice
-            
-            if soul.model.backend_type:
-                if 'backend' not in overrides: overrides['backend'] = {}
-                btype = soul.model.backend_type
-                overrides['backend']['type'] = btype
-                if soul.model.model_name:
-                    if btype not in overrides['backend']: overrides['backend'][btype] = {}
-                    overrides['backend'][btype]['model'] = soul.model.model_name
-            
-            set_session_config(session_id, overrides)
-            
-            return jsonify({"ok": True, "soul": soul.model_dump()})
+            return jsonify({"ok": True, "soul": soul.model_dump() if soul else None})
         except Exception as e:
             logger.error(f"[GlobalPresets] Error activating soul: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500

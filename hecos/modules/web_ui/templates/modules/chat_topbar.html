@@ -4,7 +4,7 @@
     <div id="model-badge" style="display:flex; align-items:center; gap:8px; flex-wrap: wrap;">
       <div id="tb-status-dot" style="width:10px; height:10px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green);"></div>
       <span id="tb-model" style="font-size: 13px; font-weight: 500;">{{ t('webui_chat_loading') }}</span>
-      <select id="sf-quick-preset-select" class="chat-session-select" style="border-color: var(--accent1); color: var(--accent1);" onchange="if(this.value) window.sfActivateSoul(this.value)">
+      <select id="so-quick-preset-select" class="chat-session-select" style="border-color: var(--accent1); color: var(--accent1);" onchange="if(this.value) window.soActivateSoul(this.value)">
           <option value="">⚡ Preset...</option>
       </select>
       <select id="chat-persona-select" class="chat-session-select" onchange="window.saveSessionConfig(); window.updateSessionDropdownTitles();">
@@ -131,15 +131,32 @@
           const sessionId = window.chatHistoryState?.activeSessionId;
           if (!sessionId) return;
           
+          let overrides = {};
+          try {
+              const res = await fetch(`/api/chat/session/config?session_id=${sessionId}`);
+              const data = await res.json();
+              if (data.ok && data.config) overrides = data.config;
+          } catch(e) {}
+          
           const pVal = document.getElementById('chat-persona-select').value;
           const mVal = document.getElementById('chat-model-select').value;
           
-          const overrides = {};
-          if (pVal) overrides.ai = { active_personality: pVal };
+          if (!overrides.ai) overrides.ai = {};
+          
+          if (pVal) {
+              overrides.ai.active_personality = pVal;
+              window.HecosPersonaName = pVal.replace('.yaml', '').replace(/_/g, ' ');
+              fetch(`/api/persona/avatar?persona=${encodeURIComponent(pVal)}`)
+                  .then(r => r.json())
+                  .then(d => { if (d.ok && d.avatar_path) window.HecosAvatar = d.avatar_path; })
+                  .catch(()=>{});
+          } else {
+              delete overrides.ai.active_personality;
+              window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+              if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
+          }
+          
           if (mVal) {
-              // Detect cloud by checking if model contains a slash and a known provider prefix.
-              // Cloud models from hybrid list are stored as e.g. "openai/gpt-4o", "anthropic/..."
-              // Local models are plain names like "llama3", "qwen2.5:7b"
               const knownCloudProviders = ['openai', 'anthropic', 'gemini', 'mistral', 'groq', 'cohere', 'together', 'deepseek', 'xai'];
               const firstSegment = mVal.split('/')[0].toLowerCase();
               const isCloud = mVal.includes('/') && knownCloudProviders.includes(firstSegment);
@@ -150,16 +167,18 @@
               } else {
                   overrides.backend = { type: 'ollama', ollama: { model: mVal } };
               }
+          } else {
+              delete overrides.backend;
           }
           
           const tEng = document.getElementById('chat-tts-engine-select').value;
           const tVoice = document.getElementById('chat-tts-voice-select').value;
           
-          if (tEng || tVoice) {
-              if (!overrides.ai) overrides.ai = {};
-              if (tEng) overrides.ai.tts_engine = tEng;
-              if (tVoice) overrides.ai.tts_voice = tVoice;
-          }
+          if (tEng) overrides.ai.tts_engine = tEng;
+          else delete overrides.ai.tts_engine;
+          
+          if (tVoice) overrides.ai.tts_voice = tVoice;
+          else delete overrides.ai.tts_voice;
           
           try {
               await fetch('/api/chat/session/config', {
@@ -167,6 +186,12 @@
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ session_id: sessionId, config: overrides })
               });
+              
+              // If the Chat Overrides panel is currently open, sync it to reflect topbar changes
+              const panel = document.getElementById('session-overrides-panel');
+              if (panel && panel.classList.contains('open') && window.soLoadActiveSessionState) {
+                  window.soLoadActiveSessionState();
+              }
           } catch(e) { console.warn("Failed to save session config", e); }
       };
       
@@ -247,6 +272,9 @@
           if (tEngSel) tEngSel.value = '';
           if (tVoiceSel) tVoiceSel.innerHTML = '<option value="">\uD83C\uDF99\uFE0F TTS Voice...</option>';
           window.updateSessionDropdownTitles();
+          
+          window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+          if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
       };
 
       window.loadSessionConfig = async function(sessionId) {
@@ -273,6 +301,14 @@
               if (data.ok && data.config) {
                   if (data.config.ai?.active_personality) {
                       if (pSel) pSel.value = data.config.ai.active_personality;
+                      window.HecosPersonaName = data.config.ai.active_personality.replace('.yaml', '').replace(/_/g, ' ');
+                      fetch(`/api/persona/avatar?persona=${encodeURIComponent(data.config.ai.active_personality)}`)
+                          .then(r => r.json())
+                          .then(d => { if (d.ok && d.avatar_path) window.HecosAvatar = d.avatar_path; })
+                          .catch(()=>{});
+                  } else {
+                      window.HecosPersonaName = window._globalPersonaName || 'Hecos';
+                      if (window._globalAvatar) window.HecosAvatar = window._globalAvatar;
                   }
                   if (data.config.ai?.tts_engine) {
                       if (tEngSel) {

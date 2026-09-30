@@ -19,25 +19,37 @@ xtts:
   gpu_acceleration: gpu
   chunk_sentences: true
   speaker_wav: C:\Hecos\hecos\assets\voice_clones\Rowena voce 001.wav
-  temperature: 0.75
-  repetition_penalty: 5.0
-  top_k: 50
-  top_p: 0.85
-  length_penalty: 1.0
+  temperature: 0.9
+  repetition_penalty: 6.0
+  top_k: 70
+  top_p: 0.9
+  length_penalty: 1.2
   current_preset: default
 xtts_presets:
   Emanuela P:
     chunk_sentences: true
     gpu_acceleration: gpu
     language: it
-    length_penalty: 1
-    repetition_penalty: 2.8
+    length_penalty: 1.5
+    repetition_penalty: 8
     speaker: Claribel Dervla
     speaker_wav: C:\Hecos\hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
-    speed: 1.6
-    temperature: 0.37
-    top_k: 21
-    top_p: 0.19
+    speed: 1.1
+    temperature: 1.2
+    top_k: 90
+    top_p: 0.95
+  Rowena 1:
+    chunk_sentences: true
+    gpu_acceleration: gpu
+    language: it
+    length_penalty: 1.2
+    repetition_penalty: 6
+    speaker: Claribel Dervla
+    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Rowena voce 001.wav
+    speed: 1
+    temperature: 0.9
+    top_k: 70
+    top_p: 0.9
 xtts_inference_presets:
   Fast & Direct:
     speed: 1.4

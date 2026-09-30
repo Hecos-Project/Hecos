@@ -34,14 +34,14 @@
         },
 
         {
-            id: 'nav.hub',
-            label: 'Open Central Hub',
-            icon: 'fas fa-cog',
-            category: 'navigation',
-            description: 'Navigate to the Central Hub (Config)',
-            contexts: ['global', 'chat', 'home'],
+            id: 'ui.chat_overrides',
+            label: 'Open Chat Overrides',
+            icon: 'fas fa-sliders-h',
+            category: 'ui',
+            description: 'Open the Session Overrides Panel',
+            contexts: ['chat'],
             handler: function() {
-                window.open('/hecos/config/ui', '_blank', 'noopener');
+                if (window.soTogglePanel) window.soTogglePanel();
             }
         },
 
@@ -80,17 +80,17 @@
         },
 
         {
-            id: 'nav.quick_config',
-            label: 'Quick Config',
-            description: 'Open the Quick Config HUD',
-            icon: 'fas fa-sliders-h',
-            category: 'navigation',
+            id: 'ui.global_defaults',
+            label: 'Global Defaults Panel',
+            description: 'Open the Global Defaults Panel',
+            icon: 'fas fa-globe',
+            category: 'ui',
             contexts: ['global', 'chat', 'hub', 'home'],
             handler: () => {
-                if (window.openQuickConfig) {
-                    window.openQuickConfig();
+                if (window.sfTogglePanel) {
+                    window.sfTogglePanel();
                 } else {
-                    console.log("Quick Config not available in this context.");
+                    console.log("Global Defaults not available in this context.");
                 }
             }
         },
@@ -497,6 +497,12 @@
                 const sfPanel = document.getElementById('soul-forge-panel');
                 if (sfPanel && sfPanel.classList.contains('open')) {
                     if (window.sfTogglePanel) window.sfTogglePanel(false);
+                    return;
+                }
+
+                const soPanel = document.getElementById('session-overrides-panel');
+                if (soPanel && soPanel.classList.contains('open')) {
+                    if (window.soTogglePanel) window.soTogglePanel(false);
                     return;
                 }
 

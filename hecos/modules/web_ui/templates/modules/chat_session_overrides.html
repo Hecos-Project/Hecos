@@ -14,10 +14,10 @@
             These are the <b>Chat Overrides</b>. Changes here only apply to the current chat session and do not overwrite your Global Defaults.
         </div>
         
-        <!-- BASE PRESET -->
+        <!-- ACTIVE SOUL -->
         <div class="sf-section sf-active-soul">
             <div class="sf-section-header">
-                <i class="fas fa-globe"></i> BASE PRESET (OPTIONAL)
+                <i class="fas fa-globe"></i> ACTIVE GLOBAL DEFAULT
             </div>
             <div class="sf-controls-row">
                 <div class="sf-control-group" style="flex:2;">
@@ -25,9 +25,22 @@
                         <option value="">-- No active global default --</option>
                     </select>
                 </div>
-                <button id="so-top-save-btn" class="btn btn-primary btn-sm" onclick="window.soOverwriteSoul()" title="Save overrides to current chat session">
-                    <i class="fas fa-save"></i> Save Overrides
+                <button class="btn btn-primary btn-sm" onclick="window.soSaveAsNewSoul()" title="Save current config as new Global Default">
+                    <i class="fas fa-plus"></i> New
                 </button>
+                <button id="so-top-save-global-btn" class="btn btn-primary btn-sm" onclick="window.soOverwriteGlobalPreset()" title="Overwrite current Global Default">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="window.soDeleteSoul()" title="Delete current Global Default">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.soExportSoul()" title="Export .global_preset.json file">
+                    <i class="fas fa-file-export"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('so-import-input').click()" title="Import .global_preset.json file">
+                    <i class="fas fa-file-import"></i>
+                </button>
+                <input type="file" id="so-import-input" accept=".json" style="display:none;" onchange="window.soImportSoul(event)">
             </div>
         </div>
 
@@ -83,19 +96,19 @@
                 <!-- Sliders for Inference -->
                 <div class="sf-slider-item">
                     <label>Temperature <span id="so-val-temp">0.7</span></label>
-                    <input type="range" id="so-temp" min="0" max="2" step="0.05" value="0.7" oninput="window.soUpdateSliderVal(this, 'sf-val-temp'); window.soDirty()">
+                    <input type="range" id="so-temp" min="0" max="2" step="0.05" value="0.7" oninput="window.soUpdateSliderVal(this, 'so-val-temp'); window.soDirty()">
                 </div>
                 <div class="sf-slider-item">
                     <label>Top P <span id="so-val-topp">0.9</span></label>
-                    <input type="range" id="so-topp" min="0" max="1" step="0.01" value="0.9" oninput="window.soUpdateSliderVal(this, 'sf-val-topp'); window.soDirty()">
+                    <input type="range" id="so-topp" min="0" max="1" step="0.01" value="0.9" oninput="window.soUpdateSliderVal(this, 'so-val-topp'); window.soDirty()">
                 </div>
                 <div class="sf-slider-item">
                     <label>Repeat Penalty <span id="so-val-reppen">1.1</span></label>
-                    <input type="range" id="so-reppen" min="0.5" max="2" step="0.05" value="1.1" oninput="window.soUpdateSliderVal(this, 'sf-val-reppen'); window.soDirty()">
+                    <input type="range" id="so-reppen" min="0.5" max="2" step="0.05" value="1.1" oninput="window.soUpdateSliderVal(this, 'so-val-reppen'); window.soDirty()">
                 </div>
                 <div class="sf-slider-item">
                     <label>Max Tokens (Predict) <span id="so-val-predict">1024</span></label>
-                    <input type="range" id="so-predict" min="128" max="8192" step="128" value="1024" oninput="window.soUpdateSliderVal(this, 'sf-val-predict'); window.soDirty()">
+                    <input type="range" id="so-predict" min="128" max="8192" step="128" value="1024" oninput="window.soUpdateSliderVal(this, 'so-val-predict'); window.soDirty()">
                 </div>
             </div>
         </div>
@@ -148,27 +161,27 @@
                 <div class="sf-sliders-grid">
                     <div class="sf-slider-item">
                         <label>Temperature <span id="so-val-xtts-temp">0.75</span></label>
-                        <input type="range" id="so-xtts-temp" min="0" max="2" step="0.05" value="0.75" oninput="window.soUpdateSliderVal(this, 'sf-val-xtts-temp'); window.soDirty()">
+                        <input type="range" id="so-xtts-temp" min="0" max="2" step="0.05" value="0.75" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-temp'); window.soDirty()">
                     </div>
                     <div class="sf-slider-item">
                         <label>Speed <span id="so-val-xtts-speed">1.0</span></label>
-                        <input type="range" id="so-xtts-speed" min="0.5" max="2" step="0.1" value="1.0" oninput="window.soUpdateSliderVal(this, 'sf-val-xtts-speed'); window.soDirty()">
+                        <input type="range" id="so-xtts-speed" min="0.5" max="2" step="0.1" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-speed'); window.soDirty()">
                     </div>
                     <div class="sf-slider-item">
                         <label>Top K <span id="so-val-xtts-topk">50</span></label>
-                        <input type="range" id="so-xtts-topk" min="1" max="100" step="1" value="50" oninput="window.soUpdateSliderVal(this, 'sf-val-xtts-topk'); window.soDirty()">
+                        <input type="range" id="so-xtts-topk" min="1" max="100" step="1" value="50" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-topk'); window.soDirty()">
                     </div>
                     <div class="sf-slider-item">
                         <label>Repetition Pen. <span id="so-val-xtts-reppen">5.0</span></label>
-                        <input type="range" id="so-xtts-reppen" min="1" max="10" step="0.5" value="5.0" oninput="window.soUpdateSliderVal(this, 'sf-val-xtts-reppen'); window.soDirty()">
+                        <input type="range" id="so-xtts-reppen" min="1" max="10" step="0.5" value="5.0" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-reppen'); window.soDirty()">
                     </div>
                     <div class="sf-slider-item">
                         <label>Top P <span id="so-val-xtts-topp">0.85</span></label>
-                        <input type="range" id="so-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85" oninput="window.soUpdateSliderVal(this, 'sf-val-xtts-topp'); window.soDirty()">
+                        <input type="range" id="so-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-topp'); window.soDirty()">
                     </div>
                     <div class="sf-slider-item">
                         <label>Length Penalty <span id="so-val-xtts-length-penalty">1.0</span></label>
-                        <input type="range" id="so-xtts-length-penalty" min="0.0" max="5.0" step="0.1" value="1.0" oninput="window.soUpdateSliderVal(this, 'sf-val-xtts-length-penalty'); window.soDirty()">
+                        <input type="range" id="so-xtts-length-penalty" min="0.0" max="5.0" step="0.1" value="1.0" oninput="window.soUpdateSliderVal(this, 'so-val-xtts-length-penalty'); window.soDirty()">
                     </div>
                 </div>
             </div>

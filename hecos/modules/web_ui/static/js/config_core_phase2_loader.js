@@ -34,7 +34,13 @@
         // Batch B: UI components (panels that auto-init on load)
         [
             `/static/js/hecos_file_picker.js${VER}`,
-            `/static/js/config_audio_logic.js${VER}`,
+            `/static/js/config_audio/ca_core.js${VER}`,
+            `/static/js/config_audio/ca_modals.js${VER}`,
+            `/static/js/config_audio/ca_tts_utils.js${VER}`,
+            `/static/js/config_audio/ca_voice_clones.js${VER}`,
+            `/static/js/config_audio/ca_xtts_presets.js${VER}`,
+            `/static/js/config_audio/ca_xtts_inference.js${VER}`,
+            `/static/js/config_audio/ca_history.js${VER}`,
             `/static/js/config_media_logic.js${VER}`,
             `/static/js/config_system_logic.js${VER}`,
             `/static/js/config_persona_logic.js${VER}`,

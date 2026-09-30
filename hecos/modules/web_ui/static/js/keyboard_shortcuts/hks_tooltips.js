@@ -76,7 +76,7 @@
         _setTitle('ch-new-chat-btn',       'Start a new chat session',           'ui.new_chat');
 
         // Quick Config status pills (no stable IDs, use selector)
-        _setTitleAll('.status-pill.clickable', 'Open Quick Config',              'nav.quick_config');
+        _setTitleAll('.status-pill.clickable', 'Open Global Defaults',              'ui.global_defaults');
 
         // -- CENTRAL HUB (config_panel & core_header) -------------------------
         _setTitle('hdr-nav-chat',      'Open Chat',             'nav.chat');

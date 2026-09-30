@@ -383,7 +383,16 @@ window.refreshStatus = async function() {
     }
     if (sbS) sbS.textContent = d.persona || '—';
 
-    window.HecosPersonaName = d.persona || 'Hecos';
+    if (d.persona) window._globalPersonaName = d.persona;
+    if (d.avatar) window._globalAvatar = d.avatar;
+
+    const pSel = document.getElementById('chat-persona-select');
+    const sessionPersona = pSel ? pSel.value : null;
+    
+    if (!sessionPersona) {
+        window.HecosPersonaName = d.persona || 'Hecos';
+        if (d.avatar) window.HecosAvatar = d.avatar;
+    }
 
     const isConnected = !!d.model;
     if (tbM) {
@@ -397,9 +406,6 @@ window.refreshStatus = async function() {
         tbDot.className = isConnected ? 'pulsing' : '';
     }
     
-    if (d.avatar) {
-        window.HecosAvatar = d.avatar;
-    }
     if (d.avatar_size) {
         window.HecosAvatarSize = d.avatar_size;
         // Apply size class globally to chat area

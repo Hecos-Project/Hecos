@@ -8,6 +8,12 @@ window.soTogglePanel = function(force, mode = 'global') {
     const shouldOpen = force !== undefined ? force : !isOpen;
     
     if (shouldOpen) {
+        try {
+            const audio = new Audio('/assets/sounds/beep-6.mp3');
+            audio.volume = window.globalTTSVolume ? (window.globalTTSVolume / 100) : 0.5;
+            audio.play().catch(e => console.log('Audio play prevented:', e));
+        } catch(e) {}
+
         // Update Title and Description based on mode
         const titleEl = document.getElementById('so-panel-title');
         const descEl = document.getElementById('so-panel-desc');
@@ -30,7 +36,7 @@ window.soTogglePanel = function(force, mode = 'global') {
         panel.classList.remove('open');
         overlay.style.display = 'none';
         if (window.soState.isDirty) {
-            window.soSaveInlineToSession();
+            window.soSaveInlineToActive();
         }
     }
 };
@@ -93,13 +99,13 @@ window.soUpdateFallbackLabels = async function() {
 window.soDirty = function() {
     window.soState.isDirty = true;
     
-    const topBtn = document.getElementById('so-top-save-btn');
+    const topBtn = document.getElementById('so-top-save-global-btn');
     if (topBtn) {
         if (window.soState.activeSoulId) {
             topBtn.innerHTML = '<i class="fas fa-save"></i> Update';
             topBtn.style.backgroundColor = 'var(--accent1, #00d2ff)';
             topBtn.style.color = '#000';
-            topBtn.onclick = window.soSaveInlineToActive;
+            topBtn.onclick = window.soSaveGlobalInlineToActive;
         }
     }
     
@@ -303,17 +309,12 @@ window.soApplySoulToUI = async function(soul) {
     window.soDirty();
     window.soState.isDirty = false; // reset dirty flag as we just loaded
     
-    const topBtn = document.getElementById('so-top-save-btn');
+    const topBtn = document.getElementById('so-top-save-global-btn');
     if (topBtn) {
         topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
         topBtn.style.backgroundColor = '';
         topBtn.style.color = '';
-        topBtn.onclick = window.soOverwriteSoul;
-    }
-    
-    const sbGD = document.getElementById('sb-global-defaults');
-    if (sbGD) {
-        sbGD.textContent = window.soState.activeSoulId || 'Custom';
+        topBtn.onclick = window.soOverwriteGlobalPreset;
     }
 };
 
@@ -323,6 +324,7 @@ window.soCollectUIState = function() {
     const getNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; };
     
     return {
+        active_global_preset: window.soState ? window.soState.activeSoulId : null,
         persona: { soul_file: getVal('so-persona-select') },
         model: { backend_type: getVal('so-backend-select'), model_name: getVal('so-model-select') },
         inference: {
@@ -388,12 +390,32 @@ window.soApplyXttsPreset = function(presetName) {
     setVal('so-xtts-speed', p.speed);
     setVal('so-xtts-topk', p.top_k);
     setVal('so-xtts-reppen', p.repetition_penalty);
+    setVal('so-xtts-topp', p.top_p);
     
     if (p.speaker !== undefined && p.speaker !== null) {
         document.getElementById('so-tts-voice-select').value = p.speaker;
     }
-    if (p.speaker_wav !== undefined && p.speaker_wav !== null) {
-        document.getElementById('so-xtts-speaker-wav').value = p.speaker_wav;
+    
+    document.getElementById('so-xtts-speaker-wav').value = p.speaker_wav || "";
+
+    // Try to match sliders with an inference preset to update the dropdown
+    let matchedInf = "";
+    if (window.soState.xttsInferencePresets) {
+        for (const [k, inf] of Object.entries(window.soState.xttsInferencePresets)) {
+            if (
+                (!p.temperature || Math.abs(inf.temperature - p.temperature) < 0.01) &&
+                (!p.speed || Math.abs(inf.speed - p.speed) < 0.01) &&
+                (!p.top_k || inf.top_k === p.top_k) &&
+                (!p.repetition_penalty || Math.abs(inf.repetition_penalty - p.repetition_penalty) < 0.01)
+            ) {
+                matchedInf = k;
+                break;
+            }
+        }
+    }
+    const xttsInfSel = document.getElementById('so-xtts-inference-preset-select');
+    if (xttsInfSel) {
+        xttsInfSel.value = matchedInf;
     }
     
     window.soDirty();
@@ -422,14 +444,3 @@ window.soApplyXttsInferencePreset = function(presetName) {
 };
 
 
-// Close panel on Escape, preventing other actions
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const panel = document.getElementById('session-overrides-panel');
-        if (panel && panel.classList.contains('open')) {
-            window.soTogglePanel(false);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-}, true);

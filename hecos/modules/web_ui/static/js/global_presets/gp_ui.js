@@ -8,6 +8,12 @@ window.sfTogglePanel = function(force, mode = 'global') {
     const shouldOpen = force !== undefined ? force : !isOpen;
     
     if (shouldOpen) {
+        try {
+            const audio = new Audio('/assets/sounds/beep-6.mp3');
+            audio.volume = window.globalTTSVolume ? (window.globalTTSVolume / 100) : 0.5;
+            audio.play().catch(e => console.log('Audio play prevented:', e));
+        } catch(e) {}
+
         // Update Title and Description based on mode
         const titleEl = document.getElementById('sf-panel-title');
         const descEl = document.getElementById('sf-panel-desc');
@@ -388,12 +394,32 @@ window.sfApplyXttsPreset = function(presetName) {
     setVal('sf-xtts-speed', p.speed);
     setVal('sf-xtts-topk', p.top_k);
     setVal('sf-xtts-reppen', p.repetition_penalty);
+    setVal('sf-xtts-topp', p.top_p);
     
     if (p.speaker !== undefined && p.speaker !== null) {
         document.getElementById('sf-tts-voice-select').value = p.speaker;
     }
-    if (p.speaker_wav !== undefined && p.speaker_wav !== null) {
-        document.getElementById('sf-xtts-speaker-wav').value = p.speaker_wav;
+    
+    document.getElementById('sf-xtts-speaker-wav').value = p.speaker_wav || "";
+
+    // Try to match sliders with an inference preset to update the dropdown
+    let matchedInf = "";
+    if (window.sfState.xttsInferencePresets) {
+        for (const [k, inf] of Object.entries(window.sfState.xttsInferencePresets)) {
+            if (
+                (!p.temperature || Math.abs(inf.temperature - p.temperature) < 0.01) &&
+                (!p.speed || Math.abs(inf.speed - p.speed) < 0.01) &&
+                (!p.top_k || inf.top_k === p.top_k) &&
+                (!p.repetition_penalty || Math.abs(inf.repetition_penalty - p.repetition_penalty) < 0.01)
+            ) {
+                matchedInf = k;
+                break;
+            }
+        }
+    }
+    const xttsInfSel = document.getElementById('sf-xtts-inference-preset-select');
+    if (xttsInfSel) {
+        xttsInfSel.value = matchedInf;
     }
     
     window.sfDirty();
@@ -421,14 +447,3 @@ window.sfApplyXttsInferencePreset = function(presetName) {
     window.sfDirty();
 };
 
-// Close panel on Escape, preventing other actions
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const panel = document.getElementById('soul-forge-panel');
-        if (panel && panel.classList.contains('open')) {
-            window.sfTogglePanel(false);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    }
-}, true);
