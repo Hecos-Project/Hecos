@@ -138,3 +138,8 @@ window.sfActivateSoul = async function(soulId) {
 };
 
 
+
+// Auto-load sidebar preset label on page load
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.sfLoadGlobalState) window.sfLoadGlobalState();
+});

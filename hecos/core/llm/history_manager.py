@@ -23,7 +23,7 @@ class HistoryManager:
             
             # Build generation parameters JSON string for UI Tooltip and History
             llm_config = config.get("llm", {})
-            _model_info_str = HistoryManager._build_model_info(backend_config, llm_config)
+            _model_info_str = HistoryManager._build_model_info(backend_config, llm_config, config)
             
             # Structured response management (String or Message with tool_calls)
             if isinstance(response, str):
@@ -60,13 +60,14 @@ class HistoryManager:
             logger.debug("HistoryManager", "AI response is an error; skipping history persistence.")
             
     @staticmethod
-    def _build_model_info(backend_config, llm_config):
+    def _build_model_info(backend_config, llm_config, full_config=None):
         _model_info_str = None
         if backend_config or llm_config:
             b_cfg = backend_config or {}
             l_cfg = llm_config or {}
             
             _m_name = b_cfg.get("model", "unknown")
+            _m_backend = b_cfg.get("backend_type", l_cfg.get("backend_type", "unknown"))
             
             # Global Presets write to backend_config (b_cfg). Default settings live in llm_config (l_cfg).
             # We must check b_cfg first, then l_cfg, then the hardcoded fallback.
@@ -77,15 +78,26 @@ class HistoryManager:
             _m_predict = b_cfg.get("num_predict", l_cfg.get("num_predict", 1024))
             _m_gpu = b_cfg.get("num_gpu", b_cfg.get("gpu_layers", 0))
             
+            # Extra info from full_config
+            full_config = full_config or {}
+            ai_cfg = full_config.get("ai", {})
+            _persona = b_cfg.get("active_personality", l_cfg.get("active_personality", ai_cfg.get("active_personality")))
+            _tts_engine = ai_cfg.get("tts_engine")
+            _tts_voice = ai_cfg.get("tts_voice")
+            
             # Create a structured dictionary
             info_dict = {
                 "model": _m_name,
+                "backend": _m_backend,
                 "temperature": _m_temp,
                 "num_ctx": _m_ctx,
                 "top_p": _m_top_p,
                 "repeat_penalty": _m_rep_pen,
                 "num_predict": _m_predict,
-                "num_gpu": _m_gpu
+                "num_gpu": _m_gpu,
+                "persona": _persona,
+                "tts_engine": _tts_engine,
+                "tts_voice": _tts_voice
             }
             
             # Serialize to JSON string for database storage

@@ -2,7 +2,7 @@ import os
 
 # Base directory for the Hecos internal structure
 # Calculated relative to hecos/core/constants.py (1 level up)
-HECOS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+HECOS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 # Main storage directories (relative to HECOS_DIR)
 LOGS_DIR = os.path.join(HECOS_DIR, "logs")

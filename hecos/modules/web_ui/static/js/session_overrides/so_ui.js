@@ -10,7 +10,7 @@ window.soTogglePanel = function(force, mode = 'global') {
     if (shouldOpen) {
         try {
             const audio = new Audio('/assets/sounds/beep-6.mp3');
-            audio.volume = window.globalTTSVolume ? (window.globalTTSVolume / 100) : 0.5;
+            audio.volume = 1.0; // Fixed at system volume
             audio.play().catch(e => console.log('Audio play prevented:', e));
         } catch(e) {}
 
@@ -97,6 +97,7 @@ window.soUpdateFallbackLabels = async function() {
 };
 
 window.soDirty = function() {
+    if (window.soUpdateCloneState) window.soUpdateCloneState();
     window.soState.isDirty = true;
     
     const topBtn = document.getElementById('so-top-save-global-btn');
@@ -259,9 +260,57 @@ window.soUpdateVoicesDropdown = async function() {
 
 
 window.soApplySoulToUI = async function(soul) {
-    if (!soul) return;
-    
     const fallbacks = window.soSystemFallbacks || {};
+    
+    if (!soul) {
+        document.getElementById('so-persona-select').value = "";
+        document.getElementById('so-backend-select').value = "";
+        window.soUpdateModelsDropdown();
+        document.getElementById('so-model-select').value = "";
+        document.getElementById('so-tts-engine-select').value = "";
+        await window.soUpdateVoicesDropdown();
+        document.getElementById('so-tts-voice-select').value = "";
+        document.getElementById('so-inference-preset-select').value = "";
+        
+        const quickSel = document.getElementById('so-quick-preset-select');
+        if (quickSel) quickSel.value = "";
+        
+        const resetVal = (id, defVal) => {
+            const el = document.getElementById(id);
+            if (el) { el.value = defVal; window.soUpdateSliderVal(el, id.replace('so-', 'so-val-')); }
+        };
+        
+        resetVal('so-temp', 0.7);
+        resetVal('so-topp', 0.9);
+        resetVal('so-reppen', 1.1);
+        resetVal('so-predict', 1024);
+        
+        document.getElementById('so-xtts-preset-select').value = "";
+        const xttsInfSel = document.getElementById('so-xtts-inference-preset-select');
+        if (xttsInfSel) xttsInfSel.value = "";
+        
+        document.getElementById('so-xtts-speaker-wav').value = "";
+        resetVal('so-xtts-temp', 0.75);
+        resetVal('so-xtts-speed', 1.0);
+        resetVal('so-xtts-topk', 50);
+        resetVal('so-xtts-reppen', 5.0);
+        resetVal('so-xtts-topp', 0.85);
+        resetVal('so-xtts-length-penalty', 1.0);
+        
+        window.soDirty();
+        if (window.soUpdateCloneState) window.soUpdateCloneState();
+        window.soState.isDirty = false;
+        
+        const topBtn = document.getElementById('so-top-save-global-btn');
+        if (topBtn) {
+            topBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+            topBtn.style.backgroundColor = '';
+            topBtn.style.color = '';
+            topBtn.onclick = window.soOverwriteGlobalPreset;
+        }
+        return;
+    }
+    
     
     // Persona
     document.getElementById('so-persona-select').value = soul.persona?.soul_file || fallbacks.persona || "";
@@ -307,6 +356,7 @@ window.soApplySoulToUI = async function(soul) {
     setVal('so-xtts-length-penalty', soul.voice?.xtts_length_penalty);
     
     window.soDirty();
+    if (window.soUpdateCloneState) window.soUpdateCloneState();
     window.soState.isDirty = false; // reset dirty flag as we just loaded
     
     const topBtn = document.getElementById('so-top-save-global-btn');
@@ -444,3 +494,31 @@ window.soApplyXttsInferencePreset = function(presetName) {
 };
 
 
+
+
+window.soUpdateCloneState = function() {
+    const wavInput = document.getElementById('so-xtts-speaker-wav');
+    const voiceSelect = document.getElementById('so-tts-voice-select');
+    if (wavInput && voiceSelect) {
+        if (wavInput.value.trim() !== '') {
+            voiceSelect.disabled = true;
+            voiceSelect.title = "Using Voice Clone (.wav)";
+            // Add a temporary option so it shows the clone text
+            let cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
+            if (!cloneOpt) {
+                cloneOpt = document.createElement('option');
+                cloneOpt.value = "CLONE";
+                cloneOpt.textContent = "-- Voice Clone Active --";
+                voiceSelect.appendChild(cloneOpt);
+            }
+            voiceSelect.value = "CLONE";
+        } else {
+            voiceSelect.disabled = false;
+            voiceSelect.title = "";
+            const cloneOpt = Array.from(voiceSelect.options).find(o => o.value === "CLONE");
+            if (cloneOpt) {
+                cloneOpt.remove();
+            }
+        }
+    }
+};

@@ -332,33 +332,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateGlobalVolume(100);
     }
     
-    // Chat Overrides init
-    const chatOverridesInput = document.getElementById('chat-overrides-input');
-    if (chatOverridesInput) {
-        // Fetch current overrides
-        fetch('/hecos/api/chat/overrides')
-            .then(res => res.json())
-            .then(data => {
-                if (data.ok && data.text) {
-                    chatOverridesInput.value = data.text;
-                }
-            })
-            .catch(err => console.error('[ChatOverrides] Fetch error:', err));
-            
-        // Auto-save logic
-        let saveTimeout;
-        chatOverridesInput.addEventListener('input', () => {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                const text = chatOverridesInput.value;
-                fetch('/hecos/api/chat/overrides', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text })
-                }).catch(err => console.error('[ChatOverrides] Save error:', err));
-            }, 1000);
-        });
-    }
 });
 
 window.refreshStatus = async function() {
@@ -388,8 +361,10 @@ window.refreshStatus = async function() {
 
     const pSel = document.getElementById('chat-persona-select');
     const sessionPersona = pSel ? pSel.value : null;
+    // Also check if a Soul Forge global preset is active — if so, it controls the persona/avatar
+    const soulForgeActive = !!(window.soState && window.soState.activeSoulId);
     
-    if (!sessionPersona) {
+    if (!sessionPersona && !soulForgeActive) {
         window.HecosPersonaName = d.persona || 'Hecos';
         if (d.avatar) window.HecosAvatar = d.avatar;
     }

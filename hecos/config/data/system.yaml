@@ -1,6 +1,6 @@
 ai:
-  active_global_preset: urania_9800_gp
-  active_personality: Urania_9800
+  active_global_preset: hecos_default
+  active_personality: Hecos_System_Soul
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
@@ -8,7 +8,9 @@ ai:
     '4': jun_my_little_princess
     '5': motoko_kusanagi
   save_special_instructions: true
-  special_instructions: ''
+  special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
+    Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione
+    di immagini (solo queste vanno generate in inglese)
   enable_safety_instructions: true
   safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
     \    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated\

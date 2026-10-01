@@ -7,6 +7,48 @@ window.chatHistory = [];
 window.isStreaming = false;
 window.hecosTabId = Math.random().toString(36).substring(2, 15);
 
+window.formatModelTooltip = function(jsonStr) {
+    try {
+        const p = JSON.parse(jsonStr);
+        if (!p.model) return jsonStr;
+        
+        let lines = [];
+        
+        // Line 1: Model & Backend
+        lines.push(`🤖 Model: ${p.model} (${p.backend || 'unknown'})`);
+        
+        // Line 2: Presets
+        if (p.global_preset || p.session_preset) {
+            let presetLine = '🎭 Preset: ';
+            if (p.session_preset && p.session_preset !== p.global_preset) {
+                presetLine += `${p.session_preset} (override)`;
+            } else if (p.global_preset) {
+                presetLine += p.global_preset;
+            }
+            lines.push(presetLine);
+        }
+        
+        // Line 3: Persona
+        if (p.persona) lines.push(`👤 Soul: ${p.persona}`);
+        
+        // Line 4: Inference Params
+        lines.push(`⚙ Temp: ${p.temperature || '?'} | Top P: ${p.top_p || '?'} | Rep Pen: ${p.repeat_penalty || '?'}`);
+        lines.push(`📊 Ctx: ${p.num_ctx || '?'} | Predict: ${p.num_predict || '?'} | GPU: ${p.num_gpu || 0}`);
+        
+        // Line 5: TTS
+        if (p.tts_engine) {
+            lines.push(`🔊 TTS: ${p.tts_engine}${p.tts_voice ? ' / ' + p.tts_voice : ''}`);
+        }
+        
+        // Line 6: Token Usage
+        if (p.prompt_tokens || p.completion_tokens) {
+            lines.push(`📈 Tokens: ${p.prompt_tokens || 0} in → ${p.completion_tokens || 0} out`);
+        }
+        
+        return lines.join('\n');
+    } catch(e) { return jsonStr; }
+};
+
 window.sendMessage = async function() {
   if (typeof window.unlockAudioContext === 'function') {
       window.unlockAudioContext();
@@ -182,13 +224,7 @@ window.sendMessage = async function() {
         }
         
         if (ev.model_info) {
-          let tooltipText = ev.model_info;
-          try {
-              const parsed = JSON.parse(ev.model_info);
-              if (parsed.model) {
-                  tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
-              }
-          } catch (e) {}
+          const tooltipText = window.formatModelTooltip(ev.model_info);
           aiBubble.setAttribute('title', tooltipText);
           aiBubble.style.cursor = 'help';
         }
@@ -339,13 +375,7 @@ window.sendInternalMessage = async function(text) {
         }
         
         if (ev.model_info) {
-          let tooltipText = ev.model_info;
-          try {
-              const parsed = JSON.parse(ev.model_info);
-              if (parsed.model) {
-                  tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
-              }
-          } catch (e) {}
+          const tooltipText = window.formatModelTooltip(ev.model_info);
           aiBubble.setAttribute('title', tooltipText);
           aiBubble.style.cursor = 'help';
         }

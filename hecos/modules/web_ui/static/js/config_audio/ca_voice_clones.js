@@ -65,6 +65,31 @@ window.onVoiceClonePathInput = function() {
     // Try to find a matching option
     const matched = Array.from(sel.options).find(o => o.value === typed);
     sel.value = matched ? matched.value : '';
+    
+    // Disable default speaker dropdown
+    const speakerSel = document.getElementById('v-xtts-speaker');
+    if (speakerSel) {
+        if (typed !== '') {
+            speakerSel.disabled = true;
+            speakerSel.title = "Using Voice Clone (.wav)";
+            let cloneOpt = Array.from(speakerSel.options).find(o => o.value === "CLONE");
+            if (!cloneOpt) {
+                cloneOpt = document.createElement('option');
+                cloneOpt.value = "CLONE";
+                cloneOpt.textContent = "-- Voice Clone Active --";
+                speakerSel.appendChild(cloneOpt);
+            }
+            speakerSel.value = "CLONE";
+        } else {
+            speakerSel.disabled = false;
+            speakerSel.title = "";
+            const cloneOpt = Array.from(speakerSel.options).find(o => o.value === "CLONE");
+            if (cloneOpt) {
+                cloneOpt.remove();
+            }
+            // Restore previous value if possible, or leave it to user
+        }
+    }
 };
 
 window.uploadVoiceClone = async function(fileInput) {

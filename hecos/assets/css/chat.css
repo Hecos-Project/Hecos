@@ -98,6 +98,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   margin-bottom: 6px;
   min-height: 32px;
   width: 100%;
+  overflow: hidden; /* required for ellipsis in nested flex */
   transition: background 0.2s;
 }
 .status-pill:last-child { margin-bottom: 0; }
@@ -113,6 +114,7 @@ body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0; /* allows flex child to shrink below content size */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-shadow: none !important;

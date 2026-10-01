@@ -184,14 +184,14 @@
     <div class="grid-2" style="margin-bottom:12px;">
       <div class="field" style="grid-column: span 2;">
         <label>Configuration Preset</label>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; align-items:center;">
           <select id="v-xtts-preset" onchange="loadXTTSPreset()" style="flex:1;">
             <option value="default">Default</option>
           </select>
-          <button class="btn btn-primary" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
-          <button class="btn btn-secondary" onclick="updateXTTSPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
-          <button class="btn btn-secondary" onclick="resetXTTSConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
-          <button class="btn btn-danger" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+          <button class="btn btn-secondary btn-sm" onclick="updateXTTSPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+          <button class="btn btn-secondary btn-sm" onclick="resetXTTSConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     </div>
@@ -247,13 +247,13 @@
     <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
       <div class="field" style="grid-column: span 2;">
         <label>Inference Parameters Preset</label>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; align-items:center;">
           <select id="v-xtts-inference-preset" onchange="loadXTTSInferencePreset()" style="flex:1;">
             <option value="">-- Nessun Preset Selezionato --</option>
           </select>
-          <button class="btn btn-primary" onclick="saveXTTSInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
-          <button class="btn btn-secondary" onclick="updateXTTSInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
-          <button class="btn btn-danger" onclick="deleteXTTSInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+          <button class="btn btn-primary btn-sm" onclick="saveXTTSInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+          <button class="btn btn-secondary btn-sm" onclick="updateXTTSInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteXTTSInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     </div>
@@ -349,19 +349,19 @@
         <select id="v-xtts-clone-select" onchange="onVoiceCloneSelect()" style="flex:1;">
           <option value="">— None (use Default Speaker) —</option>
         </select>
-        <button type="button" class="btn btn-secondary" onclick="loadVoiceCloneList()" title="Refresh voice clone list">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadVoiceCloneList()" title="Refresh voice clone list">
           <i class="fas fa-sync-alt"></i>
         </button>
-        <label class="btn btn-secondary" title="Upload WAV to voice clone library" style="cursor:pointer; margin:0;">
+        <label class="btn btn-secondary btn-sm" title="Upload WAV to voice clone library" style="cursor:pointer; margin:0; display:flex; align-items:center;">
           <i class="fas fa-upload"></i>
           <input type="file" accept=".wav" style="display:none;" onchange="uploadVoiceClone(this)">
         </label>
       </div>
 
       <!-- Manual path override + file system browse -->
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; align-items:center;">
         <input type="text" id="v-xtts-speaker-wav" placeholder="Or type / browse any path (overrides dropdown)" style="flex:1;" oninput="onVoiceClonePathInput()">
-        <button type="button" class="btn btn-secondary" title="Browse filesystem" style="margin:0;" onclick="window.openVoiceClonePicker()">
+        <button type="button" class="btn btn-secondary btn-sm" title="Browse filesystem" style="margin:0;" onclick="window.openVoiceClonePicker()">
           <i class="fas fa-folder-open"></i>
         </button>
       </div>

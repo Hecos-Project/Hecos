@@ -10,7 +10,7 @@ window.sfTogglePanel = function(force, mode = 'global') {
     if (shouldOpen) {
         try {
             const audio = new Audio('/assets/sounds/beep-6.mp3');
-            audio.volume = window.globalTTSVolume ? (window.globalTTSVolume / 100) : 0.5;
+            audio.volume = 1.0; // Fixed at system volume
             audio.play().catch(e => console.log('Audio play prevented:', e));
         } catch(e) {}
 
@@ -97,6 +97,7 @@ window.sfUpdateFallbackLabels = async function() {
 };
 
 window.sfDirty = function() {
+    if (window.sfUpdateCloneState) window.sfUpdateCloneState();
     window.sfState.isDirty = true;
     
     const topBtn = document.getElementById('sf-top-save-btn');
@@ -306,7 +307,9 @@ window.sfApplySoulToUI = async function(soul) {
     setVal('sf-xtts-topp', soul.voice?.xtts_top_p);
     setVal('sf-xtts-length-penalty', soul.voice?.xtts_length_penalty);
     
+    window.sfUpdateCloneState();
     window.sfDirty();
+    if (window.sfUpdateCloneState) window.sfUpdateCloneState();
     window.sfState.isDirty = false; // reset dirty flag as we just loaded
     
     const topBtn = document.getElementById('sf-top-save-btn');
@@ -447,3 +450,17 @@ window.sfApplyXttsInferencePreset = function(presetName) {
     window.sfDirty();
 };
 
+
+window.sfUpdateCloneState = function() {
+    const wavInput = document.getElementById('sf-xtts-speaker-wav');
+    const voiceSelect = document.getElementById('sf-tts-voice-select');
+    if (wavInput && voiceSelect) {
+        if (wavInput.value.trim() !== '') {
+            voiceSelect.disabled = true;
+            voiceSelect.title = "Using Voice Clone (.wav)";
+        } else {
+            voiceSelect.disabled = false;
+            voiceSelect.title = "";
+        }
+    }
+};

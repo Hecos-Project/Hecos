@@ -114,6 +114,10 @@ function populateAudioUI() {
             });
         }
     }
+    
+    if (typeof window.onVoiceClonePathInput === 'function') {
+        window.onVoiceClonePathInput();
+    }
 }
 
 // ── Engine Tab Switcher ──────────────────────────────────────────────────────

@@ -90,13 +90,15 @@ function addBubble(role, text, id, opts) {
   
   if (opts && opts.model_info) {
       let tooltipText = opts.model_info;
-      try {
-          const parsed = JSON.parse(opts.model_info);
-          if (parsed.model) {
-              tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
-          }
-      } catch (e) {
-          // If it's not valid JSON (e.g. old legacy data), use it as-is
+      if (window.formatModelTooltip) {
+          tooltipText = window.formatModelTooltip(opts.model_info);
+      } else {
+          try {
+              const parsed = JSON.parse(opts.model_info);
+              if (parsed.model) {
+                  tooltipText = `Model: ${parsed.model}\nTemp: ${parsed.temperature} | Ctx: ${parsed.num_ctx} | GPU: ${parsed.num_gpu}\nTop P: ${parsed.top_p} | Predict: ${parsed.num_predict} | Rep Pen: ${parsed.repeat_penalty}`;
+              }
+          } catch (e) {}
       }
       bubble.setAttribute('title', tooltipText);
       bubble.style.cursor = 'help';
