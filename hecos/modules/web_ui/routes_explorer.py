@@ -102,16 +102,8 @@ def init_explorer_routes(app, logger):
                 ["All Files",   "*.*"]
             ])
 
-            if sys.platform == "win32" and not pick_dir:
+            if sys.platform == "win32":
                 # ── Windows: PowerShell native dialog ─────────────────────────
-                # Build the filter string: "WAV Audio (*.wav)|*.wav|All Files (*.*)|*.*"
-                filter_parts = []
-                for ft in d_filetypes:
-                    label = ft[0] if len(ft) > 0 else "Files"
-                    pattern = ft[1] if len(ft) > 1 else "*.*"
-                    filter_parts.append(f"{label} ({pattern})|{pattern}")
-                filter_str = "|".join(filter_parts) if filter_parts else "All Files (*.*)|*.*"
-
                 if pick_dir:
                     ps_script = f"""
 Add-Type -AssemblyName System.Windows.Forms
@@ -119,11 +111,18 @@ $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
 $dialog.Description = '{d_title.replace("'", "`'")}'
 $dialog.ShowNewFolderButton = $true
 if ('{d_initdir}') {{ $dialog.SelectedPath = '{d_initdir.replace("'", "`'")}' }}
-$dialog.TopMost = $true
 $result = $dialog.ShowDialog()
 if ($result -eq 'OK') {{ Write-Host $dialog.SelectedPath -NoNewline }}
 """
                 else:
+                    # Build the filter string: "Image Files (*.jpg)|*.jpg|All Files (*.*)|*.*"
+                    filter_parts = []
+                    for ft in d_filetypes:
+                        label = ft[0] if len(ft) > 0 else "Files"
+                        pattern = ft[1] if len(ft) > 1 else "*.*"
+                        filter_parts.append(f"{label} ({pattern})|{pattern}")
+                    filter_str = "|".join(filter_parts) if filter_parts else "All Files (*.*)|*.*"
+
                     ps_script = f"""
 Add-Type -AssemblyName System.Windows.Forms
 $dialog = New-Object System.Windows.Forms.OpenFileDialog
@@ -148,16 +147,11 @@ if ($result -eq 'OK') {{ Write-Host $dialog.FileName -NoNewline }}
                     script = f"""
 import tkinter as tk
 from tkinter import filedialog
-import ctypes
 root = tk.Tk()
 root.withdraw()
 root.attributes('-topmost', True)
 root.lift()
 root.focus_force()
-try:
-    hwnd = root.winfo_id()
-    ctypes.windll.user32.SetForegroundWindow(hwnd)
-except: pass
 path = filedialog.askdirectory(title={d_title!r}, initialdir={d_initdir!r} if {bool(d_initdir)!r} else None)
 root.destroy()
 print(path or '', end='')

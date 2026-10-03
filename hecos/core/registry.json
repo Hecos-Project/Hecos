@@ -271,74 +271,34 @@
         "slash_commands": []
     },
     "AUTOMATION": {
-        "description": "Full PC control: mouse movement, keyboard input, window management, and Windows Accessibility API for reading browser tabs and UI controls. Combine with WEBCAM desktop_screenshot for a full see-and-act loop. Requires Windows for UIAutomation features (browser tabs, window controls); mouse/keyboard works cross-platform.",
-        "commands": {},
-        "status": "ONLINE (DORMANT)",
+        "description": "PC Automation: control the mouse, keyboard, and application windows. Use with desktop_screenshot for a full see-and-act loop.",
+        "commands": {
+            "click": "Clicks the mouse at the given screen coordinates.",
+            "click_text": "Locates text on the screen via OCR and clicks it.",
+            "drag": "Clicks and drags from one position to another.",
+            "focus_browser_tab": "Clicks on a browser tab whose title contains the given text fragment (case-insensitive).",
+            "focus_window": "Brings a window to the foreground by partial title match.",
+            "get_browser_tabs": "Returns the titles of all currently open tabs in Chrome, Edge, Opera, or Brave.",
+            "get_mouse_position": "Returns the current mouse cursor coordinates (x, y).",
+            "get_screen_size": "Returns the screen resolution (width x height in pixels).",
+            "hotkey": "Executes a keyboard shortcut by holding multiple keys simultaneously.",
+            "list_windows": "Returns a list of all currently visible window titles.",
+            "maximize_window": "Maximizes a window by partial title match.",
+            "minimize_window": "Minimizes a window by partial title match.",
+            "move_to": "Moves the mouse cursor to the specified screen coordinates.",
+            "press_key": "Presses and releases a single key.",
+            "read_window_controls": "Reads the UI control tree (buttons, inputs, links) of an application window.",
+            "scroll": "Scrolls the mouse wheel at the specified position.",
+            "type_and_enter": "Types the given text and immediately presses Enter.",
+            "type_text": "Types the given text as simulated keystrokes."
+        },
+        "status": "ONLINE",
         "example": "",
-        "routing_instructions": "",
+        "routing_instructions": "VISION/AUTOMATION SYNERGY: You DO have 'eyes'! You can interact with the user's screen. When asked to click on something or read the screen, FIRST call WEBCAM__desktop_screenshot. The system will return the image to your context. THEN analyze the image to find the exact (x, y) coordinates. FINALLY, call AUTOMATION__move_to or AUTOMATION__click with those coordinates.",
         "is_class_based": true,
-        "is_lazy": true,
-        "icon": "<i class=\"fas fa-magic\"></i>",
+        "icon": "",
         "category": "PLUGINS",
-        "module_type": "core_module",
-        "slash_commands": [
-            {
-                "id": "type",
-                "manifest_version": "1",
-                "aliases": [
-                    "/type",
-                    "/write"
-                ],
-                "description": "Simulates typing text on the keyboard",
-                "usage": "/type <text>",
-                "example": "/type Hello world!",
-                "icon": "⌨️",
-                "method": "type_text",
-                "requires_args": true
-            },
-            {
-                "id": "click_text",
-                "manifest_version": "1",
-                "aliases": [
-                    "/click_text",
-                    "/click_word"
-                ],
-                "description": "Finds text on the screen (OCR) and clicks it",
-                "usage": "/click_text <text>",
-                "example": "/click_text Submit",
-                "icon": "🖱️",
-                "method": "click_text",
-                "requires_args": true
-            },
-            {
-                "id": "hotkey",
-                "manifest_version": "1",
-                "aliases": [
-                    "/hotkey",
-                    "/shortcut"
-                ],
-                "description": "Executes a combination of keys (separated by + or comma)",
-                "usage": "/hotkey <keys>",
-                "example": "/hotkey ctrl+c",
-                "icon": "⚡",
-                "method": "hotkey",
-                "requires_args": true
-            },
-            {
-                "id": "focus",
-                "manifest_version": "1",
-                "aliases": [
-                    "/focus",
-                    "/window"
-                ],
-                "description": "Brings a window to the foreground by its title",
-                "usage": "/focus <title>",
-                "example": "/focus chrome",
-                "icon": "🪟",
-                "method": "focus_window",
-                "requires_args": true
-            }
-        ]
+        "slash_commands": []
     },
     "PERSONALITY": {
         "description": "Manage and switch AI personalities (souls) dynamically.",
@@ -525,6 +485,105 @@
         "icon": "",
         "category": "PLUGINS",
         "slash_commands": []
+    },
+    "NOTIFICATIONS": {
+        "description": "Sistema di notifiche per eventi Hecos.",
+        "commands": {
+            "add_destination": "Adds a new notification destination.",
+            "bind_event_destination": "Binds a destination to a system event, so notifications for that event are sent there.",
+            "get_status": "Returns the current status of the Notifications Center.",
+            "list_destinations": "Lists all currently configured notification destinations.",
+            "list_rules": "Lists all system events and which destinations are bound to each.",
+            "remove_destination": "Removes a notification destination by name.",
+            "send_notification": "Sends an ad-hoc notification immediately.",
+            "set_event_template": "Configures an HTML template and its variables for a given event.",
+            "unbind_event_destination": "Removes a destination from a system event."
+        },
+        "status": "ONLINE",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "icon": "",
+        "category": "PLUGINS",
+        "slash_commands": [
+            {
+                "id": "notify",
+                "aliases": [
+                    "/notify"
+                ],
+                "description": "Manage notifications: list rules, add/remove destinations, bind events, or send ad-hoc alerts.",
+                "usage": "/notify [list rules | bind <event> to <dest> | add <name> <uri> | send <subject>]",
+                "example": "/notify list rules",
+                "icon": "🔔",
+                "method": "get_status",
+                "args_schema": {},
+                "requires_args": false
+            },
+            {
+                "id": "alert",
+                "aliases": [
+                    "/alert"
+                ],
+                "description": "Send an immediate notification to all configured destinations.",
+                "usage": "/alert <message>",
+                "example": "/alert System backup completed!",
+                "icon": "🔔",
+                "method": "send_notification",
+                "args_schema": {
+                    "subject": "str",
+                    "message": "str"
+                },
+                "requires_args": true
+            }
+        ]
+    },
+    "REMINDER": {
+        "description": "Schedule time-based reminders with TTS alerts and WebUI notifications. Supports natural language and recurring CRON expressions.",
+        "commands": {
+            "set_reminder": "Creates a reminder. Fires TTS + WebUI alert at the specified time.",
+            "list_reminders": "Lists all active reminders with their scheduled time and ID.",
+            "cancel_reminder": "Cancels an active reminder by ID.",
+            "snooze_reminder": "Postpones a reminder by N minutes from now."
+        },
+        "status": "ONLINE (DORMANT)",
+        "example": "",
+        "routing_instructions": "",
+        "is_class_based": true,
+        "is_lazy": true,
+        "icon": "fa-clock",
+        "category": "PLUGINS",
+        "module_type": "hpm",
+        "slash_commands": [
+            {
+                "id": "reminder",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminder",
+                    "/ricorda",
+                    "/promemoria"
+                ],
+                "description": "Imposta un nuovo promemoria",
+                "usage": "/reminder <titolo> alle <ora>",
+                "example": "/reminder chiamata Marco alle 15:30",
+                "icon": "⏱",
+                "method": "set_reminder",
+                "requires_args": true
+            },
+            {
+                "id": "reminders",
+                "manifest_version": "1",
+                "aliases": [
+                    "/reminders",
+                    "/promemoria list"
+                ],
+                "description": "Lists all active reminders",
+                "usage": "/reminders",
+                "example": "/reminders",
+                "icon": "📋",
+                "method": "list_reminders",
+                "requires_args": false
+            }
+        ]
     },
     "USERS": {
         "description": "User information and preferences management (LLM Tools)",

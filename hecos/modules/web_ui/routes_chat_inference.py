@@ -216,10 +216,11 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
                 
                 # Always ensure tts_engine/tts_voice/backend/persona from merged config
                 ai_cfg = active_cfg_mgr.config.get("ai", {})
+                voice_cfg = active_cfg_mgr.config.get("voice", {})
                 if not _m_info_dict.get("tts_engine"):
-                    _m_info_dict["tts_engine"] = ai_cfg.get("tts_engine")
+                    _m_info_dict["tts_engine"] = voice_cfg.get("tts_engine", ai_cfg.get("tts_engine"))
                 if not _m_info_dict.get("tts_voice"):
-                    _m_info_dict["tts_voice"] = ai_cfg.get("tts_voice")
+                    _m_info_dict["tts_voice"] = voice_cfg.get("tts_voice", ai_cfg.get("tts_voice"))
                 if not _m_info_dict.get("persona"):
                     _m_info_dict["persona"] = current_persona
                 if not _m_info_dict.get("backend") or _m_info_dict["backend"] == "unknown":

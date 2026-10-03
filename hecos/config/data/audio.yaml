@@ -9,16 +9,16 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: if_sara
+  voice: CLONE
   sentence_silence: 0.0
   model_path: ''
 xtts:
   speed: 1.4
   language: it
-  speaker: Claribel Dervla
+  speaker: CLONE
   gpu_acceleration: gpu
   chunk_sentences: true
-  speaker_wav: C:\Hecos\hecos\assets\voice_clones\8bitMamma_voce1.wav
+  speaker_wav: ''
   temperature: 0.6
   repetition_penalty: 4.0
   top_k: 40

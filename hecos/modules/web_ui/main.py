@@ -28,10 +28,11 @@ except ImportError:
     translator = _T()
 
 # Ensure the project root is importable
-# Path: hecos/plugins/web_ui/main.py -> 3 levels up to reach root
-_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+# Path: hecos/modules/web_ui/main.py -> 2 levels up to reach hecos root
+_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
+_PROJ_ROOT = os.path.dirname(_ROOT)
+if _PROJ_ROOT not in sys.path:
+    sys.path.insert(0, _PROJ_ROOT)
 
 class WebUIPlugin:
     """

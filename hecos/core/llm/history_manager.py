@@ -82,8 +82,9 @@ class HistoryManager:
             full_config = full_config or {}
             ai_cfg = full_config.get("ai", {})
             _persona = b_cfg.get("active_personality", l_cfg.get("active_personality", ai_cfg.get("active_personality")))
-            _tts_engine = ai_cfg.get("tts_engine")
-            _tts_voice = ai_cfg.get("tts_voice")
+            voice_cfg = full_config.get("voice", {})
+            _tts_engine = voice_cfg.get("tts_engine", ai_cfg.get("tts_engine"))
+            _tts_voice = voice_cfg.get("tts_voice", ai_cfg.get("tts_voice"))
             
             # Create a structured dictionary
             info_dict = {

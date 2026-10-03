@@ -410,9 +410,20 @@ def _maybe_generate_tts(text: str, cfg_mgr, session_overrides: dict = None) -> t
                 "tts_engine": ai_cfg.get("tts_engine"),
                 "tts_voice": ai_cfg.get("tts_voice")
             }
-            # Add Soul Forge voice overrides
+            # Add Soul Forge voice overrides from ai block
             voice_overrides = ai_cfg.get("voice_overrides", {})
             session_overrides.update(voice_overrides)
+            
+            # The UI sends live overrides under the 'voice' key, so merge those on top
+            ui_voice_overrides = cfg_mgr.config.get("voice", {})
+            if ui_voice_overrides:
+                if "tts_engine" in ui_voice_overrides and ui_voice_overrides["tts_engine"]:
+                    session_overrides["tts_engine"] = ui_voice_overrides["tts_engine"]
+                if "tts_voice" in ui_voice_overrides and ui_voice_overrides["tts_voice"]:
+                    session_overrides["tts_voice"] = ui_voice_overrides["tts_voice"]
+                for k, v in ui_voice_overrides.items():
+                    if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_"):
+                        session_overrides[k] = v
             
         voice_cfg['session_overrides'] = session_overrides
 

@@ -81,7 +81,10 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                         if soul.persona.soul_file:
                             patch["ai"]["active_personality"] = soul.persona.soul_file
                         if soul.voice.tts_engine:
+                            patch.setdefault("ai", {})["tts_engine"] = soul.voice.tts_engine
                             patch.setdefault("audio", {})["active_engine"] = soul.voice.tts_engine
+                        if soul.voice.tts_voice:
+                            patch.setdefault("ai", {})["tts_voice"] = soul.voice.tts_voice
                         if soul.model.backend_type:
                             btype = soul.model.backend_type
                             patch.setdefault("backend", {})["type"] = btype
@@ -95,15 +98,21 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                             from hecos.core.audio.device_manager import get_audio_config, _save_audio_config
                             acfg = get_audio_config()
                             if soul.voice:
-                                for k, v in soul.voice.model_dump().items():
-                                    if v is not None and k in acfg.get('xtts', {}):
-                                        acfg['xtts'][k] = v
-                                    elif v is not None:
-                                        # handle root level like xtts_inference_presets? No, the schema places xtts_* in `xtts` block except maybe xtts_preset?
-                                        pass
+                                for k, v in soul.voice.model_dump(exclude_unset=True).items():
+                                    if k in acfg.get('xtts', {}):
+                                        acfg['xtts'][k] = v if v is not None else ""
+                                    elif k in acfg.get('kokoro', {}):
+                                        acfg['kokoro'][k] = v if v is not None else ""
+                                        
+                                if 'tts_voice' in soul.voice.model_dump(exclude_unset=True):
+                                    v = soul.voice.tts_voice
+                                    if v is not None:
+                                        acfg.setdefault('xtts', {})['speaker'] = v
+                                        acfg.setdefault('kokoro', {})['voice'] = v
+                                        
                                 # Map correctly for audio.yaml schema
-                                if soul.voice.xtts_preset is not None:
-                                    acfg['xtts']['current_preset'] = soul.voice.xtts_preset
+                                if 'xtts_preset' in soul.voice.model_dump(exclude_unset=True):
+                                    acfg['xtts']['current_preset'] = soul.voice.xtts_preset if soul.voice.xtts_preset is not None else "default"
                                 if soul.voice.xtts_inference_preset is not None:
                                     pass # this doesn't directly exist in audio.yaml root/xtts, wait...
                             _save_audio_config(acfg)
@@ -131,13 +140,13 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                             
                     if soul.inference:
                         if 'inference' not in overrides: overrides['inference'] = {}
-                        for k, v in soul.inference.model_dump().items():
-                            if v is not None: overrides['inference'][k] = v
+                        for k, v in soul.inference.model_dump(exclude_unset=True).items():
+                            overrides['inference'][k] = v
                             
                     if soul.voice:
                         if 'voice' not in overrides: overrides['voice'] = {}
-                        for k, v in soul.voice.model_dump().items():
-                            if v is not None: overrides['voice'][k] = v
+                        for k, v in soul.voice.model_dump(exclude_unset=True).items():
+                            overrides['voice'][k] = v
                 
                 set_session_config(session_id, overrides)
             

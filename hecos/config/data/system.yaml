@@ -1,6 +1,6 @@
 ai:
-  active_global_preset: hecos_default
-  active_personality: Hecos_System_Soul
+  active_global_preset: urania_9800_gp
+  active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
     '2': Urania_9800
@@ -38,7 +38,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: sorc/qwen3.5-claude-4.6-opus:4b
+    model: nandhank/qwen3.5-abliterated-truthful:9b
     available_models:
       '1': sorc/qwen3.5-claude-4.6-opus:4b
       '2': sorc/qwen3.5-claude-4.6-opus:latest

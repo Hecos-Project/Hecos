@@ -18,9 +18,8 @@ window.hpmSwitchTab = async function(tabId) {
   const btnBuiltin   = document.getElementById('hpm-tab-btn-builtin');
   const btnWidgets   = document.getElementById('hpm-tab-btn-widgets');
   const btnStore     = document.getElementById('hpm-tab-btn-store');
-  const btnBuilder   = document.getElementById('hpm-tab-btn-builder');
 
-  [btnPackages, btnBuiltin, btnWidgets, btnStore, btnBuilder].forEach(b => b && b.classList.remove('active'));
+  [btnPackages, btnBuiltin, btnWidgets, btnStore].forEach(b => b && b.classList.remove('active'));
   const activeBtn = document.getElementById(`hpm-tab-btn-${tabId}`);
   if (activeBtn) activeBtn.classList.add('active');
 
@@ -31,8 +30,10 @@ window.hpmSwitchTab = async function(tabId) {
   if (widgetsPane) widgetsPane.style.display = tabId === 'widgets' ? 'block' : 'none';
   const storePane = document.getElementById('hpm-pane-store');
   if (storePane) storePane.style.display = tabId === 'store' ? 'block' : 'none';
-  const builderPane = document.getElementById('hpm-pane-builder');
-  if (builderPane) builderPane.style.display = tabId === 'builder' ? 'block' : 'none';
+
+  // Scroll panel container to top on every tab switch
+  const panelContainer = document.getElementById('panel-container');
+  if (panelContainer) panelContainer.scrollTop = 0;
 
   // ── Content loading per tab ────────────────────────────────────────────────
   if (tabId === 'packages') {

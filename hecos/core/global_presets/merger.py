@@ -57,21 +57,14 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
     if soul.inference.preset_name:
         preset = get_inference_preset(soul.inference.preset_name)
         if preset:
-            if preset.temperature is not None: backend_dict['temperature'] = preset.temperature
-            if preset.top_p is not None: backend_dict['top_p'] = preset.top_p
-            if preset.repeat_penalty is not None: backend_dict['repeat_penalty'] = preset.repeat_penalty
-            if preset.num_predict is not None: backend_dict['num_predict'] = preset.num_predict
-            if preset.num_ctx is not None: backend_dict['num_ctx'] = preset.num_ctx
-            if preset.max_tokens is not None: backend_dict['max_tokens'] = preset.max_tokens
+            p_dump = preset.model_dump(exclude_unset=True)
+            for k in ['temperature', 'top_p', 'repeat_penalty', 'num_predict', 'num_ctx', 'max_tokens']:
+                if k in p_dump: backend_dict[k] = p_dump[k]
             
     # 2. Apply Inline Overrides (takes precedence)
-    if soul.inference.temperature is not None: backend_dict['temperature'] = soul.inference.temperature
-    if soul.inference.top_p is not None: backend_dict['top_p'] = soul.inference.top_p
-    if soul.inference.repeat_penalty is not None: backend_dict['repeat_penalty'] = soul.inference.repeat_penalty
-    if soul.inference.num_predict is not None: backend_dict['num_predict'] = soul.inference.num_predict
-    if soul.inference.num_ctx is not None: backend_dict['num_ctx'] = soul.inference.num_ctx
-    if soul.inference.max_tokens is not None: backend_dict['max_tokens'] = soul.inference.max_tokens
-    if soul.inference.n_gpu_layers is not None: backend_dict['n_gpu_layers'] = soul.inference.n_gpu_layers
+    inf_dump = soul.inference.model_dump(exclude_unset=True)
+    for k in ['temperature', 'top_p', 'repeat_penalty', 'num_predict', 'num_ctx', 'max_tokens', 'n_gpu_layers']:
+        if k in inf_dump: backend_dict[k] = inf_dump[k]
 
     # Write back
     if 'backend' not in merged: merged['backend'] = {}
@@ -88,21 +81,17 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
         
     # We pass these down to the XTTS engine via session_overrides if they exist
     voice_overrides = {}
-    if soul.voice.xtts_preset: voice_overrides['xtts_preset'] = soul.voice.xtts_preset
-    if soul.voice.xtts_temperature is not None: voice_overrides['xtts_temperature'] = soul.voice.xtts_temperature
-    if soul.voice.xtts_repetition_penalty is not None: voice_overrides['xtts_repetition_penalty'] = soul.voice.xtts_repetition_penalty
-    if soul.voice.xtts_top_k is not None: voice_overrides['xtts_top_k'] = soul.voice.xtts_top_k
-    if soul.voice.xtts_top_p is not None: voice_overrides['xtts_top_p'] = soul.voice.xtts_top_p
-    if soul.voice.xtts_speed is not None: voice_overrides['xtts_speed'] = soul.voice.xtts_speed
-    if soul.voice.xtts_length_penalty is not None: voice_overrides['xtts_length_penalty'] = soul.voice.xtts_length_penalty
-    if soul.voice.xtts_speaker_wav is not None: voice_overrides['xtts_speaker_wav'] = soul.voice.xtts_speaker_wav
+    v_dump = soul.voice.model_dump(exclude_unset=True)
     
-    if soul.voice.piper_speed is not None: voice_overrides['piper_speed'] = soul.voice.piper_speed
-    if soul.voice.piper_noise_scale is not None: voice_overrides['piper_noise_scale'] = soul.voice.piper_noise_scale
-    if soul.voice.piper_noise_w is not None: voice_overrides['piper_noise_w'] = soul.voice.piper_noise_w
-    
-    if soul.voice.kokoro_speed is not None: voice_overrides['kokoro_speed'] = soul.voice.kokoro_speed
-    if soul.voice.kokoro_voice is not None: voice_overrides['kokoro_voice'] = soul.voice.kokoro_voice
+    voice_keys = [
+        'xtts_preset', 'xtts_temperature', 'xtts_repetition_penalty', 'xtts_top_k', 
+        'xtts_top_p', 'xtts_speed', 'xtts_length_penalty', 'xtts_speaker_wav',
+        'piper_speed', 'piper_noise_scale', 'piper_noise_w',
+        'kokoro_speed', 'kokoro_voice'
+    ]
+    for k in voice_keys:
+        if k in v_dump:
+            voice_overrides[k] = v_dump[k]
 
     if voice_overrides:
         merged['ai']['voice_overrides'] = voice_overrides

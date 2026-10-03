@@ -96,7 +96,7 @@ class GlobalUninstaller:
     def parse_plugin_dependencies(self):
         """Parse HPM packages.db to extract pip requirements of all installed plugins."""
         plugin_packages = []
-        db_path = os.path.join(CWD, "config", "data", "packages.db")
+        db_path = os.path.join(CWD, "hecos", "data", "packages.db")
         if os.path.exists(db_path):
             try:
                 import sqlite3

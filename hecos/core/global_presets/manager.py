@@ -70,13 +70,22 @@ def delete_soul(soul_id: str) -> bool:
 def get_active_soul_id(session_id: str) -> Optional[str]:
     """
     Returns the ID of the active Global Preset (Soul) for the given session.
-    Reads from the session_config_db.
+    Reads from the session_config_db, falling back to the global system config.
     """
     try:
-        from hecos.memory.session_config_db import get_session_config
-        config_override = get_session_config(session_id)
-        if config_override and isinstance(config_override, dict):
-            return config_override.get('active_global_preset')
+        if session_id and session_id != "global":
+            from hecos.memory.session_config_db import get_session_config
+            config_override = get_session_config(session_id)
+            if config_override and isinstance(config_override, dict):
+                sid = config_override.get('active_global_preset')
+                if sid:
+                    return sid
+        
+        # Fallback to global
+        import sys
+        if hasattr(sys, "hecos_config_manager"):
+            cfg = sys.hecos_config_manager.config.get("ai", {})
+            return cfg.get("active_global_preset")
     except Exception as e:
         logger.error(f"[GlobalPresets] Error getting active soul for session {session_id}: {e}")
     return None
