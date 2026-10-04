@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Logo Hecos">
 </p>
 
-# Hecos - Versione 0.50.0 (Fase II: Ghost Fire)
+# Hecos - Versione 0.52.0 (Fase II: Ghost Fire)
 Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Lingua: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP
 
 ---
 
-> **Stato: Fase II (Ghost Fire)**: Hecos è attualmente in `v0.50.0`. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
+> **Stato: Fase II (Ghost Fire)**: Hecos è attualmente in `v0.52.0`. Questo è un Helping Companion System che funge da ponte tra il ragionamento ad alto livello e l'esecuzione di sistema root.
 >
 > ⚠️ **Avviso Importante**: A partire da questa major release (0.50.0+), lo sviluppo primario e l'ambiente target migrano ufficialmente a **Windows 11**.
 
@@ -23,11 +23,12 @@ Costruito su tre pilastri fondamentali:
 * ⚡ **Velocità Estrema** — Architettura nativa ottimizzata e sistema di plugin ad alte prestazioni per una reattività istantanea.
 * 🧊 **Semplicità Assoluta** — Dashboard professionale e design modulare che rende intuitiva l'orchestrazione IA avanzata.
 
-Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, Hecos 0.50.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, Llama.cpp, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale (Kokoro e Piper).
+Ora completamente migrato a una **architettura stabile Fase II: Ghost Fire**, Hecos 0.52.0 offre una interfaccia Web dedicata (Chat + Config) e internazionalizzazione completa. Grazie a **LiteLLM**, supporta Ollama, Llama.cpp, KoboldCpp e i principali provider cloud con streaming in tempo reale e TTS locale (Kokoro e Piper).
 
 ---
 
-## ✨ Caratteristiche Principali (v0.50.0)
+## ✨ Caratteristiche Principali (v0.52.0)
+* 🌐 **Preset Globali (Soul Profiles)** — Infinite possibilità di creazione combinando liberamente personalità AI, motori e voci audio TTS, backend testuali e preset di inferenza in profili master coesi.
 * 🎭 **Override Chat in Linea e Personalità Infinite** — Sovrascrivi il modello AI, la Persona e la Voce direttamente nell'interfaccia della chat al volo. Crea personalità infinite all'istante per ogni singola sessione di conversazione.
 * 📦 **Architettura HPM 0.40** — Migrazione completa a configurazioni Pydantic+TOML, introducendo vincoli di versione per le dipendenze e `pip_requirements` bloccati.
 * 🛠️ **External Dependency Manager (EDM)** — Nuovo sistema che rileva automaticamente le dipendenze principali mancanti (Node, Tesseract, VC++), consentendo download con un clic direttamente dalla WebUI.
