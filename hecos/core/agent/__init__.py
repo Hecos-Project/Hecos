@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import logging
 from hecos.core.logging import logger
@@ -26,17 +26,17 @@ class AgentTracer:
         """
         # 1. Terminal Output
         color = AgentTracer.COLOR_AGENT
-        prefix = "ðŸ§  [Agent]"
+        prefix = "🧠 [Agent]"
         
         if level == "tool":
             color = AgentTracer.COLOR_TOOL
-            prefix = "âš™ï¸ [Tool]"
+            prefix = "⚙️ [Tool]"
         elif level == "error":
             color = AgentTracer.COLOR_ERROR
-            prefix = "âŒ [Error]"
+            prefix = "❌ [Error]"
         elif level == "success":
             color = AgentTracer.COLOR_SUCCESS
-            prefix = "âœ… [Success]"
+            prefix = "✅ [Success]"
             
         print(f"{color}{prefix} {msg}{AgentTracer.COLOR_RESET}")
         logger.debug("AGENT_TRACE", f"{level.upper()}: {msg}")

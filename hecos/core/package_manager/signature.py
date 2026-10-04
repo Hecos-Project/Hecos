@@ -103,5 +103,9 @@ class SignatureVerifier:
             except Exception as e:
                 logger.warning(f"[HPM:Signature] Error during verification with {key_name}: {e}")
 
-        logger.error("[HPM:Signature] Signature verification FAILED. Package is altered or from an untrusted source.")
-        return False
+        if require_signature:
+            logger.error("[HPM:Signature] Signature verification FAILED. Package is altered or from an untrusted source.")
+            return False
+        else:
+            logger.warning("[HPM:Signature] Signature verification FAILED, but allowed by bypass flag.")
+            return True

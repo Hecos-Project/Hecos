@@ -125,3 +125,41 @@ def register_manage_config_routes(app, _hecos_src: str, cfg_mgr, log):
             log.error(f"[HPM] GET /api/hpm/settings/sounds error: {e}")
             return jsonify({"ok": False, "error": str(e)}), 500
 
+    @app.route("/api/hpm/settings/reset_cache", methods=["POST"])
+    @login_required
+    def api_hpm_settings_reset_cache():
+        try:
+            db_path = os.path.join(cfg_mgr.config.get("hpm_data_dir", os.path.join(_hecos_src, "data")), "packages.db")
+            if not os.path.exists(db_path):
+                # Fallback to alternative paths if needed
+                db_path = os.path.join(_hecos_src, "data", "packages.db")
+            
+            if os.path.exists(db_path):
+                import sqlite3
+                conn = sqlite3.connect(db_path)
+                c = conn.cursor()
+                c.execute("SELECT id, install_path FROM packages")
+                rows = c.fetchall()
+                import json
+                updated_count = 0
+                for row in rows:
+                    if row[1]:
+                        manifest_file = os.path.join(_hecos_src, row[1], "manifest.json")
+                        if os.path.exists(manifest_file):
+                            try:
+                                with open(manifest_file, 'r', encoding='utf-8') as f:
+                                    md = json.load(f)
+                                c.execute("UPDATE packages SET manifest_snapshot = ? WHERE id = ?", (json.dumps(md), row[0]))
+                                updated_count += 1
+                            except Exception:
+                                pass
+                conn.commit()
+                conn.close()
+                log.info("[HPM] Packages manifest cache (DB) cleared.")
+                _invalidate_all_caches()
+                return jsonify({"ok": True})
+            else:
+                return jsonify({"ok": False, "error": "Database not found."}), 404
+        except Exception as e:
+            log.error(f"[HPM] POST /api/hpm/settings/reset_cache error: {e}")
+            return jsonify({"ok": False, "error": str(e)}), 500

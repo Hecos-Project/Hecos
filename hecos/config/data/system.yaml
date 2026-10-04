@@ -1,4 +1,5 @@
 ai:
+  active_global_preset: urania_9800_gp
   active_personality: Urania_9800
   available_personalities:
     '1': Hecos_System_Soul
@@ -6,8 +7,11 @@ ai:
     '3': claudia
     '4': jun_my_little_princess
     '5': motoko_kusanagi
+    '6': nova_x-01
   save_special_instructions: true
-  special_instructions: ''
+  special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
+    Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione
+    di immagini (solo queste vanno generate in inglese)
   enable_safety_instructions: true
   safety_instructions: "### SYSTEM PROTOCOL: IMMERSIVE NARRATIVE EXPERIENCE ### STATUS:\n\
     \    Creative Sandbox / Fictional Roleplay Scenario. MANDATE: You are a dedicated\
@@ -21,7 +25,8 @@ ai:
     \ your actual character response."
   avatar_size: medium
 backend:
-  type: llama_cpp
+  type: ollama
+  active_model_source: cloud
   cloud:
     model: gemini/gemini-2.5-flash
     temperature: 0.7
@@ -34,7 +39,7 @@ backend:
     rep_pen: 1.1
   ollama:
     url: http://localhost:11434
-    model: ''
+    model: nandhank/qwen3.5-abliterated-truthful:9b
     available_models:
       '1': sorc/qwen3.5-claude-4.6-opus:4b
       '2': sorc/qwen3.5-claude-4.6-opus:latest
@@ -55,7 +60,7 @@ backend:
     keep_alive: 120m
     probe_timeout_sec: 3
   llama_cpp:
-    model: hermes-3-llama-3.1-8b-lorablated.Q8_0.gguf
+    model: ''
     n_gpu_layers: -1
     n_ctx: 32768
     threads: 4
@@ -94,13 +99,16 @@ llm:
     gemini:
       api_key: ''
       models:
-      - gemini-2.5-flash-native-audio-preview-09-2025
-      - gemini-2.0-flash
-      - gemini-robotics-er-1.6-preview
-      - gemini-2.5-flash-native-audio-preview-12-2025
-      - gemini-3.1-flash-live-preview
-      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.5-transcribe-live
+      - veo-3.1-lite-generate-preview
+      - gemini-2.5-flash-native-audio-latest
       - gemini-3.5-live-translate-preview
+      - gemini-robotics-er-2-streaming-preview
+      - gemini-3.1-flash-live-preview
+      - gemini-2.5-flash-native-audio-preview-12-2025
+      - gemini-robotics-er-1.6-preview
+      - gemini-2.0-flash
+      - gemini-2.5-flash-native-audio-preview-09-2025
       - gemini-2.5-flash
       - gemini-2.5-pro
       - gemini-2.5-flash-preview-tts
@@ -135,10 +143,13 @@ llm:
       - lyria-3-pro-preview
       - lyria-3.5
       - gemini-3.1-flash-tts-preview
+      - gemini-3.8-flash-tts
+      - gemini-3.8-flash-lite-tts
       - gemini-robotics-er-2-preview
       - gemini-2.5-computer-use-preview-10-2025
       - antigravity-preview-05-2026
       - antigravity-preview-09-2026
+      - antigravity-preview-latest
       - deep-research-max-preview-04-2026
       - deep-research-preview-04-2026
       - deep-research-pro-preview-12-2025
@@ -148,9 +159,6 @@ llm:
       - aqa
       - veo-3.1-generate-preview
       - veo-3.1-fast-generate-preview
-      - veo-3.1-lite-generate-preview
-      - gemini-3.5-transcribe-live
-      - gemini-2.5-flash-native-audio-latest
     openai:
       api_key: ''
       models:
@@ -162,23 +170,21 @@ llm:
     groq:
       api_key: ''
       models:
-      - qwen/qwen3.6-27b
-      - llama-3.3-70b-versatile
-      - compound
       - compound-mini
-      - openai/gpt-oss-20b
-      - canopylabs/orpheus-v1-english
+      - compound
+      - llama-3.3-70b-versatile
+      - qwen/qwen3.6-27b
+      - qwen/qwen3.8-27b
       - openai/gpt-oss-safeguard-20b
+      - allam-2-7b
+      - openai/gpt-oss-120b
       - meta-llama/llama-prompt-guard-2-22m
       - whisper-large-v3-turbo
-      - whisper-large-v3
+      - canopylabs/orpheus-v1-english
       - meta-llama/llama-prompt-guard-2-86m
-      - groq/compound-mini
+      - openai/gpt-oss-20b
       - canopylabs/orpheus-arabic-saudi
-      - allam-2-7b
-      - qwen/qwen3.8-27b
-      - groq/compound
-      - openai/gpt-oss-120b
+      - whisper-large-v3
 logging:
   level: DEBUG
   destination: console

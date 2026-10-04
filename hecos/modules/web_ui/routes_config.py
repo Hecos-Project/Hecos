@@ -13,7 +13,8 @@ from .routes_config_media import init_config_media_routes
 from .routes_config_agent import init_config_agent_routes
 from .routes_config_routing import init_config_routing_routes
 from .routes_config_utils import init_config_utils_routes
-from .routes_chat_overrides import init_chat_overrides_routes
+
+from .routes_global_presets import init_global_presets_routes
 
 def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     """
@@ -35,7 +36,8 @@ def init_config_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     # 5. UI Utilities (Plugin Registry, Window State)
     init_config_utils_routes(app, root_dir, logger)
 
-    # 6. Chat Overrides
-    init_chat_overrides_routes(app, root_dir, logger)
+
+    # 7. Soul Forge (Global Presets)
+    init_global_presets_routes(app, root_dir, logger, cfg_mgr)
 
     logger.debug("[WebUI] Modular configuration routes fully registered.")

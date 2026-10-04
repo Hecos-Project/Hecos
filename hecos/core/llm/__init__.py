@@ -1,10 +1,10 @@
-﻿import json
+import json
 import os
 
 class LLMManager:
     """
     Gestore dinamico per lo smistamento delle richieste LLM.
-    Permette di definire modelli specifici per ogni plugin o funzionalitÃ .
+    Permette di definire modelli specifici per ogni plugin o funzionalità.
     """
     _instance = None
     _config = None
@@ -45,14 +45,14 @@ class LLMManager:
         if tag in plugins:
             model = plugins[tag].get("modello_llm")
             if model:
-                # Check se il modello Ã¨ cloud e il cloud Ã¨ disattivato globalmente
+                # Check se il modello è cloud e il cloud è disattivato globalmente
                 allow_cloud = cfg.get("llm", {}).get("allow_cloud", False)
                 is_cloud = any(model.startswith(p + "/") for p in ["groq", "openai", "anthropic", "gemini", "cohere"])
                 if is_cloud and not allow_cloud:
                     return None # Forza fallback ignorando l'override del plugin
                 return model
 
-        # PossibilitÃ  futura: ricerca in core_features
+        # Possibilità futura: ricerca in core_features
         # core_features = cfg.get("core_features", {})
         # if tag in core_features:
         #     return core_features[tag].get("modello_llm")

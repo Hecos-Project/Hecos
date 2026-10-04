@@ -39,7 +39,7 @@
     // Browser-reserved combos we must never steal
     const BROWSER_RESERVED = new Set([
         'ctrl+w', 'ctrl+t', 'ctrl+n', 'ctrl+shift+n', 'ctrl+shift+t',
-        'ctrl+l', 'ctrl+r', 'ctrl+shift+j', 'ctrl+u', 'ctrl+s',
+        'ctrl+l', 'ctrl+r', 'ctrl+shift+r', 'ctrl+shift+j', 'ctrl+u', 'ctrl+s',
         'alt+F4', 'ctrl+f5'
     ]);
 
@@ -109,6 +109,12 @@
         }
 
         if (!matchedActionId) return;
+
+        // Special case: 'ui.ptt_trigger' (ctrl+shift) is handled implicitly via
+        // keydown/keyup events in chat.js. We must NOT call preventDefault() here
+        // because that would block legitimate combos like Ctrl+Shift+R, Ctrl+Shift+C, etc.
+        // The PTT trigger action exists only as metadata for the cheatsheet HUD.
+        if (matchedActionId === 'ui.ptt_trigger') return;
 
         // Check if handler is registered
         const entry = _handlers[matchedActionId];

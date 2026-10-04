@@ -15,7 +15,7 @@
     "webui_voice_mode_web": "Web — Sempre su Browser",
     "webui_voice_mode_auto": "Auto — Segue il dispositivo attivo",
     "webui_voice_mode_auto_desc": "In modalità Auto, Hecos risponderà sul dispositivo da cui riceve il comando.",
-    "webui_voice_test_title": "Test Voice (Piper)",
+    "webui_voice_test_title": "Test Voice",
     "webui_voice_test_ph": "Scrivi qualcosa per testare...",
     "webui_voice_test_web": "Test nel browser",
     "webui_voice_test_pc": "Test su casse PC",

@@ -2,11 +2,14 @@
 <div id="qc-hud-overlay" class="qc-hud-hidden" style="display: none; opacity: 0; visibility: hidden; pointer-events: none; position: fixed; top:0; left:0; width:100%; height:100%; z-index:9999;">
   <div class="qc-hud-panel">
     <div class="qc-hud-header">
-      <div class="qc-hud-title"><i class="fas fa-globe"></i> GLOBAL DEFAULTS</div>
+      <div class="qc-hud-title"><i class="fas fa-sliders-h"></i> CHAT OVERRIDES</div>
       <button class="qc-hud-close" onclick="window.closeQuickConfig()"><i class="fas fa-times"></i></button>
     </div>
     
     <div class="qc-hud-body">
+      <div style="font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.3;">
+        Questi parametri (Chat Overrides) modificano temporaneamente la sessione corrente senza alterare i Global Defaults.
+      </div>
       <div class="qc-hud-field">
         <label><i class="fas fa-server"></i> {{ t('webui_chat_backend') }}</label>
         <select id="qc-backend-type" onchange="window.qcBackendChanged()">

@@ -92,9 +92,6 @@
     <button id="hpm-tab-btn-store" class="filter-btn" onclick="hpmSwitchTab('store')"
             style="position:relative;">
       <i class="fas fa-store" style="margin-right:6px;"></i> Store <span id="hpm-cnt-store" style="opacity:0.6;font-size:0.85em;margin-left:4px;"></span>
-      <span style="position:absolute;top:-6px;right:-6px;background:linear-gradient(135deg,var(--accent),#7c3aed);
-                   color:#fff;font-size:0.55em;font-weight:800;padding:2px 5px;border-radius:6px;
-                   letter-spacing:.5px;">NEW</span>
     </button>
   </div>
 
@@ -279,46 +276,6 @@
   <div id="hpm-pane-store" style="display:none;">
   </div>
 
-</div>
-
-<!-- Uninstall Confirmation Modal -->
-<div id="hpm-confirm-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
-  <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; padding:24px; max-width:400px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
-    <h2 style="margin-top:0; font-size:1.4em; color:var(--text);"><i class="fas fa-exclamation-triangle" style="color:#ff4a4a; margin-right:8px;"></i>{{ t('hpm_confirm_uninstall_title') or 'Confirm Uninstall' }}</h2>
-    <p id="hpm-confirm-modal-text" style="margin:20px 0; color:var(--text); font-size:1.05em;"></p>
-    <div class="modal-actions" style="display:flex; justify-content:center; gap:15px; margin-top:24px;">
-      <button type="button" class="btn btn-secondary" onclick="document.getElementById('hpm-confirm-modal').style.display='none'">{{ t('hpm_confirm_uninstall_cancel') or 'Cancel' }}</button>
-      <button type="button" class="btn btn-danger" style="background:#ff4a4a; color:white; border:none;" id="hpm-confirm-modal-yes">{{ t('hpm_confirm_uninstall_yes') or 'Uninstall' }}</button>
-    </div>
-  </div>
-</div>
-<script>
-// Safety guard: prevent Enter key from accidentally confirming the Wipe/Confirm modal
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    const modal = document.getElementById('hpm-confirm-modal');
-    // If the modal is NOT visible, prevent Enter from bubbling to any button inside it
-    if (modal && modal.style.display === 'none') {
-      // Check if the active element is NOT inside the modal itself
-      const yesBtn = document.getElementById('hpm-confirm-modal-yes');
-      if (document.activeElement === yesBtn) {
-        e.preventDefault();
-      }
-    }
-    // Also: if we're focused on an input/textarea that is NOT inside the modal, stop Enter from triggering buttons
-    const tag = document.activeElement ? document.activeElement.tagName : '';
-    if ((tag === 'INPUT' || tag === 'TEXTAREA') && modal && modal.style.display === 'none') {
-      // Prevent Enter from submitting or triggering random buttons
-      const inModal = modal.contains(document.activeElement);
-      if (!inModal) {
-        // Only stop propagation - don't prevent default so the field still works normally
-        e.stopPropagation();
-      }
-    }
-  }
-});
-</script>
-
 <!-- Info / Capabilities Modal -->
 <div id="hpm-info-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
   <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; padding:24px; max-width:500px; width:100%; text-align:left; box-shadow:0 10px 30px rgba(0,0,0,0.5); display:flex; flex-direction:column; max-height:85vh;">
@@ -329,7 +286,24 @@ document.addEventListener('keydown', function(e) {
     </div>
   </div>
 </div>
-<!-- Translations for JS -->
+
+<!-- Custom Web Folder Picker Modal -->
+<div id="hpm-folder-picker-modal" class="modal-bg" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; align-items:center; justify-content:center;">
+    <div class="modal-content" style="background:var(--bg2, #1e1e1e); border:1px solid var(--border-color); border-radius:12px; max-width:600px; width:100%; height:70vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+        <div style="padding:16px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="window.builderPickerUp()" style="padding:8px 12px;"><i class="fas fa-level-up-alt"></i> Up</button>
+            <input type="text" id="hpm-picker-path" class="config-input" style="flex:1; background:var(--bg3); border:none;" readonly>
+        </div>
+        <div id="hpm-picker-list" style="flex:1; overflow-y:auto; padding:8px;">
+        </div>
+        <div style="padding:16px; border-top:1px solid var(--border-color); display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('hpm-folder-picker-modal').style.display='none'">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="window.builderPickerConfirm()">Select Folder</button>
+        </div>
+    </div>
+</div>
+
+  <!-- Translations for JS -->
 <script>
 window.HPM_I18N = {
   loading: "{{ t('webui_loading') or 'Loading modules...' }}",
@@ -373,7 +347,7 @@ window.HPM_I18N = {
     '/static/js/packages_panel_tabs.js',
     '/static/js/packages_panel_loader.js',
     '/static/js/packages_panel_updates.js',
-    '/static/js/packages_panel_init.js'
+    '/static/js/packages_panel_init.js',
   ];
 
   // Remove old script tags from previous loads so we get fresh ones
@@ -399,3 +373,15 @@ window.HPM_I18N = {
   });
 })();
 </script>
+
+<!-- Generic Confirm Modal for HPM -->
+<div id="hpm-confirm-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+  <div style="background:var(--bg-secondary); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:25px; width:400px; max-width:90%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+    <i class="fas fa-exclamation-triangle" style="font-size:3em; color:#f59e0b; margin-bottom:15px;"></i>
+    <div id="hpm-confirm-modal-text" style="font-size:1.1em; color:var(--text); margin-bottom:25px;"></div>
+    <div style="display:flex; justify-content:space-between; gap:10px;">
+      <button type="button" class="btn btn-secondary" style="flex:1; padding:10px;" onclick="document.getElementById('hpm-confirm-modal').style.display='none'">{{ t('cancel') or 'Cancel' }}</button>
+      <button type="button" id="hpm-confirm-modal-yes" class="btn btn-danger" style="flex:1; padding:10px; background:#ef4444; border:none; color:white;">{{ t('confirm') or 'Confirm' }}</button>
+    </div>
+  </div>
+</div>

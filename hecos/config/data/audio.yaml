@@ -1,4 +1,4 @@
-active_engine: kokoro
+active_engine: xtts2
 voice_status: true
 piper_path: C:\Hecos\bin\piper\piper.exe
 onnx_model: C:\Hecos\bin\piper\it_IT-paola-medium.onnx
@@ -9,11 +9,95 @@ sentence_silence: 0.2
 piper_timeout: 180
 kokoro:
   speed: 1.0
-  voice: im_nicola
+  voice: CLONE
+  sentence_silence: 0.0
+  model_path: ''
 xtts:
-  speed: 1.0
+  speed: 1.4
   language: it
-  speaker: Claribel Dervla
+  speaker: CLONE
+  gpu_acceleration: gpu
+  chunk_sentences: true
+  speaker_wav: ''
+  temperature: 0.6
+  repetition_penalty: 4.0
+  top_k: 40
+  top_p: 0.8
+  length_penalty: 0.9
+  current_preset: default
+xtts_presets:
+  8bitMamma 1:
+    chunk_sentences: true
+    gpu_acceleration: gpu
+    language: it
+    length_penalty: 0.9
+    repetition_penalty: 4
+    speaker: Claribel Dervla
+    speaker_wav: C:\Hecos\hecos\assets\voice_clones\8bitMamma_voce1.wav
+    speed: 1.4
+    temperature: 0.6
+    top_k: 40
+    top_p: 0.8
+  Emanuela P:
+    chunk_sentences: true
+    gpu_acceleration: gpu
+    language: it
+    length_penalty: 1.5
+    repetition_penalty: 8
+    speaker: Claribel Dervla
+    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Emanuela Pacotto voce 3 .wav
+    speed: 1.1
+    temperature: 1.2
+    top_k: 90
+    top_p: 0.95
+  Rowena 1:
+    chunk_sentences: true
+    gpu_acceleration: gpu
+    language: it
+    length_penalty: 1.2
+    repetition_penalty: 6
+    speaker: Claribel Dervla
+    speaker_wav: C:\Hecos\hecos\assets\voice_clones\Rowena voce 001.wav
+    speed: 1
+    temperature: 0.9
+    top_k: 70
+    top_p: 0.9
+xtts_inference_presets:
+  Fast & Direct:
+    speed: 1.4
+    temperature: 0.6
+    repetition_penalty: 4
+    top_k: 40
+    top_p: 0.8
+    length_penalty: 0.9
+  Expressive & Dynamic:
+    speed: 1
+    temperature: 0.9
+    repetition_penalty: 6
+    top_k: 70
+    top_p: 0.9
+    length_penalty: 1.2
+  Slow & Clear:
+    speed: 0.8
+    temperature: 0.4
+    repetition_penalty: 3
+    top_k: 30
+    top_p: 0.7
+    length_penalty: 0.8
+  Creative & Wild:
+    speed: 1.1
+    temperature: 1.2
+    repetition_penalty: 8
+    top_k: 90
+    top_p: 0.95
+    length_penalty: 1.5
+  Stable & Monotone:
+    speed: 1
+    temperature: 0.1
+    repetition_penalty: 10
+    top_k: 10
+    top_p: 0.5
+    length_penalty: 1
 listening_status: true
 energy_threshold: 450
 silence_timeout: 5

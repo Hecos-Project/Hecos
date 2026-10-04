@@ -4,7 +4,7 @@
     "webui_voice_routing_in_hint": "Entrada de Audio (Micrófono)",
     "webui_voice_routing_out_hint": "Salida de Voz (Altavoces)",
     "webui_voice_pc_mic": "Bus del Sistema (Micrófonos del PC)",
-    "webui_voice_test_title": "Prueba de Voz (Piper)",
+    "webui_voice_test_title": "Prueba de Voz",
     "webui_voice_test_ph": "Escribe algo para probar...",
     "webui_voice_test_web": "Probar en navegador",
     "webui_voice_test_pc": "Probar en PC",

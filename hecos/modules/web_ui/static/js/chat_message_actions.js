@@ -124,7 +124,11 @@ function buildMessageActions(msgEl, role, historyIndex) {
     listenBtn.className = 'msg-action-btn';
     const listenLabel = t('chat_btn_listen') === 'chat_btn_listen' ? 'Listen' : t('chat_btn_listen');
     listenBtn.innerHTML = `🔊 ${listenLabel}`;
-    listenBtn.title = listenLabel;
+    
+    const listenTooltipFallback = listenLabel + ' - Regenerate audio (entire message or selection)';
+    listenBtn.title = t('chat_btn_listen_tooltip') === 'chat_btn_listen_tooltip' 
+        ? listenTooltipFallback 
+        : t('chat_btn_listen_tooltip');
     
     // Capture selected text before the click clears the selection
     let _capturedSelection = null;
@@ -192,7 +196,11 @@ function buildMessageActions(msgEl, role, historyIndex) {
           const res = await fetch('/api/audio/test', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ text: textToSpeak, mode: 'web' })
+              body: JSON.stringify({ 
+                  text: textToSpeak, 
+                  mode: 'web',
+                  session_id: (window.chatHistoryState && window.chatHistoryState.activeSessionId) ? window.chatHistoryState.activeSessionId : null
+              })
           });
           const data = await res.json();
           if (data.ok && data.job_id) {

@@ -86,6 +86,8 @@ window.initEvents = function() {
     } else if (ev.type === 'voice_detected' && ev.text) {
       console.log("[Audio] Voice command received:", ev.text);
       if (window.hideWelcome) window.hideWelcome();
+      // Save to input history so ArrowUp can recall voice messages
+      if (typeof window.saveInputHistory === 'function') window.saveInputHistory(ev.text);
       
       if (ev.standalone) {
           // In standalone mode, the frontend orchestrates generation
@@ -131,6 +133,8 @@ window.initEvents = function() {
       if (window.sendBtn) window.sendBtn.disabled = false;
       if (window.showStopVoiceBtn) window.showStopVoiceBtn(false);
       
+      // Save voice message to input history (ev.user is the transcribed text from backend PTT)
+      if (ev.user && typeof window.saveInputHistory === 'function') window.saveInputHistory(ev.user);
       if (ev.user && window.chatHistory) window.chatHistory.push({role: 'user', content: ev.user});
       if (aiText && window.chatHistory)  window.chatHistory.push({role: 'assistant', content: aiText});
       if (window.chatArea) window.chatArea.scrollTop = window.chatArea.scrollHeight;

@@ -1,0 +1,218 @@
+<!-- ⚡ SOUL FORGE: Global Presets Panel -->
+<div id="soul-forge-overlay" onclick="window.sfTogglePanel(false)"></div>
+<div id="soul-forge-panel">
+    <div class="sf-header">
+        <div>
+            <i class="fas fa-bolt" style="color: var(--accent1);"></i>
+            <span id="sf-panel-title">Global Defaults</span>
+        </div>
+        <button class="sf-close-btn" onclick="window.sfTogglePanel(false)"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="sf-body">
+        <div id="sf-panel-desc" style="font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.3;">
+            These are the system's <b>Global Defaults</b>. Settings saved here are automatically applied as the foundation for every new chat and are independent of Chat Overrides.
+        </div>
+        
+        <!-- ACTIVE SOUL -->
+        <div class="sf-section sf-active-soul">
+            <div class="sf-section-header">
+                <i class="fas fa-globe"></i> ACTIVE GLOBAL DEFAULT
+            </div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group" style="flex:2;">
+                    <select id="sf-active-soul-select" class="form-control" onchange="window.sfActivateSoul(this.value)">
+                        <option value="">-- No active global default --</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="window.sfSaveAsNewSoul()" title="Save current config as new Global Default">
+                    <i class="fas fa-plus"></i> New
+                </button>
+                <button id="sf-top-save-btn" class="btn btn-primary btn-sm" onclick="window.sfOverwriteSoul()" title="Overwrite current Global Default">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="window.sfDeleteSoul()" title="Delete current Global Default">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="window.sfExportSoul()" title="Export .global_preset.json file">
+                    <i class="fas fa-file-export"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sf-import-input').click()" title="Import .global_preset.json file">
+                    <i class="fas fa-file-import"></i>
+                </button>
+                <input type="file" id="sf-import-input" accept=".json" style="display:none;" onchange="window.sfImportSoul(event)">
+            </div>
+        </div>
+
+        <!-- SOUL -->
+        <div class="sf-section">
+            <div class="sf-section-header"><i class="fas fa-masks-theater"></i> SOUL (PERSONALITY)</div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label>Soul File</label>
+                    <select id="sf-persona-select" class="form-control" onchange="window.sfDirty()">
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODEL -->
+        <div class="sf-section">
+            <div class="sf-section-header"><i class="fas fa-robot"></i> MODEL</div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label>Backend</label>
+                    <select id="sf-backend-select" class="form-control" onchange="window.sfDirty(); window.sfUpdateModelsDropdown()">
+                        <option value="ollama">Ollama</option>
+                        <option value="cloud">Cloud API</option>
+                        <option value="kobold">KoboldCPP</option>
+                        <option value="llama_cpp">Llama.cpp</option>
+                    </select>
+                </div>
+                <div class="sf-control-group">
+                    <label>Model Name</label>
+                    <select id="sf-model-select" class="form-control" onchange="window.sfDirty()">
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- INFERENCE -->
+        <div class="sf-section">
+            <div class="sf-section-header"><i class="fas fa-brain"></i> INFERENCE</div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label>Inference Preset</label>
+                    <div style="display:flex; gap:10px;">
+                        <select id="sf-inference-preset-select" class="form-control" onchange="window.sfApplyInferencePreset(this.value)">
+                            <option value="">-- No preset selected --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sf-sliders-grid">
+                <!-- Sliders for Inference -->
+                <div class="sf-slider-item">
+                    <label>Temperature <span id="sf-val-temp">0.7</span></label>
+                    <input type="range" id="sf-temp" min="0" max="2" step="0.05" value="0.7" oninput="window.sfUpdateSliderVal(this, 'sf-val-temp'); window.sfDirty()">
+                </div>
+                <div class="sf-slider-item">
+                    <label>Top P <span id="sf-val-topp">0.9</span></label>
+                    <input type="range" id="sf-topp" min="0" max="1" step="0.01" value="0.9" oninput="window.sfUpdateSliderVal(this, 'sf-val-topp'); window.sfDirty()">
+                </div>
+                <div class="sf-slider-item">
+                    <label>Repeat Penalty <span id="sf-val-reppen">1.1</span></label>
+                    <input type="range" id="sf-reppen" min="0.5" max="2" step="0.05" value="1.1" oninput="window.sfUpdateSliderVal(this, 'sf-val-reppen'); window.sfDirty()">
+                </div>
+                <div class="sf-slider-item">
+                    <label>Max Tokens (Predict) <span id="sf-val-predict">1024</span></label>
+                    <input type="range" id="sf-predict" min="128" max="8192" step="128" value="1024" oninput="window.sfUpdateSliderVal(this, 'sf-val-predict'); window.sfDirty()">
+                </div>
+            </div>
+        </div>
+        
+        <!-- VOICE -->
+        <div class="sf-section">
+            <div class="sf-section-header"><i class="fas fa-microphone-alt"></i> VOICE & TTS</div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label>TTS Engine</label>
+                    <select id="sf-tts-engine-select" class="form-control" onchange="window.sfDirty(); window.sfUpdateVoicesDropdown()">
+                        <option value="xtts2">XTTSv2</option>
+                        <option value="piper">Piper</option>
+                        <option value="kokoro">Kokoro</option>
+                    </select>
+                </div>
+                <div class="sf-control-group">
+                    <label>TTS Voice</label>
+                    <select id="sf-tts-voice-select" class="form-control" onchange="window.sfDirty()">
+                    </select>
+                </div>
+            </div>
+            
+            <div id="sf-xtts-controls" style="display:none; margin-top:15px;">
+                <div class="sf-controls-row" style="margin-bottom:15px;">
+                    <div class="sf-control-group" style="flex: 1;">
+                        <label>XTTS Preset</label>
+                        <select id="sf-xtts-preset-select" class="form-control" onchange="window.sfApplyXttsPreset(this.value)">
+                            <option value="">-- No XTTS Preset --</option>
+                        </select>
+                    </div>
+                    <div class="sf-control-group" style="flex: 2;">
+                        <label>Voice Clone Reference (.wav path)</label>
+                        <input type="text" id="sf-xtts-speaker-wav" class="form-control" placeholder="/path/to/voice.wav" oninput="window.sfDirty()" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>XTTS Inference Parameters</span>
+                    <div style="display:flex; gap:4px; align-items:center;">
+                        <div class="sf-control-group" style="flex:unset; width:150px; margin-bottom:0;">
+                            <select id="sf-xtts-inference-preset-select" class="form-control" onchange="window.sfApplyXttsInferencePreset(this.value)" style="padding: 2px 5px; font-size:11px; width:100%;">
+                                <option value="">-- Inference Preset --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="sf-sliders-grid">
+                    <div class="sf-slider-item">
+                        <label>Temperature <span id="sf-val-xtts-temp">0.75</span></label>
+                        <input type="range" id="sf-xtts-temp" min="0" max="2" step="0.05" value="0.75" oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-temp'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Speed <span id="sf-val-xtts-speed">1.0</span></label>
+                        <input type="range" id="sf-xtts-speed" min="0.5" max="2" step="0.1" value="1.0" oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-speed'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Top K <span id="sf-val-xtts-topk">50</span></label>
+                        <input type="range" id="sf-xtts-topk" min="1" max="100" step="1" value="50" oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-topk'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Repetition Pen. <span id="sf-val-xtts-reppen">5.0</span></label>
+                        <input type="range" id="sf-xtts-reppen" min="1" max="10" step="0.5" value="5.0" oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-reppen'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Top P <span id="sf-val-xtts-topp">0.85</span></label>
+                        <input type="range" id="sf-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85" oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-topp'); window.sfDirty()">
+                    </div>
+                    <div class="sf-slider-item">
+                        <label>Length Penalty <span id="sf-val-xtts-length-penalty">1.0</span></label>
+                        <input type="range" id="sf-xtts-length-penalty" min="0.0" max="5.0" step="0.1" value="1.0" oninput="window.sfUpdateSliderVal(this, 'sf-val-xtts-length-penalty'); window.sfDirty()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <div class="sf-footer">
+        <span id="sf-status-msg" style="color:var(--text-muted); font-size:12px;"></span>
+    </div>
+</div>
+
+<!-- Hecos Confirm Modal -->
+<div id="hecos-confirm-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+  <div class="card" style="width:400px; max-width:90%; text-align:center; padding:30px; box-shadow:0 10px 40px rgba(0,0,0,0.6); border-color:var(--accent);">
+    <i class="fas fa-exclamation-triangle" style="font-size:3em; color:var(--accent); margin-bottom:20px;"></i>
+    <div id="hecos-confirm-modal-text" style="font-size:1.1em; color:var(--text); margin-bottom:30px; line-height:1.5;"></div>
+    <div style="display:flex; justify-content:space-between; gap:12px;">
+      <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('hecos-confirm-modal').style.display='none'">Cancel</button>
+      <button type="button" id="hecos-confirm-modal-yes" class="btn btn-primary" style="flex:1;">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hecos Prompt Modal -->
+<div id="hecos-prompt-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:999999; justify-content:center; align-items:center; backdrop-filter:blur(5px);">
+  <div class="card" style="width:400px; max-width:90%; text-align:center; padding:30px; box-shadow:0 10px 40px rgba(0,0,0,0.6); border-color:var(--accent);">
+    <i class="fas fa-keyboard" style="font-size:3em; color:var(--accent); margin-bottom:20px;"></i>
+    <div id="hecos-prompt-modal-text" style="font-size:1.1em; color:var(--text); margin-bottom:20px; line-height:1.5;"></div>
+    <div class="field" style="margin-bottom:25px;">
+        <input type="text" id="hecos-prompt-modal-input" class="form-control" style="text-align:center; font-size:16px;">
+    </div>
+    <div style="display:flex; justify-content:space-between; gap:12px;">
+      <button type="button" class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('hecos-prompt-modal').style.display='none'">Cancel</button>
+      <button type="button" id="hecos-prompt-modal-yes" class="btn btn-primary" style="flex:1;">OK</button>
+    </div>
+  </div>
+</div>

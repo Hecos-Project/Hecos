@@ -147,6 +147,13 @@ async function showTab(name, skipScroll = false) {
   if ((name === 'ia'         || name === 'persona')        && typeof personaRefresh === 'function') personaRefresh();
   if ((name === 'lists'      || targetId === 'lists')      && typeof listsInit     === 'function') listsInit();
   if ((name === 'backup'     || targetId === 'backup')     && typeof backupPanelInit === 'function') backupPanelInit();
+  if (name === 'builder' && typeof window.builderRefreshSources === 'function') window.builderRefreshSources();
+  
+  // Scroll panel container to top
+  if (!skipScroll) {
+    const panelContainer = document.getElementById('panel-container');
+    if (panelContainer) panelContainer.scrollTop = 0;
+  }
 }
 
 /**

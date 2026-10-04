@@ -35,6 +35,7 @@ class PrivacyConfig(BaseModel):
 
 class AIConfig(BaseModel):
     model_config = ConfigDict(extra='ignore')
+    active_global_preset: str = ""
     active_personality: str = "Hecos_System_Soul.yaml"
     available_personalities: Dict[str, str] = {}
     save_special_instructions: bool = False
@@ -87,6 +88,7 @@ class LlamaCPPBackendConfig(BaseModel):
 
 class BackendConfig(BaseModel):
     type: str = "cloud"
+    active_model_source: str = "cloud"
     cloud: CloudBackendConfig = Field(default_factory=CloudBackendConfig)
     kobold: KoboldBackendConfig = Field(default_factory=KoboldBackendConfig)
     ollama: OllamaBackendConfig = Field(default_factory=OllamaBackendConfig)

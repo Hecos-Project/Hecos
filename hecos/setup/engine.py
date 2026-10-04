@@ -324,6 +324,13 @@ def _run_pip_install(engine_name, packages):
             return True
         else:
             logger.error(f"[SETUP] Failed to install {engine_name}. Exit code: {process.returncode}")
+            if engine_name.upper() == "XTTSV2":
+                logger.error("[SETUP] ❌ XTTSv2 installation failed (usually due to missing build dependencies).")
+                logger.error("[SETUP] 💡 TO FIX THIS, YOU PROBABLY NEED MICROSOFT C++ BUILD TOOLS:")
+                logger.error("[SETUP]    1. Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/")
+                logger.error("[SETUP]    2. Install the 'Desktop development with C++' workload.")
+                logger.error("[SETUP]    3. RESTART your PC.")
+                logger.error("[SETUP] 🔄 After restarting, try installing XTTSv2 again from Hecos settings.")
             return False
     except Exception as e:
         logger.error(f"[SETUP] Exception during {engine_name} installation: {e}")
@@ -394,8 +401,154 @@ def download_kokoro_engine():
     esp_ok = _install_espeak_ng()
     return pip_ok and esp_ok
 
+def _patch_python_headers():
+    import os, sys, shutil, urllib.request, zipfile, tempfile
+    
+    python_env_dir = os.path.dirname(sys.executable)
+    # Check both Include and include (case insensitive on Windows but let's be safe)
+    include_dir = os.path.join(python_env_dir, "Include")
+    libs_dir = os.path.join(python_env_dir, "libs")
+    python_h = os.path.join(include_dir, "Python.h")
+    python_h_lower = os.path.join(python_env_dir, "include", "Python.h")
+    
+    if os.path.exists(python_h) or os.path.exists(python_h_lower):
+        return True
+        
+    try:
+        from hecos.core.logging import logger
+    except ImportError:
+        import logging
+        logger = logging.getLogger("SETUP")
+        
+    v = sys.version_info
+    version_str = f"{v.major}.{v.minor}.{v.micro}"
+    
+    logger.info(f"[SETUP] ⚠️ Missing Python {version_str} C-headers (Python.h). Patching embedded environment...")
+    url = f"https://www.nuget.org/api/v2/package/python/{version_str}"
+    
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            zip_path = os.path.join(tmpdir, "python.zip")
+            logger.info(f"[SETUP] ⏳ Downloading Python headers from nuget.org...")
+            
+            # Add user agent to prevent 403 Forbidden
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response, open(zip_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+            
+            logger.info("[SETUP] ⏳ Extracting headers...")
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(tmpdir)
+                
+            tools_include = os.path.join(tmpdir, "tools", "include")
+            tools_libs = os.path.join(tmpdir, "tools", "libs")
+            
+            if os.path.exists(tools_include):
+                os.makedirs(include_dir, exist_ok=True)
+                for item in os.listdir(tools_include):
+                    s = os.path.join(tools_include, item)
+                    d = os.path.join(include_dir, item)
+                    if os.path.isdir(s): shutil.copytree(s, d, dirs_exist_ok=True)
+                    else: shutil.copy2(s, d)
+                    
+            if os.path.exists(tools_libs):
+                os.makedirs(libs_dir, exist_ok=True)
+                for item in os.listdir(tools_libs):
+                    s = os.path.join(tools_libs, item)
+                    d = os.path.join(libs_dir, item)
+                    if os.path.isdir(s): shutil.copytree(s, d, dirs_exist_ok=True)
+                    else: shutil.copy2(s, d)
+                    
+        logger.info("[SETUP] ✅ Python environment patched with C-headers successfully.")
+        return True
+    except Exception as e:
+        logger.error(f"[SETUP] ❌ Failed to patch Python headers: {e}")
+        return False
+
+def _install_msvc_build_tools():
+    try:
+        from hecos.core.logging import logger
+    except ImportError:
+        import logging
+        logger = logging.getLogger("SETUP")
+    import subprocess
+    logger.info("[SETUP] ⚠️ Attempting automatic installation of MSVC Build Tools via winget.")
+    logger.info("[SETUP] ⏳ THIS MAY TAKE 10-20 MINUTES and download ~2GB of data. Please wait...")
+    try:
+        result = subprocess.run(
+            [
+                "winget", "install",
+                "--id", "Microsoft.VisualStudio.2022.BuildTools",
+                "--silent",
+                "--accept-source-agreements",
+                "--accept-package-agreements",
+                "--override", "--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+            ],
+            capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
+        if result.returncode == 0 or "Successfully installed" in result.stdout:
+            logger.info("[SETUP] ✅ MSVC Build Tools installed successfully.")
+            return True
+        else:
+            logger.error(f"[SETUP] winget MSVC installation failed (code {result.returncode}): {result.stdout.strip()}")
+            return False
+    except Exception as e:
+        logger.error(f"[SETUP] MSVC installation error: {e}")
+        return False
+
 def download_xtts_engine():
-    return _run_pip_install("XTTSv2", ["TTS"])
+    try:
+        from hecos.core.logging import logger
+    except ImportError:
+        import logging
+        logger = logging.getLogger("SETUP")
+
+    logger.info("[SETUP] ═══════════════════════════════════════════════════════")
+    logger.info("[SETUP] 🚀 Starting XTTSv2 installation (Coqui TTS)")
+    logger.info("[SETUP] ═══════════════════════════════════════════════════════")
+    logger.info("[SETUP] Step 1/3: Installing build tools and patching Python...")
+    
+    _patch_python_headers()
+
+    
+    prereq_ok = _run_pip_install("XTTSv2-Prerequisites", ["Cython", "setuptools", "wheel", "numpy"])
+    if not prereq_ok:
+        logger.error("[SETUP] ❌ Failed to install build prerequisites. Cannot continue.")
+        return False
+
+    logger.info("[SETUP] ✅ Build tools ready.")
+    logger.info("[SETUP] Step 2/3: Installing TTS library (this may take several minutes)...")
+    
+    tts_ok = _run_pip_install("XTTSv2", ["TTS"])
+    
+    # If TTS fails, it's highly likely due to missing MSVC Build Tools for C extensions.
+    if not tts_ok:
+        logger.warning("[SETUP] ⚠️ TTS installation failed. Likely missing Microsoft Visual C++ Build Tools.")
+        msvc_ok = _install_msvc_build_tools()
+        if msvc_ok:
+            logger.info("[SETUP] 🔄 Retrying TTS library installation...")
+            tts_ok = _run_pip_install("XTTSv2", ["TTS"])
+            
+    if not tts_ok:
+        logger.error("[SETUP] ❌ TTS library installation failed.")
+        logger.error("[SETUP] 💡 Try manually: C:\\Hecos\\python_env\\python.exe -m pip install TTS")
+        logger.error("[SETUP] 🔄 After fixing, RESTART Hecos and try again.")
+        return False
+
+    logger.info("[SETUP] ✅ TTS library installed successfully.")
+    logger.info("[SETUP] Step 3/3: Verifying import...")
+    
+    try:
+        import importlib
+        TTS_mod = importlib.import_module("TTS")
+        logger.info(f"[SETUP] ✅ XTTSv2 is ready! (TTS v{getattr(TTS_mod, '__version__', '?')})")
+        logger.info("[SETUP] 🔄 RESTART Hecos to activate XTTSv2 as your TTS engine.")
+        logger.info("[SETUP] ℹ️  The XTTSv2 model (~1.8GB) will be downloaded automatically on first use.")
+        return True
+    except ImportError as e:
+        logger.error(f"[SETUP] ⚠️ TTS installed but cannot be imported: {e}")
+        logger.error("[SETUP] 🔄 RESTART Hecos — the module should become available after a fresh start.")
+        return False
 
 def unattended_onboarding(target_voices=None):
     print("=" * 60)

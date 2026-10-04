@@ -17,7 +17,8 @@ except ImportError:
 # Relative imports from our extracted modules
 from .sys_tools import (
     list_processes_tool, kill_process_tool, reboot_system_tool, execute_shell_command_tool,
-    execute_background_command_tool, open_media_file_tool
+    execute_background_command_tool, open_media_file_tool, get_date_tool, get_time_tool,
+    get_battery_status_tool
 )
 from .sandbox import run_python_code_tool
 from .file_manager import (
@@ -95,7 +96,6 @@ class ExecutorTools:
             return f"Exception executing command: {e}"
 
     def get_time(self) -> str:
-        from hecos.modules.executor.sys_tools import get_time_tool
         return get_time_tool()
 
     def get_date(self) -> str:

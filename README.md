@@ -3,7 +3,7 @@
   <img src="hecos/assets/Hecos_Logo_Banner.png" width="400" alt="Hecos Logo">
 </p>
 
-# Hecos - Version 0.50.0 (Phase II: Ghost Fire)
+# Hecos - Version 0.52.0 (Phase II: Ghost Fire)
 Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_ESP.md)
 
 # 🤖 Hecos
@@ -11,7 +11,7 @@ Language: [English](README.md) | [Italiano](README_ITA.md) | [Español](README_E
 
 ---
 
-> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.50.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
+> **Status: Phase II (Ghost Fire)**: Hecos is currently in `v0.52.0`. This is a Helping Companion System acting as a bridge between high-level reasoning and root system execution.
 >
 > ⚠️ **Important Notice**: Starting from this major release (0.50.0+), the primary development and target environment is officially **Windows 11**.
 
@@ -23,11 +23,12 @@ Built on three core pillars:
 * ⚡ **Extreme Speed** — Optimized native architecture and high-performance plugin system for real-time responsiveness.
 * 🧊 **Total Simplicity** — Professional dashboard and a modular design that makes advanced orchestration intuitive.
 
-Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.50.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro & Piper).
+Now fully migrated to a **Phase II: Ghost Fire stable architecture**, Hecos 0.52.0 brings a dedicated Web Interface (Chat + Config) and full internationalization. Powered by **LiteLLM**, it supports Ollama, Llama.cpp, KoboldCpp, and major cloud providers with real-time streaming and local TTS (Kokoro & Piper).
 
 ---
 
-## ✨ Key Features (v0.50.0)
+## ✨ Key Features (v0.52.0)
+* 🌐 **Global Presets (Soul Profiles)** — Infinite creation possibilities by freely combining AI personalities, TTS audio engines and voices, text backends, and inference presets into cohesive master profiles.
 * 🎭 **Inline Chat Overrides & Infinite Personalities** — Override the AI Model, Persona, and Voice directly within the chat interface on the fly. Create infinite personalities instantly for each conversation session.
 * 📦 **HPM 0.40 Architecture** — Fully migrated to Pydantic+TOML configurations, introducing dependency version constraints and locked `pip_requirements`.
 * 🛠️ **External Dependency Manager (EDM)** — New system that auto-detects missing core dependencies (Node, Tesseract, VC++), enabling one-click downloads directly from the WebUI.

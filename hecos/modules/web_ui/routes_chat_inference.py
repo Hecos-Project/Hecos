@@ -199,7 +199,61 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         try:
             from hecos.core.llm.client import LAST_PAYLOAD_INFO
             _m_info = LAST_PAYLOAD_INFO.get("model_info")
-        except Exception:
+            import json
+            if _m_info:
+                _m_info_dict = json.loads(_m_info)
+                
+                # Global Preset
+                from hecos.core.global_presets.manager import get_active_soul_id
+                _gp_global = get_active_soul_id("global")
+                _gp_session = get_active_soul_id(session_id)
+                _m_info_dict["global_preset"] = _gp_global
+                _m_info_dict["session_preset"] = _gp_session
+                
+                # Token usage
+                _m_info_dict["prompt_tokens"] = LAST_PAYLOAD_INFO.get("prompt_tokens", 0)
+                _m_info_dict["completion_tokens"] = LAST_PAYLOAD_INFO.get("completion_tokens", 0)
+                
+                # Always ensure tts_engine/tts_voice/backend/persona from merged config
+                ai_cfg = active_cfg_mgr.config.get("ai", {})
+                voice_cfg = active_cfg_mgr.config.get("voice", {})
+                if not _m_info_dict.get("tts_engine"):
+                    _m_info_dict["tts_engine"] = voice_cfg.get("tts_engine", ai_cfg.get("tts_engine"))
+                if not _m_info_dict.get("tts_voice"):
+                    _m_info_dict["tts_voice"] = voice_cfg.get("tts_voice", ai_cfg.get("tts_voice"))
+                if not _m_info_dict.get("persona"):
+                    _m_info_dict["persona"] = current_persona
+                if not _m_info_dict.get("backend") or _m_info_dict["backend"] == "unknown":
+                    btype = active_cfg_mgr.config.get("backend", {}).get("type")
+                    if btype:
+                        _m_info_dict["backend"] = btype
+                
+                # Check for XTTS voice clone overriding the default voice
+                _eng = (_m_info_dict.get("tts_engine") or "").lower()
+                if _eng in ("xtts", "xtts2"):
+                    try:
+                        voice_overrides = ai_cfg.get("voice_overrides", {})
+                        speaker_wav = voice_overrides.get("xtts_speaker_wav")
+                        
+                        if not speaker_wav:
+                            from hecos.core.audio.device_manager import get_audio_config
+                            aud_cfg = get_audio_config().get("xtts", {})
+                            speaker_wav = aud_cfg.get("speaker_wav", "").strip()
+                            
+                        if speaker_wav:
+                            import os
+                            if os.path.exists(speaker_wav):
+                                _m_info_dict["tts_voice"] = f"Clone: {os.path.basename(speaker_wav)}"
+                            else:
+                                abs_path = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")), "assets", "voice_clones", speaker_wav)
+                                if os.path.exists(abs_path):
+                                    _m_info_dict["tts_voice"] = f"Clone: {os.path.basename(speaker_wav)}"
+                    except Exception:
+                        pass
+                
+                _m_info = json.dumps(_m_info_dict)
+        except Exception as e:
+            _chat_log.error(f"Error enriching model_info: {e}")
             _m_info = None
             
         sess["queue"].put({"type": "trace_done", "persona_name": current_persona, "model_info": _m_info})

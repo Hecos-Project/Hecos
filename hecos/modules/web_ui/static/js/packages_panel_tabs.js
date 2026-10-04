@@ -31,6 +31,10 @@ window.hpmSwitchTab = async function(tabId) {
   const storePane = document.getElementById('hpm-pane-store');
   if (storePane) storePane.style.display = tabId === 'store' ? 'block' : 'none';
 
+  // Scroll panel container to top on every tab switch
+  const panelContainer = document.getElementById('panel-container');
+  if (panelContainer) panelContainer.scrollTop = 0;
+
   // ── Content loading per tab ────────────────────────────────────────────────
   if (tabId === 'packages') {
     if (typeof window.hpmLoadPackages === 'function') window.hpmLoadPackages();

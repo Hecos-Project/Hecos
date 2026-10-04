@@ -196,9 +196,17 @@ class KokoroEngine(BaseTTSEngine):
 
             try:
                 from kokoro import KPipeline
+                from hecos.core.audio.device_manager import get_audio_config
+                cfg = get_audio_config()
+                model_path = cfg.get("kokoro", {}).get("model_path", "").strip()
+
                 lang_name = _LANG_NAMES.get(lang_code, lang_code)
                 logger.info("KOKORO", f"Loading Kokoro pipeline for '{lang_name}'…")
-                pipeline = KPipeline(lang_code=lang_code)
+                if model_path:
+                    logger.info("KOKORO", f"Using custom model path/repo: {model_path}")
+                    pipeline = KPipeline(lang_code=lang_code, repo_id=model_path)
+                else:
+                    pipeline = KPipeline(lang_code=lang_code)
                 self._pipeline = pipeline
                 self._pipeline_lang = lang_code
                 logger.info("KOKORO", f"Kokoro pipeline ready for '{lang_name}'.")
@@ -276,10 +284,27 @@ class KokoroEngine(BaseTTSEngine):
             import numpy as np
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
+            sentence_silence = kwargs.get("sentence_silence")
+            if sentence_silence is None:
+                try:
+                    from hecos.core.audio.device_manager import get_audio_config
+                    sentence_silence = float(get_audio_config().get("kokoro", {}).get("sentence_silence", 0.0))
+                except Exception:
+                    sentence_silence = 0.0
+
+            silence_samples = int(sentence_silence * 24000)
+            silence_chunk = np.zeros(silence_samples, dtype=np.float32) if silence_samples > 0 else None
+
             chunks = []
             for _, _, audio in pipeline(text, voice=voice, speed=speed, split_pattern=r"\n+"):
                 if audio is not None:
                     chunks.append(audio)
+                    if silence_chunk is not None:
+                        chunks.append(silence_chunk)
+                        
+            # Remove the last silence chunk if added
+            if chunks and silence_chunk is not None and chunks[-1] is silence_chunk:
+                chunks.pop()
 
             if not chunks:
                 logger.warning("KOKORO", "generate_wav produced no audio chunks.")

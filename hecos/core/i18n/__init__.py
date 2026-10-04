@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 from hecos.core.logging import logger
 

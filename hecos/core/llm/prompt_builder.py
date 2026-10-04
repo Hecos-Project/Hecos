@@ -39,18 +39,7 @@ class PromptBuilder:
         rules = PromptBuilder._build_rules(config, user_id, backend_config)
         vision_note = PromptBuilder._build_vision_note(images)
         
-        chat_overrides_block = ""
-        chat_overrides_path = os.path.join(CONFIG_DATA_DIR, "chat_overrides.yaml")
-        try:
-            if os.path.exists(chat_overrides_path):
-                import yaml as pyyaml
-                with open(chat_overrides_path, "r", encoding="utf-8") as f:
-                    co_data = pyyaml.safe_load(f) or {}
-                    co_text = co_data.get("overrides", "").strip()
-                    if co_text:
-                        chat_overrides_block = f"\n### DYNAMIC CHAT OVERRIDES ###\n{co_text}\n"
-        except Exception as e:
-            logger.debug(f"PromptBuilder: Could not load chat overrides: {e}")
+
         
         system_prompt = (
             f"{personality_prompt}\n"
@@ -74,7 +63,6 @@ class PromptBuilder:
             f"{rules['user_profile_block']}"
             f"{rules['special_instructions_block']}"
             f"{vision_note}"
-            f"{chat_overrides_block}"
         )
         
         logger.debug("PromptBuilder", f"System prompt created: {len(system_prompt)} characters")

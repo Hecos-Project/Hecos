@@ -16,15 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(container);
   container.appendChild(window.HecosTTSPlayer);
 
-  // Prevent <audio> elements from trapping keyboard focus inside browser Shadow DOM.
-  // When an <audio controls> element has focus, the browser's internal shadow root
-  // consumes ESC (and other keys) before they reach our document-level listeners.
-  // By immediately blurring any audio that gains focus, ESC always propagates to our handlers.
-  document.addEventListener('focusin', (e) => {
-      if (e.target && e.target.tagName === 'AUDIO') {
-          e.target.blur();
+  // Prevent <audio> elements from trapping the ESC key inside browser Shadow DOM.
+  // Instead of blurring unconditionally on focus (which breaks the three-dots menu),
+  // we intercept the ESC key during the capture phase and blur the audio element, 
+  // allowing the event to propagate normally to our other document-level listeners.
+  document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.activeElement && document.activeElement.tagName === 'AUDIO') {
+          document.activeElement.blur();
       }
-  });
+  }, true);
 });
 
 // ── Output VU Meter Hook ──

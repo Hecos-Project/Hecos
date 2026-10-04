@@ -22,8 +22,8 @@ _verified_cache: Optional[bool] = None
 
 _IDENTITY_FILE = os.path.join(os.path.dirname(__file__), ".hecos_identity")
 _PUBLIC_KEY_SEARCH = [
-    os.path.join(os.path.dirname(__file__), "..", "..", "data", "trusted_keys", "hpm_public.pem"),
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "certs", "hpm_private.pem", "public.pem"),
+    os.path.join(os.path.dirname(__file__), "..", "data", "trusted_keys", "hpm_public.pem"),
+    os.path.join(os.path.dirname(__file__), "..", "..", "certs", "hpm_private.pem", "public.pem"),
 ]
 
 

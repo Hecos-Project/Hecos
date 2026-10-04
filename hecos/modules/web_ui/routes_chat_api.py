@@ -174,7 +174,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         except Exception as e:
             logger.warning(f"[chat/options] Failed to load personas: {e}")
         
-        models = get_hybrid_models(cfg_mgr.config, config_manager=cfg_mgr)
+        models = get_hybrid_models(cfg_mgr.config, config_manager=cfg_mgr, fast_mode=True)
         return jsonify({"ok": True, "models": models, "personas": personas})
 
     @app.route("/api/stream/<session_id>")
@@ -192,7 +192,7 @@ def init_chat_api_routes(app, cfg_mgr, logger):
                 # ESC / stop interceptor
                 if sm and getattr(sm, "webui_stop_requested", False):
                     sm.webui_stop_requested = False
-                    yield "data: " + json.dumps({"type": "error", "text": "⛔ Elaborazione annullata."}) + "\n\n"
+                    yield "data: " + json.dumps({"type": "error", "text": "⛔ Generation aborted."}) + "\n\n"
                     break
                 try:
                     ev = sess["queue"].get(timeout=0.5)

@@ -23,15 +23,28 @@
     </div>
     <div class="field">
       <label>Active TTS Engine</label>
-      <select id="v-active-engine">
+      <select id="v-active-engine" onchange="if(window.switchAudioEngineTab) window.switchAudioEngineTab(this.value); if(window.saveAudioConfig) window.saveAudioConfig();">
         <option value="piper">Piper (Default - Fast)</option>
         <option value="kokoro">Kokoro (Balanced)</option>
         <option value="xtts2">XTTSv2 (High Quality)</option>
       </select>
     </div>
+
+    <!-- TABS -->
+    <div style="display:flex; border-bottom:1px solid var(--border); margin-top:20px; gap:4px;">
+      <button id="btn-tab-piper" class="btn btn-secondary active" onclick="switchAudioEngineTab('piper')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:var(--bg3);">
+        <i class="fas fa-volume-up"></i> Piper (Fast)
+      </button>
+      <button id="btn-tab-kokoro" class="btn btn-secondary" onclick="switchAudioEngineTab('kokoro')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+        <i class="fas fa-wave-square"></i> Kokoro (Balanced)
+      </button>
+      <button id="btn-tab-xtts2" class="btn btn-secondary" onclick="switchAudioEngineTab('xtts2')" style="border-bottom-left-radius:0; border-bottom-right-radius:0; padding:8px 16px; border-bottom:none; background:transparent;">
+        <i class="fas fa-microchip"></i> XTTSv2 (High Quality)
+      </button>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-piper" style="border-top-left-radius:0; margin-top:-20px;">
     <div class="card-title"><i class="fas fa-volume-up"></i> Piper Engine (Default)</div>
     <div class="field">
       <label>{{ t('webui_conf_voice_path') }}</label>
@@ -75,16 +88,29 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-kokoro" style="border-top-left-radius:0; margin-top:-20px; display:none;">
     <div class="card-title"><i class="fas fa-wave-square"></i> Kokoro Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">Balanced</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-      Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
-      <span id="kokoro-status-badge" style="font-size:11px;"></span>
-    </p>
+    <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
+      <div style="margin-bottom: 8px;">
+        Kokoro uses the <code>kokoro</code> PyTorch package — lightweight model, great quality on CPU. Voices are downloaded on the fly.
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="kokoro-status-badge">✅ Installed</span>
+        <span id="v-kokoro-timer" style="color: var(--accent); display: none;">0.0s</span>
+      </div>
+      <div id="v-kokoro-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
+        <div id="v-kokoro-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+      </div>
+      <div id="v-kokoro-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right;">0%</div>
+    </div>
     <div class="grid-2">
       <div class="field">
         <label>Speed</label>
         <input type="number" id="v-kokoro-speed" min="0.5" max="3" step="0.05">
+      </div>
+      <div class="field">
+        <label>Sentence Silence (s)</label>
+        <input type="number" id="v-kokoro-silence" min="0" max="2" step="0.05">
       </div>
       <div class="field">
         <label>Default Voice</label>
@@ -108,24 +134,76 @@
         </select>
       </div>
     </div>
+    <div class="field" style="margin-top: 10px;">
+      <label>Offline Model Path (Optional)</label>
+      <input type="text" id="v-kokoro-model" placeholder="Leave empty to use HuggingFace cache">
+    </div>
     <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-      <button class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('kokoro')">
         <i class="fas fa-download"></i> Install / Update Kokoro
       </button>
       <span id="kokoro-install-status" style="font-size:12px; color:var(--muted);"></span>
     </div>
+
+    <!-- Test Voice Section (Kokoro) -->
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <div class="card-title" style="font-size:14px; margin-bottom:12px;">{{ t('webui_voice_test_title') }}</div>
+      <div class="field" style="margin-bottom:8px;">
+        <input type="text" id="v-kokoro-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Hecos system test, voice generation is operational.">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'kokoro')">
+          <i class="fas fa-play"></i> {{ t('webui_voice_test_web') }}
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'kokoro')">
+          <i class="fas fa-desktop"></i> {{ t('webui_voice_test_pc') }}
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" id="v-kokoro-test-stop" style="display:none;" onclick="stopVoice('kokoro')">
+          <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+        </button>
+        <span id="v-kokoro-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+      </div>
+    </div>
   </div>
 
-  <div class="card">
+  <div class="card" id="card-xtts2" style="border-top-left-radius:0; margin-top:-20px; display:none;">
     <div class="card-title"><i class="fas fa-microchip"></i> XTTSv2 Engine <span class="badge" style="float:right;font-size:10px;opacity:0.8;">High Quality</span></div>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-      XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
-      <span id="xtts2-status-badge" style="font-size:11px;"></span>
-    </p>
+    <div style="background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 16px; font-family: monospace; font-size: 11px; color: var(--muted);">
+      <div style="margin-bottom: 8px;">
+        XTTSv2 uses Coqui <code>TTS</code> — heavy PyTorch model (~1.8GB), requires a dedicated GPU for real-time synthesis. Model is downloaded on the fly.
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="xtts2-status-badge">✅ Installed & Ready (All voices are built-in)</span>
+        <span id="v-xtts-timer" style="color: var(--accent); display: none;">0.0s</span>
+      </div>
+      <div id="v-xtts-progress-container" style="display: none; width: 100%; height: 4px; background: rgba(0,0,0,0.3); border-radius: 2px; overflow: hidden; margin-top: 8px;">
+        <div id="v-xtts-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+      </div>
+      <div id="v-xtts-progress-text" style="display: none; margin-top: 4px; color: var(--accent); text-align: right;">0%</div>
+    </div>
+    <div class="grid-2" style="margin-bottom:12px;">
+      <div class="field" style="grid-column: span 2;">
+        <label>Configuration Preset</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select id="v-xtts-preset" onchange="loadXTTSPreset()" style="flex:1;">
+            <option value="default">Default</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="saveXTTSPreset()" title="Save as New Preset"><i class="fas fa-plus"></i> New</button>
+          <button class="btn btn-secondary btn-sm" onclick="updateXTTSPreset()" title="Update Current Preset"><i class="fas fa-sync-alt"></i> Update</button>
+          <button class="btn btn-secondary btn-sm" onclick="resetXTTSConfig()" title="Reset to Defaults"><i class="fas fa-undo"></i> Reset</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteXTTSPreset()" title="Delete Preset"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+    
     <div class="grid-2">
       <div class="field">
-        <label>Speed</label>
-        <input type="number" id="v-xtts-speed" min="0.5" max="3" step="0.05">
+        <label>GPU Acceleration</label>
+        <select id="v-xtts-gpu">
+          <option value="auto">Auto (Default)</option>
+          <option value="gpu">Force GPU</option>
+          <option value="cpu">Force CPU</option>
+        </select>
       </div>
       <div class="field">
         <label>Language</label>
@@ -165,11 +243,157 @@
         </select>
       </div>
     </div>
+    
+    <div class="grid-2" style="margin-top:12px; margin-bottom:12px;">
+      <div class="field" style="grid-column: span 2;">
+        <label>Inference Parameters Preset</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select id="v-xtts-inference-preset" onchange="loadXTTSInferencePreset()" style="flex:1;">
+            <option value="">-- Nessun Preset Selezionato --</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="saveXTTSInferencePreset()" title="Save as New Inference Preset"><i class="fas fa-plus"></i> New</button>
+          <button class="btn btn-secondary btn-sm" onclick="updateXTTSInferencePreset()" title="Update Current Inference Preset"><i class="fas fa-sync-alt"></i> Update</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteXTTSInferencePreset()" title="Delete Inference Preset"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid-3" style="margin-top:12px;">
+      <div class="field">
+        <label>
+          Speed
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Adjusts the speaking rate. Keep close to 1.0 to avoid artifacts. Range: 0.1 to 3.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-speed-range" min="0.1" max="3.0" step="0.05" value="1.0" style="flex:1;" oninput="document.getElementById('v-xtts-speed').value = this.value">
+          <input type="number" id="v-xtts-speed" min="0.1" max="3.0" step="0.05" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-speed-range').value = this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Temperature
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Softmax temperature. Controls creativity vs stability. Higher values = more expressive but less stable. Range: 0.01 to 2.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-temperature-range" min="0.01" max="2.0" step="0.01" value="0.75" style="flex:1;" oninput="document.getElementById('v-xtts-temperature').value = this.value">
+          <input type="number" id="v-xtts-temperature" min="0.01" max="2.0" step="0.01" value="0.75" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-temperature-range').value = this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Repetition Penalty
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Prevents the model from repeating tokens or looping. Increase if the voice gets stuck. Range: 1.0 to 10.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-repetition-range" min="1.0" max="10.0" step="0.1" value="5.0" style="flex:1;" oninput="document.getElementById('v-xtts-repetition_penalty').value = this.value">
+          <input type="number" id="v-xtts-repetition_penalty" min="1.0" max="10.0" step="0.1" value="5.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-repetition-range').value = this.value">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:12px;">
+      <div class="field">
+        <label>
+          Top K
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Limits token sampling to the top K most likely next tokens. Range: 1 to 100"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-topk-range" min="1" max="100" step="1" value="50" style="flex:1;" oninput="document.getElementById('v-xtts-topk').value = this.value">
+          <input type="number" id="v-xtts-topk" min="1" max="100" step="1" value="50" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-topk-range').value = this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Top P
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Nucleus sampling. Lower values make the output more focused and predictable. Range: 0.0 to 1.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-topp-range" min="0.0" max="1.0" step="0.01" value="0.85" style="flex:1;" oninput="document.getElementById('v-xtts-topp').value = this.value">
+          <input type="number" id="v-xtts-topp" min="0.0" max="1.0" step="0.01" value="0.85" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-topp-range').value = this.value">
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Length Penalty
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="Penalty applied to sequence length. Higher values make the speech more terse. Range: 0.1 to 5.0"></i>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="range" id="v-xtts-length-range" min="0.1" max="5.0" step="0.1" value="1.0" style="flex:1;" oninput="document.getElementById('v-xtts-length-penalty').value = this.value">
+          <input type="number" id="v-xtts-length-penalty" min="0.1" max="5.0" step="0.1" value="1.0" style="width: 60px; padding: 2px 4px; font-size: 11px;" oninput="document.getElementById('v-xtts-length-range').value = this.value">
+        </div>
+      </div>
+    </div>
+    
+    <div class="toggle-row" style="margin-top: 10px;">
+      <div class="toggle-info">
+        <strong>
+          Chunk Sentences
+          <i class="fas fa-question-circle" style="color:var(--muted); font-size:10px; cursor:help;" title="If enabled, long paragraphs are automatically split into shorter sentences before processing. This dramatically reduces memory usage and timeout errors for very long texts, but may cause slight pauses between sentences."></i>
+        </strong>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Split long paragraphs into chunks for stability</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="v-xtts-chunk">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+      <label>Voice Clone Reference</label>
+      <p style="font-size:11px; color:var(--muted); margin:4px 0 10px;">
+        Select a WAV from your library or browse for any file. Must be 10–30s, single speaker, minimal noise.
+      </p>
+
+      <!-- Library dropdown -->
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+        <select id="v-xtts-clone-select" onchange="onVoiceCloneSelect()" style="flex:1;">
+          <option value="">— None (use Default Speaker) —</option>
+        </select>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="loadVoiceCloneList()" title="Refresh voice clone list">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <label class="btn btn-secondary btn-sm" title="Upload WAV to voice clone library" style="cursor:pointer; margin:0; display:flex; align-items:center;">
+          <i class="fas fa-upload"></i>
+          <input type="file" accept=".wav" style="display:none;" onchange="uploadVoiceClone(this)">
+        </label>
+      </div>
+
+      <!-- Manual path override + file system browse -->
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="text" id="v-xtts-speaker-wav" placeholder="Or type / browse any path (overrides dropdown)" style="flex:1;" oninput="onVoiceClonePathInput()">
+        <button type="button" class="btn btn-secondary btn-sm" title="Browse filesystem" style="margin:0;" onclick="window.openVoiceClonePicker()">
+          <i class="fas fa-folder-open"></i>
+        </button>
+      </div>
+    </div>
+
+    
+
     <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-      <button class="btn btn-secondary btn-sm" onclick="installTTSEngine('xtts2')">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="installTTSEngine('xtts2')">
         <i class="fas fa-download"></i> Install / Update XTTSv2
       </button>
       <span id="xtts2-install-status" style="font-size:12px; color:var(--muted);"></span>
+    </div>
+
+    <!-- Laboratory Section (XTTSv2) -->
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <div class="card-title" style="font-size:14px; margin-bottom:12px;">Laboratory (Test Voice)</div>
+      <div class="field" style="margin-bottom:8px;">
+        <input type="text" id="v-xtts-test-text" placeholder="{{ t('webui_voice_test_ph') }}" value="Ciao, sono Urania. Test del sistema vocale completato con successo.">
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="testVoice('web', 'xtts2')">
+          <i class="fas fa-play"></i> Generate & Play
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="testVoice('console', 'xtts2')">
+          <i class="fas fa-desktop"></i> Server Speakers
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" id="v-xtts-test-stop" style="display:none;" onclick="stopVoice('xtts2')">
+          <i class="fas fa-stop"></i> {{ t('webui_voice_test_stop') }}
+        </button>
+        <span id="v-xtts-test-status" style="font-size:12px; color:var(--muted); margin-left:auto;"></span>
+      </div>
     </div>
   </div>
 
