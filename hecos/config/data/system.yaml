@@ -7,6 +7,7 @@ ai:
     '3': claudia
     '4': jun_my_little_princess
     '5': motoko_kusanagi
+    '6': nova_x-01
   save_special_instructions: true
   special_instructions: Ricorda che devi sempre parlare in italiano, non in inglese.
     Scrivi sempre e solo in lingua italiana - a meno che non si tratti della generazione

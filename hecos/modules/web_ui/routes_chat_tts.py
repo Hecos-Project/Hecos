@@ -268,7 +268,9 @@ def _run_xtts2_bypass(text: str, out_path: str, voice_cfg: dict, job_id: str = N
             sys.executable, "-c", inline_code, 
             text, out_path, speaker_wav or "", language, speaker, speed, temperature, repetition_penalty, gpu_acceleration, top_k, top_p, length_penalty
         ]
-        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        env = os.environ.copy()
+        env["PYTHONUTF8"] = "1"
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace', env=env)
         
         output_log = []
         for line in proc.stdout:

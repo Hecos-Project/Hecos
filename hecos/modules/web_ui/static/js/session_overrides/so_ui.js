@@ -211,11 +211,19 @@ window.soUpdateModelsDropdown = function() {
         let prefix = (m.type === 'cloud') ? '☁️ ' : (m.type === 'local' ? '🖥️ ' : '');
         let suffix = '';
         let sizeTag = '';
-        if (m.details && (m.details.parameter_size || m.size)) {
+        if (m.parameter_size || m.size_bytes) {
+            sizeTag = ' [';
             let parts = [];
-            if (m.details.parameter_size) parts.push(m.details.parameter_size);
-            if (m.size) parts.push((m.size/1024/1024/1024).toFixed(1) + 'GB');
-            sizeTag += ' [' + parts.join(' | ') + ']';
+            if (m.parameter_size) {
+                let p = m.parameter_size;
+                if (m.quantization_level) p += ' ' + m.quantization_level;
+                parts.push(p);
+            }
+            if (m.size_bytes) {
+                let gb = (m.size_bytes / (1024*1024*1024)).toFixed(1);
+                parts.push(gb + 'GB');
+            }
+            sizeTag += parts.join(' | ') + ']';
         }
         let tooltipText = m.name + sizeTag;
         

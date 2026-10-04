@@ -3,6 +3,7 @@
     "chat_btn_edit": "Modifica",
     "chat_btn_regenerate": "Rigenera",
     "chat_btn_listen": "Ascolta",
+    "chat_btn_listen_tooltip": "Rigenera l'audio (intero o selezione)",
     "chat_btn_delete": "Elimina",
     "chat_msg_copied": "Copiato!",
     "chat_msg_copy_failed": "Copia fallita",

@@ -133,12 +133,38 @@ def init_audio_stream_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
             text = data.get("text", "Test di Hecos, sistema vocale operativo.").strip()
             mode = data.get("mode", "web")
             engine = data.get("engine", None)
+            session_id = data.get("session_id", None)
 
-            from hecos.modules.web_ui.routes_chat_tts import generate_voice_file, set_last_audio_path, _run_xtts2_bypass
+            from hecos.modules.web_ui.routes_chat_tts import generate_voice_file, set_last_audio_path
+            from hecos.config.session_config_manager import merge_session_config
 
             logger.info(f"[WebUI] TTS Test — engine: {engine or 'active'}, mode: {mode}, text: {text[:60]!r}")
             
-            session_overrides = {"tts_engine": engine} if engine else {}
+            merged_config = merge_session_config(cfg_mgr.config, session_id) if session_id else cfg_mgr.config
+            
+            ai_cfg = merged_config.get("ai", {})
+            session_overrides = {
+                "tts_engine": ai_cfg.get("tts_engine"),
+                "tts_voice": ai_cfg.get("tts_voice")
+            }
+            session_overrides.update(ai_cfg.get("voice_overrides", {}))
+            
+            ui_voice_overrides = merged_config.get("voice", {})
+            if ui_voice_overrides:
+                if "tts_engine" in ui_voice_overrides and ui_voice_overrides["tts_engine"]:
+                    session_overrides["tts_engine"] = ui_voice_overrides["tts_engine"]
+                if "tts_voice" in ui_voice_overrides and ui_voice_overrides["tts_voice"]:
+                    session_overrides["tts_voice"] = ui_voice_overrides["tts_voice"]
+                for k, v in ui_voice_overrides.items():
+                    if k.startswith("xtts_") or k.startswith("piper_") or k.startswith("kokoro_"):
+                        session_overrides[k] = v
+
+            if engine:
+                session_overrides["tts_engine"] = engine
+                
+            voice_config = data.get("voice", {})
+            if voice_config:
+                session_overrides.update(voice_config)
 
             job_id = str(uuid.uuid4())
 
