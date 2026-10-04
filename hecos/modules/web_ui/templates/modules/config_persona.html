@@ -18,9 +18,61 @@
                         <option value="large">{{ t('label_size_large') }}</option>
                     </select>
                 </div>
+                <div class="toggle-row" style="margin: 0; gap: 8px;" title="Auto-play Avatar Video">
+                    <span style="font-size: 10px; opacity: 0.7;">Autoplay</span>
+                    <label class="switch is-small"><input type="checkbox" id="ia-avatar-animate" class="config-input" checked><span class="slider"></span></label>
+                </div>
             </div>
             <input type="file" id="ia-avatar-input" style="display: none;" accept="image/*" onchange="uploadAvatar()">
         </div>
+    </div>
+
+    <!-- Soul Media Library (Integrated into Global Defaults) -->
+    <div style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;" id="persona-media-library-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="card-title" style="margin: 0; color: var(--accent);">
+          <i class="fas fa-photo-video"></i> Soul Media Library
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div class="field" style="margin: 0; display: flex; align-items: center; gap: 4px;">
+            <label style="font-size: 10px; margin: 0; opacity: 0.7;">Max Size (MB):</label>
+            <input type="number" id="ia-media-max-size" class="config-input" value="1024" style="width: 60px; padding: 2px 4px; font-size: 11px;">
+          </div>
+          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="document.getElementById('pm-upload-input').click()">
+            <i class="fas fa-upload"></i> Upload
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="pmOpenFolder()" title="Open Folder">
+            <i class="fas fa-folder-open"></i> Folder
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="pmLoadMedia()" title="Refresh Library">
+            <i class="fas fa-sync"></i>
+          </button>
+        </div>
+        <input type="file" id="pm-upload-input" multiple style="display: none;" onchange="pmUploadFiles(this.files)">
+      </div>
+      
+      <div style="margin-bottom: 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 10px;" id="pm-filters">
+          <span class="pm-filter active" data-type="all">All</span>
+          <span class="pm-filter" data-type="image">Images</span>
+          <span class="pm-filter" data-type="video">Videos</span>
+          <span class="pm-filter" data-type="audio">Audio</span>
+        </div>
+        
+        <div id="pm-bulk-actions" style="display: none; gap: 8px;">
+          <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 8px; color: var(--error);" onclick="pmDeleteSelected()">
+            <i class="fas fa-trash"></i> Delete Selected (<span id="pm-selected-count">0</span>)
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 8px;" onclick="pmClearSelection()">Cancel</button>
+        </div>
+      </div>
+      
+      <div id="pm-dropzone" class="pm-grid" ondragover="event.preventDefault(); this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault(); this.classList.remove('dragover'); pmUploadFiles(event.dataTransfer.files)">
+        <!-- Items will be injected here -->
+      </div>
+      <div style="font-size: 10px; color: var(--muted); text-align: center; margin-top: 8px;">
+        <i class="fas fa-info-circle"></i> Double click on a media item to open the Gallery. Right click for more options.
+      </div>
     </div>
   </div>
   
@@ -63,7 +115,598 @@
       </div>
     </div>
   </div>
+
+  </div>
 </div>
+
+<style>
+  #persona-media-library-section { margin-top: 20px; }
+  .pm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+    min-height: 120px;
+    padding: 10px;
+    background: var(--bg2);
+    border: 2px dashed transparent;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+  }
+  .pm-grid.dragover {
+    border-color: var(--accent);
+    background: rgba(108, 140, 255, 0.1);
+  }
+  .pm-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg3);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .pm-item:hover {
+    transform: scale(1.02);
+  }
+  .pm-item.selected {
+    border-color: var(--accent);
+  }
+  .pm-item.is-avatar {
+    border-color: #4CAF50;
+  }
+  .pm-item-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .pm-item-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: rgba(255,255,255,0.3);
+  }
+  .pm-item-type {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(0,0,0,0.6);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #fff;
+  }
+  .pm-item-name {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: #fff;
+    font-size: 9px;
+    padding: 12px 4px 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+  .pm-avatar-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: #4CAF50;
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .pm-filter {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--bg3);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: 0.2s;
+  }
+  .pm-filter:hover { opacity: 1; }
+  .pm-filter.active {
+    background: var(--accent);
+    color: white;
+    opacity: 1;
+  }
+  
+  /* Context menu */
+  #pm-context-menu {
+    position: fixed;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 0;
+    min-width: 150px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10000;
+    display: none;
+  }
+  .pm-cm-item {
+    padding: 6px 16px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pm-cm-item:hover { background: var(--bg3); }
+  .pm-cm-item.danger { color: var(--error); }
+</style>
+
+<div id="pm-context-menu">
+  <div class="pm-cm-item" id="pm-cm-set-avatar"><i class="fas fa-user-circle"></i> Set as Avatar</div>
+  <div class="pm-cm-item" id="pm-cm-view"><i class="fas fa-eye"></i> View/Play</div>
+  <div class="pm-cm-item" id="pm-cm-rename"><i class="fas fa-edit"></i> Rename</div>
+  <div class="pm-cm-item danger" id="pm-cm-delete"><i class="fas fa-trash"></i> Delete</div>
+</div>
+
+<script>
+  function getPmPersona() {
+    const sel = document.getElementById('ia-personality-main');
+    return sel ? sel.value : null;
+  }
+
+  let pmMediaItems = [];
+  let pmSelectedFiles = new Set();
+  let pmActiveFilter = 'all';
+  let pmContextMenuTarget = null;
+
+  // Initialize
+  document.getElementById('ia-personality-main').addEventListener('change', (e) => {
+    pmLoadMedia();
+  });
+  
+  // Also load immediately if the dropdown has a value when this script runs
+  setTimeout(() => {
+    if (getPmPersona()) pmLoadMedia();
+  }, 500);
+
+  // Set up filters
+  document.querySelectorAll('.pm-filter').forEach(f => {
+    f.addEventListener('click', () => {
+      document.querySelectorAll('.pm-filter').forEach(el => el.classList.remove('active'));
+      f.classList.add('active');
+      pmActiveFilter = f.dataset.type;
+      pmRenderGrid();
+    });
+  });
+  
+  // Setup context menu close
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#pm-context-menu')) {
+      document.getElementById('pm-context-menu').style.display = 'none';
+    }
+  });
+
+  async function pmLoadMedia() {
+    const persona = getPmPersona();
+    if (!persona) return;
+    
+    try {
+      const res = await fetch(`/api/persona/media?persona=${encodeURIComponent(persona)}`);
+      const data = await res.json();
+      
+      if (data.ok) {
+        pmMediaItems = data.media || [];
+        pmSelectedFiles.clear();
+        pmUpdateSelectionUI();
+        pmRenderGrid();
+        
+        // Also update the main avatar preview just in case it changed
+        const preview = document.getElementById('ia-avatar-preview');
+        if (preview && data.avatar) {
+          // If it's a video avatar, we might want to show a video element instead,
+          // but for now, just load the URL. If it's video, img tag will fail, 
+          // so we'd need logic to swap to a <video> element in the config UI.
+          // Let's implement that swap here for the preview box:
+          const wrapper = document.getElementById('ia-avatar-wrapper');
+          if (data.avatar.type === 'video') {
+            let vid = document.getElementById('ia-avatar-preview-vid');
+            if (!vid) {
+              vid = document.createElement('video');
+              vid.id = 'ia-avatar-preview-vid';
+              vid.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 2px solid var(--border); background: var(--bg3);';
+              vid.autoplay = true; vid.loop = true; vid.muted = true;
+              wrapper.appendChild(vid);
+            }
+            if (preview) preview.style.display = 'none';
+            vid.style.display = 'block';
+            vid.src = data.avatar.url;
+          } else {
+            const vid = document.getElementById('ia-avatar-preview-vid');
+            if (vid) vid.style.display = 'none';
+            if (preview) {
+              preview.style.display = 'block';
+              preview.src = data.avatar.url;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load persona media', e);
+    }
+  }
+
+  function pmRenderGrid() {
+    const grid = document.getElementById('pm-dropzone');
+    grid.innerHTML = '';
+    
+    if (pmMediaItems.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">No media files found.<br>Drag and drop files here to upload.</div>';
+      return;
+    }
+    
+    const filtered = pmActiveFilter === 'all' 
+      ? pmMediaItems 
+      : pmMediaItems.filter(i => i.type === pmActiveFilter);
+      
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">No files match the filter.</div>';
+      return;
+    }
+    
+    filtered.forEach((item, idx) => {
+      const el = document.createElement('div');
+      el.className = 'pm-item' + (pmSelectedFiles.has(item.name) ? ' selected' : '') + (item.is_avatar ? ' is-avatar' : '');
+      el.dataset.name = item.name;
+      
+      let thumbHtml = '';
+      if (item.type === 'image') {
+        thumbHtml = `<img src="${item.url}" class="pm-item-thumb" loading="lazy">`;
+      } else if (item.type === 'video') {
+        // Use video element for thumbnail
+        thumbHtml = `
+          <video class="pm-item-thumb" muted preload="metadata">
+            <source src="${item.url}#t=0.1" type="video/mp4">
+          </video>
+          <div class="pm-item-icon"><i class="fas fa-play-circle"></i></div>
+        `;
+      } else if (item.type === 'audio') {
+        thumbHtml = `<div class="pm-item-icon" style="color: var(--accent);"><i class="fas fa-music"></i></div>`;
+      } else {
+        thumbHtml = `<div class="pm-item-icon"><i class="fas fa-file"></i></div>`;
+      }
+      
+      el.innerHTML = `
+        ${thumbHtml}
+        <div class="pm-item-type">${item.type}</div>
+        ${item.is_avatar ? '<div class="pm-avatar-badge">AVATAR</div>' : ''}
+        <div class="pm-item-name" title="${item.name}">${item.name}</div>
+      `;
+      
+      // Click handlers
+      el.addEventListener('click', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          pmToggleSelection(item.name);
+        } else if (e.shiftKey) {
+          // Range select not fully implemented, just add
+          pmToggleSelection(item.name);
+        } else {
+          // If already selected and only one selected, clear. Otherwise select only this.
+          if (pmSelectedFiles.size === 1 && pmSelectedFiles.has(item.name)) {
+            pmToggleSelection(item.name);
+          } else {
+            pmSelectedFiles.clear();
+            pmSelectedFiles.add(item.name);
+            pmUpdateSelectionUI();
+            pmRenderGrid();
+          }
+        }
+      });
+      
+      el.addEventListener('dblclick', () => {
+        pmViewItem(item);
+      });
+      
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        pmContextMenuTarget = item;
+        
+        // Update context menu items based on type
+        const setAvBtn = document.getElementById('pm-cm-set-avatar');
+        if (item.type === 'image' || item.type === 'video') {
+          setAvBtn.style.display = 'flex';
+        } else {
+          setAvBtn.style.display = 'none';
+        }
+        
+        const menu = document.getElementById('pm-context-menu');
+        menu.style.display = 'block';
+        
+        // Position menu
+        let x = e.clientX;
+        let y = e.clientY;
+        if (x + menu.offsetWidth > window.innerWidth) x = window.innerWidth - menu.offsetWidth;
+        if (y + menu.offsetHeight > window.innerHeight) y = window.innerHeight - menu.offsetHeight;
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+      });
+      
+      grid.appendChild(el);
+    });
+  }
+  
+  function pmToggleSelection(name) {
+    if (pmSelectedFiles.has(name)) pmSelectedFiles.delete(name);
+    else pmSelectedFiles.add(name);
+    pmUpdateSelectionUI();
+    pmRenderGrid();
+  }
+  
+  function pmClearSelection() {
+    pmSelectedFiles.clear();
+    pmUpdateSelectionUI();
+    pmRenderGrid();
+  }
+  
+  function pmUpdateSelectionUI() {
+    const bulk = document.getElementById('pm-bulk-actions');
+    const count = document.getElementById('pm-selected-count');
+    if (pmSelectedFiles.size > 0) {
+      bulk.style.display = 'flex';
+      count.textContent = pmSelectedFiles.size;
+    } else {
+      bulk.style.display = 'none';
+    }
+  }
+
+  // File Upload
+  async function pmUploadFiles(files) {
+    const persona = getPmPersona();
+    if (!files || files.length === 0 || !persona) return;
+    
+    const maxMb = parseInt(document.getElementById('ia-media-max-size').value) || 1024;
+    const maxBytes = maxMb * 1024 * 1024;
+
+    const formData = new FormData();
+    formData.append('persona', persona);
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > maxBytes) {
+          if (window.showToast) window.showToast('File too large: ' + files[i].name, 'error');
+          return;
+      }
+      formData.append('file', files[i]);
+    }
+    
+    // Show loading
+    const grid = document.getElementById('pm-dropzone');
+    grid.style.opacity = '0.5';
+    
+    try {
+      const res = await fetch('/api/persona/media/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.showToast) window.showToast('Files uploaded successfully', 'success');
+        pmLoadMedia(); // Reload to get fresh list
+      } else {
+        if (window.showToast) window.showToast('Upload failed: ' + data.error, 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      if (window.showToast) window.showToast('Upload failed', 'error');
+    } finally {
+      grid.style.opacity = '1';
+      document.getElementById('pm-upload-input').value = '';
+    }
+  }
+
+  // Bulk Delete
+  async function pmDeleteSelected() {
+    const persona = getPmPersona();
+    if (pmSelectedFiles.size === 0 || !persona) return;
+    
+    if (!confirm(`Delete ${pmSelectedFiles.size} selected file(s)?`)) return;
+    
+    try {
+      const res = await fetch('/api/persona/media/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          persona: persona,
+          filenames: Array.from(pmSelectedFiles)
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.showToast) window.showToast(`Deleted ${data.deleted_count} files`, 'success');
+        pmSelectedFiles.clear();
+        pmLoadMedia();
+      } else {
+        if (window.showToast) window.showToast('Delete failed: ' + data.error, 'error');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Context Menu Actions
+  document.getElementById('pm-cm-set-avatar').addEventListener('click', async () => {
+    const persona = getPmPersona();
+    if (!pmContextMenuTarget || !persona) return;
+    try {
+      const res = await fetch('/api/persona/media/set-avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          persona: persona,
+          filename: pmContextMenuTarget.name
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (window.showToast) window.showToast('Avatar updated', 'success');
+        pmLoadMedia(); // Reload to update flags and preview
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+  
+  document.getElementById('pm-cm-view').addEventListener('click', () => {
+    if (pmContextMenuTarget) pmViewItem(pmContextMenuTarget);
+  });
+  
+  document.getElementById('pm-cm-rename').addEventListener('click', async () => {
+    const persona = getPmPersona();
+    if (!pmContextMenuTarget || !persona) return;
+    
+    const newName = prompt('Enter new filename:', pmContextMenuTarget.name);
+    if (!newName || newName === pmContextMenuTarget.name) return;
+    
+    try {
+      const res = await fetch('/api/persona/media/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          persona: persona,
+          old_name: pmContextMenuTarget.name,
+          new_name: newName
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        pmLoadMedia();
+      } else {
+        if (window.showToast) window.showToast('Rename failed: ' + data.error, 'error');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+  
+  document.getElementById('pm-cm-delete').addEventListener('click', async () => {
+    const persona = getPmPersona();
+    if (!pmContextMenuTarget || !persona) return;
+    
+    if (!confirm(`Delete ${pmContextMenuTarget.name}?`)) return;
+    
+    try {
+      const res = await fetch('/api/persona/media/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          persona: persona,
+          filenames: [pmContextMenuTarget.name]
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        pmLoadMedia();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+  
+  function pmViewItem(item) {
+    if (window.HecosGallery) {
+      const idx = pmMediaItems.findIndex(i => i.name === item.name);
+      window.HecosGallery.open(pmMediaItems, idx >= 0 ? idx : 0, {
+        title: '<i class="fas fa-photo-video"></i> Soul Media',
+        onOpenFolder: () => pmOpenFolder(),
+        extraActions: (currentItem) => {
+          if (!currentItem.is_avatar && (currentItem.type === 'image' || currentItem.type === 'video')) {
+            return window.HecosGallery.button('👤 Set as Avatar', async () => {
+              const persona = getPmPersona();
+              if (!persona) return;
+              try {
+                const res = await fetch('/api/persona/media/set-avatar', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ persona: persona, filename: currentItem.name })
+                });
+                if ((await res.json()).ok) {
+                  if (window.showToast) window.showToast('Avatar updated', 'success');
+                  pmLoadMedia();
+                  window.HecosGallery.close();
+                }
+              } catch(e) {}
+            });
+          }
+          return null;
+        }
+      });
+    } else if (item.type === 'image') {
+       if(window.openLightbox) window.openLightbox(item.url);
+    } else {
+       window.open(item.url, '_blank');
+    }
+  }
+
+  async function pmOpenFolder() {
+    const persona = getPmPersona();
+    if (!persona) return;
+    try {
+      await fetch('/api/persona/media/open-folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ persona: persona })
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  // Hook into the old upload avatar function to redirect to the new system if preferred,
+  // or just let it use the existing upload API which is now wrapper around PersonaMediaManager.
+  // The existing uploadAvatar() in control_room.js will hit /api/persona/avatar/upload, 
+  // which we modified to handle the new logic. We just need to refresh media list after.
+  
+  // Create an observer to trigger pmLoadMedia when persona changes via the external UI
+  const pmObserver = new MutationObserver((mutations) => {
+    // Hack: if avatar preview src changes, reload media to catch the new avatar
+    // A better way is overriding uploadAvatar
+  });
+  // pmObserver.observe(document.getElementById('ia-avatar-preview'), { attributes: true, attributeFilter: ['src'] });
+  
+  // Override uploadAvatar locally to ensure media list updates
+  window.originalUploadAvatar = window.uploadAvatar;
+  window.uploadAvatar = async function() {
+      const input = document.getElementById('ia-avatar-input');
+      const file = input.files[0];
+      if (!file) return;
+
+      const persona = getPmPersona();
+      if (!persona) return;
+
+      const loading = document.getElementById('ia-avatar-loading');
+      if (loading) loading.style.display = 'flex';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('persona', persona);
+
+      try {
+          const res = await fetch('/api/persona/avatar/upload', {
+              method: 'POST',
+              body: formData
+          });
+          const data = await res.json();
+          if (data.ok) {
+              if (window.showToast) window.showToast('Avatar updated', 'success');
+              // Reload media list
+              if (getPmPersona() === persona) {
+                  pmLoadMedia();
+              }
+          }
+      } catch (err) {
+          console.error(err);
+      } finally {
+          if (loading) loading.style.display = 'none';
+      }
+  };
+
+</script>
 
 <script>
   // Merge the dynamically loaded zoptions into the global sysOptions

@@ -22,7 +22,7 @@ function addBubble(role, text, id, opts) {
     const usrSrc = window.HecosUserAvatar;
     if (usrSrc) {
         avatar.innerHTML = `
-        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${usrSrc}')">
+        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openUserGallery) window.openUserGallery('${usrSrc}'); else window.openAvatarFull('${usrSrc}', 'image', true)">
           <img src="${usrSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.outerHTML='<i class=\'fas fa-user\'></i>'">
           <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
         </div>`;
@@ -34,15 +34,28 @@ function addBubble(role, text, id, opts) {
     // Use the persona_name snapshot frozen at message-write time (if available), else current avatar
     const personaForAvatar = (opts && opts.persona_name) ? opts.persona_name : null;
 
-    const renderAvatar = (avatarSrc) => {
-      const imgStyle = avatarSrc !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
-        ? "object-fit:cover; border-radius:50%;"
-        : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
-      avatar.innerHTML = `
-        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${avatarSrc}')">
-          <img src="${avatarSrc}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
-          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-        </div>`;
+    const renderAvatar = (avatarInfo) => {
+      // Allow legacy path string fallback
+      const avatarSrc = typeof avatarInfo === 'string' ? avatarInfo : (avatarInfo.url || "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png");
+      const avatarType = typeof avatarInfo === 'string' ? 'image' : (avatarInfo.type || 'image');
+      
+      if (avatarType === 'video') {
+          const autoPlayAttr = (window.HecosAvatarAnimate !== false) ? 'autoplay loop' : '';
+          avatar.innerHTML = `
+            <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${avatarSrc}'); else window.openAvatarFull('${avatarSrc}', 'video')">
+              <video src="${avatarSrc}" ${autoPlayAttr} muted playsinline style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></video>
+              <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+            </div>`;
+      } else {
+          const imgStyle = avatarSrc !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
+            ? "object-fit:cover; border-radius:50%;"
+            : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+          avatar.innerHTML = `
+            <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${avatarSrc}'); else window.openAvatarFull('${avatarSrc}', 'image')">
+              <img src="${avatarSrc}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
+              <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+            </div>`;
+      }
     };
 
     if (personaForAvatar) {
@@ -50,7 +63,7 @@ function addBubble(role, text, id, opts) {
       renderAvatar(defaultAvatarSrc);
       fetch(`/api/persona/avatar?persona=${encodeURIComponent(personaForAvatar)}`)
         .then(r => r.json())
-        .then(d => { if (d.ok && d.avatar_path) renderAvatar(d.avatar_path); })
+        .then(d => { if (d.ok && d.avatar_path) renderAvatar({url: d.avatar_path, type: d.avatar_type || 'image'}); })
         .catch(() => {});
     } else {
       renderAvatar(defaultAvatarSrc);
@@ -136,17 +149,35 @@ function addBubble(role, text, id, opts) {
   return { msg, bubble };
 }
 
-// Fullscreen Avatar View
-window.openAvatarFull = function(src) {
-  let lb = document.getElementById('avatar-lightbox');
-  if (!lb) {
-    lb = document.createElement('div');
-    lb.id = 'avatar-lightbox';
-    lb.onclick = () => lb.classList.remove('active');
-    document.body.appendChild(lb);
+window.openAvatarFull = function(src, type = 'image', isUser = false) {
+  if (window.HecosGallery) {
+    const itemName = isUser ? (window.HecosUserName || 'Admin') : (window.HecosPersonaName || 'Avatar');
+    const opts = {
+      title: '<i class="fas fa-user-circle"></i> Avatar',
+      hideFolder: true
+    };
+    if (!isUser) {
+        opts.extraActions = () => window.HecosGallery.button('⚙️ Manage', () => window.open('/hecos/config/ui#ia', '_blank'));
+    }
+    window.HecosGallery.open([{ url: src, name: itemName, type: type }], 0, opts);
+  } else {
+    // Fallback if gallery not loaded
+    let lb = document.getElementById('avatar-lightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'avatar-lightbox';
+      lb.onclick = () => lb.classList.remove('active');
+      document.body.appendChild(lb);
+    }
+    
+    if (type === 'video') {
+      lb.innerHTML = `<video src="${src}" autoplay loop muted playsinline></video>`;
+    } else {
+      lb.innerHTML = `<img src="${src}">`;
+    }
+    
+    setTimeout(() => lb.classList.add('active'), 10);
   }
-  lb.innerHTML = `<img src="${src}">`;
-  setTimeout(() => lb.classList.add('active'), 10);
 };
 
 

@@ -654,3 +654,7 @@ models/gguf/*
 # Builder Studio (HPM Package)
 hecos/modules/builder_studio/
 hecos/_builder_backup/
+
+# Persona Media
+hecos/personas/*/media/
+!hecos/personas/*/media/.gitkeep

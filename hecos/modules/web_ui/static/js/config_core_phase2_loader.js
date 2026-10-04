@@ -44,6 +44,7 @@
             `/static/js/config_media_logic.js${VER}`,
             `/static/js/config_system_logic.js${VER}`,
             `/static/js/config_persona_logic.js${VER}`,
+            `/static/js/modules/hecos_gallery.js${VER}`,
         ],
         // Batch C: Aesthetic picker (lazy, only needed for aesthetics tab)
         [

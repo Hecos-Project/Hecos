@@ -142,13 +142,46 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     @app.route("/personas/<path:filename>")
     def serve_personas(filename):
         """Serve files from hecos/personas/ (avatars, media, etc.)"""
-        from flask import send_from_directory, make_response
         import mimetypes
+        from flask import request, send_file, Response
+        
         personas_dir = os.path.join(root_dir, "hecos", "personas")
-        resp       = make_response(send_from_directory(personas_dir, filename))
-        mtype, _   = mimetypes.guess_type(filename)
-        if mtype:
-            resp.headers["Content-Type"] = mtype
+        path = os.path.join(personas_dir, filename)
+        
+        if not os.path.exists(path):
+            return "File not found", 404
+            
+        mtype, _ = mimetypes.guess_type(filename)
+        file_size = os.path.getsize(path)
+        
+        range_header = request.headers.get("Range")
+        if range_header:
+            byte1, byte2 = 0, None
+            range_str = range_header.strip().replace("bytes=", "")
+            parts = range_str.split("-")
+            if parts[0].strip():
+                byte1 = int(parts[0].strip())
+            if len(parts) > 1 and parts[1].strip():
+                byte2 = int(parts[1].strip())
+
+            if byte2 is None or byte2 >= file_size:
+                byte2 = file_size - 1
+
+            length = byte2 - byte1 + 1
+
+            with open(path, "rb") as f:
+                f.seek(byte1)
+                data = f.read(length)
+
+            rv = Response(data, status=206, mimetype=mtype, direct_passthrough=True)
+            rv.headers["Content-Range"] = f"bytes {byte1}-{byte2}/{file_size}"
+            rv.headers["Accept-Ranges"] = "bytes"
+            rv.headers["Content-Length"] = str(length)
+            if mtype: rv.headers["Content-Type"] = mtype
+            return rv
+            
+        resp = send_file(path, mimetype=mtype, conditional=True)
+        resp.headers["Accept-Ranges"] = "bytes"
         resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         resp.headers["Pragma"]  = "no-cache"
         resp.headers["Expires"] = "0"
@@ -163,6 +196,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     from hecos.modules.web_ui.routes_system_sysnet     import init_system_sysnet_routes
     from hecos.modules.web_ui.routes_system_diagnostic import init_system_diagnostic_routes
     from hecos.modules.web_ui.routes_rag               import init_rag_routes
+    from hecos.modules.web_ui.routes_persona_media     import init_persona_media_routes
 
     init_system_status_routes    (app, cfg_mgr, root_dir, logger, _sm, _cpu_cache, get_vram_usage)
     init_system_control_routes   (app, logger, _sm)
@@ -171,6 +205,7 @@ def init_system_routes(app, cfg_mgr, root_dir, logger, get_sm=None):
     init_system_sysnet_routes    (app, logger)
     init_system_diagnostic_routes(app, cfg_mgr, logger)
     init_rag_routes              (app, cfg_mgr, logger)
+    init_persona_media_routes    (app, root_dir, _sm)
 
     # ── Sub-application roots ──────────────────────────────────────────────
     from hecos.modules.web_ui.routes_explorer import init_explorer_routes

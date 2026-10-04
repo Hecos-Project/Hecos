@@ -246,14 +246,22 @@ window.sendMessage = async function() {
                 .then(r => r.json())
                 .then(d => {
                   if (d.ok && d.avatar_path) {
-                    const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
-                      ? "object-fit:cover; border-radius:50%;"
-                      : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
-                    avatarEl.innerHTML = `
-                      <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="window.openAvatarFull('${d.avatar_path}')">
-                        <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
-                        <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
-                      </div>`;
+                    if (d.avatar_type === 'video') {
+                      avatarEl.innerHTML = `
+                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'video')">
+                          <video src="${d.avatar_path}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; border-radius:50%;"></video>
+                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>`;
+                    } else {
+                      const imgStyle = d.avatar_path !== "/assets/Hecos_Logo_SQR_NBG_LogoOnly.png"
+                        ? "object-fit:cover; border-radius:50%;"
+                        : "filter:drop-shadow(0 0 5px rgba(108,140,255,0.4));";
+                      avatarEl.innerHTML = `
+                        <div class="avatar-zoom-wrapper" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="if(window.openSoulGallery) window.openSoulGallery('${d.avatar_path}'); else window.openAvatarFull('${d.avatar_path}', 'image')">
+                          <img src="${d.avatar_path}" onerror="this.src='/assets/Hecos_Logo_SQR_NBG_LogoOnly.png';" style="${imgStyle}">
+                          <div class="avatar-zoom-icon"><i class="fas fa-search-plus"></i></div>
+                        </div>`;
+                    }
                   }
                 }).catch(() => {});
             }

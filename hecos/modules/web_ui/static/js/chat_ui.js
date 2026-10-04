@@ -383,6 +383,7 @@ window.refreshStatus = async function() {
     
     if (d.avatar_size) {
         window.HecosAvatarSize = d.avatar_size;
+        window.HecosAvatarAnimate = d.avatar_animate !== undefined ? d.avatar_animate : true;
         // Apply size class globally to chat area
         const chatArea = document.getElementById('chat-area');
         if (chatArea) {

@@ -84,26 +84,13 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
             if persona.endswith(".yaml"):
                 persona = persona[:-5]
 
-            avatar_path = "/assets/Hecos_Logo_NBG.png"
-            try:
-                personas_dir = os.path.join(root_dir, "hecos", "personas")
-                persona_dir  = os.path.join(personas_dir, persona)
-                if not os.path.isdir(persona_dir):
-                    persona = "Hecos_System_Soul"
-                    persona_dir = os.path.join(personas_dir, persona)
-                # Look for the first image in the avatars subfolder
-                avatars_dir = os.path.join(persona_dir, "avatars")
-                if os.path.isdir(avatars_dir):
-                    for img_file in sorted(os.listdir(avatars_dir)):
-                        if img_file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-                            rel = f"{urllib.parse.quote(persona)}/avatars/{urllib.parse.quote(img_file)}"
-                            avatar_path = "/personas/" + rel
-                            break
-            except Exception:
-                pass
-
             # Telemetry is now stateless - the endpoint provides the data,
             # and the frontend widget decides what to display based on its autonomous config.
+            
+            from hecos.core.persona.persona_media import PersonaMediaManager
+            avatar_info = PersonaMediaManager.resolve_avatar(persona)
+            avatar_path = avatar_info.get("url", "/assets/Hecos_Logo_NBG.png")
+
             cpu_val = cpu_cache.get("value", 0)
             ram_val = psutil.virtual_memory().percent
             vram_val = get_vram_usage()
@@ -114,6 +101,7 @@ def init_system_status_routes(app, cfg_mgr, root_dir, logger, get_sm, cpu_cache,
                 "persona":    persona,
                 "avatar":     avatar_path,
                 "avatar_size": cfg.get("ai", {}).get("avatar_size", "medium"),
+                "avatar_animate": cfg.get("ai", {}).get("avatar_animate", True),
                 "mic":        mic_status,
                 "tts":        tts_status,
                 "ptt":        ptt_status,
