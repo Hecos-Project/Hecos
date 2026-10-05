@@ -383,8 +383,8 @@
             if (!window.HKS_BINDINGS) return;
             window.HKS_BINDINGS.setPref(key, value);
             // Apply immediately
-            if (key === 'toastEnabled' && window.HKS_TOAST) {
-                window.HKS_TOAST.setEnabled(value);
+            if (key === 'toastEnabled' && window.UnifiedToast) {
+                window.UnifiedToast.setEnabled(value);
             }
             if (key === 'fKeysEnabled' && window.HKS) {
                 window.HKS.setEnabled(value);

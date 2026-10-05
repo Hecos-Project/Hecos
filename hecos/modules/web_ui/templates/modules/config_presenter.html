@@ -1,0 +1,179 @@
+<div id="tab-presenter" class="panel">
+  <!-- Header Card -->
+  <div class="card" style="margin-bottom:14px; padding:12px 16px; background:linear-gradient(135deg, rgba(var(--accent-rgb),0.06), var(--bg2));">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#ff512f,#dd2476); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <i class="fas fa-bullhorn" style="color:#fff; font-size:15px;"></i>
+      </div>
+      <div>
+        <div style="font-weight:700; color:var(--text); font-size:0.95em;">Presenter</div>
+        <div style="font-size:0.72em; color:var(--muted);">System announcements, live commentary &amp; notifications</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="fas fa-power-off"></i> Core Settings</div>
+    
+    <div class="toggle-row">
+      <div class="toggle-info">Enable Presenter Module</div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-enabled" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    
+    <div class="field" style="margin-top: 16px;">
+      <label>Display Mode</label>
+      <select id="presenter-display-mode" onchange="savePresenterConfig()">
+        <option value="embedded">Embedded in Chat (Expanded)</option>
+        <option value="collapsed">Embedded in Chat (Collapsed)</option>
+        <option value="overlay">Floating Overlay (Toast)</option>
+      </select>
+      <small style="color:var(--muted); font-size:11px;">Choose how the Presenter UI is displayed.</small>
+    </div>
+
+    <div class="field" style="margin-top: 16px;">
+      <label>Global Preset (Voice &amp; Personality)</label>
+      <select id="presenter-preset-id" onchange="savePresenterConfig()">
+        <option value="">Use Global Defaults</option>
+      </select>
+      <small style="color:var(--muted); font-size:11px;">Select a Global Preset to dictate the Presenter's model, voice and personality.</small>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title"><i class="fas fa-satellite-dish"></i> Behavior</div>
+
+    <div class="toggle-row">
+      <div class="toggle-info">Live Commentary<br><small style="color:var(--muted); font-size:10px;">LLM-generated commentary on system events (persona switch, etc.)</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-live-commentary" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Commentary on Chat Messages<br><small style="color:var(--muted); font-size:10px;">LLM-generated commentary summarizing every chat exchange</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-commentary-on-messages" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="toggle-row" style="margin-top:12px;">
+      <div class="toggle-info">Briefing on New Chat<br><small style="color:var(--muted); font-size:10px;">Show system status briefing when a new session starts</small></div>
+      <label class="switch">
+        <input type="checkbox" id="presenter-briefing-on-new-chat" onchange="savePresenterConfig()">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="card-title"><i class="fas fa-info-circle"></i> Notification Types</div>
+    <div style="font-size:11.5px; color:var(--muted); line-height:1.7;">
+      <div><i class="fas fa-info-circle" style="color:#6cb4ee; width:18px;"></i> <b>system_info</b> — System status messages</div>
+      <div><i class="fas fa-circle" style="color:#4caf50; width:18px; font-size:9px;"></i> <b>system_status</b> — Service online/offline</div>
+      <div><i class="fas fa-exclamation-triangle" style="color:#ffa726; width:18px;"></i> <b>system_warning</b> — Warnings</div>
+      <div><i class="fas fa-check-circle" style="color:#66bb6a; width:18px;"></i> <b>action_confirm</b> — Action confirmations</div>
+      <div><i class="fas fa-lightbulb" style="color:#ffd54f; width:18px;"></i> <b>tip</b> — Usage tips</div>
+      <div><i class="fas fa-box-open" style="color:#ab47bc; width:18px;"></i> <b>package_event</b> — HPM install/uninstall</div>
+      <div><i class="fas fa-user-astronaut" style="color:#e040fb; width:18px;"></i> <b>persona_switched</b> — Persona changes</div>
+      <div><i class="fas fa-comments" style="color:#29b6f6; width:18px;"></i> <b>new_chat</b> — New session</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let presenterConfig = {};
+
+  async function loadPresenterConfig() {
+    try {
+      // 1. Load config
+      const res = await fetch('/api/ext/presenter/config');
+      const data = await res.json();
+      if (data.ok) {
+        presenterConfig = data.config;
+        document.getElementById('presenter-enabled').checked = presenterConfig.enabled;
+        document.getElementById('presenter-display-mode').value = presenterConfig.panel_default;
+        document.getElementById('presenter-live-commentary').checked = presenterConfig.live_commentary !== false;
+        document.getElementById('presenter-commentary-on-messages').checked = presenterConfig.commentary_on_messages === true;
+        document.getElementById('presenter-briefing-on-new-chat').checked = presenterConfig.briefing_on_new_chat !== false;
+        
+        // 2. Load Global Presets
+        const sRes = await fetch('/api/souls');
+        if (sRes.ok) {
+          const sData = await sRes.json();
+          const select = document.getElementById('presenter-preset-id');
+          select.innerHTML = '<option value="">Use Global Defaults</option>';
+          if (sData.souls && Array.isArray(sData.souls)) {
+            sData.souls.forEach(soul => {
+              const opt = document.createElement('option');
+              opt.value = soul.meta.id;
+              opt.innerText = soul.meta.name || soul.meta.id;
+              select.appendChild(opt);
+            });
+          }
+          if (presenterConfig.voice && presenterConfig.voice.preset_id) {
+            select.value = presenterConfig.voice.preset_id;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[Presenter] Failed to load config", e);
+    }
+  }
+
+  async function savePresenterConfig() {
+    presenterConfig.enabled = document.getElementById('presenter-enabled').checked;
+    presenterConfig.panel_default = document.getElementById('presenter-display-mode').value;
+    presenterConfig.live_commentary = document.getElementById('presenter-live-commentary').checked;
+    presenterConfig.commentary_on_messages = document.getElementById('presenter-commentary-on-messages').checked;
+    presenterConfig.briefing_on_new_chat = document.getElementById('presenter-briefing-on-new-chat').checked;
+    
+    if (!presenterConfig.voice) presenterConfig.voice = {};
+    presenterConfig.voice.preset_id = document.getElementById('presenter-preset-id').value;
+
+    try {
+      const res = await fetch('/api/ext/presenter/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(presenterConfig)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (typeof setSaveMsg === 'function') {
+            const syncedMsg = (window.I18N && window.I18N.webui_conf_msg_synced) ? window.I18N.webui_conf_msg_synced.replace('✅ ', '✓ ') : '✓ Changes auto-saved';
+            setSaveMsg(syncedMsg, 'ok');
+            setTimeout(() => {
+                const msgEl = document.getElementById('save-msg');
+                if (msgEl && msgEl.textContent.includes('auto-saved')) {
+                    setSaveMsg('', 'muted');
+                }
+            }, 3500);
+        }
+        
+        // Notify the UI to update mode
+        if (window.Presenter) {
+           window.Presenter.setEnabled(presenterConfig.enabled);
+           window.Presenter.setDisplayMode(presenterConfig.panel_default);
+        }
+      } else {
+        if (typeof setSaveMsg === 'function') {
+            setSaveMsg('Error saving config: ' + data.error, 'err');
+        }
+      }
+    } catch (e) {
+      console.error("[Presenter] Failed to save config", e);
+    }
+  }
+
+  // Hook into the tab display event to load data
+  document.getElementById('tab-presenter').addEventListener('tab-active', () => {
+    loadPresenterConfig();
+  });
+
+  // Also call it once just in case the event already fired
+  setTimeout(loadPresenterConfig, 200);
+</script>

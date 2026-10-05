@@ -315,12 +315,25 @@ class PromptBuilder:
             "- For local Windows paths, use backslashes: `[video.mkv](C:\\Users\\Tony\\Downloads\\video.mkv)`\n"
         )
         
-        special_instructions = config.get('ai', {}).get('special_instructions', '').strip()
-        special_instructions_block = f"\n### SPECIAL INSTRUCTIONS ###\n{special_instructions}\n" if special_instructions else ""
+        ai_cfg = config.get('ai', {})
+        
+        # Special / Direct Instructions
+        use_global_dir = ai_cfg.get('use_global_direct_instructions', True)
+        global_dir = ai_cfg.get('special_instructions', '').strip() if use_global_dir else ""
+        custom_dir = ai_cfg.get('custom_instructions', '').strip()
+        
+        combined_special = "\n\n".join(filter(bool, [global_dir, custom_dir]))
+        special_instructions_block = f"\n### SPECIAL INSTRUCTIONS ###\n{combined_special}\n" if combined_special else ""
 
-        safety_instructions = config.get('ai', {}).get('safety_instructions', '').strip()
-        enable_safety = config.get('ai', {}).get('enable_safety_instructions', True)
-        safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{safety_instructions}\n" if safety_instructions and enable_safety else ""
+        # Safety Instructions
+        enable_safety = ai_cfg.get('enable_safety_instructions', True)
+        use_global_safe = ai_cfg.get('use_global_safety_instructions', True)
+        
+        global_safe = ai_cfg.get('safety_instructions', '').strip() if use_global_safe else ""
+        # For safety we might not have a 'custom_safety_instructions', the user only asked for one override box "custom_instructions".
+        # If they meant custom safety too, we could add it. But they asked for "an override personalized... and choose if we want to use the general ones".
+        # I'll just use the global safety if toggled on.
+        safety_instructions_block = f"\n### SAFETY & CONTEXT DISCLAIMER ###\n{global_safe}\n" if global_safe and enable_safety else ""
         
         user_profile_block = ""
         try:

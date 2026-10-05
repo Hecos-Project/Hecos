@@ -39,6 +39,18 @@ def merge_soul_into_config(global_config: Dict[str, Any], soul: SoulProfile) -> 
         if 'ai' not in merged: merged['ai'] = {}
         merged['ai']['safety_instructions'] = soul.persona.safety_instructions
 
+    if soul.persona.use_global_direct_instructions is not None:
+        if 'ai' not in merged: merged['ai'] = {}
+        merged['ai']['use_global_direct_instructions'] = soul.persona.use_global_direct_instructions
+
+    if soul.persona.use_global_safety_instructions is not None:
+        if 'ai' not in merged: merged['ai'] = {}
+        merged['ai']['use_global_safety_instructions'] = soul.persona.use_global_safety_instructions
+
+    if soul.persona.custom_instructions is not None:
+        if 'ai' not in merged: merged['ai'] = {}
+        merged['ai']['custom_instructions'] = soul.persona.custom_instructions
+
     # -- Model Layer --
     if soul.model.backend_type:
         if 'backend' not in merged: merged['backend'] = {}

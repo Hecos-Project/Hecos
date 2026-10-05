@@ -264,6 +264,17 @@ def _run_inference(sess: dict, session_id: str, user_message: str, history: list
         sess["history"].append({"role": "user",      "content": user_message})
         sess["history"].append({"role": "assistant",  "content": full_text})
 
+        # Emit event for Presenter and other extensions
+        try:
+            from hecos.core.events import emit
+            emit("message_exchange", {
+                "session_id": session_id,
+                "user_message": user_message,
+                "assistant_message": full_text
+            })
+        except Exception as e:
+            _chat_log.warning(f"[INFERENCE] Could not emit message_exchange: {e}")
+
         _chat_log.info(f"[INFERENCE] Generating TTS...")
         t_tts_start = time.monotonic()
         audio_status, audio_id = _maybe_generate_tts(clean_voice, active_cfg_mgr)

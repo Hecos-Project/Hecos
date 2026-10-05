@@ -55,6 +55,31 @@
                 </div>
             </div>
         </div>
+        
+        <!-- INSTRUCTIONS -->
+        <div class="sf-section">
+            <div class="sf-section-header"><i class="fas fa-terminal"></i> AI INSTRUCTIONS</div>
+            <div class="sf-controls-row">
+                <div class="sf-control-group">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <input type="checkbox" id="sf-use-global-direct" checked onchange="window.sfDirty()"> 
+                        Include Global Direct Instructions
+                    </label>
+                </div>
+                <div class="sf-control-group">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <input type="checkbox" id="sf-use-global-safety" checked onchange="window.sfDirty()"> 
+                        Include Global Safety Disclaimer
+                    </label>
+                </div>
+            </div>
+            <div class="sf-controls-row" style="margin-top: 10px;">
+                <div class="sf-control-group" style="flex:1;">
+                    <label>Custom Direct Instructions</label>
+                    <textarea id="sf-custom-instructions" class="form-control" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Type custom instructions for this global preset here..." oninput="window.sfDirty()"></textarea>
+                </div>
+            </div>
+        </div>
 
         <!-- MODEL -->
         <div class="sf-section">

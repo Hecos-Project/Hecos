@@ -287,6 +287,12 @@
   <button class="toolbar-btn" title="Paste long text or context (Ctrl+Shift+V)" onclick="openPasteModal()">
     <span class="tb-icon"><i class="fas fa-paste"></i></span> {{ t('webui_chat_toolbar_paste') }}
   </button>
+  
+  <div style="flex: 1;"></div>
+  
+  <button class="toolbar-btn" title="Toggle Presenter" onclick="if(window.Presenter) { const el = document.getElementById('hbs-presenter-embedded'); if (el) { el.classList.toggle('active'); } }">
+    <span class="tb-icon" style="color: #ff512f;"><i class="fas fa-bullhorn"></i></span> Presenter
+  </button>
 </div>
 <input type="file" id="file-upload-doc" accept=".pdf,.txt,.docx,.csv,.md" multiple>
 <input type="file" id="file-upload-img" accept="image/png,image/jpeg,image/webp" multiple>
@@ -320,5 +326,3 @@
   <div class="drop-sub">{{ t('webui_chat_toolbar_drop_sub') }}</div>
 </div>
 
-<!-- Chat Toast Notification -->
-<div id="chat-toast"></div>

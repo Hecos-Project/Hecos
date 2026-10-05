@@ -50,6 +50,13 @@ def create_session():
         # Set the new session as active in the privacy manager
         _pm().set_session(session_id, privacy_mode)
         
+        # Notify Presenter about new chat
+        try:
+            from hecos.core.events import emit
+            emit("new_chat", {"session_id": session_id})
+        except Exception:
+            pass
+        
         return jsonify({"ok": True, "session_id": session_id})
     except Exception as e:
         logger.error(f"[HISTORY] create_session error: {e}")

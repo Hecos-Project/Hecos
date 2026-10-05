@@ -160,7 +160,17 @@ def init_chat_api_routes(app, cfg_mgr, logger):
         if request.method == "POST":
             data = request.get_json(force=True) or {}
             overrides = data.get("config", {})
+            
+            old_overrides = get_session_config(session_id) or {}
+            old_p = old_overrides.get("ai", {}).get("active_personality")
+            new_p = overrides.get("ai", {}).get("active_personality")
+            
             set_session_config(session_id, overrides)
+            
+            if new_p and new_p != old_p:
+                from hecos.core.events import emit
+                emit("persona_switched", {"new_persona": new_p.replace(".yaml", "").replace("_", " ")})
+                
             return jsonify({"ok": True})
             
     @app.route("/api/chat/options")

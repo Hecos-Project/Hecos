@@ -27,6 +27,9 @@
 <!-- WEB_UI Sidebar Widget Extensions -->
 <!-- WEB_UI Emoticons Extension -->
 <link rel="stylesheet" href="/ext/emoticons/static/css/emoticons.css?v={{ version }}">
+<!-- WEB_UI HBS & Presenter Extensions -->
+<link rel="stylesheet" href="/ext/hbs_common/static/css/hbs_base.css?v={{ version }}">
+<link rel="stylesheet" href="/ext/presenter/static/css/presenter.css?v={{ version }}">
 <!-- CRITICAL: inline mobile overrides - cache-proof -->
 <style>
   /* Default: hide hamburger/mobile elements on desktop */
@@ -103,6 +106,8 @@
 <div id="main">
   {% include 'modules/mobile/mobile_navbar.html' %}
   {% include 'modules/chat_topbar.html' %}
+  <!-- Hecos Presenter Embedded Container — lives outside chat-area to survive SPA navigation -->
+  <div id="hbs-presenter-embedded"></div>
   {% include 'modules/chat_area.html' %}
   {% include 'modules/chat_input.html' %}
 </div>
@@ -201,6 +206,9 @@
 <script src="/static/js/control_room.js?v={{ version }}&t=20260921d"></script>
 <!-- WEB_UI Emoticons Extension -->
 <script src="/ext/emoticons/static/js/emoticons.js?v={{ version }}"></script>
+<!-- WEB_UI HBS & Presenter Extensions -->
+<script src="/ext/hbs_common/static/js/hbs_utils.js?v={{ version }}"></script>
+<script src="/ext/presenter/static/js/presenter.js?v={{ version }}"></script>
 <!-- HDCS Command Palette (self-contained, no ES modules) -->
 <link rel="stylesheet" href="/assets/css/cmd_palette.css?v={{ version }}">
 <script src="/static/js/commands/hecos_cmd_palette.js?v={{ version }}"></script>
@@ -227,7 +235,7 @@
 <script src="/static/js/keyboard_shortcuts/hks_actions.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_overlay.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_recorder.js?v={{ version }}"></script>
-<script src="/static/js/keyboard_shortcuts/hks_toast.js?v={{ version }}"></script>
+<script src="/static/js/chat_toast_unified/chat_toast_unified.js?v={{ version }}"></script>
 <script src="/static/js/keyboard_shortcuts/hks_tooltips.js?v={{ version }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

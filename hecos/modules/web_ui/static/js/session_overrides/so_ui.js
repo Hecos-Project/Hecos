@@ -272,6 +272,16 @@ window.soApplySoulToUI = async function(soul) {
     
     if (!soul) {
         document.getElementById('so-persona-select').value = "";
+        
+        const dirChk = document.getElementById('so-use-global-direct');
+        if (dirChk) dirChk.checked = true;
+        
+        const safeChk = document.getElementById('so-use-global-safety');
+        if (safeChk) safeChk.checked = true;
+        
+        const custInst = document.getElementById('so-custom-instructions');
+        if (custInst) custInst.value = "";
+
         document.getElementById('so-backend-select').value = "";
         window.soUpdateModelsDropdown();
         document.getElementById('so-model-select').value = "";
@@ -322,6 +332,10 @@ window.soApplySoulToUI = async function(soul) {
     
     // Persona
     document.getElementById('so-persona-select').value = soul.persona?.soul_file || fallbacks.persona || "";
+    
+    document.getElementById('so-use-global-direct').checked = soul.persona?.use_global_direct_instructions !== false;
+    document.getElementById('so-use-global-safety').checked = soul.persona?.use_global_safety_instructions !== false;
+    document.getElementById('so-custom-instructions').value = soul.persona?.custom_instructions || "";
     
     // Model
     document.getElementById('so-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
@@ -380,10 +394,16 @@ window.soApplySoulToUI = async function(soul) {
 window.soCollectUIState = function() {
     const getVal = (id) => { const v = document.getElementById(id).value; return v === "" ? null : v; };
     const getNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; };
+    const getCheck = (id) => document.getElementById(id).checked;
     
     return {
         active_global_preset: window.soState ? window.soState.activeSoulId : null,
-        persona: { soul_file: getVal('so-persona-select') },
+        persona: { 
+            soul_file: getVal('so-persona-select'),
+            use_global_direct_instructions: getCheck('so-use-global-direct'),
+            use_global_safety_instructions: getCheck('so-use-global-safety'),
+            custom_instructions: getVal('so-custom-instructions')
+        },
         model: { backend_type: getVal('so-backend-select'), model_name: getVal('so-model-select') },
         inference: {
             preset_name: getVal('so-inference-preset-select'),

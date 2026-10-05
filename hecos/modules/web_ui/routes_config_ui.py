@@ -36,6 +36,7 @@ _PANEL_MAP = {
     'flows':           'modules/config_flows.html',
     'packages':        'modules/config_packages.html',
     'shortcuts':       'modules/config_shortcuts.html',
+    'presenter':       'modules/config_presenter.html',
 }
 
 _PANELS_NEEDING_OPTIONS = {'backend', 'voice', 'ia', 'igen', 'media'}

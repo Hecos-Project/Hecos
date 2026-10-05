@@ -1,0 +1,138 @@
+/* ── Hecos Presenter CSS ─────────────────────────────────────────── */
+
+/* Embedded Mode */
+#hbs-presenter-embedded {
+    margin: 10px 16px;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.04), var(--bg2));
+    border: 1px solid rgba(255, 81, 47, 0.15);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+#hbs-presenter-embedded.active {
+    display: flex !important;
+}
+
+#hbs-presenter-embedded.collapsed .hbs-presenter-body,
+#hbs-presenter-embedded.collapsed .hbs-presenter-footer {
+    display: none !important;
+}
+
+#hbs-presenter-embedded.collapsed {
+    padding: 8px 16px;
+    gap: 0;
+}
+
+#hbs-presenter-embedded.collapsed .hbs-presenter-header {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+
+/* Overlay Mode (Toast) */
+#hbs-presenter-overlay {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 320px;
+    background: var(--bg2);
+    border: 1px solid rgba(255, 81, 47, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    padding: 12px 16px;
+    z-index: 1000;
+    transform: translateX(120%);
+    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    backdrop-filter: blur(12px);
+}
+
+#hbs-presenter-overlay.active {
+    transform: translateX(0);
+}
+
+
+/* Common Elements */
+.hbs-presenter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 8px;
+}
+
+.hbs-presenter-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff512f, #dd2476);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    flex-shrink: 0;
+    transition: background 0.3s ease;
+}
+
+.hbs-presenter-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+}
+
+.hbs-presenter-body {
+    font-size: 12.5px;
+    color: var(--text-muted, #a0a0a0);
+    line-height: 1.5;
+    animation: presenterFadeIn 0.3s ease;
+}
+
+.hbs-presenter-body i {
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.hbs-presenter-footer {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 2px;
+    opacity: 0.6;
+}
+
+@keyframes presenterFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Presenter Custom UI Controls */
+#hbs-presenter-remember-size {
+    accent-color: #ff512f; /* Match Presenter accent */
+    cursor: pointer;
+    background-color: var(--bg3);
+}
+
+.presenter-dark-input {
+    color-scheme: dark;
+}
+
+/* Fallback for webkit spinners in dark mode */
+.presenter-dark-input::-webkit-inner-spin-button, 
+.presenter-dark-input::-webkit-outer-spin-button {
+    filter: invert(0.8);
+    opacity: 0.5;
+    cursor: pointer;
+}
+.presenter-dark-input::-webkit-inner-spin-button:hover, 
+.presenter-dark-input::-webkit-outer-spin-button:hover {
+    opacity: 1;
+}

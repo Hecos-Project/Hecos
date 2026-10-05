@@ -4,14 +4,6 @@
  * Loaded by chat.html. Depends on: addBubble(), sendMessage(), window.chatHistory[], chatArea
  */
 
-// ── Toast Notification ───────────────────────────────────────────
-function showToast(msg, duration = 2000) {
-  const el = document.getElementById('chat-toast');
-  if (!el) return;
-  el.textContent = msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), duration);
-}
 
 // ── Build the action bar DOM for a message bubble ────────────────
 function buildMessageActions(msgEl, role, historyIndex) {

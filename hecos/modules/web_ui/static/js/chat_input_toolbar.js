@@ -229,7 +229,7 @@ function setupDragAndDrop() {
 document.addEventListener('DOMContentLoaded', () => {
   // CRITICAL: Move overlay elements to <body> root so they are NOT
   // trapped inside #input-bar's stacking context, which breaks fixed positioning.
-  ['paste-modal', 'drop-overlay', 'chat-toast'].forEach(id => {
+  ['paste-modal', 'drop-overlay'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.parentElement !== document.body) {
       document.body.appendChild(el);

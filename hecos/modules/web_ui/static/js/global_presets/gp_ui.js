@@ -275,6 +275,10 @@ window.sfApplySoulToUI = async function(soul) {
     // Persona
     document.getElementById('sf-persona-select').value = soul.persona?.soul_file || fallbacks.persona || "";
     
+    document.getElementById('sf-use-global-direct').checked = soul.persona?.use_global_direct_instructions !== false;
+    document.getElementById('sf-use-global-safety').checked = soul.persona?.use_global_safety_instructions !== false;
+    document.getElementById('sf-custom-instructions').value = soul.persona?.custom_instructions || "";
+    
     // Model
     document.getElementById('sf-backend-select').value = soul.model?.backend_type || fallbacks.backend || "ollama";
     window.sfUpdateModelsDropdown();
@@ -338,9 +342,15 @@ window.sfApplySoulToUI = async function(soul) {
 window.sfCollectUIState = function() {
     const getVal = (id) => { const v = document.getElementById(id).value; return v === "" ? null : v; };
     const getNum = (id) => { const v = document.getElementById(id).value; return v ? parseFloat(v) : null; };
+    const getCheck = (id) => document.getElementById(id).checked;
     
     return {
-        persona: { soul_file: getVal('sf-persona-select') },
+        persona: { 
+            soul_file: getVal('sf-persona-select'),
+            use_global_direct_instructions: getCheck('sf-use-global-direct'),
+            use_global_safety_instructions: getCheck('sf-use-global-safety'),
+            custom_instructions: getVal('sf-custom-instructions')
+        },
         model: { backend_type: getVal('sf-backend-select'), model_name: getVal('sf-model-select') },
         inference: {
             preset_name: getVal('sf-inference-preset-select'),

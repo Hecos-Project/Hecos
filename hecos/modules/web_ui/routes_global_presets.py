@@ -72,6 +72,8 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                 if not soul:
                     return jsonify({"ok": False, "error": "Soul not found"}), 404
                 
+            logger.info(f"[GlobalPresets] /activate: soul_id='{soul_id}', session_id='{session_id}', soul_name='{soul.meta.name if soul else 'None'}'")
+            
             if not session_id or session_id == "global":
                 # Set system-wide default
                 if cfg_mgr:
@@ -150,6 +152,14 @@ def init_global_presets_routes(app, root_dir, logger, cfg_mgr=None):
                 
                 set_session_config(session_id, overrides)
             
+            if soul:
+                logger.info(f"[GlobalPresets] About to emit persona_switched for '{soul.meta.name}'")
+                from hecos.core.events import emit
+                emit("persona_switched", {"new_persona": soul.meta.name})
+                logger.info("[GlobalPresets] persona_switched emitted OK")
+            else:
+                logger.info("[GlobalPresets] No soul, skipping emit")
+
             return jsonify({"ok": True, "soul": soul.model_dump() if soul else None})
         except Exception as e:
             logger.error(f"[GlobalPresets] Error activating soul: {e}")
